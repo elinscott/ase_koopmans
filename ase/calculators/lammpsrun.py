@@ -44,6 +44,7 @@ __all__ = ['LAMMPS']
 
 
 class LAMMPS:
+    name = 'lammpsrun'
 
     def __init__(self, label='lammps', tmp_dir=None, parameters={},
                  specorder=None, files=[], always_triclinic=False,
@@ -115,6 +116,8 @@ class LAMMPS:
                                              self._custom_thermo_args[0:3]])
         self.parameters['thermo_args'] = self._custom_thermo_args
 
+        self.parameters['thermo_args'] = self._custom_thermo_args
+        
         # Match something which can be converted to a float
         f_re = r'([+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|nan|inf))'
         n = len(self._custom_thermo_args)
@@ -321,6 +324,9 @@ class LAMMPS:
 
         cell_atoms = np.dot(trj_atoms.get_cell(),
                             rotation_lammps2ase)
+        celldisp = np.dot(trj_atoms.get_celldisp(),
+                          rotation_lammps2ase)
+
         # !TODO: set proper types on read_lammps_dump
         type_atoms = self.atoms.get_atomic_numbers()
         positions_atoms = np.dot(trj_atoms.get_positions(),
@@ -334,7 +340,7 @@ class LAMMPS:
             # assume periodic boundary conditions here (as in
             # write_lammps)
             self.atoms = Atoms(type_atoms, positions=positions_atoms,
-                               cell=cell_atoms)
+                               cell=cell_atoms, celldisp=celldisp)
             self.atoms.set_velocities(velocities_atoms
                                       * (Ang/(fs*1000.)))
 
@@ -342,7 +348,7 @@ class LAMMPS:
         # !TODO: save in between atoms
         if self.trajectory_out is not None:
             tmp_atoms = Atoms(type_atoms, positions=positions_atoms,
-                              cell=cell_atoms)
+                              cell=cell_atoms, celldisp=celldisp)
             tmp_atoms.set_velocities(velocities_atoms)
             self.trajectory_out.write(tmp_atoms)
         
