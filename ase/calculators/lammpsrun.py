@@ -126,7 +126,7 @@ class LAMMPS(Calculator):
 
         # period of system snapshot saving (in MD steps)
         parameters['dump_period'] = 1
-        
+       
         if not hasattr(self.parameters, 'always_triclinic'):
             self.parameters['always_triclinic'] = always_triclinic
         if not hasattr(self.parameters, 'keep_tmp_files'):
@@ -208,7 +208,34 @@ class LAMMPS(Calculator):
         stress = np.array([tc[i] for i in ('pxx', 'pyy', 'pzz', 'pyz', 'pxz', 'pxy')])
         self.results['stress'] = convert(stress, 'pressure',
                                          self.parameters['units'], 'ASE')
+    
+    # !TODO: handle legacy commandline arguments - to be removed
+    def _check_env(self):
+        """Valid LAMMPS_COMMAND pointing to lammps exectuable
 
+        :returns: None
+        :rtype: 
+
+        """
+        # set LAMMPS command from environment variable
+        if 'LAMMPS_COMMAND' in os.environ:
+            self.lammps_cmd_line = shlex.split(os.environ['LAMMPS_COMMAND'],
+                                         posix=(os.name == 'posix'))
+
+            if len(self.lammps_cmd_line) == 0:
+                self.clean()
+                raise RuntimeError('The LAMMPS_COMMAND environment variable '
+                                   'must not be empty')
+            # want always an absolute path to LAMMPS binary when calling from self.dir
+            self.lammps_cmd_line[0] = os.path.abspath(self.lammps_cmd_line[0])
+
+        else:
+            self.clean()
+            raise RuntimeError('Please set LAMMPS_COMMAND environment variable')
+        if 'LAMMPS_OPTIONS' in os.environ:
+            self.parameters['lammps_options'] = shlex.split(os.environ['LAMMPS_OPTIONS'],
+                                                            posix=(os.name == 'posix'))
+        
     def _lmp_alive(self):
         # Return True if this calculator is currently handling a running
         # lammps process
@@ -226,29 +253,6 @@ class LAMMPS(Calculator):
         """Method which explicitly runs LAMMPS."""
 
         self.calls += 1
-
-        # set LAMMPS command from environment variable
-        if 'LAMMPS_COMMAND' in os.environ:
-            lammps_cmd_line = shlex.split(os.environ['LAMMPS_COMMAND'],
-                                          posix=(os.name == 'posix'))
-            if len(lammps_cmd_line) == 0:
-                self.clean()
-                raise RuntimeError('The LAMMPS_COMMAND environment variable '
-                                   'must not be empty')
-            # want always an absolute path to LAMMPS binary when calling from
-            # self.dir
-            lammps_cmd_line[0] = os.path.abspath(lammps_cmd_line[0])
-
-        else:
-            self.clean()
-            raise RuntimeError(
-                'Please set LAMMPS_COMMAND environment variable')
-        if 'LAMMPS_OPTIONS' in os.environ:
-            lammps_options = shlex.split(os.environ['LAMMPS_OPTIONS'],
-                                         posix=(os.name == 'posix'))
-        else:
-            lammps_options = shlex.split('-echo log -screen none',
-                                         posix=(os.name == 'posix'))
 
         # change into subdirectory for LAMMPS calculations
         cwd = os.getcwd()
@@ -278,9 +282,10 @@ class LAMMPS(Calculator):
         # see to it that LAMMPS is started
         if not self._lmp_alive():
             # Attempt to (re)start lammps
-            self._lmp_handle = Popen(
-                lammps_cmd_line + lammps_options + ['-log', '/dev/stdout'],
-                stdin=PIPE, stdout=PIPE)
+            self._lmp_handle = Popen(self.lammps_cmd_line
+                                     + self.parameters['lammps_options']
+                                     + ['-log', '/dev/stdout'],
+                                     stdin=PIPE, stdout=PIPE)
         lmp_handle = self._lmp_handle
 
         # Create thread reading lammps stdout (for reference, if requested,
