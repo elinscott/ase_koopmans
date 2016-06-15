@@ -103,7 +103,7 @@ class LAMMPS:
             
         if tmp_dir is not None:
             # If tmp_dir is pointing somewhere, don't remove stuff!
-            self.parameters['verbose'] = True
+            self.keep_tmp_files = True
         self._lmp_handle = None        # To handle the lmp process
 
         # read_log depends on that the first (three) thermo_style custom args
@@ -235,7 +235,7 @@ class LAMMPS:
         lammps_in = uns_mktemp(prefix='in_' + label, dir=self.tmp_dir)
         lammps_log = uns_mktemp(prefix='log_' + label, dir=self.tmp_dir)
         lammps_trj_fd = NamedTemporaryFile(
-            prefix='trj_' + label, dir=self.tmp_dir,
+            prefix='trj_' + label, suffix='.bin', dir=self.tmp_dir,
             delete=(not self.keep_tmp_files))
         lammps_trj = lammps_trj_fd.name
         if self.no_data_file:

@@ -1,4 +1,5 @@
 import gzip
+import struct
 from os.path import splitext
 from collections import deque
 import numpy as np
@@ -28,10 +29,10 @@ def read_lammps_dump(infileobj, **kwargs):
     if isinstance(infileobj, basestring):
         suffix = splitext(infileobj)[-1]
         if suffix == ".bin":
-            fileobj = paropen(infileobj, 'rb')
-        if suffix == ".gz":
+            fileobj = paropen(infileobj, "rb")
+        elif suffix == ".gz":
             # !TODO: save for parallel execution?
-            fileobj = gzip.open(infileobj, 'rb')
+            fileobj = gzip.open(infileobj, "rb")
         else:
             fileobj = paropen(infileobj)
     else:
@@ -39,7 +40,7 @@ def read_lammps_dump(infileobj, **kwargs):
         fileobj = infileobj
 
     if suffix == ".bin":
-        return read_lammps_dump_bin(fileobj, **kwargs)
+        return read_lammps_dump_binary(fileobj, **kwargs)
 
     return read_lammps_dump_string(fileobj, **kwargs)
 
@@ -87,14 +88,16 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc = False,
     if len(quaternions):
         out_atoms = Quaternions(symbols=types,
                                 positions=positions,
-                                cell=cell, celldisp=celldisp,
+                                cell=cell,
+                                celldisp=celldisp,
+                                pbc=pbc,
                                 quaternions=quaternions)
     elif len(positions):
-        out_atoms = atomsobj(symbols=types, positions=positions,
+        out_atoms = atomsobj(symbols=types, positions=positions, pbc=pbc,
                              celldisp=celldisp, cell=cell)
     elif len(scaled_positions):
         out_atoms = atomsobj(symbols=types, scaled_positions=scaled_positions,
-                             celldisp=celldisp, cell=cell)
+                             pbc=pbc, celldisp=celldisp, cell=cell)
 
     if len(velocities):
         out_atoms.set_velocities(velocities)
@@ -192,5 +195,91 @@ def read_lammps_dump_string(fileobj, index=-1, order=True,
     return images[index]
 
 
-def read_lammps_dump_bin(fileobj):
-    raise NotImplementedError
+def read_lammps_dump_binary(fileobj, index=-1, order=True, 
+                            atomsobj=Atoms, specorder=None,
+                            intformat='SMALLBIG', 
+                            columns = None):
+    """Read binary dump-files (after binary2txt.cpp from lammps/tools)
+
+    :param fileobj: 
+    :param index: 
+    :param order: 
+    :param atomsobj: 
+    :param specorder: 
+    :returns: 
+    :rtype: 
+
+    """
+
+    # depending on the chosen compilation flag lammps uses either normal
+    # integers or long long for its id or timestep numbering
+    tagformat, bigformat = dict(
+        SMALLSMALL = ('i','i'),
+        SMALLBIG = ('i','q'),
+        BIGBIG = ('q','q')
+        )[intformat]
+
+    if not columns:
+        columns = ['id','type','x','y','z','vx','vy','vz','fx','fy','fz']
+
+    images = []
+
+    # wrap struct.unpack to raise EOFError
+    def read_variables(string):
+        obj_len = struct.calcsize(string)
+        data_obj = fileobj.read(obj_len)
+        if obj_len != len(data_obj):
+            raise EOFError
+        return struct.unpack(string, data_obj)
+    
+    while True:
+        try:
+            # read header
+            ntimestep, = read_variables('='+bigformat)
+            natoms, triclinic = read_variables('='+bigformat+'i')
+            boundary = read_variables('=6i')
+            xlo,xhi,ylo,yhi,zlo,zhi = read_variables('=6d')
+            if triclinic != 0:
+                xy,xz,yz = read_variables('=3d')
+            else:
+                xy,xz,yz = (0.,)*3
+            size_one,nchunk = read_variables('=2i')
+            if len(columns) != size_one:
+                raise ValueError("Provided columns do not match binary file")
+            
+
+            # lammps cells/boxes can have different boundary conditions on each
+            # sides (makes mainly sense for different non-periodic conditions
+            # (e.g. [f]ixed and [s]hrink for a irradiation simulation)
+            # periodic case: b 0 = 'p' 
+            # non-peridic cases 1: 'f', 2 : 's', 3: 'm'
+            pbc = np.sum(np.array(boundary).reshape((3,2)),axis=1) == 0
+
+            # create ase-cell from lammps-box
+            xhilo = (xhi - xlo) - abs(xy) - abs(xz)
+            yhilo = (yhi - ylo) - abs(yz)
+            zhilo = (zhi - zlo)
+            celldispx = xlo - min(0, xy) - min(0, xz)
+            celldispy = ylo - min(0, yz)
+            celldispz = zlo
+            cell = [[xhilo, 0, 0], [xy, yhilo, 0], [xz, yz, zhilo]]
+            celldisp = [[celldispx, celldispy, celldispz]]
+
+            # number-of-data-entries
+            n, = read_variables('=i')
+
+            # retrieve per atom data
+            data = np.array(read_variables('='+str(n)+'d')).reshape((-1, size_one))
+
+            # map data-chunk to ase atoms
+            out_atoms = lammps_data_to_ase_atoms(data = data, 
+                columns = columns, cell = cell, celldisp = celldisp, pbc=pbc,
+                atomsobj=Atoms, order=order, specorder=specorder)
+            
+            images.append(out_atoms)
+
+        except EOFError:
+            break
+
+
+    return images[index]
