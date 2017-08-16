@@ -49,7 +49,6 @@ class BulkStartGenerator(object):
 
         self.volume = volume
         self.cellbounds = cellbounds
-        self.check_isolated = check_isolated
         
         # normalize splitting probabilities:
         tot = sum([v for v in splits.values()])
