@@ -154,8 +154,6 @@ class BulkStartGenerator(object):
             cand_list = []
             # Make each new position one at a time.
             for i in range(N_blocks):
-                print i, 'out of', N_blocks, cand
-                write('cand.traj', cand)
 
                 atoms = blocks[i].copy()
                 atoms.set_tags(i)
