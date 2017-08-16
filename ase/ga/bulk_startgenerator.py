@@ -4,7 +4,8 @@ import numpy as np
 from ase import Atoms
 from ase.data import atomic_numbers
 from ase.build import molecule
-from ase.ga.utilities import atoms_too_close, closest_distances_generator 
+from ase.ga.utilities import closest_distances_generator 
+from ase.ga.bulk_utilities import atoms_too_close
 
 def random_pos(cell):
     """ Returns a random position within the box
