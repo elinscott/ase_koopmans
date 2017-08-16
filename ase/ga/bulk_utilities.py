@@ -106,7 +106,7 @@ def atoms_too_close(a, bl, use_tags=False):
         distances = cdist(pos,pos_new)
 
         if nx == 0 and ny == 0 and nz == 0:
-            if use_tags: 
+            if use_tags and len(a) > 1: 
                 x = np.array([tags]).T
                 distances += 1e2*(cdist(x, x) == 0)
             else:
