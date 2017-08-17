@@ -1,5 +1,5 @@
 """ Methods for generating new random starting candidates. """
-from random import shuffle, random, sample, choice
+from random import shuffle, random, sample
 import numpy as np
 from ase import Atoms
 from ase.data import atomic_numbers

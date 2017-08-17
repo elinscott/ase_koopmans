@@ -153,9 +153,10 @@ def convert_for_lammps(atoms):
     #coord_transform = tri_mat*trans
  
     atoms.set_cell(tri_mat.T, scale_atoms=True)
+    atoms.wrap(pbc=True)
 
     # "flip" the cell if it is too skewed
-    newcell = np.copy(cell)
+    newcell = atoms.get_cell()
     while True:
         xx, yy = newcell[0,0], newcell[1,1]
         xy, xz, yz = newcell[1,0], newcell[2,0], newcell[2,1]
