@@ -1,7 +1,6 @@
 import numpy as np
-from itertools import product, combinations_with_replacement
+from itertools import combinations_with_replacement
 from math import erf
-from cmath import sqrt
 from scipy.spatial.distance import cdist
 from ase.neighborlist import NeighborList
 try:
@@ -112,7 +111,7 @@ class FingerprintsComparator(object):
         return verdict
 
 
-    def __json_encode__(self,fingerprints,typedic):
+    def __json_encode__(self, fingerprints, typedic):
         """ json does not accept tuples nor integers as dict keys, 
         so in order to write the fingerprints to atoms.info, we need
         to convert them to strings """
@@ -134,7 +133,7 @@ class FingerprintsComparator(object):
             typedic_encoded[newkey] = val 
         return [fingerprints_encoded,typedic_encoded]
 
-    def __json_decode__(self,fingerprints,typedic):
+    def __json_decode__(self, fingerprints, typedic):
         """ This is the reverse operation of __json_encode__ """
         fingerprints_decoded = {}
         for key,val in fingerprints.iteritems():
@@ -144,7 +143,7 @@ class FingerprintsComparator(object):
             else:
                 newkey = newkey[0]
 
-            if isinstance(val,dict):
+            if isinstance(val, dict):
                 fingerprints_decoded[newkey] = {}
                 for key2,val2 in val.iteritems():
                     fingerprints_decoded[newkey][int(key2)] = np.array(val2)
@@ -154,7 +153,7 @@ class FingerprintsComparator(object):
         for key,val in typedic.iteritems():
             newkey = int(key)
             typedic_decoded[newkey] = val 
-        return [fingerprints_decoded,typedic_decoded]
+        return [fingerprints_decoded, typedic_decoded]
 
 
     def _compare_structure_(self, a1, a2):
@@ -188,12 +187,12 @@ class FingerprintsComparator(object):
             raise AssertionError('The two structures have a different \
                                   stoichiometry or ordering!')
 
-        cos_dist = self._cosine_distance_(fp1,fp2,typedic1)
+        cos_dist = self._cosine_distance_(fp1, fp2, typedic1)
         return cos_dist
 
 
 
-    def __get_volume__(self,a):
+    def __get_volume__(self, a):
         ''' Calculates the normalizing value, and other parameters 
         (pmin,pmax,qmin,qmax) that are used for surface area calculation
         in the case of 1 or 2-D periodicity.'''
@@ -216,7 +215,7 @@ class FingerprintsComparator(object):
         non_pbc_dirs = [i for i in range(3) if not self.pbc[i]]
 
         if self.dimensions == 3:
-            volume = abs(np.dot(np.cross(cell[0,:],cell[1,:]),cell[2,:]))
+            volume = abs(np.dot(np.cross(cell[0,:], cell[1,:]), cell[2,:]))
 
         elif self.dimensions == 2:
             non_pbc_dir = non_pbc_dirs[0]
@@ -225,7 +224,7 @@ class FingerprintsComparator(object):
             b = self.maxdims[non_pbc_dir]
             b /= np.linalg.norm(cell[non_pbc_dir,:])
 
-            volume = np.abs(np.dot(a,b*cell[non_pbc_dir,:]))
+            volume = np.abs(np.dot(a, b*cell[non_pbc_dir,:]))
 
             maxpos = np.max(scalpos[:,non_pbc_dir])
             minpos = np.min(scalpos[:,non_pbc_dir])
@@ -249,14 +248,14 @@ class FingerprintsComparator(object):
             b1 /= np.linalg.norm(cell[non_pbc_dirs[1],:])
          
             volume = np.abs(np.dot(np.cross(b0*v0,b1*v1),
-                                                cell[pbc_dir,:]))
+                                            cell[pbc_dir,:]))
 
             # note: here is a place where we assume that the 
             # non-periodic direction is orthogonal to the periodic ones:
             maxpos = np.max(scalpos[:,non_pbc_dirs[0]])
             minpos = np.min(scalpos[:,non_pbc_dirs[0]])
             pwidth = maxpos - minpos
-            pmargin = 0.5*(b0-pwidth)
+            pmargin = 0.5*(b0 - pwidth)
 
             pmin = np.min(scalpos[:,non_pbc_dirs[0]]) - pmargin
             pmin *= np.linalg.norm(cell[non_pbc_dirs[0],:])
@@ -266,7 +265,7 @@ class FingerprintsComparator(object):
             maxpos = np.max(scalpos[:,non_pbc_dirs[1]])
             minpos = np.min(scalpos[:,non_pbc_dirs[1]])
             qwidth = maxpos - minpos
-            qmargin = 0.5*(b1-pwidth)
+            qmargin = 0.5*(b1 - qwidth)
 
             qmin = np.min(scalpos[:,non_pbc_dirs[1]]) - qmargin
             qmin *= np.linalg.norm(cell[non_pbc_dirs[1],:])
@@ -276,11 +275,11 @@ class FingerprintsComparator(object):
         elif self.dimensions == 0:
             volume = 1.
 
-        return [volume,pmin,pmax,qmin,qmax]
+        return [volume, pmin, pmax, qmin, qmax]
 
 
 
-    def _take_fingerprints_(self,atoms,individual=False):
+    def _take_fingerprints_(self, atoms, individual=False):
         """ Returns a [fingerprints,typedic] list, where fingerprints
         is a dictionary with the fingerprints, and typedic is a 
         dictionary with the list of atom indices for each element 
@@ -408,11 +407,12 @@ class FingerprintsComparator(object):
                     fingerprint -= 1
                 fingerprints[key] = fingerprint
 
-        return [fingerprints,typedic]
+        return [fingerprints, typedic]
 
 
 
-    def _calculate_local_orders_(self,individual_fingerprints,typedic,volume):
+    def _calculate_local_orders_(self, individual_fingerprints, typedic, 
+                                 volume):
         """ Returns a list with the local order for every atom,
         using the definition of local order from
         Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632
@@ -435,7 +435,7 @@ class FingerprintsComparator(object):
         return local_orders
 
 
-    def get_local_orders(self,a):
+    def get_local_orders(self, a):
         """ Returns the local orders of all the atoms."""
 
         a_top = a[-self.n_top:]
@@ -444,14 +444,14 @@ class FingerprintsComparator(object):
         if key in a.info and not self.recalculate:
             fp,typedic = self.__json_decode__(*a.info[key])
         else:            
-            fp,typedic = self._take_fingerprints_(a_top,individual=True)
-            a.info[key] = self.__json_encode__(fp,typedic)
+            fp,typedic = self._take_fingerprints_(a_top, individual=True)
+            a.info[key] = self.__json_encode__(fp, typedic)
 
         volume,pmin,pmax,qmin,qmax = self.__get_volume__(a_top)
-        return self._calculate_local_orders_(fp,typedic,volume)
+        return self._calculate_local_orders_(fp, typedic, volume)
 
 
-    def _cosine_distance_(self,fp1,fp2,typedic):
+    def _cosine_distance_(self, fp1, fp2, typedic):
         """ Returns the cosine distance from two fingerprints. 
         It also needs information about the number of atoms from
         each element, which is included in "typedic"."""
@@ -486,29 +486,29 @@ class FingerprintsComparator(object):
         return distance
 
 
-    def plot_fingerprints(self,a,prefix=''):
+    def plot_fingerprints(self, a, prefix=''):
         """ Function for quickly plotting all the fingerprints. 
         Prefix = a prefix you want to give to the resulting PNG file."""
 
         if 'fingerprints' in a.info and not self.recalculate:
             fp,typedic = a.info['fingerprints']
-            fp,typedic = self.__json_decode__(fp,typedic)
+            fp,typedic = self.__json_decode__(fp, typedic)
         else:
             a_top = a[-self.n_top:]
             fp,typedic = self._take_fingerprints_(a_top)
-            a.info['fingerprints'] = self.__json_encode__(fp,typedic)
+            a.info['fingerprints'] = self.__json_encode__(fp, typedic)
 
         npts = int(np.ceil(self.rcut*1./self.binwidth))
-        x = np.linspace(0,self.rcut,npts,endpoint=False)
+        x = np.linspace(0, self.rcut, npts, endpoint=False)
 
         for key,val in fp.iteritems():
-            plt.plot(x,val)
-            suffix = "_fp_{0}_{1}.png".format(key[0],key[1])
+            plt.plot(x, val)
+            suffix = "_fp_{0}_{1}.png".format(key[0], key[1])
             plt.savefig(prefix+suffix)
             plt.clf()
 
 
-    def plot_individual_fingerprints(self,a,prefix=''):
+    def plot_individual_fingerprints(self, a ,prefix=''):
         """ Function for plotting all the individual fingerprints. 
         Prefix = a prefix for the resulting PNG file."""
 
@@ -516,16 +516,16 @@ class FingerprintsComparator(object):
             fp,typedic = a.info['individual_fingerprints']
         else:
             a_top = a[-self.n_top:]
-            fp,typedic = self._take_fingerprints_(a_top,individual=True)
-            a.info['individual_fingerprints'] = [fp,typedic]
+            fp,typedic = self._take_fingerprints_(a_top, individual=True)
+            a.info['individual_fingerprints'] = [fp, typedic]
 
         npts = int(np.ceil(self.rcut*1./self.binwidth))
-        x = np.linspace(0,self.rcut,npts,endpoint=False)
+        x = np.linspace(0, self.rcut, npts, endpoint=False)
 
         for key,val in fp.iteritems():
             for key2,val2 in val.iteritems():
-                plt.plot(x,val2)
-                plt.ylim([-1,10])
-                suffix = "_individual_fp_{0}_{1}.png".format(key,key2)
+                plt.plot(x, val2)
+                plt.ylim([-1, 10])
+                suffix = "_individual_fp_{0}_{1}.png".format(key, key2)
                 plt.savefig(prefix+suffix)
                 plt.clf()

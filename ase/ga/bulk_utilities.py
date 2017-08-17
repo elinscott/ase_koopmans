@@ -147,18 +147,18 @@ def convert_for_lammps(atoms):
     tri_mat[2, 2] = np.linalg.norm(np.dot(C, AxBhat))
 
     # create and save the transformation for coordinates
-    volume = np.linalg.det(ase_cell)
-    trans = np.array([np.cross(B, C), np.cross(C, A), np.cross(A, B)])
-    trans = trans / volume
-    coord_transform = tri_mat*trans
+    #volume = np.linalg.det(ase_cell)
+    #trans = np.array([np.cross(B, C), np.cross(C, A), np.cross(A, B)])
+    #trans = trans / volume
+    #coord_transform = tri_mat*trans
  
     atoms.set_cell(tri_mat.T, scale_atoms=True)
 
     # "flip" the cell if it is too skewed
     newcell = np.copy(cell)
     while True:
-        xx,yy,zz = newcell[0,0],newcell[1,1],newcell[2,2]
-        xy,xz,yz = newcell[1,0],newcell[2,0],newcell[2,1]
+        xx, yy = newcell[0,0], newcell[1,1]
+        xy, xz, yz = newcell[1,0], newcell[2,0], newcell[2,1]
         cond1 = 2*abs(xy) > xx
         cond2 = 2*abs(xz) > xx
         cond3 = 2*abs(yz) > yy

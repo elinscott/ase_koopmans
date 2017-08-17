@@ -88,7 +88,7 @@ class BulkStartGenerator(object):
             if cumprob > r:
                 break
                 
-	directions = sample(range(3),len(split))
+        directions = sample(range(3), len(split))
         repeat = [1,1,1]
         for i,d in enumerate(directions):
             repeat[d] = split[i]

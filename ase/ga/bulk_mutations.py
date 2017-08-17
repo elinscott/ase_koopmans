@@ -1,6 +1,5 @@
 import numpy as np
 from random import gauss
-from itertools import product
 from scipy.spatial.distance import cdist
 from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
@@ -81,7 +80,7 @@ class StrainMutation(OffspringCreator):
         self.descriptor = 'StrainMutation'
         self.min_inputs = 1
 
-    def update_scaling_volume(self,population, w_adapt=0.5, n_adapt=0):
+    def update_scaling_volume(self, population, w_adapt=0.5, n_adapt=0):
         """Function to initialize or update the scaling volume in a GA run."""
         if not n_adapt:
             # if not set, take best 20% of the population 
@@ -124,9 +123,9 @@ class StrainMutation(OffspringCreator):
             for i in range(3):
                 for j in range(i+1):
                     if i==j:
-                        strain[i,j] += gauss(0,self.stddev)
+                        strain[i,j] += gauss(0, self.stddev)
                     else:
-                        epsilon = 0.5*gauss(0,self.stddev)
+                        epsilon = 0.5*gauss(0, self.stddev)
                         strain[i,j] += epsilon
                         strain[j,i] += epsilon
 
@@ -137,12 +136,10 @@ class StrainMutation(OffspringCreator):
             vol = abs(np.linalg.det(newcell))
             newcell *= (self.scaling_volume/vol)**(1./3)
 
-            # converting to a representation LAMMPS will accept:
-            newcell,transfo = convert_cell(newcell)
-            newcell = flip_cell(newcell.T)
-
             mutant = atoms.copy()
-            mutant.set_cell(newcell,scale_atoms=True)
+            mutant.set_cell(newcell, scale_atoms=True)
+            convert_for_lammps(mutant)
+            newcell = mutant.get_cell()
 
             # checking constraints:
             too_close = atoms_too_close(mutant, self.blmin)
@@ -228,14 +225,13 @@ class SoftMutation(OffspringCreator):
         self.calc = calculator
         self.fconstfunc = fconstfunc
         self.rcut = rcut
-        self.used_modes = {} # for storing the used modes
+        self.used_modes = {}  # for storing the used modes
         self.descriptor = 'SoftMutation'
    
-    def _get_pwh_hessian_(self,atoms):
+    def _get_pwh_hessian_(self, atoms):
         ''' Returns the Hessian matrix d2E/dxi/dxj for the pairwise
         harmonic potential. '''
         cell = atoms.get_cell()
-        pbc = atoms.get_pbc()
         pos = atoms.get_positions()
         num = atoms.get_atomic_numbers()
         nat = len(atoms) 
@@ -246,7 +242,7 @@ class SoftMutation(OffspringCreator):
         nl.build(atoms)
 
         # constructing the hessian
-        hessian = np.zeros((nat*3,nat*3))
+        hessian = np.zeros((nat*3, nat*3))
         for i in range(nat):
             for j in range(nat):
                 if i==j:
@@ -256,13 +252,13 @@ class SoftMutation(OffspringCreator):
                     v = p - pos[i]
                     pairs = np.vstack((num[indices],np.zeros(len(indices)))).T 
                     pairs[:,1] = num[i]
-                    fc = self.fconstfunc(pairs,r[:,0])
+                    fc = self.fconstfunc(pairs, r[:,0])
                     v /= r
                     for k in range(3):
                         for l in range(3):
                             index1 = 3*i+k
                             index2 = 3*j+l
-                            h = np.sum(np.dot(fc*v[:,k],v[:,l]))
+                            h = np.sum(np.dot(fc*v[:,k], v[:,l]))
                             hessian[index1,index2] = h
                 else:
                     v = pos[j] - pos[i]
@@ -274,13 +270,13 @@ class SoftMutation(OffspringCreator):
                         for l in range(3):
                             index1 = 3*i+k
                             index2 = 3*j+l   
-                            fc = self.fconstfunc([[num[i],num[j]]],[r]) 
+                            fc = self.fconstfunc([[num[i], num[j]]], [r]) 
                             h = -1*fc*v[k]*v[l]
-                            hessian[index1,index2] = h
+                            hessian[index1, index2] = h
         return hessian
 
 
-    def _get_hessian_(self,atoms,dx):
+    def _get_hessian_(self, atoms, dx):
         ''' 
         Returns the Hessian matrix d2E/dxi/dxj using self.calc as
         calculator, through a first-order central difference scheme with
@@ -291,7 +287,7 @@ class SoftMutation(OffspringCreator):
         pos = atoms.get_positions()
         atoms.set_calculator(self.calc)
         nat = len(atoms)
-        hessian = np.zeros((3*nat,3*nat))
+        hessian = np.zeros((3*nat, 3*nat))
         for i in range(3*nat):
             row = np.zeros(3*nat)
             for direction in [-1,1]:
@@ -308,7 +304,7 @@ class SoftMutation(OffspringCreator):
         hessian *= 0.5
         return hessian
 
-    def _calculate_normal_modes_(self,atoms,dx=0.02,massweighing=False):
+    def _calculate_normal_modes_(self, atoms, dx=0.02, massweighing=False):
         '''Performs the vibrational analysis.'''
         if self.calc is None:
             hessian = self._get_pwh_hessian_(atoms)
@@ -323,7 +319,7 @@ class SoftMutation(OffspringCreator):
         modes = {eigval:eigvecs[:,i] for i,eigval in enumerate(eigvals)}
         return modes
 
-    def _animate_mode_(self,atoms,mode,nim=30,amplitude=1.0):
+    def _animate_mode_(self, atoms, mode, nim=30, amplitude=1.0):
         '''Returns an Atoms object showing an animation of the mode.'''
         pos = atoms.get_positions()
         mode = mode.reshape(np.shape(pos))
@@ -387,12 +383,12 @@ class SoftMutation(OffspringCreator):
         while tc and amplitude > min_amp:
             newpos = pos + direction*amplitude*mode
             newtop.set_positions(newpos)
-            newtop.set_positions(newtop.get_positions(wrap=True))
+            newtop.wrap()
             
             tc = atoms_too_close(newtop, self.blmin)
             mutant = slab + newtop
             if slab and not tc:
-                tc = atoms_too_close_two_sets(slab,newtop,self.blmin) 
+                tc = atoms_too_close_two_sets(slab, newtop, self.blmin) 
             
             if direction == 1:
                 direction = -1
