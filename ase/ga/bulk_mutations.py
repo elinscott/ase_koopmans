@@ -181,7 +181,7 @@ class StrainMutation(OffspringCreator):
         return mutant
 
 
-def inverse_square_model(pairs, r, param=None):
+def inverse_square_model(pairs, r, parameters=None):
     ''' 
     Returns the value of the force constant k, calculated as: 
     k = k0*(r0/r)**2
@@ -193,29 +193,30 @@ def inverse_square_model(pairs, r, param=None):
     Arguments:
     pair: Nx2 array of atomic number pairs
     r: number or array of interatomic distances (of length N)
-    param: None (if the parameter set below is to be used),
-           or dictionary with (atomic number pair):(k0, r0)
-           values
+    parameters: None (if the parameter set below is to be used),
+                or dictionary with entries of the type
+                (sorted atomic number pair):(k0, r0)
     '''
-    param = {('C', 'C'):[58.284, 1.323],
-             ('C', 'H'):[24.699, 1.15],
-             ('C', 'Mo'):[42.648, 1.685],
-             ('H', 'H'):[32.121, 0.772],
-             ('Mo', 'Mo'):[48.621, 1.982],
-             ('O', 'O'):[71.925, 1.215],
-             ('O', 'Pd'):[21.494, 1.826],
-             ('O', 'Sr'):[21.128, 1.976],
-             ('O', 'Ti'):[47.382, 1.614],
-             ('Pd', 'Pd'):[8.171, 2.499],
-             ('Sr', 'Sr'):[0.393, 4.571],
-             ('Sr', 'Ti'):[1.944, 3.22],
-             ('Ti', 'Ti'):[93.731, 1.91],
-             }
+    if parameters is None:
+        parameters = {('C', 'C'):[58.284, 1.323],
+                      ('C', 'H'):[24.699, 1.15],
+                      ('C', 'Mo'):[42.648, 1.685],
+                      ('H', 'H'):[32.121, 0.772],
+                      ('Mo', 'Mo'):[48.621, 1.982],
+                      ('O', 'O'):[71.925, 1.215],
+                      ('O', 'Pd'):[21.494, 1.826],
+                      ('O', 'Sr'):[21.128, 1.976],
+                      ('O', 'Ti'):[47.382, 1.614],
+                      ('Pd', 'Pd'):[8.171, 2.499],
+                      ('Sr', 'Sr'):[0.393, 4.571],
+                      ('Sr', 'Ti'):[1.944, 3.22],
+                      ('Ti', 'Ti'):[93.731, 1.91],
+                     }
 
     k = []
     for i,pair in enumerate(pairs):
         key = tuple(sorted([chemical_symbols[int(j)] for j in pair]))
-        k0,r0 = param[key]
+        k0,r0 = parameters[key]
         k.append(k0*(r0/r[i])**2) 
     return np.array(k)
 
@@ -265,10 +266,12 @@ class SoftMutation(OffspringCreator):
     def _get_pwh_hessian_(self, atoms):
         ''' Returns the Hessian matrix d2E/dxi/dxj for the pairwise
         harmonic potential. '''
+        if self.use_tags:
+            gather_same_tag_atoms(atoms)
+            tags = atoms.get_tags()
         cell = atoms.get_cell()
         pos = atoms.get_positions()
         num = atoms.get_atomic_numbers()
-        tags = atoms.get_tags() 
         nat = len(atoms) 
 
         # build neighborlist
@@ -288,30 +291,41 @@ class SoftMutation(OffspringCreator):
                     pairs = np.vstack((num[indices], np.zeros(len(indices)))).T 
                     pairs[:,1] = num[i]
                     fc = self.fconstfunc(pairs, r[:,0])
+
                     if self.use_tags:
                         # put high force constant for same-tag atoms:
-                        for tag in list(set(tags)):
-                            indices = np.where(tags==tag)[0]
-
-
+                        tag_indices = np.where(tags==tags[i])[0]
+                        for tag_index in tag_indices:
+                            if tag_index==i:
+                                continue
+                            select = np.where(indices==tag_index)
+                            fc[select] = 1e9 
+                                    
                     v /= r
                     for k in range(3):
                         for l in range(3):
                             index1 = 3*i+k
                             index2 = 3*j+l
                             h = np.sum(np.dot(fc*v[:,k], v[:,l]))
-                            hessian[index1,index2] = h
+                            hessian[index1, index2] = h
                 else:
-                    v = pos[j] - pos[i]
+                    # should do sum over MICs within radius, no?
+                    #v = pos[j] - pos[i]  # shouldn't this be mic vector?!
+                    #indices, offsets = nl.get_neighbors(i)
+                    #p = pos[indices] + np.dot(offsets, cell)
+                    v = atoms.get_distance(i, j, mic=True, vector=True)
                     r = np.linalg.norm(v)
+                    print v,r
                     if r > self.rcut:
                         continue
                     v /= r
                     for k in range(3):
                         for l in range(3):
                             index1 = 3*i+k
-                            index2 = 3*j+l   
-                            fc = self.fconstfunc([[num[i], num[j]]], [r]) 
+                            index2 = 3*j+l
+                            fc = self.fconstfunc([[num[i], num[j]]], [r])
+                            if self.use_tags and tags[i]==tags[j]:
+                                fc = 1e9
                             h = -1*fc*v[k]*v[l]
                             hessian[index1, index2] = h
         return hessian
@@ -410,6 +424,17 @@ class SoftMutation(OffspringCreator):
 
         key = keys[index]
         mode = modes[key].reshape(np.shape(pos))
+
+        print mode
+        if self.use_tags:
+            # Equalize directions for same-tag atoms (which 
+            # ought to be very similar to begin with):
+            tags = atoms.get_tags()
+            for tag in list(set(tags)):
+                select = np.where(tags==tag)
+                m = np.mean(mode[select], axis=0)
+                mode[select] = m
+        print mode
 
         # Find a suitable amplitude, starting from the upper bound;
         # At every trial amplitude both positive and negative 
