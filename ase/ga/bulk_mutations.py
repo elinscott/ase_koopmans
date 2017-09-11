@@ -267,7 +267,6 @@ class SoftMutation(OffspringCreator):
         ''' Returns the Hessian matrix d2E/dxi/dxj for the pairwise
         harmonic potential. '''
         if self.use_tags:
-            gather_same_tag_atoms(atoms)
             tags = atoms.get_tags()
         cell = atoms.get_cell()
         pos = atoms.get_positions()
@@ -281,10 +280,11 @@ class SoftMutation(OffspringCreator):
 
         # constructing the hessian
         hessian = np.zeros((nat*3, nat*3))
+        large_fc = 1e5  # high force constant for same-tag atoms
         for i in range(nat):
+            indices, offsets = nl.get_neighbors(i)
             for j in range(nat):
                 if i==j:
-                    indices, offsets = nl.get_neighbors(i)
                     p = pos[indices] + np.dot(offsets, cell)
                     r = cdist(p, [pos[i]])
                     v = p - pos[i]
@@ -293,13 +293,12 @@ class SoftMutation(OffspringCreator):
                     fc = self.fconstfunc(pairs, r[:,0])
 
                     if self.use_tags:
-                        # put high force constant for same-tag atoms:
                         tag_indices = np.where(tags==tags[i])[0]
                         for tag_index in tag_indices:
                             if tag_index==i:
                                 continue
                             select = np.where(indices==tag_index)
-                            fc[select] = 1e9 
+                            fc[select] = large_fc 
                                     
                     v /= r
                     for k in range(3):
@@ -309,25 +308,21 @@ class SoftMutation(OffspringCreator):
                             h = np.sum(np.dot(fc*v[:,k], v[:,l]))
                             hessian[index1, index2] = h
                 else:
-                    # should do sum over MICs within radius, no?
-                    #v = pos[j] - pos[i]  # shouldn't this be mic vector?!
-                    #indices, offsets = nl.get_neighbors(i)
-                    #p = pos[indices] + np.dot(offsets, cell)
-                    v = atoms.get_distance(i, j, mic=True, vector=True)
-                    r = np.linalg.norm(v)
-                    print v,r
-                    if r > self.rcut:
-                        continue
-                    v /= r
-                    for k in range(3):
-                        for l in range(3):
-                            index1 = 3*i+k
-                            index2 = 3*j+l
-                            fc = self.fconstfunc([[num[i], num[j]]], [r])
-                            if self.use_tags and tags[i]==tags[j]:
-                                fc = 1e9
-                            h = -1*fc*v[k]*v[l]
-                            hessian[index1, index2] = h
+                    for m,index in enumerate(indices):
+                        if index != j: 
+                            continue
+                        v = pos[index] + np.dot(offsets[m], cell) - pos[i]
+                        r = np.linalg.norm(v)
+                        v /= r
+                        for k in range(3):
+                            for l in range(3):
+                                index1 = 3*i+k
+                                index2 = 3*j+l
+                                fc = self.fconstfunc([[num[i], num[j]]], [r])
+                                if self.use_tags and tags[i]==tags[j]:
+                                    fc = large_fc
+                                h = -1*fc*v[k]*v[l]
+                                hessian[index1, index2] += h
         return hessian
 
 
@@ -424,17 +419,6 @@ class SoftMutation(OffspringCreator):
 
         key = keys[index]
         mode = modes[key].reshape(np.shape(pos))
-
-        print mode
-        if self.use_tags:
-            # Equalize directions for same-tag atoms (which 
-            # ought to be very similar to begin with):
-            tags = atoms.get_tags()
-            for tag in list(set(tags)):
-                select = np.where(tags==tag)
-                m = np.mean(mode[select], axis=0)
-                mode[select] = m
-        print mode
 
         # Find a suitable amplitude, starting from the upper bound;
         # At every trial amplitude both positive and negative 
