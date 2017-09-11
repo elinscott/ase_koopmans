@@ -4,7 +4,7 @@ from scipy.spatial.distance import cdist
 from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
 from ase.ga.utilities import atoms_too_close_two_sets
-from ase.ga.bulk_utilities import convert_for_lammps, atoms_too_close
+from ase.ga.bulk_utilities import atoms_too_close
 from ase.ga.offspring_creator import OffspringCreator
 
 
@@ -110,12 +110,23 @@ class StrainMutation(OffspringCreator):
     def mutate(self, atoms):
         """ Does the actual mutation. """
 
-        if not self.scaling_volume:
-            raise RuntimeError('Scaling volume needs to be defined before \
-                                applying a strainmutation!')
         count = 0
         invalid = True
         cell = atoms.get_cell()
+        vol = atoms.get_volume()
+        if self.use_tags:
+            pos = atoms.get_positions()
+            tags = atoms.get_tags()
+            # wrap same-tag atoms together:
+            for tag in list(set(tags)):
+                indices = np.where(tags==tag)[0]
+                if len(indices) == 1:
+                    continue
+                vectors = atoms.get_distances(indices[0], indices[1:], 
+                                              mic=True, vector=True)
+                pos[indices[1:]] = pos[indices[0]] + vectors
+            atoms.set_positions(pos)
+
         maxcount = 10000
         while invalid and count < maxcount:
             # generating the strain matrix:
@@ -130,19 +141,30 @@ class StrainMutation(OffspringCreator):
                         strain[j,i] += epsilon
 
             # applying the strain:
-            newcell = np.dot(strain,cell)
+            newcell = np.dot(strain, cell)
 
             # volume scaling:
-            vol = abs(np.linalg.det(newcell))
-            newcell *= (self.scaling_volume/vol)**(1./3)
-
+            v =abs(np.linalg.det(newcell))
+            if self.scaling_volume is None:
+                newcell *= (vol/v)**(1./3)
+            else:
+                newcell *= (self.scaling_volume/v)**(1./3) 
+            
             mutant = atoms.copy()
-            mutant.set_cell(newcell, scale_atoms=True)
-            convert_for_lammps(mutant)
-            newcell = mutant.get_cell()
+            if self.use_tags:
+                transfo = np.linalg.solve(cell, newcell)
+                for tag in list(set(tags)):
+                    select = np.where(tags==tag)
+                    cop = np.mean(pos[select], axis=0)
+                    disp = np.dot(cop, transfo) - cop 
+                    mutant.positions[select] += disp
+                mutant.set_cell(newcell, scale_atoms=False)
+            else:
+                mutant.set_cell(newcell, scale_atoms=True)
 
             # checking constraints:
-            too_close = atoms_too_close(mutant, self.blmin)
+            too_close = atoms_too_close(mutant, self.blmin, 
+                                        use_tags=self.use_tags)
             cell_not_ok = not self.cellbounds.is_within_bounds(newcell)
             invalid = too_close or cell_not_ok
 
