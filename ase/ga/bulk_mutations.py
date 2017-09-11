@@ -43,6 +43,19 @@ class PermuStrainMutation(OffspringCreator):
 
 
 
+def gather_same_tag_atoms(atoms):
+    tags = atoms.get_tags()
+    pos = atoms.get_positions()
+    for tag in list(set(tags)):
+        indices = np.where(tags==tag)[0]
+        if len(indices) == 1:
+            continue
+        vectors = atoms.get_distances(indices[0], indices[1:],
+                                      mic=True, vector=True)
+        pos[indices[1:]] = pos[indices[0]] + vectors
+    atoms.set_positions(pos)
+
+
 class StrainMutation(OffspringCreator):
     """ Mutates a candidate by applying a randomly generated strain.
     See also:
@@ -115,17 +128,9 @@ class StrainMutation(OffspringCreator):
         cell = atoms.get_cell()
         vol = atoms.get_volume()
         if self.use_tags:
-            pos = atoms.get_positions()
             tags = atoms.get_tags()
-            # wrap same-tag atoms together:
-            for tag in list(set(tags)):
-                indices = np.where(tags==tag)[0]
-                if len(indices) == 1:
-                    continue
-                vectors = atoms.get_distances(indices[0], indices[1:], 
-                                              mic=True, vector=True)
-                pos[indices[1:]] = pos[indices[0]] + vectors
-            atoms.set_positions(pos)
+            gather_same_tag_atoms(atoms)
+            pos = atoms.get_positions()
 
         maxcount = 10000
         while invalid and count < maxcount:
@@ -253,6 +258,7 @@ class SoftMutation(OffspringCreator):
         self.calc = calculator
         self.fconstfunc = fconstfunc
         self.rcut = rcut
+        self.use_tags = use_tags
         self.used_modes = {}  # for storing the used modes
         self.descriptor = 'SoftMutation'
    
@@ -262,6 +268,7 @@ class SoftMutation(OffspringCreator):
         cell = atoms.get_cell()
         pos = atoms.get_positions()
         num = atoms.get_atomic_numbers()
+        tags = atoms.get_tags() 
         nat = len(atoms) 
 
         # build neighborlist
@@ -281,6 +288,12 @@ class SoftMutation(OffspringCreator):
                     pairs = np.vstack((num[indices], np.zeros(len(indices)))).T 
                     pairs[:,1] = num[i]
                     fc = self.fconstfunc(pairs, r[:,0])
+                    if self.use_tags:
+                        # put high force constant for same-tag atoms:
+                        for tag in list(set(tags)):
+                            indices = np.where(tags==tag)[0]
+
+
                     v /= r
                     for k in range(3):
                         for l in range(3):
