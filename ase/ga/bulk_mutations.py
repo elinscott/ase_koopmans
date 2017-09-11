@@ -176,7 +176,7 @@ class StrainMutation(OffspringCreator):
         return mutant
 
 
-def inverse_square_model(pairs, r):
+def inverse_square_model(pairs, r, param=None):
     ''' 
     Returns the value of the force constant k, calculated as: 
     k = k0*(r0/r)**2
@@ -188,6 +188,9 @@ def inverse_square_model(pairs, r):
     Arguments:
     pair: Nx2 array of atomic number pairs
     r: number or array of interatomic distances (of length N)
+    param: None (if the parameter set below is to be used),
+           or dictionary with (atomic number pair):(k0, r0)
+           values
     '''
     param = {('C', 'C'):[58.284, 1.323],
              ('C', 'H'):[24.699, 1.15],
@@ -220,8 +223,9 @@ class SoftMutation(OffspringCreator):
     As in the reference above, the next-lowest mode is used if the
     structure has already been softmutated.
     '''
-    def __init__(self, n_top, blmin, bounds=[0.25,1.5], calculator=None,
-                 fconstfunc=inverse_square_model, rcut=10.0, verbose=False):
+    def __init__(self, n_top, blmin, bounds=[0.25, 1.5], calculator=None,
+                 fconstfunc=inverse_square_model, rcut=10.0, 
+                 use_tags=False, verbose=False):
         '''
         n_top: the number of atoms to be optimized
         blmin: dictionary with closest allowed interatomic distances
@@ -239,6 +243,8 @@ class SoftMutation(OffspringCreator):
                     and returns the value of the force constant
                     to be used with the pairwise harmonic potential.
         rcut: cutoff radius for the pairwise harmonic potential.
+        use_tags: whether to use the atomic tags to preserve
+                  molecular identity.
         '''
         OffspringCreator.__init__(self, verbose)
         self.n_top = n_top
@@ -269,10 +275,10 @@ class SoftMutation(OffspringCreator):
             for j in range(nat):
                 if i==j:
                     indices, offsets = nl.get_neighbors(i)
-                    p = pos[indices] + np.dot(offsets,cell)
-                    r = cdist(p,[pos[i]])
+                    p = pos[indices] + np.dot(offsets, cell)
+                    r = cdist(p, [pos[i]])
                     v = p - pos[i]
-                    pairs = np.vstack((num[indices],np.zeros(len(indices)))).T 
+                    pairs = np.vstack((num[indices], np.zeros(len(indices)))).T 
                     pairs[:,1] = num[i]
                     fc = self.fconstfunc(pairs, r[:,0])
                     v /= r
@@ -312,7 +318,7 @@ class SoftMutation(OffspringCreator):
         hessian = np.zeros((3*nat, 3*nat))
         for i in range(3*nat):
             row = np.zeros(3*nat)
-            for direction in [-1,1]:
+            for direction in [-1, 1]:
                 disp = np.zeros(3)
                 disp[i%3] = direction*dx
                 pos_disp = np.copy(pos)
@@ -407,7 +413,7 @@ class SoftMutation(OffspringCreator):
             newtop.set_positions(newpos)
             newtop.wrap()
             
-            tc = atoms_too_close(newtop, self.blmin)
+            tc = atoms_too_close(newtop, self.blmin, use_tags=self.use_tags)
             mutant = slab + newtop
             if slab and not tc:
                 tc = atoms_too_close_two_sets(slab, newtop, self.blmin) 
