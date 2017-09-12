@@ -47,22 +47,20 @@ class StrainMutation(OffspringCreator):
     Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
     Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720
 
-    After initialization of the mutation, the scaling volume
+    After initialization of the mutation, a scaling volume
     (to which each mutated structure is scaled before checking the
-    constraints) should be updated, and is typically also regularly
-    updated in the course of a GA run.
+    constraints) is typically generated from the population, 
+    which is then also occasionally updated in the course of the
+    GA run.
     """
     def __init__(self, blmin, cellbounds=None, stddev=0.7, use_tags=False, 
                  verbose=False):
         """ Parameters:
-
         blmin: dict with the minimal interatomic distances
-
-        cellbounds: CellBounds instance describing limits on cell shape
-
+        cellbounds: ase.ga.bulk_utilities.CellBounds instance 
+                    describing limits on the cell shape
         stddev: standard deviation used in the generation of the strain
                 matrix elements
-
         use_tags: whether to use the atomic tags to preserve
                   molecular identity.
         """
@@ -102,12 +100,8 @@ class StrainMutation(OffspringCreator):
 
         return self.finalize_individual(indi), 'mutation: strain'
 
-
     def mutate(self, atoms):
         """ Does the actual mutation. """
-
-        count = 0
-        invalid = True
         cell = atoms.get_cell()
         vol = atoms.get_volume()
         if self.use_tags:
@@ -115,6 +109,8 @@ class StrainMutation(OffspringCreator):
             gather_atoms_by_tag(atoms)
             pos = atoms.get_positions()
 
+        count = 0
+        invalid = True
         maxcount = 10000
         while invalid and count < maxcount:
             # generating the strain matrix:
@@ -216,7 +212,7 @@ class SoftMutation(OffspringCreator):
                  fconstfunc=inverse_square_model, rcut=10.0, 
                  use_tags=False, verbose=False):
         '''
-        blmin: dictionary with closest allowed interatomic distances
+        blmin: dictionary with closest allowed interatomic distances.
         bounds: lower and upper limits (in Angstrom) for the largest 
                 atomic displacement in the structure. For a given mode,  
                 the algorithm starts at zero amplitude and increases 
@@ -226,8 +222,9 @@ class SoftMutation(OffspringCreator):
                 is lower than the provided lower bound, the mutant is
                 considered too similar to the parent and None is 
                 returned.
-        calc: the calculator to be used in the vibrational analysis.
-              If calc is None, a pairwise harmonic potential is used.
+        calculator: the calculator to be used in the vibrational 
+                    analysis. The default (None) is to use a simple
+                    pairwise harmonic potential.
         fconstfunc: function that accepts a list of two atomic numbers
                     and a number of array of interatomic distances,
                     and returns the value of the force constant
@@ -307,7 +304,6 @@ class SoftMutation(OffspringCreator):
                                 h = -1*fc*v[k]*v[l]
                                 hessian[index1, index2] += h
         return hessian
-
 
     def _get_hessian_(self, atoms, dx):
         ''' 
@@ -430,6 +426,5 @@ class SoftMutation(OffspringCreator):
 
         if amplitude*largest_norm < self.bounds[0]:
             mutant = None           
-
 
         return mutant
