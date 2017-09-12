@@ -37,7 +37,7 @@ class CellBounds:
     on cell vector lengths and various angles
     '''
 
-    def __init__(self,bounds={}):
+    def __init__(self, bounds={}):
         self.bounds = {'alpha':[0,np.pi], 'beta':[0,np.pi], 'gamma':[0,np.pi],
                        'a':[0,1e6], 'b':[0,1e6], 'c':[0,1e6],
                        'phi':[0,np.pi], 'chi':[0,np.pi], 'psi':[0,np.pi]}
@@ -72,7 +72,22 @@ def get_rotation_matrix(u, t):
     return rotmat
 
 
-def atoms_too_close(a, bl, use_tags=False):
+def gather_atoms_by_tag(atoms):
+    ''' Translates same-tag atoms so that they lie 'together',
+    with distance vectors as in the minimum image convention.'''
+    tags = atoms.get_tags()
+    pos = atoms.get_positions()
+    for tag in list(set(tags)):
+        indices = np.where(tags==tag)[0]
+        if len(indices) == 1:
+            continue
+        vectors = atoms.get_distances(indices[0], indices[1:],
+                                      mic=True, vector=True)
+        pos[indices[1:]] = pos[indices[0]] + vectors
+    atoms.set_positions(pos)
+
+
+def atoms_too_close(atoms, bl, use_tags=False):
     ''' 
     Alternative method of finding out whether atoms are 
     too close to each other. Whereas the function in ase.ga.utilities
@@ -85,6 +100,9 @@ def atoms_too_close(a, bl, use_tags=False):
     use_tags: whether to use the Atoms tags to disable distance
               checking within a block with the same tag
     '''
+    a = atoms.copy()
+    if use_tags:
+        gather_atoms_by_tag(a)
 
     pbc = a.get_pbc()
     cell = a.get_cell()
@@ -101,9 +119,9 @@ def atoms_too_close(a, bl, use_tags=False):
             neighbours.append([0])
 
     for nx,ny,nz in product(*neighbours):
-        displacement = np.dot(cell.T,np.array([nx,ny,nz]).T)
+        displacement = np.dot(cell.T, np.array([nx,ny,nz]).T)
         pos_new = pos + displacement
-        distances = cdist(pos,pos_new)
+        distances = cdist(pos, pos_new)
 
         if nx == 0 and ny == 0 and nz == 0:
             if use_tags and len(a) > 1: 
