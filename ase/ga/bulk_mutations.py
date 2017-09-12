@@ -3,8 +3,7 @@ from random import gauss
 from scipy.spatial.distance import cdist
 from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
-from ase.ga.utilities import atoms_too_close_two_sets
-from ase.ga.bulk_utilities import atoms_too_close
+from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag
 from ase.ga.offspring_creator import OffspringCreator
 
 
@@ -42,20 +41,6 @@ class PermuStrainMutation(OffspringCreator):
         return mutant
 
 
-
-def gather_same_tag_atoms(atoms):
-    tags = atoms.get_tags()
-    pos = atoms.get_positions()
-    for tag in list(set(tags)):
-        indices = np.where(tags==tag)[0]
-        if len(indices) == 1:
-            continue
-        vectors = atoms.get_distances(indices[0], indices[1:],
-                                      mic=True, vector=True)
-        pos[indices[1:]] = pos[indices[0]] + vectors
-    atoms.set_positions(pos)
-
-
 class StrainMutation(OffspringCreator):
     """ Mutates a candidate by applying a randomly generated strain.
     See also:
@@ -67,13 +52,11 @@ class StrainMutation(OffspringCreator):
     constraints) should be updated, and is typically also regularly
     updated in the course of a GA run.
     """
-    def __init__(self, n_top, blmin, cellbounds=None, stddev=0.7, 
-                 use_tags=False, verbose=False):
+    def __init__(self, blmin, cellbounds=None, stddev=0.7, use_tags=False, 
+                 verbose=False):
         """ Parameters:
 
         blmin: dict with the minimal interatomic distances
-
-        n_top: number of atoms that are optimized
 
         cellbounds: CellBounds instance describing limits on cell shape
 
@@ -129,7 +112,7 @@ class StrainMutation(OffspringCreator):
         vol = atoms.get_volume()
         if self.use_tags:
             tags = atoms.get_tags()
-            gather_same_tag_atoms(atoms)
+            gather_atoms_by_tag(atoms)
             pos = atoms.get_positions()
 
         maxcount = 10000
@@ -229,19 +212,20 @@ class SoftMutation(OffspringCreator):
     As in the reference above, the next-lowest mode is used if the
     structure has already been softmutated.
     '''
-    def __init__(self, n_top, blmin, bounds=[0.25, 1.5], calculator=None,
+    def __init__(self, blmin, bounds=[0.5, 2.0], calculator=None,
                  fconstfunc=inverse_square_model, rcut=10.0, 
                  use_tags=False, verbose=False):
         '''
-        n_top: the number of atoms to be optimized
         blmin: dictionary with closest allowed interatomic distances
-        bounds: lower and upper bounds on the mean absolute 
-                displacement of the atoms, in units of the average 
-                covalent radius. 
-                The algorithm starts at the upper limit and lowers the 
-                amplitude until 'blmin' is satisfied. If the lower 
-                limit is reached, None is returned, because the 
-                mutated structure is too similar to the parent. 
+        bounds: lower and upper limits (in Angstrom) for the largest 
+                atomic displacement in the structure. For a given mode,  
+                the algorithm starts at zero amplitude and increases 
+                it until either blmin is violated or the largest 
+                displacement exceeds the provided upper bound).
+                If the largest displacement in the resulting structure
+                is lower than the provided lower bound, the mutant is
+                considered too similar to the parent and None is 
+                returned.
         calc: the calculator to be used in the vibrational analysis.
               If calc is None, a pairwise harmonic potential is used.
         fconstfunc: function that accepts a list of two atomic numbers
@@ -253,7 +237,6 @@ class SoftMutation(OffspringCreator):
                   molecular identity.
         '''
         OffspringCreator.__init__(self, verbose)
-        self.n_top = n_top
         self.blmin = blmin
         self.bounds = bounds
         self.calc = calculator
@@ -395,20 +378,17 @@ class SoftMutation(OffspringCreator):
 
     def mutate(self, atoms):
         """ Does the actual mutation. """
-        slab = atoms[0:len(atoms) - self.n_top]
-        top = atoms[-self.n_top:]
-        pos = top.get_positions()
-        num = top.get_atomic_numbers()        
+        pos = atoms.get_positions()
+        num = atoms.get_atomic_numbers()        
 
         modes = self._calculate_normal_modes_(atoms)
 
         # Select the mode along which we want to move the atoms;
-        # Very low-frequency modes (that are likely to be 
-        # whole-structure translations or rotations) 
-        # and previously applied modes are discarded. 
+        # The first 3 translational modes as well as previously
+        # applied modes are discarded. 
 
         keys = np.array(sorted(modes))
-        index = np.where(keys > 1e-2)[0][0] 
+        index = 3 
         confid = atoms.info['confid']
         if confid in self.used_modes:
             while index in self.used_modes[confid]:
@@ -420,35 +400,36 @@ class SoftMutation(OffspringCreator):
         key = keys[index]
         mode = modes[key].reshape(np.shape(pos))
 
-        # Find a suitable amplitude, starting from the upper bound;
-        # At every trial amplitude both positive and negative 
+        # Find a suitable amplitude for translation along the mode;
+        # at every trial amplitude both positive and negative 
         # directions are tried.
 
-        cr_av = np.mean([covalent_radii[i] for i in num])
-        amplitude = self.bounds[1]*cr_av/np.mean(np.abs(mode)) 
-        tc = True
+        mutant = atoms.copy()
+        amplitude = 0.
+        increment = 0.1
         direction = 1
-        min_amp = self.bounds[0]*cr_av/np.mean(np.abs(mode))
-        newtop = top.copy()
-        while tc and amplitude > min_amp:
+        largest_norm = np.max(np.apply_along_axis(np.linalg.norm, 1, mode))
+        while amplitude*largest_norm < self.bounds[1]:
             newpos = pos + direction*amplitude*mode
-            newtop.set_positions(newpos)
-            newtop.wrap()
-            
-            tc = atoms_too_close(newtop, self.blmin, use_tags=self.use_tags)
-            mutant = slab + newtop
-            if slab and not tc:
-                tc = atoms_too_close_two_sets(slab, newtop, self.blmin) 
-            
+            mutant.set_positions(newpos)
+            mutant.wrap()
+            too_close = atoms_too_close(mutant, self.blmin, 
+                                        use_tags=self.use_tags)
+            if too_close:
+                amplitude -= increment
+                newpos = pos + direction*amplitude*mode
+                mutant.set_positions(newpos)
+                mutant.wrap()
+                break
+
             if direction == 1:
                 direction = -1
             else:
                 direction = 1
-                amplitude -= 0.1   
-                
-        if tc:
-            mutant = None
-        else:
-            mutant = slab + newtop
+                amplitude += increment
+
+        if amplitude*largest_norm < self.bounds[0]:
+            mutant = None           
+
 
         return mutant
