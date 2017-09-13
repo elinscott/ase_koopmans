@@ -3,7 +3,8 @@ from random import gauss
 from scipy.spatial.distance import cdist
 from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
-from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag
+from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag,
+                                  get_rotation_matrix
 from ase.ga.offspring_creator import OffspringCreator
 
 
@@ -427,4 +428,87 @@ class SoftMutation(OffspringCreator):
         if amplitude*largest_norm < self.bounds[0]:
             mutant = None           
 
+        return mutant
+
+
+class RotationalMutation(OffspringCreator):
+    """ Mutates a candidate by applying random rotations 
+    to multi-atom moieties in the structure (atoms with
+    the same tag are considered part of one such moiety).
+    Only performs whole-molecule rotations, no internal
+    rotations.   
+ 
+    See also:
+    Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
+    arXiv:1204.4756v2
+    """
+    def __init__(self, blmin, probability=0.33, tags=None, verbose=False):
+        """ Parameters:
+        blmin: closest allowed distances
+        probability: probability with which a moiety is rotated.
+        tags: None or list of integers, specify respectively whether 
+              all moieties or only those with matching tags are 
+              eligible for rotation.
+        """
+        OffspringCreator.__init__(self, verbose)
+        self.blmin = blmin
+        self.probability = probability
+        self.tags = tags
+        self.descriptor = 'RotationalMutation'
+        self.min_inputs = 1
+
+    def get_new_individual(self, parents):
+        f = parents[0]
+
+        indi = self.mutate(f)
+        if indi is None:
+            return indi, 'mutation: rotational'
+            
+        indi = self.initialize_individual(f, indi)
+        indi.info['data']['parents'] = [f.info['confid']]
+
+        return self.finalize_individual(indi), 'mutation: rotational'
+
+    def mutate(self, atoms):
+        """ Does the actual mutation. """
+        mutant = atoms.copy()
+        gather_atoms_by_tag(mutant)
+        pos = mutant.get_positions() 
+        tags = mutant.get_tags()
+
+        indices = {}
+        for tag in list(set(tags)):
+            hits = np.where(tags==tag)[0]
+            if len(hits) == 1 or tag not in self.tags:
+                continue
+            indices[tag] = hits
+
+        n_rot = int(np.ceil(len(indices)*self.probability))
+        chosen_tags = np.random.choice(indices.keys(), size=n_rot,
+                                       replace=False)
+
+        too_close = True
+        count = 0
+        maxcount = 10000
+        while too_close and count < maxcount:
+            newpos = np.copy(pos)
+            for i in range(n_rot):
+                tag = chosen_tags[i]
+                p = newpos[indices[tag]]
+                cop = np.apply_along_axis(np.linalg.norm, 1, p)
+                axis = np.random.random(3)
+                axis /= np.linalg.norm(axis)
+                angle = 2*np.pi*np.random.random()
+                m = get_rotation_matrix(axis, angle)
+                p = np.dot(m, p - cop) + cop
+                newpos[indices[tag]] = p
+
+            mutant.set_positions(newpos)
+            mutant.wrap()
+            too_close = atoms_too_close(mutant, self.blmin, use_tags=True)
+            count += 1
+
+        if count == maxcount:
+            mutant = None
+            
         return mutant
