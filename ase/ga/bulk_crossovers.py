@@ -37,7 +37,7 @@ class Position(object):
             return False
 
 
-class BulkCutAndSplicePairing(OffspringCreator):
+class CutAndSplicePairing(OffspringCreator):
     """ Parameters:
     n_top   : The number of atoms to optimize
     blmin   : Dictionary with pairs of atom numbers and the closest
@@ -48,13 +48,15 @@ class BulkCutAndSplicePairing(OffspringCreator):
               in the cutting plane
     minfrac : minimal fraction of atoms a parent must contribute 
               to the child
+    use_tags: whether to use the atomic tags to preserve
+              molecular identity.
  
     For more information, see e.g.
     Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720
     Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
     """
     def __init__(self, n_top, blmin, p1=1., p2=0.05, minfrac=None,  
-                 verbose=False):
+                 use_tags=False, verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.n_top = n_top
@@ -62,7 +64,8 @@ class BulkCutAndSplicePairing(OffspringCreator):
         self.p2 = p2
         self.minfrac = minfrac
         self.scaling_volume = None
-        self.descriptor = 'CutAndSplicePairingBulk'
+        self.use_tags = use_tags
+        self.descriptor = 'CutAndSplicePairing'
         self.min_inputs = 2
 
     def update_scaling_volume(self,population, w_adapt=0.5, n_adapt=0):
@@ -87,7 +90,7 @@ class BulkCutAndSplicePairing(OffspringCreator):
         """ 
         Creates a child from two parents using the given cutting plane
         Does not check whether atoms are too close. 
-        direction: direction of the cutting surface normal (0,1 or 2) 
+        direction: direction of the cutting surface normal (0, 1 or 2) 
         fraction: fraction of the lattice vector along which  
                   the cut is made 
         """
@@ -217,11 +220,11 @@ class BulkCutAndSplicePairing(OffspringCreator):
             err = 'Trying to pair two structures with different stoichiometry'
             raise ValueError(err)
 
+        invalid = True
         counter = 0
-        not_valid = True
-        n_max = 1000
+        maxcount = 1000
         # Run until a valid pairing is made or 1000 pairings are tested.
-        while not_valid and counter < n_max:
+        while not_valid and counter < maxcount:
 
             a1_copy = a1.copy()
             a2_copy = a2.copy()
@@ -238,7 +241,7 @@ class BulkCutAndSplicePairing(OffspringCreator):
                     cond2 = i != direction and r < self.p2
                     if cond1 or cond2:
                         a.positions += random()*cell[i,:]
-                a.set_scaled_positions(a.get_scaled_positions(wrap=True))
+                a.wrap()
 
             # perform the pairing
             fraction = random()
@@ -248,7 +251,8 @@ class BulkCutAndSplicePairing(OffspringCreator):
             # Now checking if the child is a valid candidate
 
             # Verify whether the atoms are too close or not
-            not_valid = atoms_too_close(child, self.blmin)
+            invalid = atoms_too_close(child, self.blmin, 
+                                      use_tags=self.use_tags)
 
             # Verify that the generated structure contains atoms 
             # from both parents
@@ -277,11 +281,11 @@ class BulkCutAndSplicePairing(OffspringCreator):
                                                         n2[i] > -1)
             
             if not (len(n1[n1 > -1]) >= nmin1 and len(n2[n2 > -1]) >= nmin2):
-                not_valid = True
+                invalid = True
 
             counter += 1
 
-        if counter == n_max:
+        if counter == maxcount:
             return None
         
         return child
