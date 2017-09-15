@@ -3,6 +3,7 @@ from random import gauss
 from scipy.spatial.distance import cdist
 from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
+from ase.ga.utilities import atoms_too_close_two_sets
 from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag,\
                                   get_rotation_matrix
 from ase.ga.offspring_creator import OffspringCreator
@@ -360,7 +361,7 @@ class SoftMutation(OffspringCreator):
             animation.append(image)	
         return animation
 
-    def get_new_individual(self,parents):
+    def get_new_individual(self, parents):
         f = parents[0]
 
         indi = self.mutate(f)
@@ -372,7 +373,7 @@ class SoftMutation(OffspringCreator):
 
         return self.finalize_individual(indi), 'mutation: soft'
 
-    def mutate(self, atoms):
+    def mutate(self, a):
         """ Does the actual mutation. """
         pos = atoms.get_positions()
         num = atoms.get_atomic_numbers()        
@@ -441,18 +442,24 @@ class RotationalMutation(OffspringCreator):
     Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
     arXiv:1204.4756v2
     """
-    def __init__(self, blmin, probability=0.33, tags=None, verbose=False):
+    def __init__(self, blmin, n_top=None, probability=0.33, tags=None, 
+                 test_dist_to_slab=True, verbose=False):
         """ Parameters:
         blmin: closest allowed distances
+        n_top: number of atoms to optimize; if None, all are included.
         probability: probability with which a moiety is rotated.
         tags: None or list of integers, specify respectively whether 
               all moieties or only those with matching tags are 
               eligible for rotation.
+        test_dist_to_slab: whether also the distances to the slab
+                           should be checked to satisfy the blmin.
         """
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
+        self.n_top = n_top
         self.probability = probability
-        self.tags = tags 
+        self.tags = tags
+        self.test_dist_to_slab = test_dist_to_slab
         self.descriptor = 'RotationalMutation'
         self.min_inputs = 1
 
@@ -468,8 +475,12 @@ class RotationalMutation(OffspringCreator):
 
         return self.finalize_individual(indi), 'mutation: rotational'
 
-    def mutate(self, atoms):
+    def mutate(self, a):
         """ Does the actual mutation. """
+        N = len(a) if self.n_top is None else self.n_top
+        slab = a[:len(a)-N]
+        atoms = a[-N:]
+
         mutant = atoms.copy()
         gather_atoms_by_tag(mutant)
         pos = mutant.get_positions() 
@@ -505,7 +516,12 @@ class RotationalMutation(OffspringCreator):
             too_close = atoms_too_close(mutant, self.blmin, use_tags=True)
             count += 1
 
+            if not too_close and self.test_dist_to_slab:
+                too_close = atoms_too_close_two_sets(slab, mutant, self.blmin)
+        
         if count == maxcount:
             mutant = None
-            
+        else:
+            mutant = slab + mutant
+ 
         return mutant
