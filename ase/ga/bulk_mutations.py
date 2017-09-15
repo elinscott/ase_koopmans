@@ -3,7 +3,7 @@ from random import gauss
 from scipy.spatial.distance import cdist
 from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
-from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag,
+from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag,\
                                   get_rotation_matrix
 from ase.ga.offspring_creator import OffspringCreator
 
@@ -67,7 +67,6 @@ class StrainMutation(OffspringCreator):
         """
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
-        self.n_top = n_top
         self.cellbounds = cellbounds
         self.stddev = stddev
         self.use_tags = use_tags
@@ -453,7 +452,7 @@ class RotationalMutation(OffspringCreator):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.probability = probability
-        self.tags = tags
+        self.tags = tags 
         self.descriptor = 'RotationalMutation'
         self.min_inputs = 1
 
@@ -475,13 +474,13 @@ class RotationalMutation(OffspringCreator):
         gather_atoms_by_tag(mutant)
         pos = mutant.get_positions() 
         tags = mutant.get_tags()
+        eligible_tags = tags if self.tags is None else self.tags
 
         indices = {}
         for tag in list(set(tags)):
             hits = np.where(tags==tag)[0]
-            if len(hits) == 1 or tag not in self.tags:
-                continue
-            indices[tag] = hits
+            if len(hits) > 1 and tag in eligible_tags:
+                indices[tag] = hits
 
         n_rot = int(np.ceil(len(indices)*self.probability))
         chosen_tags = np.random.choice(indices.keys(), size=n_rot,
@@ -492,16 +491,14 @@ class RotationalMutation(OffspringCreator):
         maxcount = 10000
         while too_close and count < maxcount:
             newpos = np.copy(pos)
-            for i in range(n_rot):
-                tag = chosen_tags[i]
-                p = newpos[indices[tag]]
-                cop = np.apply_along_axis(np.linalg.norm, 1, p)
+            for tag in chosen_tags:
+                p = np.copy(newpos[indices[tag]])
+                cop = np.mean(p, axis=0)
                 axis = np.random.random(3)
                 axis /= np.linalg.norm(axis)
                 angle = 2*np.pi*np.random.random()
                 m = get_rotation_matrix(axis, angle)
-                p = np.dot(m, p - cop) + cop
-                newpos[indices[tag]] = p
+                newpos[indices[tag]] = np.dot(m, (p-cop).T).T + cop
 
             mutant.set_positions(newpos)
             mutant.wrap()
