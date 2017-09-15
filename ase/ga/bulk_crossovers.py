@@ -50,13 +50,15 @@ class CutAndSplicePairing(OffspringCreator):
               to the child
     use_tags: whether to use the atomic tags to preserve
               molecular identity.
+    test_dist_to_slab: whether also the distances to the slab
+              should be checked to satisfy the blmin.
  
     For more information, see e.g.
     Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720
     Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
     """
     def __init__(self, n_top, blmin, p1=1., p2=0.05, minfrac=None,  
-                 use_tags=False, verbose=False):
+                 use_tags=False, test_dist_to_slab=True, verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.n_top = n_top
@@ -65,6 +67,7 @@ class CutAndSplicePairing(OffspringCreator):
         self.minfrac = minfrac
         self.scaling_volume = None
         self.use_tags = use_tags
+        self.test_dist_to_slab = test_dist_to_slab
         self.descriptor = 'CutAndSplicePairing'
         self.min_inputs = 2
 
@@ -77,7 +80,7 @@ class CutAndSplicePairing(OffspringCreator):
         if not n_adapt:
             # take best 20% of the population
             n_adapt = int(round(0.2*len(population)))
-        v_new = np.mean([ a.get_volume() for a in population[:n_adapt] ])
+        v_new = np.mean([a.get_volume() for a in population[:n_adapt]])
 
         if not self.scaling_volume:
             self.scaling_volume = v_new
@@ -169,7 +172,7 @@ class CutAndSplicePairing(OffspringCreator):
  
         # pair the cells:
         r = random()
-        newcell = np.average([cell1,cell2], weights=[r,1-r], axis=0)
+        newcell = np.average([cell1, cell2], weights=[r, 1-r], axis=0)
         # volume scaling:
         vol = abs(np.linalg.det(newcell))
         newcell *= (self.scaling_volume/vol)**(1./3)
@@ -224,7 +227,7 @@ class CutAndSplicePairing(OffspringCreator):
         counter = 0
         maxcount = 1000
         # Run until a valid pairing is made or 1000 pairings are tested.
-        while not_valid and counter < maxcount:
+        while invalid and counter < maxcount:
 
             a1_copy = a1.copy()
             a2_copy = a2.copy()
@@ -233,7 +236,7 @@ class CutAndSplicePairing(OffspringCreator):
             direction = randrange(3)
 
             # shift individuals:
-            for a in [a1_copy,a2_copy]:
+            for a in [a1_copy, a2_copy]:
                 cell = a.get_cell()
                 for i in range(3):
                     r = random()
@@ -254,27 +257,29 @@ class CutAndSplicePairing(OffspringCreator):
             invalid = atoms_too_close(child, self.blmin, 
                                       use_tags=self.use_tags)
 
+            if not invalid and self.test_dist_to_slab:
+                invalid = atoms_too_close_two_sets(self.slab, child,
+                                                   self.blmin)
+
             # Verify that the generated structure contains atoms 
             # from both parents
             n1 = -1*np.ones((N,))
             n2 = -1*np.ones((N,))
-            scalpos1 = a1_copy.get_scaled_positions()
-            scalpos2 = a2_copy.get_scaled_positions()
-            scalpos3 = child.get_scaled_positions()
+            p1 = a1_copy.get_scaled_positions()
+            p2 = a2_copy.get_scaled_positions()
+            p3 = child.get_scaled_positions()
             if self.minfrac is not None:
-                nmin1 = int(round(self.minfrac*len(a1_copy)))
-                nmin2 = int(round(self.minfrac*len(a2_copy)))
+                nmin1 = nmin2 = int(round(self.minfrac*N))
             else:
-                nmin1 = 1
-                nmin2 = 1
+                nmin1 = nmin2 = 1
             # Using np.allclose because of some float rounding 
             # when creating the child from the paired cell and positions
             for i in range(N):
                 for j in range(N):
-                    if np.allclose(scalpos1[j,:],scalpos3[i,:]):
+                    if np.allclose(p1[j, :], p3[i, :]):
                         n1[i] = j
                         break
-                    elif np.allclose(scalpos2[j,:],scalpos3[i,:]):
+                    elif np.allclose(p2[j, :], p3[i, :]):
                         n2[i] = j
                         break
                 assert (n1[i] > -1 and n2[i] == -1) or (n1[i] == -1 and
