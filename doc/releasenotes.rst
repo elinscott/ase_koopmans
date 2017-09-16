@@ -26,6 +26,19 @@ Git master branch
   ``get_special_points(cell, lattice=None)``.  The old way still works, but
   you will get a warning.
 
+* The :class:`ase.dft.dos.DOS` object will now use linear tetrahedron
+  interpolation of the band-structure if you set ``width=0.0``.  It's slow,
+  but sometimes worth waiting for.  It uses the :func:`ase.dft.dos.ltidos`
+  helper function.
+
+* :func:`ase.io.read` can now read QBox output files.
+
+* The :mod:`ase.calculators.qmmm` module can now also use
+  :ref:`Turbomole <turbomole qmmm>` and :mod:`DFTB+ <ase.calculators.dftb>`
+  as the QM part.
+
+* New :ref:`db tutorial` tutorial.
+
 
 Version 3.14.1
 ==============

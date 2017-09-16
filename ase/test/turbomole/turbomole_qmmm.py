@@ -1,44 +1,33 @@
+"""Test the Turbomole calculator in simple QMMM and
+explicit interaction QMMM simulations."""
 from math import cos, sin, pi
 
 import numpy as np
-# import matplotlib.pyplot as plt
 
-import ase.units as units
 from ase import Atoms
 from ase.calculators.tip3p import TIP3P, epsilon0, sigma0, rOH, angleHOH
-from ase.calculators.qmmm import (SimpleQMMM, EIQMMM, LJInteractions,
-                                  LJInteractionsGeneral)
+from ase.calculators.qmmm import SimpleQMMM, EIQMMM, LJInteractions
+from ase.calculators.turbomole import Turbomole
 from ase.constraints import FixInternals
 from ase.optimize import BFGS
 
 r = rOH
 a = angleHOH * pi / 180
-
-# From http://dx.doi.org/10.1063/1.445869
-eexp = 6.50 * units.kcal / units.mol
-dexp = 2.74
-aexp = 27
-
 D = np.linspace(2.5, 3.5, 30)
 
-i = LJInteractions({('O', 'O'): (epsilon0, sigma0)})
+interaction = LJInteractions({('O', 'O'): (epsilon0, sigma0)})
+qm_par = {'esp fit': 'kollman', 'multiplicity': 1}
 
-# General LJ interaction object
-sigma_mm = np.array([0, 0, sigma0])
-epsilon_mm = np.array([0, 0, epsilon0])
-sigma_qm = np.array([0, 0, sigma0])
-epsilon_qm = np.array([0, 0, epsilon0])
-ig = LJInteractionsGeneral(sigma_qm, epsilon_qm, sigma_mm, epsilon_mm)
-
-for calc in [TIP3P(),
-             SimpleQMMM([0, 1, 2], TIP3P(), TIP3P(), TIP3P()),
-             SimpleQMMM([0, 1, 2], TIP3P(), TIP3P(), TIP3P(), vacuum=3.0),
-             EIQMMM([0, 1, 2], TIP3P(), TIP3P(), i),
-             EIQMMM([3, 4, 5], TIP3P(), TIP3P(), i, vacuum=3.0),
-             EIQMMM([0, 1, 2], TIP3P(), TIP3P(), i, vacuum=3.0),
-             EIQMMM([0, 1, 2], TIP3P(), TIP3P(), ig),
-             EIQMMM([3, 4, 5], TIP3P(), TIP3P(), ig, vacuum=3.0),
-             EIQMMM([0, 1, 2], TIP3P(), TIP3P(), ig, vacuum=3.0)]:
+for calc in [
+        TIP3P(),
+        SimpleQMMM([0, 1, 2], Turbomole(**qm_par), TIP3P(), TIP3P()),
+        SimpleQMMM([0, 1, 2], Turbomole(**qm_par), TIP3P(), TIP3P(),
+                   vacuum=3.0),
+        EIQMMM([0, 1, 2], Turbomole(**qm_par), TIP3P(), interaction),
+        EIQMMM([3, 4, 5], Turbomole(**qm_par), TIP3P(), interaction,
+               vacuum=3.0),
+        EIQMMM([0, 1, 2], Turbomole(**qm_par), TIP3P(), interaction,
+               vacuum=3.0)]:
     dimer = Atoms('H2OH2O',
                   [(r * cos(a), 0, r * sin(a)),
                    (r, 0, 0),
@@ -57,7 +46,7 @@ for calc in [TIP3P(),
 
     F = np.array(F)
 
-    # plt.plot(D, E)
+#    plt.plot(D, E)
 
     F1 = np.polyval(np.polyder(np.polyfit(D, E, 7)), D)
     F2 = F[:, :3, 0].sum(1)
@@ -80,10 +69,3 @@ for calc in [TIP3P(),
                    (np.dot(v1, v1) * np.dot(v2, v2))**0.5) / np.pi * 180
     fmt = '{0:>20}: {1:.3f} {2:.3f} {3:.3f} {4:.1f}'
     print(fmt.format(calc.name, -min(E), -e0, d0, a0))
-    assert abs(e0 + eexp) < 0.002
-    assert abs(d0 - dexp) < 0.006
-    assert abs(a0 - aexp) < 2
-
-print(fmt.format('reference', 9.999, eexp, dexp, aexp))
-
-# plt.show()
