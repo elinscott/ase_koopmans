@@ -14,11 +14,13 @@ class RattleMutation(standardmutations.RattleMutation):
     """ Modification of standardmutations.RattleMutation
         to allow for preserving molecular identity. """
     def __init__(self, blmin, n_top=None, rattle_strength=0.8,
-                 rattle_prop=0.4, use_tags=False, verbose=False):
+                 rattle_prop=0.4, use_tags=False, test_dist_to_slab=True,
+                 verbose=False):
         standardmutations.RattleMutation.__init__(self, blmin, n_top, 
                rattle_strength=rattle_strength, rattle_prop=rattle_prop, 
-               verbose=False)
+               verbose=verbose)
         self.use_tags = use_tags
+        self.test_dist_to_slab = test_dist_to_slab
 
     def mutate(self, atoms):
         """ Does the actual mutation. """
@@ -41,7 +43,6 @@ class RattleMutation(standardmutations.RattleMutation):
             ok = False
             for tag in list(set(tags)):
                 select = np.where(tags==tag)
-                cop = np.mean(pos[select], axis=0)
                 if np.random.random() < self.rattle_prop:
                     ok = True
                     r = np.random.random(3)
@@ -53,7 +54,7 @@ class RattleMutation(standardmutations.RattleMutation):
 
             top = Atoms(num, positions=pos, cell=cell, pbc=pbc, tags=tags)
             too_close = atoms_too_close(top, self.blmin, use_tags=self.use_tags)
-            if not too_close:
+            if not too_close and self.test_dist_to_slab:
                 too_close = atoms_too_close_two_sets(top, slab, self.blmin)
 
         if count == maxcount:
@@ -61,6 +62,73 @@ class RattleMutation(standardmutations.RattleMutation):
 
         mutant = slab + top
         return mutant
+
+
+class PermutationMutation(standardmutations.PermutationMutation):
+    """ Modification of standardmutations.PermutationMutation
+        to allow for preserving molecular identity. """
+    def __init__(self, blmin, n_top=None, probability=0.33, use_tags=False, 
+                 test_dist_to_slab=True, verbose=False):
+        standardmutations.PermutationMutation.__init__(self, n_top,
+                 probability=probability, verbose=verbose)
+        self.blmin = blmin
+        self.use_tags = use_tags
+        self.test_dist_to_slab = test_dist_to_slab
+
+    def mutate(self, atoms):
+        """ Does the actual mutation. """
+        N = len(atoms) if self.n_top is None else self.n_top
+        slab = atoms[:len(atoms)-N]
+        atoms = atoms[-N:]
+        if self.use_tags:
+            gather_atoms_by_tag(atoms)
+        tags = atoms.get_tags() if self.use_tags else np.arange(N)
+        pos_ref = atoms.get_positions()
+        num = atoms.get_atomic_numbers()
+        cell = atoms.get_cell()
+        pbc = atoms.get_pbc()
+        symbols = atoms.get_chemical_symbols()
+
+        unique_tags = list(set(tags))
+        n = len(unique_tags)
+        swaps = int(np.ceil(n * self.probability / 2.))  
+
+        sym = []
+        for tag in list(set(unique_tags)):
+            indices = np.where(tags==tag)[0]
+            s = ''.join([symbols[j] for j in indices])
+            sym.append(s)
+        assert len(list(set(sym))) > 1
+
+        count = 0
+        maxcount = 1000
+        too_close = True
+        while too_close and count < maxcount:
+            count += 1
+            pos = pos_ref.copy()
+            for _ in range(swaps):
+                i = j = 0
+                while sym[i] == sym[j]:
+                    i = np.random.randint(0, high=n)
+                    j = np.random.randint(0, high=n)
+                ind1 = np.where(tags==i)
+                ind2 = np.where(tags==j)
+                cop1 = np.mean(pos[ind1], axis=0)
+                cop2 = np.mean(pos[ind2], axis=0)
+                pos[ind1] += cop2 - cop1
+                pos[ind2] += cop1 - cop2
+
+            top = Atoms(num, positions=pos, cell=cell, pbc=pbc, tags=tags)
+            too_close = atoms_too_close(top, self.blmin, use_tags=self.use_tags)
+            if not too_close and self.test_dist_to_slab:
+                too_close = atoms_too_close_two_sets(top, slab, self.blmin)
+
+        if count == maxcount:
+            return None
+
+        mutant = slab + top
+        return mutant
+
 
 class PermuStrainMutation(OffspringCreator):
     """ Combination of PermutationMutation and StrainMutation, see also:
