@@ -1,13 +1,66 @@
 import numpy as np
 from random import gauss
 from scipy.spatial.distance import cdist
+from ase import Atoms
 from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
 from ase.ga.utilities import atoms_too_close_two_sets
+from ase.ga.offspring_creator import OffspringCreator
+from ase.ga import standardmutations
 from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag,\
                                   get_rotation_matrix
-from ase.ga.offspring_creator import OffspringCreator
 
+class RattleMutation(standardmutations.RattleMutation):
+    """ Modification of standardmutations.RattleMutation
+        to allow for preserving molecular identity. """
+    def __init__(self, blmin, n_top=None, rattle_strength=0.8,
+                 rattle_prop=0.4, use_tags=False, verbose=False):
+        standardmutations.RattleMutation.__init__(self, blmin, n_top, 
+               rattle_strength=rattle_strength, rattle_prop=rattle_prop, 
+               verbose=False)
+        self.use_tags = use_tags
+
+    def mutate(self, atoms):
+        """ Does the actual mutation. """
+        N = len(atoms) if self.n_top is None else self.n_top
+        slab = atoms[:len(atoms)-N]
+        atoms = atoms[-N:]
+        tags = atoms.get_tags() if self.use_tags else np.arange(N)
+        pos_ref = atoms.get_positions()
+        num = atoms.get_atomic_numbers()
+        cell = atoms.get_cell()
+        pbc = atoms.get_pbc()
+        st = 2. * self.rattle_strength
+
+        count = 0
+        maxcount = 1000
+        too_close = True
+        while too_close and count < maxcount:
+            count += 1
+            pos = pos_ref.copy()
+            ok = False
+            for tag in list(set(tags)):
+                select = np.where(tags==tag)
+                cop = np.mean(pos[select], axis=0)
+                if np.random.random() < self.rattle_prop:
+                    ok = True
+                    r = np.random.random(3)
+                    pos[select] += st * (r - 0.5)
+
+            if not ok:
+                # Nothing got rattled
+                continue
+
+            top = Atoms(num, positions=pos, cell=cell, pbc=pbc, tags=tags)
+            too_close = atoms_too_close(top, self.blmin, use_tags=self.use_tags)
+            if not too_close:
+                too_close = atoms_too_close_two_sets(top, slab, self.blmin)
+
+        if count == maxcount:
+            return None
+
+        mutant = slab + top
+        return mutant
 
 class PermuStrainMutation(OffspringCreator):
     """ Combination of PermutationMutation and StrainMutation, see also:
@@ -41,6 +94,8 @@ class PermuStrainMutation(OffspringCreator):
         if mutant is not None:
             mutant = self.strainmutation.mutate(mutant)
         return mutant
+
+
 
 
 class StrainMutation(OffspringCreator):
