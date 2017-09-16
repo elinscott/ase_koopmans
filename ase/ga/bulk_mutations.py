@@ -234,9 +234,9 @@ class StrainMutation(OffspringCreator):
             pos = atoms.get_positions()
 
         count = 0
-        invalid = True
-        maxcount = 10000
-        while invalid and count < maxcount:
+        too_close = True
+        maxcount = 1000
+        while too_close and count < maxcount:
             # generating the strain matrix:
             strain = np.identity(3)
             for i in range(3):
@@ -250,6 +250,8 @@ class StrainMutation(OffspringCreator):
 
             # applying the strain:
             newcell = np.dot(strain, cell)
+            if not self.cellbounds.is_within_bounds(newcell):
+                continue 
 
             # volume scaling:
             v =abs(np.linalg.det(newcell))
@@ -270,12 +272,9 @@ class StrainMutation(OffspringCreator):
             else:
                 mutant.set_cell(newcell, scale_atoms=True)
 
-            # checking constraints:
+            # checking distances:
             too_close = atoms_too_close(mutant, self.blmin, 
                                         use_tags=self.use_tags)
-            cell_not_ok = not self.cellbounds.is_within_bounds(newcell)
-            invalid = too_close or cell_not_ok
-
             count += 1
 
         if count == maxcount:
@@ -496,7 +495,7 @@ class SoftMutation(OffspringCreator):
 
         return self.finalize_individual(indi), 'mutation: soft'
 
-    def mutate(self, a):
+    def mutate(self, atoms):
         """ Does the actual mutation. """
         pos = atoms.get_positions()
         num = atoms.get_atomic_numbers()        

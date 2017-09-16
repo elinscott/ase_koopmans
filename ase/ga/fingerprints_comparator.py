@@ -110,7 +110,6 @@ class FingerprintsComparator(object):
 
         return verdict
 
-
     def __json_encode__(self, fingerprints, typedic):
         """ json does not accept tuples nor integers as dict keys, 
         so in order to write the fingerprints to atoms.info, we need
