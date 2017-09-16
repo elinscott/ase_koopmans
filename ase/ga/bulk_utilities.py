@@ -63,11 +63,11 @@ def get_rotation_matrix(u, t):
     rotmat = np.array([[(ux**2)*(1-cost) + cost,
                         ux*uy*(1-cost) - uz*sint,
                         ux*uz*(1-cost) + uy*sint],
-                       [uy*ux*(1-cost) + uz*sint,
+                       [ux*uy*(1-cost) + uz*sint,
                         (uy**2)*(1-cost) + cost,
                         uy*uz*(1-cost) - ux*sint],
-                       [uz*ux*(1-cost) - uy*sint,
-                        uz*uy*(1-cost) + ux*sint,
+                       [ux*uz*(1-cost) - uy*sint,
+                        uy*uz*(1-cost) + ux*sint,
                         (uz**2)*(1-cost) + cost]])
     return rotmat
 

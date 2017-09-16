@@ -475,11 +475,11 @@ class RotationalMutation(OffspringCreator):
 
         return self.finalize_individual(indi), 'mutation: rotational'
 
-    def mutate(self, a):
+    def mutate(self, atoms):
         """ Does the actual mutation. """
-        N = len(a) if self.n_top is None else self.n_top
-        slab = a[:len(a)-N]
-        atoms = a[-N:]
+        N = len(atoms) if self.n_top is None else self.n_top
+        slab = atoms[:len(atoms)-N]
+        atoms = atoms[-N:]
 
         mutant = atoms.copy()
         gather_atoms_by_tag(mutant)

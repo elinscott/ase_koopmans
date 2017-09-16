@@ -1,28 +1,27 @@
 import numpy as np
 from random import random, randrange
 from ase import Atoms
-from ase.ga.bulk_utilities import atoms_too_close
+from ase.ga.utilities import atoms_too_close_two_sets
 from ase.ga.offspring_creator import OffspringCreator
+from ase.geometry import find_mic
+from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag
 
-class Position(object):
-    """Position helper object.
-
-    This class is just a simple representation used by the pairing
-    operator.
+class Positions(object):
+    """Helper object to simplify the pairing process.
 
     Parameters:
 
-    position: [x, y, z] coordinate
-    number: Atomic species at the position
+    scaled_positions: positions in scaled coordinates
+    cop: center-of-positions (also in scaled coordinates)
+    symbols: string with the atomic symbols
     distance: Signed distance to the cutting plane
     origin: Either 0 or 1 and determines which side of the plane
-    the position should be at.
-
+            the position should be at.
     """
-    def __init__(self, position, scaled_position, number, distance, origin):
-        self.number = number
-        self.position = position
-        self.scaled_position = scaled_position
+    def __init__(self, scaled_positions, cop, symbols, distance, origin):
+        self.scaled_positions = scaled_positions
+        self.cop = cop
+        self.symbols = symbols
         self.distance = distance
         self.origin = origin
 
@@ -39,9 +38,9 @@ class Position(object):
 
 class CutAndSplicePairing(OffspringCreator):
     """ Parameters:
-    n_top   : The number of atoms to optimize
     blmin   : Dictionary with pairs of atom numbers and the closest
               distance these can have to each other.
+    n_top   : The number of atoms to optimize (None = include all).
     p1      : probability that a parent is shifted over a random
               distance along the normal of the cutting plane 
     p2      : same as p1, but for shifting along the two directions 
@@ -49,7 +48,8 @@ class CutAndSplicePairing(OffspringCreator):
     minfrac : minimal fraction of atoms a parent must contribute 
               to the child
     use_tags: whether to use the atomic tags to preserve
-              molecular identity.
+              molecular identity. Note: same-tag atoms are 
+              supposed to be grouped together.
     test_dist_to_slab: whether also the distances to the slab
               should be checked to satisfy the blmin.
  
@@ -57,7 +57,7 @@ class CutAndSplicePairing(OffspringCreator):
     Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720
     Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
     """
-    def __init__(self, n_top, blmin, p1=1., p2=0.05, minfrac=None,  
+    def __init__(self, blmin, n_top=None, p1=1., p2=0.05, minfrac=None,  
                  use_tags=False, test_dist_to_slab=True, verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
@@ -69,9 +69,9 @@ class CutAndSplicePairing(OffspringCreator):
         self.use_tags = use_tags
         self.test_dist_to_slab = test_dist_to_slab
         self.descriptor = 'CutAndSplicePairing'
-        self.min_inputs = 2
+        self.min_inputs = 1
 
-    def update_scaling_volume(self,population, w_adapt=0.5, n_adapt=0):
+    def update_scaling_volume(self, population, w_adapt=0.5, n_adapt=0):
         ''' Updates the scaling volume that is used in the pairing
         w_adapt: weight of the new vs the old scaling volume
         n_adapt: number of best candidates in the population that 
@@ -92,39 +92,53 @@ class CutAndSplicePairing(OffspringCreator):
     def _get_pairing_(self, a1, a2, direction=None, fraction=None):
         """ 
         Creates a child from two parents using the given cutting plane
-        Does not check whether atoms are too close. 
+        Does not check whether atoms are too close, but does return
+        None if the generated structure lacks sufficient atoms 
+        from one of the parents (see self.minfrac).
+        Assumes the parents have been 'topped' and checked for equal 
+        lengths, stoichiometries, and tags (if self.use_tags).
         direction: direction of the cutting surface normal (0, 1 or 2) 
         fraction: fraction of the lattice vector along which  
-                  the cut is made 
+                  the cut is made.
         """
         N = len(a1)
-        num = a1.numbers[:]
-        unique_types = list(set(num))
+        symbols = a1.get_chemical_symbols()
+        pbc = a1.get_pbc()
+        tags = a1.get_tags() if self.use_tags else np.arange(N)
 
-        types = dict()
-        for u in unique_types:
-            types[u] = sum(num == u)
-
-        # Generate list of all atoms
+        # Generate list of all atoms / atom groups:
         cell1 = a1.get_cell()
         cell2 = a2.get_cell()
-        scalpos1 = a1.get_scaled_positions()
-        scalpos2 = a2.get_scaled_positions()
-        p1 = [Position(a.position, scalpos1[i], a.number,
-            scalpos1[i,direction]-fraction, origin=0) for i,a in enumerate(a1)]
-        p2 = [Position(a.position, scalpos2[i], a.number, 
-            scalpos2[i,direction]-fraction, origin=1) for i,a in enumerate(a2)]
+        scalpos1 = a1.get_scaled_positions(wrap=False)
+        scalpos2 = a2.get_scaled_positions(wrap=False)
+        p1, p2, sym = [], [], []
+        for i in list(set(tags)):
+            indices = np.where(tags==i)[0]
+            s = ''.join([symbols[j] for j in indices])
+            sym.append(s)
+
+            cop1 = np.mean(scalpos1[indices], axis=0)
+            d1 = cop1[direction] - fraction
+            p1.append(Positions(scalpos1[indices], cop1, s, d1, 0))
+
+            cop2 = np.mean(scalpos2[indices], axis=0)
+            d2 = cop2[direction] - fraction
+            p2.append(Positions(scalpos2[indices], cop2, s, d2, 1))
 
         all_points = p1
         all_points.extend(p2)
+        unique_sym = list(set(sym))
+        types = {}
+        for s in unique_sym:
+            types[s] = sym.count(s)  
 
-        # Sort these by their atomic number
-        all_points.sort(key=lambda x: x.number, reverse=True)
+        # Sort these by chemical symbols:
+        all_points.sort(key=lambda x: x.symbols, reverse=True)
 
         # For each atom type make the pairing
-        unique_types.sort()
+        unique_sym.sort()
         use_total = dict()
-        for u in unique_types:
+        for s in unique_sym:
             used = []
             not_used = []
             # The list is looked trough in
@@ -132,7 +146,7 @@ class CutAndSplicePairing(OffspringCreator):
             # from the list along the way.
             for i in reversed(range(len(all_points))):
                 # If there are no more atoms of this type
-                if all_points[i].number != u:
+                if all_points[i].symbols != s:
                     break
                 # Check if the atom should be included
                 if all_points[i].to_use():
@@ -140,50 +154,76 @@ class CutAndSplicePairing(OffspringCreator):
                 else:
                     not_used.append(all_points.pop(i))
 
-            assert len(used) + len(not_used) == types[u] * 2
+            assert len(used) + len(not_used) == types[s] * 2
 
             # While we have too few of the given atom type
-            while len(used) < types[u]:
+            while len(used) < types[s]:
                 r = random()
                 # origin = 0 => provides atoms if pos > fraction
                 # origin = 1 => provides atoms if pos < fraction
                 pick = 0 if r > fraction else 1
-                interval = [0,fraction] if r < fraction else [fraction,1]
+                interval = [0, fraction] if r < fraction else [fraction, 1]
                 indices = []
                 for index,point in enumerate(not_used):
-                    cond1 = interval[0] <= point.scaled_position[direction]
-                    cond2 = point.scaled_position[direction] <= interval[1]
+                    cond1 = interval[0] <= point.cop[direction]
+                    cond2 = point.cop[direction] <= interval[1]
                     if cond1 and cond2:
                         if point.origin != pick:
                             indices.append(index)
-                choice = randrange(0,len(indices))
+                if len(indices) == 0:
+                    continue
+                choice = randrange(0, len(indices))
                 used.append(not_used.pop(choice))
 
             # While we have too many of the given atom type
-            while len(used) > types[u]:
+            while len(used) > types[s]:
                 # remove randomly:
-                index = randrange(0,len(used))
+                index = randrange(0, len(used))
                 not_used.append(used.pop(index))
 
-            use_total[u] = used
+            use_total[s] = used
 
         n_tot = sum([len(ll) for ll in use_total.values()])
-        assert n_tot == N
+        assert n_tot == len(sym)
  
+        # check if the generated structure contains atoms 
+        # from both parents:
+        count1, count2 = 0, 0
+        for x in use_total.values():
+            count1 += sum([y.origin==0 for y in x])
+            count2 += sum([y.origin==1 for y in x])
+        if count1 == 0 or count2 == 0:
+            return None
+
         # pair the cells:
         r = random()
         newcell = np.average([cell1, cell2], weights=[r, 1-r], axis=0)
         # volume scaling:
         vol = abs(np.linalg.det(newcell))
-        newcell *= (self.scaling_volume/vol)**(1./3)
+        if not self.scaling_volume:
+            v = 0.5*(a1.get_volume() + a2.get_volume())
+        else:
+            v = self.scaling_volume
+        newcell *= (v/vol)**(1./3)
 
-        # Reorder the atoms to follow the atom types in original order
-        pos_new = [use_total[n].pop().scaled_position for n in num]
+        # Construct the cartesian positions and reorder the atoms 
+        # to follow the original order
+        newpos = []
+        for s in sym:
+            p = use_total[s].pop()
+            c = cell1 if p.origin==0 else cell2
+            pos = np.dot(c, p.scaled_positions.T).T  
+            cop = np.dot(c, p.cop.T).T
+            vectors, lengths = find_mic(pos - cop, c, pbc)
+            newcop = np.dot(newcell, p.cop.T).T
+            newpos.append(newcop + vectors)
 
-        child = Atoms(numbers=num, scaled_positions=pos_new, 
-                     pbc=a1.get_pbc(), cell=newcell)
+        newpos = np.reshape(newpos, (N, 3))
+        num = a1.get_atomic_numbers()
+        child = Atoms(numbers=num, positions=newpos, pbc=pbc, cell=newcell,
+                      tags=tags)
+        child.wrap()
         return child
-
 
     def get_new_individual(self, parents):
         """ The method called by the user that
@@ -204,23 +244,23 @@ class CutAndSplicePairing(OffspringCreator):
         
         return self.finalize_individual(indi), desc
 
-
     def cross(self, a1, a2):
         """Crosses the two atoms objects and returns one"""
         
-        if len(a1) != self.n_top: 
-            raise ValueError('Wrong size of structure to optimize')
         if len(a1) != len(a2):
             raise ValueError('The two structures do not have the same length')
-        
-        N = self.n_top
 
-        # Only consider the atoms to optimize
-        a1 = a1[len(a1) - N: len(a1)]
-        a2 = a2[len(a2) - N: len(a2)]
+        N = len(a1) if self.n_top is None else self.n_top
+        slab = a1[:len(a1)-N]
+        a1 = a1[-N:]
+        a2 = a2[-N:]
         
         if not np.array_equal(a1.numbers, a2.numbers):
             err = 'Trying to pair two structures with different stoichiometry'
+            raise ValueError(err)
+
+        if self.use_tags and not np.array_equal(a1.get_tags(), a2.get_tags()):
+            err = 'Trying to pair two structures with different tags'
             raise ValueError(err)
 
         invalid = True
@@ -228,14 +268,14 @@ class CutAndSplicePairing(OffspringCreator):
         maxcount = 1000
         # Run until a valid pairing is made or 1000 pairings are tested.
         while invalid and counter < maxcount:
-
+            counter += 1
             a1_copy = a1.copy()
             a2_copy = a2.copy()
 
-            # choose one of the 3 lattice vectors:
+            # Choose direction of cutting plane normal (0, 1, or 2):
             direction = randrange(3)
 
-            # shift individuals:
+            # Randomly translate parent structures:
             for a in [a1_copy, a2_copy]:
                 cell = a.get_cell()
                 for i in range(3):
@@ -244,51 +284,25 @@ class CutAndSplicePairing(OffspringCreator):
                     cond2 = i != direction and r < self.p2
                     if cond1 or cond2:
                         a.positions += random()*cell[i,:]
-                a.wrap()
+                if self.use_tags:
+                    gather_atoms_by_tag(a)
+                else:
+                    a.wrap()
 
-            # perform the pairing
+            # Perform the pairing:
             fraction = random()
             child = self._get_pairing_(a1_copy, a2_copy, direction=direction,
                                        fraction=fraction)
+            if child is None:
+                continue
 
-            # Now checking if the child is a valid candidate
-
-            # Verify whether the atoms are too close or not
+            # Verify whether the atoms are too close or not:
             invalid = atoms_too_close(child, self.blmin, 
                                       use_tags=self.use_tags)
-
-            if not invalid and self.test_dist_to_slab:
-                invalid = atoms_too_close_two_sets(self.slab, child,
-                                                   self.blmin)
-
-            # Verify that the generated structure contains atoms 
-            # from both parents
-            n1 = -1*np.ones((N,))
-            n2 = -1*np.ones((N,))
-            p1 = a1_copy.get_scaled_positions()
-            p2 = a2_copy.get_scaled_positions()
-            p3 = child.get_scaled_positions()
-            if self.minfrac is not None:
-                nmin1 = nmin2 = int(round(self.minfrac*N))
-            else:
-                nmin1 = nmin2 = 1
-            # Using np.allclose because of some float rounding 
-            # when creating the child from the paired cell and positions
-            for i in range(N):
-                for j in range(N):
-                    if np.allclose(p1[j, :], p3[i, :]):
-                        n1[i] = j
-                        break
-                    elif np.allclose(p2[j, :], p3[i, :]):
-                        n2[i] = j
-                        break
-                assert (n1[i] > -1 and n2[i] == -1) or (n1[i] == -1 and
-                                                        n2[i] > -1)
-            
-            if not (len(n1[n1 > -1]) >= nmin1 and len(n2[n2 > -1]) >= nmin2):
-                invalid = True
-
-            counter += 1
+            if invalid:
+                continue
+            elif self.test_dist_to_slab:
+                invalid = atoms_too_close_two_sets(slab, child, self.blmin)
 
         if counter == maxcount:
             return None
