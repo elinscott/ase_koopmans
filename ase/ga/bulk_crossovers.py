@@ -128,9 +128,7 @@ class CutAndSplicePairing(OffspringCreator):
         all_points = p1
         all_points.extend(p2)
         unique_sym = list(set(sym))
-        types = {}
-        for s in unique_sym:
-            types[s] = sym.count(s)  
+        types = {s:sym.count(s) for s in unique_sym}
 
         # Sort these by chemical symbols:
         all_points.sort(key=lambda x: x.symbols, reverse=True)
@@ -190,8 +188,8 @@ class CutAndSplicePairing(OffspringCreator):
         # from both parents:
         count1, count2 = 0, 0
         for x in use_total.values():
-            count1 += sum([y.origin==0 for y in x])
-            count2 += sum([y.origin==1 for y in x])
+            count1 += sum([y.origin == 0 for y in x])
+            count2 += sum([y.origin == 1 for y in x])
 
         nmin = 1 if self.minfrac is None else int(round(self.minfrac*N))
         if count1 < nmin or count2 < nmin:
@@ -213,14 +211,14 @@ class CutAndSplicePairing(OffspringCreator):
         newpos = []
         for s in sym:
             p = use_total[s].pop()
-            c = cell1 if p.origin==0 else cell2
-            pos = np.dot(c, p.scaled_positions.T).T  
-            cop = np.dot(c, p.cop.T).T
+            c = cell1 if p.origin == 0 else cell2
+            pos = np.dot(p.scaled_positions, c)  
+            cop = np.dot(p.cop, c)
             vectors, lengths = find_mic(pos - cop, c, pbc)
-            newcop = np.dot(newcell, p.cop.T).T
+            newcop = np.dot(p.cop, newcell)
             newpos.append(newcop + vectors)
-
         newpos = np.reshape(newpos, (N, 3))
+
         num = a1.get_atomic_numbers()
         child = Atoms(numbers=num, positions=newpos, pbc=pbc, cell=newcell,
                       tags=tags)
