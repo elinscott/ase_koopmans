@@ -192,9 +192,11 @@ class CutAndSplicePairing(OffspringCreator):
         for x in use_total.values():
             count1 += sum([y.origin==0 for y in x])
             count2 += sum([y.origin==1 for y in x])
-        if count1 == 0 or count2 == 0:
-            return None
 
+        nmin = 1 if self.minfrac is None else int(round(self.minfrac*N))
+        if count1 < nmin or count2 < nmin:
+            return None
+ 
         # pair the cells:
         r = random()
         newcell = np.average([cell1, cell2], weights=[r, 1-r], axis=0)
