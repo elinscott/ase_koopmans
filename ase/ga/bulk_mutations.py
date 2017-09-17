@@ -1,3 +1,4 @@
+import json
 import numpy as np
 from random import gauss
 from scipy.spatial.distance import cdist
@@ -482,6 +483,12 @@ class SoftMutation(OffspringCreator):
             image.positions = newpos
             animation.append(image)	
         return animation
+
+    def write_used_modes(self, filename):
+        ''' Dump used modes to json file. '''
+        with open(filename,'w') as f:
+            json.dump(self.used_modes, f)
+        return
 
     def get_new_individual(self, parents):
         f = parents[0]
