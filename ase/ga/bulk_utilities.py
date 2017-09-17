@@ -1,29 +1,20 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 from itertools import product, combinations_with_replacement
-
+from ase.geometry.cell import cell_to_cellpar
 
 def get_cell_angles_lengths(cell):
     ''' 
     Returns cell vectors lengths (a,b,c) as well as different
-    angles (alpha,beta,gamma,phi,chi,psi). 
-    Assumes cell is in lower triangular form.
+    angles (alpha, beta, gamma, phi, chi, psi) (in radians). 
     '''
+    cellpar = cell_to_cellpar(cell)
+    cellpar[3:] *= np.pi/180  # convert angles to radians
+    parnames = ['a', 'b', 'c', 'alpha', 'beta', 'gamma']
+    values = {n:p for n,p in zip(parnames, cellpar)}
 
     volume = abs(np.linalg.det(cell))
-    lx,ly,lz = cell[0,0],cell[1,1],cell[2,2]
-    xy,xz,yz = cell[1,0],cell[2,0],cell[2,1]
-
-    values = {}
-    values['a'] = lx
-    values['b'] = np.sqrt(xy**2+ly**2)
-    values['c'] = np.sqrt(xz**2+yz**2+lz**2)
-    values['alpha'] = np.arccos((xy*xz+ly*yz)/(values['b']*values['c']))
-    values['beta'] = np.arccos(xz/values['c'])
-    values['gamma'] = np.arccos(xy/values['b'])
-    
-    params = ['phi', 'chi', 'psi']
-    for i,param in enumerate(params):
+    for i,param in enumerate(['phi', 'chi', 'psi']):
         ab = np.linalg.norm(np.cross(cell[(i+1)%3,:], cell[(i+2)%3,:]))
         c = np.linalg.norm(cell[i,:])
         values[param] = np.arcsin(np.abs(volume/(ab*c)))   
@@ -36,14 +27,13 @@ class CellBounds:
     Class for defining as well as checking limits 
     on cell vector lengths and various angles
     '''
-
     def __init__(self, bounds={}):
         self.bounds = {'alpha':[0,np.pi], 'beta':[0,np.pi], 'gamma':[0,np.pi],
                        'a':[0,1e6], 'b':[0,1e6], 'c':[0,1e6],
                        'phi':[0,np.pi], 'chi':[0,np.pi], 'psi':[0,np.pi]}
         for param,bound in bounds.iteritems():
             self.bounds[param] = bound
-        
+
     def is_within_bounds(self, cell):
         values = get_cell_angles_lengths(cell)
         verdict = True
