@@ -216,7 +216,9 @@ class CutAndSplicePairing(OffspringCreator):
             cop = np.dot(p.cop, c)
             vectors, lengths = find_mic(pos - cop, c, pbc)
             newcop = np.dot(p.cop, newcell)
-            newpos.append(newcop + vectors)
+            pos = newcop + vectors
+            for row in pos:
+                newpos.append(row)  
         newpos = np.reshape(newpos, (N, 3))
 
         num = a1.get_atomic_numbers()
