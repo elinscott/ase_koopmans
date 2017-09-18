@@ -5,7 +5,7 @@ from scipy.spatial.distance import cdist
 from ase.neighborlist import NeighborList
 try:
     import matplotlib.pyplot as plt
-except ImportError:
+except:
     Warning("Matplotlib could not be loaded - plotting won't work")
 
 
@@ -107,7 +107,6 @@ class FingerprintsComparator(object):
         # then we check the structure
         cos_dist = self._compare_structure_(a1,a2)
         verdict = cos_dist < self.cos_dist_max
-
         return verdict
 
     def __json_encode__(self, fingerprints, typedic):
