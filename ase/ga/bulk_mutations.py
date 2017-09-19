@@ -593,12 +593,12 @@ class RotationalMutation(OffspringCreator):
     Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
     arXiv:1204.4756v2
     """
-    def __init__(self, blmin, n_top=None, probability=0.33, tags=None, 
+    def __init__(self, blmin, n_top=None, fraction=0.33, tags=None, 
                  min_angle=0.25, test_dist_to_slab=True, verbose=False):
         """ Parameters:
         blmin: closest allowed distances
         n_top: number of atoms to optimize; if None, all are included.
-        probability: probability with which a moiety is rotated.
+        fraction: fraction of the moieties to be rotated.
         tags: None or list of integers, specify respectively whether 
               all moieties or only those with matching tags are 
               eligible for rotation.
@@ -609,7 +609,7 @@ class RotationalMutation(OffspringCreator):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.n_top = n_top
-        self.probability = probability
+        self.fraction = fraction
         self.tags = tags
         self.min_angle = min_angle
         self.test_dist_to_slab = test_dist_to_slab
@@ -646,7 +646,7 @@ class RotationalMutation(OffspringCreator):
             if len(hits) > 1 and tag in eligible_tags:
                 indices[tag] = hits
 
-        n_rot = int(np.ceil(len(indices)*self.probability))
+        n_rot = int(np.ceil(len(indices)*self.fraction))
         chosen_tags = np.random.choice(indices.keys(), size=n_rot,
                                        replace=False)
 
