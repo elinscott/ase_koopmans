@@ -572,7 +572,7 @@ class RotationalMutation(OffspringCreator):
     arXiv:1204.4756v2
     """
     def __init__(self, blmin, n_top=None, probability=0.33, tags=None, 
-                 test_dist_to_slab=True, verbose=False):
+                 min_angle=0.25, test_dist_to_slab=True, verbose=False):
         """ Parameters:
         blmin: closest allowed distances
         n_top: number of atoms to optimize; if None, all are included.
@@ -580,6 +580,7 @@ class RotationalMutation(OffspringCreator):
         tags: None or list of integers, specify respectively whether 
               all moieties or only those with matching tags are 
               eligible for rotation.
+        min_angle: minimal angle (in radians) for each rotation.
         test_dist_to_slab: whether also the distances to the slab
                            should be checked to satisfy the blmin.
         """
@@ -588,6 +589,7 @@ class RotationalMutation(OffspringCreator):
         self.n_top = n_top
         self.probability = probability
         self.tags = tags
+        self.min_angle = min_angle
         self.test_dist_to_slab = test_dist_to_slab
         self.descriptor = 'RotationalMutation'
         self.min_inputs = 1
@@ -636,7 +638,8 @@ class RotationalMutation(OffspringCreator):
                 cop = np.mean(p, axis=0)
                 axis = np.random.random(3)
                 axis /= np.linalg.norm(axis)
-                angle = 2*np.pi*np.random.random()
+                angle = min_angle 
+                angle += 2*(np.pi - min_angle)*np.random.random()
                 m = get_rotation_matrix(axis, angle)
                 newpos[indices[tag]] = np.dot(m, (p-cop).T).T + cop
 
