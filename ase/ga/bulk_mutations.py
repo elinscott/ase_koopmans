@@ -690,3 +690,35 @@ class RotationalMutation(OffspringCreator):
             mutant = slab + mutant
  
         return mutant
+
+
+class RattleRotationalMutation(OffspringCreator):
+    """ Combination of Rattle and RotationalMutations """
+    def __init__(self, rattlemutation, rotationalmutation, verbose=False):
+        """
+        rattlemutation: instance that rattles atoms
+        rotationalmutation: instance of a mutation that rotates moieties
+        """
+        OffspringCreator.__init__(self, verbose)
+        self.rattlemutation = rattlemutation
+        self.rotationalmutation = rotationalmutation
+        self.descriptor = 'rattlerotational'
+
+    def get_new_individual(self, parents):
+        f = parents[0]
+
+        indi = self.mutate(f)
+        if indi is None:
+            return indi, 'mutation rattlerotational'
+
+        indi = self.initialize_individual(f, indi)
+        indi.info['data']['parents'] = [f.info['confid']]
+
+        return self.finalize_individual(indi), 'mutation: rattlerotational'
+
+    def mutate(self, atoms):
+        """ Does the actual mutation. """
+        mutant = self.rattlemutation.mutate(atoms)
+        if mutant is not None:
+            mutant = self.rotationalmutation.mutate(mutant)
+        return mutant
