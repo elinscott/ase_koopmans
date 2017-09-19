@@ -638,8 +638,8 @@ class RotationalMutation(OffspringCreator):
                 cop = np.mean(p, axis=0)
                 axis = np.random.random(3)
                 axis /= np.linalg.norm(axis)
-                angle = min_angle 
-                angle += 2*(np.pi - min_angle)*np.random.random()
+                angle = self.min_angle 
+                angle += 2*(np.pi - self.min_angle)*np.random.random()
                 m = get_rotation_matrix(axis, angle)
                 newpos[indices[tag]] = np.dot(m, (p-cop).T).T + cop
 
