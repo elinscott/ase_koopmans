@@ -334,7 +334,8 @@ class SoftMutation(OffspringCreator):
     '''
     def __init__(self, blmin, bounds=[0.5, 2.0], calculator=None,
                  fconstfunc=inverse_square_model, rcut=10.0, 
-                 use_tags=False, verbose=False):
+                 used_modes_file='used_modes.json', use_tags=False, 
+                 verbose=False):
         '''
         blmin: dictionary with closest allowed interatomic distances.
         bounds: lower and upper limits (in Angstrom) for the largest 
@@ -354,6 +355,9 @@ class SoftMutation(OffspringCreator):
                     and returns the value of the force constant
                     to be used with the pairwise harmonic potential.
         rcut: cutoff radius for the pairwise harmonic potential.
+        used_modes_file: name of json dump file where previously used 
+                  modes will be stored (and read). If None, no such 
+                  file will be used.
         use_tags: whether to use the atomic tags to preserve
                   molecular identity.
         '''
@@ -363,10 +367,18 @@ class SoftMutation(OffspringCreator):
         self.calc = calculator
         self.fconstfunc = fconstfunc
         self.rcut = rcut
+        self.used_modes_file = used_modes_file
         self.use_tags = use_tags
-        self.used_modes = {}  # for storing the used modes
         self.descriptor = 'SoftMutation'
-   
+  
+        self.used_modes = {}
+        if self.used_modes_file is not None:
+            try:
+                self.read_used_modes(self.used_modes_file) 
+            except IOError:
+                # file doesn't exist (yet)
+                pass 
+
     def _get_pwh_hessian_(self, atoms):
         ''' Returns the Hessian matrix d2E/dxi/dxj for the pairwise
         harmonic potential. '''
@@ -484,9 +496,16 @@ class SoftMutation(OffspringCreator):
             animation.append(image)	
         return animation
 
+    def read_used_modes(self, filename):
+        ''' Read used modes from json file. '''
+        with open(filename, 'r') as f:
+            modes = json.load(f)
+            self.used_modes = {int(k):modes[k] for k in modes}
+        return
+
     def write_used_modes(self, filename):
         ''' Dump used modes to json file. '''
-        with open(filename,'w') as f:
+        with open(filename, 'w') as f:
             json.dump(self.used_modes, f)
         return
 
@@ -522,6 +541,9 @@ class SoftMutation(OffspringCreator):
             self.used_modes[confid].append(index)
         else:
             self.used_modes[confid] = [index] 
+
+        if self.used_modes_file is not None:
+            self.write_used_modes(self.used_modes_file)
 
         key = keys[index]
         mode = modes[key].reshape(np.shape(pos))
