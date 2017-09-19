@@ -165,8 +165,6 @@ class PermuStrainMutation(OffspringCreator):
         return mutant
 
 
-
-
 class StrainMutation(OffspringCreator):
     """ Mutates a candidate by applying a randomly generated strain.
     See also:
@@ -594,7 +592,7 @@ class RotationalMutation(OffspringCreator):
     arXiv:1204.4756v2
     """
     def __init__(self, blmin, n_top=None, fraction=0.33, tags=None, 
-                 min_angle=0.25, test_dist_to_slab=True, verbose=False):
+                 min_angle=1.57, test_dist_to_slab=True, verbose=False):
         """ Parameters:
         blmin: closest allowed distances
         n_top: number of atoms to optimize; if None, all are included.
@@ -602,7 +600,8 @@ class RotationalMutation(OffspringCreator):
         tags: None or list of integers, specify respectively whether 
               all moieties or only those with matching tags are 
               eligible for rotation.
-        min_angle: minimal angle (in radians) for each rotation.
+        min_angle: minimal angle (in radians) for each rotation;
+                   should lie in the interval [0, pi].
         test_dist_to_slab: whether also the distances to the slab
                            should be checked to satisfy the blmin.
         """
@@ -658,10 +657,22 @@ class RotationalMutation(OffspringCreator):
             for tag in chosen_tags:
                 p = np.copy(newpos[indices[tag]])
                 cop = np.mean(p, axis=0)
-                axis = np.random.random(3)
-                axis /= np.linalg.norm(axis)
+
+                if len(p) == 2:
+                    line = (p[1]-p[0])/np.linalg.norm(p[1]-p[0])
+                    while True:
+                        axis = np.random.random(3)
+                        axis /= np.linalg.norm(axis)
+                        a = np.arccos(np.dot(axis, line))
+                        if np.pi/4 < a < np.pi*3/4:
+                            break
+                else:
+                    axis = np.random.random(3)
+                    axis /= np.linalg.norm(axis)
+
                 angle = self.min_angle 
                 angle += 2*(np.pi - self.min_angle)*np.random.random()
+
                 m = get_rotation_matrix(axis, angle)
                 newpos[indices[tag]] = np.dot(m, (p-cop).T).T + cop
 
