@@ -2,6 +2,7 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from itertools import product, combinations_with_replacement
 from ase.geometry.cell import cell_to_cellpar
+from ase.io import write
 
 def get_cell_angles_lengths(cell):
     ''' 
@@ -161,7 +162,13 @@ def convert_for_lammps(atoms):
     #coord_transform = tri_mat*trans
  
     atoms.set_cell(tri_mat.T, scale_atoms=True)
-    atoms.wrap(pbc=True)
+    try:
+        atoms.wrap(pbc=True)
+    except np.linalg.LinAlgError as err:
+        if err.message == "Singular matrix":
+            print 'Error during wrapping; atoms dumped to err.traj!'
+            write('err.traj', atoms)
+        raise
 
     # "flip" the cell if it is too skewed
     newcell = atoms.get_cell()
