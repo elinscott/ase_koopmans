@@ -27,6 +27,7 @@ class FingerprintsComparator(object):
 
         n_top = number of atoms to optimize 
                 (everything except the substrate).
+                If None, all atoms will be included.
 
         dE: energy difference above which two structures are 
             automatically considered to be different.
@@ -68,7 +69,7 @@ class FingerprintsComparator(object):
                      atoms.info and recalculates them.
         """
 
-        self.n_top = n_top or 0
+        self.n_top = n_top or 0 
         self.dE = dE
         self.cos_dist_max = cos_dist_max
         self.rcut = rcut
@@ -105,7 +106,7 @@ class FingerprintsComparator(object):
                 return False
 
         # then we check the structure
-        cos_dist = self._compare_structure_(a1,a2)
+        cos_dist = self._compare_structure_(a1, a2)
         verdict = cos_dist < self.cos_dist_max
         return verdict
 
