@@ -182,13 +182,13 @@ class FingerprintsComparator(object):
         if sorted(fp1) != sorted(fp2):
             raise AssertionError('The two structures have fingerprints \
                                   with different compounds.')
-        if typedic1 != typedic2:
-            raise AssertionError('The two structures have a different \
-                                  stoichiometry or ordering!')
+        for key in typedic1:
+            if not np.array_equal(typedic1[key], typedic2[key]):
+                raise AssertionError('The two structures have a different \
+                                      stoichiometry or ordering!')
 
         cos_dist = self._cosine_distance_(fp1, fp2, typedic1)
         return cos_dist
-
 
 
     def __get_volume__(self, a):
