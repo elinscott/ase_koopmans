@@ -38,6 +38,9 @@ class StartGenerator(object):
      
     cellbounds: CellBounds instance that specifies limits on cell shape
 
+    cell: if you want to keep the cell vectors fixed, the desired
+          cell is to be specified here.
+
     splits: splitting scheme to be used, based on:
     Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32
     This should be a dict specifying the relative probabilities for each
@@ -46,11 +49,12 @@ class StartGenerator(object):
     along the remaining direction.
     """
     def __init__(self, blocks, blmin, volume, cellbounds=None, 
-                 splits={(1,):1}):
+                 cell=None, splits={(1,):1}):
 
         self.volume = volume
         self.cellbounds = cellbounds
-        
+        self.cell = cell
+ 
         # normalize splitting probabilities:
         tot = sum([v for v in splits.values()])
         self.splits = {k:v*1./tot for k,v in splits.iteritems()}
@@ -104,9 +108,16 @@ class StartGenerator(object):
         # the cellbounds constraints. Additionally, the length of
         # each subcell vector has to be greater than the largest
         # (X,X)-minimal-interatomic-distance in blmin.
-        valid = False
-        blminmax = max([blmin[k] for k in blmin if k[0]==k[1]])
+
+        if self.cell is not None:
+            full_cell = np.copy(self.cell)
+            cell = (full_cell.T/repeat).T 
+            valid = True
+        else:
+            valid = False
+
         while not valid:
+            blminmax = max([blmin[k] for k in blmin if k[0]==k[1]])
             cell = np.zeros((3,3))
             l = target_volume**0.33
             cell[0,0] = random()*l
@@ -129,7 +140,6 @@ class StartGenerator(object):
                 if np.linalg.norm(cell[i,:]) < blminmax:
                     valid = False 
           
-
         ### generating the atomic positions
         blocks = []
         surplus = []
