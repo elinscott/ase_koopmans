@@ -1,3 +1,9 @@
+"""Mutation operations intended for bulk crystals. 
+If you find this implementation useful in your work,
+please cite:
+    M. Van den Bossche, Henrik Gronbeck, B. Hammer,
+      TO BE PUBLISHED
+in addition to the papers mentioned in the docstrings."""
 import json
 import numpy as np
 from random import gauss
@@ -589,7 +595,7 @@ class RotationalMutation(OffspringCreator):
  
     See also:
     Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
-    arXiv:1204.4756v2
+      Acta Cryst. (2012), B68, 215-226.
     """
     def __init__(self, blmin, n_top=None, fraction=0.33, tags=None, 
                  min_angle=1.57, test_dist_to_slab=True, verbose=False):

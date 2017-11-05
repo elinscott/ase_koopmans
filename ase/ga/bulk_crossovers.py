@@ -1,3 +1,9 @@
+"""Crossover operation intended for bulk crystals. 
+If you find this implementation useful in your work,
+please cite:
+    M. Van den Bossche, Henrik Gronbeck, B. Hammer,
+      TO BE PUBLISHED
+in addition to the papers mentioned in the docstrings."""
 import numpy as np
 from random import random, randrange
 from ase import Atoms
