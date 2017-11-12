@@ -87,7 +87,7 @@ all_formats = {
     'jsv': ('JSV file format', '1F'),
     'lammps-dump': ('LAMMPS dump file', '+F'),
     'lammps-data': ('LAMMPS data file', '1F'),
-    'magres': ('MAGRES ab initio NMR data file', '1S'),
+    'magres': ('MAGRES ab initio NMR data file', '1F'),
     'mol': ('MDL Molfile', '1F'),
     'nwchem': ('NWChem input file', '1F'),
     'octopus': ('Octopus input file', '1F'),
@@ -302,10 +302,10 @@ def open_with_compression(filename, mode='r'):
             fd = bz2.BZ2File(filename, mode=mode)
     elif compression == 'xz':
         try:
-            import lzma
+            from lzma import open as lzma_open
         except ImportError:
-            from backports import lzma
-        fd = lzma.open(filename, mode)
+            from backports.lzma import open as lzma_open
+        fd = lzma_open(filename, mode)
     else:
         fd = open(filename, mode)
 
@@ -621,7 +621,7 @@ def filetype(filename, read=True, guess=True):
                           ('espresso-out', b'Program PWSCF'),
                           ('aims-output', b'Invoking FHI-aims ...'),
                           ('lammps-dump', b'\nITEM: TIMESTEP\n'),
-                          ('qbox', b'<fpmd:simulation'),
+                          ('qbox', b':simulation xmlns:'),
                           ('xsf', b'\nANIMSTEPS'),
                           ('xsf', b'\nCRYSTAL'),
                           ('xsf', b'\nSLAB'),
