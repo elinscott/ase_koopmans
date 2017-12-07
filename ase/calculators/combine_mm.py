@@ -71,7 +71,7 @@ class CombineMM(Calculator):
         shift = np.array([0, 0, 0])
 
         c = self.get_virtual_charges(atoms)
-        e_c, f_c = self.coulomb(c, shift) 
+        e_c, f_c = self.coulomb(c, shift)
 
         e_vdw, f1, f2 = self.vdw.calculate(self.atoms1, self.atoms2, shift)
         f_vdw = np.zeros((len(atoms), 3))
@@ -79,7 +79,7 @@ class CombineMM(Calculator):
         f_vdw[~self.mask] = f2
 
         self.results['energy'] = e_c + e_vdw
-        self.results['forces'] = f_vdw
+        self.results['forces'] = f_c + f_vdw
 
     def get_virtual_charges(self, atoms):
         vc = np.zeros(len(self.atoms))
@@ -126,7 +126,7 @@ class CombineMM(Calculator):
         ft[self.mask] = f1
         ft[~self.mask] = f2
 
-        return energy, f
+        return energy, ft
 
 #    def vdw(self, atoms1, atoms2, shift):
 #        lj = LJG(sig1, eps1, sig2, eps2)
