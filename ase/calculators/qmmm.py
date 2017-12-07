@@ -234,7 +234,7 @@ class Embedding:
         self.mmatoms = mmatoms
         charges = mmatoms.calc.get_virtual_charges(mmatoms)
         self.pcpot = qmatoms.calc.embed(charges, **self.parameters)
-        self.virtual_molecule_size = (self.molecule_size *
+        self.virtual_molecule_size = (self.molecule_size *  ## Counter ion problem
                                       len(charges) // len(mmatoms))
 
     def update(self, shift):
@@ -243,7 +243,7 @@ class Embedding:
         # center of the the QM box, but avoid ripping molecules apart:
         qmcenter = self.qmatoms.cell.diagonal() / 2
         n = self.molecule_size
-        positions = self.mmatoms.positions.reshape((-1, n, 3)) + shift
+        positions = self.mmatoms.positions.reshape((-1, n, )) + shift  ## Counter ion problem
 
         # Distances from the center of the QM box to the first atom of
         # each molecule:
@@ -256,7 +256,7 @@ class Embedding:
         # Geometric center positions for each mm mol for LR cut
         com = np.array([p.mean(axis=0) for p in positions])
         # Need per atom for C-code:
-        com_pv = np.repeat(com, self.virtual_molecule_size, axis=0)
+        com_pv = np.repeat(com, self.virtual_molecule_size, axis=0)  ## Counter ion problem
 
         positions.shape = (-1, 3)
         positions = self.mmatoms.calc.add_virtual_sites(positions)
@@ -329,7 +329,7 @@ class LJInteractionsGeneral:
         # center of the the QM box, but avoid ripping molecules apart:
         qmcenter = qmatoms.cell.diagonal() / 2
         n = self.molecule_size
-        positions = mmatoms.positions.reshape((-1, n, 3)) + shift
+        positions = mmatoms.positions.reshape((-1, n, 3)) + shift  ## Counter ion problem
 
         # Distances from the center of the QM box to the first atom of
         # each molecule:
