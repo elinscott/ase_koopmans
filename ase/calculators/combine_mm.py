@@ -131,7 +131,7 @@ class CombineMM(Calculator):
     def coulomb(self, xpos1, xpos2, xc1, xc2, shift):
         '''  Not done... 
             '''
-        e = 0.0
+        energy = 0.0
         forces = np.zeros((len(xc1)+len(xc2), 3))
 
         ## idx1 = np.array(self.molidx1)
@@ -142,65 +142,48 @@ class CombineMM(Calculator):
 
         R1 = xpos1.reshape((-1, self.apm1, 3))  # molwise for cutoff
         R2 = xpos2.reshape((-1, self.apm2, 3))
+        F1 = np.zeros_like(R1)
+        F2 = np.zeros_like(R2)
         C1 = xc1.reshape((-1, self.apm1))
         C2 = xc2.reshape((-1, self.apm2))
 
-        # Vectorized evaluation is difficult when apm1 != apm2 ... 
-        for m1, c1 in zip(R1, C1):  
-            for m2, c2 in zip(R2, C2):
+        # Vectorized evaluation is difficult when apm1 != apm2 ...
+        for m1, c1, f1 in zip(R1, C1, F1):  
+            for m2, c2, f2 in zip(R2, C2, F2):
                 d00 = (sum((m1[0] - m2[0])**2))**0.5
                 if d00 > self.rc:  # molwise cutoff from 1st atom in each mol
                     continue
                 t = 1
+                dtdd = 0
                 if d00 > self.rc - self.width: # in switching region 
                     y = (d00 - self.rc + self.width) / self.width
                     t -= y**2 * (3.0 - 2.0 *y)  # same value for entire mols
+                    dtdd -= 6.0 / self.width * y * (1.0 - y)
+                t = 1
                 for a1 in range(self.apm1):
+                    r = m2 - m1[a1]
+                    d2 = (r**2).sum(1)
+                    d = d2**0.5
+                    e = k_c * c1[a1] * c2 / d
+                    energy += e.sum()
                     for a2 in range(self.apm2):
-                        r = m1[a1] - m2[a2]
-                        d2 = (r**2).sum()
-                        d = d2**0.5 
-                        e += t * k_c * c1[a1] * c2[a2] / d
+                        F = e[:, None] * (r / d2)
+                        f = (e / d2)[:, None] * r
+                        f1 += f
+                        f2[a2] -= f.sum(0)
+                        ct += 1
 
-#        for m in mols1_pos:
-#            DOO = R[m + 1:, o] - R[m, o]
-#            #shift = np.zeros_like(DOO)
-#            #for i, periodic in enumerate(pbc):
-#            #    if periodic:
-#            #        L = cell[i]
-#            #        shift[:, i] = (DOO[:, i] + L / 2) % L - L / 2 - DOO[:, i]
-#            DOO += shift
-#            d2 = (DOO**2).sum(1)
-#            d = d2**0.5
-#            x1 = d > self.rc - self.width
-#            x2 = d < self.rc
-#            x12 = np.logical_and(x1, x2)
-#            y = (d[x12] - self.rc + self.width) / self.width
-#            t = np.zeros(len(d))  # cutoff function
-#            t[x2] = 1.0
-#            t[x12] -= y**2 * (3.0 - 2.0 * y)
-#            dtdd = np.zeros(len(d))
-#            dtdd[x12] -= 6.0 / self.width * y * (1.0 - y)
-#
-#            for j in range(atoms_in_molecule):
-#                D = R[m + 1:] - R[m, j] + shift[:, np.newaxis]
-#                r2 = (D**2).sum(axis=2)
-#                r = r2**0.5
-#                e = charges[j] * charges / r * units.Hartree * units.Bohr
-#                XXX
-#                energy += np.dot(t, e).sum()
-#                F = (e / r2 * t[:, np.newaxis])[:, :, np.newaxis] * D
-#                FOO = -(e.sum(1) * dtdd / d)[:, np.newaxis] * DOO
-#                forces[(m + 1) * 3 + o::3] += FOO
-#                forces[m * 3 + o] -= FOO.sum(0)
-#                forces[(m + 1) * 3:] += F.reshape((-1, 3))
-#                forces[m * 3 + j] -= F.sum(axis=0).sum(axis=0)
-#       
-#
+                       # #f1[a2] -= f 
+                       # #f2[a2] += f
 
-        # ima need some force redistribution here... 
-        return e, np.zeros((len(self.atoms),3))
+        F1 = F1.reshape((-1, 3))
+        F2 = F2.reshape((-1, 3))
+        # some redist plz
+        forces = np.zeros((len(self.atoms), 3))
+        forces[self.mask] = F1
+        forces[~self.mask] = F2
 
+        return energy, forces
 
     def coulomb_nocutoff(self, c, shift):
         ''' Needs cutoff and new variable names. 
