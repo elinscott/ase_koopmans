@@ -145,13 +145,14 @@ class CombineMM(Calculator):
         C1 = xc1.reshape((-1, self.apm1))
         C2 = xc2.reshape((-1, self.apm2))
 
+        # Vectorized evaluation is difficult when apm1 != apm2 ... 
         for m1, c1 in zip(R1, C1):  
             for m2, c2 in zip(R2, C2):
                 d00 = (sum((m1[0] - m2[0])**2))**0.5
                 if d00 > self.rc:  # molwise cutoff from 1st atom in each mol
                     continue
                 t = 1
-                if d00 > self.rc - self.width:
+                if d00 > self.rc - self.width: # in switching region 
                     y = (d00 - self.rc + self.width) / self.width
                     t -= y**2 * (3.0 - 2.0 *y)  # same value for entire mols
                 for a1 in range(self.apm1):
