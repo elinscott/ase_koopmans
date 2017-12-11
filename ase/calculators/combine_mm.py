@@ -174,12 +174,14 @@ class CombineMM(Calculator):
                 F1[m1] -= f1
                 F2[m2] += f2
 
-                       # #f1[a2] -= f 
-                       # #f2[a2] += f
-
         F1 = F1.reshape((-1, 3))
         F2 = F2.reshape((-1, 3))
-        # some redist plz
+
+        self.atoms1.calc.atoms = self.atoms1
+        F1 = self.atoms1.calc.redistribute_forces(F1)
+        self.atoms2.calc.atoms = self.atoms2
+        F2 = self.atoms2.calc.redistribute_forces(F2)
+
         forces = np.zeros((len(self.atoms), 3))
         forces[self.mask] = F1
         forces[~self.mask] = F2
