@@ -148,9 +148,9 @@ class CombineMM(Calculator):
         C2 = xc2.reshape((-1, self.apm2))
 
         # Vectorized evaluation is difficult when apm1 != apm2 ...
-        for m1, c1, f1 in zip(R1, C1, F1):  
-            for m2, c2, f2 in zip(R2, C2, F2):
-                d00 = (sum((m1[0] - m2[0])**2))**0.5
+        for m1, (r1, c1) in enumerate(zip(R1, C1)):  
+            for m2, (r2, c2) in enumerate(zip(R2, C2)):
+                d00 = (sum((r1[0] - r2[0])**2))**0.5
                 if d00 > self.rc:  # molwise cutoff from 1st atom in each mol
                     continue
                 t = 1
@@ -160,18 +160,19 @@ class CombineMM(Calculator):
                     t -= y**2 * (3.0 - 2.0 *y)  # same value for entire mols
                     dtdd -= 6.0 / self.width * y * (1.0 - y)
                 t = 1
-                for a1 in range(self.apm1):
-                    r = m2 - m1[a1]
+                f1 = np.zeros((self.apm1, 3))
+                f2 = np.zeros((self.apm2, 3))
+                for a1 in range(self.apm1):  # this can defo be vectorized...
+                    r = r2 - r1[a1]
                     d2 = (r**2).sum(1)
                     d = d2**0.5
                     e = k_c * c1[a1] * c2 / d
                     energy += e.sum()
                     for a2 in range(self.apm2):
-                        F = e[:, None] * (r / d2)
-                        f = (e / d2)[:, None] * r
-                        f1 += f
-                        f2[a2] -= f.sum(0)
-                        ct += 1
+                        f1[a1] += (e[a2] / d2[a2]) * r[a2]
+                        f2[a2] += (e[a2] / d2[a2]) * r[a2]
+                F1[m1] -= f1
+                F2[m2] += f2
 
                        # #f1[a2] -= f 
                        # #f2[a2] += f
