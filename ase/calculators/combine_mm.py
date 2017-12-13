@@ -58,8 +58,6 @@ class CombineMM(Calculator):
         atoms.constraints = []
         self.atoms1 = atoms[self.mask]
         self.atoms2 = atoms[~self.mask]
-        ## self.molidx1 = self.molidx[self.mask]
-        ## self.molidx2 = self.molidx[~self.mask]
 
         atoms.constraints = constraints
 
@@ -134,13 +132,7 @@ class CombineMM(Calculator):
         energy = 0.0
         forces = np.zeros((len(xc1)+len(xc2), 3))
 
-        ## idx1 = np.array(self.molidx1)
-        ## idx2 = np.array(self.molidx2)
-        
-        ## mols1_pos = [pos1[np.where(idx1==i)[0]] for i in set(idx1)]
-        ## mols2_pos = [pos2[np.where(idx2==i)[0]] for i in set(idx2)]
-
-        R1 = xpos1.reshape((-1, self.apm1, 3))  # molwise for cutoff
+        R1 = xpos1.reshape((-1, self.apm1, 3))  
         R2 = xpos2.reshape((-1, self.apm2, 3))
         F1 = np.zeros_like(R1)
         F2 = np.zeros_like(R2)
@@ -148,31 +140,34 @@ class CombineMM(Calculator):
         C2 = xc2.reshape((-1, self.apm2))
 
         # Vectorized evaluation is difficult when apm1 != apm2 ...
-        for m1, (r1, c1) in enumerate(zip(R1, C1)):  
+        for m1, (r1, c1) in enumerate(zip(R1, C1)):
             for m2, (r2, c2) in enumerate(zip(R2, C2)):
-                d00 = (sum((r1[0] - r2[0])**2))**0.5
-                if d00 > self.rc:  # molwise cutoff from 1st atom in each mol
-                    continue
+                r00 = r2[0] - r1[0]
+                d00 = (r00**2).sum()**0.5
                 t = 1
                 dtdd = 0
-                if d00 > self.rc - self.width: # in switching region 
+                if d00 > self.rc:
+                    continue 
+                elif d00 > self.rc - self.width:
                     y = (d00 - self.rc + self.width) / self.width
-                    t -= y**2 * (3.0 - 2.0 *y)  # same value for entire mols
-                    dtdd -= 6.0 / self.width * y * (1.0 - y)
-                t = 1
-                f1 = np.zeros((self.apm1, 3))
-                f2 = np.zeros((self.apm2, 3))
-                for a1 in range(self.apm1):  # this can defo be vectorized...
-                    r = r2 - r1[a1]
-                    d2 = (r**2).sum(1)
-                    d = d2**0.5
-                    e = k_c * c1[a1] * c2 / d
-                    energy += e.sum()
+                    t -= y**2 * (3.0 - 2.0 *y)  
+                    #dtdd = (6.0 / self.width) * y * (1.0 - y) / d00
+                    dtdd = r00 * 6 * y * (1.0 - y) / (self.width * d00) 
+
+                for a1 in range(self.apm1):
                     for a2 in range(self.apm2):
-                        f1[a1] += (e[a2] / d2[a2]) * r[a2]
-                        f2[a2] += (e[a2] / d2[a2]) * r[a2]
-                F1[m1] -= f1
-                F2[m2] += f2
+                        r = r2[a2] - r1[a1]
+                        d2 = (r**2).sum()
+                        d = d2**0.5
+                        e = k_c * c1[a1] * c2[a2] / d
+                        energy += t * e
+
+                        F1[m1, a1] -= t * (e / d2) * r 
+                        F2[m2, a2] += t * (e / d2) * r
+
+                        F1[m1, 0] -= dtdd * e  
+                        F2[m2, 0]  += dtdd * e 
+
 
         F1 = F1.reshape((-1, 3))
         F2 = F2.reshape((-1, 3))
@@ -188,76 +183,5 @@ class CombineMM(Calculator):
 
         return energy, forces
 
-    def coulomb_nocutoff(self, c, shift):
-        ''' Needs cutoff and new variable names. 
-            Maybe look into tipnp instead'''
-        energy = 0.0
-        f1 = np.zeros((len(self.atoms1), 3))
-        f2 = np.zeros((len(self.atoms2), 3))
-        ft = np.zeros((len(self.atoms), 3))
-
-        c1 = c[self.mask]
-        c2 = c[~self.mask]
-
-        pos1 = self.atoms1.positions
-        pos2 = self.atoms2.positions
-
-        for C, R, F in zip(c2, pos2, f2):
-            d = pos1 - R
-            r2 = (d**2).sum(1)
-            e = units.Hartree * units.Bohr * C * r2**-0.5 * c1
-            energy += e.sum()
-            f = (e / r2)[:, np.newaxis] * d
-            f1 += f
-            F -= f.sum(0)
-#        self.mmpositions = None  # this one is weird
-       
-        ft[self.mask] = f1
-        ft[~self.mask] = f2
-
-        return energy, ft
-
-    def coulomb_nomolidx(self, c, shift):
-        '''  Not done... 
-            '''
-        energy = 0.0
-        f1 = np.zeros((len(self.atoms1), 3))
-        f2 = np.zeros((len(self.atoms2), 3))
-        ft = np.zeros((len(self.atoms), 3))
-
-        c1 = c[self.mask]
-        c2 = c[~self.mask]
-
-        pos1 = self.atoms1.positions
-        pos2 = self.atoms2.positions
-
-        for C, R, F in zip(c2, pos2, f2):
-            d = pos1 - R
-            r2 = (d**2).sum(1)
-            r = r2**0.5
-
-            # cutoff
-            x1 = r > self.rc - self.width
-            x2 = r < self.rc
-            x12 = np.logical_and(x1, x2)
-            y = (r[x12] - self.rc + self.width) / self.width
-            t = np.zeros(len(r))  # cutoff function
-            t[x2] = 1.0
-            t[x12] -= y**2 * (3.0 - 2.0 * y)
-            dtdr = np.zeros(len(r))
-            dtdr[x12] -= 6.0 / self.width * y * (1.0 - y)
-
-            XXX
-
-            e = units.Hartree * units.Bohr * C * c1 * r**-1 
-            energy += np.dot(t, e).sum()
-            f = (e / r2)[:, np.newaxis] * d
-            f1 += f
-            F -= f.sum(0)
-       
-        ft[self.mask] = f1
-        ft[~self.mask] = f2
-
-        return energy, ft
 
 
