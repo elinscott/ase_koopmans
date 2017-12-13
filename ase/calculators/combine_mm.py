@@ -5,6 +5,7 @@ from ase.calculators.qmmm import LJInteractionsGeneral as LJG
 from ase import units
 
 k_c = units.Hartree * units.Bohr
+#k_c = 332.1 * units.kcal / units.mol
 
 class CombineMM(Calculator):
     """Hopefully a calculator that combines two MM calculators 
@@ -127,8 +128,6 @@ class CombineMM(Calculator):
         return vc
 
     def coulomb(self, xpos1, xpos2, xc1, xc2, shift):
-        '''  Not done... 
-            '''
         energy = 0.0
         forces = np.zeros((len(xc1)+len(xc2), 3))
 
@@ -138,7 +137,6 @@ class CombineMM(Calculator):
         F2 = np.zeros_like(R2)
         C1 = xc1.reshape((-1, self.apm1))
         C2 = xc2.reshape((-1, self.apm2))
-
         # Vectorized evaluation is difficult when apm1 != apm2 ...
         for m1, (r1, c1) in enumerate(zip(R1, C1)):
             for m2, (r2, c2) in enumerate(zip(R2, C2)):

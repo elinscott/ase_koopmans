@@ -1,16 +1,16 @@
 from __future__ import division
 import numpy as np
 
-import ase.units as unit
+from ase import units
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.tip3p import rOH, angleHOH, TIP3P
 
 __all__ = ['rOH', 'angleHOH', 'TIP4P', 'sigma0', 'epsilon0']
 
 # Electrostatic constant and parameters:
-k_c = 332.1 * unit.kcal / unit.mol
-sigma0 = 3.15365
-epsilon0 = 0.6480 * unit.kJ / unit.mol
+k_c = units.Hartree * units.Bohr
+sigma0 =  3.15365
+epsilon0 = 0.6480 * units.kJ / units.mol
 
 
 class TIP4P(TIP3P):
