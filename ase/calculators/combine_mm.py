@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy as np
 from ase.calculators.calculator import Calculator
-from ase.calculators.qmmm import LJInteractionsGeneral as LJG
+from ase.calculators.qmmm import wrap
 from ase import units
 
 k_c = units.Hartree * units.Bohr
@@ -65,10 +65,12 @@ class CombineMM(Calculator):
         self.atoms1.calc = self.calc1
         self.atoms2.calc = self.calc2
 
+        self.cell = atoms.cell
+        self.pbc = atoms.pbc
+
 
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
-
 
         if self.atoms1 is None:
             self.initialize(atoms)
@@ -87,6 +89,16 @@ class CombineMM(Calculator):
         xc2 = self.atoms2.calc.get_virtual_charges(self.atoms2)
         
         # Do pbc stuff to get shift
+        #center = atoms.cell.diagonal() / 2.
+        xpos1 = xpos1.reshape((-1, self.apm1, 3))
+        xpos2 = xpos2.reshape((-1, self.apm2, 3)) 
+        
+        #distances = xpos2[:, 0] - center # first atom of each mol in 2
+        #wrap(xpos1[:, 0], self.cell.diagonal(), self.pbc)
+        #wrap(xpos2[:, 0], self.cell.diagonal(), self.pbc)
+        #offsets = distances - xpos2[:, 0]
+        #xpos2 += offsets + center
+
         shift = np.array([0, 0, 0])
 
         e_c, f_c = self.coulomb(xpos1, xpos2, xc1, xc2, shift)
@@ -110,6 +122,7 @@ class CombineMM(Calculator):
 
     def get_virtual_charges(self, atoms):
         vc = np.zeros(len(self.atoms))
+        # this can break, IF there is virtual sites. XXX 
         vc1 = self.atoms1.calc.get_virtual_charges(atoms[self.mask])
         vc2 = self.atoms2.calc.get_virtual_charges(atoms[~self.mask])
         vc[self.mask] = vc1
@@ -131,16 +144,31 @@ class CombineMM(Calculator):
         energy = 0.0
         forces = np.zeros((len(xc1)+len(xc2), 3))
 
-        R1 = xpos1.reshape((-1, self.apm1, 3))  
-        R2 = xpos2.reshape((-1, self.apm2, 3))
+        # DEBUG
+        self.xpos1 = xpos1
+        self.xpos2 = xpos2
+
+        R1 = xpos1  
+        R2 = xpos2
         F1 = np.zeros_like(R1)
         F2 = np.zeros_like(R2)
         C1 = xc1.reshape((-1, self.apm1))
         C2 = xc2.reshape((-1, self.apm2))
-        # Vectorized evaluation is difficult when apm1 != apm2 ...
+        # Vectorized evaluation is not as trivial when apm1 != apm2.
+        # This is pretty inefficient, but for ~1-5 counter ions as region 1
+        # it should not matter much ..
+        # There is definetely room for improvements here.
+        cell = self.cell.diagonal()
         for m1, (r1, c1) in enumerate(zip(R1, C1)):
             for m2, (r2, c2) in enumerate(zip(R2, C2)):
                 r00 = r2[0] - r1[0]
+                shift = np.zeros(3)
+                for i, periodic in enumerate(self.pbc):
+                    if periodic:
+                        L = cell[i]
+                        shift[i] = (r00[i] + L / 2.) % L - L / 2. - r00[i]
+                r00 += shift  
+
                 d00 = (r00**2).sum()**0.5
                 t = 1
                 dtdd = 0
@@ -149,12 +177,11 @@ class CombineMM(Calculator):
                 elif d00 > self.rc - self.width:
                     y = (d00 - self.rc + self.width) / self.width
                     t -= y**2 * (3.0 - 2.0 *y)  
-                    #dtdd = (6.0 / self.width) * y * (1.0 - y) / d00
                     dtdd = r00 * 6 * y * (1.0 - y) / (self.width * d00) 
 
                 for a1 in range(self.apm1):
                     for a2 in range(self.apm2):
-                        r = r2[a2] - r1[a1]
+                        r = r2[a2] - r1[a1] + shift
                         d2 = (r**2).sum()
                         d = d2**0.5
                         e = k_c * c1[a1] * c2[a2] / d
