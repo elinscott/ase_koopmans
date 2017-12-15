@@ -144,7 +144,6 @@ class CombineMM(Calculator):
         energy = 0.0
         forces = np.zeros((len(xc1)+len(xc2), 3))
 
-        # DEBUG
         self.xpos1 = xpos1
         self.xpos2 = xpos2
 

@@ -288,13 +288,17 @@ def combine_lj_lorenz_berthelot(sigmaqm, sigmamm,
 class LJInteractionsGeneral:
     name = 'LJ-general'
 
-    def __init__(self, sigmaqm, epsilonqm, sigmamm,
-                 epsilonmm, molecule_size=3):
+    def __init__(self, sigmaqm, epsilonqm, sigmamm, epsilonmm, 
+                 qm_molecule_size, mm_molecule_size=3, 
+                 rc=np.Inf, width=1.0):
         self.sigmaqm = sigmaqm
         self.epsilonqm = epsilonqm
         self.sigmamm = sigmamm
         self.epsilonmm = epsilonmm
-        self.molecule_size = molecule_size
+        self.apm1 = qm_molecule_size
+        self.apm2 = mm_molecule_size
+        self.rc = rc
+        self.width = width
         self.combine_lj()
 
     def combine_lj(self):
@@ -307,19 +311,63 @@ class LJInteractionsGeneral:
         mmforces = np.zeros_like(mmatoms.positions)
         energy = 0.0
 
-        for qmi in range(len(qmatoms)):
-            if ~np.any(self.epsilon[qmi, :]):
-                continue
-            D = mmpositions - qmatoms.positions[qmi, :]
-            d2 = (D**2).sum(2)
-            c6 = (self.sigma[qmi, :]**2 / d2)**3
-            c12 = c6**2
-            e = 4 * self.epsilon[qmi, :] * (c12 - c6)
-            energy += e.sum()
-            f = (24 * self.epsilon[qmi, :] *
-                 (2 * c12 - c6) / d2)[:, :, np.newaxis] * D
-            mmforces += f.reshape((-1, 3))
-            qmforces[qmi, :] -= f.sum(0).sum(0)
+        qmpositions = qmatoms.positions.reshape((-1, self.apm1, 3))
+
+        for q, qmpos in enumerate(qmpositions):  # molwise loop
+            #eps = self.epsilon[q * self.apm1:q * self.apm1 + self.apm1]
+            #sig = self.sigma[q * self.apm1:q * self.apm1 + self.apm1]
+            eps = self.epsilon
+            sig = self.sigma
+
+            # cutoff from first atom of each mol
+            R00 = mmpositions[:, 0] - qmpos[0, :]
+            d002 = (R00**2).sum(1)
+            d00 = d002**0.5
+            x1 = d00 > self.rc - self.width
+            x2 = d00 < self.rc 
+            x12 = np.logical_and(x1, x2)
+            y = (d00[x12] - self.rc + self.width) / self.width
+            t = np.zeros(len(d00))
+            t[x2] = 1.0
+            t[x12] -= y**2 * (3.0 - 2.0 * y)
+            dt = np.zeros(len(d00))
+            dt[x12] -= 6.0 / self.width * y * (1.0 - y)
+            print(t, d00)
+            for qa in range(len(qmpos)):
+                if ~np.any(eps[qa, :]):
+                    continue  
+                R = mmpositions - qmpos[qa, :]
+                d2 = (R**2).sum(2)
+                c6 = (sig[qa, :]**2 / d2)**3
+                c12 = c6**2
+                e = 4 * eps[qa, :] * (c12 - c6)
+                energy += e.sum() * t[q]
+                f = (24 * eps[qa, :] * 
+                     (2 * c12 - c6) / d2)[:, :, None] * R
+                mmforces += f.reshape((-1, 3))
+                qmforces[q * self.apm1 + qa, :] -= f.sum(0).sum(0)
+
+       # enedebug = 0
+       # qmdebug = np.zeros_like(qmatoms.positions)
+       # mmdebug = np.zeros_like(mmatoms.positions)
+
+       # for qmi in range(len(qmatoms)):
+       #     if ~np.any(self.epsilon[qmi, :]):
+       #         continue
+       #     D = mmpositions - qmatoms.positions[qmi, :]
+       #     d2 = (D**2).sum(2)
+       #     c6 = (self.sigma[qmi, :]**2 / d2)**3
+       #     c12 = c6**2
+       #     e = 4 * self.epsilon[qmi, :] * (c12 - c6)
+       #     enedebug += e.sum()
+       #     f = (24 * self.epsilon[qmi, :] *
+       #          (2 * c12 - c6) / d2)[:, :, np.newaxis] * D
+       #     mmdebug += f.reshape((-1, 3))
+       #     qmdebug[qmi, :] -= f.sum(0).sum(0)
+
+       # print(qmdebug - qmforces)
+       # print(mmdebug - mmforces)
+       # print(enedebug - energy)
 
         return energy, qmforces, mmforces
 
@@ -328,7 +376,7 @@ class LJInteractionsGeneral:
         # Wrap point-charge positions to the MM-cell closest to the
         # center of the the QM box, but avoid ripping molecules apart:
         qmcenter = qmatoms.cell.diagonal() / 2
-        n = self.molecule_size
+        n = self.apm2
         positions = mmatoms.positions.reshape((-1, n, 3)) + shift  ## Counter ion problem
 
         # Distances from the center of the QM box to the first atom of
