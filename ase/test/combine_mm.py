@@ -31,7 +31,7 @@ def make_atoms():
 
 
 dimer = make_atoms()
-rc = 3
+rc = 3.0
 for (TIPnP, (eps, sig), nm) in zip([TIP3P, TIP4P], 
                                    ((eps3, sig3),(eps4, sig4)),
                                    [3, 4]):
@@ -42,18 +42,31 @@ for (TIPnP, (eps, sig), nm) in zip([TIP3P, TIP4P],
                                np.array([eps, 0, 0]),
                                np.array([sig, 0, 0]),
                                np.array([eps, 0, 0]), 
-                               3, 3, rc, 1.0)
+                               3, 3, rc, 1.0)  # no virtual atoms for LJ. 
     dimer.calc = CombineMM([0, 1, 2], nm, nm, 
                            TIPnP(rc=rc, width=1.0), 
                            TIPnP(rc=rc, width=1.0),
                            lj, rc=rc, width=1.0)
     F2 = dimer.get_forces()
-    Fn = dimer.calc.calculate_numerical_forces(dimer)
-    dF = F2-Fn
     dF = F1-F2
     print(TIPnP)
     print(dF)
-    assert abs(dF).max() < 2e-6
+    assert abs(dF).max() < 1e-8
 
 
+# Also check a TIP3P/TIP4P combination against numerical forces:
+eps1 = np.array([eps3, 0, 0])
+sig1 = np.array([sig3, 0, 0])
+eps2 = np.array([eps4, 0, 0])
+sig2 = np.array([sig4, 0, 0])
+lj = LJInteractionsGeneral(sig1, eps1, sig2, eps2, 3, 3, rc, 1.0)
+dimer.calc = CombineMM([0, 1, 2], 3, 4, TIP3P(rc, 1.0), TIP4P(rc, 1.0), 
+                        lj, rc, 1.0)
+
+F2 = dimer.get_forces()
+Fn = dimer.calc.calculate_numerical_forces(dimer, 1e-7)
+dF = F2-Fn
+print('TIP3P/TIP4P')
+print(dF)
+assert abs(dF).max() < 1e-8
 
