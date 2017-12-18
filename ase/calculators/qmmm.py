@@ -332,7 +332,6 @@ class LJInteractionsGeneral:
             t[x12] -= y**2 * (3.0 - 2.0 * y)
             dt = np.zeros(len(d00))
             dt[x12] -= 6.0 / self.width * y * (1.0 - y)
-            print(t, d00)
             for qa in range(len(qmpos)):
                 if ~np.any(eps[qa, :]):
                     continue  
@@ -342,10 +341,13 @@ class LJInteractionsGeneral:
                 c12 = c6**2
                 e = 4 * eps[qa, :] * (c12 - c6)
                 energy += e.sum() * t[q]
-                f = (24 * eps[qa, :] * 
+                f = t[:, None, None] * (24 * eps[qa, :] * 
                      (2 * c12 - c6) / d2)[:, :, None] * R
+                f00 = - (e.sum(1) * dt / d00)[:, None] * R00
                 mmforces += f.reshape((-1, 3))
                 qmforces[q * self.apm1 + qa, :] -= f.sum(0).sum(0)
+                qmforces[q * self.apm1, :] -= f00.sum(0)
+                mmforces[::self.apm2, :] += f00 
 
        # enedebug = 0
        # qmdebug = np.zeros_like(qmatoms.positions)
