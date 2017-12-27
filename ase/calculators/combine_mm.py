@@ -3,6 +3,7 @@ import numpy as np
 from ase.calculators.calculator import Calculator
 from ase.calculators.qmmm import wrap
 from ase import units
+import copy
 
 k_c = units.Hartree * units.Bohr
 #k_c = 332.1 * units.kcal / units.mol
@@ -23,10 +24,6 @@ class CombineMM(Calculator):
     - Be embeddable with the Embedding class, so it needs:
         - get_virtual_charges()
         - some way around virtual_molecule_size
-        - make molecule_size into a list, and ask if its
-            longer than 1, then do smarter reshapes to get
-            the correct positions arrays. 
-
     
     Maybe it can combine n MM calculators in the future? """
 
@@ -105,17 +102,19 @@ class CombineMM(Calculator):
 
         e_vdw, f1, f2 = self.vdw.calculate(self.atoms1, self.atoms2, shift)
         f_vdw = np.zeros((len(atoms), 3))
-        f_vdw[self.mask] = f1
-        f_vdw[~self.mask] = f2
+        f_vdw[self.mask] += f1
+        f_vdw[~self.mask] += f2
 
         # internal energy, forces of each subsystem:
         f12 = np.zeros((len(atoms), 3))
         e1 = self.atoms1.get_potential_energy()
-        f1 = self.atoms1.get_forces()
+        fi1 = self.atoms1.get_forces()
+
         e2 = self.atoms2.get_potential_energy()
-        f2 = self.atoms2.get_forces()
-        f12[self.mask] = f1
-        f12[~self.mask] = f2
+        fi2 = self.atoms2.get_forces()
+
+        f12[self.mask] += fi1
+        f12[~self.mask] += fi2
 
         self.results['energy'] = e_c + e_vdw + e1 + e2
         self.results['forces'] = f_c + f_vdw + f12
@@ -196,10 +195,15 @@ class CombineMM(Calculator):
         F1 = F1.reshape((-1, 3))
         F2 = F2.reshape((-1, 3))
 
-        self.atoms1.calc.atoms = self.atoms1
-        F1 = self.atoms1.calc.redistribute_forces(F1)
-        self.atoms2.calc.atoms = self.atoms2
-        F2 = self.atoms2.calc.redistribute_forces(F2)
+        # Redist forces but dont save forces in org calculators
+        atoms1 = self.atoms1.copy()
+        atoms1.calc = copy.copy(self.calc1)
+        atoms1.calc.atoms = atoms1
+        F1 = atoms1.calc.redistribute_forces(F1)
+        atoms2 = self.atoms2.copy()
+        atoms2.calc = copy.copy(self.calc2)
+        atoms2.calc.atoms = atoms2
+        F2 = atoms2.calc.redistribute_forces(F2)
 
         forces = np.zeros((len(self.atoms), 3))
         forces[self.mask] = F1

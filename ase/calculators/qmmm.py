@@ -314,8 +314,6 @@ class LJInteractionsGeneral:
         qmpositions = qmatoms.positions.reshape((-1, self.apm1, 3))
 
         for q, qmpos in enumerate(qmpositions):  # molwise loop
-            #eps = self.epsilon[q * self.apm1:q * self.apm1 + self.apm1]
-            #sig = self.sigma[q * self.apm1:q * self.apm1 + self.apm1]
             eps = self.epsilon
             sig = self.sigma
 
@@ -348,28 +346,6 @@ class LJInteractionsGeneral:
                 qmforces[q * self.apm1 + qa, :] -= f.sum(0).sum(0)
                 qmforces[q * self.apm1, :] -= f00.sum(0)
                 mmforces[::self.apm2, :] += f00 
-
-       # enedebug = 0
-       # qmdebug = np.zeros_like(qmatoms.positions)
-       # mmdebug = np.zeros_like(mmatoms.positions)
-
-       # for qmi in range(len(qmatoms)):
-       #     if ~np.any(self.epsilon[qmi, :]):
-       #         continue
-       #     D = mmpositions - qmatoms.positions[qmi, :]
-       #     d2 = (D**2).sum(2)
-       #     c6 = (self.sigma[qmi, :]**2 / d2)**3
-       #     c12 = c6**2
-       #     e = 4 * self.epsilon[qmi, :] * (c12 - c6)
-       #     enedebug += e.sum()
-       #     f = (24 * self.epsilon[qmi, :] *
-       #          (2 * c12 - c6) / d2)[:, :, np.newaxis] * D
-       #     mmdebug += f.reshape((-1, 3))
-       #     qmdebug[qmi, :] -= f.sum(0).sum(0)
-
-       # print(qmdebug - qmforces)
-       # print(mmdebug - mmforces)
-       # print(enedebug - energy)
 
         return energy, qmforces, mmforces
 
