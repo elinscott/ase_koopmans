@@ -338,7 +338,7 @@ class LJInteractionsGeneral:
                 c6 = (sig[qa, :]**2 / d2)**3
                 c12 = c6**2
                 e = 4 * eps[qa, :] * (c12 - c6)
-                energy += e.sum() * t[q]
+                energy += np.dot(e.sum(1), t)
                 f = t[:, None, None] * (24 * eps[qa, :] * 
                      (2 * c12 - c6) / d2)[:, :, None] * R
                 f00 = - (e.sum(1) * dt / d00)[:, None] * R00
