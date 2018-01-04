@@ -85,22 +85,29 @@ class CombineMM(Calculator):
         xc1 = self.atoms1.calc.get_virtual_charges(self.atoms1)
         xc2 = self.atoms2.calc.get_virtual_charges(self.atoms2)
         
-        # Do pbc stuff to get shift
-        #center = atoms.cell.diagonal() / 2.
         xpos1 = xpos1.reshape((-1, self.apm1, 3))
         xpos2 = xpos2.reshape((-1, self.apm2, 3)) 
         
-        #distances = xpos2[:, 0] - center # first atom of each mol in 2
-        #wrap(xpos1[:, 0], self.cell.diagonal(), self.pbc)
-        #wrap(xpos2[:, 0], self.cell.diagonal(), self.pbc)
-        #offsets = distances - xpos2[:, 0]
-        #xpos2 += offsets + center
-
+        # shift for qmmm not used yet.  
         shift = np.array([0, 0, 0])
 
         e_c, f_c = self.coulomb(xpos1, xpos2, xc1, xc2, shift)
 
-        e_vdw, f1, f2 = self.vdw.calculate(self.atoms1, self.atoms2, shift)
+        # PBCs wrt total box should now also be applied to subsys 1
+        # which is different from the qmmm method, for which the LJ was made.
+        # so prewrap atoms1 here. 
+        cell = atoms.cell.diagonal()
+        pos = self.atoms1.get_positions()
+        for i, periodic in enumerate(atoms.pbc):
+            if periodic:
+                d = pos[:, i]
+                L = cell[i]
+                d  = (d + L ) % L - L  
+
+        watoms1 = self.atoms1.copy()
+        watoms1.set_positions(pos)
+
+        e_vdw, f1, f2 = self.vdw.calculate(watoms1, self.atoms2, shift)
         f_vdw = np.zeros((len(atoms), 3))
         f_vdw[self.mask] += f1
         f_vdw[~self.mask] += f2
