@@ -66,10 +66,12 @@ class StartGenerator(object):
         # pre-process blocks and blmin:
         self.blocks = []
         numbers = []
-        for block,count in blocks:
-            if block in atomic_numbers:
+        for block, count in blocks:
+            if isinstance(block, Atoms):  
+                pass
+            elif block in atomic_numbers:
                 block = Atoms(block)
-            elif type(block) == str:
+            else:
                 block = molecule(block)
             self.blocks.append((block, count))
             numbers.extend(block.get_atomic_numbers())
