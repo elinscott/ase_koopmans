@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy as np
 from ase.calculators.calculator import Calculator
-from ase.calculators.qmmm import wrap
+from ase.calculators.qmmm import combine_lj_lorenz_berthelot
 from ase import units
 import copy
 
@@ -19,7 +19,7 @@ class CombineMM(Calculator):
     - Obtain forces and energies from both subsets
     - Calculate forces and energies from their interaction:
         - electrostatic
-        - vdw
+        - lj
     - Return values
     - Be embeddable with the Embedding class, so it needs:
         - get_virtual_charges()
@@ -28,7 +28,8 @@ class CombineMM(Calculator):
     Maybe it can combine n MM calculators in the future? """
 
     implemented_properties = ['energy', 'forces']
-    def __init__(self, idx, apm1, apm2, calc1, calc2, vdw, rc=7.0, width=1.0):
+    def __init__(self, idx, apm1, apm2, calc1, calc2, 
+                 sig1, eps1, sig2, eps2, rc=7.0, width=1.0):
         self.idx = idx
         self.apm1 = apm1  # atoms per mol
         self.apm2 = apm2
@@ -44,7 +45,10 @@ class CombineMM(Calculator):
         self.calc1 = calc1
         self.calc2 = calc2
 
-        self.vdw = vdw
+        self.sig1 = sig1
+        self.eps1 = eps1
+        self.sig2 = sig2
+        self.eps2 = eps2
 
         Calculator.__init__(self)
 
@@ -65,6 +69,8 @@ class CombineMM(Calculator):
         self.cell = atoms.cell
         self.pbc = atoms.pbc
 
+        self.sigma, self.epsilon = combine_lj_lorenz_berthelot(self.sig1,
+                self.sig2, self.eps1, self.eps2)
 
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
@@ -96,21 +102,24 @@ class CombineMM(Calculator):
         # PBCs wrt total box should now also be applied to subsys 1
         # which is different from the qmmm method, for which the LJ was made.
         # so prewrap atoms1 here. 
-        cell = atoms.cell.diagonal()
-        pos = self.atoms1.get_positions()
-        for i, periodic in enumerate(atoms.pbc):
-            if periodic:
-                d = pos[:, i]
-                L = cell[i]
-                d  = (d + L ) % L - L  
+        # cell = atoms.cell.diagonal()
+        # pos = self.atoms1.get_positions()
+        # for i, periodic in enumerate(atoms.pbc):
+        #     if periodic:
+        #         d = pos[:, i]
+        #         L = cell[i]
+        #         d  = (d + L ) % L - L  
+ 
+        # watoms1 = self.atoms1.copy()
+        # watoms1.set_positions(pos)
+ 
+        # e_lj, f1, f2 = self.lj.calculate(watoms1, self.atoms2, shift)
 
-        watoms1 = self.atoms1.copy()
-        watoms1.set_positions(pos)
+        e_lj, f1, f2 = self.lennard_jones(self.atoms1, self.atoms2, shift) 
 
-        e_vdw, f1, f2 = self.vdw.calculate(watoms1, self.atoms2, shift)
-        f_vdw = np.zeros((len(atoms), 3))
-        f_vdw[self.mask] += f1
-        f_vdw[~self.mask] += f2
+        f_lj = np.zeros((len(atoms), 3))
+        f_lj[self.mask] += f1
+        f_lj[~self.mask] += f2
 
         # internal energy, forces of each subsystem:
         f12 = np.zeros((len(atoms), 3))
@@ -123,8 +132,8 @@ class CombineMM(Calculator):
         f12[self.mask] += fi1
         f12[~self.mask] += fi2
 
-        self.results['energy'] = e_c + e_vdw + e1 + e2
-        self.results['forces'] = f_c + f_vdw + f12
+        self.results['energy'] = e_c + e_lj + e1 + e2
+        self.results['forces'] = f_c + f_lj + f12
 
     def get_virtual_charges(self, atoms):
         vc = np.zeros(len(self.atoms))
@@ -218,5 +227,59 @@ class CombineMM(Calculator):
 
         return energy, forces
 
+    def lennard_jones(self, atoms1, atoms2, shift):
+        pos1 = atoms1.get_positions().reshape((-1, self.apm1, 3))
+        pos2 = atoms2.get_positions().reshape((-1, self.apm2, 3))
+
+        f1 = np.zeros_like(atoms1.positions)
+        f2 = np.zeros_like(atoms2.positions)
+        energy = 0.0
+
+        cell = self.cell.diagonal()
+        for q, p1 in enumerate(pos1):  # molwise loop
+            eps = self.epsilon
+            sig = self.sigma
+
+            R00 = pos2[:, 0] - p1[0, :]
+
+            # cutoff from first atom of each mol
+            shift = np.zeros_like(R00)
+            for i, periodic in enumerate(self.pbc):
+                if periodic:
+                    L = cell[i]
+                    shift[:, i] = (R00[:, i] + L / 2) % L - L / 2 - R00[:, i]
+            R00 += shift  
+
+            d002 = (R00**2).sum(1)
+            d00 = d002**0.5
+            x1 = d00 > self.rc - self.width
+            x2 = d00 < self.rc 
+            x12 = np.logical_and(x1, x2)
+            y = (d00[x12] - self.rc + self.width) / self.width
+            t = np.zeros(len(d00))
+            t[x2] = 1.0
+            t[x12] -= y**2 * (3.0 - 2.0 * y)
+            dt = np.zeros(len(d00))
+            dt[x12] -= 6.0 / self.width * y * (1.0 - y)
+            for qa in range(len(p1)):
+                if ~np.any(eps[qa, :]):
+                    continue  
+                R = pos2 - p1[qa, :] + shift[:, None]
+                d2 = (R**2).sum(2)
+                c6 = (sig[qa, :]**2 / d2)**3
+                c12 = c6**2
+                e = 4 * eps[qa, :] * (c12 - c6)
+                energy += np.dot(e.sum(1), t)
+                f = t[:, None, None] * (24 * eps[qa, :] * 
+                     (2 * c12 - c6) / d2)[:, :, None] * R
+                f00 = - (e.sum(1) * dt / d00)[:, None] * R00
+                f2 += f.reshape((-1, 3))
+                f1[q * self.apm1 + qa, :] -= f.sum(0).sum(0)
+                f1[q * self.apm1, :] -= f00.sum(0)
+                f2[::self.apm2, :] += f00 
+
+        return energy, f1, f2
+
+        
 
 
