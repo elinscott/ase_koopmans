@@ -9,8 +9,9 @@ __all__ = ['rOH', 'angleHOH', 'TIP4P', 'sigma0', 'epsilon0']
 
 # Electrostatic constant and parameters:
 k_c = units.Hartree * units.Bohr
+qH =  0.52
 sigma0 =  3.15365
-epsilon0 = 0.6480 * units.kJ / units.mol
+epsilon0 =  0.6480 * units.kJ / units.mol
 
 
 class TIP4P(TIP3P):
@@ -38,6 +39,7 @@ class TIP4P(TIP3P):
         """
 
         TIP3P.__init__(self, rc, width)
+        self.sites_per_mol = 4
         self.energy = None
         self.forces = None
 
@@ -167,9 +169,9 @@ class TIP4P(TIP3P):
     def get_virtual_charges(self, atoms):
         charges = np.empty(len(atoms) * 4 // 3)
         charges[0::4] = 0.00  # O
-        charges[1::4] = 0.52  # H1
-        charges[2::4] = 0.52  # H2
-        charges[3::4] = -1.04  # X1
+        charges[1::4] = qH  # H1
+        charges[2::4] = qH  # H2
+        charges[3::4] = - 2* qH  # X1
         return charges
 
     def redistribute_forces(self, forces):

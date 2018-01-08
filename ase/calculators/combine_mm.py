@@ -84,36 +84,22 @@ class CombineMM(Calculator):
         self.atoms2.set_positions(pos2)
 
         # positions and charges for the coupling term, which should
-        # include virtual charges and sites: 
+        # include virtual charges and sites:
+        spm1 = self.atoms1.calc.sites_per_mol
+        spm2 = self.atoms2.calc.sites_per_mol
         xpos1 = self.atoms1.calc.add_virtual_sites(pos1)
         xpos2 = self.atoms2.calc.add_virtual_sites(pos2)
 
         xc1 = self.atoms1.calc.get_virtual_charges(self.atoms1)
         xc2 = self.atoms2.calc.get_virtual_charges(self.atoms2)
         
-        xpos1 = xpos1.reshape((-1, self.apm1, 3))
-        xpos2 = xpos2.reshape((-1, self.apm2, 3)) 
+        xpos1 = xpos1.reshape((-1, spm1, 3))
+        xpos2 = xpos2.reshape((-1, spm2, 3)) 
         
         # shift for qmmm not used yet.  
         shift = np.array([0, 0, 0])
 
-        e_c, f_c = self.coulomb(xpos1, xpos2, xc1, xc2, shift)
-
-        # PBCs wrt total box should now also be applied to subsys 1
-        # which is different from the qmmm method, for which the LJ was made.
-        # so prewrap atoms1 here. 
-        # cell = atoms.cell.diagonal()
-        # pos = self.atoms1.get_positions()
-        # for i, periodic in enumerate(atoms.pbc):
-        #     if periodic:
-        #         d = pos[:, i]
-        #         L = cell[i]
-        #         d  = (d + L ) % L - L  
- 
-        # watoms1 = self.atoms1.copy()
-        # watoms1.set_positions(pos)
- 
-        # e_lj, f1, f2 = self.lj.calculate(watoms1, self.atoms2, shift)
+        e_c, f_c = self.coulomb(xpos1, xpos2, xc1, xc2, spm1, spm2, shift)
 
         e_lj, f1, f2 = self.lennard_jones(self.atoms1, self.atoms2, shift) 
 
@@ -155,7 +141,7 @@ class CombineMM(Calculator):
 
         return vc
 
-    def coulomb(self, xpos1, xpos2, xc1, xc2, shift):
+    def coulomb(self, xpos1, xpos2, xc1, xc2, spm1, spm2, shift):
         energy = 0.0
         forces = np.zeros((len(xc1)+len(xc2), 3))
 
@@ -166,9 +152,9 @@ class CombineMM(Calculator):
         R2 = xpos2
         F1 = np.zeros_like(R1)
         F2 = np.zeros_like(R2)
-        C1 = xc1.reshape((-1, self.apm1))
-        C2 = xc2.reshape((-1, self.apm2))
-        # Vectorized evaluation is not as trivial when apm1 != apm2.
+        C1 = xc1.reshape((-1, np.shape(xpos1)[1]))
+        C2 = xc2.reshape((-1, np.shape(xpos2)[1]))
+        # Vectorized evaluation is not as trivial when spm1 != spm2.
         # This is pretty inefficient, but for ~1-5 counter ions as region 1
         # it should not matter much ..
         # There is definetely room for improvements here.
@@ -193,8 +179,8 @@ class CombineMM(Calculator):
                     t -= y**2 * (3.0 - 2.0 *y)  
                     dtdd = r00 * 6 * y * (1.0 - y) / (self.width * d00) 
 
-                for a1 in range(self.apm1):
-                    for a2 in range(self.apm2):
+                for a1 in range(spm1):
+                    for a2 in range(spm2):
                         r = r2[a2] - r1[a1] + shift
                         d2 = (r**2).sum()
                         d = d2**0.5
@@ -230,6 +216,7 @@ class CombineMM(Calculator):
     def lennard_jones(self, atoms1, atoms2, shift):
         pos1 = atoms1.get_positions().reshape((-1, self.apm1, 3))
         pos2 = atoms2.get_positions().reshape((-1, self.apm2, 3))
+
 
         f1 = np.zeros_like(atoms1.positions)
         f2 = np.zeros_like(atoms2.positions)
@@ -279,7 +266,4 @@ class CombineMM(Calculator):
                 f2[::self.apm2, :] += f00 
 
         return energy, f1, f2
-
-        
-
 
