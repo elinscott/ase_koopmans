@@ -9,31 +9,28 @@ k_c = units.Hartree * units.Bohr
 #k_c = 332.1 * units.kcal / units.mol
 
 class CombineMM(Calculator):
-    """Hopefully a calculator that combines two MM calculators 
-    (TIPnP, ACN, counterions). 
+    """A calculator that combines two MM calculators 
+    (TIPnP, ACN, counterions).
 
-    It needs to: 
-
-    - Define what parts belong to what calc
-    - Do PBC stuff and remember cutoffs
-    - Obtain forces and energies from both subsets
-    - Calculate forces and energies from their interaction:
-        - electrostatic
-        - lj
-    - Return values
-    - Be embeddable with the Embedding class, so it needs:
-        - get_virtual_charges()
-        - some way around virtual_molecule_size
+    Currently the interactions are limited to being:
+    - Nonbonded
+    - Hardcoded to two terms:
+        - Coulomb electrostatics
+        - Lennard Jones
     
+    It could of course benefit from being more like the EIQMMM class
+    where the interactions are switchable. But this is in princple
+    just meant for adding counter ions to a qmmm simulation to neutralize
+    the charge of the total systemn
+
     Maybe it can combine n MM calculators in the future? """
 
     implemented_properties = ['energy', 'forces']
     def __init__(self, idx, apm1, apm2, calc1, calc2, 
                  sig1, eps1, sig2, eps2, rc=7.0, width=1.0):
         self.idx = idx
-        self.apm1 = apm1  # atoms per mol
+        self.apm1 = apm1  # atoms per mol for LJ calculator
         self.apm2 = apm2
-        ## self.molidx = molidx
 
         self.rc = rc 
         self.width = width
