@@ -7,12 +7,13 @@ import copy
 
 k_c = units.Hartree * units.Bohr
 
+
 class CombineMM(Calculator):
     implemented_properties = ['energy', 'forces']
 
-    def __init__(self, idx, apm1, apm2, calc1, calc2, 
+    def __init__(self, idx, apm1, apm2, calc1, calc2,
                  sig1, eps1, sig2, eps2, rc=7.0, width=1.0):
-        """A calculator that combines two MM calculators 
+        """A calculator that combines two MM calculators
         (TIPnP, ACN, counterions).
 
         Currently the interactions are limited to being:
@@ -20,19 +21,20 @@ class CombineMM(Calculator):
         - Hardcoded to two terms:
             - Coulomb electrostatics
             - Lennard Jones
-        
+
         It could of course benefit from being more like the EIQMMM class
         where the interactions are switchable. But this is in princple
         just meant for adding counter ions to a qmmm simulation to neutralize
         the charge of the total systemn
 
-        Maybe it can combine n MM calculators in the future? """
+        Maybe it can combine n MM calculators in the future?
+        """
 
         self.idx = idx
         self.apm1 = apm1  # atoms per mol for LJ calculator
         self.apm2 = apm2
 
-        self.rc = rc 
+        self.rc = rc
         self.width = width
 
         self.atoms1 = None
@@ -89,16 +91,16 @@ class CombineMM(Calculator):
 
         xc1 = self.atoms1.calc.get_virtual_charges(self.atoms1)
         xc2 = self.atoms2.calc.get_virtual_charges(self.atoms2)
-        
+
         xpos1 = xpos1.reshape((-1, spm1, 3))
-        xpos2 = xpos2.reshape((-1, spm2, 3)) 
-        
-        # shift for qmmm not used yet.  
+        xpos2 = xpos2.reshape((-1, spm2, 3))
+
+        # shift for qmmm not used yet.
         shift = np.array([0, 0, 0])
 
         e_c, f_c = self.coulomb(xpos1, xpos2, xc1, xc2, spm1, spm2, shift)
 
-        e_lj, f1, f2 = self.lennard_jones(self.atoms1, self.atoms2, shift) 
+        e_lj, f1, f2 = self.lennard_jones(self.atoms1, self.atoms2, shift)
 
         f_lj = np.zeros((len(atoms), 3))
         f_lj[self.mask] += f1
@@ -120,7 +122,7 @@ class CombineMM(Calculator):
 
     def get_virtual_charges(self, atoms):
         vc = np.zeros(len(self.atoms))
-        # this can break, IF there is virtual sites. XXX 
+        # this can break, IF there is virtual sites. XXX
         vc1 = self.atoms1.calc.get_virtual_charges(atoms[self.mask])
         vc2 = self.atoms2.calc.get_virtual_charges(atoms[~self.mask])
         vc[self.mask] = vc1
@@ -128,24 +130,24 @@ class CombineMM(Calculator):
 
         return vc
 
-    def add_virtual_sites(self, positions): 
+    def add_virtual_sites(self, positions):
         vs = np.zeros(len(self.atoms), 3)
-        # this can break, IF there is virtual sites. XXX 
+        # this can break, IF there is virtual sites. XXX
         vs1 = self.atoms1.calc.add_virtual_sites()
         vs2 = self.atoms2.calc.add_virtual_sites()
         vs[self.mask] = vs1
         vs[~self.mask] = vs2
 
-        return vc
+        return vs
 
     def coulomb(self, xpos1, xpos2, xc1, xc2, spm1, spm2, shift):
         energy = 0.0
-        forces = np.zeros((len(xc1)+len(xc2), 3))
+        forces = np.zeros((len(xc1) + len(xc2), 3))
 
         self.xpos1 = xpos1
         self.xpos2 = xpos2
 
-        R1 = xpos1  
+        R1 = xpos1
         R2 = xpos2
         F1 = np.zeros_like(R1)
         F2 = np.zeros_like(R2)
@@ -164,17 +166,17 @@ class CombineMM(Calculator):
                     if periodic:
                         L = cell[i]
                         shift[i] = (r00[i] + L / 2.) % L - L / 2. - r00[i]
-                r00 += shift  
+                r00 += shift
 
                 d00 = (r00**2).sum()**0.5
                 t = 1
                 dtdd = 0
                 if d00 > self.rc:
-                    continue 
+                    continue
                 elif d00 > self.rc - self.width:
                     y = (d00 - self.rc + self.width) / self.width
-                    t -= y**2 * (3.0 - 2.0 *y)  
-                    dtdd = r00 * 6 * y * (1.0 - y) / (self.width * d00) 
+                    t -= y**2 * (3.0 - 2.0 * y)
+                    dtdd = r00 * 6 * y * (1.0 - y) / (self.width * d00)
 
                 for a1 in range(spm1):
                     for a2 in range(spm2):
@@ -184,12 +186,11 @@ class CombineMM(Calculator):
                         e = k_c * c1[a1] * c2[a2] / d
                         energy += t * e
 
-                        F1[m1, a1] -= t * (e / d2) * r 
+                        F1[m1, a1] -= t * (e / d2) * r
                         F2[m2, a2] += t * (e / d2) * r
 
-                        F1[m1, 0] -= dtdd * e  
-                        F2[m2, 0]  += dtdd * e 
-
+                        F1[m1, 0] -= dtdd * e
+                        F2[m2, 0] += dtdd * e
 
         F1 = F1.reshape((-1, 3))
         F2 = F2.reshape((-1, 3))
@@ -214,7 +215,6 @@ class CombineMM(Calculator):
         pos1 = atoms1.get_positions().reshape((-1, self.apm1, 3))
         pos2 = atoms2.get_positions().reshape((-1, self.apm2, 3))
 
-
         f1 = np.zeros_like(atoms1.positions)
         f2 = np.zeros_like(atoms2.positions)
         energy = 0.0
@@ -232,12 +232,12 @@ class CombineMM(Calculator):
                 if periodic:
                     L = cell[i]
                     shift[:, i] = (R00[:, i] + L / 2) % L - L / 2 - R00[:, i]
-            R00 += shift  
+            R00 += shift
 
             d002 = (R00**2).sum(1)
             d00 = d002**0.5
             x1 = d00 > self.rc - self.width
-            x2 = d00 < self.rc 
+            x2 = d00 < self.rc
             x12 = np.logical_and(x1, x2)
             y = (d00[x12] - self.rc + self.width) / self.width
             t = np.zeros(len(d00))
@@ -247,20 +247,19 @@ class CombineMM(Calculator):
             dt[x12] -= 6.0 / self.width * y * (1.0 - y)
             for qa in range(len(p1)):
                 if ~np.any(eps[qa, :]):
-                    continue  
+                    continue
                 R = pos2 - p1[qa, :] + shift[:, None]
                 d2 = (R**2).sum(2)
                 c6 = (sig[qa, :]**2 / d2)**3
                 c12 = c6**2
                 e = 4 * eps[qa, :] * (c12 - c6)
                 energy += np.dot(e.sum(1), t)
-                f = t[:, None, None] * (24 * eps[qa, :] * 
-                     (2 * c12 - c6) / d2)[:, :, None] * R
+                f = t[:, None, None] * (24 * eps[qa, :] *
+                                        (2 * c12 - c6) / d2)[:, :, None] * R
                 f00 = - (e.sum(1) * dt / d00)[:, None] * R00
                 f2 += f.reshape((-1, 3))
                 f1[q * self.apm1 + qa, :] -= f.sum(0).sum(0)
                 f1[q * self.apm1, :] -= f00.sum(0)
-                f2[::self.apm2, :] += f00 
+                f2[::self.apm2, :] += f00
 
         return energy, f1, f2
-

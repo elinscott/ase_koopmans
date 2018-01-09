@@ -313,13 +313,6 @@ class LJInteractionsGeneral:
 
         qmpositions = qmatoms.positions.reshape((-1, self.apm1, 3))
 
-        # PBC debug
-        debugatoms = qmatoms.copy() + mmatoms.copy()
-        debugatoms.set_positions(np.vstack((qmpositions.reshape(-1, 3), 
-                                            mmpositions.reshape(-1,3))))
-
-        self.debugatoms = debugatoms
-
         for q, qmpos in enumerate(qmpositions):  # molwise loop
             eps = self.epsilon
             sig = self.sigma
