@@ -238,7 +238,6 @@ class CombineMM(Calculator):
         forces = np.zeros((len(self.atoms), 3))
         forces[self.mask] = F1
         forces[~self.mask] = F2
-
         return energy, forces
 
     def lennard_jones(self, atoms1, atoms2, shift):
@@ -295,4 +294,10 @@ class CombineMM(Calculator):
         return energy, f1, f2
 
     def redistribute_forces(self, forces):
-        return forces
+        f1 = self.calc1.redistribute_forces(forces[self.virtual_mask])
+        f2 = self.calc2.redistribute_forces(forces[~self.virtual_mask])
+        # and then they are back on the real atom centers so
+        f = np.zeros((len(self.atoms), 3))
+        f[self.mask] = f1
+        f[~self.mask] = f2
+        return f

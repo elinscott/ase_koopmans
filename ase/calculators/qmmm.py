@@ -236,6 +236,7 @@ class Embedding:
         self.pcpot = qmatoms.calc.embed(charges, **self.parameters)
         self.virtual_molecule_size = (self.molecule_size *  ## Counter ion problem
                                       len(charges) // len(mmatoms))
+        print(self.virtual_molecule_size)
 
     def update(self, shift):
         """Update point-charge positions."""

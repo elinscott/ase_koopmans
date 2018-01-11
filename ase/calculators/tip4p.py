@@ -13,6 +13,10 @@ qH =  0.52
 sigma0 =  3.15365
 epsilon0 =  0.6480 * units.kJ / units.mol
 
+A = 600e3 * units.kcal / units.mol
+B = 610 * units.kcal / units.mol
+sigma0 = (A/B)**(1/6.)
+epsilon0 = B**2 / (4 * A)
 
 class TIP4P(TIP3P):
     def __init__(self, rc=7.0, width=1.0):
