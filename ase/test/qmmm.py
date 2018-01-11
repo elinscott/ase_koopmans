@@ -28,7 +28,7 @@ sigma_mm = np.array([0, 0, sigma0])
 epsilon_mm = np.array([0, 0, epsilon0])
 sigma_qm = np.array([0, 0, sigma0])
 epsilon_qm = np.array([0, 0, epsilon0])
-ig = LJInteractionsGeneral(sigma_qm, epsilon_qm, sigma_mm, epsilon_mm)
+ig = LJInteractionsGeneral(sigma_qm, epsilon_qm, sigma_mm, epsilon_mm, 3)
 
 for calc in [TIP3P(),
              SimpleQMMM([0, 1, 2], TIP3P(), TIP3P(), TIP3P()),

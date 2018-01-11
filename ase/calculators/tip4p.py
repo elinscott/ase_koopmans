@@ -39,6 +39,7 @@ class TIP4P(TIP3P):
         """
 
         TIP3P.__init__(self, rc, width)
+        self.atoms_per_mol = 3
         self.sites_per_mol = 4
         self.energy = None
         self.forces = None

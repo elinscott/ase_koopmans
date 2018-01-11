@@ -71,6 +71,8 @@ class CombineMM(Calculator):
         self.sigma, self.epsilon = combine_lj_lorenz_berthelot(self.sig1,
                 self.sig2, self.eps1, self.eps2)
 
+        self.make_virtual_mask()
+
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
 
@@ -121,24 +123,52 @@ class CombineMM(Calculator):
         self.results['forces'] = f_c + f_lj + f12
 
     def get_virtual_charges(self, atoms):
-        vc = np.zeros(len(self.atoms))
-        # this can break, IF there is virtual sites. XXX
+        if self.atoms1 is None:
+            self.initialize(atoms)
+
         vc1 = self.atoms1.calc.get_virtual_charges(atoms[self.mask])
         vc2 = self.atoms2.calc.get_virtual_charges(atoms[~self.mask])
-        vc[self.mask] = vc1
-        vc[~self.mask] = vc2
+        # Need to expand mask with possible new virtual sites.
+        # Virtual sites should ALWAYS be put AFTER actual atoms, like in 
+        # TIP4P: OHHX, OHHX, ... 
+
+        vc = np.zeros(len(vc1)+len(vc2))
+        vc[self.virtual_mask] = vc1
+        vc[~self.virtual_mask] = vc2
 
         return vc
 
     def add_virtual_sites(self, positions):
-        vs = np.zeros(len(self.atoms), 3)
-        # this can break, IF there is virtual sites. XXX
-        vs1 = self.atoms1.calc.add_virtual_sites()
-        vs2 = self.atoms2.calc.add_virtual_sites()
-        vs[self.mask] = vs1
-        vs[~self.mask] = vs2
+        if self.atoms1 is None:
+            self.initialize(atoms)
+
+        vs1 = self.atoms1.calc.add_virtual_sites(positions[self.mask])
+        vs2 = self.atoms2.calc.add_virtual_sites(positions[~self.mask])
+        vs = np.zeros((len(vs1)+len(vs2), 3))  
+
+        vs[self.virtual_mask] = vs1
+        vs[~self.virtual_mask] = vs2
 
         return vs
+
+    def make_virtual_mask(self):
+        virtual_mask = []
+        ct1 = 0
+        ct2 = 0
+        for i in range(len(self.mask)):
+            virtual_mask.append(self.mask[i])
+            if self.mask[i]:
+                ct1 += 1
+            if not self.mask[i]:
+                ct2 += 1
+            if (ct2 == self.apm2) & (self.apm2 != self.atoms2.calc.sites_per_mol):
+                virtual_mask.append(False)
+                ct2 = 0
+            if (ct1 == self.apm1) & (self.apm1 != self.atoms1.calc.sites_per_mol):
+                virtual_mask.append(True)
+                ct1 = 0
+
+        self.virtual_mask = np.array(virtual_mask)
 
     def coulomb(self, xpos1, xpos2, xc1, xc2, spm1, spm2, shift):
         energy = 0.0
@@ -263,3 +293,6 @@ class CombineMM(Calculator):
                 f2[::self.apm2, :] += f00
 
         return energy, f1, f2
+
+    def redistribute_forces(self, forces):
+        return forces

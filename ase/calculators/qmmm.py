@@ -243,7 +243,7 @@ class Embedding:
         # center of the the QM box, but avoid ripping molecules apart:
         qmcenter = self.qmatoms.cell.diagonal() / 2
         n = self.molecule_size
-        positions = self.mmatoms.positions.reshape((-1, n, )) + shift  ## Counter ion problem
+        positions = self.mmatoms.positions.reshape((-1, n, 3)) + shift  ## Counter ion problem
 
         # Distances from the center of the QM box to the first atom of
         # each molecule:

@@ -15,8 +15,7 @@ class AtomicCounterIon(Calculator):
 
         A very simple, nonbinded (Coulumb and LJ)
         interaction calculator meant for single atom ions
-        to charge neutralize systems (and nothing else)... 
-
+        to charge neutralize systems (and nothing else)...
         """
         self.rc = rc
         self.width = width
@@ -27,7 +26,7 @@ class AtomicCounterIon(Calculator):
         Calculator.__init__(self)
 
     def add_virtual_sites(self, positions):
-        return positions 
+        return positions
 
     def get_virtual_charges(self, atoms):
         charges = np.tile(self.charge, len(atoms) / self.sites_per_mol)
@@ -35,7 +34,7 @@ class AtomicCounterIon(Calculator):
 
     def redistribute_forces(self, forces):
         return forces
-        
+
 
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
@@ -43,17 +42,17 @@ class AtomicCounterIon(Calculator):
         #R = atoms.get_positions.reshape((-1, self.sites_per_mol, 3))
         R = atoms.get_positions()
         charges = self.get_virtual_charges(atoms)
-        pbc = atoms.pbc 
+        pbc = atoms.pbc
 
         energy = 0.0
         forces = np.zeros_like(atoms.get_positions())
 
         for m in range(len(atoms)):
-            D = R[m + 1:] - R[m]  
+            D = R[m + 1:] - R[m]
             shift = np.zeros_like(D)
             for i, periodic in enumerate(pbc):
                 if periodic:
-                    L = cell[i]
+                    L = atoms.cell.diagonal()[i]
                     shift[:, i] = (D[:, i] + L / 2) % L - L / 2 - D[:, i]
             D += shift
             d2 = (D**2).sum(1)
@@ -71,7 +70,7 @@ class AtomicCounterIon(Calculator):
 
             c6 = (self.sigma**2 / d2)**3
             c12 = c6**2
-            e_lj = 4 * self.epsilon * (c12 - c6) 
+            e_lj = 4 * self.epsilon * (c12 - c6)
             e_c = k_c * charges[m + 1:] * charges[m] / d
 
             energy += np.dot(t, e_lj)
@@ -84,7 +83,7 @@ class AtomicCounterIon(Calculator):
             forces[m + 1:] += F
 
             F = (e_c / d2 * t)[:, None] * D \
-               -(e_c * dtdd / d)[:, None] * D 
+               -(e_c * dtdd / d)[:, None] * D
 
             forces[m] -= F.sum(0)
             forces[m + 1:] += F
