@@ -8,6 +8,7 @@ from ase.utils import convert_string_to_fd
 
 class SimpleQMMM(Calculator):
     """Simple QMMM calculator."""
+
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, selection, qmcalc, mmcalc1, mmcalc2, vacuum=None):
@@ -234,7 +235,7 @@ class Embedding:
         self.mmatoms = mmatoms
         charges = mmatoms.calc.get_virtual_charges(mmatoms)
         self.pcpot = qmatoms.calc.embed(charges, **self.parameters)
-        self.virtual_molecule_size = (self.molecule_size *  ## Counter ion problem
+        self.virtual_molecule_size = (self.molecule_size *
                                       len(charges) // len(mmatoms))
 
     def update(self, shift):

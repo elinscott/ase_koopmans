@@ -14,13 +14,23 @@ class CombineMM(Calculator):
     def __init__(self, idx, apm1, apm2, calc1, calc2,
                  sig1, eps1, sig2, eps2, rc=7.0, width=1.0):
         """A calculator that combines two MM calculators
-        (TIPnP, ACN, counterions).
+        (TIPnP, Counterions, ...)
+
+        parameters:
+
+        idx: List of indices of atoms belonging to calculator 1
+        apm1,2: atoms pr molecule of each subsystem (NB: apm for TIP4P is 3!)
+        calc1,2: calculator objects for each subsystem
+        sig1,2, eps1,2: LJ parameters for each subsystem. Should be a numpy
+                        array of length = apm
+        rc = long range cutoff
+        width = width of cutoff region.
 
         Currently the interactions are limited to being:
         - Nonbonded
         - Hardcoded to two terms:
             - Coulomb electrostatics
-            - Lennard Jones
+            - Lennard-Jones
 
         It could of course benefit from being more like the EIQMMM class
         where the interactions are switchable. But this is in princple
@@ -68,8 +78,9 @@ class CombineMM(Calculator):
         self.cell = atoms.cell
         self.pbc = atoms.pbc
 
-        self.sigma, self.epsilon = combine_lj_lorenz_berthelot(self.sig1,
-                self.sig2, self.eps1, self.eps2)
+        self.sigma, self.epsilon =\
+            combine_lj_lorenz_berthelot(self.sig1, self.sig2,
+                                        self.eps1, self.eps2)
 
         self.make_virtual_mask()
 
@@ -97,12 +108,9 @@ class CombineMM(Calculator):
         xpos1 = xpos1.reshape((-1, spm1, 3))
         xpos2 = xpos2.reshape((-1, spm2, 3))
 
-        # shift for qmmm not used yet.
-        shift = np.array([0, 0, 0])
+        e_c, f_c = self.coulomb(xpos1, xpos2, xc1, xc2, spm1, spm2)
 
-        e_c, f_c = self.coulomb(xpos1, xpos2, xc1, xc2, spm1, spm2, shift)
-
-        e_lj, f1, f2 = self.lennard_jones(self.atoms1, self.atoms2, shift)
+        e_lj, f1, f2 = self.lennard_jones(self.atoms1, self.atoms2)
 
         f_lj = np.zeros((len(atoms), 3))
         f_lj[self.mask] += f1
@@ -129,22 +137,19 @@ class CombineMM(Calculator):
         vc1 = self.atoms1.calc.get_virtual_charges(atoms[self.mask])
         vc2 = self.atoms2.calc.get_virtual_charges(atoms[~self.mask])
         # Need to expand mask with possible new virtual sites.
-        # Virtual sites should ALWAYS be put AFTER actual atoms, like in 
-        # TIP4P: OHHX, OHHX, ... 
+        # Virtual sites should ALWAYS be put AFTER actual atoms, like in
+        # TIP4P: OHHX, OHHX, ...
 
-        vc = np.zeros(len(vc1)+len(vc2))
+        vc = np.zeros(len(vc1) + len(vc2))
         vc[self.virtual_mask] = vc1
         vc[~self.virtual_mask] = vc2
 
         return vc
 
     def add_virtual_sites(self, positions):
-        if self.atoms1 is None:
-            self.initialize(atoms)
-
         vs1 = self.atoms1.calc.add_virtual_sites(positions[self.mask])
         vs2 = self.atoms2.calc.add_virtual_sites(positions[~self.mask])
-        vs = np.zeros((len(vs1)+len(vs2), 3))  
+        vs = np.zeros((len(vs1) + len(vs2), 3))
 
         vs[self.virtual_mask] = vs1
         vs[~self.virtual_mask] = vs2
@@ -161,16 +166,18 @@ class CombineMM(Calculator):
                 ct1 += 1
             if not self.mask[i]:
                 ct2 += 1
-            if (ct2 == self.apm2) & (self.apm2 != self.atoms2.calc.sites_per_mol):
+            if ((ct2 == self.apm2) &
+                (self.apm2 != self.atoms2.calc.sites_per_mol)):
                 virtual_mask.append(False)
                 ct2 = 0
-            if (ct1 == self.apm1) & (self.apm1 != self.atoms1.calc.sites_per_mol):
+            if ((ct1 == self.apm1) &
+                (self.apm1 != self.atoms1.calc.sites_per_mol)):
                 virtual_mask.append(True)
                 ct1 = 0
 
         self.virtual_mask = np.array(virtual_mask)
 
-    def coulomb(self, xpos1, xpos2, xc1, xc2, spm1, spm2, shift):
+    def coulomb(self, xpos1, xpos2, xc1, xc2, spm1, spm2):
         energy = 0.0
         forces = np.zeros((len(xc1) + len(xc2), 3))
 
@@ -240,7 +247,7 @@ class CombineMM(Calculator):
         forces[~self.mask] = F2
         return energy, forces
 
-    def lennard_jones(self, atoms1, atoms2, shift):
+    def lennard_jones(self, atoms1, atoms2):
         pos1 = atoms1.get_positions().reshape((-1, self.apm1, 3))
         pos2 = atoms2.get_positions().reshape((-1, self.apm2, 3))
 

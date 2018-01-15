@@ -9,7 +9,7 @@ __all__ = ['rOH', 'angleHOH', 'TIP4P', 'sigma0', 'epsilon0']
 
 # Electrostatic constant and parameters:
 k_c = units.Hartree * units.Bohr
-qH =  0.52
+qH = 0.52
 A = 600e3 * units.kcal / units.mol
 B = 610 * units.kcal / units.mol
 sigma0 = (A / B)**(1 / 6.)
