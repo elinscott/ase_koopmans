@@ -254,8 +254,8 @@ class Embedding:
             spm1 = self.mmatoms.calc.atoms1.calc.sites_per_mol
             spm2 = self.mmatoms.calc.atoms2.calc.sites_per_mol
             pos = self.mmatoms.positions
-            pos1 = pos[mask1].reshape((-1, apm1, 3)) + shift
-            pos2 = pos[mask2].reshape((-1, apm2, 3)) + shift
+            pos1 = pos[mask1].reshape((-1, apm1, 3))
+            pos2 = pos[mask2].reshape((-1, apm2, 3))
             pos = (pos1, pos2)
         else:
             pos = (self.mmatoms.positions, )
