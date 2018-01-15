@@ -320,6 +320,7 @@ def combine_lj_lorenz_berthelot(sigmaqm, sigmamm,
     else:
         numcalcs = 1  # if theres only 1 mm calc, eps and sig are simply np arrays
         sigmamm = (sigmamm, )
+        epsilonmm = (epsilonmm, )
     for cc in range(numcalcs):
         sigma_c = np.zeros((len(sigmaqm), len(sigmamm[cc])))
         epsilon_c = np.zeros_like(sigma_c)
@@ -333,8 +334,7 @@ def combine_lj_lorenz_berthelot(sigmaqm, sigmamm,
     if numcalcs == 1:  # if imported from elsewhere, give back np.arrays as expected
         sigma = np.array(sigma[0])
         epsilon = np.array(epsilon[0])
-    print(sigma)
-    print(epsilon)
+
     return sigma, epsilon
 
 
