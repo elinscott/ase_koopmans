@@ -10,13 +10,11 @@ __all__ = ['rOH', 'angleHOH', 'TIP4P', 'sigma0', 'epsilon0']
 # Electrostatic constant and parameters:
 k_c = units.Hartree * units.Bohr
 qH =  0.52
-sigma0 =  3.15365
-epsilon0 =  0.6480 * units.kJ / units.mol
-
 A = 600e3 * units.kcal / units.mol
 B = 610 * units.kcal / units.mol
-sigma0 = (A/B)**(1/6.)
+sigma0 = (A / B)**(1 / 6.)
 epsilon0 = B**2 / (4 * A)
+# http://dx.doi.org/10.1063/1.445869
 
 class TIP4P(TIP3P):
     def __init__(self, rc=7.0, width=1.0):
@@ -71,7 +69,7 @@ class TIP4P(TIP3P):
 
         C = cell.diagonal()
         assert (cell == np.diag(C)).all(), 'not orthorhombic'
-        assert ((C >= 2 * self.rc) | ~pbc).all(), 'cutoff too large'
+        #assert ((C >= 2 * self.rc) | ~pbc).all(), 'cutoff too large'
 
         # Get dx,dy,dz from first atom of each mol to same atom of all other
         # and find min. distance. Everything moves according to this analysis.
