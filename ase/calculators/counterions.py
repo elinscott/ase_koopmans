@@ -1,11 +1,10 @@
 from __future__ import print_function
 import numpy as np
 from ase.calculators.calculator import Calculator
-from ase.calculators.qmmm import combine_lj_lorenz_berthelot
 from ase import units
-import copy
 
 k_c = units.Hartree * units.Bohr
+
 
 class AtomicCounterIon(Calculator):
     implemented_properties = ['energy', 'forces']
@@ -14,7 +13,7 @@ class AtomicCounterIon(Calculator):
                  rc=7.0, width=1.0):
         """ Counter Ion Calculator.
 
-        A very simple, nonbinded (Coulumb and LJ)
+        A very simple, nonbonded (Coulumb and LJ)
         interaction calculator meant for single atom ions
         to charge neutralize systems (and nothing else)...
         """
@@ -36,11 +35,9 @@ class AtomicCounterIon(Calculator):
     def redistribute_forces(self, forces):
         return forces
 
-
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
 
-        #R = atoms.get_positions.reshape((-1, self.sites_per_mol, 3))
         R = atoms.get_positions()
         charges = self.get_virtual_charges(atoms)
         pbc = atoms.pbc
@@ -84,7 +81,7 @@ class AtomicCounterIon(Calculator):
             forces[m + 1:] += F
 
             F = (e_c / d2 * t)[:, None] * D \
-               -(e_c * dtdd / d)[:, None] * D
+                - (e_c * dtdd / d)[:, None] * D
 
             forces[m] -= F.sum(0)
             forces[m + 1:] += F
