@@ -10,7 +10,8 @@ k_c = units.Hartree * units.Bohr
 class AtomicCounterIon(Calculator):
     implemented_properties = ['energy', 'forces']
 
-    def __init__(self, charge, epsilon, sigma,  rc=7.0, width=1.0):
+    def __init__(self, charge, epsilon, sigma, sites_per_mol=1,
+                 rc=7.0, width=1.0):
         """ Counter Ion Calculator.
 
         A very simple, nonbinded (Coulumb and LJ)
@@ -19,7 +20,7 @@ class AtomicCounterIon(Calculator):
         """
         self.rc = rc
         self.width = width
-        self.sites_per_mol = 1
+        self.sites_per_mol = sites_per_mol
         self.epsilon = epsilon
         self.sigma = sigma
         self.charge = charge

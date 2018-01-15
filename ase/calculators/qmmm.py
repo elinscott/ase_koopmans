@@ -247,8 +247,12 @@ class Embedding:
         if self.mmatoms.calc.name == 'combinemm': 
             mask1 = self.mmatoms.calc.mask
             mask2 = ~mask1
+            vmask1 = self.mmatoms.calc.virtual_mask
+            vmask2 = ~vmask1
             apm1 = self.mmatoms.calc.apm1
             apm2 = self.mmatoms.calc.apm2
+            spm1 = self.mmatoms.calc.atoms1.calc.sites_per_mol
+            spm2 = self.mmatoms.calc.atoms2.calc.sites_per_mol
             pos = self.mmatoms.positions
             pos1 = pos[mask1].reshape((-1, apm1, 3)) + shift
             pos2 = pos[mask2].reshape((-1, apm2, 3)) + shift
@@ -257,13 +261,17 @@ class Embedding:
             pos = (self.mmatoms.positions, )
             apm1 = self.molecule_size
             apm2 = self.molecule_size
-            mask1 = np.ones(len(self.mmatoms, dtype=bool))
+            spm1 = self.mmatoms.calc.sites_per_mol
+            spm2 = self.mmatoms.calc.sites_per_mol
+            mask1 = np.ones(len(self.mmatoms), dtype=bool)
             mask2 = mask1
 
         wrap_pos = np.zeros_like(self.mmatoms.positions)
+        com_all = []
         apm = (apm1, apm2)
         mask = (mask1, mask2)
-        for p, n, m in zip(pos, apm, mask):
+        spm = (spm1, spm2)
+        for p, n, m, vn in zip(pos, apm, mask, spm):
             positions = p.reshape((-1, n, 3)) + shift
 
             # Distances from the center of the QM box to the first atom of
@@ -277,13 +285,18 @@ class Embedding:
             # Geometric center positions for each mm mol for LR cut
             com = np.array([p.mean(axis=0) for p in positions])
             # Need per atom for C-code:
-            com_pv = np.repeat(com, self.virtual_molecule_size, axis=0)  ## Counter ion problem
+            com_pv = np.repeat(com, vn, axis=0)
+            com_all.append(com_pv)
 
             wrap_pos[m] = positions.reshape((-1,3))
 
-        #positions.shape = (-1, 3)
-        positions = wrap_pos
+        positions = wrap_pos.copy()
         positions = self.mmatoms.calc.add_virtual_sites(positions)
+
+        if self.mmatoms.calc.name == 'combinemm':
+            com_pv = np.zeros_like(positions)
+            for ii, m in enumerate((vmask1, vmask2)):
+                com_pv[m] = com_all[ii]
 
         # compatibility with gpaw versions w/o LR cut in PointChargePotential
         if 'rc2' in self.parameters:
@@ -320,7 +333,8 @@ def combine_lj_lorenz_berthelot(sigmaqm, sigmamm,
     if numcalcs == 1:  # if imported from elsewhere, give back np.arrays as expected
         sigma = np.array(sigma[0])
         epsilon = np.array(epsilon[0])
-
+    print(sigma)
+    print(epsilon)
     return sigma, epsilon
 
 
@@ -357,8 +371,8 @@ class LJInteractionsGeneral:
             apm2 = mmatoms.calc.apm2
             apm = (apm1, apm2)
         else:
-            apm1 = self.molecule_size
-            mask1 = np.ones(len(self.mmatoms, dtype=bool))
+            apm1 = self.mms
+            mask1 = np.ones(len(mmatoms), dtype=bool)
             mask2 = mask1
             apm = (apm1, )
             sigma = (sigma, )
