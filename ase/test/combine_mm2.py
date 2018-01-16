@@ -3,7 +3,6 @@ from ase.data import s22
 from ase.optimize.bfgs import BFGS
 from ase.constraints import FixBondLengths
 from ase.calculators.tip3p import TIP3P, epsilon0, sigma0
-from ase.calculators.qmmm import LJInteractionsGeneral
 from ase.calculators.combine_mm import CombineMM
 import numpy as np
 
