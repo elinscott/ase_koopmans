@@ -1,0 +1,61 @@
+from __future__ import print_function
+from ase.data import s22
+from ase.optimize.bfgs import BFGS
+from ase.constraints import FixBondLengths
+from ase.calculators.tip3p import TIP3P, rOH, angleHOH, epsilon0, sigma0
+from ase.calculators.qmmm import LJInteractionsGeneral, LJInteractions
+from ase.calculators.combine_mm import CombineMM
+import numpy as np
+from ase.visualize import view
+from ase.io.trajectory import TrajectoryWriter
+
+def make_atoms():
+    atoms = s22.create_s22_system('Water_dimer')
+    # rotate down in x axis:
+    center = atoms[0].position
+    atoms.translate(-center)  
+    h = atoms[3].position[1]-atoms[0].position[1]
+    l = np.linalg.norm(atoms[0].position - atoms[3].position)
+    angle = np.degrees(np.arcsin(h/l))
+    atoms.rotate(angle, '-z', center=center)
+    return atoms
+
+def make_4mer():
+    atoms = make_atoms()
+    atoms2 = make_atoms()
+    atoms2.translate([0., 3, 0])
+    atoms2.rotate(180, 'y')
+    atoms2.translate([3, 0, 0])
+    atoms += atoms2
+    return atoms
+    
+atoms = make_4mer()
+atoms.constraints = FixBondLengths([(3 * i + j, 3 * i + (j + 1) % 3)
+                                    for i in range(len(atoms) / 3)
+                                    for j in [0, 1, 2]])
+atoms.calc = TIP3P(np.Inf)
+tag = '4mer_tip3_opt.'
+opt = BFGS(atoms, logfile=tag+'log', trajectory=tag+'traj')
+opt.run(fmax=0.1)
+tip3_pos = atoms.get_positions()
+
+sig = np.array([sigma0, 0, 0 ])
+eps = np.array([epsilon0, 0, 0 ])
+rc = np.Inf
+idxes = [[0, 1, 2], [3, 4 ,5], [6, 7, 8], [9, 10, 11],
+         range(6), range(9), range(6, 12)]
+
+for ii, idx in enumerate(idxes):
+    atoms = make_4mer()
+    atoms.constraints = FixBondLengths([(3 * i + j, 3 * i + (j + 1) % 3)
+                                        for i in range(len(atoms) / 3)
+                                        for j in [0, 1, 2]])
+
+    atoms.calc = CombineMM(idx, 3, 3, TIP3P(rc), TIP3P(rc),
+                           sig, eps, sig, eps, rc=rc)
+
+    tag = '4mer_combtip3_opt_{0:02d}.'.format(ii)
+    opt = BFGS(atoms, logfile=tag+'log', trajectory=tag+'traj')
+    opt.run(fmax=0.1)
+    assert((abs(atoms.positions - tip3_pos) < 1e-8).all())
+    print('{0}: {1:>28s}: Same Geometry as TIP3P'.format(atoms.calc.name, idx))
