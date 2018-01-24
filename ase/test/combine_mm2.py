@@ -45,7 +45,7 @@ idxes = [[0, 1, 2], [3, 4 ,5], [6, 7, 8], [9, 10, 11],
 for ii, idx in enumerate(idxes):
     atoms = make_4mer()
     atoms.constraints = FixBondLengths([(3 * i + j, 3 * i + (j + 1) % 3)
-                                        for i in range(len(atoms) / 3)
+                                        for i in range(len(atoms) // 3)
                                         for j in [0, 1, 2]])
 
     atoms.calc = CombineMM(idx, 3, 3, TIP3P(rc), TIP3P(rc),
