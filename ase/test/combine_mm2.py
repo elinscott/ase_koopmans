@@ -55,4 +55,4 @@ for ii, idx in enumerate(idxes):
     opt = BFGS(atoms, logfile=tag+'log', trajectory=tag+'traj')
     opt.run(fmax=0.1)
     assert((abs(atoms.positions - tip3_pos) < 1e-8).all())
-    print('{0}: {1:>28s}: Same Geometry as TIP3P'.format(atoms.calc.name, idx))
+    print('{0}: {1!s:>28s}: Same Geometry as TIP3P'.format(atoms.calc.name, idx))
