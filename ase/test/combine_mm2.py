@@ -40,7 +40,7 @@ sig = np.array([sigma0, 0, 0 ])
 eps = np.array([epsilon0, 0, 0 ])
 rc = np.Inf
 idxes = [[0, 1, 2], [3, 4 ,5], [6, 7, 8], [9, 10, 11],
-         range(6), range(9), range(6, 12)]
+         list(range(6)), list(range(9)), list(range(6, 12))]
 
 for ii, idx in enumerate(idxes):
     atoms = make_4mer()
