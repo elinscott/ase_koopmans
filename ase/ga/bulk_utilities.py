@@ -89,7 +89,16 @@ def atoms_too_close(atoms, bl, use_tags=False):
     whereas the ase.ga.utilities function appears to be faulty.
 
     use_tags: whether to use the Atoms tags to disable distance
-              checking within a block with the same tag
+              checking within a block with the same tag.
+
+              Note: if certain atoms are constrained, this method
+              may return unexpected results in case the contraints
+              prevent same-tag atoms to be gathered together in
+              the minimum-image-convention. In such cases, one
+              should (1) release the relevant constraints, 
+              (2) apply the gather_atoms_by_tag function, and
+              (3) re-apply the constraints, before using the 
+              atoms_too_close function.  
     '''
     a = atoms.copy()
     if use_tags:
