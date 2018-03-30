@@ -9,7 +9,7 @@ import numpy as np
 from random import gauss
 from scipy.spatial.distance import cdist
 from ase import Atoms
-from ase.data import chemical_symbols, covalent_radii
+from ase.data import chemical_symbols
 from ase.neighborlist import NeighborList
 from ase.ga.offspring_creator import OffspringCreator
 from ase.ga import standardmutations
