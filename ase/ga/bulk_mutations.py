@@ -13,6 +13,7 @@ from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
 from ase.ga.offspring_creator import OffspringCreator
 from ase.ga import standardmutations
+from ase.ga.utilities import atoms_too_close_two_sets
 from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag,\
     get_rotation_matrix
 
