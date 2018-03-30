@@ -12,6 +12,7 @@ from ase.ga.offspring_creator import OffspringCreator
 from ase.geometry import find_mic
 from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag
 
+
 class Positions(object):
     """Helper object to simplify the pairing process.
 
@@ -24,6 +25,7 @@ class Positions(object):
     origin: Either 0 or 1 and determines which side of the plane
             the position should be at.
     """
+
     def __init__(self, scaled_positions, cop, symbols, distance, origin):
         self.scaled_positions = scaled_positions
         self.cop = cop
@@ -58,12 +60,13 @@ class CutAndSplicePairing(OffspringCreator):
               supposed to be grouped together.
     test_dist_to_slab: whether also the distances to the slab
               should be checked to satisfy the blmin.
- 
+
     For more information, see e.g.
     Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720
     Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
     """
-    def __init__(self, blmin, n_top=None, p1=1., p2=0.05, minfrac=None,  
+
+    def __init__(self, blmin, n_top=None, p1=1., p2=0.05, minfrac=None,
                  use_tags=False, test_dist_to_slab=True, verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
@@ -85,14 +88,14 @@ class CutAndSplicePairing(OffspringCreator):
         '''
         if not n_adapt:
             # take best 20% of the population
-            n_adapt = int(round(0.2*len(population)))
+            n_adapt = int(round(0.2 * len(population)))
         v_new = np.mean([a.get_volume() for a in population[:n_adapt]])
 
         if not self.scaling_volume:
             self.scaling_volume = v_new
         else:
             volumes = [self.scaling_volume, v_new]
-            weights = [1-w_adapt, w_adapt]
+            weights = [1 - w_adapt, w_adapt]
             self.scaling_volume = np.average(volumes, weights=weights)
 
     def _get_pairing_(self, a1, a2, direction=None, fraction=None):
@@ -119,7 +122,7 @@ class CutAndSplicePairing(OffspringCreator):
         scalpos2 = a2.get_scaled_positions(wrap=False)
         p1, p2, sym = [], [], []
         for i in list(set(tags)):
-            indices = np.where(tags==i)[0]
+            indices = np.where(tags == i)[0]
             s = ''.join([symbols[j] for j in indices])
             sym.append(s)
 
@@ -134,7 +137,7 @@ class CutAndSplicePairing(OffspringCreator):
         all_points = p1
         all_points.extend(p2)
         unique_sym = list(set(sym))
-        types = {s:sym.count(s) for s in unique_sym}
+        types = {s: sym.count(s) for s in unique_sym}
 
         # Sort these by chemical symbols:
         all_points.sort(key=lambda x: x.symbols, reverse=True)
@@ -168,7 +171,7 @@ class CutAndSplicePairing(OffspringCreator):
                 pick = 0 if r > fraction else 1
                 interval = [0, fraction] if r < fraction else [fraction, 1]
                 indices = []
-                for index,point in enumerate(not_used):
+                for index, point in enumerate(not_used):
                     cond1 = interval[0] <= point.cop[direction]
                     cond2 = point.cop[direction] <= interval[1]
                     if cond1 and cond2:
@@ -189,42 +192,42 @@ class CutAndSplicePairing(OffspringCreator):
 
         n_tot = sum([len(ll) for ll in use_total.values()])
         assert n_tot == len(sym)
- 
-        # check if the generated structure contains atoms 
+
+        # check if the generated structure contains atoms
         # from both parents:
         count1, count2 = 0, 0
         for x in use_total.values():
             count1 += sum([y.origin == 0 for y in x])
             count2 += sum([y.origin == 1 for y in x])
 
-        nmin = 1 if self.minfrac is None else int(round(self.minfrac*N))
+        nmin = 1 if self.minfrac is None else int(round(self.minfrac * N))
         if count1 < nmin or count2 < nmin:
             return None
- 
+
         # pair the cells:
         r = random()
-        newcell = np.average([cell1, cell2], weights=[r, 1-r], axis=0)
+        newcell = np.average([cell1, cell2], weights=[r, 1 - r], axis=0)
         # volume scaling:
         vol = abs(np.linalg.det(newcell))
         if not self.scaling_volume:
-            v = 0.5*(a1.get_volume() + a2.get_volume())
+            v = 0.5 * (a1.get_volume() + a2.get_volume())
         else:
             v = self.scaling_volume
-        newcell *= (v/vol)**(1./3)
+        newcell *= (v / vol)**(1. / 3)
 
-        # Construct the cartesian positions and reorder the atoms 
+        # Construct the cartesian positions and reorder the atoms
         # to follow the original order
         newpos = []
         for s in sym:
             p = use_total[s].pop()
             c = cell1 if p.origin == 0 else cell2
-            pos = np.dot(p.scaled_positions, c)  
+            pos = np.dot(p.scaled_positions, c)
             cop = np.dot(p.cop, c)
             vectors, lengths = find_mic(pos - cop, c, pbc)
             newcop = np.dot(p.cop, newcell)
             pos = newcop + vectors
             for row in pos:
-                newpos.append(row)  
+                newpos.append(row)
         newpos = np.reshape(newpos, (N, 3))
 
         num = a1.get_atomic_numbers()
@@ -249,20 +252,20 @@ class CutAndSplicePairing(OffspringCreator):
         indi = self.initialize_individual(f, indi)
         indi.info['data']['parents'] = [f.info['confid'],
                                         m.info['confid']]
-        
+
         return self.finalize_individual(indi), desc
 
     def cross(self, a1, a2):
         """Crosses the two atoms objects and returns one"""
-        
+
         if len(a1) != len(a2):
             raise ValueError('The two structures do not have the same length')
 
         N = len(a1) if self.n_top is None else self.n_top
-        slab = a1[:len(a1)-N]
+        slab = a1[:len(a1) - N]
         a1 = a1[-N:]
         a2 = a2[-N:]
-        
+
         if not np.array_equal(a1.numbers, a2.numbers):
             err = 'Trying to pair two structures with different stoichiometry'
             raise ValueError(err)
@@ -291,7 +294,7 @@ class CutAndSplicePairing(OffspringCreator):
                     cond1 = i == direction and r < self.p1
                     cond2 = i != direction and r < self.p2
                     if cond1 or cond2:
-                        a.positions += random()*cell[i,:]
+                        a.positions += random() * cell[i, :]
                 if self.use_tags:
                     gather_atoms_by_tag(a)
                 else:
@@ -305,7 +308,7 @@ class CutAndSplicePairing(OffspringCreator):
                 continue
 
             # Verify whether the atoms are too close or not:
-            invalid = atoms_too_close(child, self.blmin, 
+            invalid = atoms_too_close(child, self.blmin,
                                       use_tags=self.use_tags)
             if invalid:
                 continue
@@ -314,5 +317,5 @@ class CutAndSplicePairing(OffspringCreator):
 
         if counter == maxcount:
             return None
-        
+
         return child
