@@ -404,7 +404,7 @@ class SoftMutation(OffspringCreator):
         # build neighborlist
         nl = NeighborList([self.rcut / 2.] * nat, skin=0., bothways=True,
                           self_interaction=False)
-        nl.build(atoms)
+        nl.update(atoms)
 
         # constructing the hessian
         hessian = np.zeros((nat * 3, nat * 3))
