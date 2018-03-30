@@ -174,13 +174,7 @@ def convert_for_lammps(atoms):
     #coord_transform = tri_mat*trans
 
     atoms.set_cell(tri_mat.T, scale_atoms=True)
-    try:
-        atoms.wrap(pbc=True)
-    except np.linalg.LinAlgError as err:
-        if err.message == "Singular matrix":
-            print 'Error during wrapping; atoms dumped to err.traj!'
-            write('err.traj', atoms)
-        raise
+    atoms.wrap(pbc=True)
 
     # "flip" the cell if it is too skewed
     newcell = atoms.get_cell()
