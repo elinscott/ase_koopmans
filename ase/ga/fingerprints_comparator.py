@@ -333,7 +333,7 @@ class FingerprintsComparator(object):
         a.set_pbc(self.pbc)
         nl = NeighborList([self.rcut / 2.] * len(a), skin=0.,
                           self_interaction=False, bothways=True)
-        nl.build(a)
+        nl.update(a)
 
         # parameters for the binning:
         m = int(np.ceil(self.nsigma * self.sigma / self.binwidth))
