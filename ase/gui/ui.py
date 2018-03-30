@@ -191,7 +191,8 @@ class CheckButton(Widget):
         self.callback = callback
 
     def create(self, parent):
-        self.check = tk.Checkbutton(parent, text=self.text, var=self.var, command=self.callback)
+        self.check = tk.Checkbutton(parent, text=self.text,
+                                    var=self.var, command=self.callback)
         return self.check
 
     @property
@@ -200,14 +201,16 @@ class CheckButton(Widget):
 
 
 class SpinBox(Widget):
-    def __init__(self, value, start, end, step, callback=None):
+    def __init__(self, value, start, end, step, callback=None, 
+                 rounding=None, width=6):
         self.callback = callback
+        self.rounding = rounding
         self.creator = partial(tk.Spinbox,
                                from_=start,
                                to=end,
                                increment=step,
                                command=callback,
-                               width=6)
+                               width=width)
         self.initial = str(value)
 
     def create(self, parent):
@@ -228,6 +231,11 @@ class SpinBox(Widget):
     @value.setter
     def value(self, x):
         self.widget.delete(0, 'end')
+        if '.' in str(x) and self.rounding is not None:
+            try:
+                x = round(float(x), self.rounding)
+            except (ValueError, TypeError):
+                pass
         self.widget.insert(0, x)
 
 
@@ -538,6 +546,38 @@ def bind(callback, modifier=None):
     return handle
 
 
+class ASEFileChooser(LoadFileDialog):
+    def __init__(self, win, formatcallback=lambda event: None):
+        from ase.io.formats import all_formats, get_ioformat
+        LoadFileDialog.__init__(self, win, _('Open ...'))
+        labels = [_('Automatic')]
+        values = ['']
+
+        def key(item):
+            return item[1][0]
+
+        for format, (description, code) in sorted(all_formats.items(),
+                                                  key=key):
+            io = get_ioformat(format)
+            if io.read and description != '?':
+                labels.append(_(description))
+                values.append(format)
+
+        self.format = None
+
+        def callback(value):
+            self.format = value
+
+        Label(_('Choose parser:')).pack(self.top)
+        formats = ComboBox(labels, values, callback)
+        formats.pack(self.top)
+
+
+def show_io_error(filename, err):
+    showerror(_('Read error'),
+              _('Could not read {}: {}'.format(filename, err)))
+
+
 class ASEGUIWindow(MainWindow):
     def __init__(self, close, menu, config,
                  scroll, scroll_event,
@@ -564,12 +604,13 @@ class ASEGUIWindow(MainWindow):
         self.canvas.bind('<Control-ButtonRelease>', bind(release, 'ctrl'))
         self.canvas.bind('<Shift-ButtonRelease>', bind(release, 'shift'))
         self.canvas.bind('<Configure>', resize)
+        self.canvas.bind('<Shift-B{right}-Motion>'.format(right=right),
+                         bind(scroll))
+
         self.win.bind('<MouseWheel>', bind(scroll_event))
-        for key in ['Key', 'Next', 'Prior']:
-            # Next and Prior are PageUp/Dn, referring to Z axis.
-            self.win.bind('<{}>'.format(key), bind(scroll))
-            self.win.bind('<Shift-{}>'.format(key), bind(scroll, 'shift'))
-            self.win.bind('<Control-{}>'.format(key), bind(scroll, 'ctrl'))
+        self.win.bind('<Key>', bind(scroll))
+        self.win.bind('<Shift-Key>', bind(scroll, 'shift'))
+        self.win.bind('<Control-Key>', bind(scroll, 'ctrl'))
 
         self.fg = config['gui_foreground_color']
         self.bg = config['gui_background_color']

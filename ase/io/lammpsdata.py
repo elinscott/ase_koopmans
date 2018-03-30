@@ -3,14 +3,17 @@ import numpy as np
 
 from ase.atoms import Atoms
 from ase.parallel import paropen
+from ase.calculators.lammpslib import unit_convert
 from ase.utils import basestring
 
 
-def read_lammps_data(fileobj, Z_of_type=None, style='full'):
+def read_lammps_data(fileobj, Z_of_type=None, style='full', sort_by_id=False,
+                     units="metal"):
     """Method which reads a LAMMPS data file.
 
-    order: Order the particles according to their id. Might be faster to
+    sort_by_id: Order the particles according to their id. Might be faster to
     switch it off.
+    Units are set by default to the style=metal setting in LAMMPS.
     """
     if isinstance(fileobj, basestring):
         f = paropen(fileobj)
@@ -36,14 +39,17 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full'):
     pos_in = {}
     travel_in = {}
     mol_id_in = {}
+    mmcharge_in = {}
     mass_in = {}
     vel_in = {}
     bonds_in = []
     angles_in = []
+    dihedrals_in = []
 
     sections = ["Atoms",
                 "Velocities",
                 "Masses",
+                "Charges",
                 "Ellipsoids",
                 "Lines",
                 "Triangles",
@@ -148,6 +154,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full'):
                     pos_in[id] = (int(fields[2]), float(fields[4]),
                                   float(fields[5]), float(fields[6]))
                     mol_id_in[id] = int(fields[1])
+                    mmcharge_in[id] = float(fields[3])
                     if len(fields) == 10:
                         travel_in[id] = (int(fields[7]),
                                          int(fields[8]),
@@ -161,10 +168,21 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full'):
                         travel_in[id] = (int(fields[5]),
                                          int(fields[6]),
                                          int(fields[7]))
+                elif ((style == 'angle' or style == 'bond' or
+                       style == 'molecular') and
+                      (len(fields) == 6 or len(fields) == 9)):
+                    # id mol-id type x y z [tx ty tz]
+                    pos_in[id] = (int(fields[2]), float(fields[3]),
+                                  float(fields[4]), float(fields[5]))
+                    mol_id_in[id] = int(fields[1])
+                    if len(fields) == 9:
+                        travel_in[id] = (int(fields[6]),
+                                         int(fields[7]),
+                                         int(fields[8]))
                 else:
-                    raise RuntimeError("Style '%s' not supported or invalid" +
-                                       " number of fields %d" %
-                                       (style, len(fields)))
+                    raise RuntimeError("Style '{}' not supported or invalid "
+                                       "number of fields {}"
+                                       "".format(style, len(fields)))
             elif section == "Velocities":  # id vx vy vz
                 vel_in[int(fields[0])] = (float(fields[1]),
                                           float(fields[2]),
@@ -180,6 +198,12 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full'):
                                   int(fields[2]),
                                   int(fields[3]),
                                   int(fields[4])))
+            elif section == "Dihedrals": # id type atom1 atom2 atom3 atom4
+                dihedrals_in.append((int(fields[1]),
+                                     int(fields[2]),
+                                     int(fields[3]),
+                                     int(fields[4]),
+                                     int(fields[5])))
 
     # set cell
     cell = np.zeros((3, 3))
@@ -210,6 +234,10 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full'):
         mol_id = np.zeros((N), int)
     else:
         mol_id = None
+    if len(mmcharge_in) > 0:
+        mmcharge = np.zeros((N), float)
+    else:
+        mmcharge = None
     if len(travel_in) > 0:
         travel = np.zeros((N, 3), int)
     else:
@@ -222,29 +250,45 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full'):
         angles = [""] * N
     else:
         angles = None
+    if len(dihedrals_in) > 0:
+        dihedrals = [""] * N
+    else:
+        dihedrals = None
 
     ind_of_id = {}
     # copy per-atom quantities from read-in values
     for (i, id) in enumerate(pos_in.keys()):
         # by id
         ind_of_id[id] = i
+        if sort_by_id:
+            ind = id-1
+        else:
+            ind = i
         type = pos_in[id][0]
-        positions[i, :] = [pos_in[id][1], pos_in[id][2], pos_in[id][3]]
+        positions[ind, :] = [pos_in[id][1], pos_in[id][2], pos_in[id][3]]
         if velocities is not None:
-            velocities[i, :] = [vel_in[id][0], vel_in[id][1], vel_in[id][2]]
+            velocities[ind, :] = [vel_in[id][0], vel_in[id][1], vel_in[id][2]]
         if travel is not None:
-            travel[i] = travel_in[id]
+            travel[ind] = travel_in[id]
         if mol_id is not None:
             mol_id[i] = mol_id_in[id]
+        if mmcharge is not None:
+            mmcharge[i] = mmcharge_in[id]
         ids[i] = id
         # by type
-        types[i] = type
+        types[ind] = type
         if Z_of_type is None:
-            numbers[i] = type
+            numbers[ind] = type
         else:
-            numbers[i] = Z_of_type[type]
+            numbers[ind] = Z_of_type[type]
         if masses is not None:
-            masses[i] = mass_in[type]
+            masses[ind] = mass_in[type]
+    # convert units
+    positions *= unit_convert("distance", units)
+    masses *= unit_convert("mass", units)
+    cell *= unit_convert("distance", units)
+    if velocities is not None:
+        velocities *= unit_convert("velocity", units)
 
     # create ase.Atoms
     at = Atoms(positions=positions,
@@ -261,6 +305,8 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full'):
         at.arrays['travel'] = travel
     if mol_id is not None:
         at.arrays['mol-id'] = mol_id
+    if mmcharge is not None:
+        at.arrays['mmcharge'] = mmcharge
 
     if bonds is not None:
         for (type, a1, a2) in bonds_in:
@@ -286,6 +332,20 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full'):
             if len(angles[i]) == 0:
                 angles[i] = '_'
         at.arrays['angles'] = np.array(angles)
+
+    if dihedrals is not None:
+        for (type, a1, a2, a3, a4) in dihedrals_in:
+            i_a1 = ind_of_id[a1]
+            i_a2 = ind_of_id[a2]
+            i_a3 = ind_of_id[a3]
+            i_a4 = ind_of_id[a4]
+            if len(dihedrals[i_a1]) > 0:
+                dihedrals[i_a1] += ","
+            dihedrals[i_a1] += "%d-%d-%d(%d)" % (i_a2, i_a3, i_a4, type)
+        for i in range(len(dihedrals)):
+            if len(dihedrals[i]) == 0:
+                dihedrals[i] = '_'
+        at.arrays['dihedrals'] = np.array(dihedrals)
 
     at.info['comment'] = comment
 

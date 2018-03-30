@@ -49,7 +49,6 @@ def get_cell_coordinates(cell):
     return B1, B2
 
 
-
 def get_bonds(atoms, covalent_radii):
     from ase.neighborlist import NeighborList
     nl = NeighborList(covalent_radii * 1.5,
@@ -110,7 +109,7 @@ class View:
         if fname is None:
             title = 'ase.gui'
         else:
-            title = '{}@{}'.format(basename(fname), frame)
+            title = basename(fname)
 
         self.window.title = title
 
@@ -147,12 +146,12 @@ class View:
         self.X_cell = self.X[natoms:natoms + len(B1)]
         self.X_bonds = self.X[natoms + len(B1):]
 
-        if 1:#if init or frame != self.frame:
+        if 1:  # if init or frame != self.frame:
             cell = atoms.cell
             ncellparts = len(B1)
             nbonds = len(bonds)
 
-            if 1: #init or (atoms.cell != self.atoms.cell).any():
+            if 1:  # init or (atoms.cell != self.atoms.cell).any():
                 self.X_cell[:] = np.dot(B1, cell)
                 self.B = np.empty((ncellparts + nbonds, 3))
                 self.B[:ncellparts] = np.dot(B2, cell)
@@ -207,9 +206,8 @@ class View:
     def toggle_show_velocities(self, key=None):
         self.draw()
 
-    # transitional compat hack
     def get_forces(self):
-        return self.images.get_forces(self.atoms)
+        return self.atoms.get_forces()
 
     def toggle_show_forces(self, key=None):
         self.draw()
@@ -242,6 +240,8 @@ class View:
             self.draw()
             return
 
+        # Get the min and max point of the projected atom positions
+        # including the covalent_radii used for drawing the atoms
         P = np.dot(self.X, self.axes)
         n = len(self.atoms)
         covalent_radii = self.get_covalent_radii()
@@ -250,6 +250,7 @@ class View:
         P[:n] += 2 * covalent_radii[:, None]
         P2 = P.max(0)
         self.center = np.dot(self.axes, (P1 + P2) / 2)
+        # Add 30% of whitespace on each side of the atoms
         S = 1.3 * (P2 - P1)
         w, h = self.window.size
         if S[0] * h < S[1] * w:
@@ -550,7 +551,8 @@ class View:
             self.draw()
 
         # XXX check bounds
-        indices = np.arange(len(self.atoms))[self.images.selected[:len(self.atoms)]]
+        natoms = len(self.atoms)
+        indices = np.arange(natoms)[self.images.selected[:natoms]]
         if len(indices) != len(selected_ordered):
             selected_ordered = []
         self.images.selected_ordered = selected_ordered

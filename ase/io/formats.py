@@ -31,7 +31,7 @@ import os
 import sys
 
 from ase.atoms import Atoms
-from ase.utils import import_module, basestring
+from ase.utils import import_module, basestring, PurePath
 from ase.parallel import parallel_function, parallel_generator
 
 
@@ -39,10 +39,12 @@ class UnknownFileTypeError(Exception):
     pass
 
 
-IOFormat = collections.namedtuple('IOFormat', 'read, write, single, acceptsfd')
+IOFormat = collections.namedtuple('IOFormat',
+                                  'read, write, single, acceptsfd, isbinary')
 ioformats = {}  # will be filled at run-time
 
-# 1=single, +=multiple, F=accepts a file-descriptor, S=needs a file-name str
+# 1=single, +=multiple, F=accepts a file-descriptor, S=needs a file-name str,
+# B=like F, but opens in binary mode
 all_formats = {
     'abinit': ('ABINIT input file', '1F'),
     'aims': ('FHI-aims geometry file', '1S'),
@@ -56,6 +58,7 @@ all_formats = {
     'cfg': ('AtomEye configuration', '1F'),
     'cif': ('CIF-file', '+F'),
     'cmdft': ('CMDFT-file', '1F'),
+    'crystal': ('Crystal fort.34 format', '1S'),
     'cube': ('CUBE file', '1F'),
     'dacapo': ('Dacapo netCDF output file', '1F'),
     'dacapo-text': ('Dacapo text output', '1F'),
@@ -81,7 +84,7 @@ all_formats = {
     'gpw': ('GPAW restart-file', '1S'),
     'gromacs': ('Gromacs coordinates', '1S'),
     'gromos': ('Gromos96 geometry file', '1F'),
-    'html': ('X3DOM HTML', '1S'),
+    'html': ('X3DOM HTML', '1F'),
     'iwm': ('?', '1F'),
     'json': ('ASE JSON database file', '+F'),
     'jsv': ('JSV file format', '1F'),
@@ -89,6 +92,8 @@ all_formats = {
     'lammps-data': ('LAMMPS data file', '1F'),
     'magres': ('MAGRES ab initio NMR data file', '1F'),
     'mol': ('MDL Molfile', '1F'),
+    'mustem': ('muSTEM xtl file', '1F'),
+    'netcdftrajectory': ('AMBER NetCDF trajectory file', '+S'),
     'nwchem': ('NWChem input file', '1F'),
     'octopus': ('Octopus input file', '1F'),
     'proteindatabank': ('Protein Data Bank', '+F'),
@@ -101,7 +106,7 @@ all_formats = {
     'sdf': ('SDF format', '1F'),
     'struct': ('WIEN2k structure file', '1S'),
     'struct_out': ('SIESTA STRUCT file', '1F'),
-    'traj': ('ASE trajectory', '+S'),
+    'traj': ('ASE trajectory', '+B'),
     'trj': ('Old ASE pickle trajectory', '+S'),
     'turbomole': ('TURBOMOLE coord file', '1F'),
     'turbomole-gradient': ('TURBOMOLE gradient file', '+F'),
@@ -158,6 +163,8 @@ extension2format = {
     'con': 'eon',
     'config': 'dlp4',
     'exi': 'exciting',
+    'f34': 'crystal',
+    '34': 'crystal',
     'g96': 'gromos',
     'geom': 'castep-geom',
     'gro': 'gromacs',
@@ -171,7 +178,13 @@ extension2format = {
     'shelx': 'res',
     'in': 'aims',
     'poscar': 'vasp',
-    'phonon': 'castep-phonon'}
+    'phonon': 'castep-phonon',
+    'xtl': 'mustem'}
+
+netcdfconventions2format = {
+    'http://www.etsf.eu/fileformats': 'etsf',
+    'AMBER': 'netcdftrajectory'
+}
 
 
 def initialize(format):
@@ -197,8 +210,10 @@ def initialize(format):
         raise ValueError('File format not recognized: ' + format)
     code = all_formats[format][1]
     single = code[0] == '1'
-    acceptsfd = code[1] == 'F'
-    ioformats[format] = IOFormat(read, write, single, acceptsfd)
+    assert code[1] in 'BFS'
+    acceptsfd = code[1] != 'S'
+    isbinary = code[1] == 'B'
+    ioformats[format] = IOFormat(read, write, single, acceptsfd, isbinary)
 
 
 def get_ioformat(format):
@@ -279,6 +294,8 @@ def open_with_compression(filename, mode='r'):
             mode = 'rt'
         elif mode == 'w':
             mode = 'wt'
+        elif mode == 'a':
+            mode = 'at'
     else:
         # The version of gzip in Anaconda Python 2 on Windows forcibly
         # adds a 'b', so strip any 't' and let the string conversions
@@ -321,7 +338,7 @@ def wrap_read_function(read, filename, index=None, **kwargs):
             yield atoms
 
 
-def write(filename, images, format=None, parallel=True, **kwargs):
+def write(filename, images, format=None, parallel=True, append=False, **kwargs):
     """Write Atoms object(s) to file.
 
     filename: str or file
@@ -335,6 +352,14 @@ def write(filename, images, format=None, parallel=True, **kwargs):
     parallel: bool
         Default is to write on master only.  Use parallel=False to write
         from all slaves.
+    append: bool
+        Default is to open files in 'w' or 'wb' mode, overwriting existing files.
+        In some cases opening the file in 'a' or 'ab' mode (appending) is usefull,
+        e.g. writing trajectories or saving multiple Atoms objects in one file.
+        WARNING: If the file format does not support multiple entries without
+        additional keywords/headers, files created using 'append=True'
+        might not be readable by any program! They will nevertheless be
+        written without error message.
 
     The use of additional keywords is format specific."""
 
@@ -354,11 +379,11 @@ def write(filename, images, format=None, parallel=True, **kwargs):
 
     io = get_ioformat(format)
 
-    _write(filename, fd, format, io, images, parallel=parallel, **kwargs)
+    _write(filename, fd, format, io, images, parallel=parallel, append=append, **kwargs)
 
 
 @parallel_function
-def _write(filename, fd, format, io, images, parallel=None, **kwargs):
+def _write(filename, fd, format, io, images, parallel=None, append=False, **kwargs):
     if isinstance(images, Atoms):
         images = [images]
 
@@ -382,7 +407,10 @@ def _write(filename, fd, format, io, images, parallel=None, **kwargs):
     if io.acceptsfd:
         open_new = (fd is None)
         if open_new:
-            fd = open_with_compression(filename, 'w')
+            mode = 'wb' if io.isbinary else 'w'
+            if append:
+                mode = mode.replace('w','a')
+            fd = open_with_compression(filename, mode)
         io.write(fd, images, **kwargs)
         if open_new:
             fd.close()
@@ -390,7 +418,13 @@ def _write(filename, fd, format, io, images, parallel=None, **kwargs):
         if fd is not None:
             raise ValueError("Can't write {}-format to file-descriptor"
                              .format(format))
-        io.write(filename, images, **kwargs)
+        if 'append' in io.write.__code__.co_varnames:
+            io.write(filename, images, append=append, **kwargs)
+        elif append:
+            raise ValueError("Cannot append to {}-format, write-function "
+                             "does not support the append keyword.".format(format))
+        else:
+            io.write(filename, images, **kwargs)
 
 
 def read(filename, index=None, format=None, parallel=True, **kwargs):
@@ -418,6 +452,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
     of ``filename``. In this case the format cannot be auto-decected,
     so the ``format`` argument should be explicitly given."""
 
+    if isinstance(filename, PurePath):
+        filename = str(filename)
     if isinstance(index, basestring):
         index = string2index(index)
     filename, index = parse_filename(filename, index)
@@ -477,7 +513,8 @@ def _iread(filename, index, format, io, parallel=None, full_output=False,
     must_close_fd = False
     if isinstance(filename, basestring):
         if io.acceptsfd:
-            fd = open_with_compression(filename)
+            mode = 'rb' if io.isbinary else 'r'
+            fd = open_with_compression(filename, mode)
             must_close_fd = True
         else:
             fd = filename
@@ -574,6 +611,10 @@ def filetype(filename, read=True, guess=True):
             return 'vasp-xml'
         if basename == 'coord':
             return 'turbomole'
+        if basename == 'f34':
+            return 'crystal'
+        if basename == '34':
+            return 'crystal'
         if basename == 'gradient':
             return 'turbomole-gradient'
         if basename.endswith('I_info'):
@@ -601,14 +642,32 @@ def filetype(filename, read=True, guess=True):
         fd.seek(0)
 
     if len(data) == 0:
-        raise IOError('Empty file: ' + filename)
+        raise UnknownFileTypeError('Empty file: ' + filename)
+
+    if data.startswith(b'CDF'):
+        # We can only recognize these if we actually have the netCDF4 module.
+        try:
+            import netCDF4
+        except ImportError:
+            pass
+        else:
+            nc = netCDF4.Dataset(filename)
+            if 'Conventions' in nc.ncattrs():
+                if nc.Conventions in netcdfconventions2format:
+                    return netcdfconventions2format[nc.Conventions]
+                else:
+                    raise UnknownFileTypeError(
+                        "Unsupported NetCDF convention: "
+                        "'{}'".format(nc.Conventions))
+            else:
+                raise UnknownFileTypeError("NetCDF file does not have a "
+                                           "'Conventions' attribute.")
 
     for format, magic in [('traj', b'- of UlmASE-Trajectory'),
                           ('traj', b'AFFormatASE-Trajectory'),
                           ('gpw', b'- of UlmGPAW'),
                           ('gpw', b'AFFormatGPAW'),
                           ('trj', b'PickleTrajectory'),
-                          ('etsf', b'CDF'),
                           ('turbomole', b'$coord'),
                           ('turbomole-gradient', b'$grad'),
                           ('dftb', b'Geometry')]:
