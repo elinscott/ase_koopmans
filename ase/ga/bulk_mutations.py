@@ -11,7 +11,6 @@ from scipy.spatial.distance import cdist
 from ase import Atoms
 from ase.data import chemical_symbols, covalent_radii
 from ase.neighborlist import NeighborList
-from ase.ga.utilities import atoms_too_close_two_sets
 from ase.ga.offspring_creator import OffspringCreator
 from ase.ga import standardmutations
 from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag,\
@@ -536,8 +535,6 @@ class SoftMutation(OffspringCreator):
     def mutate(self, atoms):
         """ Does the actual mutation. """
         pos = atoms.get_positions()
-        num = atoms.get_atomic_numbers()
-
         modes = self._calculate_normal_modes_(atoms)
 
         # Select the mode along which we want to move the atoms;
