@@ -7,11 +7,11 @@ in addition to the papers mentioned in the docstrings."""
 import numpy as np
 from random import random, randrange
 from ase import Atoms
+from ase.geometry import find_mic
+from ase.build import niggli_reduce
 from ase.ga.utilities import atoms_too_close_two_sets
 from ase.ga.offspring_creator import OffspringCreator
-from ase.geometry import find_mic
 from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag
-
 
 class Positions(object):
     """Helper object to simplify the pairing process.
@@ -55,6 +55,7 @@ class CutAndSplicePairing(OffspringCreator):
               in the cutting plane
     minfrac : minimal fraction of atoms a parent must contribute 
               to the child
+    cellbounds: 
     use_tags: whether to use the atomic tags to preserve
               molecular identity. Note: same-tag atoms are 
               supposed to be grouped together.
@@ -67,16 +68,19 @@ class CutAndSplicePairing(OffspringCreator):
     """
 
     def __init__(self, blmin, n_top=None, p1=1., p2=0.05, minfrac=None,
-                 use_tags=False, test_dist_to_slab=True, verbose=False):
+                 cellbounds=None, use_tags=False, test_dist_to_slab=True,
+                 verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.n_top = n_top
         self.p1 = p1
         self.p2 = p2
         self.minfrac = minfrac
-        self.scaling_volume = None
+        self.cellbounds = cellbounds
         self.use_tags = use_tags
         self.test_dist_to_slab = test_dist_to_slab
+
+        self.scaling_volume = None
         self.descriptor = 'CutAndSplicePairing'
         self.min_inputs = 1
 
@@ -114,6 +118,12 @@ class CutAndSplicePairing(OffspringCreator):
         symbols = a1.get_chemical_symbols()
         pbc = a1.get_pbc()
         tags = a1.get_tags() if self.use_tags else np.arange(N)
+
+        if self.cellbounds is not None:
+            if not self.cellbounds.is_within_bounds(a1.get_cell()):
+                niggli_reduce(a1)
+            if not self.cellbounds.is_within_bounds(a2.get_cell()):
+                niggli_reduce(a2)
 
         # Generate list of all atoms / atom groups:
         cell1 = a1.get_cell()
@@ -205,8 +215,16 @@ class CutAndSplicePairing(OffspringCreator):
             return None
 
         # pair the cells:
-        r = random()
-        newcell = np.average([cell1, cell2], weights=[r, 1 - r], axis=0)
+        if self.cellbounds is None:
+            r = random()
+            newcell = r * cell1 + (1 - r) * cell2
+        else:
+            found = False
+            while not found:
+                r = random()
+                newcell = r * cell1 + (1 - r) * cell2
+                found = self.cellbounds.is_within_bounds(newcell)
+
         # volume scaling:
         vol = abs(np.linalg.det(newcell))
         if not self.scaling_volume:
