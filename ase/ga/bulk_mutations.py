@@ -11,6 +11,7 @@ from scipy.spatial.distance import cdist
 from ase import Atoms
 from ase.data import chemical_symbols
 from ase.neighborlist import NeighborList
+from ase.build import niggli_reduce
 from ase.ga.offspring_creator import OffspringCreator
 from ase.ga import standardmutations
 from ase.ga.utilities import atoms_too_close_two_sets
@@ -26,7 +27,8 @@ class RattleMutation(standardmutations.RattleMutation):
                  rattle_prop=0.4, use_tags=False, test_dist_to_slab=True,
                  verbose=False):
         standardmutations.RattleMutation.__init__(self, blmin, n_top,
-                                                  rattle_strength=rattle_strength, rattle_prop=rattle_prop,
+                                                  rattle_strength=rattle_strength, 
+                                                  rattle_prop=rattle_prop,
                                                   verbose=verbose)
         self.use_tags = use_tags
         self.test_dist_to_slab = test_dist_to_slab
@@ -238,17 +240,26 @@ class StrainMutation(OffspringCreator):
 
     def mutate(self, atoms):
         """ Does the actual mutation. """
-        cell = atoms.get_cell()
+        cell_ref = atoms.get_cell()
+        pos_ref = atoms.get_positions()
         vol = atoms.get_volume()
         if self.use_tags:
             tags = atoms.get_tags()
             gather_atoms_by_tag(atoms)
             pos = atoms.get_positions()
 
+        mutant = atoms.copy()
+        if self.cellbounds is not None:
+            if not self.cellbounds.is_within_bounds(cell_ref):
+                niggli_reduce(mutant)
+
         count = 0
         too_close = True
         maxcount = 1000
         while too_close and count < maxcount:
+            mutant.set_cell(cell_ref, scale_atoms=False)
+            mutant.set_positions(pos_ref)
+
             # generating the strain matrix:
             strain = np.identity(3)
             for i in range(3):
@@ -261,30 +272,30 @@ class StrainMutation(OffspringCreator):
                         strain[j, i] += epsilon
 
             # applying the strain:
-            newcell = np.dot(strain, cell)
-            if not self.cellbounds.is_within_bounds(newcell):
-                continue
+            cell_new = np.dot(strain, cell_ref)
 
             # volume scaling:
-            v = abs(np.linalg.det(newcell))
+            v = abs(np.linalg.det(cell_new))
             if self.scaling_volume is None:
-                newcell *= (vol / v)**(1. / 3)
+                cell_new *= (vol / v)**(1. / 3)
             else:
-                newcell *= (self.scaling_volume / v)**(1. / 3)
+                cell_new *= (self.scaling_volume / v)**(1. / 3)
 
-            mutant = atoms.copy()
+            # check cell dimensions:
+            if not self.cellbounds.is_within_bounds(cell_new):
+                continue
+
             if self.use_tags:
-                transfo = np.linalg.solve(cell, newcell)
+                transfo = np.linalg.solve(cell_ref, cell_new)
                 for tag in list(set(tags)):
                     select = np.where(tags == tag)
                     cop = np.mean(pos[select], axis=0)
                     disp = np.dot(cop, transfo) - cop
                     mutant.positions[select] += disp
-                mutant.set_cell(newcell, scale_atoms=False)
-            else:
-                mutant.set_cell(newcell, scale_atoms=True)
 
-            # checking distances:
+            mutant.set_cell(cell_new, scale_atoms=not self.use_tags)
+
+            # check distances:
             too_close = atoms_too_close(mutant, self.blmin,
                                         use_tags=self.use_tags)
             count += 1
