@@ -119,12 +119,6 @@ class CutAndSplicePairing(OffspringCreator):
         pbc = a1.get_pbc()
         tags = a1.get_tags() if self.use_tags else np.arange(N)
 
-        if self.cellbounds is not None:
-            if not self.cellbounds.is_within_bounds(a1.get_cell()):
-                niggli_reduce(a1)
-            if not self.cellbounds.is_within_bounds(a2.get_cell()):
-                niggli_reduce(a2)
-
         # Generate list of all atoms / atom groups:
         cell1 = a1.get_cell()
         cell2 = a2.get_cell()
@@ -292,27 +286,41 @@ class CutAndSplicePairing(OffspringCreator):
             err = 'Trying to pair two structures with different tags'
             raise ValueError(err)
 
+        a1_copy = a1.copy()
+        a2_copy = a2.copy()
+
+        if self.cellbounds is not None:
+            if not self.cellbounds.is_within_bounds(a1_copy.get_cell()):
+                niggli_reduce(a1_copy)
+            if not self.cellbounds.is_within_bounds(a2_copy.get_cell()):
+                niggli_reduce(a2_copy)
+  
+        pos1_ref = a1_copy.get_positions()
+        pos2_ref = a2_copy.get_positions()
+
         invalid = True
         counter = 0
         maxcount = 1000
+
         # Run until a valid pairing is made or 1000 pairings are tested.
         while invalid and counter < maxcount:
             counter += 1
-            a1_copy = a1.copy()
-            a2_copy = a2.copy()
 
             # Choose direction of cutting plane normal (0, 1, or 2):
             direction = randrange(3)
 
             # Randomly translate parent structures:
-            for a in [a1_copy, a2_copy]:
+            for a, pos in zip([a1_copy, a2_copy], [pos1_ref, pos2_ref]):
+                a.set_positions(pos)
                 cell = a.get_cell()
+
                 for i in range(3):
                     r = random()
                     cond1 = i == direction and r < self.p1
                     cond2 = i != direction and r < self.p2
                     if cond1 or cond2:
                         a.positions += random() * cell[i, :]
+
                 if self.use_tags:
                     gather_atoms_by_tag(a)
                 else:
