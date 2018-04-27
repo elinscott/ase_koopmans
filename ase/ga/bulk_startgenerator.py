@@ -1,8 +1,8 @@
-""" Methods for generating new random starting candidates. 
-If you find this implementation useful in your work,
-please cite:
+""" Methods for generating new random starting candidates
+for bulk crystal structures. If you find this implementation 
+useful in your work, please cite:
     M. Van den Bossche, Henrik Gronbeck, B. Hammer,
-      TO BE PUBLISHED
+    J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
 in addition to the papers mentioned in the docstrings."""
 from random import shuffle, random, sample
 import numpy as np

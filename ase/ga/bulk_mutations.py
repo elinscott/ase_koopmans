@@ -1,8 +1,8 @@
-"""Mutation operations intended for bulk crystals. 
+"""Mutation operations intended for bulk structures.
 If you find this implementation useful in your work,
 please cite:
     M. Van den Bossche, Henrik Gronbeck, B. Hammer,
-      TO BE PUBLISHED
+    J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
 in addition to the papers mentioned in the docstrings."""
 import json
 import numpy as np

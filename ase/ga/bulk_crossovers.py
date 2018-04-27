@@ -1,8 +1,8 @@
-"""Crossover operation intended for bulk crystals. 
+"""Crossover operation intended for bulk structures.
 If you find this implementation useful in your work,
 please cite:
     M. Van den Bossche, Henrik Gronbeck, B. Hammer,
-      TO BE PUBLISHED
+    J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
 in addition to the papers mentioned in the docstrings."""
 import numpy as np
 from random import random, randrange
