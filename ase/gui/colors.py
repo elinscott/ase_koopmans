@@ -26,12 +26,19 @@ class ColorWindow:
                   _('By number of neighbors'),]
 
         self.radio = ui.RadioButtons(labels, values, self.toggle,
-                                     vertical=True)
+                                     vertical=True, )
         self.radio.value = gui.colormode
         self.win.add(self.radio)
         self.activate()
         self.label = ui.Label()
         self.win.add(self.label)
+
+    def change_mnmx(self):
+        print('change min/max value')
+        mn, mx = self.mnmx[1].value, self.mnmx[3].value
+        colorscale, _, _ = self.gui.colormode_data
+        self.gui.colormode_data = colorscale, mn, mx
+        self.gui.draw()
 
     def activate(self):
         images = self.gui.images
@@ -69,6 +76,17 @@ class ColorWindow:
                     u'magmom': 'μB'}[value]
             text = '[{0},{1}]: [{2:.6f},{3:.6f}] {4}'.format(
                 _('Green'), _('Yellow'), mn, mx, unit)
+
+            rng = mx - mn  # XXX what are optimal allowed range and steps ?
+            self.mnmx = [_('min:'),
+                         ui.SpinBox(mn, mn - 10 * rng, mx + rng, rng / 10.,
+                                    self.change_mnmx),
+                         _('max:'),
+                         ui.SpinBox(mx, mn - 10 * rng, mx + rng, rng / 10.,
+                                    self.change_mnmx),
+                         _(unit)
+            ]
+            self.win.add(self.mnmx)
 
         self.label.text = text
         self.radio.value = value
