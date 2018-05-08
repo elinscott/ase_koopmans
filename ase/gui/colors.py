@@ -64,9 +64,23 @@ class ColorWindow:
                                 for i in range(len(self.gui.images))])
             mn = scalars.min()
             mx = scalars.max()
-            colorscale = ['#{0:02X}AA00'.format(red)
-                          for red in range(0, 240, 10)]
-            self.gui.colormode_data = colorscale, mn, mx
+            try:
+                import matplotlib as plt
+                # matplotlib diverse colormaps
+                cmaps = ['magma', 'viridis', 'plasma', 'inferno', 
+                         'rainbow', 'jet',
+                         'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+                         'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm',
+                         'bwr', 'seismic']
+                print('set self.colormap')
+                self.colormap = ui.ComboBox(cmaps, cmaps, self.update_colormap)
+                self.gui.colormode_data = None, mn, mx
+                self.update_colormap(cmaps[0])
+                self.win.add(self.colormap)
+            except:
+                colorscale = ['#{0:02X}AA00'.format(red)
+                              for red in range(0, 240, 10)]
+                self.gui.colormode_data = colorscale, mn, mx
 
             unit = {'tag': '',
                     'force': 'eV/Ang',
@@ -100,3 +114,18 @@ class ColorWindow:
         if not self.radio[mode].active:
             mode = 'jmol'
         self.toggle(mode)
+
+    def update_colormap(self, cmap):
+        "Called by gui when colormap has changed"
+        N = 10  # XXX change default n
+        print('gewaehlt:', cmap)
+        colorscale, mn, mx = self.gui.colormode_data
+        import pylab as plt
+        import matplotlib
+        cmap = plt.cm.get_cmap(cmap)
+        print('0 colorscale', colorscale)
+        colorscale = [matplotlib.colors.rgb2hex(c[:3]) for c in
+                      cmap(np.linspace(0, 1, N))]
+        print('1 colorscale', colorscale)
+        self.gui.colormode_data = colorscale, mn, mx
+        self.gui.draw()
