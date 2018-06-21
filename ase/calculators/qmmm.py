@@ -319,6 +319,9 @@ class LJInteractionsGeneral:
             f = (24 * self.epsilon[qmi, :] *
                  (2 * c12 - c6) / d2)[:, :, np.newaxis] * D
             mmforces += f.reshape((-1, 3))
+            if mmatoms.calc.name == 'acn': 
+                # This needs to be generalized for an arbitrary MM calculator
+                mmforces = mmatoms.calc.redistribute_forces(mmforces)
             qmforces[qmi, :] -= f.sum(0).sum(0)
 
         return energy, qmforces, mmforces

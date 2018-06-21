@@ -88,11 +88,9 @@ class ACN(Calculator):
         pbc = self.atoms.pbc
         cell = self.atoms.cell.diagonal()
         nm = len(R)
-        self.nm = nm
-        # mc = self.get_molcoms(nm)
 
         assert (self.atoms.cell == np.diag(cell)).all(), 'not orthorhombic'
-        # assert ((cell >= 2 * self.rc) | ~pbc).all(), 'cutoff too large'
+        assert ((cell >= 2 * self.rc) | ~pbc).all(), 'cutoff too large'
         if Z[0] == 7:
             n = 0
             me = 2
@@ -101,8 +99,6 @@ class ACN(Calculator):
             me = 0
         assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
         assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
-        self.n = n
-        self.me = me
 
         charges = self.get_virtual_charges(atoms[:3])
 
@@ -110,8 +106,6 @@ class ACN(Calculator):
         self.forces = np.zeros((3 * nm, 3))
 
         for m in range(nm - 1):
-            # Get distances between COM molecule m and m+1:nm
-            # Dmm = mc[m + 1:] - mc[m]
             Dmm = R[m + 1:, 1] - R[m, 1]
             # MIC PBCs
             shift = wrap(Dmm, cell, pbc)
@@ -157,27 +151,36 @@ class ACN(Calculator):
             energy += e
             self.forces += f
         
-        f_new = self.redistribute_forces(self.n, self.me, self.forces)
-        self.forces = f_new
+        fr = self.redistribute_forces(self.forces)
+        self.forces = fr
 
         self.results['energy'] = energy
         self.results['forces'] = self.forces
  
-    def redistribute_forces(self, n, me, f_old):
+    def redistribute_forces(self, fo):
         """Ciccotti et al., Molecular Physics, 1982.
         """        
-        f_new = np.zeros_like(f_old)
+        fr = np.zeros_like(fo)
+        Z = self.atoms.numbers
+        if Z[0] == 7:
+            n = 0
+            me = 2
+        else:
+            n = 2
+            me = 0
+        assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
+        assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
         
         # N
-        f_new[n::3, :] = ((1 - n_n * m_mec * c_n) * f_old[n::3, :] - 
-                          n_n * m_cn * c_me * f_old[me::3, :] + 
-                          n_n * m_men * f_old[1::3, :])
+        fr[n::3, :] = ((1 - n_n * m_mec * c_n) * fo[n::3, :] - 
+                          n_n * m_cn * c_me * fo[me::3, :] + 
+                          n_n * m_men * fo[1::3, :])
         # Me 
-        f_new[me::3, :] = ((1 - n_me * m_cn * c_me) * f_old[me::3, :] - 
-                           n_me * m_mec * c_n * f_old[n::3, :] + 
-                           n_me * m_men * f_old[1::3, :])
+        fr[me::3, :] = ((1 - n_me * m_cn * c_me) * fo[me::3, :] - 
+                           n_me * m_mec * c_n * fo[n::3, :] + 
+                           n_me * m_men * fo[1::3, :])
  
-        return f_new                 
+        return fr                 
 
     def get_molcoms(self, nm):      
         molcoms = np.zeros((nm, 3))      
