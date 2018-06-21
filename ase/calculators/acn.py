@@ -37,24 +37,6 @@ n_me = c_me / (c_me**2 * m_cn + c_n**2 * m_mec + m_men)
 n_n = c_n / (c_me**2 * m_cn + c_n**2 * m_mec + m_men)
 
 
-def set_acn_charges(atoms, qmidx=0):
-    charges = np.empty(len(atoms))
-    # Correct atom sequence is:
-    # MeCNMeCN ... MeCN or NCMeNCMe ... NCMe
-    if atoms.numbers[qmidx] == 7:
-        n = qmidx
-        me = qmidx + 2
-    else:
-        n = qmidx + 2
-        me = qmidx
-    assert (atoms.numbers[n::3] == 7).all, 'Incorrect atom sequence'
-    assert (atoms.numbers[qmidx + 1::3] == 6).all, 'Incorrect atom sequence'
-    charges[me::3] = q_me
-    charges[qmidx + 1::3] = q_c
-    charges[n::3] = q_n
-    atoms.set_initial_charges(charges)
-
-
 def wrap(D, cell, pbc):
     """Wrap distances to nearest neighbor (minimum image convention)."""
     shift = np.zeros_like(D)
@@ -118,11 +100,11 @@ class ACN(Calculator):
             n = 2
             me = 0
         assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
-        assert (Z[1::3] == 6).all, 'Incorrect atoms sequence'
+        assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
         self.n = n
         self.me = me
 
-        charges = self.atoms[:3].get_initial_charges()
+        charges = self.get_virtual_charges(atoms[:3])
 
         energy = 0.0
         self.forces = np.zeros((3 * nm, 3))
@@ -187,11 +169,13 @@ class ACN(Calculator):
         f_new = np.zeros_like(f_old)
         
         # N
-        f_new[n::3, :] = (1 - n_n * m_mec * c_n) * f_old[n::3, :] -
-        n_n * m_cn * c_me * f_old[me::3, :] + n_n * m_men * f_old[1::3, :]
+        f_new[n::3, :] = ((1 - n_n * m_mec * c_n) * f_old[n::3, :] - 
+                          n_n * m_cn * c_me * f_old[me::3, :] + 
+                          n_n * m_men * f_old[1::3, :])
         # Me 
-        f_new[me::3, :] = (1 - n_me * m_cn * c_me) * f_old[me::3, :] -
-        n_me * m_mec * c_n * f_old[n::3, :] + n_me * m_men * f_old[1::3, :]
+        f_new[me::3, :] = ((1 - n_me * m_cn * c_me) * f_old[me::3, :] - 
+                           n_me * m_mec * c_n * f_old[n::3, :] + 
+                           n_me * m_men * f_old[1::3, :])
  
         return f_new                 
 
@@ -224,6 +208,24 @@ class ACN(Calculator):
             system_changes.append('positions')
         return system_changes
 
+    def get_virtual_charges(self, atoms):
+        charges = np.empty(len(atoms))
+        # Correct atom sequence is:
+        # MeCNMeCN ... MeCN or NCMeNCMe ... NCMe
+        Z = atoms.numbers
+        if Z[0] == 7:
+            n = 0
+            me = 2
+        else:
+            n = 2
+            me = 0
+        assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
+        assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
+        charges[me::3] = q_me
+        charges[1::3] = q_c
+        charges[n::3] = q_n
+        return charges
+    
 
 class PointChargePotential:
     def __init__(self, mmcharges):
