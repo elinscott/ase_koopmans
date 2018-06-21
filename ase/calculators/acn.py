@@ -66,7 +66,20 @@ class ACN(Calculator):
     pcpot = None
 
     def __init__(self, rc=5.0, width=1.0):
-        """Acetonitrile potential.
+        """Three-site potential foracetonitrile.
+           
+        Parameters from: 
+        http://dx.doi.org/10.1080/08927020108024509
+
+        Correct atom sequence should be:
+        MeCNMeCN ... MeCN or NCMeNCMe ... NCMe 
+
+        Forces are redistributed from the central C atom to N 
+        and Methyl according to a scheme by Ciccotti et al. 
+        (http://dx.doi.org/10.1080/00268978200100942) for MD
+        propagation of rigid linear triatomic molecules. Use 
+        class FixBondLengthsACNLinear in constraints.py to 
+        do MD with this calculator.
 
         rc: float
             Cutoff radius for Coulomb part.
@@ -91,14 +104,6 @@ class ACN(Calculator):
 
         assert (self.atoms.cell == np.diag(cell)).all(), 'not orthorhombic'
         assert ((cell >= 2 * self.rc) | ~pbc).all(), 'cutoff too large'
-        if Z[0] == 7:
-            n = 0
-            me = 2
-        else:
-            n = 2
-            me = 0
-        assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
-        assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
 
         charges = self.get_virtual_charges(atoms[:3])
 
@@ -173,12 +178,12 @@ class ACN(Calculator):
         
         # N
         fr[n::3, :] = ((1 - n_n * m_mec * c_n) * fo[n::3, :] - 
-                          n_n * m_cn * c_me * fo[me::3, :] + 
-                          n_n * m_men * fo[1::3, :])
+                       n_n * m_cn * c_me * fo[me::3, :] + 
+                       n_n * m_men * fo[1::3, :])
         # Me 
         fr[me::3, :] = ((1 - n_me * m_cn * c_me) * fo[me::3, :] - 
-                           n_me * m_mec * c_n * fo[n::3, :] + 
-                           n_me * m_men * fo[1::3, :])
+                        n_me * m_mec * c_n * fo[n::3, :] + 
+                        n_me * m_men * fo[1::3, :])
  
         return fr                 
 
@@ -213,8 +218,6 @@ class ACN(Calculator):
 
     def get_virtual_charges(self, atoms):
         charges = np.empty(len(atoms))
-        # Correct atom sequence is:
-        # MeCNMeCN ... MeCN or NCMeNCMe ... NCMe
         Z = atoms.numbers
         if Z[0] == 7:
             n = 0
