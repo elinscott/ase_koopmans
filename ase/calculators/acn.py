@@ -66,7 +66,7 @@ class ACN(Calculator):
     pcpot = None
 
     def __init__(self, rc=5.0, width=1.0):
-        """Three-site potential foracetonitrile.
+        """Three-site potential for acetonitrile.
            
         Parameters from: 
         http://dx.doi.org/10.1080/08927020108024509
@@ -78,8 +78,8 @@ class ACN(Calculator):
         and Methyl according to a scheme by Ciccotti et al. 
         (http://dx.doi.org/10.1080/00268978200100942) for MD
         propagation of rigid linear triatomic molecules. Use 
-        class FixBondLengthsACNLinear in constraints.py to 
-        do MD with this calculator.
+        class FixBondLengthsLinear in constraints.py to do MD 
+        with this calculator.
 
         rc: float
             Cutoff radius for Coulomb part.
@@ -97,7 +97,6 @@ class ACN(Calculator):
         Calculator.calculate(self, atoms, properties, system_changes)
 
         R = self.atoms.positions.reshape((-1, 3, 3))
-        Z = self.atoms.numbers
         pbc = self.atoms.pbc
         cell = self.atoms.cell.diagonal()
         nm = len(R)

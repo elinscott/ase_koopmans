@@ -2,13 +2,15 @@ from __future__ import division, print_function
 from math import sqrt
 from ase.geometry import find_mic
 from ase.calculators.calculator import PropertyNotImplementedError
+from ase.data import atomic_masses
 
 import numpy as np
 
 __all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
            'FixAtoms', 'UnitCellFilter', 'FixScaled', 'StrainFilter',
            'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
-           'FixBondLengths', 'FixInternals', 'Hookean', 'ExternalForce']
+           'FixBondLengths', 'FixBondLengthsLinear', 'FixInternals', 'Hookean', 
+           'ExternalForce']
 
 
 def dict2constraint(dct):
@@ -313,6 +315,130 @@ class FixBondLengths(FixConstraint):
 def FixBondLength(a1, a2):
     """Fix distance between atoms with indices a1 and a2."""
     return FixBondLengths([(a1, a2)])
+
+
+class FixBondLengthsLinear(FixConstraint):
+    """Follows Ciccotti et al., Molecular Physics, 1982.
+    """
+
+    rMeC = 1.458
+    rCN = 1.157
+    rMeN = rMeC+rCN
+    CMe=rCN/rMeN
+    CN=rMeC/rMeN
+    mMe=atomic_masses[6]+3*atomic_masses[1]
+    mC=atomic_masses[6]
+    mN=atomic_masses[7]
+    MCN=mC*mN
+    MMeC=mC*mMe
+    MMeN=mN*mMe
+    NMe=CMe/(CMe**2*MCN+CN**2*MMeC+MMeN)
+    NN=CN/(CMe**2*MCN+CN**2*MMeC+MMeN)
+    AMe=(1-NMe*MCN*CMe+NMe*MMeC*CN)/mMe
+    AN=(1+NN*MCN*CMe-NN*MMeC*CN)/mN
+
+    def __init__(self, pairs, singlets, bondlengths=None):
+        """iterations:
+                Ignored"""
+        self.pairs = np.asarray(pairs)
+        self.singlets = singlets
+        self.bondlengths = bondlengths 
+
+        self.removed_dof = len(pairs)+3*len(singlets)
+
+    def adjust_positions(self, atoms, new):
+        old = atoms.positions
+
+        if self.bondlengths is None:
+           self.bondlengths = self.initialize_bond_lengths(atoms) 
+
+        C = np.zeros(2)
+        A = np.zeros(2)
+        if atoms.numbers[self.pairs[0,0]] == 7:
+            C[0] = self.CN
+            A[0] = self.AN
+            C[1] = self.CMe
+            A[1] = self.AMe
+        else:
+            C[0] = self.CMe
+            A[0] = self.AMe
+            C[1] = self.CN
+            A[1] = self.AN 
+
+        for j, ab in enumerate(self.pairs):
+            n = ab[0]
+            m = ab[1]
+            r0 = old[n] - old[m]
+            d0 = find_mic([r0], atoms.cell, atoms._pbc)[0][0]
+            d1 = new[n] - new[m] - r0 + d0
+            cd = self.bondlengths[j]
+            a = np.dot(d0, d0)*(A[0]**2+A[1]**2+2*A[0]*A[1])
+            b = np.dot(d1, d0)*(A[0]+A[1])
+            c =  np.dot(d1, d1) - cd**2
+            g = (b-(b**2-a*c)**0.5)/a
+            new[n] -= g * A[0] * d0
+            new[m] += g * A[1] * d0
+            k = self.singlets[j]
+            new[k] = C[0]*new[n]+C[1]*new[m]  
+         
+    def adjust_momenta(self, atoms, p):
+        old = atoms.positions
+        masses = atoms.get_masses()
+
+        if self.bondlengths is None:
+           self.bondlengths = self.initialize_bond_lengths(atoms)
+
+        A = np.zeros(2)
+        if atoms.numbers[self.pairs[0,0]] == 7:
+            A[0] = self.AN
+            A[1] = self.AMe
+        else:
+            A[0] = self.AMe
+            A[1] = self.AN
+
+        for j, ab in enumerate(self.pairs):
+            n = ab[0]
+            m = ab[1]
+            d = old[n] - old[m]
+            d = find_mic([d], atoms.cell, atoms._pbc)[0][0]
+            dv = p[n] / masses[n] - p[m] / masses[m]
+            cd = self.bondlengths[j]
+            k = np.dot(dv, d) / cd**2
+            p[n] -= k * A[0] / (A[0]+A[1]) * masses[n] * d
+            p[m] += k * A[1] / (A[0]+A[1]) * masses[m] * d
+
+    def adjust_forces(self, atoms, forces):
+        self.constraint_forces = -forces
+        self.adjust_momenta(atoms, forces)
+        self.constraint_forces += forces
+
+    def initialize_bond_lengths(self, atoms):
+        bondlengths = np.zeros(len(self.pairs))
+
+        for i, ab in enumerate(self.pairs):
+            bondlengths[i] = atoms.get_distance(ab[0], ab[1], mic=True)
+
+        return bondlengths
+
+    def get_indices(self):
+        return np.unique(self.pairs.ravel())
+
+    def todict(self):
+        return {'name': 'FixBondLengthsLinear',
+                'kwargs': {'pairs': self.pairs,
+                           'singlets': self.singlets}}
+
+    def index_shuffle(self, atoms, ind):
+        """Shuffle the indices of the two atoms in this constraint"""
+        map = np.zeros(len(atoms), int)
+        map[ind] = 1
+        n = map.sum()
+        map[:] = -1
+        map[ind] = range(n)
+        pairs = map[self.pairs]
+        self.pairs = pairs[(pairs != -1).all(1)]
+        if len(self.pairs) == 0:
+            raise IndexError('Constraint not part of slice')
 
 
 class FixedMode(FixConstraint):
