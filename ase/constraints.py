@@ -330,21 +330,21 @@ class FixBondLengthsLinear(FixConstraint):
         
         C = np.zeros(2) 
         L = np.zeros(2)
-	m_a = masses[0] 
-	m_b = masses[1]
-	m_c = masses[2]
-	m_ab = m_a * m_b
-	m_bc = m_b * m_c
-	m_ac = m_a * m_c
-	r_ab = distances[0]
-	r_bc = distances[1]
-	r_ac = r_ab + r_bc
-	c_a = r_bc / r_ac
-	c_c = r_ab / r_ac
+        m_a = masses[0] 
+        m_b = masses[1]
+        m_c = masses[2]
+        m_ab = m_a * m_b
+        m_bc = m_b * m_c
+        m_ac = m_a * m_c
+        r_ab = distances[0]
+        r_bc = distances[1]
+        r_ac = r_ab + r_bc
+        c_a = r_bc / r_ac
+        c_c = r_ab / r_ac
         n_a = c_a / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
         n_b = c_c / (c_a**2 * m_bc + c_n**2 * m_ab + m_ac)
-	l_a = (1 - n_a * m_bc * c_a + n_a * m_ab * c_c) / m_a
-	l_b = (1 + n_c * m_bc * c_a - n_c * m_ab * c_c) / m_c
+        l_a = (1 - n_a * m_bc * c_a + n_a * m_ab * c_c) / m_a
+        l_b = (1 + n_c * m_bc * c_a - n_c * m_ab * c_c) / m_c
         C[0] = c_a
         C[1] = c_c
         L[0] = l_a
@@ -352,7 +352,7 @@ class FixBondLengthsLinear(FixConstraint):
         self.C = C
         self.L = L
 
-        self.removed_dof = len(pairs)+3*len(singlets)
+        self.removed_dof = len(pairs) + 3 * len(singlets)
 
     def adjust_positions(self, atoms, new):
         old = atoms.positions
@@ -367,14 +367,15 @@ class FixBondLengthsLinear(FixConstraint):
             d0 = find_mic([r0], atoms.cell, atoms._pbc)[0][0]
             d1 = new[n] - new[m] - r0 + d0
             cd = self.bondlengths[j]
-            a = np.dot(d0, d0)*(self.L[0]**2+self.L[1]**2+2*self.L[0]*self.L[1])
-            b = np.dot(d1, d0)*(self.L[0]+self.L[1])
-            c =  np.dot(d1, d1) - cd**2
-            g = (b-(b**2-a*c)**0.5)/a
-            new[n] -= g * self-L[0] * d0
+            a = np.dot(d0, d0) * (self.L[0]**2 + 
+                                  self.L[1]**2 + 2 * self.L[0] * self.L[1])
+            b = np.dot(d1, d0) * (self.L[0] + self.L[1])
+            c = np.dot(d1, d1) - cd**2
+            g = (b - (b**2 - a * c)**0.5) / a
+            new[n] -= g * self.L[0] * d0
             new[m] += g * self.L[1] * d0
             k = self.singlets[j]
-            new[k] = self.C[0]*new[n]+self.C[1]*new[m]  
+            new[k] = self.C[0] * new[n] + self.C[1] * new[m]  
          
     def adjust_momenta(self, atoms, p):
         old = atoms.positions
@@ -391,8 +392,8 @@ class FixBondLengthsLinear(FixConstraint):
             dv = p[n] / masses[n] - p[m] / masses[m]
             cd = self.bondlengths[j]
             k = np.dot(dv, d) / cd**2
-            p[n] -= k * self.A[0] / (self.A[0]+self.A[1]) * masses[n] * d
-            p[m] += k * self.A[1] / (self.A[0]+self.A[1]) * masses[m] * d
+            p[n] -= k * self.A[0] / (self.A[0] + self.A[1]) * masses[n] * d
+            p[m] += k * self.A[1] / (self.A[0] + self.A[1]) * masses[m] * d
 
     def adjust_forces(self, atoms, forces):
         self.constraint_forces = -forces
