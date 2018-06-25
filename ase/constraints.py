@@ -321,28 +321,36 @@ class FixBondLengthsLinear(FixConstraint):
     """Follows Ciccotti et al., Molecular Physics, 1982.
     """
 
-    rMeC = 1.458
-    rCN = 1.157
-    rMeN = rMeC+rCN
-    CMe=rCN/rMeN
-    CN=rMeC/rMeN
-    mMe=atomic_masses[6]+3*atomic_masses[1]
-    mC=atomic_masses[6]
-    mN=atomic_masses[7]
-    MCN=mC*mN
-    MMeC=mC*mMe
-    MMeN=mN*mMe
-    NMe=CMe/(CMe**2*MCN+CN**2*MMeC+MMeN)
-    NN=CN/(CMe**2*MCN+CN**2*MMeC+MMeN)
-    AMe=(1-NMe*MCN*CMe+NMe*MMeC*CN)/mMe
-    AN=(1+NN*MCN*CMe-NN*MMeC*CN)/mN
-
-    def __init__(self, pairs, singlets, bondlengths=None):
+    def __init__(self, pairs, singlets, distances, masses, bondlengths=None):
         """iterations:
                 Ignored"""
         self.pairs = np.asarray(pairs)
         self.singlets = singlets
         self.bondlengths = bondlengths 
+        
+        C = np.zeros(2) 
+        L = np.zeros(2)
+	m_a = masses[0] 
+	m_b = masses[1]
+	m_c = masses[2]
+	m_ab = m_a * m_b
+	m_bc = m_b * m_c
+	m_ac = m_a * m_c
+	r_ab = distances[0]
+	r_bc = distances[1]
+	r_ac = r_ab + r_bc
+	c_a = r_bc / r_ac
+	c_c = r_ab / r_ac
+        n_a = c_a / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
+        n_b = c_c / (c_a**2 * m_bc + c_n**2 * m_ab + m_ac)
+	l_a = (1 - n_a * m_bc * c_a + n_a * m_ab * c_c) / m_a
+	l_b = (1 + n_c * m_bc * c_a - n_c * m_ab * c_c) / m_c
+        C[0] = c_a
+        C[1] = c_c
+        L[0] = l_a
+        L[1] = l_b
+        self.C = C
+        self.L = L
 
         self.removed_dof = len(pairs)+3*len(singlets)
 
@@ -350,20 +358,7 @@ class FixBondLengthsLinear(FixConstraint):
         old = atoms.positions
 
         if self.bondlengths is None:
-           self.bondlengths = self.initialize_bond_lengths(atoms) 
-
-        C = np.zeros(2)
-        A = np.zeros(2)
-        if atoms.numbers[self.pairs[0,0]] == 7:
-            C[0] = self.CN
-            A[0] = self.AN
-            C[1] = self.CMe
-            A[1] = self.AMe
-        else:
-            C[0] = self.CMe
-            A[0] = self.AMe
-            C[1] = self.CN
-            A[1] = self.AN 
+            self.bondlengths = self.initialize_bond_lengths(atoms) 
 
         for j, ab in enumerate(self.pairs):
             n = ab[0]
@@ -372,29 +367,21 @@ class FixBondLengthsLinear(FixConstraint):
             d0 = find_mic([r0], atoms.cell, atoms._pbc)[0][0]
             d1 = new[n] - new[m] - r0 + d0
             cd = self.bondlengths[j]
-            a = np.dot(d0, d0)*(A[0]**2+A[1]**2+2*A[0]*A[1])
-            b = np.dot(d1, d0)*(A[0]+A[1])
+            a = np.dot(d0, d0)*(self.L[0]**2+self.L[1]**2+2*self.L[0]*self.L[1])
+            b = np.dot(d1, d0)*(self.L[0]+self.L[1])
             c =  np.dot(d1, d1) - cd**2
             g = (b-(b**2-a*c)**0.5)/a
-            new[n] -= g * A[0] * d0
-            new[m] += g * A[1] * d0
+            new[n] -= g * self-L[0] * d0
+            new[m] += g * self.L[1] * d0
             k = self.singlets[j]
-            new[k] = C[0]*new[n]+C[1]*new[m]  
+            new[k] = self.C[0]*new[n]+self.C[1]*new[m]  
          
     def adjust_momenta(self, atoms, p):
         old = atoms.positions
         masses = atoms.get_masses()
 
         if self.bondlengths is None:
-           self.bondlengths = self.initialize_bond_lengths(atoms)
-
-        A = np.zeros(2)
-        if atoms.numbers[self.pairs[0,0]] == 7:
-            A[0] = self.AN
-            A[1] = self.AMe
-        else:
-            A[0] = self.AMe
-            A[1] = self.AN
+            self.bondlengths = self.initialize_bond_lengths(atoms)
 
         for j, ab in enumerate(self.pairs):
             n = ab[0]
@@ -404,8 +391,8 @@ class FixBondLengthsLinear(FixConstraint):
             dv = p[n] / masses[n] - p[m] / masses[m]
             cd = self.bondlengths[j]
             k = np.dot(dv, d) / cd**2
-            p[n] -= k * A[0] / (A[0]+A[1]) * masses[n] * d
-            p[m] += k * A[1] / (A[0]+A[1]) * masses[m] * d
+            p[n] -= k * self.A[0] / (self.A[0]+self.A[1]) * masses[n] * d
+            p[m] += k * self.A[1] / (self.A[0]+self.A[1]) * masses[m] * d
 
     def adjust_forces(self, atoms, forces):
         self.constraint_forces = -forces
