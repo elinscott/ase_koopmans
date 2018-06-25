@@ -2,7 +2,6 @@ from __future__ import division, print_function
 from math import sqrt
 from ase.geometry import find_mic
 from ase.calculators.calculator import PropertyNotImplementedError
-from ase.data import atomic_masses
 
 import numpy as np
 
@@ -342,7 +341,7 @@ class FixBondLengthsLinear(FixConstraint):
         c_a = r_bc / r_ac
         c_c = r_ab / r_ac
         n_a = c_a / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
-        n_b = c_c / (c_a**2 * m_bc + c_n**2 * m_ab + m_ac)
+        n_c = c_c / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
         l_a = (1 - n_a * m_bc * c_a + n_a * m_ab * c_c) / m_a
         l_b = (1 + n_c * m_bc * c_a - n_c * m_ab * c_c) / m_c
         C[0] = c_a
