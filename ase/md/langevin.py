@@ -64,11 +64,11 @@ class Langevin(MolecularDynamics):
         if self.selectlinear is not None:
             self.mask = np.zeros(len(atoms), bool)
             self.mask[self.selectlinear] = True
-            m_a = masses[0]
-            m_b = masses[1]
-            m_c = masses[2]
-            r_ab = distances[0]
-            r_bc = distances[1]
+            m_a = masseslinear[0]
+            m_b = masseslinear[1]
+            m_c = masseslinear[2]
+            r_ab = distslinear[0]
+            r_bc = distslinear[1]
             r_ac = r_ab + r_bc
             self.m_ab = m_a * m_b
             self.m_bc = m_b * m_c
@@ -79,8 +79,10 @@ class Langevin(MolecularDynamics):
             self.mr_ba = (m_b / m_a)**0.5
             self.mr_ca = (m_c / m_a)**0.5
             self.mr_ac = (m_a / m_c)**0.5
-            self.n_a = c_a / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
-            self.n_c = c_c / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
+            self.n_a = self.c_a / (self.c_a**2 * self.m_bc + 
+                                   self.c_c**2 * self.m_ab + self.m_ac)
+            self.n_c = self.c_c / (self.c_a**2 * self.m_bc + 
+                                   self.c_c**2 * self.m_ab + self.m_ac)
 
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
                                    logfile, loginterval)
@@ -175,6 +177,18 @@ class Langevin(MolecularDynamics):
         return f
 
         def redistribute(self):
+            m_ab = self.m_ab
+            m_bc = self.m_bc 
+            m_ac = self.m_ac
+            c_a = self.c_a 
+            c_c = self.c_c 
+            mr_bc = self.mr_bc
+            mr_ba = self.mr_ba
+            mr_ca = self.mr_ca 
+            mr_ac = self.mr_ac
+            n_a = self.n_a 
+            n_c = self.n_c 
+
             v = self.v
             xi = self.xi
             eta = self.eta
