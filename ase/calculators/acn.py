@@ -162,8 +162,6 @@ class ACN(Calculator):
         self.results['forces'] = self.forces
  
     def redistribute_forces(self, fo):
-        """Ciccotti et al., Molecular Physics, 1982.
-        """        
         fr = np.zeros_like(fo)
         Z = self.atoms.numbers
         if Z[0] == 7:

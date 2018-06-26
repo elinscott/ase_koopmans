@@ -48,14 +48,40 @@ class Langevin(MolecularDynamics):
     # Helps Asap doing the right thing.  Increment when changing stuff:
     _lgv_version = 3
 
-    def __init__(self, atoms, timestep, temperature, friction, fixcm=True,
-                 trajectory=None, logfile=None, loginterval=1,
-                 communicator=world, rng=np.random):
+    def __init__(self, atoms, timestep, temperature, friction,  
+                 selectlinear=None, distslinear=None, masseslinear=None, 
+                 fixcm=True, trajectory=None, logfile=None, 
+                 loginterval=1, communicator=world, rng=np.random):
         self.temp = temperature
         self.fr = friction
+        self.selectlinear = selectlinear
+        self.distslinear = distslinear
+        self.masseslinear = masseslinear
         self.fixcm = fixcm  # will the center of mass be held fixed?
         self.communicator = communicator
         self.rng = rng
+
+        if self.selectlinear is not None:
+            self.mask = np.zeros(len(atoms), bool)
+            self.mask[self.selectlinear] = True
+            m_a = masses[0]
+            m_b = masses[1]
+            m_c = masses[2]
+            r_ab = distances[0]
+            r_bc = distances[1]
+            r_ac = r_ab + r_bc
+            self.m_ab = m_a * m_b
+            self.m_bc = m_b * m_c
+            self.m_ac = m_a * m_c
+            self.c_a = r_bc / r_ac
+            self.c_c = r_ab / r_ac
+            self.mr_bc = (m_b / m_c)**0.5
+            self.mr_ba = (m_b / m_a)**0.5
+            self.mr_ca = (m_c / m_a)**0.5
+            self.mr_ac = (m_a / m_c)**0.5
+            self.n_a = c_a / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
+            self.n_c = c_c / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
+
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
                                    logfile, loginterval)
         self.updatevars()
@@ -107,6 +133,9 @@ class Langevin(MolecularDynamics):
         self.xi = self.rng.standard_normal(size=(natoms, 3))
         self.eta = self.rng.standard_normal(size=(natoms, 3))
 
+        if self.selectlinear is not None:
+            self.v, self.xi, self.eta = self.redistribute() 
+
         if self.communicator is not None:
             self.communicator.broadcast(self.xi, 0)
             self.communicator.broadcast(self.eta, 0)
@@ -144,6 +173,51 @@ class Langevin(MolecularDynamics):
         atoms.set_momenta(self.v * self.masses)
 
         return f
+
+        def redistribute(self):
+            v = self.v
+            xi = self.xi
+            eta = self.eta
+            vlin = v[~self.mask]
+            xilin = xi[~self.mask]
+            etalin = eta[~self.mask]             
+            vnew = np.zeros_like(v)
+            xinew = np.zeros_like(xi)
+            etanew = np.zeros_like(eta)
+            vr = np.zeros_like(vlin)
+            xir = np.zeros_like(xilin)
+            etar = np.zeros_like(etalin)
+
+            # Avoid redistributing for atoms in selectlinear
+            vnew[self.mask] = v[self.mask] 
+            xinew[self.mask] = xi[self.mask] 
+            etanew[self.mask] = eta[self.mask]         
+
+            # Redistribute for primary atoms of linear molecules
+            vr[::3, :] = (vlin[::3, :] - n_a * m_bc * 
+                          (c_a * vlin[::3, :] + 
+                           c_c * vlin[2::3, :] - vlin[1::3, :]))
+            xir[::3, :] = ((1 - n_a * m_bc * c_a) * xilin[::3, :] - 
+                           n_a * (m_ab * c_c * mr_ca * xilin[2::3, :] - 
+                           m_ac * mr_ba * xilin[1::3, :]))
+            etar[::3, :] = ((1 - n_a * m_bc * c_a) * etalin[::3, :] - 
+                            n_a * (m_ab * c_c * mr_ca * etalin[2::3, :] - 
+                            m_ac * mr_ba * etalin[1::3, :]))
+            vr[2::3, :] = (vlin[2::3, :] - n_c * m_ab * 
+                           (c_c * vlin[2::3, :] + 
+                            c_c * vlin[::3, :] - vlin[1::3, :]))
+            xir[2::3, :] = ((1 - n_c * m_ab * c_c) * xilin[2::3, :] - 
+                            n_c * (m_bc * c_a * mr_ac * xilin[::3, :] - 
+                            m_ac * mr_bc * xilin[1::3, :]))
+            etar[2::3, :] = ((1 - n_c * m_ab * c_c) * etalin[2::3, :] - 
+                             n_c * (m_bc * c_a * mr_ac * etalin[::3, :] - 
+                             m_ac * mr_bc * etalin[1::3, :]))
+        
+            vnew[~self.mask] = vr
+            xinew[~self.mask] = xir 
+            etanew[~self.mask] = etar           
+
+            return vnew, xinew, etanew
 
     def _get_com_velocity(self):
         """Return the center of mass velocity.
