@@ -317,12 +317,37 @@ def FixBondLength(a1, a2):
 
 
 class FixBondLengthsLinear(FixConstraint):
-    """Follows Ciccotti et al., Molecular Physics, 1982.
+    """RATTLE algorithm for linear triatomic molecules.
+      
+       Based on Ciccotti et al. Molecular Physics 1982:
+       http://dx.doi.org/10.1080/00268978200100942
     """
 
     def __init__(self, pairs, singlets, distances, masses, bondlengths=None):
-        """iterations:
-                Ignored"""
+        """
+            a--b--c
+            |-----|
+              r_ac
+            
+            Apply bond constraint to r_ac
+            Update position of b accoring to a linear vectorial constrain:  
+            p_b = c_a * p_a + c_c * p_c
+            where: c_a = r_bc / r_ac
+                   c_c = r_ab / r_ac   
+
+            pairs: list 
+                   Pairs of indices for the atoms forming the bonds 
+                   to constrain
+            singlets: list 
+                      Indices of secondary atoms b 
+            distances: list 
+                       [r_ab, r_bc]
+            masses: list
+                    [m_a, m_b, m_c]         
+            bondlengths: array
+                         Fixed bondlengths   
+
+                """
         self.pairs = np.asarray(pairs)
         self.singlets = singlets
         self.bondlengths = bondlengths 
