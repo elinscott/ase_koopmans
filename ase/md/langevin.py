@@ -229,7 +229,7 @@ class Langevin(MolecularDynamics):
                         m_ac * mr_ba * etalin[1::3, :]))
         vr[2::3, :] = (vlin[2::3, :] - n_c * m_ab * 
                        (c_c * vlin[2::3, :] + 
-                        c_c * vlin[::3, :] - vlin[1::3, :]))
+                        c_a * vlin[::3, :] - vlin[1::3, :]))
         xir[2::3, :] = ((1 - n_c * m_ab * c_c) * xilin[2::3, :] - 
                         n_c * (m_bc * c_a * mr_ac * xilin[::3, :] - 
                         m_ac * mr_bc * xilin[1::3, :]))
