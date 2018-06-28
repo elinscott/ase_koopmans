@@ -23,6 +23,16 @@ class Langevin(MolecularDynamics):
     friction
         A friction coefficient, typically 1e-4 to 1e-2.
 
+    selectlinear
+        Select atoms that do not belong to rigid linear triatomic 
+        molecules
+
+    distslinear
+        Bondlengths of rigid linear triatomic molecules
+
+    masseslinear
+        Masses of atoms of rigid linear triatomic molecules
+
     fixcm
         If True, the position and momentum of the center of mass is
         kept unperturbed.  Default: True.
