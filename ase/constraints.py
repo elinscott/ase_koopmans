@@ -351,17 +351,19 @@ class FixBondLengthsLinear(FixConstraint):
         self.pairs = np.asarray(pairs)
         self.singlets = singlets
         self.bondlengths = bondlengths 
+        self.distances = distances
+        self.masses = masses
         
         C = np.zeros(2) 
         L = np.zeros(2)
-        m_a = masses[0] 
-        m_b = masses[1]
-        m_c = masses[2]
+        m_a = self.masses[0] 
+        m_b = self.masses[1]
+        m_c = self.masses[2]
         m_ab = m_a * m_b
         m_bc = m_b * m_c
         m_ac = m_a * m_c
-        r_ab = distances[0]
-        r_bc = distances[1]
+        r_ab = self.distances[0]
+        r_bc = self.distances[1]
         r_ac = r_ab + r_bc
         c_a = r_bc / r_ac
         c_c = r_ab / r_ac
@@ -416,8 +418,8 @@ class FixBondLengthsLinear(FixConstraint):
             dv = p[n] / masses[n] - p[m] / masses[m]
             cd = self.bondlengths[j]
             k = np.dot(dv, d) / cd**2
-            p[n] -= k * self.A[0] / (self.A[0] + self.A[1]) * masses[n] * d
-            p[m] += k * self.A[1] / (self.A[0] + self.A[1]) * masses[m] * d
+            p[n] -= k * self.L[0] / (self.L[0] + self.L[1]) * masses[n] * d
+            p[m] += k * self.L[1] / (self.L[0] + self.L[1]) * masses[m] * d
 
     def adjust_forces(self, atoms, forces):
         self.constraint_forces = -forces
@@ -438,7 +440,9 @@ class FixBondLengthsLinear(FixConstraint):
     def todict(self):
         return {'name': 'FixBondLengthsLinear',
                 'kwargs': {'pairs': self.pairs,
-                           'singlets': self.singlets}}
+                           'singlets': self.singlets,
+                           'distances': self.distances,
+                           'masses': self.masses}}
 
     def index_shuffle(self, atoms, ind):
         """Shuffle the indices of the two atoms in this constraint"""

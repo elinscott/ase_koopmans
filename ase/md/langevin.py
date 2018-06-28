@@ -186,62 +186,62 @@ class Langevin(MolecularDynamics):
 
         return f
 
-        def redistribute(self):
-            m_ab = self.m_ab
-            m_bc = self.m_bc 
-            m_ac = self.m_ac
-            c_a = self.c_a 
-            c_c = self.c_c 
-            mr_bc = self.mr_bc
-            mr_ba = self.mr_ba
-            mr_ca = self.mr_ca 
-            mr_ac = self.mr_ac
-            n_a = self.n_a 
-            n_c = self.n_c 
+    def redistribute(self):
+        m_ab = self.m_ab
+        m_bc = self.m_bc 
+        m_ac = self.m_ac
+        c_a = self.c_a 
+        c_c = self.c_c 
+        mr_bc = self.mr_bc
+        mr_ba = self.mr_ba
+        mr_ca = self.mr_ca 
+        mr_ac = self.mr_ac
+        n_a = self.n_a 
+        n_c = self.n_c 
 
-            v = self.v
-            xi = self.xi
-            eta = self.eta
-            vlin = v[~self.mask]
-            xilin = xi[~self.mask]
-            etalin = eta[~self.mask]             
-            vnew = np.zeros_like(v)
-            xinew = np.zeros_like(xi)
-            etanew = np.zeros_like(eta)
-            vr = np.zeros_like(vlin)
-            xir = np.zeros_like(xilin)
-            etar = np.zeros_like(etalin)
+        v = self.v
+        xi = self.xi
+        eta = self.eta
+        vlin = v[~self.mask]
+        xilin = xi[~self.mask]
+        etalin = eta[~self.mask]             
+        vnew = np.zeros_like(v)
+        xinew = np.zeros_like(xi)
+        etanew = np.zeros_like(eta)
+        vr = np.zeros_like(vlin)
+        xir = np.zeros_like(xilin)
+        etar = np.zeros_like(etalin)
 
-            # Avoid redistributing for atoms in selectlinear
-            vnew[self.mask] = v[self.mask] 
-            xinew[self.mask] = xi[self.mask] 
-            etanew[self.mask] = eta[self.mask]         
+        # Avoid redistributing for atoms in selectlinear
+        vnew[self.mask] = v[self.mask] 
+        xinew[self.mask] = xi[self.mask] 
+        etanew[self.mask] = eta[self.mask]         
 
-            # Redistribute for primary atoms of linear molecules
-            vr[::3, :] = (vlin[::3, :] - n_a * m_bc * 
-                          (c_a * vlin[::3, :] + 
-                           c_c * vlin[2::3, :] - vlin[1::3, :]))
-            xir[::3, :] = ((1 - n_a * m_bc * c_a) * xilin[::3, :] - 
-                           n_a * (m_ab * c_c * mr_ca * xilin[2::3, :] - 
-                           m_ac * mr_ba * xilin[1::3, :]))
-            etar[::3, :] = ((1 - n_a * m_bc * c_a) * etalin[::3, :] - 
-                            n_a * (m_ab * c_c * mr_ca * etalin[2::3, :] - 
-                            m_ac * mr_ba * etalin[1::3, :]))
-            vr[2::3, :] = (vlin[2::3, :] - n_c * m_ab * 
-                           (c_c * vlin[2::3, :] + 
-                            c_c * vlin[::3, :] - vlin[1::3, :]))
-            xir[2::3, :] = ((1 - n_c * m_ab * c_c) * xilin[2::3, :] - 
-                            n_c * (m_bc * c_a * mr_ac * xilin[::3, :] - 
-                            m_ac * mr_bc * xilin[1::3, :]))
-            etar[2::3, :] = ((1 - n_c * m_ab * c_c) * etalin[2::3, :] - 
-                             n_c * (m_bc * c_a * mr_ac * etalin[::3, :] - 
-                             m_ac * mr_bc * etalin[1::3, :]))
+        # Redistribute for primary atoms of linear molecules
+        vr[::3, :] = (vlin[::3, :] - n_a * m_bc * 
+                      (c_a * vlin[::3, :] + 
+                       c_c * vlin[2::3, :] - vlin[1::3, :]))
+        xir[::3, :] = ((1 - n_a * m_bc * c_a) * xilin[::3, :] - 
+                       n_a * (m_ab * c_c * mr_ca * xilin[2::3, :] - 
+                       m_ac * mr_ba * xilin[1::3, :]))
+        etar[::3, :] = ((1 - n_a * m_bc * c_a) * etalin[::3, :] - 
+                        n_a * (m_ab * c_c * mr_ca * etalin[2::3, :] - 
+                        m_ac * mr_ba * etalin[1::3, :]))
+        vr[2::3, :] = (vlin[2::3, :] - n_c * m_ab * 
+                       (c_c * vlin[2::3, :] + 
+                        c_c * vlin[::3, :] - vlin[1::3, :]))
+        xir[2::3, :] = ((1 - n_c * m_ab * c_c) * xilin[2::3, :] - 
+                        n_c * (m_bc * c_a * mr_ac * xilin[::3, :] - 
+                        m_ac * mr_bc * xilin[1::3, :]))
+        etar[2::3, :] = ((1 - n_c * m_ab * c_c) * etalin[2::3, :] - 
+                         n_c * (m_bc * c_a * mr_ac * etalin[::3, :] - 
+                         m_ac * mr_bc * etalin[1::3, :]))
         
-            vnew[~self.mask] = vr
-            xinew[~self.mask] = xir 
-            etanew[~self.mask] = etar           
+        vnew[~self.mask] = vr
+        xinew[~self.mask] = xir 
+        etanew[~self.mask] = etar           
 
-            return vnew, xinew, etanew
+        return vnew, xinew, etanew
 
     def _get_com_velocity(self):
         """Return the center of mass velocity.
