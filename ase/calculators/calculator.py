@@ -7,90 +7,11 @@ import numpy as np
 
 from ase.dft.kpoints import bandpath, monkhorst_pack
 
-
-class CalculatorError(RuntimeError):
-    """Base class of error types related to ASE calculators."""
-
-
-class CalculatorSetupError(CalculatorError):
-    """Calculation cannot be performed with the given parameters.
-
-    Reasons to raise this errors are:
-      * The calculator is not properly configured
-        (missing executable, environment variables, ...)
-      * The given atoms object is not supported
-      * Calculator parameters are unsupported
-
-    Typically raised before a calculation."""
-
-
-class EnvironmentError(CalculatorSetupError):
-    """Raised if calculator is not properly set up with ASE.
-
-    May be missing an executable or environment variables."""
-
-
-class InputError(CalculatorSetupError):
-    """Raised if inputs given to the calculator were incorrect.
-
-    Bad input keywords or values, or missing pseudopotentials.
-
-    This may be raised before or during calculation, depending on
-    when the problem is detected."""
-
-
-class CalculationFailed(CalculatorError):
-    """Calculation failed unexpectedly.
-
-    Reasons to raise this error are:
-      * Calculation did not converge
-      * Calculation ran out of memory
-      * Segmentation fault or other abnormal termination
-      * Arithmetic trouble (singular matrices, NaN, ...)
-
-    Typically raised during calculation."""
-
-
-class SCFError(CalculationFailed):
-    """SCF loop did not converge."""
-
-
-class ReadError(CalculatorError):
-    """Unexpected irrecoverable error while reading calculation results."""
-
+class ReadError(Exception):
+    pass
 
 class PropertyNotImplementedError(NotImplementedError):
-    """Raised if a calculator does not implement the requested property."""
-
-
-class PropertyNotPresent(CalculatorError):
-    """Requested property is missing.
-
-    Maybe it was never calculated, or for some reason was not extracted
-    with the rest of the results, without being a fatal ReadError."""
-
-def compare_atoms(atoms1, atoms2, tol=1e-15):
-    """Check for system changes since last calculation."""
-    if atoms1 is None:
-        system_changes = all_changes[:]
-    else:
-        system_changes = []
-        if not equal(atoms1.positions, atoms2.positions, tol):
-            system_changes.append('positions')
-        if not equal(atoms1.numbers, atoms2.numbers):
-            system_changes.append('numbers')
-        if not equal(atoms1.cell, atoms2.cell, tol):
-            system_changes.append('cell')
-        if not equal(atoms1.pbc, atoms2.pbc):
-            system_changes.append('pbc')
-        if not equal(atoms1.get_initial_magnetic_moments(),
-                     atoms2.get_initial_magnetic_moments(), tol):
-            system_changes.append('initial_magmoms')
-        if not equal(atoms1.get_initial_charges(),
-                     atoms2.get_initial_charges(), tol):
-            system_changes.append('initial_charges')
-
-    return system_changes
+    pass
 
 
 all_properties = ['energy', 'forces', 'stress', 'dipole',
@@ -102,23 +23,19 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 
 # Recognized names of calculators sorted alphabetically:
-names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
-         'demon', 'dftb', 'dmol', 'eam', 'elk', 'emt', 'espresso',
-         'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
-         'hotbit', 'jacapo', 'lammpsrun',
-         'lammpslib', 'lj', 'mopac', 'morse', 'nwchem', 'octopus', 'onetep',
-         'siesta', 'tip3p', 'turbomole', 'vasp']
+names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'demon', 'dftb',
+         'eam', 'elk', 'emt', 'exciting', 'fleur', 'gaussian', 'gpaw',
+         'gromacs', 'hotbit', 'jacapo', 'lammps', 'lammpslib', 'lj', 'mopac',
+         'morse', 'nwchem', 'octopus', 'onetep', 'siesta', 'tip3p',
+         'turbomole', 'vasp','ACE']
 
 
 special = {'cp2k': 'CP2K',
-           'dmol': 'DMol3',
            'eam': 'EAM',
            'elk': 'ELK',
            'emt': 'EMT',
-           'crystal': 'CRYSTAL',
            'fleur': 'FLEUR',
-           'gulp': 'GULP',
-           'lammpsrun': 'LAMMPS',
+           'lammps': 'LAMMPS',
            'lammpslib': 'LAMMPSlib',
            'lj': 'LennardJones',
            'mopac': 'MOPAC',
@@ -252,33 +169,6 @@ def kpts2ndarray(kpts, atoms=None):
     return np.array(kpts)
 
 
-class EigenvalOccupationMixin:
-    """Define 'eigenvalues' and 'occupations' properties on class.
-
-    eigenvalues and occupations will be arrays of shape (spin, kpts, nbands).
-
-    Classes must implement the old-fashioned get_eigenvalues and
-    get_occupations methods."""
-
-    @property
-    def eigenvalues(self):
-        return self.build_eig_occ_array(self.get_eigenvalues)
-
-    @property
-    def occupations(self):
-        return self.build_eig_occ_array(self.get_occupation_numbers)
-
-    def build_eig_occ_array(self, getter):
-        nspins = self.get_number_of_spins()
-        nkpts = len(self.get_ibz_k_points())
-        nbands = self.get_number_of_bands()
-        arr = np.zeros((nspins, nkpts, nbands))
-        for s in range(nspins):
-            for k in range(nkpts):
-                arr[s, k, :] = getter(spin=s, kpt=k)
-        return arr
-
-
 class Parameters(dict):
     """Dictionary for parameters.
 
@@ -294,6 +184,18 @@ class Parameters(dict):
     def __setattr__(self, key, value):
         self[key] = value
 
+    def update(self, other=None, **kwargs):
+        if isinstance(other, dict):
+            self.update(other.items())
+        else:
+            for key, value in other:
+                if isinstance(value, dict) and isinstance(self[key], dict):
+                    self[key].update(value)
+                else:
+                    self[key] = value
+        if kwargs:
+            self.update(kwargs)
+
     @classmethod
     def read(cls, filename):
         """Read parameters from file."""
@@ -305,7 +207,7 @@ class Parameters(dict):
     def tostring(self):
         keys = sorted(self)
         return 'dict(' + ',\n     '.join(
-            '{}={!r}'.format(key, self[key]) for key in keys) + ')\n'
+            '%s=%r' % (key, self[key]) for key in keys) + ')\n'
 
     def write(self, filename):
         file = open(filename, 'w')
@@ -313,7 +215,7 @@ class Parameters(dict):
         file.close()
 
 
-class Calculator(object):
+class Calculator:
     """Base-class for all ASE calculators.
 
     A calculator must raise PropertyNotImplementedError if asked for a
@@ -378,7 +280,7 @@ class Calculator(object):
                 # Atoms were read from file.  Update atoms:
                 if not (equal(atoms.numbers, self.atoms.numbers) and
                         (atoms.pbc == self.atoms.pbc).all()):
-                    raise CalculatorError('Atoms not compatible with file')
+                    raise RuntimeError('Atoms not compatible with file')
                 atoms.positions = self.atoms.positions
                 atoms.cell = self.atoms.cell
 
@@ -495,18 +397,30 @@ class Calculator(object):
 
     def check_state(self, atoms, tol=1e-15):
         """Check for system changes since last calculation."""
-        return compare_atoms(self.atoms, atoms)
+        if self.atoms is None:
+            system_changes = all_changes[:]
+        else:
+            system_changes = []
+            if not equal(self.atoms.positions, atoms.positions, tol):
+                system_changes.append('positions')
+            if not equal(self.atoms.numbers, atoms.numbers):
+                system_changes.append('numbers')
+            if not equal(self.atoms.cell, atoms.cell, tol):
+                system_changes.append('cell')
+            if not equal(self.atoms.pbc, atoms.pbc):
+                system_changes.append('pbc')
+            if not equal(self.atoms.get_initial_magnetic_moments(),
+                         atoms.get_initial_magnetic_moments(), tol):
+                system_changes.append('initial_magmoms')
+            if not equal(self.atoms.get_initial_charges(),
+                         atoms.get_initial_charges(), tol):
+                system_changes.append('initial_charges')
+
+        return system_changes
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         energy = self.get_property('energy', atoms)
         if force_consistent:
-            if 'free_energy' not in self.results:
-                name = self.__class__.__name__
-                # XXX but we don't know why the energy is not there.
-                # We should raise PropertyNotPresent.  Discuss
-                raise PropertyNotImplementedError(
-                    'Force consistent/free energy ("free_energy") '
-                    'not provided by {0} calculator'.format(name))
             return self.results['free_energy']
         else:
             return energy
@@ -532,8 +446,7 @@ class Calculator(object):
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.implemented_properties:
-            raise PropertyNotImplementedError('{} property not implemented'
-                                              .format(name))
+            raise PropertyNotImplementedError
 
         if atoms is None:
             atoms = self.atoms
@@ -556,8 +469,7 @@ class Calculator(object):
         if name not in self.results:
             # For some reason the calculator was not able to do what we want,
             # and that is OK.
-            raise PropertyNotImplementedError('{} not present in this '
-                                              'calculation'.format(name))
+            raise PropertyNotImplementedError
 
         result = self.results[name]
         if isinstance(result, np.ndarray):
@@ -565,7 +477,6 @@ class Calculator(object):
         return result
 
     def calculation_required(self, atoms, properties):
-        assert not isinstance(properties, str)
         system_changes = self.check_state(atoms)
         if system_changes:
             return True
@@ -627,11 +538,11 @@ class Calculator(object):
             x = np.eye(3)
             x[i, i] += d
             atoms.set_cell(np.dot(cell, x), scale_atoms=True)
-            eplus = atoms.get_potential_energy(force_consistent=True)
+            eplus = atoms.get_potential_energy()
 
             x[i, i] -= 2 * d
             atoms.set_cell(np.dot(cell, x), scale_atoms=True)
-            eminus = atoms.get_potential_energy(force_consistent=True)
+            eminus = atoms.get_potential_energy()
 
             stress[i, i] = (eplus - eminus) / (2 * d * V)
             x[i, i] += d
@@ -640,12 +551,12 @@ class Calculator(object):
             x[i, j] = d
             x[j, i] = d
             atoms.set_cell(np.dot(cell, x), scale_atoms=True)
-            eplus = atoms.get_potential_energy(force_consistent=True)
+            eplus = atoms.get_potential_energy()
 
             x[i, j] = -d
             x[j, i] = -d
             atoms.set_cell(np.dot(cell, x), scale_atoms=True)
-            eminus = atoms.get_potential_energy(force_consistent=True)
+            eminus = atoms.get_potential_energy()
 
             stress[i, j] = (eplus - eminus) / (4 * d * V)
             stress[j, i] = stress[i, j]
@@ -661,14 +572,8 @@ class Calculator(object):
 
     def band_structure(self):
         """Create band-structure object for plotting."""
-        from ase.dft.band_structure import get_band_structure
-        # XXX This calculator is supposed to just have done a band structure
-        # calculation, but the calculator may not have the correct Fermi level
-        # if it updated the Fermi level after changing k-points.
-        # This will be a problem with some calculators (currently GPAW), and
-        # the user would have to override this by providing the Fermi level
-        # from the selfconsistent calculation.
-        return get_band_structure(calc=self)
+        from ase.dft.band_structure import BandStructure
+        return BandStructure(calc=self)
 
 
 class FileIOCalculator(Calculator):
@@ -699,17 +604,20 @@ class FileIOCalculator(Calculator):
         Calculator.calculate(self, atoms, properties, system_changes)
         self.write_input(self.atoms, properties, system_changes)
         if self.command is None:
-            raise CalculatorSetupError(
-                'Please set ${} environment variable '
-                .format('ASE_' + self.name.upper() + '_COMMAND') +
-                'or supply the command keyword')
+            raise RuntimeError('Please set $%s environment variable ' %
+                               ('ASE_' + self.name.upper() + '_COMMAND') +
+                               'or supply the command keyword')
         command = self.command.replace('PREFIX', self.prefix)
-        errorcode = subprocess.call(command, shell=True, cwd=self.directory)
+        olddir = os.getcwd()
+        try:
+            os.chdir(self.directory)
+            errorcode = subprocess.call(command, shell=True)
+        finally:
+            os.chdir(olddir)
 
         if errorcode:
-            raise CalculationFailed('{} in {} returned an error: {}'
-                                    .format(self.name, self.directory,
-                                            errorcode))
+            raise RuntimeError('%s returned an error: %d' %
+                               (self.name, errorcode))
         self.read_results()
 
     def write_input(self, atoms, properties=None, system_changes=None):
