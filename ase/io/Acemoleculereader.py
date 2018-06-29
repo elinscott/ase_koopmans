@@ -40,7 +40,8 @@ class Acemoleculereader:
         ''' Read atoms geometry '''
         f = open(filename, 'r')
         lines = f.read()
-        geo_lines = lines.split("====================  Atoms  =====================")[-1].split("=================================")[0].split('\n')
+        geometry_lines = lines.split("  Atoms  =====================")[-1]
+        geo_lines = geometry_lines.split("===============")[0].split('\n')
         self.data = []
         atoms = []
         positions = []

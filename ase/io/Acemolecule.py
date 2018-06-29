@@ -24,7 +24,8 @@ def read_Acemolecule_out(filename, quantity='atoms'):
     f = open(filename, 'r')
     lines = f.read()
     energy_list = lines.split("Total energy ")
-    energy = float(energy_list[len(energy_list) - 1].split('\n')[0].split('=')[1])
+    energy_line = energy_list[len(energy_list) - 1]
+    energy = float(energy_line.split('\n')[0].split('=')[1])
     geometry = zip(atom_symbol, positions)
         
     if(quantity == 'energy'):
@@ -34,8 +35,8 @@ def read_Acemolecule_out(filename, quantity='atoms'):
         return energy
     if(quantity == 'forces'):
         try:
-            forces_lines = lines.split("Force:: List of total force in atomic unit.")[1].split("======")[0]
-            forces_line = forces_lines.split('\n')
+            forces_lines = lines.split("total force in atomic unit.")[1]
+            forces_line = forces_lines.split("======")[0].split('\n')
             forces = list()
             for i in range(2, len(forces_line) - 1):
                 forces += [[float(forces_line[i].split()[3]),
@@ -59,7 +60,8 @@ def read_Acemolecule_input(Label):
     '''Reads a Acemolecule input file'''
     filename = check_filename(Label)
     inputtemplate = open(filename, 'r')
-    geometryfile = inputtemplate.read().split('GeometryFilename')[1].split('\n')[0].split()[0]
+    geometryfile_line = inputtemplate.read().split('GeometryFilename')[1]
+    geometryfile = geometryfile_line.split('\n')[0].split()[0]
     xyzfile = open(geometryfile, 'r')
     atom_num = int(xyzfile.readline())
     atom_info = xyzfile.read().split('\n')[1:]
