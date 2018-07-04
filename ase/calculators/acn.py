@@ -213,6 +213,9 @@ class ACN(Calculator):
             system_changes.append('positions')
         return system_changes
 
+    def add_virtual_sites(self, positions):
+        return positions  # no virtual sites
+
     def get_virtual_charges(self, atoms):
         charges = np.empty(len(atoms))
         Z = atoms.numbers
