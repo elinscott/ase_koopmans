@@ -214,7 +214,8 @@ def ints2string(x, threshold=None):
 class FixBondLengths(FixConstraint):
     maxiter = 500
 
-    def __init__(self, pairs, tolerance=1e-13, bondlengths=None, iterations=None):
+    def __init__(self, pairs, tolerance=1e-13, 
+                 bondlengths=None, iterations=None):
         """iterations:
                 Ignored"""
         self.pairs = np.asarray(pairs)
@@ -356,12 +357,12 @@ class FixBondLengthsLinear(FixConstraint):
         
         C = np.zeros(2) 
         L = np.zeros(2)
-        m_a = self.masses[0] 
-        m_b = self.masses[1]
-        m_c = self.masses[2]
-        m_ab = m_a * m_b
-        m_bc = m_b * m_c
-        m_ac = m_a * m_c
+        self.m_a = self.masses[0] 
+        self.m_b = self.masses[1]
+        self.m_c = self.masses[2]
+        m_ab = self.m_a * self.m_b
+        m_bc = self.m_b * self.m_c
+        m_ac = self.m_a * self.m_c
         r_ab = self.distances[0]
         r_bc = self.distances[1]
         r_ac = r_ab + r_bc
@@ -369,8 +370,8 @@ class FixBondLengthsLinear(FixConstraint):
         c_c = r_ab / r_ac
         n_a = c_a / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
         n_c = c_c / (c_a**2 * m_bc + c_c**2 * m_ab + m_ac)
-        l_a = (1 - n_a * m_bc * c_a + n_a * m_ab * c_c) / m_a
-        l_b = (1 + n_c * m_bc * c_a - n_c * m_ab * c_c) / m_c
+        l_a = (1 - n_a * m_bc * c_a + n_a * m_ab * c_c) / self.m_a
+        l_b = (1 + n_c * m_bc * c_a - n_c * m_ab * c_c) / self.m_c
         C[0] = c_a
         C[1] = c_c
         L[0] = l_a
@@ -420,6 +421,9 @@ class FixBondLengthsLinear(FixConstraint):
             k = np.dot(dv, d) / cd**2
             p[n] -= k * self.L[0] / (self.L[0] + self.L[1]) * masses[n] * d
             p[m] += k * self.L[1] / (self.L[0] + self.L[1]) * masses[m] * d
+            s = self.singlets[j]
+            p[s] = self.m_b * (self.C[0] * p[n] / self.m_a + 
+                               self.C[1] * p[m] / self.m_c)
 
     def adjust_forces(self, atoms, forces):
         self.constraint_forces = -forces
