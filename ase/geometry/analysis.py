@@ -2,7 +2,7 @@
 """
 
 import numpy as np
-from scipy.sparse import csgraph, dok_matrix, find
+from scipy.sparse import csgraph, csr_matrix, find
 
 #memory-friendly iterator based zip for python2
 try:
@@ -14,7 +14,17 @@ __all__ = ['get_distance_matrix', 'get_distance_indices', 'buildNeighborList', '
 
 
 def get_distance_matrix(graph):
-    return dok_matrix(csgraph.dijkstra(graph, directed=False, limit=3))
+    """Get Distance Matrix.
+
+    This is the memory bottleneck, as csgraph.dijkstra produces a
+    dense output matrix. Here we replace all np.inf values with 0 and
+    transform back to csr_matrix.
+    Why not dok_matrix like the connectivity-matrix? Because we do row-
+    picking later and this is super fast with csr.
+    """
+    mat = csgraph.dijkstra(graph, directed=False, limit=3)
+    mat[mat == np.inf] = 0
+    return csr_matrix(mat, dtype=np.int8)
 
 def get_distance_indices(distanceMatrix, distance):
     shape = distanceMatrix.get_shape()
@@ -385,7 +395,7 @@ class Analysis(object):
             cIdxs = self._get_symbol_idxs(imI, C)
             dIdxs = self._get_symbol_idxs(imI, D)
             for aIdx in aIdxs:
-                dihedrals = [ (aIdx,) + d for d in self.all_dihedrals[imI][aIdx] if ( d[0] in bIdxs ) and ( d[1] in cIdxs ) and ( d[2] in dIdxs ) ]
+                dihedrals = [ (aIdx, ) + d for d in self.all_dihedrals[imI][aIdx] if ( d[0] in bIdxs ) and ( d[1] in cIdxs ) and ( d[2] in dIdxs ) ]
                 if not unique:
                     dihedrals += [ d[::-1] for d in dihedrals ]
                 r[-1].extend(dihedrals)
@@ -437,7 +447,7 @@ class Analysis(object):
         elif isinstance(imageIdx, slice):
             sl = imageIdx
         elif imageIdx is None:
-            sl = slice(0,None)
+            sl = slice(0, None)
         else:
             raise ValueError("Unsupported type for imageIdx in ase.geometry.analysis.Analysis.get_values")
 
