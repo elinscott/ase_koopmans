@@ -1,8 +1,7 @@
-"""Tools for analyzing instances of :class:`~ase.atoms.Atoms`
+"""Tools for analyzing instances of :class:`~ase.Atoms`
 """
 
 import numpy as np
-from ase.geometry import find_mic
 from scipy.sparse import csgraph, dok_matrix, find
 
 #memory-friendly iterator based zip for python2
@@ -10,6 +9,8 @@ try:
     from itertools import izip as zip
 except ImportError:
     pass
+
+__all__ = ['get_distance_matrix', 'get_distance_indices', 'buildNeighborList', 'Analysis']
 
 
 def get_distance_matrix(graph):
@@ -49,20 +50,19 @@ def buildNeighborList(atoms, cutoffs=None, **kwargs):
 
 
 class Analysis(object):
+    """Initialize Analysis class
+
+    - ``images``: :class:`~ase.Atoms` object or list of such
+    - ``nl``: None, :class:`~ase.neighborlist.NeighborList` object or list of such
+    - ``**kwargs``: Arguments for constructing :class:`~ase.neighborlist.NeighborList` object if ``nl`` is None.
+
+    The choice of ``bothways=True`` for the :class:`~ase.neighborlist.NeighborList` object
+    will not influence the amount of bonds/angles/dihedrals you get, all are reported
+    in both directions. Use the *unique*-labeled properties to get lists without
+    duplicates.
+    """
+
     def __init__(self, images, nl=None, **kwargs):
-        """Initialize Analysis class
-
-        * *images*: :class:`~ase.atoms.Atoms` object or list of such
-        * *nl*: `None`, :class:`~ase.neighborlist.NeighborList` object or list of such
-        * ***kwargs*: Arguments for constructing :class:`~ase.neighborlist.NeighborList`
-        object if *nl* is `None`.
-
-        The choice of `bothways=True` for the :class:`~ase.neighborlist.NeighborList` object
-        will not influence the amount of bonds/angles/dihedrals you get, all are reported
-        in both directions. Use the *unique*-labeled properties to get lists without
-        duplicates.
-        """
-
         self.images = images
 
         if isinstance(nl, list):
@@ -316,30 +316,28 @@ class Analysis(object):
         """Converts a tuple of indices to their symbols"""
         return ( self.images[imI][idx].symbol for idx in tup )
 
-    def getBonds(self, A, B, unique=True):
+    def get_bonds(self, A, B, unique=True):
         """Get bonds from element A to element B"""
         r = []
         for imI in range(len(self.all_bonds)):
             r.append([])
             aIdxs = self._get_symbol_idxs(imI, A)
-            if A == B:
-                bIdxs = aIdxs
-            else:
+            if A != B:
                 bIdxs = self._get_symbol_idxs(imI, B)
-            print(aIdxs)
-            print(bIdxs)
             for idx in aIdxs:
                 bonded = self.all_bonds[imI][idx]
-                print(bonded)
-                r[-1].extend([ (idx, x) for x in bonded if x in bIdxs ])
+                if A == B:
+                    r[-1].extend([ (idx, x) for x in bonded if ( x in aIdxs ) and ( x > idx ) ])
+                else:
+                    r[-1].extend([ (idx, x) for x in bonded if x in bIdxs ])
 
-            if unique:
-                r[-1] =  [ x for x in r[-1] if x[0] < x[-1] ]
+            if not unique:
+                r[-1] +=  [ x[::-1] for x in r[-1] ]
 
         return r
 
 
-    def getAngles(self, A, B, C, unique=True):
+    def get_angles(self, A, B, C, unique=True):
         """Get angles from given elements A-B-C.
 
         *B* will be the central atom. The order of the returned indices
@@ -373,13 +371,12 @@ class Analysis(object):
         return r
 
 
-    def getDihedrals(self, A, B, C, D, unique=True):
+    def get_dihedrals(self, A, B, C, D, unique=True):
         """Get dihedrals A-B-C-D.
 
         If `unique=False` A-B-C-D and D-C-B-A will be returned.
         """
         r = []
-        angles = self.getAngles(A, B, C, unique=True)
         for imI in range(len(self.all_dihedrals)):
             r.append([])
             #get indices of elements
@@ -396,4 +393,80 @@ class Analysis(object):
         return r
 
 
+    def get_bond_value(self, imIdx, idxs, **kwargs):
+        """Get bond length idxs[0]-idxs[1] from image imIdx.
 
+        *kwargs* are passed on to :func:`ase.Atoms.get_distance`
+        """
+        return self.images[imIdx].get_distance(idxs[0], idxs[1], **kwargs)
+
+    def get_angle_value(self, imIdx, idxs, **kwargs):
+        """Get angle idxs[0]-idxs[1]-idxs[2] from image imIdx.
+
+        *kwargs* are passed on to :func:`ase.Atoms.get_angle`
+        """
+        return self.images[imIdx].get_angle(idxs[0], idxs[1], idxs[2], **kwargs)
+
+    def get_dihedral_value(self, imIdx, idxs, **kwargs):
+        """Get dihedral idxs[0]-idxs[1]-idxs[2]-idxs[3] from image imIdx.
+
+        *kwargs* are passed on to :func:`ase.Atoms.get_dihedral`
+        """
+        return self.images[imIdx].get_dihedral(idxs[0], idxs[1], idxs[2], idxs[3], **kwargs)
+
+    def get_values(self, inputList, imageIdx=None, **kwargs):
+        """Get Bond/Angle/Dihedral values.
+
+        *inputList* can be any list provided by :meth:`~ase.geometry.analysis.Analysis.get_bonds`,
+        :meth:`~ase.geometry.analysis.Analysis.get_angles` or
+        :meth:`~ase.geometry.analysis.Analysis.get_dihedrals`.
+
+        Using *imageIdx* (can be integer or slice) the analyzed frames can be specified.
+        If *imageIdx* is None, all frames will be analyzed.
+
+        *kwargs* is passed on to the :class:`~ase.Atoms` classes functions for
+        retrieving the values.
+
+        The type of value requested is determined from the length of the tuple inputList[0][0].
+        The methods from the :class:`~ase.Atoms` class are used.
+        """
+
+        #get slice from imageIdx
+        if isinstance(imageIdx, int):
+            sl = slice(imageIdx, imageIdx+1)
+        elif isinstance(imageIdx, slice):
+            sl = imageIdx
+        elif imageIdx is None:
+            sl = slice(0,None)
+        else:
+            raise ValueError("Unsupported type for imageIdx in ase.geometry.analysis.Analysis.get_values")
+
+        #get method to call from length of inputList
+        if len(inputList[0][0]) == 2:
+            get = self.get_bond_value
+        elif len(inputList[0][0]) == 3:
+            get = self.get_angle_value
+        elif len(inputList[0][0]) == 4:
+            get = self.get_dihedral_value
+
+        #check if length of slice and inputList match
+        singleNL = False
+        if len(inputList) != len(self.images[sl]):
+            #only one nl for all images
+            if len(inputList) == 1 and len(self.nl) == 1:
+                singleNL = True
+            else:
+                raise RuntimeError("Length of inputList does not match length of \
+                        images requested, but it also is not one item long.")
+
+        r = []
+        for inputIdx, image in enumerate(self.images[sl]):
+            imageIdx = self.images.index(image)
+            r.append([])
+            #always use first list from input if only a single neighborlist was used
+            if singleNL:
+                inputIdx = 0
+            for tupl in inputList[inputIdx]:
+                r[-1].append(get(imageIdx, tupl, **kwargs))
+
+        return r
