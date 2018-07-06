@@ -27,6 +27,11 @@ def get_distance_matrix(graph):
     return csr_matrix(mat, dtype=np.int8)
 
 def get_distance_indices(distanceMatrix, distance):
+    """Get indices for each node that are distance or less away.
+
+    The distance matrix only contains shortest paths, so when looking for
+    distances longer than one, we need to add the lower values for cases
+    where atoms are connected via a shorter path too."""
     shape = distanceMatrix.get_shape()
     indices = []
     #iterate over rows
@@ -34,8 +39,8 @@ def get_distance_indices(distanceMatrix, distance):
         row = distanceMatrix.getrow(i)[0]
         #find all non-zero
         found = find(row)
-        #screen for distance
-        equal = np.where( found[-1] == distance )[0]
+        #screen for smaller or equal distance
+        equal = np.where( found[-1] <= distance )[0]
         #found[1] contains the indexes
         indices.append([ found[1][x] for x in equal ])
     return indices
@@ -225,8 +230,17 @@ class Analysis(object):
                         firstNeighs = [ angle[0] for angle in anglesI ]
                         relevantSecondNeighs = [ idx for idx in secondNeighs if lAtom in self.all_bonds[imI][idx] ]
                         relevantFirstNeighs = [ firstNeighs[secondNeighs.index(idx)] for idx in relevantSecondNeighs ]
-                        #iterate over all atoms that are connected to jAtom and lAtom
+                        #iterate over all atoms that are connected to iAtom and lAtom
                         for jAtom, kAtom in zip(relevantFirstNeighs, relevantSecondNeighs):
+                            #remove dihedrals in circles
+                            tupl = (jAtom, kAtom, lAtom)
+                            if len(set((iAtom, ) + tupl)) != 4:
+                                continue
+                            #avoid duplicates
+                            elif tupl in self._allDihedrals[-1][-1]:
+                                continue
+                            elif iAtom in tupl:
+                                raise RuntimeError("Something is wrong in analysis.all_dihedrals!")
                             self._allDihedrals[-1][-1].append((jAtom, kAtom, lAtom))
 
         return self._allDihedrals
