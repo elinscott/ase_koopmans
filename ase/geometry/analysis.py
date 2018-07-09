@@ -94,6 +94,13 @@ class Analysis(object):
         self._allAngles = None
         self._allDihedrals = None
 
+    def _delete_derived_info(self):
+        del self.adjacency_matrix
+        del self.distance_matrix
+        del self.all_bonds
+        del self.all_angles
+        del self.all_dihedrals
+
     @property
     def images(self):
         """Get images"""
@@ -133,6 +140,8 @@ class Analysis(object):
             self._nl = nl
         else:
             self._nl = [ nl ]
+
+        self._delete_derived_info()
 
     @nl.deleter
     def nl(self):
