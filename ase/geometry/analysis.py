@@ -119,7 +119,7 @@ class Analysis(object):
     @images.deleter
     def images(self):
         """Delete images"""
-        del(self._images)
+        self._images = None
         self._nImages = None
 
     @property
@@ -146,7 +146,7 @@ class Analysis(object):
     @nl.deleter
     def nl(self):
         """Delete Neighbor Lists"""
-        del(self._nl)
+        self._nl = None
 
     def _get_all_x(self, distance):
         """Helper function to get bonds, angles, dihedrals"""
