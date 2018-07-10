@@ -481,6 +481,8 @@ class Analysis(object):
             get = self.get_angle_value
         elif len(inputList[0][0]) == 4:
             get = self.get_dihedral_value
+        else:
+            raise ValueError("inputList in ase.geometry.analysis.Analysis.get_values has a bad shape.")
 
         #check if length of slice and inputList match
         singleNL = False
