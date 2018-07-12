@@ -23,6 +23,8 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
 from ase.utils import basestring
+from ase.constraints import FixAtoms
+from ase.geometry import cell_to_cellpar, cellpar_to_cell
 
 __all__ = ['read_xyz', 'write_xyz', 'iread_xyz']
 
@@ -335,6 +337,9 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
         # NB: ASE cell is transpose of extended XYZ lattice
         cell = info['Lattice'].T
         del info['Lattice']
+    elif 'Cellpars' in info:
+        cell = np.round(cellpar_to_cell(info['Cellpars']).T, 10)
+        del info['Cellpars']
     elif nvec > 0:
         #cell information given as pseudo-Atoms
         cell = np.zeros((3,3))
@@ -429,6 +434,19 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
                   cell=cell,
                   pbc=pbc,
                   info=info)
+
+    # Read and set constraints
+    cnstr = None
+    if 'cnstr' in arrays:
+        cnstr = arrays['cnstr']
+        cnstrlist = []
+        for fix in cnstr:
+            if fix == 'F':
+                cnstrlist.append(1)
+            else:
+                cnstrlist.append(0)
+        del arrays['cnstr']
+        atoms.set_constraint(FixAtoms(mask=cnstrlist))
 
     for name, array in arrays.items():
         atoms.new_array(name, array)
@@ -617,7 +635,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
 
 
 def output_column_format(atoms, columns, arrays,
-                         write_info=True, results=None):
+                         write_info=True, results=None, cellpars=False):
     """
     Helper function to build extended XYZ comment line
     """
@@ -631,10 +649,16 @@ def output_column_format(atoms, columns, arrays,
 
     # NB: Lattice is stored as tranpose of ASE cell,
     # with Fortran array ordering
-    lattice_str = ('Lattice="' +
-                   ' '.join([str(x) for x in np.reshape(atoms.cell.T,
-                                                        9, order='F')]) +
-                   '"')
+    if cellpars:
+        cpars = cell_to_cellpar(atoms.cell.T).tolist()
+        lattice_str = ('Cellpars="' +
+                       ' '.join([str(x) for x in cpars]) +
+                       '"')
+    else:
+        lattice_str = ('Lattice="' +
+                       ' '.join([str(x) for x in np.reshape(atoms.cell.T,
+                                                            9, order='F')]) +
+                       '"')
 
     property_names = []
     property_types = []
@@ -688,7 +712,7 @@ def output_column_format(atoms, columns, arrays,
 
 
 def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
-              write_results=True, plain=False, vec_cell=False, append=False):
+              write_results=True, plain=False, vec_cell=False, append=False, cellpars=False):
     """
     Write output in extended XYZ format
 
@@ -719,6 +743,20 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                        [key for key in atoms.arrays.keys() if
                         key not in ['symbols', 'positions', 'numbers',
                                     'species', 'pos']])
+
+        if 'cnstr' in fr_cols:
+            # Fixed flags
+            cnstr = images[0]._get_constraints()
+            for c in cnstr:
+                if isinstance(c, FixAtoms):
+                    cnstrlist = c.index
+            if len(cnstr) > 0:
+                cnstr = np.zeros((natoms,), dtype=np.str)
+                cnstr[:] = 'M'
+                for i in cnstrlist:
+                    cnstr[i] = 'F'
+            else:
+                fr_cols.remove('cnstr')
 
         if vec_cell:
             plain = True
@@ -804,6 +842,8 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                 arrays[column] = atoms.arrays[column]
             elif column == 'symbols':
                 arrays[column] = np.array(symbols)
+            elif column == 'cnstr':
+                arrays[column] = cnstr
             else:
                 raise ValueError('Missing array "%s"' % column)
 
@@ -815,7 +855,8 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                                                        fr_cols,
                                                        arrays,
                                                        write_info,
-                                                       per_frame_results)
+                                                       per_frame_results,
+                                                       cellpars)
         if plain or comment != '':
             # override key/value pairs with user-speficied comment string
             comm = comment
