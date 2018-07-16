@@ -3,6 +3,8 @@
 
 import numpy as np
 from scipy.sparse import csgraph, csr_matrix, find
+from ase.ga.utilities import get_rdf
+from ase import Atoms
 
 #memory-friendly iterator based zip for python2
 try:
@@ -100,6 +102,22 @@ class Analysis(object):
         del self.all_bonds
         del self.all_angles
         del self.all_dihedrals
+
+    def _get_slice(self, imageIdx):
+        """Return a slice from user input.
+        Using *imageIdx* (can be integer or slice) the analyzed frames can be specified.
+        If *imageIdx* is None, all frames will be analyzed.
+        """
+        #get slice from imageIdx
+        if isinstance(imageIdx, int):
+            sl = slice(imageIdx, imageIdx+1)
+        elif isinstance(imageIdx, slice):
+            sl = imageIdx
+        elif imageIdx is None:
+            sl = slice(0, None)
+        else:
+            raise ValueError("Unsupported type for imageIdx in ase.geometry.analysis.Analysis._get_slice")
+        return sl
 
     @property
     def images(self):
@@ -343,7 +361,10 @@ class Analysis(object):
 
     def _get_symbol_idxs(self, imI, sym):
         """Get list of indices of element *sym*"""
-        return [ idx for idx in range(len(self.images[imI])) if self.images[imI][idx].symbol == sym  ]
+        if isinstance(imI, int):
+            return [ idx for idx in range(len(self.images[imI])) if self.images[imI][idx].symbol == sym  ]
+        else:
+            return [ idx for idx in range(len(imI)) if imI[idx].symbol == sym ]
 
     def _idxTuple2SymbolTuple(self, imI, tup):
         """Converts a tuple of indices to their symbols"""
@@ -455,7 +476,7 @@ class Analysis(object):
         :meth:`~ase.geometry.analysis.Analysis.get_dihedrals`.
 
         Using *imageIdx* (can be integer or slice) the analyzed frames can be specified.
-        If *imageIdx* is None, all frames will be analyzed.
+        If *imageIdx* is None, all frames will be analyzed. See :func:`~ase.geometry.analysis.Analysis._get_slice` for details.
 
         *kwargs* is passed on to the :class:`~ase.Atoms` classes functions for
         retrieving the values.
@@ -464,15 +485,7 @@ class Analysis(object):
         The methods from the :class:`~ase.Atoms` class are used.
         """
 
-        #get slice from imageIdx
-        if isinstance(imageIdx, int):
-            sl = slice(imageIdx, imageIdx+1)
-        elif isinstance(imageIdx, slice):
-            sl = imageIdx
-        elif imageIdx is None:
-            sl = slice(0, None)
-        else:
-            raise ValueError("Unsupported type for imageIdx in ase.geometry.analysis.Analysis.get_values")
+        sl = self._get_slice(imageIdx)
 
         #get method to call from length of inputList
         if len(inputList[0][0]) == 2:
@@ -505,3 +518,66 @@ class Analysis(object):
                 r[-1].append(get(imageIdx, tupl, **kwargs))
 
         return r
+
+    def get_rdf(self, rmax, nbins, imageIdx=None, elements=None, return_dists=False):
+        """Get RDF.
+
+        Wrapper for :meth:`ase.ga.utilities.get_rdf` with more selection possibilities.
+
+        * `rmax` (type: float): Maximum distance of RDF.
+        * `nbins` (type: int): Number of bins to devide RDF.
+        * `imageIdx` (type: int/slice/None): Images to analyze, see :func:`~ase.geometry.analysis.Analysis._get_slice` for details.
+        * `elements` (type: str/int/list/tuple): Make partial RDFs.
+
+        If elements is `None`, a full RDF is calculated. If elements is an *integer* or a *list/tuple
+        of integers*, only those atoms will contribute to the RDF (like a mask). If elements
+        is a *string* or a *list/tuple of strings*, only Atoms of those elements will contribute.
+
+        """
+
+        sl = self._get_slice(imageIdx)
+
+        r = []
+        el = None
+
+        for image in self.images[sl]:
+            if elements is None:
+                tmpImage = image
+            #integers
+            elif isinstance(elements, int):
+                tmpImage = Atoms(cell=image.get_cell(), pbc=image.get_pbc())
+                tmpImage.append(image[elements])
+            #strings
+            elif isinstance(elements, str):
+                tmpImage = Atoms(cell=image.get_cell(), pbc=image.get_pbc())
+                for idx in self._get_symbol_idxs(image, elements):
+                    tmpImage.append(image[idx])
+            #lists
+            elif isinstance(elements, list) or isinstace(elements, tuple):
+                #list of ints
+                if all(isinstance(x, int) for x in elements):
+                    if len(elements) == 2:
+                        #use builtin get_rdf mask
+                        el = elements
+                        tmpImage = image
+                    else:
+                        #create dummy image
+                        tmpImage = Atoms(cell=image.get_cell(), pbc=image.get_pbc())
+                        for idx in elements:
+                            tmpImage.append(image[idx])
+                #list of strings
+                elif all(isinstance(x, str) for x in elements):
+                    tmpImage = Atoms(cell=image.get_cell(), pbc=image.get_pbc())
+                    for element in elements:
+                        for idx in self._get_symbol_idxs(image, element):
+                            tmpImage.append(image[idx])
+                else:
+                    raise ValueError("Unsupported type of elements given in ase.geometry.analysis.Analysis.get_rdf!")
+            else:
+                raise ValueError("Unsupported type of elements given in ase.geometry.analysis.Analysis.get_rdf!")
+
+            r.append(get_rdf(tmpImage, rmax, nbins, elements=el, no_dists=(not return_dists)))
+        return r
+
+
+
