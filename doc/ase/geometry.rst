@@ -4,8 +4,7 @@ Geometry tools
 .. automodule:: ase.geometry
     :members:
 
-.. automodule:: ase.geometry.analysis
-    :members:
-
+Analysis tools
+--------------
 .. autoclass:: ase.geometry.analysis.Analysis
     :members:

@@ -2,7 +2,7 @@
 """
 
 import numpy as np
-from scipy.sparse import csgraph, csr_matrix, find
+from ase.neighborlist import buildNeighborList, get_distance_matrix, get_distance_indices
 from ase.ga.utilities import get_rdf
 from ase import Atoms
 
@@ -11,59 +11,6 @@ try:
     from itertools import izip as zip
 except ImportError:
     pass
-
-__all__ = ['get_distance_matrix', 'get_distance_indices', 'buildNeighborList', 'Analysis']
-
-
-def get_distance_matrix(graph):
-    """Get Distance Matrix.
-
-    This is the memory bottleneck, as csgraph.dijkstra produces a
-    dense output matrix. Here we replace all np.inf values with 0 and
-    transform back to csr_matrix.
-    Why not dok_matrix like the connectivity-matrix? Because we do row-
-    picking later and this is super fast with csr.
-    """
-    mat = csgraph.dijkstra(graph, directed=False, limit=3)
-    mat[mat == np.inf] = 0
-    return csr_matrix(mat, dtype=np.int8)
-
-def get_distance_indices(distanceMatrix, distance):
-    """Get indices for each node that are distance or less away.
-
-    The distance matrix only contains shortest paths, so when looking for
-    distances longer than one, we need to add the lower values for cases
-    where atoms are connected via a shorter path too."""
-    shape = distanceMatrix.get_shape()
-    indices = []
-    #iterate over rows
-    for i in range(shape[0]):
-        row = distanceMatrix.getrow(i)[0]
-        #find all non-zero
-        found = find(row)
-        #screen for smaller or equal distance
-        equal = np.where( found[-1] <= distance )[0]
-        #found[1] contains the indexes
-        indices.append([ found[1][x] for x in equal ])
-    return indices
-
-
-def buildNeighborList(atoms, cutoffs=None, **kwargs):
-    """Automatically build and update a NeighborList
-
-    Returns a :class:`~ase.neighborlist.NeigborList` instance.
-    """
-    from ase.neighborlist import NeighborList, natural_cutoffs
-
-    if cutoffs is None:
-        cutoffs = natural_cutoffs(atoms)
-
-    nl = NeighborList(cutoffs, **kwargs)
-    nl.update(atoms)
-
-    return nl
-
-
 
 class Analysis(object):
     """Initialize Analysis class
