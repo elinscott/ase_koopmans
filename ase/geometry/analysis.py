@@ -53,8 +53,7 @@ def buildNeighborList(atoms, cutoffs=None, **kwargs):
 
     Returns a :class:`~ase.neighborlist.NeigborList` instance.
     """
-    from ase.utils import natural_cutoffs
-    from ase.neighborlist import NeighborList
+    from ase.neighborlist import NeighborList, natural_cutoffs
 
     if cutoffs is None:
         cutoffs = natural_cutoffs(atoms)

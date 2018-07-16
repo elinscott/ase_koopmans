@@ -35,6 +35,8 @@ class. It also provides easy access to the two implementations methods and funct
 
 .. autofunction:: ase.neighborlist.primitive_neighbor_list
 
+.. automethod:: ase.neighborlist.natural_cutoffs
+
 .. automethod:: ase.neighborlist.get_connectivity_matrix
 
 .. _GPAW: http://wiki.fysik.dtu.dk/gpaw

@@ -7,6 +7,22 @@ from ase.data import atomic_numbers
 from ase.geometry import complete_cell
 
 
+def natural_cutoffs(atoms, mult=1, **kwargs):
+    """Generate a radial cutoff for every atom based on covalent radii.
+
+    The covalent radii are a reasonable cutoff estimation for bonds in
+    many applications such as neighborlists, so function generates an
+    atoms length list of radii based on this idea.
+
+    * atoms: An atoms object
+    * mult: A multiplier for all cutoffs, useful for coarse grained adjustment
+    * kwargs: Symbol of the atom and its corresponding cutoff, used to override the covalent radii
+    """
+    return [kwargs.get(atom.symbol, covalent_radii[atom.number] * mult)
+            for atom in atoms]
+
+
+
 def mic(dr, cell, pbc=None):
     """
     Apply minimum image convention to an array of distance vectors.
@@ -83,7 +99,7 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
               Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
             * A list/array with a per atom value: This specifies the radius of
               an atomic sphere for each atoms. If spheres overlap, atoms are
-              within each others neighborhood. See :func:`~ase.utils.natural_cutoffs`
+              within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
               for an example on how to get such a list.
     self_interaction: bool
         Return the atom itself as its own neighbor if set to true.
@@ -440,7 +456,7 @@ def neighbor_list(quantities, a, cutoff, self_interaction=False,
               Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
             * A list/array with a per atom value: This specifies the radius of
               an atomic sphere for each atoms. If spheres overlap, atoms are
-              within each others neighborhood. See :func:`~ase.utils.natural_cutoffs`
+              within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
               for an example on how to get such a list.
 
     self_interaction: bool
@@ -586,10 +602,9 @@ def get_connectivity_matrix(nl, sparse=True):
 
     >>> from ase import neighborlist
     >>> from ase.build import molecule
-    >>> from ase.utils import natural_cutoffs
     >>> from scipy import sparse
     >>> mol = molecule('CH3CH2OH')
-    >>> cutOff = natural_cutoffs(mol)
+    >>> cutOff = neighborlist.natural_cutoffs(mol)
     >>> neighborList = neighborlist.NeighborList(cutOff, self_interaction=False, bothways=True)
     >>> neighborList.update(mol)
     >>> matrix = neighborList.get_connectivity_matrix()
@@ -906,7 +921,7 @@ class NeighborList:
     cutoffs: list of float
         List of cutoff radii - one for each atom. If the spheres (defined by
         their cutoff radii) of two atoms overlap, they will be counted as
-        neighbors. See :func:`~ase.utils.natural_cutoffs` for an example on how to
+        neighbors. See :func:`~ase.neighborlist.natural_cutoffs` for an example on how to
         get such a list.
 
     skin: float
