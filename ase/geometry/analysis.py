@@ -13,11 +13,17 @@ except ImportError:
     pass
 
 class Analysis(object):
-    """Initialize Analysis class
+    """Analysis class
 
-    - ``images``: :class:`~ase.Atoms` object or list of such
-    - ``nl``: None, :class:`~ase.neighborlist.NeighborList` object or list of such
-    - ``**kwargs``: Arguments for constructing :class:`~ase.neighborlist.NeighborList` object if ``nl`` is None.
+    Parameters for initialization:
+
+    images: :class:`~ase.Atoms` object or list of such
+        Images to analyze.
+    nl: None, :class:`~ase.neighborlist.NeighborList` object or list of such
+        Neighborlist(s) for the given images. One or nImages, depending if bonding
+        pattern changes or is constant. Using one Neigborlist greatly improves speed.
+    kwargs: options, dict
+        Arguments for constructing :class:`~ase.neighborlist.NeighborList` object if :data:`nl` is None.
 
     The choice of ``bothways=True`` for the :class:`~ase.neighborlist.NeighborList` object
     will not influence the amount of bonds/angles/dihedrals you get, all are reported
@@ -67,7 +73,10 @@ class Analysis(object):
 
     @property
     def images(self):
-        """Get images"""
+        """Images.
+
+        Set during initialization but can also be set later.
+        """
         return self._images
 
     @images.setter
@@ -88,12 +97,18 @@ class Analysis(object):
 
     @property
     def nImages(self):
-        """get nImage"""
-        return self._nImages
+        """Number of Images in this instance.
+
+        Cannot be set, is determined automatically.
+        """
+        return len(self.images)
 
     @property
     def nl(self):
-        """Get Neighbor Lists"""
+        """Neighbor Lists in this instance.
+
+        Set during initialization but can also be set later.
+        """
         return self._nl
 
     @nl.setter
@@ -126,11 +141,13 @@ class Analysis(object):
 
     @property
     def all_bonds(self):
-        """Get all Bonds
+        """All Bonds.
 
-        Returns a list with indices of bonded atoms for each neighborlist in *self*.
+        A list with indices of bonded atoms for each neighborlist in *self*.
         Atom i is connected to all atoms inside result[i]. Duplicates from PBC are
-        removed.
+        removed. See also :data:`unique_bonds`.
+
+        **No setter, only getter and deleter**
         """
         if self._allBonds is None:
             self._allBonds = self._get_all_x(1)
@@ -139,17 +156,20 @@ class Analysis(object):
 
     @all_bonds.deleter
     def all_bonds(self):
+        """Delete all_bonds"""
         self._allBonds = None
 
 
     @property
     def all_angles(self):
-        """Get all angles
+        """All angles
 
-        Returns a list with indices of atoms in angles for each neighborlist in *self*.
+        A list with indices of atoms in angles for each neighborlist in *self*.
         Atom i forms an angle to the atoms inside the tuples in result[i]:
         i -- result[i][x][0] -- result[i][x][1]
-        where x is in range(number of angles from i).
+        where x is in range(number of angles from i). See also :data:`unique_angles`.
+
+        **No setter, only getter and deleter**
         """
         if self._allAngles is None:
             self._allAngles = []
@@ -174,17 +194,20 @@ class Analysis(object):
 
     @all_angles.deleter
     def all_angles(self):
+        """Delete all_angles"""
         self._allAngles = None
 
 
     @property
     def all_dihedrals(self):
-        """Get all dihedrals
+        """All dihedrals
 
-        Returns a list with indices of atoms in dihedrals for each neighborlist in *self*.
+        Returns a list with indices of atoms in dihedrals for each neighborlist in this instance.
         Atom i forms a dihedral to the atoms inside the tuples in result[i]:
         i -- result[i][x][0] -- result[i][x][1] -- result[i][x][2]
-        where x is in range(number of dihedrals from i).
+        where x is in range(number of dihedrals from i). See also :data:`unique_dihedrals`.
+
+        **No setter, only getter and deleter**
         """
         if self._allDihedrals is None:
             self._allDihedrals = []
@@ -220,13 +243,16 @@ class Analysis(object):
 
     @all_dihedrals.deleter
     def all_dihedrals(self):
+        """Delete all_dihedrals"""
         self._allDihedrals = None
 
     @property
     def adjacency_matrix(self):
-        """Get the adjacency matrix.
+        """The adjacency/connectivity matrix.
 
-        If not already done, build a list of adjacency matrices for all `self.nl`.
+        If not already done, build a list of adjacency matrices for all :data:`nl`.
+
+        **No setter, only getter and deleter**
         """
 
         if self._adjacencyMatrix is None:
@@ -238,13 +264,17 @@ class Analysis(object):
 
     @adjacency_matrix.deleter
     def adjacency_matrix(self):
+        """Delete adjacency_matrix"""
         self._adjacencyMatrix = None
 
     @property
     def distance_matrix(self):
-        """Get the distance matrix.
+        """The distance matrix.
 
-        If not already done, build a list of distance matrices for all `self.nl`.
+        If not already done, build a list of distance matrices for all :data:`nl`. See
+        :meth:`ase.neighborlist.get_distance_matrix`.
+
+        **No setter, only getter and deleter**
         """
 
         if self._distanceMatrix is None:
@@ -256,15 +286,18 @@ class Analysis(object):
 
     @distance_matrix.deleter
     def distance_matrix(self):
+        """Delete distance_matrix"""
         self._distanceMatrix = None
 
 
     @property
     def unique_bonds(self):
-        """Get unique bonds.
+        """Unique Bonds.
 
-        Get *all_bonds* i-j without j-i. This is the upper triangle of the
+        :data:`all_bonds` i-j without j-i. This is the upper triangle of the
         connectivity matrix (i,j), `i < j`
+
+        **No setter or deleter, only getter**
         """
         bonds = []
         for imI in range(len(self.all_bonds)):
@@ -291,19 +324,24 @@ class Analysis(object):
 
     @property
     def unique_angles(self):
-        """Get unique angles.
+        """Unique Angles.
 
-        Get *all_angles* i-j-k without k-j-i.
+        :data:`all_angles` i-j-k without k-j-i.
+
+        **No setter or deleter, only getter**
         """
         return self._filter_unique(self.all_angles)
 
     @property
     def unique_dihedrals(self):
-        """Get unique dihedrals.
+        """Unique Dihedrals.
 
-        Get *all_dihedrals* i-j-k-l without l-k-j-i.
+        :data:`all_dihedrals` i-j-k-l without l-k-j-i.
+
+        **No setter or deleter, only getter**
         """
         return self._filter_unique(self.all_dihedrals)
+
 
     def _get_symbol_idxs(self, imI, sym):
         """Get list of indices of element *sym*"""
@@ -312,12 +350,29 @@ class Analysis(object):
         else:
             return [ idx for idx in range(len(imI)) if imI[idx].symbol == sym ]
 
+
     def _idxTuple2SymbolTuple(self, imI, tup):
         """Converts a tuple of indices to their symbols"""
         return ( self.images[imI][idx].symbol for idx in tup )
 
+
     def get_bonds(self, A, B, unique=True):
-        """Get bonds from element A to element B"""
+        """Get bonds from element A to element B.
+
+        Parameters:
+
+        A, B: str
+            Get Bonds between elements A and B
+        unique: bool
+            Return the bonds both ways or just one way (A-B and B-A or only A-B)
+
+        Returns:
+
+        return: list of lists of tuples
+            return[imageIdx][atomIdx][bondI], each tuple starts with atomIdx.
+
+        Use :func:`get_values` to convert the returned list to values.
+        """
         r = []
         for imI in range(len(self.all_bonds)):
             r.append([])
@@ -340,8 +395,19 @@ class Analysis(object):
     def get_angles(self, A, B, C, unique=True):
         """Get angles from given elements A-B-C.
 
-        *B* will be the central atom. The order of the returned indices
-        will be A-B-C, if `unique=False` A-B-C AND C-B-A both be returned.
+        Parameters:
+
+        A, B, C: str
+            Get Angles between elements A, B and C. **B will be the central atom**.
+        unique: bool
+            Return the angles both ways or just one way (A-B-C and C-B-A or only A-B-C)
+
+        Returns:
+
+        return: list of lists of tuples
+            return[imageIdx][atomIdx][angleI], each tuple starts with atomIdx.
+
+        Use :func:`get_values` to convert the returned list to values.
         """
         from itertools import product, combinations, permutations
         r = []
@@ -374,7 +440,19 @@ class Analysis(object):
     def get_dihedrals(self, A, B, C, D, unique=True):
         """Get dihedrals A-B-C-D.
 
-        If `unique=False` A-B-C-D and D-C-B-A will be returned.
+        Parameters:
+
+        A, B, C, D: str
+            Get Dihedralss between elements A, B, C and D. **B-C will be the central axis**.
+        unique: bool
+            Return the dihedrals both ways or just one way (A-B-C-D and D-C-B-A or only A-B-C-D)
+
+        Returns:
+
+        return: list of lists of tuples
+            return[imageIdx][atomIdx][dihedralI], each tuple starts with atomIdx.
+
+        Use :func:`get_values` to convert the returned list to values.
         """
         r = []
         for imI in range(len(self.all_dihedrals)):
@@ -394,38 +472,82 @@ class Analysis(object):
 
 
     def get_bond_value(self, imIdx, idxs, **kwargs):
-        """Get bond length idxs[0]-idxs[1] from image imIdx.
+        """Get bond length.
 
-        *kwargs* are passed on to :func:`ase.Atoms.get_distance`
+        Parameters:
+
+        imIdx: int
+            Index of Image to get value from.
+        idxs: tuple or list of integers
+            Get distance between atoms idxs[0]-idxs[1].
+        kwargs: options or dict
+            Passed on to :func:`ase.Atoms.get_distance`.
+
+        Returns:
+
+        return: float
+            Value returned by image.get_distance.
         """
         return self.images[imIdx].get_distance(idxs[0], idxs[1], **kwargs)
 
     def get_angle_value(self, imIdx, idxs, **kwargs):
-        """Get angle idxs[0]-idxs[1]-idxs[2] from image imIdx.
+        """Get angle.
 
-        *kwargs* are passed on to :func:`ase.Atoms.get_angle`
+        Parameters:
+
+        imIdx: int
+            Index of Image to get value from.
+        idxs: tuple or list of integers
+            Get angle between atoms idxs[0]-idxs[1]-idxs[2].
+        kwargs: options or dict
+            Passed on to :func:`ase.Atoms.get_angle`.
+
+        Returns:
+
+        return: float
+            Value returned by image.get_angle.
         """
         return self.images[imIdx].get_angle(idxs[0], idxs[1], idxs[2], **kwargs)
 
     def get_dihedral_value(self, imIdx, idxs, **kwargs):
-        """Get dihedral idxs[0]-idxs[1]-idxs[2]-idxs[3] from image imIdx.
+        """Get dihedral.
 
-        *kwargs* are passed on to :func:`ase.Atoms.get_dihedral`
+        Parameters:
+
+        imIdx: int
+            Index of Image to get value from.
+        idxs: tuple or list of integers
+            Get angle between atoms idxs[0]-idxs[1]-idxs[2]-idxs[3].
+        kwargs: options or dict
+            Passed on to :func:`ase.Atoms.get_dihedral`.
+
+        Returns:
+
+        return: float
+            Value returned by image.get_dihedral.
         """
         return self.images[imIdx].get_dihedral(idxs[0], idxs[1], idxs[2], idxs[3], **kwargs)
 
     def get_values(self, inputList, imageIdx=None, **kwargs):
         """Get Bond/Angle/Dihedral values.
 
-        *inputList* can be any list provided by :meth:`~ase.geometry.analysis.Analysis.get_bonds`,
-        :meth:`~ase.geometry.analysis.Analysis.get_angles` or
-        :meth:`~ase.geometry.analysis.Analysis.get_dihedrals`.
+        Parameters:
 
-        Using *imageIdx* (can be integer or slice) the analyzed frames can be specified.
-        If *imageIdx* is None, all frames will be analyzed. See :func:`~ase.geometry.analysis.Analysis._get_slice` for details.
+        inputList: list of lists of tuples
+            Can be any list provided by :meth:`~ase.geometry.analysis.Analysis.get_bonds`,
+            :meth:`~ase.geometry.analysis.Analysis.get_angles` or
+            :meth:`~ase.geometry.analysis.Analysis.get_dihedrals`.
+        imageIdx: integer or slice
+            The images from :data:`images` to be analyzed. If None, all frames will be analyzed.
+            See :func:`~ase.geometry.analysis.Analysis._get_slice` for details.
+        kwargs: options or dict
+            Passed on to the :class:`~ase.Atoms` classes functions for retrieving the values.
 
-        *kwargs* is passed on to the :class:`~ase.Atoms` classes functions for
-        retrieving the values.
+        Returns:
+
+        return: list of lists of floats
+            return[imageIdx][valueIdx]. Has the same shape as the *inputList*, instead of each
+            tuple there is a float with the value this tuple yields.
 
         The type of value requested is determined from the length of the tuple inputList[0][0].
         The methods from the :class:`~ase.Atoms` class are used.
@@ -465,20 +587,32 @@ class Analysis(object):
 
         return r
 
+
     def get_rdf(self, rmax, nbins, imageIdx=None, elements=None, return_dists=False):
         """Get RDF.
 
         Wrapper for :meth:`ase.ga.utilities.get_rdf` with more selection possibilities.
 
-        * `rmax` (type: float): Maximum distance of RDF.
-        * `nbins` (type: int): Number of bins to devide RDF.
-        * `imageIdx` (type: int/slice/None): Images to analyze, see :func:`~ase.geometry.analysis.Analysis._get_slice` for details.
-        * `elements` (type: str/int/list/tuple): Make partial RDFs.
+        Parameters:
+
+        rmax: float
+            Maximum distance of RDF.
+        nbins: int
+            Number of bins to devide RDF.
+        imageIdx: int/slice/None
+            Images to analyze, see :func:`_get_slice` for details.
+        elements: str/int/list/tuple
+            Make partial RDFs.
 
         If elements is `None`, a full RDF is calculated. If elements is an *integer* or a *list/tuple
         of integers*, only those atoms will contribute to the RDF (like a mask). If elements
         is a *string* or a *list/tuple of strings*, only Atoms of those elements will contribute.
 
+        Returns:
+
+        return: list of lists / list of tuples of lists
+            If return_dists is True, the returned tuples contain (rdf, distances). Otherwise
+            only rdfs for each image are returned.
         """
 
         sl = self._get_slice(imageIdx)
@@ -524,6 +658,3 @@ class Analysis(object):
 
             r.append(get_rdf(tmpImage, rmax, nbins, elements=el, no_dists=(not return_dists)))
         return r
-
-
-
