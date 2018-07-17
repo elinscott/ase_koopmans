@@ -3,7 +3,7 @@ from math import sqrt
 import numpy as np
 from scipy import sparse as sp
 
-from ase.data import atomic_numbers
+from ase.data import atomic_numbers, covalent_radii
 from ase.geometry import complete_cell
 
 
