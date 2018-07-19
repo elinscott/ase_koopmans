@@ -23,7 +23,7 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
 from ase.utils import basestring
-from ase.constraints import FixAtoms
+from ase.constraints import FixAtoms, FixCartesian
 from ase.geometry import cell_to_cellpar, cellpar_to_cell
 
 __all__ = ['read_xyz', 'write_xyz', 'iread_xyz']
@@ -436,17 +436,14 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
                   info=info)
 
     # Read and set constraints
-    cnstr = None
-    if 'cnstr' in arrays:
-        cnstr = arrays['cnstr']
-        cnstrlist = []
-        for fix in cnstr:
-            if fix == 'F':
-                cnstrlist.append(1)
-            else:
-                cnstrlist.append(0)
-        del arrays['cnstr']
-        atoms.set_constraint(FixAtoms(mask=cnstrlist))
+    if 'move_mask' in arrays:
+        if properties['move_mask'][1] == 3:
+            atoms.set_constraint(FixCartesian(range(natoms), mask=arrays['move_mask']))
+        elif properties['move_mask'][1] == 1:
+            atoms.set_constraint(FixAtoms(mask=arrays['move_mask']))
+        else:
+            raise XYZError('Not implemented constraint')
+        del arrays['move_mask']
 
     for name, array in arrays.items():
         atoms.new_array(name, array)
@@ -744,20 +741,6 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                         key not in ['symbols', 'positions', 'numbers',
                                     'species', 'pos']])
 
-        if 'cnstr' in fr_cols:
-            # Fixed flags
-            cnstr = images[0]._get_constraints()
-            for c in cnstr:
-                if isinstance(c, FixAtoms):
-                    cnstrlist = c.index
-            if len(cnstr) > 0:
-                cnstr = np.zeros((natoms,), dtype=np.str)
-                cnstr[:] = 'M'
-                for i in cnstrlist:
-                    cnstr[i] = 'F'
-            else:
-                fr_cols.remove('cnstr')
-
         if vec_cell:
             plain = True
 
@@ -831,7 +814,21 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                 if pos.shape != (natoms, 3) or pos.dtype.kind != 'f':
                     raise ValueError('Pseudo Atoms containing cell have bad coords')
 
-
+        # Move mask
+        if 'move_mask' in fr_cols:
+            cnstr = images[0]._get_constraints()
+            if len(cnstr) > 0:
+                for c in cnstr:
+                    if isinstance(c, FixAtoms):
+                        cnstr = np.zeros((natoms,), dtype=np.bool)
+                        for idx in c.index:
+                            cnstr[idx] = True
+                    elif isinstance(c, FixCartesian):
+                        cnstr = np.ones((natoms, 3), dtype=np.bool)
+                        for idx in c.a:
+                            cnstr[idx] = c.mask[idx]
+            else:
+                fr_cols.remove('move_mask')
 
         # Collect data to be written out
         arrays = {}
@@ -842,7 +839,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                 arrays[column] = atoms.arrays[column]
             elif column == 'symbols':
                 arrays[column] = np.array(symbols)
-            elif column == 'cnstr':
+            elif column == 'move_mask':
                 arrays[column] = cnstr
             else:
                 raise ValueError('Missing array "%s"' % column)
