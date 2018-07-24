@@ -323,7 +323,6 @@ class LJInteractionsGeneral:
             qmforces[qmi, :] -= f.sum(0).sum(0)
 
         if mmatoms.calc.name == 'acn': 
-            print('Redistributing LJ MM forces')
             # This needs to be generalized for an arbitrary MM calculator
             mmforces = mmatoms.calc.redistribute_forces(mmforces)
 
