@@ -675,7 +675,7 @@ class RotationalMutation(OffspringCreator):
                 indices[tag] = hits
 
         n_rot = int(np.ceil(len(indices) * self.fraction))
-        chosen_tags = np.random.choice(indices.keys(), size=n_rot,
+        chosen_tags = np.random.choice(list(indices.keys()), size=n_rot,
                                        replace=False)
 
         too_close = True
