@@ -9,9 +9,10 @@ from random import random, randrange
 from ase import Atoms
 from ase.geometry import find_mic
 from ase.build import niggli_reduce
-from ase.ga.utilities import atoms_too_close_two_sets
+from ase.ga.utilities import (atoms_too_close, atoms_too_close_two_sets,
+                              gather_atoms_by_tag)
 from ase.ga.offspring_creator import OffspringCreator
-from ase.ga.bulk_utilities import atoms_too_close, gather_atoms_by_tag
+
 
 class Positions(object):
     """Helper object to simplify the pairing process.

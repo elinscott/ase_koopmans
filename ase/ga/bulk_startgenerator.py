@@ -9,8 +9,7 @@ import numpy as np
 from ase import Atoms
 from ase.data import atomic_numbers
 from ase.build import molecule
-from ase.ga.utilities import closest_distances_generator
-from ase.ga.bulk_utilities import atoms_too_close
+from ase.ga.utilities import closest_distances_generator, atoms_too_close
 
 
 def random_pos(cell):
