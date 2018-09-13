@@ -44,8 +44,6 @@ pairing = CutAndSplicePairing(blmin, p1=1., p2=0., minfrac=0.15,
 
 a3, desc = pairing.get_new_individual([a1, a2])
 cell = a3.get_cell()
-if not cellbounds.is_within_bounds(cell):
-    write('to_check.traj', [a1, a2, a3])
 assert cellbounds.is_within_bounds(cell)
 assert not atoms_too_close(a3, blmin, use_tags=True)
 
