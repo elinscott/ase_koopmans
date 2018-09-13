@@ -32,13 +32,13 @@ class CellBounds:
         self.bounds = {'alpha': [0, np.pi], 'beta': [0, np.pi], 'gamma': [0, np.pi],
                        'a': [0, 1e6], 'b': [0, 1e6], 'c': [0, 1e6],
                        'phi': [0, np.pi], 'chi': [0, np.pi], 'psi': [0, np.pi]}
-        for param, bound in bounds.iteritems():
+        for param, bound in bounds.items():
             self.bounds[param] = bound
 
     def is_within_bounds(self, cell):
         values = get_cell_angles_lengths(cell)
         verdict = True
-        for param, bound in self.bounds.iteritems():
+        for param, bound in self.bounds.items():
             if not (bound[0] <= values[param] <= bound[1]):
                 verdict = False
         return verdict

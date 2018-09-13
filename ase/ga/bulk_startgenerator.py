@@ -62,7 +62,7 @@ class StartGenerator(object):
 
         # normalize splitting probabilities:
         tot = sum([v for v in splits.values()])
-        self.splits = {k: v * 1. / tot for k, v in splits.iteritems()}
+        self.splits = {k: v * 1. / tot for k, v in splits.items()}
 
         # pre-process blocks and blmin:
         self.blocks = []
@@ -94,7 +94,7 @@ class StartGenerator(object):
         # choose factors according to the probabilities
         r = random()
         cumprob = 0
-        for split, prob in self.splits.iteritems():
+        for split, prob in self.splits.items():
             cumprob += prob
             if cumprob > r:
                 break

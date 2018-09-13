@@ -113,19 +113,19 @@ class FingerprintsComparator(object):
         so in order to write the fingerprints to atoms.info, we need
         to convert them to strings """
         fingerprints_encoded = {}
-        for key, val in fingerprints.iteritems():
+        for key, val in fingerprints.items():
             try:
                 newkey = "_".join(map(str, list(key)))
             except TypeError:
                 newkey = str(key)
             if isinstance(val, dict):
                 fingerprints_encoded[newkey] = {}
-                for key2, val2 in val.iteritems():
+                for key2, val2 in val.items():
                     fingerprints_encoded[newkey][str(key2)] = val2
             else:
                 fingerprints_encoded[newkey] = val
         typedic_encoded = {}
-        for key, val in typedic.iteritems():
+        for key, val in typedic.items():
             newkey = str(key)
             typedic_encoded[newkey] = val
         return [fingerprints_encoded, typedic_encoded]
@@ -133,7 +133,7 @@ class FingerprintsComparator(object):
     def __json_decode__(self, fingerprints, typedic):
         """ This is the reverse operation of __json_encode__ """
         fingerprints_decoded = {}
-        for key, val in fingerprints.iteritems():
+        for key, val in fingerprints.items():
             newkey = map(int, key.split("_"))
             if len(newkey) > 1:
                 newkey = tuple(newkey)
@@ -142,12 +142,12 @@ class FingerprintsComparator(object):
 
             if isinstance(val, dict):
                 fingerprints_decoded[newkey] = {}
-                for key2, val2 in val.iteritems():
+                for key2, val2 in val.items():
                     fingerprints_decoded[newkey][int(key2)] = np.array(val2)
             else:
                 fingerprints_decoded[newkey] = np.array(val)
         typedic_decoded = {}
-        for key, val in typedic.iteritems():
+        for key, val in typedic.items():
             newkey = int(key)
             typedic_decoded[newkey] = val
         return [fingerprints_decoded, typedic_decoded]
@@ -413,9 +413,9 @@ class FingerprintsComparator(object):
         n_tot = sum([len(typedic[key]) for key in typedic])
 
         local_orders = []
-        for index, fingerprints in individual_fingerprints.iteritems():
+        for index, fingerprints in individual_fingerprints.items():
             local_order = 0
-            for unique_type, fingerprint in fingerprints.iteritems():
+            for unique_type, fingerprint in fingerprints.items():
                 term = np.linalg.norm(fingerprint)**2
                 term *= self.binwidth
                 term *= (volume * 1. / n_tot)**3
@@ -489,7 +489,7 @@ class FingerprintsComparator(object):
         npts = int(np.ceil(self.rcut * 1. / self.binwidth))
         x = np.linspace(0, self.rcut, npts, endpoint=False)
 
-        for key, val in fp.iteritems():
+        for key, val in fp.items():
             plt.plot(x, val)
             suffix = "_fp_{0}_{1}.png".format(key[0], key[1])
             plt.savefig(prefix + suffix)
@@ -509,8 +509,8 @@ class FingerprintsComparator(object):
         npts = int(np.ceil(self.rcut * 1. / self.binwidth))
         x = np.linspace(0, self.rcut, npts, endpoint=False)
 
-        for key, val in fp.iteritems():
-            for key2, val2 in val.iteritems():
+        for key, val in fp.items():
+            for key2, val2 in val.items():
                 plt.plot(x, val2)
                 plt.ylim([-1, 10])
                 suffix = "_individual_fp_{0}_{1}.png".format(key, key2)
