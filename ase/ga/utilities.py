@@ -123,7 +123,6 @@ def atoms_too_close(a, bl, use_tags=False):
     lengths = a.get_cell_lengths_and_angles()[:3]
     min_length = max(bl.values())
     for i in range(3):
-        print lengths, min_length
         if lengths[i] < min_length and a.pbc[i]:
             return True
 
