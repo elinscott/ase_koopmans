@@ -161,7 +161,7 @@ class StartGenerator(object):
 
         # The ordering is shuffled so different blocks
         # are added in random order.
-        order = range(N_blocks)
+        order = list(range(N_blocks))
         shuffle(order)
         blocks = [blocks[i] for i in order]
         indices = np.array(indices)[order]
