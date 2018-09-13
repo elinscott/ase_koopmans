@@ -1,6 +1,4 @@
 import numpy as np
-from scipy.spatial.distance import cdist
-from itertools import product, combinations_with_replacement
 from ase.geometry.cell import cell_to_cellpar
 
 
@@ -63,82 +61,6 @@ def get_rotation_matrix(u, t):
                         uy * uz * (1 - cost) + ux * sint,
                         (uz**2) * (1 - cost) + cost]])
     return rotmat
-
-
-def gather_atoms_by_tag(atoms):
-    ''' Translates same-tag atoms so that they lie 'together',
-    with distance vectors as in the minimum image convention.'''
-    tags = atoms.get_tags()
-    pos = atoms.get_positions()
-    for tag in list(set(tags)):
-        indices = np.where(tags == tag)[0]
-        if len(indices) == 1:
-            continue
-        vectors = atoms.get_distances(indices[0], indices[1:],
-                                      mic=True, vector=True)
-        pos[indices[1:]] = pos[indices[0]] + vectors
-    atoms.set_positions(pos)
-
-
-def atoms_too_close(atoms, bl, use_tags=False):
-    ''' 
-    Alternative method of finding out whether atoms are 
-    too close to each other. Whereas the function in ase.ga.utilities
-    can take up to the order of 1 second to decide, this one
-    consistently does it in a few milliseconds. 
-    Furthermore, for cells with one very short lattice vector
-    (e.g. 1-2 Angstrom), this method seems to correctly evaluate,
-    whereas the ase.ga.utilities function appears to be faulty.
-
-    use_tags: whether to use the Atoms tags to disable distance
-              checking within a block with the same tag.
-
-              Note: if certain atoms are constrained, this method
-              may return unexpected results in case the contraints
-              prevent same-tag atoms to be gathered together in
-              the minimum-image-convention. In such cases, one
-              should (1) release the relevant constraints, 
-              (2) apply the gather_atoms_by_tag function, and
-              (3) re-apply the constraints, before using the 
-              atoms_too_close function.  
-    '''
-    a = atoms.copy()
-    if use_tags:
-        gather_atoms_by_tag(a)
-
-    pbc = a.get_pbc()
-    cell = a.get_cell()
-    num = a.get_atomic_numbers()
-    pos = a.get_positions()
-    tags = a.get_tags()
-    unique_types = sorted(list(set(num)))
-
-    neighbours = []
-    for i in range(3):
-        if pbc[i]:
-            neighbours.append([-1, 0, 1])
-        else:
-            neighbours.append([0])
-
-    for nx, ny, nz in product(*neighbours):
-        displacement = np.dot(cell.T, np.array([nx, ny, nz]).T)
-        pos_new = pos + displacement
-        distances = cdist(pos, pos_new)
-
-        if nx == 0 and ny == 0 and nz == 0:
-            if use_tags and len(a) > 1:
-                x = np.array([tags]).T
-                distances += 1e2 * (cdist(x, x) == 0)
-            else:
-                distances += 1e2 * np.identity(len(a))
-
-        for type1, type2 in combinations_with_replacement(unique_types, 2):
-            x1 = np.where(num == type1)
-            x2 = np.where(num == type2)
-            if np.min(distances[x1].T[x2]) < bl[(type1, type2)]:
-                return True
-
-    return False
 
 
 def convert_for_lammps(atoms):
