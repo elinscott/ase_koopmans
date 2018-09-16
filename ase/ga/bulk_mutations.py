@@ -9,7 +9,7 @@ import numpy as np
 from random import gauss
 from scipy.spatial.distance import cdist
 from ase import Atoms
-from ase.data import chemical_symbols
+from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 from ase.build import niggli_reduce
 from ase.ga.offspring_creator import OffspringCreator
@@ -306,49 +306,26 @@ class StrainMutation(OffspringCreator):
         return mutant
 
 
-def inverse_square_model(pairs, r, parameters=None):
-    ''' 
-    Returns the value of the force constant k, calculated as: 
-    k = k0*(r0/r)**2
-    Here, the parameters k0 and r0 are taken equal to the 
-    force constant and equilibrium bond length of the gas-phase
-    diatomic molecule. The tabulated data have been obtained
-    with PBE/def2-sv(p) in NWChem.
+def get_number_of_valence_electrons(Z):
+    ''' Return the number of valence electrons for the element with
+        atomic number Z, simply based on its periodic table group '''
+    groups = [[], [1, 3, 11, 19, 37, 55, 87], [2, 4, 12, 20, 38, 56, 88],
+              [21, 39, 57, 89]]
 
-    Arguments:
-    pair: Nx2 array of atomic number pairs
-    r: number or array of interatomic distances (of length N)
-    parameters: None (if the parameter set below is to be used),
-                or dictionary with entries of the type
-                (sorted atomic number pair):(k0, r0)
-    '''
-    if parameters is None:
-        parameters = {('C', 'C'): [58.284, 1.323],
-                      ('C', 'H'): [24.699, 1.15],
-                      ('C', 'Mo'): [42.648, 1.685],
-                      ('Ca', 'Ca'): [0.584, 4.120],
-                      ('Ca', 'H'): [5.834, 1.984],
-                      ('Ca', 'O'): [13.194, 3.699],
-                      ('H', 'H'): [32.121, 0.772],
-                      ('H', 'O'): [39.455, 0.994],
-                      ('H', 'Pd'): [14.794, 1.555],
-                      ('Mo', 'Mo'): [48.621, 1.982],
-                      ('O', 'O'): [71.925, 1.215],
-                      ('O', 'Pd'): [21.494, 1.826],
-                      ('O', 'Sr'): [21.128, 1.976],
-                      ('O', 'Ti'): [47.382, 1.614],
-                      ('Pd', 'Pd'): [8.171, 2.499],
-                      ('Sr', 'Sr'): [0.393, 4.571],
-                      ('Sr', 'Ti'): [1.944, 3.22],
-                      ('Ti', 'Ti'): [93.731, 1.91],
-                      }
+    for i in range(9):
+        groups.append(i + np.array([22, 40, 72, 104]))
 
-    k = []
-    for i, pair in enumerate(pairs):
-        key = tuple(sorted([chemical_symbols[int(j)] for j in pair]))
-        k0, r0 = parameters[key]
-        k.append(k0 * (r0 / r[i])**2)
-    return np.array(k)
+    for i in range(6):
+        groups.append(i + np.array([5, 13, 31, 49, 81, 113]))
+
+    for i, group in enumerate(groups):
+        if Z in group:
+            nval = i if i < 13 else i - 10
+            break
+    else:
+        raise ValueError('Z=%d not included in this dataset.' % Z) 
+
+    return nval
 
 
 class SoftMutation(OffspringCreator):
@@ -360,8 +337,7 @@ class SoftMutation(OffspringCreator):
     structure has already been softmutated.
     '''
 
-    def __init__(self, blmin, bounds=[0.5, 2.0], calculator=None,
-                 fconstfunc=inverse_square_model, rcut=10.0,
+    def __init__(self, blmin, bounds=[0.5, 2.0], calculator=None, rcut=10.,
                  used_modes_file='used_modes.json', use_tags=False,
                  verbose=False):
         '''
@@ -376,12 +352,9 @@ class SoftMutation(OffspringCreator):
                 considered too similar to the parent and None is 
                 returned.
         calculator: the calculator to be used in the vibrational 
-                    analysis. The default (None) is to use a simple
-                    pairwise harmonic potential.
-        fconstfunc: function that accepts a list of two atomic numbers
-                    and a number of array of interatomic distances,
-                    and returns the value of the force constant
-                    to be used with the pairwise harmonic potential.
+                    analysis. The default (None) is to determine the
+                    the force constants via the "bond electronegativity"
+                    model described in the reference above.
         rcut: cutoff radius for the pairwise harmonic potential.
         used_modes_file: name of json dump file where previously used 
                   modes will be stored (and read). If None, no such 
@@ -393,7 +366,6 @@ class SoftMutation(OffspringCreator):
         self.blmin = blmin
         self.bounds = bounds
         self.calc = calculator
-        self.fconstfunc = fconstfunc
         self.rcut = rcut
         self.used_modes_file = used_modes_file
         self.use_tags = use_tags
@@ -407,9 +379,9 @@ class SoftMutation(OffspringCreator):
                 # file doesn't exist (yet)
                 pass
 
-    def _get_pwh_hessian_(self, atoms):
-        ''' Returns the Hessian matrix d2E/dxi/dxj for the pairwise
-        harmonic potential. '''
+    def _get_bem_hessian_(self, atoms):
+        ''' Returns the Hessian matrix d2E/dxi/dxj using the bond 
+            electronegativity model '''
         if self.use_tags:
             tags = atoms.get_tags()
         cell = atoms.get_cell()
@@ -422,20 +394,52 @@ class SoftMutation(OffspringCreator):
                           self_interaction=False)
         nl.update(atoms)
 
+        # computing the force constants
+        s_norms = []
+        valence_states = []
+        r_cov = []
+        for i in range(nat):
+            indices, offsets = nl.get_neighbors(i)
+            p = pos[indices] + np.dot(offsets, cell)
+            r = cdist(p, [pos[i]])
+            r_ci = covalent_radii[num[i]]
+            s = 0.
+            for j in indices:
+                d = r[j] - r_ci - covalent_radii[num[j]]
+                s += np.exp(-d / 0.37)
+            s_norms.append(s)
+            valence_states.append(get_number_of_valence_electrons(num[i]))
+            r_cov.append(r_ci)
+
+        fconst = [] 
+        for i in range(nat):
+            indices, offsets = nl.get_neighbors(i)
+            p = pos[indices] + np.dot(offsets, cell)
+            r = cdist(p, [pos[i]])
+            n = num[indices]
+            fc = []
+            for j in indices:
+                d = r[j] - r_cov[i] - r_cov[j]
+                chi_ik = 0.481 * valence_states[num[i]] / (r_cov[i] + 0.5 * d)
+                chi_jk = 0.481 * valence_states[num[j]] / (r_cov[j] + 0.5 * d)
+                cn_ik = np.exp(-d / 0.37) / s_norms[i]
+                cn_jk = np.exp(-d / 0.37) / s_norms[j]
+                fc.append(np.sqrt(chi_ik * chi_jk / (cn_ik * cn_jk)))
+            fconst.append(fc)
+
         # constructing the hessian
         hessian = np.zeros((nat * 3, nat * 3))
         large_fc = 1e5  # high force constant for same-tag atoms
         for i in range(nat):
             indices, offsets = nl.get_neighbors(i)
+            fcs = np.array(fconst[i])
             for j in range(nat):
                 if i == j:
                     p = pos[indices] + np.dot(offsets, cell)
                     r = cdist(p, [pos[i]])
                     v = p - pos[i]
-                    pairs = np.vstack((num[indices], np.zeros(len(indices)))).T
-                    pairs[:, 1] = num[i]
-                    fc = self.fconstfunc(pairs, r[:, 0])
-
+                    fc = fcs.copy()
+  
                     if self.use_tags:
                         tag_indices = np.where(tags == tags[i])[0]
                         for tag_index in tag_indices:
@@ -462,14 +466,14 @@ class SoftMutation(OffspringCreator):
                             for l in range(3):
                                 index1 = 3 * i + k
                                 index2 = 3 * j + l
-                                fc = self.fconstfunc([[num[i], num[j]]], [r])
+                                fc = fcs[m] 
                                 if self.use_tags and tags[i] == tags[j]:
                                     fc = large_fc
                                 h = -1 * fc * v[k] * v[l]
                                 hessian[index1, index2] += h
         return hessian
 
-    def _get_hessian_(self, atoms, dx):
+    def _get_calc_hessian_(self, atoms, dx):
         ''' 
         Returns the Hessian matrix d2E/dxi/dxj using self.calc as
         calculator, through a first-order central difference scheme with
@@ -500,9 +504,9 @@ class SoftMutation(OffspringCreator):
     def _calculate_normal_modes_(self, atoms, dx=0.02, massweighing=False):
         '''Performs the vibrational analysis.'''
         if self.calc is None:
-            hessian = self._get_pwh_hessian_(atoms)
+            hessian = self._get_bem_hessian_(atoms)
         else:
-            hessian = self._get_hessian_(atoms, dx)
+            hessian = self._get_calc_hessian_(atoms, dx)
 
         if massweighing:
             m = np.array([np.repeat(atoms.get_masses()**-0.5, 3)])
