@@ -211,23 +211,21 @@ class CutAndSplicePairing(OffspringCreator):
             return None
 
         # pair the cells:
-        if self.cellbounds is None:
+        if not self.scaling_volume:
+            v_ref = 0.5 * (a1.get_volume() + a2.get_volume())
+        else:
+            v_ref = self.scaling_volume
+
+        found = False
+        while not found:
             r = random()
             newcell = r * cell1 + (1 - r) * cell2
-        else:
-            found = False
-            while not found:
-                r = random()
-                newcell = r * cell1 + (1 - r) * cell2
+            vol = abs(np.linalg.det(newcell))
+            newcell *= (v_ref / vol)**(1. / 3)
+            if self.cellbounds is not None:
                 found = self.cellbounds.is_within_bounds(newcell)
-
-        # volume scaling:
-        vol = abs(np.linalg.det(newcell))
-        if not self.scaling_volume:
-            v = 0.5 * (a1.get_volume() + a2.get_volume())
-        else:
-            v = self.scaling_volume
-        newcell *= (v / vol)**(1. / 3)
+            else:
+                found = True
 
         # Construct the cartesian positions and reorder the atoms
         # to follow the original order
@@ -242,8 +240,8 @@ class CutAndSplicePairing(OffspringCreator):
             pos = newcop + vectors
             for row in pos:
                 newpos.append(row)
-        newpos = np.reshape(newpos, (N, 3))
 
+        newpos = np.reshape(newpos, (N, 3))
         num = a1.get_atomic_numbers()
         child = Atoms(numbers=num, positions=newpos, pbc=pbc, cell=newcell,
                       tags=tags)
