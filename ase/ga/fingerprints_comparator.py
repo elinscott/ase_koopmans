@@ -291,7 +291,7 @@ class FingerprintsComparator(object):
         num = atoms.get_atomic_numbers()
         cell = atoms.get_cell()
 
-        unique_types = sorted(list(set(num)))
+        unique_types = np.unique(num)
         posdic = {}
         typedic = {}
         for t in unique_types:

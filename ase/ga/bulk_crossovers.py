@@ -127,7 +127,7 @@ class CutAndSplicePairing(OffspringCreator):
         scalpos1 = a1.get_scaled_positions(wrap=False)
         scalpos2 = a2.get_scaled_positions(wrap=False)
         p1, p2, sym = [], [], []
-        for i in list(set(tags)):
+        for i in np.unique(tags):
             indices = np.where(tags == i)[0]
             s = ''.join([symbols[j] for j in indices])
             sym.append(s)
@@ -142,7 +142,7 @@ class CutAndSplicePairing(OffspringCreator):
 
         all_points = p1
         all_points.extend(p2)
-        unique_sym = list(set(sym))
+        unique_sym = np.unique(sym)
         types = {s: sym.count(s) for s in unique_sym}
 
         # Sort these by chemical symbols:

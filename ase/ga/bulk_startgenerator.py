@@ -76,7 +76,7 @@ class StartGenerator(object):
                 block = molecule(block)
             self.blocks.append((block, count))
             numbers.extend(block.get_atomic_numbers())
-        numbers = list(set(numbers))  # unique atomic numbers
+        numbers = np.unique(numbers)
 
         if type(blmin) == dict:
             self.blmin = blmin

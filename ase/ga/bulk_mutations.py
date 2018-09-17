@@ -56,7 +56,7 @@ class RattleMutation(standardmutations.RattleMutation):
             count += 1
             pos = pos_ref.copy()
             ok = False
-            for tag in list(set(tags)):
+            for tag in np.unique(tags):
                 select = np.where(tags == tag)
                 if np.random.random() < self.rattle_prop:
                     ok = True
@@ -107,16 +107,16 @@ class PermutationMutation(standardmutations.PermutationMutation):
         pbc = atoms.get_pbc()
         symbols = atoms.get_chemical_symbols()
 
-        unique_tags = list(set(tags))
+        unique_tags = np.unique(tags)
         n = len(unique_tags)
         swaps = int(np.ceil(n * self.probability / 2.))
 
         sym = []
-        for tag in list(set(unique_tags)):
+        for tag in unique_tags:
             indices = np.where(tags == tag)[0]
             s = ''.join([symbols[j] for j in indices])
             sym.append(s)
-        assert len(list(set(sym))) > 1
+        assert len(np.unique(sym)) > 1
 
         count = 0
         maxcount = 1000
@@ -292,7 +292,7 @@ class StrainMutation(OffspringCreator):
 
             if self.use_tags:
                 transfo = np.linalg.solve(cell_ref, cell_new)
-                for tag in list(set(tags)):
+                for tag in np.unique(tags):
                     select = np.where(tags == tag)
                     cop = np.mean(pos[select], axis=0)
                     disp = np.dot(cop, transfo) - cop
@@ -739,7 +739,7 @@ class RotationalMutation(OffspringCreator):
         eligible_tags = tags if self.tags is None else self.tags
 
         indices = {}
-        for tag in list(set(tags)):
+        for tag in np.unique(tags):
             hits = np.where(tags == tag)[0]
             if len(hits) > 1 and tag in eligible_tags:
                 indices[tag] = hits
