@@ -454,7 +454,6 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
             indices, offsets = nl.get_neighbors(i)
             p = pos[indices] + np.dot(offsets, cell)
             r = cdist(p, [pos[i]])[:, 0]
-            n = num[indices]
             fc = []
             for j, ii in enumerate(indices):
                 d = r[j] - r_cov[i] - r_cov[ii]
