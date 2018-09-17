@@ -4,6 +4,7 @@ please cite:
     M. Van den Bossche, Henrik Gronbeck, B. Hammer,
     J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
 in addition to the papers mentioned in the docstrings."""
+import inspect
 import json
 import numpy as np
 from random import gauss
@@ -601,7 +602,8 @@ class SoftMutation(OffspringCreator):
         """ Does the actual mutation. """
         a = atoms.copy()
 
-        if issubclass(self.calc, PairwiseHarmonicPotential):
+        if inspect.isclass(self.calc):
+            assert issubclass(self.calc, PairwiseHarmonicPotential)
             calc = self.calc(atoms, rcut=self.rcut)
         else:
             calc = self.calc
