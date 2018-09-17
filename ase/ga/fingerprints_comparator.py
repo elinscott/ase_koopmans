@@ -10,11 +10,11 @@ except:
 
 
 class FingerprintsComparator(object):
-    """ 
-    Implementation of comparison using fingerprint functions, based on: 
+    """
+    Implementation of comparison using fingerprint functions, based on:
     Oganov, Valle, J. Chem. Phys. 130, 104504 (2009)
-    http://dx.doi.org/10.1063/1.3079326 
-    and 
+    http://dx.doi.org/10.1063/1.3079326
+    and
     Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632
     http://dx.doi.org/10.1016/j.cpc.2010.06.007
     """
@@ -22,14 +22,14 @@ class FingerprintsComparator(object):
     def __init__(self, n_top=None, dE=1.0, cos_dist_max=5e-3, rcut=20.,
                  binwidth=0.05, sigma=0.02, nsigma=4, pbc=[True] * 3,
                  maxdims=[None] * 3, recalculate=False):
-        """ 
+        """
         Arguments:
 
-        n_top = number of atoms to optimize 
+        n_top = number of atoms to optimize
                 (everything except the substrate).
                 If None, all atoms will be included.
 
-        dE: energy difference above which two structures are 
+        dE: energy difference above which two structures are
             automatically considered to be different.
 
         cos_dist_max: maximal cosine distance between two structures in
@@ -40,8 +40,8 @@ class FingerprintsComparator(object):
         binwidth: width of the bins over which the fingerprints are
                   discretized.
 
-        pbc: list of booleans specifying whether to apply periodic 
-             boundary conditions along each of the three unit cell 
+        pbc: list of booleans specifying whether to apply periodic
+             boundary conditions along each of the three unit cell
              vectors when calculating the fingerprint.
              Note: for isolated systems (pbc = [False,False,False]),
              the pair correlation function itself is always short-ranged
@@ -49,13 +49,13 @@ class FingerprintsComparator(object):
              substracted for calculating the fingerprint. Also the
              volume normalization disappears.
 
-        maxdims: If PBC in only 1 or 2 dimensions are specified, the 
+        maxdims: If PBC in only 1 or 2 dimensions are specified, the
                  maximal thicknesses along the non-periodic directions
                  can be specified, as a list of length 3 (the values for
                  the periodic directions are not read). If not specified
                  the length of the cell vector along the non-periodic
                  direction is used.
-                 Note: in this implementation, the cell vectors are 
+                 Note: in this implementation, the cell vectors are
                  assumed to be orthogonal.
 
         sigma: standard deviation of the gaussian smearing to be applied
@@ -65,7 +65,7 @@ class FingerprintsComparator(object):
                 which the gaussian smearing is cut off (i.e. no smearing
                 beyond that distance).
 
-        recalculate: if True, ignores the fingerprints stored in  
+        recalculate: if True, ignores the fingerprints stored in
                      atoms.info and recalculates them.
         """
 
@@ -109,7 +109,7 @@ class FingerprintsComparator(object):
         return verdict
 
     def __json_encode__(self, fingerprints, typedic):
-        """ json does not accept tuples nor integers as dict keys, 
+        """ json does not accept tuples nor integers as dict keys,
         so in order to write the fingerprints to atoms.info, we need
         to convert them to strings """
         fingerprints_encoded = {}
@@ -188,7 +188,7 @@ class FingerprintsComparator(object):
         return cos_dist
 
     def __get_volume__(self, a):
-        ''' Calculates the normalizing value, and other parameters 
+        ''' Calculates the normalizing value, and other parameters
         (pmin,pmax,qmin,qmax) that are used for surface area calculation
         in the case of 1 or 2-D periodicity.'''
 
@@ -274,16 +274,16 @@ class FingerprintsComparator(object):
 
     def _take_fingerprints_(self, atoms, individual=False):
         """ Returns a [fingerprints,typedic] list, where fingerprints
-        is a dictionary with the fingerprints, and typedic is a 
-        dictionary with the list of atom indices for each element 
+        is a dictionary with the fingerprints, and typedic is a
+        dictionary with the list of atom indices for each element
         (or "type") in the atoms object.
-        The keys in the fingerprints dictionary are the (A,B) tuples, 
-        which are the different element-element combinations in the 
-        atoms object (A and B are the atomic numbers). 
-        When A != B, the (A,B) tuple is sorted (A < B). 
+        The keys in the fingerprints dictionary are the (A,B) tuples,
+        which are the different element-element combinations in the
+        atoms object (A and B are the atomic numbers).
+        When A != B, the (A,B) tuple is sorted (A < B).
 
         If individual=True, a dict is returned, where each atom index
-        has an {atomic_number:fingerprint} dict as value. 
+        has an {atomic_number:fingerprint} dict as value.
         If individual=False, the fingerprints from atoms of the same
         atomic number are added together."""
 
@@ -441,7 +441,7 @@ class FingerprintsComparator(object):
         return self._calculate_local_orders_(fp, typedic, volume)
 
     def _cosine_distance_(self, fp1, fp2, typedic):
-        """ Returns the cosine distance from two fingerprints. 
+        """ Returns the cosine distance from two fingerprints.
         It also needs information about the number of atoms from
         each element, which is included in "typedic"."""
 
@@ -475,7 +475,7 @@ class FingerprintsComparator(object):
         return distance
 
     def plot_fingerprints(self, a, prefix=''):
-        """ Function for quickly plotting all the fingerprints. 
+        """ Function for quickly plotting all the fingerprints.
         Prefix = a prefix you want to give to the resulting PNG file."""
 
         if 'fingerprints' in a.info and not self.recalculate:
@@ -496,7 +496,7 @@ class FingerprintsComparator(object):
             plt.clf()
 
     def plot_individual_fingerprints(self, a, prefix=''):
-        """ Function for plotting all the individual fingerprints. 
+        """ Function for plotting all the individual fingerprints.
         Prefix = a prefix for the resulting PNG file."""
 
         if 'individual_fingerprints' in a.info and not self.recalculate:

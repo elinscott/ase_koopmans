@@ -51,14 +51,15 @@ class CutAndSplicePairing(OffspringCreator):
               distance these can have to each other.
     n_top   : The number of atoms to optimize (None = include all).
     p1      : probability that a parent is shifted over a random
-              distance along the normal of the cutting plane 
-    p2      : same as p1, but for shifting along the two directions 
+              distance along the normal of the cutting plane
+    p2      : same as p1, but for shifting along the two directions
               in the cutting plane
-    minfrac : minimal fraction of atoms a parent must contribute 
+    minfrac : minimal fraction of atoms a parent must contribute
               to the child
-    cellbounds: 
+    cellbounds: CellBounds instance describing the acceptable cell
+              shapes and dimensions.
     use_tags: whether to use the atomic tags to preserve
-              molecular identity. Note: same-tag atoms are 
+              molecular identity. Note: same-tag atoms are
               supposed to be grouped together.
     test_dist_to_slab: whether also the distances to the slab
               should be checked to satisfy the blmin.
@@ -88,8 +89,8 @@ class CutAndSplicePairing(OffspringCreator):
     def update_scaling_volume(self, population, w_adapt=0.5, n_adapt=0):
         ''' Updates the scaling volume that is used in the pairing
         w_adapt: weight of the new vs the old scaling volume
-        n_adapt: number of best candidates in the population that 
-                 are used to calculate the new scaling volume 
+        n_adapt: number of best candidates in the population that
+                 are used to calculate the new scaling volume
         '''
         if not n_adapt:
             # take best 20% of the population
@@ -104,15 +105,15 @@ class CutAndSplicePairing(OffspringCreator):
             self.scaling_volume = np.average(volumes, weights=weights)
 
     def _get_pairing_(self, a1, a2, direction=None, fraction=None):
-        """ 
+        """
         Creates a child from two parents using the given cutting plane
         Does not check whether atoms are too close, but does return
-        None if the generated structure lacks sufficient atoms 
+        None if the generated structure lacks sufficient atoms
         from one of the parents (see self.minfrac).
-        Assumes the parents have been 'topped' and checked for equal 
+        Assumes the parents have been 'topped' and checked for equal
         lengths, stoichiometries, and tags (if self.use_tags).
-        direction: direction of the cutting surface normal (0, 1 or 2) 
-        fraction: fraction of the lattice vector along which  
+        direction: direction of the cutting surface normal (0, 1 or 2)
+        fraction: fraction of the lattice vector along which
                   the cut is made.
         """
         N = len(a1)
@@ -295,7 +296,7 @@ class CutAndSplicePairing(OffspringCreator):
                 niggli_reduce(a1_copy)
             if not self.cellbounds.is_within_bounds(a2_copy.get_cell()):
                 niggli_reduce(a2_copy)
-  
+
         pos1_ref = a1_copy.get_positions()
         pos2_ref = a2_copy.get_positions()
 

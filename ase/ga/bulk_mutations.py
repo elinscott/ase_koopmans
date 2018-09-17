@@ -31,7 +31,7 @@ class RattleMutation(standardmutations.RattleMutation):
                  rattle_prop=0.4, use_tags=False, test_dist_to_slab=True,
                  verbose=False):
         standardmutations.RattleMutation.__init__(self, blmin, n_top,
-                                                  rattle_strength=rattle_strength, 
+                                                  rattle_strength=rattle_strength,
                                                   rattle_prop=rattle_prop,
                                                   verbose=verbose)
         self.use_tags = use_tags
@@ -87,7 +87,8 @@ class PermutationMutation(standardmutations.PermutationMutation):
     def __init__(self, blmin, n_top=None, probability=0.33, use_tags=False,
                  test_dist_to_slab=True, verbose=False):
         standardmutations.PermutationMutation.__init__(self, n_top,
-                                                       probability=probability, verbose=verbose)
+                                                       probability=probability,
+                                                       verbose=verbose)
         self.blmin = blmin
         self.use_tags = use_tags
         self.test_dist_to_slab = test_dist_to_slab
@@ -155,8 +156,8 @@ class PermuStrainMutation(OffspringCreator):
 
     def __init__(self, permutationmutation, strainmutation, verbose=False):
         """
-        permutationmutation: instance of a mutation that permutes 
-                             atom types 
+        permutationmutation: instance of a mutation that permutes
+                             atom types
         strainmutation: instance of a mutation that mutates by straining
         """
         OffspringCreator.__init__(self, verbose)
@@ -191,7 +192,7 @@ class StrainMutation(OffspringCreator):
 
     After initialization of the mutation, a scaling volume
     (to which each mutated structure is scaled before checking the
-    constraints) is typically generated from the population, 
+    constraints) is typically generated from the population,
     which is then also occasionally updated in the course of the
     GA run.
     """
@@ -200,7 +201,7 @@ class StrainMutation(OffspringCreator):
                  verbose=False):
         """ Parameters:
         blmin: dict with the minimal interatomic distances
-        cellbounds: ase.ga.bulk_utilities.CellBounds instance 
+        cellbounds: ase.ga.bulk_utilities.CellBounds instance
                     describing limits on the cell shape
         stddev: standard deviation used in the generation of the strain
                 matrix elements
@@ -335,7 +336,7 @@ class TagFilter:
         for i in range(self.n):
             indices = np.where(self.tags == self.unique_tags[i])
             shift = positions[i] - cop_pos[i]
-            all_pos[indices] += shift 
+            all_pos[indices] += shift
         self.atoms.set_positions(all_pos, **kwargs)
 
     def get_forces(self, *args, **kwargs):
@@ -373,7 +374,7 @@ class PairwiseHarmonicPotential:
         self.nl.update(self.atoms)
 
         self.calculate_force_constants()
- 
+
     def calculate_force_constants(self):
         msg = 'Child class needs to define calculate_force_constants() method'
         raise NotImplementedError(msg)
@@ -418,10 +419,10 @@ def get_number_of_valence_electrons(Z):
     return nval
 
 
-class BondElectroNegativityModel(PairwiseHarmonicPotential): 
-    ''' Pairwise harmonic potential where the force constants are 
+class BondElectroNegativityModel(PairwiseHarmonicPotential):
+    ''' Pairwise harmonic potential where the force constants are
         determined using the "bond electronegativity" model from
-        Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32 
+        Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32
         Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103
     '''
     def calculate_force_constants(self):
@@ -463,7 +464,7 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
                 cn_jk = s_norms[ii] / np.exp(-d / 0.37)
                 fc.append(np.sqrt(chi_ik * chi_jk / (cn_ik * cn_jk)))
             self.force_constants.append(np.array(fc))
- 
+
 
 class SoftMutation(OffspringCreator):
     '''
@@ -480,23 +481,23 @@ class SoftMutation(OffspringCreator):
                  verbose=False):
         '''
         blmin: dictionary with closest allowed interatomic distances.
-        bounds: lower and upper limits (in Angstrom) for the largest 
-                atomic displacement in the structure. For a given mode,  
-                the algorithm starts at zero amplitude and increases 
-                it until either blmin is violated or the largest 
+        bounds: lower and upper limits (in Angstrom) for the largest
+                atomic displacement in the structure. For a given mode,
+                the algorithm starts at zero amplitude and increases
+                it until either blmin is violated or the largest
                 displacement exceeds the provided upper bound).
                 If the largest displacement in the resulting structure
                 is lower than the provided lower bound, the mutant is
-                considered too similar to the parent and None is 
+                considered too similar to the parent and None is
                 returned.
-        calculator: the calculator to be used in the vibrational 
+        calculator: the calculator to be used in the vibrational
                     analysis. The default is to use a calculator
-                    based on pairwise harmonic potentials with force 
+                    based on pairwise harmonic potentials with force
                     constants from the "bond electronegativity"
                     model described in the reference above.
         rcut: cutoff radius for the pairwise harmonic potentials.
-        used_modes_file: name of json dump file where previously used 
-                  modes will be stored (and read). If None, no such 
+        used_modes_file: name of json dump file where previously used
+                  modes will be stored (and read). If None, no such
                   file will be used.
         use_tags: whether to use the atomic tags to preserve
                   molecular identity.
@@ -521,8 +522,8 @@ class SoftMutation(OffspringCreator):
                 pass
 
     def _get_hessian_(self, atoms, dx):
-        ''' 
-        Returns the Hessian matrix d2E/dxi/dxj using a first-order 
+        '''
+        Returns the Hessian matrix d2E/dxi/dxj using a first-order
         central difference scheme with displacements dx.
         '''
         N = len(atoms)
@@ -652,7 +653,7 @@ class SoftMutation(OffspringCreator):
 
         while amplitude * largest_norm < self.bounds[1]:
             pos_new = pos + direction * amplitude * mode
-            pos_new = expand(a, pos_new) 
+            pos_new = expand(a, pos_new)
             mutant.set_positions(pos_new)
             mutant.wrap()
             too_close = atoms_too_close(mutant, self.blmin,
@@ -678,11 +679,11 @@ class SoftMutation(OffspringCreator):
 
 
 class RotationalMutation(OffspringCreator):
-    """ Mutates a candidate by applying random rotations 
+    """ Mutates a candidate by applying random rotations
     to multi-atom moieties in the structure (atoms with
     the same tag are considered part of one such moiety).
     Only performs whole-molecule rotations, no internal
-    rotations.   
+    rotations.
 
     See also:
     Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
@@ -695,8 +696,8 @@ class RotationalMutation(OffspringCreator):
         blmin: closest allowed distances
         n_top: number of atoms to optimize; if None, all are included.
         fraction: fraction of the moieties to be rotated.
-        tags: None or list of integers, specify respectively whether 
-              all moieties or only those with matching tags are 
+        tags: None or list of integers, specify respectively whether
+              all moieties or only those with matching tags are
               eligible for rotation.
         min_angle: minimal angle (in radians) for each rotation;
                    should lie in the interval [0, pi].

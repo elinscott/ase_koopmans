@@ -3,9 +3,9 @@ from ase.geometry.cell import cell_to_cellpar
 
 
 def get_cell_angles_lengths(cell):
-    ''' 
+    '''
     Returns cell vectors lengths (a,b,c) as well as different
-    angles (alpha, beta, gamma, phi, chi, psi) (in radians). 
+    angles (alpha, beta, gamma, phi, chi, psi) (in radians).
     '''
     cellpar = cell_to_cellpar(cell)
     cellpar[3:] *= np.pi / 180  # convert angles to radians
@@ -23,8 +23,8 @@ def get_cell_angles_lengths(cell):
 
 
 class CellBounds:
-    ''' 
-    Class for defining as well as checking limits 
+    '''
+    Class for defining as well as checking limits
     on cell vector lengths and various angles
     '''
 
@@ -66,7 +66,7 @@ def get_rotation_matrix(u, t):
 def convert_for_lammps(atoms):
     """
     Convert a parallel piped (forming right hand basis)
-    to lower triangular, low-tilt box that LAMMPS will accept. 
+    to lower triangular, low-tilt box that LAMMPS will accept.
 
     This code draws from a previous LAMMPS interface:
     https://svn.fysik.dtu.dk/projects/ase-extra/trunk/
