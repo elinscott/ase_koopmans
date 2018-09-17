@@ -19,7 +19,7 @@ from ase.ga.bulk_utilities import get_rotation_matrix
 try:
     from scipy.spatial.distance import cdist
     have_scipy = True
-except ImportError
+except ImportError:
     have_scipy = False
 
 
@@ -310,6 +310,92 @@ class StrainMutation(OffspringCreator):
         return mutant
 
 
+class TagFilter:
+    ''' Filter which constrains same-tag atoms to behave
+        like internally rigid moieties '''
+    def __init__(self, atoms):
+        self.atoms = atoms
+        gather_atoms_by_tag(self.atoms)
+        self.tags = self.atoms.get_tags()
+        self.unique_tags = np.unique(self.tags)
+        self.n = len(self.unique_tags)
+
+    def get_positions(self):
+        all_pos = self.atoms.get_positions()
+        cop_pos = np.zeros((self.n, 3))
+        for i in range(self.n):
+            indices = np.where(self.tags == self.unique_tags[i])
+            cop_pos[i] = np.average(all_pos[indices], axis=0)
+        return cop_pos
+
+    def set_positions(self, positions, **kwargs):
+        cop_pos = self.get_positions()
+        all_pos = self.atoms.get_positions()
+        assert np.all(np.shape(positions) == np.shape(cop_pos))
+        for i in range(self.n):
+            indices = np.where(self.tags == self.unique_tags[i])
+            shift = positions[i] - cop_pos[i]
+            all_pos[indices] += shift 
+        self.atoms.set_positions(all_pos, **kwargs)
+
+    def get_forces(self, *args, **kwargs):
+        f = self.atoms.get_forces()
+        forces = np.zeros((self.n, 3))
+        for i in range(self.n):
+             indices = np.where(self.tags == self.unique_tags[i])
+             forces[i] = np.sum(f[indices], axis=0)
+        return forces
+
+    def get_masses(self):
+        m = self.atoms.get_masses()
+        masses = np.zeros(self.n)
+        for i in range(self.n):
+            indices = np.where(self.tags == self.unique_tags[i])
+            masses[i] = np.sum(m[indices])
+        return masses
+
+    def __len__(self):
+        return self.n
+
+
+class PairwiseHarmonicPotential:
+    ''' Parent class for interatomic potentials of the type
+        E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2 '''
+    def __init__(self, atoms, rcut=10.):
+        self.atoms = atoms
+        self.pos0 = atoms.get_positions()
+        self.rcut = rcut
+
+        # build neighborlist
+        nat = len(self.atoms)
+        self.nl = NeighborList([self.rcut / 2.] * nat, skin=0., bothways=True,
+                               self_interaction=False)
+        self.nl.update(self.atoms)
+
+        self.calculate_force_constants()
+ 
+    def calculate_force_constants(self):
+        msg = 'Child class needs to define calculate_force_constants() method'
+        raise NotImplementedError(msg)
+
+    def get_forces(self, atoms):
+        pos = atoms.get_positions()
+        cell = atoms.get_cell()
+        forces = np.zeros_like(pos)
+
+        for i, p in enumerate(pos):
+            indices, offsets = self.nl.get_neighbors(i)
+            p = pos[indices] + np.dot(offsets, cell)
+            r = cdist(p, [pos[i]])
+            v = (p - pos[i]) / r
+            p0 = self.pos0[indices] + np.dot(offsets, cell)
+            r0 = cdist(p0, [self.pos0[i]])
+            dr = r - r0
+            forces[i] = np.dot(self.force_constants[i].T, dr * v)
+
+        return forces
+
+
 def get_number_of_valence_electrons(Z):
     ''' Return the number of valence electrons for the element with
         atomic number Z, simply based on its periodic table group '''
@@ -327,10 +413,57 @@ def get_number_of_valence_electrons(Z):
             nval = i if i < 13 else i - 10
             break
     else:
-        raise ValueError('Z=%d not included in this dataset.' % Z) 
+        raise ValueError('Z=%d not included in this dataset.' % Z)
 
     return nval
 
+
+class BondElectroNegativityModel(PairwiseHarmonicPotential): 
+    ''' Pairwise harmonic potential where the force constants are 
+        determined using the "bond electronegativity" model from
+        Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32 
+        Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103
+    '''
+    def calculate_force_constants(self):
+        cell = self.atoms.get_cell()
+        pos = self.atoms.get_positions()
+        num = self.atoms.get_atomic_numbers()
+        nat = len(self.atoms)
+        nl = self.nl
+
+        # computing the force constants
+        s_norms = []
+        valence_states = []
+        r_cov = []
+        for i in range(nat):
+            indices, offsets = nl.get_neighbors(i)
+            p = pos[indices] + np.dot(offsets, cell)
+            r = cdist(p, [pos[i]])
+            r_ci = covalent_radii[num[i]]
+            s = 0.
+            for j, index in enumerate(indices):
+                d = r[j] - r_ci - covalent_radii[num[index]]
+                s += np.exp(-d / 0.37)
+            s_norms.append(s)
+            valence_states.append(get_number_of_valence_electrons(num[i]))
+            r_cov.append(r_ci)
+
+        self.force_constants = []
+        for i in range(nat):
+            indices, offsets = nl.get_neighbors(i)
+            p = pos[indices] + np.dot(offsets, cell)
+            r = cdist(p, [pos[i]])[:, 0]
+            n = num[indices]
+            fc = []
+            for j, ii in enumerate(indices):
+                d = r[j] - r_cov[i] - r_cov[ii]
+                chi_ik = 0.481 * valence_states[i] / (r_cov[i] + 0.5 * d)
+                chi_jk = 0.481 * valence_states[ii] / (r_cov[ii] + 0.5 * d)
+                cn_ik = s_norms[i] / np.exp(-d / 0.37)
+                cn_jk = s_norms[ii] / np.exp(-d / 0.37)
+                fc.append(np.sqrt(chi_ik * chi_jk / (cn_ik * cn_jk)))
+            self.force_constants.append(np.array(fc))
+ 
 
 class SoftMutation(OffspringCreator):
     '''
@@ -341,7 +474,8 @@ class SoftMutation(OffspringCreator):
     structure has already been softmutated.
     '''
 
-    def __init__(self, blmin, bounds=[0.5, 2.0], calculator=None, rcut=10.,
+    def __init__(self, blmin, bounds=[0.5, 2.0], rcut=10.,
+                 calculator=BondElectroNegativityModel,
                  used_modes_file='used_modes.json', use_tags=False,
                  verbose=False):
         '''
@@ -356,10 +490,11 @@ class SoftMutation(OffspringCreator):
                 considered too similar to the parent and None is 
                 returned.
         calculator: the calculator to be used in the vibrational 
-                    analysis. The default (None) is to determine the
-                    the force constants via the "bond electronegativity"
+                    analysis. The default is to use a calculator
+                    based on pairwise harmonic potentials with force 
+                    constants from the "bond electronegativity"
                     model described in the reference above.
-        rcut: cutoff radius for the pairwise harmonic potential.
+        rcut: cutoff radius for the pairwise harmonic potentials.
         used_modes_file: name of json dump file where previously used 
                   modes will be stored (and read). If None, no such 
                   file will be used.
@@ -385,135 +520,38 @@ class SoftMutation(OffspringCreator):
                 # file doesn't exist (yet)
                 pass
 
-    def _get_bem_hessian_(self, atoms):
-        ''' Returns the Hessian matrix d2E/dxi/dxj using the bond 
-            electronegativity model '''
-        if self.use_tags:
-            tags = atoms.get_tags()
-        cell = atoms.get_cell()
-        pos = atoms.get_positions()
-        num = atoms.get_atomic_numbers()
-        nat = len(atoms)
-
-        # build neighborlist
-        nl = NeighborList([self.rcut / 2.] * nat, skin=0., bothways=True,
-                          self_interaction=False)
-        nl.update(atoms)
-
-        # computing the force constants
-        s_norms = []
-        valence_states = []
-        r_cov = []
-        for i in range(nat):
-            indices, offsets = nl.get_neighbors(i)
-            p = pos[indices] + np.dot(offsets, cell)
-            r = cdist(p, [pos[i]])
-            r_ci = covalent_radii[num[i]]
-            s = 0.
-            for j in indices:
-                d = r[j] - r_ci - covalent_radii[num[j]]
-                s += np.exp(-d / 0.37)
-            s_norms.append(s)
-            valence_states.append(get_number_of_valence_electrons(num[i]))
-            r_cov.append(r_ci)
-
-        fconst = [] 
-        for i in range(nat):
-            indices, offsets = nl.get_neighbors(i)
-            p = pos[indices] + np.dot(offsets, cell)
-            r = cdist(p, [pos[i]])
-            n = num[indices]
-            fc = []
-            for j in indices:
-                d = r[j] - r_cov[i] - r_cov[j]
-                chi_ik = 0.481 * valence_states[num[i]] / (r_cov[i] + 0.5 * d)
-                chi_jk = 0.481 * valence_states[num[j]] / (r_cov[j] + 0.5 * d)
-                cn_ik = np.exp(-d / 0.37) / s_norms[i]
-                cn_jk = np.exp(-d / 0.37) / s_norms[j]
-                fc.append(np.sqrt(chi_ik * chi_jk / (cn_ik * cn_jk)))
-            fconst.append(fc)
-
-        # constructing the hessian
-        hessian = np.zeros((nat * 3, nat * 3))
-        large_fc = 1e5  # high force constant for same-tag atoms
-        for i in range(nat):
-            indices, offsets = nl.get_neighbors(i)
-            fcs = np.array(fconst[i])
-            for j in range(nat):
-                if i == j:
-                    p = pos[indices] + np.dot(offsets, cell)
-                    r = cdist(p, [pos[i]])
-                    v = p - pos[i]
-                    fc = fcs.copy()
-  
-                    if self.use_tags:
-                        tag_indices = np.where(tags == tags[i])[0]
-                        for tag_index in tag_indices:
-                            if tag_index == i:
-                                continue
-                            select = np.where(indices == tag_index)
-                            fc[select] = large_fc
-
-                    v /= r
-                    for k in range(3):
-                        for l in range(3):
-                            index1 = 3 * i + k
-                            index2 = 3 * j + l
-                            h = np.sum(np.dot(fc * v[:, k], v[:, l]))
-                            hessian[index1, index2] = h
-                else:
-                    for m, index in enumerate(indices):
-                        if index != j:
-                            continue
-                        v = pos[index] + np.dot(offsets[m], cell) - pos[i]
-                        r = np.linalg.norm(v)
-                        v /= r
-                        for k in range(3):
-                            for l in range(3):
-                                index1 = 3 * i + k
-                                index2 = 3 * j + l
-                                fc = fcs[m] 
-                                if self.use_tags and tags[i] == tags[j]:
-                                    fc = large_fc
-                                h = -1 * fc * v[k] * v[l]
-                                hessian[index1, index2] += h
-        return hessian
-
-    def _get_calc_hessian_(self, atoms, dx):
+    def _get_hessian_(self, atoms, dx):
         ''' 
-        Returns the Hessian matrix d2E/dxi/dxj using self.calc as
-        calculator, through a first-order central difference scheme with
-        displacements dx. In principle we could use the ase.vibrations 
-        module, but that one involves alot of I/O operations, so this is
-        a more light-weight version better suited for a GA mutation.
+        Returns the Hessian matrix d2E/dxi/dxj using a first-order 
+        central difference scheme with displacements dx.
         '''
+        N = len(atoms)
         pos = atoms.get_positions()
-        atoms.set_calculator(self.calc)
-        nat = len(atoms)
-        hessian = np.zeros((3 * nat, 3 * nat))
-        for i in range(3 * nat):
-            row = np.zeros(3 * nat)
+        hessian = np.zeros((3 * N, 3 * N))
+
+        for i in range(3 * N):
+            row = np.zeros(3 * N)
             for direction in [-1, 1]:
                 disp = np.zeros(3)
                 disp[i % 3] = direction * dx
                 pos_disp = np.copy(pos)
-                pos_disp[i / 3] += disp
-                atoms.positions = pos_disp
+                pos_disp[i // 3] += disp
+                atoms.set_positions(pos_disp)
                 f = atoms.get_forces()
                 row += -1 * direction * f.flatten()
+
             row /= (2. * dx)
             hessian[i] = row
+
         hessian += np.copy(hessian).T
         hessian *= 0.5
+        atoms.set_positions(pos)
+
         return hessian
 
     def _calculate_normal_modes_(self, atoms, dx=0.02, massweighing=False):
         '''Performs the vibrational analysis.'''
-        if self.calc is None:
-            hessian = self._get_bem_hessian_(atoms)
-        else:
-            hessian = self._get_calc_hessian_(atoms, dx)
-
+        hessian = self._get_hessian_(atoms, dx)
         if massweighing:
             m = np.array([np.repeat(atoms.get_masses()**-0.5, 3)])
             hessian *= (m * m.T)
@@ -561,8 +599,19 @@ class SoftMutation(OffspringCreator):
 
     def mutate(self, atoms):
         """ Does the actual mutation. """
-        pos = atoms.get_positions()
-        modes = self._calculate_normal_modes_(atoms)
+        a = atoms.copy()
+
+        if issubclass(self.calc, PairwiseHarmonicPotential):
+            calc = self.calc(atoms, rcut=self.rcut)
+        else:
+            calc = self.calc
+        a.set_calculator(calc)
+
+        if self.use_tags:
+            a = TagFilter(a)
+
+        pos = a.get_positions()
+        modes = self._calculate_normal_modes_(a)
 
         # Select the mode along which we want to move the atoms;
         # The first 3 translational modes as well as previously
@@ -593,16 +642,26 @@ class SoftMutation(OffspringCreator):
         increment = 0.1
         direction = 1
         largest_norm = np.max(np.apply_along_axis(np.linalg.norm, 1, mode))
+
+        def expand(atoms, positions):
+            if isinstance(atoms, TagFilter):
+                a.set_positions(positions)
+                return a.atoms.get_positions()
+            else:
+                return positions
+
         while amplitude * largest_norm < self.bounds[1]:
-            newpos = pos + direction * amplitude * mode
-            mutant.set_positions(newpos)
+            pos_new = pos + direction * amplitude * mode
+            pos_new = expand(a, pos_new) 
+            mutant.set_positions(pos_new)
             mutant.wrap()
             too_close = atoms_too_close(mutant, self.blmin,
                                         use_tags=self.use_tags)
             if too_close:
                 amplitude -= increment
-                newpos = pos + direction * amplitude * mode
-                mutant.set_positions(newpos)
+                pos_new = pos + direction * amplitude * mode
+                pos_new = expand(a, pos_new)
+                mutant.set_positions(pos_new)
                 mutant.wrap()
                 break
 
