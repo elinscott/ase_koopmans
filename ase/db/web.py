@@ -15,8 +15,7 @@ def creates(*filenames):
 
 
 def process_metadata(db, html=True):
-    meta = db.metadata
-
+    meta = {}
     mod = {}
     if db.python:
         with open(db.python) as fd:
@@ -73,12 +72,7 @@ def process_metadata(db, html=True):
     meta['special_keys'] = sk
 
     if not meta['layout']:
-        keys = ['id', 'formula', 'age']
-        meta['layout'] = [
-            ('Basic properties',
-             [['ATOMS', 'CELL'],
-              [('Key Value Pairs', keys), 'FORCES']])]
-
+        meta['layout'] = default_layout
     if mod:
         meta['functions'] = functions[:]
         functions[:] = []
@@ -108,3 +102,10 @@ def process_metadata(db, html=True):
     meta['all_keys'] = sorted(all_keys2)
 
     return meta
+
+
+def default_layout(row):
+    keys = ['id', 'formula', 'age']
+    return [('Basic properties',
+             [['ATOMS', 'CELL'],
+              [('Key Value Pairs', keys), 'FORCES']])]
