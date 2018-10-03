@@ -29,7 +29,7 @@ class AtomicCounterIon(Calculator):
         return positions
 
     def get_virtual_charges(self, atoms):
-        charges = np.tile(self.charge, len(atoms) / self.sites_per_mol)
+        charges = np.tile(self.charge, len(atoms) // self.sites_per_mol)
         return charges
 
     def redistribute_forces(self, forces):
