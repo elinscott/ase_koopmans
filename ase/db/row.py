@@ -75,7 +75,8 @@ class AtomsRow:
             dct = atoms2dict(dct)
         assert 'numbers' in dct
         self._constraints = dct.pop('constraints', [])
-        self._data = dct.pop('data', None)
+        self._constrained_forces = None
+        self._data = dct.pop('data', {})
         kvp = dct.pop('key_value_pairs', {})
         self._keys = list(kvp.keys())
         self.__dict__.update(kvp)
@@ -139,8 +140,6 @@ class AtomsRow:
     @property
     def data(self):
         """Data dict."""
-        if self._data is None:
-            raise AttributeError
         if not isinstance(self._data, dict):
             self._data = decode(self._data)  # lazy decoding
         return FancyDict(self._data)
@@ -169,13 +168,17 @@ class AtomsRow:
     @property
     def constrained_forces(self):
         """Forces after applying constraints."""
+        if self._constrained_forces is not None:
+            return self._constrained_forces
         forces = self.forces
         constraints = self.constraints
         if constraints:
             forces = forces.copy()
+            atoms = self.toatoms()
             for constraint in constraints:
-                constraint.adjust_forces(self.positions, forces)
+                constraint.adjust_forces(atoms, forces)
 
+        self._constrained_forces = forces
         return forces
 
     @property
@@ -193,6 +196,8 @@ class AtomsRow:
     @property
     def volume(self):
         """Volume of unit cell."""
+        if self.cell is None:
+            return None
         vol = abs(np.linalg.det(self.cell))
         if vol == 0.0:
             raise AttributeError
