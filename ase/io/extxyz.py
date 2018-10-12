@@ -438,9 +438,9 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
     # Read and set constraints
     if 'move_mask' in arrays:
         if properties['move_mask'][1] == 3:
-            atoms.set_constraint(FixCartesian(range(natoms), mask=arrays['move_mask']))
+            atoms.set_constraint([FixCartesian(a, mask=arrays['move_mask'][a, :]) for a in range(natoms)])
         elif properties['move_mask'][1] == 1:
-            atoms.set_constraint(FixAtoms(mask=arrays['move_mask']))
+            atoms.set_constraint(FixAtoms(mask=~arrays['move_mask']))
         else:
             raise XYZError('Not implemented constraint')
         del arrays['move_mask']
@@ -818,15 +818,16 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
         if 'move_mask' in fr_cols:
             cnstr = images[0]._get_constraints()
             if len(cnstr) > 0:
-                for c in cnstr:
-                    if isinstance(c, FixAtoms):
-                        cnstr = np.zeros((natoms,), dtype=np.bool)
-                        for idx in c.index:
-                            cnstr[idx] = True
-                    elif isinstance(c, FixCartesian):
-                        cnstr = np.ones((natoms, 3), dtype=np.bool)
-                        for idx in c.a:
-                            cnstr[idx] = c.mask[idx]
+                c0 = cnstr[0]
+                if isinstance(c0, FixAtoms):
+                    cnstr = np.ones((natoms,), dtype=np.bool)
+                    for idx in c0.index:
+                        cnstr[idx] = False
+                elif isinstance(c0, FixCartesian):
+                    for i in range(len(cnstr)):
+                        idx = cnstr[i].a
+                        cnstr[idx] = cnstr[i].mask
+                    cnstr = np.asarray(cnstr)
             else:
                 fr_cols.remove('move_mask')
 
