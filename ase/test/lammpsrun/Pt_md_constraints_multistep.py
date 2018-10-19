@@ -31,9 +31,9 @@ params['group'] = ['lower_atoms id '
 params['fix'] = ['freeze_lower_atoms lower_atoms setforce 0.0 0.0 0.0']
 params['run'] = 100
 params['timestep'] = 0.0005
+params['dump_period'] = 10
 calc.parameters = params
 calc.write_velocities = True
-calc.dump_period = 10
 # set_atoms=True to read final coordinates and velocities after NVE simulation
 calc.run(set_atoms=True)
 

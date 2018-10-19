@@ -37,6 +37,7 @@ from ase.parallel import paropen
 from ase.units import GPa, Ang, fs
 from ase.utils import basestring
 from ase.io.lammpsdata import write_lammps_data
+from ase.io.lammpsrun import read_lammps_dump
 from ase.calculators.lammps import Prism, write_lammps_in, CALCULATION_END_MARK
 
 __all__ = ['LAMMPS']
@@ -306,7 +307,44 @@ class LAMMPS:
             # it could
             raise RuntimeError('Atoms have gone missing')
 
-        self.read_lammps_trj(lammps_trj=lammps_trj, set_atoms=set_atoms)
+
+        trj_atoms = read_lammps_dump(fileobj=lammps_trj, order=False, index=-1)
+        cell_atoms = trj_atoms.get_cell()
+
+        # BEWARE: reconstructing the rotation from the LAMMPS
+        #         output trajectory file fails in case of shrink
+        #         wrapping for a non-periodic direction
+        #      -> hence rather obtain rotation from prism object
+        #         used to generate the LAMMPS input
+        # rotation_lammps2ase = np.dot(
+        #               np.linalg.inv(np.array(cell)), cell_atoms)
+        rotation_lammps2ase = np.linalg.inv(self.prism.R)
+
+        # !TODO: set proper types on read_lammps_dump
+        type_atoms = self.atoms.get_atomic_numbers()
+        positions_atoms = np.dot(trj_atoms.get_positions(),
+                                 rotation_lammps2ase)
+        velocities_atoms = np.dot(trj_atoms.get_velocities(),
+                                  rotation_lammps2ase)
+        forces_atoms = np.dot(trj_atoms.get_forces(),
+                              rotation_lammps2ase)
+
+        if set_atoms:
+            # assume periodic boundary conditions here (as in
+            # write_lammps)
+            self.atoms = Atoms(type_atoms, positions=positions_atoms,
+                               cell=cell_atoms)
+            self.atoms.set_velocities(velocities_atoms
+                                      * (Ang/(fs*1000.)))
+
+        self.forces = forces_atoms
+        # !TODO: save in between atoms
+        if self.trajectory_out is not None:
+            tmp_atoms = Atoms(type_atoms, positions=positions_atoms,
+                              cell=cell_atoms)
+            tmp_atoms.set_velocities(velocities_atoms)
+            self.trajectory_out.write(tmp_atoms)
+        
         lammps_trj_fd.close()
         if not self.no_data_file:
             lammps_data_fd.close()
@@ -350,163 +388,6 @@ class LAMMPS:
             f.close()
 
         self.thermo_content = thermo_content
-
-    def read_lammps_trj(self, lammps_trj=None, set_atoms=False):
-        """Method which reads a LAMMPS dump file."""
-        if lammps_trj is None:
-            lammps_trj = self.label + '.lammpstrj'
-
-        f = paropen(lammps_trj, 'r')
-        while True:
-            line = f.readline()
-
-            if not line:
-                break
-
-            # TODO: extend to proper dealing with multiple steps in one
-            # trajectory file
-            if 'ITEM: TIMESTEP' in line:
-
-                n_atoms = 0
-                lo = []
-                hi = []
-                tilt = []
-                id = []
-                type = []
-                positions = []
-                velocities = []
-                forces = []
-
-            if 'ITEM: NUMBER OF ATOMS' in line:
-                line = f.readline()
-                n_atoms = int(line.split()[0])
-
-            if 'ITEM: BOX BOUNDS' in line:
-                # save labels behind "ITEM: BOX BOUNDS" in triclinic case
-                # (>=lammps-7Jul09)
-                tilt_items = line.split()[3:]
-                for i in range(3):
-                    line = f.readline()
-                    fields = line.split()
-                    lo.append(float(fields[0]))
-                    hi.append(float(fields[1]))
-                    if len(fields) >= 3:
-                        tilt.append(float(fields[2]))
-
-            if 'ITEM: ATOMS' in line:
-                # (reliably) identify values by labels behind "ITEM: ATOMS"
-                # - requires >=lammps-7Jul09
-                # create corresponding index dictionary before iterating over
-                # atoms to (hopefully) speed up lookups...
-                atom_attributes = {}
-                for (i, x) in enumerate(line.split()[2:]):
-                    atom_attributes[x] = i
-                for n in range(n_atoms):
-                    line = f.readline()
-                    fields = line.split()
-                    id.append(int(fields[atom_attributes['id']]))
-                    type.append(int(fields[atom_attributes['type']]))
-                    positions.append([float(fields[atom_attributes[x]])
-                                      for x in ['x', 'y', 'z']])
-                    velocities.append([float(fields[atom_attributes[x]])
-                                       for x in ['vx', 'vy', 'vz']])
-                    forces.append([float(fields[atom_attributes[x]])
-                                   for x in ['fx', 'fy', 'fz']])
-                # Re-order items according to their 'id' since running in
-                # parallel can give arbitrary ordering.
-                type = [x for _,x in sorted(zip(id, type))]
-                positions = [x for _,x in sorted(zip(id, positions))]
-                velocities = [x for _,x in sorted(zip(id, velocities))]
-                forces = [x for _,x in sorted(zip(id, forces))]
-                
-                # determine cell tilt (triclinic case!)
-                if len(tilt) >= 3:
-                    # for >=lammps-7Jul09 use labels behind "ITEM: BOX BOUNDS"
-                    # to assign tilt (vector) elements ...
-                    if len(tilt_items) >= 3:
-                        xy = tilt[tilt_items.index('xy')]
-                        xz = tilt[tilt_items.index('xz')]
-                        yz = tilt[tilt_items.index('yz')]
-                    # ... otherwise assume default order in 3rd column
-                    # (if the latter was present)
-                    else:
-                        xy = tilt[0]
-                        xz = tilt[1]
-                        yz = tilt[2]
-                else:
-                    xy = xz = yz = 0
-                xhilo = (hi[0] - lo[0]) - xy - xz
-                yhilo = (hi[1] - lo[1]) - yz
-                zhilo = (hi[2] - lo[2])
-
-                # The simulation box bounds are included in each snapshot and
-                # if the box is triclinic (non-orthogonal), then the tilt
-                # factors are also printed; see the region prism command for
-                # a description of tilt factors.
-                # For triclinic boxes the box bounds themselves (first 2
-                # quantities on each line) are a true "bounding box" around
-                # the simulation domain, which means they include the effect of
-                # any tilt.
-                # [ http://lammps.sandia.gov/doc/dump.html , lammps-7Jul09 ]
-                #
-                # This *should* extract the lattice vectors that LAMMPS uses
-                # from the true "bounding box" printed in the dump file.
-                # It might fail in some cases (negative tilts?!) due to the
-                # MIN / MAX construction of these box corners:
-                #
-                #   void Domain::set_global_box()
-                #   [...]
-                #     if (triclinic) {
-                #       [...]
-                #       boxlo_bound[0] = MIN(boxlo[0],boxlo[0]+xy);
-                #       boxlo_bound[0] = MIN(boxlo_bound[0],boxlo_bound[0]+xz);
-                #       boxlo_bound[1] = MIN(boxlo[1],boxlo[1]+yz);
-                #       boxlo_bound[2] = boxlo[2];
-                #       #           boxhi_bound[0] = MAX(boxhi[0],boxhi[0]+xy);
-                #       boxhi_bound[0] = MAX(boxhi_bound[0],boxhi_bound[0]+xz);
-                #       boxhi_bound[1] = MAX(boxhi[1],boxhi[1]+yz);
-                #       boxhi_bound[2] = boxhi[2];
-                #     }
-                # [ lammps-7Jul09/src/domain.cpp ]
-                #
-                cell = [[xhilo, 0, 0], [xy, yhilo, 0], [xz, yz, zhilo]]
-
-                # These have been put into the correct order
-                cell_atoms = np.array(cell)
-                type_atoms = np.array(type)
-
-                if self.atoms:
-                    cell_atoms = self.atoms.get_cell()
-
-                    # BEWARE: reconstructing the rotation from the LAMMPS
-                    #         output trajectory file fails in case of shrink
-                    #         wrapping for a non-periodic direction
-                    #      -> hence rather obtain rotation from prism object
-                    #         used to generate the LAMMPS input
-                    # rotation_lammps2ase = np.dot(
-                    #               np.linalg.inv(np.array(cell)), cell_atoms)
-                    rotation_lammps2ase = np.linalg.inv(self.prism.R)
-
-                    type_atoms = self.atoms.get_atomic_numbers()
-                    positions_atoms = np.dot(positions, rotation_lammps2ase)
-                    velocities_atoms = np.dot(velocities, rotation_lammps2ase)
-                    forces_atoms = np.dot(forces, rotation_lammps2ase)
-
-                if set_atoms:
-                    # assume periodic boundary conditions here (as in
-                    # write_lammps)
-                    self.atoms = Atoms(type_atoms, positions=positions_atoms,
-                                       cell=cell_atoms)
-                    self.atoms.set_velocities(velocities_atoms
-                                              * (Ang/(fs*1000.)))
-
-                self.forces = forces_atoms
-                if self.trajectory_out is not None:
-                    tmp_atoms = Atoms(type_atoms, positions=positions_atoms,
-                                      cell=cell_atoms)
-                    tmp_atoms.set_velocities(velocities_atoms)
-                    self.trajectory_out.write(tmp_atoms)
-        f.close()
 
 
 class SpecialTee(object):

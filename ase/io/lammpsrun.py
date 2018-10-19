@@ -20,13 +20,15 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
     # load everything into memory
     lines = deque(f.readlines())
 
-    natoms = 0
+    n_atoms = 0
     images = []
 
-    while len(lines) > natoms:
+    while len(lines) > n_atoms:
         line = lines.popleft()
 
         if 'ITEM: TIMESTEP' in line:
+
+            n_atoms = 0
             lo = []
             hi = []
             tilt = []
@@ -40,11 +42,11 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
 
         if 'ITEM: NUMBER OF ATOMS' in line:
             line = lines.popleft()
-            natoms = int(line.split()[0])
+            n_atoms = int(line.split()[0])
             
         if 'ITEM: BOX BOUNDS' in line:
-            # save labels behind "ITEM: BOX BOUNDS" in
-            # triclinic case (>=lammps-7Jul09)
+            # save labels behind "ITEM: BOX BOUNDS" in triclinic case
+            # (>=lammps-7Jul09)
             tilt_items = line.split()[3:]
             for i in range(3):
                 line = lines.popleft()
@@ -55,10 +57,10 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
                     tilt.append(float(fields[2]))
 
             # determine cell tilt (triclinic case!)
-            if (len(tilt) >= 3):
-                # for >=lammps-7Jul09 use labels behind
-                # "ITEM: BOX BOUNDS" to assign tilt (vector) elements ...
-                if (len(tilt_items) >= 3):
+            if len(tilt) >= 3:
+                # for >=lammps-7Jul09 use labels behind "ITEM: BOX BOUNDS"
+                # to assign tilt (vector) elements ...
+                if len(tilt_items) >= 3:
                     xy = tilt[tilt_items.index('xy')]
                     xz = tilt[tilt_items.index('xz')]
                     yz = tilt[tilt_items.index('yz')]
@@ -101,7 +103,7 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
             atom_attributes = {}
             for (i, x) in enumerate(line.split()[2:]):
                 atom_attributes[x] = i
-            for n in range(natoms):
+            for n in range(n_atoms):
                 line = lines.popleft()
                 fields = line.split()
                 id.append(int(fields[atom_attributes['id']]))
