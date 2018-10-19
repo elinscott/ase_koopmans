@@ -5,7 +5,7 @@ from ase.atoms import Atoms
 from ase.parallel import paropen
 from ase.calculators.lammpslib import unit_convert
 from ase.utils import basestring
-
+from ase.calculators.lammpsrun import Prism
 
 def read_lammps_data(fileobj, Z_of_type=None, style='full', sort_by_id=False,
                      units="metal"):
@@ -352,3 +352,68 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full', sort_by_id=False,
     at.info['comment'] = comment
 
     return at
+
+
+def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
+                      prismobj=None, velocities=False):
+    """Write atomic structure data to a LAMMPS data_ file."""
+    if isinstance(fileobj, basestring):
+        f = paropen(fileobj, 'wb')
+        close_file = True
+    else:
+        # Presume fileobj acts like a fileobj
+        f = fileobj
+        close_file = False
+
+    if isinstance(atoms, list):
+        if len(atoms) > 1:
+            raise ValueError(
+                'Can only write one configuration to a lammps data file!')
+        atoms = atoms[0]
+
+    f.write('{0} (written by ASE) \n\n'.format(f.name).encode('utf-8'))
+
+    symbols = atoms.get_chemical_symbols()
+    n_atoms = len(symbols)
+    f.write('{0} \t atoms \n'.format(n_atoms).encode('utf-8'))
+
+    if specorder is None:
+        # This way it is assured that LAMMPS atom types are always
+        # assigned predictably according to the alphabetic order
+        species = sorted(set(symbols))
+    else:
+        # To index elements in the LAMMPS data file
+        # (indices must correspond to order in the potential file)
+        species = specorder
+    n_atom_types = len(species)
+    f.write('{0}  atom types\n'.format(n_atom_types).encode('utf-8'))
+
+    if prismobj is None:
+        p = Prism(atoms.get_cell())
+    else:
+        p = prismobj
+    xhi, yhi, zhi, xy, xz, yz = p.get_lammps_prism_str()
+
+    f.write('0.0 {0}  xlo xhi\n'.format(xhi).encode('utf-8'))
+    f.write('0.0 {0}  ylo yhi\n'.format(yhi).encode('utf-8'))
+    f.write('0.0 {0}  zlo zhi\n'.format(zhi).encode('utf-8'))
+
+    if force_skew or p.is_skewed():
+        f.write('{0} {1} {2}  xy xz yz\n'.format(xy, xz, yz).encode('utf-8'))
+    f.write('\n\n'.encode('utf-8'))
+
+    f.write('Atoms \n\n'.encode('utf-8'))
+    for i, r in enumerate(p.positions_to_lammps_strs(atoms.get_positions())):
+        s = species.index(symbols[i]) + 1
+        f.write('{0:>6} {1:>3} {2} {3} {4}\n'.format(
+                *(i + 1, s) + tuple(r)).encode('utf-8'))
+
+    if velocities and atoms.get_velocities() is not None:
+        f.write('\n\nVelocities \n\n'.encode('utf-8'))
+        for i, v in enumerate(atoms.get_velocities() / (Ang/(fs*1000.))):
+            f.write('{0:>6} {1} {2} {3}\n'.format(
+                    *(i + 1,) + tuple(v)).encode('utf-8'))
+
+    f.flush()
+    if close_file:
+        f.close()
