@@ -309,7 +309,6 @@ class LAMMPS:
 
 
         trj_atoms = read_lammps_dump(fileobj=lammps_trj, order=False, index=-1)
-        cell_atoms = trj_atoms.get_cell()
 
         # BEWARE: reconstructing the rotation from the LAMMPS
         #         output trajectory file fails in case of shrink
@@ -320,6 +319,8 @@ class LAMMPS:
         #               np.linalg.inv(np.array(cell)), cell_atoms)
         rotation_lammps2ase = np.linalg.inv(self.prism.R)
 
+        cell_atoms = np.dot(trj_atoms.get_cell(),
+                            rotation_lammps2ase)
         # !TODO: set proper types on read_lammps_dump
         type_atoms = self.atoms.get_atomic_numbers()
         positions_atoms = np.dot(trj_atoms.get_positions(),

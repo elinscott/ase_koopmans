@@ -16,49 +16,18 @@ class Prism(object):
         e.g. for atom positions (when using create_atom in the in-file),
         x must be within [xlo, xhi).
         """
-        a, b, c = cell
-        an, bn, cn = [np.linalg.norm(v) for v in cell]
 
-        alpha = np.arccos(np.dot(b, c) / (bn * cn))
-        beta = np.arccos(np.dot(a, c) / (an * cn))
-        gamma = np.arccos(np.dot(a, b) / (an * bn))
-
-        xhi = an
-        xyp = np.cos(gamma) * bn
-        yhi = np.sin(gamma) * bn
-        xzp = np.cos(beta) * cn
-        yzp = (bn * cn * np.cos(alpha) - xyp * xzp) / yhi
-        zhi = np.sqrt(cn**2 - xzp**2 - yzp**2)
-
+        Qtrans, Ltrans = np.linalg.qr(cell.T)
+        self.R = Qtrans
+        self.lammps_cell = Ltrans.T
         # Set precision
         self.car_prec = dec.Decimal('10.0') ** \
-            int(np.floor(np.log10(max((xhi, yhi, zhi)))) - digits)
+            int(np.floor(np.log10(np.max(self.lammps_cell)))-digits)
         self.dir_prec = dec.Decimal('10.0') ** (-digits)
         self.acc = float(self.car_prec)
-        self.eps = np.finfo(xhi).eps
+        self.eps = np.finfo(self.acc).eps
 
-        # For rotating positions from ase to lammps
-        Apre = np.array(((xhi, 0, 0),
-                         (xyp, yhi, 0),
-                         (xzp, yzp, zhi)))
-        self.R = np.dot(np.linalg.inv(cell), Apre)
-
-        # Actual lammps cell may be different from what is used to create R
-        def fold(vec, pvec, i):
-            p = pvec[i]
-            x = vec[i] + 0.5 * p
-            n = (np.mod(x, p) - x) / p
-            return [float(self.f2qdec(a)) for a in (vec + n * pvec)]
-
-        Apre[1, :] = fold(Apre[1, :], Apre[0, :], 0)
-        Apre[2, :] = fold(Apre[2, :], Apre[1, :], 1)
-        Apre[2, :] = fold(Apre[2, :], Apre[0, :], 0)
-
-        self.A = Apre
-        self.Ainv = np.linalg.inv(self.A)
-
-        if self.is_skewed() and \
-                (not (pbc[0] and pbc[1] and pbc[2])):
+        if self.is_skewed() and not np.all(pbc):
             raise RuntimeError('Skewed lammps cells MUST have '
                                'PBC == True in all directions!')
 
@@ -74,11 +43,11 @@ class Prism(object):
 
     def dir2car(self, v):
         """Direct to cartesian coordinates"""
-        return np.dot(v, self.A)
+        return np.dot(v, self.R)
 
     def car2dir(self, v):
         """Cartesian to direct coordinates"""
-        return np.dot(v, self.Ainv)
+        return np.dot(v, self.R.T)
 
     def fold_to_str(self, v):
         """Fold a position into the lammps cell (semi open)
@@ -94,8 +63,7 @@ class Prism(object):
                       self.dir2car(list(map(float, d)))])
 
     def get_lammps_prism(self):
-        A = self.A
-        return A[0, 0], A[1, 1], A[2, 2], A[1, 0], A[2, 0], A[2, 1]
+        return self.lammps_cell[(0,1,2,1,2,2), (0,1,2,0,0,1)]    
 
     def get_lammps_prism_str(self):
         """Return a tuple of strings"""
@@ -120,6 +88,5 @@ class Prism(object):
 
     def is_skewed(self):
         acc = self.acc
-        prism = self.get_lammps_prism()
-        axy, axz, ayz = [np.abs(x) for x in prism[3:]]
-        return (axy >= acc) or (axz >= acc) or (ayz >= acc)
+        cell_sq = self.lammps_cell**2
+        return np.sum(np.tril(cell_sq, -1)) / np.sum(np.diag(cell_sq)) > acc
