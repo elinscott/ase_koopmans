@@ -31,7 +31,6 @@ from threading import Thread
 from re import compile as re_compile, IGNORECASE
 from tempfile import mkdtemp, NamedTemporaryFile, mktemp as uns_mktemp
 import numpy as np
-import decimal as dec
 from ase import Atoms
 from ase.parallel import paropen
 from ase.units import GPa, Ang, fs
@@ -116,8 +115,6 @@ class LAMMPS:
                                              self._custom_thermo_args[0:3]])
         self.parameters['thermo_args'] = self._custom_thermo_args
 
-        self.parameters['thermo_args'] = self._custom_thermo_args
-        
         # Match something which can be converted to a float
         f_re = r'([+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|nan|inf))'
         n = len(self._custom_thermo_args)
@@ -280,6 +277,7 @@ class LAMMPS:
         write_lammps_in(lammps_in=fd,
                         parameters=self.parameters,
                         atoms=self.atoms,
+                        prismobj=self.prism,
                         lammps_trj=lammps_trj,
                         lammps_data=lammps_data,
                         verbose=self.keep_tmp_files)
@@ -441,8 +439,8 @@ if __name__ == '__main__':
     Pd_eam_file = 'Pd_u3.eam'
     pair_coeff = ['* * ' + Pd_eam_file]
     parameters = {'pair_style': pair_style, 'pair_coeff': pair_coeff}
-    files = [Pd_eam_file]
-    calc = LAMMPS(parameters=parameters, files=files)
+    my_files = [Pd_eam_file]
+    calc = LAMMPS(parameters=parameters, files=my_files)
     a0 = 3.93
     b0 = a0 / 2.0
     if True:
@@ -455,8 +453,8 @@ if __name__ == '__main__':
         print(calc.get_forces(bulk))
         # single points for various lattice constants
         bulk.set_calculator(calc)
-        for n in range(-5, 5, 1):
-            a = a0 * (1 + n / 100.0)
+        for i in range(-5, 5, 1):
+            a = a0 * (1 + i / 100.0)
             bulk.set_cell([a] * 3)
             print('a : {0} , total energy : {1}'.format(
                 a, bulk.get_potential_energy()))

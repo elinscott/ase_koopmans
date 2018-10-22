@@ -1,92 +1,91 @@
-import decimal as dec
 import numpy as np
 
 
-class Prism(object):
+class Prism:
+    """The representation of the unit cell in LAMMPS
 
-    def __init__(self, cell, pbc=(True, True, True), digits=10):
-        """Create a lammps-style triclinic prism object from a cell
+    The main purpose of the prism-object is to create suitable
+    string representations of prism limits and atom positions
+    within the prism.
 
-        The main purpose of the prism-object is to create suitable
-        string representations of prism limits and atom positions
-        within the prism.
-        When creating the object, the digits parameter (default set to 10)
-        specify the precision to use.
-        lammps is picky about stuff being within semi-open intervals,
-        e.g. for atom positions (when using create_atom in the in-file),
-        x must be within [xlo, xhi).
-        """
+    :param cell: cell in ase coordinate system
+    :param pbc: periodic boundaries
+    :param tolerance: precision for skewness test
+    """
 
-        Qtrans, Ltrans = np.linalg.qr(cell.T)
-        self.R = Qtrans
-        self.lammps_cell = Ltrans.T
-        # Set precision
-        self.car_prec = dec.Decimal('10.0') ** \
-            int(np.floor(np.log10(np.max(self.lammps_cell)))-digits)
-        self.dir_prec = dec.Decimal('10.0') ** (-digits)
-        self.acc = float(self.car_prec)
-        self.eps = np.finfo(self.acc).eps
+    def __init__(self, cell, pbc=(True, True, True), tolerance=1.0e-6):
+        # Use LQ decomposition to get the lammps cell
+        # ase_cell * R = lammps_cell
+        qtrans, ltrans = np.linalg.qr(cell.T)
+        self.R = qtrans
+        self.lammps_cell = ltrans.T
+        self.tolerance = tolerance
 
         if self.is_skewed() and not np.all(pbc):
             raise RuntimeError('Skewed lammps cells MUST have '
                                'PBC == True in all directions!')
 
-    def f2qdec(self, f):
-        return dec.Decimal(repr(f)).quantize(self.car_prec, dec.ROUND_DOWN)
-
-    def f2qs(self, f):
-        return str(self.f2qdec(f))
-
-    def f2s(self, f):
-        return str(dec.Decimal(repr(f)).quantize(self.car_prec,
-                                                 dec.ROUND_HALF_EVEN))
-
-    def dir2car(self, v):
-        """Direct to cartesian coordinates"""
-        return np.dot(v, self.R)
-
-    def car2dir(self, v):
-        """Cartesian to direct coordinates"""
-        return np.dot(v, self.R.T)
-
-    def fold_to_str(self, v):
-        """Fold a position into the lammps cell (semi open)
-
-        Returns tuple of str.
-        """
-        # Two-stage fold, first into box, then into semi-open interval
-        # (within the given precision).
-        d = [x % (1 - self.dir_prec) for x in
-             map(dec.Decimal,
-                 map(repr, np.mod(self.car2dir(v) + self.eps, 1.0)))]
-        return tuple([self.f2qs(x) for x in
-                      self.dir2car(list(map(float, d)))])
-
     def get_lammps_prism(self):
-        return self.lammps_cell[(0,1,2,1,2,2), (0,1,2,0,0,1)]    
+        """Return lammps cell
 
-    def get_lammps_prism_str(self):
-        """Return a tuple of strings"""
-        p = self.get_lammps_prism()
-        return tuple([self.f2s(x) for x in p])
+        :returns: lammps cell
+        :rtype: np.array
 
-    def positions_to_lammps_strs(self, positions):
-        """Rotate an ase-cell position to the lammps cell orientation
-
-        Returns tuple of str.
         """
-        rot_positions = np.dot(positions, self.R)
-        return [tuple([self.f2s(x) for x in position])
-                for position in rot_positions]
+        return self.lammps_cell[(0, 1, 2, 1, 2, 2), (0, 1, 2, 0, 0, 1)]
 
-    def pos_to_lammps_fold_str(self, position):
-        """Rotate and fold an ase-cell position into the lammps cell
+    def update_cell(self, xyz, offdiag):
+        """Rotate new lammps cell into ase coordinate system
 
-        Returns tuple of str.
+        :param xyz: dimension on the diagonal
+        :param offdiag: off-digonal cell elements
+        :returns: ase cell
+        :rtype: np.arry
+
         """
-        return self.fold_to_str(np.dot(position, self.R))
+        self.lammps_cell = self.to_cell_matrix(xyz, offdiag)
+        return np.dot(self.lammps_cell, self.R.T)
+
+    def to_cell_matrix(self, xyz, offdiag):
+        """Build lammps triagonal cell from given parameters
+
+        :param xyz: dimensions on the diagonal
+        :param offdiag: off-digonal cell elements
+        :returns: lammps cell
+        :rtype: np.array
+
+        """
+        c_xx, c_yy, c_zz = xyz
+        c_xy, c_xz, c_yz = offdiag
+        return np.array([[c_xx, 0., 0.], [c_xy, c_yy, 0.],
+                         [c_xz, c_yz, c_zz]])
+
+    def vector_to_lammps(self, vec):
+        """Rotate vector from ase coordinate system to lammps one
+
+        :param vec: to be rotated ase-vector
+        :returns: lammps-vector
+        :rtype: np.array
+
+        """
+        return np.dot(vec, self.R)
+
+    def vector_to_ase(self, vec):
+        """Rotate vector from lammps coordinate system to ase one
+
+        :param vec: to be rotated lammps-vector
+        :returns: ase-vector
+        :rtype: np.array
+
+        """
+        return np.dot(vec, self.R.T)
 
     def is_skewed(self):
-        acc = self.acc
+        """Test if a lammps cell is not tetragonal
+
+        :returns: bool
+        :rtype: bool
+
+        """
         cell_sq = self.lammps_cell**2
-        return np.sum(np.tril(cell_sq, -1)) / np.sum(np.diag(cell_sq)) > acc
+        return np.sum(np.tril(cell_sq, -1)) / np.sum(np.diag(cell_sq)) > self.tolerance

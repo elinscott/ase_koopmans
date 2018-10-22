@@ -392,7 +392,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
         p = Prism(atoms.get_cell())
     else:
         p = prismobj
-    xhi, yhi, zhi, xy, xz, yz = p.get_lammps_prism_str()
+    xhi, yhi, zhi, xy, xz, yz = p.get_lammps_prism()
 
     f.write('0.0 {0}  xlo xhi\n'.format(xhi).encode('utf-8'))
     f.write('0.0 {0}  ylo yhi\n'.format(yhi).encode('utf-8'))
@@ -403,14 +403,17 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
     f.write('\n\n'.encode('utf-8'))
 
     f.write('Atoms \n\n'.encode('utf-8'))
-    for i, r in enumerate(p.positions_to_lammps_strs(atoms.get_positions())):
+    pos = p.vector_to_lammps(atoms.get_positions())
+    for i, r in enumerate(pos):
         s = species.index(symbols[i]) + 1
         f.write('{0:>6} {1:>3} {2} {3} {4}\n'.format(
                 *(i + 1, s) + tuple(r)).encode('utf-8'))
 
     if velocities and atoms.get_velocities() is not None:
         f.write('\n\nVelocities \n\n'.encode('utf-8'))
-        for i, v in enumerate(atoms.get_velocities() / (Ang/(fs*1000.))):
+        vel = p.vector_to_lammps(atoms.get_velocities())
+        # !TODO: add unit handling
+        for i, v in enumerate(vel):
             f.write('{0:>6} {1} {2} {3}\n'.format(
                     *(i + 1,) + tuple(v)).encode('utf-8'))
 
