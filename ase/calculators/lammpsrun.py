@@ -310,7 +310,10 @@ class LAMMPS:
             raise RuntimeError('Atoms have gone missing')
 
 
-        trj_atoms = read_lammps_dump(fileobj=lammps_trj, order=False, index=-1)
+        trj_atoms = read_lammps_dump(infileobj=lammps_trj,
+                                     order=False,
+                                     index=-1,
+                                     specorder=self.parameters['specorder'])
 
         # BEWARE: reconstructing the rotation from the LAMMPS
         #         output trajectory file fails in case of shrink
