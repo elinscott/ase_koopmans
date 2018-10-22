@@ -82,8 +82,8 @@ class LAMMPS:
         self.calls = 0
         self.forces = None
         self.keep_alive = keep_alive
-        self.keep_tmp_files = keep_tmp_files
         self.no_data_file = no_data_file
+        self.keep_tmp_files = keep_tmp_files
 
         # if True writes velocities from atoms.get_velocities() to LAMMPS input
         self.write_velocities = False
@@ -98,10 +98,12 @@ class LAMMPS:
             self.parameters['specorder'] = specorder
         if not hasattr(parameters, 'always_triclinic'):
             self.parameters['always_triclinic'] = always_triclinic
+        if not hasattr(parameters, 'keep_tmp_files'):
+            self.parameters['verbose'] = keep_tmp_files
             
         if tmp_dir is not None:
             # If tmp_dir is pointing somewhere, don't remove stuff!
-            self.keep_tmp_files = True
+            self.parameters['verbose'] = True
         self._lmp_handle = None        # To handle the lmp process
 
         # read_log depends on that the first (three) thermo_style custom args
@@ -143,7 +145,7 @@ class LAMMPS:
 
         self._lmp_end()
 
-        if not self.keep_tmp_files:
+        if not self.parameters['keep_tmp_files']:
             shutil.rmtree(self.tmp_dir)
 
     def get_potential_energy(self, atoms):
@@ -279,8 +281,7 @@ class LAMMPS:
                         atoms=self.atoms,
                         prismobj=self.prism,
                         lammps_trj=lammps_trj,
-                        lammps_data=lammps_data,
-                        verbose=self.keep_tmp_files)
+                        lammps_data=lammps_data)
 
         if self.keep_tmp_files:
             lammps_in_fd.close()
