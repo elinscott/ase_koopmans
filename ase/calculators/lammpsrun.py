@@ -313,46 +313,18 @@ class LAMMPS:
         trj_atoms = read_lammps_dump(infileobj=lammps_trj,
                                      order=False,
                                      index=-1,
+                                     prismobj=self.prism,
                                      specorder=self.parameters['specorder'])
 
-        # BEWARE: reconstructing the rotation from the LAMMPS
-        #         output trajectory file fails in case of shrink
-        #         wrapping for a non-periodic direction
-        #      -> hence rather obtain rotation from prism object
-        #         used to generate the LAMMPS input
-        # rotation_lammps2ase = np.dot(
-        #               np.linalg.inv(np.array(cell)), cell_atoms)
-        rotation_lammps2ase = np.linalg.inv(self.prism.R)
-
-        cell_atoms = np.dot(trj_atoms.get_cell(),
-                            rotation_lammps2ase)
-        celldisp = np.dot(trj_atoms.get_celldisp(),
-                          rotation_lammps2ase)
-
-        # !TODO: set proper types on read_lammps_dump
-        type_atoms = self.atoms.get_atomic_numbers()
-        positions_atoms = np.dot(trj_atoms.get_positions(),
-                                 rotation_lammps2ase)
-        velocities_atoms = np.dot(trj_atoms.get_velocities(),
-                                  rotation_lammps2ase)
-        forces_atoms = np.dot(trj_atoms.get_forces(),
-                              rotation_lammps2ase)
-
         if set_atoms:
-            # assume periodic boundary conditions here (as in
-            # write_lammps)
-            self.atoms = Atoms(type_atoms, positions=positions_atoms,
-                               cell=cell_atoms, celldisp=celldisp)
-            self.atoms.set_velocities(velocities_atoms
-                                      * (Ang/(fs*1000.)))
+            self.atoms = trj_atoms.copy()
 
-        self.forces = forces_atoms
-        # !TODO: save in between atoms
+        self.forces = trj_atoms.get_forces()
+        # !TODO: trj_atoms is only the last snapshot of the system; Is it
+        #        desireable to save also the inbetween steps?
         if self.trajectory_out is not None:
-            tmp_atoms = Atoms(type_atoms, positions=positions_atoms,
-                              cell=cell_atoms, celldisp=celldisp)
-            tmp_atoms.set_velocities(velocities_atoms)
-            self.trajectory_out.write(tmp_atoms)
+            # !TODO: is it advisable to create here temporary atoms-objects
+            self.trajectory_out.write(trj_atoms)
         
         lammps_trj_fd.close()
         if not self.no_data_file:
