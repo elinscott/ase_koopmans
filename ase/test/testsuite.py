@@ -170,9 +170,10 @@ def runtests_subprocess(task_queue, result_queue, verbose):
             #    Probably they contain a reference to a module or something.
             #  * gui/run may deadlock for unknown reasons in subprocess
 
-            if test in ['bandstructure.py', 'doctests.py', 'gui/run.py',
-                        'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
-                        'db/db_web.py']:
+            t = test.replace('\\', '/')
+            if t in ['bandstructure.py', 'doctests.py', 'gui/run.py',
+                     'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
+                     'fio/animate.py', 'db/db_web.py']:
                 result = Result(name=test, status='please run on master')
                 result_queue.put(result)
                 continue
@@ -266,6 +267,13 @@ def summary(results):
     fail = [r for r in results if r.status == 'FAIL']
     skip = [r for r in results if r.status == 'SKIPPED']
     ok = [r for r in results if r.status == 'OK']
+
+    if fail or err:
+        print()
+        print('Failures and errors:')
+        for r in err + fail:
+            print('{}: {}: {}'.format(r.name, r.exception.__class__.__name__,
+                                      r.exception))
 
     print('========== Summary ==========')
     print('Number of tests   {:3d}'.format(ntests))
