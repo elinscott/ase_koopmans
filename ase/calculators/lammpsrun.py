@@ -33,29 +33,51 @@ from tempfile import mkdtemp, NamedTemporaryFile, mktemp as uns_mktemp
 import numpy as np
 from ase import Atoms
 from ase.parallel import paropen
-from ase.units import GPa, Ang, fs
+from ase.calculators.calculator import Calculator
+from ase.calculators.calculator import all_changes
 from ase.utils import basestring
 from ase.io.lammpsdata import write_lammps_data
 from ase.io.lammpsrun import read_lammps_dump
-from ase.calculators.lammps import Prism, write_lammps_in, CALCULATION_END_MARK
+from ase.calculators.lammps import Prism, write_lammps_in, CALCULATION_END_MARK, convert
 
 __all__ = ['LAMMPS']
 
 
-class LAMMPS:
+class LAMMPS(Calculator):
     name = 'lammpsrun'
 
-    def __init__(self, label='lammps', tmp_dir=None, parameters={},
-                 specorder=None, files=[], always_triclinic=False,
+    implemented_properties = ['energy', 'forces', 'stress']
+
+    default_parameters = dict(
+        units='metal',
+        atom_style='atomic',
+        dump_period=1,
+        specorder=None,
+        always_triclinic=False,
+        verbose=False,
+        thermo_args=['step', 'temp', 'press', 'cpu',
+                     'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz',
+                     'ke', 'pe', 'etotal',
+                     'vol', 'lx', 'ly', 'lz', 'atoms']
+        )
+
+    # legacy parameter persist, when the 'parameters' is manipulated from the
+    # outside.  All others are rested to the default value
+    legacy_parameters=['specorder',
+                       'dump_period',
+                       '_custom_thermo_args',
+                       ]
+    
+    def __init__(self, label='lammps', tmp_dir=None, 
+                 parameters=default_parameters, files=[], always_triclinic=False,
                  keep_alive=True, keep_tmp_files=False,
-                 no_data_file=False):
+                 no_data_file=False,
+                 **kwargs):
         """The LAMMPS calculators object
 
         files: list
             Short explanation XXX
         parameters: dict
-            Short explanation XXX
-        specorder: list
             Short explanation XXX
         keep_tmp_files: bool
             Retain any temporary files created. Mostly useful for debugging.
@@ -76,11 +98,22 @@ class LAMMPS:
             a perfect parallelepiped.
         """
 
-        self.label = label
-        self.parameters = parameters
+        Calculator.__init__(self, label=label, **kwargs)
+
+        self.parameters.update(parameters)
+        self.prism = None
         self.files = files
         self.calls = 0
         self.forces = None
+        # thermo_content contains data "written by" thermo_style.
+        # It is a list of dictionaries, each dict (one for each line
+        # printed by thermo_style) contains a mapping between each
+        # custom_thermo_args-argument and the corresponding
+        # value as printed by lammps. thermo_content will be
+        # re-populated by the read_log method.
+        self.thermo_content = []
+
+        
         self.keep_alive = keep_alive
         self.no_data_file = no_data_file
         self.keep_tmp_files = keep_tmp_files
@@ -93,43 +126,16 @@ class LAMMPS:
 
         # period of system snapshot saving (in MD steps)
         parameters['dump_period'] = 1
-
-        if not hasattr(parameters, 'specorder'):
-            self.parameters['specorder'] = specorder
-        if not hasattr(parameters, 'always_triclinic'):
+        
+        if not hasattr(self.parameters, 'always_triclinic'):
             self.parameters['always_triclinic'] = always_triclinic
-        if not hasattr(parameters, 'keep_tmp_files'):
+        if not hasattr(self.parameters, 'keep_tmp_files'):
             self.parameters['verbose'] = keep_tmp_files
-            
+
         if tmp_dir is not None:
             # If tmp_dir is pointing somewhere, don't remove stuff!
             self.keep_tmp_files = True
         self._lmp_handle = None        # To handle the lmp process
-
-        # read_log depends on that the first (three) thermo_style custom args
-        # can be capitilized and matched against the log output. I.e.
-        # don't use e.g. 'ke' or 'cpu' which are labeled KinEng and CPU.
-        self._custom_thermo_args = ['step', 'temp', 'press', 'cpu',
-                                    'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz',
-                                    'ke', 'pe', 'etotal',
-                                    'vol', 'lx', 'ly', 'lz', 'atoms']
-        self._custom_thermo_mark = ' '.join([x.capitalize() for x in
-                                             self._custom_thermo_args[0:3]])
-        self.parameters['thermo_args'] = self._custom_thermo_args
-
-        # Match something which can be converted to a float
-        f_re = r'([+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|nan|inf))'
-        n = len(self._custom_thermo_args)
-        # Create a re matching exactly N white space separated floatish things
-        self._custom_thermo_re = re_compile(
-            r'^\s*' + r'\s+'.join([f_re] * n) + r'\s*$', flags=IGNORECASE)
-        # thermo_content contains data "written by" thermo_style.
-        # It is a list of dictionaries, each dict (one for each line
-        # printed by thermo_style) contains a mapping between each
-        # custom_thermo_args-argument and the corresponding
-        # value as printed by lammps. thermo_content will be
-        # re-populated by the read_log method.
-        self.thermo_content = []
 
         if tmp_dir is None:
             self.tmp_dir = mkdtemp(prefix='LAMMPS-')
@@ -141,6 +147,26 @@ class LAMMPS:
         for f in files:
             shutil.copy(f, os.path.join(self.tmp_dir, os.path.basename(f)))
 
+    def __setattr__(self, key, value):
+        """Old LAMMPSRUN allows it to just override the parameters
+        dictionary. "Modern" ase calculators can assume that default
+        parameters are always set, overrides of the
+        'parameters'-dictionary have to be caught and the default
+        parameters need to be added first.
+        """
+        # !TODO: remove and break somebody's code (e.g. the test example)
+        if key == 'parameters' and value is not None:
+            temp_dict = self.get_default_parameters()
+            if self.parameters:
+                for l_key in self.legacy_parameters:
+                    try:
+                        temp_dict[l_key] = self.parameters[l_key]
+                    except KeyError:
+                        pass
+            temp_dict.update(value)
+            value = temp_dict
+        Calculator.__setattr__(self, key, value)
+
     def clean(self, force=False):
 
         self._lmp_end()
@@ -148,27 +174,16 @@ class LAMMPS:
         if not self.parameters['keep_tmp_files']:
             shutil.rmtree(self.tmp_dir)
 
-    def get_potential_energy(self, atoms):
-        self.update(atoms)
-        return self.thermo_content[-1]['pe']
+    def check_state(self, atoms, tol=1.0e-4):
+        # differenct convention for unit-cell and limit precision in
+        # LAMMPS-input file will lead to small rounding errors
+        return Calculator.check_state(self, atoms, tol)
 
-    def get_forces(self, atoms):
-        self.update(atoms)
-        return self.forces.copy()
+    def calculate(self, atoms=None,
+                  properties=['energy', 'forces', 'stress', 'energies'],
+                  system_changes=all_changes):
+        Calculator.calculate(self, atoms, properties, system_changes)
 
-    def get_stress(self, atoms):
-        self.update(atoms)
-        tc = self.thermo_content[-1]
-        # 1 bar (used by lammps for metal units) = 1e-4 GPa
-        return np.array([tc[i] for i in ('pxx','pyy','pzz',
-                                         'pyz','pxz','pxy')])*(-1e-4*GPa)
-
-    def update(self, atoms):
-        if not hasattr(self, 'atoms') or self.atoms != atoms:
-            self.calculate(atoms)
-
-    def calculate(self, atoms):
-        self.atoms = atoms.copy()
         pbc = self.atoms.get_pbc()
         if all(pbc):
             cell = self.atoms.get_cell()
@@ -184,6 +199,15 @@ class LAMMPS:
             cell = self.atoms.get_cell()
         self.prism = Prism(cell)
         self.run()
+
+        tc = self.thermo_content[-1]
+        
+        self.results['energy'] = convert(tc['pe'],'energy',
+                                         self.parameters['units'], 'ASE')
+        self.results['forces'] = self.forces.copy()
+        stress = np.array([tc[i] for i in ('pxx', 'pyy', 'pzz', 'pyz', 'pxz', 'pxy')])
+        self.results['stress'] = convert(stress, 'pressure',
+                                         self.parameters['units'], 'ASE')
 
     def _lmp_alive(self):
         # Return True if this calculator is currently handling a running
@@ -309,7 +333,6 @@ class LAMMPS:
             # it could
             raise RuntimeError('Atoms have gone missing')
 
-
         trj_atoms = read_lammps_dump(infileobj=lammps_trj,
                                      order=False,
                                      index=-1,
@@ -325,13 +348,12 @@ class LAMMPS:
         if self.trajectory_out is not None:
             # !TODO: is it advisable to create here temporary atoms-objects
             self.trajectory_out.write(trj_atoms)
-        
+
         lammps_trj_fd.close()
         if not self.no_data_file:
             lammps_data_fd.close()
 
         os.chdir(cwd)
-
 
     def read_lammps_log(self, lammps_log=None, PotEng_first=False):
         """Method which reads a LAMMPS output log file."""
@@ -346,21 +368,35 @@ class LAMMPS:
             # Expect lammps_in to be a file-like object
             f = lammps_log
             close_log_file = False
+            
+        # read_log depends on that the first (three) thermo_style custom args
+        # can be capitilized and matched against the log output. I.e.
+        # don't use e.g. 'ke' or 'cpu' which are labeled KinEng and CPU.
+        _custom_thermo_mark = ' '.join([x.capitalize() for x in
+                                        self.parameters['thermo_args'][0:3]])
 
+        # !TODO: regex-magic necessary?
+        # Match something which can be converted to a float
+        f_re = r'([+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|nan|inf))'
+        n_args = len(self.parameters['thermo_args'])
+        # Create a re matching exactly N white space separated floatish things
+        _custom_thermo_re = re_compile(
+            r'^\s*' + r'\s+'.join([f_re] * n_args) + r'\s*$', flags=IGNORECASE)
+            
         thermo_content = []
         line = f.readline().decode('utf-8')
         while line and line.strip() != CALCULATION_END_MARK:
             # get thermo output
-            if line.startswith(self._custom_thermo_mark):
+            if line.startswith(_custom_thermo_mark):
                 m = True
                 while m:
                     line = f.readline().decode('utf-8')
-                    m = self._custom_thermo_re.match(line)
+                    m = _custom_thermo_re.match(line)
                     if m:
                         # create a dictionary between each of the
                         # thermo_style args and it's corresponding value
                         thermo_content.append(
-                            dict(zip(self._custom_thermo_args,
+                            dict(zip(self.parameters['thermo_args'],
                                      map(float, m.groups()))))
             else:
                 line = f.readline().decode('utf-8')
