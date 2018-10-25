@@ -147,12 +147,12 @@ class Dynamics:
             pass
         return converged
 
-    def converged(self):
+    def converged(self, *args):
         """" a dummy function as placeholder for a real criterion, e.g. in
         Optimizer """
         return False
 
-    def log(self):
+    def log(self, *args):
         """" a dummy function as placeholder for a real logger, e.g. in
         Optimizer """
         return True
