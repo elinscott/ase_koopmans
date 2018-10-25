@@ -196,9 +196,11 @@ class BFGSLineSearch(Optimizer):
         self.r0 = r0
         self.g0 = g0
 
-    def log(self, forces):
+    def log(self, forces=None):
         if self.logfile is None:
             return
+        if forces is None:
+            forces = self.atoms.get_forces()
         fmax = sqrt((forces**2).sum(axis=1).max())
         e = self.atoms.get_potential_energy(
             force_consistent=self.force_consistent)

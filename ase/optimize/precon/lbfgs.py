@@ -372,7 +372,9 @@ class PreconLBFGS(Optimizer):
         self.smax = smax
         return Optimizer.run(self, fmax, steps)
 
-    def log(self, forces):
+    def log(self, forces=None):
+        if forces is None:
+            forces = self.atoms.get_forces()
         if isinstance(self.atoms, UnitCellFilter):
             natoms = len(self.atoms.atoms)
             forces, stress = forces[:natoms], self.atoms.stress

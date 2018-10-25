@@ -161,7 +161,9 @@ class PreconFIRE(Optimizer):
             fmax_sq = (forces**2).sum(axis=1).max()
             return fmax_sq < self.fmax**2
 
-    def log(self, forces):
+    def log(self, forces=None):
+        if forces is None:
+            forces = self.atoms.get_forces()
         if isinstance(self.atoms, UnitCellFilter):
             natoms = len(self.atoms.atoms)
             forces, stress = forces[:natoms], self.atoms.stress
