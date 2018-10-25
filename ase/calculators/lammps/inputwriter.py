@@ -96,7 +96,7 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
             *tuple('sp'[int(x)] for x in pbc)).encode('utf-8'))
     fileobj.write('atom_modify sort 0 0.0 \n'.encode('utf-8'))
     for key in ('neighbor', 'newton'):
-        if key in parameters:
+        if parameters[key]:
             fileobj.write('{0} {1} \n'.format(
                 key, parameters[key]).encode('utf-8'))
     fileobj.write('\n'.encode('utf-8'))
