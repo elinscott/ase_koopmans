@@ -218,7 +218,7 @@ def PhononHarmonics(atoms,
                     rng=np.random,
                     quantum=True,
                     failfast=True):
-    """Excite phonon modes to specified temperature.
+    r"""Excite phonon modes to specified temperature.
 
     This will displace atomic positions and set the velocities so as
     to produce a random, phononically correct state with the requested

@@ -109,8 +109,8 @@ class Dynamics:
                 function(*args, **kwargs)
 
     def irun(self, steps=1000, fmax=None, md=False):
-        """Run structure optimization algorithm as generator. This allows, e.g.,
-        to easily run two optimizers at the same time.
+        """Run structure dynamics algorithm as generator. This allows, e.g.,
+        to easily run two optimizers or MD thermostats at the same time.
 
         Examples:
         >>> opt1 = BFGS(atoms)
@@ -124,7 +124,7 @@ class Dynamics:
             f = self.atoms.get_forces()
             self.log(f)
             self.call_observers()
-            if self.converged(f):
+            if self.converged():
                 yield True
                 return
             self.step(f)
@@ -137,24 +137,22 @@ class Dynamics:
             yield False
 
     def run(self, steps=1000, fmax=None, md=False):
-        """Run structure optimization algorithm.
+        """Run dynamics algorithm.
 
         This method will return when the forces on all individual
         atoms are less than *fmax* or when the number of steps exceeds
-        *steps*.
-        FloK: Move functionality into self.irun to be able to run as
-              generator."""
+        *steps*."""
 
         for converged in Dynamics.irun(self, steps, fmax, md):
             pass
         return converged
 
-    def converged(self, f):
+    def converged(self):
         """" a dummy function as placeholder for a real criterion, e.g. in
         Optimizer """
         return False
 
-    def log(self, f):
+    def log(self):
         """" a dummy function as placeholder for a real logger, e.g. in
         Optimizer """
         return True
@@ -215,13 +213,13 @@ class Optimizer(Dynamics):
         pass
 
     def irun(self, fmax=0.05, steps=1000):
-        """ call Dynamics.irun """
-        return super(Optimizer, self).irun(fmax=fmax, steps=steps)
+        """ call Dynamics.irun with fmax set"""
+        return Dynamics.irun(self, fmax=fmax, steps=steps)
 
 
     def run(self, fmax=0.05, steps=1000):
-        """ call Dynamics.run """
-        return super(Optimizer, self).run(fmax=fmax, steps=steps)
+        """ call Dynamics.run with fmax set"""
+        return Dynamics.run(self, fmax=fmax, steps=steps)
 
     def converged(self, forces=None):
         """Did the optimization converge?"""
@@ -232,7 +230,9 @@ class Optimizer(Dynamics):
                     self.atoms.get_curvature() < 0.0)
         return (forces**2).sum(axis=1).max() < self.fmax**2
 
-    def log(self, forces):
+    def log(self, forces=None):
+        if forces is None:
+            forces = self.atoms.get_forces()
         fmax = sqrt((forces**2).sum(axis=1).max())
         e = self.atoms.get_potential_energy(
             force_consistent=self.force_consistent)
