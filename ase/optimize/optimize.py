@@ -108,7 +108,7 @@ class Dynamics:
             if call:
                 function(*args, **kwargs)
 
-    def irun(self, steps=1000, fmax=None, md=False):
+    def irun(self, steps=1000):
         """Run structure dynamics algorithm as generator. This allows, e.g.,
         to easily run two optimizers or MD thermostats at the same time.
 
@@ -119,10 +119,9 @@ class Dynamics:
         >>>     opt1.run()
         """
 
-        self.fmax = fmax
         for _ in range(steps):
             f = self.atoms.get_forces()
-            self.log(f)
+            self.log()
             self.call_observers()
             if self.converged():
                 yield True
@@ -131,19 +130,16 @@ class Dynamics:
             yield False
             self.nsteps += 1
 
-        if md:
-            yield True
-        else:
-            yield False
+        yield False
 
-    def run(self, steps=1000, fmax=None, md=False):
+    def run(self, steps=1000):
         """Run dynamics algorithm.
 
         This method will return when the forces on all individual
         atoms are less than *fmax* or when the number of steps exceeds
         *steps*."""
 
-        for converged in Dynamics.irun(self, steps, fmax, md):
+        for converged in Dynamics.irun(self, steps):
             pass
         return converged
 
@@ -197,6 +193,8 @@ class Optimizer(Dynamics):
         if self.force_consistent is None:
             self.set_force_consistent()
         self.restart = restart
+        # initialize attribute
+        self.fmax = None
 
         if restart is None or not isfile(restart):
             self.initialize()
@@ -214,12 +212,14 @@ class Optimizer(Dynamics):
 
     def irun(self, fmax=0.05, steps=1000):
         """ call Dynamics.irun with fmax set"""
-        return Dynamics.irun(self, fmax=fmax, steps=steps)
+        self.fmax = fmax
+        return Dynamics.irun(self, steps=steps)
 
 
     def run(self, fmax=0.05, steps=1000):
         """ call Dynamics.run with fmax set"""
-        return Dynamics.run(self, fmax=fmax, steps=steps)
+        self.fmax = fmax
+        return Dynamics.run(self, steps=steps)
 
     def converged(self, forces=None):
         """Did the optimization converge?"""

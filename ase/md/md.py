@@ -14,6 +14,7 @@ class MolecularDynamics(Dynamics):
         self.dt = timestep
         Dynamics.__init__(self, atoms, logfile=None, trajectory=trajectory)
         self.masses = self.atoms.get_masses()
+        self.max_steps = None
         if 0 in self.masses:
             warnings.warn('Zero mass encountered in atoms; this will '
                           'likely lead to errors if the massless atoms '
@@ -32,11 +33,17 @@ class MolecularDynamics(Dynamics):
 
     def irun(self, steps=50):
         """ Call Dynamics.irun with md=True """
-        return Dynamics.irun(self, steps=steps, md=True)
+        self.max_steps = steps + self.nsteps
+        return Dynamics.irun(self, steps=steps)
 
     def run(self, steps=50):
         """ Call Dynamics.run with md=True """
-        return Dynamics.run(self, steps=steps, md=True)
+        self.max_steps = steps + self.nsteps
+        return Dynamics.run(self, steps=steps)
 
     def get_time(self):
         return self.nsteps * self.dt
+
+    def converged(self):
+        """ MD is 'converged' when number of maximum steps is reached. """
+        return self.nsteps >= self.max_steps
