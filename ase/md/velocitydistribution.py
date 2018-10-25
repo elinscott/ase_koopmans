@@ -240,6 +240,7 @@ def PhononHarmonics(atoms,
     failfast: bool
         True for sanity checking the phonon spectrum for negative frequencies
         at Gamma.
+
     """
 
     # Receive displacements and velocities from phonon_harmonics()

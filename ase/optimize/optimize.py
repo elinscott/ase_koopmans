@@ -108,6 +108,58 @@ class Dynamics:
             if call:
                 function(*args, **kwargs)
 
+    def irun(self, steps=1000, fmax=None, md=False):
+        """Run structure optimization algorithm as generator. This allows, e.g.,
+        to easily run two optimizers at the same time.
+
+        Examples:
+        >>> opt1 = BFGS(atoms)
+        >>> opt2 = BFGS(StrainFilter(atoms)).irun()
+        >>> for _ in opt2:
+        >>>     opt1.run()
+        """
+
+        self.fmax = fmax
+        for _ in range(steps):
+            f = self.atoms.get_forces()
+            self.log(f)
+            self.call_observers()
+            if self.converged(f):
+                yield True
+                return
+            self.step(f)
+            yield False
+            self.nsteps += 1
+
+        if md:
+            yield True
+        else:
+            yield False
+
+    def run(self, steps=1000, fmax=None, md=False):
+        """Run structure optimization algorithm.
+
+        This method will return when the forces on all individual
+        atoms are less than *fmax* or when the number of steps exceeds
+        *steps*.
+        FloK: Move functionality into self.irun to be able to run as
+              generator."""
+
+        for converged in Dynamics.irun(self, steps, fmax, md):
+            pass
+        return converged
+
+    def converged(self, f):
+        """" a dummy function as placeholder for a real criterion, e.g. in
+        Optimizer """
+        return False
+
+    def log(self, f):
+        """" a dummy function as placeholder for a real logger, e.g. in
+        Optimizer """
+        return True
+
+
 
 class Optimizer(Dynamics):
     """Base-class for all structure optimization classes."""
@@ -144,6 +196,8 @@ class Optimizer(Dynamics):
         """
         Dynamics.__init__(self, atoms, logfile, trajectory, master)
         self.force_consistent = force_consistent
+        if self.force_consistent is None:
+            self.set_force_consistent()
         self.restart = restart
 
         if restart is None or not isfile(restart):
@@ -161,45 +215,13 @@ class Optimizer(Dynamics):
         pass
 
     def irun(self, fmax=0.05, steps=1000):
-        """Run structure optimization algorithm as generator. This allows, e.g.,
-        to easily run two optimizers at the same time.
-
-        Examples:
-        >>> opt1 = BFGS(atoms)
-        >>> opt2 = BFGS(StrainFilter(atoms)).irun()
-        >>> for _ in opt2:
-        >>>     opt1.run()
-        """
-
-        if self.force_consistent is None:
-            self.set_force_consistent()
-        self.fmax = fmax
-        for _ in range(steps):
-            f = self.atoms.get_forces()
-            self.log(f)
-            self.call_observers()
-            if self.converged(f):
-                yield True
-                return
-            self.step(f)
-            yield False
-            self.nsteps += 1
-
-        yield False
+        """ call Dynamics.irun """
+        return super(Optimizer, self).irun(fmax=fmax, steps=steps)
 
 
     def run(self, fmax=0.05, steps=1000):
-        """Run structure optimization algorithm.
-
-        This method will return when the forces on all individual
-        atoms are less than *fmax* or when the number of steps exceeds
-        *steps*.
-        FloK: Move functionality into self.irun to be able to run as
-              generator."""
-
-        for converged in self.irun(fmax, steps):
-            pass
-        return converged
+        """ call Dynamics.run """
+        return super(Optimizer, self).run(fmax=fmax, steps=steps)
 
     def converged(self, forces=None):
         """Did the optimization converge?"""

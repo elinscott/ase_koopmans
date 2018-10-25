@@ -19,6 +19,8 @@ class MolecularDynamics(Dynamics):
                           'likely lead to errors if the massless atoms '
                           'are unconstrained.')
         self.masses.shape = (-1, 1)
+        if not self.atoms.has('momenta'):
+            self.atoms.set_momenta(np.zeros([len(self.atoms), 3]))
         if logfile:
             self.attach(MDLogger(dyn=self, atoms=atoms, logfile=logfile),
                         interval=loginterval)
@@ -28,17 +30,13 @@ class MolecularDynamics(Dynamics):
                 'md-type': self.__class__.__name__,
                 'timestep': self.dt}
 
+    def irun(self, steps=50):
+        """ Call Dynamics.irun with md=True """
+        return Dynamics.irun(self, steps=steps, md=True)
+
     def run(self, steps=50):
-        """Integrate equation of motion."""
-        f = self.atoms.get_forces(md=True)
-
-        if not self.atoms.has('momenta'):
-            self.atoms.set_momenta(np.zeros_like(f))
-
-        for step in range(steps):
-            f = self.step(f)
-            self.nsteps += 1
-            self.call_observers()
+        """ Call Dynamics.run with md=True """
+        return Dynamics.run(self, steps=steps, md=True)
 
     def get_time(self):
         return self.nsteps * self.dt
