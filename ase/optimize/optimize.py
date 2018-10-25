@@ -160,7 +160,7 @@ class Optimizer(Dynamics):
     def initialize(self):
         pass
 
-    def irun(self, fmax=0.05, steps=100000000):
+    def irun(self, fmax=0.05, steps=1000):
         """Run structure optimization algorithm as generator. This allows, e.g.,
         to easily run two optimizers at the same time.
 
@@ -174,8 +174,7 @@ class Optimizer(Dynamics):
         if self.force_consistent is None:
             self.set_force_consistent()
         self.fmax = fmax
-        step = 0
-        while step < steps:
+        for _ in range(steps):
             f = self.atoms.get_forces()
             self.log(f)
             self.call_observers()
@@ -185,12 +184,11 @@ class Optimizer(Dynamics):
             self.step(f)
             yield False
             self.nsteps += 1
-            step += 1
 
         yield False
 
 
-    def run(self, fmax=0.05, steps=100000000):
+    def run(self, fmax=0.05, steps=1000):
         """Run structure optimization algorithm.
 
         This method will return when the forces on all individual
