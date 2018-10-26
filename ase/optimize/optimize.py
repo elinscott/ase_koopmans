@@ -119,17 +119,23 @@ class Dynamics:
         >>>     opt1.run()
         """
 
-        for _ in range(steps):
+        # initialize logging
+        if self.nsteps == 0:
             self.log()
             self.call_observers()
+
+        for _ in range(steps):
+            self.step()
+            self.nsteps += 1
+            # log the step
+            self.log()
+            self.call_observers()
+
             if self.converged():
                 yield True
                 return
-            self.step()
-            yield False
-            self.nsteps += 1
-
-        yield False
+            else:
+                yield False
 
     def run(self, steps=1000):
         """Run dynamics algorithm.
