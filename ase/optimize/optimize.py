@@ -124,6 +124,12 @@ class Dynamics:
             self.log()
             self.call_observers()
 
+        # check if algorithm is already converged to avoid unnecessary work
+        # (important for optimization)
+        if self.converged():
+            yield True
+            return
+
         for _ in range(steps):
             self.step()
             self.nsteps += 1
