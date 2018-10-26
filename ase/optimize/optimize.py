@@ -108,7 +108,7 @@ class Dynamics:
             if call:
                 function(*args, **kwargs)
 
-    def irun(self, steps=1000, compute_first_force=True):
+    def irun(self, steps=None):
         """Run structure dynamics algorithm as generator. This allows, e.g.,
         to easily run two optimizers or MD thermostats at the same time.
 
@@ -118,6 +118,15 @@ class Dynamics:
         >>> for _ in opt2:
         >>>     opt1.run()
         """
+
+        # steps has to come from the respective subclass
+        assert steps
+
+        # replace xrange with range entirely when python2 is dropped
+        try:
+            xrange
+        except NameError:
+            xrange = range
 
         # initialize logging
         if self.nsteps == 0:
@@ -130,7 +139,7 @@ class Dynamics:
             yield True
             return
 
-        for _ in range(steps):
+        for _ in xrange(steps):
             self.step()
             self.nsteps += 1
             # log the step
@@ -143,7 +152,7 @@ class Dynamics:
             else:
                 yield False
 
-    def run(self, steps=1000):
+    def run(self, steps=None):
         """Run dynamics algorithm.
 
         This method will return when the forces on all individual
@@ -221,13 +230,13 @@ class Optimizer(Dynamics):
     def initialize(self):
         pass
 
-    def irun(self, fmax=0.05, steps=1000):
+    def irun(self, fmax=0.05, steps=100000000):
         """ call Dynamics.irun and keep track of fmax"""
         self.fmax = fmax
         return Dynamics.irun(self, steps=steps)
 
 
-    def run(self, fmax=0.05, steps=1000):
+    def run(self, fmax=0.05, steps=100000000):
         """ call Dynamics.run and keep track of fmax"""
         self.fmax = fmax
         return Dynamics.run(self, steps=steps)
