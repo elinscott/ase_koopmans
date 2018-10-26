@@ -5,7 +5,6 @@ import pickle
 import time
 from math import sqrt
 from os.path import isfile
-from warnings import warn
 
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.parallel import rank, barrier
