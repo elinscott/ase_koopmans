@@ -58,7 +58,7 @@ class Dynamics:
 
         self.observers = []
         self.nsteps = 0
-        # maxint
+        # maximum number of steps placeholder with maxint
         self.max_steps = 100000000
 
         if trajectory is not None:
@@ -111,7 +111,7 @@ class Dynamics:
                 function(*args, **kwargs)
 
     def irun(self):
-        """Run structure dynamics algorithm as generator. This allows, e.g.,
+        """Run dynamics algorithm as generator. This allows, e.g.,
         to easily run two optimizers or MD thermostats at the same time.
 
         Examples:
@@ -126,15 +126,18 @@ class Dynamics:
             self.log()
             self.call_observers()
 
+        # run the algorithm until converged or max_steps reached
         while not self.converged() and self.nsteps < self.max_steps:
             yield False
 
+            # compute the next step
             self.step()
             self.nsteps += 1
             # log the step
             self.log()
             self.call_observers()
 
+        # finally check if algorithm was converged
         yield self.converged()
 
     def run(self):
@@ -157,7 +160,6 @@ class Dynamics:
         """" a dummy function as placeholder for a real logger, e.g. in
         Optimizer """
         return True
-
 
 
 class Optimizer(Dynamics):
