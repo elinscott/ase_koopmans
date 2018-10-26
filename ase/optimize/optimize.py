@@ -230,13 +230,13 @@ class Optimizer(Dynamics):
     def initialize(self):
         pass
 
-    def irun(self, fmax=0.05, steps=100000000):
+    def irun(self, fmax=0.05, steps=10000000):
         """ call Dynamics.irun and keep track of fmax"""
         self.fmax = fmax
         return Dynamics.irun(self, steps=steps)
 
 
-    def run(self, fmax=0.05, steps=100000000):
+    def run(self, fmax=0.05, steps=10000000):
         """ call Dynamics.run and keep track of fmax"""
         self.fmax = fmax
         return Dynamics.run(self, steps=steps)
