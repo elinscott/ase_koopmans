@@ -5,6 +5,7 @@ import pickle
 import time
 from math import sqrt
 from os.path import isfile
+from warnings import warn
 
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.parallel import rank, barrier
@@ -58,6 +59,8 @@ class Dynamics:
 
         self.observers = []
         self.nsteps = 0
+        # maxint
+        self.max_steps = 100000000
 
         if trajectory is not None:
             if isinstance(trajectory, basestring):
@@ -108,7 +111,7 @@ class Dynamics:
             if call:
                 function(*args, **kwargs)
 
-    def irun(self, steps=None):
+    def irun(self):
         """Run structure dynamics algorithm as generator. This allows, e.g.,
         to easily run two optimizers or MD thermostats at the same time.
 
@@ -119,47 +122,30 @@ class Dynamics:
         >>>     opt1.run()
         """
 
-        # steps has to come from the respective subclass
-        assert steps
-
-        # replace xrange with range entirely when python2 is dropped
-        try:
-            xrange
-        except NameError:
-            xrange = range
-
         # initialize logging
         if self.nsteps == 0:
             self.log()
             self.call_observers()
 
-        # check if algorithm is already converged to avoid unnecessary work
-        # (important for optimization)
-        if self.converged():
-            yield True
-            return
+        while not self.converged() and self.nsteps < self.max_steps:
+            yield False
 
-        for _ in xrange(steps):
             self.step()
             self.nsteps += 1
             # log the step
             self.log()
             self.call_observers()
 
-            if self.converged():
-                yield True
-                return
-            else:
-                yield False
+        yield self.converged()
 
-    def run(self, steps=None):
+    def run(self):
         """Run dynamics algorithm.
 
         This method will return when the forces on all individual
         atoms are less than *fmax* or when the number of steps exceeds
         *steps*."""
 
-        for converged in Dynamics.irun(self, steps):
+        for converged in Dynamics.irun(self):
             pass
         return converged
 
@@ -230,16 +216,20 @@ class Optimizer(Dynamics):
     def initialize(self):
         pass
 
-    def irun(self, fmax=0.05, steps=10000000):
+    def irun(self, fmax=0.05, steps=None):
         """ call Dynamics.irun and keep track of fmax"""
         self.fmax = fmax
-        return Dynamics.irun(self, steps=steps)
+        if steps:
+            self.max_steps = steps
+        return Dynamics.irun(self)
 
 
-    def run(self, fmax=0.05, steps=10000000):
+    def run(self, fmax=0.05, steps=None):
         """ call Dynamics.run and keep track of fmax"""
         self.fmax = fmax
-        return Dynamics.run(self, steps=steps)
+        if steps:
+            self.max_steps = steps
+        return Dynamics.run(self)
 
     def converged(self, forces=None):
         """Did the optimization converge?"""
