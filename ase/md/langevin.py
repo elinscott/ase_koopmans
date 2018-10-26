@@ -99,7 +99,7 @@ class Langevin(MolecularDynamics):
         atoms = self.atoms
         natoms = len(atoms)
 
-        if f == None:
+        if f is None:
             f = atoms.get_forces()
 
         # This velocity as well as xi, eta and a few other variables are stored

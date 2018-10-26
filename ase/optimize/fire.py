@@ -74,7 +74,7 @@ class FIRE(Optimizer):
     def step(self, f=None):
         atoms = self.atoms
 
-        if f == None:
+        if f is None:
             f = atoms.get_forces()
 
         if self.v is None:

@@ -213,7 +213,7 @@ class PreconLBFGS(Optimizer):
         then take it"""
         r = self.atoms.get_positions()
 
-        if f == None:
+        if f is None:
             f = self.atoms.get_forces()
 
         previously_reset_hessian = self._just_reset_hessian

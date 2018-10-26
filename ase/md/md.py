@@ -34,12 +34,12 @@ class MolecularDynamics(Dynamics):
     def irun(self, steps=50):
         """ Call Dynamics.irun and keep track of max_steps """
         self.max_steps = steps + self.nsteps
-        return Dynamics.irun(self, steps=steps)
+        return Dynamics.irun(self)
 
     def run(self, steps=50):
         """ Call Dynamics.run and keep track of max_steps """
         self.max_steps = steps + self.nsteps
-        return Dynamics.run(self, steps=steps)
+        return Dynamics.run(self)
 
     def get_time(self):
         return self.nsteps * self.dt

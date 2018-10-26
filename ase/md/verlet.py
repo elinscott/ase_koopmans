@@ -22,7 +22,7 @@ class VelocityVerlet(MolecularDynamics):
 
         atoms = self.atoms
 
-        if f == None:
+        if f is None:
             f = atoms.get_forces()
 
         p = atoms.get_momenta()

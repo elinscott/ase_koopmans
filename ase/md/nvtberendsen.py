@@ -83,7 +83,7 @@ class NVTBerendsen(MolecularDynamics):
         # one step velocity verlet
         atoms = self.atoms
 
-        if f == None:
+        if f is None:
             f = atoms.get_forces()
 
         p = self.atoms.get_momenta()

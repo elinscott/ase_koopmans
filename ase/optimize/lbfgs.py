@@ -113,7 +113,7 @@ class LBFGS(Optimizer):
         Use the given forces, update the history and calculate the next step --
         then take it"""
 
-        if f == None:
+        if f is None:
             f = self.atoms.get_forces()
 
         r = self.atoms.get_positions()

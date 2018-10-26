@@ -171,7 +171,7 @@ class GPMin(Optimizer, GaussianProcess):
 
         atoms = self.atoms
 
-        if f == None:
+        if f is None:
             f = atoms.get_forces()
 
         r0 = atoms.get_positions().reshape(-1)

@@ -100,7 +100,7 @@ class BFGSLineSearch(Optimizer):
     def step(self, f=None):
         atoms = self.atoms
 
-        if f == None:
+        if f is None:
             f = atoms.get_forces()
 
         from ase.neb import NEB
