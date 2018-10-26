@@ -108,7 +108,7 @@ class Dynamics:
             if call:
                 function(*args, **kwargs)
 
-    def irun(self, steps=1000):
+    def irun(self, steps=1000, compute_first_force=True):
         """Run structure dynamics algorithm as generator. This allows, e.g.,
         to easily run two optimizers or MD thermostats at the same time.
 
@@ -120,13 +120,12 @@ class Dynamics:
         """
 
         for _ in range(steps):
-            f = self.atoms.get_forces()
             self.log()
             self.call_observers()
             if self.converged():
                 yield True
                 return
-            self.step(f)
+            self.step()
             yield False
             self.nsteps += 1
 

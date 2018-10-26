@@ -95,9 +95,12 @@ class Langevin(MolecularDynamics):
         # Works in parallel Asap, #GLOBAL number of atoms:
         self.natoms = self.atoms.get_number_of_atoms()
 
-    def step(self, f):
+    def step(self, f=None):
         atoms = self.atoms
         natoms = len(atoms)
+
+        if f == None:
+            f = atoms.get_forces()
 
         # This velocity as well as xi, eta and a few other variables are stored
         # as attributes, so Asap can do its magic when atoms migrate between

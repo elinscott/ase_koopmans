@@ -97,8 +97,12 @@ class BFGSLineSearch(Optimizer):
         self.e0 = None
         self.rep_count = 0
 
-    def step(self, f):
+    def step(self, f=None):
         atoms = self.atoms
+
+        if f == None:
+            f = atoms.get_forces()
+
         from ase.neb import NEB
         if isinstance(atoms, NEB):
             raise TypeError('NEB calculations cannot use the BFGSLineSearch'
