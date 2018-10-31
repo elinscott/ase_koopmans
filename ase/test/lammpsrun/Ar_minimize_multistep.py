@@ -25,7 +25,7 @@ assert abs(norm(ar_nc.positions) - 23.588) < 1E-3
 
 
 params['minimize'] = '1.0e-15 1.0e-6 2000 4000'   # add minimize
-calc.params = params
+calc.parameters = params
 
 # set_atoms=True to read final coordinates after minimization
 calc.run(set_atoms=True)

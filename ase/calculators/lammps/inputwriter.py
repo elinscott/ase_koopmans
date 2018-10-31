@@ -145,7 +145,7 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
         'fx fy fz\n'
         ''.format(lammps_trj, parameters['dump_period']).encode('utf-8'))
     fileobj.write('thermo_style custom {0}\n'
-                  'thermo_modify flush yes\n'
+                  'thermo_modify flush yes format float %23.16g\n'
                   'thermo 1\n'.format(
                       ' '.join(parameters['thermo_args'])).encode('utf-8'))
 

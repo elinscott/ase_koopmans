@@ -31,6 +31,8 @@ from threading import Thread
 from re import compile as re_compile, IGNORECASE
 from tempfile import mkdtemp, NamedTemporaryFile, mktemp as uns_mktemp
 import numpy as np
+import inspect
+
 from ase import Atoms
 from ase.parallel import paropen
 from ase.calculators.calculator import Calculator
@@ -209,9 +211,11 @@ class LAMMPS(Calculator):
         dictionary. "Modern" ase calculators can assume that default
         parameters are always set, overrides of the
         'parameters'-dictionary have to be caught and the default
-        parameters need to be added first.
+        parameters need to be added first.  A check refuses to set
+        calculator attributes if they are unknown and set outside the
+        '__init__' functions.
         """
-        # !TODO: remove and break somebody's code (e.g. the test example)
+        # !TODO: remove and break somebody's code (e.g. the test examples)
         if key == 'parameters' and value is not None and \
           self.parameters is not None:
             print(self.legacy_warn_string.format('parameters'))
@@ -232,8 +236,14 @@ class LAMMPS(Calculator):
             print(self.legacy_warn_string.format(
                 '{} for {}'.format(self.legacy_parameters_map[key], key)))
             self.set(**{self.legacy_parameters_map[key]: value})
-        else:
+        # Catch setting none-default attributes
+        # one test was assigning an useless Attribute, but it still worked
+        # because the assigned object was before manipulation already handed
+        # over to the calculator (10/2018)
+        elif hasattr(self, key) or inspect.stack()[1][3] == '__init__':
             Calculator.__setattr__(self, key, value)
+        else:
+            raise AttributeError("Setting unknown Attribute '{}'".format(key))
 
     def __getattr__(self, key):
         """Corresponding getattribute-function to emulate legacy behavior.
@@ -261,16 +271,6 @@ class LAMMPS(Calculator):
                   system_changes=all_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
         self.run()
-
-        tc = self.thermo_content[-1]
-
-        self.results['energy'] = convert(tc['pe'], 'energy',
-                                         self.parameters['units'], 'ASE')
-        self.results['forces'] = self.forces.copy()
-        stress = np.array([tc[i] for i in ('pxx', 'pyy', 'pzz',
-                                           'pyz', 'pxz', 'pxy')])
-        self.results['stress'] = convert(stress, 'pressure',
-                                         self.parameters['units'], 'ASE')
 
     # !TODO: to be removed - handles legacy commandline arguments
     def _check_env(self):
@@ -460,7 +460,16 @@ class LAMMPS(Calculator):
         if self.parameters.trajectory_out is not None:
             # !TODO: is it advisable to create here temporary atoms-objects
             self.trajectory_out.write(trj_atoms)
-
+        
+        tc = self.thermo_content[-1]
+        self.results['energy'] = convert(tc['pe'], 'energy',
+                                         self.parameters['units'], 'ASE')
+        self.results['forces'] = self.forces.copy()
+        stress = np.array([tc[i] for i in ('pxx', 'pyy', 'pzz',
+                                           'pyz', 'pxz', 'pxy')])
+        self.results['stress'] = convert(stress, 'pressure',
+                                         self.parameters['units'], 'ASE')
+            
         lammps_trj_fd.close()
         if not self.parameters.no_data_file:
             lammps_data_fd.close()
