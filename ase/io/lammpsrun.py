@@ -62,6 +62,7 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc=False,
     :param specorder: list of species to map lammps types to ase-species
     (usually .dump files to not contain type to species mapping)
     :param prismobj: Coordinate transformation between lammps and ase
+    :type prismobj: Prism
     :param units: lammps units for unit transformation between lammps and ase
     :returns: Atoms object
     :rtype: Atoms
@@ -102,8 +103,8 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc=False,
     cell = convert(cell, 'distance', units, 'ASE')
     celldisp = convert(celldisp, 'distance', units, 'ASE')
     if prismobj:
-        cell = prismobj.vector_to_ase(cell)
         celldisp = prismobj.vector_to_ase(celldisp)
+        cell = prismobj.update_cell(cell)
 
     if len(quaternions):
         out_atoms = Quaternions(symbols=types,
@@ -116,7 +117,7 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc=False,
         # reverse coordinations transform to lammps system
         # (for all vectors = pos, vel, force)
         if prismobj:
-            positions = prismobj.vector_to_ase(positions)
+            positions = prismobj.vector_to_ase(positions, wrap=True)
 
         out_atoms = atomsobj(
             symbols=types, positions=positions, pbc=pbc,
@@ -221,13 +222,19 @@ def read_lammps_dump_string(fileobj, index=-1, **kwargs):
 
             cell, celldisp = construct_cell(diagdisp, offdiag)
 
+            # Handle pbc conditions
+            if len(tilt_items) > 3:
+                pbc = ['p' in d.lower() for d in tilt_items[3:]]
+            else:
+                pbc = (False,)*3
+                
         if 'ITEM: ATOMS' in line:
             colnames = line.split()[2:]
             datarows = [lines.popleft() for _ in range(n_atoms)]
             data = np.loadtxt(datarows)
             out_atoms = lammps_data_to_ase_atoms(
                 data=data, colnames=colnames, cell=cell, celldisp=celldisp,
-                atomsobj=Atoms, **kwargs)
+                atomsobj=Atoms, pbc=pbc, **kwargs)
             images.append(out_atoms)
 
         if index >= 0 and len(images) > index:

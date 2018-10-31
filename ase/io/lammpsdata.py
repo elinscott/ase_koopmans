@@ -403,7 +403,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
     f.write('\n\n'.encode('utf-8'))
 
     f.write('Atoms \n\n'.encode('utf-8'))
-    pos = p.vector_to_lammps(atoms.get_positions())
+    pos = p.vector_to_lammps(atoms.get_positions(), wrap=True)
     for i, r in enumerate(pos):
         s = species.index(symbols[i]) + 1
         f.write('{0:>6} {1:>3} {2} {3} {4}\n'.format(

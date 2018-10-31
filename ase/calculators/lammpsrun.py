@@ -90,6 +90,9 @@ class LAMMPS(Calculator):
         tmp_dir=None,
         files=[],  # usually contains potential parameters
         verbose=False,
+        write_velocities=False,
+        binary_dump=True,  # bool - use binary dump files (full precision but
+                           #        long long ids are casted to double)
         lammps_options='-echo log -screen none -log /dev/stdout',
         trajectory_out=None,  # file object, if is not None the trajectory will
                               # be saved in it
@@ -127,8 +130,8 @@ class LAMMPS(Calculator):
 
     default_parameters = dict(ase_parameters, **lammps_parameters)
 
-    # legacy parameter persist, when the 'parameters' is manipulated from the
-    # outside.  All others are rested to the default value
+    # legacy parameter persist, when the 'parameters' dictinary is manipulated
+    # from the outside.  All others are rested to the default value
     legacy_parameters = ['specorder',
                          'dump_period',
                          'always_triclinic',
@@ -257,21 +260,6 @@ class LAMMPS(Calculator):
                   properties=['energy', 'forces', 'stress', 'energies'],
                   system_changes=all_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
-
-        pbc = self.atoms.get_pbc()
-        if all(pbc):
-            cell = self.atoms.get_cell()
-        elif not any(pbc):
-            # large enough cell for non-periodic calculation -
-            # LAMMPS shrink-wraps automatically via input command
-            #       "periodic s s s"
-            # below
-            cell = 2 * np.max(np.abs(self.atoms.get_positions())) * np.eye(3)
-        else:
-            print("WARNING: semi-periodic ASE cell detected - translation")
-            print("         to proper LAMMPS input cell might fail")
-            cell = self.atoms.get_cell()
-        self.prism = Prism(cell)
         self.run()
 
         tc = self.thermo_content[-1]
@@ -351,6 +339,21 @@ class LAMMPS(Calculator):
 
     def run(self, set_atoms=False):
         """Method which explicitly runs LAMMPS."""
+        pbc = self.atoms.get_pbc()
+        if all(pbc):
+            cell = self.atoms.get_cell()
+        elif not any(pbc):
+            # large enough cell for non-periodic calculation -
+            # LAMMPS shrink-wraps automatically via input command
+            #       "periodic s s s"
+            # below
+            cell = 2 * np.max(np.abs(self.atoms.get_positions())) * np.eye(3)
+        else:
+            print("WARNING: semi-periodic ASE cell detected - translation")
+            print("         to proper LAMMPS input cell might fail")
+            cell = self.atoms.get_cell()
+        self.prism = Prism(cell)
+        
         self.set_missing_parameters()
         self.calls += 1
 
@@ -365,7 +368,8 @@ class LAMMPS(Calculator):
         lammps_log = uns_mktemp(prefix='log_' + label,
                                 dir=self.parameters.tmp_dir)
         lammps_trj_fd = NamedTemporaryFile(
-            prefix='trj_' + label, suffix='.bin',
+            prefix='trj_' + label,
+            suffix=('.bin' if self.parameters.binary_dump else ''),
             dir=self.parameters.tmp_dir,
             delete=(not self.parameters.keep_tmp_files))
         lammps_trj = lammps_trj_fd.name
@@ -378,6 +382,7 @@ class LAMMPS(Calculator):
             write_lammps_data(lammps_data_fd, self.atoms,
                               specorder=self.parameters.specorder,
                               force_skew=self.parameters.always_triclinic,
+                              velocities=self.parameters.write_velocities,
                               prismobj=self.prism)
             lammps_data = lammps_data_fd.name
             lammps_data_fd.flush()
