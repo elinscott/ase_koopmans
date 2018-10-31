@@ -84,17 +84,17 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc=False,
             cols = [colnames.index(label) for label in labels]
             if quantity:
                 return convert(data[:, cols], quantity, units, 'ASE')
-            else:
-                return data[:, cols]
+
+            return data[:, cols]
         except ValueError:
-            return []
+            return None
 
     # slice data block into columns
     # + perform necessary conversions to ASE units
     positions = get_quantity(['x', 'y', 'z'], 'distance')
     scaled_positions = get_quantity(['xs', 'ys', 'zs'])
     velocities = get_quantity(['vx', 'vy', 'vz'], 'velocity')
-    charges = get_quantity(['q'], 'charge')[:]
+    charges = get_quantity(['q'], 'charge')
     forces = get_quantity(['fx', 'fy', 'fz'], 'force')
     # !TODO: how need quaternions be converted?
     quaternions = get_quantity(['c_q[1]', 'c_q[2]', 'c_q[3]', 'c_q[4]'])
@@ -106,14 +106,14 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc=False,
         celldisp = prismobj.vector_to_ase(celldisp)
         cell = prismobj.update_cell(cell)
 
-    if len(quaternions):
+    if quaternions:
         out_atoms = Quaternions(symbols=types,
                                 positions=positions,
                                 cell=cell,
                                 celldisp=celldisp,
                                 pbc=pbc,
                                 quaternions=quaternions)
-    elif len(positions):
+    elif positions is not None:
         # reverse coordinations transform to lammps system
         # (for all vectors = pos, vel, force)
         if prismobj:
@@ -122,17 +122,17 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc=False,
         out_atoms = atomsobj(
             symbols=types, positions=positions, pbc=pbc,
             celldisp=celldisp, cell=cell)
-    elif len(scaled_positions):
+    elif scaled_positions is not None:
         out_atoms = atomsobj(symbols=types, scaled_positions=scaled_positions,
                              pbc=pbc, celldisp=celldisp, cell=cell)
 
-    if len(velocities):
+    if velocities is not None:
         if prismobj:
             velocities = prismobj.vector_to_ase(velocities)
         out_atoms.set_velocities(velocities)
-    if len(charges):
+    if charges is not None:
         out_atoms.set_initial_charges(charges)
-    if len(forces):
+    if forces is not None:
         if prismobj:
             forces = prismobj.vector_to_ase(forces)
         # !TODO: use another calculator if available (or move forces
@@ -174,7 +174,7 @@ def read_lammps_dump_string(fileobj, index=-1, **kwargs):
     """Process cleartext lammps dumpfiles
 
     :param fileobj: filestream providing the trajectory data
-    :param index: if containing multiple images, which to return (default: the last)
+    :param index: selection for multiple images (default: the last)
     :returns: list of Atoms objects
     :rtype: list
     """
@@ -191,7 +191,8 @@ def read_lammps_dump_string(fileobj, index=-1, **kwargs):
         if 'ITEM: TIMESTEP' in line:
             n_atoms = 0
             line = lines.popleft()
-            ntimestep = int(line.split()[0])
+            # !TODO: pyflakes complains about this line -> do something
+            # ntimestep = int(line.split()[0])  # NOQA
 
         if 'ITEM: NUMBER OF ATOMS' in line:
             line = lines.popleft()
@@ -218,7 +219,7 @@ def read_lammps_dump_string(fileobj, index=-1, **kwargs):
                                   for i in ['xy', 'xz', 'yz']]
                     offdiag = offdiag[sort_index]
             else:
-                offdiag = (0.,)*3
+                offdiag = (0.,) * 3
 
             cell, celldisp = construct_cell(diagdisp, offdiag)
 
@@ -226,8 +227,8 @@ def read_lammps_dump_string(fileobj, index=-1, **kwargs):
             if len(tilt_items) > 3:
                 pbc = ['p' in d.lower() for d in tilt_items[3:]]
             else:
-                pbc = (False,)*3
-                
+                pbc = (False,) * 3
+
         if 'ITEM: ATOMS' in line:
             colnames = line.split()[2:]
             datarows = [lines.popleft() for _ in range(n_atoms)]
@@ -237,7 +238,7 @@ def read_lammps_dump_string(fileobj, index=-1, **kwargs):
                 atomsobj=Atoms, pbc=pbc, **kwargs)
             images.append(out_atoms)
 
-        if index >= 0 and len(images) > index:
+        if len(images) > index >= 0:
             break
 
     return images[index]
@@ -250,8 +251,8 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
     :param fileobj: file-stream containing the binary lammps data
     :param index: if the file contains multiple images, which to return
     :param colnames: data is columns and identified by a header
-    :param intformat: lammps support different integer size.  Parameter set at 
-    compile-time and can unfortunately not derived from data file 
+    :param intformat: lammps support different integer size.  Parameter set at
+    compile-time and can unfortunately not derived from data file
     :returns: list of Atoms-objects
     :rtype: list
     """
@@ -282,14 +283,14 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
     while True:
         try:
             # read header
-            ntimestep, = read_variables('='+bigformat)
-            n_atoms, triclinic = read_variables('='+bigformat+'i')
+            ntimestep, = read_variables('=' + bigformat)
+            n_atoms, triclinic = read_variables('=' + bigformat + 'i')
             boundary = read_variables('=6i')
             diagdisp = read_variables('=6d')
             if triclinic != 0:
                 offdiag = read_variables('=3d')
             else:
-                offdiag = (0.,)*3
+                offdiag = (0.,) * 3
             size_one, nchunk = read_variables('=2i')
             if len(colnames) != size_one:
                 raise ValueError("Provided columns do not match binary file")
@@ -306,9 +307,9 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
             data = []
             for _ in range(nchunk):
                 # number-of-data-entries
-                n, = read_variables('=i')
+                n_data, = read_variables('=i')
                 # retrieve per atom data
-                data += read_variables('=' + str(n) + 'd')
+                data += read_variables('=' + str(n_data) + 'd')
             data = np.array(data).reshape((-1, size_one))
 
             # map data-chunk to ase atoms
@@ -319,7 +320,7 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
             images.append(out_atoms)
 
             # stop if requested index has been found
-            if index >= 0 and len(images) > index:
+            if len(images) > index >= 0:
                 break
 
         except EOFError:

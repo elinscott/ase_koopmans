@@ -46,11 +46,10 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
         # By default, atom types in alphabetic order
         species = sorted(set(symbols))
 
-    n_atom_types = len(species)
     species_i = {s: i + 1 for i, s in enumerate(species)}
 
     fileobj.write('create_box {0} asecell\n'
-                  ''.format(n_atom_types).encode('utf-8'))
+                  ''.format(len(species)).encode('utf-8'))
     for sym, pos in zip(symbols, atoms.get_positions()):
         if parameters['verbose']:
             fileobj.write('# atom pos in ase cell: {0:.16} {1:.16} {2:.16}\n'
