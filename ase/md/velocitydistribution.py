@@ -102,6 +102,8 @@ def phonon_harmonics(
     temp,
     rng=np.random.rand,
     quantum=True,
+    plus_minus=False,
+    return_eigensolution=False,
     failfast=True,
 ):
     r"""Return displacements and velocities that produce a given temperature.
@@ -119,13 +121,18 @@ def phonon_harmonics(
     quantum: bool
         True for Bose-Einstein distribution, False for Maxwell-Boltzmann
         (classical limit)
+    plus_minus: bool
+        Displace atoms with +/- the amplitude accoding to PRB 94, 075125
+    return_eigensolution: bool
+        return eigenvalues and eigenvectors of the dynamical matrix
     failfast: bool
         True for sanity checking the phonon spectrum for negative
         frequencies at Gamma
 
     Returns:
 
-        displacements, velocities generated from the eigenmodes
+        displacements, velocities generated from the eigenmodes,
+        (optional: eigenvalues, eigenvectors of dynamical matrix)
 
     Purpose:
 
@@ -203,34 +210,66 @@ def phonon_harmonics(
     else:
         A_s = np.sqrt(temp) / w_s
 
-    # compute the gaussian distribution for the amplitudes
-    # We need 0 < P <= 1.0 and not 0 0 <= P < 1.0 for the logarithm
-    # to avoid (highly improbable) NaN.
+    if plus_minus:
+        # create samples by multiplying the amplitude with +/-
+        # according to Eq. 5 in PRB 94, 075125
 
-    # Box Muller [en.wikipedia.org/wiki/Box–Muller_transform]:
-    spread = np.sqrt(-2.0 * np.log(1.0 - rng(nw)))
+        spread = (-1) ** np.arange(nw)
 
-    # Beasly-Springer-Moro (TEST!): benefitial when using quasi random numbers
-    # [BrownGeorgescuMandelstahm2013],
-    # spread = np.sqrt(2.0) / np.erf(2*rng(nw) - 1)
+        # gauge eigenvectors: largest value always positive
+        for ii in range(X_acs.shape[-1]):
+            vec = X_acs[:, :, ii]
+            max_arg = np.argmax(abs(vec))
+            X_acs[:, :, ii] *= np.sign(vec.flat[max_arg])
 
-    # Create velocities und displacements from the amplitudes and eigenvectors
-    A_s *= spread
+        # Create velocities und displacements from the amplitudes and
+        # eigenvectors
+        A_s *= spread
+        phi_s = 2.0 * np.pi * rng(nw)
 
-    # Assign random phases
-    phi_s = 2.0 * np.pi * rng(nw)
+        # Assign velocities, sqrt(2) compensates for missing sin(phi) in
+        # amplitude for displacement
+        v_ac = (w_s * A_s * np.sqrt(2) * np.cos(phi_s) * X_acs).sum(axis=2)
+        v_ac /= np.sqrt(masses)[:, None]
 
-    v_ac = (w_s * A_s * np.cos(phi_s) * X_acs).sum(axis=2)
-    v_ac /= np.sqrt(masses)[:, None]
+        # Assign displacements
+        d_ac = (A_s * X_acs).sum(axis=2)
+        d_ac /= np.sqrt(masses)[:, None]
 
-    d_ac = (A_s * np.sin(phi_s) * X_acs).sum(axis=2)
-    d_ac /= np.sqrt(masses)[:, None]
+    else:
+        # compute the gaussian distribution for the amplitudes
+        # We need 0 < P <= 1.0 and not 0 0 <= P < 1.0 for the logarithm
+        # to avoid (highly improbable) NaN.
 
+        # Box Muller [en.wikipedia.org/wiki/Box–Muller_transform]:
+        spread = np.sqrt(-2.0 * np.log(1.0 - rng(nw)))
+
+        # assign amplitudes and phases
+        A_s *= spread
+        phi_s = 2.0 * np.pi * rng(nw)
+
+        # Assign velocities and displacements
+        v_ac = (w_s * A_s * np.cos(phi_s) * X_acs).sum(axis=2)
+        v_ac /= np.sqrt(masses)[:, None]
+
+        d_ac = (A_s * np.sin(phi_s) * X_acs).sum(axis=2)
+        d_ac /= np.sqrt(masses)[:, None]
+
+    if return_eigensolution:
+        return d_ac, v_ac, w2_s, X_is
+    # else
     return d_ac, v_ac
 
 
 def PhononHarmonics(
-    atoms, force_constants, temp, rng=np.random, quantum=True, failfast=True
+    atoms,
+    force_constants,
+    temp,
+    rng=np.random,
+    quantum=True,
+    plus_minus=False,
+    return_eigensolution=False,
+    failfast=True,
 ):
     r"""Excite phonon modes to specified temperature.
 
@@ -263,8 +302,10 @@ def PhononHarmonics(
         masses=atoms.get_masses(),
         temp=temp,
         rng=rng.rand,
+        plus_minus=plus_minus,
         quantum=quantum,
         failfast=failfast,
+        return_eigensolution=False,
     )
 
     # Assign new positions (with displacements) and velocities
