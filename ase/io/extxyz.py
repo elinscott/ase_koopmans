@@ -24,7 +24,6 @@ from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
 from ase.utils import basestring
 from ase.constraints import FixAtoms, FixCartesian
-from ase.geometry import cell_to_cellpar, cellpar_to_cell
 
 __all__ = ['read_xyz', 'write_xyz', 'iread_xyz']
 
@@ -337,9 +336,6 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
         # NB: ASE cell is transpose of extended XYZ lattice
         cell = info['Lattice'].T
         del info['Lattice']
-    elif 'Cellpars' in info:
-        cell = np.round(cellpar_to_cell(info['Cellpars']).T, 10)
-        del info['Cellpars']
     elif nvec > 0:
         #cell information given as pseudo-Atoms
         cell = np.zeros((3,3))
@@ -632,7 +628,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
 
 
 def output_column_format(atoms, columns, arrays,
-                         write_info=True, results=None, cellpars=False):
+                         write_info=True, results=None):
     """
     Helper function to build extended XYZ comment line
     """
@@ -646,16 +642,10 @@ def output_column_format(atoms, columns, arrays,
 
     # NB: Lattice is stored as tranpose of ASE cell,
     # with Fortran array ordering
-    if cellpars:
-        cpars = cell_to_cellpar(atoms.cell.T).tolist()
-        lattice_str = ('Cellpars="' +
-                       ' '.join([str(x) for x in cpars]) +
-                       '"')
-    else:
-        lattice_str = ('Lattice="' +
-                       ' '.join([str(x) for x in np.reshape(atoms.cell.T,
-                                                            9, order='F')]) +
-                       '"')
+    lattice_str = ('Lattice="' +
+                   ' '.join([str(x) for x in np.reshape(atoms.cell.T,
+                                                        9, order='F')]) +
+                   '"')
 
     property_names = []
     property_types = []
@@ -709,7 +699,7 @@ def output_column_format(atoms, columns, arrays,
 
 
 def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
-              write_results=True, plain=False, vec_cell=False, append=False, cellpars=False):
+              write_results=True, plain=False, vec_cell=False, append=False):
     """
     Write output in extended XYZ format
 
@@ -853,8 +843,8 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                                                        fr_cols,
                                                        arrays,
                                                        write_info,
-                                                       per_frame_results,
-                                                       cellpars)
+                                                       per_frame_results)
+
         if plain or comment != '':
             # override key/value pairs with user-speficied comment string
             comm = comment
