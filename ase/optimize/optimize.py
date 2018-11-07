@@ -121,6 +121,9 @@ class Dynamics:
         >>>     opt1.run()
         """
 
+        # let the user inspect the atoms before algorithm is started
+        yield False
+
         # initialize logging
         if self.nsteps == 0:
             self.log()
@@ -128,11 +131,15 @@ class Dynamics:
 
         # run the algorithm until converged or max_steps reached
         while not self.converged() and self.nsteps < self.max_steps:
-            yield False
 
             # compute the next step
             self.step()
             self.nsteps += 1
+
+            # let the user inspect the step and change things before logging
+            # and predicting the next step
+            yield False
+
             # log the step
             self.log()
             self.call_observers()
