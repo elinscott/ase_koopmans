@@ -45,11 +45,11 @@ class NPTBerendsen(NVTBerendsen):
     def __init__(self, atoms, timestep, temperature, taut=0.5e3 *
                  units.fs, pressure=1.01325, taup=1e3 * units.fs,
                  compressibility=4.57e-5, fixcm=True, trajectory=None,
-                 logfile=None, loginterval=1):
+                 logfile=None, loginterval=1, append_trajectory=False):
 
         NVTBerendsen.__init__(self, atoms, timestep, temperature,
                               taut, fixcm, trajectory, logfile,
-                              loginterval)
+                              loginterval, append_trajectory=append_trajectory)
         self.taup = taup
         self.pressure = pressure
         self.compressibility = compressibility
