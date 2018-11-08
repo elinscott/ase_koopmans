@@ -30,10 +30,11 @@ class NVTBerendsen(MolecularDynamics):
 
     def __init__(self, atoms, timestep, temperature, taut, fixcm=True,
                  trajectory=None, logfile=None, loginterval=1,
-                 communicator=world):
+                 communicator=world, append_trajectory=False):
 
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
-                                   logfile, loginterval)
+                                   logfile, loginterval,
+                                   append_trajectory=append_trajectory)
         self.taut = taut
         self.temperature = temperature
         self.fixcm = fixcm  # will the center of mass be held fixed?

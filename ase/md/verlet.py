@@ -5,7 +5,7 @@ from ase.md.md import MolecularDynamics
 
 class VelocityVerlet(MolecularDynamics):
     def __init__(self, atoms, timestep=None, trajectory=None, logfile=None,
-                 loginterval=1, dt=None):
+                 loginterval=1, dt=None, append_trajectory=False):
         # FloK: rename dt -> timestep and make sure nobody is affected
         if dt is not None:
             import warnings
@@ -16,7 +16,8 @@ class VelocityVerlet(MolecularDynamics):
             raise TypeError('Missing timestep argument')
 
         MolecularDynamics.__init__(self, atoms, timestep, trajectory, logfile,
-                                   loginterval)
+                                   loginterval,
+                                   append_trajectory=append_trajectory)
 
     def step(self, f=None):
 
