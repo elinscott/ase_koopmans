@@ -1,8 +1,7 @@
 from __future__ import print_function
-import collections
 import json
-import os
 import sys
+from collections import defaultdict
 from random import randint
 
 import ase.io
@@ -11,7 +10,6 @@ from ase.db.core import convert_str_to_int_float_or_str
 from ase.db.summary import Summary
 from ase.db.table import Table, all_columns
 from ase.db.web import process_metadata
-from ase.calculators.calculator import get_calculator
 from ase.utils import plural, basestring
 
 try:
@@ -21,25 +19,43 @@ except NameError:
 
 
 class CLICommand:
-    short_description = 'Manipulate and query ASE database'
+    """Manipulate and query ASE database.
 
-    description = """Query is a comma-separated list of
+    Query is a comma-separated list of
     selections where each selection is of the type "ID", "key" or
     "key=value".  Instead of "=", one can also use "<", "<=", ">=", ">"
     and  "!=" (these must be protected from the shell by using quotes).
-    Special keys: id, user, calculator, age, natoms, energy, magmom,
-    and charge.  Chemical symbols can also be used to select number of
+    Special keys:
+
+    * id
+    * user
+    * calculator
+    * age
+    * natoms
+    * energy
+    * magmom
+    * charge
+
+    Chemical symbols can also be used to select number of
     specific atomic species (H, He, Li, ...).  Selection examples:
-    'calculator=nwchem', 'age<1d', 'natoms=1', 'user=alice',
-    '2.2<bandgap<4.1', 'Cu>=10'"""
+
+        calculator=nwchem
+        age<1d
+        natoms=1
+        user=alice
+        2.2<bandgap<4.1
+        Cu>=10
+
+    See also: https://wiki.fysik.dtu.dk/ase/ase/db/db.html.
+    """
 
     @staticmethod
     def add_arguments(parser):
         add = parser.add_argument
-        add('database')
-        add('query', nargs='*')
-        add('-v', '--verbose', action='store_true')
-        add('-q', '--quiet', action='store_true')
+        add('database', help='SQLite3 file, JSON file or postgres URL.')
+        add('query', nargs='*', help='Query string.')
+        add('-v', '--verbose', action='store_true', help='More output.')
+        add('-q', '--quiet', action='store_true', help='Less output.')
         add('-n', '--count', action='store_true',
             help='Count number of selected rows.')
         add('-l', '--long', action='store_true',
@@ -47,7 +63,10 @@ class CLICommand:
         add('-i', '--insert-into', metavar='db-name',
             help='Insert selected rows into another database.')
         add('-a', '--add-from-file', metavar='filename',
-            help='Add results from file.')
+            help='Add configuration(s) from file.  '
+            'If the file contains more than one configuration then you can '
+            'use the syntax filename@: to add all of them.  Default is to '
+            'only add the last.')
         add('-k', '--add-key-value-pairs', metavar='key1=val1,key2=val2,...',
             help='Add key-value pairs to selected rows.  Values must '
             'be numbers or strings and keys must follow the same rules as '
@@ -100,6 +119,12 @@ class CLICommand:
             help='Give rows a new unique id when using --insert-into.')
         add('--strip-data', action='store_true',
             help='Strip data when using --insert-into.')
+        add('--show-keys', action='store_true',
+            help='Show all keys.')
+        add('--show-values', metavar='key1,key2,...',
+            help='Show values for key(s).')
+        add('--write-summary-files', metavar='prefix',
+            help='Write summary-files with a "<prefix>-<uid>-" prefix.')
 
     @staticmethod
     def run(args):
@@ -138,16 +163,51 @@ def main(args):
         db.analyse()
         return
 
+    if args.show_keys:
+        keys = defaultdict(int)
+        for row in db.select(query):
+            for key in row._keys:
+                keys[key] += 1
+
+        n = max(len(key) for key in keys) + 1
+        for key, number in keys.items():
+            print('{:{}} {}'.format(key + ':', n, number))
+        return
+
+    if args.show_values:
+        keys = args.show_values.split(',')
+        values = {key: defaultdict(int) for key in keys}
+        numbers = set()
+        for row in db.select(query):
+            kvp = row.key_value_pairs
+            for key in keys:
+                value = kvp.get(key)
+                if value is not None:
+                    values[key][value] += 1
+                    if not isinstance(value, str):
+                        numbers.add(key)
+
+        n = max(len(key) for key in keys) + 1
+        for key in keys:
+            vals = values[key]
+            if key in numbers:
+                print('{:{}} [{}..{}]'
+                      .format(key + ':', n, min(vals), max(vals)))
+            else:
+                print('{:{}} {}'
+                      .format(key + ':', n,
+                              ', '.join('{}({})'.format(v, n)
+                                        for v, n in vals.items())))
+        return
+
     if args.add_from_file:
         filename = args.add_from_file
-        if ':' in filename:
-            calculator_name, filename = filename.split(':')
-            atoms = get_calculator(calculator_name)(filename).get_atoms()
-        else:
-            atoms = ase.io.read(filename)
-        db.write(atoms, key_value_pairs=add_key_value_pairs)
-        out('Added {0} from {1}'.format(atoms.get_chemical_formula(),
-                                        filename))
+        configs = ase.io.read(filename)
+        if not isinstance(configs, list):
+            configs = [configs]
+        for atoms in configs:
+            db.write(atoms, key_value_pairs=add_key_value_pairs)
+        out('Added ' + plural(len(configs), 'row'))
         return
 
     if args.count:
@@ -235,7 +295,7 @@ def main(args):
             tags = []
             keys = args.plot
         keys = keys.split(',')
-        plots = collections.defaultdict(list)
+        plots = defaultdict(list)
         X = {}
         labels = []
         for row in db.select(query, sort=args.sort, include_data=False):
@@ -268,53 +328,58 @@ def main(args):
         return
 
     db.python = args.metadata_from_python_script
-    db.meta = process_metadata(db, html=args.open_web_browser)
 
     if args.long:
-        # Remove .png files so that new ones will be created.
-        for func, filenames in db.meta.get('functions', []):
-            for filename in filenames:
-                try:
-                    os.remove(filename)
-                except OSError:  # Python 3 only: FileNotFoundError
-                    pass
-
+        db.meta = process_metadata(db, html=args.open_web_browser)
         row = db.get(query)
         summary = Summary(row, db.meta)
         summary.write()
-    else:
-        if args.open_web_browser:
-            import ase.db.app as app
-            app.databases['default'] = db
-            app.app.run(host='0.0.0.0', debug=True)
-        else:
-            columns = list(all_columns)
-            c = args.columns
-            if c and c.startswith('++'):
-                keys = set()
-                for row in db.select(query,
-                                     limit=args.limit, offset=args.offset,
-                                     include_data=False):
-                    keys.update(row._keys)
-                columns.extend(keys)
-                if c[2:3] == ',':
-                    c = c[3:]
-                else:
-                    c = ''
-            if c:
-                if c[0] == '+':
-                    c = c[1:]
-                elif c[0] != '-':
-                    columns = []
-                for col in c.split(','):
-                    if col[0] == '-':
-                        columns.remove(col[1:])
-                    else:
-                        columns.append(col.lstrip('+'))
+        return
 
-            table = Table(db, verbosity, args.cut)
-            table.select(query, columns, args.sort, args.limit, args.offset)
-            if args.csv:
-                table.write_csv()
+    if args.open_web_browser:
+        import ase.db.app as app
+        app.databases['default'] = db
+        app.app.run(host='0.0.0.0', debug=True)
+        return
+
+    if args.write_summary_files:
+        prefix = args.write_summary_files
+        db.meta = process_metadata(db, html=args.open_web_browser)
+        ukey = db.meta.get('unique_key', 'id')
+        for row in db.select(query):
+            uid = row.get(ukey)
+            summary = Summary(row,
+                              db.meta,
+                              prefix='{}-{}-'.format(prefix, uid))
+        return
+
+    columns = list(all_columns)
+    c = args.columns
+    if c and c.startswith('++'):
+        keys = set()
+        for row in db.select(query,
+                             limit=args.limit, offset=args.offset,
+                             include_data=False):
+            keys.update(row._keys)
+        columns.extend(keys)
+        if c[2:3] == ',':
+            c = c[3:]
+        else:
+            c = ''
+    if c:
+        if c[0] == '+':
+            c = c[1:]
+        elif c[0] != '-':
+            columns = []
+        for col in c.split(','):
+            if col[0] == '-':
+                columns.remove(col[1:])
             else:
-                table.write(query)
+                columns.append(col.lstrip('+'))
+
+    table = Table(db, verbosity=verbosity, cut=args.cut)
+    table.select(query, columns, args.sort, args.limit, args.offset)
+    if args.csv:
+        table.write_csv()
+    else:
+        table.write(query)

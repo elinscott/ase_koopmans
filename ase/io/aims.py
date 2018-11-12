@@ -126,6 +126,10 @@ def write_aims(filename, atoms, scaled=False, ghosts=None):
             fd.write('\n')
     fix_cart = np.zeros([len(atoms), 3])
 
+    # else aims crashes anyways
+    # better be more explicit
+    write_magmoms = np.any([a.magmom for a in atoms])
+
     if atoms.constraints:
         for constr in atoms.constraints:
             if isinstance(constr, FixAtoms):
@@ -165,7 +169,7 @@ def write_aims(filename, atoms, scaled=False, ghosts=None):
                     fd.write('constrain_relaxation %s\n' % 'xyz'[n])
         if atom.charge:
             fd.write('initial_charge %16.6f\n' % atom.charge)
-        if atom.magmom:
+        if write_magmoms:
             fd.write('initial_moment %16.6f\n' % atom.magmom)
 # except KeyError:
 #     continue
@@ -280,7 +284,9 @@ def read_aims_output(filename, index=-1):
             f = []
             for i in range(n_atoms):
                 inp = fd.readline().split()
-                f.append([float(inp[2]), float(inp[3]), float(inp[4])])
+                # FlK: use inp[-3:] instead of inp[1:4] to make sure this works
+                # when atom number is not preceded by a space.
+                f.append([float(i) for i in inp[-3:]])
             if not found_aims_calculator:
                 e = images[-1].get_potential_energy()
                 images[-1].set_calculator(SinglePointCalculator(atoms,

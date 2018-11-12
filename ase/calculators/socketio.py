@@ -8,6 +8,7 @@ import numpy as np
 from ase.calculators.calculator import (Calculator, all_changes,
                                         PropertyNotImplementedError)
 import ase.units as units
+from ase.utils import basestring
 
 
 def actualunixsocketname(name):
@@ -91,14 +92,14 @@ class IPIProtocol:
 
         self.log(' sendposdata')
         self.sendmsg('POSDATA')
-        self.send(cell / units.Bohr, np.float64)
-        self.send(icell * units.Bohr, np.float64)
+        self.send(cell.T / units.Bohr, np.float64)
+        self.send(icell.T * units.Bohr, np.float64)
         self.send(len(positions), np.int32)
         self.send(positions / units.Bohr, np.float64)
 
     def recvposdata(self):
-        cell = self.recv((3, 3), np.float64)
-        icell = self.recv((3, 3), np.float64)
+        cell = self.recv((3, 3), np.float64).T.copy()
+        icell = self.recv((3, 3), np.float64).T.copy()
         natoms = self.recv(1, np.int32)
         natoms = int(natoms)
         positions = self.recv((natoms, 3), np.float64)
@@ -113,7 +114,7 @@ class IPIProtocol:
         natoms = self.recv(1, np.int32)
         assert natoms >= 0
         forces = self.recv((int(natoms), 3), np.float64)
-        virial = self.recv((3, 3), np.float64)
+        virial = self.recv((3, 3), np.float64).T.copy()
         nmorebytes = self.recv(1, np.int32)
         nmorebytes = int(nmorebytes)
         if nmorebytes > 0:
@@ -136,7 +137,7 @@ class IPIProtocol:
         natoms = len(forces)
         self.send(np.array([natoms]), np.int32)
         self.send(units.Bohr / units.Ha * forces, np.float64)
-        self.send(1.0 / units.Ha * virial, np.float64)
+        self.send(1.0 / units.Ha * virial.T, np.float64)
         # We prefer to always send at least one byte due to trouble with
         # empty messages.  Reading a closed socket yields 0 bytes
         # and thus can be confused with a 0-length bytestring.
@@ -198,7 +199,7 @@ class SocketServer:
     default_port = 31415
 
     def __init__(self, client_command=None, port=None,
-                 unixsocket=None, timeout=None, log=None):
+                 unixsocket=None, timeout=None, cwd=None, log=None):
         """Create server and listen for connections.
 
         Parameters:
@@ -262,13 +263,15 @@ class SocketServer:
         self.protocol = None
         self.clientsocket = None
         self.address = None
+        self.cwd = cwd
 
         if client_command is not None:
             client_command = client_command.format(port=port,
                                                    unixsocket=unixsocket)
             if log:
                 print('Launch subprocess: {}'.format(client_command), file=log)
-            self.proc = Popen(client_command, shell=True)
+            self.proc = Popen(client_command, shell=True,
+                              cwd=self.cwd)
             # self._accept(process_args)
 
     def _accept(self, client_command=None):
@@ -503,7 +506,7 @@ class SocketClient:
         finally:
             self.close()
 
-    def run(self, atoms, use_stress=True):
+    def run(self, atoms, use_stress=False):
         for _ in self.irun(atoms, use_stress=use_stress):
             pass
 
@@ -573,7 +576,13 @@ class SocketIOCalculator(Calculator):
         self.calc = calc
         self.timeout = timeout
         self.server = None
-        self.log = log
+
+        if isinstance(log, basestring):
+            self.log = open(log, 'w')
+            self.log_was_opened = True
+        else:
+            self.log = log
+            self.log_was_opened = False
 
         # We only hold these so we can pass them on to the server.
         # They may both be None as stored here.
@@ -601,7 +610,9 @@ class SocketIOCalculator(Calculator):
     def launch_server(self, cmd=None):
         self.server = SocketServer(client_command=cmd, port=self._port,
                                    unixsocket=self._unixsocket,
-                                   timeout=self.timeout, log=self.log)
+                                   timeout=self.timeout, log=self.log,
+                                   cwd=(None if self.calc is None
+                                        else self.calc.directory))
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
@@ -626,9 +637,10 @@ class SocketIOCalculator(Calculator):
         self.atoms = atoms.copy()
         results = self.server.calculate(atoms)
         virial = results.pop('virial')
-        vol = atoms.get_volume()
-        from ase.constraints import full_3x3_to_voigt_6_stress
-        results['stress'] = -full_3x3_to_voigt_6_stress(virial) / vol
+        if self.atoms.number_of_lattice_vectors == 3 and any(self.atoms.pbc):
+            from ase.constraints import full_3x3_to_voigt_6_stress
+            vol = atoms.get_volume()
+            results['stress'] = -full_3x3_to_voigt_6_stress(virial) / vol
         self.results.update(results)
 
     def close(self):
@@ -636,6 +648,8 @@ class SocketIOCalculator(Calculator):
             self.server.close()
             self.server = None
             self.calculator_initialized = False
+            if self.log_was_opened:
+                self.log.close()
 
     def __enter__(self):
         return self
