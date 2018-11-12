@@ -1,73 +1,33 @@
 import numpy as np
-from ase.atoms import Atoms
 from ase.build.general_surface import surface
 from ase.atoms import string2symbols
 
 
-def Identify_Layers(surface, tol=0.2):
+def find_z_layers(atoms, tolerance=0.2, max_width=0.4):
     """
-    This funciton analyzes a slab, returning a dictionary containing an entry
-    for each layer of atoms. It decides what layers are based on atoms that
-    have the same height within a tolerance.
-    
-    inputs:
-        surface: Atoms object
-            Your slab model
-        tol: float
-            Determines how close atoms must be to be (in Angstrom) in the same
-            layer
-    returns:
-        representation_dict: dict
-            keys are the numbers of the layers, numbered from bottom to top.
-            The values are dictionaries containing the height, composition,
-            indicies of the atoms in the layer and the layer number.
-    """
-    surface1 = surface.copy()
-    representation_dict = {}
-    height_neighbors = np.empty([len(surface), len(surface)])
-    relation_list = []
-    layer_list = []
-    for i, atom in enumerate(surface1):
-        diff = surface1.get_positions()[:, 2] - atom.position[2]
-        c2 = diff > -tol
-        c1 = diff < tol
-        close = c1 & c2
-        height_neighbors[i] = close
-    for row1 in range(len(height_neighbors)):  # generate pairs
-        flag = 0
-        for row2 in range(row1 + 1, len(height_neighbors)):
-            if np.array_equal(height_neighbors[row1],
-               height_neighbors[row2]):  # compare rows
-                relation_list.append((row1, row2))
-                flag = 1
-        if flag == 0:
-            relation_list.append((row1, row1))
-    layer_list = [[relation_list[0][0],
-                   relation_list[0][1]]]  # prime the list initially
-    for j, tup in enumerate(relation_list):
-        flag = 0
-        for i, layer in enumerate(layer_list):
-            if tup[0] in layer and tup[1] in layer:
-                flag = 1
-            elif tup[0] in layer:
-                layer.append(tup[1])
-                flag = 1
-            elif tup[1] in layer:
-                layer.append(tup[0])
-                flag = 1
-        if flag == 0:
-            layer_list.append([tup[0], tup[1]])
-    for item in layer_list:
-        fixed_list = set(item)
-        fixed_list = sorted(list(fixed_list))
-        height = round(surface1[fixed_list[0]].position[2])
-        composition = Atoms([a.symbol for a in surface1 if
-                             a.index in fixed_list]).get_chemical_formula()
-        representation_dict[height] = {'indicies': fixed_list,
-                                       'composition': composition,
-                                       'height': height
-                                       }
-    return representation_dict
+    Find layers, returning a list of arrays of atom indices for each layer.
+
+    For example, atoms[layers[i]] will be the ith layer."""
+
+    args = np.argsort(atoms.positions[:, 2])
+    zcoords = atoms.positions[:, 2][args]
+    layers = []
+
+    def add_layer(layer):
+        layer_width = zcoords[layer[-1]] - zcoords[layer[0]]
+        if layer_width > max_width:
+            raise ValueError('Layers not well defined: width={} > '
+                             'max_width={}'.format(layer_width, max_width))
+        layers.append(layer)
+
+    layer = [0]
+    for i in range(1, len(atoms)):
+        if zcoords[i] - zcoords[i - 1] > tolerance:
+            add_layer(layer)
+            layer = []
+        layer.append(i)
+    add_layer(layer)
+    return [args[layer] for layer in layers]
 
 
 def Smart_Surface(lattice, indices, layers, vacuum=None, tol=1e-10,
@@ -109,10 +69,9 @@ def Smart_Surface(lattice, indices, layers, vacuum=None, tol=1e-10,
             if value >= 1 - tol:  # move things closer to zero within tol
                 positions[i] -= 1
         surf.set_scaled_positions(np.reshape(positions, (len(surf), 3)))
-        rep = Identify_Layers(surf)
-        top_layer = max(rep.keys())
+        rep = find_z_layers(surf)
         if termination is not None:
-            comp = string2symbols(rep[top_layer]['composition'])
+            comp = [surf.get_chemical_symbols()[a] for a in rep[-1]]
             term = string2symbols(termination)
             # list atoms in top layer and not in requested termination
             check = [a for a in comp if a not in term]
