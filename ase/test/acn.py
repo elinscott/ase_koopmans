@@ -6,9 +6,9 @@ dimer = Atoms('CCNCCN',
               [(-r_mec, 0, 0),
                (0, 0, 0),
                (r_cn, 0, 0),
-               (-r_mec, 3.7, 0),
+               (r_mec, 3.7, 0),
                (0, 3.7, 0),
-               (r_cn, 3.7, 0)])
+               (-r_cn, 3.7, 0)])
 
 # Set mass of methyls
 masses = dimer.get_masses()
