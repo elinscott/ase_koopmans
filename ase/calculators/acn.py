@@ -48,9 +48,8 @@ def wrap(D, cell, pbc):
     return shift
 
 
-def CombineLJ_lorenz_berthelot(sigma, epsilon):
-    """Combine LJ parameters according to the
-       Lorenz-Berthelot rule"""
+def combine_lj_lorenz_berthelot(sigma, epsilon):
+    """Combine LJ parameters according to the Lorenz-Berthelot rule"""
     sigma_c = np.zeros((len(sigma), len(sigma)))
     epsilon_c = np.zeros_like(sigma_c)
 
@@ -121,7 +120,7 @@ class ACN(Calculator):
             cut, dcut = self.cutoff(d)
 
             # LJ parameters
-            sigma_c, epsilon_c = CombineLJ_lorenz_berthelot(sigma, epsilon)
+            sigma_c, epsilon_c = combine_lj_lorenz_berthelot(sigma, epsilon)
 
             for j in range(3):
                 D = R[m + 1:] - R[m, j] + shift[:, np.newaxis]
