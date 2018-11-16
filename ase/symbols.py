@@ -77,7 +77,7 @@ class Symbols:
     @classmethod
     def fromsymbols(cls, symbols):
         numbers = symbols2numbers(symbols)
-        return cls(numbers)
+        return cls(np.array(numbers))
 
     def __getitem__(self, key):
         num = self.numbers[key]
@@ -86,18 +86,19 @@ class Symbols:
         return Symbols(num)
 
     def __setitem__(self, key, value):
-        if isinstance(value, basestring):
-            Z = atomic_numbers[value]
-        else:
-            Z = [atomic_numbers[v] for v in value]
-
-        self.numbers[key] = Z
+        numbers = symbols2numbers(value)
+        if len(numbers) == 1:
+            numbers = numbers[0]
+        self.numbers[key] = numbers
 
     def __len__(self):
         return len(self.numbers)
 
+    def __str__(self):
+        return self.get_chemical_formula('reduce')
+
     def __repr__(self):
-        return 'Symbols(\'{}\')'.format(self.get_chemical_formula())
+        return 'Symbols(\'{}\')'.format(self)
 
     def __eq__(self, obj):
         if not hasattr(obj, '__len__'):

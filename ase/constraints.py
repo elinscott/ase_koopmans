@@ -9,7 +9,7 @@ from scipy.linalg import expm
 
 __all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
            'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled', 'StrainFilter',
-           'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
+           'FixCom', 'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
            'FixBondLengths', 'FixInternals', 'Hookean', 'ExternalForce']
 
 
@@ -203,6 +203,37 @@ class FixAtoms(FixConstraint):
         if len(self.index) == 0:
             return None
         return self
+
+
+class FixCom(FixConstraint):
+    """Constraint class for fixing the center of mass.
+
+    References
+
+    https://pubs.acs.org/doi/abs/10.1021/jp9722824
+
+    """
+
+    def __init__(self):
+
+        self.removed_dof = 3
+
+    def adjust_positions(self, atoms, new):
+        masses = atoms.get_masses()
+        old_cm = atoms.get_center_of_mass()
+        new_cm = np.dot(masses, new) / masses.sum()
+        d = old_cm - new_cm
+        new += d
+
+    def adjust_forces(self, atoms, forces):
+        m = atoms.get_masses()
+        mm = np.tile(m, (3, 1)).T
+        lb = np.sum(mm * forces, axis=0) / sum(m**2)
+        forces -= mm * lb
+
+    def todict(self):
+        return {'name': 'FixCom',
+                'kwargs': {}}
 
 
 def ints2string(x, threshold=None):
@@ -1621,14 +1652,16 @@ class ExpCellFilter(UnitCellFilter):
           \phi = potential energy
           S = stress tensor [3x3 matrix]
           L(U, V) = directional derivative of exp at U in direction V, i.e
-             d/dt exp(U + t V)|_{t=0} = L(U, V)
+          d/dt exp(U + t V)|_{t=0} = L(U, V)
 
-         This means we can write
-            d/dt E(U + t V)|_{t=0} = L(U, S exp (-U)) : V
+        This means we can write
 
-         and therefore the contribution to the gradient of the energy is
+          d/dt E(U + t V)|_{t=0} = L(U, S exp (-U)) : V
 
-            \nabla E(U) / \nabla U_ij =  [L(U, S exp(-U))]_ij
+        and therefore the contribution to the gradient of the energy is
+
+          \nabla E(U) / \nabla U_ij =  [L(U, S exp(-U))]_ij
+
         """
 
         Filter.__init__(self, atoms, indices=range(len(atoms)))
@@ -1725,6 +1758,7 @@ class ExpCellFilter(UnitCellFilter):
         if (self.mask != 1.0).any():
             virial *= self.mask
 
+        deform_grad_log_force_naive = virial.copy()
         Y = np.zeros((6,6))
         Y[0:3,0:3] = self.deform_grad_log
         Y[3:6,3:6] = self.deform_grad_log
@@ -1735,23 +1769,28 @@ class ExpCellFilter(UnitCellFilter):
             deform_grad_log_force[i1,i2] = ff
             deform_grad_log_force[i2,i1] = ff
 
-        if self.constant_volume:
-            dglf = deform_grad_log_force.trace()
-            np.fill_diagonal(deform_grad_log_force, np.diag(deform_grad_log_force) - dglf / 3.0)
+        # check for reasonable alignment between naive and exact search directions
+        if (np.sum(deform_grad_log_force*deform_grad_log_force_naive) /
+            np.sqrt(np.sum(deform_grad_log_force**2) * np.sum(deform_grad_log_force_naive**2)) > 0.8):
+            deform_grad_log_force = deform_grad_log_force_naive
 
+        # Cauchy stress used for convergence testing
+        convergence_crit_stress = -(virial/volume)
+        if self.constant_volume:
+            # apply constraint to force
+            dglf_trace = deform_grad_log_force.trace()
+            np.fill_diagonal(deform_grad_log_force, np.diag(deform_grad_log_force) - dglf_trace / 3.0)
+            # apply constraint to Cauchy stress used for convergence testing
+            ccs_trace = convergence_crit_stress.trace()
+            np.fill_diagonal(convergence_crit_stress, np.diag(convergence_crit_stress) - ccs_trace / 3.0)
+
+        # pack gradients into vector
         natoms = len(self.atoms)
         forces = np.zeros((natoms + 3, 3))
         forces[:natoms] = atoms_forces
         forces[natoms:] = deform_grad_log_force
 
-        # set for convergence testing purposes
-        conv_crit_stress = -(virial/volume)
-        if self.constant_volume:
-            # cofactor matrix
-            d_det_F = np.linalg.inv(self.deform_grad).T * np.linalg.det(self.deform_grad)
-            d_det_F_hat = d_det_F / np.sqrt(np.sum(d_det_F**2))
-            conv_crit_stress += np.sum(virial/volume * d_det_F_hat) * d_det_F_hat
-        self.stress = full_3x3_to_voigt_6_stress(conv_crit_stress)
+        self.stress = full_3x3_to_voigt_6_stress(convergence_crit_stress)
 
         return forces
 

@@ -9,6 +9,14 @@ Git master branch
 
 :git:`master <>`.
 
+* No changes yet
+
+
+Version 3.17.0
+==============
+
+12 November 2018: :git:`3.17.0 <../3.17.0>`
+
 General changes:
 
 * ``atoms.symbols`` is now an array-like object which works
@@ -20,7 +28,7 @@ General changes:
 * Test suite now runs in parallel.
 
 * New :class:`~ase.dft.pdos.DOS` object for representing and plotting
-  densities and states.
+  densities of states.
 
 * Neighbor lists can now :meth:`get connectivity matrices
   <ase.neighborlist.NeighborList.get_connectivity_matrix>`.
@@ -46,7 +54,7 @@ Algorithms:
   :class:`~ase.constraints.ExpCellFilter`, based on an exponential
   reformulation of the degrees of freedom pertaining to the cell.
   This is probably significantly faster than
-  :class:`ase.constraints.UnitCellFilter`.
+  :class:`~ase.constraints.UnitCellFilter`.
 
 * :class:`~ase.constraints.UnitCellFilter` now supports scalar pressure and
   hydrostatic strain.
@@ -63,7 +71,12 @@ Algorithms:
   calculation is now much simpler.  Works the same way as for the serial
   case.
 
+* New :class:`~ase.constraints.FixCom` constraint for fixing
+  center of mass.
+
 Calculators:
+
+* Added :class:`ase.calculators.qmmm.ForceQMMM` force-based QM/MM calculator.
 
 * Socked-based interface to certain calculators through the
   :mod:`~ase.calculators.socketio` module:
@@ -71,6 +84,8 @@ Calculators:
   communicating coordinates, forces and other quantities over
   sockets using the i-PI protocol.  This removes the overhead for
   starting and stopping calculators for each geometry step.
+  The calculators which best support this feature are Espresso,
+  Siesta, and Aims.
 
 * Added calculator for :mod:`OpenMX <ase.calculators.openmx>`.
 
@@ -82,10 +97,25 @@ Calculators:
   manipulate them.
 
 * :class:`~ase.calculators.espresso.Espresso`
-  and :class:`~ase.calculators.dft.Dftb` now support the
+  and :mod:`~ase.calculators.dftb` now support the
   :class:`~ase.dft.band_structure.BandStructure` machinery
   including improved handling of kpoints, ``get_eigenvalues()``,
   and friends.
+
+I/O:
+
+* CIF reader now parses fractional occupancies if present.
+  The GUI visualizes fractional occupancies in the style of Pacman.
+
+* Support for downloading calculations from the Nomad archive.
+  Use ``ase nomad-get nmd://<uri> ...`` to download one or more URIs
+  as JSON files.  Use the :mod:`ase.nomad` module to download
+  and work with Nomad entries programmatically.  ``nomad-json``
+  is now a recognized IO format.
+
+* Sequences of atoms objects can now be saved as animations using
+  the mechanisms offered by matplotlib.  ``gif`` and ``mp4`` are now
+  recognized output formats.
 
 Database:
 
@@ -121,6 +151,11 @@ GUI:
 
 * Added callback method :meth:`ase.gui.gui.GUI.repeat_poll` to the GUI.
   Useful for programmatically updating the GUI.
+
+* Improved error handling and communication with subprocesses (for plots)
+  in GUI.
+
+* Added Basque translation.
 
 Version 3.16.2
 ==============
