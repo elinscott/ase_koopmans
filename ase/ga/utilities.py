@@ -7,11 +7,7 @@ import os
 import time
 import math
 from ase.ga import get_neighbor_list
-try:
-    from scipy.spatial.distance import cdist
-    have_scipy = True
-except ImportError:
-    have_scipy = False
+from scipy.spatial.distance import cdist
 
 
 def closest_distances_generator(atom_numbers, ratio_of_covalent_radii):
@@ -112,29 +108,7 @@ def gather_atoms_by_tag(atoms):
     atoms.set_positions(pos)
 
 
-def atoms_too_close(a, bl, use_tags=False):
-    """ Checks if any atoms in a are too close, as defined by
-        the distances in the bl dictionary. """
-    if have_scipy:
-        return atoms_too_close_scipy(a, bl, use_tags=use_tags)  
-    else:
-        assert not use_tags, "Using tags only possible if SciPy is installed"
-
-    lengths = a.get_cell_lengths_and_angles()[:3]
-    min_length = max(bl.values())
-    for i in range(3):
-        if lengths[i] < min_length and a.pbc[i]:
-            return True
-
-    num = a.numbers
-    for i in range(len(a)):
-        for j in range(i + 1, len(a)):
-            if a.get_distance(i, j, True) < bl[(num[i], num[j])]:
-                return True
-    return False
-
-
-def atoms_too_close_scipy(atoms, bl, use_tags=False):
+def atoms_too_close(atoms, bl, use_tags=False):
     """ Checks if any atoms in a are too close, as defined by
         the distances in the bl dictionary.
 
