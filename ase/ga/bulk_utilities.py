@@ -50,7 +50,7 @@ class CellBounds:
         for param, bound in bounds.items():
             if param not in ['a', 'b', 'c']:
                 # Convert angle from degree to radians
-                bound *= np.pi / 180.
+                bound = [b * np.pi / 180. for b in bound]
             self.bounds[param] = bound
 
     def is_within_bounds(self, cell):
