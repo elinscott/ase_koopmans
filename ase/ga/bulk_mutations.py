@@ -17,11 +17,7 @@ from ase.ga import standardmutations
 from ase.ga.utilities import (atoms_too_close, atoms_too_close_two_sets,
                               gather_atoms_by_tag)
 from ase.ga.bulk_utilities import get_rotation_matrix
-try:
-    from scipy.spatial.distance import cdist
-    have_scipy = True
-except ImportError:
-    have_scipy = False
+from scipy.spatial.distance import cdist
 
 
 class RattleMutation(standardmutations.RattleMutation):
@@ -510,8 +506,6 @@ class SoftMutation(OffspringCreator):
         self.used_modes_file = used_modes_file
         self.use_tags = use_tags
         self.descriptor = 'SoftMutation'
-
-        assert have_scipy, 'SoftMutation requires SciPy'
 
         self.used_modes = {}
         if self.used_modes_file is not None:
