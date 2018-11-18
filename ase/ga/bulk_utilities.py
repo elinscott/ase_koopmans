@@ -25,14 +25,20 @@ def get_cell_angles_lengths(cell):
 class CellBounds:
     '''
     Class for defining as well as checking limits
-    on cell vector lengths and various angles
+    on cell vector lengths (in Angstroms) and
+    various angles (in degrees).
     '''
 
     def __init__(self, bounds={}):
-        self.bounds = {'alpha': [0, np.pi], 'beta': [0, np.pi], 'gamma': [0, np.pi],
-                       'a': [0, 1e6], 'b': [0, 1e6], 'c': [0, 1e6],
-                       'phi': [0, np.pi], 'chi': [0, np.pi], 'psi': [0, np.pi]}
+        self.bounds = {'alpha': [0, np.pi], 'beta': [0, np.pi],
+                       'gamma': [0, np.pi], 'phi': [0, np.pi],
+                       'chi': [0, np.pi], 'psi': [0, np.pi],
+                       'a': [0, 1e6], 'b': [0, 1e6], 'c': [0, 1e6]}
+
         for param, bound in bounds.items():
+            if param not in ['a', 'b', 'c']:
+                # Convert angle from degree to radians
+                bound *= np.pi / 180.
             self.bounds[param] = bound
 
     def is_within_bounds(self, cell):
