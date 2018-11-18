@@ -5,9 +5,10 @@ from scipy.spatial.distance import cdist
 from ase.neighborlist import NeighborList
 
 
-class FingerprintsComparator(object):
+class OFPComparator(object):
     """
-    Implementation of comparison using fingerprint functions, based on:
+    Implementation of comparison using Oganov's fingerprint (OFP)
+    functions, based on:
     Oganov, Valle, J. Chem. Phys. 130, 104504 (2009)
     http://dx.doi.org/10.1063/1.3079326
     and
