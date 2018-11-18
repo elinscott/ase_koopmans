@@ -111,11 +111,11 @@ class OFPComparator(object):
                 return False
 
         # then we check the structure
-        cos_dist = self._compare_structure_(a1, a2)
+        cos_dist = self._compare_structure(a1, a2)
         verdict = cos_dist < self.cos_dist_max
         return verdict
 
-    def __json_encode__(self, fingerprints, typedic):
+    def _json_encode(self, fingerprints, typedic):
         """ json does not accept tuples nor integers as dict keys,
         so in order to write the fingerprints to atoms.info, we need
         to convert them to strings """
@@ -137,8 +137,8 @@ class OFPComparator(object):
             typedic_encoded[newkey] = val
         return [fingerprints_encoded, typedic_encoded]
 
-    def __json_decode__(self, fingerprints, typedic):
-        """ This is the reverse operation of __json_encode__ """
+    def _json_decode(self, fingerprints, typedic):
+        """ This is the reverse operation of _json_encode """
         fingerprints_decoded = {}
         for key, val in fingerprints.items():
             newkey = map(int, key.split("_"))
@@ -159,7 +159,7 @@ class OFPComparator(object):
             typedic_decoded[newkey] = val
         return [fingerprints_decoded, typedic_decoded]
 
-    def _compare_structure_(self, a1, a2):
+    def _compare_structure(self, a1, a2):
         """ Returns the cosine distance between the two structures,
             using their fingerprints. """
 
@@ -171,17 +171,17 @@ class OFPComparator(object):
 
         if 'fingerprints' in a1.info and not self.recalculate:
             fp1, typedic1 = a1.info['fingerprints']
-            fp1, typedic1 = self.__json_decode__(fp1, typedic1)
+            fp1, typedic1 = self._json_decode(fp1, typedic1)
         else:
-            fp1, typedic1 = self._take_fingerprints_(a1top)
-            a1.info['fingerprints'] = self.__json_encode__(fp1, typedic1)
+            fp1, typedic1 = self._take_fingerprints(a1top)
+            a1.info['fingerprints'] = self._json_encode(fp1, typedic1)
 
         if 'fingerprints' in a2.info and not self.recalculate:
             fp2, typedic2 = a2.info['fingerprints']
-            fp2, typedic2 = self.__json_decode__(fp2, typedic2)
+            fp2, typedic2 = self._json_decode(fp2, typedic2)
         else:
-            fp2, typedic2 = self._take_fingerprints_(a2top)
-            a2.info['fingerprints'] = self.__json_encode__(fp2, typedic2)
+            fp2, typedic2 = self._take_fingerprints(a2top)
+            a2.info['fingerprints'] = self._json_encode(fp2, typedic2)
 
         if sorted(fp1) != sorted(fp2):
             raise AssertionError('The two structures have fingerprints \
@@ -191,10 +191,10 @@ class OFPComparator(object):
                 raise AssertionError('The two structures have a different \
                                       stoichiometry or ordering!')
 
-        cos_dist = self._cosine_distance_(fp1, fp2, typedic1)
+        cos_dist = self._cosine_distance(fp1, fp2, typedic1)
         return cos_dist
 
-    def __get_volume__(self, a):
+    def _get_volume(self, a):
         ''' Calculates the normalizing value, and other parameters
         (pmin,pmax,qmin,qmax) that are used for surface area calculation
         in the case of 1 or 2-D periodicity.'''
@@ -279,7 +279,7 @@ class OFPComparator(object):
 
         return [volume, pmin, pmax, qmin, qmax]
 
-    def _take_fingerprints_(self, atoms, individual=False):
+    def _take_fingerprints(self, atoms, individual=False):
         """ Returns a [fingerprints,typedic] list, where fingerprints
         is a dictionary with the fingerprints, and typedic is a
         dictionary with the list of atom indices for each element
@@ -307,7 +307,7 @@ class OFPComparator(object):
             posdic[t] = pos[tlist]
 
         # determining the volume normalization and other parameters
-        volume, pmin, pmax, qmin, qmax = self.__get_volume__(atoms)
+        volume, pmin, pmax, qmin, qmax = self._get_volume(atoms)
 
         # functions for calculating the surface area
         non_pbc_dirs = [i for i in range(3) if not self.pbc[i]]
@@ -409,8 +409,8 @@ class OFPComparator(object):
 
         return [fingerprints, typedic]
 
-    def _calculate_local_orders_(self, individual_fingerprints, typedic,
-                                 volume):
+    def _calculate_local_orders(self, individual_fingerprints, typedic,
+                                volume):
         """ Returns a list with the local order for every atom,
         using the definition of local order from
         Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632
@@ -439,15 +439,15 @@ class OFPComparator(object):
         key = 'individual_fingerprints'
 
         if key in a.info and not self.recalculate:
-            fp, typedic = self.__json_decode__(*a.info[key])
+            fp, typedic = self._json_decode(*a.info[key])
         else:
-            fp, typedic = self._take_fingerprints_(a_top, individual=True)
-            a.info[key] = self.__json_encode__(fp, typedic)
+            fp, typedic = self._take_fingerprints(a_top, individual=True)
+            a.info[key] = self._json_encode(fp, typedic)
 
-        volume, pmin, pmax, qmin, qmax = self.__get_volume__(a_top)
-        return self._calculate_local_orders_(fp, typedic, volume)
+        volume, pmin, pmax, qmin, qmax = self._get_volume(a_top)
+        return self._calculate_local_orders(fp, typedic, volume)
 
-    def _cosine_distance_(self, fp1, fp2, typedic):
+    def _cosine_distance(self, fp1, fp2, typedic):
         """ Returns the cosine distance from two fingerprints.
         It also needs information about the number of atoms from
         each element, which is included in "typedic"."""
@@ -492,11 +492,11 @@ class OFPComparator(object):
 
         if 'fingerprints' in a.info and not self.recalculate:
             fp, typedic = a.info['fingerprints']
-            fp, typedic = self.__json_decode__(fp, typedic)
+            fp, typedic = self._json_decode(fp, typedic)
         else:
             a_top = a[-self.n_top:]
-            fp, typedic = self._take_fingerprints_(a_top)
-            a.info['fingerprints'] = self.__json_encode__(fp, typedic)
+            fp, typedic = self._take_fingerprints(a_top)
+            a.info['fingerprints'] = self._json_encode(fp, typedic)
 
         npts = int(np.ceil(self.rcut * 1. / self.binwidth))
         x = np.linspace(0, self.rcut, npts, endpoint=False)
@@ -520,7 +520,7 @@ class OFPComparator(object):
             fp, typedic = a.info['individual_fingerprints']
         else:
             a_top = a[-self.n_top:]
-            fp, typedic = self._take_fingerprints_(a_top, individual=True)
+            fp, typedic = self._take_fingerprints(a_top, individual=True)
             a.info['individual_fingerprints'] = [fp, typedic]
 
         npts = int(np.ceil(self.rcut * 1. / self.binwidth))
