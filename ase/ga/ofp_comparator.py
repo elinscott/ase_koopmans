@@ -17,8 +17,8 @@ class OFPComparator(object):
     """
 
     def __init__(self, n_top=None, dE=1.0, cos_dist_max=5e-3, rcut=20.,
-                 binwidth=0.05, sigma=0.02, nsigma=4, pbc=[True] * 3,
-                 maxdims=[None] * 3, recalculate=False):
+                 binwidth=0.05, sigma=0.02, nsigma=4, pbc=None,
+                 maxdims=None, recalculate=False):
         """
         Arguments:
 
@@ -39,7 +39,8 @@ class OFPComparator(object):
 
         pbc: list of booleans specifying whether to apply periodic
              boundary conditions along each of the three unit cell
-             vectors when calculating the fingerprint.
+             vectors when calculating the fingerprint. The default
+             is to apply PBCs in all 3 directions.
              Note: for isolated systems (pbc = [False,False,False]),
              the pair correlation function itself is always short-ranged
              (decays to zero beyond a certain radius), so unity is not
@@ -71,8 +72,17 @@ class OFPComparator(object):
         self.cos_dist_max = cos_dist_max
         self.rcut = rcut
         self.binwidth = binwidth
-        self.pbc = pbc
-        self.maxdims = maxdims
+
+        if pbc is None:
+            self.pbc = [True] * 3
+        else:
+            self.pbc = pbc
+
+        if maxdims is None:
+            self.maxdims = [None] * 3
+        else:
+            self.maxdims = maxdims
+
         self.sigma = sigma
         self.nsigma = nsigma
         self.recalculate = recalculate
