@@ -9,6 +9,14 @@ Git master branch
 
 :git:`master <>`.
 
+* No changes yet
+
+
+Version 3.17.0
+==============
+
+12 November 2018: :git:`3.17.0 <../3.17.0>`
+
 General changes:
 
 * ``atoms.symbols`` is now an array-like object which works
@@ -67,6 +75,8 @@ Algorithms:
   center of mass.
 
 Calculators:
+
+* Added :class:`ase.calculators.qmmm.ForceQMMM` force-based QM/MM calculator.
 
 * Socked-based interface to certain calculators through the
   :mod:`~ase.calculators.socketio` module:
@@ -144,6 +154,8 @@ GUI:
 
 * Improved error handling and communication with subprocesses (for plots)
   in GUI.
+
+* Added Basque translation.
 
 Version 3.16.2
 ==============

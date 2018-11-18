@@ -588,7 +588,7 @@ def _skip_to_blank(f, spacegroup, setting):
         line = f.readline()
         if not line:
             raise SpacegroupNotFoundError(
-                'invalid spacegroup %s, setting %i not found in data base' %
+                'invalid spacegroup `%s`, setting `%s` not found in data base' %
                 (spacegroup, setting))
         if not line.strip():
             break
@@ -812,10 +812,12 @@ def get_spacegroup(atoms, symprec=1e-5):
     except ImportError:
         from pyspglib import spglib  # For versions 1.8.x or before
 
-    sg = spglib.get_spacegroup(atoms.get_cell(),
-                               atoms.get_scaled_positions(),
-                               atoms.get_atomic_numbers(),
+    sg = spglib.get_spacegroup((atoms.get_cell(),
+                                atoms.get_scaled_positions(),
+                                atoms.get_atomic_numbers()),
                                symprec=symprec)
+    if sg is None:
+        raise RuntimeError('Spacegroup not found')
     sg_no = int(sg[sg.find('(') + 1:sg.find(')')])
     return Spacegroup(sg_no)
 
