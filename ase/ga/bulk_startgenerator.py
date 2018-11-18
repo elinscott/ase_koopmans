@@ -47,10 +47,15 @@ class StartGenerator(object):
 
     splits: splitting scheme to be used, based on:
     Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32
-    This should be a dict specifying the relative probabilities for each
-    split, written as tuples. As an example, (4,2) means split factors
-    of 4 and 2 for two directions (randomly chosen), with no splitting
-    along the remaining direction.
+    This should be a dict specifying the relative probabilities for
+    each split, written as tuples.
+    For example, splits={(2,): 3, (1,): 1} means that, for each structure,
+    either a splitting factor of 2 is applied to one randomly chosen axis,
+    or a splitting factor of 1 is applied (i.e., no splitting). The
+    probability ratio of the two scenararios will be 3:1, i.e. 75% chance
+    for the former and 25% chance for the latter splitting scheme. To e.g.
+    always apply splitting factors of 2 and 3 along two randomly chosen
+    axes, set splits={(2, 3): 1}, et cetera.
     """
 
     def __init__(self, blocks, blmin, volume, cellbounds=None,
