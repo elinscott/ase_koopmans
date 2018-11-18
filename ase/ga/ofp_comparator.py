@@ -312,18 +312,13 @@ class OFPComparator(object):
         # functions for calculating the surface area
         non_pbc_dirs = [i for i in range(3) if not self.pbc[i]]
 
-        def arccos(x):
-            # the domain of the numpy version is only [-1,1]
-            y = x + np.lib.scimath.sqrt(x**2 - 1).astype('complex')
-            return (1. / 1j) * np.log(y)
-
         def surface_area_0d(r):
             return 4 * np.pi * (r**2)
 
         def surface_area_1d(r, pos):
             q0 = pos[non_pbc_dirs[1]]
-            phi1 = arccos((qmax - q0) / r).real
-            phi2 = np.pi - arccos((qmin - q0) / r).real
+            phi1 = np.lib.scimath.arccos((qmax - q0) / r).real
+            phi2 = np.pi - np.lib.scimath.arccos((qmin - q0) / r).real
             factor = 1 - (phi1 + phi2) / np.pi
             return surface_area_2d(r, pos) * factor
 
