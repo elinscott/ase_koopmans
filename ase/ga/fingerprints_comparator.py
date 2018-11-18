@@ -3,10 +3,6 @@ from itertools import combinations_with_replacement
 from math import erf
 from scipy.spatial.distance import cdist
 from ase.neighborlist import NeighborList
-try:
-    import matplotlib.pyplot as plt
-except:
-    Warning("Matplotlib could not be loaded - plotting won't work")
 
 
 class FingerprintsComparator(object):
@@ -477,6 +473,11 @@ class FingerprintsComparator(object):
     def plot_fingerprints(self, a, prefix=''):
         """ Function for quickly plotting all the fingerprints.
         Prefix = a prefix you want to give to the resulting PNG file."""
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            Warning("Matplotlib could not be loaded - plotting won't work")
+            raise
 
         if 'fingerprints' in a.info and not self.recalculate:
             fp, typedic = a.info['fingerprints']
@@ -498,6 +499,11 @@ class FingerprintsComparator(object):
     def plot_individual_fingerprints(self, a, prefix=''):
         """ Function for plotting all the individual fingerprints.
         Prefix = a prefix for the resulting PNG file."""
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            Warning("Matplotlib could not be loaded - plotting won't work")
+            raise
 
         if 'individual_fingerprints' in a.info and not self.recalculate:
             fp, typedic = a.info['individual_fingerprints']
