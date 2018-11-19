@@ -1,4 +1,4 @@
-"""Test RATTLE  and QM/MM for rigid linear acetonitrile."""
+"""Test RATTLE and QM/MM for rigid linear acetonitrile."""
 
 import numpy as np
 
@@ -27,8 +27,6 @@ for calc in [ACN(),
                    (r_mec, 3.7, 0),
                    (0, 3.7, 0),
                    (-r_cn, 3.7, 0)])
-
-    dimer.center(vacuum=10)
 
     masses = dimer.get_masses()
     masses[::3] = m_me
