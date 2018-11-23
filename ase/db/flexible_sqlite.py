@@ -22,7 +22,7 @@ class FlexibleSqlite(SQLite3Database):
 
     def _guess_type(self, entries):
         """Guess the type based on the first entry."""
-        val = entries[entries.keys()[0]]
+        val = entries[list(entries.keys())[0]]
 
         if isinstance(val, int):
             return "INTEGER"
