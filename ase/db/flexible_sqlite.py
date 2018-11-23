@@ -10,7 +10,8 @@ class FlexibleSqlite(SQLite3Database):
         con = self.connection or self._connect()
         cur = con.cursor()
         dtype = self._guess_type(entries)
-        sql = "CREATE TABLE IF NOT EXISTS {} (key TEXT, value {}, id INTEGER)".format(name, dtype)
+        sql = "CREATE TABLE IF NOT EXISTS {} (key TEXT, value {}, id INTEGER, ".format(name, dtype)
+        sql += "FOREIGN KEY (id) REFERENCES systems(id))"
         cur.execute(sql)
 
         # Create an index on the id for fast lookup
