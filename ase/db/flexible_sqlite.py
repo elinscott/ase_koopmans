@@ -94,6 +94,7 @@ class FlexibleSqlite(SQLite3Database):
 
     def write(self, atoms, key_value_pairs={}, data={}, id=None, **kwargs):
         extra_tables = kwargs.pop("tables", {})
+        extra_tables.update(key_value_pairs.pop("tables", {}))
         uid = Database.write(self, atoms, key_value_pairs=key_value_pairs, data=data, id=id, **kwargs)
         self._insert_external_tables(extra_tables, uid)
 
