@@ -3,83 +3,60 @@ from ase.parallel import parallel_function
 from ase.db.core import lock, Database
 
 class FlexibleSqlite(SQLite3Database):
-    def _create_if_not_exists(self, name, entries):
-        """
-        Create a new table if it does not already exists
+    def _create_table_if_not_exists(self, name, entries):
+        """Huge data structures needs to be stored differently.
+           basically similar form as key_value_pairs
         """
         con = self.connection or self._connect()
-        types = self._get_types(entries)
         cur = con.cursor()
-        cols = ",".join(k + " " + v for k, v in types.items())
-        sql = "CREATE TABLE IF NOT EXISTS {} ({})".format(name, cols)
+        dtype = self._guess_type(entries)
+        sql = "CREATE TABLE IF NOT EXISTS {} (key TEXT, value {}, id INTEGER)".format(name, dtype)
         cur.execute(sql)
 
+        # Create an index on the id for fast lookup
+        sql = "CREATE INDEX IF NOT EXISTS {}_index ON {} (id)".format(name, name)
+        cur.execute(sql)
         if self.connection is None:
             con.commit()
             con.close()
 
-    def _get_types(self, entries):
-        types = {}
-        for k, v in entries.items():
-            if isinstance(v, float):
-                types[k] = "float"
-            elif isinstance(v, int):
-                types[k] = "integer"
-            elif isinstance(v, str):
-                types[k] = "text"
-        return types
+    def _guess_type(self, entries):
+        """Guess the type based on the first entry."""
+        val = entries[entries.keys()[0]]
 
-    def _sync_columns(self, name, entries):
-        """
-        Synchronize columns. (i.e. create the ones that does not exist)
-        """
-        con = self.connection or self._connect()
-        cur = con.cursor()
-        types = self._get_types(entries)
-
-        for k, v in types.items():
-            try:
-                sql = "ALTER TABLE {} ADD COLUMN {} {}".format(name, k, v)
-                cur.execute(sql)
-            except Exception:
-                # Column already exists
-                pass
-        
-        if self.connection is None:
-            con.commit()
-            con.close()
+        if isinstance(val, int):
+            return "INTEGER"
+        if isinstance(val, float):
+            return "REAL"
+        if isinstance(val, str):
+            return "TEXT"
+        raise ValueError("Unknown datatype!")
 
     @parallel_function
     @lock
-    def insert(self, name=None, entries=None, sync=True):
-        """Insert a new row into a table."""
+    def insert(self, name=None, entries=None):
+        """SQLite has limitations on the number of columns
+           so very big tables needs a different scheme."""
         if name is None or entries is None:
             # There is nothing to do
             return
+        self._create_table_if_not_exists(name, entries)
+        id = entries.pop("id")
 
-        if sync:
-            self._create_if_not_exists(name, entries)
-            self._sync_columns(name, entries)
-        
         con = self.connection or self._connect()
         cur = con.cursor()
 
-        key_value = [(k, v) for k, v in entries.items()]
-        if self._id_exists_in_table(cur, name, entries["id"]):
-            sql = "UPDATE {} SET ".format(name)
-            vals = list(item[1] for item in key_value if item[0] != "id")
-            sql += ",".join(item[0]+"=?" for item in key_value if item[0] != "id")
-            sql += " WHERE id=?"
-            vals.append(entries["id"])
-            cur.execute(sql, tuple(vals))
-        else:
-            sql = "INSERT INTO {} ".format(name)
-            
-            cols = ",".join(item[0] for item in key_value)
-            vals = tuple(item[1] for item in key_value)
-            sql += "({}) ".format(cols)
-            sql += "VALUES (" + ",".join("?" for item in key_value) + ")"
-            cur.execute(sql, vals)
+        # First we check if entries alrady exists
+        cur.execute("SELECT key FROM {} WHERE id=?".format(name), (id,))
+        for item in cur:
+            value = entries.pop(item[0], None)
+            if value is not None:
+                sql = "UPDATE {} SET value=? WHERE id=? AND key=?".format(name)
+                cur.execute(sql, (value, id, item[0]))
+
+        inserts = [(k, v, id) for k, v in entries.items()]
+        sql = "INSERT INTO {} VALUES (?, ?, ?)".format(name)
+        cur.executemany(sql, inserts)
 
         if self.connection is None:
             con.commit()
@@ -118,12 +95,8 @@ class FlexibleSqlite(SQLite3Database):
         con = self.connection or self._connect()
         cur = con.cursor()
         cur.execute("SELECT * FROM {} WHERE id=?".format(name), (id,))
-        row = cur.fetchone()
-        dictionary = None
-
-        if row:
-            column_names = [info[0] for info in cur.description]
-            dictionary = dict([(name, value) for name, value in zip(column_names, row)])
+        items = cur.fetchall()
+        dictionary = dict([(item[0], item[1]) for item in items])
 
         if self.connection is None:
             con.close()

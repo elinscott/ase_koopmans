@@ -23,7 +23,7 @@ def read_write_no_tables():
 
 def read_write_table():
     """Test if we can write an atoms object with an attached table."""
-    
+
     db_name = "read_write_table_test.db"
     db = connect(db_name, type="flexsqlite")
     atoms = bulk("Al")*(4, 4, 4)
@@ -41,7 +41,7 @@ def read_write_table():
     external.sort()
     assert external == ["test_table", "thermo"]
 
-    row = db.get(id=1)
+    row = db.get(id=2)
     for k, v in thermo.items():
         if row["thermo"][k] is not None and k != "id":
             assert abs(row["thermo"][k] - v) < 1E-8
