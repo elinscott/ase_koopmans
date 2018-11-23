@@ -8,6 +8,7 @@ from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
 from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import ReadError
+import numpy as np
 
 
 def update_nested(d, u):
@@ -65,9 +66,57 @@ class ACE(FileIOCalculator):
     ACE-Molecule logfile reader
     '''
     name = 'ACE'
-    implemented_properties = ['energy', 'forces', 'geometry']
+    implemented_properties = ['energy', 'forces', 'geometry','excitation-energy']
     system_changes = None
-    command = 'mpirun -np 1 ace PREFIX_opt.inp > PREFIX_opt.log'
+#    default_parameters = {}
+    parameters = OrderedParameters()
+    user_parameters = OrderedParameters()
+    defaults = OrderedParameters([\
+            ('BasicInformation', \
+                       OrderedDict([ ('Label', '/home/khs/work/asetest/H2test'), \
+                                     ('Type', 'Scaling'), ('Scaling', '1.0'), \
+                                     ('Basis', 'Sinc'), ('Cell', '3.0'), \
+                                     ('Grid', 'Sphere'), ('KineticMatrix', 'Finite_Difference'), \
+                                     ('DerivativesOrder', '7'), ('GeometryFormat', 'xyz'), \
+                                     ('SpinMultiplicity', '1.0'), ('Centered', '0'), \
+                                     ('OccupationMethod', 'ZeroTemp'), ('Polarize', '0'), \
+                                     ('Pseudopotential',\
+                                                           {'Pseudopotential': '1', 'Format': 'upf',\
+                                                            'PSFilePath': '/home/khs/DATA/UPF', \
+                                                            'PSFileSuffix': '.pbe-theos.UPF'}\
+                                     ), \
+                                     ('GeometryFilename', '/home/khs/work/asetest/H2test_opt.xyz'),\
+                                     ('ForceCalculation', 'Yes'), ('ForceDerivative', 'Potential'), ('NumElectrons', '2')])\
+            ),\
+            ('Guess',\
+                       OrderedDict([('InitialGuess', '1'), ('InitialFilePath', '/home/khs/DATA/UPF'),\
+                                    ('InitialFileSuffix', '.pbe-theos.UPF')])\
+            ), \
+#            ('Scf', \
+#                       OrderedDict[('IterateMaxCycle', '150'), ('ConvergenceType', 'Energy'), ('ConvergenceTolerance', '0.00001'),\
+#                        ('EnergyDecomposition', '1'), ('ComputeInitialEnergy', '1'), ('Diagonalize',\
+#                       {'DiagonalizeMaxIter': '10', 'Tolerance': '0.000001', 'FullOrthogonalize': '1'}),\
+#                        ('ExchangeCorrelation', \
+#                                    {'CalGradientUsingDensity': '1', 'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'}),\
+#                       ('Mixing', \
+#                                    {'MixingMethod': '1', 'MixingType': 'Density', 'MixingParameter': '0.5', \
+#                                    'PulayMixingParameter': '0.1'}),\
+#                       ('SolvationModel', {'Solvent': 'water', 'Area': '1.0', 'SolverType': 'None'}), \
+#                       ('NumberOfEigenvalues', '4')])]) \
+            ('Scf', \
+                       {'IterateMaxCycle': '150', 'ConvergenceType': 'Energy', 'ConvergenceTolerance': '0.00001',\
+                        'EnergyDecomposition': '1', 'ComputeInitialEnergy': '1', 'Diagonalize':\
+                       {'DiagonalizeMaxIter': '10', 'Tolerance': '0.000001', 'FullOrthogonalize': '1'},\
+                        'ExchangeCorrelation': \
+                                    {'CalGradientUsingDensity': '1', 'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},\
+                       'Mixing': \
+                                    {'MixingMethod': '1', 'MixingType': 'Density', 'MixingParameter': '0.5', \
+                                    'PulayMixingParameter': '0.1'},\
+                       'SolvationModel': {'Solvent': 'water', 'Area': '1.0', 'SolverType': 'None'}, \
+                       'NumberOfEigenvalues': '4'})]) \
+    
+    #defaults = OrderedParameters()
+    command = 'mpirun -np 1 ace PREFIX.inp > PREFIX.log'
 
     def __init__(
             self, restart=None, ignore_bad_restart_file=False,
@@ -75,40 +124,123 @@ class ACE(FileIOCalculator):
             basisfile=None, **kwargs):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command=command, **kwargs)
+        
+    def compare_parameters(self,parameters, key2, val2):    
+#        print("compare start")
+#        print(key2, val2)
+        compare = 0
+        for key, val in parameters.items():
+            if(key == key2):
+                parameters[key] = val2
+                print("key is updated------------------------------------------------------------")
+                return 10
+            if( compare != 10 and str( type(parameters[key]) ) != "<class 'str'>" and str(type(parameters[key]) ) != "<class 'list'>" \
+                and str(type(parameters[key])) != "<class 'NoneType'>" ):
+ #               print(parameters[key])
+                compare = self.compare_parameters(parameters[key],key2, val2)
+        return compare
+    def get_property(self, name, atoms=None,  allow_calculation=True):
+        print(self.implemented_properties)
+        if name not in self.implemented_properties:
+            raise PropertyNotImplementedError('{} property not implemented'
+                                              .format(name))
+        if atoms is None:
+            atoms = self.atoms
+            system_changes = []
+        else:
+            system_changes = self.check_state(atoms)
+            if system_changes:
+                self.reset()
+        if (name == 'excitation-energy'):
+            print("here")
+            self.parameters = OrderedParameters([('BasicInformation', OrderedParameters([('Type', 'Scaling'), ('Scaling', '1.0'), ('Basis', 'Sinc'), ('Grid', 'Atoms'), ('Radius', ['4.0', '4.0']), ('AbsoluteRadius', '1'), ('GeometryFilename', 'xyz/benzene.xyz'), ('GeometryFormat', 'xyz'), ('SpinMultiplicity', '1.0'), ('Centered', '1'), ('OccupationMethod', 'ZeroTemp'), ('Polarize', '0'), ('NumElectrons', '30'), ('KineticMatrix', 'Finite_Difference'), ('DerivativesOrder', '9'), ('ShallowCopyOrbitals', '1'), ('ParallelGridAtoms', '1'), ('Pseudopotential', OrderedParameters([('Pseudopotential', '1'), ('Format', 'upf'), ('UsingDoubleGrid', 'No'), ('NonlocalRmax', '2.0'), ('Nonlocalthreshold', '0.000001'), ('PSFilePath', '/home/khs/DATA/UPF/'), ('PSFileSuffix', '.pbe-theos.UPF')]))])), ('Guess', OrderedParameters([('InitialGuess', '3'), ('InitialFilePath', 'pbe.gs/'), ('Info', 'benzene_opt.log'), ('InfoFiletype', 'ACE'), ('NumberOfEigenvalues', '40')])), ('TDDFT', OrderedParameters([('SortOrbital', 'Order'), ('MaximumOrder', '30'), ('Gradient', '1'), ('ExchangeCorrelation', OrderedParameters([('CalGradientUsingDensity', '0'), ('XFunctional', '101'), ('CFunctional', '130')])), ('OrbitalInfo', OrderedParameters([('ExchangeCorrelation', OrderedParameters([('CalGradientUsingDensity', '0'), ('XFunctional', '101'), ('CFunctional', '130')]))])), ('xckernelwithoutEXX', OrderedParameters([('ExchangeCorrelation', OrderedParameters([('CalGradientUsingDensity', '0')]))]))]))])
+#            changed_parameters = FileIOCalculator.set(self)
+#            update_nested(changed_parameters2, changed_parameters)
+#            self.parameters = changed_parameters2 
+            
+        else:
+            print("here2")
+#        print (self.parameters)
+        print("initial")
+#        self.add_parameters(self.parameters, self.user_parameters)   
+        if 'modified' in self.parameters:
+#            print(self.parameters)
+            del self.parameters['modified'] 
+#        print(self.parameters)
+        for key, val in self.user_parameters.items(): 
+            print("divid")
+            print(key, val)
+            none_value = self.compare_parameters(self.parameters, key, val)   
+            print("compare_value ::::", none_value ) 
+            if(none_value == 0):
+                self.parameters[key] = val
+        if 'system_changes' in self.parameters:
+            del self.parameters['system_changes']
+        print(self.parameters)
+        self.write_input(atoms) 
 
-    def get_default_parameters(self):
-        pass
+
+        if name not in self.results:
+            if not allow_calculation:
+                return None
+            self.calculate(atoms, [name], system_changes)
+        
+        if name not in self.results:
+            # For some reason the calculator was not able to do what we want,
+            # and that is OK.
+            raise PropertyNotImplementedError('{} not present in this '
+                                              'calculation'.format(name))
+        result = self.results[name]
+        if isinstance(result, np.ndarray):
+            result = result.copy()
+        
+        return result
 
     def set(self, **kwargs):
         self.parameters = OrderedParameters()
-        changed_parameters2 = OrderedParameters()
+        #changed_parameters2 = OrderedParameters()
+        #changed_parameters2 = self.default_parameters
+        changed_parameters2 = self.defaults
         if 'ACEtemplate' in kwargs:
             filename = kwargs.pop("ACEtemplate")
             changed_parameters2 = self.read_acemolecule_inp(filename)
-
+            print(changed_parameters2)
+#        if 'mode' in kwargs:
+#            if(kwargs.pop("mode") == '2'):
+#                print("mode is 2")
         changed_parameters = FileIOCalculator.set(self, **kwargs)
         update_nested(changed_parameters2, changed_parameters)
         self.parameters = changed_parameters2
-
+ #       if 'modified' in kwargs:
+ #           user_parameters = kwargs.pop('modified')
+ #           self.compare_parameters(self.parameters, user_parameters)   
+        if 'modified' in self.parameters:
+            self.user_parameters = kwargs.pop('modified')
+            print(self.parameters)
+            del self.parameters['modified'] 
         if changed_parameters:
             self.reset()
         return changed_parameters
 
     def read(self, label):
         FileIOCalculator.read(self, label)
-        filename = self.label + "_opt.log"
+        filename = self.label + ".log"
         if not os.path.isfile(filename):
             raise ReadError
         self.read_results()
 
     def make_xyz_file(self, atoms):
-        atoms.write(self.label + "_opt.xyz")
+        atoms.write("{}_opt.xyz".format(self.label))
 
     def write_input(self, atoms, properties=None, system_changes=None):
         '''Writes the input file'''
+#        print("1",atoms)
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
-        inputfile = open(self.label + '_opt.inp', 'w')
-        atoms.write("{}_opt.xyz".format(self.label))
+#        print("2",atoms)
+#        print(self.label)
+        inputfile = open(self.label + '.inp', 'w')
+#        atoms.write("{}_opt.xyz".format(self.label))
+        self.make_xyz_file(atoms)
         self.parameters["BasicInformation"]["GeometryFilename"] = "{}_opt.xyz".format(self.label)
         self.parameters["BasicInformation"]["GeometryFormat"] = "xyz"
         new_parameters = OrderedParameters()
@@ -116,13 +248,19 @@ class ACE(FileIOCalculator):
         new_parameters["Guess"] = OrderedDict()
         update_nested(new_parameters, self.parameters)
         self.parameters = new_parameters
+#        print(self.parameters)
         self.write_acemolecule_input(inputfile, self.parameters)
 
         inputfile.close()
 
     def read_results(self):
-        filename = self.label + '_opt.log'
-        quantities = ['energy', 'forces', 'atoms']
+        filename = self.label + '.log'
+        f= open(filename,"r")
+        tddft = len(f.read().split("TDDFT"))
+        if(tddft>2):
+            quantities = ['excitation-energy']
+        else:
+            quantities = ['energy','forces', 'atoms','excitation-energy']
         for value in quantities:
             self.results[value] = read_acemolecule_out(filename, quantity=value)
 
@@ -201,4 +339,5 @@ system_changes = None
 if __name__ == "__main__":
     ace = ACE()
     ace.set(ACEtemplate="test.a")
+    y
     ace.write_input(Atoms("H2", positions=[[0, 0, 0], [0, 0, 1.0]]))

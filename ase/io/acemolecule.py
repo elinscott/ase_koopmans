@@ -23,12 +23,17 @@ def read_acemolecule_out(filename, quantity='atoms'):
 
     f = open(filename, 'r')
     lines = f.read()
-    energy_list = lines.split("Total energy ")
-    energy_line = energy_list[len(energy_list) - 1]
-    energy = float(energy_line.split('\n')[0].split('=')[1])
     geometry = zip(atom_symbol, positions)
         
+    if(quantity == 'excitation-energy'):
+        f.close()
+        # ee is excitation-energy
+        ee = 1
+        return ee
     if(quantity == 'energy'):
+        energy_list = lines.split("Total energy ")
+        energy_line = energy_list[len(energy_list) - 1]
+        energy = float(energy_line.split('\n')[0].split('=')[1])
         f.close()
         energy *= ase.units.Hartree
         # energy must be modified, hartree to eV
