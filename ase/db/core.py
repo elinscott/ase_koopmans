@@ -170,6 +170,10 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type == 'postgresql':
         from ase.db.postgresql import PostgreSQLDatabase
         return PostgreSQLDatabase(name)
+
+    if type == "flexsqlite":
+        from ase.db.flexible_sqlite import FlexibleSqlite
+        return FlexibleSqlite(name, create_indices, use_lock_file, serial=serial)
     raise ValueError('Unknown database type: ' + type)
 
 
