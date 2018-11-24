@@ -49,12 +49,17 @@ class FlexibleSqlite(SQLite3Database):
 
         # First we check if entries alrady exists
         cur.execute("SELECT key FROM {} WHERE id=?".format(name), (id,))
+        updates = []
         for item in cur:
             value = entries.pop(item[0], None)
             if value is not None:
-                sql = "UPDATE {} SET value=? WHERE id=? AND key=?".format(name)
-                cur.execute(sql, (value, id, item[0]))
+                updates.append((value, id, item[0]))
 
+        # Update entry if key and ID already exists
+        sql = "UPDATE {} SET value=? WHERE id=? AND key=?".format(name)
+        cur.executemany(sql, updates)
+
+        # Insert the ones that does not already exist
         inserts = [(k, v, id) for k, v in entries.items()]
         sql = "INSERT INTO {} VALUES (?, ?, ?)".format(name)
         cur.executemany(sql, inserts)
