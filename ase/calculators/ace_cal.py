@@ -134,8 +134,7 @@ class ACE(FileIOCalculator):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)'''
         
         if name not in self.implemented_properties:
-            raise PropertyNotImplementedError('{} property not implemented'
-                                              .format(name))
+            print ('{} property not implemented'.format(name))
         if atoms is None:
             atoms = self.atoms
             system_changes = []
@@ -194,8 +193,7 @@ class ACE(FileIOCalculator):
         if name not in self.results:
             # For some reason the calculator was not able to do what we want,
             # and that is OK.
-            raise PropertyNotImplementedError('{} not present in this '
-                                              'calculation'.format(name))
+            print'{} not present in this calculation'.format(name))
         result = self.results[name]
         if isinstance(result, np.ndarray):
             result = result.copy()
