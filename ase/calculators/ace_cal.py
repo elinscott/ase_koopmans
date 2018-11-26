@@ -331,5 +331,4 @@ system_changes = None
 if __name__ == "__main__":
     ace = ACE()
     ace.set(ACEtemplate="test.a")
-    y
     ace.write_input(Atoms("H2", positions=[[0, 0, 0], [0, 0, 1.0]]))
