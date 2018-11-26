@@ -121,13 +121,18 @@ class ACE(FileIOCalculator):
     def compare_parameters(self,parameters, key2, val2):    
         '''Replace and Add parameters that users want'''
         compare = 0
+#        print("???????????????????????????")
+#        print (parameters)
         for key, val in parameters.items():
             if(key == key2):
                 parameters[key] = val2
                 print("a parameter is updated")
+                print (type([1,1]))
                 return 10
-            if( compare != 10 and str( type(parameters[key]) ) != "<class 'str'>" and str(type(parameters[key]) ) != "<class 'list'>" \
-                and str(type(parameters[key])) != "<class 'NoneType'>" ):
+            if( compare != 10 and type(parameters[key]) != type('1') and type(parameters[key]) != type([1,1]) \
+                and type(parameters[key]) != type(None) ):
+                ##### type is different depanding on python version.
+#                print (type(parameters[key]))
                 compare = self.compare_parameters(parameters[key],key2, val2)
         return compare
     def get_property(self, name, atoms=None,  allow_calculation=True):
@@ -153,7 +158,7 @@ class ACE(FileIOCalculator):
                                                  ('DerivativesOrder', '9'), ('ShallowCopyOrbitals', '1'),('ParallelGridAtoms', '1'),\
                                                  ('Pseudopotential',\
                                                 OrderedParameters([('Pseudopotential', '1'), ('Format', 'upf'),\
-                                                                   ('UsingDoubleGrid', 'No'), ('NonlocalRmax', '2.0'),\
+                                                                   ('UsingDoubleGrid', '0'), ('NonlocalRmax', '2.0'),\
                                                                    ('Nonlocalthreshold', '0.000001'), \
                                                                    ('PSFilePath', '/home/khs/DATA/UPF/'), \
                                                                    ('PSFileSuffix', '.pbe-theos.UPF')]))])),\
@@ -193,7 +198,7 @@ class ACE(FileIOCalculator):
         if name not in self.results:
             # For some reason the calculator was not able to do what we want,
             # and that is OK.
-            print'{} not present in this calculation'.format(name))
+            print ('{} not present in this calculation'.format(name))
         result = self.results[name]
         if isinstance(result, np.ndarray):
             result = result.copy()
