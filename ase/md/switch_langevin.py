@@ -44,7 +44,7 @@ class SwitchLangevin(Langevin):
         self.n_eq = n_eq
         self.n_switch = n_switch
         self.lam = 0.0
-        self.calc = MixedCalculator(calc1, calc2, self.lam)
+        self.calc = MixedCalculator(calc1, calc2, weight1=1.0, weight2=0.0)
         self.atoms.set_calculator(self.calc)
 
         self.path_data = []
@@ -64,7 +64,8 @@ class SwitchLangevin(Langevin):
         for step in range(1, self.n_switch):
             # update calculator
             self.lam = get_lambda(step, self.n_switch)
-            self.calc.lam = self.lam
+            self.calc.weight1 = 1 - self.lam
+            self.calc.weight2 = self.lam
 
             # carry out md step
             forces = self.step(forces)

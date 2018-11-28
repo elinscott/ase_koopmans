@@ -5,25 +5,28 @@ from ase.calculators.calculator import Calculator, all_changes
 
 class MixedCalculator(Calculator):
     """
-    Mixing of two calculators with a parameter lambda
+    Mixing of two calculators with different weights
 
-    H(lambda) = (1-lambda) * H1 + lambda * H2
+    H = weight1 * H1 + weight2 * H2
 
     Parameters
     ----------
     calc1 : ASE-calculator
     calc2 : ASE-calculator
-    lambda : float
-        mixing parameter for the two calculators
+    weight1 : float
+        weight for calculator 1
+    weight2 : float
+        weight for calculator 2
     """
 
     implemented_properties = ['forces', 'energy']
 
-    def __init__(self, calc1, calc2, lam):
+    def __init__(self, calc1, calc2, weight1, weight2):
         Calculator.__init__(self)
         self.calc1 = calc1
         self.calc2 = calc2
-        self.lam = lam
+        self.weight1 = weight1
+        self.weight2 = weight2
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
@@ -39,8 +42,8 @@ class MixedCalculator(Calculator):
         forces2 = atoms_tmp.get_forces()
         energy2 = atoms_tmp.get_potential_energy()
 
-        self.results['forces'] = (1.0-self.lam)*forces1 + self.lam*forces2
-        self.results['energy'] = (1.0-self.lam)*energy1 + self.lam*energy2
+        self.results['forces'] = self.weight1*forces1 + self.weight2*forces2
+        self.results['energy'] = self.weight1*energy1 + self.weight2*energy2
         self.results['energy_contributions'] = (energy1, energy2)
 
     def get_energy_contributions(self):
