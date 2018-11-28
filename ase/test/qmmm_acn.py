@@ -1,5 +1,3 @@
-from math import cos, sin
-
 import numpy as np
 
 import ase.units as units
