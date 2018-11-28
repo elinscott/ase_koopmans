@@ -16,7 +16,7 @@ import numpy as np
 
 import ase.units as units
 from ase.atom import Atom
-from ase.constraints import FixConstraint, FixBondLengths
+from ase.constraints import FixConstraint, FixBondLengths, FixBondLengthsLinear
 from ase.data import atomic_numbers, chemical_symbols, atomic_masses
 from ase.utils import basestring, formula_hill, formula_metal
 from ase.geometry import (wrap_positions, find_mic, cellpar_to_cell,
