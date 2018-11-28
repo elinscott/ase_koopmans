@@ -24,7 +24,7 @@ class Langevin(MolecularDynamics):
         A friction coefficient, typically 1e-4 to 1e-2.
 
     selectlinear
-        Select atoms that do not belong to rigid linear triatomic 
+        Select atoms that do not belong to rigid linear triatomic
         molecules
 
     distslinear
@@ -58,9 +58,9 @@ class Langevin(MolecularDynamics):
     # Helps Asap doing the right thing.  Increment when changing stuff:
     _lgv_version = 3
 
-    def __init__(self, atoms, timestep, temperature, friction,  
-                 selectlinear=None, distslinear=None, masseslinear=None, 
-                 fixcm=True, trajectory=None, logfile=None, 
+    def __init__(self, atoms, timestep, temperature, friction,
+                 selectlinear=None, distslinear=None, masseslinear=None,
+                 fixcm=True, trajectory=None, logfile=None,
                  loginterval=1, communicator=world, rng=np.random):
         self.temp = temperature
         self.fr = friction
@@ -89,9 +89,9 @@ class Langevin(MolecularDynamics):
             self.mr_ba = (m_b / m_a)**0.5
             self.mr_ca = (m_c / m_a)**0.5
             self.mr_ac = (m_a / m_c)**0.5
-            self.n_a = self.c_a / (self.c_a**2 * self.m_bc + 
+            self.n_a = self.c_a / (self.c_a**2 * self.m_bc +
                                    self.c_c**2 * self.m_ab + self.m_ac)
-            self.n_c = self.c_c / (self.c_a**2 * self.m_bc + 
+            self.n_c = self.c_c / (self.c_a**2 * self.m_bc +
                                    self.c_c**2 * self.m_ab + self.m_ac)
 
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
@@ -146,8 +146,8 @@ class Langevin(MolecularDynamics):
         self.eta = self.rng.standard_normal(size=(natoms, 3))
 
         if self.selectlinear is not None:
-            self.xi, self.eta = self.redistribute() 
-         
+            self.xi, self.eta = self.redistribute()
+
         if self.communicator is not None:
             self.communicator.broadcast(self.xi, 0)
             self.communicator.broadcast(self.eta, 0)
@@ -188,46 +188,46 @@ class Langevin(MolecularDynamics):
 
     def redistribute(self):
         m_ab = self.m_ab
-        m_bc = self.m_bc 
+        m_bc = self.m_bc
         m_ac = self.m_ac
-        c_a = self.c_a 
-        c_c = self.c_c 
+        c_a = self.c_a
+        c_c = self.c_c
         mr_bc = self.mr_bc
         mr_ba = self.mr_ba
-        mr_ca = self.mr_ca 
+        mr_ca = self.mr_ca
         mr_ac = self.mr_ac
-        n_a = self.n_a 
-        n_c = self.n_c 
+        n_a = self.n_a
+        n_c = self.n_c
 
         xi = self.xi
         eta = self.eta
         xilin = xi[~self.mask]
-        etalin = eta[~self.mask]             
+        etalin = eta[~self.mask]
         xinew = np.zeros_like(xi)
         etanew = np.zeros_like(eta)
         xir = np.zeros_like(xilin)
         etar = np.zeros_like(etalin)
 
         # Avoid redistributing for atoms in selectlinear
-        xinew[self.mask] = xi[self.mask] 
-        etanew[self.mask] = eta[self.mask]         
+        xinew[self.mask] = xi[self.mask]
+        etanew[self.mask] = eta[self.mask]
 
         # Redistribute for primary atoms of linear molecules
-        xir[::3, :] = ((1 - n_a * m_bc * c_a) * xilin[::3, :] - 
-                       n_a * (m_ab * c_c * mr_ca * xilin[2::3, :] - 
+        xir[::3, :] = ((1 - n_a * m_bc * c_a) * xilin[::3, :] -
+                       n_a * (m_ab * c_c * mr_ca * xilin[2::3, :] -
                        m_ac * mr_ba * xilin[1::3, :]))
-        etar[::3, :] = ((1 - n_a * m_bc * c_a) * etalin[::3, :] - 
-                        n_a * (m_ab * c_c * mr_ca * etalin[2::3, :] - 
+        etar[::3, :] = ((1 - n_a * m_bc * c_a) * etalin[::3, :] -
+                        n_a * (m_ab * c_c * mr_ca * etalin[2::3, :] -
                         m_ac * mr_ba * etalin[1::3, :]))
-        xir[2::3, :] = ((1 - n_c * m_ab * c_c) * xilin[2::3, :] - 
-                        n_c * (m_bc * c_a * mr_ac * xilin[::3, :] - 
+        xir[2::3, :] = ((1 - n_c * m_ab * c_c) * xilin[2::3, :] -
+                        n_c * (m_bc * c_a * mr_ac * xilin[::3, :] -
                         m_ac * mr_bc * xilin[1::3, :]))
-        etar[2::3, :] = ((1 - n_c * m_ab * c_c) * etalin[2::3, :] - 
-                         n_c * (m_bc * c_a * mr_ac * etalin[::3, :] - 
+        etar[2::3, :] = ((1 - n_c * m_ab * c_c) * etalin[2::3, :] -
+                         n_c * (m_bc * c_a * mr_ac * etalin[::3, :] -
                          m_ac * mr_bc * etalin[1::3, :]))
-        
-        xinew[~self.mask] = xir 
-        etanew[~self.mask] = etar           
+
+        xinew[~self.mask] = xir
+        etanew[~self.mask] = etar
 
         return xinew, etanew
 

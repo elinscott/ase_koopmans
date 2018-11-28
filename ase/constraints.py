@@ -8,7 +8,7 @@ import numpy as np
 __all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
            'FixAtoms', 'UnitCellFilter', 'FixScaled', 'StrainFilter',
            'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
-           'FixBondLengths', 'FixBondLengthsLinear', 'FixInternals', 'Hookean', 
+           'FixBondLengths', 'FixBondLengthsLinear', 'FixInternals', 'Hookean',
            'ExternalForce']
 
 
@@ -214,7 +214,7 @@ def ints2string(x, threshold=None):
 class FixBondLengths(FixConstraint):
     maxiter = 500
 
-    def __init__(self, pairs, tolerance=1e-13, 
+    def __init__(self, pairs, tolerance=1e-13,
                  bondlengths=None, iterations=None):
         """iterations:
                 Ignored"""
@@ -229,7 +229,7 @@ class FixBondLengths(FixConstraint):
         masses = atoms.get_masses()
 
         if self.bondlengths is None:
-           self.bondlengths = self.initialize_bond_lengths(atoms)
+            self.bondlengths = self.initialize_bond_lengths(atoms)
 
         for i in range(self.maxiter):
             converged = True
@@ -256,7 +256,7 @@ class FixBondLengths(FixConstraint):
         masses = atoms.get_masses()
 
         if self.bondlengths is None:
-           self.bondlengths = self.initialize_bond_lengths(atoms)
+            self.bondlengths = self.initialize_bond_lengths(atoms)
 
         for i in range(self.maxiter):
             converged = True
@@ -319,7 +319,7 @@ def FixBondLength(a1, a2):
 
 class FixBondLengthsLinear(FixConstraint):
     """RATTLE algorithm for linear triatomic molecules.
-      
+
        Based on Ciccotti et al. Molecular Physics 1982:
        http://dx.doi.org/10.1080/00268978200100942
     """
@@ -329,36 +329,36 @@ class FixBondLengthsLinear(FixConstraint):
             a--b--c
             |-----|
               r_ac
-            
+
             Apply bond constraint to r_ac
-            Update position of b accoring to a linear vectorial constrain:  
+            Update position of b accoring to a linear vectorial constrain:
             p_b = c_a * p_a + c_c * p_c
             where: c_a = r_bc / r_ac
-                   c_c = r_ab / r_ac   
+                   c_c = r_ab / r_ac
 
-            pairs: list 
-                   Pairs of indices for the atoms forming the bonds 
+            pairs: list
+                   Pairs of indices for the atoms forming the bonds
                    to constrain
-            centers: list 
-                      Indices of secondary atoms b 
-            distances: list 
+            centers: list
+                      Indices of secondary atoms b
+            distances: list
                        [r_ab, r_bc]
             masses: list
-                    [m_a, m_b, m_c]         
+                    [m_a, m_b, m_c]
             bondlengths: array
-                         Fixed bondlengths   
+                         Fixed bondlengths
 
                 """
         self.pairs = np.asarray(pairs)
         self.centers = centers
-        self.bondlengths = bondlengths 
+        self.bondlengths = bondlengths
         self.distances = distances
         self.masses = masses
-        
-        C = np.zeros(2) 
+
+        C = np.zeros(2)
         L = np.zeros(2)
         N = np.zeros(2)
-        self.m_a = self.masses[0] 
+        self.m_a = self.masses[0]
         self.m_b = self.masses[1]
         self.m_c = self.masses[2]
         m_ab = self.m_a * self.m_b
@@ -380,7 +380,7 @@ class FixBondLengthsLinear(FixConstraint):
         self.C = C
         self.L = L
         N[0] = self.c_a / (self.c_a**2 + self.c_c**2 + 1)
-        N[1] = self.c_c / (self.c_a**2 + self.c_c**2 + 1)  
+        N[1] = self.c_c / (self.c_a**2 + self.c_c**2 + 1)
         self.N = N
 
         self.removed_dof = len(pairs) + 3 * len(centers)
@@ -389,7 +389,7 @@ class FixBondLengthsLinear(FixConstraint):
         old = atoms.positions
 
         if self.bondlengths is None:
-            self.bondlengths = self.initialize_bond_lengths(atoms) 
+            self.bondlengths = self.initialize_bond_lengths(atoms)
 
         for j, ab in enumerate(self.pairs):
             n = ab[0]
@@ -398,7 +398,7 @@ class FixBondLengthsLinear(FixConstraint):
             d0 = find_mic([r0], atoms.cell, atoms._pbc)[0][0]
             d1 = new[n] - new[m] - r0 + d0
             cd = self.bondlengths[j]
-            a = np.dot(d0, d0) * (self.L[0]**2 + 
+            a = np.dot(d0, d0) * (self.L[0]**2 +
                                   self.L[1]**2 + 2 * self.L[0] * self.L[1])
             b = np.dot(d1, d0) * (self.L[0] + self.L[1])
             c = np.dot(d1, d1) - cd**2
@@ -406,8 +406,8 @@ class FixBondLengthsLinear(FixConstraint):
             new[n] -= g * self.L[0] * d0
             new[m] += g * self.L[1] * d0
             k = self.centers[j]
-            new[k] = self.C[0] * new[n] + self.C[1] * new[m]  
-         
+            new[k] = self.C[0] * new[n] + self.C[1] * new[m]
+
     def adjust_momenta(self, atoms, p):
         old = atoms.positions
         masses = atoms.get_masses()
@@ -426,16 +426,16 @@ class FixBondLengthsLinear(FixConstraint):
             p[n] -= k * self.L[0] / (self.L[0] + self.L[1]) * masses[n] * d
             p[m] += k * self.L[1] / (self.L[0] + self.L[1]) * masses[m] * d
             s = self.centers[j]
-            p[s] = self.m_b * (self.C[0] * p[n] / self.m_a + 
+            p[s] = self.m_b * (self.C[0] * p[n] / self.m_a +
                                self.C[1] * p[m] / self.m_c)
 
     def adjust_forces(self, atoms, forces):
         A = np.zeros(2)
         A[0] = (self.N[0] * self.c_a - self.N[0] * self.c_c - 1)
-        A[1] = (self.N[1] * self.c_c - self.N[0] * self.c_c - 1) 
-        
+        A[1] = (self.N[1] * self.c_c - self.N[0] * self.c_c - 1)
+
         self.constraint_forces = -forces
-        old = atoms.positions        
+        old = atoms.positions
 
         if self.bondlengths is None:
             self.bondlengths = self.initialize_bond_lengths(atoms)
@@ -445,24 +445,24 @@ class FixBondLengthsLinear(FixConstraint):
             m = ab[1]
             s = self.centers[j]
             cd = self.bondlengths[j]
-            f_a, f_b, f_c = self.redistribute_forces(forces, n, m, s) 
+            f_a, f_b, f_c = self.redistribute_forces(forces, n, m, s)
             d = old[n] - old[m]
             d = find_mic([d], atoms.cell, atoms._pbc)[0][0]
             df = f_a - f_c
             k = -np.dot(df, d) / cd**2
             forces[n] = f_a + k * d * A[0] / (A[0] + A[1])
             forces[m] = f_c - k * d * A[1] / (A[0] + A[1])
-            forces[s] = f_b + k * d * (self.N[1] - self.N[0]) / (A[0] + A[1])  
+            forces[s] = f_b + k * d * (self.N[1] - self.N[0]) / (A[0] + A[1])
 
         self.constraint_forces += forces
 
     def redistribute_forces(self, forces, n, m, s):
 
         f_a = ((1 - self.N[0] * self.c_a) * forces[n] -
-               self.N[0] * (self.c_c * forces[m] - forces[s])) 
-   
+               self.N[0] * (self.c_c * forces[m] - forces[s]))
+
         f_c = ((1 - self.N[1] * self.c_c) * forces[m] -
-               self.N[1] * (self.c_a * forces[n] - forces[s])) 
+               self.N[1] * (self.c_a * forces[n] - forces[s]))
 
         f_b = ((1 - 1 / (self.c_a**2 + self.c_c**2 + 1)) * forces[s] +
                self.N[0] * forces[n] + self.N[1] * forces[m])

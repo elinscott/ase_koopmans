@@ -66,18 +66,18 @@ class ACN(Calculator):
 
     def __init__(self, rc=5.0, width=1.0, md=True):
         """Three-site potential for acetonitrile.
-           
-        Parameters from: 
+
+        Parameters from:
         http://dx.doi.org/10.1080/08927020108024509
 
         Correct atom sequence should be:
-        MeCNMeCN ... MeCN or NCMeNCMe ... NCMe 
+        MeCNMeCN ... MeCN or NCMeNCMe ... NCMe
 
-        Forces are redistributed from the central C atom to N 
-        and Methyl according to a scheme by Ciccotti et al. 
+        Forces are redistributed from the central C atom to N
+        and Methyl according to a scheme by Ciccotti et al.
         (http://dx.doi.org/10.1080/00268978200100942) for MD
-        propagation of rigid linear triatomic molecules. Use 
-        class FixBondLengthsLinear in constraints.py to do MD 
+        propagation of rigid linear triatomic molecules. Use
+        class FixBondLengthsLinear in constraints.py to do MD
         with this calculator.
 
         rc: float
@@ -113,7 +113,7 @@ class ACN(Calculator):
             Dmm = R[m + 1:, 1] - R[m, 1]
             # MIC PBCs
             shift = wrap(Dmm, cell, pbc)
-        
+
             # Smooth cutoff
             Dmm += shift
             d2 = (Dmm**2).sum(1)
@@ -148,22 +148,21 @@ class ACN(Calculator):
                 self.forces[m * 3 + j] -= F.sum(axis=0).sum(axis=0)
                 self.forces[(m + 1) * 3 + 1::3] += Fmm
                 self.forces[m * 3 + 1] -= Fmm.sum(0)
-                
+
         if self.pcpot:
             e, f = self.pcpot.calculate(np.tile(charges, nm),
                                         self.atoms.positions)
             energy += e
             self.forces += f
-        
-         
+
         fr = self.redistribute_forces(self.forces)
         self.forces = fr
 
         self.results['energy'] = energy
         self.results['forces'] = self.forces
- 
+
     def redistribute_forces(self, fo):
-        if self.md: 
+        if self.md:
             fr = np.zeros_like(fo)
             Z = self.atoms.numbers
             if Z[0] == 7:
@@ -174,37 +173,37 @@ class ACN(Calculator):
                 me = 0
             assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
             assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
-        
+
             # N
-            fr[n::3, :] = ((1 - n_n * m_mec * c_n) * fo[n::3, :] - 
-                           n_n * m_cn * c_me * fo[me::3, :] + 
+            fr[n::3, :] = ((1 - n_n * m_mec * c_n) * fo[n::3, :] -
+                           n_n * m_cn * c_me * fo[me::3, :] +
                            n_n * m_men * fo[1::3, :])
-            # Me 
-            fr[me::3, :] = ((1 - n_me * m_cn * c_me) * fo[me::3, :] - 
-                            n_me * m_mec * c_n * fo[n::3, :] + 
+            # Me
+            fr[me::3, :] = ((1 - n_me * m_cn * c_me) * fo[me::3, :] -
+                            n_me * m_mec * c_n * fo[n::3, :] +
                             n_me * m_men * fo[1::3, :])
- 
+
         else:
             fr = fo
 
-        return fr                 
+        return fr
 
-    def get_molcoms(self, nm):      
-        molcoms = np.zeros((nm, 3))      
-        for m in range(nm): 
-            molcoms[m] = self.atoms[m * 3:(m + 1) * 3].get_center_of_mass() 
+    def get_molcoms(self, nm):
+        molcoms = np.zeros((nm, 3))
+        for m in range(nm):
+            molcoms[m] = self.atoms[m * 3:(m + 1) * 3].get_center_of_mass()
         return molcoms
- 
-    def cutoff(self, d): 
-        x1 = d > self.rc - self.width  
-        x2 = d < self.rc 
-        x12 = np.logical_and(x1, x2)    
-        y = (d[x12] - self.rc + self.width) / self.width  
-        cut = np.zeros(len(d))  # cutoff function    
-        cut[x2] = 1.0     
-        cut[x12] -= y**2 * (3.0 - 2.0 * y)    
-        dtdd = np.zeros(len(d))     
-        dtdd[x12] -= 6.0 / self.width * y * (1.0 - y)        
+
+    def cutoff(self, d):
+        x1 = d > self.rc - self.width
+        x2 = d < self.rc
+        x12 = np.logical_and(x1, x2)
+        y = (d[x12] - self.rc + self.width) / self.width
+        cut = np.zeros(len(d))  # cutoff function
+        cut[x2] = 1.0
+        cut[x12] -= y**2 * (3.0 - 2.0 * y)
+        dtdd = np.zeros(len(d))
+        dtdd[x12] -= 6.0 / self.width * y * (1.0 - y)
         return cut, dtdd
 
     def embed(self, charges):
@@ -236,7 +235,7 @@ class ACN(Calculator):
         charges[1::3] = q_c
         charges[n::3] = q_n
         return charges
-    
+
 
 class PointChargePotential:
     def __init__(self, mmcharges):
