@@ -947,7 +947,7 @@ class Atoms(object):
         conadd = []
         # Constraints need to be deepcopied, but only the relevant ones.
         for con in copy.deepcopy(self.constraints):
-            if isinstance(con, (FixConstraint, FixBondLengths)):
+            if isinstance(con, (FixConstraint, FixBondLengths, FixBondLengthsLinear)):
                 try:
                     con.index_shuffle(self, i)
                     conadd.append(con)

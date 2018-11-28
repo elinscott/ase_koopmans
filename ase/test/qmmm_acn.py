@@ -61,6 +61,4 @@ for calc in [ACN(md=False),
     assert abs(d0 - dref) < 0.224
     assert abs(a0 - aref) < 2.9
 
-plt.show()
-
 print(fmt.format('reference', eref, dref, aref))

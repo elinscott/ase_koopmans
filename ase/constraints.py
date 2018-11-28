@@ -496,6 +496,8 @@ class FixBondLengthsLinear(FixConstraint):
         map[ind] = range(n)
         pairs = map[self.pairs]
         self.pairs = pairs[(pairs != -1).all(1)]
+        singlets = map[self.singlets]
+        self.singlets = singlets[(singlets != -1)]
         if len(self.pairs) == 0:
             raise IndexError('Constraint not part of slice')
 
