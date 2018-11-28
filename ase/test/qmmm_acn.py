@@ -1,7 +1,6 @@
 from math import cos, sin
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 import ase.units as units
 from ase import Atoms

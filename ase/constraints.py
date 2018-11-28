@@ -478,7 +478,7 @@ class FixBondLengthsLinear(FixConstraint):
         return bondlengths
 
     def get_indices(self):
-        return np.unique(self.pairs.ravel())
+        return np.unique(np.hstack((self.pairs.ravel(), self.singlets)))
 
     def todict(self):
         return {'name': 'FixBondLengthsLinear',
