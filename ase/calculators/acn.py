@@ -64,7 +64,7 @@ class ACN(Calculator):
     nolabel = True
     pcpot = None
 
-    def __init__(self, rc=5.0, width=1.0):
+    def __init__(self, rc=5.0, width=1.0, md=True):
         """Three-site potential for acetonitrile.
            
         Parameters from: 
@@ -88,6 +88,7 @@ class ACN(Calculator):
         self.rc = rc
         self.width = width
         self.forces = None
+        self.md = md
         Calculator.__init__(self)
 
     def calculate(self, atoms=None,
@@ -154,6 +155,7 @@ class ACN(Calculator):
             energy += e
             self.forces += f
         
+         
         fr = self.redistribute_forces(self.forces)
         self.forces = fr
 
@@ -161,26 +163,30 @@ class ACN(Calculator):
         self.results['forces'] = self.forces
  
     def redistribute_forces(self, fo):
-        fr = np.zeros_like(fo)
-        Z = self.atoms.numbers
-        if Z[0] == 7:
-            n = 0
-            me = 2
-        else:
-            n = 2
-            me = 0
-        assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
-        assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
+        if self.md: 
+            fr = np.zeros_like(fo)
+            Z = self.atoms.numbers
+            if Z[0] == 7:
+                n = 0
+                me = 2
+            else:
+                n = 2
+                me = 0
+            assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
+            assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
         
-        # N
-        fr[n::3, :] = ((1 - n_n * m_mec * c_n) * fo[n::3, :] - 
-                       n_n * m_cn * c_me * fo[me::3, :] + 
-                       n_n * m_men * fo[1::3, :])
-        # Me 
-        fr[me::3, :] = ((1 - n_me * m_cn * c_me) * fo[me::3, :] - 
-                        n_me * m_mec * c_n * fo[n::3, :] + 
-                        n_me * m_men * fo[1::3, :])
+            # N
+            fr[n::3, :] = ((1 - n_n * m_mec * c_n) * fo[n::3, :] - 
+                           n_n * m_cn * c_me * fo[me::3, :] + 
+                           n_n * m_men * fo[1::3, :])
+            # Me 
+            fr[me::3, :] = ((1 - n_me * m_cn * c_me) * fo[me::3, :] - 
+                            n_me * m_mec * c_n * fo[n::3, :] + 
+                            n_me * m_men * fo[1::3, :])
  
+        else:
+            fr = fo
+
         return fr                 
 
     def get_molcoms(self, nm):      
