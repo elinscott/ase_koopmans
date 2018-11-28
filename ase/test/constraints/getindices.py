@@ -10,7 +10,7 @@ C1 = FixAtoms([0, 2, 4])
 C2 = FixBondLengths([[0, 1], [0, 2]])
 C3 = FixInternals(bonds=[[1, [7, 8]], [1, [8, 9]]])
 C4 = Hookean(a1=30, a2=40, rt=1.79, k=5.)
-C5 = FixBondLengthsLinear(pairs=[(0, 2), (3, 5)], singlets=[1, 4],
+C5 = FixBondLengthsLinear(pairs=[(0, 2), (3, 5)], centers=[1, 4],
                           distances=[1,1], masses=[1,1,1])
 
 slab.set_constraint([C1, C2, C3, C4, C5])

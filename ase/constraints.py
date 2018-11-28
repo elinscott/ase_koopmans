@@ -324,7 +324,7 @@ class FixBondLengthsLinear(FixConstraint):
        http://dx.doi.org/10.1080/00268978200100942
     """
 
-    def __init__(self, pairs, singlets, distances, masses, bondlengths=None):
+    def __init__(self, pairs, centers, distances, masses, bondlengths=None):
         """
             a--b--c
             |-----|
@@ -339,7 +339,7 @@ class FixBondLengthsLinear(FixConstraint):
             pairs: list 
                    Pairs of indices for the atoms forming the bonds 
                    to constrain
-            singlets: list 
+            centers: list 
                       Indices of secondary atoms b 
             distances: list 
                        [r_ab, r_bc]
@@ -350,7 +350,7 @@ class FixBondLengthsLinear(FixConstraint):
 
                 """
         self.pairs = np.asarray(pairs)
-        self.singlets = singlets
+        self.centers = centers
         self.bondlengths = bondlengths 
         self.distances = distances
         self.masses = masses
@@ -383,7 +383,7 @@ class FixBondLengthsLinear(FixConstraint):
         N[1] = self.c_c / (self.c_a**2 + self.c_c**2 + 1)  
         self.N = N
 
-        self.removed_dof = len(pairs) + 3 * len(singlets)
+        self.removed_dof = len(pairs) + 3 * len(centers)
 
     def adjust_positions(self, atoms, new):
         old = atoms.positions
@@ -405,7 +405,7 @@ class FixBondLengthsLinear(FixConstraint):
             g = (b - (b**2 - a * c)**0.5) / a
             new[n] -= g * self.L[0] * d0
             new[m] += g * self.L[1] * d0
-            k = self.singlets[j]
+            k = self.centers[j]
             new[k] = self.C[0] * new[n] + self.C[1] * new[m]  
          
     def adjust_momenta(self, atoms, p):
@@ -425,7 +425,7 @@ class FixBondLengthsLinear(FixConstraint):
             k = np.dot(dv, d) / cd**2
             p[n] -= k * self.L[0] / (self.L[0] + self.L[1]) * masses[n] * d
             p[m] += k * self.L[1] / (self.L[0] + self.L[1]) * masses[m] * d
-            s = self.singlets[j]
+            s = self.centers[j]
             p[s] = self.m_b * (self.C[0] * p[n] / self.m_a + 
                                self.C[1] * p[m] / self.m_c)
 
@@ -443,7 +443,7 @@ class FixBondLengthsLinear(FixConstraint):
         for j, ab in enumerate(self.pairs):
             n = ab[0]
             m = ab[1]
-            s = self.singlets[j]
+            s = self.centers[j]
             cd = self.bondlengths[j]
             f_a, f_b, f_c = self.redistribute_forces(forces, n, m, s) 
             d = old[n] - old[m]
@@ -478,12 +478,12 @@ class FixBondLengthsLinear(FixConstraint):
         return bondlengths
 
     def get_indices(self):
-        return np.unique(np.hstack((self.pairs.ravel(), self.singlets)))
+        return np.unique(np.hstack((self.pairs.ravel(), self.centers)))
 
     def todict(self):
         return {'name': 'FixBondLengthsLinear',
                 'kwargs': {'pairs': self.pairs,
-                           'singlets': self.singlets,
+                           'centers': self.centers,
                            'distances': self.distances,
                            'masses': self.masses}}
 
@@ -496,8 +496,8 @@ class FixBondLengthsLinear(FixConstraint):
         map[ind] = range(n)
         pairs = map[self.pairs]
         self.pairs = pairs[(pairs != -1).all(1)]
-        singlets = map[self.singlets]
-        self.singlets = singlets[(singlets != -1)]
+        centers = map[self.centers]
+        self.centers = centers[(centers != -1)]
         if len(self.pairs) == 0:
             raise IndexError('Constraint not part of slice')
 

@@ -40,7 +40,7 @@ for calc in [ACN(md=False),
     dimer.calc = calc
 
     fixd = FixBondLengthsLinear(pairs=[(0, 2), (3, 5)],
-                                singlets=[1, 4],
+                                centers=[1, 4],
                                 distances=[r_mec,r_cn],
                                 masses=[m_me,m_c,m_n])
 

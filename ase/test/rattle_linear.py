@@ -33,7 +33,7 @@ for calc in [ACN(),
     dimer.set_masses(masses) 
 
     fixd = FixBondLengthsLinear(pairs=[(0, 2), (3, 5)], 
-                                singlets=[1, 4],
+                                centers=[1, 4],
                                 distances=[r_mec,r_cn],
                                 masses=[m_me,m_c,m_n]) 
     dimer.set_constraint(fixd)
