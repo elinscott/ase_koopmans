@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 from math import sqrt
-from ase.geometry import find_mic
+from ase.geometry import find_mic, wrap_positions
 from ase.calculators.calculator import PropertyNotImplementedError
 
 import numpy as np
@@ -406,7 +406,13 @@ class FixBondLengthsLinear(FixConstraint):
             new[n] -= g * self.L[0] * d0
             new[m] += g * self.L[1] * d0
             k = self.centers[j]
-            new[k] = self.C[0] * new[n] + self.C[1] * new[m]
+            if np.allclose(d0, r0):
+                new[k] = self.C[0] * new[n] + self.C[1] * new[m]
+            else:
+                v1 = find_mic([new[n]], atoms.cell, atoms._pbc)[0][0]
+                v2 = find_mic([new[m]], atoms.cell, atoms._pbc)[0][0]
+                rb = self.C[0] * v1 + self.C[1] * v2
+                new[k] = wrap_positions([rb], atoms.cell, atoms.pbc)
 
     def adjust_momenta(self, atoms, p):
         old = atoms.positions
