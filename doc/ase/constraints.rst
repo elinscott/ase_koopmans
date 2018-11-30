@@ -95,6 +95,51 @@ Example of use::
     indices 0 and 2 will be fixed. The constraint is for the same purpose
     as the FixBondLength class.
 
+The FixLinearTriatomic class
+============================
+
+This class is used to keep the geometry of linear triatomic molecules
+rigid in geometry optimizations or molecular dynamics runs. Rigidness 
+of linear triatomic molecules is impossible to achieve by constraining 
+all interatomic distances using :class:`FixBondLength`, as this doesn't
+remove an adequate number of degrees of freedom (4). To overcome this, 
+:class:`FixLinearTriatomic` fixes the distance between the outer atoms 
+using RATTLE and applies a linear vectorial constraint to the central 
+atom using the RATTLE-constrained positions of the outer atoms (read 
+more about this here: G. Ciccotti, M. Ferrario, J.-P. Ryckaert, Molecular 
+Physics 47, 1253 (1982)). 
+
+When setting these constraints one has to specify the following: (i) the 
+indices of the outer atoms, (ii) the indices of the central atoms, (iii) 
+the distances between the central atom and the outer atoms of the reference 
+molecular geometry, and (iv) the masses of the atoms of the reference molecule.
+
+.. autoclass:: FixLinearTriatomic
+
+The example below shows how to fix the geometry of two carbon dioxide 
+molecules::
+
+    >>> from ase.build import molecule
+    >>> from ase.constraints import FixLinearTriatomic 
+    >>> atoms = molecule('CO2')
+    >>> dimer = atoms + atoms.copy()
+    >>> dCO = atoms.get_distance(0, 1)
+    >>> masses = atoms.get_masses()
+    >>> mo = masses[1]
+    >>> mc = masses[0]
+    >>> c = FixLinearTriatomic(pairs=[(1, 2), (4, 5)],
+                               centers=[0, 3],
+                               distances=[dCO,dCO],
+                               masses=[mo,mc,mo])
+    >>> dimer.set_constraint(c)
+
+.. note::
+
+  The atomic indices in *pairs* and *centers* need to be specified for 
+  each linear triatomic molecule one wishes to fix, while *distances* and *masses* 
+  are specified for a single type of linear molecule. When wanting to fix the 
+  geometry of molecules belonging to different types of linear triatomics, one has 
+  to set a :class:`FixLinearTriatomic` constraint for each molecular type. 
 
 The FixedLine class
 ===================
