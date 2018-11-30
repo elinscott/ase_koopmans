@@ -7,7 +7,7 @@ from ase.calculators.acn import (ACN, m_me, m_c,
                                  sigma_me, sigma_c, sigma_n,
                                  epsilon_me, epsilon_c, epsilon_n) 
 from ase.calculators.qmmm import SimpleQMMM, LJInteractionsGeneral, EIQMMM
-from ase.constraints import FixBondLengthsLinear
+from ase.constraints import FixLinearTriatomic
 from ase.optimize import BFGS
 
 # From https://www.sciencedirect.com/science/article/pii/S0166128099002079 
@@ -39,10 +39,10 @@ for calc in [ACN(md=False),
 
     dimer.calc = calc
 
-    fixd = FixBondLengthsLinear(pairs=[(0, 2), (3, 5)],
-                                centers=[1, 4],
-                                distances=[r_mec,r_cn],
-                                masses=[m_me,m_c,m_n])
+    fixd = FixLinearTriatomic(pairs=[(0, 2), (3, 5)],
+                              centers=[1, 4],
+                              distances=[r_mec,r_cn],
+                              masses=[m_me,m_c,m_n])
 
     dimer.set_constraint(fixd)
 

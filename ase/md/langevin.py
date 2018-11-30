@@ -24,14 +24,18 @@ class Langevin(MolecularDynamics):
         A friction coefficient, typically 1e-4 to 1e-2.
 
     selectlinear
-        Select atoms that do not belong to rigid linear triatomic
-        molecules
+        Selection of atoms that are not part of rigid linear triatomic
+        molecules. Default is None, which means that the propagated
+        system does not include molecules kept rigid using FixLinearTriatomic
+        constraints.
 
     distslinear
-        Bondlengths of rigid linear triatomic molecules
+
+        Bond distances between outer and central atoms in rigid linear 
+        triatomic molecules with FixLinearTriatomic constraints.
 
     masseslinear
-        Masses of atoms of rigid linear triatomic molecules
+        Masses of atoms of 
 
     fixcm
         If True, the position and momentum of the center of mass is
@@ -62,6 +66,11 @@ class Langevin(MolecularDynamics):
                  selectlinear=None, distslinear=None, masseslinear=None,
                  fixcm=True, trajectory=None, logfile=None,
                  loginterval=1, communicator=world, rng=np.random):
+        for constraint in atoms.constraints:
+            if (constraint.todict()['name'] == 'FixLinearTriatomic' and 
+               selectlinear is None): 
+                raise ValueError('Specify "selectlinear" when using' 
+                                 'FixLinearTriatomic constraints')
         self.temp = temperature
         self.fr = friction
         self.selectlinear = selectlinear

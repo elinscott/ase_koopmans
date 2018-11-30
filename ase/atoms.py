@@ -16,7 +16,7 @@ import numpy as np
 
 import ase.units as units
 from ase.atom import Atom
-from ase.constraints import FixConstraint, FixBondLengths, FixBondLengthsLinear
+from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
 from ase.data import atomic_masses
 from ase.utils import basestring
 from ase.geometry import (wrap_positions, find_mic, cellpar_to_cell,
@@ -917,7 +917,7 @@ class Atoms(object):
         conadd = []
         # Constraints need to be deepcopied, but only the relevant ones.
         for con in copy.deepcopy(self.constraints):
-            if isinstance(con, (FixConstraint, FixBondLengths, FixBondLengthsLinear)):
+            if isinstance(con, (FixConstraint, FixBondLengths, FixLinearTriatomic)):
                 try:
                     con.index_shuffle(self, i)
                     conadd.append(con)

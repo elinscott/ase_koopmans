@@ -9,7 +9,7 @@ from ase.calculators.acn import (ACN, m_me, m_c,
                                  epsilon_me, epsilon_c, epsilon_n)
 from ase.calculators.qmmm import SimpleQMMM, EIQMMM, LJInteractionsGeneral
 from ase.md.verlet import VelocityVerlet
-from ase.constraints import FixBondLengthsLinear 
+from ase.constraints import FixLinearTriatomic 
 import ase.units as units
 
 sigma = np.array([sigma_me, sigma_c, sigma_n])
@@ -32,10 +32,10 @@ for calc in [ACN(),
     masses[::3] = m_me
     dimer.set_masses(masses) 
 
-    fixd = FixBondLengthsLinear(pairs=[(0, 2), (3, 5)], 
-                                centers=[1, 4],
-                                distances=[r_mec,r_cn],
-                                masses=[m_me,m_c,m_n]) 
+    fixd = FixLinearTriatomic(pairs=[(0, 2), (3, 5)], 
+                              centers=[1, 4],
+                              distances=[r_mec,r_cn],
+                              masses=[m_me,m_c,m_n]) 
     dimer.set_constraint(fixd)
 
     dimer.calc = calc

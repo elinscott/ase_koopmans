@@ -1,6 +1,6 @@
 from ase.build import fcc111
 from ase.constraints import (FixAtoms, FixBondLengths, 
-                             FixBondLengthsLinear,
+                             FixLinearTriatomic,
                              FixInternals, Hookean,
                              constrained_indices)
 
@@ -16,6 +16,6 @@ C5 = FixBondLengthsLinear(pairs=[(0, 2), (3, 5)], centers=[1, 4],
 slab.set_constraint([C1, C2, C3, C4, C5])
 assert all(constrained_indices(slab, (FixAtoms, FixBondLengths)) ==
            [0, 1, 2, 4])
-assert all(constrained_indices(slab, (FixBondLengths, FixBondLengthsLinear)) ==
+assert all(constrained_indices(slab, (FixBondLengths, FixLinearTriatomic)) ==
            [0, 1, 2, 3, 4, 5])
 assert all(constrained_indices(slab) == [0, 1, 2, 3, 4, 5, 7, 8, 9, 30, 40])

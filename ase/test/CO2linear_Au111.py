@@ -1,7 +1,7 @@
 from math import pi, cos, sin
 from ase import Atoms
 from ase.calculators.emt import EMT
-from ase.constraints import FixBondLengthsLinear
+from ase.constraints import FixLinearTriatomic
 from ase.optimize import BFGS
 from ase.build import fcc111, add_adsorbate
 
@@ -29,8 +29,8 @@ for wrap in [False, True]:
     if wrap:
         # Remap into the cell so bond is actually wrapped:
         slab.set_scaled_positions(slab.get_scaled_positions() % 1.0)
-    constraint = FixBondLengthsLinear(pairs=[(-2, -1)], centers=[-3], 
-                                distances=[d0,d1], masses=[m_o,m_c,m_o])
+    constraint = FixLinearTriatomic(pairs=[(-2, -1)], centers=[-3], 
+                                    distances=[d0,d1], masses=[m_o,m_c,m_o])
     slab.set_constraint(constraint)
     dyn = BFGS(slab, trajectory='relax_%d.traj' % wrap)
     dyn.run(fmax=0.05)

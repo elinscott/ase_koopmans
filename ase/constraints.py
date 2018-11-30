@@ -8,10 +8,10 @@ import numpy as np
 from scipy.linalg import expm
 
 __all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
-           'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled', 'StrainFilter',
-           'FixCom', 'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
-           'FixBondLengths', 'FixBondLengthsLinear', 'FixInternals', 'Hookean',
-           'ExternalForce']
+           'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled',
+           'StrainFilter', 'FixCom', 'FixedPlane', 'Filter', 'FixConstraint',
+           'FixedLine', 'FixBondLengths', 'FixLinearTriatomic', 'FixInternals',
+           'Hookean', 'ExternalForce']
 
 
 def dict2constraint(dct):
@@ -350,38 +350,40 @@ def FixBondLength(a1, a2):
     return FixBondLengths([(a1, a2)])
 
 
-class FixBondLengthsLinear(FixConstraint):
-    """RATTLE algorithm for linear triatomic molecules.
+class FixLinearTriatomic(FixConstraint):
+    """Holonomic constraints for rigid linear triatomic systems.
 
-       Based on Ciccotti et al. Molecular Physics 1982:
+       References:
+
+       Based on Ciccotti et al. Molecular Physics 1982
        http://dx.doi.org/10.1080/00268978200100942
     """
 
     def __init__(self, pairs, centers, distances, masses, bondlengths=None):
+        """For pairs=[(a, c)] and centers=[b] fix the following geometry:
+
+           a--b--c
+
+           by applying two types of constraints:
+           1) RATTLE-type bond constraint to fix distance between outer atoms
+              a and b
+           2) Linear vectorial constraint to the position of central atom b
+
+           Parameters:
+
+           pairs: list
+               Pairs of indices for the outer atoms forming the bonds to fix.
+           centers: list
+               Indices of central atoms.
+           distances: list
+               Distances between outer and central atoms in one molecule, i. e.
+               |r_ab| and |r_ac|.
+           masses: list
+               Masses of the three atoms, i.e. [m_a, m_b, m_c].
+           bondlengths: array
+               Fixed bond lengths, if None they will be initialized from the
+               initial atomic distances.
         """
-            a--b--c
-            |-----|
-              r_ac
-
-            Apply bond constraint to r_ac
-            Update position of b accoring to a linear vectorial constrain:
-            p_b = c_a * p_a + c_c * p_c
-            where: c_a = r_bc / r_ac
-                   c_c = r_ab / r_ac
-
-            pairs: list
-                   Pairs of indices for the atoms forming the bonds
-                   to constrain
-            centers: list
-                      Indices of secondary atoms b
-            distances: list
-                       [r_ab, r_bc]
-            masses: list
-                    [m_a, m_b, m_c]
-            bondlengths: array
-                         Fixed bondlengths
-
-                """
         self.pairs = np.asarray(pairs)
         self.centers = centers
         self.bondlengths = bondlengths
@@ -520,7 +522,7 @@ class FixBondLengthsLinear(FixConstraint):
         return np.unique(np.hstack((self.pairs.ravel(), self.centers)))
 
     def todict(self):
-        return {'name': 'FixBondLengthsLinear',
+        return {'name': 'FixLinearTriatomic',
                 'kwargs': {'pairs': self.pairs,
                            'centers': self.centers,
                            'distances': self.distances,
