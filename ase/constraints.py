@@ -351,23 +351,15 @@ def FixBondLength(a1, a2):
 
 
 class FixLinearTriatomic(FixConstraint):
-    """Holonomic constraints for rigid linear triatomic systems.
-
-       References:
-
-       Based on Ciccotti et al. Molecular Physics 1982
-       http://dx.doi.org/10.1080/00268978200100942
-    """
+    """Holonomic constraints for rigid linear triatomic molecules."""
 
     def __init__(self, pairs, centers, distances, masses, bondlengths=None):
-        """For pairs=[(a, c)] and centers=[b] fix the following geometry:
+        """Apply RATTLE-type bond constraints between outer atoms a and b 
+           and linear vectorial constraints to the position of central 
+           atoms b to fix the geometry of linear triatomic molecules of the 
+           type:
 
            a--b--c
-
-           by applying two types of constraints:
-           1) RATTLE-type bond constraint to fix the distance between outer
-              atoms a and b
-           2) Linear vectorial constraint to the position of central atom b
 
            Parameters:
 
@@ -376,13 +368,17 @@ class FixLinearTriatomic(FixConstraint):
            centers: list
                Indices of central atoms.
            distances: list
-               Distances between outer and central atoms in one molecule, i. e.
-               |r_ab| and |r_ac|.
+               Distances between outer and central atoms of the reference 
+               molecular geometry.
            masses: list
-               Masses of the three atoms, i.e. [m_a, m_b, m_c].
+               Masses of the three atoms.
            bondlengths: array
                Fixed bond lengths, if None they will be initialized from the
                initial atomic distances.
+           
+           References:
+
+           http://dx.doi.org/10.1080/00268978200100942
         """
         self.pairs = np.asarray(pairs)
         self.centers = centers
