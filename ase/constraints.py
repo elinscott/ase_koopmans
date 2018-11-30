@@ -365,8 +365,8 @@ class FixLinearTriatomic(FixConstraint):
            a--b--c
 
            by applying two types of constraints:
-           1) RATTLE-type bond constraint to fix distance between outer atoms
-              a and b
+           1) RATTLE-type bond constraint to fix the distance between outer
+              atoms a and b
            2) Linear vectorial constraint to the position of central atom b
 
            Parameters:

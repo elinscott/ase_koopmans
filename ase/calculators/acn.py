@@ -24,7 +24,7 @@ r_mec = 1.458
 r_cn = 1.157
 r_men = r_mec + r_cn
 
-# Variables needed to distribute forces from central C to Methyl and N
+# Variables needed to redistribute forces
 c_me = r_cn / r_men
 c_n = r_mec / r_men
 m_me = atomic_masses[6] + 3 * atomic_masses[1]
@@ -88,6 +88,7 @@ class ACN(Calculator):
             Width for cutoff function for Coulomb interactions.
         md: bool
             If True forces will be redistributed for MD propagation.
+            Use False for geometry optimizations.
         """
         self.rc = rc
         self.width = width

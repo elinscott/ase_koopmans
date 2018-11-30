@@ -25,17 +25,11 @@ class Langevin(MolecularDynamics):
 
     selectlinear
         Selection of atoms that are not part of rigid linear triatomic
-        molecules. Default is None, which means that the propagated
-        system does not include molecules kept rigid using FixLinearTriatomic
-        constraints.
-
-    distslinear
-
-        Bond distances between outer and central atoms in rigid linear 
-        triatomic molecules with FixLinearTriatomic constraints.
-
-    masseslinear
-        Masses of atoms of 
+        molecules. Default is None, which means that the atoms object
+        should not include molecules kept rigid using FixLinearTriatomic
+        constraints. If these are present, "selectlinear" must be specified
+        and a sequence ABCABC... of atoms of linear triatomic molecules of
+        the same type is assumed.
 
     fixcm
         If True, the position and momentum of the center of mass is
@@ -63,31 +57,33 @@ class Langevin(MolecularDynamics):
     _lgv_version = 3
 
     def __init__(self, atoms, timestep, temperature, friction,
-                 selectlinear=None, distslinear=None, masseslinear=None,
-                 fixcm=True, trajectory=None, logfile=None,
+                 selectlinear=None, fixcm=True, trajectory=None, logfile=None,
                  loginterval=1, communicator=world, rng=np.random):
         for constraint in atoms.constraints:
-            if (constraint.todict()['name'] == 'FixLinearTriatomic' and 
-               selectlinear is None): 
-                raise ValueError('Specify "selectlinear" when using' 
+            if (constraint.todict()['name'] == 'FixLinearTriatomic' and
+               selectlinear is None):
+                raise ValueError('Specify "selectlinear" when using'
                                  'FixLinearTriatomic constraints')
         self.temp = temperature
         self.fr = friction
         self.selectlinear = selectlinear
-        self.distslinear = distslinear
-        self.masseslinear = masseslinear
         self.fixcm = fixcm  # will the center of mass be held fixed?
         self.communicator = communicator
         self.rng = rng
 
+        MolecularDynamics.__init__(self, atoms, timestep, trajectory,
+                                   logfile, loginterval)
+
         if self.selectlinear is not None:
             self.mask = np.zeros(len(atoms), bool)
             self.mask[self.selectlinear] = True
+            masseslinear = self.masses[~self.mask]
             m_a = masseslinear[0]
             m_b = masseslinear[1]
             m_c = masseslinear[2]
-            r_ab = distslinear[0]
-            r_bc = distslinear[1]
+            atomslinear = atoms[~self.mask]
+            r_ab = atomslinear.get_distance(0, 1)
+            r_bc = atomslinear.get_distance(1, 2)
             r_ac = r_ab + r_bc
             self.m_ab = m_a * m_b
             self.m_bc = m_b * m_c
@@ -103,8 +99,6 @@ class Langevin(MolecularDynamics):
             self.n_c = self.c_c / (self.c_a**2 * self.m_bc +
                                    self.c_c**2 * self.m_ab + self.m_ac)
 
-        MolecularDynamics.__init__(self, atoms, timestep, trajectory,
-                                   logfile, loginterval)
         self.updatevars()
 
     def todict(self):
@@ -221,7 +215,6 @@ class Langevin(MolecularDynamics):
         xinew[self.mask] = xi[self.mask]
         etanew[self.mask] = eta[self.mask]
 
-        # Redistribute for primary atoms of linear molecules
         xir[::3, :] = ((1 - n_a * m_bc * c_a) * xilin[::3, :] -
                        n_a * (m_ab * c_c * mr_ca * xilin[2::3, :] -
                        m_ac * mr_ba * xilin[1::3, :]))
