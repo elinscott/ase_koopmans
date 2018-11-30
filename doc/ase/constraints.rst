@@ -119,6 +119,18 @@ A mode is a list of vectors specifying a direction for each atom. It often
 comes from :meth:`ase.vibrations.Vibrations.get_mode`.
 
 
+The FixCom class
+===================
+
+.. autoclass:: FixCom
+
+Example of use::
+
+  >>> from ase.constraints import FixCom
+  >>> c = FixCom()
+  >>> atoms.set_constraint(c)
+
+
 The Hookean class
 =================
 
@@ -381,9 +393,24 @@ hydrogen atoms are returned.
 The UnitCellFilter class
 ========================
 
+The unit cell filter is for optimizing positions and unit cell
+simultaneously.  Note that :class:`ExpCellFilter` will probably
+perform better.
+
 .. autoclass:: UnitCellFilter
 
 The StrainFilter class
 ======================
 
+The strain filter is for optimizing the unit cell while keeping
+scaled positions fixed.
+
 .. autoclass:: StrainFilter
+
+The ExpCellFilter class
+=======================
+
+The exponential cell filter is an improved :class:`UnitCellFilter`
+which is parameter free.
+
+.. autoclass:: ExpCellFilter

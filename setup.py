@@ -3,6 +3,7 @@
 # Copyright (C) 2007-2017  CAMd
 # Please see the accompanying LICENSE file for further information.
 
+from __future__ import print_function
 import os
 import re
 import sys
@@ -12,8 +13,8 @@ from glob import glob
 from os.path import join
 
 
-if sys.version_info < (2, 7, 0, 'final', 0):
-    raise SystemExit('Python 2.7 or later is required!')
+if sys.version_info < (3, 4, 0, 'final', 0):
+    raise SystemExit('Python 3.4 or later is required!')
 
 
 with open('README.rst') as fd:
@@ -44,11 +45,13 @@ class build_py(_build_py):
         msgfmt = 'msgfmt'
         status = os.system(msgfmt + ' -V')
         if status == 0:
-            for pofile in glob('ase/gui/po/*/LC_MESSAGES/ag.po'):
+            for pofile in sorted(glob('ase/gui/po/*/LC_MESSAGES/ag.po')):
                 dirname = join(self.build_lib, os.path.dirname(pofile))
                 if not os.path.isdir(dirname):
                     os.makedirs(dirname)
                 mofile = join(dirname, 'ag.mo')
+                print()
+                print('Compile {}'.format(pofile))
                 status = os.system('%s -cv %s --output-file=%s 2>&1' %
                                    (msgfmt, pofile, mofile))
                 assert status == 0, 'msgfmt failed!'
@@ -83,10 +86,9 @@ setup(name='ase',
           'License :: OSI Approved :: '
           'GNU Lesser General Public License v2 or later (LGPLv2+)',
           'Operating System :: OS Independent',
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
           'Topic :: Scientific/Engineering :: Physics'])

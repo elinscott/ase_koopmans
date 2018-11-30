@@ -80,6 +80,7 @@ all_formats = {
     'gaussian': ('Gaussian com (input) file', '1S'),
     'gaussian-out': ('Gaussian output file', '1F'),
     'gen': ('DFTBPlus GEN format', '1F'),
+    'gif': ('Graphics interchange format', '+S'),
     'gpaw-out': ('GPAW text output', '+F'),
     'gpw': ('GPAW restart-file', '1S'),
     'gromacs': ('Gromacs coordinates', '1S'),
@@ -92,8 +93,10 @@ all_formats = {
     'lammps-data': ('LAMMPS data file', '1F'),
     'magres': ('MAGRES ab initio NMR data file', '1F'),
     'mol': ('MDL Molfile', '1F'),
+    'mp4': ('MP4 animation', '+S'),
     'mustem': ('muSTEM xtl file', '1F'),
     'netcdftrajectory': ('AMBER NetCDF trajectory file', '+S'),
+    'nomad-json': ('JSON from Nomad archive', '+F'),
     'nwchem': ('NWChem input file', '1F'),
     'octopus': ('Octopus input file', '1F'),
     'proteindatabank': ('Protein Data Bank', '+F'),
@@ -138,10 +141,12 @@ format2modulename = {
     'espresso-in': 'espresso',
     'espresso-out': 'espresso',
     'gaussian-out': 'gaussian',
+    'gif': 'animation',
     'html': 'x3d',
     'json': 'db',
     'lammps-dump': 'lammpsrun',
     'lammps-data': 'lammpsdata',
+    'mp4': 'animation',
     'postgresql': 'db',
     'struct': 'wien2k',
     'struct_out': 'siesta',
@@ -338,7 +343,8 @@ def wrap_read_function(read, filename, index=None, **kwargs):
             yield atoms
 
 
-def write(filename, images, format=None, parallel=True, append=False, **kwargs):
+def write(filename, images, format=None, parallel=True, append=False,
+          **kwargs):
     """Write Atoms object(s) to file.
 
     filename: str or file
@@ -409,7 +415,7 @@ def _write(filename, fd, format, io, images, parallel=None, append=False, **kwar
         if open_new:
             mode = 'wb' if io.isbinary else 'w'
             if append:
-                mode = mode.replace('w','a')
+                mode = mode.replace('w', 'a')
             fd = open_with_compression(filename, mode)
         io.write(fd, images, **kwargs)
         if open_new:
@@ -455,7 +461,11 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
     if isinstance(filename, PurePath):
         filename = str(filename)
     if isinstance(index, basestring):
-        index = string2index(index)
+        try:
+            index = string2index(index)
+        except ValueError:
+            pass
+
     filename, index = parse_filename(filename, index)
     if index is None:
         index = -1
@@ -537,19 +547,23 @@ def _iread(filename, index, format, io, parallel=None, full_output=False,
 
 
 def parse_filename(filename, index=None):
-    if not isinstance(filename, basestring) or '@' not in filename:
+    if not isinstance(filename, basestring):
         return filename, index
+
+    extension = os.path.basename(filename)
+    if '@' not in extension:
+        return filename, index
+
     newindex = None
-    if ('.json@' in filename or
-        '.db@' in filename or
-        filename.startswith('pg://')):
-        newfilename, newindex = filename.rsplit('@', 1)
-    else:
-        newfilename, newindex = filename.rsplit('@', 1)
-        try:
-            newindex = string2index(newindex)
-        except ValueError:
-            return filename, index
+    newfilename, newindex = filename.rsplit('@', 1)
+
+    if isinstance(index, slice):
+        return newfilename, index
+    try:
+        newindex = string2index(newindex)
+    except ValueError:
+        pass
+
     return newfilename, newindex
 
 
@@ -586,7 +600,7 @@ def filetype(filename, read=True, guess=True):
                 return 'eon'
             return 'bundletrajectory'
 
-        if filename.startswith('pg://'):
+        if filename.startswith('postgres'):
             return 'postgresql'
 
         # strip any compression extensions that can be read
@@ -595,6 +609,9 @@ def filetype(filename, read=True, guess=True):
 
         if basename == 'inp':
             return 'octopus'
+
+        if basename.endswith('.nomad.json'):
+            return 'nomad-json'
 
         if '.' in basename:
             ext = os.path.splitext(basename)[1].strip('.').lower()

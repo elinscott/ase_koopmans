@@ -9,14 +9,115 @@ Git master branch
 
 :git:`master <>`.
 
+* No changes yet
+
+
+Version 3.17.0
+==============
+
+12 November 2018: :git:`3.17.0 <../3.17.0>`
+
+General changes:
+
+* ``atoms.symbols`` is now an array-like object which works
+  like a view of ``atoms.numbers``, but based on chemical symbols.
+  This enables convenient shortcuts such as
+  ``mask = atoms.symbols == 'Au'`` or
+  ``atoms.symbols[4:8] = 'Mo'``.
+
 * Test suite now runs in parallel.
 
+* New :class:`~ase.dft.pdos.DOS` object for representing and plotting
+  densities of states.
+
+* Neighbor lists can now :meth:`get connectivity matrices
+  <ase.neighborlist.NeighborList.get_connectivity_matrix>`.
+
+* :ref:`ase convert <cli>` now provides options to execute custom code
+  on each processed image.
+
+* :class:`~ase.phonons.Phonons` class now uses
+  the :class:`~ase.dft.pdos.DOS` and
+  :class:`~ase.dft.band_structure.BandStructure` machinery.
+
+* Positions and velocities can now be initialized from phononic
+  force constant matrix; see
+  :func:`~ase.md.velocitydistribution.PhononHarmonics`.
+
+Algorithms:
+
+* New Gaussian Process (GP) regression optimizer
+  (:class:`~ase.optimize.GPMin`).  Check out this `performance test
+  <https://wiki.fysik.dtu.dk/gpaw/devel/ase_optimize/ase_optimize.html>`_.
+
+* New filter for lattice optimization,
+  :class:`~ase.constraints.ExpCellFilter`, based on an exponential
+  reformulation of the degrees of freedom pertaining to the cell.
+  This is probably significantly faster than
+  :class:`~ase.constraints.UnitCellFilter`.
+
+* :class:`~ase.constraints.UnitCellFilter` now supports scalar pressure and
+  hydrostatic strain.
+
+* Compare if two bulk structure are symmetrically equivalent with
+  :class:`~ase.utils.structure_comparator.SymmetryEquivalenceCheck`.
+
+* :class:`~ase.neb.NEB` now supports a boolean keyword,
+  ``dynamic_relaxation``, which will freeze or unfreeze images
+  according to the size of the spring forces so as to save
+  force evaluations.  Only implemented for serial NEB calculations.
+
+* Writing a trajectory file from a parallelized :class:`~ase.neb.NEB`
+  calculation is now much simpler.  Works the same way as for the serial
+  case.
+
+* New :class:`~ase.constraints.FixCom` constraint for fixing
+  center of mass.
+
+Calculators:
+
+* Added :class:`ase.calculators.qmmm.ForceQMMM` force-based QM/MM calculator.
+
 * Socked-based interface to certain calculators through the
-  :mod:`~ase.calculators.ipi` module:
+  :mod:`~ase.calculators.socketio` module:
   Added support for
   communicating coordinates, forces and other quantities over
   sockets using the i-PI protocol.  This removes the overhead for
   starting and stopping calculators for each geometry step.
+  The calculators which best support this feature are Espresso,
+  Siesta, and Aims.
+
+* Added calculator for :mod:`OpenMX <ase.calculators.openmx>`.
+
+* Updated the :class:`~ase.calculators.castep.Castep` calculator as well as
+  the related I/O methods in order to be more forgiving and less reliant on
+  the presence of a CASTEP binary. The ``castep_keywords.py`` file has been
+  replaced by a JSON file, and if its generation fails CASTEP files can still
+  be read and written if higher tolerance levels are set for the functions that
+  manipulate them.
+
+* :class:`~ase.calculators.espresso.Espresso`
+  and :mod:`~ase.calculators.dftb` now support the
+  :class:`~ase.dft.band_structure.BandStructure` machinery
+  including improved handling of kpoints, ``get_eigenvalues()``,
+  and friends.
+
+I/O:
+
+* CIF reader now parses fractional occupancies if present.
+  The GUI visualizes fractional occupancies in the style of Pacman.
+
+* Support for downloading calculations from the Nomad archive.
+  Use ``ase nomad-get nmd://<uri> ...`` to download one or more URIs
+  as JSON files.  Use the :mod:`ase.nomad` module to download
+  and work with Nomad entries programmatically.  ``nomad-json``
+  is now a recognized IO format.
+
+* Sequences of atoms objects can now be saved as animations using
+  the mechanisms offered by matplotlib.  ``gif`` and ``mp4`` are now
+  recognized output formats.
+
+Database:
 
 * The :meth:`ase.db.core.Database.write` method now takes a ``id`` that
   allows you to overwrite an existing row.
@@ -24,7 +125,7 @@ Git master branch
 * The :meth:`ase.db.core.Database.update` can now update the Atoms and the data
   parts of a row.
 
-* The :meth:`ase.db.core.Database.update` will no longer accept a list of
+* The :meth:`ase.db.core.Database.update` method will no longer accept a list of
   row ID's as the first argument.  Replace this::
 
       db.update(ids, ...)
@@ -35,6 +136,26 @@ Git master branch
           for id in ids:
               db.update(id, ...)
 
+* New ``--show-keys`` and ``--show-values=...`` options for the
+  :ref:`ase db <cli>` command line interface.
+
+* Optimized performance of ase db, with enhanced speed of
+  queries on key value pairs for large SQLite (.db) database files.
+  Also, The ase db server (PostgreSQL) backend now uses
+  native ARRAY and JSONB data types for storing NumPy arrays and
+  dictionaries instead of the BYTEA datatype. Note that backwards
+  compatibility is lost for the postgreSQL backend, and that
+  postgres version 9.4+ is required.
+
+GUI:
+
+* Added callback method :meth:`ase.gui.gui.GUI.repeat_poll` to the GUI.
+  Useful for programmatically updating the GUI.
+
+* Improved error handling and communication with subprocesses (for plots)
+  in GUI.
+
+* Added Basque translation.
 
 Version 3.16.2
 ==============
@@ -327,7 +448,6 @@ Version 3.12.0
 * New :ref:`defects` tutorial and new super-cell functions:
   :func:`~ase.build.get_deviation_from_optimal_cell_shape`,
   :func:`~ase.build.find_optimal_cell_shape`,
-  :func:`~ase.build.find_optimal_cell_shape_pure_python`,
   :func:`~ase.build.make_supercell`.
 
 * New :class:`~ase.dft.band_structure.BandStructure` object.  Can identify
@@ -603,7 +723,7 @@ Version 3.5.0
   :class:`~ase.neighborlist.NeighborList` object and is
   now ASAP_ compatible.
 
-* :mod:`BFGSLineSearch <ase.optimize.bfgslinesearch>` is now the default
+* :class:`ase.optimize.BFGSLineSearch>` is now the default
   (``QuasiNewton==BFGSLineSearch``).
 
 * There is a new interface to the LAMMPS molecular dynamics code.
