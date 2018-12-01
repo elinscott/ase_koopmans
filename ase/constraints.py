@@ -389,7 +389,7 @@ class FixLinearTriatomic(FixConstraint):
         C = np.zeros(2)
         L = np.zeros(2)
         N = np.zeros(2)
-        M = np.zeros(2) 
+        M = np.zeros(2)
         self.m_a = self.masses[0]
         self.m_b = self.masses[1]
         self.m_c = self.masses[2]
@@ -518,9 +518,11 @@ class FixLinearTriatomic(FixConstraint):
             m = ab[1]
             s = self.centers[j]
             f_a = ((1 - self.M[0] * self.c_a * self.m_bc) * forces[n] -
-                   self.M[0] * (self.c_c * self.m_ab * forces[m] - self.m_ac * forces[s]))
+                   self.M[0] * (self.c_c * self.m_ab * forces[m] -
+                                self.m_ac * forces[s]))
             f_c = ((1 - self.M[1] * self.m_ab * self.c_c) * forces[m] -
-                   self.M[1] * (self.c_a * self.m_bc * forces[n] - self.m_ac * forces[s]))
+                   self.M[1] * (self.c_a * self.m_bc * forces[n] -
+                                self.m_ac * forces[s]))
             forces[n] = f_a
             forces[m] = f_c
             forces[s] = 0
