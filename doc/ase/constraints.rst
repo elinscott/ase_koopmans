@@ -100,19 +100,19 @@ The FixLinearTriatomic class
 
 This class is used to keep the geometry of linear triatomic molecules
 rigid in geometry optimizations or molecular dynamics runs. Rigidness 
-of linear triatomic molecules is impossible to achieve by constraining 
-all interatomic distances using :class:`FixBondLength`, as this doesn't
-remove an adequate number of degrees of freedom (4). To overcome this, 
+of linear triatomic molecules is impossible to attain by constraining 
+all interatomic distances using :class:`FixBondLength`, as this won't
+remove an adequate number of degrees of freedom. To overcome this, 
 :class:`FixLinearTriatomic` fixes the distance between the outer atoms 
-using RATTLE and applies a linear vectorial constraint to the central 
+with RATTLE and applies a linear vectorial constraint to the central 
 atom using the RATTLE-constrained positions of the outer atoms (read 
-more about this here: G. Ciccotti, M. Ferrario, J.-P. Ryckaert, Molecular 
-Physics 47, 1253 (1982)). 
+more about the method here: G. Ciccotti, M. Ferrario, J.-P. Ryckaert, 
+Molecular Physics 47, 1253 (1982)). 
 
 When setting these constraints one has to specify the following: (i) the 
 indices of the outer atoms, (ii) the indices of the central atoms, (iii) 
-the distances between the central atom and the outer atoms of the reference 
-molecular geometry, and (iv) the masses of the atoms of the reference molecule.
+the distances between the central atom and the outer atoms of the target
+molecular geometry, and (iv) the masses of the atoms of the target molecule.
 
 .. autoclass:: FixLinearTriatomic
 

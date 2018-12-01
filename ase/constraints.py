@@ -373,8 +373,8 @@ class FixLinearTriatomic(FixConstraint):
            masses: list
                Masses of the three atoms.
            bondlengths: array
-               Fixed bond lengths, if None they will be initialized from the
-               initial atomic distances.
+               Bond lengths to fix. Default is None, in which case they will
+               be initialized from the initial atomic distances.
 
            References:
 
