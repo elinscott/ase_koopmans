@@ -322,12 +322,6 @@ class LJInteractionsGeneral:
             mmforces += f.reshape((-1, 3))
             qmforces[qmi, :] -= f.sum(0).sum(0)
 
-        # This needs to be generalized for an arbitrary MM calculator
-        if mmatoms.calc.name == 'acn':
-            mmforces = mmatoms.calc.redistribute_forces(mmforces)
-        if qmatoms.calc.name == 'acn':
-            qmforces = mmatoms.calc.redistribute_forces(qmforces)
-
         return energy, qmforces, mmforces
 
     def update(self, qmatoms, mmatoms, shift):

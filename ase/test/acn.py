@@ -19,6 +19,6 @@ dimer.calc = ACN(rc=5.0, width=2.0)  # Put C-C distance in the cutoff range
 F = dimer.get_forces()
 print(F)
 Fnum = dimer.calc.calculate_numerical_forces(dimer)
-dF = dimer.calc.redistribute_forces(Fnum) - F
+dF = Fnum - F
 print(dF)
 assert abs(dF).max() < 2e-6

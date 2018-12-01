@@ -354,9 +354,9 @@ class FixLinearTriatomic(FixConstraint):
     """Holonomic constraints for rigid linear triatomic molecules."""
 
     def __init__(self, pairs, centers, distances, masses, bondlengths=None):
-        """Apply RATTLE-type bond constraints between outer atoms a and b 
-           and linear vectorial constraints to the position of central 
-           atoms b to fix the geometry of linear triatomic molecules of the 
+        """Apply RATTLE-type bond constraints between outer atoms a and b
+           and linear vectorial constraints to the position of central
+           atoms b to fix the geometry of linear triatomic molecules of the
            type:
 
            a--b--c
@@ -368,14 +368,14 @@ class FixLinearTriatomic(FixConstraint):
            centers: list
                Indices of central atoms.
            distances: list
-               Distances between outer and central atoms of the reference 
+               Distances between outer and central atoms of the reference
                molecular geometry.
            masses: list
                Masses of the three atoms.
            bondlengths: array
                Fixed bond lengths, if None they will be initialized from the
                initial atomic distances.
-           
+
            References:
 
            http://dx.doi.org/10.1080/00268978200100942
@@ -389,6 +389,7 @@ class FixLinearTriatomic(FixConstraint):
         C = np.zeros(2)
         L = np.zeros(2)
         N = np.zeros(2)
+        M = np.zeros(2) 
         self.m_a = self.masses[0]
         self.m_b = self.masses[1]
         self.m_c = self.masses[2]
@@ -408,11 +409,17 @@ class FixLinearTriatomic(FixConstraint):
         C[1] = self.c_c
         L[0] = l_a
         L[1] = l_b
-        self.C = C
-        self.L = L
+        M[0] = n_a
+        M[1] = n_c
         N[0] = self.c_a / (self.c_a**2 + self.c_c**2 + 1)
         N[1] = self.c_c / (self.c_a**2 + self.c_c**2 + 1)
+        self.C = C
+        self.L = L
         self.N = N
+        self.M = M
+        self.m_ab = m_ab
+        self.m_bc = m_bc
+        self.m_ac = m_ac
 
         self.removed_dof = len(pairs) + 3 * len(centers)
 
@@ -494,7 +501,6 @@ class FixLinearTriatomic(FixConstraint):
         self.constraint_forces += forces
 
     def redistribute_forces(self, forces, n, m, s):
-
         f_a = ((1 - self.N[0] * self.c_a) * forces[n] -
                self.N[0] * (self.c_c * forces[m] - forces[s]))
 
@@ -505,6 +511,19 @@ class FixLinearTriatomic(FixConstraint):
                self.N[0] * forces[n] + self.N[1] * forces[m])
 
         return f_a, f_b, f_c
+
+    def redistribute_forces_md(self, forces):
+        for j, ab in enumerate(self.pairs):
+            n = ab[0]
+            m = ab[1]
+            s = self.centers[j]
+            f_a = ((1 - self.M[0] * self.c_a * self.m_bc) * forces[n] -
+                   self.M[0] * (self.c_c * self.m_ab * forces[m] - self.m_ac * forces[s]))
+            f_c = ((1 - self.M[1] * self.m_ab * self.c_c) * forces[m] -
+                   self.M[1] * (self.c_a * self.m_bc * forces[n] - self.m_ac * forces[s]))
+            forces[n] = f_a
+            forces[m] = f_c
+            forces[s] = 0
 
     def initialize_bond_lengths(self, atoms):
         bondlengths = np.zeros(len(self.pairs))
