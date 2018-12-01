@@ -23,18 +23,9 @@ epsilon = np.array([epsilon_me, epsilon_c, epsilon_n])
 r_mec = 1.458
 r_cn = 1.157
 r_men = r_mec + r_cn
-
-# Variables needed to redistribute forces
-c_me = r_cn / r_men
-c_n = r_mec / r_men
 m_me = atomic_masses[6] + 3 * atomic_masses[1]
 m_c = atomic_masses[6]
 m_n = atomic_masses[7]
-m_cn = m_c * m_n
-m_mec = m_c * m_me
-m_men = m_n * m_me
-n_me = c_me / (c_me**2 * m_cn + c_n**2 * m_mec + m_men)
-n_n = c_n / (c_me**2 * m_cn + c_n**2 * m_mec + m_men)
 
 
 def wrap(D, cell, pbc):
