@@ -20,63 +20,6 @@ from ase.ga.bulk_utilities import get_rotation_matrix
 from scipy.spatial.distance import cdist
 
 
-class RattleMutation(standardmutations.RattleMutation):
-    """ Modification of standardmutations.RattleMutation
-        to allow for preserving molecular identity. """
-
-    def __init__(self, blmin, n_top=None, rattle_strength=0.8,
-                 rattle_prop=0.4, use_tags=False, test_dist_to_slab=True,
-                 verbose=False):
-        standardmutations.RattleMutation.__init__(self, blmin, n_top,
-                                                  rattle_strength=rattle_strength,
-                                                  rattle_prop=rattle_prop,
-                                                  verbose=verbose)
-        self.use_tags = use_tags
-        self.test_dist_to_slab = test_dist_to_slab
-
-    def mutate(self, atoms):
-        """ Does the actual mutation. """
-        N = len(atoms) if self.n_top is None else self.n_top
-        slab = atoms[:len(atoms) - N]
-        atoms = atoms[-N:]
-        tags = atoms.get_tags() if self.use_tags else np.arange(N)
-        pos_ref = atoms.get_positions()
-        num = atoms.get_atomic_numbers()
-        cell = atoms.get_cell()
-        pbc = atoms.get_pbc()
-        st = 2. * self.rattle_strength
-
-        count = 0
-        maxcount = 1000
-        too_close = True
-        while too_close and count < maxcount:
-            count += 1
-            pos = pos_ref.copy()
-            ok = False
-            for tag in np.unique(tags):
-                select = np.where(tags == tag)
-                if np.random.random() < self.rattle_prop:
-                    ok = True
-                    r = np.random.random(3)
-                    pos[select] += st * (r - 0.5)
-
-            if not ok:
-                # Nothing got rattled
-                continue
-
-            top = Atoms(num, positions=pos, cell=cell, pbc=pbc, tags=tags)
-            too_close = atoms_too_close(
-                top, self.blmin, use_tags=self.use_tags)
-            if not too_close and self.test_dist_to_slab:
-                too_close = atoms_too_close_two_sets(top, slab, self.blmin)
-
-        if count == maxcount:
-            return None
-
-        mutant = slab + top
-        return mutant
-
-
 class PermutationMutation(standardmutations.PermutationMutation):
     """ Modification of standardmutations.PermutationMutation
         to allow for preserving molecular identity. """

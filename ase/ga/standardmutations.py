@@ -21,14 +21,23 @@ class RattleMutation(OffspringCreator):
         n_top: Number of atoms optimized by the GA.
         rattle_strength: Strength with which the atoms are moved.
         rattle_prop: The probability with which each atom is rattled.
+        test_dist_to_slab: whether to also make sure that the distances
+                  between the atoms and the slab satisfy the blmin.
+        use_tags: if True, the atomic tags will be used to preserve
+                  molecular identity. Same-tag atoms will then be
+                  displaced collectively, so that the internal
+                  geometry is preserved.
     """
     def __init__(self, blmin, n_top, rattle_strength=0.8,
-                 rattle_prop=0.4, verbose=False):
+                 rattle_prop=0.4, test_dist_to_slab=True, use_tags=False,
+                 verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.n_top = n_top
         self.rattle_strength = rattle_strength
         self.rattle_prop = rattle_prop
+        self.test_dist_to_slab = test_dist_to_slab
+        self.use_tags = use_tags
         self.descriptor = 'RattleMutation'
         self.min_inputs = 1
 
@@ -46,28 +55,45 @@ class RattleMutation(OffspringCreator):
 
     def mutate(self, atoms):
         """ Does the actual mutation. """
-        slab = atoms[0:len(atoms) - self.n_top]
-        pos_ref = atoms.get_positions()[-self.n_top:]
-        num_top = atoms.numbers[-self.n_top:]
+        N = len(atoms) if self.n_top is None else self.n_top
+        slab = atoms[:len(atoms) - N]
+        atoms = atoms[-N:]
+        tags = atoms.get_tags() if self.use_tags else np.arange(N)
+        pos_ref = atoms.get_positions()
+        num = atoms.get_atomic_numbers()
+        cell = atoms.get_cell()
+        pbc = atoms.get_pbc()
         st = 2. * self.rattle_strength
+
         count = 0
-        tc = True
-        while tc and count < 1000:
-            pos = pos_ref.copy()
-            for i in range(len(pos)):
-                if random() < self.rattle_prop:
-                    r = np.array([random() for r in range(3)])
-                    pos[i] = pos[i] + st * (r - 0.5)
-            top = Atoms(num_top, positions=pos,
-                        cell=slab.get_cell(), pbc=slab.get_pbc())
-            tc = atoms_too_close(top, self.blmin)
-            if not tc:
-                tc = atoms_too_close_two_sets(top, slab, self.blmin)
+        maxcount = 1000
+        too_close = True
+        while too_close and count < maxcount:
             count += 1
-        if count == 1000:
+            pos = pos_ref.copy()
+            ok = False
+            for tag in np.unique(tags):
+                select = np.where(tags == tag)
+                if np.random.random() < self.rattle_prop:
+                    ok = True
+                    r = np.random.random(3)
+                    pos[select] += st * (r - 0.5)
+
+            if not ok:
+                # Nothing got rattled
+                continue
+
+            top = Atoms(num, positions=pos, cell=cell, pbc=pbc, tags=tags)
+            too_close = atoms_too_close(
+                top, self.blmin, use_tags=self.use_tags)
+            if not too_close and self.test_dist_to_slab:
+                too_close = atoms_too_close_two_sets(top, slab, self.blmin)
+
+        if count == maxcount:
             return None
-        tot = slab + top
-        return tot
+
+        mutant = slab + top
+        return mutant
 
         
 class PermutationMutation(OffspringCreator):
