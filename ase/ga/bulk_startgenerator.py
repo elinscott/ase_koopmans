@@ -184,7 +184,6 @@ class StartGenerator(object):
 
         # Runs until we have found a valid candidate.
         cand = Atoms('', cell=cell, pbc=pbc)
-        cand_list = []
         niter = 0
         for i in range(N_blocks):
             atoms = blocks[i].copy()
@@ -206,7 +205,6 @@ class StartGenerator(object):
                 too_close = atoms_too_close(attempt, blmin, use_tags=True)
                 if not too_close:
                     cand += atoms
-                    cand_list.append(atoms)
                     break
                 niter += 1
             else:
