@@ -88,8 +88,19 @@ class StartGenerator(object):
         else:
             self.blmin = closest_distances_generator(numbers, blmin)
 
-    def get_new_candidate(self):
-        """ Returns a new candidate. """
+    def get_new_candidate(self, maxiter=None):
+        """ Returns a new candidate.
+
+        maxiter: upper bound on the total number of times
+                 the random position generator is called
+                 when generating the new candidate.
+
+                 By default (maxiter=None) no such bound
+                 is imposed. If the generator takes too
+                 long time to create a new candidate, it
+                 may be suitable to specify a finite value.
+                 When the bound is exceeded, None is returned.
+        """
 
         pbc = [True] * 3
         blmin = self.blmin
@@ -174,14 +185,14 @@ class StartGenerator(object):
         # Runs until we have found a valid candidate.
         cand = Atoms('', cell=cell, pbc=pbc)
         cand_list = []
+        niter = 0
         for i in range(N_blocks):
             atoms = blocks[i].copy()
             atoms.set_tags(i)
             rotate = len(atoms) > 1
 
             # Make each new position one at a time.
-            pos_found = False
-            while not pos_found:
+            while maxiter is None or niter < maxiter:
                 cop = atoms.get_positions().mean(axis=0)
                 pos = random_pos(cell)
                 atoms.translate(pos - cop)
@@ -197,6 +208,14 @@ class StartGenerator(object):
                     cand += atoms
                     cand_list.append(atoms)
                     break
+                niter += 1
+            else:
+                # Reached upper bound on iteration count
+                cand = None
+                break
+
+        if cand is None:
+            return None
 
         # rebuild the candidate after repeating,
         # randomly deleting surplus blocks and
