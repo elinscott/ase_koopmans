@@ -172,61 +172,57 @@ class StartGenerator(object):
         indices = np.array(indices)[order]
 
         # Runs until we have found a valid candidate.
-        while True:
-            cand = Atoms('', cell=cell, pbc=pbc)
-            cand_list = []
+        cand = Atoms('', cell=cell, pbc=pbc)
+        cand_list = []
+        for i in range(N_blocks):
+            atoms = blocks[i].copy()
+            atoms.set_tags(i)
+            rotate = len(atoms) > 1
+
             # Make each new position one at a time.
-            for i in range(N_blocks):
+            pos_found = False
+            while not pos_found:
+                cop = atoms.get_positions().mean(axis=0)
+                pos = random_pos(cell)
+                atoms.translate(pos - cop)
+                if rotate:
+                    phi, theta, psi = 360 * np.random.random(3)
+                    atoms.euler_rotate(phi=phi, theta=0.5 * theta, psi=psi,
+                                       center=pos)
+                # add if it fits:
+                attempt = cand + atoms
+                attempt.wrap()
+                too_close = atoms_too_close(attempt, blmin, use_tags=True)
+                if not too_close:
+                    cand += atoms
+                    cand_list.append(atoms)
+                    break
 
-                atoms = blocks[i].copy()
-                atoms.set_tags(i)
-                rotate = len(atoms) > 1
+        # rebuild the candidate after repeating,
+        # randomly deleting surplus blocks and
+        # sorting back to the original order
+        tags = cand.get_tags()
+        nrep = int(np.prod(repeat))
+        cand_full = cand.repeat(repeat)
 
-                pos_found = False
-                while not pos_found:
-                    cop = atoms.get_positions().mean(axis=0)
-                    pos = random_pos(cell)
-                    atoms.translate(pos - cop)
-                    if rotate:
-                        phi, theta, psi = 360 * np.random.random(3)
-                        atoms.euler_rotate(phi=phi, theta=0.5 * theta, psi=psi,
-                                           center=pos)
-                    # add if it fits:
-                    attempt = cand + atoms
-                    attempt.wrap()
-                    too_close = atoms_too_close(attempt, blmin, use_tags=True)
-                    if not too_close:
-                        cand += atoms
-                        cand_list.append(atoms)
-                        break
+        tags_full = cand_full.get_tags()
+        for i in range(nrep):
+            tags_full[len(cand) * i:len(cand) * (i + 1)] += i * N_blocks
+        cand_full.set_tags(tags_full)
 
-            # rebuild the candidate after repeating,
-            # randomly deleting surplus blocks and
-            # sorting back to the original order
-            tags = cand.get_tags()
-            nrep = int(np.prod(repeat))
-            cand_full = cand.repeat(repeat)
-
-            tags_full = cand_full.get_tags()
-            for i in range(nrep):
-                tags_full[len(cand) * i:len(cand) * (i + 1)] += i * N_blocks
-            cand_full.set_tags(tags_full)
-
-            cand = Atoms('', cell=full_cell, pbc=pbc)
-            indices_full = np.tile(indices, nrep)
-            tag_counter = 0
-            for i, (block, count) in enumerate(self.blocks):
-                tags = np.where(indices_full == i)[0]
-                bad = np.random.choice(tags, size=surplus[i], replace=False)
-                for tag in tags:
-                    if tag not in bad:
-                        select = [a.index for a in cand_full if a.tag == tag]
-                        atoms = cand_full[select]  # is indeed a copy!
-                        atoms.set_tags(tag_counter)
-                        assert len(atoms) == len(block)
-                        cand += atoms
-                        tag_counter += 1
-
-            break
+        cand = Atoms('', cell=full_cell, pbc=pbc)
+        indices_full = np.tile(indices, nrep)
+        tag_counter = 0
+        for i, (block, count) in enumerate(self.blocks):
+            tags = np.where(indices_full == i)[0]
+            bad = np.random.choice(tags, size=surplus[i], replace=False)
+            for tag in tags:
+                if tag not in bad:
+                    select = [a.index for a in cand_full if a.tag == tag]
+                    atoms = cand_full[select]  # is indeed a copy!
+                    atoms.set_tags(tag_counter)
+                    assert len(atoms) == len(block)
+                    cand += atoms
+                    tag_counter += 1
 
         return cand
