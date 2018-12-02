@@ -19,41 +19,6 @@ from ase.ga.bulk_utilities import get_rotation_matrix
 from scipy.spatial.distance import cdist
 
 
-class PermuStrainMutation(OffspringCreator):
-    """ Combination of PermutationMutation and StrainMutation, see also:
-    Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
-    """
-
-    def __init__(self, permutationmutation, strainmutation, verbose=False):
-        """
-        permutationmutation: instance of a mutation that permutes
-                             atom types
-        strainmutation: instance of a mutation that mutates by straining
-        """
-        OffspringCreator.__init__(self, verbose)
-        self.permutationmutation = permutationmutation
-        self.strainmutation = strainmutation
-
-    def get_new_individual(self, parents):
-        f = parents[0]
-
-        indi = self.mutate(f)
-        if indi is None:
-            return indi, 'mutation: permustrain'
-
-        indi = self.initialize_individual(f, indi)
-        indi.info['data']['parents'] = [f.info['confid']]
-
-        return self.finalize_individual(indi), 'mutation: permustrain'
-
-    def mutate(self, atoms):
-        """ Does the actual mutation. """
-        mutant = self.permutationmutation.mutate(atoms)
-        if mutant is not None:
-            mutant = self.strainmutation.mutate(mutant)
-        return mutant
-
-
 class StrainMutation(OffspringCreator):
     """ Mutates a candidate by applying a randomly generated strain.
     See also:
@@ -178,6 +143,41 @@ class StrainMutation(OffspringCreator):
         if count == maxcount:
             mutant = None
 
+        return mutant
+
+
+class PermuStrainMutation(OffspringCreator):
+    """ Combination of PermutationMutation and StrainMutation, see also:
+    Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
+    """
+
+    def __init__(self, permutationmutation, strainmutation, verbose=False):
+        """
+        permutationmutation: instance of a mutation that permutes
+                             atom types
+        strainmutation: instance of a mutation that mutates by straining
+        """
+        OffspringCreator.__init__(self, verbose)
+        self.permutationmutation = permutationmutation
+        self.strainmutation = strainmutation
+
+    def get_new_individual(self, parents):
+        f = parents[0]
+
+        indi = self.mutate(f)
+        if indi is None:
+            return indi, 'mutation: permustrain'
+
+        indi = self.initialize_individual(f, indi)
+        indi.info['data']['parents'] = [f.info['confid']]
+
+        return self.finalize_individual(indi), 'mutation: permustrain'
+
+    def mutate(self, atoms):
+        """ Does the actual mutation. """
+        mutant = self.permutationmutation.mutate(atoms)
+        if mutant is not None:
+            mutant = self.strainmutation.mutate(mutant)
         return mutant
 
 
