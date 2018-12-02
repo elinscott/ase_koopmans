@@ -3,8 +3,9 @@
 import numpy as np
 from random import random, randrange
 from math import ceil, cos, sin, pi
-from ase.ga.utilities import atoms_too_close
-from ase.ga.utilities import atoms_too_close_two_sets
+from ase.ga.utilities import (atoms_too_close,
+                              atoms_too_close_two_sets,
+                              gather_atoms_by_tag)
 from ase.ga.offspring_creator import OffspringCreator
 from ase import Atoms
 
@@ -103,12 +104,26 @@ class PermutationMutation(OffspringCreator):
 
        n_top: Number of atoms optimized by the GA.
        probability: The probability with which an atom is permuted.
+       test_dist_to_slab: whether to also make sure that the distances
+                 between the atoms and the slab satisfy the blmin.
+       use_tags: if True, the atomic tags will be used to preserve
+                 molecular identity. Permutations will then happen
+                 at the molecular level, i.e. swapping the center-of-
+                 positions of two moieties while preserving their
+                 internal geometries.
+       blmin:  Dictionary defining the minimum distance between atoms
+               after the permutation. If equal to None (the default),
+               no such check is performed.
     """
 
-    def __init__(self, n_top, probability=0.33, verbose=False):
+    def __init__(self, n_top, probability=0.33, test_dist_to_slab=True,
+                 use_tags=False, blmin=None, verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.n_top = n_top
         self.probability = probability
+        self.test_dist_to_slab = test_dist_to_slab
+        self.use_tags = use_tags
+        self.blmin = blmin
         self.descriptor = 'PermutationMutation'
         self.min_inputs = 1
 
@@ -126,25 +141,62 @@ class PermutationMutation(OffspringCreator):
 
     def mutate(self, atoms):
         """ Does the actual mutation. """
-        a = atoms.copy()
-        s = self.n_top
-        p = a.get_positions()[-s:]
-        n = a.numbers[-s:]
-        n_un = list(set(n))
-        assert len(n_un) > 1, 'Permutations with one atomic type is not valid'
-        m = int(ceil(float(s) * self.probability / 2.))
-        for _ in range(m):
-            i = j = 0
-            while n[i] == n[j]:
-                i = randrange(0, s)
-                j = randrange(0, s)
-            t = p[i].copy()
-            p[i] = p[j].copy()
-            p[j] = t
-        p_tot = a.get_positions()
-        p_tot[-s:] = p
-        a.set_positions(p_tot)
-        return a
+        N = len(atoms) if self.n_top is None else self.n_top
+        slab = atoms[:len(atoms) - N]
+        atoms = atoms[-N:]
+        if self.use_tags:
+            gather_atoms_by_tag(atoms)
+        tags = atoms.get_tags() if self.use_tags else np.arange(N)
+        pos_ref = atoms.get_positions()
+        num = atoms.get_atomic_numbers()
+        cell = atoms.get_cell()
+        pbc = atoms.get_pbc()
+        symbols = atoms.get_chemical_symbols()
+
+        unique_tags = np.unique(tags)
+        n = len(unique_tags)
+        swaps = int(np.ceil(n * self.probability / 2.))
+
+        sym = []
+        for tag in unique_tags:
+            indices = np.where(tags == tag)[0]
+            s = ''.join([symbols[j] for j in indices])
+            sym.append(s)
+        assert len(np.unique(sym)) > 1, \
+               'Permutations with one atom (or molecule) type is not valid'
+
+        count = 0
+        maxcount = 1000
+        too_close = True
+        while too_close and count < maxcount:
+            count += 1
+            pos = pos_ref.copy()
+            for _ in range(swaps):
+                i = j = 0
+                while sym[i] == sym[j]:
+                    i = np.random.randint(0, high=n)
+                    j = np.random.randint(0, high=n)
+                ind1 = np.where(tags == i)
+                ind2 = np.where(tags == j)
+                cop1 = np.mean(pos[ind1], axis=0)
+                cop2 = np.mean(pos[ind2], axis=0)
+                pos[ind1] += cop2 - cop1
+                pos[ind2] += cop1 - cop2
+
+            top = Atoms(num, positions=pos, cell=cell, pbc=pbc, tags=tags)
+            if self.blmin is None:
+                too_close = False
+            else:
+                too_close = atoms_too_close(
+                    top, self.blmin, use_tags=self.use_tags)
+                if not too_close and self.test_dist_to_slab:
+                    too_close = atoms_too_close_two_sets(top, slab, self.blmin)
+
+        if count == maxcount:
+            return None
+
+        mutant = slab + top
+        return mutant
 
 
 class MirrorMutation(OffspringCreator):
