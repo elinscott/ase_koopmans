@@ -537,7 +537,6 @@ class BaseSiesta(FileIOCalculator):
             f.write('\n')
 
     def _write_atomic_coordinates_zmatrix(self, f, atoms):
-        from __future__ import print_function
         """Write atomic coordinates in Z-matrix format.
 
         Parameters:
