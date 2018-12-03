@@ -79,15 +79,15 @@ class Langevin(MolecularDynamics):
             self.mask[self.selectlinear] = True
 
             # Friction on central atom must be zero
-            if np.isscalar(self.fr): 
-               self.fr = np.full((len(atoms), 3), self.fr)
-               frl = self.fr[~self.mask]
-               frl[1::3] = 0.0      
-               self.fr[~self.mask] = frl
+            if np.isscalar(self.fr):
+                self.fr = np.full((len(atoms), 3), self.fr)
+                frl = self.fr[~self.mask]
+                frl[1::3] = 0.0
+                self.fr[~self.mask] = frl
             else:
-               frl = self.fr[~self.mask]
-               frl[1::3] = 0.0
-               self.fr[~self.mask] = frl
+                frl = self.fr[~self.mask]
+                frl[1::3] = 0.0
+                self.fr[~self.mask] = frl
 
             masseslinear = self.masses[~self.mask]
             m_a = masseslinear[0]
