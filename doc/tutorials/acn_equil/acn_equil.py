@@ -41,7 +41,6 @@ tag = 'acn_27mol_300K'
 atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
 
 # Create Langevin object 
-# The friction on the central atom must be zero 
 md = Langevin(atoms, 1 * units.fs, 
               temperature=300 * units.kB,
               selectlinear=[],
@@ -66,7 +65,6 @@ atoms.constraints = FixLinearTriatomic(
 atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
 
 # Create Langevin object
-# The friction on the central atom must be zero
 md = Langevin(atoms, 2 * units.fs,
               temperature=300 * units.kB,
               selectlinear=[],

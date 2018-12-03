@@ -58,11 +58,7 @@ class ACN(Calculator):
     def __init__(self, rc=5.0, width=1.0):
         """Three-site potential for acetonitrile.
 
-        References:
-
-        http://dx.doi.org/10.1080/08927020108024509
-
-        Atom sequence should be:
+        Atom sequence must be:
         MeCNMeCN ... MeCN or NCMeNCMe ... NCMe
 
         When performing molecular dynamics (MD), forces are redistributed
@@ -76,6 +72,10 @@ class ACN(Calculator):
             Cutoff radius for Coulomb interactions.
         width: float
             Width for cutoff function for Coulomb interactions.
+
+        References:
+
+        http://dx.doi.org/10.1080/08927020108024509
         """
         self.rc = rc
         self.width = width
