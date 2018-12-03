@@ -58,7 +58,7 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc=False,
     :param celldisp: origin shift
     :param pbc: periodic boundaries
     :param atomsobj: function to create ase-Atoms object
-    :param order: sort atoms by id. Might be fast to turn off
+    :param order: sort atoms by id. Might be faster to turn off
     :param specorder: list of species to map lammps types to ase-species
     (usually .dump files to not contain type to species mapping)
     :param prismobj: Coordinate transformation between lammps and ase
@@ -72,8 +72,10 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp, pbc=False,
     ids = data[:, colnames.index('id')].astype(int)
     types = data[:, colnames.index('type')].astype(int)
     if order:
-        data = data[ids - 1, :]
-        types = types[ids - 1]
+        sort_order = np.argsort(ids)
+        ids = ids[sort_order]
+        data = data[sort_order, :]
+        types = types[sort_order]
 
     # reconstruct types from given specorder
     if specorder:
