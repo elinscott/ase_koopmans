@@ -5,8 +5,8 @@ from ase.ga.bulk_utilities import CellBounds
 from ase.ga.bulk_startgenerator import StartGenerator
 from ase.ga.bulk_crossovers import CutAndSplicePairing
 from ase.ga.bulk_mutations import (SoftMutation, RotationalMutation, 
-                                   StrainMutation, RattleMutation, 
-                                   RattleRotationalMutation)
+                                   RattleRotationalMutation, StrainMutation)
+from ase.ga.standardmutations import RattleMutation
 
 h2 = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.75]])
 blocks = [('H', 4), ('H2O', 3), (h2, 2)]  # the building blocks
@@ -24,10 +24,9 @@ atom_numbers = list(set(stoichiometry))
 blmin = closest_distances_generator(atom_numbers=atom_numbers,
                                     ratio_of_covalent_radii=1.3)
 
-cellbounds = CellBounds(bounds={'phi':[0.2 * np.pi, 0.8 * np.pi],
-                                'chi':[0.2 * np.pi, 0.8 * np.pi],
-                                'psi':[0.2 * np.pi, 0.8 * np.pi],
-                                'a':[3, 50], 'b':[3, 50], 'c':[3, 50]})
+cellbounds = CellBounds(bounds={'phi':[30, 150], 'chi':[30, 150],
+                                'psi':[30, 150], 'a':[3, 50],
+                                'b':[3, 50], 'c':[3, 50]})
 
 sg = StartGenerator(blocks, blmin, volume, cellbounds=cellbounds,
                     splits=splits)
@@ -47,13 +46,14 @@ cell = a3.get_cell()
 assert cellbounds.is_within_bounds(cell)
 assert not atoms_too_close(a3, blmin, use_tags=True)
 
+n_top = len(a1)
 strainmut = StrainMutation(blmin, stddev=0.7, cellbounds=cellbounds,
                            use_tags=True)
 softmut = SoftMutation(blmin, bounds=[2., 5.], used_modes_file=None,
-                       use_tags=True) 
+                       use_tags=True)
 rotmut = RotationalMutation(blmin, fraction=0.3, min_angle=0.5 * np.pi)
-rattlemut = RattleMutation(blmin, rattle_prop=0.3, rattle_strength=0.5, 
-                           use_tags=True)
+rattlemut = RattleMutation(blmin, n_top, rattle_prop=0.3, rattle_strength=0.5,
+                           use_tags=True, test_dist_to_slab=False)
 rattlerotmut = RattleRotationalMutation(rattlemut, rotmut)
 
 for i, mut in enumerate([strainmut, softmut, rotmut, rattlemut, rattlerotmut]):
