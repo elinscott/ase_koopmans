@@ -73,7 +73,7 @@ class ACE(FileIOCalculator):
     # defaults is default value of ACE-input
     defaults = OrderedParameters([('BasicInformation',\
                                  OrderedParameters([('Label', '/home/khs/work/asetest/H2test'),\
-                                                     ('Type', 'Scaling'), ('Scaling', '1.0'), ('Basis', 'Sinc'),\
+                                                     ('Type', 'Scaling'), ('Scaling', '0.35'), ('Basis', 'Sinc'),\
                                                      ('Cell', '3.0'), ('Grid', 'Sphere'),\
                                                      ('KineticMatrix', 'Finite_Difference'), ('DerivativesOrder', '7'),\
                                                      ('GeometryFormat', 'xyz'), ('SpinMultiplicity', '1.0'), ('Centered', '0'),\
@@ -127,7 +127,7 @@ class ACE(FileIOCalculator):
             if(key == key2):
                 parameters[key] = val2
                 print("a parameter is updated")
-                print (type([1,1]))
+#                print (type([1,1]))
                 return 10
             if( compare != 10 and type(parameters[key]) != type('1') and type(parameters[key]) != type([1,1]) \
                 and type(parameters[key]) != type(None) ):
@@ -150,8 +150,8 @@ class ACE(FileIOCalculator):
         if (name == 'excitation-energy'):
             self.parameters =\
             OrderedParameters([('BasicInformation',\
-                              OrderedParameters([('Type', 'Scaling'), ('Scaling', '1.0'), ('Basis', 'Sinc'), ('Grid', 'Atoms'),\
-                                                 ('Radius', ['4.0', '4.0']), ('AbsoluteRadius', '1'),\
+                              OrderedParameters([('Type', 'Scaling'), ('Scaling', '0.35'), ('Basis', 'Sinc'), ('Grid', 'Atoms'),\
+                                                 ('Radius', '5.5'), ('AbsoluteRadius', '1'),\
                                                  ('GeometryFilename', 'xyz/benzene.xyz'), ('GeometryFormat', 'xyz'),\
                                                  ('SpinMultiplicity', '1.0'), ('Centered', '1'), ('OccupationMethod', 'ZeroTemp'),\
                                                  ('Polarize', '0'), ('NumElectrons', '30'), ('KineticMatrix', 'Finite_Difference'),\
@@ -166,7 +166,7 @@ class ACE(FileIOCalculator):
                               OrderedParameters([('InitialGuess', '3'), ('InitialFilePath', 'pbe.gs/'), ('Info', 'benzene_opt.log'),\
                                                  ('InfoFiletype', 'ACE'), ('NumberOfEigenvalues', '40')])),\
                                ('TDDFT',\
-                              OrderedParameters([('SortOrbital', 'Order'), ('MaximumOrder', '30'), ('Gradient', '1'),\
+                              OrderedParameters([('SortOrbital', 'Order'), ('MaximumOrder', '10'), ('Gradient', '1'),\
                                                  ('ExchangeCorrelation', \
                                                 OrderedParameters([('CalGradientUsingDensity', '0'), ('XFunctional', '101'),\
                                                                    ('CFunctional', '130')])),\
