@@ -1,8 +1,8 @@
 """ A collection of mutations that can be used. """
 
 import numpy as np
-from random import random, randrange
-from math import ceil, cos, sin, pi
+from random import random
+from math import cos, sin, pi
 from ase.ga.utilities import (atoms_too_close,
                               atoms_too_close_two_sets,
                               gather_atoms_by_tag)

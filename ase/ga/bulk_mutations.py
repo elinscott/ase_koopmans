@@ -8,7 +8,6 @@ import inspect
 import json
 import numpy as np
 from random import gauss
-from ase import Atoms
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 from ase.build import niggli_reduce
