@@ -246,7 +246,10 @@ class PairwiseHarmonicPotential:
         self.calculate_force_constants()
 
     def calculate_force_constants(self):
-        msg = 'Child class needs to define calculate_force_constants() method'
+        msg = 'Child class needs to define a calculate_force_constants() ' \
+              'method which computes the force constants and stores them ' \
+              'in self.force_constants (as a list which contains, for every ' \
+              'atom, a list of the atom\'s force constants with its neighbors.'
         raise NotImplementedError(msg)
 
     def get_forces(self, atoms):
