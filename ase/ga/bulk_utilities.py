@@ -106,12 +106,6 @@ def convert_for_lammps(atoms):
     tri_mat[1, 2] = np.dot(C, np.cross(AxBhat, Ahat))
     tri_mat[2, 2] = np.linalg.norm(np.dot(C, AxBhat))
 
-    # create and save the transformation for coordinates
-    #volume = np.linalg.det(ase_cell)
-    #trans = np.array([np.cross(B, C), np.cross(C, A), np.cross(A, B)])
-    #trans = trans / volume
-    #coord_transform = tri_mat*trans
-
     atoms.set_cell(tri_mat.T, scale_atoms=True)
     atoms.wrap(pbc=True)
 

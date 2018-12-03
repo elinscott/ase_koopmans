@@ -162,8 +162,9 @@ class PermutationMutation(OffspringCreator):
             indices = np.where(tags == tag)[0]
             s = ''.join([symbols[j] for j in indices])
             sym.append(s)
+
         assert len(np.unique(sym)) > 1, \
-               'Permutations with one atom (or molecule) type is not valid'
+            'Permutations with one atom (or molecule) type is not valid'
 
         count = 0
         maxcount = 1000

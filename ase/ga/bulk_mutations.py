@@ -212,8 +212,8 @@ class TagFilter:
         f = self.atoms.get_forces()
         forces = np.zeros((self.n, 3))
         for i in range(self.n):
-             indices = np.where(self.tags == self.unique_tags[i])
-             forces[i] = np.sum(f[indices], axis=0)
+            indices = np.where(self.tags == self.unique_tags[i])
+            forces[i] = np.sum(f[indices], axis=0)
         return forces
 
     def get_masses(self):

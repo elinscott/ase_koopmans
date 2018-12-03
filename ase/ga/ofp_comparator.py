@@ -324,7 +324,9 @@ class OFPComparator(object):
 
         def surface_area_2d(r, pos):
             p0 = pos[non_pbc_dirs[0]]
-            return 2 * np.pi * r * (np.minimum(pmax - p0, r) + np.minimum(p0 - pmin, r))
+            area = np.minimum(pmax - p0, r) + np.minimum(p0 - pmin, r)
+            area *= 2 * np.pi * r
+            return area
 
         def surface_area_3d(r):
             return 4 * np.pi * (r**2)
@@ -392,12 +394,12 @@ class OFPComparator(object):
                         fingerprint -= 1
                     fingerprints[i][unique_type] = fingerprint
         else:
-            for type1, type2 in combinations_with_replacement(unique_types, r=2):
-                key = (type1, type2)
+            for t1, t2 in combinations_with_replacement(unique_types, r=2):
+                key = (t1, t2)
                 fingerprint = np.zeros(nbins)
-                for i in typedic[type1]:
-                    fingerprint += take_individual_rdf(i, type2)
-                fingerprint /= len(typedic[type1])
+                for i in typedic[t1]:
+                    fingerprint += take_individual_rdf(i, t2)
+                fingerprint /= len(typedic[t1])
                 if self.dimensions > 0:
                     fingerprint -= 1
                 fingerprints[key] = fingerprint
