@@ -8,8 +8,8 @@ import numpy as np
 from scipy.linalg import expm
 
 __all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
-           'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled', 'StrainFilter', 
-           'FixCom', 'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine', 
+           'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled', 'StrainFilter',
+           'FixCom', 'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
            'FixBondLengths', 'FixInternals', 'Hookean', 'ExternalForce']
 
 

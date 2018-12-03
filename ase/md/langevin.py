@@ -48,8 +48,8 @@ class Langevin(MolecularDynamics):
     # Helps Asap doing the right thing.  Increment when changing stuff:
     _lgv_version = 3
 
-    def __init__(self, atoms, timestep, temperature, friction, fixcm=True, 
-                 trajectory=None, logfile=None, loginterval=1, 
+    def __init__(self, atoms, timestep, temperature, friction, fixcm=True,
+                 trajectory=None, logfile=None, loginterval=1,
                  communicator=world, rng=np.random):
         self.temp = temperature
         self.fr = friction
