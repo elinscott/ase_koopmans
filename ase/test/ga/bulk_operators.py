@@ -6,7 +6,7 @@ from ase.ga.bulk_startgenerator import StartGenerator
 from ase.ga.bulk_crossovers import CutAndSplicePairing
 from ase.ga.bulk_mutations import (SoftMutation, RotationalMutation, 
                                    RattleRotationalMutation, StrainMutation)
-from ase.ga.standardmutations import RattleMutation
+from ase.ga.standardmutations import RattleMutation, PermutationMutation
 
 h2 = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.75]])
 blocks = [('H', 4), ('H2O', 3), (h2, 2)]  # the building blocks
@@ -55,8 +55,11 @@ rotmut = RotationalMutation(blmin, fraction=0.3, min_angle=0.5 * np.pi)
 rattlemut = RattleMutation(blmin, n_top, rattle_prop=0.3, rattle_strength=0.5,
                            use_tags=True, test_dist_to_slab=False)
 rattlerotmut = RattleRotationalMutation(rattlemut, rotmut)
+permut = PermutationMutation(n_top, probability=0.33, test_dist_to_slab=False,
+                             use_tags=True, blmin=blmin)
+mutations = [strainmut, softmut, rotmut, rattlemut, rattlerotmut, permut]
 
-for i, mut in enumerate([strainmut, softmut, rotmut, rattlemut, rattlerotmut]):
+for i, mut in enumerate(mutations):
     a = [a1, a2][i % 2]
     a3 = None
     while a3 is None:
