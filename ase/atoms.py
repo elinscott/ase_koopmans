@@ -16,7 +16,7 @@ import numpy as np
 
 import ase.units as units
 from ase.atom import Atom
-from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
+from ase.constraints import FixConstraint, FixBondLengths
 from ase.data import atomic_masses
 from ase.utils import basestring
 from ase.geometry import (wrap_positions, find_mic, cellpar_to_cell,
@@ -718,8 +718,6 @@ class Atoms(object):
             # to skip real constraints but include special "constraints"
             # Like Hookean.
             for constraint in self.constraints:
-                if md and hasattr(constraint, 'redistribute_forces_md'):
-                    constraint.redistribute_forces_md(forces)
                 if not md or hasattr(constraint, 'adjust_potential_energy'):
                     constraint.adjust_forces(self, forces)
         return forces
@@ -919,8 +917,7 @@ class Atoms(object):
         conadd = []
         # Constraints need to be deepcopied, but only the relevant ones.
         for con in copy.deepcopy(self.constraints):
-            if isinstance(con, (FixConstraint, FixBondLengths,
-                                FixLinearTriatomic)):
+            if isinstance(con, (FixConstraint, FixBondLengths)):
                 try:
                     con.index_shuffle(self, i)
                     conadd.append(con)

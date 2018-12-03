@@ -184,12 +184,11 @@ class EIQMMM(Calculator):
 
         self.embedding.update(shift)
 
-        qmenergy = self.qmatoms.get_potential_energy()
-        mmenergy = self.mmatoms.get_potential_energy()
-
         ienergy, iqmforces, immforces = self.interaction.calculate(
             self.qmatoms, self.mmatoms, shift)
 
+        qmenergy = self.qmatoms.get_potential_energy()
+        mmenergy = self.mmatoms.get_potential_energy()
         energy = ienergy + qmenergy + mmenergy
 
         print('Energies: {0:12.3f} {1:+12.3f} {2:+12.3f} = {3:12.3f}'
