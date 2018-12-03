@@ -49,7 +49,8 @@ class SiestaParameters(Parameters):
             atoms=None,
             restart=None,
             ignore_bad_restart_file=False,
-            fdf_arguments=None):
+            fdf_arguments=None,
+            atomic_coord_format='xyz'):
         kwargs = locals()
         kwargs.pop('self')
         Parameters.__init__(self, **kwargs)
@@ -127,7 +128,7 @@ class BaseSiesta(FileIOCalculator):
 
         # Put in the default arguments.
         parameters = self.default_parameters.__class__(**kwargs)
-
+        
         # Setup the siesta command based on number of nodes.
         command = os.environ.get('SIESTA_COMMAND')
         if command is None:
@@ -154,6 +155,7 @@ class BaseSiesta(FileIOCalculator):
             self,
             command=command,
             **parameters)
+        
 
     def __getitem__(self, key):
         """Convenience method to retrieve a parameter as
@@ -497,6 +499,22 @@ class BaseSiesta(FileIOCalculator):
             - f:     An open file object.
             - atoms: An atoms object.
         """
+        af = self.parameters.atomic_coord_format.lower()
+        if af=='xyz':
+            self._write_atomic_coordinates_xyz(f, atoms)
+        elif af=='zmatrix':
+            self._write_atomic_coordinates_zmatrix(f, atoms)
+        else:
+            raise RuntimeError('Unknown atomic_coord_format: {}'.format(af))			
+
+
+    def _write_atomic_coordinates_xyz(self, f, atoms):
+        """Write atomic coordinates.
+
+        Parameters:
+            - f:     An open file object.
+            - atoms: An atoms object.
+        """
         species, species_numbers = self.species(atoms)
         f.write('\n')
         f.write('AtomicCoordinatesFormat  Ang\n')
@@ -518,6 +536,61 @@ class BaseSiesta(FileIOCalculator):
             f.write('%endblock AtomicCoordinatesOrigin\n')
             f.write('\n')
 
+    def _write_atomic_coordinates_zmatrix(self, f, atoms):
+        """Write atomic coordinates in Z-matrix format.
+
+        Parameters:
+            - f:     An open file object.
+            - atoms: An atoms object.
+        """
+        species, species_numbers = self.species(atoms)
+        print(file=f)
+        print('ZM.UnitsLength   Ang', file=f)
+        print('%block Zmatrix', file=f)
+        print('  cartesian', file=f)
+        fstr = "{:5d}"+"{:20.10f}"*3+"{:3d}"*3+"{:7d} {:s}"
+        a2constr = self.make_xyz_constraints(atoms)
+        a2p,a2s = atoms.get_positions(), atoms.get_chemical_symbols()
+        for ia, (sp,xyz,ccc,sym) in enumerate(zip(species_numbers, a2p, a2constr, a2s)):
+          print(fstr.format(sp, *xyz, *ccc, ia+1, sym), file=f)
+        print('%endblock Zmatrix', file=f)
+
+        origin = tuple(-atoms.get_celldisp().flatten())
+        if any(origin):
+            f.write('%block AtomicCoordinatesOrigin\n')
+            f.write('     %.4f  %.4f  %.4f\n' % origin)
+            f.write('%endblock AtomicCoordinatesOrigin\n')
+            f.write('\n')
+
+    def make_xyz_constraints(self, atoms):
+       """ Create coordinate-resolved list of constraints [natoms, 0:3] 
+       The elements of the list must be integers 0 or 1
+         1 -- means that the coordinate will be updated during relaxation procedure
+         0 -- mains that the coordinate will be fixed during geometry relaxation
+       """
+       from ase.constraints import FixAtoms, FixedLine, FixedPlane
+       a = atoms
+       a2c = np.ones((len(a),3), dtype=int)
+       for c in a.constraints:
+         tc = type(c)
+         if tc==FixAtoms:
+           a2c[c.get_indices()] = 0
+         elif tc==FixedLine:
+           norm_dir = c.dir/np.linalg.norm(c.dir)
+           if (max(norm_dir)-1.0)>1e-6:
+             raise RuntimeError('norm_dir: {} -- must be one of the Cartesian axes...'.format(norm_dir))
+           a2c[c.a] = norm_dir.round().astype(int)
+         elif tc==FixedPlane:
+           norm_dir = c.dir/np.linalg.norm(c.dir)
+           if (max(norm_dir)-1.0)>1e-6:
+             raise RuntimeError('norm_dir: {} -- must be one of the Cartesian axes...'.format(norm_dir))
+           a2c[c.a] = abs(1-norm_dir.round().astype(int))
+         else:
+           print('Constraint is not implemented {} in {}'.format(str(c), __file__ ))
+           #raise RuntimeWarning('a')
+       return a2c
+
+    
     def _write_kpts(self, f):
         """Write kpts.
 
