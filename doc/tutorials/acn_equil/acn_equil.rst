@@ -7,20 +7,15 @@ In this tutorial we see how to perform a thermal equilibration of an MD
 box of classical acetonitrile molecules using the Langevin module and 
 the implementation of an acetonitrile force field in ASE.  
 
+The procedure we use for the equilibration closely follows the one 
+presented in the tutorial :ref:`TIPnP Water Box Equillibration`.  
+
 Since the TIPnP type water interpotentials are for rigid
 molecules, there are no intramolecular force terms, and we need to
 constrain all internal degrees of freedom. For this, we're
 using the RATTLE-type constraints of the :ref:`FixBondLengths` class to
 constrain all internal atomic distances (O-H1, O-H2, and H1-H2) for
 each molecule.
-
-The box is equillibrated with the Langevin thermostat.
-
-
-For efficiency, we first equillibrate a smaller box, and then repeat that
-once more for the final equillibration. However, the potentials are not
-parallelized, and are mainly included for testing and for use with QM/MM
-tasks, so expect to let it run for some time.
 
 .. literalinclude:: acn_equil.py
 

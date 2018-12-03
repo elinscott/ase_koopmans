@@ -42,13 +42,10 @@ atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
 
 # Create Langevin object 
 # The friction on the central atom must be zero 
-fr = np.zeros((len(atoms), 3))
-fr[::3] = 0.01
-fr[2::3] = 0.01
 md = Langevin(atoms, 1 * units.fs, 
               temperature=300 * units.kB,
               selectlinear=[],
-              friction=fr, 
+              friction=0.01, 
               logfile=tag + '.log')
 
 traj = Trajectory(tag + '.traj', 'w', atoms)
@@ -70,13 +67,10 @@ atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
 
 # Create Langevin object
 # The friction on the central atom must be zero
-fr = np.zeros((len(atoms), 3))
-fr[::3] = 0.01
-fr[2::3] = 0.01
 md = Langevin(atoms, 2 * units.fs,
               temperature=300 * units.kB,
               selectlinear=[],
-              friction=fr,
+              friction=0.01,
               logfile=tag + '.log')
 
 traj = Trajectory(tag + '.traj', 'w', atoms)
