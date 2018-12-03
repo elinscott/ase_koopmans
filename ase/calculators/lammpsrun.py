@@ -32,6 +32,7 @@ from re import compile as re_compile, IGNORECASE
 from tempfile import mkdtemp, NamedTemporaryFile, mktemp as uns_mktemp
 import numpy as np
 import inspect
+import warnings
 
 from ase import Atoms
 from ase.parallel import paropen
@@ -151,7 +152,7 @@ class LAMMPS(Calculator):
         '_custom_thermo_args': 'thermo_args'
     }
 
-    legacy_warn_string = "WARNING: you are using an "
+    legacy_warn_string = "you are using an "
     legacy_warn_string += "old syntax to set '{}'.\n         "
     legacy_warn_string += "Please use {}.set().".format(name.upper())
     
@@ -163,7 +164,7 @@ class LAMMPS(Calculator):
         if 'parameters' in kwargs:
             old_parameters = kwargs['parameters']
             if isinstance(old_parameters, dict):
-                print(self.legacy_warn_string.format('parameters'))
+                warnings.warn(self.legacy_warn_string.format('parameters'))
                 del kwargs['parameters']
         else:
             old_parameters = None
@@ -218,8 +219,6 @@ class LAMMPS(Calculator):
         # !TODO: remove and break somebody's code (e.g. the test examples)
         if key == 'parameters' and value is not None and \
           self.parameters is not None:
-            print(self.legacy_warn_string.format('parameters'))
-
             temp_dict = self.get_default_parameters()
             if self.parameters:
                 for l_key in self.legacy_parameters:
@@ -233,7 +232,7 @@ class LAMMPS(Calculator):
             print(self.legacy_warn_string.format(key))
             self.set(**{key: value})
         elif key in self.legacy_parameters_map:
-            print(self.legacy_warn_string.format(
+            warnings.warn(self.legacy_warn_string.format(
                 '{} for {}'.format(self.legacy_parameters_map[key], key)))
             self.set(**{self.legacy_parameters_map[key]: value})
         # Catch setting none-default attributes
@@ -349,8 +348,8 @@ class LAMMPS(Calculator):
             # below
             cell = 2 * np.max(np.abs(self.atoms.get_positions())) * np.eye(3)
         else:
-            print("WARNING: semi-periodic ASE cell detected - translation")
-            print("         to proper LAMMPS input cell might fail")
+            warnings.warn("semi-periodic ASE cell detected - translation "
+                          + "to proper LAMMPS input cell might fail")
             cell = self.atoms.get_cell()
         self.prism = Prism(cell)
             
