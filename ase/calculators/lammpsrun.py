@@ -353,7 +353,7 @@ class LAMMPS(Calculator):
             print("         to proper LAMMPS input cell might fail")
             cell = self.atoms.get_cell()
         self.prism = Prism(cell)
-        
+            
         self.set_missing_parameters()
         self.calls += 1
 
@@ -465,7 +465,7 @@ class LAMMPS(Calculator):
         self.results['energy'] = convert(tc['pe'], 'energy',
                                          self.parameters['units'], 'ASE')
         self.results['forces'] = self.forces.copy()
-        stress = np.array([tc[i] for i in ('pxx', 'pyy', 'pzz',
+        stress = -np.array([tc[i] for i in ('pxx', 'pyy', 'pzz',
                                            'pyz', 'pxz', 'pxy')])
         self.results['stress'] = convert(stress, 'pressure',
                                          self.parameters['units'], 'ASE')
