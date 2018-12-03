@@ -55,7 +55,7 @@ class ACN(Calculator):
     nolabel = True
     pcpot = None
 
-    def __init__(self, rc=5.0, width=1.0, md=True):
+    def __init__(self, rc=5.0, width=1.0):
         """Three-site potential for acetonitrile.
 
         References:
@@ -65,26 +65,21 @@ class ACN(Calculator):
         Atom sequence should be:
         MeCNMeCN ... MeCN or NCMeNCMe ... NCMe
 
-        When performing molecular dynamics (MD) propagation of rigid
-        acetonitrile, forces are redistributed and only Me and N sites
-        propagated based on a scheme for MD of rigid triatomic molecules
-        from Ciccotti et al. Molecular Physics 1982
-        (http://dx.doi.org/10.1080/00268978200100942). Use the class
-        FixLinearTriatomic in constraints.py to fix the geometry of the
-        acetonitrile molecules.
+        When performing molecular dynamics (MD), forces are redistributed
+        and only Me and N sites propagated based on a scheme for MD of
+        rigid triatomic molecules from Ciccotti et al. Molecular Physics
+        1982 (http://dx.doi.org/10.1080/00268978200100942). Apply constraints
+        using the FixLinearTriatomic to fix the geometry of the acetonitrile
+        molecules.
 
         rc: float
             Cutoff radius for Coulomb interactions.
         width: float
             Width for cutoff function for Coulomb interactions.
-        md: bool
-            If True forces will be redistributed for MD propagation.
-            Use False for geometry optimizations.
         """
         self.rc = rc
         self.width = width
         self.forces = None
-        self.md = md
         Calculator.__init__(self)
 
     def calculate(self, atoms=None,

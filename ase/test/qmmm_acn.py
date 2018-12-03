@@ -19,12 +19,12 @@ sigma = np.array([sigma_me, sigma_c, sigma_n])
 epsilon = np.array([epsilon_me, epsilon_c, epsilon_n])
 inter = LJInteractionsGeneral(sigma, epsilon, sigma, epsilon)
 
-for calc in [ACN(md=False),
-             SimpleQMMM([0, 1, 2], ACN(md=False), ACN(md=False), ACN(md=False)),
-             SimpleQMMM([0, 1, 2], ACN(md=False), ACN(md=False), ACN(md=False), vacuum=3.0),
-             EIQMMM([0, 1, 2], ACN(md=False), ACN(md=False), inter),
-             EIQMMM([0, 1, 2], ACN(md=False), ACN(md=False), inter, vacuum=3.0),
-             EIQMMM([3, 4, 5], ACN(md=False), ACN(md=False), inter, vacuum=3.0)]:
+for calc in [ACN(),
+             SimpleQMMM([0, 1, 2], ACN(), ACN(), ACN()),
+             SimpleQMMM([0, 1, 2], ACN(), ACN(), ACN(), vacuum=3.0),
+             EIQMMM([0, 1, 2], ACN(), ACN(), inter),
+             EIQMMM([0, 1, 2], ACN(), ACN(), inter, vacuum=3.0),
+             EIQMMM([3, 4, 5], ACN(), ACN(), inter, vacuum=3.0)]:
     dimer = Atoms('CCNCCN',
                   [(-r_mec, 0, 0),
                    (0, 0, 0),
