@@ -58,7 +58,6 @@ class Langevin(MolecularDynamics):
         self.rng = rng
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
                                    logfile, loginterval)
-
         self.updatevars()
 
     def todict(self):

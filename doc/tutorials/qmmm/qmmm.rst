@@ -25,7 +25,7 @@ the calculator for the QM subsystem.
 
 
 You might also be interested in the solvent MM potentials included in ASE.
-The tutorial on :ref:`TIPnP Water Box Equillibration` could be relevant to
+The tutorial on :ref:`tipnp water box equillibration` could be relevant to
 have a look at.
 
 
@@ -132,7 +132,7 @@ sampling or dynamics studies, these are the steps:
 QM/MM MD General Strategy for A QM complex in an MM solvent:
 
 1. Equillibrate an MM solvent box using one of the MM potentials built into
-   ASE (see :ref:`TIPnP Water Box Equillibration` for water potentials), one
+   ASE (see :ref:`tipnp water box equillibration` for water potentials), one
    of the compatible external MM codes, or write your own potential
    (see :ref:`Adding new calculators`)
 2. Optimize the gas-phase structure of your QM complex in GPAW, analyze what

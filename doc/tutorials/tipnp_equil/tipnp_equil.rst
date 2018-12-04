@@ -1,4 +1,4 @@
-.. _TIPnP Water Box Equillibration:
+.. _tipnp water box equillibration:
 
 Equilibrating A TIPnP Water Box
 ===============================

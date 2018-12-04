@@ -1,4 +1,4 @@
-.. _Acetonitrile MD Box Equilibration:
+.. _acetonitrile_md_box_equilibration:
 
 Equilibrating an MD box of acetonitrile
 =======================================
@@ -23,7 +23,7 @@ as is done for TIPnP water. Instead, we must use the class :class:`FixLinearTria
 
 
 The MD procedure we use for the equilibration closely follows the one 
-presented in the tutorial :ref:`TIPnP Water Box Equillibration`. A difference
+presented in the tutorial :ref:`tipnp water box equillibration`. A difference
 is represented by the specification of the keyword *selectlinear*, which is
 used to select molecules in the simulation box that are not linear triatomics. 
 In this case, since all acetonitrile molecules are linear triatomics *selectlinear*
