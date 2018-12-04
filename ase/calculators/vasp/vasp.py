@@ -31,7 +31,7 @@ from ase.utils import devnull, basestring
 
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.calculators.calculator import PropertyNotImplementedError
-from .create_input import GenerateVaspInput
+from .create_input import GenerateVaspInput, read_potcar_numbers_of_electrons
 
 
 class Vasp(GenerateVaspInput, Calculator):
@@ -263,15 +263,9 @@ class Vasp(GenerateVaspInput, Calculator):
         return self.read_default_number_of_electrons(filename)
 
     def read_default_number_of_electrons(self, filename='POTCAR'):
-        nelect = []
-        lines = open(filename).readlines()
-        for n, line in enumerate(lines):
-            if line.find('TITEL') != -1:
-                symbol = line.split('=')[1].split()[1].split('_')[0].strip()
-                valence = float(lines[n + 4].split(';')[1]
-                                .split('=')[1].split()[0].strip())
-                nelect.append((symbol, valence))
-        return nelect
+        file_obj = open(filename)
+        r = read_potcar_numbers_of_electrons(file_obj=file_obj)
+        return r
 
     def get_number_of_electrons(self):
         self.update(self.atoms)
@@ -754,7 +748,7 @@ class Vasp(GenerateVaspInput, Calculator):
             'magmoms': 'magnetic_moments'
         }
         property_getter = {
-            'energy':  {'function': 'get_potential_energy', 'args': [atoms]}, 
+            'energy':  {'function': 'get_potential_energy', 'args': [atoms]},
             'forces':  {'function': 'get_forces',           'args': [atoms]},
             'dipole':  {'function': 'get_dipole_moment',    'args': [atoms]},
             'fermi':   {'function': 'get_fermi_level',      'args': []},
