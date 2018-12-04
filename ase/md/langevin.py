@@ -70,7 +70,6 @@ class Langevin(MolecularDynamics):
         self.fixcm = fixcm  # will the center of mass be held fixed?
         self.communicator = communicator
         self.rng = rng
-
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
                                    logfile, loginterval)
 
@@ -136,7 +135,6 @@ class Langevin(MolecularDynamics):
         dt = self.dt
         T = self.temp
         fr = self.fr
-        print(fr)
         masses = self.masses
         sigma = np.sqrt(2 * T * fr / masses)
 
