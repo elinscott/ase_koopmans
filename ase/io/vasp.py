@@ -87,7 +87,7 @@ def get_atomtypes_from_formula(formula):
     """Return atom types from chemical formula (optionally prepended
     with and underscore).
     """
-    from ase.atoms import string2symbols
+    from ase.symbols import string2symbols
     symbols = string2symbols(formula.split('_')[0])
     atomtypes = [symbols[0]]
     for s in symbols[1:]:
@@ -332,7 +332,7 @@ def read_vasp_out(filename='OUTCAR', index=-1, force_consistent=False):
                 mag = np.array(magnetization, float)
                 images[-1].calc.magmoms = mag
                 images[-1].calc.results['magmoms'] = mag
-            if magmom:
+            if magmom is not None:
                 images[-1].calc.results['magmom'] = magmom
             atoms = Atoms(pbc=True, constraint=constr)
             poscount += 1
@@ -447,10 +447,14 @@ def __get_xml_parameter(par):
     # Float parameters do not have a 'type' attrib
     var_type = to_type[par.attrib.get('type', 'float')]
 
-    if par.tag == 'v':
-        return list(map(var_type, text.split()))
-    else:
-        return var_type(text.strip())
+    try:
+        if par.tag == 'v':
+            return list(map(var_type, text.split()))
+        else:
+            return var_type(text.strip())
+    except ValueError:
+        # Vasp can sometimes write "*****" due to overflow
+        return None
 
 
 def read_vasp_xml(filename='vasprun.xml', index=-1):
@@ -671,7 +675,8 @@ def read_vasp_xml(filename='vasprun.xml', index=-1):
 
 
 def write_vasp(filename, atoms, label='', direct=False, sort=None,
-               symbol_count=None, long_format=True, vasp5=False):
+               symbol_count=None, long_format=True, vasp5=False,
+               ignore_constraints=False):
     """Method to write VASP position (POSCAR/CONTCAR) files.
 
     Writes label, scalefactor, unitcell, # of various kinds of atoms,
@@ -707,7 +712,9 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
     else:
         coord = atoms.get_positions()
 
-    if atoms.constraints:
+    constraints = atoms.constraints and not ignore_constraints
+
+    if constraints:
         sflags = np.zeros((len(atoms), 3), dtype=bool)
         for constr in atoms.constraints:
             if isinstance(constr, FixScaled):
@@ -735,7 +742,7 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
         ind = np.argsort(atoms.get_chemical_symbols())
         symbols = np.array(atoms.get_chemical_symbols())[ind]
         coord = coord[ind]
-        if atoms.constraints:
+        if constraints:
             sflags = sflags[ind]
     else:
         symbols = atoms.get_chemical_symbols()
@@ -789,7 +796,7 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
         f.write(' %3i' % count)
     f.write('\n')
 
-    if atoms.constraints:
+    if constraints:
         f.write('Selective dynamics\n')
 
     if direct:
@@ -804,7 +811,7 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
     for iatom, atom in enumerate(coord):
         for dcoord in atom:
             f.write(cform % dcoord)
-        if atoms.constraints:
+        if constraints:
             for flag in sflags[iatom]:
                 if flag:
                     s = 'F'
