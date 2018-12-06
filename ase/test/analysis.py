@@ -1,7 +1,6 @@
 #test the geometry.analysis module
 import numpy as np
-from ase.geometry.analysis import *
-from ase.build import molecule
+from ase.geometry.analysis import Analysis
 from ase.build import molecule
 
 mol = molecule('CH3CH2OH')
