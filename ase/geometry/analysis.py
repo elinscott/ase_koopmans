@@ -1,10 +1,12 @@
 """Tools for analyzing instances of :class:`~ase.Atoms`
 """
 
-import numpy as np
 from ase.neighborlist import buildNeighborList, get_distance_matrix, get_distance_indices
 from ase.ga.utilities import get_rdf
 from ase import Atoms
+
+
+__all__ = ['Analysis']
 
 #memory-friendly iterator based zip for python2
 try:
@@ -409,7 +411,7 @@ class Analysis(object):
 
         Use :func:`get_values` to convert the returned list to values.
         """
-        from itertools import product, combinations, permutations
+        from itertools import product, combinations
         r = []
         for imI in range(len(self.all_angles)):
             r.append([])
@@ -633,7 +635,7 @@ class Analysis(object):
                 for idx in self._get_symbol_idxs(image, elements):
                     tmpImage.append(image[idx])
             #lists
-            elif isinstance(elements, list) or isinstace(elements, tuple):
+            elif isinstance(elements, list) or isinstance(elements, tuple):
                 #list of ints
                 if all(isinstance(x, int) for x in elements):
                     if len(elements) == 2:
