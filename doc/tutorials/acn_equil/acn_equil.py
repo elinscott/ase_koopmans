@@ -9,7 +9,6 @@ from ase.io import Trajectory
 import numpy as np
 
 
-# Set up acetonitrile box at 25 deg C density
 pos = [[0, 0, -r_mec],
        [0, 0, 0],
        [0, 0, r_cn]]
@@ -21,10 +20,12 @@ masses = atoms.get_masses()
 masses[::3] = m_me
 atoms.set_masses(masses)
 
-vol = ((masses.sum() / 6.022140857e23) / (0.776 / 1e24))**(1 / 3.)
-atoms.set_cell((vol, vol, vol))
+# Determine side length of a box with the density of acetonitrile at 298 K
+d = 0.776 / 1e24 # Density in g/Ang3 (https://pubs.acs.org/doi/10.1021/je00001a006)
+L = ((masses.sum() / ase.units.mol) / d)**(1 / 3.)
+# Set up box of 27 acetonitrile molecules  
+atoms.set_cell((L, L, L))
 atoms.center()
-
 atoms = atoms.repeat((3, 3, 3))
 atoms.set_pbc(True)
 
