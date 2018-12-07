@@ -22,7 +22,7 @@ atoms.set_masses(masses)
 
 # Determine side length of a box with the density of acetonitrile at 298 K
 d = 0.776 / 1e24 # Density in g/Ang3 (https://pubs.acs.org/doi/10.1021/je00001a006)
-L = ((masses.sum() / ase.units.mol) / d)**(1 / 3.)
+L = ((masses.sum() / units.mol) / d)**(1 / 3.)
 # Set up box of 27 acetonitrile molecules  
 atoms.set_cell((L, L, L))
 atoms.center()
