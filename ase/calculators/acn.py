@@ -28,13 +28,13 @@ m_c = atomic_masses[6]
 m_n = atomic_masses[7]
 
 
-def wrap(D, cell, pbc):
+def wrap(D, cd, pbc):
     """Wrap distances to nearest neighbor (minimum image convention)."""
     shift = np.zeros_like(D)
     for i, periodic in enumerate(pbc):
         if periodic:
             d = D[:, i]
-            L = cell[i]
+            L = cd[i]
             shift[:, i] = (d + L / 2) % L - L / 2 - d
     return shift
 
@@ -89,11 +89,11 @@ class ACN(Calculator):
 
         R = self.atoms.positions.reshape((-1, 3, 3))
         pbc = self.atoms.pbc
-        cell = self.atoms.cell.diagonal()
+        cd = self.atoms.cell.diagonal()
         nm = len(R)
 
-        assert (self.atoms.cell == np.diag(cell)).all(), 'not orthorhombic'
-        assert ((cell >= 2 * self.rc) | ~pbc).all(), 'cutoff too large'
+        assert (self.atoms.cell == np.diag(cd)).all(), 'not orthorhombic'
+        assert ((cd >= 2 * self.rc) | ~pbc).all(), 'cutoff too large'
 
         charges = self.get_virtual_charges(atoms[:3])
 
@@ -103,7 +103,7 @@ class ACN(Calculator):
         for m in range(nm - 1):
             Dmm = R[m + 1:, 1] - R[m, 1]
             # MIC PBCs
-            shift = wrap(Dmm, cell, pbc)
+            shift = wrap(Dmm, cd, pbc)
 
             # Smooth cutoff
             Dmm += shift
