@@ -28,7 +28,7 @@ class Cell:
             array = np.zeros((3, 3))
 
         if pbc is None:
-            pbc = np.zeros(3, bool)
+            pbc = np.ones(3, bool)
 
         # We could have lazy attributes for structure (bcc, fcc, ...)
         # and other things.  However this requires making the cell
