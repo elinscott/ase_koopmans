@@ -130,7 +130,7 @@ class FlexibleSqlite(SQLite3Database):
         from ase.db.sqlite import all_tables
         ignore = ['information', 'sqlite_sequence']
         names = self._get_tables_names()
-        return list(set(names) - set(all_tables) - set(ignore))
+        return set(names) - set(all_tables) - set(ignore)
 
     def _convert_tuple_to_row(self, values):
         """Convert tuples to row."""
