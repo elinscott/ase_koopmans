@@ -1,12 +1,11 @@
 from ase.db.sqlite import SQLite3Database
 from ase.parallel import parallel_function
 from ase.db.core import lock, Database
+from ase.db.row import AtomsRow
 
 class FlexibleSqlite(SQLite3Database):
     def _create_table_if_not_exists(self, name, entries):
-        """Huge data structures needs to be stored differently.
-           basically similar form as key_value_pairs
-        """
+        """Create a table if it does not exist."""
         con = self.connection or self._connect()
         cur = con.cursor()
         dtype = self._guess_type(entries)
@@ -78,6 +77,10 @@ class FlexibleSqlite(SQLite3Database):
     def write(self, atoms, key_value_pairs={}, data={}, id=None, **kwargs):
         extra_tables = kwargs.pop("tables", {})
         extra_tables.update(key_value_pairs.pop("tables", {}))
+
+        # We need to remove the extra tables if atoms is AtomsRow instance
+        if isinstance(atoms, AtomsRow):
+            extra_tables.update(atoms.__dict__.pop("tables"))
         uid = Database.write(self, atoms, key_value_pairs=key_value_pairs, data=data, id=id, **kwargs)
         self._insert_external_tables(extra_tables, uid)
         return uid
