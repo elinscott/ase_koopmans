@@ -81,7 +81,9 @@ class FlexibleSqlite(SQLite3Database):
         # We need to remove the extra tables if atoms is AtomsRow instance
         if isinstance(atoms, AtomsRow):
             for name in self.get_external_table_names():
-                extra_tables.update(atoms.__dict__.pop(name))
+                new_table = atoms.__dict__.pop(name, {})
+                if new_table:
+                    extra_tables.update({name: new_table})
         uid = Database.write(self, atoms, key_value_pairs=key_value_pairs, data=data, id=id, **kwargs)
         self._insert_external_tables(extra_tables, uid)
         return uid
@@ -149,7 +151,7 @@ class FlexibleSqlite(SQLite3Database):
 
     def _delete(self, cur, ids, tables=None):
         from ase.db.sqlite import all_tables
-        default_tables = all_tables[::-1] + self.get_external_table_names()
+        default_tables = all_tables[::-1] + list(self.get_external_table_names())
         tables = tables or default_tables
         SQLite3Database._delete(self, cur, ids, tables=tables)
         

@@ -38,8 +38,7 @@ def read_write_table():
 
     db.write(atoms, tables={"test_table": {"some_col": 1.0}})
     external = db.get_external_table_names()
-    external.sort()
-    assert external == ["test_table", "thermo"]
+    assert external == set(["test_table", "thermo"])
 
     row = db.get(id=2)
     for k, v in thermo.items():
@@ -74,8 +73,36 @@ def read_write_table():
             db.write(atoms, tables={"thermo1": thermo, "thermo2": thermo2})
     os.remove(db_name)
 
+
+def write_atoms_row():
+    db_name = "write_atoms_row.db"
+    db = connect(db_name, type="flexsqlite")
+    
+    atoms = bulk("Ta")*(4, 4, 4)
+    uid = db.write(atoms, tables={"some_table": {"val1": 0.0, "val2": 1.0}})
+
+    # Retrieve the row from the database
+    row = db.get(id=uid)
+
+    # Hack: Update the __dict__ entry of the row
+    row.__dict__["some_table"]["val2"] = 6.0
+    row.__dict__["unique_id"] = "1e45a76"
+
+
+    # Update the database
+    uid = db.write(row)
+
+    # Again get the row and verify that the table
+    # has to updated values
+    row2 = db.get(id=uid)
+    assert abs(row2["some_table"]["val1"]) < 1E-6
+    assert abs(row2["some_table"]["val2"] - 6.0) < 1E-6
+    os.remove(db_name)
+
+
 read_write_no_tables()
 read_write_table()
+write_atoms_row()
 
 
 
