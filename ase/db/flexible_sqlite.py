@@ -80,6 +80,7 @@ class FlexibleSqlite(SQLite3Database):
         extra_tables.update(key_value_pairs.pop("tables", {}))
         uid = Database.write(self, atoms, key_value_pairs=key_value_pairs, data=data, id=id, **kwargs)
         self._insert_external_tables(extra_tables, uid)
+        return uid
 
     def _insert_external_tables(self, tables, uid):
         """Insert the external tables to the database."""
