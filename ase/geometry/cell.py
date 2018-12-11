@@ -21,7 +21,7 @@ class Cell:
 
     # This overridable variable tells an Atoms object whether atoms.cell
     # and atoms.get_cell() should be a Cell object or an array.
-    _atoms_use_cellobj = bool(os.environ.get('ASE_DEBUG_CELLOBJ'))
+    _atoms_use_cellobj = 1#bool(os.environ.get('ASE_DEBUG_CELLOBJ'))
 
     def __init__(self, array=None, pbc=None):
         if array is None:
@@ -67,8 +67,8 @@ class Cell:
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
         return Cell(cell)
 
-    def crystal_structure(self, eps=2e-4, niggli_reduce=True):
-        return crystal_structure_from_cell(self.array, eps, niggli_reduce)
+    #def crystal_structure(self, eps=2e-4, niggli_reduce=True):
+    #    return crystal_structure_from_cell(self.array, eps, niggli_reduce)
 
     def complete(self):
         """Convert missing cell vectors into orthogonal unit vectors."""
@@ -99,14 +99,16 @@ class Cell:
         return self.array.any(1).sum()
 
     @property
-    def is_orthorhombic(self):
-        return is_orthorhombic(self.array)
+    def orthorhombic(self):
+        return orthorhombic(self.array)
 
     @property
     def ndim(self):
         return self.array.ndim
 
     def box(self):
+        """Return cell lengths if orthorhombic, else raise ValueError."""
+        # XXX More intelligent name for thos method?
         return orthorhombic(self.array)
 
     def __array__(self, dtype=float):
@@ -160,29 +162,29 @@ class Cell:
         cell, _ = niggli_reduce_cell(self.array)
         return Cell(cell)
 
-    def bandpath(self, path, npoints=50):
-        from ase.dft.kpoints import bandpath, BandPath
-        objs = bandpath(path, self.array, npoints=npoints)
-        return BandPath(*objs, names=path)
+    #def bandpath(self, path, npoints=50):
+    #    from ase.dft.kpoints import bandpath, BandPath
+    #    objs = bandpath(path, self.array, npoints=npoints)
+    #    return BandPath(*objs, names=path)
 
-    def special_points(self, eps=2e-4):
-        from ase.dft.kpoints import get_special_points
-        return get_special_points(self.array, eps=eps)
+    #def special_points(self, eps=2e-4):
+    #    from ase.dft.kpoints import get_special_points
+    #    return get_special_points(self.array, eps=eps)
 
-    def special_paths(self, eps=2e-4):
-        from ase.dft.kpoints import special_paths
-        structure = self.crystal_structure(eps=eps)
-        pathstring = special_paths[structure]
-        paths = pathstring.split(',')
-        return paths
+    #def special_paths(self, eps=2e-4):
+    #    from ase.dft.kpoints import special_paths
+    #    structure = self.crystal_structure(eps=eps)
+    #    pathstring = special_paths[structure]
+    #    paths = pathstring.split(',')
+    #    return paths
 
-    def bravais(self, eps=2e-4):
-        """Get bravais lattice and lattice parameters as (lattice, par).
+    #def bravais_type(self, eps=2e-4):
+    #    """Get bravais lattice and lattice parameters as (lattice, par).
 
-        lattice, par = uc.bravais()
-        print(uc.cellpar())
-        print(lattice(**par).cellpar())"""
-        return get_bravais_lattice(self, eps=eps)
+    #    lattice, par = uc.bravais()
+    #    print(uc.cellpar())
+    #    print(lattice(**par).cellpar())"""
+    #    return get_bravais_lattice(self, eps=eps)
 
 
 def unit_vector(x):
