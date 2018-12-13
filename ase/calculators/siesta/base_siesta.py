@@ -544,16 +544,16 @@ class BaseSiesta(FileIOCalculator):
             - atoms: An atoms object.
         """
         species, species_numbers = self.species(atoms)
-        print(file=f)
-        print('ZM.UnitsLength   Ang', file=f)
-        print('%block Zmatrix', file=f)
-        print('  cartesian', file=f)
-        fstr = "{:5d}"+"{:20.10f}"*3+"{:3d}"*3+"{:7d} {:s}"
+        f.write('\n')
+        f.write('ZM.UnitsLength   Ang\n')
+        f.write('%block Zmatrix\n')
+        f.write('  cartesian\n')
+        fstr = "{:5d}"+"{:20.10f}"*3+"{:3d}"*3+"{:7d} {:s}\n"
         a2constr = self.make_xyz_constraints(atoms)
         a2p,a2s = atoms.get_positions(), atoms.get_chemical_symbols()
         for ia, (sp,xyz,ccc,sym) in enumerate(zip(species_numbers, a2p, a2constr, a2s)):
-          print(fstr.format(sp, *xyz, *ccc, ia+1, sym), file=f)
-        print('%endblock Zmatrix', file=f)
+          f.write(fstr.format(sp, *xyz, *ccc, ia+1, sym))
+        f.write('%endblock Zmatrix\n')
 
         origin = tuple(-atoms.get_celldisp().flatten())
         if any(origin):
