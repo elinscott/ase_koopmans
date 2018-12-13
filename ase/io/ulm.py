@@ -101,14 +101,14 @@ def writeint(fd, n, pos=None):
         fd.seek(pos)
     a = np.array(n, np.int64)
     if not np.little_endian:
-        a.byteswap(True)
+        a = a.byteswap()
     fd.write(a.tobytes())
 
 
 def readints(fd, n):
     a = np.frombuffer(fd.read(int(n * 8)), dtype=np.int64, count=n)
     if not np.little_endian:
-        a.byteswap(True)
+        a = a.byteswap()
     return a
 
 
@@ -166,7 +166,7 @@ class Writer:
                 # File format identifier and other stuff:
                 a = np.array([VERSION, self.nitems, self.pos0], np.int64)
                 if not np.little_endian:
-                    a.byteswap(True)
+                    a = a.byteswap()
                 self.header = ('- of Ulm{0:16}'.format(tag).encode('ascii') +
                                a.tostring() +
                                self.offsets.tostring())
@@ -553,7 +553,7 @@ class NDArrayReader:
         if step != 1:
             a = a[::step].copy()
         if self.little_endian != np.little_endian:
-            a.byteswap(True)
+            a = a.byteswap()
         if self.length_of_last_dimension is not None:
             a = a[..., :self.length_of_last_dimension]
         if self.scale != 1.0:
