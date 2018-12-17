@@ -13,7 +13,7 @@ Git master branch
 
 * NWChem calculator now supports TDDFT runs.
   
-* The genetic algorithm module :mod:`ase.ga` now supports bulk structures. See 
+* The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`_ga_bulk_tutorial.`.
 
 Version 3.17.0
 ==============
