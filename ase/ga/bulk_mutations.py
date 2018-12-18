@@ -33,14 +33,23 @@ class StrainMutation(OffspringCreator):
 
     def __init__(self, blmin, cellbounds=None, stddev=0.7, use_tags=False,
                  verbose=False):
-        """ Parameters:
-        blmin: dict with the minimal interatomic distances
+        """
+        Parameters
+        ----------
+
+        blmin: dict
+            Containing the minimal interatomic distances
+
         cellbounds: ase.ga.bulk_utilities.CellBounds instance
-                    describing limits on the cell shape
-        stddev: standard deviation used in the generation of the strain
-                matrix elements
-        use_tags: whether to use the atomic tags to preserve
-                  molecular identity.
+            describing limits on the cell shape
+
+        stddev: float
+            standard deviation used in the generation of the
+            strain matrix elements
+
+        use_tags: boolean
+            whether to use the atomic tags to preserve molecular identity.
+
         """
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
@@ -183,6 +192,7 @@ class PermuStrainMutation(OffspringCreator):
 class TagFilter:
     ''' Filter which constrains same-tag atoms to behave
         like internally rigid moieties '''
+
     def __init__(self, atoms):
         self.atoms = atoms
         gather_atoms_by_tag(self.atoms)
@@ -231,6 +241,7 @@ class TagFilter:
 class PairwiseHarmonicPotential:
     ''' Parent class for interatomic potentials of the type
         E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2 '''
+
     def __init__(self, atoms, rcut=10.):
         self.atoms = atoms
         self.pos0 = atoms.get_positions()
@@ -297,6 +308,7 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
         Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32
         Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103
     '''
+
     def calculate_force_constants(self):
         cell = self.atoms.get_cell()
         pos = self.atoms.get_positions()
