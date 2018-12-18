@@ -144,6 +144,10 @@ class Cell:
     def reciprocal(self):
         return np.linalg.pinv(self.array).transpose()
 
+    def lattice_type(self, eps=2e-4):
+        from ase.crystal_info import analyse_cell
+        return analyse_cell(self, eps=eps)
+
     def __repr__(self):
         if self.is_orthorhombic:
             numbers = self.box().tolist()
@@ -370,6 +374,81 @@ class Bravais:
         return '{}({}{})'.format(self.__class__.__name__,
                                  self.type,
                                  self.varnames)
+
+
+class BravaisLattice:
+    def __init__(self, name, varnames, variants):
+        self._name = name
+        self._varnames = varnames
+        self._variants = {}
+
+        for name, pointnames, paths in variants:
+            variant = Variant(name, pointnames, paths)
+            self._variants[name] = variant
+
+    @property
+    def variants(self):
+        return dict(self._variants)
+
+    @property
+    def type(self):
+        return self.__class__.__name__
+
+    @property
+    def varnames(self):
+        return self._varnames
+
+    @property
+    def name(self):
+        return self._name
+
+from collections import namedtuple
+#class Variant(namedtuple()
+#Variant = namedtuple()
+
+Variant = namedtuple('Variant', ['name', 'special_point_names',
+                                 'special_paths'])
+
+
+class bct(BravaisLattice):
+    def __init__(self):
+        BravaisLattice.__init__(
+            self, 'tetragonal', ('a', 'c'),
+            [['bct1', 'GMNPXSS1', 'GXMGSPNS1M XP'],
+             ['bct2', 'GNPSS1XYY1Z', 'GXYSGZS1NPY1Z XP']])
+
+    def __call__(self, a, c):
+        return np.diag(np.array([a, a, c]))
+
+    def get_variant(self, a, c):
+        return self._variants['bct1' if c < a else 'bct2']
+
+    def get_special_points(self, a, c):
+        a2 = a * a
+        c2 = c * c
+        eta = .25 * (1 + c2 / a2)
+
+        variant = self.get_variant(a, c)
+        if variant.name == 'bct1':
+            points = [[0,0,0],
+                      [-.5, .5, .5],
+                      [0.,.5,0.],
+                      [.25, .25, .25],
+                      [0.,0.,.5],
+                      [eta,eta,-eta],
+                      [-eta,1-eta,eta]]
+        else:
+            points = [[0.,.0,0.],
+                      [0.,.5,0.],
+                      [.25,.25,.25],
+                      [-eta,eta,eta],
+                      [eta,1-eta,-eta],
+                      [0.,0.,.5],
+                      [-zeta,zeta,.5],
+                      [.5,.5,-zeta],
+                      [.5,.5,-.5]]
+        assert len(points) == len(variant.special_point_names)
+        return points
 
 
 bravais = {}
