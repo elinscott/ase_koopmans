@@ -47,3 +47,4 @@ def relax_one(atoms, cellbounds=None):
     f = atoms.get_forces()
     s = atoms.get_stress()
     finalize(atoms, energy=e, forces=f, stress=s)
+    print('in relax', atoms.calc)
