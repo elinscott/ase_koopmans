@@ -28,9 +28,11 @@ Run the GA search
 Now we run the search
 
 
+
 All the operators
 -----------------
 
-.. autoclass:: ase.ga.bulk_mutations
-    :members:
+.. autoclass:: ase.ga.bulk_mutations.StrainMutation
+.. autoclass:: ase.ga.bulk_mutations.SoftMutation
+              
                   

@@ -11,7 +11,8 @@ blocks = [('Ag', 24)]  # the building blocks
 volume = 10. * 24  # cell volume in angstrom^3
 splits = {(4,): 1, (2,): 1}  # cell splitting scheme
 
-stoichiometry = [atomic_numbers[b[0]] * b[1] for b in blocks]
+stoichiometry = [atomic_numbers[atom] for atom, count in blocks
+                 for _ in range(count)]
 atom_numbers = list(set(stoichiometry))
 
 blmin = closest_distances_generator(atom_numbers=atom_numbers,
@@ -27,7 +28,8 @@ sg = StartGenerator(blocks, blmin, volume, cellbounds=cellbounds,
                     splits=splits)
 
 # create the database to store information in
-da = PrepareDB(db_file_name='gadb.db', stoichiometry=stoichiometry)
+da = PrepareDB(db_file_name='gadb.db',
+               stoichiometry=stoichiometry)
 
 for i in range(N):
     a = sg.get_new_candidate()
