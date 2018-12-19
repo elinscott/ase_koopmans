@@ -18,9 +18,9 @@ atom_numbers = list(set(stoichiometry))
 blmin = closest_distances_generator(atom_numbers=atom_numbers,
                                     ratio_of_covalent_radii=0.5)
 
-cellbounds = CellBounds(bounds={'phi': [0.2 * np.pi, 0.8 * np.pi],
-                                'chi': [0.2 * np.pi, 0.8 * np.pi],
-                                'psi': [0.2 * np.pi, 0.8 * np.pi],
+cellbounds = CellBounds(bounds={'phi': [35, 145],
+                                'chi': [35, 145],
+                                'psi': [35, 145],
                                 'a': [3, 50], 'b': [3, 50], 'c': [3, 50]})
 
 # create the starting population
