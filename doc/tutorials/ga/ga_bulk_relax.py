@@ -27,7 +27,10 @@ def relax_one(atoms, cellbounds=None):
             if not cellbounds.is_within_bounds(atoms.get_cell()):
                 niggli_reduce(atoms)
             if not cellbounds.is_within_bounds(atoms.get_cell()):
-                raise RuntimeError('Niggli reduction did not work; aborting')
+                # Niggli reduction did not work; this candidate should
+                # be discarded so we set an absurdly high energy
+                finalize(atoms, 1e9)
+                return
 
         try:
             calc = EMT()
@@ -47,4 +50,3 @@ def relax_one(atoms, cellbounds=None):
     f = atoms.get_forces()
     s = atoms.get_stress()
     finalize(atoms, energy=e, forces=f, stress=s)
-    print('in relax', atoms.calc)

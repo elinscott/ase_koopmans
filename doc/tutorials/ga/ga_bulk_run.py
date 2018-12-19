@@ -54,13 +54,12 @@ while da.get_number_of_unrelaxed_candidates() > 0:
     a = da.get_an_unrelaxed_candidate()
     scaled_pos = a.get_scaled_positions(wrap=True)
     a.set_scaled_positions(scaled_pos)
-    try:
-        relax_one(a, cellbounds=cb_check)
-    except Exception as err:
-        print('Exception:', err)
-        sys.stdout.flush()
-        set_raw_score(a, -1e9)
-    print(a.calc)
+
+    relax_one(a, cellbounds=cb_check)
+    # except Exception as err:
+    #     print('Exception:', err)
+    #     sys.stdout.flush()
+    #     set_raw_score(a, -1e9)
     da.add_relaxed_step(a)
     if not cb_check.is_within_bounds(a.get_cell()):
         da.kill_candidate(a.info['confid'])
