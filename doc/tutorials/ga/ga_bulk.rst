@@ -20,19 +20,27 @@ and has much the same functionality as USPEX by Oganov and coworkers.
 Initial population
 ==================
 
+The following script (:download:`ga_bulk_start.py`) creates the initial population.
+
 .. literalinclude:: ga_bulk_start.py
 
 Run the GA search
 =================
 
-Now we run the search
+Now we run the search (:download:`ga_bulk_run.py`)
 
+.. literalinclude:: ga_bulk_run.py
 
+Where we import the relaxation function from :download:`ga_bulk_relax.py`
 
-All the operators
------------------
+All the bulk operators
+----------------------
 
 .. autoclass:: ase.ga.bulk_mutations.StrainMutation
 .. autoclass:: ase.ga.bulk_mutations.SoftMutation
-              
-                  
+
+
+All the helper functions
+------------------------
+
+.. autoclass:: ase.ga.bulk_utilities.CellBounds
