@@ -1,5 +1,3 @@
-import numpy as np
-
 from ase.data import atomic_numbers
 from ase.ga.utilities import closest_distances_generator
 from ase.ga.bulk_utilities import CellBounds
