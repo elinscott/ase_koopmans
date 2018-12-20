@@ -46,7 +46,8 @@ stoichiometry.
 Initial population
 ==================
 
-The following script (:download:`ga_bulk_start.py`) creates the initial population.
+The following script (:download:`ga_bulk_start.py`) creates a :file:`gadb.db`
+database containing 20 randomly generated initial structures.
 
 .. literalinclude:: ga_bulk_start.py
 
