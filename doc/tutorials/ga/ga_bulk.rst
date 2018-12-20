@@ -16,6 +16,32 @@ The implementation is based on:
    
 and has much the same functionality as USPEX by Oganov and coworkers.
 
+What sets crystal structure searches apart from other global optimization
+problems, is that typically the cell vectors need to be treated as additional
+degrees of freedom (in addition to the atomic coordinates). This results in
+the following 'bulk GA'-specific functionality:
+
+* Generating random structures now also involves randomized unit cell vectors.
+
+* Cut-and-splice pairing needs to be done using scaled coordinates and
+  includes a random combination of the two parent unit cells.
+
+* A 'strain' mutation applies a random deformation of the parent unit cell,
+  similar to how the 'rattle' mutation acts on the atomic coordinates.
+
+* In a 'permustrain' mutation, atoms from different elements are swapped
+  in addition to the 'strain' mutation.
+
+* A 'soft' mutation displaces the atoms along a low-frequency vibrational
+  mode obtained via e.g. a simple harmonic bond model.
+
+
+As an example, we will search for the most energetically stable :mol:`Ag_2_4`
+polymorphs using an EMT potential. Note that, in general, the number of atoms
+per unit cell should be chosen carefully, as one will only find crystal structures
+where the stoichiometry of the primitive cell is a divisor of the chosen
+stoichiometry.
+
 
 Initial population
 ==================
@@ -32,6 +58,8 @@ Now we run the search (:download:`ga_bulk_run.py`)
 .. literalinclude:: ga_bulk_run.py
 
 Where we import the relaxation function from :download:`ga_bulk_relax.py`
+
+
 
 All the bulk operators
 ----------------------
