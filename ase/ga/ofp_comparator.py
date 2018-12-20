@@ -141,7 +141,7 @@ class OFPComparator(object):
         """ This is the reverse operation of _json_encode """
         fingerprints_decoded = {}
         for key, val in fingerprints.items():
-            newkey = map(int, key.split("_"))
+            newkey = list(map(int, key.split("_")))
             if len(newkey) > 1:
                 newkey = tuple(newkey)
             else:

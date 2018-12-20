@@ -33,14 +33,24 @@ class StrainMutation(OffspringCreator):
 
     def __init__(self, blmin, cellbounds=None, stddev=0.7, use_tags=False,
                  verbose=False):
-        """ Parameters:
-        blmin: dict with the minimal interatomic distances
+        """
+        Parameters:
+
+        blmin: dict
+            The closest allowed interatomic distances on the form:
+            {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers
+
         cellbounds: ase.ga.bulk_utilities.CellBounds instance
-                    describing limits on the cell shape
-        stddev: standard deviation used in the generation of the strain
-                matrix elements
-        use_tags: whether to use the atomic tags to preserve
-                  molecular identity.
+            Describing limits on the cell shape, see
+            :class:`~ase.ga.bulk_utilities.CellBounds`
+
+        stddev: float
+            standard deviation used in the generation of the
+            strain matrix elements
+
+        use_tags: boolean
+            whether to use the atomic tags to preserve molecular identity.
+
         """
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
@@ -183,6 +193,7 @@ class PermuStrainMutation(OffspringCreator):
 class TagFilter:
     ''' Filter which constrains same-tag atoms to behave
         like internally rigid moieties '''
+
     def __init__(self, atoms):
         self.atoms = atoms
         gather_atoms_by_tag(self.atoms)
@@ -231,6 +242,7 @@ class TagFilter:
 class PairwiseHarmonicPotential:
     ''' Parent class for interatomic potentials of the type
         E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2 '''
+
     def __init__(self, atoms, rcut=10.):
         self.atoms = atoms
         self.pos0 = atoms.get_positions()
@@ -297,6 +309,7 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
         Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32
         Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103
     '''
+
     def calculate_force_constants(self):
         cell = self.atoms.get_cell()
         pos = self.atoms.get_positions()
@@ -351,27 +364,42 @@ class SoftMutation(OffspringCreator):
                  used_modes_file='used_modes.json', use_tags=False,
                  verbose=False):
         '''
-        blmin: dictionary with closest allowed interatomic distances.
-        bounds: lower and upper limits (in Angstrom) for the largest
-                atomic displacement in the structure. For a given mode,
-                the algorithm starts at zero amplitude and increases
-                it until either blmin is violated or the largest
-                displacement exceeds the provided upper bound).
-                If the largest displacement in the resulting structure
-                is lower than the provided lower bound, the mutant is
-                considered too similar to the parent and None is
-                returned.
-        calculator: the calculator to be used in the vibrational
-                    analysis. The default is to use a calculator
-                    based on pairwise harmonic potentials with force
-                    constants from the "bond electronegativity"
-                    model described in the reference above.
-        rcut: cutoff radius for the pairwise harmonic potentials.
-        used_modes_file: name of json dump file where previously used
-                  modes will be stored (and read). If None, no such
-                  file will be used.
-        use_tags: whether to use the atomic tags to preserve
-                  molecular identity.
+        Parameters:
+
+        blmin: dict
+            The closest allowed interatomic distances on the form:
+            {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers
+
+        bounds: list
+            Lower and upper limits (in Angstrom) for the largest
+            atomic displacement in the structure. For a given mode,
+            the algorithm starts at zero amplitude and increases
+            it until either blmin is violated or the largest
+            displacement exceeds the provided upper bound).
+            If the largest displacement in the resulting structure
+            is lower than the provided lower bound, the mutant is
+            considered too similar to the parent and None is
+            returned.
+
+        calculator: ASE calculator object
+            The calculator to be used in the vibrational
+            analysis. The default is to use a calculator
+            based on pairwise harmonic potentials with force
+            constants from the "bond electronegativity"
+            model described in the reference above. Any calculator with
+            a working `get_forces` method will work.
+
+        rcut: float
+            Cutoff radius for the pairwise harmonic potentials.
+
+        used_modes_file: str or None
+            Name of json dump file where previously used
+            modes will be stored (and read). If None, no such
+            file will be used. Default is to use the filename 'used_modes.json'
+
+        use_tags: boolean
+            Specifies whether to use the atomic tags to preserve
+            molecular identity.
         '''
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
