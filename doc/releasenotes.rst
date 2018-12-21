@@ -9,8 +9,9 @@ Git master branch
 
 :git:`master <>`.
 
-* No changes yet
+* Multiple improvements to the ONETEP Calculator. Input files can now be written that specify LDOS, bsunfolding and many other functionalities.
 
+* NWChem calculator now supports TDDFT runs.
 
 Version 3.17.0
 ==============
@@ -710,8 +711,7 @@ Version 3.5.1
 
 24 May 2011: :git:`3.5.1 <../3.5.1>`.
 
-* Problem with parallel vibration calculations fixed:
-  `Ticket #80 <https://trac.fysik.dtu.dk/projects/ase/ticket/80>`_.
+* Problem with parallel vibration calculations fixed.
 
 
 Version 3.5.0
