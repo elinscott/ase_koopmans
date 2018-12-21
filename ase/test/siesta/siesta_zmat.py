@@ -10,6 +10,7 @@ from ase import Atoms
 test_path = 'tmp_siesta'
 if not os.path.exists(test_path): os.makedirs(test_path)
 os.chdir(test_path)
+
 run_path = 'run_directory'
 pseudo_path = 'pseudos'
 if not os.path.exists(pseudo_path): os.makedirs(pseudo_path)
@@ -36,9 +37,9 @@ siesta = Siesta(
     label='test_label',
     atomic_coord_format='zmatrix',
     fdf_arguments={
-      'MD.TypeOfRun': 'CG', 
-      'MD.NumCGsteps': 1000
-      })
+        'MD.TypeOfRun': 'CG', 
+        'MD.NumCGsteps': 1000
+        })
 
 atoms.set_calculator(siesta)
 
@@ -59,8 +60,6 @@ assert any([line.split()[4:9] == ['0', '0', '0', '1', 'C'] for line in lines])
 assert any([line.split()[4:9] == ['0', '1', '0', '2', 'O'] for line in lines])
 assert any([line.split()[4:9] == ['0', '1', '1', '3', 'O'] for line in lines])
 
-#for s in lsl:  print(s)
-  
 
 # Remove the test directory.
 os.chdir('../..')

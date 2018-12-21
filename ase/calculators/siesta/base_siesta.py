@@ -548,14 +548,14 @@ class BaseSiesta(FileIOCalculator):
         f.write('ZM.UnitsLength   Ang\n')
         f.write('%block Zmatrix\n')
         f.write('  cartesian\n')
-        fstr = "{:5d}"+"{:20.10f}"*3+"{:3d}"*3+"{:7d} {:s}\n"
+        fstr = "{:5d}" + "{:20.10f}" * 3 + "{:3d}" * 3 + "{:7d} {:s}\n"
         a2constr = self.make_xyz_constraints(atoms)
         a2p,a2s = atoms.get_positions(), atoms.get_chemical_symbols()
         for ia, (sp,xyz,ccc,sym) in enumerate(zip(species_numbers, a2p, a2constr, a2s)):
-          f.write(fstr.format(sp, *xyz, *ccc, ia+1, sym))
+            f.write(fstr.format(sp, *xyz, *ccc, ia+1, sym))
         f.write('%endblock Zmatrix\n')
 
-        origin = tuple(-atoms.get_celldisp().flatten())
+        origin = tuple( -atoms.get_celldisp().flatten() )
         if any(origin):
             f.write('%block AtomicCoordinatesOrigin\n')
             f.write('     %.4f  %.4f  %.4f\n' % origin)
@@ -563,32 +563,32 @@ class BaseSiesta(FileIOCalculator):
             f.write('\n')
 
     def make_xyz_constraints(self, atoms):
-       """ Create coordinate-resolved list of constraints [natoms, 0:3] 
-       The elements of the list must be integers 0 or 1
-         1 -- means that the coordinate will be updated during relaxation procedure
-         0 -- mains that the coordinate will be fixed during geometry relaxation
-       """
-       from ase.constraints import FixAtoms, FixedLine, FixedPlane
-       a = atoms
-       a2c = np.ones((len(a),3), dtype=int)
-       for c in a.constraints:
-         tc = type(c)
-         if tc==FixAtoms:
-           a2c[c.get_indices()] = 0
-         elif tc==FixedLine:
-           norm_dir = c.dir/np.linalg.norm(c.dir)
-           if (max(norm_dir)-1.0)>1e-6:
-             raise RuntimeError('norm_dir: {} -- must be one of the Cartesian axes...'.format(norm_dir))
-           a2c[c.a] = norm_dir.round().astype(int)
-         elif tc==FixedPlane:
-           norm_dir = c.dir/np.linalg.norm(c.dir)
-           if (max(norm_dir)-1.0)>1e-6:
-             raise RuntimeError('norm_dir: {} -- must be one of the Cartesian axes...'.format(norm_dir))
-           a2c[c.a] = abs(1-norm_dir.round().astype(int))
-         else:
-           print('Constraint is not implemented {} in {}'.format(str(c), __file__ ))
-           #raise RuntimeWarning('a')
-       return a2c
+        """ Create coordinate-resolved list of constraints [natoms, 0:3] 
+        The elements of the list must be integers 0 or 1
+          1 -- means that the coordinate will be updated during relaxation procedure
+          0 -- mains that the coordinate will be fixed during geometry relaxation
+        """
+        from ase.constraints import FixAtoms, FixedLine, FixedPlane
+        import warnings, sys
+        
+        a = atoms
+        a2c = np.ones((len(a), 3), dtype = int)
+        for c in a.constraints:
+            if isinstance(c, FixAtoms):
+                a2c[c.get_indices()] = 0
+            elif isinstance(c, FixedLine):
+                norm_dir = c.dir / np.linalg.norm(c.dir)
+                if ( max(norm_dir) - 1.0 ) > 1e-6:
+                    raise RuntimeError('norm_dir: {} -- must be one of the Cartesian axes...'.format(norm_dir))
+                a2c[c.a] = norm_dir.round().astype(int)
+            elif isinstance(c, FixedPlane):
+                norm_dir = c.dir / np.linalg.norm(c.dir)
+                if ( max(norm_dir) - 1.0 ) > 1e-6:
+                    raise RuntimeError('norm_dir: {} -- must be one of the Cartesian axes...'.format(norm_dir))
+                a2c[c.a] = abs( 1 - norm_dir.round().astype(int) )
+            else:
+                warnings.warn('Constraint {} is ignored at {}'.format( str(c), sys._getframe().f_code ))
+        return a2c
 
     
     def _write_kpts(self, f):
