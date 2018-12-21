@@ -61,5 +61,5 @@ assert any([line.split()[4:9] == ['0', '1', '1', '3', 'O'] for line in lines])
 
 
 # Remove the test directory.
-os.chdir('../..')
+os.chdir('../')
 os.system('rm -rf {}'.format(test_path))
