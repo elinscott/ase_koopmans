@@ -1286,6 +1286,12 @@ class GenerateVaspInput(object):
         for key, val in self.dict_params.items():
             if val is not None:
                 if key == 'ldau_luj':
+                    # User didn't turn on LDAU tag.
+                    # Only turn on if ldau is unspecified
+                    if self.bool_params['ldau'] is None:
+                        self.bool_params['ldau'] = True
+                        # At this point we have already parsed our bool params
+                        incar.write(' LDAU = .TRUE.\n')
                     llist = ulist = jlist = ''
                     for symbol in self.symbol_count:
                         #  default: No +U
