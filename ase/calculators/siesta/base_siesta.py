@@ -59,7 +59,7 @@ class SiestaParameters(Parameters):
 class BaseSiesta(FileIOCalculator):
     """Calculator interface to the SIESTA code.
     """
-    allowed_basis_names = ['SZ', 'SZP', 'DZ', 'DZP']
+    allowed_basis_names = ['SZ', 'SZP', 'DZ', 'DZP', 'TZP']
     allowed_spins = ['UNPOLARIZED', 'COLLINEAR', 'FULL']
     allowed_xc = {}
     allowed_fdf_keywords = {}
@@ -80,19 +80,19 @@ class BaseSiesta(FileIOCalculator):
         """ASE interface to the SIESTA code.
 
         Parameters:
-           - label        : The base head of all created files.
+           - label        : The basename of all files created during SIESTA run.
            - mesh_cutoff  : Energy in eV.
                             The mesh cutoff energy for determining number of
-                            grid points.
-           - energy_shift : Energy in eVV
-                            The confining energy of the basis sets.
+                            grid points in the matrix-element calculation.
+           - energy_shift : Energy in eV
+                            The confining energy of the basis set generation.
            - kpts         : Tuple of 3 integers, the k-points in different
                             directions.
            - xc           : The exchange-correlation potential. Can be set to
                             any allowed value for either the Siesta
                             XC.funtional or XC.authors keyword. Default "LDA"
-           - basis_set    : "SZ"|"SZP"|"DZ"|"DZP", strings which specify the
-                            type of functions basis set.
+           - basis_set    : "SZ"|"SZP"|"DZ"|"DZP"|"TZP", strings which specify
+                            the type of functions basis set.
            - spin         : "UNPOLARIZED"|"COLLINEAR"|"FULL". The level of spin
                             description to be used.
            - species      : None|list of Species objects. The species objects
@@ -124,6 +124,13 @@ class BaseSiesta(FileIOCalculator):
                             separate line, while tuples will write each element
                             in a single line.  ASE units are assumed in the
                             input.
+           - atomic_coord_format: "xyz"|"zmatrix", strings to switch between the
+                            default way of entering the system's geometry (via
+                            the block AtomicCoordinatesAndAtomicSpecies) and
+                            a recent method via the block Zmatrix. The block
+                            Zmatrix allows to specify basic geometry constrains
+                            such as realized through the ASE classes FixAtom, 
+                            FixedLine and FixedPlane.
         """
 
         # Put in the default arguments.
