@@ -11,10 +11,9 @@ test_path = 'tmp_siesta'
 if not os.path.exists(test_path): os.makedirs(test_path)
 os.chdir(test_path)
 
-run_path = 'run_directory'
+run_path = '.'
 pseudo_path = 'pseudos'
 if not os.path.exists(pseudo_path): os.makedirs(pseudo_path)
-if not os.path.exists(run_path): os.makedirs(run_path)
 
 # Make dummy pseudopotentials.
 for symbol in 'HCO':
