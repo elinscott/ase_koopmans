@@ -786,7 +786,10 @@ class GenerateVaspInput(object):
         'pbe0': {'gga': 'PE', 'lhfcalc': True},
         'hse03': {'gga': 'PE', 'lhfcalc': True, 'hfscreen': 0.3},
         'hse06': {'gga': 'PE', 'lhfcalc': True, 'hfscreen': 0.2},
-        'hsesol': {'gga': 'PS', 'lhfcalc': True, 'hfscreen': 0.2}}
+        'hsesol': {'gga': 'PS', 'lhfcalc': True, 'hfscreen': 0.2},
+        'rev-vdw-df2': {'gga': 'MK', 'luse_vdw': True, 'param1': 0.1234,
+                        'param2':0.711357, 'zab_vdw': -1.8867, 'aggac': 0.0}
+    }
 
     def __init__(self, restart=None):
         self.float_params = {}
