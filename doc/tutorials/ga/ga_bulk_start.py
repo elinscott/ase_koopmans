@@ -11,7 +11,7 @@ N = 20
 volume = 240.
 
 # Specify the 'building blocks' from which the initial structures
-# will be constructed. Here we take individual Ag atoms as building
+# will be constructed. Here we take single Ag atoms as building
 # blocks, 24 in total.
 blocks = [('Ag', 24)]
 
@@ -35,13 +35,12 @@ cellbounds = CellBounds(bounds={'phi': [35, 145],
 # Choose an (optional) 'cell splitting' scheme which basically
 # controls the level of translational symmetry (within the unit
 # cell) of the randomly generated structures. Here a 1:1 ratio
-# of splitting factors 2 and 4 is used:
-splits = {(2,): 1, (4,): 1}
+# of splitting factors 2 and 1 is used:
+splits = {(2,): 1, (1,): 1}
 # There will hence be a 50% probability that a candidate
 # is constructed by repeating an randomly generated Ag12
 # structure along a randomly chosen axis. In the other 50%
-# of cases, a 4-fold repetition of a randomly created Ag6
-# unit will be performed.
+# of cases, no cell cell splitting will be applied.
 
 # Initialize the random structure generator
 sg = StartGenerator(blocks, blmin, volume, cellbounds=cellbounds,
