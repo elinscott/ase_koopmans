@@ -1,12 +1,17 @@
-from __future__ import print_function
 from ase.build import niggli_reduce
 from ase.calculators.singlepoint import SinglePointCalculator
-from asap3 import EMT
-from ase.optimize.precon import PreconLBFGS, PreconFIRE
+from ase.optimize import FIRE
+from ase.constraints import ExpCellFilter
 from ase.ga import set_raw_score
+try:
+    from asap3 import EMT
+except ImportError:
+    from ase.calculators.emt import EMT
 
 
 def finalize(atoms, energy=None, forces=None, stress=None):
+    # Finalizes the atoms by attaching a SinglePointCalculator
+    # and setting the raw score as the negative of the total energy
     atoms.wrap()
     calc = SinglePointCalculator(atoms, energy=energy, forces=forces,
                                  stress=stress)
@@ -15,36 +20,35 @@ def finalize(atoms, energy=None, forces=None, stress=None):
     set_raw_score(atoms, raw_score)
 
 
-def relax_one(atoms, cellbounds=None):
+def relax(atoms, cellbounds=None):
+    # Performs a variable-cell relaxation of the structure
     calc = EMT()
+    atoms.set_calculator(calc)
 
-    # Relax the atoms object sequentially by trying to reduce the unit
-    # cell after each couple of relaxation steps
     converged = False
     niter = 0
-    while not converged and niter < 100:
+    while not converged and niter < 10:
         if cellbounds is not None:
-            if not cellbounds.is_within_bounds(atoms.get_cell()):
+            cell = atoms.get_cell()
+            if not cellbounds.is_within_bounds(cell):
                 niggli_reduce(atoms)
-            if not cellbounds.is_within_bounds(atoms.get_cell()):
-                # Niggli reduction did not work; this candidate should
+            cell = atoms.get_cell()
+            if not cellbounds.is_within_bounds(cell):
+                # Niggli reduction did not bring the unit cell
+                # within the specified bounds; this candidate should
                 # be discarded so we set an absurdly high energy
                 finalize(atoms, 1e9)
                 return
 
-        try:
-            calc = EMT()
-            atoms.set_calculator(calc)
-            dyn = PreconLBFGS(atoms, variable_cell=True, maxstep=0.2,
-                              a_min=1e-3,
-                              use_armijo=True, logfile=None, trajectory=None)
-            dyn.run(fmax=5e-2, smax=1e-4, steps=50)
-        except RuntimeError:
-            dyn = PreconFIRE(atoms, variable_cell=True, dt=0.05, maxmove=0.2,
-                             use_armijo=False, logfile=None, trajectory=None)
-            dyn.run(fmax=5e-2, smax=1e-4, steps=10)
+        ecf = ExpCellFilter(atoms)
+        dyn = FIRE(ecf, maxmove=0.2, logfile=None, trajectory=None)
+        dyn.run(fmax=1e-3, steps=100)
+
         converged = dyn.converged()
         niter += 1
+
+    dyn = FIRE(atoms, maxmove=0.2, logfile=None, trajectory=None)
+    dyn.run(fmax=1e-2, steps=100)
 
     e = atoms.get_potential_energy()
     f = atoms.get_forces()

@@ -54,11 +54,13 @@ database containing 20 randomly generated initial structures.
 Run the GA search
 =================
 
-Now we run the search (:download:`ga_bulk_run.py`)
+Now we can start the actual search (:download:`ga_bulk_run.py`),
+which should only take a few minutes to complete.
+The relaxation function, which performs the variable-cell
+local optimization, is imported from :download:`ga_bulk_relax.py`.
+
 
 .. literalinclude:: ga_bulk_run.py
-
-Where we import the relaxation function from :download:`ga_bulk_relax.py`
 
 
 
