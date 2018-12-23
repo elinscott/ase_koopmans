@@ -134,4 +134,4 @@ all_candidates = da.get_all_relaxed_candidates()
 write('all_candidates.traj', all_candidates)
 
 current_pop = population.get_current_population()
-write('current_population.traj', pop)
+write('current_population.traj', current_pop)
