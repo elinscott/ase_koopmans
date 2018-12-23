@@ -2,6 +2,7 @@ from __future__ import print_function, division
 # Copyright (C) 2010, Jesper Friis
 # (see accompanying license files for details).
 
+from abc import abstractmethod, ABC
 import os
 import numpy as np
 from numpy import pi, sin, cos, arccos, sqrt, dot
@@ -103,6 +104,10 @@ class Cell:
         return orthorhombic(self.array)
 
     @property
+    def is_orthorhombic(self):
+        return is_orthorhombic(self.array)
+
+    @property
     def ndim(self):
         return self.array.ndim
 
@@ -135,6 +140,9 @@ class Cell:
         # I think normally it is more convenient just to get zero
         return np.abs(np.linalg.det(self.array))
 
+    def tolist(self):
+        return self.array.tolist()
+
     def scaled_positions(self, positions):
         return np.linalg.solve(self.complete().array.T, positions.T).T
 
@@ -145,7 +153,7 @@ class Cell:
         return np.linalg.pinv(self.array).transpose()
 
     def lattice_type(self, eps=2e-4):
-        from ase.crystal_info import analyse_cell
+        from ase.geometry.crystal_info import analyse_cell
         return analyse_cell(self, eps=eps)
 
     def __repr__(self):
@@ -376,60 +384,218 @@ class Bravais:
                                  self.varnames)
 
 
-class BravaisLattice:
-    def __init__(self, name, varnames, variants):
-        self._name = name
-        self._varnames = varnames
-        self._variants = {}
+class BravaisLattice(ABC):
+    # These parameters can be set by the @bravais decorator for a subclass.
+    # (We could also use metaclasses to do this, but that's more abstract)
+    type = None  # e.g. CUB, BCT, ORCF, ...
+    name = None  # e.g. cubic, body-centered tetragonal, ...
+    parameters = None  # e.g. ('a', 'c')
+    variants = None  # e.g. {'BCT1': <variant object>,
+    #                        'BCT2': <variant object>}
 
-        for name, pointnames, paths in variants:
-            variant = Variant(name, pointnames, paths)
-            self._variants[name] = variant
+    def __init__(self, **kwargs):
+        p = {}
+        for k, v in kwargs.items():
+            p[k] = float(v)
+        self._parameters = p
 
-    @property
-    def variants(self):
-        return dict(self._variants)
+    def __getattr__(self, name):
+        return self._parameters[name]
 
-    @property
-    def type(self):
-        return self.__class__.__name__
+    def tocell(self):
+        cell = self._cell(**self._parameters)
+        return Cell(cell)
 
-    @property
-    def varnames(self):
-        return self._varnames
+    def get_special_points(self):
+        kw = self._parameters
+        variant_name = self._variant_name(**kw)
+        variant = self.variants[variant_name]
+        points = self._special_points(variant=variant, **kw)
+        # replace the string by list of points using some regex
+        #assert len(points) == len(variant.special_point_names)
+        return np.array(points)
 
-    @property
-    def name(self):
-        return self._name
+    def get_variant(self):
+        name = self._variant_name(**self._parameters)
+        return self.variants[name]
+
+    @abstractmethod
+    def _cell(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def _special_points(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def _variant_name(self, **kwargs):
+        pass
+
+    def __repr__(self):
+        par = ', '.join('{}={}'.format(k, v)
+                        for k, v in self._parameters.items())
+        return '{}({})'.format(self.type, par)
+
+
+special_paths = {
+    'cub': 'GXMGRX,MR',
+    'fcc': 'GXWKGLUWLK,UX',
+    'bcc': 'GHNGPH,PN',
+    'tet': 'GXMGZRAZXR,MA',
+    'orc': 'GXSYGZURTZ,YT,UX,SR',
+    'hex': 'GMKGALHA,LM,KH',
+    'mcl': 'GYHCEM1AXH1,MDZ,YD',
+    'rhl1': 'GLB1,BZGX,QFP1Z,LP',
+    'rhl2': 'GPZQGFP1Q1LZ'}
+
+ibz_points = {'cub': {'G': [0, 0, 0],
+                      'X': [0, 0 / 2, 1 / 2],
+                      'R': [1 / 2, 1 / 2, 1 / 2],
+                      'M': [0 / 2, 1 / 2, 1 / 2]},
+              'fcc': {'G': [0, 0, 0],
+                      'X': [1 / 2, 0, 1 / 2],
+                      'W': [1 / 2, 1 / 4, 3 / 4],
+                      'K': [3 / 8, 3 / 8, 3 / 4],
+                      'U': [5 / 8, 1 / 4, 5 / 8],
+                      'L': [1 / 2, 1 / 2, 1 / 2]},
+              'bcc': {'G': [0, 0, 0],
+                      'H': [1 / 2, -1 / 2, 1 / 2],
+                      'N': [0, 0, 1 / 2],
+                      'P': [1 / 4, 1 / 4, 1 / 4]},
+              'hex': {'G': [0, 0, 0],
+                      'M': [0, 1 / 2, 0],
+                      'K': [-1 / 3, 1 / 3, 0],
+                      'A': [0, 0, 1 / 2],
+                      'L': [0, 1 / 2, 1 / 2],
+                      'H': [-1 / 3, 1 / 3, 1 / 2]},
+              'tet': {'G': [0, 0, 0],
+                      'X': [1 / 2, 0, 0],
+                      'M': [1 / 2, 1 / 2, 0],
+                      'Z': [0, 0, 1 / 2],
+                      'R': [1 / 2, 0, 1 / 2],
+                      'A': [1 / 2, 1 / 2, 1 / 2]},
+              'orc': {'G': [0, 0, 0],
+                      'R': [1 / 2, 1 / 2, 1 / 2],
+                      'S': [1 / 2, 1 / 2, 0],
+                      'T': [0, 1 / 2, 1 / 2],
+                      'U': [1 / 2, 0, 1 / 2],
+                      'X': [1 / 2, 0, 0],
+                      'Y': [0, 1 / 2, 0],
+                      'Z': [0, 0, 1 / 2]}}
+
+
+class SimpleBravaisLattice(BravaisLattice):
+    """Special implementation for cases with only one variant."""
+    special_point_names = None  # Autoinitialized by @bravais decorator
+    special_points = None
+    special_paths = None
+
+    def _special_points(self, **kwargs):
+        return self.special_points
+
+    def _variant_name(self, **kwargs):
+        return self.variant_names[0]
 
 from collections import namedtuple
-#class Variant(namedtuple()
-#Variant = namedtuple()
-
 Variant = namedtuple('Variant', ['name', 'special_point_names',
                                  'special_paths'])
 
 
-class bct(BravaisLattice):
-    def __init__(self):
-        BravaisLattice.__init__(
-            self, 'tetragonal', ('a', 'c'),
-            [['bct1', 'GMNPXSS1', 'GXMGSPNS1M XP'],
-             ['bct2', 'GNPSS1XYY1Z', 'GXYSGZS1NPY1Z XP']])
+bravais_names = []
+bravais_lattices = {}
 
-    def __call__(self, a, c):
+def bravais(longname, parameters, variants):
+
+    def decorate(cls):
+        btype = cls.__name__
+        cls.type = btype
+        cls.name = longname
+        cls.parameters = tuple(parameters)
+        cls.variant_names = []
+        cls.variants = {}
+
+        for name, special_point_names, special_paths in variants:
+            special_paths = special_paths.replace(',', ' ')
+            special_paths = tuple(special_paths.split())
+            cls.variant_names.append(name)
+            cls.variants[name] = Variant(name, special_point_names,
+                                         special_paths)
+
+        if len(variants) == 1:
+            # Only one variant.  We define the special points/paths statically:
+            variant = cls.variants[cls.variant_names[0]]
+            cls.special_point_names = variant.special_point_names
+            cls.special_paths = variant.special_paths
+
+            assert cls.type.isupper()
+            lowername = cls.type.lower()
+            if lowername in ibz_points:
+                pointinfo = ibz_points[lowername]
+                points = []
+                for name in cls.special_point_names:
+                    points.append(pointinfo[name])
+                cls.special_points = np.array(points)
+
+        # Register in global list and dictionary
+        bravais_names.append(btype)
+        bravais_lattices[btype] = cls
+        return cls
+
+    return decorate
+
+from ase.geometry.crystal_info import special_paths#, ibz_points
+
+
+class Cubic(SimpleBravaisLattice):
+    """Abstract class for cubic lattices."""
+    def __init__(self, a):
+        SimpleBravaisLattice.__init__(self, a=a)
+
+@bravais('cubic', 'a',
+         [['CUB1', 'GXRM', 'GXMGRX MR']])
+class CUB(Cubic):
+    def _cell(self, a):
+        return cub(a)
+
+@bravais('face-centered cubic', 'a',
+         [['FCC1', 'GKLUWX', 'GXWKGLUWLK UX']])
+class FCC(Cubic):
+    def _cell(self, a):
+        return fcc(a)
+
+@bravais('body-centered cubic', 'a',
+         [['BCC1', 'GHPN', 'GHNGPH PN']])
+class BCC(Cubic):
+    def _cell(self, a):
+        return bcc(a)
+
+@bravais('tetragonal', 'ac',
+         [['TET1', 'GAMRXZ', 'GXMGZRAZXR MA']])
+class TET(SimpleBravaisLattice):
+    def _cell(self, a, c):
+        return tet(a, c)
+
+@bravais('body-centered tetragonal', 'ac',
+         [['BCT1', 'GMNPXSS1', 'GXMGSPNS1M XP'],
+          ['BCT2', 'GNPSS1XYY1Z', 'GXYSGZS1NPY1Z XP']])
+class BCT(BravaisLattice):
+    def __init__(self, a, c):
+        BravaisLattice.__init__(self, a=a, c=c)
+
+    def _cell(self, a, c):
         return np.diag(np.array([a, a, c]))
 
-    def get_variant(self, a, c):
-        return self._variants['bct1' if c < a else 'bct2']
+    def _variant_name(self, a, c):
+        return 'BCT1' if c < a else 'BCT2'
 
-    def get_special_points(self, a, c):
+    def _special_points(self, a, c, variant):
         a2 = a * a
         c2 = c * c
         eta = .25 * (1 + c2 / a2)
 
-        variant = self.get_variant(a, c)
-        if variant.name == 'bct1':
+        assert variant.name in self.variants
+
+        if variant.name == 'BCT1':
             points = [[0,0,0],
                       [-.5, .5, .5],
                       [0.,.5,0.],
@@ -438,6 +604,7 @@ class bct(BravaisLattice):
                       [eta,eta,-eta],
                       [-eta,1-eta,eta]]
         else:
+            zeta = 0.5 * a2 / c2
             points = [[0.,.0,0.],
                       [0.,.5,0.],
                       [.25,.25,.25],
@@ -447,7 +614,396 @@ class bct(BravaisLattice):
                       [-zeta,zeta,.5],
                       [.5,.5,-zeta],
                       [.5,.5,-.5]]
-        assert len(points) == len(variant.special_point_names)
+        return points
+
+class Orthorhombic(BravaisLattice):
+    """Abstract class for orthorhombic types."""
+    def __init__(self, a, b, c):
+        BravaisLattice.__init__(self, a=a, b=b, c=c)
+
+@bravais('orthorhombic', 'abc',
+         [['ORC1', 'GRSTUXYZ', 'GXSYGZURTZ YT UX SR']])
+class ORC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
+    def _cell(self, a, b, c):
+        return orc(a, b, c)
+
+@bravais('face-centered orthorhombic', 'abc',
+         [['ORCF1', 'GAA1LTXX1YZ', 'GYTZGXA1Y TX1 XAZ LG'],
+          ['ORCF2', 'GCC1DD1LHH1XYZ', 'GYCDXGZD1HC C1Z XH1 HY LG'],
+          ['ORCF3', 'GAA1LTXX1YZ', 'GYTZGXA1Y TX1 XAZ LG']])  # same as orcf1
+class ORCF(Orthorhombic):
+    def _cell(self, a, b, c):
+        return orcf(a, b, c)
+
+    def _special_points(self, a, b, c, variant):
+        a2 = a * a
+        b2 = b * b
+        c2 = c * c
+        xminus = 0.25 * (1 + a2 / b2 - a2 / c2)
+        xplus = 0.25 * (1 + a2 / b2 + a2 / c2)
+
+        variant = get_orcf_variant(a, b, c)
+
+        if variant == 1 or variant == 3:
+            zeta = xminus
+            eta = xplus
+
+            points = [[0, 0, 0],
+                      [.5, .5 + zeta, zeta],
+                      [.5, .5 - zeta, 1 - zeta],
+                      [.5, .5, .5],
+                      [1., .5, .5],
+                      [0., eta, eta],
+                      [1., 1 - eta, 1 - eta],
+                      [.5, 0, .5],
+                      [.5, .5, 0]]
+
+        if variant == 2:
+            phi = 0.25 * (1 + c2 / b2 - c2 / a2)
+            delta = 0.25 * (1 + b2 / a2 - b2 / c2)
+            eta = xminus
+
+            points = [[0,0,0],
+                      [.5, .5-eta, 1-eta],
+                      [.5, .5+eta, eta],
+                      [.5-delta, .5, 1-delta],
+                      [.5+delta, .5, delta],
+                      [.5, .5, .5],
+                      [1-phi, .5-phi, .5],
+                      [phi, .5+phi, .5],
+                      [0., .5, .5],
+                      [.5, 0., .5],
+                      [.5, .5, 0.]]
+
+        return points
+
+    def _variant_name(self, a, b, c):
+        # XXX
+        # In general we need to remember eps, because here we need eps to
+        # decide which variant we are.
+        #
+        # The framework must also know how to forward the eps to this function
+
+        diff = 1.0 / (a * a) - 1.0 / (b * b) - 1.0 / (c * c)
+        eps = 2e-4
+        if abs(diff) < eps:
+            return 'ORCF3'
+        return 'ORCF1' if diff > 0 else 'ORCF2'
+
+
+@bravais('body-centered orthorhombic', 'abc',
+         [['ORCI1', 'GLL1L2RSTWXX1YY1Z', 'GXLTWRX1ZGYSW L1Y Y1Z']])
+class ORCI(Orthorhombic):
+    def _cell(self, a, b, c):
+        return orci(a, b, c)
+
+    def _variant_name(self, a, b, c):
+        return 'ORCI1'
+
+    def _special_points(self, a, b, c, variant):
+        a2 = a**2
+        b2 = b**2
+        c2 = c**2
+
+        zeta = .25 * (1 + a2 / c2)
+        eta = .25 * (1 + b2 / c2)
+        delta = .25 * (b2 - a2) / c2
+        mu = .25 * (a2 + b2) / c2
+
+        points = [[0.,0.,0.],
+                  [-mu,-mu,.5-delta],
+                  [mu, -m1, .5+delta],
+                  [.5-delta, .5+delta, -mu],
+                  [0,.5,0],
+                  [.5,0,0],
+                  [0.,0.,.5],
+                  [.25,.25,.25],
+                  [-zeta, zeta, zeta],
+                  [zeta, 1 - zeta, -zeta],
+                  [eta, -eta, eta],
+                  [1 - eta, eta, -eta],
+                  [.5,.5,-.5]]
+        return points
+
+
+@bravais('c-centered orthorhombic', 'abc',
+         [['ORCC1', 'GAA1RSTXX1YZ', 'GXSRAZGYX1A1TY ZT']])
+class ORCC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
+    def _cell(self, a, b, c):
+        return orcc(a, b, c)
+
+@bravais('hexagonal', 'ac',
+         [['HEX1', 'GMKALH', 'GMKGALHA LM KH']])
+class HEX(SimpleBravaisLattice):
+    def __init__(self, a, c):
+        BravaisLattice.__init__(self, a=a, c=c)
+
+    def _cell(self, a, c):
+        x = 0.5 * np.sqrt(3)
+        return np.array([[0.5 * a, -x * a, 0], [0.5 * a, x * a, 0],
+                         [0., 0., c]])
+
+
+@bravais('rhombohedral', ('a', 'alpha'),
+         [['RHL1', 'GBB21FLL1PP1P2QXZ', 'GLB1 BZGX QFP1Z LP'],
+          ['RHL2', 'GFLPP1QQ1Z', 'GPZQGFP1Q1LZ']])
+class RHL(BravaisLattice):
+    def __init__(self, a, alpha):
+         BravaisLattice.__init__(self, a=a, alpha=alpha)
+
+    def _cell(self, a, alpha):
+        alpha *= np.pi / 180
+        acosa = a * np.cos(alpha)
+        acosa2 = a * np.cos(0.5 * alpha)
+        asina2 = a * np.sin(0.5 * alpha)
+        acosfrac = acosa / acosa2
+        return np.array([[acosa2, -asina2, 0], [acosa2, asina2, 0],
+                         [a * acosfrac, 0, a * np.sqrt(1 - acosfrac**2)]])
+
+    def _variant_name(self, a, alpha):
+        return 'RHL1' if alpha < 90 else 'RHL2'
+
+    def _special_points(self, a, alpha, variant):
+        cosa = np.cos(alpha)
+        eta = (1 + 4 * cosa) / (2 + 4 * cosa)
+        nu = .75 - 0.5 * eta
+
+        if variant.name == 'RHL1':
+            points = [[0,0,0],
+                      [eta,.5,1-eta],
+                      [.5, 1 - eta, eta - 1],
+                      [.5,.5,0],
+                      [.5,0,0],
+                      [0,0,-.5],
+                      [eta,nu,nu],
+                      [1-nu,1-nu,1-eta],
+                      [nu,nu,eta-1],
+                      [1-nu,nu,0],
+                      [nu,0,-nu],
+                      [.5,.5,.5]]
+        else:
+            points = [[0,0,0],
+                      [.5,-.5,0],
+                      [.5,0,0],
+                      [1-nu,-nu,1-nu],
+                      [nu,nu-1,nu-1],
+                      [eta,eta,eta],
+                      [1-eta,-eta,-eta],
+                      [.5,-.5,.5]]
+        return points
+
+@bravais('monoclinic', ('a', 'b', 'c', 'alpha'),
+         [['MCL1', 'GACDD1EHH1H2MM1M2XYY1Z', 'GYHCEM1AXH1 MDZ YD']])
+class MCL(SimpleBravaisLattice):
+    def __init__(self, a, b, c, alpha):
+        BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
+
+    def _cell(self, a, b, c, alpha):
+        return mcl(a, b, c, alpha)
+
+@bravais('c-centered monoclinic', ('a', 'b', 'c', 'alpha'),
+         [['MCLC1', 'GNN1FF1F2F3II1LMXX1X2YY1Z', 'GYFLI I1ZF1 YX1 XGN MG'],
+          ['MCLC2', 'GNN1FF1F2F3II1LMXX1X2YY1Z', 'GYFLI I1ZF1 NGM'],
+          ['MCLC3', 'GFF1F2HH1H2IMNN1XYY1Y2Y3Z', 'GYFHZIF1 H1Y1XGN MG'],
+          ['MCLC4', 'GFF1F2HH1H2IMNN1XYY1Y2Y3Z', 'GYFHZI H1Y1XGN MG'],
+          ['MCLC5', 'GFF1F2HH1H2II1LMNN1XYY1Y2Y3Z',
+           'GYFLI I1ZHF1 H1Y1XGN MG']])
+class MCLC(BravaisLattice):
+    def __init__(self, a, b, c, alpha):
+        BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
+
+    def _cell(self, a, b, c, alpha):
+        return mclc(a, b, c, alpha)
+
+    def _variant_name(self, a, b, c, alpha):
+        from ase.geometry.cell import mclc
+        # okay, this is a bit hacky
+
+        # We need the same parameters here as when determining the points.
+        # Right now we just repeat the code:
+        a2 = a * a
+        b2 = b * b
+        cosa = np.cos(alpha)
+        sina = np.sin(alpha)
+        sina2 = sina**2
+
+        cell = mclc(a, b, c, alpha)
+        lengths_angles = Cell(np.linalg.inv(cell)).cellpar()
+
+        kgamma = lengths_angles[-1]
+
+        if abs(kgamma - 90) < eps:
+            variant = 2
+        elif kgamma > 90:
+            variant = 1
+        elif kgamma < 90:
+            num = b * cosa / c + b2 * sina2 / a2
+            if abs(num - 1) < eps:
+                variant = 4
+            elif num < 1:
+                variant = 3
+            else:
+                variant = 5
+        variant = 'MCLC' + str(variant)
+        return variant
+
+    def _special_points(self, a, b, c, alpha, variant):
+        assert a <= c
+        assert b <= c
+        assert alpha < 90
+
+        variant = int(variant.name[-1])
+
+        a2 = a * a
+        b2 = b * b
+        # c2 = c * c
+        cosa = np.cos(alpha)
+        sina = np.sin(alpha)
+        sina2 = sina**2
+
+        paths = {1: 'GYFLI I1ZF1 YX1 XGN MG',
+                 2: 'GYFLI I1ZF1 NGM',
+                 3: 'GYFHZIF1 H1Y1XGN MG',
+                 4: 'GYFHZI H1Y1XGN MG',
+                 5: 'GYFLI I1ZHF1 H1Y1XGN MG'}
+
+        if variant == 1 or variant == 2:
+            zeta = (2 - b * cosa / c) / (4 * sina2)
+            eta = 0.5 + 2 * zeta * c * cosa / b
+            psi = .75 - a2 / (4 * b2 * sina * sina)
+            phi = psi + (.75 - psi) * b * cosa / c
+
+            names = 'GNN1FF1F2F3II1LMXX1X2YY1Z'
+            points = [[0,0,0],
+                      [.5,0,0],
+                      [0,-.5,0],
+                      [1-zeta,1-zeta,1-eta],
+                      [zeta,zeta,eta],
+                      [-zeta,-zeta,1-eta],
+                      [1-zeta,-zeta,1-eta],
+                      [phi,1-phi,.5],
+                      [.5,.5,.5],
+                      [.5,0,.5],
+                      [1-psi,psi-1,0],
+                      [psi,1-psi,0],
+                      [.5,.5,0],
+                      [-.5,-.5,0],
+                      [0,0,.5]]
+        elif variant == 3 or variant == 4:
+            mu = .25 * (1 + b2 / a2)
+            delta = b * c * cosa / (2  * a2)
+            zeta = mu - 0.25 + (1 - b * cosa / c) / (4 * sina2)
+            eta = 0.5 + 2 * zeta * c * cosa / b
+            phi = 1 + zeta - 2 * mu
+            psi = eta - 2 * delta
+
+            names = 'GFF1F2HH1H2IMNN1XYY1Y2Y3Z'
+            points = [[0,0,0],
+                      [1-phi,1-phi,1-psi],
+                      [phi,phi-1,psi],
+                      [1-phi,-phi,1-psi],
+                      [zeta,zeta,eta],
+                      [1-zeta,-zeta,1-eta],
+                      [-zeta,-zeta,1-eta],
+                      [.5,-.5,.5],
+                      [.5,-.5,.5],
+                      [.5,0,.5],
+                      [.5,0,0],
+                      [0,-.5,0],
+                      [.5,-.5,0],
+                      [mu,mu,delta],
+                      [1-mu,-mu,-delta],
+                      [-mu,-mu,-delta],
+                      [mu,mu-1,delta],
+                      [0,0,.5]]
+        elif variant == 5:
+            zeta = .25 * (b2 / a2 + (1 - b * cosa / c) / sina2)
+            eta = 0.5 + 2 * zeta * c * cosa / b
+            mu = .5 * eta + b2 / (4 * a2) - b * c * cosa / (2 * a2)
+            nu = 2 * mu - zeta
+            omega = (4 * nu - 1 - b2 * sina2 / a2) * c / (2 * b * cosa)
+            delta = zeta * c * cosa / b + omega / 2 - .25
+            rho = 1 - zeta * a2 / b2
+
+            points = [[0,0,0],
+                      [nu,nu,omega],
+                      [1-nu,1-nu,1-omega],
+                      [nu,nu-1,omega],
+                      [zeta,zeta,eta],
+                      [1-zeta,-zeta,1-eta],
+                      [-zeta,-zeta,1-eta],
+                      [rho,1-rho,.5],
+                      [1-rho,rho-1,.5],
+                      [.5,.5,.5],
+                      [.5,0,.5],
+                      [.5,0,0],
+                      [0,-.5,0],
+                      [.5,-.5,0],
+                      [mu,mu,delta],
+                      [1-mu,-mu,-delta],
+                      [mu,mu-1,delta],
+                      [0,0,.5]]
+
+        return points
+
+
+@bravais('trigonal', ('a', 'b', 'c', 'alpha', 'beta', 'gamma'),
+         [['TRI1a', 'GLMNRXYZ', 'XGY LGZ NGM RG'],  # XXX labels, paths
+          ['TRI2a', 'GLMNRXYZ', 'XGY LGZ NGM RG'],  # are all the same.
+          ['TRI1b', 'GLMNRXYZ', 'XGY LGZ NGM RG'],
+          ['TRI2b', 'GLMNRXYZ', 'XGY LGZ NGM RG']])
+class TRI(BravaisLattice):
+    def __init__(self, a, b, c, alpha, beta, gamma):
+        BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha, beta=beta,
+                                gamma=gamma)
+
+    def _cell(self, a, b, c, alpha, beta, gamma):
+        return tri(a, b, c, alpha, beta, gamma)
+
+    def _variant_name(self, a, b, c, alpha, beta, gamma):
+        c = Cell.new([a, b, c, alpha, beta, gamma])
+        reciprocal = c.reciprocal()
+        from ase.geometry.cell import get_cell_lengths_and_angles
+        ka, kb, kc, kalpha, kbeta, kgamma = get_cell_lengths_and_angles(
+            reciprocal)
+        # lengths = np.array([ka, kb, kc])
+        angles = np.array([kalpha, kbeta, kgamma])
+
+        if abs(kgamma - 90) < eps:
+            if kalpha > 90 and kbeta > 90:
+                var = '2a'
+            elif kalpha < 90 and kbeta < 90:
+                var = '2b'
+            else:
+                bad
+        elif all(angles > 90) and kgamma < min(kalpha, kbeta):
+            var = '1a'
+        elif all(angles < 90) and kgamma > max(kalpha, kbeta):
+            var = '1b'
+        return 'TRI' + var
+
+    def _special_points(self, a, b, c, alpha, beta, gamma, variant):
+        # (None of the points actually depend on any parameters)
+        # (We should store the points openly on the variant objects)
+        if var == 'TRI1a' or var == 'TRI2a':
+            points = [[0.,0.,0.],
+                      [.5,.5,0],
+                      [0,.5,.5],
+                      [.5,0,.5],
+                      [.5,.5,.5],
+                      [.5,0,0],
+                      [0,.5,0],
+                      [0,0,.5]]
+        else:
+            points = [[0,0,0],
+                      [.5,-.5,0],
+                      [0,0,.5],
+                      [-.5,-.5,.5],
+                      [0,-.5,.5],
+                      [0,-0.5,0],
+                      [.5,0,0],
+                      [-.5,0,.5]]
+
         return points
 
 

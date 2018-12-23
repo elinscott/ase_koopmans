@@ -1,6 +1,6 @@
 import numpy as np
-from ase.geometry.cell import Cell, get_bravais_lattice
-from ase.build.tools import niggli_reduce_cell
+#from ase.geometry.cell import Cell#, get_bravais_lattice
+#from ase.build.tools import niggli_reduce_cell
 
 special_paths = {
     'cubic': 'GXMGRX,MR',
@@ -94,7 +94,7 @@ class _special_points:
 cub_special_points = _special_points('cubic', 'GXRM')
 fcc_special_points = _special_points('fcc', 'GKLUWX')
 bcc_special_points = _special_points('bcc', 'GHPN')
-tet_special_points = _special_points('tegragonal', 'GAMRXZ')
+tet_special_points = _special_points('tetragonal', 'GAMRXZ')
 
 def bct_special_points(a, c):
     a2 = a * a
@@ -522,7 +522,7 @@ class ExtendedCellInfo:
         self._d = kwargs
 
     @property
-    def bravais(self):
+    def bravais(self):  # could be called 'type'
         return self._d['bravais']
 
     @property
@@ -538,8 +538,23 @@ class ExtendedCellInfo:
     def cell(self):
         return self.bravais(**self.parameters)
 
-    def bandpath():
-        pass
+    #def bandpath(path=None, npoints):
+    #    if path is None:
+    #        path = self.special_bandpaths[0]
+
+    #    return BandPath(...)
+
+    @property
+    def special_bandpaths(self):
+        return ...
+
+    @property
+    def special_points(self):
+        return ...
+
+    @property
+    def variant(self):
+        return ...
 
     # bandpath()
     # default bandpaths
