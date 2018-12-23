@@ -555,25 +555,25 @@ class Cubic(SimpleBravaisLattice):
          [['CUB1', 'GXRM', 'GXMGRX MR']])
 class CUB(Cubic):
     def _cell(self, a):
-        return cub(a)
+        return a * np.eye(3)
 
 @bravais('face-centered cubic', 'a',
          [['FCC1', 'GKLUWX', 'GXWKGLUWLK UX']])
 class FCC(Cubic):
     def _cell(self, a):
-        return fcc(a)
+        return 0.5 * np.array([[0., a, a], [a, 0, a], [a, a, 0]])
 
 @bravais('body-centered cubic', 'a',
          [['BCC1', 'GHPN', 'GHNGPH PN']])
 class BCC(Cubic):
     def _cell(self, a):
-        return bcc(a)
+        return 0.5 * np.array([[-a, a, a], [a, -a, a], [a, a, -a]])
 
 @bravais('tetragonal', 'ac',
          [['TET1', 'GAMRXZ', 'GXMGZRAZXR MA']])
 class TET(SimpleBravaisLattice):
     def _cell(self, a, c):
-        return tet(a, c)
+        return np.diag(np.array([a, a, c]))
 
 @bravais('body-centered tetragonal', 'ac',
          [['BCT1', 'GMNPXSS1', 'GXMGSPNS1M XP'],
@@ -583,7 +583,7 @@ class BCT(BravaisLattice):
         BravaisLattice.__init__(self, a=a, c=c)
 
     def _cell(self, a, c):
-        return np.diag(np.array([a, a, c]))
+        return 0.5 * np.array([[-a, a, c], [a, -a, c], [a, a, -c]])
 
     def _variant_name(self, a, c):
         return 'BCT1' if c < a else 'BCT2'
@@ -625,7 +625,7 @@ class Orthorhombic(BravaisLattice):
          [['ORC1', 'GRSTUXYZ', 'GXSYGZURTZ YT UX SR']])
 class ORC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
     def _cell(self, a, b, c):
-        return orc(a, b, c)
+        return np.diag([a, b, c]).astype(float)
 
 @bravais('face-centered orthorhombic', 'abc',
          [['ORCF1', 'GAA1LTXX1YZ', 'GYTZGXA1Y TX1 XAZ LG'],
@@ -633,7 +633,7 @@ class ORC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
           ['ORCF3', 'GAA1LTXX1YZ', 'GYTZGXA1Y TX1 XAZ LG']])  # same as orcf1
 class ORCF(Orthorhombic):
     def _cell(self, a, b, c):
-        return orcf(a, b, c)
+        return 0.5 * np.array([[0, b, c], [a, 0, c], [a, b, 0]])
 
     def _special_points(self, a, b, c, variant):
         a2 = a * a
@@ -695,7 +695,7 @@ class ORCF(Orthorhombic):
          [['ORCI1', 'GLL1L2RSTWXX1YY1Z', 'GXLTWRX1ZGYSW L1Y Y1Z']])
 class ORCI(Orthorhombic):
     def _cell(self, a, b, c):
-        return orci(a, b, c)
+        return 0.5 * np.array([[-a, b, c], [a, -b, c], [a, b, -c]])
 
     def _variant_name(self, a, b, c):
         return 'ORCI1'
@@ -730,7 +730,8 @@ class ORCI(Orthorhombic):
          [['ORCC1', 'GAA1RSTXX1YZ', 'GXSRAZGYX1A1TY ZT']])
 class ORCC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
     def _cell(self, a, b, c):
-        return orcc(a, b, c)
+        return np.array([[0.5 * a, -0.5 * b, 0], [0.5 * a, 0.5 * b, 0],
+                         [0, 0, c]])
 
 @bravais('hexagonal', 'ac',
          [['HEX1', 'GMKALH', 'GMKGALHA LM KH']])
@@ -799,7 +800,10 @@ class MCL(SimpleBravaisLattice):
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
 
     def _cell(self, a, b, c, alpha):
-        return mcl(a, b, c, alpha)
+        alpha *= np.pi / 180
+        return np.array([[a, 0, 0], [0, b, 0],
+                         [0, c * np.cos(alpha), c * np.sin(alpha)]])
+
 
 @bravais('c-centered monoclinic', ('a', 'b', 'c', 'alpha'),
          [['MCLC1', 'GNN1FF1F2F3II1LMXX1X2YY1Z', 'GYFLI I1ZF1 YX1 XGN MG'],
@@ -813,7 +817,9 @@ class MCLC(BravaisLattice):
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
 
     def _cell(self, a, b, c, alpha):
-        return mclc(a, b, c, alpha)
+        alpha *= np.pi / 180
+        return np.array([[0.5 * a, 0.5 * b, 0], [-0.5 * a, 0.5 * b, 0],
+                         [0, c * np.cos(alpha), c * np.sin(alpha)]])
 
     def _variant_name(self, a, b, c, alpha):
         from ase.geometry.cell import mclc
@@ -861,19 +867,12 @@ class MCLC(BravaisLattice):
         sina = np.sin(alpha)
         sina2 = sina**2
 
-        paths = {1: 'GYFLI I1ZF1 YX1 XGN MG',
-                 2: 'GYFLI I1ZF1 NGM',
-                 3: 'GYFHZIF1 H1Y1XGN MG',
-                 4: 'GYFHZI H1Y1XGN MG',
-                 5: 'GYFLI I1ZHF1 H1Y1XGN MG'}
-
         if variant == 1 or variant == 2:
             zeta = (2 - b * cosa / c) / (4 * sina2)
             eta = 0.5 + 2 * zeta * c * cosa / b
             psi = .75 - a2 / (4 * b2 * sina * sina)
             phi = psi + (.75 - psi) * b * cosa / c
 
-            names = 'GNN1FF1F2F3II1LMXX1X2YY1Z'
             points = [[0,0,0],
                       [.5,0,0],
                       [0,-.5,0],
@@ -897,7 +896,6 @@ class MCLC(BravaisLattice):
             phi = 1 + zeta - 2 * mu
             psi = eta - 2 * delta
 
-            names = 'GFF1F2HH1H2IMNN1XYY1Y2Y3Z'
             points = [[0,0,0],
                       [1-phi,1-phi,1-psi],
                       [phi,phi-1,psi],
@@ -952,13 +950,25 @@ class MCLC(BravaisLattice):
           ['TRI2a', 'GLMNRXYZ', 'XGY LGZ NGM RG'],  # are all the same.
           ['TRI1b', 'GLMNRXYZ', 'XGY LGZ NGM RG'],
           ['TRI2b', 'GLMNRXYZ', 'XGY LGZ NGM RG']])
+
+
 class TRI(BravaisLattice):
     def __init__(self, a, b, c, alpha, beta, gamma):
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha, beta=beta,
                                 gamma=gamma)
 
     def _cell(self, a, b, c, alpha, beta, gamma):
-        return tri(a, b, c, alpha, beta, gamma)
+        alpha, beta, gamma = np.array([alpha, beta, gamma]) * (np.pi / 180)
+        singamma = np.sin(gamma)
+        cosgamma = np.cos(gamma)
+        cosbeta = np.cos(beta)
+        cosalpha = np.cos(alpha)
+        a3x = c * cosbeta
+        a3y = c / singamma * (cosalpha - cosbeta * cosgamma)
+        a3z = c / singamma * np.sqrt(singamma**2 - cosalpha**2 - cosbeta**2
+                                     + 2 * cosalpha * cosbeta * cosgamma)
+        return np.array([[a, 0, 0], [b * cosgamma, b * singamma, 0],
+                         [a3x, a3y, a3z]])
 
     def _variant_name(self, a, b, c, alpha, beta, gamma):
         c = Cell.new([a, b, c, alpha, beta, gamma])
@@ -1005,92 +1015,6 @@ class TRI(BravaisLattice):
                       [-.5,0,.5]]
 
         return points
-
-
-bravais = {}
-def bravaisclass(func):
-    name = func.__name__
-    b = Bravais(func)
-    bravais[name] = b
-    return b
-
-
-@bravaisclass
-def cub(a):
-    return a * np.eye(3)
-
-@bravaisclass
-def fcc(a):
-    return 0.5 * np.array([[0., a, a], [a, 0, a], [a, a, 0]])
-
-@bravaisclass
-def bcc(a):
-    return 0.5 * np.array([[-a, a, a], [a, -a, a], [a, a, -a]])
-
-@bravaisclass
-def tet(a, c):
-    return np.diag(np.array([a, a, c]))
-
-@bravaisclass
-def bct(a, c):
-    return 0.5 * np.array([[-a, a, c], [a, -a, c], [a, a, -c]])
-
-@bravaisclass
-def orc(a, b, c):
-    return np.diag([a, b, c]).astype(float)
-
-@bravaisclass
-def orcf(a, b, c):
-    return 0.5 * np.array([[0, b, c], [a, 0, c], [a, b, 0]])
-
-@bravaisclass
-def orci(a, b, c):
-    return 0.5 * np.array([[-a, b, c], [a, -b, c], [a, b, -c]])
-
-@bravaisclass
-def orcc(a, b, c):
-    return np.array([[0.5 * a, -0.5 * b, 0], [0.5 * a, 0.5 * b, 0], [0, 0, c]])
-
-@bravaisclass
-def hex(a, c):
-    x = 0.5 * np.sqrt(3)
-    return np.array([[0.5 * a, -x * a, 0], [0.5 * a, x * a, 0], [0., 0., c]])
-
-@bravaisclass
-def rhl(a, alpha):
-    alpha *= np.pi / 180
-    acosa = a * np.cos(alpha)
-    acosa2 = a * np.cos(0.5 * alpha)
-    asina2 = a * np.sin(0.5 * alpha)
-    acosfrac = acosa / acosa2
-    return np.array([[acosa2, -asina2, 0], [acosa2, asina2, 0],
-                     [a * acosfrac, 0, a * np.sqrt(1 - acosfrac**2)]])
-
-@bravaisclass
-def mcl(a, b, c, alpha):
-    alpha *= np.pi / 180
-    return np.array([[a, 0, 0], [0, b, 0],
-                     [0, c * np.cos(alpha), c * np.sin(alpha)]])
-
-@bravaisclass
-def mclc(a, b, c, alpha):
-    alpha *= np.pi / 180
-    return np.array([[0.5 * a, 0.5 * b, 0], [-0.5 * a, 0.5 * b, 0],
-                     [0, c * np.cos(alpha), c * np.sin(alpha)]])
-
-@bravaisclass
-def tri(a, b, c, alpha, beta, gamma):
-    alpha, beta, gamma = np.array([alpha, beta, gamma]) * (np.pi / 180)
-    singamma = np.sin(gamma)
-    cosgamma = np.cos(gamma)
-    cosbeta = np.cos(beta)
-    cosalpha = np.cos(alpha)
-    a3x = c * cosbeta
-    a3y = c / singamma * (cosalpha - cosbeta * cosgamma)
-    a3z = c / singamma * np.sqrt(singamma**2 - cosalpha**2 - cosbeta**2
-                                 + 2 * cosalpha * cosbeta * cosgamma)
-    return np.array([[a, 0, 0], [b * cosgamma, b * singamma, 0],
-                     [a3x, a3y, a3z]])
 
 
 def crystal_structure_from_cell(cell, eps=2e-4, niggli_reduce=True):
