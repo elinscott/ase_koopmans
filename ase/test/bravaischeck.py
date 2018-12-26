@@ -1,5 +1,6 @@
 import numpy as np
-from ase.geometry.cell import Cell, bravais_lattices as bravais1
+from ase.geometry.cell import Cell
+from ase.geometry.bravais import bravais_lattices as bravais1
 from ase.build import bulk
 
 bravais = {}
