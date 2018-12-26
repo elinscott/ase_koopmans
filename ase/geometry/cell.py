@@ -341,62 +341,6 @@ def metric_from_cell(cell):
     return np.dot(cell, cell.T)
 
 
-class Bravais:
-    data = dict(cub='cubic',
-                fcc='face-centered cubic',
-                bcc='body-centered cubic',
-                tet='tetragonal',
-                bct='body-centered tetragonal',
-                orc='orthorhombic',
-                orcf='face-centered orthorhombic',
-                orci='body-centered orthorhombic',
-                orcc='c-centered orthorhombic',
-                hex='hexagonal',
-                rhl='rhombohedral',
-                mcl='monoclinic',
-                mclc='c-centered monoclinic',
-                tri='triclinic')
-
-    def __init__(self, newcellarray):
-        self.newcellarray = newcellarray
-
-    @property
-    def type(self):
-        """Short name, e.g. fcc."""
-        return self.newcellarray.__name__
-
-    @property
-    def name(self):
-        """Long name, e.g. face-centered cubic"""
-        return self.data[self.type]
-
-    @property
-    def varnames(self):
-        """Get names of standardized variables that define cell."""
-        # The varnames are the standardized arguments that define a
-        # lattice, e.g. ['a', 'c'] for tetragonal.  We might as well
-        # take them from the function which builds the lattice:
-        code = self.newcellarray.__code__
-        return code.co_varnames[:code.co_argcount]
-
-    def __call__(self, *args, **kwargs):
-        """Return a new cell.
-
-        Allowed arguments are those given by varnames."""
-        cycle = kwargs.pop('cycle', None)
-        cell = self.newcellarray(*args, **kwargs)
-        assert cell.shape == (3, 3), cell
-        if cycle:
-            perm = (np.arange(-3, 0) + cycle) % 3
-            cell = cell[perm]
-        return Cell(cell)
-
-    def __repr__(self):
-        return '{}({}{})'.format(self.__class__.__name__,
-                                 self.type,
-                                 self.varnames)
-
-
 class BravaisLattice(ABC):
     # These parameters can be set by the @bravais decorator for a subclass.
     # (We could also use metaclasses to do this, but that's more abstract)
@@ -504,18 +448,6 @@ Lattice name: {type}
         return '\n'.join(chunks)
 
 
-
-special_paths = {
-    'cub': 'GXMGRX,MR',
-    'fcc': 'GXWKGLUWLK,UX',
-    'bcc': 'GHNGPH,PN',
-    'tet': 'GXMGZRAZXR,MA',
-    'orc': 'GXSYGZURTZ,YT,UX,SR',
-    'hex': 'GMKGALHA,LM,KH',
-    'mcl': 'GYHCEM1AXH1,MDZ,YD',
-    'rhl1': 'GLB1,BZGX,QFP1Z,LP',
-    'rhl2': 'GPZQGFP1Q1LZ'}
-
 ibz_points = {'cub': {'G': [0, 0, 0],
                       'X': [0, 0 / 2, 1 / 2],
                       'R': [1 / 2, 1 / 2, 1 / 2],
@@ -609,8 +541,15 @@ def bravais(longname, parameters, variants):
 
             assert cls.type.isupper()
             lowername = cls.type.lower()
-            if lowername in ibz_points:
-                pointinfo = ibz_points[lowername]
+            from ase.dft.kpoints import ibz_points
+            name2name = {'cub': 'cubic',
+                         'fcc': 'fcc',
+                         'bcc': 'bcc',
+                         'tet': 'tetragonal',
+                         'orc': 'orthorhombic',
+                         'hex': 'hexagonal'}
+            if lowername in name2name:
+                pointinfo = ibz_points[name2name[lowername]]
                 points = []
                 for name in cls.special_point_names:
                     points.append(pointinfo[name])
@@ -622,8 +561,6 @@ def bravais(longname, parameters, variants):
         return cls
 
     return decorate
-
-from ase.geometry.crystal_info import special_paths#, ibz_points
 
 
 class Cubic(SimpleBravaisLattice):
