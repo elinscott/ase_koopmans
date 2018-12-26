@@ -803,7 +803,8 @@ class BaseSiesta(FileIOCalculator):
 
             if label not in self.results['ion']:
                 fname = os.path.join(self.directory, label + '.ion.xml')
-                self.results['ion'][label] = get_ion(fname)
+                if os.path.isfile(fname):
+                    self.results['ion'][label] = get_ion(fname)
 
     def read_hsx(self):
         """
