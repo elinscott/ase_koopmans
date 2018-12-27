@@ -64,6 +64,7 @@ def read_acemolecule_out(filename, quantity='atoms'):
 
 def read_acemolecule_input(Label):
     '''Reads a Acemolecule input file'''
+    filename = Label
     inputtemplate = open(filename, 'r')
     lines = inputttemplate.readlines()
     for line in lines:
