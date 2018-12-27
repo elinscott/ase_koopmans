@@ -55,7 +55,7 @@ class Acemoleculereader:
 #        mol = read(filename, format='xyz' ,index = str(start_line+':'+end_line))
 #        print (mol)
         for i in range(start_line+1, end_line):
-            print(lines[i])
+#            print(lines[i])
             atomic_number = lines[i].split()[0]
             atoms.append(str(chemical_symbols[int(atomic_number)]))
             x = lines[i].split()[1]
@@ -73,6 +73,6 @@ if __name__ == "__main__":
     Label = str(sys.argv[1].split('.inp')[0])
     system_changes = None
     a = ACE_read(Label + '.inp', format='acemolecule-input')
-    print(a.get_positions())
+#    print(a.get_positions())
     
     filename = Label + '.log'
