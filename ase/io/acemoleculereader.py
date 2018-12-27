@@ -1,7 +1,7 @@
 from __future__ import print_function
 import sys
 from ase.data import chemical_symbols
-
+from ase.io import read
 
 def check_filename(filename):
     check = str(filename).split("'")
@@ -39,20 +39,30 @@ class Acemoleculereader:
     def parse(self, filename):
         ''' Read atoms geometry '''
         f = open(filename, 'r')
-        lines = f.read()
-        geometry_lines = lines.split("  Atoms  =====================")[-1]
-        geo_lines = geometry_lines.split("===============")[0].split('\n')
+        lines = f.readlines()
+        start_line = 0
+        end_line = 0
+        for i in range(len(lines)):
+            if(lines[i]== '====================  Atoms  =====================\n' ):
+                start_line = i
+            if(start_line != '' and len(lines[i].split('=')) == '3'):
+                end_line = i
+                break
         self.data = []
         atoms = []
         positions = []
         new_dict = {}
-        for i in range(1, len(geo_lines) - 1):
-            atomic_number = geo_lines[i].split()[0]
+#        mol = read(filename, format='xyz' ,index = str(start_line+':'+end_line))
+#        print (mol)
+        for i in range(start_line+1, end_line):
+            print(lines[i])
+            atomic_number = lines[i].split()[0]
             atoms.append(str(chemical_symbols[int(atomic_number)]))
-            x = geo_lines[i].split()[1]
-            y = geo_lines[i].split()[2]
-            z = geo_lines[i].split()[3]
+            x = lines[i].split()[1]
+            y = lines[i].split()[2]
+            z = lines[i].split()[3]
             positions.append((x, y, z))
+#        print (mol.get_atomic_numbers())
         new_dict["Atomic_numbers"] = atoms
         new_dict["Positions"] = positions
         self.data = new_dict

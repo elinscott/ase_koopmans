@@ -65,7 +65,7 @@ class ACE(FileIOCalculator):
     '''
     ACE-Molecule logfile reader
     '''
-    name = 'ACE'
+    name = 'ace'
     implemented_properties = ['energy', 'forces', 'geometry','excitation-energy']
     system_changes = None
     parameters = OrderedParameters()
@@ -104,8 +104,8 @@ class ACE(FileIOCalculator):
                                                                       ('MixingParameter', '0.5'), ('PulayMixingParameter', '0.1')\
                                                                       ])),\
                                                     ('SolvationModel',\
-                                                   OrderedParameters([('Solvent', 'water'), ('Area', '1.0'),\
-                                                    ('SolverType', 'None')])),\
+                                                   OrderedParameters([('SolvationLibrary', 'Psolver')\
+                                                    ])),\
                                                     ('NumberOfEigenvalues', '4')])),\
                                   ('Force',\
                                  OrderedParameters([('ForceDerivative', 'Potential')]))])
@@ -113,7 +113,7 @@ class ACE(FileIOCalculator):
 
     def __init__(
             self, restart=None, ignore_bad_restart_file=False,
-            label='ACE', atoms=None, command=None,
+            label='ace', atoms=None, command=None,
             basisfile=None, **kwargs):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command=command, **kwargs)
@@ -329,7 +329,6 @@ class ACE(FileIOCalculator):
                     fpt.write(prefix + str(key) + "\t\t" + str(val) + "\n")
         return
 
-system_changes = None
 
 if __name__ == "__main__":
     ace = ACE()
