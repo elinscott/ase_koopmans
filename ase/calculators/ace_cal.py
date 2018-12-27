@@ -121,13 +121,10 @@ class ACE(FileIOCalculator):
     def compare_parameters(self,parameters, key2, val2):    
         '''Replace and Add parameters that users want'''
         compare = 0
-#        print("???????????????????????????")
-#        print (parameters)
         for key, val in parameters.items():
             if(key == key2):
                 parameters[key] = val2
-                print("a parameter is updated")
-#                print (type([1,1]))
+#                print("a parameter is updated")
                 return 10
             if( compare != 10 and type(parameters[key]) != type('1') and type(parameters[key]) != type([1,1]) \
                 and type(parameters[key]) != type(None) ):
