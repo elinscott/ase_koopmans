@@ -1,7 +1,7 @@
 from __future__ import print_function
 import sys
 from ase.data import chemical_symbols
-from ase.io import read
+#from ase.io import read
 
 def check_filename(filename):
     check = str(filename).split("'")
@@ -53,9 +53,7 @@ class Acemoleculereader:
         positions = []
         new_dict = {}
 #        mol = read(filename, format='xyz' ,index = str(start_line+':'+end_line))
-#        print (mol)
         for i in range(start_line+1, end_line):
-#            print(lines[i])
             atomic_number = lines[i].split()[0]
             atoms.append(str(chemical_symbols[int(atomic_number)]))
             x = lines[i].split()[1]

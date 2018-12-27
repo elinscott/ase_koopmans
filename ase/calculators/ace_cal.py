@@ -288,7 +288,7 @@ class ACE(FileIOCalculator):
                 else:
                     param[L_line[0]] = " ".join(L_line[1:])
         if not "root" == sublist_name:
-            print(param)
+#            print(param)
             raise ReadError("Not matching ending block in " + sublist_name)
         return param
 
