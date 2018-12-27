@@ -193,6 +193,10 @@ def bravais(longname, parameters, variants):
     return decorate
 
 
+class UnconventionalLattice(ValueError):
+    pass
+
+
 class Cubic(SimpleBravaisLattice):
     """Abstract class for cubic lattices."""
     def __init__(self, a):
@@ -266,16 +270,31 @@ class BCT(BravaisLattice):
                       [.5,.5,-.5]]
         return points
 
+
+def check_orc(a, b, c):
+    if not a < b < c:
+        raise UnconventionalLattice('a < b < c')
+
+
 class Orthorhombic(BravaisLattice):
     """Abstract class for orthorhombic types."""
     def __init__(self, a, b, c):
+        # XXX ORCx have convention a < b < c, except ORCI which has a < b.
+        # We should raise errors as appropriate.
+        #
+        # Also, we will need to handle uneven permutation of axes
+        # because of this.
+        #
+        # Very XXX
         BravaisLattice.__init__(self, a=a, b=b, c=c)
+
 
 @bravais('orthorhombic', 'abc',
          [['ORC1', 'GRSTUXYZ', 'GXSYGZURTZ YT UX SR']])
 class ORC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
     def _cell(self, a, b, c):
         return np.diag([a, b, c]).astype(float)
+
 
 @bravais('face-centered orthorhombic', 'abc',
          [['ORCF1', 'GAA1LTXX1YZ', 'GYTZGXA1Y TX1 XAZ LG'],
@@ -331,13 +350,13 @@ class ORCF(Orthorhombic):
         # decide which variant we are.
         #
         # The framework must also know how to forward the eps to this function
+        check_orc(a, b, c)
 
         diff = 1.0 / (a * a) - 1.0 / (b * b) - 1.0 / (c * c)
         eps = 2e-4
         if abs(diff) < eps:
             return 'ORCF3'
         return 'ORCF1' if diff > 0 else 'ORCF2'
-
 
 @bravais('body-centered orthorhombic', 'abc',
          [['ORCI1', 'GLL1L2RSTWXX1YY1Z', 'GXLTWRX1ZGYSW L1Y Y1Z']])
@@ -346,6 +365,7 @@ class ORCI(Orthorhombic):
         return 0.5 * np.array([[-a, b, c], [a, -b, c], [a, b, -c]])
 
     def _variant_name(self, a, b, c):
+        check_orc(a, b, c)
         return 'ORCI1'
 
     def _special_points(self, a, b, c, variant):
@@ -380,6 +400,10 @@ class ORCC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
     def _cell(self, a, b, c):
         return np.array([[0.5 * a, -0.5 * b, 0], [0.5 * a, 0.5 * b, 0],
                          [0, 0, c]])
+
+    def _variant_name(self, a, b, c):
+        check_orc(a, b, 0)  # check only a < b
+        return SimpleBravaisLattice._variant_name(self, a, b, c)
 
 @bravais('hexagonal', 'ac',
          [['HEX1', 'GMKALH', 'GMKGALHA LM KH']])
@@ -441,6 +465,12 @@ class RHL(BravaisLattice):
                       [.5,-.5,.5]]
         return points
 
+
+def check_mcl(a, b, c, alpha):
+    if not a <= c and b <= c and alpha < 90:
+        raise UnconventionalLattice('Expected a <= c, b <= c, alpha < 90')
+
+
 @bravais('monoclinic', ('a', 'b', 'c', 'alpha'),
          [['MCL1', 'GACDD1EHH1H2MM1M2XYY1Z', 'GYHCEM1AXH1 MDZ YD']])
 class MCL(SimpleBravaisLattice):
@@ -451,6 +481,10 @@ class MCL(SimpleBravaisLattice):
         alpha *= np.pi / 180
         return np.array([[a, 0, 0], [0, b, 0],
                          [0, c * np.cos(alpha), c * np.sin(alpha)]])
+
+    def _variant_name(self, a, b, c, alpha):
+        check_mcl(a, b, c, alpha)
+        return SimpleBravaisLattice._variant_name(self, a, b, c, alpha)
 
 
 @bravais('c-centered monoclinic', ('a', 'b', 'c', 'alpha'),
@@ -475,6 +509,8 @@ class MCLC(BravaisLattice):
 
         # We need the same parameters here as when determining the points.
         # Right now we just repeat the code:
+        check_mcl(a, b, c, alpha)
+
         a2 = a * a
         b2 = b * b
         cosa = np.cos(alpha)
@@ -505,10 +541,6 @@ class MCLC(BravaisLattice):
         return variant
 
     def _special_points(self, a, b, c, alpha, variant):
-        assert a <= c
-        assert b <= c
-        assert alpha < 90
-
         variant = int(variant.name[-1])
 
         a2 = a * a
