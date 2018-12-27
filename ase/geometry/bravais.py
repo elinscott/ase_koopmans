@@ -46,8 +46,7 @@ class BravaisLattice(ABC):
     def get_special_points(self):
         variant = self._variant
         points = self._special_points(variant=variant, **self._parameters)
-        # replace the string by list of points using some regex
-        #assert len(points) == len(variant.special_point_names)
+        assert len(points) == len(self.kpoint_labels)
         return np.array(points)
 
     def get_variant(self):
@@ -56,9 +55,6 @@ class BravaisLattice(ABC):
 
     @property
     def kpoint_labels(self):
-        return self.get_kpoint_labels()
-
-    def get_kpoint_labels(self):
         labels = re.findall(r'[A-Z]\d?', self._variant.special_point_names)
         return labels
 
@@ -91,15 +87,13 @@ class BravaisLattice(ABC):
         return '{}({})'.format(self.type, par)
 
     def __str__(self):
-        special_points = self.get_special_points()
-
-        labels = self.get_kpoint_labels()
-        assert len(labels) == len(special_points)
+        points = self.get_special_points()
+        labels = self.kpoint_labels
 
         coordstring = '\n'.join(['    {:2s} {:7.4f} {:7.4f} {:7.4f}'
                                  .format(label, *point)
                                  for label, point
-                                 in zip(labels, special_points)])
+                                 in zip(labels, points)])
 
         string = """\
 {repr}
@@ -137,9 +131,11 @@ class SimpleBravaisLattice(BravaisLattice):
     special_path = None
 
     def _special_points(self, **kwargs):
+        assert self.special_points is not None, self.__class__
         return self.special_points
 
     def _variant_name(self, **kwargs):
+        assert len(self.variants) == 1
         return self.variant_names[0]
 
 
@@ -409,8 +405,25 @@ class ORCC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
         return np.array([[0.5 * a, -0.5 * b, 0], [0.5 * a, 0.5 * b, 0],
                          [0, 0, c]])
 
+    def _special_points(self, a, b, c, variant):
+        zeta = .25 * (1 + a * a / (b * b))
+        points = [[0,0,0],
+                  [zeta,zeta,.5],
+                  [-zeta,1-zeta,.5],
+                  [0,.5,.5],
+                  [0,.5,0],
+                  [-.5,.5,.5],
+                  [zeta,zeta,0],
+                  [-zeta,1-zeta,0],
+                  [-.5,.5,0],
+                  [0,0,.5]]
+        return points
+
+
     def _variant_name(self, a, b, c):
-        check_orc(a, b, 2 * max(a, b))  # check only a < b for ORCC
+        if not a < b:
+            raise UnconventionalLattice('Expected a < b, got a={}, b={}'
+                                        .format(a, b))
         return SimpleBravaisLattice._variant_name(self)
 
 @bravais('hexagonal', 'ac',
@@ -481,7 +494,7 @@ def check_mcl(a, b, c, alpha):
 
 @bravais('monoclinic', ('a', 'b', 'c', 'alpha'),
          [['MCL1', 'GACDD1EHH1H2MM1M2XYY1Z', 'GYHCEM1AXH1,MDZ,YD']])
-class MCL(SimpleBravaisLattice):
+class MCL(BravaisLattice):
     def __init__(self, a, b, c, alpha):
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
 
@@ -490,10 +503,32 @@ class MCL(SimpleBravaisLattice):
         return np.array([[a, 0, 0], [0, b, 0],
                          [0, c * np.cos(alpha), c * np.sin(alpha)]])
 
+    def _special_points(self, a, b, c, alpha, variant):
+        cosa = np.cos(alpha)
+        eta = (1 - b * cosa / c) / (2 * np.sin(alpha)**2)
+        nu = .5 - eta * c * cosa / b
+
+        points = [[0,0,0],
+                  [.5,.5,0],
+                  [0,.5,.5],
+                  [.5,0,.5],
+                  [.5,0,-.5],
+                  [.5,.5,.5],
+                  [0,eta,1-nu],
+                  [0,1-eta,nu],
+                  [0,eta,-nu],
+                  [.5,eta,1-nu],
+                  [.5,1-eta,nu],
+                  [.5,eta,-nu],
+                  [0,.5,0],
+                  [0,0,.5],
+                  [0,0,-.5],
+                  [.5,0,0]]
+        return points
+
     def _variant_name(self, a, b, c, alpha):
         check_mcl(a, b, c, alpha)
-        # XXX slightly ugly
-        return SimpleBravaisLattice._variant_name(self)
+        return 'MCL1'
 
 
 @bravais('c-centered monoclinic', ('a', 'b', 'c', 'alpha'),
@@ -573,10 +608,12 @@ class MCLC(BravaisLattice):
                       [-zeta,-zeta,1-eta],
                       [1-zeta,-zeta,1-eta],
                       [phi,1-phi,.5],
+                      [1-phi,phi-1,.5],
                       [.5,.5,.5],
                       [.5,0,.5],
                       [1-psi,psi-1,0],
                       [psi,1-psi,0],
+                      [psi-1,-psi,0],
                       [.5,.5,0],
                       [-.5,-.5,0],
                       [0,0,.5]]
@@ -856,6 +893,51 @@ def get_bravais_lattice1(uc, eps=2e-4):
 
     raise RuntimeError('Cannot recognize cell at all somehow!')
 
+
+def _test_all_variants():
+    """For testing; yield every variant of every Bravais lattice."""
+    a, b, c = 3., 4., 5.
+    alpha = 80.0
+    yield CUB(a)
+    yield FCC(a)
+    yield BCC(a)
+    yield TET(a, c)
+    bct1 = BCT(2 * a, c)
+    bct2 = BCT(a, c)
+    assert bct1.variant.name == 'BCT1'
+    assert bct2.variant.name == 'BCT2'
+
+    yield bct1
+    yield bct2
+
+    yield ORC(a, b, c)
+
+    a0 = np.sqrt(1.0 / (1 / b**2 + 1 / c**2))
+    orcf1 = ORCF(0.5 * a0, b, c)
+    orcf2 = ORCF(1.2 * a0, b, c)
+    orcf3 = ORCF(a0, b, c)
+    assert orcf1.variant.name == 'ORCF1'
+    assert orcf2.variant.name == 'ORCF2'
+    assert orcf3.variant.name == 'ORCF3'
+    yield orcf1
+    yield orcf2
+    yield orcf3
+
+    yield ORCI(a, b, c)
+    yield ORCC(a, b, c)
+
+    yield HEX(a, c)
+
+    rhl1 = RHL(a, alpha)
+    rhl2 = RHL(a, alpha + 2.0 * (90 - alpha))
+    assert rhl1.variant.name == 'RHL1'
+    assert rhl2.variant.name == 'RHL2'
+    yield rhl1
+    yield rhl2
+
+    yield MCL(a, b, c, alpha)
+
+    yield MCLC(a, b, c, alpha)
 
 def get_bravais_lattice(uc, eps=2e-4):
     bravaisclass, parameters = get_bravais_lattice1(uc, eps=eps)
