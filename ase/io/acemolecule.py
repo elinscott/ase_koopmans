@@ -66,10 +66,10 @@ def read_acemolecule_input(Label):
     '''Reads a Acemolecule input file'''
     filename = Label
     inputtemplate = open(filename, 'r')
-    lines = inputttemplate.readlines()
+    lines = inputtemplate.readlines()
     for line in lines:
         if(len(line.split('GeometryFilename')) > 1):
-            line.split()[2] = geometryfile
+            geometryfile = line.split()[2] 
             break
     atoms = read(geometryfile, format='xyz')
     inputtemplate.close()
