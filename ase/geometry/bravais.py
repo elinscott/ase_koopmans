@@ -14,12 +14,6 @@ class BravaisLattice(ABC):
     variants = None  # e.g. {'BCT1': <variant object>,
     #                        'BCT2': <variant object>}
 
-    _class_desc_template = """\
-Lattice name: {type}
-  Long name: {name}
-  Parameters: {parameters}
-"""
-
     def __init__(self, **kwargs):
         p = {}
         for k, v in kwargs.items():
@@ -99,7 +93,11 @@ Lattice name: {type}
 
     @classmethod
     def type_description(cls):
-        desc = cls._class_desc_template.format(**vars(cls))
+        desc = """\
+Lattice name: {type}
+  Long name: {name}
+  Parameters: {parameters}
+""".format(**vars(cls))
 
         chunks = [desc]
         for name in cls.variant_names:
@@ -116,7 +114,7 @@ class SimpleBravaisLattice(BravaisLattice):
     """Special implementation for cases with only one variant."""
     special_point_names = None  # Autoinitialized by @bravais decorator
     special_points = None
-    special_paths = None
+    special_path = None
 
     def _special_points(self, **kwargs):
         return self.special_points
@@ -129,13 +127,13 @@ class Variant:
     variant_desc = """\
 Variant name: {name}
   Special point names: {special_point_names}
-  Special paths: {special_paths}
+  Special paths: {special_path}
 """
 
-    def __init__(self, name, special_point_names, special_paths):
+    def __init__(self, name, special_point_names, special_path):
         self.name = name
         self.special_point_names = special_point_names
-        self.special_paths = special_paths
+        self.special_path = special_path
 
     def __str__(self):
         return self.variant_desc.format(**vars(self))
@@ -145,6 +143,10 @@ bravais_names = []
 bravais_lattices = {}
 
 def bravais(longname, parameters, variants):
+    """Decorator for Bravais lattice classes.
+
+    This sets a number of class variables and processes the information
+    about different variants into a list of Variant objects."""
 
     def decorate(cls):
         btype = cls.__name__
@@ -154,18 +156,16 @@ def bravais(longname, parameters, variants):
         cls.variant_names = []
         cls.variants = {}
 
-        for name, special_point_names, special_paths in variants:
-            special_paths = special_paths.replace(',', ' ')
-            special_paths = tuple(special_paths.split())
+        for name, special_point_names, special_path in variants:
             cls.variant_names.append(name)
             cls.variants[name] = Variant(name, special_point_names,
-                                         special_paths)
+                                         special_path)
 
         if len(variants) == 1:
             # Only one variant.  We define the special points/paths statically:
             variant = cls.variants[cls.variant_names[0]]
             cls.special_point_names = variant.special_point_names
-            cls.special_paths = variant.special_paths
+            cls.special_path = variant.special_path
 
             assert cls.type.isupper()
             lowername = cls.type.lower()
@@ -203,25 +203,25 @@ class Cubic(SimpleBravaisLattice):
         SimpleBravaisLattice.__init__(self, a=a)
 
 @bravais('cubic', 'a',
-         [['CUB1', 'GXRM', 'GXMGRX MR']])
+         [['CUB1', 'GXRM', 'GXMGRX,MR']])
 class CUB(Cubic):
     def _cell(self, a):
         return a * np.eye(3)
 
 @bravais('face-centered cubic', 'a',
-         [['FCC1', 'GKLUWX', 'GXWKGLUWLK UX']])
+         [['FCC1', 'GKLUWX', 'GXWKGLUWLK,UX']])
 class FCC(Cubic):
     def _cell(self, a):
         return 0.5 * np.array([[0., a, a], [a, 0, a], [a, a, 0]])
 
 @bravais('body-centered cubic', 'a',
-         [['BCC1', 'GHPN', 'GHNGPH PN']])
+         [['BCC1', 'GHPN', 'GHNGPH,PN']])
 class BCC(Cubic):
     def _cell(self, a):
         return 0.5 * np.array([[-a, a, a], [a, -a, a], [a, a, -a]])
 
 @bravais('tetragonal', 'ac',
-         [['TET1', 'GAMRXZ', 'GXMGZRAZXR MA']])
+         [['TET1', 'GAMRXZ', 'GXMGZRAZXR,MA']])
 class TET(SimpleBravaisLattice):
     def __init__(self, a, c):
         SimpleBravaisLattice.__init__(self, a=a, c=c)
@@ -230,8 +230,8 @@ class TET(SimpleBravaisLattice):
         return np.diag(np.array([a, a, c]))
 
 @bravais('body-centered tetragonal', 'ac',
-         [['BCT1', 'GMNPXSS1', 'GXMGSPNS1M XP'],
-          ['BCT2', 'GNPSS1XYY1Z', 'GXYSGZS1NPY1Z XP']])
+         [['BCT1', 'GMNPXSS1', 'GXMGSPNS1M,XP'],
+          ['BCT2', 'GNPSS1XYY1Z', 'GXYSGZS1NPY1Z,XP']])
 class BCT(BravaisLattice):
     def __init__(self, a, c):
         BravaisLattice.__init__(self, a=a, c=c)
@@ -273,7 +273,7 @@ class BCT(BravaisLattice):
 
 def check_orc(a, b, c):
     if not a < b < c:
-        raise UnconventionalLattice('a < b < c')
+        raise UnconventionalLattice('Expected a < b < c')
 
 
 class Orthorhombic(BravaisLattice):
@@ -290,16 +290,16 @@ class Orthorhombic(BravaisLattice):
 
 
 @bravais('orthorhombic', 'abc',
-         [['ORC1', 'GRSTUXYZ', 'GXSYGZURTZ YT UX SR']])
+         [['ORC1', 'GRSTUXYZ', 'GXSYGZURTZ,YT,UX,SR']])
 class ORC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
     def _cell(self, a, b, c):
         return np.diag([a, b, c]).astype(float)
 
 
 @bravais('face-centered orthorhombic', 'abc',
-         [['ORCF1', 'GAA1LTXX1YZ', 'GYTZGXA1Y TX1 XAZ LG'],
-          ['ORCF2', 'GCC1DD1LHH1XYZ', 'GYCDXGZD1HC C1Z XH1 HY LG'],
-          ['ORCF3', 'GAA1LTXX1YZ', 'GYTZGXA1Y TX1 XAZ LG']])  # same as orcf1
+         [['ORCF1', 'GAA1LTXX1YZ', 'GYTZGXA1Y,TX1,XAZ,LG'],
+          ['ORCF2', 'GCC1DD1LHH1XYZ', 'GYCDXGZD1HC,C1Z,XH1,HY,LG'],
+          ['ORCF3', 'GAA1LTXX1YZ', 'GYTZGXA1Y,TX1,XAZ,LG']])  # same as orcf1
 class ORCF(Orthorhombic):
     def _cell(self, a, b, c):
         return 0.5 * np.array([[0, b, c], [a, 0, c], [a, b, 0]])
@@ -359,7 +359,7 @@ class ORCF(Orthorhombic):
         return 'ORCF1' if diff > 0 else 'ORCF2'
 
 @bravais('body-centered orthorhombic', 'abc',
-         [['ORCI1', 'GLL1L2RSTWXX1YY1Z', 'GXLTWRX1ZGYSW L1Y Y1Z']])
+         [['ORCI1', 'GLL1L2RSTWXX1YY1Z', 'GXLTWRX1ZGYSW,L1Y,Y1Z']])
 class ORCI(Orthorhombic):
     def _cell(self, a, b, c):
         return 0.5 * np.array([[-a, b, c], [a, -b, c], [a, b, -c]])
@@ -395,7 +395,7 @@ class ORCI(Orthorhombic):
 
 
 @bravais('c-centered orthorhombic', 'abc',
-         [['ORCC1', 'GAA1RSTXX1YZ', 'GXSRAZGYX1A1TY ZT']])
+         [['ORCC1', 'GAA1RSTXX1YZ', 'GXSRAZGYX1A1TY,ZT']])
 class ORCC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
     def _cell(self, a, b, c):
         return np.array([[0.5 * a, -0.5 * b, 0], [0.5 * a, 0.5 * b, 0],
@@ -406,7 +406,7 @@ class ORCC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
         return SimpleBravaisLattice._variant_name(self, a, b, c)
 
 @bravais('hexagonal', 'ac',
-         [['HEX1', 'GMKALH', 'GMKGALHA LM KH']])
+         [['HEX1', 'GMKALH', 'GMKGALHA,LM,KH']])
 class HEX(SimpleBravaisLattice):
     def __init__(self, a, c):
         BravaisLattice.__init__(self, a=a, c=c)
@@ -418,7 +418,7 @@ class HEX(SimpleBravaisLattice):
 
 
 @bravais('rhombohedral', ('a', 'alpha'),
-         [['RHL1', 'GBB21FLL1PP1P2QXZ', 'GLB1 BZGX QFP1Z LP'],
+         [['RHL1', 'GBB21FLL1PP1P2QXZ', 'GLB1,BZGX,QFP1Z,LP'],
           ['RHL2', 'GFLPP1QQ1Z', 'GPZQGFP1Q1LZ']])
 class RHL(BravaisLattice):
     def __init__(self, a, alpha):
@@ -472,7 +472,7 @@ def check_mcl(a, b, c, alpha):
 
 
 @bravais('monoclinic', ('a', 'b', 'c', 'alpha'),
-         [['MCL1', 'GACDD1EHH1H2MM1M2XYY1Z', 'GYHCEM1AXH1 MDZ YD']])
+         [['MCL1', 'GACDD1EHH1H2MM1M2XYY1Z', 'GYHCEM1AXH1,MDZ,YD']])
 class MCL(SimpleBravaisLattice):
     def __init__(self, a, b, c, alpha):
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
@@ -488,12 +488,12 @@ class MCL(SimpleBravaisLattice):
 
 
 @bravais('c-centered monoclinic', ('a', 'b', 'c', 'alpha'),
-         [['MCLC1', 'GNN1FF1F2F3II1LMXX1X2YY1Z', 'GYFLI I1ZF1 YX1 XGN MG'],
-          ['MCLC2', 'GNN1FF1F2F3II1LMXX1X2YY1Z', 'GYFLI I1ZF1 NGM'],
-          ['MCLC3', 'GFF1F2HH1H2IMNN1XYY1Y2Y3Z', 'GYFHZIF1 H1Y1XGN MG'],
-          ['MCLC4', 'GFF1F2HH1H2IMNN1XYY1Y2Y3Z', 'GYFHZI H1Y1XGN MG'],
+         [['MCLC1', 'GNN1FF1F2F3II1LMXX1X2YY1Z', 'GYFLI,I1ZF1,YX1,XGN,MG'],
+          ['MCLC2', 'GNN1FF1F2F3II1LMXX1X2YY1Z', 'GYFLI,I1ZF1,NGM'],
+          ['MCLC3', 'GFF1F2HH1H2IMNN1XYY1Y2Y3Z', 'GYFHZIF1,H1Y1XGN,MG'],
+          ['MCLC4', 'GFF1F2HH1H2IMNN1XYY1Y2Y3Z', 'GYFHZI,H1Y1XGN,MG'],
           ['MCLC5', 'GFF1F2HH1H2II1LMNN1XYY1Y2Y3Z',
-           'GYFLI I1ZHF1 H1Y1XGN MG']])
+           'GYFLI,I1ZHF1,H1Y1XGN,MG']])
 class MCLC(BravaisLattice):
     def __init__(self, a, b, c, alpha):
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
@@ -629,12 +629,10 @@ class MCLC(BravaisLattice):
 
 
 @bravais('trigonal', ('a', 'b', 'c', 'alpha', 'beta', 'gamma'),
-         [['TRI1a', 'GLMNRXYZ', 'XGY LGZ NGM RG'],  # XXX labels, paths
-          ['TRI2a', 'GLMNRXYZ', 'XGY LGZ NGM RG'],  # are all the same.
-          ['TRI1b', 'GLMNRXYZ', 'XGY LGZ NGM RG'],
-          ['TRI2b', 'GLMNRXYZ', 'XGY LGZ NGM RG']])
-
-
+         [['TRI1a', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG'],  # XXX labels, paths
+          ['TRI2a', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG'],  # are all the same.
+          ['TRI1b', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG'],
+          ['TRI2b', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG']])
 class TRI(BravaisLattice):
     def __init__(self, a, b, c, alpha, beta, gamma):
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha, beta=beta,
@@ -670,6 +668,7 @@ class TRI(BravaisLattice):
             elif kalpha < 90 and kbeta < 90:
                 var = '2b'
             else:
+                # Is this possible?  Maybe due to epsilon
                 assert 0, 'unexpected combination of angles'
         elif all(angles > 90) and kgamma < min(kalpha, kbeta):
             var = '1a'
