@@ -559,7 +559,7 @@ class BaseSiesta(FileIOCalculator):
         a2constr = self.make_xyz_constraints(atoms)
         a2p,a2s = atoms.get_positions(), atoms.get_chemical_symbols()
         for ia, (sp,xyz,ccc,sym) in enumerate(zip(species_numbers, a2p, a2constr, a2s)):
-            f.write(fstr.format(sp, *xyz, *ccc, ia+1, sym))
+            f.write( fstr.format(sp, xyz[0], xyz[1], xyz[2], ccc[0], ccc[1], ccc[2], ia+1, sym) )
         f.write('%endblock Zmatrix\n')
 
         origin = tuple( -atoms.get_celldisp().flatten() )
@@ -822,9 +822,6 @@ class BaseSiesta(FileIOCalculator):
         if isfile(filename):
             self.results['hsx'] = readHSX(filename)
         else:
-            warnings.warn(filename + """ does not exist =>
-                                     siesta.results["hsx"]=None""",
-                                     UserWarning)
             self.results['hsx'] = None
 
     def read_dim(self):
@@ -842,9 +839,6 @@ class BaseSiesta(FileIOCalculator):
         if isfile(filename):
             self.results['dim'] = readDIM(filename)
         else:
-            warnings.warn(filename + """ does not exist =>
-                                     siesta.results["dim"]=None""",
-                                     UserWarning)
             self.results['dim'] = None
 
     def read_pld(self, norb, natms):
@@ -862,9 +856,6 @@ class BaseSiesta(FileIOCalculator):
         if isfile(filename):
             self.results['pld'] = readPLD(filename, norb, natms)
         else:
-            warnings.warn(filename + """ does not exist =>
-                                     siesta.results["pld"]=None""",
-                                     UserWarning)
             self.results['pld'] = None
 
     def read_wfsx(self):
@@ -886,10 +877,6 @@ class BaseSiesta(FileIOCalculator):
             readWFSX(filename)
             self.results['wfsx'] = readWFSX(filename)
         else:
-            filename = fname_woext + '.WFSX or ' + fname_woext + '.fullBZ.WFSX'
-            warnings.warn(filename + """ does not exist =>
-                                     siesta.results["wfsx"]=None""",
-                                     UserWarning)
             self.results['wfsx'] = None
 
     def read_pseudo_density(self):
