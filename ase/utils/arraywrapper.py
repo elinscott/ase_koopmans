@@ -24,7 +24,8 @@ if py3:
 else:
     forward_methods += ['__div__', '__rdiv__']
 
-forward_methods += ['all', 'any', 'diagonal', 'dot', 'sum', 'ravel', 'tolist',
+forward_methods += ['all', 'any', 'diagonal', 'dot', 'mean', 'sum',
+                    'ravel', 'tolist',
                     'transpose', 'tofile', 'tobytes', 'tostring']
 
 

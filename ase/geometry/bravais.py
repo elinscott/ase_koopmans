@@ -5,6 +5,7 @@ import numpy as np
 
 from ase.geometry.cell import Cell
 
+
 class BravaisLattice(ABC):
     # These parameters can be set by the @bravais decorator for a subclass.
     # (We could also use metaclasses to do this, but that's more abstract)
@@ -16,9 +17,16 @@ class BravaisLattice(ABC):
 
     def __init__(self, **kwargs):
         p = {}
+        eps = kwargs.pop('eps', 2e-4)
         for k, v in kwargs.items():
             p[k] = float(v)
         self._parameters = p
+        self._eps = eps
+        self._variant = self.get_variant()
+
+    @property
+    def variant(self):
+        return self._variant
 
     def __getattr__(self, name):
         return self._parameters[name]
@@ -36,10 +44,8 @@ class BravaisLattice(ABC):
         return cell.cellpar()
 
     def get_special_points(self):
-        kw = self._parameters
-        variant_name = self._variant_name(**kw)
-        variant = self.variants[variant_name]
-        points = self._special_points(variant=variant, **kw)
+        variant = self._variant
+        points = self._special_points(variant=variant, **self._parameters)
         # replace the string by list of points using some regex
         #assert len(points) == len(variant.special_point_names)
         return np.array(points)
@@ -48,21 +54,35 @@ class BravaisLattice(ABC):
         name = self._variant_name(**self._parameters)
         return self.variants[name]
 
+    @property
+    def kpoint_labels(self):
+        return self.get_kpoint_labels()
+
     def get_kpoint_labels(self):
-        variant = self.get_variant()
-        labels = re.findall(r'[A-Z]\d?', variant.special_point_names)
+        labels = re.findall(r'[A-Z]\d?', self._variant.special_point_names)
         return labels
 
     @abstractmethod
     def _cell(self, **kwargs):
+        """Return a Cell object from this Bravais lattice.
+
+        Arguments are the dictionary of Bravais parameters."""
         pass
 
     @abstractmethod
     def _special_points(self, **kwargs):
+        """Return the special point coordinates as an npoints x 3 sequence.
+
+        Ordering must be same as kpoint labels.
+
+        Arguments are the dictionary of Bravais parameters and the variant."""
         pass
 
     @abstractmethod
     def _variant_name(self, **kwargs):
+        """Return the name (e.g. ORCF3) of variant.
+
+        Arguments will be the dictionary of Bravais parameters."""
         pass
 
     def __repr__(self):
@@ -112,7 +132,7 @@ Lattice name: {type}
 
 class SimpleBravaisLattice(BravaisLattice):
     """Special implementation for cases with only one variant."""
-    special_point_names = None  # Autoinitialized by @bravais decorator
+    special_point_names = None  # These are initialized by @bravais decorator
     special_points = None
     special_path = None
 
@@ -273,19 +293,13 @@ class BCT(BravaisLattice):
 
 def check_orc(a, b, c):
     if not a < b < c:
-        raise UnconventionalLattice('Expected a < b < c')
+        raise UnconventionalLattice('Expected a < b < c, got {}, {}, {}'
+                                    .format(a, b, c))
 
 
 class Orthorhombic(BravaisLattice):
     """Abstract class for orthorhombic types."""
     def __init__(self, a, b, c):
-        # XXX ORCx have convention a < b < c, except ORCI which has a < b.
-        # We should raise errors as appropriate.
-        #
-        # Also, we will need to handle uneven permutation of axes
-        # because of this.
-        #
-        # Very XXX
         BravaisLattice.__init__(self, a=a, b=b, c=c)
 
 
@@ -345,16 +359,10 @@ class ORCF(Orthorhombic):
         return points
 
     def _variant_name(self, a, b, c):
-        # XXX
-        # In general we need to remember eps, because here we need eps to
-        # decide which variant we are.
-        #
-        # The framework must also know how to forward the eps to this function
         check_orc(a, b, c)
 
         diff = 1.0 / (a * a) - 1.0 / (b * b) - 1.0 / (c * c)
-        eps = 2e-4
-        if abs(diff) < eps:
+        if abs(diff) < self._eps:
             return 'ORCF3'
         return 'ORCF1' if diff > 0 else 'ORCF2'
 
@@ -402,8 +410,8 @@ class ORCC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
                          [0, 0, c]])
 
     def _variant_name(self, a, b, c):
-        check_orc(a, b, 0)  # check only a < b
-        return SimpleBravaisLattice._variant_name(self, a, b, c)
+        check_orc(a, b, 2 * max(a, b))  # check only a < b for ORCC
+        return SimpleBravaisLattice._variant_name(self)
 
 @bravais('hexagonal', 'ac',
          [['HEX1', 'GMKALH', 'GMKGALHA,LM,KH']])
@@ -484,7 +492,8 @@ class MCL(SimpleBravaisLattice):
 
     def _variant_name(self, a, b, c, alpha):
         check_mcl(a, b, c, alpha)
-        return SimpleBravaisLattice._variant_name(self, a, b, c, alpha)
+        # XXX slightly ugly
+        return SimpleBravaisLattice._variant_name(self)
 
 
 @bravais('c-centered monoclinic', ('a', 'b', 'c', 'alpha'),
@@ -522,9 +531,9 @@ class MCLC(BravaisLattice):
 
         kgamma = lengths_angles[-1]
 
-        eps = 2e-4  # XXX we should know precision better somehow
-        # Also, we should probably not compare angles/lengths with
-        # the same precision
+        eps = self._eps
+        # We should not compare angles in degrees versus lengths with
+        # the same precision.
         if abs(kgamma - 90) < eps:
             variant = 2
         elif kgamma > 90:
@@ -653,15 +662,11 @@ class TRI(BravaisLattice):
 
     def _variant_name(self, a, b, c, alpha, beta, gamma):
         c = Cell.new([a, b, c, alpha, beta, gamma])
-        #from ase.geometry.cell import get_cell_lengths_and_angles
-        #ka, kb, kc, kalpha, kbeta, kgamma = get_cell_lengths_and_angles
-        #reciprocal)
         (ka, kb, kc, kalpha, kbeta,
          kgamma) = Cell(c.reciprocal()).cellpar()
-        # lengths = np.array([ka, kb, kc])
         angles = np.array([kalpha, kbeta, kgamma])
 
-        eps = 2e-4  # XXX must support variable eps
+        eps = self._eps
         if abs(kgamma - 90) < eps:
             if kalpha > 90 and kbeta > 90:
                 var = '2a'
@@ -674,6 +679,10 @@ class TRI(BravaisLattice):
             var = '1a'
         elif all(angles < 90) and kgamma > max(kalpha, kbeta):
             var = '1b'
+        else:
+            raise UnconventionalLattice(
+                'Reciprocal lattice has unexpected angles: kalpha={}, '
+                'kbeta={}, kgamma={}'.format(kalpha, kbeta, kgamma))
         return 'TRI' + var
 
     def _special_points(self, a, b, c, alpha, beta, gamma, variant):
@@ -729,7 +738,10 @@ def get_bravais_lattice1(uc, eps=2e-4):
 
     def check(f, *args, **kwargs):
         axis = kwargs.pop('axis', 0)
-        cell = f(*args, **kwargs).tocell()
+        try:
+            cell = f(*args, **kwargs).tocell()
+        except UnconventionalLattice:
+            return None
         mycellpar = Cell(cell).cellpar()
         permutation = (np.arange(-3, 0) + axis) % 3
         mycellpar = mycellpar.reshape(2, 3)[:, permutation].ravel()
