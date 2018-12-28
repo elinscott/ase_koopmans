@@ -814,8 +814,6 @@ class BaseSiesta(FileIOCalculator):
         'is_gamma', 'sc_orb2uc_orb', 'row2nnzero', 'sparse_ind2column',
         'H_sparse', 'S_sparse', 'aB2RaB_sparse', 'total_elec_charge', 'temp'
         """
-
-        import warnings
         from ase.calculators.siesta.import_functions import readHSX
 
         filename = os.path.join(self.directory, self.label + '.HSX')
@@ -831,8 +829,6 @@ class BaseSiesta(FileIOCalculator):
         'natoms_sc', 'norbitals_sc', 'norbitals', 'nspin',
         'nnonzero', 'natoms_interacting'
         """
-
-        import warnings
         from ase.calculators.siesta.import_functions import readDIM
 
         filename = os.path.join(self.directory, self.label + '.DIM')
@@ -848,8 +844,6 @@ class BaseSiesta(FileIOCalculator):
         'max_rcut', 'orb2ao', 'orb2uorb', 'orb2occ', 'atm2sp',
         'atm2shift', 'coord_sc', 'cell', 'nunit_cells'
         """
-
-        import warnings
         from ase.calculators.siesta.import_functions import readPLD
 
         filename = os.path.join(self.directory, self.label + '.PLD')
@@ -863,8 +857,6 @@ class BaseSiesta(FileIOCalculator):
         Read the siesta WFSX file
         Return a namedtuple with the following arguments:
         """
-
-        import warnings
         from ase.calculators.siesta.import_functions import readWFSX
         
         fname_woext = os.path.join(self.directory, self.label)
