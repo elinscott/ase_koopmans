@@ -499,7 +499,7 @@ class Calculator(object):
 
     def check_state(self, atoms, tol=1e-15):
         """Check for system changes since last calculation."""
-        return compare_atoms(self.atoms, atoms)
+        return compare_atoms(self.atoms, atoms, tol)
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         energy = self.get_property('energy', atoms)
