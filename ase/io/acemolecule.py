@@ -3,6 +3,7 @@ import numpy as np
 import ase.units
 from ase.atoms import Atoms
 from ase.io.acemoleculereader import Acemoleculereader as ACE_reader
+from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io import read
 
 
@@ -18,48 +19,52 @@ def read_acemolecule_out(filename, quantity='atoms'):
     f = open(filename, 'r')
     lines = f.readlines()
     geometry = zip(atom_symbol, positions)
-        
+#    energy = 0.0    
+     
     if(quantity == 'excitation-energy'):
         f.close()
         # ee is excitation-energy
+        q
         ee = 1
         return ee
+    
+    for i in range(len(lines)-1,1,-1):
+        line = lines[i].split()
+        if(len(line)>2):
+            if(line[0] == 'Total' and line[1] == 'energy'):
+                energy = float(line[3])
+                break
+    f.close()
+    energy *= ase.units.Hartree
+    # energy must be modified, hartree to eV
+    
+    for i in range(len(lines)-1,1,-1):
+        if (lines[i] == '!================================================\n'):
+            endline_num = i
+        if (lines[i] == '! Atom           x         y         z\n'):
+            forces = []
+            startline_num = i
+            for j in range(startline_num+1, endline_num):
+                forces += [[float(lines[j].split()[3]), 
+                            float(lines[j].split()[4]), 
+                            float(lines[j].split()[5])]]
+            convert = ase.units.Hartree / ase.units.Bohr
+            forces = np.array(forces) * convert
+            break
+        if(i == 30):
+            forces = None
+            break
+    calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
+    atoms.set_calculator(calc)
     if(quantity == 'energy'):
-        energy = 0
-        for i in range(len(lines)-1,1,-1):
-            line = lines[i].split()
-            if(len(line)>2):
-                if(line[0] == 'Total' and line[1] == 'energy'):
-                    energy = float(line[3])
-                    break
-        f.close()
-        energy *= ase.units.Hartree
-        # energy must be modified, hartree to eV
         return energy
     if(quantity == 'forces'):
-        for i in range(len(lines)-1,1,-1):
-            if (lines[i] == '!================================================\n'):
-                endline_num = i
-            if (lines[i] == '! Atom           x         y         z\n'):
-                forces = []
-                startline_num = i
-                for j in range(startline_num+1, endline_num):
-                    forces += [[float(lines[j].split()[3]), 
-                                float(lines[j].split()[4]), 
-                                float(lines[j].split()[5])]]
-                convert = ase.units.Hartree / ase.units.Bohr
-                forces = np.array(forces) * convert
-                break
-            if(i == 30):
-                forces = None
-                break
-        f.close()
         return forces
     if(quantity == 'geometry'):
-        f.close()
+#        f.close()
         return geometry
     if(quantity == 'atoms'):
-        f.close()
+#        f.close()
         return atoms
 
 
