@@ -49,6 +49,13 @@ class BravaisLattice(ABC):
         assert len(points) == len(self.kpoint_labels)
         return np.array(points)
 
+    # XXX which should be the standard way of doing this?
+    # Array or dict?
+    def get_special_point_dict(self):
+        labels = self.kpoint_labels
+        points = self.get_special_points()
+        return dict(zip(labels, points))
+
     def get_variant(self):
         name = self._variant_name(**self._parameters)
         return self.variants[name]
@@ -57,6 +64,40 @@ class BravaisLattice(ABC):
     def kpoint_labels(self):
         labels = re.findall(r'[A-Z]\d?', self._variant.special_point_names)
         return labels
+
+    def bandpath(self, path=None, npoints=50):
+        # npoints should depend on the length of the path
+        if path is None:
+            path = self.variant.special_path
+
+        pathcoords = self._resolve_kpt_path_string(path)
+        #print(pathcoords)
+
+        from ase.dft.kpoints import paths2kpts
+        kpts, x, X = paths2kpts(pathcoords, self.tocell(), npoints)
+        return kpts, x, X
+
+        #print(pathcoords)
+        #sdfkj
+        #paths = [special_point_coords[sym] for sym in path.split(',')]
+
+        #paths = []
+
+        #from ase.dft.kpoints import bandpath, CellInfo
+
+        #rcell = self.tocell().reciprocal()
+
+        #cellinfo = CellInfo(rcell, ..., self.variant.special_poin)
+
+        #return bandpath(vertices, self.tocell(), npoints=npoints)
+        #from ase.
+
+    def _resolve_kpt_path_string(self, path):
+        from ase.dft.kpoints import parse_path_string
+        paths = parse_path_string(path)
+        special_point_coords = self.get_special_point_dict()
+        return [np.array([special_point_coords[sym] for sym in subpath])
+                for subpath in paths]
 
     @abstractmethod
     def _cell(self, **kwargs):
@@ -68,6 +109,8 @@ class BravaisLattice(ABC):
     @abstractmethod
     def _special_points(self, **kwargs):
         """Return the special point coordinates as an npoints x 3 sequence.
+
+        Subclasses typically return a nested list.
 
         Ordering must be same as kpoint labels.
 
@@ -143,7 +186,7 @@ class Variant:
     variant_desc = """\
 Variant name: {name}
   Special point names: {special_point_names}
-  Special paths: {special_path}
+  Default path: {special_path}
 """
 
     def __init__(self, name, special_point_names, special_path):
@@ -452,7 +495,7 @@ class RHL(BravaisLattice):
         asina2 = a * np.sin(0.5 * alpha)
         acosfrac = acosa / acosa2
         return np.array([[acosa2, -asina2, 0], [acosa2, asina2, 0],
-                         [a * acosfrac, 0, a * np.sqrt(1 - acosfrac**2)]])
+                         [a * acosfrac, 0, a * (1 - acosfrac**2)**.5]])
 
     def _variant_name(self, a, alpha):
         return 'RHL1' if alpha < 90 else 'RHL2'
@@ -488,7 +531,7 @@ class RHL(BravaisLattice):
 
 
 def check_mcl(a, b, c, alpha):
-    if not a <= c and b <= c and alpha < 90:
+    if not (a <= c and b <= c and alpha < 90):
         raise UnconventionalLattice('Expected a <= c, b <= c, alpha < 90')
 
 
@@ -562,7 +605,7 @@ class MCLC(BravaisLattice):
         sina2 = sina**2
 
         cell = self.tocell()
-        lengths_angles = Cell(np.linalg.inv(cell)).cellpar()
+        lengths_angles = Cell(cell.reciprocal()).cellpar()
 
         kgamma = lengths_angles[-1]
 
@@ -632,7 +675,6 @@ class MCLC(BravaisLattice):
                       [zeta,zeta,eta],
                       [1-zeta,-zeta,1-eta],
                       [-zeta,-zeta,1-eta],
-                      [.5,-.5,.5],
                       [.5,-.5,.5],
                       [.5,0,.5],
                       [.5,0,0],
@@ -748,6 +790,10 @@ class TRI(BravaisLattice):
 
 
 def get_bravais_lattice1(uc, eps=2e-4):
+    uc2 = uc.niggli_reduce()
+    if np.abs(uc2 - uc).max() > eps:
+        raise ValueError('Can only get recognize Bravais lattice of '
+                         'Niggli-reduced cell.')
     if np.linalg.det(uc.array) < 0:
         raise ValueError('Cell should be right-handed')
 
@@ -897,7 +943,7 @@ def get_bravais_lattice1(uc, eps=2e-4):
 def _test_all_variants():
     """For testing; yield every variant of every Bravais lattice."""
     a, b, c = 3., 4., 5.
-    alpha = 80.0
+    alpha, beta, gamma = 80.0, 75.0, 65.0
     yield CUB(a)
     yield FCC(a)
     yield BCC(a)
@@ -937,7 +983,22 @@ def _test_all_variants():
 
     yield MCL(a, b, c, alpha)
 
-    yield MCLC(a, b, c, alpha)
+    mclc1 = MCLC(a, b, c, 80)
+    mclc3 = MCLC(1.8 * a, b, c * 2, 80)
+    assert mclc1.variant.name == 'MCLC1'
+    assert mclc3.variant.name == 'MCLC3'
+
+    yield mclc1
+    yield mclc3
+
+    # XXX TODO:
+    # mclc2
+    # mclc4
+    # mclc5
+    # tri1a
+    # tri1b
+    # tri2a
+    # tri2b
 
 def get_bravais_lattice(uc, eps=2e-4):
     bravaisclass, parameters = get_bravais_lattice1(uc, eps=eps)

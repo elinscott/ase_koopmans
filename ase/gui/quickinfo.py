@@ -62,18 +62,18 @@ def info(gui):
 
         add()
 
-        lattice, par = uc.bravais()
+        lattice = uc.bravais()
         lattice_string = _('Lattice: {}').format(lattice.name)
         add(lattice_string)
 
         pretty = dict(alpha='α', beta='β', gamma='γ')
         if lattice.type != 'tri':
             parts = []
-            for varname in lattice.varnames:
+            for varname in lattice.parameters:
                 prettyname = pretty.get(varname, varname)
                 unit = ' Å' if varname in 'abc' else '°'
                 part = '{}={:.3f}{}'.format(prettyname,
-                                            par[varname],
+                                            lattice._parameters[varname],
                                             unit)
                 parts.append(part)
             add(format(', '.join(parts)))

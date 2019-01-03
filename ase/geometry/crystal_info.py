@@ -453,7 +453,7 @@ def tri_special_points(a, b, c, alpha, beta, gamma, eps=2e-4):
     return var, names, paths[var], points
 
 def _get_special_points():
-    # name/variant | special point names | special paths | special points
+    # name/variant | special point names | special path | special points
     d = [('cub', 'GMRX', ['GXMGRX', 'MR'],
           [[0, 0, 0],
            [1 / 2, 1 / 2, 0],

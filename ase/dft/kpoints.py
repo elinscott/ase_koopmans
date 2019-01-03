@@ -126,7 +126,6 @@ def bandpath(path, cell, npoints=50):
     Return list of k-points, list of x-coordinates and list of
     x-coordinates of special points."""
 
-
     if isinstance(path, basestring):
         cellinfo = get_cellinfo(cell)
         special = cellinfo.special_points
@@ -145,6 +144,10 @@ def bandpath(path, cell, npoints=50):
     else:
         paths = path
 
+    return paths2kpts(paths, cell, npoints)
+
+
+def paths2kpts(paths, cell, npoints):
     points = np.concatenate(paths)
     dists = points[1:] - points[:-1]
     lengths = [np.linalg.norm(d) for d in kpoint_convert(cell, skpts_kc=dists)]
