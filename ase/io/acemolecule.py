@@ -24,7 +24,6 @@ def read_acemolecule_out(filename, quantity='atoms'):
     if(quantity == 'excitation-energy'):
         f.close()
         # ee is excitation-energy
-        q
         ee = 1
         return ee
     
