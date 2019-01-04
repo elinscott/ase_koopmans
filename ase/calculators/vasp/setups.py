@@ -52,7 +52,7 @@ setups_defaults = {'minimal':
                      'Lu':'_3',
                      'Hf': '_pv',
                      'Ta': '_pv',
-                     'W': '_pv',
+                     'W': '_sv',
                      'Tl': '_d',
                      'Pb': '_d',
                      'Bi':'_d',
