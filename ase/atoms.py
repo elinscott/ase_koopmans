@@ -907,10 +907,16 @@ class Atoms(object):
                 raise IndexError('Index out of range.')
 
             return Atom(atoms=self, index=i)
-        elif isinstance(i, list) and len(i) > 0:
-            # Make sure a list of booleans will work correctly and not be
-            # interpreted at 0 and 1 indices.
+        elif not isinstance(i, slice):
             i = np.array(i)
+            # if i is a mask
+            if i.dtype == bool:
+                try:
+                    i = np.arange(len(self))[i]
+                except IndexError:
+                    raise IndexError('length of item mask '
+                                     'mismatches that of {0} '
+                                     'object'.format(self.__class__.__name__))
 
         import copy
 
