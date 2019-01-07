@@ -2,6 +2,7 @@
 
 """Infrared intensities"""
 
+import os.path as op
 from math import sqrt
 from sys import stdout
 
@@ -156,13 +157,24 @@ class Infrared(Vibrations):
         self.method = method.lower()
         self.direction = direction.lower()
         assert self.method in ['standard', 'frederiksen']
+
+        def load(fname, combined_data=None):
+            if combined_data is not None:
+                return combined_data[fname]
+            return pickleload(open(fname, 'rb'))
+
         if direction != 'central':
             raise NotImplementedError(
                 'Only central difference is implemented at the moment.')
 
+        if op.isfile(self.name + '.all.pckl'):
+            # Open the combined pickle-file
+            combined_data = load(self.name + '.all.pckl')
+        else:
+            combined_data = None
         # Get "static" dipole moment and forces
         name = '%s.eq.pckl' % self.name
-        [forces_zero, dipole_zero] = pickleload(open(name, 'rb'))
+        [forces_zero, dipole_zero] = load(name, combined_data)
         self.dipole_zero = (sum(dipole_zero**2)**0.5) / units.Debye
         self.force_zero = max([sum((forces_zero[j])**2)**0.5
                                for j in self.indices])
@@ -174,15 +186,13 @@ class Infrared(Vibrations):
         for a in self.indices:
             for i in 'xyz':
                 name = '%s.%d%s' % (self.name, a, i)
-                [fminus, dminus] = pickleload(
-                    open(name + '-.pckl', 'rb'))
-                [fplus, dplus] = pickleload(
-                    open(name + '+.pckl', 'rb'))
+                [fminus, dminus] = load(name + '-.pckl', combined_data)
+                [fplus, dplus] = load(name + '+.pckl', combined_data)
                 if self.nfree == 4:
-                    [fminusminus, dminusminus] = pickleload(
-                        open(name + '--.pckl', 'rb'))
-                    [fplusplus, dplusplus] = pickleload(
-                        open(name + '++.pckl', 'rb'))
+                    [fminusminus, dminusminus] = load(
+                        name + '--.pckl', combined_data)
+                    [fplusplus, dplusplus] = load(
+                        name + '++.pckl', combined_data)
                 if self.method == 'frederiksen':
                     fminus[a] += -fminus.sum(0)
                     fplus[a] += -fplus.sum(0)
