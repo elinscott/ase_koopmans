@@ -114,8 +114,7 @@ class RDA:
 
         Parameters:
 
-        num_atoms: int
-            The number of atoms in the unit cell.
+        num_atoms: int    The number of atoms in the unit cell.
         """
 
         self.bonds = []
@@ -138,12 +137,9 @@ class RDA:
 
         Parameters:
 
-        i: int
-            The index of the first atom.
-        n: int
-            The index of the second atom.
-        offset: tuple
-            The cell offset of the second atom.
+        i: int           The index of the first atom.
+        n: int           The index of the second atom.
+        offset: tuple    The cell offset of the second atom.
         """
 
         roffset = tuple(-np.array(offset))
@@ -162,12 +158,8 @@ class RDA:
         of the subspace spanned by the visited components no longer increases.
 
         Returns:
-        hist : tuple
-            Dimensionality histogram.  Contains the number of components of
-            each dimensionality type, e.g. [10, 2, 1, 0]
-
-        components: array
-            The component ID every atom
+        hist : tuple         Dimensionality histogram.
+        components: array    The component ID every atom
         """
 
         adjacency = build_adjacency_list(self.graph.get_components(),

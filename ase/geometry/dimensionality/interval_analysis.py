@@ -134,14 +134,10 @@ def analyze_kintervals(atoms, method='RDA'):
         (score, amin, bmax, hr, components)
 
         score:      float   Dimensionality score in the range [0, 1].
-                            A higher score is better.
         amin:       float   The start of the k-interval
         bmax:       float   The end of the k-interval
         hr:         string  The reduced histogram of the interval
-                            e.g. 0D, 1D, 2D, 3D, 03D, 012D etc.
         h:          tuple   The histogram of the number of components
-                            of each dimensionality type, e.g. (0, 3, 0, 0)
-                            means three 1D components.
         components: array   The component ID of each atom.
         cdim:       dict    The component dimensionalities
     """

@@ -32,10 +32,8 @@ class TSA:
 
         Parameters:
 
-        num_atoms: int
-            The number of atoms in the unit cell.
-        n: int
-            The number size of the (n, n, n) periodic supercell.
+        num_atoms: int    The number of atoms in the unit cell.
+        n: int            The number size of the (n, n, n) periodic supercell.
         """
 
         self.n = n
@@ -55,12 +53,9 @@ class TSA:
 
         Parameters:
 
-        i: int
-            The index of the first atom.
-        n: int
-            The index of the second atom.
-        offset: tuple
-            The cell offset of the second atom.
+        i: int           The index of the first atom.
+        n: int           The index of the second atom.
+        offset: tuple    The cell offset of the second atom.
         """
 
         nbr_cells = (self.cells + offset) % self.n
@@ -76,12 +71,9 @@ class TSA:
         """Determines the dimensionality of each component with the TSA method.
 
         Returns:
-        hist : tuple
-            Dimensionality histogram.  Contains the number of components of
-            each dimensionality type, e.g. [10, 2, 1, 0]
 
-        components: array
-            The component ID every atom
+        hist : tuple         Dimensionality histogram.
+        components: array    The component ID every atom
         """
 
         n = self.n
