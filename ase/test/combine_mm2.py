@@ -1,6 +1,6 @@
 from __future__ import print_function
 from ase.data import s22
-from ase.optimize.bfgs import BFGS
+from ase.optimize import FIRE
 from ase.constraints import FixBondLengths
 from ase.calculators.tip3p import TIP3P, epsilon0, sigma0
 from ase.calculators.combine_mm import CombineMM
@@ -25,15 +25,19 @@ def make_4mer():
     atoms2.translate([3, 0, 0])
     atoms += atoms2
     return atoms
-    
+
+# More biased initial positions for faster test. Set 
+# to false for a slower, harder test. 
+fast_test = True  
+
 atoms = make_4mer()
 atoms.constraints = FixBondLengths([(3 * i + j, 3 * i + (j + 1) % 3)
                                     for i in range(int(len(atoms) // 3))
                                     for j in [0, 1, 2]])
 atoms.calc = TIP3P(np.Inf)
 tag = '4mer_tip3_opt.'
-opt = BFGS(atoms, logfile=tag+'log', trajectory=tag+'traj')
-opt.run(fmax=0.1)
+opt = FIRE(atoms, logfile=tag+'log', trajectory=tag+'traj')
+opt.run(fmax=0.05)
 tip3_pos = atoms.get_positions()
 
 sig = np.array([sigma0, 0, 0 ])
@@ -44,6 +48,8 @@ idxes = [[0, 1, 2], [3, 4 ,5], [6, 7, 8], [9, 10, 11],
 
 for ii, idx in enumerate(idxes):
     atoms = make_4mer()
+    if fast_test:
+        atoms.set_positions(tip3_pos)
     atoms.constraints = FixBondLengths([(3 * i + j, 3 * i + (j + 1) % 3)
                                         for i in range(len(atoms) // 3)
                                         for j in [0, 1, 2]])
@@ -52,7 +58,7 @@ for ii, idx in enumerate(idxes):
                            sig, eps, sig, eps, rc=rc)
 
     tag = '4mer_combtip3_opt_{0:02d}.'.format(ii)
-    opt = BFGS(atoms, logfile=tag+'log', trajectory=tag+'traj')
-    opt.run(fmax=0.1)
+    opt = FIRE(atoms, logfile=tag+'log', trajectory=tag+'traj')
+    opt.run(fmax=0.05)
     assert((abs(atoms.positions - tip3_pos) < 1e-8).all())
     print('{0}: {1!s:>28s}: Same Geometry as TIP3P'.format(atoms.calc.name, idx))
