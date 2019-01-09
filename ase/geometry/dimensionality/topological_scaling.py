@@ -1,7 +1,6 @@
-'''
-Implements the Topological Scaling Algorithm (TSA)
-Method is described in:
+"""Implements the Topological Scaling Algorithm (TSA)
 
+Method is described in:
 Topology-Scaling Identification of Layered Solids and Stable Exfoliated
 2D Materials
 M. Ashton, J. Paul, S.B. Sinnott, and R.G. Hennig
@@ -11,7 +10,7 @@ Phys. Rev. Lett. 118, 106101
 
 A disjoint set is used here to allow insertion of bonds one at a time.
 This permits k-interval analysis.
-'''
+"""
 
 
 import itertools
@@ -23,11 +22,13 @@ class TSA:
 
     def __init__(self, num_atoms, n=2):
 
-        '''
-        Initializes the TSA class.  A disjoint set is maintained for the single
-        cell and for the supercell.  For some materials, such as
-        interpenetrating networks, the dimensionality classification is
-        dependent on the size of the initial cell.
+        """Initializes the TSA class.
+
+        A disjoint set is maintained for the single cell and for the supercell.
+        For some materials, such as interpenetrating networks,
+        the dimensionality classification is dependent on the size of the
+        initial cell.
+
 
         Parameters:
 
@@ -35,7 +36,7 @@ class TSA:
             The number of atoms in the unit cell.
         n: int
             The number size of the (n, n, n) periodic supercell.
-        '''
+        """
 
         self.n = n
         self.num_atoms = num_atoms
@@ -48,9 +49,9 @@ class TSA:
 
     def insert_bond(self, i, j, offset):
 
-        '''
-        Inserts a bond into the component graph, both in the single cell and
+        """Inserts a bond into the component graph, both in the single cell and
         each of the n^3 subcells of the supercell.
+
 
         Parameters:
 
@@ -60,7 +61,7 @@ class TSA:
             The index of the second atom.
         offset: tuple
             The cell offset of the second atom.
-        '''
+        """
 
         nbr_cells = (self.cells + offset) % self.n
         nbr_offsets = self.num_atoms * np.dot(self.m, nbr_cells.T)
@@ -72,8 +73,7 @@ class TSA:
 
     def check(self):
 
-        '''
-        Determines the dimensionality of each component using the TSA method.
+        """Determines the dimensionality of each component with the TSA method.
 
         Returns:
         hist : tuple
@@ -82,7 +82,7 @@ class TSA:
 
         components: array
             The component ID every atom
-        '''
+        """
 
         n = self.n
         offsets = self.offsets

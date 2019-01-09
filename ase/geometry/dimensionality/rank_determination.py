@@ -1,6 +1,5 @@
-'''
+"""
 Implements the Rank Determination Algorithm (RDA)
-Method is described in:
 
 Method is described in:
 Definition of a scoring parameter to identify low-dimensional materials
@@ -8,7 +7,7 @@ components
 P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
 https://arxiv.org/abs/1808.02114
 2018
-'''
+"""
 
 import numpy as np
 from collections import defaultdict
@@ -16,24 +15,29 @@ from ase.geometry.dimensionality.disjoint_set import DisjointSet
 
 
 def fcalc_rank(l):
-    ''' Fast geometric rank calculation.  Only for arrays whose elements are
-    linearly independent.
-    '''
+    """Fast geometric rank calculation.
+
+    Only for arrays whose elements are linearly independent.
+    """
     return len(l) - 1
 
 
 def calc_rank(l):
-    ''' Full rank calculation.  The rank of an empty set of vectors is defined
-    as -1.  The geometric rank of single point is zero.  The geometric rank of
-    two linearly independent points (a line) is 1 etc.
-    '''
+    """Full rank calculation.
+
+    The rank of an empty set of vectors is defined as -1.  The geometric rank
+    of single point is zero.  The geometric rank of two linearly independent
+    points (a line) is 1 etc.
+    """
     return np.linalg.matrix_rank(np.array(l) - l[0])
 
 
 def bfs(adjacency, start):
-    ''' Traverse the component graph using BFS until the matrix rank of the
-    subspace spanned by the visited components no longer increases.
-    '''
+    """Traverse the component graph using BFS.
+
+    The graph is traversed until the matrix rank of the subspace spanned by
+    the visited components no longer increases.
+    """
 
     visited = set()
     cvisited = defaultdict(list)
@@ -103,15 +107,16 @@ class RDA:
 
     def __init__(self, num_atoms):
 
-        '''
-        Initializes the RDA class.  A disjoint set is used to maintain the
-        component graph.
+        """
+        Initializes the RDA class.
+
+        A disjoint set is used to maintain the component graph.
 
         Parameters:
 
         num_atoms: int
             The number of atoms in the unit cell.
-        '''
+        """
 
         self.bonds = []
         self.graph = DisjointSet(num_atoms)
@@ -122,10 +127,10 @@ class RDA:
 
     def insert_bond(self, i, j, offset):
 
-        '''
-        Adds a bond to the list of graph edges.  Graph components are merged
-        if the bond does not cross a cell boundary.
+        """
+        Adds a bond to the list of graph edges.
 
+        Graph components are merged if the bond does not cross a cell boundary.
         Bonds which cross cell boundaries can inappropriately connect
         components which are not connected in the infinite crystal.  This is
         tested during graph traversal.
@@ -139,7 +144,7 @@ class RDA:
             The index of the second atom.
         offset: tuple
             The cell offset of the second atom.
-        '''
+        """
 
         roffset = tuple(-np.array(offset))
         self.bonds += [(i, j, offset)]
@@ -150,8 +155,9 @@ class RDA:
 
     def check(self):
 
-        '''
+        """
         Determines the dimensionality of each component using the RDA method.
+
         The component graph is traversed (using BFS) until the matrix rank
         of the subspace spanned by the visited components no longer increases.
 
@@ -162,7 +168,7 @@ class RDA:
 
         components: array
             The component ID every atom
-        '''
+        """
 
         adjacency = build_adjacency_list(self.graph.get_components(),
                                          self.bonds)

@@ -1,5 +1,4 @@
-'''
-Implements the dimensionality scoring parameter.
+"""Implements the dimensionality scoring parameter.
 
 Method is described in:
 Definition of a scoring parameter to identify low-dimensional materials
@@ -7,7 +6,7 @@ components
 P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
 https://arxiv.org/abs/1808.02114
 2018
-'''
+"""
 
 import numpy as np
 from ase.neighborlist import NeighborList
@@ -43,6 +42,7 @@ def hstring(h):
 def merge_intervals(intervals):
 
     """Merges intervals of the same type (same reduced histogram).
+
     For example, two histograms with component histograms [10, 4, 0, 0] and
     [6, 2, 0, 0] are both 01D structures so they will be merged.
 
@@ -111,9 +111,11 @@ def get_bond_list(atoms, nl, rs):
 
 def analyze_kintervals(atoms, method='RDA'):
 
-    """Performs a k-interval analysis of a periodic solid and identifies the
-    components (connected clusters) in each interval.  The intervals are
-    sorted according to the scoring parameter, from high to low.
+    """Performs a k-interval analysis of a periodic solid.
+
+    In each k-interval the components (connected clusters) are identified.
+    The intervals are sorted according to the scoring parameter, from high
+    to low.
 
 
     Parameters:
@@ -154,12 +156,12 @@ def analyze_kintervals(atoms, method='RDA'):
     num_atoms = len(atoms)
     rs = radii[atoms.get_atomic_numbers()]
 
-    '''
+    """
     The interval analysis is performed by iteratively expanding the neighbor
     lists, until the component analysis finds a single 3D component.  To avoid
     repeat analyses after expanding the neighbor lists, we keep track of the
     previously inserted bonds.
-    '''
+    """
 
     intervals = []
     seen = set()
