@@ -12,7 +12,7 @@ https://arxiv.org/abs/1808.02114
 
 import numpy as np
 from collections import defaultdict
-from from ase.geometry.dimensionality.disjoint_set import DisjointSet
+from ase.geometry.dimensionality.disjoint_set import DisjointSet
 
 
 def fcalc_rank(l):
