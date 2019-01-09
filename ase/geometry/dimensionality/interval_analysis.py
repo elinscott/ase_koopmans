@@ -109,7 +109,7 @@ def get_bond_list(atoms, nl, rs):
     return sorted(bonds)
 
 
-def identify_components(atoms, method='RDA'):
+def analyze_kintervals(atoms, method='RDA'):
 
     """Performs a k-interval analysis of a periodic solid and identifies the
     components (connected clusters) in each interval.  The intervals are
