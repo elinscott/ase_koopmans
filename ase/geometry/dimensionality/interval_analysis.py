@@ -13,8 +13,8 @@ import numpy as np
 from ase.neighborlist import NeighborList
 from ase.data import covalent_radii as radii
 from collections import defaultdict
-import rank_determination
-import topological_scaling
+from ase.geometry.dimensionality import rank_determination
+from ase.geometry.dimensionality import topological_scaling
 
 
 def f(x):
