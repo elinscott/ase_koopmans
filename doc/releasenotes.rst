@@ -9,9 +9,14 @@ Git master branch
 
 :git:`master <>`.
 
-* Multiple improvements to the ONETEP Calculator. Input files can now be written that specify LDOS, bsunfolding and many other functionalities.
+* Multiple improvements to the ONETEP Calculator. Input files can now be
+  written that specify LDOS, bsunfolding and many other functionalities.
 
 * NWChem calculator now supports TDDFT runs.
+
+* New :func:`ase.geometry.analyze_dimensionality` function.  See:
+  :ref:`dimtutorial`.
+
 
 Version 3.17.0
 ==============
