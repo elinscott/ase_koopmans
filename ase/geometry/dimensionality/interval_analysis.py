@@ -129,17 +129,24 @@ def analyze_kintervals(atoms, method='RDA'):
 
     Returns:
 
-    intervals : list
+    intervals: list
         List of tuples for each interval identified.  Each tuple contains
         (score, amin, bmax, hr, components)
 
-        score:      float   Dimensionality score in the range [0, 1].
-        amin:       float   The start of the k-interval
-        bmax:       float   The end of the k-interval
-        hr:         string  The reduced histogram of the interval
-        h:          tuple   The histogram of the number of components
-        components: array   The component ID of each atom.
-        cdim:       dict    The component dimensionalities
+        score: float
+            Dimensionality score in the range [0, 1]
+        amin: float
+            The start of the k-interval
+        bmax: float
+            The end of the k-interval
+        hr: str
+            The reduced histogram of the interval
+        h: tuple
+            The histogram of the number of components
+        components: array
+            The component ID of each atom.
+        cdim: dict
+            The component dimensionalities
     """
 
     if method == 'RDA':
