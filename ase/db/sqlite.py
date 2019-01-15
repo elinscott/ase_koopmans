@@ -682,6 +682,51 @@ class SQLite3Database(Database, object):
                         ('metadata', md))
         con.commit()
 
+    def get_external_table_names(self):
+        """Return a list with the external table names."""
+        con = self.connection or self._connect()
+        cur = con.cursor()
+        sql = "SELECT name FROM external_table_names"
+        cur.execute(sql)
+
+        ext_tab_names = [x[0] for x in cur.fetchall()]
+
+        if self.connection is None:
+            con.close()
+        return ext_tab_names
+
+    def external_table_exists(self, name):
+        """Return True if an external table name exists."""
+        return name in self.get_external_table_names()
+
+    def create_table_if_not_exists(self, name, dtype):
+        """Create a new table if it does not exits.
+        
+        Arguments
+        ==========
+        name: str
+            Name of the new table
+        dtype: str
+            Datatype of the value field (typically REAL, INTEGER, TEXT etc.)
+        """
+        if self.external_table_exists(name):
+            return
+        
+        con = self.connection or self._connect()
+        cur = con.cursor()
+        sql = "CREATE TABLE IF NOT EXISTS {} ".format(name)
+        sql += "(key TEXT, value {}, id INTEGER, ".format(dtype)
+        sql += "FOREIGN KEY (id) REFERENCES systems(id))"
+        cur.execute(sql)
+
+        # Insert the new table name in external_table_names
+        sql = "INSERT INTO external_table_names VALUES (?)"
+        cur.execute(sql, (name,))
+
+        if self.connection is None:
+            con.commit()
+            con.close()
+
 
 if __name__ == '__main__':
     import sys
