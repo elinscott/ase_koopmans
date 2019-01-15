@@ -101,6 +101,8 @@ def energy_force_curve(images, ax=None):
 
     accumulated_distance = 0.0
 
+    # XXX force_consistent=True will work with some calculators,
+    # but won't work if images were loaded from a trajectory.
     energies = [atoms.get_potential_energy()
                 for atoms in images]
 
