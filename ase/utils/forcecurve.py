@@ -124,10 +124,15 @@ def energy_force_curve(images, ax=None):
             disp_a = (disp**2).sum(axis=1)**.5
             return sum(disp_a)
 
-        disp = 0.5 * total_displacement(disp_ac)
         dE_fdotr = -0.5 * np.vdot(f_ac.ravel(), disp_ac.ravel())
 
-        linescale = 0.4
+        linescale = 0.45
+
+        disp = 0.5 * total_displacement(disp_ac)
+
+        if i == 0 or i == nim - 1:
+            disp *= 2
+
         x1 = accumulated_distance - disp * linescale
         x2 = accumulated_distance + disp * linescale
         y1 = energies[i] - dE_fdotr * linescale
@@ -151,10 +156,11 @@ if __name__ == '__main__':
     atoms.calc = EMT()
     atoms.rattle(stdev=0.05)
 
-    md = VelocityVerlet(atoms, timestep=6.0 * fs, trajectory='tmp.traj')
-    md.run(steps=50)
+    md = VelocityVerlet(atoms, timestep=12.0 * fs, trajectory='tmp.traj')
+    md.run(steps=52)
     images = read('tmp.traj', ':')
 
     import matplotlib.pyplot as plt
     ax = energy_force_curve(images)
-    plt.savefig('tmp.png')
+    plt.show()
+    #plt.savefig('tmp.png')
