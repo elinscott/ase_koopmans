@@ -43,7 +43,7 @@ def get_all_symmetries(symmetries=None, max=99):
     # print 'There are %i symmetry operations.' % len(symmetries_all)
     return symmetries_all
 
-    
+
 def get_neighbor_symmetries(symmetries=None, neighbor_positions=None,
                             neighbor_numbers=None):
     if (symmetries is None or neighbor_positions is None or
@@ -55,7 +55,7 @@ def get_neighbor_symmetries(symmetries=None, neighbor_positions=None,
 
     for s in symmetries:
         neighbor_symmetry = []
-        
+
         for p in neighbor_positions:
             new_p = np.array(np.matrix(p) * s)
             neighbor_symmetry.append(neighbor_numbers[tuple(new_p[0])])
@@ -64,7 +64,7 @@ def get_neighbor_symmetries(symmetries=None, neighbor_positions=None,
 
     return neighbor_symmetries
 
-    
+
 def get_surface_symmetries(symmetries=None, surface_names=None,
                            surface_numbers=None):
     if symmetries is None or surface_names is None or surface_numbers is None:
@@ -84,13 +84,13 @@ def get_surface_symmetries(symmetries=None, surface_names=None,
 
     return np.array(surface_symmetries, int)
 
-    
+
 def apply_neighbor_symmetry(neighbors=None, symmetry=None):
     if neighbors is None or symmetry is None:
         raise Warning('Both neighbor list and symmetry list are needed.')
 
     new_neighbors = [0] * len(symmetry)
-    
+
     for i, n in enumerate(symmetry):
         new_neighbors[i] = neighbors[n]
 
