@@ -82,14 +82,14 @@ def bandgap(calc=None, direct=False, spin=None, output='-',
             """Convert k or (s, k) to string."""
             if kpts is None:
                 return '(s={}, k={}, n={})'.format(s, k, n)
-            return '(s={}, k={}, n={}, [{:.3f}, {:.3f}, {:.3f}])'.format(
+            return '(s={}, k={}, n={}, [{:.2f}, {:.2f}, {:.2f}])'.format(
                 s, k, n, *kpts[k])
 
         p = functools.partial(print, file=convert_string_to_fd(output))
         if spin is not None:
             p('spin={}: '.format(spin), end='')
         if gap == 0.0:
-            p('No gap!')
+            p('No gap')
         elif direct:
             p('Direct gap: {:.3f} eV'.format(gap))
             if s1 == s2:
