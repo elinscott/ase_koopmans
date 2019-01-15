@@ -1,9 +1,35 @@
+from __future__ import division
 from abc import abstractmethod, ABC
 import re
 
 import numpy as np
 
 from ase.geometry.cell import Cell
+
+_degrees = np.pi / 180
+
+
+class BandPath:
+    def __init__(self,  icell, coords, xvalues, labels=None, special_coords=None):
+        if labels is None and special_coords is None:
+            labels = ''
+            special_coords = np.empty((0, 3))
+        assert len(xvalues) == len(coords)
+        self.xvalues = xvalues
+        assert len(labels) == len(special_coords)  # Maybe include ','?
+        self.labels = labels
+        assert special_coords.shape == (labels, 3)
+        self.special_coords = special_coords
+
+        self.icell = icell
+        self.coords = coords
+
+    def _scale(self, coords):
+        return np.dot(coords, self.icell)
+
+    @property
+    def array(self):
+        return self._scale(self.coords)
 
 
 class BravaisLattice(ABC):
@@ -43,6 +69,10 @@ class BravaisLattice(ABC):
         cell = self.tocell(cycle=cycle)
         return cell.cellpar()
 
+    @property
+    def special_path(self):
+        return self.variant.special_path
+
     def get_special_points(self):
         variant = self._variant
         points = self._special_points(variant=variant, **self._parameters)
@@ -71,26 +101,17 @@ class BravaisLattice(ABC):
             path = self.variant.special_path
 
         pathcoords = self._resolve_kpt_path_string(path)
-        #print(pathcoords)
+        print(pathcoords)
 
         from ase.dft.kpoints import paths2kpts
-        kpts, x, X = paths2kpts(pathcoords, self.tocell(), npoints)
-        return kpts, x, X
+        cell = self.tocell()
+        icell = cell.reciprocal()
+        kpts, x, X = paths2kpts(pathcoords, icell, npoints)
 
-        #print(pathcoords)
-        #sdfkj
-        #paths = [special_point_coords[sym] for sym in path.split(',')]
-
-        #paths = []
-
-        #from ase.dft.kpoints import bandpath, CellInfo
-
-        #rcell = self.tocell().reciprocal()
-
-        #cellinfo = CellInfo(rcell, ..., self.variant.special_poin)
-
-        #return bandpath(vertices, self.tocell(), npoints=npoints)
-        #from ase.
+        return BandPath(icell, kpts, x, labels=path, special_coords=X)
+    #def __init__(self,  icell, coords, xvalues, labels=None, special_coords=None):
+    #    if labels is None and special_coords is None:
+        #return kpts, x, X
 
     def _resolve_kpt_path_string(self, path):
         from ase.dft.kpoints import parse_path_string
@@ -233,10 +254,19 @@ def bravais(longname, parameters, variants):
                          'fcc': 'fcc',
                          'bcc': 'bcc',
                          'tet': 'tetragonal',
-                         'orc': 'orthorhombic',
-                         'hex': 'hexagonal'}
+                         'orc': 'orthorhombic'}
+            pointinfo = None
             if lowername in name2name:
                 pointinfo = ibz_points[name2name[lowername]]
+            elif lowername == 'hex':
+                pointinfo = {'Gamma': [0, 0, 0],
+                              'M': [0, 1 / 2, 0],
+                              'K': [1 / 3, 1 / 3, 0],  # !
+                              'A': [0, 0, 1 / 2],
+                              'L': [0, 1 / 2, 1 / 2],
+                              'H': [1 / 3, 1 / 3, 1 / 2]} # !
+
+            if pointinfo is not None:
                 points = []
                 for name in cls.special_point_names:
                     if name == 'G':
@@ -280,7 +310,7 @@ class BCC(Cubic):
         return 0.5 * np.array([[-a, a, a], [a, -a, a], [a, a, -a]])
 
 @bravais('tetragonal', 'ac',
-         [['TET1', 'GAMRXZ', 'GXMGZRAZXR,MA']])
+         [['TET1', 'GAMRXZ', 'GXMGZRAZ,XR,MA']])
 class TET(SimpleBravaisLattice):
     def __init__(self, a, c):
         SimpleBravaisLattice.__init__(self, a=a, c=c)
@@ -288,8 +318,10 @@ class TET(SimpleBravaisLattice):
     def _cell(self, a, c):
         return np.diag(np.array([a, a, c]))
 
+# XXX in BCT2 we use S for Sigma.
+# Also in other places I think
 @bravais('body-centered tetragonal', 'ac',
-         [['BCT1', 'GMNPXSS1', 'GXMGSPNS1M,XP'],
+         [['BCT1', 'GMNPXZZ1', 'GXMGZPNZ1M,XP'],
           ['BCT2', 'GNPSS1XYY1Z', 'GXYSGZS1NPY1Z,XP']])
 class BCT(BravaisLattice):
     def __init__(self, a, c):
@@ -304,11 +336,11 @@ class BCT(BravaisLattice):
     def _special_points(self, a, c, variant):
         a2 = a * a
         c2 = c * c
-        eta = .25 * (1 + c2 / a2)
 
         assert variant.name in self.variants
 
         if variant.name == 'BCT1':
+            eta = .25 * (1 + c2 / a2)
             points = [[0,0,0],
                       [-.5, .5, .5],
                       [0.,.5,0.],
@@ -317,6 +349,7 @@ class BCT(BravaisLattice):
                       [eta,eta,-eta],
                       [-eta,1-eta,eta]]
         else:
+            eta = .25 * (1 + a2 / c2)  # Not same eta as BCT1!
             zeta = 0.5 * a2 / c2
             points = [[0.,.0,0.],
                       [0.,.5,0.],
@@ -352,7 +385,7 @@ class ORC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
 @bravais('face-centered orthorhombic', 'abc',
          [['ORCF1', 'GAA1LTXX1YZ', 'GYTZGXA1Y,TX1,XAZ,LG'],
           ['ORCF2', 'GCC1DD1LHH1XYZ', 'GYCDXGZD1HC,C1Z,XH1,HY,LG'],
-          ['ORCF3', 'GAA1LTXX1YZ', 'GYTZGXA1Y,TX1,XAZ,LG']])  # same as orcf1
+          ['ORCF3', 'GAA1LTXX1YZ', 'GYTZGXA1Y,XAZ,LG']])
 class ORCF(Orthorhombic):
     def _cell(self, a, b, c):
         return 0.5 * np.array([[0, b, c], [a, 0, c], [a, b, 0]])
@@ -426,7 +459,7 @@ class ORCI(Orthorhombic):
         mu = .25 * (a2 + b2) / c2
 
         points = [[0.,0.,0.],
-                  [-mu,-mu,.5-delta],
+                  [-mu,mu,.5-delta],
                   [mu, -mu, .5+delta],
                   [.5-delta, .5+delta, -mu],
                   [0,.5,0],
@@ -482,7 +515,7 @@ class HEX(SimpleBravaisLattice):
 
 
 @bravais('rhombohedral', ('a', 'alpha'),
-         [['RHL1', 'GBB21FLL1PP1P2QXZ', 'GLB1,BZGX,QFP1Z,LP'],
+         [['RHL1', 'GBB1FLL1PP1P2QXZ', 'GLB1,BZGX,QFP1Z,LP'],
           ['RHL2', 'GFLPP1QQ1Z', 'GPZQGFP1Q1LZ']])
 class RHL(BravaisLattice):
     def __init__(self, a, alpha):
@@ -501,11 +534,10 @@ class RHL(BravaisLattice):
         return 'RHL1' if alpha < 90 else 'RHL2'
 
     def _special_points(self, a, alpha, variant):
-        cosa = np.cos(alpha)
-        eta = (1 + 4 * cosa) / (2 + 4 * cosa)
-        nu = .75 - 0.5 * eta
-
         if variant.name == 'RHL1':
+            cosa = np.cos(alpha * _degrees)
+            eta = (1 + 4 * cosa) / (2 + 4 * cosa)
+            nu = .75 - 0.5 * eta
             points = [[0,0,0],
                       [eta,.5,1-eta],
                       [.5, 1 - eta, eta - 1],
@@ -519,6 +551,8 @@ class RHL(BravaisLattice):
                       [nu,0,-nu],
                       [.5,.5,.5]]
         else:
+            eta = 1 / (2 * np.tan(alpha * _degrees / 2)**2)
+            nu = .75 - 0.5 * eta
             points = [[0,0,0],
                       [.5,-.5,0],
                       [.5,0,0],
@@ -547,7 +581,7 @@ class MCL(BravaisLattice):
                          [0, c * np.cos(alpha), c * np.sin(alpha)]])
 
     def _special_points(self, a, b, c, alpha, variant):
-        cosa = np.cos(alpha)
+        cosa = np.cos(alpha * _degrees)
         eta = (1 - b * cosa / c) / (2 * np.sin(alpha)**2)
         nu = .5 - eta * c * cosa / b
 
@@ -633,8 +667,8 @@ class MCLC(BravaisLattice):
         a2 = a * a
         b2 = b * b
         # c2 = c * c
-        cosa = np.cos(alpha)
-        sina = np.sin(alpha)
+        cosa = np.cos(alpha * _degrees)
+        sina = np.sin(alpha * _degrees)
         sina2 = sina**2
 
         if variant == 1 or variant == 2:
@@ -728,10 +762,10 @@ class TRI(BravaisLattice):
 
     def _cell(self, a, b, c, alpha, beta, gamma):
         alpha, beta, gamma = np.array([alpha, beta, gamma]) * (np.pi / 180)
-        singamma = np.sin(gamma)
-        cosgamma = np.cos(gamma)
-        cosbeta = np.cos(beta)
-        cosalpha = np.cos(alpha)
+        singamma = np.sin(gamma * _degrees)
+        cosgamma = np.cos(gamma * _degrees)
+        cosbeta = np.cos(beta * _degrees)
+        cosalpha = np.cos(alpha * _degrees)
         a3x = c * cosbeta
         a3y = c / singamma * (cosalpha - cosbeta * cosgamma)
         a3z = c / singamma * np.sqrt(singamma**2 - cosalpha**2 - cosbeta**2
