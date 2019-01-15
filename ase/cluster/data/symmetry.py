@@ -57,7 +57,7 @@ def get_neighbor_symmetries(symmetries=None, neighbor_positions=None,
         neighbor_symmetry = []
 
         for p in neighbor_positions:
-            new_p = np.array(np.matrix(p) * s)
+            new_p = np.dot(p, s)
             neighbor_symmetry.append(neighbor_numbers[tuple(new_p[0])])
 
         neighbor_symmetries.append(neighbor_symmetry)
@@ -77,7 +77,7 @@ def get_surface_symmetries(symmetries=None, surface_names=None,
         surface_symmetry = []
 
         for s in surface_names:
-            ns = np.array(np.matrix(s) * sym)
+            ns = np.dot(s, sym)
             surface_symmetry.append(surface_numbers[tuple(ns[0])])
 
         surface_symmetries.append(surface_symmetry)
