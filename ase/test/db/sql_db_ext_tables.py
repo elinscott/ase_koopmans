@@ -27,5 +27,8 @@ def test_create_and_delete_ext_tab():
             db.create_table_if_not_exists(tab, "INTEGER")
         assert sorted(db.get_external_table_names()) == ext_tab
 
+        db.delete_external_table("tab1")
+        assert sorted(db.get_external_table_names()) == ["tab2", "tab3"]
+
 test_create_and_delete_ext_tab()
 

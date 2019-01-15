@@ -727,6 +727,24 @@ class SQLite3Database(Database, object):
             con.commit()
             con.close()
 
+    def delete_external_table(self, name):
+        """Delete an external table."""
+        if not self.external_table_exists(name):
+            return
+        
+        con = self.connection or self._connect()
+        cur = con.cursor()
+        
+        sql = "DROP TABLE {}".format(name)
+        cur.execute(sql)
+
+        sql = "DELETE FROM external_table_names WHERE name=?"
+        cur.execute(sql, (name,))
+
+        if self.connection is None:
+            con.commit()
+            con.close()
+
 
 if __name__ == '__main__':
     import sys
