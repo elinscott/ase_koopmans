@@ -82,8 +82,8 @@ how to write a big array in chunks:
 Now read first and second items:
 
 >>> with ulm.open('x.ulm') as r:
-...     print(r.keys())
-dict_keys(['a', 'b', 'c', 'd'])
+...     print(sorted(r.keys()))
+['a', 'b', 'c', 'd']
 >>> with ulm.open('x.ulm', index=1) as r:
 ...     print(r.keys())
 dict_keys(['bigarray'])
@@ -91,7 +91,7 @@ dict_keys(['bigarray'])
 To get all the data, it is possible to iterate over the items in the file.
 
 >>> for i, r in enumerate(ulm.Reader('x.ulm')):
-...     for k in r.keys():
+...     for k in sorted(r.keys()):
 ...         print(i, k)
 0 a
 0 b
