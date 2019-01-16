@@ -804,7 +804,7 @@ class SQLite3Database(Database, object):
         # First we check if entries already exists
         cursor.execute("SELECT key FROM {} WHERE id=?".format(name), (id,))
         updates = []
-        for item in cursor:
+        for item in cursor.fetchall():
             value = entries.pop(item[0], None)
             if value is not None:
                 updates.append((value, id, item[0]))
