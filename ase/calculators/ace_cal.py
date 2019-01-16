@@ -71,44 +71,41 @@ class ACE(FileIOCalculator):
     parameters = OrderedParameters()
     user_parameters = OrderedParameters()
     # defaults is default value of ACE-input
-    defaults = OrderedParameters([('BasicInformation',\
-                                 OrderedParameters([('Label', '/home/khs/work/asetest/H2test'),\
-                                                     ('Type', 'Scaling'), ('Scaling', '0.35'), ('Basis', 'Sinc'),\
-                                                     ('Cell', '3.0'), ('Grid', 'Sphere'),\
-                                                     ('KineticMatrix', 'Finite_Difference'), ('DerivativesOrder', '7'),\
-                                                     ('GeometryFormat', 'xyz'), ('SpinMultiplicity', '1.0'), ('Centered', '0'),\
-                                                     ('OccupationMethod', 'ZeroTemp'), ('Polarize', '0'),\
-                                                     ('Pseudopotential',\
-                                                     OrderedParameters([('Pseudopotential', '1'),\
-                                                                       ('Format', 'upf'),\
-                                                                       ('PSFilePath', '/home/khs/DATA/UPF')\
-                                                                       ,('PSFileSuffix', '.pbe-theos.UPF')\
-                                                                       ])),\
-                                                     ('GeometryFilename', 'test_opt.xyz'), ('NumElectrons', '2')])),\
-                                  ('Guess',\
-                                 OrderedParameters([('InitialGuess', '1'), ('InitialFilePath', '/home/khs/DATA/UPF'),\
-                                                    ('InitialFileSuffix', '.pbe-theos.UPF')])),\
-                                  ('Scf',\
-                                 OrderedParameters([('IterateMaxCycle', '150'), ('ConvergenceType', 'Energy'),\
-                                                    ('ConvergenceTolerance', '0.00001'), ('EnergyDecomposition', '1'),\
-                                                    ('ComputeInitialEnergy', '1'),\
-                                                    ('Diagonalize',\
-                                                   OrderedParameters([('DiagonalizeMaxIter', '10'), ('Tolerance', '0.000001'),\
-                                                                      ('FullOrthogonalize', '1')])),\
-                                                    ('ExchangeCorrelation',\
-                                                   OrderedParameters([('CalGradientUsingDensity', '1'),\
-                                                                      ('XFunctional', 'GGA_X_PBE'), ('CFunctional', 'GGA_C_PBE')\
-                                                                      ])),\
-                                                    ('Mixing',\
-                                                   OrderedParameters([('MixingMethod', '1'), ('MixingType', 'Density'),\
-                                                                      ('MixingParameter', '0.5'), ('PulayMixingParameter', '0.1')\
-                                                                      ])),\
-                                                    ('SolvationModel',\
-                                                   OrderedParameters([('SolvationLibrary', 'Psolver')\
-                                                    ])),\
-                                                    ('NumberOfEigenvalues', '4')])),\
-                                  ('Force',\
-                                 OrderedParameters([('ForceDerivative', 'Potential')]))])
+    basic_list =[{ 'Label' : '/home/khs/work/asetest/H2test', 
+                  'Type' : 'Scaling', 'Scaling' : '0.35', 'Basis' : 'Sinc',\
+                  'Cell' : '3.0', 'Grid' : 'Sphere',\
+                  'KineticMatrix': 'Finite_Difference', 'DerivativesOrder' : '7',\
+                  'GeometryFormat' : 'xyz', 'SpinMultiplicity' : '1.0', 'Centered' : '0', 
+                  'OccupationMethod' : 'ZeroTemp', 'Polarize' : '0',\
+                  'GeometryFilename' : 'test_opt.xyz', 'NumElectrons' : '2'}
+                 ]
+    guess_list = [] #now not need this
+    scf_list = [ { 'IterateMaxCycle' : '150', 'ConvergenceType' : 'Energy',\
+                 'ConvergenceTolerance' : '0.00001', 'EnergyDecomposition' : '1',\
+                 'ComputeInitialEnergy': '1',\
+                 'Diagonalize' : {
+                                  'DiagonalizeMaxIter' : '10', 'Tolerance' : '0.000001',\
+                                  'FullOrthogonalize' : '1' } , \
+                 'ExchangeCorrelation' : {'CalGradientUsingDensity' : '1', 'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'} ,\
+                 'Mixing' : { 'MixingMethod' : '1', 'MixingType' : 'Density' ,\
+                            'MixingParameter' : '0.5', 'PulayMixingParameter' : '0.1' }, \
+                 'NumberOfEigenvalues': '4',\
+                 }]
+    
+    force_list = [{ 'ForceDerivative' : 'Potential'   }  ]
+#    solvation_list = [{'SolvationLibrary' : 'PCMSolver', 'Solvent' : 'water', 'Area' : '0.2', 'SolverType' : 'CPCM' }] 
+    tddft_list = [{
+    'SortOrbital': 'Order', 'MaximumOrder' : '10', 'Gradient' : '1',\
+            'ExchangeCorrelation' :  {'CalGradientUsingDensity' : '0', 'XFunctional' : '101', 'CFunctional' : '130'},\
+            'OrbitalInfo' : {'ExchangeCorrelation' : {'CalGradientUsingDensity': '0', 'XFunctional' : '101', 'CFunctional' : '130'}},\
+            'xckernelwithoutEXX' : {'ExchangeCorrelation' : {'CalGradientUsingDensity' : '0'}}   
+    }] 
+    order_list = [0,1,2,3]
+    order_key_list = ['BasicInformation', 'Guess', 'Scf','Force', 'TDDFT' ]
+
+
+    default_parameters = {'BasicInformation': basic_list, 'Guess' : guess_list, 'Scf':scf_list, 'Force' : force_list, 'Order' : order_list} 
+    
     command = 'mpirun -np 1 ace PREFIX.inp > PREFIX.log'
 
     def __init__(
@@ -120,18 +117,16 @@ class ACE(FileIOCalculator):
         
     def compare_parameters(self,parameters, key2, val2):    
         '''Replace and Add parameters that users want'''
-        compare = 0
-        for key, val in parameters.items():
-            if(key == key2):
-                parameters[key] = val2
-#                print("a parameter is updated")
-                return 10
-            if( compare != 10 and type(parameters[key]) != type('1') and type(parameters[key]) != type([1,1]) \
-                and type(parameters[key]) != type(None) ):
-                ##### type is different depanding on python version.
-#                print (type(parameters[key]))
-                compare = self.compare_parameters(parameters[key],key2, val2)
-        return compare
+#        print(parameters)
+        for val_key, val_val in val2.items():
+            for key, val in parameters.items():
+                if val_key==key and isinstance(val_val,str):
+                    parameters[key]=val2[key]                                  
+                if (val_key==key and isinstance(val_val,dict)):
+                    parameters[key]= compare_parameters(parameters[key], key, val_val)                    
+        return parameters
+
+
     def get_property(self, name, atoms=None,  allow_calculation=True):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)'''
         
@@ -144,46 +139,15 @@ class ACE(FileIOCalculator):
             system_changes = self.check_state(atoms)
             if system_changes:
                 self.reset()
-        if (name == 'excitation-energy'):
-            self.parameters =\
-            OrderedParameters([('BasicInformation',\
-                              OrderedParameters([('Type', 'Scaling'), ('Scaling', '0.35'), ('Basis', 'Sinc'), ('Grid', 'Atoms'),\
-                                                 ('Radius', '5.5'), ('AbsoluteRadius', '1'),\
-                                                 ('GeometryFilename', 'xyz/benzene.xyz'), ('GeometryFormat', 'xyz'),\
-                                                 ('SpinMultiplicity', '1.0'), ('Centered', '1'), ('OccupationMethod', 'ZeroTemp'),\
-                                                 ('Polarize', '0'), ('NumElectrons', '30'), ('KineticMatrix', 'Finite_Difference'),\
-                                                 ('DerivativesOrder', '9'), ('ShallowCopyOrbitals', '1'),('ParallelGridAtoms', '1'),\
-                                                 ('Pseudopotential',\
-                                                OrderedParameters([('Pseudopotential', '1'), ('Format', 'upf'),\
-                                                                   ('UsingDoubleGrid', '0'), ('NonlocalRmax', '2.0'),\
-                                                                   ('Nonlocalthreshold', '0.000001'), \
-                                                                   ('PSFilePath', '/home/khs/DATA/UPF/'), \
-                                                                   ('PSFileSuffix', '.pbe-theos.UPF')]))])),\
-                               ('Guess',\
-                              OrderedParameters([('InitialGuess', '3'), ('InitialFilePath', 'pbe.gs/'), ('Info', 'benzene_opt.log'),\
-                                                 ('InfoFiletype', 'ACE'), ('NumberOfEigenvalues', '40')])),\
-                               ('TDDFT',\
-                              OrderedParameters([('SortOrbital', 'Order'), ('MaximumOrder', '10'), ('Gradient', '1'),\
-                                                 ('ExchangeCorrelation', \
-                                                OrderedParameters([('CalGradientUsingDensity', '0'), ('XFunctional', '101'),\
-                                                                   ('CFunctional', '130')])),\
-                                                 ('OrbitalInfo',\
-                                                OrderedParameters([('ExchangeCorrelation', \
-                                                                  OrderedParameters([('CalGradientUsingDensity', '0'),\
-                                                                                     ('XFunctional', '101'),\
-                                                                                     ('CFunctional', '130')]))])),\
-                                                 ('xckernelwithoutEXX',\
-                                                OrderedParameters([('ExchangeCorrelation',\
-                                                                 OrderedParameters([('CalGradientUsingDensity', '0')]))]))]))])
             
-        if 'modified' in self.parameters:
-            del self.parameters['modified'] 
-        for key, val in self.user_parameters.items(): 
-            none_value = self.compare_parameters(self.parameters, key, val)   
-            if(none_value == 0):
-                self.parameters[key] = val
-        if 'system_changes' in self.parameters:
-            del self.parameters['system_changes']
+#        if 'modified' in self.parameters:
+#            del self.parameters['modified'] 
+#        for key, val in self.user_parameters.items(): 
+#            none_value = self.compare_parameters(self.parameters, key, val)   
+#            if(none_value == 0):
+#                self.parameters[key] = val
+#        if 'system_changes' in self.parameters:
+#            del self.parameters['system_changes']
         self.write_input(atoms) 
 
 
@@ -203,19 +167,28 @@ class ACE(FileIOCalculator):
         return result
 
     def set(self, **kwargs):
-        self.parameters = OrderedParameters()
-        changed_parameters2 = self.defaults
-        if 'ACEtemplate' in kwargs:
-            filename = kwargs.pop("ACEtemplate")
-            changed_parameters2 = self.read_acemolecule_inp(filename)
-        changed_parameters = FileIOCalculator.set(self, **kwargs)
-        update_nested(changed_parameters2, changed_parameters)
-        self.parameters = changed_parameters2
-        if 'modified' in self.parameters:
-            self.user_parameters = kwargs.pop('modified')
-            del self.parameters['modified'] 
-        if changed_parameters:
-            self.reset()
+#        self.parameters = OrderedParameters()
+        changed_parameters = self.default_parameters
+#        if 'ACEtemplate' in kwargs:
+#            filename = kwargs.pop("ACEtemplate")
+#            changed_parameters2 = self.read_acemolecule_inp(filename)
+#        changed_parameters = FileIOCalculator.set(self, **kwargs)
+#        update_nested(changed_parameters2, changed_parameters)
+#        self.parameters = changed_parameters2
+        duplication = []
+        for key in self.order_key_list:
+            modified = False
+            if key  in kwargs.keys():
+                for val in kwargs[key]:
+                    duplication.append(self.compare_parameters(self.default_parameters[key][0], key, val))
+                modified = True
+            if(modified):
+                changed_parameters[key] = duplication
+        print("in_set")
+        print(changed_parameters)
+        self.parameters = changed_parameters
+#        if changed_parameters:
+#            self.reset()
         return changed_parameters
 
     def read(self, label):
@@ -233,13 +206,16 @@ class ACE(FileIOCalculator):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         inputfile = open(self.label + '.inp', 'w')
         self.make_xyz_file(atoms)
-        self.parameters["BasicInformation"]["GeometryFilename"] = "{}_opt.xyz".format(self.label)
-        self.parameters["BasicInformation"]["GeometryFormat"] = "xyz"
-        new_parameters = OrderedParameters()
-        new_parameters["BasicInformation"] = OrderedDict()
-        new_parameters["Guess"] = OrderedDict()
-        update_nested(new_parameters, self.parameters)
-        self.parameters = new_parameters
+        print("write_input")
+        print(self.parameters["BasicInformation"])
+        print("BasciInfor end")
+        self.parameters["BasicInformation"][0]["GeometryFilename"] = "{}_opt.xyz".format(self.label)
+        self.parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"        
+        #new_parameters = OrderedParameters()
+        #new_parameters["BasicInformation"] = OrderedDict()
+        #new_parameters["Guess"] = OrderedDict()
+        #update_nested(new_parameters, self.parameters)
+        #self.parameters = new_parameters
         self.write_acemolecule_input(inputfile, self.parameters)
 
         inputfile.close()
@@ -306,24 +282,31 @@ class ACE(FileIOCalculator):
                 param2[key_list[-1]] = str(val)
         return param
 
-    def write_acemolecule_input(self, fpt, param, indent=0):
-        prefix = "    " * indent
-        for key, val in param.items():
-            if isinstance(val, Mapping):
-                fpt.write(prefix + "%% " + str(key) + "\n")
-                self.write_acemolecule_input(fpt, param[key], indent + 1)
-                fpt.write(prefix + "%% End\n")
-            elif isinstance(val, list):
-                for item in val:
-                    if '#' in key:
-                        fpt.write(prefix + str(key) + " " + str(item) + "\n")
-                    else:
-                        fpt.write(prefix + str(key) + "\t\t" + str(item) + "\n")
+    def write_acemolecule_section(self, fpt, section,indent =0):
+        for key, val in section.items():
+            if(isinstance(val,str) or isinstance(val,int) or isinstance(val,float)):
+                fpt.write('\t'*indent + str(key) + " " + str(val) + "\n")
             else:
-                if '#' in key:
-                    fpt.write(prefix + str(key) + " " + str(val) + "\n")
-                else:
-                    fpt.write(prefix + str(key) + "\t\t" + str(val) + "\n")
+                fpt.write('\t'*indent +"%% " + str(key) + "\n")
+                ++indent
+                self.write_acemolecule_section(fpt,val,indent)
+                fpt.write('\t'*indent +"%% End\n")
+
+        return
+
+    def write_acemolecule_input(self, fpt, param2, indent=0):
+        prefix = "    " * indent
+        param = deepcopy(param2)
+        for i in param['Order']:
+            fpt.write(prefix+"%%"+self.order_key_list[i] +"\n")
+            section_list = param[self.order_key_list[i]]
+            if(len(section_list) > 0):
+                section = section_list.pop(0)
+                print("section start")
+                print(section)
+                print("section end")
+                self.write_acemolecule_section(fpt,section,1)
+            fpt.write("%% End\n") 
         return
 
 

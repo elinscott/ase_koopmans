@@ -114,8 +114,8 @@ class Gaussian(FileIOCalculator):
 
     default_parameters = {'charge': 0,
                           'method': 'hf',
-                          'basis': '6-31g*',
-                          'force': 'force'}
+                          'basis': '6-31g*'}
+                    #      'force': 'force'}
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='g09', atoms=None, scratch=None, ioplist=list(),
@@ -185,6 +185,8 @@ class Gaussian(FileIOCalculator):
         link0 = str()
         route = '#p %s/%s' % (self.parameters['method'],
                               self.parameters['basis'])
+        if(self.parameters['method']=='pm6'):
+            route = '#p %s' % (self.parameters['method'])
 
         for key, val in self.parameters.items():
             if key.lower() in link0_keys:
