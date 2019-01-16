@@ -688,8 +688,8 @@ class SQLite3Database(Database, object):
         if len(ids) == 0:
             return
         con = self._connect()
-        self._delete(con.cursor(), ids)
         self._delete(con.cursor(), ids, tables=self.get_external_table_names(db_con=con))
+        self._delete(con.cursor(), ids)
         con.commit()
         con.close()
 
