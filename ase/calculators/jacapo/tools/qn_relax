@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # from torque import *
 # from ase import *
 from ase.optimize import QuasiNewton
