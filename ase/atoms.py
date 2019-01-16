@@ -763,7 +763,7 @@ class Atoms(object):
         """
         if self._calc is None:
             raise RuntimeError('Atoms object has no calculator.')
-        return self._calc.get_property('stresses')
+        return self._calc.get_stresses()
 
     def get_dipole_moment(self):
         """Calculate the electric dipole moment for the atoms object.

@@ -521,6 +521,9 @@ class Calculator(object):
     def get_stress(self, atoms=None):
         return self.get_property('stress', atoms)
 
+    def get_stresses(self, atoms=None):
+        return self.get_property('stresses', atoms)
+
     def get_dipole_moment(self, atoms=None):
         return self.get_property('dipole', atoms)
 
