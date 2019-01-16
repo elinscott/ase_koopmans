@@ -489,12 +489,20 @@ class Aims(FileIOCalculator):
         if ('compute_forces' in self.parameters or
             'sc_accuracy_forces' in self.parameters):
             self.read_forces()
-        if ('compute_numerical_stress' in self.parameters or
-            'compute_analytical_stress' in self.parameters or
-            'compute_heat_flux' in self.parameters):
+
+        if ('sc_accuracy_stress' in self.parameters or
+            ('compute_numerical_stress' in self.parameters
+            and self.parameters['compute_numerical_stress']) or
+            ('compute_analytical_stress' in self.parameters
+            and self.parameters['compute_analytical_stress']) or
+            ('compute_heat_flux' in self.parameters
+            and self.parameters['compute_heat_flux'])):
             self.read_stress()
-        if 'compute_heat_flux' in self.parameters:
+            
+        if ('compute_heat_flux' in self.parameters
+            and self.parameters['compute_heat_flux']):
             self.read_stresses()
+
         if ('dipole' in self.parameters.get('output', []) and
             not self.atoms.pbc.any()):
             self.read_dipole()
