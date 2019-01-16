@@ -83,9 +83,17 @@ for db_name in DB_NAMES:
 
     if name is None:
         continue
-    test_create_and_delete_ext_tab(db_name)
-    test_insert_in_external_tables(db_name)
-    test_extract_from_table(db_name)
-    test_write_atoms_row(db_name)
-    os.remove(db_name)
+        
+    if db_name == "postgresql":
+        c = connect(name)
+        c.delete([row.id for row in c.select()])
+    test_create_and_delete_ext_tab(name)
+    test_insert_in_external_tables(name)
+    test_extract_from_table(name)
+    test_write_atoms_row(name)
+
+    if db_name != "postgresql":
+        os.remove(name)
+    
+
 
