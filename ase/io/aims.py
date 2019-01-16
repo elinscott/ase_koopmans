@@ -249,6 +249,7 @@ def read_aims_output(filename, index=-1):
     f = None
     pbc = False
     found_aims_calculator = False
+    stress = None
     while True:
         line = fd.readline()
         if not line:
@@ -328,6 +329,17 @@ def read_aims_output(filename, index=-1):
             else:
                 atoms.set_constraint(fix_cart)
             images.append(atoms)
+
+        # FlK: add analytical stress and replace stress=None
+        if "Analytical stress tensor - Symmetrized" in line:
+            # scroll to significant lines
+            for _ in range(4):
+                next(fd)
+            stress = []
+            for _ in range(3):
+                inp = fd.readline()
+                stress.append([float(i) for i in inp.split()[2:5]])
+
         if "Total atomic forces" in line:
             f = []
             for i in range(n_atoms):
@@ -337,11 +349,17 @@ def read_aims_output(filename, index=-1):
                 f.append([float(i) for i in inp[-3:]])
             if not found_aims_calculator:
                 e = images[-1].get_potential_energy()
-                images[-1].set_calculator(
-                    SinglePointCalculator(atoms, energy=e, forces=f)
-                )
+                # FlK: Add the stress if it has been computed
+                if stress is None:
+                    calc = SinglePointCalculator(atoms, energy=e, forces=f)
+                else:
+                    calc = SinglePointCalculator(
+                        atoms, energy=e, forces=f, stress=stress
+                    )
+                images[-1].set_calculator(calc)
             e = None
             f = None
+
         if "Total energy corrected" in line:
             e = float(line.split()[5])
             if pbc:
@@ -359,6 +377,28 @@ def read_aims_output(filename, index=-1):
             # if found_aims_calculator:
             # calc.set_results(images[-1])
             # images[-1].set_calculator(calc)
+
+        # FlK: add stress per atom
+        if "Per atom stress (eV) used for heat flux calculation" in line:
+            # scroll to boundary
+            next(l for l in fd if "-------------" in l)
+
+            stresses = []
+            for l in [next(fd) for _ in range(n_atoms)]:
+                # Read stresses
+                xx, yy, zz, xy, xz, yz = [float(d) for d in l.split()[2:8]]
+                stresses.append([[xx, xy, xz], [xy, yy, yz], [xz, yz, zz]])
+
+            if not found_aims_calculator:
+                e = images[-1].get_potential_energy()
+                f = images[-1].get_forces()
+                stress = images[-1].get_stress()
+
+                calc = SinglePointCalculator(
+                    atoms, energy=e, forces=f, stress=stress, stresses=stresses
+                )
+                images[-1].set_calculator(calc)
+
     fd.close()
     if molecular_dynamics:
         images = images[1:]
