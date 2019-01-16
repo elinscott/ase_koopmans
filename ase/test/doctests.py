@@ -12,7 +12,7 @@ import ase.eos as eos
 modules = [xtal, spacegroup, cell, findsym, atoms, eos,
            geometry, tools, collection]
 
-if sys.version_info >= (3, 5):
+if sys.version_info >= (3, 6):
     # dicts must be ordered
     modules.append(ulm)
 
