@@ -69,8 +69,8 @@ To see what's inside 'x.ulm' do this::
 More examples
 -------------
 
-In the following we append to the ulm-file from above and the array is written
-in chunks::
+In the following we append to the ulm-file from above and demonstrae
+how to write a big array in chunks:
 
 >>> w = ulm.open('x.ulm', 'a')
 >>> w.add_array('bigarray', (10, 1000), float)
@@ -79,8 +79,7 @@ in chunks::
 ...
 >>> w.close()
 
-The reader opens the file again and prints the data, which was written
-first:
+Now read first and second items:
 
 >>> with ulm.open('x.ulm') as r:
 ...     print(r.keys())
@@ -102,7 +101,7 @@ To get all the data, it is possible to iterate over the items in the file.
 >>> r.close()
 
 The different parts (items) of the file are numbered by the index
-argument. Or in the usual way to get items:
+argument:
 
 >>> r = ulm.Reader('x.ulm')
 >>> r[1].bigarray.shape
