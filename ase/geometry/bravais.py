@@ -634,8 +634,8 @@ class MCLC(BravaisLattice):
 
         a2 = a * a
         b2 = b * b
-        cosa = np.cos(alpha)
-        sina = np.sin(alpha)
+        cosa = np.cos(alpha * _degrees)
+        sina = np.sin(alpha * _degrees)
         sina2 = sina**2
 
         cell = self.tocell()
@@ -744,6 +744,7 @@ class MCLC(BravaisLattice):
                       [.5,-.5,0],
                       [mu,mu,delta],
                       [1-mu,-mu,-delta],
+                      [-mu,-mu,-delta],
                       [mu,mu-1,delta],
                       [0,0,.5]]
 
@@ -1023,7 +1024,12 @@ def _test_all_variants():
     assert mclc3.variant.name == 'MCLC3'
 
     yield mclc1
+    # mclc2 has same special points as mclc1
     yield mclc3
+    # mclc4 has same special points as mclc3
+
+    mclc5 = MCLC(b, b, b, 50)
+    yield mclc5
 
     # XXX TODO:
     # mclc2
