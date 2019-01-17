@@ -738,6 +738,9 @@ class Atoms(object):
         shape = stress.shape
 
         if shape == (3, 3):
+            # if Voigt form is not wanted, return rightaway
+            if not voigt:
+                return stress
             warnings.warn('Converting 3x3 stress tensor from %s ' %
                           self._calc.__class__.__name__ +
                           'calculator to the required Voigt form.')
