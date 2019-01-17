@@ -776,10 +776,10 @@ class TRI(BravaisLattice):
 
     def _variant_name(self, a, b, c, alpha, beta, gamma):
         c = Cell.new([a, b, c, alpha, beta, gamma])
-        (ka, kb, kc, kalpha, kbeta,
-         kgamma) = Cell(c.reciprocal()).cellpar()
-        angles = np.array([kalpha, kbeta, kgamma])
+        icellpar = Cell(c.reciprocal()).cellpar()
+        kangles = kalpha, kbeta, kgamma = icellpar[3:]
 
+        #print('kangles', kangles)
         eps = self._eps
         if abs(kgamma - 90) < eps:
             if kalpha > 90 and kbeta > 90:
@@ -789,9 +789,9 @@ class TRI(BravaisLattice):
             else:
                 # Is this possible?  Maybe due to epsilon
                 assert 0, 'unexpected combination of angles'
-        elif all(angles > 90) and kgamma < min(kalpha, kbeta):
+        elif all(kangles > 90):# and kgamma < min(kalpha, kbeta):
             var = '1a'
-        elif all(angles < 90) and kgamma > max(kalpha, kbeta):
+        elif all(kangles < 90):# and kgamma > max(kalpha, kbeta):
             var = '1b'
         else:
             raise UnconventionalLattice(
@@ -1031,10 +1031,12 @@ def _test_all_variants():
     mclc5 = MCLC(b, b, b, 50)
     yield mclc5
 
+    # wtf, these are weird
+    #tri1a = TRI(a*1.2,a*1.05, a*1.1, 70,80,88)
+    #yield tri1a
+    #print(tri)
+
     # XXX TODO:
-    # mclc2
-    # mclc4
-    # mclc5
     # tri1a
     # tri1b
     # tri2a
