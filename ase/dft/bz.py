@@ -79,7 +79,7 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
     if paths is not None:
         for names, points in paths:
             x, y, z = np.array(points).T
-            ax.plot(x, y, z, c='r', ls='-')
+            ax.plot(x, y, z, c='r', ls='-', marker='.')
 
             for name, point in zip(names, points):
                 x, y, z = point
@@ -103,6 +103,7 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
     ax.set_aspect('equal')
 
     ax.view_init(azim=azim / pi * 180, elev=elev / pi * 180)
+    return {'fig': fig, 'ax': ax}
 
 
 def bz2d_plot(cell, vectors=False, paths=None, points=None):

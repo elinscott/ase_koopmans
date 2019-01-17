@@ -95,13 +95,45 @@ class BravaisLattice(ABC):
         labels = re.findall(r'[A-Z]\d?', self._variant.special_point_names)
         return labels
 
+    def plot_bz(self, path=None, **plotkwargs):
+        from ase.dft.bz import bz3d_plot
+
+        coords = self.get_special_point_dict()
+
+        if path is None:
+            isolated_points = ','.join(coords)
+            path = self.special_path + ',' + isolated_points
+            # (Isolated points are normally plotted twice since they are
+            #  also part of the special path.)
+
+        cell = self.tocell()
+        icell = cell.reciprocal()
+
+        paths = []
+
+        if path:
+            for path0 in path.split(','):
+                if not re.match(r'([A-Z]\d?)+', path0):
+                    raise ValueError('Invalid path string: {}'
+                                     .format(repr(path0)))
+                path0 = re.findall(r'[A-Z]\d?', path0)
+                thecoords = [coords[label] for label in path0]
+                abscoords = np.dot(thecoords, icell)
+                paths.append((path0, abscoords))
+        else:
+            paths = None
+
+        kw = {'vectors': True}
+        kw.update(plotkwargs)
+
+        return bz3d_plot(cell, paths=paths, **kw)
+
     def bandpath(self, path=None, npoints=50):
         # npoints should depend on the length of the path
         if path is None:
             path = self.variant.special_path
 
         pathcoords = self._resolve_kpt_path_string(path)
-        print(pathcoords)
 
         from ase.dft.kpoints import paths2kpts
         cell = self.tocell()
@@ -109,9 +141,6 @@ class BravaisLattice(ABC):
         kpts, x, X = paths2kpts(pathcoords, icell, npoints)
 
         return BandPath(icell, kpts, x, labels=path, special_coords=X)
-    #def __init__(self,  icell, coords, xvalues, labels=None, special_coords=None):
-    #    if labels is None and special_coords is None:
-        #return kpts, x, X
 
     def _resolve_kpt_path_string(self, path):
         from ase.dft.kpoints import parse_path_string
@@ -779,7 +808,6 @@ class TRI(BravaisLattice):
         icellpar = Cell(c.reciprocal()).cellpar()
         kangles = kalpha, kbeta, kgamma = icellpar[3:]
 
-        #print('kangles', kangles)
         eps = self._eps
         if abs(kgamma - 90) < eps:
             if kalpha > 90 and kbeta > 90:
@@ -1034,7 +1062,6 @@ def _test_all_variants():
     # wtf, these are weird
     #tri1a = TRI(a*1.2,a*1.05, a*1.1, 70,80,88)
     #yield tri1a
-    #print(tri)
 
     # XXX TODO:
     # tri1a
