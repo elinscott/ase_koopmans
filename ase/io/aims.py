@@ -250,10 +250,7 @@ def read_aims_output(filename, index=-1):
     pbc = False
     found_aims_calculator = False
     stress = None
-    while True:
-        line = next(fd)
-        if not line:
-            break
+    for line in fd:
         # if "List of parameters used to initialize the calculator:" in line:
         #     next(fd)
         #     calc = read_aims_calculator(fd)
