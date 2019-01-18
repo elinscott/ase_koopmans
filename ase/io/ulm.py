@@ -190,7 +190,8 @@ def writeint(fd, n, pos=None):
 def readints(fd, n):
     a = np.frombuffer(fd.read(int(n * 8)), dtype=np.int64, count=n)
     if not np.little_endian:
-        # Cannot use in-place byteswap because frombuffer() returns readonly view
+        # Cannot use in-place byteswap because frombuffer()
+        # returns readonly view
         a = a.byteswap()
     return a
 
@@ -583,7 +584,7 @@ class Reader:
                 value = value.read()
             if isinstance(value, NDArrayReader):
                 s = '<ndarray shape={} dtype={}>'.format(value.shape,
-                                                           value.dtype)
+                                                         value.dtype)
             elif isinstance(value, Reader):
                 s = value.tostr(verbose, indent + '    ')
             else:
@@ -641,7 +642,8 @@ class NDArrayReader:
         if step != 1:
             a = a[::step].copy()
         if self.little_endian != np.little_endian:
-            a = a.byteswap(inplace=a.flags.writeable) # frombuffer() returns readonly array
+            # frombuffer() returns readonly array
+            a = a.byteswap(inplace=a.flags.writeable)
         if self.length_of_last_dimension is not None:
             a = a[..., :self.length_of_last_dimension]
         if self.scale != 1.0:
