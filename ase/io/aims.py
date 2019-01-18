@@ -392,7 +392,7 @@ def read_aims_output(filename, index=-1):
             if not found_aims_calculator:
                 e = images[-1].get_potential_energy()
                 f = images[-1].get_forces()
-                stress = images[-1].get_stress()
+                stress = images[-1].get_stress(voigt=False)
 
                 calc = SinglePointCalculator(
                     atoms, energy=e, forces=f, stress=stress, stresses=stresses
