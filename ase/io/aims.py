@@ -251,11 +251,11 @@ def read_aims_output(filename, index=-1):
     found_aims_calculator = False
     stress = None
     while True:
-        line = fd.readline()
+        line = next(fd)
         if not line:
             break
         # if "List of parameters used to initialize the calculator:" in line:
-        #     fd.readline()
+        #     next(fd)
         #     calc = read_aims_calculator(fd)
         #     calc.out = filename
         #     found_aims_calculator = True
@@ -266,7 +266,7 @@ def read_aims_output(filename, index=-1):
             if not pbc:
                 pbc = True
                 for i in range(3):
-                    inp = fd.readline().split()
+                    inp = next(fd).split()
                     cell.append([inp[1], inp[2], inp[3]])
         if "Found relaxation constraint for atom" in line:
             xyz = [0, 0, 0]
@@ -291,36 +291,36 @@ def read_aims_output(filename, index=-1):
                 else:
                     fix_cart[n].mask[xyz.index(1)] = 0
         if "Atomic structure:" in line and not molecular_dynamics:
-            fd.readline()
+            next(fd)
             atoms = Atoms()
             for i in range(n_atoms):
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 atoms.append(Atom(inp[3], (inp[4], inp[5], inp[6])))
         if "Complete information for previous time-step:" in line:
             molecular_dynamics = True
         if "Updated atomic structure:" in line and not molecular_dynamics:
-            fd.readline()
+            next(fd)
             atoms = Atoms()
             for i in range(n_atoms):
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 if "lattice_vector" in inp[0]:
                     cell = []
                     for i in range(3):
                         cell += [[float(inp[1]), float(inp[2]), float(inp[3])]]
-                        inp = fd.readline().split()
+                        inp = next(fd).split()
                     atoms.set_cell(cell)
-                    inp = fd.readline().split()
+                    inp = next(fd).split()
                 atoms.append(Atom(inp[4], (inp[1], inp[2], inp[3])))
                 if molecular_dynamics:
-                    inp = fd.readline().split()
+                    inp = next(fd).split()
         if "Atomic structure (and velocities)" in line:
-            fd.readline()
+            next(fd)
             atoms = Atoms()
             velocities = []
             for i in range(n_atoms):
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 atoms.append(Atom(inp[4], (inp[1], inp[2], inp[3])))
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 floatvect = [v_unit * float(l) for l in inp[1:4]]
                 velocities.append(floatvect)
             atoms.set_velocities(velocities)
@@ -343,7 +343,7 @@ def read_aims_output(filename, index=-1):
         if "Total atomic forces" in line:
             f = []
             for i in range(n_atoms):
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 # FlK: use inp[-3:] instead of inp[1:4] to make sure this works
                 # when atom number is not preceded by a space.
                 f.append([float(i) for i in inp[-3:]])
