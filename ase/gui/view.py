@@ -4,6 +4,7 @@ from os.path import basename
 
 import numpy as np
 
+from ase.calculators.calculator import PropertyNotImplementedError
 from ase.data import atomic_numbers
 from ase.data.colors import jmol_colors
 from ase.geometry import complete_cell
@@ -222,7 +223,12 @@ class View:
         self.draw()
 
     def get_forces(self):
-        return self.atoms.get_forces()
+        if self.atoms.calc is not None:
+            try:
+                return self.atoms.get_forces()
+            except PropertyNotImplementedError:
+                pass
+        return np.zeros((len(self.atoms), 3))
 
     def toggle_show_forces(self, key=None):
         self.draw()
