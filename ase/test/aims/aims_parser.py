@@ -17,7 +17,7 @@ def run():
     key = "Total atomic forces (unitary forces cleaned) [eV/Ang]:"
     with open("aims.out") as f:
         next(l for l in f if key in l)
-        line = f.readline()
+        line = next(f)
         ref_force = [float(l) for l in line.split()[2:5]]
 
     assert norm(atoms.get_forces()[0] - ref_force) < 1e-12
@@ -29,7 +29,7 @@ def run():
         # scroll to significant lines
         for _ in range(4):
             next(f)
-        line = f.readline()
+        line = next(f)
         ref_stress = [float(l) for l in line.split()[2:5]]
 
     assert norm(atoms.get_stress(voigt=False)[0] - ref_stress) < 1e-12
