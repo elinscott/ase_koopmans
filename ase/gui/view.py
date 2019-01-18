@@ -411,8 +411,7 @@ class View:
                 vector_arrays.append(v * 10.0 * self.velocity_vector_scale)
         if self.window['toggle-show-forces']:
             f = self.get_forces()
-            if f is not None:
-                vector_arrays.append(f * self.force_vector_scale)
+            vector_arrays.append(f * self.force_vector_scale)
 
         for array in vector_arrays:
             array[:] = np.dot(array, axes) + X[:n]
