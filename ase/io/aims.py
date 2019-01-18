@@ -337,7 +337,7 @@ def read_aims_output(filename, index=-1):
                 next(fd)
             stress = []
             for _ in range(3):
-                inp = fd.readline()
+                inp = next(fd)
                 stress.append([float(i) for i in inp.split()[2:5]])
 
         if "Total atomic forces" in line:
