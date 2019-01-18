@@ -392,8 +392,11 @@ class Writer:
                                   type(None))):
                 self.data[name] = value
             elif isinstance(value, np.ndarray):
-                self.add_array(name, value.shape, value.dtype)
-                self.fill(value)
+                if value.ndim == 0:
+                    self.data[name] = value.item()
+                else:
+                    self.add_array(name, value.shape, value.dtype)
+                    self.fill(value)
             else:
                 value.write(self.child(name))
 
