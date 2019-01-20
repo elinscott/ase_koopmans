@@ -13,8 +13,9 @@ The implementation is based on:
    | J. Chem. Theory Comput. 2018, 14, 2797−2807
 
    __ http://doi.org/10.1021/acs.jctc.8b00039
-   
-and has much the same functionality as USPEX by Oganov and coworkers.
+
+and has much the same functionality as e.g. the USPEX program from the Oganov
+group and the XtalOpt code by the Zurek group.
 
 What sets crystal structure searches apart from other global optimization
 problems, is that typically the cell vectors need to be treated as additional
@@ -51,6 +52,7 @@ database containing 20 randomly generated initial structures.
 
 .. literalinclude:: ga_bulk_start.py
 
+
 Run the GA search
 =================
 
@@ -59,9 +61,7 @@ which should only take a few minutes to complete.
 The relaxation function, which performs the variable-cell
 local optimization, is imported from :download:`ga_bulk_relax.py`.
 
-
 .. literalinclude:: ga_bulk_run.py
-
 
 
 All the bulk operators
