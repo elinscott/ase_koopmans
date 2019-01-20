@@ -80,3 +80,4 @@ All the helper functions
 
 .. autoclass:: ase.ga.bulk_utilities.CellBounds
 .. autoclass:: ase.ga.bulk_startgenerator.StartGenerator
+.. autoclass:: ase.ga.ofp_comparator.OFPComparator
