@@ -34,17 +34,18 @@ class CellBounds:
         conjunction with a [low, high] list determining
         the lower and upper bounds:
 
-    a, b, c:
-        minimal and maximal lengths (in Angstrom)
-        for the 1st, 2nd and 3rd lattice vectors.
-    alpha, beta, gamma:
-        minimal and maximal values
-        (in degrees) for the angles between the
-        lattice vectors.
-    phi, chi, psi:
-        minimal and maximal values (in degrees)
-        for the angles between each lattice vector
-        and the plane defined by the other two vectors.
+        a, b, c:
+           Minimal and maximal lengths (in Angstrom)
+           for the 1st, 2nd and 3rd lattice vectors.
+
+        alpha, beta, gamma:
+           Minimal and maximal values (in degrees)
+           for the angles between the lattice vectors.
+
+        phi, chi, psi:
+           Minimal and maximal values (in degrees)
+           for the angles between each lattice vector
+           and the plane defined by the other two vectors.
 
     Example:
 

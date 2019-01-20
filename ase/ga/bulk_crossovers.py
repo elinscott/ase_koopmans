@@ -1,6 +1,6 @@
 """Crossover operation intended for bulk structures.
 If you find this implementation useful in your work,
-please cite:
+please consider citing:
     M. Van den Bossche, Henrik Gronbeck, B. Hammer,
     J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
 in addition to the papers mentioned in the docstrings."""
@@ -46,27 +46,51 @@ class Positions(object):
 
 
 class CutAndSplicePairing(OffspringCreator):
-    """ Parameters:
-    blmin   : Dictionary with pairs of atom numbers and the closest
-              distance these can have to each other.
-    n_top   : The number of atoms to optimize (None = include all).
-    p1      : probability that a parent is shifted over a random
-              distance along the normal of the cutting plane
-    p2      : same as p1, but for shifting along the two directions
-              in the cutting plane
-    minfrac : minimal fraction of atoms a parent must contribute
-              to the child
-    cellbounds: CellBounds instance describing the acceptable cell
-              shapes and dimensions.
-    use_tags: whether to use the atomic tags to preserve
+    """ A cut and splice operator for bulk structures.
+
+    For more information, see also:
+
+    * `Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720`__
+
+      __ https://doi.org/10.1016/j.cpc.2006.07.020
+
+    * `Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387`__
+
+      __ https://doi.org/10.1016/j.cpc.2010.07.048
+
+    Parameters:
+
+    blmin: dict
+           The closest allowed interatomic distances on the form:
+           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
+
+    n_top: int or None
+           The number of atoms to optimize (None = include all).
+
+    p1: float or int between 0 and 1
+        Probability that a parent is shifted over a random
+        distance along the normal of the cutting plane.
+
+    p2: float or int between 0 and 1
+        Same as p1, but for shifting along the two directions
+        in the cutting plane.
+
+    minfrac: float or int between 0 and 1
+             Minimal fraction of atoms a parent must contribute
+             to the child.
+
+    cellbounds: ase.ga.bulk_utilities.CellBounds instance
+                Describing limits on the cell shape, see
+                :class:`~ase.ga.bulk_utilities.CellBounds`.
+
+    use_tags: boolean
+              Whether to use the atomic tags to preserve
               molecular identity. Note: same-tag atoms are
               supposed to be grouped together.
-    test_dist_to_slab: whether also the distances to the slab
-              should be checked to satisfy the blmin.
 
-    For more information, see e.g.
-    Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720
-    Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
+    test_dist_to_slab: boolean
+                       Whether also the distances to the slab
+                       should be checked to satisfy the blmin.
     """
 
     def __init__(self, blmin, n_top=None, p1=1., p2=0.05, minfrac=None,

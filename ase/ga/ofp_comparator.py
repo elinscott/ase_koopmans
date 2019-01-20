@@ -6,67 +6,77 @@ from ase.neighborlist import NeighborList
 
 
 class OFPComparator(object):
-    """
-    Implementation of comparison using Oganov's fingerprint (OFP)
+    """ Implementation of comparison using Oganov's fingerprint (OFP)
     functions, based on:
-    Oganov, Valle, J. Chem. Phys. 130, 104504 (2009)
-    http://dx.doi.org/10.1063/1.3079326
-    and
-    Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632
-    http://dx.doi.org/10.1016/j.cpc.2010.06.007
+
+      * `Oganov, Valle, J. Chem. Phys. 130, 104504 (2009)`__
+
+        __ http://dx.doi.org/10.1063/1.3079326
+
+      * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
+
+        __ http://dx.doi.org/10.1016/j.cpc.2010.06.007
+
+    Parameters:
+
+    n_top: int or None
+           The number of atoms to optimize (None = include all).
+
+    dE: float
+        Energy difference above which two structures are
+        automatically considered to be different.
+
+    cos_dist_max: float
+        Maximal cosine distance between two structures in
+        order to be still considered the same structure.
+
+    rcut: float
+        Cutoff radius in Angstrom for the fingerprints.
+
+    binwidth: float
+        Width in Angstrom of the bins over which the fingerprints
+        are discretized.
+
+    pbc: list of three booleans or None
+         Specifies whether to apply periodic boundary conditions
+         along each of the three unit cell vectors when calculating
+         the fingerprint. The default (None) is to apply PBCs in all
+         3 directions.
+
+         Note: for isolated systems (pbc = [False, False, False]),
+         the pair correlation function itself is always short-ranged
+         (decays to zero beyond a certain radius), so unity is not
+         substracted for calculating the fingerprint. Also the
+         volume normalization disappears.
+
+    maxdims: list of three floats or None
+             If PBCs in only 1 or 2 dimensions are specified, the
+             maximal thicknesses along the non-periodic directions
+             can be specified here (the values given for the periodic
+             directions will not be used). If set to None, the length
+             of the cell vector along the non-periodic direction is
+             used.
+
+             Note: in this implementation, the cell vectors are
+             assumed to be orthogonal.
+
+    sigma: float
+           Standard deviation of the gaussian smearing to be applied
+           in the calculation of the fingerprints (in Angstrom).
+
+    nsigma: int
+            Distance (as the number of standard deviations sigma) at
+            which the gaussian smearing is cut off (i.e. no smearing
+            beyond that distance).
+
+    recalculate: boolean
+                 If True, ignores the fingerprints stored in
+                 atoms.info and recalculates them.
     """
 
     def __init__(self, n_top=None, dE=1.0, cos_dist_max=5e-3, rcut=20.,
                  binwidth=0.05, sigma=0.02, nsigma=4, pbc=None,
                  maxdims=None, recalculate=False):
-        """
-        Arguments:
-
-        n_top = number of atoms to optimize
-                (everything except the substrate).
-                If None, all atoms will be included.
-
-        dE: energy difference above which two structures are
-            automatically considered to be different.
-
-        cos_dist_max: maximal cosine distance between two structures in
-                      order to be still considered the same structure.
-
-        rcut: cutoff radius for the fingerprints.
-
-        binwidth: width of the bins over which the fingerprints are
-                  discretized.
-
-        pbc: list of booleans specifying whether to apply periodic
-             boundary conditions along each of the three unit cell
-             vectors when calculating the fingerprint. The default
-             is to apply PBCs in all 3 directions.
-             Note: for isolated systems (pbc = [False,False,False]),
-             the pair correlation function itself is always short-ranged
-             (decays to zero beyond a certain radius), so unity is not
-             substracted for calculating the fingerprint. Also the
-             volume normalization disappears.
-
-        maxdims: If PBC in only 1 or 2 dimensions are specified, the
-                 maximal thicknesses along the non-periodic directions
-                 can be specified, as a list of length 3 (the values for
-                 the periodic directions are not read). If not specified
-                 the length of the cell vector along the non-periodic
-                 direction is used.
-                 Note: in this implementation, the cell vectors are
-                 assumed to be orthogonal.
-
-        sigma: standard deviation of the gaussian smearing to be applied
-               in the calculation of the fingerprints (in Angstrom).
-
-        nsigma: distance (as the number of standard deviations sigma) at
-                which the gaussian smearing is cut off (i.e. no smearing
-                beyond that distance).
-
-        recalculate: if True, ignores the fingerprints stored in
-                     atoms.info and recalculates them.
-        """
-
         self.n_top = n_top or 0
         self.dE = dE
         self.cos_dist_max = cos_dist_max

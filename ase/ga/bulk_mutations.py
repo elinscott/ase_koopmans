@@ -1,6 +1,6 @@
 """Mutation operations intended for bulk structures.
 If you find this implementation useful in your work,
-please cite:
+please consider citing:
     M. Van den Bossche, Henrik Gronbeck, B. Hammer,
     J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
 in addition to the papers mentioned in the docstrings."""
@@ -20,38 +20,43 @@ from scipy.spatial.distance import cdist
 
 class StrainMutation(OffspringCreator):
     """ Mutates a candidate by applying a randomly generated strain.
-    See also:
-    Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
-    Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720
+
+    For more information, see also:
+
+      * `Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720`__
+
+        __ https://doi.org/10.1016/j.cpc.2006.07.020
+
+      * `Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387`__
+
+        __ https://doi.org/10.1016/j.cpc.2010.07.048
 
     After initialization of the mutation, a scaling volume
     (to which each mutated structure is scaled before checking the
     constraints) is typically generated from the population,
     which is then also occasionally updated in the course of the
     GA run.
+
+    Parameters:
+
+    blmin: dict
+           The closest allowed interatomic distances on the form:
+           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
+
+    cellbounds: ase.ga.bulk_utilities.CellBounds instance
+                Describing limits on the cell shape, see
+                :class:`~ase.ga.bulk_utilities.CellBounds`.
+
+    stddev: float
+            Standard deviation used in the generation of the
+            strain matrix elements.
+
+    use_tags: boolean
+              Whether to use the atomic tags to preserve molecular identity.
     """
 
     def __init__(self, blmin, cellbounds=None, stddev=0.7, use_tags=False,
                  verbose=False):
-        """
-        Parameters:
-
-        blmin: dict
-            The closest allowed interatomic distances on the form:
-            {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers
-
-        cellbounds: ase.ga.bulk_utilities.CellBounds instance
-            Describing limits on the cell shape, see
-            :class:`~ase.ga.bulk_utilities.CellBounds`
-
-        stddev: float
-            standard deviation used in the generation of the
-            strain matrix elements
-
-        use_tags: boolean
-            whether to use the atomic tags to preserve molecular identity.
-
-        """
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.cellbounds = cellbounds
@@ -156,16 +161,24 @@ class StrainMutation(OffspringCreator):
 
 
 class PermuStrainMutation(OffspringCreator):
-    """ Combination of PermutationMutation and StrainMutation, see also:
-    Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387
+    """ Combination of PermutationMutation and StrainMutation.
+
+    For more information, see also:
+
+      * `Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387`__
+
+        __ https://doi.org/10.1016/j.cpc.2010.07.048
+
+    Parameters:
+
+    permutationmutation: OffspringCreator instance
+                         A mutation that permutes atom types.
+
+    strainmutation: OffspringCreator instance
+                    A mutation that mutates by straining.
     """
 
     def __init__(self, permutationmutation, strainmutation, verbose=False):
-        """
-        permutationmutation: instance of a mutation that permutes
-                             atom types
-        strainmutation: instance of a mutation that mutates by straining
-        """
         OffspringCreator.__init__(self, verbose)
         self.permutationmutation = permutationmutation
         self.strainmutation = strainmutation
@@ -305,9 +318,16 @@ def get_number_of_valence_electrons(Z):
 
 class BondElectroNegativityModel(PairwiseHarmonicPotential):
     ''' Pairwise harmonic potential where the force constants are
-        determined using the "bond electronegativity" model from
-        Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32
-        Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103
+        determined using the "bond electronegativity" model, see:
+
+      * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
+
+        __ https://dx.doi.org/10.1016/j.cpc.2010.06.007
+
+      * `Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103`__
+
+        __ https://dx.doi.org/10.1103/PhysRevB.84.092103
+
     '''
 
     def calculate_force_constants(self):
@@ -354,23 +374,22 @@ class SoftMutation(OffspringCreator):
     '''
     Mutates the structure by displacing it along the lowest (nonzero)
     frequency modes found by vibrational analysis, as in:
-    Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32
+
+    * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
+
+      __ https://dx.doi.org/10.1016/j.cpc.2010.06.007
+
     As in the reference above, the next-lowest mode is used if the
-    structure has already been softmutated.
-    '''
+    structure has already been softmutated along the current-lowest
+    mode.
 
-    def __init__(self, blmin, bounds=[0.5, 2.0], rcut=10.,
-                 calculator=BondElectroNegativityModel,
-                 used_modes_file='used_modes.json', use_tags=False,
-                 verbose=False):
-        '''
-        Parameters:
+    Parameters:
 
-        blmin: dict
-            The closest allowed interatomic distances on the form:
-            {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers
+    blmin: dict
+           The closest allowed interatomic distances on the form:
+           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
 
-        bounds: list
+    bounds: list
             Lower and upper limits (in Angstrom) for the largest
             atomic displacement in the structure. For a given mode,
             the algorithm starts at zero amplitude and increases
@@ -381,26 +400,33 @@ class SoftMutation(OffspringCreator):
             considered too similar to the parent and None is
             returned.
 
-        calculator: ASE calculator object
-            The calculator to be used in the vibrational
-            analysis. The default is to use a calculator
-            based on pairwise harmonic potentials with force
-            constants from the "bond electronegativity"
-            model described in the reference above. Any calculator with
-            a working `get_forces` method will work.
+    calculator: ASE calculator object
+                The calculator to be used in the vibrational
+                analysis. The default is to use a calculator
+                based on pairwise harmonic potentials with force
+                constants from the "bond electronegativity"
+                model described in the reference above.
+                Any calculator with a working :func:`get_forces()`
+                method will work.
 
-        rcut: float
-            Cutoff radius for the pairwise harmonic potentials.
+    rcut: float
+          Cutoff radius in Angstrom for the pairwise harmonic
+          potentials.
 
-        used_modes_file: str or None
-            Name of json dump file where previously used
-            modes will be stored (and read). If None, no such
-            file will be used. Default is to use the filename 'used_modes.json'
+    used_modes_file: str or None
+                     Name of json dump file where previously used
+                     modes will be stored (and read). If None,
+                     no such file will be used. Default is to use
+                     the filename 'used_modes.json'.
 
-        use_tags: boolean
-            Specifies whether to use the atomic tags to preserve
-            molecular identity.
-        '''
+    use_tags: boolean
+              Whether to use the atomic tags to preserve molecular identity.
+    '''
+
+    def __init__(self, blmin, bounds=[0.5, 2.0],
+                 calculator=BondElectroNegativityModel, rcut=10.,
+                 used_modes_file='used_modes.json', use_tags=False,
+                 verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.bounds = bounds
@@ -583,25 +609,40 @@ class RotationalMutation(OffspringCreator):
     Only performs whole-molecule rotations, no internal
     rotations.
 
-    See also:
-    Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
-      Acta Cryst. (2012), B68, 215-226.
+    For more information, see also:
+
+      * `Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
+        Acta Cryst. (2012), B68, 215-226.`__
+
+        __ https://dx.doi.org/10.1107/S0108768112017466
+
+    Parameters:
+
+    blmin: dict
+           The closest allowed interatomic distances on the form:
+           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
+
+    n_top: int or None
+           The number of atoms to optimize (None = include all).
+
+    fraction: float
+              Fraction of the moieties to be rotated.
+
+    tags: None or list of integers
+          Specifies, respectively, whether all moieties or only those
+          with matching tags are eligible for rotation.
+
+    min_angle: float
+               Minimal angle (in radians) for each rotation;
+               should lie in the interval [0, pi].
+
+    test_dist_to_slab: boolean
+                       Whether also the distances to the slab
+                       should be checked to satisfy the blmin.
     """
 
     def __init__(self, blmin, n_top=None, fraction=0.33, tags=None,
                  min_angle=1.57, test_dist_to_slab=True, verbose=False):
-        """ Parameters:
-        blmin: closest allowed distances
-        n_top: number of atoms to optimize; if None, all are included.
-        fraction: fraction of the moieties to be rotated.
-        tags: None or list of integers, specify respectively whether
-              all moieties or only those with matching tags are
-              eligible for rotation.
-        min_angle: minimal angle (in radians) for each rotation;
-                   should lie in the interval [0, pi].
-        test_dist_to_slab: whether also the distances to the slab
-                           should be checked to satisfy the blmin.
-        """
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.n_top = n_top
@@ -690,13 +731,18 @@ class RotationalMutation(OffspringCreator):
 
 
 class RattleRotationalMutation(OffspringCreator):
-    """ Combination of Rattle and RotationalMutations """
+    """ Combination of RattleMutation and RotationalMutation.
+
+    Parameters:
+
+    rattlemutation: OffspringCreator instance
+                    A mutation that rattles atoms.
+
+    rotationalmutation: OffspringCreator instance
+                        A mutation that rotates moieties.
+    """
 
     def __init__(self, rattlemutation, rotationalmutation, verbose=False):
-        """
-        rattlemutation: instance that rattles atoms
-        rotationalmutation: instance of a mutation that rotates moieties
-        """
         OffspringCreator.__init__(self, verbose)
         self.rattlemutation = rattlemutation
         self.rotationalmutation = rotationalmutation
