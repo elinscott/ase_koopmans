@@ -1,9 +1,20 @@
-"""Simple and efficient pythonic file-format.
+"""
+ULM files
+=========
+
+*Simple and efficient pythonic file-format*
 
 Stores ndarrays as binary data and Python's built-in datatypes
 (bool, int, float, complex, str, dict, list, tuple, None) as json.
 
-File layout when there is only a single item::
+.. autofunction:: open
+.. autoexception:: InvalidULMFileError
+
+
+File layout
+-----------
+
+When there is only a single item::
 
     0: "- of Ulm" (magic prefix, ascii)
     8: "                " (tag, ascii)
@@ -15,6 +26,10 @@ File layout when there is only a single item::
     p0: n (length of json data, int64)
     p0+8: json data
     p0+8+n: EOF
+
+
+Examples
+--------
 
 Writing:
 
@@ -30,6 +45,7 @@ Reading:
 >>> r = ulm.open('x.ulm')
 >>> print(r.c)
 abc
+>>> r.close()
 
 To see what's inside 'x.ulm' do this::
 
@@ -42,7 +58,59 @@ To see what's inside 'x.ulm' do this::
         c: abc,
         d: 3.14}
 
-Versions:
+
+.. autoclass:: Writer
+    :members:
+
+.. autoclass:: Reader
+    :members:
+
+
+More examples
+-------------
+
+In the following we append to the ulm-file from above and demonstrae
+how to write a big array in chunks:
+
+>>> w = ulm.open('x.ulm', 'a')
+>>> w.add_array('bigarray', (10, 1000), float)
+>>> for i in range(10):
+...     w.fill(np.ones(1000))
+...
+>>> w.close()
+
+Now read first and second items:
+
+>>> with ulm.open('x.ulm') as r:
+...     print(r.keys())
+dict_keys(['a', 'b', 'c', 'd'])
+>>> with ulm.open('x.ulm', index=1) as r:
+...     print(r.keys())
+dict_keys(['bigarray'])
+
+To get all the data, it is possible to iterate over the items in the file.
+
+>>> for i, r in enumerate(ulm.Reader('x.ulm')):
+...     for k in r.keys():
+...         print(i, k)
+0 a
+0 b
+0 c
+0 d
+1 bigarray
+>>> r.close()
+
+The different parts (items) of the file are numbered by the index
+argument:
+
+>>> r = ulm.Reader('x.ulm')
+>>> r[1].bigarray.shape
+(10, 1000)
+>>> r.close()
+
+
+Versions
+--------
 
 1) Initial version.
 
@@ -50,7 +118,6 @@ Versions:
    _little_endian=False item.
 
 3) Changed magic string from "AFFormat" to "- of Ulm".
-
 """
 
 from __future__ import print_function
@@ -72,14 +139,29 @@ VERSION = 3
 N1 = 42  # block size - max number of items: 1, N1, N1*N1, N1*N1*N1, ...
 
 
-def open(filename, mode='r', index=None, tag=''):
-    """Open ulm-file."""
+def open(filename, mode='r', index=None, tag=None):
+    """Open ulm-file.
+
+    filename: str
+        Filename.
+    mode: str
+        Mode.  Must be 'r' for reading, 'w' for writing to a new file
+        (overwriting an existing one) or 'a' for appending to an existing file.
+    index: int
+        Index of item to read.  Defaults to 0.
+    tag: str
+        Magic ID string.
+
+    Returns a :class:`Reader` or a :class:`Writer` object.  May raise
+    :class:`InvalidULMFileError`.
+    """
     if mode == 'r':
+        assert tag is None
         return Reader(filename, index or 0)
     if mode not in 'wa':
         2 / 0
     assert index is None
-    return Writer(filename, mode, tag)
+    return Writer(filename, mode, tag or '')
 
 
 ulmopen = open
@@ -108,7 +190,8 @@ def writeint(fd, n, pos=None):
 def readints(fd, n):
     a = np.frombuffer(fd.read(int(n * 8)), dtype=np.int64, count=n)
     if not np.little_endian:
-        a.byteswap(True)
+        # Cannot use in-place byteswap because frombuffer() returns readonly view
+        a = a.byteswap()
     return a
 
 
@@ -427,6 +510,7 @@ class Reader:
         return self._tag
 
     def keys(self):
+        """Return list of keys."""
         return self._data.keys()
 
     def asdict(self):
@@ -483,6 +567,7 @@ class Reader:
         return data
 
     def __getitem__(self, index):
+        """Return Reader for item *index*."""
         data = self._read_data(index)
         return Reader(self._fd, index, data, self._little_endian)
 
@@ -494,13 +579,13 @@ class Reader:
             if verbose and isinstance(value, NDArrayReader):
                 value = value.read()
             if isinstance(value, NDArrayReader):
-                s = '<ndarray shape={0} dtype={1}>'.format(value.shape,
+                s = '<ndarray shape={} dtype={}>'.format(value.shape,
                                                            value.dtype)
             elif isinstance(value, Reader):
                 s = value.tostr(verbose, indent + '    ')
             else:
                 s = str(value).replace('\n', '\n  ' + ' ' * len(key) + indent)
-            strings.append('{0}{1}: {2}'.format(indent, key, s))
+            strings.append('{}{}: {}'.format(indent, key, s))
         return '{\n' + ',\n'.join(strings) + '}'
 
     def __str__(self):
@@ -553,7 +638,7 @@ class NDArrayReader:
         if step != 1:
             a = a[::step].copy()
         if self.little_endian != np.little_endian:
-            a.byteswap(True)
+            a = a.byteswap(inplace=a.flags.writeable) # frombuffer() returns readonly array
         if self.length_of_last_dimension is not None:
             a = a[..., :self.length_of_last_dimension]
         if self.scale != 1.0:

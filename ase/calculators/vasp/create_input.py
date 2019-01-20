@@ -776,6 +776,8 @@ class GenerateVaspInput(object):
                         'param1': 0.1234, 'param2': 1.0},
         'vdw-df2': {'gga': 'ML', 'luse_vdw': True, 'aggac': 0.0,
                     'zab_vdw': -1.8867},
+        'rev-vdw-df2': {'gga': 'MK', 'luse_vdw': True, 'param1': 0.1234,
+                        'param2':0.711357, 'zab_vdw': -1.8867, 'aggac': 0.0},
         'beef-vdw': {'gga': 'BF', 'luse_vdw': True,
                      'zab_vdw': -1.8867},
         # Hartree-Fock and hybrids
@@ -786,7 +788,8 @@ class GenerateVaspInput(object):
         'pbe0': {'gga': 'PE', 'lhfcalc': True},
         'hse03': {'gga': 'PE', 'lhfcalc': True, 'hfscreen': 0.3},
         'hse06': {'gga': 'PE', 'lhfcalc': True, 'hfscreen': 0.2},
-        'hsesol': {'gga': 'PS', 'lhfcalc': True, 'hfscreen': 0.2}}
+        'hsesol': {'gga': 'PS', 'lhfcalc': True, 'hfscreen': 0.2}
+    }
 
     def __init__(self, restart=None):
         self.float_params = {}
@@ -1286,6 +1289,12 @@ class GenerateVaspInput(object):
         for key, val in self.dict_params.items():
             if val is not None:
                 if key == 'ldau_luj':
+                    # User didn't turn on LDAU tag.
+                    # Only turn on if ldau is unspecified
+                    if self.bool_params['ldau'] is None:
+                        self.bool_params['ldau'] = True
+                        # At this point we have already parsed our bool params
+                        incar.write(' LDAU = .TRUE.\n')
                     llist = ulist = jlist = ''
                     for symbol in self.symbol_count:
                         #  default: No +U

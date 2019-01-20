@@ -49,7 +49,8 @@ class SiestaParameters(Parameters):
             atoms=None,
             restart=None,
             ignore_bad_restart_file=False,
-            fdf_arguments=None):
+            fdf_arguments=None,
+            atomic_coord_format='xyz'):
         kwargs = locals()
         kwargs.pop('self')
         Parameters.__init__(self, **kwargs)
@@ -58,7 +59,7 @@ class SiestaParameters(Parameters):
 class BaseSiesta(FileIOCalculator):
     """Calculator interface to the SIESTA code.
     """
-    allowed_basis_names = ['SZ', 'SZP', 'DZ', 'DZP']
+    allowed_basis_names = ['SZ', 'SZP', 'DZ', 'DZP', 'TZP']
     allowed_spins = ['UNPOLARIZED', 'COLLINEAR', 'FULL']
     allowed_xc = {}
     allowed_fdf_keywords = {}
@@ -79,19 +80,19 @@ class BaseSiesta(FileIOCalculator):
         """ASE interface to the SIESTA code.
 
         Parameters:
-           - label        : The base head of all created files.
+           - label        : The basename of all files created during SIESTA run.
            - mesh_cutoff  : Energy in eV.
                             The mesh cutoff energy for determining number of
-                            grid points.
-           - energy_shift : Energy in eVV
-                            The confining energy of the basis sets.
+                            grid points in the matrix-element calculation.
+           - energy_shift : Energy in eV
+                            The confining energy of the basis set generation.
            - kpts         : Tuple of 3 integers, the k-points in different
                             directions.
            - xc           : The exchange-correlation potential. Can be set to
                             any allowed value for either the Siesta
                             XC.funtional or XC.authors keyword. Default "LDA"
-           - basis_set    : "SZ"|"SZP"|"DZ"|"DZP", strings which specify the
-                            type of functions basis set.
+           - basis_set    : "SZ"|"SZP"|"DZ"|"DZP"|"TZP", strings which specify
+                            the type of functions basis set.
            - spin         : "UNPOLARIZED"|"COLLINEAR"|"FULL". The level of spin
                             description to be used.
            - species      : None|list of Species objects. The species objects
@@ -123,11 +124,18 @@ class BaseSiesta(FileIOCalculator):
                             separate line, while tuples will write each element
                             in a single line.  ASE units are assumed in the
                             input.
+           - atomic_coord_format: "xyz"|"zmatrix", strings to switch between the
+                            default way of entering the system's geometry (via
+                            the block AtomicCoordinatesAndAtomicSpecies) and
+                            a recent method via the block Zmatrix. The block
+                            Zmatrix allows to specify basic geometry constrains
+                            such as realized through the ASE classes FixAtom, 
+                            FixedLine and FixedPlane.
         """
 
         # Put in the default arguments.
         parameters = self.default_parameters.__class__(**kwargs)
-
+        
         # Setup the siesta command based on number of nodes.
         command = os.environ.get('SIESTA_COMMAND')
         if command is None:
@@ -154,6 +162,7 @@ class BaseSiesta(FileIOCalculator):
             self,
             command=command,
             **parameters)
+        
 
     def __getitem__(self, key):
         """Convenience method to retrieve a parameter as
@@ -497,6 +506,22 @@ class BaseSiesta(FileIOCalculator):
             - f:     An open file object.
             - atoms: An atoms object.
         """
+        af = self.parameters.atomic_coord_format.lower()
+        if af=='xyz':
+            self._write_atomic_coordinates_xyz(f, atoms)
+        elif af=='zmatrix':
+            self._write_atomic_coordinates_zmatrix(f, atoms)
+        else:
+            raise RuntimeError('Unknown atomic_coord_format: {}'.format(af))			
+
+
+    def _write_atomic_coordinates_xyz(self, f, atoms):
+        """Write atomic coordinates.
+
+        Parameters:
+            - f:     An open file object.
+            - atoms: An atoms object.
+        """
         species, species_numbers = self.species(atoms)
         f.write('\n')
         f.write('AtomicCoordinatesFormat  Ang\n')
@@ -518,6 +543,61 @@ class BaseSiesta(FileIOCalculator):
             f.write('%endblock AtomicCoordinatesOrigin\n')
             f.write('\n')
 
+    def _write_atomic_coordinates_zmatrix(self, f, atoms):
+        """Write atomic coordinates in Z-matrix format.
+
+        Parameters:
+            - f:     An open file object.
+            - atoms: An atoms object.
+        """
+        species, species_numbers = self.species(atoms)
+        f.write('\n')
+        f.write('ZM.UnitsLength   Ang\n')
+        f.write('%block Zmatrix\n')
+        f.write('  cartesian\n')
+        fstr = "{:5d}" + "{:20.10f}" * 3 + "{:3d}" * 3 + "{:7d} {:s}\n"
+        a2constr = self.make_xyz_constraints(atoms)
+        a2p,a2s = atoms.get_positions(), atoms.get_chemical_symbols()
+        for ia, (sp,xyz,ccc,sym) in enumerate(zip(species_numbers, a2p, a2constr, a2s)):
+            f.write( fstr.format(sp, xyz[0], xyz[1], xyz[2], ccc[0], ccc[1], ccc[2], ia+1, sym) )
+        f.write('%endblock Zmatrix\n')
+
+        origin = tuple( -atoms.get_celldisp().flatten() )
+        if any(origin):
+            f.write('%block AtomicCoordinatesOrigin\n')
+            f.write('     %.4f  %.4f  %.4f\n' % origin)
+            f.write('%endblock AtomicCoordinatesOrigin\n')
+            f.write('\n')
+
+    def make_xyz_constraints(self, atoms):
+        """ Create coordinate-resolved list of constraints [natoms, 0:3] 
+        The elements of the list must be integers 0 or 1
+          1 -- means that the coordinate will be updated during relaxation procedure
+          0 -- mains that the coordinate will be fixed during geometry relaxation
+        """
+        from ase.constraints import FixAtoms, FixedLine, FixedPlane
+        import warnings, sys
+        
+        a = atoms
+        a2c = np.ones((len(a), 3), dtype = int)
+        for c in a.constraints:
+            if isinstance(c, FixAtoms):
+                a2c[c.get_indices()] = 0
+            elif isinstance(c, FixedLine):
+                norm_dir = c.dir / np.linalg.norm(c.dir)
+                if ( max(norm_dir) - 1.0 ) > 1e-6:
+                    raise RuntimeError('norm_dir: {} -- must be one of the Cartesian axes...'.format(norm_dir))
+                a2c[c.a] = norm_dir.round().astype(int)
+            elif isinstance(c, FixedPlane):
+                norm_dir = c.dir / np.linalg.norm(c.dir)
+                if ( max(norm_dir) - 1.0 ) > 1e-6:
+                    raise RuntimeError('norm_dir: {} -- must be one of the Cartesian axes...'.format(norm_dir))
+                a2c[c.a] = abs( 1 - norm_dir.round().astype(int) )
+            else:
+                warnings.warn('Constraint {} is ignored at {}'.format( str(c), sys._getframe().f_code ))
+        return a2c
+
+    
     def _write_kpts(self, f):
         """Write kpts.
 
@@ -723,7 +803,8 @@ class BaseSiesta(FileIOCalculator):
 
             if label not in self.results['ion']:
                 fname = os.path.join(self.directory, label + '.ion.xml')
-                self.results['ion'][label] = get_ion(fname)
+                if os.path.isfile(fname):
+                    self.results['ion'][label] = get_ion(fname)
 
     def read_hsx(self):
         """
@@ -733,17 +814,12 @@ class BaseSiesta(FileIOCalculator):
         'is_gamma', 'sc_orb2uc_orb', 'row2nnzero', 'sparse_ind2column',
         'H_sparse', 'S_sparse', 'aB2RaB_sparse', 'total_elec_charge', 'temp'
         """
-
-        import warnings
         from ase.calculators.siesta.import_functions import readHSX
 
         filename = os.path.join(self.directory, self.label + '.HSX')
         if isfile(filename):
             self.results['hsx'] = readHSX(filename)
         else:
-            warnings.warn(filename + """ does not exist =>
-                                     siesta.results["hsx"]=None""",
-                                     UserWarning)
             self.results['hsx'] = None
 
     def read_dim(self):
@@ -753,17 +829,12 @@ class BaseSiesta(FileIOCalculator):
         'natoms_sc', 'norbitals_sc', 'norbitals', 'nspin',
         'nnonzero', 'natoms_interacting'
         """
-
-        import warnings
         from ase.calculators.siesta.import_functions import readDIM
 
         filename = os.path.join(self.directory, self.label + '.DIM')
         if isfile(filename):
             self.results['dim'] = readDIM(filename)
         else:
-            warnings.warn(filename + """ does not exist =>
-                                     siesta.results["dim"]=None""",
-                                     UserWarning)
             self.results['dim'] = None
 
     def read_pld(self, norb, natms):
@@ -773,17 +844,12 @@ class BaseSiesta(FileIOCalculator):
         'max_rcut', 'orb2ao', 'orb2uorb', 'orb2occ', 'atm2sp',
         'atm2shift', 'coord_sc', 'cell', 'nunit_cells'
         """
-
-        import warnings
         from ase.calculators.siesta.import_functions import readPLD
 
         filename = os.path.join(self.directory, self.label + '.PLD')
         if isfile(filename):
             self.results['pld'] = readPLD(filename, norb, natms)
         else:
-            warnings.warn(filename + """ does not exist =>
-                                     siesta.results["pld"]=None""",
-                                     UserWarning)
             self.results['pld'] = None
 
     def read_wfsx(self):
@@ -791,8 +857,6 @@ class BaseSiesta(FileIOCalculator):
         Read the siesta WFSX file
         Return a namedtuple with the following arguments:
         """
-
-        import warnings
         from ase.calculators.siesta.import_functions import readWFSX
         
         fname_woext = os.path.join(self.directory, self.label)
@@ -805,10 +869,6 @@ class BaseSiesta(FileIOCalculator):
             readWFSX(filename)
             self.results['wfsx'] = readWFSX(filename)
         else:
-            filename = fname_woext + '.WFSX or ' + fname_woext + '.fullBZ.WFSX'
-            warnings.warn(filename + """ does not exist =>
-                                     siesta.results["wfsx"]=None""",
-                                     UserWarning)
             self.results['wfsx'] = None
 
     def read_pseudo_density(self):
