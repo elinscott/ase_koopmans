@@ -63,7 +63,7 @@ class CLICommand:
             help='Use "-E 5,2.0" for 5 lattice constants ranging from '
             '-2.0 %% to +2.0 %%.')
         add('--eos-type', default='sjeos', help='Selects the type of eos.')
-        add('-w', '--write')
+        add('-o', '--output', help='Write result to file (append mode).')
         add('--modify', metavar='...',
             help='Modify atoms with Python statement.  ' +
             'Example: --modify="atoms.positions[-1,2]+=0.1".')
@@ -112,8 +112,8 @@ class Runner:
         if args.after:
             exec(args.after, {'atoms': atoms})
 
-        if args.write:
-            write(args.write, atoms, append=True)
+        if args.output:
+            write(args.output, atoms, append=True)
 
     def build(self, name):
         if name == '-':
