@@ -550,7 +550,10 @@ class HEX(SimpleBravaisLattice):
           ['RHL2', 'GFLPP1QQ1Z', 'GPZQGFP1Q1LZ']])
 class RHL(BravaisLattice):
     def __init__(self, a, alpha):
-         BravaisLattice.__init__(self, a=a, alpha=alpha)
+        if alpha >= 120:
+            raise ValueError('Need alpha < 120 degrees, got {}'
+                             .format(alpha))
+        BravaisLattice.__init__(self, a=a, alpha=alpha)
 
     def _cell(self, a, alpha):
         alpha *= np.pi / 180
@@ -558,8 +561,10 @@ class RHL(BravaisLattice):
         acosa2 = a * np.cos(0.5 * alpha)
         asina2 = a * np.sin(0.5 * alpha)
         acosfrac = acosa / acosa2
+        xx = (1 - acosfrac**2)
+        assert xx > 0.0
         return np.array([[acosa2, -asina2, 0], [acosa2, asina2, 0],
-                         [a * acosfrac, 0, a * (1 - acosfrac**2)**.5]])
+                         [a * acosfrac, 0, a * xx**0.5]])
 
     def _variant_name(self, a, alpha):
         return 'RHL1' if alpha < 90 else 'RHL2'
@@ -1105,7 +1110,7 @@ def get_bravais_lattice(uc, eps=2e-4):
 def _test_all_variants():
     """For testing; yield every variant of every Bravais lattice."""
     a, b, c = 3., 4., 5.
-    alpha, beta, gamma = 80.0, 75.0, 65.0
+    alpha = 55.0
     yield CUB(a)
     yield FCC(a)
     yield BCC(a)
@@ -1136,15 +1141,15 @@ def _test_all_variants():
 
     yield HEX(a, c)
 
-    rhl1 = RHL(a, alpha)
+    rhl1 = RHL(a, alpha=55.0)
     assert rhl1.variant.name == 'RHL1'
     yield rhl1
 
-    rhl2 = RHL(a, alpha + 2.0 * (90 - alpha))
+    rhl2 = RHL(a, alpha=105.0)
     assert rhl2.variant.name == 'RHL2'
     yield rhl2
 
-    yield MCL(a, b, c, 50.)
+    yield MCL(a, b, c, alpha)
 
     mclc1 = MCLC(a, b, c, 80)
     assert mclc1.variant.name == 'MCLC1'
