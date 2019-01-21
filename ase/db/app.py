@@ -248,8 +248,8 @@ def index(project):
 
     table.format(SUBSCRIPT)
 
-    addcolumns = [column for column in all_columns + table.keys
-                  if column not in table.columns]
+    addcolumns = sorted(column for column in all_columns + table.keys
+                        if column not in table.columns)
 
     return render_template('table.html',
                            project=project,
