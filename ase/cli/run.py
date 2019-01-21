@@ -207,9 +207,7 @@ class Runner:
         return name
 
 
-def str2dict(s: str,
-             namespace: 'Dict[str, Any]' = {},
-             sep: str = '=') -> 'Dict[str, Any]':
+def str2dict(s: str, namespace={}, sep: str = '='):
     """Convert comma-separated key=value string to dictionary.
 
     Examples:
