@@ -409,6 +409,7 @@ class Orthorhombic(BravaisLattice):
          [['ORC', 'GRSTUXYZ', 'GXSYGZURTZ,YT,UX,SR']])
 class ORC(Orthorhombic, SimpleBravaisLattice):  # FIXME stupid diamond problem
     def _cell(self, a, b, c):
+        check_orc(a, b, c)
         return np.diag([a, b, c]).astype(float)
 
 
@@ -596,7 +597,9 @@ class RHL(BravaisLattice):
 
 def check_mcl(a, b, c, alpha):
     if not (a <= c and b <= c and alpha < 90):
-        raise UnconventionalLattice('Expected a <= c, b <= c, alpha < 90')
+        raise UnconventionalLattice('Expected a <= c, b <= c, alpha < 90; '
+                                    'got a={}, b={}, c={}, alpha={}'
+                                    .format(a, b, c, alpha))
 
 
 @bravais('monoclinic', ('a', 'b', 'c', 'alpha'),
@@ -612,7 +615,7 @@ class MCL(BravaisLattice):
 
     def _special_points(self, a, b, c, alpha, variant):
         cosa = np.cos(alpha * _degrees)
-        eta = (1 - b * cosa / c) / (2 * np.sin(alpha)**2)
+        eta = (1 - b * cosa / c) / (2 * np.sin(alpha * _degrees)**2)
         nu = .5 - eta * c * cosa / b
 
         points = [[0,0,0],
@@ -853,15 +856,13 @@ class TRI(BravaisLattice):
         return points
 
 
-def get_bravais_lattice1(uc, eps=2e-4):
-    uc2 = uc.niggli_reduce()
-    if np.abs(uc2 - uc).max() > eps:
-        print(uc)
-        print(uc2)
-        raise ValueError('Can only get recognize Bravais lattice of '
-                         'Niggli-reduced cell.')
-    if np.linalg.det(uc.array) < 0:
-        raise ValueError('Cell should be right-handed')
+def get_bravais_lattice(uc, eps=2e-4):
+    #uc2 = uc.niggli_reduce()
+    #if 0: #np.abs(uc2 - uc).max() > eps:
+    #    raise ValueError('Can only get recognize Bravais lattice of '
+    #                     'Niggli-reduced cell.')
+    #if np.linalg.det(uc.array) < 0:
+    #    raise ValueError('Cell should be right-handed')
 
     cellpar = uc.cellpar()
     ABC = cellpar[:3]
@@ -892,6 +893,7 @@ def get_bravais_lattice1(uc, eps=2e-4):
         except UnconventionalLattice:
             return None
         mycellpar = Cell(cell).cellpar()
+        #for iperm in range(3):
         permutation = (np.arange(-3, 0) + axis) % 3
         mycellpar = mycellpar.reshape(2, 3)[:, permutation].ravel()
         if np.allclose(mycellpar, cellpar):
@@ -913,24 +915,32 @@ def get_bravais_lattice1(uc, eps=2e-4):
     def allclose(a, b):
         return np.allclose(a, b, atol=eps)
 
+    def noduplicates(a):
+        sorted_a = np.sort(a)
+        smallest_deviation = abs(sorted_a[1:] - sorted_a[:-1]).min()
+        return smallest_deviation > eps
+
     if all_lengths_equal:
         if allclose(angles, 90):
-            return check(CUB, A)
+            return CUB(A), {}  #check(CUB, A)
         if allclose(angles, 60):
-            return check(FCC, np.sqrt(2) * A)
+            return FCC(np.sqrt(2) * A), {}
+            #return check(FCC, np.sqrt(2) * A)
         if allclose(angles, np.arccos(-1 / 3) * 180 / np.pi):
-            return check(BCC, 2.0 * A / np.sqrt(3))
+            return BCC(2.0 * A / np.sqrt(3)), {}
+            #return check(BCC, 2.0 * A / np.sqrt(3))
 
     if all_lengths_equal and unequal_angle_dir is not None:
         x = BC_CA_AB[unequal_angle_dir]
         y = BC_CA_AB[(unequal_angle_dir + 1) % 3]
 
-        if x < 0:
-            c = 2.0 * np.sqrt(-y)
-            a = np.sqrt(2.0 * A**2 - 0.5 * c**2)
-            obj = check(BCT, a, c, axis=-unequal_angle_dir + 2)
-            if obj:
-                return obj
+        c = 2.0 * np.sqrt(-y)
+        a = np.sqrt(2.0 * A**2 - 0.5 * c**2)
+        obj = check(BCT, a, c, axis=-unequal_angle_dir + 2)
+        if obj:
+            bct = BCT(a, c)
+            return bct, {}  # permutation
+            #return obj
 
     if (unequal_angle_dir is not None
           and abs(angles[unequal_angle_dir] - 120) < eps
@@ -938,68 +948,154 @@ def get_bravais_lattice1(uc, eps=2e-4):
         a2 = -2 * BC_CA_AB[unequal_scalarprod_dir]
         c = ABC[unequal_scalarprod_dir]
         assert a2 > 0
-        return check(HEX, np.sqrt(a2), c, axis=-unequal_scalarprod_dir + 2)
+        lat = HEX(np.sqrt(a2), c)
+        return lat, {}  # permutation
+        #xxxxxxxx
+        #return check(HEX, np.sqrt(a2), c, axis=-unequal_scalarprod_dir + 2)
 
     if allclose(angles, 90) and unequal_length_dir is not None:
         a = ABC[unequal_length_dir - 1]
         c = ABC[unequal_length_dir]
-        return check(TET, a, c, axis=-unequal_length_dir + 2)
+        xx = check(TET, a, c, axis=-unequal_length_dir + 2)
+        assert xx
+        return TET(a, c), {}  # permutation
 
-    if unequal_length_dir is not None:
-        X = ABC[unequal_length_dir - 1]**2
-        Y = BC_CA_AB[unequal_length_dir]
-        c = ABC[unequal_length_dir]
-        a = np.sqrt(2 * (X + Y))
-        b = np.sqrt(2 * (X - Y))
-        obj = check(ORCC, a, b, c, axis=2 - unequal_length_dir)
-        if obj:
-            return obj
+    if (unequal_length_dir is not None
+        and abs(BC_CA_AB[unequal_length_dir]) > eps
+        and sum(abs(BC_CA_AB) > eps) == 1):
+
+        cdir = unequal_length_dir
+
+        orcc_c = ABC[cdir]
+        Y = BC_CA_AB[cdir]
+        X = ABC[(cdir + 1) % 3]**2
+
+        #orcc_c = np.sqrt(BC_CA_AB[cdir])
+        #sum(abs(BC_CA_AB) > eps)
+        #assert Y < 0  # ?
+        orcc_a = np.sqrt(2 * (X + Y))
+        orcc_b = np.sqrt(2 * (X - Y))
+        if orcc_a > orcc_b:
+            orcc_a, orcc_b = orcc_b, orcc_a
+            # permutation?
+        lat = ORCC(orcc_a, orcc_b, orcc_c)
+        return lat, {}  # permutation
+        #lat.tocell()
+        #obj = check(ORCC, a, b, c, axis=2 - unequal_length_dir)
+        #xxxxxxxxxxxxxx
+        #if obj:
+        #    return obj
 
     if allclose(angles, 90) and all_lengths_different:
-        return check(ORC, A, B, C)
+        permutation = np.argsort(ABC)
+        lat = ORC(*ABC[permutation])
+        return lat, {}  # permutation
 
-    if all_lengths_different:
-        obj = check(ORCF, *(2 * np.sqrt(BC_CA_AB)))
-        if obj:
-            return obj
+    if all_lengths_different and noduplicates(BC_CA_AB):
+        permutation = np.argsort(BC_CA_AB)
+        lat = ORCF(*(2 * np.sqrt(BC_CA_AB[permutation])))
+        par1 = lat.cellpar()
+        par2 = uc.new(uc.array[permutation]).cellpar()
+        assert allclose(par1, par2)
+        return lat, {}  # XXX permutation
+        #print('ORCF', 
+        #print(par1)
+        #print(par2)
+        # XXX permutation
+        #obj = check(ORCF, *(2 * np.sqrt(BC_CA_AB[permutation])))
+        #if obj:
+        #    return obj
 
     if all_lengths_equal:
         dims2 = -2 * np.array([BC_CA_AB[1] + BC_CA_AB[2],
                                BC_CA_AB[2] + BC_CA_AB[0],
                                BC_CA_AB[0] + BC_CA_AB[1]])
-        if all(dims2 > 0):
+        #mindifference = min(abs(dims2[1] - dims2[0]),
+        #                    (dims2[2] - dims2[1]),
+        #                    (dims2[0] - dims2[2]))
+        if all(dims2 > 0) and noduplicates(dims2):#mindifference > eps:
             dims = np.sqrt(dims2)
-            obj = check(ORCI, *dims)
-            if obj:
-                return obj
+            permutation = np.argsort(dims)
+            lat = ORCI(*dims[permutation])
+            assert allclose(lat.tocell(), uc[permutation])
+            return lat, {}  # perm
+            #obj = check(ORCI, *dims)
+            #xxxxxx
+            #if obj:
+            #    return obj
 
     if all_lengths_equal:
         cosa = BC_CA_AB[0] / A**2
-        alpha = np.arccos(cosa) * 180 / np.pi
-        obj = check(RHL, A, alpha)
-        if obj:
-            return obj
+        rhl_alpha = np.arccos(cosa) * 180 / np.pi
+        lat = RHL(A, rhl_alpha)
+        return lat, {}
+        #obj = check(RHL, A, alpha)
+        #xxxxxxxxxxx
+        #if obj:
+        #    return obj
 
-    if all_lengths_different and unequal_scalarprod_dir is not None:
-        alpha = angles[unequal_scalarprod_dir]
-        abc = ABC[np.arange(-3, 0) + unequal_scalarprod_dir]
-        obj = check(MCL, *abc, alpha=alpha, axis=-unequal_scalarprod_dir)
-        if obj:
-            return obj
+    #if all_lengths_different and unequal_scalarprod_dir is not None:
+    if unequal_scalarprod_dir is not None:
+        mcl_alpha = angles[unequal_scalarprod_dir]
+        other_two_angles = [angles[unequal_scalarprod_dir - 1],
+                            angles[unequal_scalarprod_dir - 2]]
+        if allclose(other_two_angles, 90):
+            assert mcl_alpha < 90, mcl_alpha
+            #cdir = np.argmax(abc)
+
+            #mcl_abc = ABC[np.arange(-3, 0) + unequal_scalarprod_dir]
+            a_dir = unequal_scalarprod_dir
+            b_dir = (a_dir - 1) % 3
+            c_dir = (b_dir - 1) % 3
+            mcl_a = ABC[a_dir]
+            mcl_b = ABC[b_dir]
+            mcl_c = ABC[c_dir]
+            if mcl_c < mcl_b:
+                b_dir, c_dir = c_dir, b_dir
+                mcl_c, mcl_b = mcl_b, mcl_c
+
+            assert mcl_a < mcl_c
+            permutation = np.array([a_dir, b_dir, c_dir])
+            # Or reverse somehow?
+
+            lat = MCL(mcl_a, mcl_b, mcl_c, mcl_alpha)
+            return lat, {}  # permutation
+            #cdir = 1 + np.argmax(mcl_abc[1:])
+            #mcl_c = mcl_abc[cdir]
+            #mcl_b = 
+
+            #mcl_a = 
+            #mcl_bc = ABC[unequal_scalarprod_dir - 1]
+            #a1 = abc[unequal_scalarprod_dir - 1]
+            #a1 = abc[unequal_scalarprod_dir - 2]
+
+            #abc = ABC[np.arange(-3, 0) + unequal_scalarprod_dir]
+            #MCL(*abc, alpha=alpha)
+        #obj = check(MCL, *abc, alpha=alpha, axis=-unequal_scalarprod_dir)
+        #xxxxxxxxxxxxxx
+        #if obj:
+        #    return obj
 
     if unequal_length_dir is not None:
-        c = ABC[unequal_length_dir]
-        L = ABC[unequal_length_dir - 1]
-        b = np.sqrt(2 * (L**2 + BC_CA_AB[unequal_length_dir]))
-        a = np.sqrt(4 * L**2 - b**2)
-        cosa = 2 * BC_CA_AB[unequal_length_dir - 1] / (b * c)
-        alpha = np.arccos(cosa) * 180 / np.pi
-        obj = check(MCLC, a, b, c, alpha, axis=-unequal_length_dir + 2)
-        if obj:
-            return obj
+        cdir = unequal_length_dir
+        mclc_c = ABC[cdir]
+        L = ABC[cdir - 1]
+        mclc_b = np.sqrt(2 * (L**2 + BC_CA_AB[unequal_length_dir]))
+        mclc_a = np.sqrt(4 * L**2 - mclc_b**2)
+        cosa = 2 * BC_CA_AB[unequal_length_dir - 1] / (mclc_b * mclc_c)
+        mclc_alpha = np.arccos(cosa) * 180 / np.pi
+        assert mclc_alpha < 90
+        lat = MCLC(mclc_a, mclc_b, mclc_c, mclc_alpha)
+        # XXX many things wrong currently
+        return lat, {}
+        #obj = check(MCLC, a, b, c, alpha, axis=-unequal_length_dir + 2)
+        #xxxxxxxxxxx
+        #if obj:
+        #    return obj
 
     obj = check(TRI, A, B, C, *angles)
     if obj:
+        xxxxxxxxxxx
         # Should always be true
         return obj
 
@@ -1041,25 +1137,26 @@ def _test_all_variants():
     yield HEX(a, c)
 
     rhl1 = RHL(a, alpha)
-    rhl2 = RHL(a, alpha + 2.0 * (90 - alpha))
     assert rhl1.variant.name == 'RHL1'
-    assert rhl2.variant.name == 'RHL2'
     yield rhl1
+
+    rhl2 = RHL(a, alpha + 2.0 * (90 - alpha))
+    assert rhl2.variant.name == 'RHL2'
     yield rhl2
 
-    yield MCL(a, b, c, alpha)
+    yield MCL(a, b, c, 50.)
 
     mclc1 = MCLC(a, b, c, 80)
-    mclc3 = MCLC(1.8 * a, b, c * 2, 80)
     assert mclc1.variant.name == 'MCLC1'
-    assert mclc3.variant.name == 'MCLC3'
-
     yield mclc1
     # mclc2 has same special points as mclc1
+
+    mclc3 = MCLC(1.8 * a, b, c * 2, 80)
+    assert mclc3.variant.name == 'MCLC3'
     yield mclc3
     # mclc4 has same special points as mclc3
 
-    mclc5 = MCLC(b, b, b, 50)
+    mclc5 = MCLC(b, b, 1.1 * b, 50)
     assert mclc5.variant.name == 'MCLC5'
     yield mclc5
 
@@ -1073,8 +1170,8 @@ def _test_all_variants():
     # tri2a
     # tri2b
 
-def get_bravais_lattice(uc, eps=2e-4):
-    bravaisclass, parameters = get_bravais_lattice1(uc, eps=eps)
-    # XXX MCL does not get alpha.  Only a, b, c
-    bravais = bravaisclass(**parameters)
-    return bravais
+#def get_bravais_lattice(uc, eps=2e-4):
+#    bravaisclass, parameters = get_bravais_lattice1(uc, eps=eps)
+#    # XXX MCL does not get alpha.  Only a, b, c
+#    bravais = bravaisclass(**parameters)
+#    return bravais
