@@ -403,11 +403,11 @@ def _write(filename, fd, format, io, images, parallel=None, append=False, **kwar
         raise ValueError("Can't write to {}-format".format(format))
 
     # Special case for json-format:
-    if format == 'json' and len(images) > 1:
+    if format == 'json' and (len(images) > 1 or append):
         if filename is not None:
-            io.write(filename, images, **kwargs)
+            io.write(filename, images, append=append, **kwargs)
             return
-        raise ValueError("Can't write more than one image to file-descriptor"
+        raise ValueError("Can't write more than one image to file-descriptor "
                          'using json-format.')
 
     if io.acceptsfd:
