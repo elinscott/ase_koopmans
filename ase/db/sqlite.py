@@ -352,7 +352,6 @@ class SQLite3Database(Database, object):
 
         # Update external tables
         valid_entries = []
-        invalid_entries = []
         for k, v in ext_tables.items():
             try:
                 # Guess the type of the value
@@ -360,8 +359,12 @@ class SQLite3Database(Database, object):
                 self.create_table_if_not_exists(k, dtype, db_con=con)
                 v["id"] = id
                 valid_entries.append(k)
-            except ValueError:
-                invalid_entries.append(k)
+            except ValueError as exc:
+                # Close the connection without committing
+                if self.connection is None:
+                    con.close()
+                # Raise error again
+                raise ValueError(exc)
 
         # Insert entries in the valid tables
         for tabname in valid_entries:
