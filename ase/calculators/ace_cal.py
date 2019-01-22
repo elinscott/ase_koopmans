@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 from collections import Mapping
 from copy import deepcopy
-from re import sub
+#from re import sub
 from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
 from ase.calculators.calculator import FileIOCalculator
@@ -89,7 +89,7 @@ class ACE(FileIOCalculator):
             'ExchangeCorrelation' :  {'XFunctional' : '101', 'CFunctional' : '130'},\
             'OrbitalInfo' : {'ExchangeCorrelation' : {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'}},\
             }] 
-    order_list = [0,1,2,3]
+    order_list = [0,1,2,3, 4]
     order_key_list = ['BasicInformation', 'Guess', 'Scf','Force', 'TDDFT' ]
 
 
@@ -111,7 +111,7 @@ class ACE(FileIOCalculator):
                 if val_key==key and (isinstance(val_val,str) or isinstance(val_val, float) or isinstance(val_val, int) or isinstance(val_val, list) ):
                     parameters[key] = str(val2[key])
                 elif (val_key==key and isinstance(val_val,dict)):
-                    parameters[key] = compare_parameters(parameters[key], key, val_val)            
+                    parameters[key] = self.compare_parameters(parameters[key], key, val_val)            
         
         
         return parameters
