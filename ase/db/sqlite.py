@@ -833,9 +833,9 @@ class SQLite3Database(Database, object):
                              "given types: {}".format(typenames))            
 
         val = values[0]
-        if isinstance(val, int):
+        if isinstance(val, int) or np.issubdtype(type(val), np.integer):
             return "INTEGER"
-        if isinstance(val, float):
+        if isinstance(val, float) or np.issubdtype(type(val), np.floating):
             return "REAL"
         if isinstance(val, str):
             return "TEXT"

@@ -2,6 +2,7 @@ import os
 from ase.db import connect
 from ase import Atoms
 from ase.test import must_raise
+import numpy as np
 
 DB_NAMES = ["test_ext_tables.db", "postgresql"]
 
@@ -55,6 +56,29 @@ def test_insert_in_external_tables(db_name):
     # i.e. string value into the same table
     with must_raise(ValueError):
         db.write(atoms, external_tables={"insert_tab": {"rate": "something"}})
+
+    # Try to insert Numpy floats
+    db.write(atoms, external_tables={"insert_tab": {"rate": np.float32(1.0)}})
+    db.write(atoms, external_tables={"insert_tab": {"rate": np.float64(1.0)}})
+
+    # Make sure that we cannot insert a Numpy integer types into 
+    # a float array
+    with must_raise(ValueError):
+        db.write(atoms, external_tables={"insert_tab": {"rate": np.int32(1.0)}})
+        db.write(atoms, external_tables={"insert_tab": {"rate": np.int64(1.0)}})
+
+    # Create a new table should have INTEGER types
+    db.write(atoms, external_tables={"integer_tab": {"rate": 1}})
+
+    # Make sure we can insert Numpy integers
+    db.write(atoms, external_tables={"integer_tab": {"rate": np.int32(1)}})
+    db.write(atoms, external_tables={"integer_tab": {"rate": np.int64(1)}})
+
+    # Make sure that we cannot insert float
+    with must_raise(ValueError):
+        db.write(atoms, external_tables={"integer_tab": {"rate": np.float32(1)}})
+        db.write(atoms, external_tables={"integer_tab": {"rate": np.float64(1)}})
+
 
 def test_extract_from_table(db_name):
     atoms = Atoms()
