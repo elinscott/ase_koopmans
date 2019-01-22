@@ -114,8 +114,8 @@ class Gaussian(FileIOCalculator):
 
     default_parameters = {'charge': 0,
                           'method': 'hf',
-                          'basis': '6-31g*'}
-                    #      'force': 'force'}
+                          'basis': '6-31g*',
+                          'force': 'force'}
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='g09', atoms=None, scratch=None, ioplist=list(),

@@ -68,44 +68,33 @@ class ACE(FileIOCalculator):
     name = 'ace'
     implemented_properties = ['energy', 'forces', 'geometry','excitation-energy']
     system_changes = None
-    parameters = OrderedParameters()
     user_parameters = OrderedParameters()
     # defaults is default value of ACE-input
-    basic_list =[{ 'Label' : '/home/khs/work/asetest/H2test', 
+    basic_list =[{
                   'Type' : 'Scaling', 'Scaling' : '0.35', 'Basis' : 'Sinc',\
                   'Cell' : '3.0', 'Grid' : 'Sphere',\
                   'KineticMatrix': 'Finite_Difference', 'DerivativesOrder' : '7',\
-                  'GeometryFormat' : 'xyz', 'SpinMultiplicity' : '1.0', 'Centered' : '0', 
-                  'OccupationMethod' : 'ZeroTemp', 'Polarize' : '0',\
-                  'GeometryFilename' : 'test_opt.xyz', 'NumElectrons' : '2'}
+                  'GeometryFilename': None, 'NumElectrons': None}
                  ]
     guess_list = [] #now not need this
-    scf_list = [ { 'IterateMaxCycle' : '150', 'ConvergenceType' : 'Energy',\
-                 'ConvergenceTolerance' : '0.00001', 'EnergyDecomposition' : '1',\
-                 'ComputeInitialEnergy': '1',\
-                 'Diagonalize' : {
-                                  'DiagonalizeMaxIter' : '10', 'Tolerance' : '0.000001',\
-                                  'FullOrthogonalize' : '1' } , \
-                 'ExchangeCorrelation' : {'CalGradientUsingDensity' : '1', 'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'} ,\
-                 'Mixing' : { 'MixingMethod' : '1', 'MixingType' : 'Density' ,\
-                            'MixingParameter' : '0.5', 'PulayMixingParameter' : '0.1' }, \
-                 'NumberOfEigenvalues': '4',\
+    scf_list = [ {
+                 'ExchangeCorrelation' : {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'} ,\
+                 'NumberOfEigenvalues': None,
                  }]
     
     force_list = [{ 'ForceDerivative' : 'Potential'   }  ]
 #    solvation_list = [{'SolvationLibrary' : 'PCMSolver', 'Solvent' : 'water', 'Area' : '0.2', 'SolverType' : 'CPCM' }] 
     tddft_list = [{
-    'SortOrbital': 'Order', 'MaximumOrder' : '10', 'Gradient' : '1',\
-            'ExchangeCorrelation' :  {'CalGradientUsingDensity' : '0', 'XFunctional' : '101', 'CFunctional' : '130'},\
-            'OrbitalInfo' : {'ExchangeCorrelation' : {'CalGradientUsingDensity': '0', 'XFunctional' : '101', 'CFunctional' : '130'}},\
-            'xckernelwithoutEXX' : {'ExchangeCorrelation' : {'CalGradientUsingDensity' : '0'}}   
-    }] 
+    'SortOrbital': 'Order', 'MaximumOrder' : '10',\
+            'ExchangeCorrelation' :  {'XFunctional' : '101', 'CFunctional' : '130'},\
+            'OrbitalInfo' : {'ExchangeCorrelation' : {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'}},\
+            }] 
     order_list = [0,1,2,3]
     order_key_list = ['BasicInformation', 'Guess', 'Scf','Force', 'TDDFT' ]
 
 
     default_parameters = {'BasicInformation': basic_list, 'Guess' : guess_list, 'Scf':scf_list, 'Force' : force_list, 'Order' : order_list} 
-    
+    parameters = default_parameters
     command = 'mpirun -np 1 ace PREFIX.inp > PREFIX.log'
 
     def __init__(
@@ -116,14 +105,15 @@ class ACE(FileIOCalculator):
                                   label, atoms, command=command, **kwargs)
         
     def compare_parameters(self,parameters, key2, val2):    
-        '''Replace and Add parameters that users want'''
-#        print(parameters)
+        '''Replace parameters that users want'''
         for val_key, val_val in val2.items():
             for key, val in parameters.items():
-                if val_key==key and isinstance(val_val,str):
-                    parameters[key]=val2[key]                                  
-                if (val_key==key and isinstance(val_val,dict)):
-                    parameters[key]= compare_parameters(parameters[key], key, val_val)                    
+                if val_key==key and (isinstance(val_val,str) or isinstance(val_val, float) or isinstance(val_val, int) or isinstance(val_val, list) ):
+                    parameters[key] = str(val2[key])
+                elif (val_key==key and isinstance(val_val,dict)):
+                    parameters[key] = compare_parameters(parameters[key], key, val_val)            
+        
+        
         return parameters
 
 
@@ -148,6 +138,7 @@ class ACE(FileIOCalculator):
 #                self.parameters[key] = val
 #        if 'system_changes' in self.parameters:
 #            del self.parameters['system_changes']
+        print("write input run")
         self.write_input(atoms) 
 
 
@@ -168,7 +159,7 @@ class ACE(FileIOCalculator):
 
     def set(self, **kwargs):
 #        self.parameters = OrderedParameters()
-        changed_parameters = self.default_parameters
+        changed_parameters = deepcopy(self.parameters)
 #        if 'ACEtemplate' in kwargs:
 #            filename = kwargs.pop("ACEtemplate")
 #            changed_parameters2 = self.read_acemolecule_inp(filename)
@@ -176,12 +167,35 @@ class ACE(FileIOCalculator):
 #        update_nested(changed_parameters2, changed_parameters)
 #        self.parameters = changed_parameters2
         duplication = []
-        for key in self.order_key_list:
+        if 'Order' in kwargs:
+            changed_parameters['Order'] = kwargs['Order']
+            for i in range(10):
+                j = 0
+                for value in kwargs['Order']:
+                    if(i in self.order_list and i==value):
+                        j= j+1
+                        if(j>1):
+                            for num in range(j-1):
+                                changed_parameters[self.order_key_list[i]] += self.default_parameters[self.order_key_list[i]]
+                            
+        for key in self.order_key_list: #### key : BasicInformation, Force, Scf and so on
             modified = False
-            if key  in kwargs.keys():
-                for val in kwargs[key]:
-                    duplication.append(self.compare_parameters(self.default_parameters[key][0], key, val))
-                modified = True
+            print(kwargs)
+            if key  in kwargs.keys(): ##### kwargs.key() : In Basic, Cell, GeometryFilename, ....
+                i=0
+                for val in kwargs[key]: ########## kwargs[key] : basic_list, force_lsit ....
+                    element = self.compare_parameters(changed_parameters[key][i], key, val)
+                    if(element == self.parameters[key][i]):
+                        print("yes")
+                        print(element)
+                        print(self.parameters[key][i])
+                        print("yes end")
+                        changed_parameters[key][i].update(val) 
+                    else:
+                        print("duplication")
+                        duplication.append(element)
+                        modified = True
+                    i= i+1
             if(modified):
                 changed_parameters[key] = duplication
         print("in_set")
@@ -282,13 +296,12 @@ class ACE(FileIOCalculator):
                 param2[key_list[-1]] = str(val)
         return param
 
-    def write_acemolecule_section(self, fpt, section,indent =0):
+    def write_acemolecule_section(self, fpt, section,indent = 0):
         for key, val in section.items():
             if(isinstance(val,str) or isinstance(val,int) or isinstance(val,float)):
                 fpt.write('\t'*indent + str(key) + " " + str(val) + "\n")
-            else:
+            elif isinstance(val, dict):
                 fpt.write('\t'*indent +"%% " + str(key) + "\n")
-                ++indent
                 self.write_acemolecule_section(fpt,val,indent)
                 fpt.write('\t'*indent +"%% End\n")
 
