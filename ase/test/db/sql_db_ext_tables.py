@@ -79,6 +79,10 @@ def test_insert_in_external_tables(db_name):
         db.write(atoms, external_tables={"integer_tab": {"rate": np.float32(1)}})
         db.write(atoms, external_tables={"integer_tab": {"rate": np.float64(1)}})
 
+    # Make sure that ValueError is raised with mixed datatypes
+    with must_raise(ValueError):
+        db.write(atoms, external_tables={"integer_tab": {"rate": 1, "rate2": 2.0}})
+
 
 def test_extract_from_table(db_name):
     atoms = Atoms()
