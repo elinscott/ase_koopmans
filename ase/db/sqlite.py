@@ -789,6 +789,14 @@ class SQLite3Database(Database, object):
             con.commit()
             con.close()
 
+    def _convert_to_recognized_types(self, value):
+        """Convert Numpy types to python types."""
+        if np.issubdtype(type(value), np.integer):
+            return int(value)
+        elif np.issubdtype(type(value), np.floating):
+            return float(value)
+        return value
+
     def _insert_in_external_table(self, cursor, name=None, entries=None):
         """Insert into external table"""
         if name is None or entries is None:
@@ -810,14 +818,14 @@ class SQLite3Database(Database, object):
         for item in cursor.fetchall():
             value = entries.pop(item[0], None)
             if value is not None:
-                updates.append((value, id, item[0]))
+                updates.append((value, id, self._convert_to_recognized_types(item[0])))
 
         # Update entry if key and ID already exists
         sql = "UPDATE {} SET value=? WHERE id=? AND key=?".format(name)
         cursor.executemany(sql, updates)
 
         # Insert the ones that does not already exist
-        inserts = [(k, v, id) for k, v in entries.items()]
+        inserts = [(k, self._convert_to_recognized_types(v), id) for k, v in entries.items()]
         sql = "INSERT INTO {} VALUES (?, ?, ?)".format(name)
         cursor.executemany(sql, inserts)
 
