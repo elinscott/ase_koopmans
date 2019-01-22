@@ -5,7 +5,8 @@ from ase.ga.bulk_utilities import CellBounds
 from ase.ga.bulk_startgenerator import StartGenerator
 from ase.ga.bulk_crossovers import CutAndSplicePairing
 from ase.ga.bulk_mutations import (SoftMutation, RotationalMutation,
-                                   RattleRotationalMutation, StrainMutation, CombinationMutation)
+                                   RattleRotationalMutation, StrainMutation)
+from ase.ga.offspring_creator import CombinationMutation
 from ase.ga.standardmutations import RattleMutation, PermutationMutation
 
 h2 = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.75]])

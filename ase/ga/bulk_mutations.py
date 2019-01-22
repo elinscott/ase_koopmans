@@ -11,7 +11,7 @@ from random import gauss
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 from ase.build import niggli_reduce
-from ase.ga.offspring_creator import OffspringCreator
+from ase.ga.offspring_creator import OffspringCreator, CombinationMutation
 from ase.ga.utilities import (atoms_too_close, atoms_too_close_two_sets,
                               gather_atoms_by_tag)
 from ase.ga.bulk_utilities import get_rotation_matrix
@@ -160,7 +160,7 @@ class StrainMutation(OffspringCreator):
         return mutant
 
 
-class PermuStrainMutation(OffspringCreator):
+class PermuStrainMutation(CombinationMutation):
     """ Combination of PermutationMutation and StrainMutation.
 
     For more information, see also:
@@ -179,28 +179,10 @@ class PermuStrainMutation(OffspringCreator):
     """
 
     def __init__(self, permutationmutation, strainmutation, verbose=False):
-        OffspringCreator.__init__(self, verbose)
-        self.permutationmutation = permutationmutation
-        self.strainmutation = strainmutation
-
-    def get_new_individual(self, parents):
-        f = parents[0]
-
-        indi = self.mutate(f)
-        if indi is None:
-            return indi, 'mutation: permustrain'
-
-        indi = self.initialize_individual(f, indi)
-        indi.info['data']['parents'] = [f.info['confid']]
-
-        return self.finalize_individual(indi), 'mutation: permustrain'
-
-    def mutate(self, atoms):
-        """ Does the actual mutation. """
-        mutant = self.permutationmutation.mutate(atoms)
-        if mutant is not None:
-            mutant = self.strainmutation.mutate(mutant)
-        return mutant
+        super(PermuStrainMutation, self).__init__(permutationmutation,
+                                                  strainmutation,
+                                                  verbose=verbose)
+        self.descriptor = 'permustrain'
 
 
 class TagFilter:
@@ -730,7 +712,7 @@ class RotationalMutation(OffspringCreator):
         return mutant
 
 
-class RattleRotationalMutation(OffspringCreator):
+class RattleRotationalMutation(CombinationMutation):
     """ Combination of RattleMutation and RotationalMutation.
 
     Parameters:
@@ -743,62 +725,7 @@ class RattleRotationalMutation(OffspringCreator):
     """
 
     def __init__(self, rattlemutation, rotationalmutation, verbose=False):
-        OffspringCreator.__init__(self, verbose)
-        self.rattlemutation = rattlemutation
-        self.rotationalmutation = rotationalmutation
+        super(RattleRotationalMutation, self).__init__(rattlemutation,
+                                                       rotationalmutation,
+                                                       verbose=verbose)
         self.descriptor = 'rattlerotational'
-
-    def get_new_individual(self, parents):
-        f = parents[0]
-
-        indi = self.mutate(f)
-        if indi is None:
-            return indi, 'mutation rattlerotational'
-
-        indi = self.initialize_individual(f, indi)
-        indi.info['data']['parents'] = [f.info['confid']]
-
-        return self.finalize_individual(indi), 'mutation: rattlerotational'
-
-    def mutate(self, atoms):
-        """ Does the actual mutation. """
-        mutant = self.rattlemutation.mutate(atoms)
-        if mutant is not None:
-            mutant = self.rotationalmutation.mutate(mutant)
-        return mutant
-
-
-class CombinationMutation(OffspringCreator):
-    """Combine two or more mutations into one operation.
-
-    """
-
-    def __init__(self, *args, verbose=False):
-        super(CombinationMutation, self).__init__(verbose=verbose)
-        self.descriptor = 'CombinationMutation'
-
-        # Check that a combination mutation makes sense
-        msg = "Too few operators supplied to a CombinationMutation"
-        assert len(args) > 1, msg
-
-        self.operators = args
-
-    def get_new_individual(self, parents):
-        f = parents[0]
-
-        indi = self.mutate(f)
-        if indi is None:
-            return indi, 'mutation: {}'.format(self.descriptor)
-
-        indi = self.initialize_individual(f, indi)
-        indi.info['data']['parents'] = [f.info['confid']]
-
-        return (self.finalize_individual(indi),
-                'mutation: {}'.format(self.descriptor))
-
-    def mutate(self, atoms):
-        """Perform the mutations one at a time."""
-        for op in self.operators:
-            if atoms is not None:
-                atoms = op.mutate(atoms)
-        return atoms
