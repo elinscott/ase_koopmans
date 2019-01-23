@@ -135,6 +135,9 @@ def connect(name, type='extract_from_name', create_indices=True,
         Use append=False to start a new database.
     """
 
+    if isinstance(name, PurePath):
+        name = str(name)
+
     if type == 'extract_from_name':
         if name is None:
             type = None
@@ -151,11 +154,9 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type is None:
         return Database()
 
-    if not append and world.rank == 0 and os.path.isfile(name):
-        os.remove(name)
-
-    if isinstance(name, PurePath):
-        name = str(name)
+    if not append and world.rank == 0:
+        if isinstance(name, str) and os.path.isfile(name):
+            os.remove(name)
 
     if type != 'postgresql' and isinstance(name, basestring):
         name = os.path.abspath(name)

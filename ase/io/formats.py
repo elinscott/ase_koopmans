@@ -363,8 +363,9 @@ def write(filename, images, format=None, parallel=True, append=False,
         Default is to write on master only.  Use parallel=False to write
         from all slaves.
     append: bool
-        Default is to open files in 'w' or 'wb' mode, overwriting existing files.
-        In some cases opening the file in 'a' or 'ab' mode (appending) is usefull,
+        Default is to open files in 'w' or 'wb' mode, overwriting
+        existing files.  In some cases opening the file in 'a' or 'ab'
+        mode (appending) is usefull,
         e.g. writing trajectories or saving multiple Atoms objects in one file.
         WARNING: If the file format does not support multiple entries without
         additional keywords/headers, files created using 'append=True'
@@ -389,11 +390,13 @@ def write(filename, images, format=None, parallel=True, append=False,
 
     io = get_ioformat(format)
 
-    _write(filename, fd, format, io, images, parallel=parallel, append=append, **kwargs)
+    _write(filename, fd, format, io, images, parallel=parallel, append=append,
+           **kwargs)
 
 
 @parallel_function
-def _write(filename, fd, format, io, images, parallel=None, append=False, **kwargs):
+def _write(filename, fd, format, io, images, parallel=None, append=False,
+           **kwargs):
     if isinstance(images, Atoms):
         images = [images]
 
@@ -407,11 +410,11 @@ def _write(filename, fd, format, io, images, parallel=None, append=False, **kwar
         raise ValueError("Can't write to {}-format".format(format))
 
     # Special case for json-format:
-    if format == 'json' and len(images) > 1:
+    if format == 'json' and (len(images) > 1 or append):
         if filename is not None:
-            io.write(filename, images, **kwargs)
+            io.write(filename, images, append=append, **kwargs)
             return
-        raise ValueError("Can't write more than one image to file-descriptor"
+        raise ValueError("Can't write more than one image to file-descriptor "
                          'using json-format.')
 
     if io.acceptsfd:
@@ -432,7 +435,8 @@ def _write(filename, fd, format, io, images, parallel=None, append=False, **kwar
             io.write(filename, images, append=append, **kwargs)
         elif append:
             raise ValueError("Cannot append to {}-format, write-function "
-                             "does not support the append keyword.".format(format))
+                             "does not support the append keyword."
+                             .format(format))
         else:
             io.write(filename, images, **kwargs)
 

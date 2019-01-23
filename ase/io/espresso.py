@@ -44,7 +44,7 @@ _PW_TOTEN = '!    total energy'
 _PW_STRESS = 'total   stress'
 _PW_FERMI = 'the Fermi energy is'
 _PW_KPTS = 'number of k points='
-_PW_BANDS = 'End of '
+_PW_BANDS = _PW_END
 
 class Namelist(OrderedDict):
     """Case insensitive dict that emulates Fortran Namelists."""
@@ -272,29 +272,29 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                           "set verbosity='high' to print them."
 
         for kpts_index in indexes[_PW_KPTS]:
-            if image_index < kpts_index < next_index:
-                nkpts = int(pwo_lines[kpts_index].split()[4])
-                kpts_index += 2
+            nkpts = int(pwo_lines[kpts_index].split()[4])
+            kpts_index += 2
 
-                if pwo_lines[kpts_index].strip() == kpoints_warning:
-                    continue
+            if pwo_lines[kpts_index].strip() == kpoints_warning:
+                continue
 
-                # QE prints the k-points in units of 2*pi/alat
-                # with alat defined as the length of the first
-                # cell vector
-                cell = structure.get_cell()
-                alat = np.linalg.norm(cell[0])
-                ibzkpts = []
-                weights = []
-                for i in range(nkpts):
-                    l =  pwo_lines[kpts_index + i].split()
-                    weights.append(float(l[-1]))
-                    coord = map(float, [l[-6], l[-5], l[-4].strip('),')])
-                    coord = np.array(coord) * 2 * np.pi / alat
-                    coord = kpoint_convert(cell, ckpts_kv=coord)
-                    ibzkpts.append(coord)
-                ibzkpts = np.array(ibzkpts)
-                weights = np.array(weights)
+            # QE prints the k-points in units of 2*pi/alat
+            # with alat defined as the length of the first
+            # cell vector
+            cell = structure.get_cell()
+            alat = np.linalg.norm(cell[0])
+            ibzkpts = []
+            weights = []
+            for i in range(nkpts):
+                l =  pwo_lines[kpts_index + i].split()
+                weights.append(float(l[-1]))
+                coord = np.array([l[-6], l[-5], l[-4].strip('),')],
+                                 dtype=float)
+                coord *= 2 * np.pi / alat
+                coord = kpoint_convert(cell, ckpts_kv=coord)
+                ibzkpts.append(coord)
+            ibzkpts = np.array(ibzkpts)
+            weights = np.array(weights)
 
         # Bands
         kpts = None
