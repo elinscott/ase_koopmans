@@ -36,7 +36,7 @@ def get_mic_distance(p1, p2, cell, pbc):
          elongated ones.
     """
     ct = cell.T
-    pos = np.mat((p1, p2))
+    pos = np.array((p1, p2))
     scaled = np.linalg.solve(ct, pos.T).T
     for i in range(3):
         if pbc[i]:
@@ -45,10 +45,10 @@ def get_mic_distance(p1, p2, cell, pbc):
     P = np.dot(scaled, cell)
 
     pbc_directions = [[-1, 1] * int(direction) + [0] for direction in pbc]
-    translations = np.mat(list(product(*pbc_directions))).T
+    translations = np.array(list(itertools.product(*pbc_directions))).T
     p0r = np.tile(np.reshape(P[0, :], (3, 1)), (1, translations.shape[1]))
     p1r = np.tile(np.reshape(P[1, :], (3, 1)), (1, translations.shape[1]))
-    dp_vec = p0r + ct * translations
+    dp_vec = p0r + np.dot(ct, translations)
     d = np.min(np.power(p1r - dp_vec, 2).sum(axis=0))**0.5
     return d
 

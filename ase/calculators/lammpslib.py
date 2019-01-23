@@ -42,7 +42,7 @@ def convert_cell(ase_cell):
     to lower triangular matrix LAMMPS can accept. This
     function transposes cell matrix so the bases are column vectors
     """
-    cell = np.matrix.transpose(ase_cell)
+    cell = ase_cell.T
 
     if not is_upper_triangular(cell):
         # rotate bases into triangular matrix
@@ -390,8 +390,7 @@ by invoking the get_potential_energy() method::
 
             # If necessary, transform the velocities to new coordinate system
             if self.coord_transform is not None:
-                vel = np.dot(self.coord_transform, np.matrix.transpose(vel))
-                vel = np.matrix.transpose(vel)
+                vel = np.dot(self.coord_transform, vel.T).T
 
             # Convert ase velocities matrix to lammps-style velocities array
             lmp_velocities = list(vel.ravel())
