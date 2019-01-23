@@ -44,7 +44,7 @@ def get_mic_distance(p1, p2, cell, pbc):
     P = np.dot(scaled, cell)
 
     pbc_directions = [[-1, 1] * int(direction) + [0] for direction in pbc]
-    translations = np.mat(list(itertools.product(*pbc_directions))).T
+    translations = np.array(list(itertools.product(*pbc_directions))).T
     p0r = np.tile(np.reshape(P[0, :], (3, 1)), (1, translations.shape[1]))
     p1r = np.tile(np.reshape(P[1, :], (3, 1)), (1, translations.shape[1]))
     dp_vec = p0r + np.dot(ct, translations)
