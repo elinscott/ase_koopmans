@@ -99,6 +99,7 @@ def energy_force_curve(images, ax=None):
 
     nim = len(images)
 
+    accumulated_distances = []
     accumulated_distance = 0.0
 
     # XXX force_consistent=True will work with some calculators,
@@ -134,35 +135,56 @@ def energy_force_curve(images, ax=None):
 
         if i == 0 or i == nim - 1:
             disp *= 2
+            dE_fdotr *= 2
 
         x1 = accumulated_distance - disp * linescale
         x2 = accumulated_distance + disp * linescale
         y1 = energies[i] - dE_fdotr * linescale
         y2 = energies[i] + dE_fdotr * linescale
 
+        #if i == nim - 1:
+        #    y2 = energies[i]
+        #    x2 = accumulated_distance
+
         ax.plot([x1, x2], [y1, y2], 'b-')
         ax.plot(accumulated_distance, energies[i], 'bo')
         ax.set_ylabel('Energy [eV]')
         ax.set_xlabel('Accumulative distance [Å]')
+        accumulated_distances.append(accumulated_distance)
         accumulated_distance += total_displacement(rightpos - atoms.positions)
+
+    ax.plot(accumulated_distances, energies, ':', zorder=-1, color='k')
     return ax
 
-if __name__ == '__main__':
-    from ase.build import bulk
-    from ase.calculators.emt import EMT
-    from ase.md import VelocityVerlet
-    from ase.units import fs
+
+def plotfromfile(*fnames):
     from ase.io import read
+    nplots = len(fnames)
 
-    atoms = bulk('Au', cubic=True) * (2, 1, 1)
-    atoms.calc = EMT()
-    atoms.rattle(stdev=0.05)
-
-    md = VelocityVerlet(atoms, timestep=12.0 * fs, trajectory='tmp.traj')
-    md.run(steps=52)
-    images = read('tmp.traj', ':')
-
-    import matplotlib.pyplot as plt
-    ax = energy_force_curve(images)
+    for i, fname in enumerate(fnames):
+        images = read(fname, ':')
+        import matplotlib.pyplot as plt
+        plt.subplot(nplots, 1, 1 + i)
+        ax = energy_force_curve(images)
     plt.show()
+
+if __name__ == '__main__':
+    if 0:
+        from ase.build import bulk
+        from ase.calculators.emt import EMT
+        from ase.md import VelocityVerlet
+        from ase.units import fs
+        from ase.io import read
+
+        atoms = bulk('Au', cubic=True) * (2, 1, 1)
+        atoms.calc = EMT()
+        atoms.rattle(stdev=0.05)
+
+        md = VelocityVerlet(atoms, timestep=12.0 * fs, trajectory='tmp.traj')
+        md.run(steps=52)
+        images = read('tmp.traj', ':')
+
+    import sys
+    fnames = sys.argv[1:]
+    plotfromfile(fnames)
     #plt.savefig('tmp.png')
