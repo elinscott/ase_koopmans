@@ -16,11 +16,6 @@ The ASE calculator is an interface to the ``ace`` executable.
 
 Setup
 =====
-
-Set up the calculator like a standard ``FileIOCalculator``:
-
- * ``export ASE_ACE-Molecule_COMMAND="/PATH/TO/ACE/MOLEUCLE/ace  PREFIX.inp > PREFIX.log"``
-
 A simple calculation can be set up::
 
     import sys
