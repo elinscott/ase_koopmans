@@ -6,6 +6,8 @@ from ase.geometry.geometry import (wrap_positions,
                                    get_duplicate_atoms,
                                    get_angles, get_distances)
 from ase.geometry.distance import distance
+from ase.geometry.dimensionality.interval_analysis \
+    import analyze_kintervals as analyze_dimensionality
 
 
 __all__ = ['wrap_positions', 'complete_cell',
@@ -13,4 +15,4 @@ __all__ = ['wrap_positions', 'complete_cell',
            'get_layers', 'find_mic', 'get_duplicate_atoms',
            'cell_to_cellpar', 'cellpar_to_cell',
            'crystal_structure_from_cell', 'distance',
-           'get_angles', 'get_distances']
+           'get_angles', 'get_distances', 'analyze_dimensionality']

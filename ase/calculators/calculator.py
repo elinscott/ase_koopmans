@@ -94,7 +94,7 @@ def compare_atoms(atoms1, atoms2, tol=1e-15):
     return system_changes
 
 
-all_properties = ['energy', 'forces', 'stress', 'dipole',
+all_properties = ['energy', 'forces', 'stress', 'stresses', 'dipole',
                   'charges', 'magmom', 'magmoms', 'free_energy']
 
 
@@ -499,7 +499,7 @@ class Calculator(object):
 
     def check_state(self, atoms, tol=1e-15):
         """Check for system changes since last calculation."""
-        return compare_atoms(self.atoms, atoms)
+        return compare_atoms(self.atoms, atoms, tol)
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         energy = self.get_property('energy', atoms)
@@ -520,6 +520,9 @@ class Calculator(object):
 
     def get_stress(self, atoms=None):
         return self.get_property('stress', atoms)
+
+    def get_stresses(self, atoms=None):
+        return self.get_property('stresses', atoms)
 
     def get_dipole_moment(self, atoms=None):
         return self.get_property('dipole', atoms)

@@ -3064,7 +3064,7 @@ than density cutoff %i' % (pw, dw))
             scriptname = 'script%s.py' % str(pid)
             scriptfile = open(scriptname, 'w')
             scriptfile.write(
-"""#!/usr/bin/env python
+"""#!/usr/bin/env python3
 from socket import *
 from sys    import version
 from string import split
