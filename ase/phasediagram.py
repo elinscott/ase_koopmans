@@ -337,10 +337,12 @@ class PhaseDiagram:
                 count = parse_formula(name)[0]
             else:
                 count = name
-                name = formula_hill(count)
 
             if filter and any(symbol not in filter for symbol in count):
                 continue
+
+            if not isinstance(name, basestring):
+                name = formula_hill(count)
 
             natoms = 0
             for symbol, n in count.items():
