@@ -4,7 +4,7 @@
 ACE-Molecule
 ============
 
-`ACE-Molecule <https://gitlab.com/aceteam.kaist/ACE-Molecule/wikis/home>`_  ACE-Molecule, whitch
+`ACE-Molecule <https://gitlab.com/aceteam.kaist/ACE-Molecule/wikis/home>`_ ACE-Molecule, whitch
 stands for Advanced Computational Engine for Molecule, is a quantum chemistry package based on a 
 real-space numerical grid. The package aims to carry out accurate and fast electronic structure 
 calculations for large molecular systems. The present main features include ground-state DFT 
@@ -16,6 +16,7 @@ The ASE calculator is an interface to the ``ace`` executable.
 
 Setup
 =====
+
 A simple calculation can be set up::
 
     import sys
@@ -88,5 +89,3 @@ The example of updating parameters::
 
     basic = [dict(Cell = 5.0, VerboseLevel = 2)]
     ace.set(BasicInformation = basic)
-
-
