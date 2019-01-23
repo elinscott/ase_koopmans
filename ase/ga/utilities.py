@@ -1,6 +1,6 @@
 """ Various utility methods used troughout the GA. """
 from ase.data import covalent_radii
-from itertools import product, combinations_with_replacement
+import itertools
 import numpy as np
 from ase.io import write, read
 import os
@@ -141,7 +141,7 @@ def atoms_too_close(atoms, bl, use_tags=False):
         else:
             neighbours.append([0])
 
-    for nx, ny, nz in product(*neighbours):
+    for nx, ny, nz in itertools.product(*neighbours):
         displacement = np.dot(cell.T, np.array([nx, ny, nz]).T)
         pos_new = pos + displacement
         distances = cdist(pos, pos_new)
@@ -153,7 +153,8 @@ def atoms_too_close(atoms, bl, use_tags=False):
             else:
                 distances += 1e2 * np.identity(len(a))
 
-        for type1, type2 in combinations_with_replacement(unique_types, 2):
+        iterator = itertools.combinations_with_replacement(unique_types, 2)
+        for type1, type2 in iterator:
             x1 = np.where(num == type1)
             x2 = np.where(num == type2)
             if np.min(distances[x1].T[x2]) < bl[(type1, type2)]:
