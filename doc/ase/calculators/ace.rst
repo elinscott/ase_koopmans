@@ -1,8 +1,8 @@
 .. module:: ase.calculators.ace_cal
 
-========
+============
 ACE-Molecule
-========
+============
 
 `ACE-Molecule <https://gitlab.com/aceteam.kaist/ACE-Molecule/wikis/home>`_  ACE-Molecule, whitch
 stands for Advanced Computational Engine for Molecule, is a quantum chemistry package based on a 
@@ -19,8 +19,6 @@ Setup
 A simple calculation can be set up::
 
     import sys
-    import os
-    from ase.atoms import Atoms
     from ase.io import read
     from ase.calculators.ace_cal import ACE
     
@@ -33,8 +31,6 @@ A simple calculation can be set up::
 A Force calculation can be set up::
     
     import sys
-    import os
-    from ase.atoms import Atoms
     from ase.io import read
     from ase.calculators.ace_cal import ACE
     
@@ -49,8 +45,6 @@ A Force calculation can be set up::
 
 A Geometry optimization calculation can be set up:: 
     import sys
-    import os
-    from ase.atoms import Atoms
     from ase.io import read
     from ase.calculators.ace_cal import ACE
     from ase.optimize import BFGS
@@ -67,8 +61,6 @@ A Geometry optimization calculation can be set up::
 
 A TDDFT calculation can be set up ::
    import sys
-   import os
-   from ase.atoms import Atoms
    from ase.io import read
    from ase.calculators.ace_cal import ACE
    from ase.optimize import BFGS
