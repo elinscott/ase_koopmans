@@ -86,16 +86,16 @@ class ACE(FileIOCalculator):
 #    solvation_list = [{'SolvationLibrary' : 'PCMSolver', 'Solvent' : 'water', 'Area' : '0.2', 'SolverType' : 'CPCM' }] 
     tddft_list = [{
     'SortOrbital': 'Order', 'MaximumOrder' : '10',\
-            'ExchangeCorrelation' :  {'XFunctional' : '101', 'CFunctional' : '130'},\
-            'OrbitalInfo' : {'ExchangeCorrelation' : {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'}},\
+            'ExchangeCorrelation' :  {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'},\
+#            'OrbitalInfo' : {'ExchangeCorrelation' : {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'}},\
             }] 
-    order_list = [0,1,2,3, 4]
+    order_list = [0,1,2]
     order_key_list = ['BasicInformation', 'Guess', 'Scf','Force', 'TDDFT' ]
 
 
-    default_parameters = {'BasicInformation': basic_list, 'Guess' : guess_list, 'Scf':scf_list, 'Force' : force_list, 'Order' : order_list} 
+    default_parameters = {'BasicInformation': basic_list, 'Guess' : guess_list, 'Scf':scf_list, 'Force' : force_list, 'TDDFT': tddft_list ,'Order' : order_list} 
     parameters = default_parameters
-    command = 'mpirun -np 1 ace PREFIX.inp > PREFIX.log'
+    command = 'mpirun -np 1 ../ace PREFIX.inp > PREFIX.log'
 
     def __init__(
             self, restart=None, ignore_bad_restart_file=False,
@@ -186,20 +186,20 @@ class ACE(FileIOCalculator):
                 for val in kwargs[key]: ########## kwargs[key] : basic_list, force_lsit ....
                     element = self.compare_parameters(changed_parameters[key][i], key, val)
                     if(element == self.parameters[key][i]):
-                        print("yes")
-                        print(element)
+#                        print("yes")
+#                        print(element)
                         print(self.parameters[key][i])
-                        print("yes end")
+#                        print("yes end")
                         changed_parameters[key][i].update(val) 
                     else:
-                        print("duplication")
+#                        print("duplication")
                         duplication.append(element)
                         modified = True
                     i= i+1
             if(modified):
                 changed_parameters[key] = duplication
-        print("in_set")
-        print(changed_parameters)
+#        print("in_set")
+#        print(changed_parameters)
         self.parameters = changed_parameters
 #        if changed_parameters:
 #            self.reset()
