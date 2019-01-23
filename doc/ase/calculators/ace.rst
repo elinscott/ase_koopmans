@@ -19,7 +19,7 @@ Setup
 
 Set up the calculator like a standard ``FileIOCalculator``:
 
- * ``export ASE_ACE-Molecule_COMMAND="/path/ace  PREFIX.inp > PREFIX.log"``
+ * ``export ASE_ACE-Molecule_COMMAND="/PATH/TO/ACE/MOLEUCLE/ace  PREFIX.inp > PREFIX.log"``
 
 A simple calculation can be set up::
 
@@ -29,11 +29,11 @@ A simple calculation can be set up::
     from ase.io import read
     from ase.calculators.ace_cal import ACE
     
-    Label = str(sys.argv[1].split('.inp')[0])    
+    label = sys.argv[1]    
     mol= read('H2.xyz')
-    ace = ACE(label=Label)
+    ace = ACE(label=label)
     mol.set_calculator(ace)
-    print ('Single Point Energy : ',  ace.get_property('energy', mol))
+    print (mol.get_potential_energy())
 
 A Force calculation can be set up::
     
@@ -43,16 +43,16 @@ A Force calculation can be set up::
     from ase.io import read
     from ase.calculators.ace_cal import ACE
     
-    basic_list = [{'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/home/khs/DATA/UPF', 'PSFileSuffix' : '.pbe-theos.UPF'} } ]
-    Label = str(sys.argv[1].split('.inp')[0])    
+    basic_list = [{'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} } ]
+    label = sys.argv[1]    
     mol= read('H2.xyz')
     order_list = [0, 1, 2, 3]
-    ace = ACE(label=Label, BasicInformation = basic_list, Order = order_list)
+    ace = ACE(label=label, BasicInformation = basic_list, Order = order_list)
     mol.set_calculator(ace)
-    print (ace.get_property('forces', mol))
+    print (mol.get_forces())
     
 
-A OPT calculation can be set up:: 
+A Geometry optimization calculation can be set up:: 
     import sys
     import os
     from ase.atoms import Atoms
@@ -60,11 +60,11 @@ A OPT calculation can be set up::
     from ase.calculators.ace_cal import ACE
     from ase.optimize import BFGS
 
-    basic_list = [{'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/home/khs/DATA/UPF', 'PSFileSuffix' : '.pbe-theos.UPF'} } ]
-    Label = str(sys.argv[1].split('.inp')[0])    
+    basic_list = [{'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} } ]
+    label = sys.argv[1]    
     mol= read('H2.xyz')
     order_list = [0, 1, 2, 3]
-    ace = ACE(label=Label, BasicInformation = basic_list, Order = order_list)
+    ace = ACE(label=label, BasicInformation = basic_list, Order = order_list)
     mol.set_calculator(ace)
     g_opt = BFGS(mol)
     g_opt.run(fmax=0.05)
@@ -78,11 +78,11 @@ A TDDFT calculation can be set up ::
    from ase.calculators.ace_cal import ACE
    from ase.optimize import BFGS
    
-   Label = str(sys.argv[1].split('.inp')[0])
+   label = sys.argv[1]    
    mol= read('H2.xyz')
    order_list = [0, 1, 2, 4]
    scf_list = [dict(FinalDiagonalize = dict(NumberOfEigenvalues= 12))]
-   ace = ACE(label=Label, Scf= scf_list, Order = order_list)
+   ace = ACE(label=label, Scf= scf_list, Order = order_list)
    mol.set_calculator(ace)
    print (ace.get_property('excitation-energy', mol))
     
@@ -102,11 +102,4 @@ The example of updating parameters::
     basic = [dict(Cell = 5.0, VerboseLevel = 2)]
     ace.set(BasicInformation = basic)
 
-
-
-
-ACE-Molecuel Calculator Class
-=========================
-
-.. autoclass:: ase.calculators.ace_cal.ACE
 
