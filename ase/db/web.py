@@ -4,8 +4,9 @@ import os
 from ase.db.core import default_key_descriptions
 
 
-def process_metadata(db, html=True):
-    meta = {}
+def process_metadata(db, html: bool = True):  # -> Dict
+    """Process metadata dict from database and/or Python file."""
+    meta = db.metadata
 
     if db.python:
         if isinstance(db.python, str):
