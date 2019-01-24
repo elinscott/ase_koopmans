@@ -157,7 +157,7 @@ def write_castep_cell(fd, atoms, positions_frac=False, force_write=False,
         magnetic_moments: if None, no SPIN values are initialised.
                           If 'initial', the values from
                           get_initial_magnetic_moments() are used.
-                          If 'calculated', the values from 
+                          If 'calculated', the values from
                           get_magnetic_moments() are used.
                           If an array of the same length as the atoms object,
                           its contents will be used as magnetic moments.
@@ -397,7 +397,7 @@ def read_castep_cell(fd, index=None, calculator_args={}, find_spg=False,
     will be stored in the atoms.calc attribute.
 
     By default, the Castep calculator will be tolerant and in the absence of a
-    castep_keywords.json file it will just accept all keywords that aren't 
+    castep_keywords.json file it will just accept all keywords that aren't
     automatically parsed.
     """
 
@@ -1206,7 +1206,7 @@ def read_param(filename='', calc=None, fd=None, get_interface_options=False):
         if filename == '':
             raise ValueError('One between filename and fd must be provided')
         fd = open(filename)
-    elif filename is not '':
+    elif filename:
         warnings.warn('Filestream used to read param, file name will be '
                       'ignored')
 
