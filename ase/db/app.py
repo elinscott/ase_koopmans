@@ -60,14 +60,14 @@ app = Flask(__name__)
 
 app.secret_key = 'asdf'
 
-databases = {}  # type: Dict[str, Database]
+databases = {}  # Dict[str, Database]
 home = ''  # link to homepage
 ase_db_footer = ''  # footer (for a license)
 open_ase_gui = True  # click image to open ASE's GUI
 download_button = True
 
 # List of (project-name, title, nrows) tuples (will be filled in at run-time):
-projects = []  # type: List[Tuple[str, str, int]]
+projects = []  # List[Tuple[str, str, int]]
 
 # Find numbers in formulas so that we can convert H2O to H<sub>2</sub>O:
 SUBSCRIPT = re.compile(r'(\d+)')
@@ -77,7 +77,7 @@ connections = {}
 
 
 def connect_databases(uris):
-    # types: (List[str]) -> None
+    # (List[str]) -> None
     """Fill in databases dict."""
     python_configs = []
     dbs = []
