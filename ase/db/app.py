@@ -60,17 +60,25 @@ app = Flask(__name__)
 
 app.secret_key = 'asdf'
 
-databases = {}
+databases = {}  # Dict[str, Database]
 home = ''  # link to homepage
 ase_db_footer = ''  # footer (for a license)
 open_ase_gui = True  # click image to open ASE's GUI
 download_button = True
 
-# List of (project-name, title) tuples (will be filled in at run-time):
-projects = []
+# List of (project-name, title, nrows) tuples (will be filled in at run-time):
+projects = []  # List[Tuple[str, str, int]]
+
+# Find numbers in formulas so that we can convert H2O to H<sub>2</sub>O:
+SUBSCRIPT = re.compile(r'(\d+)')
+
+next_con_id = 1
+connections = {}
 
 
 def connect_databases(uris):
+    # (List[str]) -> None
+    """Fill in databases dict."""
     python_configs = []
     dbs = []
     for uri in uris:
@@ -90,46 +98,28 @@ def connect_databases(uris):
         db.python = py
 
 
-next_con_id = 1
-connections = {}
+def initialize_databases():
+    """Initialize databases and fill in projects list."""
+    for proj, db in sorted(databases.items()):
+        meta = ase.db.web.process_metadata(db)
+        db.meta = meta
+        nrows = len(db)
+        projects.append((proj, db.meta.get('title', proj), nrows))
+        print('Initialized {proj}: {nrows} rows'
+              .format(proj=proj, nrows=nrows))
+
 
 if 'ASE_DB_APP_CONFIG' in os.environ:
     app.config.from_envvar('ASE_DB_APP_CONFIG')
     connect_databases(str(name) for name in app.config['ASE_DB_NAMES'])
+    initialize_databases()
     home = app.config['ASE_DB_HOMEPAGE']
     ase_db_footer = app.config['ASE_DB_FOOTER']
     tmpdir = str(app.config['ASE_DB_TMPDIR'])
     download_button = app.config['ASE_DB_DOWNLOAD']
     open_ase_gui = False
 else:
-    tmpdir = tempfile.mkdtemp()  # used to cache png-files
-
-# Find numbers in formulas so that we can convert H2O to H<sub>2</sub>O:
-SUBSCRIPT = re.compile(r'(\d+)')
-
-
-errors = 0
-
-
-def error(e):
-    """Write traceback and other stuff to 00-99.error files."""
-    global errors
-    import traceback
-    x = request.args.get('x', '0')
-    try:
-        cid = int(x)
-    except ValueError:
-        cid = 0
-    con = connections.get(cid)
-    with open(op.join(tmpdir, '{:02}.err'.format(errors % 100)), 'w') as fd:
-        print(repr((errors, con, e, request)), file=fd)
-        if hasattr(e, '__traceback__'):
-            traceback.print_tb(e.__traceback__, file=fd)
-    errors += 1
-    raise e
-
-
-app.register_error_handler(Exception, error)
+    tmpdir = tempfile.mkdtemp(prefix='ase-db-app-')  # used to cache png-files
 
 
 @app.route('/', defaults={'project': None})
@@ -140,13 +130,6 @@ def index(project):
 
     # Backwards compatibility:
     project = request.args.get('project') or project
-
-    if not projects:
-        # First time: initialize list of projects
-        for proj, db in sorted(databases.items()):
-            meta = ase.db.web.process_metadata(db)
-            db.meta = meta
-            projects.append((proj, db.meta.get('title', proj)))
 
     if project is None and len(projects) > 1:
         return render_template('projects.html',
@@ -265,8 +248,8 @@ def index(project):
 
     table.format(SUBSCRIPT)
 
-    addcolumns = [column for column in all_columns + table.keys
-                  if column not in table.columns]
+    addcolumns = sorted(column for column in all_columns + table.keys
+                        if column not in table.columns)
 
     return render_template('table.html',
                            project=project,
@@ -309,9 +292,9 @@ def cif(project, name):
     return send_from_directory(tmpdir, name)
 
 
-@app.route('/<project>/plot/<png>')
-def plot(project, png):
-    png = project + '-' + png
+@app.route('/<project>/plot/<uid>/<png>')
+def plot(project, uid, png):
+    png = project + '-' + uid + '-' + png
     return send_from_directory(tmpdir, png)
 
 
@@ -324,19 +307,19 @@ def gui(project, id):
     return '', 204, []
 
 
-@app.route('/<project>/row/<value>')
-def row(project, value):
+@app.route('/<project>/row/<uid>')
+def row(project, uid):
     db = databases[project]
     if not hasattr(db, 'meta'):
         db.meta = ase.db.web.process_metadata(db)
+    prefix = '{}/{}-{}-'.format(tmpdir, project, uid)
     key = db.meta.get('unique_key', 'id')
     try:
-        value = int(value)
+        uid = int(uid)
     except ValueError:
         pass
-    row = db.get(**{key: value})
-    prfx = '{project}-{id}-'.format(project=project, id=row.id)
-    s = Summary(row, db.meta, SUBSCRIPT, prfx, tmpdir)
+    row = db.get(**{key: uid})
+    s = Summary(row, db.meta, SUBSCRIPT, prefix)
     atoms = Atoms(cell=row.cell, pbc=row.pbc)
     n1, n2, n3 = kptdensity2monkhorstpack(atoms,
                                           kptdensity=1.8,
@@ -344,6 +327,7 @@ def row(project, value):
     return render_template('summary.html',
                            project=project,
                            s=s,
+                           uid=uid,
                            n1=n1,
                            n2=n2,
                            n3=n3,
@@ -441,6 +425,11 @@ def robots():
             'User-agent: SiteCheck-sitecrawl by Siteimprove.com\n'
             'Disallow: /\n',
             200)
+
+
+@app.route('/cif/<stuff>')
+def oldcif(stuff):
+    return 'Bad URL'
 
 
 def pages(page, nrows, limit):

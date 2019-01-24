@@ -1095,6 +1095,17 @@ class VaspDos(object):
                     'dz2+': 13, 'dz2-up': 13, 'dz2-': 14, 'dz2-down': 14,
                     'dxz+': 15, 'dxz-up': 15, 'dxz-': 16, 'dxz-down': 16,
                     'dx2+': 17, 'dx2-up': 17, 'dx2-': 18, 'dx2-down': 18}
+        else:
+            norb = {'s+': 1, 's-up': 1, 's-': 2, 's-down': 2,
+                    'py+': 3, 'py-up': 3, 'py-': 4, 'py-down': 4,
+                    'pz+': 5, 'pz-up': 5, 'pz-': 6, 'pz-down': 6,
+                    'px+': 7, 'px-up': 7, 'px-': 8, 'px-down': 8,
+                    'dxy+': 9, 'dxy-up': 9, 'dxy-': 10, 'dxy-down': 10,
+                    'dyz+': 11, 'dyz-up': 11, 'dyz-': 12, 'dyz-down': 12,
+                    'dz2+': 13, 'dz2-up': 13, 'dz2-': 14, 'dz2-down': 14,
+                    'dxz+': 15, 'dxz-up': 15, 'dxz-': 16, 'dxz-down': 16,
+                    'dx2+': 17, 'dx2-up': 17, 'dx2-': 18, 'dx2-down': 18
+            }
         return self._site_dos[atom, norb[orbital.lower()], :]
 
     def _get_dos(self):

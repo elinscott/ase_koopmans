@@ -7,7 +7,6 @@ from math import sqrt
 import numpy as np
 
 import ase.parallel as mpi
-from ase import Atoms
 from ase.build import minimize_rotation_and_translation
 from ase.calculators.calculator import Calculator
 from ase.calculators.singlepoint import SinglePointCalculator
@@ -18,9 +17,9 @@ from ase.utils import basestring
 
 
 class NEB:
-    def __init__(self, images, k=0.1, climb=False, parallel=False,
+    def __init__(self, images, k=0.1, fmax=0.05, climb=False, parallel=False,
                  remove_rotation_and_translation=False, world=None,
-                 method='aseneb'):
+                 method='aseneb', dynamic_relaxation=False):
         """Nudged elastic band.
 
         Paper I:
@@ -49,6 +48,16 @@ class NEB:
             TRUE actives NEB-TR for removing translation and
             rotation during NEB. By default applied non-periodic
             systems
+        dynamic_relaxation: bool
+            TRUE calculates the norm of the forces acting on each image
+            in the band. An image is optimized only if its norm is above
+            the convergence criterion. The list fmax_images is updated
+            every force call; if a previously converged image goes out
+            of tolerance (due to spring adjustments between the image
+            and its neighbors), it will be optimized again. This routine
+            can speed up calculations if convergence is non-uniform.
+            Convergence criterion should be the same as that given to
+            the optimizer. Not efficient when parallelizing over images.
         method: string of method
             Choice betweeen three method:
 
@@ -70,6 +79,8 @@ class NEB:
         self.emax = np.nan
 
         self.remove_rotation_and_translation = remove_rotation_and_translation
+        self.dynamic_relaxation = dynamic_relaxation
+        self.fmax = fmax
 
         if method in ['aseneb', 'eb', 'improvedtangent']:
             self.method = method
@@ -133,10 +144,35 @@ class NEB:
 
     def set_positions(self, positions):
         n1 = 0
-        for image in self.images[1:-1]:
-            n2 = n1 + self.natoms
-            image.set_positions(positions[n1:n2])
-            n1 = n2
+        for i, image in enumerate(self.images[1:-1]):
+            if self.dynamic_relaxation:
+                if self.parallel:
+                    msg = ('Dynamic relaxation does not work efficiently '
+                           'when parallelizing over images. Try AutoNEB '
+                           'routine for freezing images in parallel.')
+                    raise ValueError(msg)
+                else:
+                    forces_dyn = self.get_fmax_all(self.images)
+                    if forces_dyn[i] < self.fmax:
+                        n1 += self.natoms
+                    else:
+                        n2 = n1 + self.natoms
+                        image.set_positions(positions[n1:n2])
+                        n1 = n2
+            else:
+                n2 = n1 + self.natoms
+                image.set_positions(positions[n1:n2])
+                n1 = n2
+
+    def get_fmax_all(self, images):
+        n = self.natoms
+        f_i = self.get_forces()
+        fmax_images = []
+        for i in range(self.nimages-2):
+            n1 = n * i
+            n2 = n + n * i
+            fmax_images.append(np.sqrt((f_i[n1:n2]**2).sum(axis=1)).max())
+        return fmax_images
 
     def get_forces(self):
         """Evaluate and return the forces."""
@@ -591,27 +627,8 @@ class NEBTools:
     def plot_band(self, ax=None):
         """Plots the NEB band on matplotlib axes object 'ax'. If ax=None
         returns a new figure object."""
-        if not ax:
-            import matplotlib.pyplot as plt
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-        else:
-            fig = None
-        s, E, Sfit, Efit, lines = self.get_fit()
-        ax.plot(s, E, 'o')
-        for x, y in lines:
-            ax.plot(x, y, '-g')
-        ax.plot(Sfit, Efit, 'k-')
-        ax.set_xlabel(r'path [$\AA$]')
-        ax.set_ylabel('energy [eV]')
-        Ef = max(Efit) - E[0]
-        Er = max(Efit) - E[-1]
-        dE = E[-1] - E[0]
-        ax.set_title('$E_\\mathrm{f} \\approx$ %.3f eV; '
-                     '$E_\\mathrm{r} \\approx$ %.3f eV; '
-                     '$\\Delta E$ = %.3f eV'
-                     % (Ef, Er, dE))
-        return fig
+        ax = plot_band_from_fit(*self.get_fit(), ax=ax)
+        return ax.figure
 
     def get_fmax(self, **kwargs):
         """Returns fmax, as used by optimizers with NEB."""
@@ -629,6 +646,27 @@ class NEBTools:
         pbc = images[0].pbc
         s, E, Sfit, Efit, lines = fit0(E, F, R, A, pbc)
         return s, E, Sfit, Efit, lines
+
+
+def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
+    if ax is None:
+        import matplotlib.pyplot as plt
+        ax = plt.gca()
+
+    ax.plot(s, E, 'o')
+    for x, y in lines:
+        ax.plot(x, y, '-g')
+    ax.plot(Sfit, Efit, 'k-')
+    ax.set_xlabel(r'path [$\AA$]')
+    ax.set_ylabel('energy [eV]')
+    Ef = max(Efit) - E[0]
+    Er = max(Efit) - E[-1]
+    dE = E[-1] - E[0]
+    ax.set_title('$E_\\mathrm{f} \\approx$ %.3f eV; '
+                 '$E_\\mathrm{r} \\approx$ %.3f eV; '
+                 '$\\Delta E$ = %.3f eV'
+                 % (Ef, Er, dE))
+    return ax
 
 
 NEBtools = NEBTools  # backwards compatibility
@@ -650,16 +688,6 @@ def interpolate(images, mic=False):
 if __name__ == '__main__':
     # This stuff is used by ASE's GUI
     import matplotlib.pyplot as plt
-    if sys.version_info[0] == 2:
-        E, F, R, A, pbc = pickle.load(sys.stdin)
-    else:
-        E, F, R, A, pbc = pickle.load(sys.stdin.buffer)
-    symbols = 'X' * len(R[0])
-    images = []
-    for e, r, f in zip(E, R, F):
-        atoms = Atoms(symbols, r, cell=A, pbc=pbc)
-        atoms.calc = SinglePointCalculator(atoms, energy=e, forces=f)
-        images.append(atoms)
-    nebtools = NEBtools(images)
-    fig = nebtools.plot_band()
+    fit = pickle.load(sys.stdin)
+    plot_band_from_fit(*fit)
     plt.show()
