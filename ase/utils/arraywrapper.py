@@ -4,12 +4,7 @@ import numpy as np
 py3 = sys.version_info[0] == 3
 
 inplace_methods = ['__iadd__', '__imul__', '__ipow__', '__isub__',
-                   '__itruediv__']
-
-if py3:
-    inplace_methods.append('__imatmul__')
-else:
-    inplace_methods.append('__idiv__')
+                   '__itruediv__', '__imatmul__']
 
 forward_methods = ['__abs__', '__add__', '__contains__', '__eq__',
                    '__ge__', '__getitem__', '__gt__', '__hash__',
@@ -19,10 +14,7 @@ forward_methods = ['__abs__', '__add__', '__contains__', '__eq__',
                    '__rsub__', '__rtruediv__', '__setitem__',
                    '__sub__', '__truediv__']
 
-if py3:
-    forward_methods += ['__matmul__', '__rmatmul__']
-else:
-    forward_methods += ['__div__', '__rdiv__']
+forward_methods += ['__matmul__', '__rmatmul__']
 
 forward_methods += ['all', 'any', 'diagonal', 'dot', 'mean', 'sum',
                     'ravel', 'tolist',
@@ -58,7 +50,7 @@ def arraylike(cls):
         setattr(cls, name, meth)
     for name in forward_methods:
         assert hasattr(np.ndarray, name), name
-        if hasattr(np.ndarray, name) and not hasattr(cls, name):
+        if hasattr(np.ndarray, name):  # and not hasattr(cls, name):
             meth = forward_call(name)
             setattr(cls, name, meth)
     return cls
