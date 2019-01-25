@@ -210,9 +210,18 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             symbols = [label_to_symbol(position[0]) for position in
                        positions_card]
             positions = [position[1] for position in positions_card]
+            
+            constraints = [position[2] for position in positions_card]
+
+            if np.any(constraints):
+                constraint = FixAtoms(
+                    indices=[i for i, c in enumerate(constraints)
+                             if np.all(np.array(c)==0)])
+            else:
+                constraint = None
 
             structure = Atoms(symbols=symbols, positions=positions, cell=cell,
-                              pbc=True)
+                              pbc=True, constraint=constraint)
 
         # Extract calculation results
         # Energy
@@ -331,10 +340,10 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                         except ValueError:
                             break
                     bands_index += 1
-
                 if spin == 1:
                     assert len(eigenvalues[0]) == len(eigenvalues[1])
-                assert len(eigenvalues[0]) * (1 + spin) == len(ibzkpts)
+                assert len(eigenvalues[0]) * (1 + spin) == len(ibzkpts),\
+                    'Wrong number of eigenvalues'
 
                 kpts = []
                 for s in range(spin + 1):
@@ -477,9 +486,19 @@ def read_espresso_in(fileobj):
     symbols = [label_to_symbol(position[0]) for position in positions_card]
     positions = [position[1] for position in positions_card]
 
+    constraints = [position[2] for position in positions_card]
+
+    if np.any(constraints):
+        constraint = FixAtoms(
+            indices=[i for i, c in enumerate(constraints)
+                     if np.all(np.array(c)==0)])
+    else:
+        constraint = None
+
     # TODO: put more info into the atoms object
     # e.g magmom, force constraints
-    atoms = Atoms(symbols=symbols, positions=positions, cell=cell, pbc=True)
+    atoms = Atoms(symbols=symbols, positions=positions, cell=cell, pbc=True,
+                  constraint=constraint)
 
     return atoms
 
