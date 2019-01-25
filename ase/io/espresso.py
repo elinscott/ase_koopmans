@@ -325,6 +325,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                         if l[2] == 'DOWN':
                             spin += 1
                     else:
+                        l = ' -'.join(pwo_lines[bands_index].split('-')).split()
                         try:
                             bands.extend(map(float, l))
                         except ValueError:
@@ -333,7 +334,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
                 if spin == 1:
                     assert len(eigenvalues[0]) == len(eigenvalues[1])
-                assert len(eigenvalues[0]) == len(ibzkpts)
+                assert len(eigenvalues[0]) * (1 + spin) == len(ibzkpts)
 
                 kpts = []
                 for s in range(spin + 1):
