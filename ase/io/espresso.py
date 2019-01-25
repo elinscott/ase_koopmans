@@ -286,7 +286,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             ibzkpts = []
             weights = []
             for i in range(nkpts):
-                l =  pwo_lines[kpts_index + i].split()
+                l = pwo_lines[kpts_index + i].split()
                 weights.append(float(l[-1]))
                 coord = np.array([l[-6], l[-5], l[-4].strip('),')],
                                  dtype=float)
@@ -312,7 +312,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                 spin, bands, eigenvalues = 0, [], [[], []]
 
                 while True:
-                    l = pwo_lines[bands_index].split()
+                    l = pwo_lines[bands_index].replace('-', ' -').split()
                     if len(l) == 0:
                         if len(bands) > 0:
                             eigenvalues[spin].append(bands)
