@@ -37,6 +37,8 @@
             {{ boolean(control) }}
         {% elif control[0] == 'RANGE' %}
             {{ myrange(control) }}
+        {% elif control[0] == 'SRANGE' %}
+            {{ mysrange(control) }}
         {% endif %}
       </div>
     {% endfor %}
@@ -228,35 +230,61 @@
 {% set choise = con.query[1][key] %}
 {{ text }}:
 <select name="select_{{ key }}">
-  <option value="">-</option>
-  {% for val in choises %}
-  <option value="{{ val }}" {% if val == con.query[1][key] %} selected {% endif %}>
+<option value="">-</option>
+{% for val in choises %}
+    <option value="{{ val }}"
+    {% if val == con.query[1][key] %} selected {% endif %}>
     {{ val }}
-  </option>
-  {% endfor %}
+    </option>
+{% endfor %}
 </select>
 {% endmacro %}
 
 {% macro boolean(control) %}
-            {% set key, text = control[1:] %}
-            {% set choise = con.query[1][key] %}
-                {{ text }}:<select name="bool_{{ key }}">
-            <option value="" {% if '' == choise %} selected {% endif %}>-</option>
-            <option value="1" {% if '1' == choise %} selected {% endif %}>Yes</option>
-            <option value="0" {% if '0' == choise %} selected {% endif %}>No</option>
-            </select>
+{% set key, text = control[1:] %}
+{% set choise = con.query[1][key] %}
+{{ text }}:<select name="bool_{{ key }}">
+<option value="" {% if '' == choise %} selected {% endif %}>-</option>
+<option value="1" {% if '1' == choise %} selected {% endif %}>Yes</option>
+<option value="0" {% if '0' == choise %} selected {% endif %}>No</option>
+</select>
 {% endmacro %}
 
 {% macro myrange(control) %}
-            {% set id, text, choises = control[1:] %}
-            {% set v1, v2, var = con.query[1].get(id, ['', '', '']) %}
-                {{ text }}:
-                <input type="text" name="from_{{ id }}" value="{{ v1 }}" size="6"> -
-                <input type="text" name="to_{{ id }}" value="{{ v2 }}" size="6">
-                <select name="range_{{ id }}">
-            {% for txt, key in choises %}
-                <option value="{{ key }}" {% if key == var %} selected {% endif %}>{{ txt }}</option>
-            {% endfor %}
-                </select>
-                <br/>
+{% set id, text, choises = control[1:] %}
+{% set v1, v2, var = con.query[1].get(id, ['', '', '']) %}
+{{ text }}:
+<input type="text" name="from_{{ id }}" value="{{ v1 }}" size="6"> -
+<input type="text" name="to_{{ id }}" value="{{ v2 }}" size="6">
+<select name="range_{{ id }}">
+{% for txt, key in choises %}
+    <option value="{{ key }}" {% if key == var %} selected {% endif %}>
+    {{ txt }}
+    </option>
+{% endfor %}
+</select>
+<br/>
+{% endmacro %}
+
+{% macro mysrange(control) %}
+{% set key, description, choises = control[1:] %}
+{% set v1, v2 = con.query[1].get(key, ['', '']) %}
+{{ description }}:
+<select name="from_{{ key }}">
+<option value="">-</option>
+{% for val, text in choises.items() %}
+    <option value="{{ val }}" {% if val == v1 %} selected {% endif %}>
+    {{ val}} ({{ text }})
+    </option>
+{% endfor %}
+</select> -
+<select name="to_{{ key }}">
+<option value="">-</option>
+{% for val, text in choises.items() %}
+    <option value="{{ val }}" {% if val == v2 %} selected {% endif %}>
+    {{ val}} ({{ text }})
+    </option>
+{% endfor %}
+</select>
+<br/>
 {% endmacro %}
