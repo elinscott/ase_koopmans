@@ -59,7 +59,7 @@ class Cell:
         return self.array.shape
 
     @classmethod
-    def new(cls, cell):
+    def new(cls, cell, pbc=None):
         cell = np.array(cell, float)
 
         if cell.shape == (3,):
@@ -70,12 +70,13 @@ class Cell:
             raise ValueError('Cell must be length 3 sequence, length 6 '
                              'sequence or 3x3 matrix!')
 
-        return cls(cell)
+        return cls(cell, pbc=pbc)
 
     @classmethod
-    def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None):
+    def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None,
+                    pbc=None):
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
-        return Cell(cell)
+        return Cell(cell, pbc=pbc)
 
     #def crystal_structure(self, eps=2e-4, niggli_reduce=True):
     #    return crystal_structure_from_cell(self.array, eps, niggli_reduce)
@@ -86,10 +87,10 @@ class Cell:
 
     def complete(self):
         """Convert missing cell vectors into orthogonal unit vectors."""
-        return Cell(complete_cell(self.array))
+        return Cell(complete_cell(self.array), self.pbc)
 
     def copy(self):
-        return Cell(self.array.copy())
+        return Cell(self.array.copy(), self.pbc)
 
     @property
     def dtype(self):
@@ -184,8 +185,8 @@ class Cell:
 
     def niggli_reduce(self):
         from ase.build.tools import niggli_reduce_cell
-        cell, _ = niggli_reduce_cell(self.array)
-        return Cell(cell)
+        cell, op = niggli_reduce_cell(self.array)
+        return Cell(cell, self.pbc), op
 
     #def bandpath(self, path, npoints=50):
     #    from ase.dft.kpoints import bandpath, BandPath
