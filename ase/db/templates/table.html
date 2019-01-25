@@ -268,11 +268,11 @@
 
 {% macro mysrange(control) %}
 {% set key, description, choises = control[1:] %}
-{% set v1, v2 = con.query[1].get(id, ['', '']) %}
+{% set v1, v2 = con.query[1].get(key, ['', '']) %}
 {{ description }}:
 <select name="from_{{ key }}">
 <option value="">-</option>
-{% for val, text in choises %}
+{% for val, text in choises.items() %}
     <option value="{{ val }}" {% if val == v1 %} selected {% endif %}>
     {{ val}} ({{ text }})
     </option>
@@ -280,7 +280,7 @@
 </select> -
 <select name="to_{{ key }}">
 <option value="">-</option>
-{% for val, text in choises %}
+{% for val, text in choises.items() %}
     <option value="{{ val }}" {% if val == v2 %} selected {% endif %}>
     {{ val}} ({{ text }})
     </option>
