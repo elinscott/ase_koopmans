@@ -20,3 +20,8 @@ assert atoms.get_chemical_symbols()
 string = str(atoms.symbols)
 symbols = Symbols.fromsymbols(string)
 assert (symbols == atoms.symbols).all()
+
+atoms = molecule('H2O')
+atoms.symbols = 'Au2Ag'
+print(atoms.symbols)
+assert (atoms.symbols == 'Au2Ag').all()

@@ -6,18 +6,6 @@ variables:
   POSTGRES_USER: ase
   POSTGRES_PASSWORD: "ase"
 
-python_2_7_tests:
-  image: python:2.7
-  script:
-    - pip install numpy scipy matplotlib flask psycopg2-binary
-    # using "install from source" instructions
-    - export PATH=$PATH:$CI_PROJECT_DIR/bin
-    - echo $PATH
-    - export PYTHONPATH=$CI_PROJECT_DIR
-    - echo $PYTHONPATH
-    - python --version
-    - ase test --strict
-
 # Check oldest supported Python with oldest supported libraries.
 # Does not install any optional libraries except matplotlib.
 # This test does not use the --strict flag because things like
