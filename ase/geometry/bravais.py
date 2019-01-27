@@ -6,30 +6,90 @@ import numpy as np
 
 from ase.geometry.cell import Cell
 
+
 _degrees = np.pi / 180
 
 
-class BandPath:
-    def __init__(self,  icell, coords, xvalues, labels=None, special_coords=None):
-        if labels is None and special_coords is None:
-            labels = ''
-            special_coords = np.empty((0, 3))
-        assert len(xvalues) == len(coords)
-        self.xvalues = xvalues
-        #assert len(labels) == len(special_coords)  # Maybe include ','?
-        self.labels = labels
-        #assert special_coords.shape == (labels, 3)
-        self.special_coords = special_coords
+from ase.dft.kpoints import parse_path_string
 
-        self.icell = icell
-        self.coords = coords
+
+def resolve_kpt_path_string(path, special_points):
+    paths = parse_path_string(path)
+    coords = [np.array([special_points[sym] for sym in subpath])
+              for subpath in paths]
+    print('grr', coords)
+    #special_point_coords = self.get_special_point_dict()
+    return paths, coords
+
+
+class BandPath:
+    def __init__(self, cell, scaled_kpts=None,
+                 special_points=None, labelseq=None):
+        if scaled_kpts is None:
+            scaled_kpts = np.empty((0, 3))
+
+        if special_points is None:
+            special_points = {}
+
+        if labelseq is None:
+            labelseq = []
+
+        #assert icell.shape == (3, 3)
+        assert scaled_kpts.ndim == 2 and scaled_kpts.shape[1] == 3
+        self.cell = cell
+        self.icell = cell.reciprocal()
+        self.scaled_kpts = scaled_kpts
+        self.special_points = special_points
+        self.labelseq = labelseq
+
+    @classmethod
+    def fromdict(cls, d):
+        kwargs = dict(d)
+        assert kwargs.pop('_ase_objtype') == 'bandpath'
+        return cls(**kwargs)
+
+    def todict(self):
+        return {'_ase_objtype': 'bandpath',
+                'scaled_kpts': self.scaled_kpts,
+                'special_points': special_points,
+                'labelseq': self.labelseq,
+                'cell': self.cell}
 
     def _scale(self, coords):
         return np.dot(coords, self.icell)
 
+    def __repr__(self):
+        return ('{}(vertices={}, special_points={})'
+                .format(self.__class__.__name__,
+                        self.labelseq,
+                        self.special_points))
+
     @property
-    def array(self):
-        return self._scale(self.coords)
+    def kpts(self):
+        return self._scale(self.scaled_kpts)
+
+    def plot(self, **plotkwargs):
+        from ase.dft.bz import bz3d_plot
+
+        special_points = self.special_points
+        labelseq, coords = resolve_kpt_path_string(self.labelseq,
+                                                   special_points)
+
+        paths = []
+        points_already_plotted = set()
+        for subpath_labels, subpath_coords in zip(labelseq, coords):
+            points_already_plotted.update(subpath_labels)
+            paths.append((subpath_labels, self._scale(subpath_coords)))
+
+        # Add each special point as a single-point subpath if they were
+        # not plotted already:
+        for label, point in special_points.items():
+            if label not in points_already_plotted:
+                paths.append((label, [self._scale(point)]))
+
+        kw = {'vectors': True}
+        kw.update(plotkwargs)
+        return bz3d_plot(self.cell, paths=paths, **kw)
 
 
 class BravaisLattice(ABC):
@@ -74,7 +134,7 @@ class BravaisLattice(ABC):
     def special_path(self):
         return self.variant.special_path
 
-    def get_special_points(self):
+    def get_special_points_array(self):
         variant = self._variant
         points = self._special_points(variant=variant, **self._parameters)
         assert len(points) == len(self.kpoint_labels)
@@ -82,9 +142,12 @@ class BravaisLattice(ABC):
 
     # XXX which should be the standard way of doing this?
     # Array or dict?
-    def get_special_point_dict(self):
+    def get_special_points(self):
+        if hasattr(self, 'special_points'):
+            return self.special_points  # if points do not depend on lattice
+
         labels = self.kpoint_labels
-        points = self.get_special_points()
+        points = self.get_special_points_array()
         return dict(zip(labels, points))
 
     def get_variant(self):
@@ -93,16 +156,22 @@ class BravaisLattice(ABC):
 
     @property
     def kpoint_labels(self):
-        labels = re.findall(r'[A-Z]\d?', self._variant.special_point_names)
-        return labels
+        labels = parse_path_string(self._variant.special_point_names)
+        assert len(labels) == 1  # list of lists
+        return labels[0]
 
-    def plot_bz(self, path=None, **plotkwargs):
+    def plot_bz(self, path=None, special_points=None, **plotkwargs):
         from ase.dft.bz import bz3d_plot
 
-        coords = self.get_special_point_dict()
+        bandpath = self.bandpath(path=path, special_points=special_points)
+        return bandpath.plot(**plotkwargs)
+
+        # XXXXXXXXX outdated code below
+        if special_points is None:
+            special_points = self.get_special_points()
 
         if path is None:
-            isolated_points = ','.join(coords)
+            isolated_points = ','.join(special_points)
             path = self.special_path + ',' + isolated_points
             # (Isolated points are normally plotted twice since they are
             #  also part of the special path.)
@@ -118,7 +187,7 @@ class BravaisLattice(ABC):
                     raise ValueError('Invalid path string: {}'
                                      .format(repr(path0)))
                 path0 = re.findall(r'[A-Z]\d?', path0)
-                thecoords = [coords[label] for label in path0]
+                thecoords = [special_points[label] for label in path0]
                 abscoords = np.dot(thecoords, icell)
                 paths.append((path0, abscoords))
         else:
@@ -129,26 +198,25 @@ class BravaisLattice(ABC):
 
         return bz3d_plot(cell, paths=paths, **kw)
 
-    def bandpath(self, path=None, npoints=50):
+    def bandpath(self, path=None, npoints=50, special_points=None):
+        if special_points is None:
+            special_points = self.get_special_points()
+
         # npoints should depend on the length of the path
         if path is None:
             path = self.variant.special_path
 
-        pathcoords = self._resolve_kpt_path_string(path)
+        assert special_points is not None
+        pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
 
-        from ase.dft.kpoints import paths2kpts
         cell = self.tocell()
         icell = cell.reciprocal()
+
+        from ase.dft.kpoints import paths2kpts
         kpts, x, X = paths2kpts(pathcoords, icell, npoints)
 
-        return BandPath(icell, kpts, x, labels=path, special_coords=X)
-
-    def _resolve_kpt_path_string(self, path):
-        from ase.dft.kpoints import parse_path_string
-        paths = parse_path_string(path)
-        special_point_coords = self.get_special_point_dict()
-        return [np.array([special_point_coords[sym] for sym in subpath])
-                for subpath in paths]
+        return BandPath(cell, kpts, labelseq=path,
+                        special_points=special_points)
 
     @abstractmethod
     def _cell(self, **kwargs):
@@ -185,9 +253,8 @@ class BravaisLattice(ABC):
         labels = self.kpoint_labels
 
         coordstring = '\n'.join(['    {:2s} {:7.4f} {:7.4f} {:7.4f}'
-                                 .format(label, *point)
-                                 for label, point
-                                 in zip(labels, points)])
+                                 .format(label, *points[label])
+                                 for label in labels])
 
         string = """\
 {repr}
@@ -252,6 +319,7 @@ Variant name: {name}
 bravais_names = []
 bravais_lattices = {}
 
+
 def bravais(longname, parameters, variants):
     """Decorator for Bravais lattice classes.
 
@@ -302,7 +370,12 @@ def bravais(longname, parameters, variants):
                     if name == 'G':
                         name = 'Gamma'
                     points.append(pointinfo[name])
-                cls.special_points = np.array(points)
+                #cls.special_points = np.array(points)
+                cls.special_point_array = np.array(points)
+                print(cls.special_point_array)
+                x = zip(cls.special_point_names,
+                        cls.special_point_array)
+                cls.special_points = dict(x)
 
         # Register in global list and dictionary
         bravais_names.append(btype)
@@ -861,7 +934,13 @@ class TRI(BravaisLattice):
         return points
 
 
-def get_bravais_lattice(uc, eps=2e-4):
+def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
+    orig_uc = uc
+    if _niggli_reduce:
+        from ase.build.tools import niggli_reduce_cell
+
+        uc, niggli_op = uc.niggli_reduce()
+
     #uc2 = uc.niggli_reduce()
     #if 0: #np.abs(uc2 - uc).max() > eps:
     #    raise ValueError('Can only get recognize Bravais lattice of '

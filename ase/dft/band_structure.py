@@ -204,3 +204,15 @@ class BandStructure:
         bsp = BandStructurePlot(self)
         # Maybe return bsp?  But for now run the plot, for compatibility
         return bsp.plot(*args, **kwargs)
+
+
+class NewBandStructure(BandStructure):
+    def __init__(self, bandpath, energies, reference=0.0):
+        self.bandpath = bandpath
+        BandStructure.__init__(self, cell=self.bandpath.cell,
+                               kpts=bandpath.kpts,
+                               energies=energies, reference=reference)
+
+    def get_labels(self):
+        return labels_from_kpts(self.kpts, self.cell,
+                                special_points=self.bandpath.special_points)

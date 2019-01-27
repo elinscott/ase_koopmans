@@ -81,9 +81,11 @@ class Cell:
     #def crystal_structure(self, eps=2e-4, niggli_reduce=True):
     #    return crystal_structure_from_cell(self.array, eps, niggli_reduce)
 
-    def bravais(self, eps=2e-4):
+    def bravais(self, eps=2e-4, _niggli_reduce=True):
+        # We want to always reduce (so things are as robust as possible)
         from ase.geometry.bravais import get_bravais_lattice
-        return get_bravais_lattice(self, eps=eps)
+        return get_bravais_lattice(self, eps=eps,
+                                   _niggli_reduce=_niggli_reduce)
 
     def complete(self):
         """Convert missing cell vectors into orthogonal unit vectors."""

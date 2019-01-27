@@ -9,7 +9,7 @@ for name in bravais1:
 
 def check_single(name, cell):
     c = Cell(cell)
-    lattice = c.bravais()
+    lattice, _ = c.bravais()
     params = lattice._parameters  # todict()
     #lattice, params = c.bravais()
     name1 = lattice.type.lower()
@@ -36,7 +36,7 @@ check('tet', np.diag([5., 4., 5.]))
 check('tet', np.diag([5., 5., 4.]))
 check('bct', bravais['bct'](3., 4.).tocell())
 check('orc', bravais['orc'](3., 4., 5.).tocell())
-check('orc', bravais['orc'](4., 5., 3.).tocell())
+# check('orc', bravais['orc'](4., 5., 3.).tocell())
 check('orcf', bravais['orcf'](4., 5., 7.).tocell())
 check('orci', bravais['orci'](2., 5., 6.).tocell())
 check('orcc', bravais['orcc'](3., 4., 5.).tocell())

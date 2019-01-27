@@ -179,7 +179,7 @@ def paths2kpts(paths, cell, npoints):
 get_bandpath = bandpath  # old name
 
 
-def labels_from_kpts(kpts, cell, eps=1e-5):
+def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     """Get an x-axis to be used when plotting a band structure.
 
     The first of the returned lists can be used as a x-axis when plotting
@@ -200,7 +200,8 @@ def labels_from_kpts(kpts, cell, eps=1e-5):
     the second is x coordinates of the special points,
     the third is the special points as strings.
     """
-    special_points = get_special_points(cell)
+    if special_points is None:
+        special_points = get_special_points(cell)
     points = np.asarray(kpts)
     diffs = points[1:] - points[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
