@@ -2,8 +2,7 @@ import datetime
 import json
 
 import numpy as np
-from ase.utils import basestring
-
+from ase.utils import basestring, reader, writer
 
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -69,11 +68,12 @@ def decode(txt):
     return numpyfy(mydecode(txt))
 
 
-def read_json(name):
-    if isinstance(name, basestring):
-        fd = open(name, 'r')
-    else:
-        fd = name
+@reader
+def read_json(fd):
     dct = decode(fd.read())
-    fd.close()
     return dct
+
+
+@writer
+def write_json(fd, obj):
+    fd.write(encode(obj))
