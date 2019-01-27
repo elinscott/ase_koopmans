@@ -2,7 +2,7 @@ import datetime
 import json
 
 import numpy as np
-from ase.utils import basestring, reader, writer
+from ase.utils import reader, writer
 
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -18,7 +18,12 @@ class MyEncoder(json.JSONEncoder):
         if isinstance(obj, datetime.datetime):
             return {'__datetime__': obj.isoformat()}
         if hasattr(obj, 'todict'):
-            return obj.todict()
+            d = obj.todict()
+            if not isinstance(d, dict):
+                raise RuntimeError('todict() of {} returned object of type {} '
+                                   'but should have returned dict'
+                                   .format(obj, type(d)))
+            return d
         return json.JSONEncoder.default(self, obj)
 
 
@@ -32,6 +37,16 @@ def object_hook(dct):
     if '__complex_ndarray__' in dct:
         r, i = (np.array(x) for x in dct['__complex_ndarray__'])
         return r + i * 1j
+
+    if '__ase_type__' in dct:
+        objtype = dct.pop('__ase_type__')
+        dct = numpyfy(dct)
+        if objtype == 'bandstructure':
+            from ase.dft.band_structure import BandStructure
+            return BandStructure(**dct)
+        else:
+            raise KeyError('Cannot handle type: {}'.format(objtype))
+
     return dct
 
 

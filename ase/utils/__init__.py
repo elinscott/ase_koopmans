@@ -398,11 +398,11 @@ def iofunction(func, mode):
         try:
             if openandclose:
                 fd = open(fd, mode)
-            thing = func(fd, *args, **kwargs)
+            obj = func(fd, *args, **kwargs)
+            return obj
         finally:
             if openandclose:
                 fd.close()
-        return thing
     return iofunc
 
 
