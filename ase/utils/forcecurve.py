@@ -92,7 +92,13 @@ def fit_images(images):
     return fit_raw(E, F, R, A, pbc)
 
 
-def energy_force_curve(images, ax=None):
+def force_curve(images, ax=None):
+    """Plot energies and forces as a function of accumulated displacements.
+
+    This is for testing whether a calculator's forces are consistent with
+    the energies on a set of geometries where energies and forces are
+    available."""
+
     if ax is None:
         import matplotlib.pyplot as plt
         ax = plt.gca()
@@ -121,7 +127,8 @@ def energy_force_curve(images, ax=None):
         else:
             leftpos = atoms.positions
 
-        disp_ac = rightpos - leftpos
+        disp_ac, _ = find_mic(rightpos - leftpos, cell=atoms.cell,
+                              pbc=atoms.pbc)
 
         def total_displacement(disp):
             disp_a = (disp**2).sum(axis=1)**.5
@@ -141,10 +148,6 @@ def energy_force_curve(images, ax=None):
         x2 = accumulated_distance + disp * linescale
         y1 = energies[i] - dE_fdotr * linescale
         y2 = energies[i] + dE_fdotr * linescale
-
-        #if i == nim - 1:
-        #    y2 = energies[i]
-        #    x2 = accumulated_distance
 
         ax.plot([x1, x2], [y1, y2], 'b-')
         ax.plot(accumulated_distance, energies[i], 'bo')
@@ -168,23 +171,8 @@ def plotfromfile(*fnames):
         ax = energy_force_curve(images)
     plt.show()
 
+
 if __name__ == '__main__':
-    if 0:
-        from ase.build import bulk
-        from ase.calculators.emt import EMT
-        from ase.md import VelocityVerlet
-        from ase.units import fs
-        from ase.io import read
-
-        atoms = bulk('Au', cubic=True) * (2, 1, 1)
-        atoms.calc = EMT()
-        atoms.rattle(stdev=0.05)
-
-        md = VelocityVerlet(atoms, timestep=12.0 * fs, trajectory='tmp.traj')
-        md.run(steps=52)
-        images = read('tmp.traj', ':')
-
     import sys
     fnames = sys.argv[1:]
-    plotfromfile(fnames)
-    #plt.savefig('tmp.png')
+    plotfromfile(*fnames)
