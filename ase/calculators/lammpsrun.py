@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 # lammps.py (2011/03/29)
 # An ASE calculator for the LAMMPS classical MD code available from
 #       http://lammps.sandia.gov/
@@ -30,9 +31,9 @@ from subprocess import Popen, PIPE
 from threading import Thread
 from re import compile as re_compile, IGNORECASE
 from tempfile import mkdtemp, NamedTemporaryFile, mktemp as uns_mktemp
-import numpy as np
 import inspect
 import warnings
+import numpy as np
 
 from ase import Atoms
 from ase.parallel import paropen
@@ -48,7 +49,7 @@ from ase.calculators.lammps import write_lammps_in
 from ase.calculators.lammps import CALCULATION_END_MARK
 from ase.calculators.lammps import convert
 
-__all__ = ['LAMMPS']
+__all__ = ["LAMMPS"]
 
 
 class LAMMPS(Calculator):
@@ -76,12 +77,13 @@ class LAMMPS(Calculator):
         Force use of a triclinic cell in LAMMPS, even if the cell is
         a perfect parallelepiped.
     """
-    name = 'lammpsrun'
+
+    name = "lammpsrun"
 
     command = None
-    'Lammps binary used for the simulation'
+    "Lammps binary used for the simulation"
 
-    implemented_properties = ['energy', 'forces', 'stress', 'energies']
+    implemented_properties = ["energy", "forces", "stress", "energies"]
 
     # parameters to choose options in LAMMPSRUN
     ase_parameters = dict(
@@ -94,22 +96,20 @@ class LAMMPS(Calculator):
         files=[],  # usually contains potential parameters
         verbose=False,
         write_velocities=False,
-        binary_dump=True,  # bool - use binary dump files (full precision but
-                           #        long long ids are casted to double)
-        lammps_options='-echo log -screen none -log /dev/stdout',
-        trajectory_out=None,  # file object, if is not None the trajectory will
-                              # be saved in it
+        binary_dump=True,  # bool - use binary dump files (full
+                           # precision but long long ids are casted to
+                           # double)
+        lammps_options="-echo log -screen none -log /dev/stdout",
+        trajectory_out=None,  # file object, if is not None the
+                              # trajectory will be saved in it
     )
 
     # parameters forwarded to LAMMPS
     lammps_parameters = dict(
-        neighbor=None,
-        newton=None,
-        units='metal',  # str - Which units used; some potentials
+        boundary=None,  # bounadry conditions styles
+        units="metal",  # str - Which units used; some potentials
                         # require certain units
-        boundary=None,  # bounadry conditions
-        # styles
-        atom_style='atomic',
+        atom_style="atomic",
         bond_style=None,
         angle_style=None,
         dihedral_style=None,
@@ -117,17 +117,17 @@ class LAMMPS(Calculator):
         kspace_style=None,
         special_bonds=None,
         # potential informations
-        pair_style='lj/cut 2.5',
-        pair_coeff=['* * 1 1'],
+        pair_style="lj/cut 2.5",
+        pair_coeff=["* * 1 1"],
         masses=None,
         pair_modify=None,
         # variables controlling the output
-        thermo_args=['step', 'temp', 'press', 'cpu',
-                     'pxx', 'pyy', 'pzz', 'pxy', 'pxz', 'pyz',
-                     'ke', 'pe', 'etotal',
-                     'vol', 'lx', 'ly', 'lz', 'atoms'],
-        dump_properties=['id', 'type', 'x', 'y', 'z',
-                         'vx', 'vy', 'vz', 'fx', 'fy', 'fz'],
+        thermo_args=[
+            "step", "temp", "press", "cpu", "pxx", "pyy", "pzz",
+            "pxy", "pxz", "pyz", "ke", "pe", "etotal", "vol", "lx",
+            "ly", "lz", "atoms", ],
+        dump_properties=["id", "type", "x", "y", "z", "vx", "vy",
+                         "vz", "fx", "fy", "fz", ],
         dump_period=1,  # period of system snapshot saving (in MD steps)
     )
 
@@ -135,37 +135,36 @@ class LAMMPS(Calculator):
 
     # legacy parameter persist, when the 'parameters' dictinary is manipulated
     # from the outside.  All others are rested to the default value
-    legacy_parameters = ['specorder',
-                         'dump_period',
-                         'always_triclinic',
-                         'keep_alive',
-                         'keep_tmp_files',
-                         'tmp_dir',
-                         'parameters',
-                         'no_data_file',
-                         'files',
-                         'write_velocities',
-                         'trajectory_out',
-                         ]
+    legacy_parameters = [
+        "specorder",
+        "dump_period",
+        "always_triclinic",
+        "keep_alive",
+        "keep_tmp_files",
+        "tmp_dir",
+        "parameters",
+        "no_data_file",
+        "files",
+        "write_velocities",
+        "trajectory_out",
+    ]
 
-    legacy_parameters_map = {
-        '_custom_thermo_args': 'thermo_args'
-    }
+    legacy_parameters_map = {"_custom_thermo_args": "thermo_args"}
 
     legacy_warn_string = "You are using an "
     legacy_warn_string += "old syntax to set '{}'.\n"
     legacy_warn_string += "Please use {}.set().".format(name.upper())
-    
-    def __init__(self, label='lammps', **kwargs):
+
+    def __init__(self, label="lammps", **kwargs):
         # "Parameters" used to be the dictionary with all parameters forwarded
         # to lammps.  This clashes with the implementation in Calculator to
         # reload an old one. Trying to catch both cases to not break old
         # scripts.
-        if 'parameters' in kwargs:
-            old_parameters = kwargs['parameters']
+        if "parameters" in kwargs:
+            old_parameters = kwargs["parameters"]
             if isinstance(old_parameters, dict):
-                warnings.warn(self.legacy_warn_string.format('parameters'))
-                del kwargs['parameters']
+                warnings.warn(self.legacy_warn_string.format("parameters"))
+                del kwargs["parameters"]
         else:
             old_parameters = None
 
@@ -188,10 +187,10 @@ class LAMMPS(Calculator):
         if self.parameters.tmp_dir is not None:
             # If tmp_dir is pointing somewhere, don't remove stuff!
             self.parameters.keep_tmp_files = True
-        self._lmp_handle = None        # To handle the lmp process
+        self._lmp_handle = None  # To handle the lmp process
 
         if self.parameters.tmp_dir is None:
-            self.parameters.tmp_dir = mkdtemp(prefix='LAMMPS-')
+            self.parameters.tmp_dir = mkdtemp(prefix="LAMMPS-")
         else:
             self.parameters.tmp_dir = os.path.realpath(self.parameters.tmp_dir)
             if not os.path.isdir(self.parameters.tmp_dir):
@@ -199,11 +198,12 @@ class LAMMPS(Calculator):
 
         # verify that lammps-command is available
         self._check_env()
-        self.command += ' ' + self.parameters.lammps_options
+        self.command += " " + self.parameters.lammps_options
 
         for f in self.parameters.files:
-            shutil.copy(f, os.path.join(self.parameters.tmp_dir,
-                                        os.path.basename(f)))
+            shutil.copy(
+                f, os.path.join(self.parameters.tmp_dir, os.path.basename(f))
+            )
 
     def __setattr__(self, key, value):
         """Catch attribute sets to emulate legacy behavior.
@@ -217,8 +217,11 @@ class LAMMPS(Calculator):
         '__init__' functions.
         """
         # !TODO: remove and break somebody's code (e.g. the test examples)
-        if key == 'parameters' and value is not None and \
-          self.parameters is not None:
+        if (
+                key == "parameters"
+                and value is not None
+                and self.parameters is not None
+        ):
             temp_dict = self.get_default_parameters()
             if self.parameters:
                 for l_key in self.legacy_parameters:
@@ -228,18 +231,21 @@ class LAMMPS(Calculator):
                         pass
             temp_dict.update(value)
             value = temp_dict
-        if key in self.legacy_parameters and key != 'parameters':
+        if key in self.legacy_parameters and key != "parameters":
             print(self.legacy_warn_string.format(key))
             self.set(**{key: value})
         elif key in self.legacy_parameters_map:
-            warnings.warn(self.legacy_warn_string.format(
-                '{} for {}'.format(self.legacy_parameters_map[key], key)))
+            warnings.warn(
+                self.legacy_warn_string.format(
+                    "{} for {}".format(self.legacy_parameters_map[key], key)
+                )
+            )
             self.set(**{self.legacy_parameters_map[key]: value})
         # Catch setting none-default attributes
         # one test was assigning an useless Attribute, but it still worked
         # because the assigned object was before manipulation already handed
         # over to the calculator (10/2018)
-        elif hasattr(self, key) or inspect.stack()[1][3] == '__init__':
+        elif hasattr(self, key) or inspect.stack()[1][3] == "__init__":
             Calculator.__setattr__(self, key, value)
         else:
             raise AttributeError("Setting unknown Attribute '{}'".format(key))
@@ -247,7 +253,7 @@ class LAMMPS(Calculator):
     def __getattr__(self, key):
         """Corresponding getattribute-function to emulate legacy behavior.
         """
-        if key in self.legacy_parameters and key != 'parameters':
+        if key in self.legacy_parameters and key != "parameters":
             return self.parameters[key]
         if key in self.legacy_parameters_map:
             return self.parameters[self.legacy_parameters_map[key]]
@@ -257,7 +263,7 @@ class LAMMPS(Calculator):
 
         self._lmp_end()
 
-        if not self.parameters.keep_tmp_files:
+        if not self.parameters.keep_tmp_files or force:
             shutil.rmtree(self.parameters.tmp_dir)
 
     def check_state(self, atoms, tol=1.0e-4):
@@ -265,9 +271,11 @@ class LAMMPS(Calculator):
         # LAMMPS-input file will lead to small rounding errors
         return Calculator.check_state(self, atoms, tol)
 
-    def calculate(self, atoms=None,
-                  properties=['energy', 'forces', 'stress', 'energies'],
-                  system_changes=all_changes):
+    def calculate(self, atoms=None, properties=None, system_changes=None):
+        if properties is None:
+            properties = self.implemented_properties
+        if system_changes is None:
+            system_changes = all_changes
         Calculator.calculate(self, atoms, properties, system_changes)
         self.run()
 
@@ -275,21 +283,24 @@ class LAMMPS(Calculator):
     def _check_env(self):
         """Valid LAMMPS_COMMAND pointing to lammps exectuable
         """
-        name = 'ASE_' + self.name.upper() + '_COMMAND'
+        name = "ASE_" + self.name.upper() + "_COMMAND"
         self.command = os.environ.get(name, self.command)
 
         if self.command is not None:
             return
 
         # set LAMMPS command from environment variable
-        if 'LAMMPS_COMMAND' in os.environ:
-            lammps_cmd_line = shlex.split(os.environ['LAMMPS_COMMAND'],
-                                          posix=(os.name == 'posix'))
+        if "LAMMPS_COMMAND" in os.environ:
+            lammps_cmd_line = shlex.split(
+                os.environ["LAMMPS_COMMAND"], posix=(os.name == "posix")
+            )
 
             if len(lammps_cmd_line) == 0:
                 self.clean()
-                raise RuntimeError('The ASE_LAMMPSRUN_COMMAND environment '
-                                   ' variable must not be empty')
+                raise RuntimeError(
+                    "The ASE_LAMMPSRUN_COMMAND environment "
+                    " variable must not be empty"
+                )
             # want always an absolute path to LAMMPS binary
             # when calling from self.dir
             self.command = os.path.abspath(lammps_cmd_line[0])
@@ -297,24 +308,28 @@ class LAMMPS(Calculator):
         else:
             self.clean()
             raise RuntimeError(
-                'Please set ASE_LAMMPSRUN_COMMAND environment variable')
-        if 'LAMMPS_OPTIONS' in os.environ:
-            lammps_options = shlex.split(os.environ['LAMMPS_OPTIONS'],
-                                         posix=(os.name == 'posix'))
-            self.command = ' '.join([self.command] + lammps_options)
+                "Please set ASE_LAMMPSRUN_COMMAND environment variable"
+            )
+        if "LAMMPS_OPTIONS" in os.environ:
+            lammps_options = shlex.split(
+                os.environ["LAMMPS_OPTIONS"], posix=(os.name == "posix")
+            )
+            self.command = " ".join([self.command] + lammps_options)
 
     def _lmp_alive(self):
         # Return True if this calculator is currently handling a running
         # lammps process
         return self._lmp_handle and not isinstance(
-            self._lmp_handle.poll(), int)
+            self._lmp_handle.poll(), int
+        )
 
     def _lmp_end(self):
         # Close lammps input and wait for lammps to end. Return process
         # return value
         if self._lmp_alive():
             self._lmp_handle.stdin.close()
-            return self._lmp_handle.wait()
+            # !TODO: handle lammps error codes
+            # return self._lmp_handle.wait()
 
     def set_missing_parameters(self):
         """Verify that all necessary variables are set.
@@ -330,14 +345,16 @@ class LAMMPS(Calculator):
             for type_id, specie in enumerate(self.parameters.specorder):
                 mass = atomic_masses[chemical_symbols.index(specie)]
                 self.parameters.masses += [
-                    '{0:d} {1:f}'.format(type_id + 1, mass)]
+                    "{0:d} {1:f}".format(type_id + 1, mass)
+                ]
 
         # set boundary condtions
         if not self.parameters.boundary:
-            b_str = ' '.join(['fp'[int(x)] for x in self.atoms.get_pbc()])
+            b_str = " ".join(["fp"[int(x)] for x in self.atoms.get_pbc()])
             self.parameters.boundary = b_str
 
     def run(self, set_atoms=False):
+        # !TODO: split this function
         """Method which explicitly runs LAMMPS."""
         pbc = self.atoms.get_pbc()
         if all(pbc):
@@ -349,11 +366,13 @@ class LAMMPS(Calculator):
             # below
             cell = 2 * np.max(np.abs(self.atoms.get_positions())) * np.eye(3)
         else:
-            warnings.warn("semi-periodic ASE cell detected - translation "
-                          + "to proper LAMMPS input cell might fail")
+            warnings.warn(
+                "semi-periodic ASE cell detected - translation "
+                + "to proper LAMMPS input cell might fail"
+            )
             cell = self.atoms.get_cell()
         self.prism = Prism(cell)
-            
+
         self.set_missing_parameters()
         self.calls += 1
 
@@ -362,45 +381,54 @@ class LAMMPS(Calculator):
         os.chdir(self.parameters.tmp_dir)
 
         # setup file names for LAMMPS calculation
-        label = '{0}{1:>06}'.format(self.label, self.calls)
-        lammps_in = uns_mktemp(prefix='in_' + label,
-                               dir=self.parameters.tmp_dir)
-        lammps_log = uns_mktemp(prefix='log_' + label,
-                                dir=self.parameters.tmp_dir)
+        label = "{0}{1:>06}".format(self.label, self.calls)
+        lammps_in = uns_mktemp(
+            prefix="in_" + label, dir=self.parameters.tmp_dir
+        )
+        lammps_log = uns_mktemp(
+            prefix="log_" + label, dir=self.parameters.tmp_dir
+        )
         lammps_trj_fd = NamedTemporaryFile(
-            prefix='trj_' + label,
-            suffix=('.bin' if self.parameters.binary_dump else ''),
+            prefix="trj_" + label,
+            suffix=(".bin" if self.parameters.binary_dump else ""),
             dir=self.parameters.tmp_dir,
-            delete=(not self.parameters.keep_tmp_files))
+            delete=(not self.parameters.keep_tmp_files),
+        )
         lammps_trj = lammps_trj_fd.name
         if self.parameters.no_data_file:
             lammps_data = None
         else:
             lammps_data_fd = NamedTemporaryFile(
-                prefix='data_' + label, dir=self.parameters.tmp_dir,
-                delete=(not self.parameters.keep_tmp_files))
-            write_lammps_data(lammps_data_fd, self.atoms,
-                              specorder=self.parameters.specorder,
-                              force_skew=self.parameters.always_triclinic,
-                              velocities=self.parameters.write_velocities,
-                              prismobj=self.prism,
-                              units=self.parameters.units,
-                              )
+                prefix="data_" + label,
+                dir=self.parameters.tmp_dir,
+                delete=(not self.parameters.keep_tmp_files),
+            )
+            write_lammps_data(
+                lammps_data_fd,
+                self.atoms,
+                specorder=self.parameters.specorder,
+                force_skew=self.parameters.always_triclinic,
+                velocities=self.parameters.write_velocities,
+                prismobj=self.prism,
+                units=self.parameters.units,
+            )
             lammps_data = lammps_data_fd.name
             lammps_data_fd.flush()
 
         # see to it that LAMMPS is started
         if not self._lmp_alive():
             # Attempt to (re)start lammps
-            self._lmp_handle = Popen(shlex.split(self.command,
-                                                 posix=(os.name == 'posix')),
-                                     stdin=PIPE, stdout=PIPE)
+            self._lmp_handle = Popen(
+                shlex.split(self.command, posix=(os.name == "posix")),
+                stdin=PIPE,
+                stdout=PIPE,
+            )
         lmp_handle = self._lmp_handle
 
         # Create thread reading lammps stdout (for reference, if requested,
         # also create lammps_log, although it is never used)
         if self.parameters.keep_tmp_files:
-            lammps_log_fd = open(lammps_log, 'wb')
+            lammps_log_fd = open(lammps_log, "wb")
             fd = SpecialTee(lmp_handle.stdout, lammps_log_fd)
         else:
             fd = lmp_handle.stdout
@@ -410,16 +438,18 @@ class LAMMPS(Calculator):
         # write LAMMPS input (for reference, also create the file lammps_in,
         # although it is never used)
         if self.parameters.keep_tmp_files:
-            lammps_in_fd = open(lammps_in, 'wb')
+            lammps_in_fd = open(lammps_in, "wb")
             fd = SpecialTee(lmp_handle.stdin, lammps_in_fd)
         else:
             fd = lmp_handle.stdin
-        write_lammps_in(lammps_in=fd,
-                        parameters=self.parameters,
-                        atoms=self.atoms,
-                        prismobj=self.prism,
-                        lammps_trj=lammps_trj,
-                        lammps_data=lammps_data)
+        write_lammps_in(
+            lammps_in=fd,
+            parameters=self.parameters,
+            atoms=self.atoms,
+            prismobj=self.prism,
+            lammps_trj=lammps_trj,
+            lammps_data=lammps_data,
+        )
 
         if self.parameters.keep_tmp_files:
             lammps_in_fd.close()
@@ -436,22 +466,26 @@ class LAMMPS(Calculator):
         exitcode = lmp_handle.poll()
         if exitcode and exitcode != 0:
             cwd = os.getcwd()
-            raise RuntimeError('LAMMPS exited in {} with exit code: {}.'
-                               ''.format(cwd, exitcode))
+            raise RuntimeError(
+                "LAMMPS exited in {} with exit code: {}."
+                "".format(cwd, exitcode)
+            )
 
         # A few sanity checks
         if len(self.thermo_content) == 0:
-            raise RuntimeError('Failed to retrieve any thermo_style-output')
-        if int(self.thermo_content[-1]['atoms']) != len(self.atoms):
+            raise RuntimeError("Failed to retrieve any thermo_style-output")
+        if int(self.thermo_content[-1]["atoms"]) != len(self.atoms):
             # This obviously shouldn't happen, but if prism.fold_...() fails,
             # it could
-            raise RuntimeError('Atoms have gone missing')
+            raise RuntimeError("Atoms have gone missing")
 
-        trj_atoms = read_lammps_dump(infileobj=lammps_trj,
-                                     order=False,
-                                     index=-1,
-                                     prismobj=self.prism,
-                                     specorder=self.parameters.specorder)
+        trj_atoms = read_lammps_dump(
+            infileobj=lammps_trj,
+            order=False,
+            index=-1,
+            prismobj=self.prism,
+            specorder=self.parameters.specorder,
+        )
 
         if set_atoms:
             self.atoms = trj_atoms.copy()
@@ -462,16 +496,19 @@ class LAMMPS(Calculator):
         if self.parameters.trajectory_out is not None:
             # !TODO: is it advisable to create here temporary atoms-objects
             self.trajectory_out.write(trj_atoms)
-        
+
         tc = self.thermo_content[-1]
-        self.results['energy'] = convert(tc['pe'], 'energy',
-                                         self.parameters['units'], 'ASE')
-        self.results['forces'] = self.forces.copy()
-        stress = -np.array([tc[i] for i in ('pxx', 'pyy', 'pzz',
-                                            'pyz', 'pxz', 'pxy')])
-        self.results['stress'] = convert(stress, 'pressure',
-                                         self.parameters['units'], 'ASE')
-            
+        self.results["energy"] = convert(
+            tc["pe"], "energy", self.parameters["units"], "ASE"
+        )
+        self.results["forces"] = self.forces.copy()
+        stress = np.array(
+            [-tc[i] for i in ("pxx", "pyy", "pzz", "pyz", "pxz", "pxy")]
+        )
+        self.results["stress"] = convert(
+            stress, "pressure", self.parameters["units"], "ASE"
+        )
+
         lammps_trj_fd.close()
         if not self.parameters.no_data_file:
             lammps_data_fd.close()
@@ -479,13 +516,14 @@ class LAMMPS(Calculator):
         os.chdir(cwd)
 
     def read_lammps_log(self, lammps_log=None):
+        # !TODO: somehow communicate 'thermo_content' explicitly
         """Method which reads a LAMMPS output log file."""
 
         if lammps_log is None:
-            lammps_log = self.label + '.log'
+            lammps_log = self.label + ".log"
 
         if isinstance(lammps_log, asestring):
-            fileobj = paropen(lammps_log, 'wb')
+            fileobj = paropen(lammps_log, "wb")
             close_log_file = True
         else:
             # Expect lammps_in to be a file-like object
@@ -495,34 +533,41 @@ class LAMMPS(Calculator):
         # read_log depends on that the first (three) thermo_style custom args
         # can be capitilized and matched against the log output. I.e.
         # don't use e.g. 'ke' or 'cpu' which are labeled KinEng and CPU.
-        _custom_thermo_mark = ' '.join([x.capitalize() for x in
-                                        self.parameters.thermo_args[0:3]])
+        _custom_thermo_mark = " ".join(
+            [x.capitalize() for x in self.parameters.thermo_args[0:3]]
+        )
 
         # !TODO: regex-magic necessary?
         # Match something which can be converted to a float
-        f_re = r'([+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|nan|inf))'
-        n_args = len(self.parameters['thermo_args'])
+        f_re = r"([+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|nan|inf))"
+        n_args = len(self.parameters["thermo_args"])
         # Create a re matching exactly N white space separated floatish things
         _custom_thermo_re = re_compile(
-            r'^\s*' + r'\s+'.join([f_re] * n_args) + r'\s*$', flags=IGNORECASE)
+            r"^\s*" + r"\s+".join([f_re] * n_args) + r"\s*$", flags=IGNORECASE
+        )
 
         thermo_content = []
-        line = fileobj.readline().decode('utf-8')
+        line = fileobj.readline().decode("utf-8")
         while line and line.strip() != CALCULATION_END_MARK:
             # get thermo output
             if line.startswith(_custom_thermo_mark):
-                m = True
-                while m:
-                    line = fileobj.readline().decode('utf-8')
-                    m = _custom_thermo_re.match(line)
-                    if m:
+                bool_match = True
+                while bool_match:
+                    line = fileobj.readline().decode("utf-8")
+                    bool_match = _custom_thermo_re.match(line)
+                    if bool_match:
                         # create a dictionary between each of the
                         # thermo_style args and it's corresponding value
                         thermo_content.append(
-                            dict(zip(self.parameters.thermo_args,
-                                     map(float, m.groups()))))
+                            dict(
+                                zip(
+                                    self.parameters.thermo_args,
+                                    map(float, bool_match.groups()),
+                                )
+                            )
+                        )
             else:
-                line = fileobj.readline().decode('utf-8')
+                line = fileobj.readline().decode("utf-8")
 
         if close_log_file:
             fileobj.close()
@@ -530,7 +575,7 @@ class LAMMPS(Calculator):
         self.thermo_content = thermo_content
 
 
-class SpecialTee(object):
+class SpecialTee:
     """A special purpose, with limited applicability, tee-like thing.
 
     A subset of stuff read from, or written to, orig_fd,
@@ -561,7 +606,7 @@ class SpecialTee(object):
 
     def readlines(self, *args, **kwargs):
         data = self._orig_fd.readlines(*args, **kwargs)
-        self._out_fd.write(''.join(data))
+        self._out_fd.write("".join(data))
         return data
 
     def flush(self):
@@ -569,29 +614,31 @@ class SpecialTee(object):
         self._out_fd.flush()
 
 
-if __name__ == '__main__':
-    pair_style = 'eam'
-    Pd_eam_file = 'Pd_u3.eam'
-    pair_coeff = ['* * ' + Pd_eam_file]
-    parameters = {'pair_style': pair_style, 'pair_coeff': pair_coeff}
+if __name__ == "__main__":
+    pair_style = "eam"
+    Pd_eam_file = "Pd_u3.eam"
+    pair_coeff = ["* * " + Pd_eam_file]
+    parameters = {"pair_style": pair_style, "pair_coeff": pair_coeff}
     my_files = [Pd_eam_file]
     calc = LAMMPS(parameters=parameters, files=my_files)
     a0 = 3.93
     b0 = a0 / 2.0
-    if True:
-        bulk = Atoms(
-            ['Pd'] * 4,
-            positions=[(0, 0, 0), (b0, b0, 0), (b0, 0, b0), (0, b0, b0)],
-            cell=[a0] * 3, pbc=True)
-        # test get_forces
-        print('forces for a = {0}'.format(a0))
-        print(calc.get_forces(bulk))
-        # single points for various lattice constants
-        bulk.set_calculator(calc)
-        for i in range(-5, 5, 1):
-            a = a0 * (1 + i / 100.0)
-            bulk.set_cell([a] * 3)
-            print('a : {0} , total energy : {1}'.format(
-                a, bulk.get_potential_energy()))
+
+    bulk = Atoms(
+        ["Pd"] * 4,
+        positions=[(0, 0, 0), (b0, b0, 0), (b0, 0, b0), (0, b0, b0)],
+        cell=[a0] * 3,
+        pbc=True,
+    )
+    # test get_forces
+    print("forces for a = {0}".format(a0))
+    print(calc.get_forces(bulk))
+    # single points for various lattice constants
+    bulk.set_calculator(calc)
+    for i in range(-5, 5, 1):
+        a = a0 * (1 + i / 100.0)
+        bulk.set_cell([a] * 3)
+        print("a : {0} , total energy : {1}".format(
+            a, bulk.get_potential_energy()))
 
     calc.clean()

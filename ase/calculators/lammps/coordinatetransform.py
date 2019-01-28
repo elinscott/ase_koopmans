@@ -47,7 +47,7 @@ class Prism:
         #    rot_mat * lammps_tilt^T = ase_cell^T
         # => lammps_tilt * rot_mat^T = ase_cell
         # => lammps_tilt             = ase_cell * rot_mat
-        qtrans, ltrans = np.linalg.qr(cell.T, mode='complete')
+        qtrans, ltrans = np.linalg.qr(cell.T, mode="complete")
         self.rot_mat = qtrans
         self.lammps_tilt = ltrans.T
         self.ase_cell = cell
@@ -76,9 +76,13 @@ class Prism:
         #      \    /--/                        \    /--/
         #       o==/-----------------------------o--/
         # !TODO: handle extreme tilt (= off-diagonal > 1.5)
-        self.flip = np.array([abs(self.lammps_cell[i][j]
-                                  / self.lammps_tilt[k][k]) > 0.5
-                              and self.pbc[k] for i, j, k in FLIP_ORDER])
+        self.flip = np.array(
+            [
+                abs(self.lammps_cell[i][j] / self.lammps_tilt[k][k]) > 0.5
+                and self.pbc[k]
+                for i, j, k in FLIP_ORDER
+            ]
+        )
         for iteri, (i, j, k) in enumerate(FLIP_ORDER):
             if self.flip[iteri]:
                 change = self.lammps_cell[k][k]
@@ -120,13 +124,18 @@ class Prism:
         new_vol = np.linalg.det(new_ase_cell)
         old_vol = np.linalg.det(self.ase_cell)
         test_residual = self.ase_cell.copy()
-        test_residual *= (new_vol / old_vol) ** (1. / 3.)
+        test_residual *= (new_vol / old_vol) ** (1.0 / 3.0)
         test_residual -= new_ase_cell
-        if any(np.linalg.norm(test_residual, axis=1)
-               > 0.5 * np.linalg.norm(self.ase_cell, axis=1)):
-            print("WARNING: Significant simulation cell changes from LAMMPS "
-                  + "detected.\n" + " " * 9
-                  + "Backtransformation to ASE might fail!")
+        if any(
+                np.linalg.norm(test_residual, axis=1)
+                > 0.5 * np.linalg.norm(self.ase_cell, axis=1)
+        ):
+            print(
+                "WARNING: Significant simulation cell changes from LAMMPS "
+                + "detected.\n"
+                + " " * 9
+                + "Backtransformation to ASE might fail!"
+            )
         return new_ase_cell
 
     def vector_to_lammps(self, vec, wrap=False):
@@ -140,9 +149,12 @@ class Prism:
         # !TODO: right eps-limit
         # lammps might not like atoms outside the cell
         if wrap:
-            return wrap_positions(np.dot(vec, self.rot_mat),
-                                  self.lammps_cell,
-                                  pbc=self.pbc, eps=1e-18)
+            return wrap_positions(
+                np.dot(vec, self.rot_mat),
+                self.lammps_cell,
+                pbc=self.pbc,
+                eps=1e-18,
+            )
 
         return np.dot(vec, self.rot_mat)
 
@@ -161,8 +173,9 @@ class Prism:
             # translate: expresses lammps-coordinate system in the rotate, but
             #            without tilt removed system
             # fractional: vector in tilted system
-            translate = np.linalg.solve(self.lammps_tilt.T,
-                                        self.lammps_cell.T).T
+            translate = np.linalg.solve(
+                self.lammps_tilt.T, self.lammps_cell.T
+            ).T
             fractional = np.linalg.solve(self.lammps_tilt.T, vec.T).T
 
             # !TODO: make somehow nicer
@@ -184,6 +197,8 @@ class Prism:
         :rtype: bool
 
         """
-        cell_sq = self.lammps_cell**2
-        return np.sum(np.tril(cell_sq, -1)) \
-            / np.sum(np.diag(cell_sq)) > self.tolerance
+        cell_sq = self.lammps_cell ** 2
+        return (
+            np.sum(np.tril(cell_sq, -1)) / np.sum(np.diag(cell_sq))
+            > self.tolerance
+        )

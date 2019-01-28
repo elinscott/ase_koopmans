@@ -33,31 +33,31 @@ NEWTON = 1.0
 COULOMB = units.C
 VOLT = 1.0
 
-ATOMIC_MASS_UNIT = 1. / units.kg
+ATOMIC_MASS_UNIT = 1.0 / units.kg
 MOLE = N_A
 POISE = 0.1 * PASCAL * SECOND
-STATCOULOMB = 1. / 2997924580. * COULOMB
+STATCOULOMB = 1.0 / 2997924580.0 * COULOMB
 STATVOLT = 299.792458 * VOLT
 
-DIM = 3.
+DIM = 3.0
 
 UNITSETS = {}
 
 # !TODO add missing units to 'ASE'
 # !TODO add reduce Lennards-Jones units
 # !TODO cross check which CODATA version lammps uses
-UNITSETS['ASE'] = dict(
+UNITSETS["ASE"] = dict(
     mass=gram / MOLE,
     distance=angstrom,
-    time=1. / units.second,
+    time=1.0 / units.second,
     energy=eV,
-    velocity=angstrom / (1. / units.second),
+    velocity=angstrom / (1.0 / units.second),
     force=eV / angstrom,
-    pressure=1. / units.Pascal,
-    charge=elementary_charge
+    pressure=1.0 / units.Pascal,
+    charge=elementary_charge,
 )
 
-UNITSETS['real'] = dict(
+UNITSETS["real"] = dict(
     mass=gram / MOLE,
     distance=angstrom,
     time=femto,
@@ -69,11 +69,11 @@ UNITSETS['real'] = dict(
     pressure=atmosphere,
     dynamic_viscosity=POISE,
     charge=elementary_charge,
-    electric_field=1. / angstrom,
-    density=gram / centi**DIM
+    electric_field=1.0 / angstrom,
+    density=gram / centi ** DIM,
 )
 
-UNITSETS['metal'] = dict(
+UNITSETS["metal"] = dict(
     mass=gram / MOLE,
     distance=angstrom,
     time=pico,
@@ -86,11 +86,11 @@ UNITSETS['metal'] = dict(
     dynamic_viscosity=POISE,
     charge=elementary_charge,
     dipole=elementary_charge * angstrom,
-    electric_field=1. / angstrom,
-    density=gram / centi**DIM
+    electric_field=1.0 / angstrom,
+    density=gram / centi ** DIM,
 )
 
-UNITSETS['si'] = dict(
+UNITSETS["si"] = dict(
     mass=kilo * gram,
     distance=METER,
     time=SECOND,
@@ -104,10 +104,10 @@ UNITSETS['si'] = dict(
     charge=COULOMB,
     dipole=COULOMB * METER,
     electric_field=VOLT / METER,
-    density=kilo * gram / METER**DIM
+    density=kilo * gram / METER ** DIM,
 )
 
-UNITSETS['cgs'] = dict(
+UNITSETS["cgs"] = dict(
     mass=gram,
     distance=centi * METER,
     time=SECOND,
@@ -116,19 +116,19 @@ UNITSETS['cgs'] = dict(
     force=dyne,
     torque=dyne * centi * METER,
     temperature=KELVIN,
-    pressure=dyne / (centi * METER)**2,  # or barye = 1.0e-6 bars,
+    pressure=dyne / (centi * METER) ** 2,  # or barye = 1.0e-6 bars,
     dynamic_viscosity=POISE,
     charge=STATCOULOMB,  # or esu (4.8032044e-10 is a proton)
     dipole=STATCOULOMB * centi * METER,  # = 10^18 debye,
     electric_field=STATVOLT / (centi * METER),  # or dyne / esu,,
-    density=gram / (centi * METER ** DIM)
+    density=gram / (centi * METER ** DIM),
 )
 
-UNITSETS['electron'] = dict(
+UNITSETS["electron"] = dict(
     mass=ATOMIC_MASS_UNIT,
     distance=units.Bohr,
     time=femto * SECOND,
-    energy=units.Hartree/units.J,
+    energy=units.Hartree / units.J,
     # velocity = Bohr / atomic time units, [1.03275e-15 SECONDs]
     velocity=units.Bohr / (units.AUT / units.second),
     force=units.Hartree / units.Bohr,
@@ -139,7 +139,7 @@ UNITSETS['electron'] = dict(
     electric_field=VOLT / (centi * METER),
 )
 
-UNITSETS['micro'] = dict(
+UNITSETS["micro"] = dict(
     mass=pico * gram,
     distance=micro * METER,
     time=micro * SECOND,
@@ -156,7 +156,7 @@ UNITSETS['micro'] = dict(
     density=pico * gram / (micro * METER) ** DIM,
 )
 
-UNITSETS['nano'] = dict(
+UNITSETS["nano"] = dict(
     mass=atto * gram,
     distance=nano * METER,
     time=nano * SECOND,
