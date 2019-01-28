@@ -168,7 +168,7 @@ def plotfromfile(*fnames):
         images = read(fname, ':')
         import matplotlib.pyplot as plt
         plt.subplot(nplots, 1, 1 + i)
-        ax = energy_force_curve(images)
+        force_curve(images)
     plt.show()
 
 
