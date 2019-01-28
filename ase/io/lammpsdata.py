@@ -7,6 +7,7 @@ from ase.calculators.lammpslib import unit_convert
 from ase.utils import basestring
 from ase.calculators.lammps import Prism
 
+
 def read_lammps_data(fileobj, Z_of_type=None, style='full', sort_by_id=False,
                      units="metal"):
     """Method which reads a LAMMPS data file.
@@ -355,8 +356,12 @@ def read_lammps_data(fileobj, Z_of_type=None, style='full', sort_by_id=False,
 
 
 def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
-                      prismobj=None, velocities=False):
+                      prismobj=None, velocities=False, units='metal'):
     """Write atomic structure data to a LAMMPS data_ file."""
+    # !TODO: add unit handling
+    if units != 'metal':
+        raise NotImplementedError
+    
     if isinstance(fileobj, basestring):
         f = paropen(fileobj, 'wb')
         close_file = True
@@ -412,7 +417,6 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
     if velocities and atoms.get_velocities() is not None:
         f.write('\n\nVelocities \n\n'.encode('utf-8'))
         vel = p.vector_to_lammps(atoms.get_velocities())
-        # !TODO: add unit handling
         for i, v in enumerate(vel):
             f.write('{0:>6} {1:23.17g} {2:23.17g} {3:23.17g}\n'.format(
                     *(i + 1,) + tuple(v)).encode('utf-8'))

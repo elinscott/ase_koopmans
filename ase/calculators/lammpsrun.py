@@ -146,14 +146,14 @@ class LAMMPS(Calculator):
                          'files',
                          'write_velocities',
                          'trajectory_out',
-                        ]
+                         ]
 
     legacy_parameters_map = {
         '_custom_thermo_args': 'thermo_args'
     }
 
-    legacy_warn_string = "you are using an "
-    legacy_warn_string += "old syntax to set '{}'.\n         "
+    legacy_warn_string = "You are using an "
+    legacy_warn_string += "old syntax to set '{}'.\n"
     legacy_warn_string += "Please use {}.set().".format(name.upper())
     
     def __init__(self, label='lammps', **kwargs):
@@ -288,15 +288,16 @@ class LAMMPS(Calculator):
 
             if len(lammps_cmd_line) == 0:
                 self.clean()
-                raise RuntimeError('The LAMMPS_COMMAND environment variable '
-                                   'must not be empty')
-            # want always an absolute path to LAMMPS binary when calling from self.dir
+                raise RuntimeError('The ASE_LAMMPSRUN_COMMAND environment '
+                                   ' variable must not be empty')
+            # want always an absolute path to LAMMPS binary
+            # when calling from self.dir
             self.command = os.path.abspath(lammps_cmd_line[0])
 
         else:
             self.clean()
             raise RuntimeError(
-                'Please set LAMMPS_COMMAND environment variable')
+                'Please set ASE_LAMMPSRUN_COMMAND environment variable')
         if 'LAMMPS_OPTIONS' in os.environ:
             lammps_options = shlex.split(os.environ['LAMMPS_OPTIONS'],
                                          posix=(os.name == 'posix'))
@@ -382,7 +383,9 @@ class LAMMPS(Calculator):
                               specorder=self.parameters.specorder,
                               force_skew=self.parameters.always_triclinic,
                               velocities=self.parameters.write_velocities,
-                              prismobj=self.prism)
+                              prismobj=self.prism,
+                              units=self.parameters.units,
+                              )
             lammps_data = lammps_data_fd.name
             lammps_data_fd.flush()
 
@@ -465,7 +468,7 @@ class LAMMPS(Calculator):
                                          self.parameters['units'], 'ASE')
         self.results['forces'] = self.forces.copy()
         stress = -np.array([tc[i] for i in ('pxx', 'pyy', 'pzz',
-                                           'pyz', 'pxz', 'pxy')])
+                                            'pyz', 'pxz', 'pxy')])
         self.results['stress'] = convert(stress, 'pressure',
                                          self.parameters['units'], 'ASE')
             

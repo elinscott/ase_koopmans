@@ -20,6 +20,9 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
     :type prismobj: Prism
 
     """
+    if parameters.units != 'metal':
+        raise NotImplementedError
+    
     if parameters['verbose']:
         fileobj.write('## Original ase cell\n'.encode('utf-8'))
         fileobj.write(''.join(['# {0:.16} {1:.16} {2:.16}\n'.format(*x)
@@ -55,7 +58,7 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
             fileobj.write('# atom pos in ase cell: {0:.16} {1:.16} {2:.16}\n'
                           ''.format(*tuple(pos)).encode('utf-8'))
         fileobj.write('create_atoms {0} single {1} {2} {3} units box\n'.format(
-            *((species_i[sym],)+tuple(prismobj.vector_to_lammps(pos)))
+            *((species_i[sym],) + tuple(prismobj.vector_to_lammps(pos)))
         ).encode('utf-8'))
 
 
