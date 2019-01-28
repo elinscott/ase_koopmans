@@ -107,7 +107,7 @@ class Infrared(Vibrations):
 
     Example:
 
-    >>> #!/usr/bin/env python
+    >>> #!/usr/bin/env python3
 
     >>> from ase.io import read
     >>> from ase.calculators.siesta import Siesta

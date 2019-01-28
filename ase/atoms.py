@@ -244,6 +244,11 @@ class Atoms(object):
     def symbols(self):
         return Symbols(self.numbers)
 
+    @symbols.setter
+    def symbols(self, obj):
+        new_symbols = Symbols.fromsymbols(obj)
+        self.numbers[:] = new_symbols.numbers
+
     def set_calculator(self, calc=None):
         """Attach calculator object."""
         self._calc = calc
@@ -738,6 +743,9 @@ class Atoms(object):
         shape = stress.shape
 
         if shape == (3, 3):
+            # if Voigt form is not wanted, return rightaway
+            if not voigt:
+                return stress
             warnings.warn('Converting 3x3 stress tensor from %s ' %
                           self._calc.__class__.__name__ +
                           'calculator to the required Voigt form.')
