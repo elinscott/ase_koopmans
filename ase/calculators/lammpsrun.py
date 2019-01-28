@@ -110,11 +110,6 @@ class LAMMPS(Calculator):
         units="metal",  # str - Which units used; some potentials
                         # require certain units
         atom_style="atomic",
-        bond_style=None,
-        angle_style=None,
-        dihedral_style=None,
-        improper_style=None,
-        kspace_style=None,
         special_bonds=None,
         # potential informations
         pair_style="lj/cut 2.5",
@@ -411,6 +406,7 @@ class LAMMPS(Calculator):
                 velocities=self.parameters.write_velocities,
                 prismobj=self.prism,
                 units=self.parameters.units,
+                atom_style=self.parameters.atom_style
             )
             lammps_data = lammps_data_fd.name
             lammps_data_fd.flush()

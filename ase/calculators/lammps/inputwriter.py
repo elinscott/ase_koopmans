@@ -115,6 +115,13 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
             ).encode("utf-8")
         )
 
+    # setup styles except 'pair_style'
+    for style_type in ("atom", "bond", "angle",
+                       "dihedral", "improper", "kspace"):
+        style = style_type + "_style"
+        if style in parameters:
+            fileobj.write('{} {} \n'.format(style, parameters[style]).encode("utf-8"))
+
     pbc = atoms.get_pbc()
     fileobj.write("units metal \n".encode("utf-8"))
     if "boundary" in parameters:

@@ -392,7 +392,8 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
 
 
 def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
-                      prismobj=None, velocities=False, units="metal"):
+                      prismobj=None, velocities=False, units="metal",
+                      atom_style='atomic'):
     """Write atomic structure data to a LAMMPS data_ file."""
     # !TODO: add unit handling
     if units != "metal":
@@ -450,13 +451,26 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
 
     f.write("Atoms \n\n".encode("utf-8"))
     pos = p.vector_to_lammps(atoms.get_positions(), wrap=True)
-    for i, r in enumerate(pos):
-        s = species.index(symbols[i]) + 1
-        f.write(
-            "{0:>6} {1:>3} {2:23.17g} {3:23.17g} {4:23.17g}\n".format(
-                *(i + 1, s) + tuple(r)
-            ).encode("utf-8")
-        )
+
+    if atom_style == 'atomic':
+        for i, r in enumerate(pos):
+            s = species.index(symbols[i]) + 1
+            f.write(
+                "{0:>6} {1:>3} {2:23.17g} {3:23.17g} {4:23.17g}\n".format(
+                    *(i + 1, s) + tuple(r)
+                ).encode("utf-8")
+            )
+    elif atom_style == 'charge':
+        charges = atoms.get_initial_charges()
+        for i, (q, r) in enumerate(zip(charges, pos)):
+            s = species.index(symbols[i]) + 1
+            f.write(
+                "{0:>6} {1:>3} {2:>5} {3:23.17g} {4:23.17g} {5:23.17g}\n".format(
+                    *(i + 1, s, q) + tuple(r)
+                ).encode("utf-8")
+            )
+    else:
+        raise NotImplementedError
 
     if velocities and atoms.get_velocities() is not None:
         f.write("\n\nVelocities \n\n".encode("utf-8"))
