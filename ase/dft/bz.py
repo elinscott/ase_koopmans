@@ -17,7 +17,8 @@ def bz_vertices(icell):
 
 
 def bz3d_plot(cell, vectors=False, paths=None, points=None,
-              elev=None, scale=1, interactive=False):
+              elev=None, scale=1, interactive=False,
+              pointstyle=None):
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     from mpl_toolkits.mplot3d import proj3d
@@ -91,8 +92,11 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
                         ha='center', va='bottom', color='r')
 
     if kpoints is not None:
+        kw = {'c': 'b'}
+        if pointstyle is not None:
+            kw.update(pointstyle)
         for p in kpoints:
-            ax.scatter(p[0], p[1], p[2], c='b')
+            ax.scatter(p[0], p[1], p[2], **kw)
 
     ax.set_axis_off()
     ax.autoscale_view(tight=True)

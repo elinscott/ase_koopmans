@@ -210,7 +210,7 @@ class NewBandStructure(BandStructure):
     def __init__(self, bandpath, energies, reference=0.0):
         self.bandpath = bandpath
         BandStructure.__init__(self, cell=self.bandpath.cell,
-                               kpts=bandpath.kpts,
+                               kpts=bandpath.scaled_kpts,
                                energies=energies, reference=reference)
 
     def get_labels(self):

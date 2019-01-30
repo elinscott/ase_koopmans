@@ -88,7 +88,9 @@ class BandPath:
 
         kw = {'vectors': True}
         kw.update(plotkwargs)
-        return bz3d_plot(self.cell, paths=paths, **kw)
+        return bz3d_plot(self.cell, paths=paths, points=self.kpts,
+                         pointstyle={'marker': '.'},
+                         **kw)
 
 
 class BravaisLattice(ABC):
@@ -115,7 +117,9 @@ class BravaisLattice(ABC):
         return self._variant
 
     def __getattr__(self, name):
-        return self._parameters[name]
+        if name in self._parameters:
+            return self._parameters[name]
+        return self.__getattribute__(name)  # Raises error
 
     def tocell(self, cycle=0):
         cell = self._cell(**self._parameters)
@@ -162,7 +166,9 @@ class BravaisLattice(ABC):
     def plot_bz(self, path=None, special_points=None, **plotkwargs):
         from ase.dft.bz import bz3d_plot
 
-        bandpath = self.bandpath(path=path, special_points=special_points)
+        # Create a generic bandpath (no actual kpoints):
+        bandpath = self.bandpath(path=path, special_points=special_points,
+                                 npoints=0)
         return bandpath.plot(**plotkwargs)
 
         # XXXXXXXXX outdated code below
