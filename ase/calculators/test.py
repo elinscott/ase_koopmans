@@ -136,6 +136,7 @@ class FreeElectrons(Calculator):
     """
 
     implemented_properties = ['energy']
+    default_parameters = {'kpts': np.zeros((1, 3))}
 
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms)
