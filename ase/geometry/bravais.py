@@ -17,7 +17,6 @@ def resolve_kpt_path_string(path, special_points):
     paths = parse_path_string(path)
     coords = [np.array([special_points[sym] for sym in subpath])
               for subpath in paths]
-    print('grr', coords)
     #special_point_coords = self.get_special_point_dict()
     return paths, coords
 
@@ -213,7 +212,7 @@ class BravaisLattice(ABC):
         icell = cell.reciprocal()
 
         from ase.dft.kpoints import paths2kpts
-        kpts, x, X = paths2kpts(pathcoords, icell, npoints)
+        kpts, x, X = paths2kpts(pathcoords, cell, npoints)
 
         return BandPath(cell, kpts, labelseq=path,
                         special_points=special_points)
@@ -370,12 +369,9 @@ def bravais(longname, parameters, variants):
                     if name == 'G':
                         name = 'Gamma'
                     points.append(pointinfo[name])
-                #cls.special_points = np.array(points)
                 cls.special_point_array = np.array(points)
-                print(cls.special_point_array)
-                x = zip(cls.special_point_names,
-                        cls.special_point_array)
-                cls.special_points = dict(x)
+                cls.special_points = dict(zip(cls.special_point_names,
+                                              cls.special_point_array))
 
         # Register in global list and dictionary
         bravais_names.append(btype)
