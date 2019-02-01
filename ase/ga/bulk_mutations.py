@@ -426,7 +426,7 @@ class SoftMutation(OffspringCreator):
                 # file doesn't exist (yet)
                 pass
 
-    def _get_hessian_(self, atoms, dx):
+    def _get_hessian(self, atoms, dx):
         """
         Returns the Hessian matrix d2E/dxi/dxj using a first-order
         central difference scheme with displacements dx.
@@ -455,9 +455,9 @@ class SoftMutation(OffspringCreator):
 
         return hessian
 
-    def _calculate_normal_modes_(self, atoms, dx=0.02, massweighing=False):
+    def _calculate_normal_modes(self, atoms, dx=0.02, massweighing=False):
         """Performs the vibrational analysis."""
-        hessian = self._get_hessian_(atoms, dx)
+        hessian = self._get_hessian(atoms, dx)
         if massweighing:
             m = np.array([np.repeat(atoms.get_masses()**-0.5, 3)])
             hessian *= (m * m.T)
@@ -466,7 +466,7 @@ class SoftMutation(OffspringCreator):
         modes = {eigval: eigvecs[:, i] for i, eigval in enumerate(eigvals)}
         return modes
 
-    def _animate_mode_(self, atoms, mode, nim=30, amplitude=1.0):
+    def animate_mode(self, atoms, mode, nim=30, amplitude=1.0):
         """Returns an Atoms object showing an animation of the mode."""
         pos = atoms.get_positions()
         mode = mode.reshape(np.shape(pos))
@@ -518,7 +518,7 @@ class SoftMutation(OffspringCreator):
             a = TagFilter(a)
 
         pos = a.get_positions()
-        modes = self._calculate_normal_modes_(a)
+        modes = self._calculate_normal_modes(a)
 
         # Select the mode along which we want to move the atoms;
         # The first 3 translational modes as well as previously
