@@ -235,8 +235,8 @@ class TagFilter:
 
 
 class PairwiseHarmonicPotential:
-    ''' Parent class for interatomic potentials of the type
-        E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2 '''
+    """ Parent class for interatomic potentials of the type
+        E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2 """
 
     def __init__(self, atoms, rcut=10.):
         self.atoms = atoms
@@ -277,8 +277,8 @@ class PairwiseHarmonicPotential:
 
 
 def get_number_of_valence_electrons(Z):
-    ''' Return the number of valence electrons for the element with
-        atomic number Z, simply based on its periodic table group '''
+    """ Return the number of valence electrons for the element with
+        atomic number Z, simply based on its periodic table group """
     groups = [[], [1, 3, 11, 19, 37, 55, 87], [2, 4, 12, 20, 38, 56, 88],
               [21, 39, 57, 89]]
 
@@ -299,7 +299,7 @@ def get_number_of_valence_electrons(Z):
 
 
 class BondElectroNegativityModel(PairwiseHarmonicPotential):
-    ''' Pairwise harmonic potential where the force constants are
+    """ Pairwise harmonic potential where the force constants are
         determined using the "bond electronegativity" model, see:
 
       * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
@@ -310,7 +310,7 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
 
         __ https://dx.doi.org/10.1103/PhysRevB.84.092103
 
-    '''
+    """
 
     def calculate_force_constants(self):
         cell = self.atoms.get_cell()
@@ -353,7 +353,7 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
 
 
 class SoftMutation(OffspringCreator):
-    '''
+    """
     Mutates the structure by displacing it along the lowest (nonzero)
     frequency modes found by vibrational analysis, as in:
 
@@ -403,7 +403,7 @@ class SoftMutation(OffspringCreator):
 
     use_tags: boolean
               Whether to use the atomic tags to preserve molecular identity.
-    '''
+    """
 
     def __init__(self, blmin, bounds=[0.5, 2.0],
                  calculator=BondElectroNegativityModel, rcut=10.,
@@ -427,10 +427,10 @@ class SoftMutation(OffspringCreator):
                 pass
 
     def _get_hessian_(self, atoms, dx):
-        '''
+        """
         Returns the Hessian matrix d2E/dxi/dxj using a first-order
         central difference scheme with displacements dx.
-        '''
+        """
         N = len(atoms)
         pos = atoms.get_positions()
         hessian = np.zeros((3 * N, 3 * N))
@@ -456,7 +456,7 @@ class SoftMutation(OffspringCreator):
         return hessian
 
     def _calculate_normal_modes_(self, atoms, dx=0.02, massweighing=False):
-        '''Performs the vibrational analysis.'''
+        """Performs the vibrational analysis."""
         hessian = self._get_hessian_(atoms, dx)
         if massweighing:
             m = np.array([np.repeat(atoms.get_masses()**-0.5, 3)])
@@ -467,7 +467,7 @@ class SoftMutation(OffspringCreator):
         return modes
 
     def _animate_mode_(self, atoms, mode, nim=30, amplitude=1.0):
-        '''Returns an Atoms object showing an animation of the mode.'''
+        """Returns an Atoms object showing an animation of the mode."""
         pos = atoms.get_positions()
         mode = mode.reshape(np.shape(pos))
         animation = []
@@ -479,14 +479,14 @@ class SoftMutation(OffspringCreator):
         return animation
 
     def read_used_modes(self, filename):
-        ''' Read used modes from json file. '''
+        """ Read used modes from json file. """
         with open(filename, 'r') as f:
             modes = json.load(f)
             self.used_modes = {int(k): modes[k] for k in modes}
         return
 
     def write_used_modes(self, filename):
-        ''' Dump used modes to json file. '''
+        """ Dump used modes to json file. """
         with open(filename, 'w') as f:
             json.dump(self.used_modes, f)
         return
