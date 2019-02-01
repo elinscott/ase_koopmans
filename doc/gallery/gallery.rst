@@ -69,3 +69,12 @@ Nanoparticle
 :mod:`ase.cluster`
 :download:`cluster.py <../ase/cluster/cluster.py>`
 
+
+Pretty pictures
+===============
+
+.. image:: ../ase/spacegroup/spacegroup-cosb3.png
+   :width: 10cm
+
+:mod:`ase.spacegroup`
+:download:`cosb3.py <../ase/spacegroup/spacegroup-cosb3.py>`

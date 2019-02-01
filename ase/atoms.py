@@ -244,6 +244,11 @@ class Atoms(object):
     def symbols(self):
         return Symbols(self.numbers)
 
+    @symbols.setter
+    def symbols(self, obj):
+        new_symbols = Symbols.fromsymbols(obj)
+        self.numbers[:] = new_symbols.numbers
+
     def set_calculator(self, calc=None):
         """Attach calculator object."""
         self._calc = calc
