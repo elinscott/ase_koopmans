@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from ase import Atoms
 from ase.ga.utilities import closest_distances_generator, atoms_too_close
@@ -72,3 +73,13 @@ for i, mut in enumerate(mutations):
     assert cellbounds.is_within_bounds(cell)
     assert np.all(a3.numbers == a.numbers)
     assert not atoms_too_close(a3, blmin, use_tags=True)
+
+modes_file = 'modes.txt'
+softmut_with = SoftMutation(blmin, bounds=[2., 5.], use_tags=True,
+                            used_modes_file=modes_file)
+no_muts = 3
+for _ in range(no_muts):
+    softmut_with.get_new_individual([a1])
+softmut_with.read_used_modes(modes_file)
+assert len(list(softmut_with.used_modes.values())[0]) == no_muts
+os.remove(modes_file)
