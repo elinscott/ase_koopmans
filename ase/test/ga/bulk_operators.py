@@ -1,12 +1,14 @@
 import os
 import numpy as np
 from ase import Atoms
+from ase.build import bulk
 from ase.ga.utilities import closest_distances_generator, atoms_too_close
 from ase.ga.bulk_utilities import CellBounds
 from ase.ga.bulk_startgenerator import StartGenerator
 from ase.ga.bulk_crossovers import CutAndSplicePairing
 from ase.ga.bulk_mutations import (SoftMutation, RotationalMutation,
                                    RattleRotationalMutation, StrainMutation)
+from ase.ga.ofp_comparator import OFPComparator
 from ase.ga.offspring_creator import CombinationMutation
 from ase.ga.standardmutations import RattleMutation, PermutationMutation
 
@@ -83,3 +85,19 @@ for _ in range(no_muts):
 softmut_with.read_used_modes(modes_file)
 assert len(list(softmut_with.used_modes.values())[0]) == no_muts
 os.remove(modes_file)
+
+comparator = OFPComparator(recalculate=True)
+gold = bulk('Au') * (2, 2, 2)
+silver = bulk('Ag') * (2, 2, 2)
+assert comparator.looks_like(gold, gold)
+try:
+    comparator.looks_like(gold, silver)
+    raise AssertionError('Different elements should not be supported'
+                         ' by the comparator')
+except AssertionError:
+    pass
+gc = gold.copy()
+gc[0].x += .1
+assert comparator.looks_like(gold, gc)
+gc[0].x += .2
+assert not comparator.looks_like(gold, gc)
