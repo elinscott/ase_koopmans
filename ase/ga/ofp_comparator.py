@@ -6,7 +6,7 @@ from ase.neighborlist import NeighborList
 
 
 class OFPComparator(object):
-    """ Implementation of comparison using Oganov's fingerprint (OFP)
+    """Implementation of comparison using Oganov's fingerprint (OFP)
     functions, based on:
 
       * `Oganov, Valle, J. Chem. Phys. 130, 104504 (2009)`__
@@ -24,18 +24,18 @@ class OFPComparator(object):
 
     dE: float
         Energy difference above which two structures are
-        automatically considered to be different.
+        automatically considered to be different. (Default 1 eV)
 
     cos_dist_max: float
         Maximal cosine distance between two structures in
-        order to be still considered the same structure.
+        order to be still considered the same structure. Default 5e-3
 
     rcut: float
-        Cutoff radius in Angstrom for the fingerprints.
+        Cutoff radius in Angstrom for the fingerprints. (Default 20 Å)
 
     binwidth: float
         Width in Angstrom of the bins over which the fingerprints
-        are discretized.
+        are discretized. (Default 0.05 Å)
 
     pbc: list of three booleans or None
          Specifies whether to apply periodic boundary conditions
@@ -51,27 +51,29 @@ class OFPComparator(object):
 
     maxdims: list of three floats or None
              If PBCs in only 1 or 2 dimensions are specified, the
-             maximal thicknesses along the non-periodic directions
-             can be specified here (the values given for the periodic
-             directions will not be used). If set to None, the length
-             of the cell vector along the non-periodic direction is
-             used.
+             maximal thicknesses along the non-periodic directions can
+             be specified here (the values given for the periodic
+             directions will not be used). If set to None (the
+             default), the length of the cell vector along the
+             non-periodic direction is used.
 
              Note: in this implementation, the cell vectors are
              assumed to be orthogonal.
 
     sigma: float
            Standard deviation of the gaussian smearing to be applied
-           in the calculation of the fingerprints (in Angstrom).
+           in the calculation of the fingerprints (in
+           Angstrom). Default 0.02 Å
 
     nsigma: int
             Distance (as the number of standard deviations sigma) at
             which the gaussian smearing is cut off (i.e. no smearing
-            beyond that distance).
+            beyond that distance). (Default 4)
 
     recalculate: boolean
                  If True, ignores the fingerprints stored in
-                 atoms.info and recalculates them.
+                 atoms.info and recalculates them. (Default False)
+
     """
 
     def __init__(self, n_top=None, dE=1.0, cos_dist_max=5e-3, rcut=20.,
@@ -194,12 +196,12 @@ class OFPComparator(object):
             a2.info['fingerprints'] = self._json_encode(fp2, typedic2)
 
         if sorted(fp1) != sorted(fp2):
-            raise AssertionError('The two structures have fingerprints \
-                                  with different compounds.')
+            raise AssertionError('The two structures have fingerprints '
+                                 'with different compounds.')
         for key in typedic1:
             if not np.array_equal(typedic1[key], typedic2[key]):
-                raise AssertionError('The two structures have a different \
-                                      stoichiometry or ordering!')
+                raise AssertionError('The two structures have a different '
+                                     'stoichiometry or ordering!')
 
         cos_dist = self._cosine_distance(fp1, fp2, typedic1)
         return cos_dist
