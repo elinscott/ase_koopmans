@@ -933,7 +933,7 @@ class Turbomole(FileIOCalculator):
             damp_str = 'scf\ndamp\n'
             for par in damp_pars:
                 par_str = str(par) if par else ''
-                damp_str +=  par_str + '\n'
+                damp_str += par_str + '\n'
             damp_str += '\n'
 
         define_str = define_str_tpl
@@ -1551,7 +1551,7 @@ class Turbomole(FileIOCalculator):
             else:
                 match = re.search(r'^\s+(\d+)\s+(\w+)', line)
                 if match:
-                    if len(primitives) is not 0:
+                    if len(primitives) > 0:
                         # end primitives
                         function['primitive functions'] = primitives
                         function['number of primitives'] = len(primitives)
@@ -1636,7 +1636,7 @@ class Turbomole(FileIOCalculator):
                     continue
                 match = re.search(r'^(\w(\-\w)?)', line)
                 if match:
-                    if len(terms) is not 0:
+                    if len(terms) > 0:
                         # end terms
                         group['terms'] = terms
                         group['number of terms'] = len(terms)
