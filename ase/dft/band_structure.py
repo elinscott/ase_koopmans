@@ -131,14 +131,17 @@ class BandStructurePlot:
         emax += self.bs.reference
 
         self.xcoords, label_xcoords, orig_labels = self.bs.get_labels()
-
+        label_xcoords = list(label_xcoords)
         labels = [pretty(name) for name in orig_labels]
+
         i = 1
         while i < len(labels):
             if label_xcoords[i - 1] == label_xcoords[i]:
-                labels[i - 1] = labels[i - 1][:-1] + ',' + labels[i][1:]
-                labels[i] = ''
-            i += 1
+                labels[i - 1] = labels[i - 1] + ',' + labels[i]
+                labels.pop(i)
+                label_xcoords.pop(i)
+            else:
+                i += 1
 
         for x in label_xcoords[1:-1]:
             ax.axvline(x, color='0.5')
