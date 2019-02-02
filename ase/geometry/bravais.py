@@ -840,7 +840,7 @@ class TRI(BravaisLattice):
                                 gamma=gamma)
 
     def _cell(self, a, b, c, alpha, beta, gamma):
-        alpha, beta, gamma = np.array([alpha, beta, gamma]) * (np.pi / 180)
+        alpha, beta, gamma = np.array([alpha, beta, gamma])
         singamma = np.sin(gamma * _degrees)
         cosgamma = np.cos(gamma * _degrees)
         cosbeta = np.cos(beta * _degrees)
@@ -1211,18 +1211,23 @@ def _test_all_variants():
     assert mclc5.variant.name == 'MCLC5'
     yield mclc5
 
-    # wtf, these are weird
-    #tri1a = TRI(a*1.2,a*1.05, a*1.1, 70,80,88)
-    #yield tri1a
+    def get_tri(kcellpar):
+        # We build the TRI lattices from cellpars of reciprocal cell
+        icell = Cell.fromcellpar(kcellpar)
+        cellpar = Cell(4 * icell.reciprocal()).cellpar()
+        return TRI(*cellpar)
 
-    # XXX TODO:
-    # tri1a
-    # tri1b
-    # tri2a
-    # tri2b
+    tri1a = get_tri([1., 1.2, 1.4, 120., 110., 100.])
+    assert tri1a.variant.name == 'TRI1a'
+    yield tri1a
 
-#def get_bravais_lattice(uc, eps=2e-4):
-#    bravaisclass, parameters = get_bravais_lattice1(uc, eps=eps)
-#    # XXX MCL does not get alpha.  Only a, b, c
-#    bravais = bravaisclass(**parameters)
-#    return bravais
+    tri1b = get_tri([1., 1.2, 1.4, 50., 60., 70.])
+    assert tri1b.variant.name == 'TRI1b'
+    yield tri1b
+
+    tri2a = get_tri([1., 1.2, 1.4, 120., 110., 90.])
+    assert tri2a.variant.name == 'TRI2a'
+    yield tri2a
+    tri2b = get_tri([1., 1.2, 1.4, 50., 60., 90.])
+    assert tri2b.variant.name == 'TRI2b'
+    yield tri2b
