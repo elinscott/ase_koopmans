@@ -11,7 +11,7 @@ from random import gauss
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 from ase.build import niggli_reduce
-from ase.ga.offspring_creator import OffspringCreator
+from ase.ga.offspring_creator import OffspringCreator, CombinationMutation
 from ase.ga.utilities import (atoms_too_close, atoms_too_close_two_sets,
                               gather_atoms_by_tag)
 from ase.ga.bulk_utilities import get_rotation_matrix
@@ -160,7 +160,7 @@ class StrainMutation(OffspringCreator):
         return mutant
 
 
-class PermuStrainMutation(OffspringCreator):
+class PermuStrainMutation(CombinationMutation):
     """ Combination of PermutationMutation and StrainMutation.
 
     For more information, see also:
@@ -179,28 +179,10 @@ class PermuStrainMutation(OffspringCreator):
     """
 
     def __init__(self, permutationmutation, strainmutation, verbose=False):
-        OffspringCreator.__init__(self, verbose)
-        self.permutationmutation = permutationmutation
-        self.strainmutation = strainmutation
-
-    def get_new_individual(self, parents):
-        f = parents[0]
-
-        indi = self.mutate(f)
-        if indi is None:
-            return indi, 'mutation: permustrain'
-
-        indi = self.initialize_individual(f, indi)
-        indi.info['data']['parents'] = [f.info['confid']]
-
-        return self.finalize_individual(indi), 'mutation: permustrain'
-
-    def mutate(self, atoms):
-        """ Does the actual mutation. """
-        mutant = self.permutationmutation.mutate(atoms)
-        if mutant is not None:
-            mutant = self.strainmutation.mutate(mutant)
-        return mutant
+        super(PermuStrainMutation, self).__init__(permutationmutation,
+                                                  strainmutation,
+                                                  verbose=verbose)
+        self.descriptor = 'permustrain'
 
 
 class TagFilter:
@@ -253,8 +235,8 @@ class TagFilter:
 
 
 class PairwiseHarmonicPotential:
-    ''' Parent class for interatomic potentials of the type
-        E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2 '''
+    """ Parent class for interatomic potentials of the type
+        E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2 """
 
     def __init__(self, atoms, rcut=10.):
         self.atoms = atoms
@@ -295,8 +277,8 @@ class PairwiseHarmonicPotential:
 
 
 def get_number_of_valence_electrons(Z):
-    ''' Return the number of valence electrons for the element with
-        atomic number Z, simply based on its periodic table group '''
+    """ Return the number of valence electrons for the element with
+        atomic number Z, simply based on its periodic table group """
     groups = [[], [1, 3, 11, 19, 37, 55, 87], [2, 4, 12, 20, 38, 56, 88],
               [21, 39, 57, 89]]
 
@@ -317,7 +299,7 @@ def get_number_of_valence_electrons(Z):
 
 
 class BondElectroNegativityModel(PairwiseHarmonicPotential):
-    ''' Pairwise harmonic potential where the force constants are
+    """ Pairwise harmonic potential where the force constants are
         determined using the "bond electronegativity" model, see:
 
       * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
@@ -328,7 +310,7 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
 
         __ https://dx.doi.org/10.1103/PhysRevB.84.092103
 
-    '''
+    """
 
     def calculate_force_constants(self):
         cell = self.atoms.get_cell()
@@ -371,7 +353,7 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
 
 
 class SoftMutation(OffspringCreator):
-    '''
+    """
     Mutates the structure by displacing it along the lowest (nonzero)
     frequency modes found by vibrational analysis, as in:
 
@@ -421,7 +403,7 @@ class SoftMutation(OffspringCreator):
 
     use_tags: boolean
               Whether to use the atomic tags to preserve molecular identity.
-    '''
+    """
 
     def __init__(self, blmin, bounds=[0.5, 2.0],
                  calculator=BondElectroNegativityModel, rcut=10.,
@@ -444,11 +426,11 @@ class SoftMutation(OffspringCreator):
                 # file doesn't exist (yet)
                 pass
 
-    def _get_hessian_(self, atoms, dx):
-        '''
+    def _get_hessian(self, atoms, dx):
+        """
         Returns the Hessian matrix d2E/dxi/dxj using a first-order
         central difference scheme with displacements dx.
-        '''
+        """
         N = len(atoms)
         pos = atoms.get_positions()
         hessian = np.zeros((3 * N, 3 * N))
@@ -473,9 +455,9 @@ class SoftMutation(OffspringCreator):
 
         return hessian
 
-    def _calculate_normal_modes_(self, atoms, dx=0.02, massweighing=False):
-        '''Performs the vibrational analysis.'''
-        hessian = self._get_hessian_(atoms, dx)
+    def _calculate_normal_modes(self, atoms, dx=0.02, massweighing=False):
+        """Performs the vibrational analysis."""
+        hessian = self._get_hessian(atoms, dx)
         if massweighing:
             m = np.array([np.repeat(atoms.get_masses()**-0.5, 3)])
             hessian *= (m * m.T)
@@ -484,8 +466,8 @@ class SoftMutation(OffspringCreator):
         modes = {eigval: eigvecs[:, i] for i, eigval in enumerate(eigvals)}
         return modes
 
-    def _animate_mode_(self, atoms, mode, nim=30, amplitude=1.0):
-        '''Returns an Atoms object showing an animation of the mode.'''
+    def animate_mode(self, atoms, mode, nim=30, amplitude=1.0):
+        """Returns an Atoms object showing an animation of the mode."""
         pos = atoms.get_positions()
         mode = mode.reshape(np.shape(pos))
         animation = []
@@ -497,14 +479,14 @@ class SoftMutation(OffspringCreator):
         return animation
 
     def read_used_modes(self, filename):
-        ''' Read used modes from json file. '''
+        """ Read used modes from json file. """
         with open(filename, 'r') as f:
             modes = json.load(f)
             self.used_modes = {int(k): modes[k] for k in modes}
         return
 
     def write_used_modes(self, filename):
-        ''' Dump used modes to json file. '''
+        """ Dump used modes to json file. """
         with open(filename, 'w') as f:
             json.dump(self.used_modes, f)
         return
@@ -536,7 +518,7 @@ class SoftMutation(OffspringCreator):
             a = TagFilter(a)
 
         pos = a.get_positions()
-        modes = self._calculate_normal_modes_(a)
+        modes = self._calculate_normal_modes(a)
 
         # Select the mode along which we want to move the atoms;
         # The first 3 translational modes as well as previously
@@ -730,7 +712,7 @@ class RotationalMutation(OffspringCreator):
         return mutant
 
 
-class RattleRotationalMutation(OffspringCreator):
+class RattleRotationalMutation(CombinationMutation):
     """ Combination of RattleMutation and RotationalMutation.
 
     Parameters:
@@ -743,26 +725,7 @@ class RattleRotationalMutation(OffspringCreator):
     """
 
     def __init__(self, rattlemutation, rotationalmutation, verbose=False):
-        OffspringCreator.__init__(self, verbose)
-        self.rattlemutation = rattlemutation
-        self.rotationalmutation = rotationalmutation
+        super(RattleRotationalMutation, self).__init__(rattlemutation,
+                                                       rotationalmutation,
+                                                       verbose=verbose)
         self.descriptor = 'rattlerotational'
-
-    def get_new_individual(self, parents):
-        f = parents[0]
-
-        indi = self.mutate(f)
-        if indi is None:
-            return indi, 'mutation rattlerotational'
-
-        indi = self.initialize_individual(f, indi)
-        indi.info['data']['parents'] = [f.info['confid']]
-
-        return self.finalize_individual(indi), 'mutation: rattlerotational'
-
-    def mutate(self, atoms):
-        """ Does the actual mutation. """
-        mutant = self.rattlemutation.mutate(atoms)
-        if mutant is not None:
-            mutant = self.rotationalmutation.mutate(mutant)
-        return mutant

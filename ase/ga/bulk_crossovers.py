@@ -128,7 +128,7 @@ class CutAndSplicePairing(OffspringCreator):
             weights = [1 - w_adapt, w_adapt]
             self.scaling_volume = np.average(volumes, weights=weights)
 
-    def _get_pairing_(self, a1, a2, direction=None, fraction=None):
+    def _get_pairing(self, a1, a2, direction=None, fraction=None):
         """
         Creates a child from two parents using the given cutting plane
         Does not check whether atoms are too close, but does return
@@ -352,8 +352,8 @@ class CutAndSplicePairing(OffspringCreator):
 
             # Perform the pairing:
             fraction = random()
-            child = self._get_pairing_(a1_copy, a2_copy, direction=direction,
-                                       fraction=fraction)
+            child = self._get_pairing(a1_copy, a2_copy, direction=direction,
+                                      fraction=fraction)
             if child is None:
                 continue
 
