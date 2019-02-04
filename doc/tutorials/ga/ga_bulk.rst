@@ -41,7 +41,9 @@ As an example, we will search for the most energetically stable :mol:`Ag_2_4`
 polymorphs using an EMT potential. Note that, in general, the number of atoms
 per unit cell should be chosen carefully, as one will only find crystal structures
 where the stoichiometry of the primitive cell is a divisor of the chosen
-stoichiometry.
+stoichiometry. As the stress tensor is currently not implemented in the EMT
+calculator in ASE, the `ASAP <https://wiki.fysik.dtu.dk/asap/asap>`_ code will
+be used instead.
 
 
 Initial population

@@ -3,10 +3,7 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.optimize import FIRE
 from ase.constraints import ExpCellFilter
 from ase.ga import set_raw_score
-try:
-    from asap3 import EMT
-except ImportError:
-    from ase.calculators.emt import EMT
+from asap3 import EMT
 
 
 def finalize(atoms, energy=None, forces=None, stress=None):
