@@ -31,11 +31,12 @@ class OFPComparator(object):
         order to be still considered the same structure. Default 5e-3
 
     rcut: float
-        Cutoff radius in Angstrom for the fingerprints. (Default 20 Å)
+        Cutoff radius in Angstrom for the fingerprints.
+        (Default 20 Angstrom)
 
     binwidth: float
         Width in Angstrom of the bins over which the fingerprints
-        are discretized. (Default 0.05 Å)
+        are discretized. (Default 0.05 Angstrom)
 
     pbc: list of three booleans or None
          Specifies whether to apply periodic boundary conditions
@@ -63,7 +64,7 @@ class OFPComparator(object):
     sigma: float
            Standard deviation of the gaussian smearing to be applied
            in the calculation of the fingerprints (in
-           Angstrom). Default 0.02 Å
+           Angstrom). Default 0.02 Angstrom.
 
     nsigma: int
             Distance (as the number of standard deviations sigma) at
