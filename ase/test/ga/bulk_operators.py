@@ -88,16 +88,13 @@ os.remove(modes_file)
 
 comparator = OFPComparator(recalculate=True)
 gold = bulk('Au') * (2, 2, 2)
-silver = bulk('Ag') * (2, 2, 2)
 assert comparator.looks_like(gold, gold)
-try:
-    comparator.looks_like(gold, silver)
-    raise AssertionError('Different elements should not be supported'
-                         ' by the comparator')
-except AssertionError:
-    pass
+
+# This move should not exceed the default threshold
 gc = gold.copy()
 gc[0].x += .1
 assert comparator.looks_like(gold, gc)
+
+# An additional step will exceed the threshold
 gc[0].x += .2
 assert not comparator.looks_like(gold, gc)
