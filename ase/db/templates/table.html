@@ -30,7 +30,7 @@
     </div>
     <div class="row">
     {% for control in ctrl %}
-      <div class="col-md-4" style="margin-top:5px">
+      <div class="col-md-3" style="margin-top:5px">
         {% if control[0] == 'SELECT' %}
             {{ select(control) }}
         {% elif control[0] == 'BOOL' %}
@@ -229,6 +229,7 @@
 {% set key, text, choises = control[1:] %}
 {% set choise = con.query[1][key] %}
 {{ text }}:
+</div><div class="col-md-7" style="margin-top:5px">
 <select name="select_{{ key }}">
 <option value="">-</option>
 {% for val in choises %}
@@ -243,7 +244,9 @@
 {% macro boolean(control) %}
 {% set key, text = control[1:] %}
 {% set choise = con.query[1][key] %}
-{{ text }}:<select name="bool_{{ key }}">
+{{ text }}:
+</div><div class="col-md-7" style="margin-top:5px">
+<select name="bool_{{ key }}">
 <option value="" {% if '' == choise %} selected {% endif %}>-</option>
 <option value="1" {% if '1' == choise %} selected {% endif %}>Yes</option>
 <option value="0" {% if '0' == choise %} selected {% endif %}>No</option>
@@ -254,6 +257,7 @@
 {% set id, text, choises = control[1:] %}
 {% set v1, v2, var = con.query[1].get(id, ['', '', '']) %}
 {{ text }}:
+</div><div class="col-md-7" style="margin-top:5px">
 <input type="text" name="from_{{ id }}" value="{{ v1 }}" size="6"> -
 <input type="text" name="to_{{ id }}" value="{{ v2 }}" size="6">
 <select name="range_{{ id }}">
@@ -267,10 +271,10 @@
 {% endmacro %}
 
 {% macro mysrange(control) %}
-{% set key, description, choises = control[1:] %}
+{% set key, description, choises = control[1:4] %}
 {% set v1, v2 = con.query[1].get(key, ['', '']) %}
 {{ description }}:
-</div><div class="col-md-6" style="margin-top:5px">
+</div><div class="col-md-7" style="margin-top:5px">
 <select name="from_{{ key }}">
 <option value="">-</option>
 {% for val, text in choises.items() %}
