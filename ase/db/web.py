@@ -65,8 +65,8 @@ def process_metadata(db, html: bool = True):  # -> Dict
             pass
         else:
             # SRANGE
-            choises = special[2]
-            special = ['SRANGE', key, description, choises]
+            choises, start, stop = special[2:]
+            special = ['SRANGE', key, description, choises, start, stop]
 
         sk.append(special)
     meta['special_keys'] = sk
