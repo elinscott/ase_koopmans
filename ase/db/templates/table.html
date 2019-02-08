@@ -271,8 +271,8 @@
 {% endmacro %}
 
 {% macro mysrange(control) %}
-{% set key, description, choises, d1, d2 = control[1:] %}
-{% set v1, v2 = con.query[1].get(key, [d1, d2]) %}
+{% set key, description, choises = control[1:] %}
+{% set v1, v2 = con.query[1].get(key, ['', '']) %}
 {{ description }}:
 </div><div class="col-md-7" style="margin-top:5px">
 <select name="from_{{ key }}">
