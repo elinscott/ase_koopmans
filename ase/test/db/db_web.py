@@ -17,10 +17,8 @@ c.write(atoms,
         data={'x': x,
               't1': t1,
               't2': t2})
-
-c.python = {'title': 'Test title',
-            'key_descriptions':
-                {'foo': ('FOO', 'FOO ...', '`m_e`')},
+c.metadata = {'title': 'Test title'}
+c.python = {'key_descriptions': {'foo': ('FOO', 'FOO ...', '`m_e`')},
             'default_columns': ['foo', 'formula', 'bar']}
 app.databases['default'] = c
 app.initialize_databases()

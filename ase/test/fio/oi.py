@@ -115,6 +115,9 @@ def test(format):
 
     atoms = get_atoms()
 
+    if format == 'dlp4':
+        atoms.pbc = (1, 1, 0)
+
     images = [atoms, atoms]
 
     io = get_ioformat(format)
