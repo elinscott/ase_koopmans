@@ -140,6 +140,11 @@ Keyword                               Description
                                   'atom_style atomic',
                                   'atom_modify map array sort 0 0'])
 
+``amendments``     extra list of strings of LAMMPS commands to be run post
+                   post initialization. (Use: Initialization amendments)
+
+                   ["mass 1 58.6934"]
+
 ``keep_alive``     Boolean
                    whether to keep the lammps routine alive for more commands
 
@@ -380,6 +385,9 @@ by invoking the get_potential_energy() method::
         self.lmp.command('echo log')  # switch back log
 
         self.set_lammps_pos(atoms)
+
+        for cmd in self.parameters.amendments:
+            self.lmp.command(cmd)
 
         if n_steps > 0:
             if velocity_field is None:
