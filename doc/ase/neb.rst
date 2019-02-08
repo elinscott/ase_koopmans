@@ -216,3 +216,15 @@ A class exists to help in automating the analysis of NEB jobs. See the
 
 .. autoclass:: NEBTools
    :members:
+
+
+AutoNEB
+=======
+
+.. warning::
+
+    The module from where the :class:`ase.autoneb.AutoNEB` class is imported
+    may be changed some day in a future version of ASE
+    (most likely to :mod:`ase.neb` or :mod:`ase.mep`).
+
+.. autoclass:: ase.autoneb.AutoNEB
