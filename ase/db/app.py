@@ -202,8 +202,8 @@ def index(project):
             else:  # SRANGE
                 v1 = request.args['from_' + key]
                 v2 = request.args['to_' + key]
-                dct[key] = (int(v1) if v1 else special[3],
-                            int(v2) if v2 else special[4])
+                dct[key] = (int(v1) if v1 else special[4],
+                            int(v2) if v2 else special[5])
                 if v1:
                     q += ',{}>={}'.format(key, v1)
                 if v2:
