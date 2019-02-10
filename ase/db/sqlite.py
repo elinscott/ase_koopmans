@@ -755,6 +755,10 @@ class SQLite3Database(Database, object):
         dtype: str
             Datatype of the value field (typically REAL, INTEGER, TEXT etc.)
         """
+        if name in all_tables:
+            raise ValueError("External table can not be any of {}"
+                             "".format(all_tables))
+
         if self.external_table_exists(name):
             return
 
