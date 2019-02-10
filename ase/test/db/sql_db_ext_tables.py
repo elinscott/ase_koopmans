@@ -6,6 +6,7 @@ import numpy as np
 
 DB_NAMES = ["test_ext_tables.db", "postgresql"]
 
+
 def get_db_name(name):
     if name == 'postgresql':
         if os.environ.get('POSTGRES_DB'):  # gitlab-ci
@@ -13,6 +14,7 @@ def get_db_name(name):
         else:
             name = os.environ.get('ASE_TEST_POSTGRES_URL')
     return name
+
 
 def test_create_and_delete_ext_tab(db_name):
     ext_tab = ["tab1", "tab2", "tab3"]
@@ -27,13 +29,20 @@ def test_create_and_delete_ext_tab(db_name):
     db.delete_external_table("tab1")
     assert sorted(db.get_external_table_names()) == ["tab2", "tab3"]
 
+
 def test_insert_in_external_tables(db_name):
     atoms = Atoms()
     db = connect(db_name)
 
     # Now a table called insert_tab with schema datatype REAL should
     # be created
-    uid = db.write(atoms, external_tables={"insert_tab": {"rate": 1.0, "rate1": -2.0}})
+    uid = db.write(
+        atoms,
+        external_tables={
+            "insert_tab": {
+                "rate": 1.0,
+                "rate1": -
+                2.0}})
 
     db.delete([uid])
 
@@ -49,7 +58,7 @@ def test_insert_in_external_tables(db_name):
         con.close()
     assert not entries
 
-    # Make sure that there are now entries in the 
+    # Make sure that there are now entries in the
     # external table with current uid
 
     # Try to insert something that should not pass
@@ -61,13 +70,19 @@ def test_insert_in_external_tables(db_name):
     db.write(atoms, external_tables={"insert_tab": {"rate": np.float32(1.0)}})
     db.write(atoms, external_tables={"insert_tab": {"rate": np.float64(1.0)}})
 
-    # Make sure that we cannot insert a Numpy integer types into 
+    # Make sure that we cannot insert a Numpy integer types into
     # a float array
     with must_raise(ValueError):
-        db.write(atoms, external_tables={"insert_tab": {"rate": np.int32(1.0)}})
+        db.write(
+            atoms, external_tables={
+                "insert_tab": {
+                    "rate": np.int32(1.0)}})
 
     with must_raise(ValueError):
-        db.write(atoms, external_tables={"insert_tab": {"rate": np.int64(1.0)}})
+        db.write(
+            atoms, external_tables={
+                "insert_tab": {
+                    "rate": np.int64(1.0)}})
 
     # Create a new table should have INTEGER types
     db.write(atoms, external_tables={"integer_tab": {"rate": 1}})
@@ -78,14 +93,25 @@ def test_insert_in_external_tables(db_name):
 
     # Make sure that we cannot insert float
     with must_raise(ValueError):
-        db.write(atoms, external_tables={"integer_tab": {"rate": np.float32(1)}})
-    
+        db.write(
+            atoms, external_tables={
+                "integer_tab": {
+                    "rate": np.float32(1)}})
+
     with must_raise(ValueError):
-        db.write(atoms, external_tables={"integer_tab": {"rate": np.float64(1)}})
+        db.write(
+            atoms, external_tables={
+                "integer_tab": {
+                    "rate": np.float64(1)}})
 
     # Make sure that ValueError is raised with mixed datatypes
     with must_raise(ValueError):
-        db.write(atoms, external_tables={"integer_tab": {"rate": 1, "rate2": 2.0}})
+        db.write(
+            atoms,
+            external_tables={
+                "integer_tab": {
+                    "rate": 1,
+                    "rate2": 2.0}})
 
     # Test that we cannot insert anything into a reserved table name
     from ase.db.sqlite import all_tables
@@ -97,7 +123,13 @@ def test_insert_in_external_tables(db_name):
 def test_extract_from_table(db_name):
     atoms = Atoms()
     db = connect(db_name)
-    uid = db.write(atoms, external_tables={"insert_tab": {"rate": 12.0, "rate1": -10.0}})
+    uid = db.write(
+        atoms,
+        external_tables={
+            "insert_tab": {
+                "rate": 12.0,
+                "rate1": -
+                10.0}})
 
     row = db.get(id=uid)
     assert abs(row["insert_tab"]["rate"] - 12.0) < 1E-8
@@ -107,14 +139,14 @@ def test_extract_from_table(db_name):
 def test_write_atoms_row(db_name):
     atoms = Atoms()
     db = connect(db_name)
-    uid = db.write(atoms, external_tables={"insert_tab": {"rate": 12.0, "rate1": -10.0}, 
-                                           "another_tab": {"somevalue": 1.0}})
+    uid = db.write(
+        atoms, external_tables={"insert_tab": {"rate": 12.0, "rate1": -10.0},
+                                "another_tab": {"somevalue": 1.0}})
     row = db.get(id=uid)
 
-    # Hack: Just change the unique ID 
+    # Hack: Just change the unique ID
     row["unique_id"] = "uniqueIDTest"
     db.write(row)
-
 
 
 for db_name in DB_NAMES:
