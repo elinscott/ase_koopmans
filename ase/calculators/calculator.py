@@ -104,7 +104,7 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 # Recognized names of calculators sorted alphabetically:
 names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
-         'demon', 'dftb', 'dmol', 'eam', 'elk', 'emt', 'espresso',
+         'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
          'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
          'hotbit', 'jacapo', 'lammpsrun',
          'lammpslib', 'lj', 'mopac', 'morse', 'nwchem', 'octopus', 'onetep',
@@ -112,6 +112,7 @@ names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
 
 
 special = {'cp2k': 'CP2K',
+           'dftd3': 'DFTD3',
            'dmol': 'DMol3',
            'eam': 'EAM',
            'elk': 'ELK',
@@ -681,7 +682,7 @@ class Calculator(object):
 class FileIOCalculator(Calculator):
     """Base class for calculators that write/read input/output files."""
 
-    command = None
+    command = None  # str
     'Command used to start calculation'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
@@ -701,15 +702,16 @@ class FileIOCalculator(Calculator):
             name = 'ASE_' + self.name.upper() + '_COMMAND'
             self.command = os.environ.get(name, self.command)
 
-    def calculate(self, atoms=None, properties=['energy'],
-                  system_changes=all_changes):
-        Calculator.calculate(self, atoms, properties, system_changes)
-        self.write_input(self.atoms, properties, system_changes)
         if self.command is None:
             raise CalculatorSetupError(
                 'Please set ${} environment variable '
                 .format('ASE_' + self.name.upper() + '_COMMAND') +
                 'or supply the command keyword')
+
+    def calculate(self, atoms=None, properties=['energy'],
+                  system_changes=all_changes):
+        Calculator.calculate(self, atoms, properties, system_changes)
+        self.write_input(self.atoms, properties, system_changes)
         command = self.command.replace('PREFIX', self.prefix)
         errorcode = subprocess.call(command, shell=True, cwd=self.directory)
 
