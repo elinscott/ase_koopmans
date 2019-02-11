@@ -317,7 +317,7 @@ class DFTD3(FileIOCalculator):
                         raise RuntimeError(message)
 
                     if line.startswith(' Edisp'):
-                        # line looks something lik this:
+                        # line looks something like this:
                         #
                         #     Edisp /kcal,au,ev: xxx xxx xxx
                         #
