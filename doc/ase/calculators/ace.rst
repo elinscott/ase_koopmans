@@ -45,6 +45,7 @@ A Force calculation can be set up::
     
 
 A Geometry optimization calculation can be set up:: 
+
     import sys
     from ase.io import read
     from ase.calculators.ace_cal import ACE
@@ -60,7 +61,8 @@ A Geometry optimization calculation can be set up::
     g_opt.run(fmax=0.05)
     print ("OPT is end")
 
-A TDDFT calculation can be set up ::
+A TDDFT calculation can be set up::
+
    import sys
    from ase.io import read
    from ase.calculators.ace_cal import ACE
