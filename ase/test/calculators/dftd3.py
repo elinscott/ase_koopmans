@@ -10,6 +10,7 @@ releps = 1e-6
 abseps = 1e-8
 
 def close(val, reference, releps=releps, abseps=abseps):
+    print(val, reference)
     assert np.abs(val - reference) < max(np.abs(releps * reference), abseps)
 
 def array_close(val, reference, releps=releps, abseps=abseps):
@@ -19,9 +20,6 @@ def array_close(val, reference, releps=releps, abseps=abseps):
         close(vali, refflat[i], releps, abseps)
 
 def main():
-    if "ASE_DFTD3_COMMAND" not in os.environ:
-        raise NotAvailable('$ASE_DFTD3_COMMAND not defined')
-    
     # do all non-periodic calculations with Adenine-Thymine complex
     system = create_s22_system('Adenine-thymine_complex_stack')
 
@@ -60,9 +58,9 @@ def main():
                       [-0.0019694065480327,  0.0115576523485515,  0.0083901101633852],
                       [-0.0020036820791533,  0.0109276020920431,  0.0204922407855956],
                       [-0.0062424587308054,  0.0069848349714167,  0.0088791235460659]])
-    
+
     array_close(system.get_forces(), f_ref)
-    
+
     # calculate numerical forces, but use very loose comparison criteria!
     # dftd3 doesn't print enough digits to stdout to get good convergence
     f_numer = system.calc.calculate_numerical_forces(system, d=1e-4)
@@ -113,10 +111,10 @@ def main():
 
     # use diamond for bulk system
     system = bulk('C')
-    
+
     system.set_calculator(DFTD3())
     close(system.get_potential_energy(), -0.2160072476277501)
-    
+
     # Do one stress for the default settings
     s_ref = np.array([ 0.0182329043326,
                        0.0182329043326,
@@ -126,7 +124,7 @@ def main():
                       -3.22766949320e-14])
 
     array_close(system.get_stress(), s_ref)
-    
+
     # As with numerical forces, numerical stresses will not be very well
     # converged due to the limited number of digits printed to stdout
     # by dftd3. So, use very loose comparison criteria.
