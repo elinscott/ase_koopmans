@@ -33,15 +33,16 @@ import ase
 from ase.io import read
 from ase.utils import basestring
 
-from ase.calculators.calculator import (FileIOCalculator, ReadError,
-                                        all_changes)
+from ase.calculators.calculator import (Calculator, ReadError,
+                                        all_changes, CalculatorSetupError,
+                                        CalculationFailed)
 
 from ase.calculators.vasp.create_input import GenerateVaspInput
 
 
-class Vasp2(GenerateVaspInput, FileIOCalculator):
+class Vasp2(GenerateVaspInput, Calculator):
     """ASE interface for the Vienna Ab initio Simulation Package (VASP),
-    with the FileIOCalculator interface.
+    with the Calculator interface.
 
         Parameters:
 
@@ -116,8 +117,8 @@ class Vasp2(GenerateVaspInput, FileIOCalculator):
             # We restart in the label directory
             restart = label
 
-        FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
-                                  label, atoms, command, **kwargs)
+        Calculator.__init__(self, restart, ignore_bad_restart_file,
+                            label, atoms, **kwargs)
 
         self.command = command
 
@@ -156,15 +157,15 @@ class Vasp2(GenerateVaspInput, FileIOCalculator):
                         break
             else:
                 msg = ('Please set either command in calculator'
-                       ' or one of the following environment'
+                       ' or one of the following environment '
                        'variables (prioritized as follows): {}').format(
                            ', '.join(self.env_commands))
-                raise RuntimeError(msg)
+                raise CalculatorSetupError(msg)
         return cmd
 
     def set(self, **kwargs):
         """Override the set function, to test for changes in the
-        Vasp FileIO Calculator, then call the create_input.set()
+        Vasp Calculator, then call the create_input.set()
         on remaining inputs for VASP specific keys.
 
         Allows for setting ``label``, ``directory`` and ``txt``
@@ -191,7 +192,7 @@ class Vasp2(GenerateVaspInput, FileIOCalculator):
             atoms = kwargs.pop('atoms')
             self.set_atoms(atoms)  # Resets results
 
-        changed_parameters.update(FileIOCalculator.set(self, **kwargs))
+        changed_parameters.update(Calculator.set(self, **kwargs))
 
         # We might at some point add more to changed parameters, or use it
         if changed_parameters:
@@ -276,8 +277,8 @@ class Vasp2(GenerateVaspInput, FileIOCalculator):
             os.chdir(olddir)
 
         if errorcode:
-            raise RuntimeError('{} in {} returned an error: {:d}'.format(
-                               self.name, self.directory, errorcode))
+            raise CalculationFailed('{} in {} returned an error: {:d}'.format(
+                self.name, self.directory, errorcode))
 
         # Read results from calculation
         self.update_atoms(atoms)
@@ -307,7 +308,7 @@ class Vasp2(GenerateVaspInput, FileIOCalculator):
             return True
 
         # First we check for default changes
-        system_changes = FileIOCalculator.check_state(self, atoms, tol=tol)
+        system_changes = Calculator.check_state(self, atoms, tol=tol)
 
         # We now check if we have made any changes to the input parameters
         # XXX: Should we add these parameters to all_changes?
@@ -337,7 +338,8 @@ class Vasp2(GenerateVaspInput, FileIOCalculator):
         """Write VASP inputfiles, INCAR, KPOINTS and POTCAR"""
         # Create the folders where we write the files, if we aren't in the
         # current working directory.
-        FileIOCalculator.write_input(self, atoms, properties, system_changes)
+        if self.directory != os.curdir and not os.path.isdir(self.directory):
+            os.makedirs(self.directory)
 
         self.initialize(atoms)
 
@@ -349,7 +351,7 @@ class Vasp2(GenerateVaspInput, FileIOCalculator):
         Raises ReadError if they are not found"""
         if label is None:
             label = self.label
-        FileIOCalculator.read(self, label)
+        Calculator.read(self, label)
 
         # If we restart, self.parameters isn't initialized
         if self.parameters is None:
