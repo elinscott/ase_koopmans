@@ -31,7 +31,7 @@ from warnings import warn
 
 import ase
 from ase.io import read
-from ase.utils import basestring
+from ase.utils import basestring, PurePath
 
 from ase.calculators.calculator import (Calculator, ReadError,
                                         all_changes, CalculatorSetupError,
@@ -981,6 +981,8 @@ class Vasp2(GenerateVaspInput, Calculator):
             return line
 
     def set_txt(self, txt):
+        if isinstance(txt, PurePath):
+            txt = str(txt)
         if txt is None:
             # Default behavoir, write to vasp.out
             self.txt = self.prefix + '.out'
