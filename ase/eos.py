@@ -92,6 +92,32 @@ def check_birchmurnaghan():
     print(simplify(BP.subs(v, v0)))
 
 
+def b3():
+    from sympy import symbols, Rational, diff, simplify
+    v, b, bp, v0 = symbols('v b bp v0')
+    a2 = b / (2 * v0)
+    a3 = (-1 - bp) * b / (6 * v0**2)
+    e = a2 * (v - v0)**2 + a3 * (v - v0)**3
+    print(e)
+    B = diff(e, v, 2) * v
+    BP = -v * diff(B, v) / b
+    print(simplify(B.subs(v, v0)))
+    print(simplify(BP.subs(v, v0)))
+
+
+def dcdft():
+    from sympy import symbols, Rational, simplify, integrate
+    v, c1, d1, v1 = symbols('v c1 d1 v1')
+    c2, d2, v2 = symbols('c2 d2 v2')
+    x1 = v - v1
+    e1 = c1 * x1**2 + d1 * x1**3
+    x2 = v - v2
+    e2 = c2 * x2**2 + d2 * x2**3
+    i = integrate((e1 - e2)**2, v)
+    print(i)
+    print(simplify(i))
+
+
 def pouriertarantola(V, E0, B0, BP, V0):
     'Pourier-Tarantola equation from PRB 70, 224107'
 
