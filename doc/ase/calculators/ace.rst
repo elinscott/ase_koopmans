@@ -25,7 +25,8 @@ A simple calculation can be set up::
     
     label = sys.argv[1]    
     mol= read('H2.xyz')
-    ace = ACE(label=label)
+    basic_list = {'Cell' : 12.0}
+    ace = ACE(label=label, BasicInformation = basic_list)
     mol.set_calculator(ace)
     print (mol.get_potential_energy())
 
@@ -35,7 +36,7 @@ A Force calculation can be set up::
     from ase.io import read
     from ase.calculators.acemolecule import ACE
     
-    basic_list = {'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} }
+    basic_list = {'Cell' : 12.0 ,'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} }
     label = sys.argv[1]    
     mol= read('H2.xyz')
     order_list = ["BasicInformation", "Guess", "Scf", "Force"]
@@ -51,7 +52,7 @@ A Geometry optimization calculation can be set up::
     from ase.calculators.acemolecule import ACE
     from ase.optimize import BFGS
 
-    basic_list = {'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} }
+    basic_list = {'Cell' : 12.0, 'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} }
     label = sys.argv[1]    
     mol= read('H2.xyz')
     order_list = ["BasicInformation", "Guess", "Scf", "Force"]
@@ -70,9 +71,10 @@ A TDDFT calculation can be set up::
    
    label = sys.argv[1]    
    mol= read('H2.xyz')
+   basic_list = {'Cell' : 12.0}
    order_list = ["BasicInformation", "Guess", "Scf", "TDDFT"]
    scf_list = [dict(FinalDiagonalize = dict(NumberOfEigenvalues= 12))]
-   ace = ACE(label=label, Scf= scf_list, order = order_list)
+   ace = ACE(label=label, BasicInformation = basic_list, Scf= scf_list, order = order_list)
    mol.set_calculator(ace)
    print (ace.get_property('excitation-energy', mol))
     
