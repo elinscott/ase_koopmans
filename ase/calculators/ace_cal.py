@@ -68,7 +68,6 @@ class ACE(FileIOCalculator):
     name = 'ace'
     implemented_properties = ['energy', 'forces', 'geometry','excitation-energy']
     system_changes = None
-    user_parameters = OrderedParameters()
     # defaults is default value of ACE-input
     basic_list =[{
                   'Type' : 'Scaling', 'Scaling' : '0.35', 'Basis' : 'Sinc',\
@@ -168,6 +167,15 @@ class ACE(FileIOCalculator):
 #        self.parameters = changed_parameters2
         duplication = []
         if 'Order' in kwargs:
+            order_list = []
+            for element in kwargs['Order']:
+                mod = 0
+                if(element in self.order_key_list):
+                   order_element = self.order_key_list.index(element)
+                   order_list.append(order_element)
+                   mod = 1
+            if(mod == 1):
+                kwargs['Order'] = order_list
             changed_parameters['Order'] = kwargs['Order']
             for i in range(10):
                 j = 0
@@ -190,25 +198,25 @@ class ACE(FileIOCalculator):
                 i=0
                 for val in kwargs[key]: ########## kwargs[key] : basic_list, force_lsit ....
                     element = self.compare_parameters(changed_parameters[key][i], key, val)
-                    print ("--element--")
-                    print(element)
-                    print("-- changed_parameters --")
+#                    print ("--element--")
+#                    print(element)
+#                    print("-- changed_parameters --")
                     print(changed_parameters[key][i])
                     if(element == changed_parameters[key][i]):
-                        print("element is same")
-                        print(self.parameters[key][i])
+#                        print("element is same")
+#                        print(self.parameters[key][i])
                         changed_parameters[key][i].update(val) 
-                        print("element end")
+#                        print("element end")
                     else:
                         duplication.append(element)
                         modified = True
                     i= i+1
                     if(modified):
-                        print("modified")
+#                        print("modified")
                         changed_parameters[key] = duplication
                         duplication = []
-                        print(changed_parameters[key][i-1])
-                        print("modified end")
+#                        print(changed_parameters[key][i-1])
+#                        print("modified end")
 
 #        print("in_set")
 #        print(changed_parameters)
@@ -258,54 +266,6 @@ class ACE(FileIOCalculator):
         for value in quantities:
             self.results[value] = read_acemolecule_out(filename, quantity=value)
 
-#    def read_acemolecule_inp(self, filename):
-#        with open(filename) as fpt:
-#            return self.parse_acemolecule_inp(fpt)
-
-#    def parse_acemolecule_inp(self, fpt, preserve_comment=False, sublist_name="root"):
-#        param = OrderedParameters()
-#        for line2 in fpt:
-#            line = line2.strip()
-#            line = line.replace('%%', '%% ')
-#            line = sub(r"(#+)", r"\1 ", line)
-#            if not preserve_comment:
-#                line = line.split('#')[0].strip()
-#            if len(line) == 0:
-#                continue
-#            L_line = line.split()
-#
-#            if len(L_line) < 2:
-#                if not L_line[0] in param:
-#                    param[L_line[0]] = ""
-#            else:
-#                if L_line[0] == "%%":
-#                    if L_line[1] == "End":
-#                        return param
-#                    else:
-#                        param[L_line[1]] = self.parse_acemolecule_inp(fpt, preserve_comment, L_line[1])
-#                elif L_line[0] in param:
-#                    if not type(param[L_line[0]]) is list:
-#                        param[L_line[0]] = [param[L_line[0]]]
-#                    param[L_line[0]].append(" ".join(L_line[1:]))
-#                else:
-#                    param[L_line[0]] = " ".join(L_line[1:])
-#        if not "root" == sublist_name:
-#            raise ReadError("Not matching ending block in " + sublist_name)
-#        return param
-
-#    def append_args(self, old_param, new_args):
-#        param = deepcopy(old_param)
-#        for key, val in new_args.items():
-#            key_list = key.split('.')
-#            param2 = param
-#        for key2 in key_list[:-1]:
-#            param2 = param2.setdefault(key2, OrderedDict())
-#        if val is not None:
-#            if type(val) is list:
-#                param2[key_list[-1]] = val
-#            else:
-#                param2[key_list[-1]] = str(val)
-#        return param
 
     def write_acemolecule_section(self, fpt, section,indent = 0):
         for key, val in section.items():
