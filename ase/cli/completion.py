@@ -37,7 +37,7 @@ def update(filename, commands):
     import textwrap
     from ase.utils import import_module
 
-    dct = {}  # type: Dict[str, List[str]]
+    dct = {}  # Dict[str, List[str]]
 
     class Subparser:
         def __init__(self, command):
