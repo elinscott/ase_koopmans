@@ -70,6 +70,11 @@ wien2k_Bp      : 4.860
 wien2k_volume  : 11.951
 
 
+.. seealso::
+
+    :ref:`dcdft tut`.
+
+
 G2 ...
 ======
 

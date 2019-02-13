@@ -28,6 +28,7 @@ but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
    lattice_constant
    eos/eos
    db/db
+   dcdft/dcdft
    constraints/diffusion
    selfdiffusion/al110
    neb/diffusion
