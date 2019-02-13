@@ -1553,20 +1553,18 @@ class GenerateVaspInput(object):
                              for line in lines[3:]])
         self.set(kpts=kpts)
 
-    def read_potcar(self):
+    def read_potcar(self, filename='POTCAR'):
         """ Read the pseudopotential XC functional from POTCAR file.
         """
-        file = open('POTCAR', 'r')
-        lines = file.readlines()
-        file.close()
 
         # Search for key 'LEXCH' in POTCAR
         xc_flag = None
-        for line in lines:
-            key = line.split()[0].upper()
-            if key == 'LEXCH':
-                xc_flag = line.split()[-1].upper()
-                break
+        with open(filename, 'r') as f:
+            for line in f:
+                key = line.split()[0].upper()
+                if key == 'LEXCH':
+                    xc_flag = line.split()[-1].upper()
+                    break
 
         if xc_flag is None:
             raise ValueError('LEXCH flag not found in POTCAR file.')
