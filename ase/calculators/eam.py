@@ -80,13 +80,13 @@ where `\mu_i^\alpha` is the dipole vector, `\lambda_i^{\alpha\beta}`
 is the quadrupole tensor and `\nu_i` is the trace of
 `\lambda_i^{\alpha\beta}`.
 
-The fs potential is defined as 
+The fs potential is defined as
 
 .. math::
    E_i = F_\alpha (\sum_{j\neq i} \rho_{\alpha \beta}(r_{ij}))
    + \frac{1}{2}\sum_{j\neq i}\phi_{\alpha \beta}(r_{ij})
-   
-where `\alpha` and `\beta` are element types of atoms. This form is similar to 
+
+where `\alpha` and `\beta` are element types of atoms. This form is similar to
 original EAM formula above, except that `\rho` and `\phi` are determined
 by element types.
 
@@ -122,7 +122,7 @@ Arguments
 =========================  ====================================================
 Keyword                    Description
 =========================  ====================================================
-``potential``              file of potential in ``.alloy``, ``.adp`` or ``.fs`` 
+``potential``              file of potential in ``.alloy``, ``.adp`` or ``.fs``
                            format (This is generally all you need to supply)
 
 ``elements[N]``            array of N element abbreviations
@@ -148,8 +148,8 @@ Keyword                    Description
                            call to the ``update()`` method then the neighbor
                            list can be reused. Defaults to 1.0.
 
-``form``                   the form of the potential ``alloy``, ``adp`` or 
-                           ``fs``. This will be determined from the file suffix 
+``form``                   the form of the potential ``alloy``, ``adp`` or
+                           ``fs``. This will be determined from the file suffix
                            or must be set if using equations
 
 =========================  ====================================================
@@ -670,10 +670,10 @@ End EAM Interface Documentation
         # check we have all the properties requested
         for property in properties:
             if property not in self.results:
-                if property is 'energy':
+                if property == 'energy':
                     self.calculate_energy(self.atoms)
 
-                if property is 'forces':
+                if property == 'forces':
                     self.calculate_forces(self.atoms)
 
         # we need to remember the previous state of parameters
