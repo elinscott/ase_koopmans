@@ -21,7 +21,7 @@ A simple calculation can be set up::
 
     import sys
     from ase.io import read
-    from ase.calculators.ace_cal import ACE
+    from ase.calculators.acemolecule import ACE
     
     label = sys.argv[1]    
     mol= read('H2.xyz')
@@ -33,7 +33,7 @@ A Force calculation can be set up::
     
     import sys
     from ase.io import read
-    from ase.calculators.ace_cal import ACE
+    from ase.calculators.acemolecule import ACE
     
     basic_list = [{'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} } ]
     label = sys.argv[1]    
@@ -48,7 +48,7 @@ A Geometry optimization calculation can be set up::
 
     import sys
     from ase.io import read
-    from ase.calculators.ace_cal import ACE
+    from ase.calculators.acemolecule import ACE
     from ase.optimize import BFGS
 
     basic_list = [{'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} } ]
@@ -65,7 +65,7 @@ A TDDFT calculation can be set up::
 
    import sys
    from ase.io import read
-   from ase.calculators.ace_cal import ACE
+   from ase.calculators.acemolecule import ACE
    from ase.optimize import BFGS
    
    label = sys.argv[1]    

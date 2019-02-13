@@ -1,5 +1,5 @@
 from ase import Atoms
-from ase.calculators.ace_cal import ACE
+from ase.calculators.acemolecule import ACE
 
 label = "test"
 mol = Atoms('H2',[(0, 0, 0),(0, 0, 0.7)])
