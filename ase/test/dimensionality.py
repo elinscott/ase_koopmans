@@ -1,6 +1,6 @@
-from ase.geometry import analyze_dimensionality
 import ase.build
 from ase.lattice.cubic import FaceCenteredCubic
+from ase.geometry import analyze_dimensionality
 
 
 # 2D test
