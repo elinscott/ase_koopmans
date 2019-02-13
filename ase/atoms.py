@@ -1364,9 +1364,13 @@ class Atoms(object):
         if mic:
             a, b, c = find_mic([a, b, c], self._cell, self._pbc)[0]
         bxa = np.cross(b, a)
-        bxa /= np.linalg.norm(bxa)
         cxb = np.cross(c, b)
-        cxb /= np.linalg.norm(cxb)
+        bxanorm = np.linalg.norm(bxa)
+        cxbnorm = np.linalg.norm(cxb)
+        if bxanorm == 0 or cxbnorm == 0:
+            raise ZeroDivisionError('Undefined dihedral angle')
+        bxa /= bxanorm
+        cxb /= cxbnorm
         angle = np.vdot(bxa, cxb)
         # check for numerical trouble due to finite precision:
         if angle < -1:
