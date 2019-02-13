@@ -35,11 +35,11 @@ A Force calculation can be set up::
     from ase.io import read
     from ase.calculators.acemolecule import ACE
     
-    basic_list = [{'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} } ]
+    basic_list = {'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} }
     label = sys.argv[1]    
     mol= read('H2.xyz')
-    order_list = [0, 1, 2, 3]
-    ace = ACE(label=label, BasicInformation = basic_list, Order = order_list)
+    order_list = ["BasicInformation", "Guess", "Scf", "Force"]
+    ace = ACE(label=label, BasicInformation = basic_list, order = order_list)
     mol.set_calculator(ace)
     print (mol.get_forces())
     
@@ -51,11 +51,11 @@ A Geometry optimization calculation can be set up::
     from ase.calculators.acemolecule import ACE
     from ase.optimize import BFGS
 
-    basic_list = [{'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} } ]
+    basic_list = {'Pseudopotential' : {'Pseudopotential' : 1, 'Format' : 'upf', 'PSFilePath' : '/PATH/TO/UPF/FILES', 'PSFileSuffix' : '.pbe-theos.UPF'} }
     label = sys.argv[1]    
     mol= read('H2.xyz')
-    order_list = [0, 1, 2, 3]
-    ace = ACE(label=label, BasicInformation = basic_list, Order = order_list)
+    order_list = ["BasicInformation", "Guess", "Scf", "Force"]
+    ace = ACE(label=label, BasicInformation = basic_list, order = order_list)
     mol.set_calculator(ace)
     g_opt = BFGS(mol)
     g_opt.run(fmax=0.05)
@@ -70,24 +70,30 @@ A TDDFT calculation can be set up::
    
    label = sys.argv[1]    
    mol= read('H2.xyz')
-   order_list = [0, 1, 2, 4]
+   order_list = ["BasicInformation", "Guess", "Scf", "TDDFT"]
    scf_list = [dict(FinalDiagonalize = dict(NumberOfEigenvalues= 12))]
-   ace = ACE(label=label, Scf= scf_list, Order = order_list)
+   ace = ACE(label=label, Scf= scf_list, order = order_list)
    mol.set_calculator(ace)
    print (ace.get_property('excitation-energy', mol))
     
+
 Parameters
 ==========
 
 The calculator will interpret any of the documented options for ``ace``:
-https://gitlab.com/aceteam.kaist/ACE-Molecule/tree/release-1.0.0/vars
+https://gitlab.com/aceteam.kaist/ACE-Molecule/tree/master/vars
 
-default parameters exist. But If you want to obtain result of force 
-calculation or TDDFT, you have to revise parameters. 
-Parameters can be given as keywords and the calculator will put them into
-the correct section of the input file.
+By default, this calculator sets simple SCF calculations (Including BasicInformation, Guess, and Scf section).
+If you want to do force or excited state calculations, or change exchange-correlation functionals, you need to change input parameters.
+Parameters can be given as keywords and the calculator will put them into the corresponding section of the input file.
+Each (sub)section is represented as dictionary.
 
-The example of updating parameters::
+An example for updating parameters::
 
-    basic = [dict(Cell = 5.0, VerboseLevel = 2)]
+    basic = dict(Cell = 12.0, VerboseLevel = 2)]
     ace.set(BasicInformation = basic)
+
+An example for updating subsection parameters::
+
+    ace.set(Scf = {"ExchangeCorrelation": {"XFunctional": "LDA_X", "CFunctional": "LDA_C_PZ"}})
+
