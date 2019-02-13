@@ -48,9 +48,21 @@ Set both environment variables in your shell configuration file:
   $ export VASP_SCRIPT=$HOME/vasp/run_vasp.py
   $ export VASP_PP_PATH=$HOME/vasp/mypps
 
-.. highlight:: python
+.. _VASP vdW wiki: https://cms.mpi.univie.ac.at/vasp/vasp/vdW_DF_functional_Langreth_Lundqvist_et_al.html
+  
+The following environment variable can be used to automatically copy the
+van der Waals kernel to the calculation directory. The kernel is needed for
+vdW calculations, see `VASP vdW wiki`_, for more details. The kernel is looked
+for, whenever ``luse_vdw=True``.
 
+.. highlight:: bash
 
+::
+   
+   $ export ASE_VASP_VDW=$HOME/<path-to-vdw_kernel.bindat-folder>
+
+The environment variable :envvar:`ASE_VASP_VDW` should point to the folder where
+the :file:`vdw_kernel.bindat` file is located.
 
 VASP Calculator
 ===============
@@ -88,6 +100,7 @@ keyword         type       default value   description
 ``sigma``       ``float``                  Width of smearing
 ``nelm``        ``int``                    Maximum number of
                                            SC-iterations
+``ldau_luj``    ``dict``                   LD(S)A+U parameters
 ==============  =========  ==============  ============================
 
 For parameters in the list without default value given, VASP will set
@@ -326,6 +339,23 @@ For example:
     kpts, x_coords, x_special_points = bandpath('GXL', si.cell, npoints=20)
 
 returns an acceptable ``kpts`` array (for use with ``reciprocal=True``) as well as plotting information.
+
+LD(S)A+U
+========
+The VASP +U corrections can be turned on using the default VASP parameters explicitly, by manually setting
+the ``ldaul``, ``ldauu`` and ``ldauj`` parameters, as well as enabling ``ldau``.
+
+However, ASE offers a convenient ASE specific keyword to enable these, by using a dictionary construction, through the
+``ldau_luj`` keyword. If the user does not explicitly set ``ldau=False``, then ``ldau=True`` will automatically
+be set if ``ldau_luj`` is set.
+For example:
+
+.. code-block:: python
+
+    calc = Vasp(ldau_luj={'Si': {'L': 1, 'U': 3, 'J': 0}})
+    
+will set ``U=3`` on the Si p-orbitals, and will automatically set ``ldau=True`` as well.
+
 
 Restart old calculation
 =======================

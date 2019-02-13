@@ -9,7 +9,8 @@ from time import time
 
 import numpy as np
 
-from ase.atoms import Atoms, symbols2numbers, string2symbols
+from ase.atoms import Atoms
+from ase.symbols import symbols2numbers, string2symbols
 from ase.calculators.calculator import all_properties, all_changes
 from ase.data import atomic_numbers
 from ase.db.row import AtomsRow
@@ -30,11 +31,10 @@ default_key_descriptions = {
     'energy': ('Energy', 'Total energy', 'eV'),
     'fmax': ('Maximum force', '', 'eV/Ang'),
     'smax': ('Maximum stress', '', '`\\text{eV/Ang}^3`'),
-    'pbc': ('PBC', 'Periodic boundary conditions', ''),
     'charge': ('Charge', '', '|e|'),
     'mass': ('Mass', '', 'au'),
     'magmom': ('Magnetic moment', '', 'au'),
-    'unique_id': ('Unique ID', '', ''),
+    'unique_id': ('Unique ID', 'Random (unique) ID', ''),
     'volume': ('Volume', 'Volume of unit-cell', '`\\text{Ang}^3`')}
 
 
@@ -135,6 +135,9 @@ def connect(name, type='extract_from_name', create_indices=True,
         Use append=False to start a new database.
     """
 
+    if isinstance(name, PurePath):
+        name = str(name)
+
     if type == 'extract_from_name':
         if name is None:
             type = None
@@ -151,11 +154,9 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type is None:
         return Database()
 
-    if not append and world.rank == 0 and os.path.isfile(name):
-        os.remove(name)
-
-    if isinstance(name, PurePath):
-        name = str(name)
+    if not append and world.rank == 0:
+        if isinstance(name, str) and os.path.isfile(name):
+            os.remove(name)
 
     if type != 'postgresql' and isinstance(name, basestring):
         name = os.path.abspath(name)

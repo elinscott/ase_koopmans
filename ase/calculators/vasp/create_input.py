@@ -22,6 +22,7 @@ http://cms.mpi.univie.ac.at/vasp/
 import os
 import sys
 import warnings
+import shutil
 from os.path import join, isfile, islink
 
 import numpy as np
@@ -775,6 +776,8 @@ class GenerateVaspInput(object):
                         'param1': 0.1234, 'param2': 1.0},
         'vdw-df2': {'gga': 'ML', 'luse_vdw': True, 'aggac': 0.0,
                     'zab_vdw': -1.8867},
+        'rev-vdw-df2': {'gga': 'MK', 'luse_vdw': True, 'param1': 0.1234,
+                        'param2':0.711357, 'zab_vdw': -1.8867, 'aggac': 0.0},
         'beef-vdw': {'gga': 'BF', 'luse_vdw': True,
                      'zab_vdw': -1.8867},
         # Hartree-Fock and hybrids
@@ -785,7 +788,8 @@ class GenerateVaspInput(object):
         'pbe0': {'gga': 'PE', 'lhfcalc': True},
         'hse03': {'gga': 'PE', 'lhfcalc': True, 'hfscreen': 0.3},
         'hse06': {'gga': 'PE', 'lhfcalc': True, 'hfscreen': 0.2},
-        'hsesol': {'gga': 'PS', 'lhfcalc': True, 'hfscreen': 0.2}}
+        'hsesol': {'gga': 'PS', 'lhfcalc': True, 'hfscreen': 0.2}
+    }
 
     def __init__(self, restart=None):
         self.float_params = {}
@@ -833,7 +837,10 @@ class GenerateVaspInput(object):
             'kpts_nintersections': None,
             # Option to write explicit k-points in units
             # of reciprocal lattice vectors:
-            'reciprocal': False}
+            'reciprocal': False,
+            # Switch to disable writing constraints to POSCAR
+            'ignore_constraints': False
+        }
 
     def set_xc_params(self, xc):
         """Set parameters corresponding to XC functional"""
@@ -959,7 +966,9 @@ class GenerateVaspInput(object):
         self.check_xc()
         self.all_symbols = atoms.get_chemical_symbols()
         self.natoms = len(atoms)
-        self.spinpol = atoms.get_initial_magnetic_moments().any()
+
+        self.spinpol = (atoms.get_initial_magnetic_moments().any()
+                        or self.int_params['ispin'] == 2)
         atomtypes = atoms.get_chemical_symbols()
 
         # Determine the number of atoms of each atomic species
@@ -1112,11 +1121,43 @@ class GenerateVaspInput(object):
         from ase.io.vasp import write_vasp
         write_vasp(join(directory, 'POSCAR'),
                    self.atoms_sorted,
-                   symbol_count=self.symbol_count)
+                   symbol_count=self.symbol_count,
+                   ignore_constraints=self.input_params['ignore_constraints'])
         self.write_incar(atoms, directory=directory)
         self.write_potcar(directory=directory)
         self.write_kpoints(directory=directory)
         self.write_sort_file(directory=directory)
+        self.copy_vdw_kernel(directory=directory)
+
+    def copy_vdw_kernel(self, directory='./'):
+        """Method to copy the vdw_kernel.bindat file.
+        Set ASE_VASP_VDW environment variable to the vdw_kernel.bindat
+        folder location. Checks if LUSE_VDW is enabled, and if no location
+        for the vdW kernel is specified, a warning is issued."""
+
+        vdw_env = 'ASE_VASP_VDW'
+        kernel = 'vdw_kernel.bindat'
+        dst = os.path.join(directory, kernel)
+
+        # No need to copy the file again
+        if isfile(dst):
+            return
+
+        if self.bool_params['luse_vdw']:
+            src = None
+            if vdw_env in os.environ:
+                src = os.path.join(os.environ[vdw_env],
+                                   kernel)
+
+            if not src or not isfile(src):
+                warnings.warn(('vdW has been enabled, however no'
+                               ' location for the {} file'
+                               ' has been specified.'
+                               ' Set {} environment variable to'
+                               ' copy the vdW kernel.').format(
+                                   kernel, vdw_env))
+            else:
+                shutil.copyfile(src, dst)
 
     def clean(self):
         """Method which cleans up after a calculation.
@@ -1193,22 +1234,39 @@ class GenerateVaspInput(object):
                   (self.dict_params['ldau_luj'] is not None)):
                 pass
             elif key == 'magmom':
+                if not len(val) == len(atoms):
+                    msg = ('Expected length of magmom tag to be'
+                           ' {}, i.e. 1 value per atom, but got {}').format(
+                               len(atoms), len(val))
+                    raise ValueError(msg)
+
+                # Check if user remembered to specify ispin
+                # note: we do not overwrite ispin if ispin=1
+                if not self.int_params['ispin']:
+                    self.spinpol = True
+                    incar.write(' ispin = 2\n'.upper())
+
                 incar.write(' %s = ' % key.upper())
                 magmom_written = True
                 # Work out compact a*x b*y notation and write in this form
-                list = [[1, val[0]]]
+                # Assume 1 magmom per atom, ordered as our atoms object
+
+                val = val[self.sort]  # Order in VASP format
+
+                # Compactify the magmom list to symbol order
+                lst = [[1, val[0]]]
                 for n in range(1, len(val)):
                     if val[n] == val[n - 1]:
-                        list[-1][0] += 1
+                        lst[-1][0] += 1
                     else:
-                        list.append([1, val[n]])
-                    [incar.write('%i*%.4f ' % (mom[0], mom[1]))
-                     for mom in list]
-                    incar.write('\n')
+                        lst.append([1, val[n]])
+                incar.write(' '.join(['{:d}*{:.4f}'.format(mom[0], mom[1])
+                                      for mom in lst]))
+                incar.write('\n')
             else:
-                    incar.write(' %s = ' % key.upper())
-                    [incar.write('%.4f ' % x) for x in val]
-                    incar.write('\n')
+                incar.write(' %s = ' % key.upper())
+                [incar.write('%.4f ' % x) for x in val]
+                incar.write('\n')
 
         for key, val in self.bool_params.items():
             if val is not None:
@@ -1231,6 +1289,12 @@ class GenerateVaspInput(object):
         for key, val in self.dict_params.items():
             if val is not None:
                 if key == 'ldau_luj':
+                    # User didn't turn on LDAU tag.
+                    # Only turn on if ldau is unspecified
+                    if self.bool_params['ldau'] is None:
+                        self.bool_params['ldau'] = True
+                        # At this point we have already parsed our bool params
+                        incar.write(' LDAU = .TRUE.\n')
                     llist = ulist = jlist = ''
                     for symbol in self.symbol_count:
                         #  default: No +U
@@ -1242,7 +1306,11 @@ class GenerateVaspInput(object):
                     incar.write(' LDAUU =%s\n' % ulist)
                     incar.write(' LDAUJ =%s\n' % jlist)
 
-        if self.spinpol and not magmom_written:
+        if (self.spinpol
+            and not magmom_written
+            # We don't want to write magmoms if they are all 0.
+            # but we could still be doing a spinpol calculation
+            and atoms.get_initial_magnetic_moments().any()):
             if not self.int_params['ispin']:
                 incar.write(' ispin = 2\n'.upper())
             # Write out initial magnetic moments
