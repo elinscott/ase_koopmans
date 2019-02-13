@@ -72,7 +72,7 @@ class ACE(FileIOCalculator):
     # defaults is default value of ACE-input
     basic_list =[{
                   'Type' : 'Scaling', 'Scaling' : '0.35', 'Basis' : 'Sinc',\
-                  'Cell' : '3.0', 'Grid' : 'Sphere',\
+                  'Grid' : 'Sphere',\
                   'KineticMatrix': 'Finite_Difference', 'DerivativesOrder' : '7',\
                   'GeometryFilename': None, 'NumElectrons': None}
                  ]
@@ -181,23 +181,35 @@ class ACE(FileIOCalculator):
         for key in self.order_key_list: #### key : BasicInformation, Force, Scf and so on
             modified = False
             print(kwargs)
-            if key  in kwargs.keys(): ##### kwargs.key() : In Basic, Cell, GeometryFilename, ....
+            if key  in kwargs.keys(): ##### kwargs.key() : BasicInformation, Force, ....
+                if(isinstance(kwargs[key],dict)):
+                    dict_to_list = []
+                    dict_to_list.append(kwargs[key])
+                    kwargs[key] = dict_to_list
+#                for aaa in range(2):
                 i=0
                 for val in kwargs[key]: ########## kwargs[key] : basic_list, force_lsit ....
                     element = self.compare_parameters(changed_parameters[key][i], key, val)
-                    if(element == self.parameters[key][i]):
-#                        print("yes")
-#                        print(element)
+                    print ("--element--")
+                    print(element)
+                    print("-- changed_parameters --")
+                    print(changed_parameters[key][i])
+                    if(element == changed_parameters[key][i]):
+                        print("element is same")
                         print(self.parameters[key][i])
-#                        print("yes end")
                         changed_parameters[key][i].update(val) 
+                        print("element end")
                     else:
-#                        print("duplication")
                         duplication.append(element)
                         modified = True
                     i= i+1
-            if(modified):
-                changed_parameters[key] = duplication
+                    if(modified):
+                        print("modified")
+                        changed_parameters[key] = duplication
+                        duplication = []
+                        print(changed_parameters[key][i-1])
+                        print("modified end")
+
 #        print("in_set")
 #        print(changed_parameters)
         self.parameters = changed_parameters
