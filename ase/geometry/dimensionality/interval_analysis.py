@@ -42,8 +42,8 @@ class KInterval:
 
     def __init__(self, a, b, h, components, cdim, score=None):
 
-        self.k1 = a
-        self.k2 = b
+        self.a = a
+        self.b = b
         self.h = h
         self.components = components
         self.cdim = cdim
@@ -78,8 +78,8 @@ def merge_intervals(intervals):
     for hstring in dimtypes:
         relevant = [e for e in intervals if e.hstring == hstring]
         combined_score = sum([e.score for e in relevant])
-        amin = min([e.k1 for e in relevant])
-        bmax = max([e.k2 for e in relevant])
+        amin = min([e.a for e in relevant])
+        bmax = max([e.b for e in relevant])
         best = max(intervals, key=lambda x: x.score)
         merged = KInterval(amin, bmax, best.h, best.components, best.cdim,
                            score=combined_score)
