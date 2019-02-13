@@ -413,17 +413,17 @@ class Atoms(object):
                 a = a.copy()
 
         if name in self.arrays:
-            raise RuntimeError
+            raise RuntimeError('Array {} already present'.format(name))
 
         for b in self.arrays.values():
             if len(a) != len(b):
-                raise ValueError('Array has wrong length: %d != %d.' %
-                                 (len(a), len(b)))
+                raise ValueError('Array "%s" has wrong length: %d != %d.' %
+                                 (name, len(a), len(b)))
             break
 
         if shape is not None and a.shape[1:] != shape:
-            raise ValueError('Array has wrong shape %s != %s.' %
-                             (a.shape, (a.shape[0:1] + shape)))
+            raise ValueError('Array "%s" has wrong shape %s != %s.' %
+                             (a.name, a.shape, (a.shape[0:1] + shape)))
 
         self.arrays[name] = a
 
@@ -453,8 +453,8 @@ class Atoms(object):
             else:
                 a = np.asarray(a)
                 if a.shape != b.shape:
-                    raise ValueError('Array has wrong shape %s != %s.' %
-                                     (a.shape, b.shape))
+                    raise ValueError('Array "%s" has wrong shape %s != %s.' %
+                                     (name, a.shape, b.shape))
                 b[:] = a
 
     def has(self, name):
@@ -1196,6 +1196,7 @@ class Atoms(object):
         >>> atoms.rotate(90, (0, 0, 1))
         >>> atoms.rotate(-90, '-z')
         >>> atoms.rotate('x', 'y')
+        >>> atoms.rotate((1, 0, 0), (0, 1, 0))
         """
 
         if not isinstance(a, (float, int)):
