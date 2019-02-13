@@ -157,7 +157,7 @@ def opencew(filename, world=None):
 
 
 class Lock:
-    def __init__(self, name='lock', world=None):
+    def __init__(self, name='lock', world=None, timeout=float('inf')):
         self.name = str(name)
 
         if world is None:
@@ -165,11 +165,17 @@ class Lock:
         self.world = world
 
     def acquire(self):
+        dt = 0.2
+        t1 = time.time()
         while True:
             fd = opencew(self.name, self.world)
             if fd is not None:
                 break
-            time.sleep(1.0)
+            time_left = self.timeout - (time.time() - t1)
+            if time_left <= 0:
+                raise TimeoutError
+            time.sleep(min(dt, time_left))
+            dt *= 2
 
     def release(self):
         self.world.barrier()
@@ -218,7 +224,7 @@ def search_current_git_hash(arg, world=None):
     else:
         # Assume arg is module
         dpath = os.path.dirname(arg.__file__)
-    #dpath = os.path.abspath(dpath)
+    # dpath = os.path.abspath(dpath)
     # in case this is just symlinked into $PYTHONPATH
     dpath = os.path.realpath(dpath)
     dpath = os.path.dirname(dpath)  # Go to the parent directory
@@ -368,7 +374,8 @@ def natural_cutoffs(atoms, mult=1, **kwargs):
 
     * atoms: An atoms object
     * mult: A multiplier for all cutoffs, useful for coarse grained adjustment
-    * kwargs: Symbol of the atom and its corresponding cutoff, used to override the covalent radii
+    * kwargs: Symbol of the atom and its corresponding cutoff, used to override
+      the covalent radii
     """
     return [kwargs.get(atom.symbol, covalent_radii[atom.number] * mult)
             for atom in atoms]
