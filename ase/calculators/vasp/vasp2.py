@@ -87,7 +87,7 @@ class Vasp2(GenerateVaspInput, Calculator):
     name = 'Vasp2'
 
     # Environment commands
-    env_commands = ['ASE_VASP_COMMAND', 'VASP_COMMAND', 'VASP_SCRIPT']
+    env_commands = ('ASE_VASP_COMMAND', 'VASP_COMMAND', 'VASP_SCRIPT')
 
     implemented_properties = ['energy', 'free_energy', 'forces', 'dipole',
                               'fermi', 'stress', 'magmom', 'magmoms']
@@ -117,8 +117,12 @@ class Vasp2(GenerateVaspInput, Calculator):
             # We restart in the label directory
             restart = label
 
-        Calculator.__init__(self, restart, ignore_bad_restart_file,
-                            label, atoms, **kwargs)
+        Calculator.__init__(self,
+                            restart=restart,
+                            ignore_bad_restart_file=ignore_bad_restart_file,
+                            label=label,
+                            atoms=atoms,
+                            **kwargs)
 
         self.command = command
 
@@ -142,7 +146,7 @@ class Vasp2(GenerateVaspInput, Calculator):
     def make_command(self, command=None):
         """Return command if one is passed, otherwise try to find
         ASE_VASP_COMMAND, VASP_COMMAND or VASP_SCRIPT.
-        If none are set, a RuntimeError is raised"""
+        If none are set, a CalculatorSetupError is raised"""
         if command:
             cmd = command
         else:
@@ -358,8 +362,8 @@ class Vasp2(GenerateVaspInput, Calculator):
             self.parameters = self.get_default_parameters()
 
         # Check for existence of the necessary output files
-        for file in ['OUTCAR', 'CONTCAR', 'vasprun.xml']:
-            filename = os.path.join(self.directory, file)
+        for f in ['OUTCAR', 'CONTCAR', 'vasprun.xml']:
+            filename = self._indir(f)
             if not os.path.isfile(filename):
                 raise ReadError(
                     'VASP outputfile {} was not found'.format(filename))
@@ -371,23 +375,22 @@ class Vasp2(GenerateVaspInput, Calculator):
         self.read_sort()
 
         # Read parameters
-        olddir = os.getcwd()
-        try:
-            os.chdir(self.directory)
-            self.read_incar()
-            self.read_kpoints()
-            self.read_potcar()
-        finally:
-            os.chdir(olddir)
+        self.read_incar(filename=self._indir('INCAR'))
+        self.read_kpoints(filename=self._indir('KPOINTS'))
+        self.read_potcar(filename=self._indir('POTCAR'))
 
         # Read the results from the calculation
         self.read_results()
+
+    def _indir(self, filename):
+        """Prepend current directory to filename"""
+        return os.path.join(self.directory, filename)
 
     def read_sort(self):
         """Create the sorting and resorting list from ase-sort.dat.
         If the ase-sort.dat file does not exist, the sorting is redone.
         """
-        sortfile = os.path.join(self.directory, 'ase-sort.dat')
+        sortfile = self._indir('ase-sort.dat')
         if os.path.isfile(sortfile):
             self.sort = []
             self.resort = []
@@ -403,7 +406,7 @@ class Vasp2(GenerateVaspInput, Calculator):
     def read_atoms(self, filename='CONTCAR'):
         """Read the atoms from file located in the VASP
         working directory. Defaults to CONTCAR."""
-        filename = os.path.join(self.directory, filename)
+        filename = self._indir(filename)
         return read(filename)
 
     def update_atoms(self, atoms):
@@ -413,7 +416,7 @@ class Vasp2(GenerateVaspInput, Calculator):
             if self.int_params['ibrion'] > -1 and self.int_params['nsw'] > 0:
                 # Update atomic positions and unit cell with the ones read
                 # from CONTCAR.
-                atoms_sorted = read(os.path.join(self.directory, 'CONTCAR'))
+                atoms_sorted = read(self._indir('CONTCAR'))
                 atoms.positions = atoms_sorted[self.resort].positions
                 atoms.cell = atoms_sorted.cell
 
@@ -524,7 +527,7 @@ class Vasp2(GenerateVaspInput, Calculator):
         Example:
         >>> outcar = load_file('OUTCAR')
         """
-        filename = os.path.join(self.directory, filename)
+        filename = self._indir(filename)
         with open(filename, 'r') as f:
             return f.readlines()
 
@@ -532,7 +535,7 @@ class Vasp2(GenerateVaspInput, Calculator):
     def load_file_iter(self, filename):
         """Return a file iterator"""
 
-        filename = os.path.join(self.directory, filename)
+        filename = self._indir(filename)
         with open(filename, 'r') as f:
             yield f
 
@@ -572,9 +575,7 @@ class Vasp2(GenerateVaspInput, Calculator):
             Default value: False
         """
         if overwrite or not self._xml_data:
-            self._xml_data = read(os.path.join(self.directory,
-                                               filename),
-                                  index=-1)
+            self._xml_data = read(self._indir(filename), index=-1)
         return self._xml_data
 
     def get_ibz_k_points(self):
