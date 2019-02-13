@@ -3,7 +3,6 @@ import os
 from collections import OrderedDict
 from collections import Mapping
 from copy import deepcopy
-#from re import sub
 from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
 from ase.calculators.calculator import FileIOCalculator
@@ -25,6 +24,7 @@ class OrderedParameters(OrderedDict):
     Since ACE-Molecule input section depends on order, we need OrderedDict.
     Nothing different with ase.calculators.calculator.Parameters
     '''
+
     def __init__(self, *args, **kwargs):
         super(OrderedParameters, self).__init__(*args, **kwargs)
 
@@ -66,33 +66,32 @@ class ACE(FileIOCalculator):
     ACE-Molecule logfile reader
     '''
     name = 'ace'
-    implemented_properties = ['energy', 'forces', 'geometry','excitation-energy']
+    implemented_properties = ['energy', 'forces',
+                              'geometry', 'excitation-energy']
     system_changes = None
     # defaults is default value of ACE-input
-    basic_list =[{
-                  'Type' : 'Scaling', 'Scaling' : '0.35', 'Basis' : 'Sinc',\
-                  'Grid' : 'Sphere',\
-                  'KineticMatrix': 'Finite_Difference', 'DerivativesOrder' : '7',\
+    basic_list = [{
+        'Type': 'Scaling', 'Scaling': '0.35', 'Basis': 'Sinc',
+                  'Grid': 'Sphere',
+                  'KineticMatrix': 'Finite_Difference', 'DerivativesOrder': '7',
                   'GeometryFilename': None, 'NumElectrons': None}
-                 ]
-    guess_list = [] #now not need this
-    scf_list = [ {
-                 'ExchangeCorrelation' : {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'} ,\
-                 'NumberOfEigenvalues': None,
-                 }]
-    
-    force_list = [{ 'ForceDerivative' : 'Potential'   }  ]
-#    solvation_list = [{'SolvationLibrary' : 'PCMSolver', 'Solvent' : 'water', 'Area' : '0.2', 'SolverType' : 'CPCM' }] 
+                  ]
+    guess_list = []  # now not need this
+    scf_list = [{
+        'ExchangeCorrelation': {'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},
+        'NumberOfEigenvalues': None,
+    }]
+
+    force_list = [{'ForceDerivative': 'Potential'}]
     tddft_list = [{
-    'SortOrbital': 'Order', 'MaximumOrder' : '10',\
-            'ExchangeCorrelation' :  {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'},\
-#            'OrbitalInfo' : {'ExchangeCorrelation' : {'XFunctional' : 'GGA_X_PBE', 'CFunctional' : 'GGA_C_PBE'}},\
-            }] 
-    order_list = [0,1,2]
-    order_key_list = ['BasicInformation', 'Guess', 'Scf','Force', 'TDDFT' ]
+        'SortOrbital': 'Order', 'MaximumOrder': '10',
+        'ExchangeCorrelation': {'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},\
+    }]
+    order_list = [0, 1, 2]
+    order_key_list = ['BasicInformation', 'Guess', 'Scf', 'Force', 'TDDFT']
 
-
-    default_parameters = {'BasicInformation': basic_list, 'Guess' : guess_list, 'Scf':scf_list, 'Force' : force_list, 'TDDFT': tddft_list ,'Order' : order_list} 
+    default_parameters = {'BasicInformation': basic_list, 'Guess': guess_list,
+                          'Scf': scf_list, 'Force': force_list, 'TDDFT': tddft_list, 'order': order_list}
     parameters = default_parameters
     command = 'mpirun -np 1 ../ace PREFIX.inp > PREFIX.log'
 
@@ -102,25 +101,24 @@ class ACE(FileIOCalculator):
             basisfile=None, **kwargs):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command=command, **kwargs)
-        
-    def compare_parameters(self,parameters, key2, val2):    
+
+    def compare_parameters(self, parameters, key2, val2):
         '''Replace parameters that users want'''
         for val_key, val_val in val2.items():
             for key, val in parameters.items():
-                if val_key==key and (isinstance(val_val,str) or isinstance(val_val, float) or isinstance(val_val, int) or isinstance(val_val, list) ):
+                if val_key == key and (isinstance(val_val, str) or isinstance(val_val, float) or isinstance(val_val, int) or isinstance(val_val, list)):
                     parameters[key] = str(val2[key])
-                elif (val_key==key and isinstance(val_val,dict)):
-                    parameters[key] = self.compare_parameters(parameters[key], key, val_val)            
-        
-        
+                elif (val_key == key and isinstance(val_val, dict)):
+                    parameters[key] = self.compare_parameters(
+                        parameters[key], key, val_val)
+
         return parameters
 
-
-    def get_property(self, name, atoms=None,  allow_calculation=True):
+    def get_property(self, name, atoms=None, allow_calculation=True):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)'''
-        
+
         if name not in self.implemented_properties:
-            print ('{} property not implemented'.format(name))
+            print('{} property not implemented'.format(name))
         if atoms is None:
             atoms = self.atoms
             system_changes = []
@@ -128,101 +126,70 @@ class ACE(FileIOCalculator):
             system_changes = self.check_state(atoms)
             if system_changes:
                 self.reset()
-            
-#        if 'modified' in self.parameters:
-#            del self.parameters['modified'] 
-#        for key, val in self.user_parameters.items(): 
-#            none_value = self.compare_parameters(self.parameters, key, val)   
-#            if(none_value == 0):
-#                self.parameters[key] = val
-#        if 'system_changes' in self.parameters:
-#            del self.parameters['system_changes']
-        print("write input run")
-        self.write_input(atoms) 
 
+        self.write_input(atoms)
 
         if name not in self.results:
             if not allow_calculation:
                 return None
             self.calculate(atoms, [name], system_changes)
-        
+
         if name not in self.results:
             # For some reason the calculator was not able to do what we want,
             # and that is OK.
-            print ('{} not present in this calculation'.format(name))
+            print('{} not present in this calculation'.format(name))
         result = self.results[name]
         if isinstance(result, np.ndarray):
             result = result.copy()
-        
+
         return result
 
     def set(self, **kwargs):
-#        self.parameters = OrderedParameters()
         changed_parameters = deepcopy(self.parameters)
-#        if 'ACEtemplate' in kwargs:
-#            filename = kwargs.pop("ACEtemplate")
-#            changed_parameters2 = self.read_acemolecule_inp(filename)
-#        changed_parameters = FileIOCalculator.set(self, **kwargs)
-#        update_nested(changed_parameters2, changed_parameters)
-#        self.parameters = changed_parameters2
         duplication = []
-        if 'Order' in kwargs:
+        if 'order' in kwargs:
             order_list = []
-            for element in kwargs['Order']:
+            for element in kwargs['order']:
                 mod = 0
                 if(element in self.order_key_list):
-                   order_element = self.order_key_list.index(element)
-                   order_list.append(order_element)
-                   mod = 1
+                    order_element = self.order_key_list.index(element)
+                    order_list.append(order_element)
+                    mod = 1
             if(mod == 1):
-                kwargs['Order'] = order_list
-            changed_parameters['Order'] = kwargs['Order']
+                kwargs['order'] = order_list
+            changed_parameters['order'] = kwargs['order']
             for i in range(10):
                 j = 0
-                for value in kwargs['Order']:
-                    if(i in self.order_list and i==value):
-                        j= j+1
-                        if(j>1):
-                            for num in range(j-1):
-                                changed_parameters[self.order_key_list[i]] += self.default_parameters[self.order_key_list[i]]
-                            
-        for key in self.order_key_list: #### key : BasicInformation, Force, Scf and so on
+                for value in kwargs['order']:
+                    if(i in self.order_list and i == value):
+                        j = j + 1
+                        if(j > 1):
+                            for num in range(j - 1):
+                                changed_parameters[self.order_key_list[i]
+                                                   ] += self.default_parameters[self.order_key_list[i]]
+
+        for key in self.order_key_list:  # key : BasicInformation, Force, Scf and so on
             modified = False
-            print(kwargs)
-            if key  in kwargs.keys(): ##### kwargs.key() : BasicInformation, Force, ....
-                if(isinstance(kwargs[key],dict)):
+            if key in kwargs.keys():  # kwargs.key() : BasicInformation, Force, ....
+                if(isinstance(kwargs[key], dict)):
                     dict_to_list = []
                     dict_to_list.append(kwargs[key])
                     kwargs[key] = dict_to_list
-#                for aaa in range(2):
-                i=0
-                for val in kwargs[key]: ########## kwargs[key] : basic_list, force_lsit ....
-                    element = self.compare_parameters(changed_parameters[key][i], key, val)
-#                    print ("--element--")
-#                    print(element)
-#                    print("-- changed_parameters --")
-                    print(changed_parameters[key][i])
+                i = 0
+                # kwargs[key] : basic_list, force_lsit ....
+                for val in kwargs[key]:
+                    element = self.compare_parameters(
+                        changed_parameters[key][i], key, val)
                     if(element == changed_parameters[key][i]):
-#                        print("element is same")
-#                        print(self.parameters[key][i])
-                        changed_parameters[key][i].update(val) 
-#                        print("element end")
+                        changed_parameters[key][i].update(val)
                     else:
                         duplication.append(element)
                         modified = True
-                    i= i+1
+                    i = i + 1
                     if(modified):
-#                        print("modified")
                         changed_parameters[key] = duplication
                         duplication = []
-#                        print(changed_parameters[key][i-1])
-#                        print("modified end")
-
-#        print("in_set")
-#        print(changed_parameters)
         self.parameters = changed_parameters
-#        if changed_parameters:
-#            self.reset()
         return changed_parameters
 
     def read(self, label):
@@ -240,16 +207,9 @@ class ACE(FileIOCalculator):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         inputfile = open(self.label + '.inp', 'w')
         self.make_xyz_file(atoms)
-        print("write_input")
-        print(self.parameters["BasicInformation"])
-        print("BasciInfor end")
-        self.parameters["BasicInformation"][0]["GeometryFilename"] = "{}_opt.xyz".format(self.label)
-        self.parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"        
-        #new_parameters = OrderedParameters()
-        #new_parameters["BasicInformation"] = OrderedDict()
-        #new_parameters["Guess"] = OrderedDict()
-        #update_nested(new_parameters, self.parameters)
-        #self.parameters = new_parameters
+        self.parameters["BasicInformation"][0]["GeometryFilename"] = "{}_opt.xyz".format(
+            self.label)
+        self.parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"
         self.write_acemolecule_input(inputfile, self.parameters)
 
         inputfile.close()
@@ -257,42 +217,39 @@ class ACE(FileIOCalculator):
     def read_results(self):
         '''Read results from logfile '''
         filename = self.label + '.log'
-        f= open(filename,"r")
+        f = open(filename, "r")
         tddft = len(f.read().split("TDDFT"))
-        if(tddft>2):
+        if(tddft > 2):
             quantities = ['excitation-energy']
         else:
-            quantities = ['energy','forces', 'atoms','excitation-energy']
+            quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
         for value in quantities:
-            self.results[value] = read_acemolecule_out(filename, quantity=value)
+            self.results[value] = read_acemolecule_out(
+                filename, quantity=value)
 
-
-    def write_acemolecule_section(self, fpt, section,indent = 0):
+    def write_acemolecule_section(self, fpt, section, indent=0):
         for key, val in section.items():
-            if(isinstance(val,str) or isinstance(val,int) or isinstance(val,float)):
-                fpt.write('\t'*indent + str(key) + " " + str(val) + "\n")
+            if(isinstance(val, str) or isinstance(val, int) or isinstance(val, float)):
+                fpt.write('\t' * indent + str(key) + " " + str(val) + "\n")
             elif isinstance(val, dict):
-                fpt.write('\t'*indent +"%% " + str(key) + "\n")
-                indent = indent+1
-                self.write_acemolecule_section(fpt,val,indent)
-                indent = indent-1
-                fpt.write('\t'*indent +"%% End\n")
-   
+                fpt.write('\t' * indent + "%% " + str(key) + "\n")
+                indent = indent + 1
+                self.write_acemolecule_section(fpt, val, indent)
+                indent = indent - 1
+                fpt.write('\t' * indent + "%% End\n")
+
         return
 
     def write_acemolecule_input(self, fpt, param2, indent=0):
         prefix = "    " * indent
         param = deepcopy(param2)
-        for i in param['Order']:
-            fpt.write(prefix+"%%"+self.order_key_list[i] +"\n")
+        for i in param['order']:
+            fpt.write(prefix + "%% " + self.order_key_list[i] + "\n")
             section_list = param[self.order_key_list[i]]
             if(len(section_list) > 0):
                 section = section_list.pop(0)
-                print("section start")
-                print(section)
-                print("section end")
-                self.write_acemolecule_section(fpt,section,1)
-            fpt.write("%% End\n") 
+                self.write_acemolecule_section(fpt, section, 1)
+            fpt.write("%% End\n")
         return
 
 
