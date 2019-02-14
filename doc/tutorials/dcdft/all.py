@@ -1,6 +1,6 @@
-# creates: volume.csv, B.csv, Bp.csv
+# creates: volume.csv, B.csv, Bp.csv,  Pt.png
 import sys
 sys.path[:0] = ['.']
-import calculate
-import fit
-import tables
+import calculate  # noqa
+import fit  # noqa
+import tables  # noqa

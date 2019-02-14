@@ -2,10 +2,9 @@ import json
 from pathlib import Path
 from ase.eos import EquationOfState as EOS
 from ase.io import read
-from ase.units import kJ
 
 
-def fit(symbol):
+def fit(symbol: str):  # -> Tuple[float, float, float]
     V = []
     E = []
     for atoms in read(f'{symbol}.traj@:'):
@@ -21,7 +20,6 @@ data = {}  # Dict[Dict[str, float]]
 for path in Path().glob('*.traj'):
     symbol = path.name.split('.')[0]
     v0, B, Bp = fit(symbol)
-    B *= 1e24 / kJ  # convert to GPa
     data[symbol] = {'emt_volume': v0,
                     'emt_B': B,
                     'emt_Bp': Bp}

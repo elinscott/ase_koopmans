@@ -31,6 +31,8 @@ Takatani, T. et al., J. Chem. Phys., 132, 144104 (2010) where a large and more
 complete basis set has been used for all database members.
 
 
+.. _dcdft:
+
 DeltaCodesDFT
 =============
 
@@ -42,7 +44,10 @@ Structures and data from:
 
     https://github.com/molmod/DeltaCodesDFT
 
-See also [Lejaeghere2014]_.
+.. seealso::
+
+    * [Lejaeghere2014]_.
+    * https://molmod.ugent.be/deltacodesdft
 
 .. [Lejaeghere2014]
 
