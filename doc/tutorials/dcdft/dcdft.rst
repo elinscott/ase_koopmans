@@ -7,8 +7,9 @@ The `\Delta` value is defined as:
 
 .. math::
 
-    \sqrt{\int_{V_a}^{V_b}
-          (E_1(V) - E_2(V))^2 / (V_b - V_a)}
+    \sqrt{\frac{\int_{V_a}^{V_b}
+                (E_1(V) - E_2(V))^2}
+          {V_b - V_a}},
 
 and can be calculated using the :func:`ase.utils.dcdft.delta` function:
 
@@ -54,7 +55,7 @@ Now, we can calculate `\Delta` between EMT and WIEN2k for Pt:
 ...       15.64, 248.71 * 1e-24 * kJ, 5.46)
 0.03205389052984122
 
-Here are all the values calculated with the script below:
+Here are all the values (in meV/atom) calculated with the script below:
 
 .. csv-table::
     :file: delta.csv
