@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from optparse import OptionParser
 from ase.visualize import view
 from ase.calculators.jacapo import Jacapo

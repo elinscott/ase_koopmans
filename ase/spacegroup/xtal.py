@@ -190,7 +190,11 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
     if primitive_cell:
         from ase.build import cut
         prim_cell = sg.scaled_primitive_cell
+
+        # Preserve calculator if present:
+        calc = atoms.calc
         atoms = cut(atoms, a=prim_cell[0], b=prim_cell[1], c=prim_cell[2])
+        atoms.calc = calc
 
     if size != (1, 1, 1):
         atoms = atoms.repeat(size)

@@ -243,6 +243,11 @@ class Atoms(object):
     def symbols(self):
         return Symbols(self.numbers)
 
+    @symbols.setter
+    def symbols(self, obj):
+        new_symbols = Symbols.fromsymbols(obj)
+        self.numbers[:] = new_symbols.numbers
+
     def set_calculator(self, calc=None):
         """Attach calculator object."""
         self._calc = calc
@@ -408,17 +413,17 @@ class Atoms(object):
                 a = a.copy()
 
         if name in self.arrays:
-            raise RuntimeError
+            raise RuntimeError('Array {} already present'.format(name))
 
         for b in self.arrays.values():
             if len(a) != len(b):
-                raise ValueError('Array has wrong length: %d != %d.' %
-                                 (len(a), len(b)))
+                raise ValueError('Array "%s" has wrong length: %d != %d.' %
+                                 (name, len(a), len(b)))
             break
 
         if shape is not None and a.shape[1:] != shape:
-            raise ValueError('Array has wrong shape %s != %s.' %
-                             (a.shape, (a.shape[0:1] + shape)))
+            raise ValueError('Array "%s" has wrong shape %s != %s.' %
+                             (a.name, a.shape, (a.shape[0:1] + shape)))
 
         self.arrays[name] = a
 
@@ -448,8 +453,8 @@ class Atoms(object):
             else:
                 a = np.asarray(a)
                 if a.shape != b.shape:
-                    raise ValueError('Array has wrong shape %s != %s.' %
-                                     (a.shape, b.shape))
+                    raise ValueError('Array "%s" has wrong shape %s != %s.' %
+                                     (name, a.shape, b.shape))
                 b[:] = a
 
     def has(self, name):
@@ -738,6 +743,9 @@ class Atoms(object):
         shape = stress.shape
 
         if shape == (3, 3):
+            # if Voigt form is not wanted, return rightaway
+            if not voigt:
+                return stress
             warnings.warn('Converting 3x3 stress tensor from %s ' %
                           self._calc.__class__.__name__ +
                           'calculator to the required Voigt form.')
@@ -908,10 +916,16 @@ class Atoms(object):
                 raise IndexError('Index out of range.')
 
             return Atom(atoms=self, index=i)
-        elif isinstance(i, list) and len(i) > 0:
-            # Make sure a list of booleans will work correctly and not be
-            # interpreted at 0 and 1 indices.
+        elif not isinstance(i, slice):
             i = np.array(i)
+            # if i is a mask
+            if i.dtype == bool:
+                try:
+                    i = np.arange(len(self))[i]
+                except IndexError:
+                    raise IndexError('length of item mask '
+                                     'mismatches that of {0} '
+                                     'object'.format(self.__class__.__name__))
 
         import copy
 
@@ -1183,6 +1197,7 @@ class Atoms(object):
         >>> atoms.rotate(90, (0, 0, 1))
         >>> atoms.rotate(-90, '-z')
         >>> atoms.rotate('x', 'y')
+        >>> atoms.rotate((1, 0, 0), (0, 1, 0))
         """
 
         if not isinstance(a, (float, int)):
@@ -1351,9 +1366,13 @@ class Atoms(object):
         if mic:
             a, b, c = find_mic([a, b, c], self.cell, self.pbc)[0]
         bxa = np.cross(b, a)
-        bxa /= np.linalg.norm(bxa)
         cxb = np.cross(c, b)
-        cxb /= np.linalg.norm(cxb)
+        bxanorm = np.linalg.norm(bxa)
+        cxbnorm = np.linalg.norm(cxb)
+        if bxanorm == 0 or cxbnorm == 0:
+            raise ZeroDivisionError('Undefined dihedral angle')
+        bxa /= bxanorm
+        cxb /= cxbnorm
         angle = np.vdot(bxa, cxb)
         # check for numerical trouble due to finite precision:
         if angle < -1:

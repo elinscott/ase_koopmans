@@ -42,6 +42,7 @@ but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
    ga/ga_convex_hull
    defects/defects
    qmmm/qmmm
+   dimensionality/dimensionality
 
 
 NumPy
