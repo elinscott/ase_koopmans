@@ -10,21 +10,21 @@ from ase.cluster.data.symmetry import (get_all_symmetries,
 
 
 # Definition of symmetries (in hcp basis)
-basesymmetries = [np.matrix([[1, 0, 0],  # Mirror y-axis
-                             [0, 1, 0],
-                             [0, 0, -1]]),
-                  np.matrix([[0, 1, 0],  # Rotation z-axix (3-fold)
-                             [-1, -1, 0],
-                             [0, 0, 1]]),
-                  np.matrix([[1, 0, 0],  # Rotation a-axis (2-fold)
-                             [-1, -1, 0],
-                             [0, 0, -1]]),
-                  np.matrix([[-1, -1, 0],  # Rotation b-axis (2-fold)
-                             [0, 1, 0],
-                             [0, 0, -1]]),
-                  np.matrix([[0, 1, 0],  # Rotation ab-axis (2-fold)
-                             [1, 0, 0],
-                             [0, 0, -1]])]
+basesymmetries = [np.array([[1, 0, 0],  # Mirror y-axis
+                            [0, 1, 0],
+                            [0, 0, -1]]),
+                  np.array([[0, 1, 0],  # Rotation z-axix (3-fold)
+                            [-1, -1, 0],
+                            [0, 0, 1]]),
+                  np.array([[1, 0, 0],  # Rotation a-axis (2-fold)
+                            [-1, -1, 0],
+                            [0, 0, -1]]),
+                  np.array([[-1, -1, 0],  # Rotation b-axis (2-fold)
+                            [0, 1, 0],
+                            [0, 0, -1]]),
+                  np.array([[0, 1, 0],  # Rotation ab-axis (2-fold)
+                            [1, 0, 0],
+                            [0, 0, -1]])]
 
 symmetries = get_all_symmetries(basesymmetries, 12)
 

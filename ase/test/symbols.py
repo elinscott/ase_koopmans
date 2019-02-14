@@ -1,4 +1,5 @@
 from ase.build import molecule
+from ase.symbols import Symbols
 
 atoms = molecule('CH3CH2OH')
 print(atoms.symbols)
@@ -16,3 +17,11 @@ print(atoms)
 print(atoms.numbers)
 
 assert atoms.get_chemical_symbols()
+string = str(atoms.symbols)
+symbols = Symbols.fromsymbols(string)
+assert (symbols == atoms.symbols).all()
+
+atoms = molecule('H2O')
+atoms.symbols = 'Au2Ag'
+print(atoms.symbols)
+assert (atoms.symbols == 'Au2Ag').all()

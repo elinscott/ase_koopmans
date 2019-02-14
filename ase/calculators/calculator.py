@@ -69,6 +69,7 @@ class PropertyNotPresent(CalculatorError):
     Maybe it was never calculated, or for some reason was not extracted
     with the rest of the results, without being a fatal ReadError."""
 
+
 def compare_atoms(atoms1, atoms2, tol=1e-15):
     """Check for system changes since last calculation."""
     if atoms1 is None:
@@ -93,7 +94,7 @@ def compare_atoms(atoms1, atoms2, tol=1e-15):
     return system_changes
 
 
-all_properties = ['energy', 'forces', 'stress', 'dipole',
+all_properties = ['energy', 'forces', 'stress', 'stresses', 'dipole',
                   'charges', 'magmom', 'magmoms', 'free_energy']
 
 
@@ -103,7 +104,7 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 # Recognized names of calculators sorted alphabetically:
 names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
-         'demon', 'dftb', 'dmol', 'eam', 'elk', 'emt', 'espresso',
+         'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
          'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
          'hotbit', 'jacapo', 'lammpsrun',
          'lammpslib', 'lj', 'mopac', 'morse', 'nwchem', 'octopus', 'onetep',
@@ -111,6 +112,7 @@ names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
 
 
 special = {'cp2k': 'CP2K',
+           'dftd3': 'DFTD3',
            'dmol': 'DMol3',
            'eam': 'EAM',
            'elk': 'ELK',
@@ -136,6 +138,8 @@ def get_calculator(name):
         from gpaw import GPAW as Calculator
     elif name == 'hotbit':
         from hotbit import Calculator
+    elif name == 'vasp2':
+        from ase.calculators.vasp import Vasp2 as Calculator
     else:
         classname = special.get(name, name.title())
         module = __import__('ase.calculators.' + name, {}, None, [classname])
@@ -496,7 +500,7 @@ class Calculator(object):
 
     def check_state(self, atoms, tol=1e-15):
         """Check for system changes since last calculation."""
-        return compare_atoms(self.atoms, atoms)
+        return compare_atoms(self.atoms, atoms, tol)
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         energy = self.get_property('energy', atoms)
@@ -517,6 +521,9 @@ class Calculator(object):
 
     def get_stress(self, atoms=None):
         return self.get_property('stress', atoms)
+
+    def get_stresses(self, atoms=None):
+        return self.get_property('stresses', atoms)
 
     def get_dipole_moment(self, atoms=None):
         return self.get_property('dipole', atoms)
@@ -675,7 +682,7 @@ class Calculator(object):
 class FileIOCalculator(Calculator):
     """Base class for calculators that write/read input/output files."""
 
-    command = None
+    command = None  # str
     'Command used to start calculation'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,

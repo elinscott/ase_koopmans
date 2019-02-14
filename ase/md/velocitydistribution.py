@@ -14,8 +14,10 @@ import numpy as np
 from ase.parallel import world
 from ase import units
 
-def _maxwellboltzmanndistribution(masses, temp, communicator=world,
-                                  rng=np.random):
+
+def _maxwellboltzmanndistribution(
+    masses, temp, communicator=world, rng=np.random
+):
     # For parallel GPAW simulations, the random velocities should be
     # distributed.  Uses gpaw world communicator as default, but allow
     # option of specifying other communicator (for ensemble runs)
@@ -25,15 +27,17 @@ def _maxwellboltzmanndistribution(masses, temp, communicator=world,
     return momenta
 
 
-def MaxwellBoltzmannDistribution(atoms, temp, communicator=world,
-                                 force_temp=False, rng=np.random):
+def MaxwellBoltzmannDistribution(
+    atoms, temp, communicator=world, force_temp=False, rng=np.random
+):
     """Sets the momenta to a Maxwell-Boltzmann distribution.
 
     temp should be fed in energy units; i.e., for 300 K use
     temp=300.*units.kB. If force_temp is set to True, it scales the
     random momenta such that the temperature request is precise."""
-    momenta = _maxwellboltzmanndistribution(atoms.get_masses(), temp,
-                                            communicator, rng)
+    momenta = _maxwellboltzmanndistribution(
+        atoms.get_masses(), temp, communicator, rng
+    )
     atoms.set_momenta(momenta)
     if force_temp:
         temp0 = atoms.get_kinetic_energy() / len(atoms) / 1.5
@@ -91,12 +95,17 @@ def n_BE(temp, omega):
         n = 1 / (np.exp(omega / (temp)) - 1)
     return n
 
-def phonon_harmonics(force_constants,
-                     masses,
-                     temp,
-                     rng=np.random.rand,
-                     quantum=True,
-                     failfast=True):
+
+def phonon_harmonics(
+    force_constants,
+    masses,
+    temp,
+    rng=np.random.rand,
+    quantum=False,
+    plus_minus=False,
+    return_eigensolution=False,
+    failfast=True,
+):
     r"""Return displacements and velocities that produce a given temperature.
 
     Parameters:
@@ -106,19 +115,24 @@ def phonon_harmonics(force_constants,
     masses: array of length N
         masses of the structure in amu
     temp: float
-        Temperature converted to eV (T \* units.kB)
+        Temperature converted to eV (T * units.kB)
     rng: function
         Random number generator function, e.g., np.random.rand
     quantum: bool
         True for Bose-Einstein distribution, False for Maxwell-Boltzmann
         (classical limit)
+    plus_minus: bool
+        Displace atoms with +/- the amplitude accoding to PRB 94, 075125
+    return_eigensolution: bool
+        return eigenvalues and eigenvectors of the dynamical matrix
     failfast: bool
         True for sanity checking the phonon spectrum for negative
         frequencies at Gamma
 
     Returns:
 
-        displacements, velocities generated from the eigenmodes
+        displacements, velocities generated from the eigenmodes,
+        (optional: eigenvalues, eigenvectors of dynamical matrix)
 
     Purpose:
 
@@ -159,7 +173,7 @@ def phonon_harmonics(force_constants,
     """
 
     # Build dynamical matrix
-    rminv = (masses**-0.5).repeat(3)
+    rminv = (masses ** -0.5).repeat(3)
     dynamical_matrix = force_constants * rminv[:, None] * rminv[None, :]
 
     # Solve eigenvalue problem to compute phonon spectrum and eigenvectors
@@ -170,14 +184,17 @@ def phonon_harmonics(force_constants,
         zeros = w2_s[:3]
         worst_zero = np.abs(zeros).max()
         if worst_zero > 1e-3:
-            raise ValueError('Translational modes have suspiciously large '
-                             'energies; should be close to zero: {}'
-                             .format(w2_s[:3]))
+            raise ValueError(
+                "Translational modes have suspiciously large "
+                "energies; should be close to zero: {}".format(w2_s[:3])
+            )
 
         w2min = w2_s[3:].min()
         if w2min < 0:
-            raise ValueError('Dynamical matrix has negative eigenvalues '
-                             'such as {}'.format(w2min))
+            raise ValueError(
+                "Dynamical matrix has negative eigenvalues "
+                "such as {}".format(w2min)
+            )
 
     # First three modes are translational so ignore:
     nw = len(w2_s) - 3
@@ -189,35 +206,71 @@ def phonon_harmonics(force_constants,
     # or high temperature (== classical) limit
     if quantum:
         hbar = units._hbar * units.J * units.s
-        A_s = np.sqrt(hbar * (2*n_BE(temp, hbar*w_s) + 1) / (2*w_s))
+        A_s = np.sqrt(hbar * (2 * n_BE(temp, hbar * w_s) + 1) / (2 * w_s))
     else:
         A_s = np.sqrt(temp) / w_s
 
-    # compute the gaussian distribution for the amplitudes
-    # We need 0 < P <= 1.0 and not 0 0 <= P < 1.0 for the logarithm
-    # to avoid (highly improbable) NaN.
-    # REM(FloK): This is a Box-Muller transformation. Probably replace by Beasly-Springer-Moro algorithm
-    # according to [BrownGeorgescuMandelstahm2013],
-    # especially when rng() produces quasi-random numbers (instead of pseudo-random)
-    spread = np.sqrt(-2.0 * np.log(1.0 - rng(nw)))
+    if plus_minus:
+        # create samples by multiplying the amplitude with +/-
+        # according to Eq. 5 in PRB 94, 075125
 
-    # Assign random phases
-    phi_s = 2.0 * np.pi * rng(nw)
+        spread = (-1) ** np.arange(nw)
 
-    # Create velocities und displacements from the amplitudes and eigenvectors
-    A_s *= spread
-    v_ac = (w_s * A_s * np.cos(phi_s) * X_acs).sum(axis=2) / np.sqrt(masses)[:, None]
-    d_ac = (A_s * np.sin(phi_s) * X_acs).sum(axis=2) / np.sqrt(masses)[:, None]
+        # gauge eigenvectors: largest value always positive
+        for ii in range(X_acs.shape[-1]):
+            vec = X_acs[:, :, ii]
+            max_arg = np.argmax(abs(vec))
+            X_acs[:, :, ii] *= np.sign(vec.flat[max_arg])
 
+        # Create velocities und displacements from the amplitudes and
+        # eigenvectors
+        A_s *= spread
+        phi_s = 2.0 * np.pi * rng(nw)
+
+        # Assign velocities, sqrt(2) compensates for missing sin(phi) in
+        # amplitude for displacement
+        v_ac = (w_s * A_s * np.sqrt(2) * np.cos(phi_s) * X_acs).sum(axis=2)
+        v_ac /= np.sqrt(masses)[:, None]
+
+        # Assign displacements
+        d_ac = (A_s * X_acs).sum(axis=2)
+        d_ac /= np.sqrt(masses)[:, None]
+
+    else:
+        # compute the gaussian distribution for the amplitudes
+        # We need 0 < P <= 1.0 and not 0 0 <= P < 1.0 for the logarithm
+        # to avoid (highly improbable) NaN.
+
+        # Box Muller [en.wikipedia.org/wiki/Box–Muller_transform]:
+        spread = np.sqrt(-2.0 * np.log(1.0 - rng(nw)))
+
+        # assign amplitudes and phases
+        A_s *= spread
+        phi_s = 2.0 * np.pi * rng(nw)
+
+        # Assign velocities and displacements
+        v_ac = (w_s * A_s * np.cos(phi_s) * X_acs).sum(axis=2)
+        v_ac /= np.sqrt(masses)[:, None]
+
+        d_ac = (A_s * np.sin(phi_s) * X_acs).sum(axis=2)
+        d_ac /= np.sqrt(masses)[:, None]
+
+    if return_eigensolution:
+        return d_ac, v_ac, w2_s, X_is
+    # else
     return d_ac, v_ac
 
 
-def PhononHarmonics(atoms,
-                    force_constants,
-                    temp,
-                    rng=np.random,
-                    quantum=True,
-                    failfast=True):
+def PhononHarmonics(
+    atoms,
+    force_constants,
+    temp,
+    rng=np.random,
+    quantum=False,
+    plus_minus=False,
+    return_eigensolution=False,
+    failfast=True,
+):
     r"""Excite phonon modes to specified temperature.
 
     This will displace atomic positions and set the velocities so as
@@ -231,7 +284,7 @@ def PhononHarmonics(atoms,
     force_constants: ndarray of size 3N x 3N
         Force constants for the the structure represented by atoms in eV/Å²
     temp: float
-        Temperature in eV (T \* units.kB)
+        Temperature in eV (T * units.kB)
     rng: Random number generator
         RandomState or other random number generator, e.g., np.random.rand
     quantum: bool
@@ -244,13 +297,16 @@ def PhononHarmonics(atoms,
     """
 
     # Receive displacements and velocities from phonon_harmonics()
-    d_ac, v_ac = phonon_harmonics(force_constants=force_constants,
-                                  masses=atoms.get_masses(),
-                                  temp=temp,
-                                  rng=rng.rand,
-                                  quantum=quantum,
-                                  failfast=failfast)
-
+    d_ac, v_ac = phonon_harmonics(
+        force_constants=force_constants,
+        masses=atoms.get_masses(),
+        temp=temp,
+        rng=rng.rand,
+        plus_minus=plus_minus,
+        quantum=quantum,
+        failfast=failfast,
+        return_eigensolution=False,
+    )
 
     # Assign new positions (with displacements) and velocities
     atoms.positions += d_ac

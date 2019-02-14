@@ -84,6 +84,7 @@ class LAMMPS:
         self.always_triclinic = always_triclinic
         self.calls = 0
         self.forces = None
+        self.stress = None
         self.keep_alive = keep_alive
         self.keep_tmp_files = keep_tmp_files
         self.no_data_file = no_data_file
@@ -152,10 +153,7 @@ class LAMMPS:
 
     def get_stress(self, atoms):
         self.update(atoms)
-        tc = self.thermo_content[-1]
-        # 1 bar (used by lammps for metal units) = 1e-4 GPa
-        return np.array([tc[i] for i in ('pxx', 'pyy', 'pzz', 'pyz', 'pxz',
-                                         'pxy')]) * (-1e-4 * GPa)
+        return self.stress.copy()
 
     def update(self, atoms):
         if not hasattr(self, 'atoms') or self.atoms != atoms:
@@ -199,7 +197,8 @@ class LAMMPS:
 
         # set LAMMPS command from environment variable
         if 'LAMMPS_COMMAND' in os.environ:
-            lammps_cmd_line = shlex.split(os.environ['LAMMPS_COMMAND'])
+            lammps_cmd_line = shlex.split(os.environ['LAMMPS_COMMAND'],
+                                          posix=(os.name == 'posix'))
             if len(lammps_cmd_line) == 0:
                 self.clean()
                 raise RuntimeError('The LAMMPS_COMMAND environment variable '
@@ -213,9 +212,11 @@ class LAMMPS:
             raise RuntimeError(
                 'Please set LAMMPS_COMMAND environment variable')
         if 'LAMMPS_OPTIONS' in os.environ:
-            lammps_options = shlex.split(os.environ['LAMMPS_OPTIONS'])
+            lammps_options = shlex.split(os.environ['LAMMPS_OPTIONS'],
+                                         posix=(os.name == 'posix'))
         else:
-            lammps_options = shlex.split('-echo log -screen none')
+            lammps_options = shlex.split('-echo log -screen none',
+                                         posix=(os.name == 'posix'))
 
         # change into subdirectory for LAMMPS calculations
         cwd = os.getcwd()
@@ -497,6 +498,14 @@ class LAMMPS:
 
         self.thermo_content = thermo_content
 
+        tc = self.thermo_content[-1]
+        # 1 bar (used by lammps for metal units) = 1e-4 GPa
+        # The Voigt stress tensor in LAMMPS orientation
+        # Later we will transform this tensor to the original orientation
+        stress = np.array([tc[i] for i in ('pxx', 'pyy', 'pzz', 'pyz', 'pxz',
+                                           'pxy')]) * (-1e-4 * GPa)
+        self.stress = stress
+
     def read_lammps_trj(self, lammps_trj=None, set_atoms=False):
         """Method which reads a LAMMPS dump file."""
         if lammps_trj is None:
@@ -560,11 +569,11 @@ class LAMMPS:
                                    for x in ['fx', 'fy', 'fz']])
                 # Re-order items according to their 'id' since running in
                 # parallel can give arbitrary ordering.
-                type = [type[x - 1] for x in id]
-                positions = [positions[x - 1] for x in id]
-                velocities = [velocities[x - 1] for x in id]
-                forces = [forces[x - 1] for x in id]
-
+                type = [x for _,x in sorted(zip(id, type))]
+                positions = [x for _,x in sorted(zip(id, positions))]
+                velocities = [x for _,x in sorted(zip(id, velocities))]
+                forces = [x for _,x in sorted(zip(id, forces))]
+                
                 # determine cell tilt (triclinic case!)
                 if len(tilt) >= 3:
                     # for >=lammps-7Jul09 use labels behind "ITEM: BOX BOUNDS"
@@ -637,6 +646,8 @@ class LAMMPS:
                     positions_atoms = np.dot(positions, rotation_lammps2ase)
                     velocities_atoms = np.dot(velocities, rotation_lammps2ase)
                     forces_atoms = np.dot(forces, rotation_lammps2ase)
+                    stress_atoms = np.dot(self.prism.R, self.stress)
+                    stress_atoms = np.dot(stress_atoms, rotation_lammps2ase)
 
                 if set_atoms:
                     # assume periodic boundary conditions here (as in
@@ -645,12 +656,15 @@ class LAMMPS:
                                        cell=cell_atoms)
                     self.atoms.set_velocities(velocities_atoms
                                               * (Ang/(fs*1000.)))
+                    self.atoms.arrays['stress'] = stress_atoms
 
                 self.forces = forces_atoms
+                self.stress = stress_atoms
                 if self.trajectory_out is not None:
                     tmp_atoms = Atoms(type_atoms, positions=positions_atoms,
                                       cell=cell_atoms)
                     tmp_atoms.set_velocities(velocities_atoms)
+                    tmp_atoms.arrays['stress'] = stress_atoms
                     self.trajectory_out.write(tmp_atoms)
         f.close()
 

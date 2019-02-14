@@ -15,6 +15,8 @@ from __future__ import print_function
 
 from itertools import islice
 import re
+import warnings
+
 import numpy as np
 
 from ase.atoms import Atoms
@@ -23,6 +25,7 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
 from ase.utils import basestring
+from ase.constraints import FixAtoms, FixCartesian
 
 __all__ = ['read_xyz', 'write_xyz', 'iread_xyz']
 
@@ -430,6 +433,16 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
                   pbc=pbc,
                   info=info)
 
+    # Read and set constraints
+    if 'move_mask' in arrays:
+        if properties['move_mask'][1] == 3:
+            atoms.set_constraint([FixCartesian(a, mask=arrays['move_mask'][a, :]) for a in range(natoms)])
+        elif properties['move_mask'][1] == 1:
+            atoms.set_constraint(FixAtoms(mask=~arrays['move_mask']))
+        else:
+            raise XYZError('Not implemented constraint')
+        del arrays['move_mask']
+
     for name, array in arrays.items():
         atoms.new_array(name, array)
 
@@ -794,7 +807,22 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                 if pos.shape != (natoms, 3) or pos.dtype.kind != 'f':
                     raise ValueError('Pseudo Atoms containing cell have bad coords')
 
-
+        # Move mask
+        if 'move_mask' in fr_cols:
+            cnstr = images[0]._get_constraints()
+            if len(cnstr) > 0:
+                c0 = cnstr[0]
+                if isinstance(c0, FixAtoms):
+                    cnstr = np.ones((natoms,), dtype=np.bool)
+                    for idx in c0.index:
+                        cnstr[idx] = False
+                elif isinstance(c0, FixCartesian):
+                    for i in range(len(cnstr)):
+                        idx = cnstr[i].a
+                        cnstr[idx] = cnstr[i].mask
+                    cnstr = np.asarray(cnstr)
+            else:
+                fr_cols.remove('move_mask')
 
         # Collect data to be written out
         arrays = {}
@@ -805,11 +833,19 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                 arrays[column] = atoms.arrays[column]
             elif column == 'symbols':
                 arrays[column] = np.array(symbols)
+            elif column == 'move_mask':
+                arrays[column] = cnstr
             else:
                 raise ValueError('Missing array "%s"' % column)
 
         if write_results:
-            fr_cols += per_atom_results.keys()
+            for key in per_atom_results:
+                if key not in fr_cols:
+                    fr_cols += [key]
+                else:
+                    warnings.warn('write_xyz() overwriting array "{0}" present '
+                                  'in atoms.arrays with stored results '
+                                  'from calculator'.format(key))
             arrays.update(per_atom_results)
 
         comm, ncols, dtype, fmt = output_column_format(atoms,
@@ -817,6 +853,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                                                        arrays,
                                                        write_info,
                                                        per_frame_results)
+
         if plain or comment != '':
             # override key/value pairs with user-speficied comment string
             comm = comment

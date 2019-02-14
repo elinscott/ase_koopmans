@@ -33,6 +33,8 @@ commands = {
          '--crystal-structure', '-a', '--lattice-constant',
          '--orthorhombic', '--cubic', '-r', '--repeat', '-g',
          '--gui', '--periodic'],
+    'completion':
+        [],
     'convert':
         ['-v', '--verbose', '-i', '--input-format', '-o',
          '--output-format', '-f', '--force', '-n',
@@ -63,23 +65,21 @@ commands = {
     'info':
         ['-v', '--verbose', '--formats'],
     'nomad-get':
-        [''],
+        [],
     'nomad-upload':
-        ['-t', '--token', '-n', '--do-not-save-token', '-0', '--dry-run'],
+        ['-t', '--token', '-n', '--no-save-token', '-0', '--dry-run'],
     'reciprocal':
         ['-v', '--verbose', '-p', '--path', '-d', '--dimension',
          '--no-vectors', '-k', '--k-points', '-i',
          '--ibz-k-points'],
     'run':
-        ['-t', '--tag', '-p', '--parameters', '-d', '--database', '-S',
-         '--skip', '--properties', '-f', '--maximum-force',
-         '--constrain-tags', '-s', '--maximum-stress', '-E',
-         '--equation-of-state', '--eos-type', '-i',
-         '--interactive', '-c', '--collection', '--modify',
-         '--after'],
+        ['-p', '--parameters', '-t', '--tag', '--properties', '-f',
+         '--maximum-force', '--constrain-tags', '-s',
+         '--maximum-stress', '-E', '--equation-of-state',
+         '--eos-type', '-o', '--output', '--modify', '--after'],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
-         '--jobs', '-v', '--verbose'],
+         '--jobs', '-v', '--verbose', '--strict'],
     'ulm':
         ['-n', '--index', '-d', '--delete', '-v', '--verbose']}
 # End of computer generated data

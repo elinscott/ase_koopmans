@@ -44,7 +44,7 @@ _PW_TOTEN = '!    total energy'
 _PW_STRESS = 'total   stress'
 _PW_FERMI = 'the Fermi energy is'
 _PW_KPTS = 'number of k points='
-_PW_BANDS = 'End of band structure calculation'
+_PW_BANDS = _PW_END
 
 
 class Namelist(OrderedDict):
@@ -212,8 +212,11 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                        positions_card]
             positions = [position[1] for position in positions_card]
 
+            constraint_idx = [position[2] for position in positions_card]
+            constraint = get_constraint(constraint_idx)
+
             structure = Atoms(symbols=symbols, positions=positions, cell=cell,
-                              pbc=True)
+                              constraint=constraint, pbc=True)
 
         # Extract calculation results
         # Energy
@@ -269,44 +272,61 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         # K-points
         ibzkpts = None
         weights = None
+        kpoints_warning = "Number of k-points >= 100: " + \
+                          "set verbosity='high' to print them."
+
         for kpts_index in indexes[_PW_KPTS]:
-            if image_index < kpts_index < next_index:
-                ibzkpts = []
-                weights = []
-                nkpts = int(pwo_lines[kpts_index].split()[4])
-                kpts_index += 2
-                # QE prints the k-points in units of 2*pi/alat
-                # with alat defined as the length of the first
-                # cell vector
-                cell = structure.get_cell()
-                alat = np.linalg.norm(cell[0])
-                for i in range(nkpts):
-                    l =  pwo_lines[kpts_index + i].split()
-                    weights.append(float(l[-1]))
-                    coord = map(float, [l[-6], l[-5], l[-4].strip('),')])
-                    coord = np.array(coord) * 2 * np.pi / alat
-                    coord = kpoint_convert(cell, ckpts_kv=coord)
-                    ibzkpts.append(coord)
-                ibzkpts = np.array(ibzkpts)
-                weights = np.array(weights)
+            nkpts = int(pwo_lines[kpts_index].split()[4])
+            kpts_index += 2
+
+            if pwo_lines[kpts_index].strip() == kpoints_warning:
+                continue
+
+            # QE prints the k-points in units of 2*pi/alat
+            # with alat defined as the length of the first
+            # cell vector
+            cell = structure.get_cell()
+            alat = np.linalg.norm(cell[0])
+            ibzkpts = []
+            weights = []
+            for i in range(nkpts):
+                l = pwo_lines[kpts_index + i].split()
+                weights.append(float(l[-1]))
+                coord = np.array([l[-6], l[-5], l[-4].strip('),')],
+                                 dtype=float)
+                coord *= 2 * np.pi / alat
+                coord = kpoint_convert(cell, ckpts_kv=coord)
+                ibzkpts.append(coord)
+            ibzkpts = np.array(ibzkpts)
+            weights = np.array(weights)
 
         # Bands
         kpts = None
+        kpoints_warning = "Number of k-points >= 100: " + \
+                          "set verbosity='high' to print the bands."
+
         for bands_index in indexes[_PW_BANDS]:
             if image_index < bands_index < next_index:
+                bands_index += 2
+
+                if pwo_lines[bands_index].strip() == kpoints_warning:
+                    continue
+
                 assert ibzkpts is not None
                 spin, bands, eigenvalues = 0, [], [[], []]
-                bands_index += 2
+
                 while True:
-                    l = pwo_lines[bands_index].split()
+                    l = pwo_lines[bands_index].replace('-', ' -').split()
                     if len(l) == 0:
                         if len(bands) > 0:
                             eigenvalues[spin].append(bands)
                             bands = []
-                    elif l[0] == 'k' and l[1] == '=':
+                    elif l == ['occupation', 'numbers']:
+                        bands_index += 3
+                    elif l[0] == 'k' and l[1].startswith('='):
                         pass
-                    elif len(l) > 2 and l[1] == 'SPIN':
-                        if l[2] == 'DOWN':
+                    elif 'SPIN' in l:
+                        if 'DOWN' in l:
                             spin += 1
                     else:
                         try:
@@ -317,7 +337,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
                 if spin == 1:
                     assert len(eigenvalues[0]) == len(eigenvalues[1])
-                assert len(eigenvalues[0]) == len(ibzkpts)
+                assert len(eigenvalues[0] + eigenvalues[1]) == len(ibzkpts)
 
                 kpts = []
                 for s in range(spin + 1):
@@ -326,8 +346,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                         kpts.append(kpt)
 
         # Put everything together
-        calc = SinglePointDFTCalculator(structure, energy=energy, 
-                                        forces=forces, stress=stress, 
+        calc = SinglePointDFTCalculator(structure, energy=energy,
+                                        forces=forces, stress=stress,
                                         magmoms=magmoms, efermi=efermi,
                                         ibzkpts=ibzkpts)
         calc.kpts = kpts
@@ -459,10 +479,13 @@ def read_espresso_in(fileobj):
 
     symbols = [label_to_symbol(position[0]) for position in positions_card]
     positions = [position[1] for position in positions_card]
+    constraint_idx = [position[2] for position in positions_card]
+    constraint = get_constraint(constraint_idx)
 
     # TODO: put more info into the atoms object
-    # e.g magmom, force constraints
-    atoms = Atoms(symbols=symbols, positions=positions, cell=cell, pbc=True)
+    # e.g magmom, forces.
+    atoms = Atoms(symbols=symbols, positions=positions, cell=cell,
+                  constraint=constraint, pbc=True)
 
     return atoms
 
@@ -1642,3 +1665,21 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
 
     # DONE!
     fd.write(''.join(pwi))
+
+
+def get_constraint(constraint_idx):
+    """
+    Map constraints from QE input/output to FixAtoms or FixCartesian constraint
+    """
+    if not np.any(constraint_idx):
+        return None
+
+    a = [a for a, c in enumerate(constraint_idx) if np.all(c is not None)]
+    mask = [[(ic + 1) % 2 for ic in c] for c in constraint_idx
+            if np.all(c is not None)]
+
+    if np.all(np.array(mask)) == 1:
+        constraint = FixAtoms(a)
+    else:
+        constraint = FixCartesian(a, mask)
+    return constraint

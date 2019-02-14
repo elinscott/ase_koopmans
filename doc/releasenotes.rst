@@ -9,6 +9,22 @@ Git master branch
 
 :git:`master <>`.
 
+* Multiple improvements to the ONETEP Calculator. Input files can now be
+  written that specify LDOS, bsunfolding and many other functionalities.
+
+* NWChem calculator now supports TDDFT runs.
+  
+* The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`ga_bulk_tutorial`.
+
+* New :func:`ase.geometry.analyze_dimensionality` function.  See:
+  :ref:`dimtutorial`.
+
+
+Version 3.17.0
+==============
+
+12 November 2018: :git:`3.17.0 <../3.17.0>`
+
 General changes:
 
 * ``atoms.symbols`` is now an array-like object which works
@@ -67,6 +83,8 @@ Algorithms:
   center of mass.
 
 Calculators:
+
+* Added :class:`ase.calculators.qmmm.ForceQMMM` force-based QM/MM calculator.
 
 * Socked-based interface to certain calculators through the
   :mod:`~ase.calculators.socketio` module:
@@ -700,8 +718,7 @@ Version 3.5.1
 
 24 May 2011: :git:`3.5.1 <../3.5.1>`.
 
-* Problem with parallel vibration calculations fixed:
-  `Ticket #80 <https://trac.fysik.dtu.dk/projects/ase/ticket/80>`_.
+* Problem with parallel vibration calculations fixed.
 
 
 Version 3.5.0

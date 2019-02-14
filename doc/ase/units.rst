@@ -10,7 +10,7 @@ Other units are (amongst others)
 ``nm``, ``Bohr``, ``Hartree`` or ``Ha``, ``kJ``, ``kcal``, ``mol``,
 ``Rydberg`` or ``Ry``, ``second``, ``fs`` and ``kB``.
 
-Time is given in units of :math:`\textrm Å \sqrt{\textrm{u} / \textrm{eV}}`.  Thus, for example, :math:`1\textrm{ fs} \approx 0.098 \textrm Å \sqrt{\textrm{u} / \textrm{eV}}`.
+Time is given in units of :math:`\textrm Å \sqrt{\textrm{u} / \textrm{eV}}`.  Thus, for example, :math:`1\textrm{ fs} \approx 0.098 \textrm Å \sqrt{\textrm{u} / \textrm{eV}}`, where `\textrm u` is the atomic mass unit.
 
 
 .. note::
