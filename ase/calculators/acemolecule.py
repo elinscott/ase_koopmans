@@ -88,7 +88,10 @@ class ACE(FileIOCalculator):
         'ExchangeCorrelation': {'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},\
     }]
     order_list = [0, 1, 2]
-    order_key_list = ['BasicInformation', 'Guess', 'Scf', 'Force', 'TDDFT']
+    cis_list = []
+    cisd_list = []
+    dda_list = []
+    order_key_list = ['BasicInformation', 'Guess', 'Scf', 'Force', 'TDDFT','CIS', 'CISD', 'DDA', 'AVAS', 'LOCS', 'EnsembleKSScf', 'Charge', 'Analysis', 'DeltaScf', 'TAOScf', 'ExDFT', 'SigamScf']
 
     default_parameters = {'BasicInformation': basic_list, 'Guess': guess_list,
                           'Scf': scf_list, 'Force': force_list, 'TDDFT': tddft_list, 'order': order_list}
@@ -116,7 +119,6 @@ class ACE(FileIOCalculator):
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)'''
-
         if name not in self.implemented_properties:
             print('{} property not implemented'.format(name))
         if atoms is None:
@@ -126,7 +128,10 @@ class ACE(FileIOCalculator):
             system_changes = self.check_state(atoms)
             if system_changes:
                 self.reset()
-
+        if(name=='forces'):
+            if not 3 in self.parameters["order"]:
+                self.parameters["order"].append(3)
+                self.results = {}
         self.write_input(atoms)
 
         if name not in self.results:
