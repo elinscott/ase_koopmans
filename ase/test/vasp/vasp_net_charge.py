@@ -17,8 +17,8 @@ system = bulk('Al', 'fcc', a=4.5, cubic=True)
 # Dummy calculation to let VASP determine default number of electrons
 calc = Vasp(xc='LDA', nsw=-1, ibrion=-1, nelm=1, lwave=False, lcharg=False)
 calc.calculate(system)
-default_nelect_from_vasp = calc.nelect
-assert default_nelect_from_vasp > 0
+default_nelect_from_vasp = calc.get_number_of_electrons()
+assert default_nelect_from_vasp == 12
 
 # Make sure that no nelect was written into INCAR yet (as it wasn't necessary)
 calc = Vasp()
@@ -55,4 +55,4 @@ assert calc.float_params['nelect'] is None
 calc = Vasp(xc='LDA', nsw=-1, ibrion=-1, nelm=1, lwave=False, lcharg=False,
             nelect=15)
 calc.calculate(system)
-assert calc.nelect == 15
+assert calc.get_number_of_electrons() == 15
