@@ -1691,15 +1691,11 @@ def _to_vasp_bool(x):
 def open_potcar(filename):
     """ Open POTCAR file with transparent decompression if it's an archive (.Z)
     """
-    import tempfile
+    import gzip
     if filename.endswith('R'):
         return open(filename, 'r')
     elif filename.endswith('.Z'):
-        file_tmp = tempfile.NamedTemporaryFile()
-        file_tmp_path = file_tmp.name
-        file_tmp.close()
-        os.system('gunzip -c %s > %s' % (filename, file_tmp_path))
-        return open(file_tmp_path, 'r')
+        return gzip.open(filename)
     else:
         raise ValueError('Invalid POTCAR filename: "%s"' % filename)
 
