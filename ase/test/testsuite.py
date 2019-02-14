@@ -84,7 +84,7 @@ def runtest_almost_no_magic(test):
             raise
 
 
-def run_single_test(filename):
+def run_single_test(filename, verbose, strict):
     """Execute single test and return results as dictionary."""
     result = Result(name=filename)
 
@@ -96,23 +96,25 @@ def run_single_test(filename):
     os.chdir(testsubdir)
     t1 = time.time()
 
-    sys.stdout = devnull
+    if not verbose:
+        sys.stdout = devnull
     try:
         with warnings.catch_warnings():
-            # We want all warnings to be errors.  Except some that are
-            # normally entirely ignored by Python, and which we don't want
-            # to bother about.
-            warnings.filterwarnings('error')
-            for warntype in [PendingDeprecationWarning, ImportWarning,
-                             ResourceWarning]:
-                warnings.filterwarnings('ignore', category=warntype)
+            if strict:
+                # We want all warnings to be errors.  Except some that are
+                # normally entirely ignored by Python, and which we don't want
+                # to bother about.
+                warnings.filterwarnings('error')
+                for warntype in [PendingDeprecationWarning, ImportWarning,
+                                 ResourceWarning]:
+                    warnings.filterwarnings('ignore', category=warntype)
 
             # This happens from matplotlib sometimes.
             # How can we allow matplotlib to import badly and yet keep
             # a higher standard for modules within our own codebase?
             warnings.filterwarnings('ignore',
                                     'Using or importing the ABCs from',
-                                    DeprecationWarning)
+                                    category=DeprecationWarning)
             runtest_almost_no_magic(filename)
     except KeyboardInterrupt:
         raise
@@ -153,7 +155,7 @@ class Result:
         self.__dict__ = d
 
 
-def runtests_subprocess(task_queue, result_queue):
+def runtests_subprocess(task_queue, result_queue, verbose, strict):
     """Main test loop to be called within subprocess."""
 
     try:
@@ -169,14 +171,16 @@ def runtests_subprocess(task_queue, result_queue):
             #    Probably they contain a reference to a module or something.
             #  * gui/run may deadlock for unknown reasons in subprocess
 
-            if test in ['bandstructure.py', 'doctests.py', 'gui/run.py',
-                        'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
-                        'db/db_web.py']:
+            t = test.replace('\\', '/')
+            if t in ['bandstructure.py', 'doctests.py', 'gui/run.py',
+                     'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
+                     'forcecurve.py',
+                     'fio/animate.py', 'db/db_web.py', 'x3d.py']:
                 result = Result(name=test, status='please run on master')
                 result_queue.put(result)
                 continue
 
-            result = run_single_test(test)
+            result = run_single_test(test, verbose, strict)
 
             # Any subprocess that uses multithreading is unsafe in
             # subprocesses due to a fork() issue:
@@ -212,7 +216,7 @@ def print_test_result(result):
         print('=' * 78)
 
 
-def runtests_parallel(nprocs, tests):
+def runtests_parallel(nprocs, tests, verbose, strict):
     # Test names will be sent, and results received, into synchronized queues:
     task_queue = Queue()
     result_queue = Queue()
@@ -229,7 +233,7 @@ def runtests_parallel(nprocs, tests):
         for i in range(nprocs):
             p = Process(target=runtests_subprocess,
                         name='ASE-test-worker-{}'.format(i),
-                        args=[task_queue, result_queue])
+                        args=[task_queue, result_queue, verbose, strict])
             procs.append(p)
             p.start()
 
@@ -238,11 +242,11 @@ def runtests_parallel(nprocs, tests):
             if nprocs == 0:
                 # No external workers so we do everything.
                 task = task_queue.get()
-                result = run_single_test(task)
+                result = run_single_test(task, verbose, strict)
             else:
                 result = result_queue.get()  # blocking call
                 if result.status == 'please run on master':
-                    result = run_single_test(result.name)
+                    result = run_single_test(result.name, verbose, strict)
             print_test_result(result)
             yield result
 
@@ -266,6 +270,13 @@ def summary(results):
     skip = [r for r in results if r.status == 'SKIPPED']
     ok = [r for r in results if r.status == 'OK']
 
+    if fail or err:
+        print()
+        print('Failures and errors:')
+        for r in err + fail:
+            print('{}: {}: {}'.format(r.name, r.exception.__class__.__name__,
+                                      r.exception))
+
     print('========== Summary ==========')
     print('Number of tests   {:3d}'.format(ntests))
     print('Passes:           {:3d}'.format(len(ok)))
@@ -281,7 +292,7 @@ def summary(results):
 
 
 def test(calculators=[], jobs=0,
-         stream=sys.stdout, files=None):
+         stream=sys.stdout, files=None, verbose=False, strict=False):
     """Main test-runner for ASE."""
 
     if LooseVersion(np.__version__) >= '1.14':
@@ -311,15 +322,20 @@ def test(calculators=[], jobs=0,
 
     # Note: :25 corresponds to ase.cli indentation
     print('{:25}{}'.format('test directory', testdir))
+    if test_calculator_names:
+        print('{:25}{}'.format('Enabled calculators:',
+                               ' '.join(test_calculator_names)))
     print('{:25}{}'.format('number of processes',
                            jobs or '1 (multiprocessing disabled)'))
     print('{:25}{}'.format('time', time.strftime('%c')))
+    if strict:
+        print('Strict mode: Convert most warnings to errors')
     print()
 
     t1 = time.time()
     results = []
     try:
-        for result in runtests_parallel(jobs, tests):
+        for result in runtests_parallel(jobs, tests, verbose, strict):
             results.append(result)
     except KeyboardInterrupt:
         print('Interrupted by keyboard')
@@ -384,13 +400,17 @@ class must_raise:
 
 
 class CLICommand:
-    short_description = 'Test ASE'
+    """Run ASE's test-suite.
+
+    By default, tests for external calculators are skipped.  Enable with
+    "-c name".
+    """
 
     @staticmethod
     def add_arguments(parser):
         parser.add_argument(
             '-c', '--calculators',
-            help='Comma-separated list of calculators to test.')
+            help='Comma-separated list of calculators to test')
         parser.add_argument('--list', action='store_true',
                             help='print all tests and exit')
         parser.add_argument('--list-calculators', action='store_true',
@@ -400,7 +420,12 @@ class CLICommand:
                             help='number of worker processes.  '
                             'By default use all available processors '
                             'up to a maximum of 32.  '
-                            '0 disables multiprocessing.')
+                            '0 disables multiprocessing')
+        parser.add_argument('-v', '--verbose', action='store_true',
+                            help='Write test outputs to stdout.  '
+                            'Mostly useful when inspecting a single test')
+        parser.add_argument('--strict', action='store_true',
+                            help='convert warnings to errors')
         parser.add_argument('tests', nargs='*',
                             help='Specify particular test files.  '
                             'Glob patterns are accepted.')
@@ -432,5 +457,6 @@ class CLICommand:
                 sys.exit(1)
 
         ntrouble = test(calculators=calculators, jobs=args.jobs,
-                        files=args.tests)
+                        strict=args.strict,
+                        files=args.tests, verbose=args.verbose)
         sys.exit(ntrouble)

@@ -7,6 +7,12 @@ from scipy.spatial import cKDTree as KDTree
 from ase import Atom, Atoms
 from ase.build.tools import niggli_reduce
 
+
+def normalize(cell):
+    for i in range(3):
+        cell[i] /= np.linalg.norm(cell[i])
+
+
 try:
     from itertools import filterfalse
 except ImportError:  # python2.7
@@ -186,8 +192,7 @@ class SymmetryEquivalenceCheck(object):
         """Get the internal angles of the unit cell."""
         cell = cell.copy()
 
-        # Normalize each vector
-        cell /= np.linalg.norm(cell, axis=1, keepdims=True)
+        normalize(cell)
 
         dot = cell.dot(cell.T)
 
@@ -287,6 +292,8 @@ class SymmetryEquivalenceCheck(object):
             if matrices is None:
                 matrices, translations = \
                     self._get_rotation_reflection_matrices()
+                if matrices is None:
+                    continue
 
             # After the candidate translation based on s1 has been computed
             # we need potentially to swap s1 and s2 for robust comparison
@@ -399,7 +406,7 @@ class SymmetryEquivalenceCheck(object):
         normal_vectors = np.array([np.cross(cell[1, :], cell[2, :]),
                                    np.cross(cell[0, :], cell[2, :]),
                                    np.cross(cell[0, :], cell[1, :])])
-        normal_vectors /= np.linalg.norm(normal_vectors, axis=1, keepdims=True)
+        normalize(normal_vectors)
 
         # Get the distance to the unit cell faces from each atomic position
         pos2faces = np.abs(positions.dot(normal_vectors.T))
@@ -508,7 +515,14 @@ class SymmetryEquivalenceCheck(object):
                                               rtol=rtol, atol=0)
             # The first vector is not interesting
             correct_lengths_mask[0] = False
+
+            # If no trial vectors can be found (for any direction)
+            # then the candidates are different and we return None
+            if not np.any(correct_lengths_mask):
+                return None, None
+
             candidate_indices.append(np.nonzero(correct_lengths_mask)[0])
+
         # Now we calculate all relevant angles in one step. The relevant angles
         # are the ones made by the current candidates. We will have to keep
         # track of the indices in the angles matrix and the indices in the
@@ -550,9 +564,15 @@ class SymmetryEquivalenceCheck(object):
         # Get the rotation/reflection matrix [R] by:
         # [R] = [V][T]^-1, where [V] is the reference vectors and
         # [T] is the trial vectors
-        inverted_trial = np.linalg.inv([refined_candidate_list])[0]
-        canditate_trans_mat = np.matmul(ref_vec.T, inverted_trial)
-        return canditate_trans_mat, atoms1_ref.get_positions()
+        # XXX What do we know about the length/shape of refined_candidate_list?
+        if len(refined_candidate_list) == 1:
+            inverted_trial = 1.0 / refined_candidate_list
+        else:
+            inverted_trial = np.linalg.inv(refined_candidate_list)
+
+        # Equivalent to np.matmul(ref_vec.T, inverted_trial)
+        candidate_trans_mat = np.dot(ref_vec.T, inverted_trial.T).T
+        return candidate_trans_mat, atoms1_ref.get_positions()
 
     def _reduce_to_primitive(self, structure):
         """Reduce the two structure to their primitive type"""

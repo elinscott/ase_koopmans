@@ -87,7 +87,7 @@ def get_atomtypes_from_formula(formula):
     """Return atom types from chemical formula (optionally prepended
     with and underscore).
     """
-    from ase.atoms import string2symbols
+    from ase.symbols import string2symbols
     symbols = string2symbols(formula.split('_')[0])
     atomtypes = [symbols[0]]
     for s in symbols[1:]:
@@ -332,7 +332,7 @@ def read_vasp_out(filename='OUTCAR', index=-1, force_consistent=False):
                 mag = np.array(magnetization, float)
                 images[-1].calc.magmoms = mag
                 images[-1].calc.results['magmoms'] = mag
-            if magmom:
+            if magmom is not None:
                 images[-1].calc.results['magmom'] = magmom
             atoms = Atoms(pbc=True, constraint=constr)
             poscount += 1
@@ -447,10 +447,14 @@ def __get_xml_parameter(par):
     # Float parameters do not have a 'type' attrib
     var_type = to_type[par.attrib.get('type', 'float')]
 
-    if par.tag == 'v':
-        return list(map(var_type, text.split()))
-    else:
-        return var_type(text.strip())
+    try:
+        if par.tag == 'v':
+            return list(map(var_type, text.split()))
+        else:
+            return var_type(text.strip())
+    except ValueError:
+        # Vasp can sometimes write "*****" due to overflow
+        return None
 
 
 def read_vasp_xml(filename='vasprun.xml', index=-1):

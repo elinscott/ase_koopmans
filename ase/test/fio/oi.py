@@ -93,6 +93,10 @@ def test(format):
         # We have a standalone dmol test
         return
 
+    if format in ['gif', 'mp4']:
+        # Complex dependencies; see animate.py test
+        return
+
     if format in ['postgresql', 'trj', 'vti', 'vtu']:
         # Let's not worry about these.
         return
@@ -110,6 +114,9 @@ def test(format):
         return
 
     atoms = get_atoms()
+
+    if format == 'dlp4':
+        atoms.pbc = (1, 1, 0)
 
     images = [atoms, atoms]
 

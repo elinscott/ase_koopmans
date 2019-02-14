@@ -287,6 +287,18 @@ class EquationOfState:
 
         return self.v0, self.e0, self.B
 
+    def getplotdata(self):
+        if self.v0 is None:
+            self.fit()
+
+        x = np.linspace(min(self.v), max(self.v), 100)
+        if self.eos_string == 'sj':
+            y = self.fit0(x**-(1 / 3))
+        else:
+            y = self.func(x, *self.eos_parameters)
+
+        return self.eos_string, self.e0, self.v0, self.B, x, y, self.v, self.e
+
     def plot(self, filename=None, show=None, ax=None):
         """Plot fitted energy curve.
 
@@ -296,43 +308,18 @@ class EquationOfState:
 
         import matplotlib.pyplot as plt
 
-        if self.v0 is None:
-            self.fit()
-
         if filename is None and show is None:
             show = True
 
-        if ax is None:
-            ax = plt.gca()
+        plotdata = self.getplotdata()
 
-        x = np.linspace(min(self.v), max(self.v), 100)
-        if self.eos_string == 'sj':
-            y = self.fit0(x**-(1 / 3))
-        else:
-            y = self.func(x, *self.eos_parameters)
-
-        ax.plot(x, y, '-r')
-        ax.plot(self.v, self.e, 'o')
-
-        try:
-            ax.set_xlabel(u'volume [Å$^3$]')
-            ax.set_ylabel(u'energy [eV]')
-            ax.set_title(u'%s: E: %.3f eV, V: %.3f Å$^3$, B: %.3f GPa' %
-                         (self.eos_string, self.e0, self.v0,
-                          self.B / kJ * 1.e24))
-
-        except ImportError:  # XXX what would cause this error?  LaTeX?
-            ax.set_xlabel(u'volume [L(length)^3]')
-            ax.set_ylabel(u'energy [E(energy)]')
-            ax.set_title(u'%s: E: %.3f E, V: %.3f L^3, B: %.3e E/L^3' %
-                         (self.eos_string, self.e0, self.v0, self.B))
+        ax = plot(*plotdata, ax=ax)
 
         if show:
             plt.show()
         if filename is not None:
             fig = ax.get_figure()
             fig.savefig(filename)
-
         return ax
 
     def fit_sjeos(self):
@@ -365,6 +352,32 @@ class EquationOfState:
         self.fit0 = fit0
 
         return self.v0, self.e0, self.B
+
+
+def plot(eos_string, e0, v0, B, x, y, v, e, ax=None):
+    if ax is None:
+        import matplotlib.pyplot as plt
+        ax = plt.gca()
+
+    ax.plot(x, y, '-r')
+    ax.plot(v, e, 'o')
+
+    try:
+        ax.set_xlabel(u'volume [Å$^3$]')
+        ax.set_ylabel(u'energy [eV]')
+        ax.set_title(u'%s: E: %.3f eV, V: %.3f Å$^3$, B: %.3f GPa' %
+                     (eos_string, e0, v0,
+                      B / kJ * 1.e24))
+
+    except ImportError:  # XXX what would cause this error?  LaTeX?
+        import warnings
+        warnings.warn('Could not use LaTeX formatting')
+        ax.set_xlabel(u'volume [L(length)^3]')
+        ax.set_ylabel(u'energy [E(energy)]')
+        ax.set_title(u'%s: E: %.3f E, V: %.3f L^3, B: %.3e E/L^3' %
+                     (eos_string, e0, v0, B))
+
+    return ax
 
 
 def calculate_eos(atoms, npoints=5, eps=0.04, trajectory=None, callback=None):
@@ -425,13 +438,21 @@ def calculate_eos(atoms, npoints=5, eps=0.04, trajectory=None, callback=None):
 
 
 class CLICommand:
-    short_description = 'Calculate equation of state'
+    """Calculate EOS from one or more trajectory files.
+
+    See https://wiki.fysik.dtu.dk/ase/tutorials/eos/eos.html for
+    more information.
+    """
 
     @staticmethod
     def add_arguments(parser):
         parser.add_argument('trajectories', nargs='+', metavar='trajectory')
-        parser.add_argument('-p', '--plot', action='store_true')
-        parser.add_argument('-t', '--type', default='sj')
+        parser.add_argument('-p', '--plot', action='store_true',
+                            help='Plot EOS fit.  Default behaviour is '
+                            'to write results of fit.')
+        parser.add_argument('-t', '--type', default='sj',
+                            help='Type of fit.  Must be one of {}.'
+                            .format(', '.join(eos_names)))
 
     @staticmethod
     def run(args):
@@ -466,7 +487,8 @@ class CLICommand:
                 try:
                     v0, e0, B = eos.fit()
                 except ValueError as ex:
-                    print('{0:30}{1:2}    {2}'.format(name, len(v), ex.message))
+                    print('{:30}{:2}    {}'
+                          .format(name, len(v), ex.message))
                 else:
-                    print('{0:30}{1:2} {2:10.3f}{3:10.3f}{4:14.3f}'
+                    print('{:30}{:2} {:10.3f}{:10.3f}{:14.3f}'
                           .format(name, len(v), v0, e0, B / kJ * 1.0e24))

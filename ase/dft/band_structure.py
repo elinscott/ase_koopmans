@@ -184,9 +184,11 @@ class BandStructure:
         return labels_from_kpts(self.kpts, self.cell)
 
     def todict(self):
-        return dict((key, getattr(self, key))
-                    for key in
-                    ['cell', 'kpts', 'energies', 'reference'])
+        dct = dict((key, getattr(self, key))
+                   for key in
+                   ['cell', 'kpts', 'energies', 'reference'])
+        dct['__ase_type__'] = 'bandstructure'
+        return dct
 
     def write(self, filename):
         """Write to json file."""
@@ -197,8 +199,11 @@ class BandStructure:
     def read(filename):
         """Read from json file."""
         with open(filename, 'r') as f:
-            dct = decode(f.read())
-        return BandStructure(**dct)
+            bs = decode(f.read())
+            # Handle older BS files without __ase_type__:
+            if not isinstance(bs, BandStructure):
+                return BandStructure(**bs)
+            return bs
 
     def plot(self, *args, **kwargs):
         bsp = BandStructurePlot(self)

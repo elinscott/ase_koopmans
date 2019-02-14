@@ -52,8 +52,8 @@ New release
 
   * Commit the updated ``*.eb`` files, so they will be part of the
     *next* release.
-    
-  If the commands above fails, your need to `integrate EasyBuild with github`_.
+
+  If the commands above fail, you need to `integrate EasyBuild with github`_.
 
 * Export issues, MR's, ... from GitLab (https://gitlab.com/ase/ase/export)
   and store the tar-file in a safe place.
