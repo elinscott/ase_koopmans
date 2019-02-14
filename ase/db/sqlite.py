@@ -347,10 +347,7 @@ class SQLite3Database(Database, object):
 
     def _update(self, id, key_value_pairs, data=None):
         """Update key_value_pairs and data for a single row """
-        if self.type == 'postgresql':
-            encode = functools.partial(_encode, pg=True)
-        else:
-            encode = _encode
+        encode = self.encode
 
         con = self.connection or self._connect()
         self._initialize(con)
