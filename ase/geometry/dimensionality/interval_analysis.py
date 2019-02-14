@@ -10,7 +10,7 @@ https://arxiv.org/abs/1808.02114
 
 import numpy as np
 from ase.neighborlist import NeighborList
-from ase.data import covalent_radii as radii
+from ase.data import covalent_radii
 from ase.geometry.dimensionality import rank_determination
 from ase.geometry.dimensionality import topological_scaling
 
@@ -132,7 +132,7 @@ def build_kintervals(atoms, method):
 
     assert all([e in [0, 1] for e in atoms.pbc])
     num_atoms = len(atoms)
-    rs = radii[atoms.get_atomic_numbers()]
+    rs = covalent_radii[atoms.get_atomic_numbers()]
 
     """
     The interval analysis is performed by iteratively expanding the neighbor
