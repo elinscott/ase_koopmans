@@ -1696,8 +1696,10 @@ def open_potcar(filename):
         return open(filename, 'r')
     elif filename.endswith('.Z'):
         file_tmp = tempfile.NamedTemporaryFile()
-        os.system('gunzip -c %s > %s' % (filename, file_tmp.name))
-        return file_tmp
+        file_tmp_path = file_tmp.name
+        file_tmp.close()
+        os.system('gunzip -c %s > %s' % (filename, file_tmp_path))
+        return open(file_tmp_path, 'r')
     else:
         raise ValueError('Invalid POTCAR filename: "%s"' % filename)
 
