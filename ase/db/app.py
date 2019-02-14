@@ -190,17 +190,24 @@ def index(project):
                 dct[key] = convert_str_to_int_float_or_str(value)
                 if value:
                     q += ',{}={}'.format(key, value)
-            else:
+            elif kind == 'RANGE':
                 v1 = request.args['from_' + key]
                 v2 = request.args['to_' + key]
                 var = request.args['range_' + key]
                 dct[key] = (v1, v2, var)
-                if v1 or v2:
-                    var = request.args['range_' + key]
-                    if v1:
-                        q += ',{}>={}'.format(var, v1)
-                    if v2:
-                        q += ',{}<={}'.format(var, v2)
+                if v1:
+                    q += ',{}>={}'.format(var, v1)
+                if v2:
+                    q += ',{}<={}'.format(var, v2)
+            else:  # SRANGE
+                v1 = request.args['from_' + key]
+                v2 = request.args['to_' + key]
+                dct[key] = (int(v1) if v1 else v1,
+                            int(v2) if v2 else v2)
+                if v1:
+                    q += ',{}>={}'.format(key, v1)
+                if v2:
+                    q += ',{}<={}'.format(key, v2)
         q = q.lstrip(',')
         query += [dct, q]
         sort = 'id'

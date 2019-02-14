@@ -25,3 +25,8 @@ The method is described in the article:
   | 2018
 
 __ http://arxiv.org/abs/1808.02114
+
+.. seealso::
+
+    More examples here: `Dimensionality analysis of ICSD and COD databases
+    <https://cmr.fysik.dtu.dk/lowdim/lowdim.html>`_.

@@ -123,7 +123,7 @@ class GaussianProcess():
                in the training set- '''
 
         X, Y = args
-        self.kernel.set_params(np.array([self.kernel.weight, l , self.noise]))
+        self.kernel.set_params(np.array([self.kernel.weight, l[0] , self.noise]))
         self.train(X, Y)
 
         y = Y.flatten()
@@ -167,7 +167,7 @@ class GaussianProcess():
             raise NameError("The Gaussian Process could not be fitted.")
         else:
             self.hyperparams = np.array(
-                [self.kernel.weight, result.x.copy(), self.noise])
+                [self.kernel.weight, result.x.copy()[0], self.noise])
             
         self.set_hyperparams(self.hyperparams)
         return self.hyperparams
