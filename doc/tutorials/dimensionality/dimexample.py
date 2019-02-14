@@ -9,9 +9,9 @@ atoms.set_pbc((1, 1, 1))
 atoms *= 3
 
 intervals = analyze_dimensionality(atoms, method='RDA')
-(score, a, b, hr, h, components, cdim) = intervals[0]
-print(sum([e[0] for e in intervals]))
-print(hr, h, score, a, b)
+m = intervals[0]
+print(sum([e.score for e in intervals]))
+print(m.hstring, m.h, m.score, m.a, m.b)
 
-atoms.set_tags(components)
+atoms.set_tags(m.components)
 view(atoms)
