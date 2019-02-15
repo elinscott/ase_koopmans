@@ -78,7 +78,15 @@ def build_supercomponent(atoms, components, k, v):
     # build superlayer/superchain by mapping components into visited cells
     positions = []
     numbers = []
+    seen = set()
     for c, offset in v:
+
+        # only want one copy of each sub-component
+        if c in seen:
+            continue
+        else:
+            seen.add(c)
+
         indices = np.where(components == c)[0]
         ps = atoms.positions[indices] + np.dot(offset, atoms.get_cell())
         positions += list(ps)
@@ -109,11 +117,13 @@ def isolate_chain(atoms, components, k, v):
     norm = np.linalg.norm(vector)
     vhat = vector / norm
 
-    # project atoms into new basis and keep only those contained in new cell
+    # project atoms into new basis
     scaled = np.dot(positions, orthogonal_basis(vhat).T / norm)
-    indices = np.where((scaled[:, 2] >= 0) & (scaled[:, 2] < 1))[0]
-    scaled = scaled[indices]
-    numbers = numbers[indices]
+
+    # move atoms into new cell
+    scaled[:,2] %= 1.0
+
+    # subtract barycentre in x and y directions
     scaled[:, :2] -= np.mean(scaled, axis=0)[:2]
 
     # construct a new atoms object containing the isolated chain
@@ -153,15 +163,16 @@ def isolate_monolayer(atoms, components, k, v):
     positions, numbers = build_supercomponent(atoms, components, k, v)
     a, b, basis = construct_inplane_basis(atoms, k, v)
 
-    # project atoms into new basis and keep only those contained in new cell
-    cell = np.dot(np.array([a, b, [0, 0, 1]]), basis.T)
+    # project atoms into new basis
+    c = np.cross(a, b)
+    c /= np.linalg.norm(c)
+    cell = np.dot(np.array([a, b, c]), basis.T)
     scaled = np.linalg.solve(cell.T, np.dot(positions, basis.T).T).T
 
-    smin = np.min(scaled[:, :2], axis=1)
-    smax = np.max(scaled[:, :2], axis=1)
-    indices = np.where((smin >= 0) & (smax < 1))[0]
-    scaled = scaled[indices]
-    numbers = numbers[indices]
+    # move atoms into new cell
+    scaled[:,:2] %= 1.0
+
+    # subtract barycentre in z direction
     scaled[:, 2] -= np.mean(scaled, axis=0)[2]
 
     # construct a new atoms object containing the isolated chain
