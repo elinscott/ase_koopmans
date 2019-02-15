@@ -2,7 +2,7 @@
 Implements functions for extracting ('isolating') a low-dimensional material
 component in its own unit cell.
 
-Uses the rank-determination method described in:
+This uses the rank-determination method described in:
 Definition of a scoring parameter to identify low-dimensional materials
 components
 P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
@@ -103,10 +103,13 @@ def build_supercomponent(atoms, components, k, v):
 
 def select_chain_rotation(scaled):
 
-    best = (-1, None)
+    best = (-1, [1, 0, 0])
     for s in scaled:
         vhat = np.array([s[0], s[1], 0])
-        vhat /= np.linalg.norm(vhat)
+        norm = np.linalg.norm(vhat)
+        if norm < 1E-6:
+            continue
+        vhat /= norm
         obj = np.sum(np.dot(scaled, vhat)**2)
         best = max(best, (obj, vhat), key=lambda x: x[0])
     _, vhat = best
@@ -116,8 +119,6 @@ def select_chain_rotation(scaled):
 
 
 def isolate_chain(atoms, components, k, v):
-
-    positions, numbers = build_supercomponent(atoms, components, k, v)
 
     # identify the vector along the chain; this is the new cell vector
     basis_points = np.array([offset for c, offset in v if c == k])
@@ -132,6 +133,7 @@ def isolate_chain(atoms, components, k, v):
     vhat = vector / norm
 
     # project atoms into new basis
+    positions, numbers = build_supercomponent(atoms, components, k, v)
     scaled = np.dot(positions, orthogonal_basis(vhat).T / norm)
 
     # move atoms into new cell
@@ -143,10 +145,15 @@ def isolate_chain(atoms, components, k, v):
     # pick a good chain rotation (i.e. non-random) 
     scaled = select_chain_rotation(scaled)
 
+    # make cell large enough in x and y directions
+    init_cell = norm * np.eye(3)
+    pos = np.dot(scaled, init_cell)
+    rmax = np.max(np.linalg.norm(pos[:,:2], axis=1))
+    rmax = max(1, rmax)
+    cell = np.diag([4 * rmax, 4 * rmax, 1])
+
     # construct a new atoms object containing the isolated chain
-    cell = norm * np.eye(3)
-    return ase.Atoms(numbers=numbers, scaled_positions=scaled, cell=cell,
-                 pbc=[0, 0, 1])
+    return ase.Atoms(numbers=numbers, positions=pos, cell=cell, pbc=[0, 0, 1])
 
 
 def construct_inplane_basis(atoms, k, v):
@@ -177,24 +184,30 @@ def construct_inplane_basis(atoms, k, v):
 
 def isolate_monolayer(atoms, components, k, v):
 
-    positions, numbers = build_supercomponent(atoms, components, k, v)
     a, b, basis = construct_inplane_basis(atoms, k, v)
 
     # project atoms into new basis
     c = np.cross(a, b)
     c /= np.linalg.norm(c)
-    cell = np.dot(np.array([a, b, c]), basis.T)
-    scaled = np.linalg.solve(cell.T, np.dot(positions, basis.T).T).T
+    init_cell = np.dot(np.array([a, b, c]), basis.T)
+
+    positions, numbers = build_supercomponent(atoms, components, k, v)
+    scaled = np.linalg.solve(init_cell.T, np.dot(positions, basis.T).T).T
 
     # move atoms into new cell
     scaled[:,:2] %= 1.0
 
-    # subtract barycentre in z direction
+    # subtract barycentre in z-direction
     scaled[:, 2] -= np.mean(scaled, axis=0)[2]
 
+    # make cell large enough in z-direction
+    pos = np.dot(scaled, init_cell)
+    zmax = np.max(np.abs(pos[:,2]))
+    cell = np.copy(init_cell)
+    cell[2] *= 4 * zmax
+
     # construct a new atoms object containing the isolated chain
-    return ase.Atoms(numbers=numbers, scaled_positions=scaled,
-                 cell=cell, pbc=[1, 1, 0])
+    return ase.Atoms(numbers=numbers, positions=pos, cell=cell, pbc=[1, 1, 0])
 
 
 def isolate_components(atoms, k):
