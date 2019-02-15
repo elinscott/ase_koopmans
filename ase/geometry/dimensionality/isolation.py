@@ -137,18 +137,18 @@ def isolate_chain(atoms, components, k, v):
     scaled = np.dot(positions, orthogonal_basis(vhat).T / norm)
 
     # move atoms into new cell
-    scaled[:,2] %= 1.0
+    scaled[:, 2] %= 1.0
 
     # subtract barycentre in x and y directions
     scaled[:, :2] -= np.mean(scaled, axis=0)[:2]
 
-    # pick a good chain rotation (i.e. non-random) 
+    # pick a good chain rotation (i.e. non-random)
     scaled = select_chain_rotation(scaled)
 
     # make cell large enough in x and y directions
     init_cell = norm * np.eye(3)
     pos = np.dot(scaled, init_cell)
-    rmax = np.max(np.linalg.norm(pos[:,:2], axis=1))
+    rmax = np.max(np.linalg.norm(pos[:, :2], axis=1))
     rmax = max(1, rmax)
     cell = np.diag([4 * rmax, 4 * rmax, 1])
 
@@ -195,14 +195,14 @@ def isolate_monolayer(atoms, components, k, v):
     scaled = np.linalg.solve(init_cell.T, np.dot(positions, basis.T).T).T
 
     # move atoms into new cell
-    scaled[:,:2] %= 1.0
+    scaled[:, :2] %= 1.0
 
     # subtract barycentre in z-direction
     scaled[:, 2] -= np.mean(scaled, axis=0)[2]
 
     # make cell large enough in z-direction
     pos = np.dot(scaled, init_cell)
-    zmax = np.max(np.abs(pos[:,2]))
+    zmax = np.max(np.abs(pos[:, 2]))
     cell = np.copy(init_cell)
     cell[2] *= 4 * zmax
 
