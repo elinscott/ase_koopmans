@@ -12,15 +12,16 @@ def fit(symbol: str):  # -> Tuple[float, float, float]
         E.append(atoms.get_potential_energy() / len(atoms))
     eos = EOS(V, E, 'birchmurnaghan')
     eos.fit()
-    B, Bp, v0 = eos.eos_parameters[1:]
-    return v0, B, Bp
+    e0, B, Bp, v0 = eos.eos_parameters
+    return e0, v0, B, Bp
 
 
 data = {}  # Dict[Dict[str, float]]
 for path in Path().glob('*.traj'):
     symbol = path.name.split('.')[0]
-    v0, B, Bp = fit(symbol)
-    data[symbol] = {'emt_volume': v0,
+    e0, v0, B, Bp = fit(symbol)
+    data[symbol] = {'emt_energy': e0,
+                    'emt_volume': v0,
                     'emt_B': B,
                     'emt_Bp': Bp}
 

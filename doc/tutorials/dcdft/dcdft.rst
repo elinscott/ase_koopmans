@@ -3,15 +3,26 @@
 Calculating Delta-values
 ========================
 
-The `\Delta` value is defined as:
+In this tutorial we compare the equation-of-state (EOS) calculated for 7 FCC
+metals using values from :class:`~ase.calculators.emt.EMT`, WIEN2k and
+experiment. Each EOS is described by three parameters:
+
+* volume per atom
+* bulk-modulus
+* pressure derivative of bulk-modulus
+
+Differences between two EOS'es can be measured by a single `\Delta` value
+defined as:
 
 .. math::
 
     \sqrt{\frac{\int_{V_a}^{V_b}
-                (E_1(V) - E_2(V))^2}
+                (E_1(V) - E_2(V))^2 dV}
           {V_b - V_a}},
 
-and can be calculated using the :func:`ase.utils.dcdft.delta` function:
+where `E_n(V)` is the energy per atom as a function of volume.
+The `\Delta` value can be calculated using the :func:`ase.utils.dcdft.delta`
+function:
 
 .. autofunction:: ase.utils.dcdft.delta
 
@@ -20,7 +31,8 @@ and can be calculated using the :func:`ase.utils.dcdft.delta` function:
     * :ref:`dcdft`
     * :mod:`ase.eos`
 
-Let us calculate some `\Delta` values for some metals using :class:`~ase.calculators.emt.EMT`:
+We get the WIEN2k and experimental numbers from the :ref:`dcdft` ASE-collection
+and we calculate the EMT EOS using this script:
 
 .. literalinclude:: calculate.py
 

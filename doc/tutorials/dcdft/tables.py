@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ase.collections import dcdft
 from ase.eos import birchmurnaghan
+from ase.io import read
 from ase.units import kJ
 from ase.utils.dcdft import delta
 
@@ -43,11 +44,20 @@ with open('delta.csv', 'w') as f:
               file=f)
 
         if symbol == 'Pt':
+            va = min(emt[0], exp[0], wien2k[0])
+            vb = max(emt[0], exp[0], wien2k[0])
+            v = np.linspace(0.94 * va, 1.06 * vb)
             for (v0, B, Bp), code in [(emt, 'EMT'),
                                       (exp, 'experiment'),
                                       (wien2k, 'WIEN2k')]:
-                v = np.linspace(0.94 * v0, 1.06 * v0)
                 plt.plot(v, birchmurnaghan(v, 0.0, B, Bp, v0), label=code)
+            e0 = dct['emt_energy']
+            V = []
+            E = []
+            for atoms in read('Pt.traj@:'):
+                V.append(atoms.get_volume() / len(atoms))
+                E.append(atoms.get_potential_energy() / len(atoms) - e0)
+            plt.plot(V, E, 'o')
             plt.legend()
             plt.xlabel('volume [Ang^3]')
             plt.ylabel('energy [eV/atom]')

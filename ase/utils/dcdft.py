@@ -17,7 +17,7 @@ def delta(v1, B1, Bp1,
     symmetric: bool
         Default is to calculate a symmetric delta.
 
-    Retruns Delta value in Ev/atom.
+    Retruns Delta value in eV/atom.
     """
     if symmetric:
         va = 0.94 * (v1 + v2) / 2
