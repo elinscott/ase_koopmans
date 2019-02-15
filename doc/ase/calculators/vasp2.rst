@@ -8,7 +8,7 @@ Introduction
 ============
 
 This module introduces an updated version of the ASE VASP_ calculator,
-which adds the functionality of the :class:`~ase.calculators.calculator.FileIOCalculator`.
+which adds the functionality of the :class:`~ase.calculators.calculator.Calculator`.
 This allows a more general usage of the other ASE methods,
 such as :class:`~ase.dft.band_structure.BandStructure`.
 
@@ -88,7 +88,7 @@ VASP specific keywords.
 Examples
 ========
 
-The Vasp FileIO calculator now integrates with existing ASE functions, such as
+The Vasp 2 calculator now integrates with existing ASE functions, such as
 :class:`~ase.dft.band_structure.BandStructure` or :class:`~ase.dft.bandgap.bandgap`.
 
 Band structure with VASP

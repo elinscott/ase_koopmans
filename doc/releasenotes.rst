@@ -24,6 +24,8 @@ Git master branch
   difference between two DFT equation-of-states.  See the new :ref:`dcdft tut`
   tutorial.
 
+* Calculation of stress tensor implemented for
+  :class:`~ase.calculators.emt.EMT` potential
 
 Version 3.17.0
 ==============
