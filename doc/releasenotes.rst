@@ -13,11 +13,14 @@ Git master branch
   written that specify LDOS, bsunfolding and many other functionalities.
 
 * NWChem calculator now supports TDDFT runs.
-  
+
 * The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`ga_bulk_tutorial`.
 
 * New :func:`ase.geometry.analyze_dimensionality` function.  See:
   :ref:`dimtutorial`.
+
+* Calculation of stress tensor implemented for
+  :class:`~ase.calculators.emt.EMT` potential
 
 
 Version 3.17.0
