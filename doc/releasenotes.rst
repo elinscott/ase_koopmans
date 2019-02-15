@@ -20,7 +20,7 @@ Git master branch
 * New :func:`ase.geometry.analyze_dimensionality` function.  See:
   :ref:`dimtutorial`.
 
-* New :func:`ase.utils.dcdft.delta` function:  Calculates the
+* New :func:`ase.utils.deltacodesdft.delta` function:  Calculates the
   difference between two DFT equation-of-states.  See the new :ref:`dcdft tut`
   tutorial.
 

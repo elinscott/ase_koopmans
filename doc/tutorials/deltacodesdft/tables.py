@@ -6,7 +6,7 @@ from ase.collections import dcdft
 from ase.eos import birchmurnaghan
 from ase.io import read
 from ase.units import kJ
-from ase.utils.dcdft import delta
+from ase.utils.deltacodesdft import delta
 
 # Read EMT data:
 data = json.loads(Path('fit.json').read_text())
