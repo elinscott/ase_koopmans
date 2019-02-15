@@ -101,6 +101,20 @@ def build_supercomponent(atoms, components, k, v):
     return positions, numbers
 
 
+def select_chain_rotation(scaled):
+
+    best = (-1, None)
+    for s in scaled:
+        vhat = np.array([s[0], s[1], 0])
+        vhat /= np.linalg.norm(vhat)
+        obj = np.sum(np.dot(scaled, vhat)**2)
+        best = max(best, (obj, vhat), key=lambda x: x[0])
+    _, vhat = best
+    cost, sint, _ = vhat
+    rot = np.array([[cost, -sint, 0], [sint, cost, 0], [0, 0, 1]])
+    return np.dot(scaled, rot)
+
+
 def isolate_chain(atoms, components, k, v):
 
     positions, numbers = build_supercomponent(atoms, components, k, v)
@@ -125,6 +139,9 @@ def isolate_chain(atoms, components, k, v):
 
     # subtract barycentre in x and y directions
     scaled[:, :2] -= np.mean(scaled, axis=0)[:2]
+
+    # pick a good chain rotation (i.e. non-random) 
+    scaled = select_chain_rotation(scaled)
 
     # construct a new atoms object containing the isolated chain
     cell = norm * np.eye(3)
