@@ -21,10 +21,10 @@ defined as:
           {V_b - V_a}},
 
 where `E_n(V)` is the energy per atom as a function of volume.
-The `\Delta` value can be calculated using the :func:`ase.utils.dcdft.delta`
-function:
+The `\Delta` value can be calculated using the
+:func:`ase.utils.deltacodesdft.delta` function:
 
-.. autofunction:: ase.utils.dcdft.delta
+.. autofunction:: ase.utils.deltacodesdft.delta
 
 .. seealso::
 
@@ -61,7 +61,7 @@ Pressure derivative of bulk-moduli:
 
 Now, we can calculate `\Delta` between EMT and WIEN2k for Pt:
 
->>> from ase.utils.dcdft import delta
+>>> from ase.utils.deltacodesdft import delta
 >>> from ase.units import kJ
 >>> delta(15.08, 278.67 * 1e-24 * kJ, 5.31,
 ...       15.64, 248.71 * 1e-24 * kJ, 5.46)
