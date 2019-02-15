@@ -14,14 +14,18 @@ Git master branch
 
 * NWChem calculator now supports TDDFT runs.
 
-* The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`ga_bulk_tutorial`.
+* The genetic algorithm module :mod:`ase.ga` now has operators for crystal
+  structure prediction. See :ref:`ga_bulk_tutorial`.
 
 * New :func:`ase.geometry.analyze_dimensionality` function.  See:
   :ref:`dimtutorial`.
 
+* New :func:`ase.utils.deltacodesdft.delta` function:  Calculates the
+  difference between two DFT equation-of-states.  See the new :ref:`dcdft tut`
+  tutorial.
+
 * Calculation of stress tensor implemented for
   :class:`~ase.calculators.emt.EMT` potential
-
 
 Version 3.17.0
 ==============
