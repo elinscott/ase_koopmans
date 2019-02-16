@@ -47,7 +47,7 @@ class BandPath:
     def todict(self):
         return {'_ase_objtype': 'bandpath',
                 'scaled_kpts': self.scaled_kpts,
-                'special_points': special_points,
+                'special_points': self.special_points,
                 'labelseq': self.labelseq,
                 'cell': self.cell}
 
@@ -223,7 +223,6 @@ class BravaisLattice(ABC):
         pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
 
         cell = self.tocell()
-        icell = cell.reciprocal()
 
         from ase.dft.kpoints import paths2kpts
         kpts, x, X = paths2kpts(pathcoords, cell, npoints)
@@ -311,6 +310,8 @@ Variant name: {name}
         if special_points is not None:
             special_points = dict(special_points)
             special_points['G'] = special_points.pop('Gamma')
+            for key, value in special_points.items():
+                special_points[key] = np.array(value)
         self.special_points = special_points
 
     def __str__(self):
@@ -902,10 +903,8 @@ class TRI(BravaisLattice):
 
 
 def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
-    orig_uc = uc
+    # orig_uc = uc
     if _niggli_reduce:
-        from ase.build.tools import niggli_reduce_cell
-
         uc, niggli_op = uc.niggli_reduce()
 
     #uc2 = uc.niggli_reduce()
@@ -982,7 +981,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
             #return check(BCC, 2.0 * A / np.sqrt(3))
 
     if all_lengths_equal and unequal_angle_dir is not None:
-        x = BC_CA_AB[unequal_angle_dir]
+        # x = BC_CA_AB[unequal_angle_dir]
         y = BC_CA_AB[(unequal_angle_dir + 1) % 3]
 
         c = 2.0 * np.sqrt(-y)
