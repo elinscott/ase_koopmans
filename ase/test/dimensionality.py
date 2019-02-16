@@ -11,11 +11,11 @@ atoms *= 2
 
 intervals = analyze_dimensionality(atoms, method='RDA')
 m = intervals[0]
-assert m.hstring == '2D'
+assert m.dimtype == '2D'
 
 intervals = analyze_dimensionality(atoms, method='TSA')
 m = intervals[0]
-assert m.hstring == '2D'
+assert m.dimtype == '2D'
 
 
 # 3D test
@@ -23,8 +23,8 @@ atoms = FaceCenteredCubic(size=(2, 2, 2), symbol='Cu', pbc=(1, 1, 1))
 
 intervals = analyze_dimensionality(atoms, method='RDA')
 m = intervals[0]
-assert m.hstring == '3D'
+assert m.dimtype == '3D'
 
 intervals = analyze_dimensionality(atoms, method='TSA')
 m = intervals[0]
-assert m.hstring == '3D'
+assert m.dimtype == '3D'

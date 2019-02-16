@@ -32,7 +32,7 @@ def reduced_histogram(h):
     return tuple(h)
 
 
-def build_hstring(h):
+def build_dimtype(h):
 
     h = reduced_histogram(h)
     return ''.join([str(i) for i, e in enumerate(h) if e > 0]) + 'D'
@@ -48,7 +48,7 @@ class KInterval:
         self.components = components
         self.cdim = cdim
 
-        self.hstring = build_hstring(h)
+        self.dimtype = build_dimtype(h)
         if score is not None:
             self.score = score
         else:
@@ -72,11 +72,11 @@ def merge_intervals(intervals):
     that the scores sum to 1.
     """
 
-    dimtypes = set([e.hstring for e in intervals])
+    dimtypes = set([e.dimtype for e in intervals])
 
     merged_intervals = []
-    for hstring in dimtypes:
-        relevant = [e for e in intervals if e.hstring == hstring]
+    for dimtype in dimtypes:
+        relevant = [e for e in intervals if e.dimtype == dimtype]
         combined_score = sum([e.score for e in relevant])
         amin = min([e.a for e in relevant])
         bmax = max([e.b for e in relevant])
@@ -230,7 +230,7 @@ def analyze_kintervals(atoms, method='RDA', merge=True):
             The start of the k-interval
         b: float
             The end of the k-interval
-        hstring: str
+        dimtype: str
             The dimensionality type
         h: tuple
             The histogram of the number of components of each dimensionality.

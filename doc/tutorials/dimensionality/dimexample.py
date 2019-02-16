@@ -11,7 +11,7 @@ atoms *= 3
 intervals = analyze_dimensionality(atoms, method='RDA')
 m = intervals[0]
 print(sum([e.score for e in intervals]))
-print(m.hstring, m.h, m.score, m.a, m.b)
+print(m.dimtype, m.h, m.score, m.a, m.b)
 
 atoms.set_tags(m.components)
 view(atoms)
