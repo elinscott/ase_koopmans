@@ -38,7 +38,7 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
 
     icell = np.linalg.inv(cell).T
     kpoints = points
-    fig = plt.figure(figsize=(5, 5))
+    fig = plt.figure(figsize=(6, 5))
     ax = fig.gca(projection='3d')
 
     azim = pi / 5
