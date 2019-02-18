@@ -19,6 +19,7 @@ class CLIError(Exception):
 # python -m ase.cli.completion to update autocompletion.
 commands = [
     ('info', 'ase.cli.info'),
+    ('show', 'ase.cli.show'),
     ('test', 'ase.test'),
     ('gui', 'ase.gui.ag'),
     ('db', 'ase.db.cli'),
