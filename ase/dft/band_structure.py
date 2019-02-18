@@ -5,6 +5,49 @@ from ase.io.jsonio import encode, decode
 from ase.parallel import paropen
 
 
+def calculate_band_structure(atoms, path=None, scf_kwargs=None,
+                             bs_kwargs=None):
+
+    calc = atoms.calc
+
+    if calc is None:
+        raise ValueError('Atoms have no calculator')
+
+    if path is None:
+        lat, op = atoms.cell.bravais()
+        path = lat.bandpath()  # Default bandpath
+
+    if scf_kwargs is not None:
+        calc.set(**scf_kwargs)
+
+    atoms.get_potential_energy()
+
+    if hasattr(calc, 'get_fermi_energy'):  # XXX FreeElectrons
+        # What is the protocol for a calculator to tell whether
+        # it has fermi_energy?
+        eref = calc.get_fermi_energy()
+    else:
+        eref = 0.0
+
+    if bs_kwargs is None:
+        bs_kwargs = {}
+
+    calc.set(kpts=path.scaled_kpts, **bs_kwargs)
+    calc.results.clear()  # XXX get rid of me
+    atoms.get_potential_energy()
+
+    bs0 = calc.band_structure()
+    # we should verify here that bs0.kpts are similar to path.scaled_kpts,
+    # as a sanity check of sorts.  The former may have been rounded etc.
+    # if they were read from calculator output file.
+
+    # We could also check bs0.eref, but it's better to use the one which we
+    # know came from the selfconsistent calculation.
+
+    bs = NewBandStructure(path, bs0.energies, reference=eref)
+    return bs
+
+
 def get_band_structure(atoms=None, calc=None):
     """Create band structure object from Atoms or calculator."""
     atoms = atoms if atoms is not None else calc.atoms
@@ -215,12 +258,12 @@ class BandStructure:
 
 
 class NewBandStructure(BandStructure):
-    def __init__(self, bandpath, energies, reference=0.0):
-        self.bandpath = bandpath
-        BandStructure.__init__(self, cell=self.bandpath.cell,
-                               kpts=bandpath.scaled_kpts,
+    def __init__(self, path, energies, reference=0.0):
+        self.path = path
+        BandStructure.__init__(self, cell=self.path.cell,
+                               kpts=path.scaled_kpts,
                                energies=energies, reference=reference)
 
     def get_labels(self):
         return labels_from_kpts(self.kpts, self.cell,
-                                special_points=self.bandpath.special_points)
+                                special_points=self.path.special_points)
