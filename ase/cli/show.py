@@ -21,7 +21,7 @@ class CLICommand:
         for fname in args.file:
             obj = read_json(fname)
             objtype = obj.ase_objtype
-            print(objtype)
+            print('Object type:', objtype)
             print(obj)
 
             # plot() should be uniform among plottable objects

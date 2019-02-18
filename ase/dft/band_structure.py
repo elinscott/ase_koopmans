@@ -36,20 +36,16 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     calc.results.clear()  # XXX get rid of me
     atoms.get_potential_energy()
 
-    bs0 = calc.band_structure()
-    # we should verify here that bs0.kpts are similar to path.scaled_kpts,
-    # as a sanity check of sorts.  The former may have been rounded etc.
-    # if they were read from calculator output file.
-
-    # We could also check bs0.eref, but it's better to use the one which we
-    # know came from the selfconsistent calculation.
-
-    bs = NewBandStructure(path, bs0.energies, reference=eref)
+    bs = get_band_structure(atoms, _bandpath=path)
     return bs
 
 
-def get_band_structure(atoms=None, calc=None):
+def get_band_structure(atoms=None, calc=None, _bandpath=None):
     """Create band structure object from Atoms or calculator."""
+    # XXX We throw away info about the bandpath when we create the calculator.
+    # If we have kept the bandpath, we can provide it as an argument here.
+    # It would be wise to check that the bandpath kpoints are the same as
+    # those stored in the calculator.
     atoms = atoms if atoms is not None else calc.atoms
     calc = calc if calc is not None else atoms.calc
 
@@ -61,8 +57,12 @@ def get_band_structure(atoms=None, calc=None):
                          for k in range(len(kpts))])
     energies = np.array(energies)
 
-    return BandStructure(cell=atoms.cell,
-                         kpts=kpts,
+
+    if _bandpath is None:
+        from ase.dft.kpoints import BandPath
+        _bandpath = BandPath(cell=atoms.cell, scaled_kpts=kpts)
+
+    return BandStructure(path=_bandpath,
                          energies=energies,
                          reference=calc.get_fermi_level())
 
@@ -216,7 +216,8 @@ class BandStructurePlot:
             plt.show()
 
 
-class BandStructure:
+# XXX delete me
+class OldBandStructure:
     def __init__(self, cell, kpts, energies, reference=0.0):
         """Create band structure object from energies and k-points."""
         assert cell.shape == (3, 3)
@@ -241,14 +242,14 @@ class BandStructure:
         with paropen(filename, 'w') as f:
             f.write(encode(self))
 
-    @staticmethod
-    def read(filename):
+    @classmethod
+    def read(cls, filename):
         """Read from json file."""
         with open(filename, 'r') as f:
             bs = decode(f.read())
             # Handle older BS files without __ase_type__:
-            if not isinstance(bs, BandStructure):
-                return BandStructure(**bs)
+            if not isinstance(bs, cls):
+                return cls(**bs)
             return bs
 
     def plot(self, *args, **kwargs):
@@ -257,13 +258,40 @@ class BandStructure:
         return bsp.plot(*args, **kwargs)
 
 
-class NewBandStructure(BandStructure):
+class BandStructure:
+    ase_objtype = 'bandstructure'
+
     def __init__(self, path, energies, reference=0.0):
         self.path = path
-        BandStructure.__init__(self, cell=self.path.cell,
-                               kpts=path.scaled_kpts,
-                               energies=energies, reference=reference)
+        self.energies = np.asarray(energies)
+        self.reference=reference
+
+    def todict(self):
+        return dict(__ase_type__=self.ase_objtype,
+                    path=self.path.todict(),
+                    energies=self.energies,
+                    reference=self.reference)
 
     def get_labels(self):
-        return labels_from_kpts(self.kpts, self.cell,
+        return labels_from_kpts(self.path.scaled_kpts, self.path.cell,
                                 special_points=self.path.special_points)
+
+    def write(self, filename):
+        with paropen(filename, 'w') as f:
+            f.write(encode(self))
+
+    @classmethod
+    def read(cls, filename):
+        with open(filename, 'r') as f:
+            return decode(f.read())
+
+    def plot(self, *args, **kwargs):
+        bsp = BandStructurePlot(self)
+        # Maybe return bsp?  But for now run the plot, for compatibility
+        return bsp.plot(*args, **kwargs)
+
+    def __repr__(self):
+        return ('{}(path={!r}, energies=[{} values], reference={})'
+                .format(self.__class__.__name__, self.path,
+                        '{}x{}x{}'.format(*self.energies.shape),
+                        self.reference))

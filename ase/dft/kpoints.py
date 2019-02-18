@@ -162,10 +162,10 @@ class BandPath:
         return np.dot(coords, self.icell)
 
     def __repr__(self):
-        return ('{}(vertices={}, special_points={}, kpts=[{} kpoints])'
+        return ('{}(path={}, special_points={}, kpts=[{} kpoints])'
                 .format(self.__class__.__name__,
                         self.labelseq,
-                        self.special_points,
+                        ''.join(sorted(self.special_points)),
                         len(self.scaled_kpts)))
 
     @property
