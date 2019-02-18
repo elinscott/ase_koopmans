@@ -172,50 +172,16 @@ class BravaisLattice(ABC):
         return labels[0]
 
     def plot_bz(self, path=None, special_points=None, **plotkwargs):
-        from ase.dft.bz import bz3d_plot
-
         # Create a generic bandpath (no actual kpoints):
         bandpath = self.bandpath(path=path, special_points=special_points,
                                  npoints=0)
         return bandpath.plot(**plotkwargs)
 
-        # XXXXXXXXX outdated code below
-        if special_points is None:
-            special_points = self.get_special_points()
-
-        if path is None:
-            isolated_points = ','.join(special_points)
-            path = self.special_path + ',' + isolated_points
-            # (Isolated points are normally plotted twice since they are
-            #  also part of the special path.)
-
-        cell = self.tocell()
-        icell = cell.reciprocal()
-
-        paths = []
-
-        if path:
-            for path0 in path.split(','):
-                if not re.match(r'([A-Z]\d?)+', path0):
-                    raise ValueError('Invalid path string: {}'
-                                     .format(repr(path0)))
-                path0 = re.findall(r'[A-Z]\d?', path0)
-                thecoords = [special_points[label] for label in path0]
-                abscoords = np.dot(thecoords, icell)
-                paths.append((path0, abscoords))
-        else:
-            paths = None
-
-        kw = {'vectors': True}
-        kw.update(plotkwargs)
-
-        return bz3d_plot(cell, paths=paths, **kw)
-
     def bandpath(self, path=None, npoints=50, special_points=None):
+        # npoints should depend on the length of the path
         if special_points is None:
             special_points = self.get_special_points()
 
-        # npoints should depend on the length of the path
         if path is None:
             path = self.variant.special_path
 
