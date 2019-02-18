@@ -105,6 +105,8 @@ def resolve_kpt_path_string(path, special_points):
 
 
 class BandPath:
+    ase_objtype = 'bandpath'
+
     def __init__(self, cell, scaled_kpts=None,
                  special_points=None, labelseq=None):
         if scaled_kpts is None:
@@ -131,20 +133,40 @@ class BandPath:
         return cls(**kwargs)
 
     def todict(self):
-        return {'_ase_objtype': 'bandpath',
+        return {'__ase_type__': self.ase_objtype,
                 'scaled_kpts': self.scaled_kpts,
                 'special_points': self.special_points,
                 'labelseq': self.labelseq,
                 'cell': self.cell}
 
+    def write(self, filename):
+        # XXX could be provided by a class decorator,
+        # e.g., @jsonio('bandpath').
+        # That decorator should also provide a static read() function.
+        #
+        # WIP: get rid of similar stuff in BandStructure class.
+        from ase.parallel import paropen
+        from ase.io.jsonio import encode
+        with paropen(filename, 'w') as fd:
+            fd.write(encode(self))
+
+    @classmethod
+    def read(cls, filename):
+        # XXX unify handling of JSONable objects
+        with open(filename, 'r') as fd:
+            bandpath = decode(fd.read())
+        assert isinstance(bandpath, cls)
+        return bandpath
+
     def _scale(self, coords):
         return np.dot(coords, self.icell)
 
     def __repr__(self):
-        return ('{}(vertices={}, special_points={})'
+        return ('{}(vertices={}, special_points={}, kpts=[{} kpoints])'
                 .format(self.__class__.__name__,
                         self.labelseq,
-                        self.special_points))
+                        self.special_points,
+                        len(self.scaled_kpts)))
 
     @property
     def kpts(self):
