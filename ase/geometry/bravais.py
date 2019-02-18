@@ -5,89 +5,11 @@ import re
 import numpy as np
 
 from ase.geometry.cell import Cell
-from ase.dft.kpoints import parse_path_string, ibz_points
+from ase.dft.kpoints import (parse_path_string, ibz_points, BandPath,
+                             resolve_kpt_path_string)
 
 
 _degrees = np.pi / 180
-
-
-def resolve_kpt_path_string(path, special_points):
-    paths = parse_path_string(path)
-    coords = [np.array([special_points[sym] for sym in subpath])
-              for subpath in paths]
-    return paths, coords
-
-
-class BandPath:
-    def __init__(self, cell, scaled_kpts=None,
-                 special_points=None, labelseq=None):
-        if scaled_kpts is None:
-            scaled_kpts = np.empty((0, 3))
-
-        if special_points is None:
-            special_points = {}
-
-        if labelseq is None:
-            labelseq = []
-
-        assert cell.shape == (3, 3)
-        assert scaled_kpts.ndim == 2 and scaled_kpts.shape[1] == 3
-        self.cell = cell
-        self.icell = cell.reciprocal()
-        self.scaled_kpts = scaled_kpts
-        self.special_points = special_points
-        self.labelseq = labelseq
-
-    @classmethod
-    def fromdict(cls, d):
-        kwargs = dict(d)
-        assert kwargs.pop('_ase_objtype') == 'bandpath'
-        return cls(**kwargs)
-
-    def todict(self):
-        return {'_ase_objtype': 'bandpath',
-                'scaled_kpts': self.scaled_kpts,
-                'special_points': self.special_points,
-                'labelseq': self.labelseq,
-                'cell': self.cell}
-
-    def _scale(self, coords):
-        return np.dot(coords, self.icell)
-
-    def __repr__(self):
-        return ('{}(vertices={}, special_points={})'
-                .format(self.__class__.__name__,
-                        self.labelseq,
-                        self.special_points))
-
-    @property
-    def kpts(self):
-        return self._scale(self.scaled_kpts)
-
-    def plot(self, **plotkwargs):
-        from ase.dft.bz import bz3d_plot
-
-        special_points = self.special_points
-        labelseq, coords = resolve_kpt_path_string(self.labelseq,
-                                                   special_points)
-
-        paths = []
-        points_already_plotted = set()
-        for subpath_labels, subpath_coords in zip(labelseq, coords):
-            points_already_plotted.update(subpath_labels)
-            paths.append((subpath_labels, self._scale(subpath_coords)))
-
-        # Add each special point as a single-point subpath if they were
-        # not plotted already:
-        for label, point in special_points.items():
-            if label not in points_already_plotted:
-                paths.append((label, [self._scale(point)]))
-
-        kw = {'vectors': True}
-        kw.update(plotkwargs)
-        return bz3d_plot(self.cell, paths=paths, points=self.kpts,
-                         pointstyle={'marker': '.'},
-                         **kw)
 
 
 class BravaisLattice(ABC):
@@ -275,10 +197,11 @@ Variant name: {name}
         self.special_path = special_path
         if special_points is not None:
             special_points = dict(special_points)
-            special_points['G'] = special_points.pop('Gamma')
             for key, value in special_points.items():
                 special_points[key] = np.array(value)
         self.special_points = special_points
+        # XXX Should make special_points available as a single array as well
+        # (easier to transform that way)
 
     def __str__(self):
         return self.variant_desc.format(**vars(self))
@@ -868,7 +791,11 @@ class TRI(BravaisLattice):
         return points
 
 
-def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
+def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
+    # XXX we need to figure out a way to reduce the cell to standard
+    # forms, Niggli or otherwise.  Else we will not always get the
+    # right type.
+
     # orig_uc = uc
     if _niggli_reduce:
         uc, niggli_op = uc.niggli_reduce()
