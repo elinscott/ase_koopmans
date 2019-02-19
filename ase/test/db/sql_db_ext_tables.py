@@ -65,6 +65,8 @@ def test_insert_in_external_tables(db_name):
     # a float array
     with must_raise(ValueError):
         db.write(atoms, external_tables={"insert_tab": {"rate": np.int32(1.0)}})
+    
+    with must_raise(ValueError):
         db.write(atoms, external_tables={"insert_tab": {"rate": np.int64(1.0)}})
 
     # Create a new table should have INTEGER types
@@ -77,6 +79,8 @@ def test_insert_in_external_tables(db_name):
     # Make sure that we cannot insert float
     with must_raise(ValueError):
         db.write(atoms, external_tables={"integer_tab": {"rate": np.float32(1)}})
+
+    with must_raise(ValueError):
         db.write(atoms, external_tables={"integer_tab": {"rate": np.float64(1)}})
 
     # Make sure that ValueError is raised with mixed datatypes
@@ -104,6 +108,16 @@ def test_write_atoms_row(db_name):
     row["unique_id"] = "uniqueIDTest"
     db.write(row)
 
+def test_external_table_upon_update():
+    db = connect('update_table.db')
+    no_features = 5
+    ext_table = dict((i, i) for i in range(no_features))
+    atoms = Atoms('Pb', positions=[[0, 0, 0]])
+    db.write(atoms)
+    db.update(1, external_tables={'sys': ext_table})
+    os.remove('update_table.db')
+
+
 
 
 for db_name in DB_NAMES:
@@ -119,6 +133,7 @@ for db_name in DB_NAMES:
     test_insert_in_external_tables(name)
     test_extract_from_table(name)
     test_write_atoms_row(name)
+    test_external_table_upon_update()
 
     if db_name != "postgresql":
         os.remove(name)
