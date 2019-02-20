@@ -98,7 +98,7 @@ init_statements = [
     value TEXT)""",
 
     "INSERT INTO information VALUES ('version', '{}')".format(VERSION),
-    
+
     """CREATE TABLE external_table_info (name TEXT, datatype TEXT)"""
     ]
 
@@ -379,7 +379,8 @@ class SQLite3Database(Database, object):
         # Insert entries in the valid tables
         for tabname in valid_entries:
             try:
-                self._insert_in_external_table(cur, name=tabname, entries=ext_tables[tabname])
+                self._insert_in_external_table(
+                    cur, name=tabname, entries=ext_tables[tabname])
             except ValueError as exc:
                 # Close the connection without committing
                 if self.connection is None:
@@ -476,7 +477,7 @@ class SQLite3Database(Database, object):
         for tab in external_tab:
             row = self.read_external_table(tab, dct["id"])
             tables[tab] = row
-        
+
         dct.update(tables)
         return AtomsRow(dct)
 
@@ -701,7 +702,8 @@ class SQLite3Database(Database, object):
         if len(ids) == 0:
             return
         con = self._connect()
-        self._delete(con.cursor(), ids, tables=self.get_external_table_names(db_con=con))
+        self._delete(con.cursor(), ids,
+                     tables=self.get_external_table_names(db_con=con))
         self._delete(con.cursor(), ids)
         con.commit()
         con.close()
@@ -754,7 +756,7 @@ class SQLite3Database(Database, object):
 
     def create_table_if_not_exists(self, name, dtype, db_con=None):
         """Create a new table if it does not exits.
-        
+
         Arguments
         ==========
         name: str
@@ -762,9 +764,13 @@ class SQLite3Database(Database, object):
         dtype: str
             Datatype of the value field (typically REAL, INTEGER, TEXT etc.)
         """
+        if name in all_tables:
+            raise ValueError("External table can not be any of {}"
+                             "".format(all_tables))
+
         if self.external_table_exists(name):
             return
-        
+
         con = db_con or self.connection or self._connect()
         cur = con.cursor()
         sql = "CREATE TABLE IF NOT EXISTS {} ".format(name)
@@ -784,10 +790,10 @@ class SQLite3Database(Database, object):
         """Delete an external table."""
         if not self.external_table_exists(name):
             return
-        
+
         con = self.connection or self._connect()
         cur = con.cursor()
-        
+
         sql = "DROP TABLE {}".format(name)
         cur.execute(sql)
 
@@ -811,7 +817,7 @@ class SQLite3Database(Database, object):
         if name is None or entries is None:
             # There is nothing to do
             return
-        
+
         id = entries.pop("id")
         dtype = self._guess_type(entries)
         expected_dtype = self._get_value_type_of_table(cursor, name)
@@ -827,14 +833,16 @@ class SQLite3Database(Database, object):
         for item in cursor.fetchall():
             value = entries.pop(item[0], None)
             if value is not None:
-                updates.append((value, id, self._convert_to_recognized_types(item[0])))
+                updates.append(
+                    (value, id, self._convert_to_recognized_types(item[0])))
 
         # Update entry if key and ID already exists
         sql = "UPDATE {} SET value=? WHERE id=? AND key=?".format(name)
         cursor.executemany(sql, updates)
 
         # Insert the ones that does not already exist
-        inserts = [(k, self._convert_to_recognized_types(v), id) for k, v in entries.items()]
+        inserts = [(k, self._convert_to_recognized_types(v), id)
+                   for k, v in entries.items()]
         sql = "INSERT INTO {} VALUES (?, ?, ?)".format(name)
         cursor.executemany(sql, inserts)
 
@@ -847,7 +855,7 @@ class SQLite3Database(Database, object):
         if any([t != all_types[0] for t in all_types]):
             typenames = [t.__name__ for t in all_types]
             raise ValueError("Inconsistent datatypes in the table. "
-                             "given types: {}".format(typenames))            
+                             "given types: {}".format(typenames))
 
         val = values[0]
         if isinstance(val, int) or np.issubdtype(type(val), np.integer):
