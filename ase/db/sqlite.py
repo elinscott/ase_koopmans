@@ -229,6 +229,16 @@ class SQLite3Database(Database, object):
             raise IOError('Please convert to new format. ' +
                           'Use: python -m ase.db.convert ' + self.filename)
 
+        # Check that external_tables_info is present
+        cur = con.execute(
+            'SELECT COUNT(*) FROM sqlite_master '
+            'WHERE name="external_table_info"')
+
+        if cur.fetchone()[0] == 0:
+            sql = "CREATE TABLE external_table_info (name TEXT, datatype TEXT)"
+            cur.execute(sql)
+            con.commit()
+
         self.initialized = True
 
     def _write(self, atoms, key_value_pairs, data, id):
@@ -732,7 +742,6 @@ class SQLite3Database(Database, object):
         cur = con.cursor()
         sql = "SELECT name FROM external_table_info"
         cur.execute(sql)
-
         ext_tab_names = [x[0] for x in cur.fetchall()]
 
         if self.connection is None and db_con is None:
