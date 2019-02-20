@@ -87,7 +87,13 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
                 if name == 'G':
                     name = '\\Gamma'
                 elif len(name) > 1:
-                    name = name[0] + '_' + name[1]
+                    import re
+                    m = re.match(r'^(\D+?)(\d*)$', name)
+                    if m is None:
+                        raise ValueError('Bad label: {}'.format(name))
+                    name, num = m.group(1, 2)
+                    if num:
+                        name = '{}_{{{}}}'.format(name, num)
                 ax.text(x, y, z, '$' + name + '$',
                         ha='center', va='bottom', color='r')
 
