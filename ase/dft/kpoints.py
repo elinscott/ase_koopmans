@@ -189,7 +189,7 @@ class BandPath:
         # not plotted already:
         for label, point in special_points.items():
             if label not in points_already_plotted:
-                paths.append((label, [self._scale(point)]))
+                paths.append(([label], [self._scale(point)]))
 
         kw = {'vectors': True}
         kw.update(plotkwargs)
