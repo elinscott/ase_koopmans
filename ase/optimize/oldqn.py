@@ -24,7 +24,7 @@ def scale_radius_energy(f,r):
         scale = 1.0
 #       if(r<=0.01):
 #               return scale
-        
+
         if f<0.01: scale*=1.4
         if f<0.05: scale*=1.4
         if f<0.10: scale*=1.4
@@ -57,7 +57,7 @@ def find_lamda(upperlimit,Gbar,b,radius):
         step = 0.1
         while  f(lowerlimit,Gbar,b,radius) < 0:
                 lowerlimit -= step
-                
+
         converged = False
 
         while not converged:
@@ -66,7 +66,7 @@ def find_lamda(upperlimit,Gbar,b,radius):
                 lamda = midt
                 fmidt = f(midt,Gbar,b,radius)
                 fupper = f(upperlimit,Gbar,b,radius)
-        
+
                 if fupper*fmidt<0:
                         lowerlimit = midt
                 else:
@@ -117,7 +117,7 @@ class GoodOldQuasiNewton(Optimizer):
             Used to set the maximum distance an atom can move per
             iteration (default value is 0.2 Angstroms).
 
-        
+
         logfile: file object or str
             If *logfile* is a string, a file with that name will be opened.
             Use '-' for stdout.
@@ -126,7 +126,7 @@ class GoodOldQuasiNewton(Optimizer):
             Defaults to None, which causes only rank 0 to save files.  If
             set to true,  this rank will save files.
         """
- 
+
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master)
 
         self.eps = 1e-12
@@ -147,7 +147,7 @@ class GoodOldQuasiNewton(Optimizer):
                 self.maxradius = 0.5*np.sqrt(n)
         else:
                 self.maxradius = maxradius
-                
+
         # 0.01 < radius < maxradius
         self.radius = max(min( self.radius, self.maxradius ), 0.0001)
 
@@ -169,7 +169,7 @@ class GoodOldQuasiNewton(Optimizer):
     def set_max_radius(self, maxradius):
                 self.maxradius = maxradius
                 self.radius = min(self.maxradius, self.radius)
-                
+
     def set_hessian(self,hessian):
         self.hessian = hessian
 
@@ -208,7 +208,7 @@ class GoodOldQuasiNewton(Optimizer):
                       self.hessian,
                       self.energy_estimate),f)
         f.close()
-        
+
 
 
     def update_hessian(self,pos,G):
@@ -231,7 +231,7 @@ class GoodOldQuasiNewton(Optimizer):
                 print('hessian ',self.hessian)
 
 
-        
+
     def update_hessian_bfgs(self,pos,G):
         n = len(self.hessian)
         dgrad = G - self.oldG
@@ -296,9 +296,12 @@ class GoodOldQuasiNewton(Optimizer):
 
 
 
-    def step(self, f):
+    def step(self, f=None):
         """ Do one QN step
         """
+
+        if f is None:
+            f = self.atoms.get_forces()
 
         pos = self.atoms.get_positions().ravel()
         G = -self.atoms.get_forces().ravel()
@@ -344,8 +347,8 @@ class GoodOldQuasiNewton(Optimizer):
                         fg = self.get_force_prediction(G)
                         self.write_log("Scale factors %f %f "%(scale_radius_energy(f,self.radius),
                                                                 scale_radius_force(fg,self.radius)))
-                        
-                                   
+
+
                 self.radius = max(min(self.radius,self.maxradius), 0.0001)
         else:
                 self.update_hessian(pos,G)
@@ -359,7 +362,7 @@ class GoodOldQuasiNewton(Optimizer):
 
         # calculate projection of G onto eigenvectors V
         Gbar = np.dot(G,np.transpose(V))
-        
+
         lamdas = self.get_lambdas(b,Gbar)
 
         D = -Gbar/(b-lamdas)
@@ -428,7 +431,7 @@ class GoodOldQuasiNewton(Optimizer):
                 lamda = find_lamda(upperlimit,Gbar,b,self.radius)
                 lamdas += lamda
                 lamdas[0] -= 2*lamda
-                
+
         return lamdas
 
 
@@ -442,7 +445,7 @@ class GoodOldQuasiNewton(Optimizer):
             print(" ")
 
 
-    
+
 
     def get_hessian_inertia(self,eigenvalues):
         # return number of negative modes

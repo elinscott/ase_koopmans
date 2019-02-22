@@ -41,9 +41,13 @@ class MDMin(Optimizer):
 
     def read(self):
         self.v, self.dt = self.load()
-        
-    def step(self, f):
+
+    def step(self, f=None):
         atoms = self.atoms
+
+        if f is None:
+            f = atoms.get_forces()
+
 
         if self.v is None:
             self.v = np.zeros((len(atoms), 3))

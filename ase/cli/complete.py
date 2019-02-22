@@ -67,7 +67,7 @@ commands = {
     'nomad-get':
         [],
     'nomad-upload':
-        ['-t', '--token', '-n', '--do-not-save-token', '-0', '--dry-run'],
+        ['-t', '--token', '-n', '--no-save-token', '-0', '--dry-run'],
     'reciprocal':
         ['-v', '--verbose', '-p', '--path', '-d', '--dimension',
          '--no-vectors', '-k', '--k-points', '-i',
@@ -76,12 +76,10 @@ commands = {
         ['-p', '--parameters', '-t', '--tag', '--properties', '-f',
          '--maximum-force', '--constrain-tags', '-s',
          '--maximum-stress', '-E', '--equation-of-state',
-         '--eos-type', '--modify', '--after', '-i',
-         '--interactive', '-c', '--collection', '-d',
-         '--database', '-S', '--skip'],
+         '--eos-type', '-o', '--output', '--modify', '--after'],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
-         '--jobs', '-v', '--verbose'],
+         '--jobs', '-v', '--verbose', '--strict'],
     'ulm':
         ['-n', '--index', '-d', '--delete', '-v', '--verbose']}
 # End of computer generated data

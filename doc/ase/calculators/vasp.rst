@@ -89,6 +89,9 @@ keyword         type       default value   description
 ``reciprocal``  ``bool``   None            Use reciprocal units if
                                            **k**-points are specified
                                            explicitly
+``net_charge``  ``int``    None            Net charge per unit cell (as
+                                           an alternative to specifying
+                                           the total charge ``nelect``)
 ``prec``        ``str``                    Accuracy of calculation
 ``encut``       ``float``                  Kinetic energy cutoff
 ``ediff``       ``float``                  Convergence break condition
@@ -100,6 +103,7 @@ keyword         type       default value   description
 ``sigma``       ``float``                  Width of smearing
 ``nelm``        ``int``                    Maximum number of
                                            SC-iterations
+``ldau_luj``    ``dict``                   LD(S)A+U parameters
 ==============  =========  ==============  ============================
 
 For parameters in the list without default value given, VASP will set
@@ -338,6 +342,23 @@ For example:
     kpts, x_coords, x_special_points = bandpath('GXL', si.cell, npoints=20)
 
 returns an acceptable ``kpts`` array (for use with ``reciprocal=True``) as well as plotting information.
+
+LD(S)A+U
+========
+The VASP +U corrections can be turned on using the default VASP parameters explicitly, by manually setting
+the ``ldaul``, ``ldauu`` and ``ldauj`` parameters, as well as enabling ``ldau``.
+
+However, ASE offers a convenient ASE specific keyword to enable these, by using a dictionary construction, through the
+``ldau_luj`` keyword. If the user does not explicitly set ``ldau=False``, then ``ldau=True`` will automatically
+be set if ``ldau_luj`` is set.
+For example:
+
+.. code-block:: python
+
+    calc = Vasp(ldau_luj={'Si': {'L': 1, 'U': 3, 'J': 0}})
+    
+will set ``U=3`` on the Si p-orbitals, and will automatically set ``ldau=True`` as well.
+
 
 Restart old calculation
 =======================

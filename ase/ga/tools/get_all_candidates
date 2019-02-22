@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ Program for extracting all relaxed structures from a GA run. """
 from ase.ga.data import DataConnection
 from ase.io import write
