@@ -6,16 +6,31 @@ from ase.parallel import paropen
 
 
 def calculate_band_structure(atoms, path=None, scf_kwargs=None,
-                             bs_kwargs=None):
-
-    calc = atoms.calc
-
-    if calc is None:
-        raise ValueError('Atoms have no calculator')
-
+                             bs_kwargs=None, kpts_tol=1e-6, cell_tol=1e-6):
     if path is None:
         lat, op = atoms.cell.bravais()
         path = lat.bandpath()  # Default bandpath
+
+    cellpar1 = path.cell.cellpar()
+    cellpar2 = atoms.cell.cellpar()
+    cellpar_err = np.abs(cellpar2 - cellpar1).max()
+    if cellpar_err > cell_tol:
+        # For many cells this will be okay, but we are not smart enough
+        # to guarantee this.
+        #
+        # User must therefore create a new bandpath for each cell.
+        #
+        # (In principle we should have different tolerance for lengths/angles)
+        raise ValueError('Atoms and band path have different unit cells.  '
+                         'Please reduce atoms to standard form.  '
+                         'Cell lengths and angles are {} vs {}'
+                         .format(cellpar1, cellpar2))
+
+    calc = atoms.calc
+    if calc is None:
+        raise ValueError('Atoms have no calculator')
+
+
 
     if scf_kwargs is not None:
         calc.set(**scf_kwargs)
@@ -35,6 +50,13 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     calc.set(kpts=path.scaled_kpts, **bs_kwargs)
     calc.results.clear()  # XXX get rid of me
     atoms.get_potential_energy()
+
+    ibzkpts = calc.get_ibz_k_points()
+    kpts_err = np.abs(path.scaled_kpts - ibzkpts).max()
+    if kpts_err > kpts_tol:
+        raise RuntimeError('Kpoints of calculator differ from those '
+                           'of the band path we just used; '
+                           'err={} > tol={}'.format(kpts_err, kpts_tol))
 
     bs = get_band_structure(atoms, _bandpath=path)
     return bs
@@ -120,6 +142,7 @@ class BandStructurePlot:
             else:
                 lbl = label
             ax.plot(self.xcoords, e_kn[:, 0], label=lbl, **kwargs)
+
             for e_k in e_kn.T[1:]:
                 ax.plot(self.xcoords, e_k, **kwargs)
 
