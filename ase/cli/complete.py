@@ -77,6 +77,8 @@ commands = {
          '--maximum-force', '--constrain-tags', '-s',
          '--maximum-stress', '-E', '--equation-of-state',
          '--eos-type', '-o', '--output', '--modify', '--after'],
+    'show':
+        [],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
          '--jobs', '-v', '--verbose', '--strict'],
