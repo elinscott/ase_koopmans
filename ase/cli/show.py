@@ -18,14 +18,23 @@ class CLICommand:
 
     @staticmethod
     def run(args, parser):
-        for fname in args.file:
-            obj = read_json(fname)
-            objtype = obj.ase_objtype
-            print('Object type:', objtype)
-            print(obj)
-
-            # plot() should be uniform among plottable objects
-            obj.plot()
 
         import matplotlib.pyplot as plt
+        colors = 'bgrcmyk'
+
+        for i, fname in enumerate(args.file):
+            obj = read_json(fname)
+            objtype = obj.ase_objtype
+            print('{}: {}'.format(fname, objtype))
+            print(obj)
+
+            kw = {}
+            if obj.ase_objtype == 'bandstructure':
+                ax = plt.gca()
+                kw.update(show=False,
+                          ax=ax,
+                          colors=colors[i])
+            # plot() should be uniform among plottable objects
+            obj.plot(**kw)
+
         plt.show()
