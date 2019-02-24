@@ -107,16 +107,9 @@ class BravaisLattice(ABC):
         if path is None:
             path = self.variant.special_path
 
-        assert special_points is not None
-        pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
-
-        cell = self.tocell()
-
-        from ase.dft.kpoints import paths2kpts
-        kpts, x, X = paths2kpts(pathcoords, cell, npoints)
-
-        return BandPath(cell, kpts, labelseq=path,
-                        special_points=special_points)
+        bandpath = BandPath(cell=self.tocell(), labelseq=path,
+                            special_points=special_points)
+        return bandpath.interpolate(npoints=npoints)
 
     @abstractmethod
     def _cell(self, **kwargs):
@@ -391,8 +384,6 @@ class ORCF(Orthorhombic):
         return points
 
     def _variant_name(self, a, b, c):
-        check_orc(a, b, c)
-
         diff = 1.0 / (a * a) - 1.0 / (b * b) - 1.0 / (c * c)
         if abs(diff) < self._eps:
             return 'ORCF3'
