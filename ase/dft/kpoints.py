@@ -120,8 +120,8 @@ class BandPath:
 
         assert cell.shape == (3, 3)
         assert scaled_kpts.ndim == 2 and scaled_kpts.shape[1] == 3
-        self.cell = cell
-        self.icell = cell.reciprocal()
+        self.cell = cell.copy()
+        self.icell = self.cell.reciprocal()
         self.scaled_kpts = scaled_kpts
         self.special_points = special_points
         self.labelseq = labelseq
@@ -138,6 +138,19 @@ class BandPath:
                 'special_points': self.special_points,
                 'labelseq': self.labelseq,
                 'cell': self.cell}
+
+    def interpolate(self, path=None, npoints=50, special_points=None):
+        # default for npoints should depend on the length of the path
+        if path is None:
+            path = self.labelseq
+
+        special_points = {} if special_points is None else dict(special_points)
+        special_points.update(self.special_points)
+        pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
+        kpts, x, X = paths2kpts(pathcoords, self.cell, npoints)
+        return BandPath(self.cell, kpts, labelseq=path,
+                        special_points=special_points)
+
 
     def write(self, filename):
         # XXX could be provided by a class decorator,
@@ -168,8 +181,7 @@ class BandPath:
                         ''.join(sorted(self.special_points)),
                         len(self.scaled_kpts)))
 
-    @property
-    def kpts(self):
+    def cartesian_kpts(self):
         return self._scale(self.scaled_kpts)
 
     def plot(self, **plotkwargs):
@@ -193,7 +205,7 @@ class BandPath:
 
         kw = {'vectors': True}
         kw.update(plotkwargs)
-        return bz3d_plot(self.cell, paths=paths, points=self.kpts,
+        return bz3d_plot(self.cell, paths=paths, points=self.cartesian_kpts(),
                          pointstyle={'marker': '.'},
                          **kw)
 
