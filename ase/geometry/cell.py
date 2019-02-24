@@ -81,8 +81,9 @@ class Cell:
     #def crystal_structure(self, eps=2e-4, niggli_reduce=True):
     #    return crystal_structure_from_cell(self.array, eps, niggli_reduce)
 
-    def bravais(self, eps=2e-4, _niggli_reduce=True):
+    def bravais(self, eps=2e-4, _niggli_reduce=False):
         # We want to always reduce (so things are as robust as possible)
+        # ...or not.  It is not very reliable somehow.
         from ase.geometry.bravais import get_bravais_lattice
         return get_bravais_lattice(self, eps=eps,
                                    _niggli_reduce=_niggli_reduce)
