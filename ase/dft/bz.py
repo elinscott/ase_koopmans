@@ -18,7 +18,7 @@ def bz_vertices(icell):
 
 def bz3d_plot(cell, vectors=False, paths=None, points=None,
               elev=None, scale=1, interactive=False,
-              pointstyle=None):
+              pointstyle=None, fig=None, ax=None):
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     from mpl_toolkits.mplot3d import proj3d
@@ -38,8 +38,10 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
 
     icell = np.linalg.inv(cell).T
     kpoints = points
-    fig = plt.figure(figsize=(6, 5))
-    ax = fig.gca(projection='3d')
+    if ax is None:
+        if fig is None:
+            fig = plt.gcf() #figure(figsize=(6, 5))
+        ax = fig.gca(projection='3d')
 
     azim = pi / 5
     elev = elev or pi / 6
