@@ -14,7 +14,8 @@ forward_methods = ['__abs__', '__add__', '__contains__', '__eq__',
                    '__rsub__', '__rtruediv__', '__setitem__',
                    '__sub__', '__truediv__']
 
-forward_methods += ['__matmul__', '__rmatmul__']
+if hasattr(np.ndarray, '__matmul__'):
+    forward_methods += ['__matmul__', '__rmatmul__']
 
 forward_methods += ['all', 'any', 'diagonal', 'dot', 'mean', 'sum',
                     'ravel', 'tolist',
