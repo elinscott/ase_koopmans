@@ -5,7 +5,7 @@ Dimensionality analysis
 =======================
 
 This is a example of analysis of the dimensionality of a structure using
-the :func:`ase.geometry.analyze_dimensionality` function. This is
+the :func:`ase.geometry.dimensionality.analyze_dimensionality` function. This is
 useful for finding low-dimensional materials, such as 1D chain-like
 structures, 2D layered structures, or structures with multiple dimensionality
 types, such as 1D+3D.
