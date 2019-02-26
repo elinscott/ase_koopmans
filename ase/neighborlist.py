@@ -22,7 +22,7 @@ def natural_cutoffs(atoms, mult=1, **kwargs):
             for atom in atoms]
 
 
-def buildNeighborList(atoms, cutoffs=None, **kwargs):
+def build_neighbor_list(atoms, cutoffs=None, **kwargs):
     """Automatically build and update a NeighborList.
 
     Parameters:

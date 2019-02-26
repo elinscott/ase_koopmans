@@ -1,7 +1,7 @@
 """Tools for analyzing instances of :class:`~ase.Atoms`
 """
 
-from ase.neighborlist import buildNeighborList, get_distance_matrix, get_distance_indices
+from ase.neighborlist import build_neighbor_list, get_distance_matrix, get_distance_indices
 from ase.ga.utilities import get_rdf
 from ase import Atoms
 
@@ -42,7 +42,7 @@ class Analysis(object):
         elif nl is not None:
             self._nl = [ nl ]
         else:
-            self._nl = [ buildNeighborList(self.images[0], **kwargs) ]
+            self._nl = [ build_neighbor_list(self.images[0], **kwargs) ]
 
         self._cache = {}
 
