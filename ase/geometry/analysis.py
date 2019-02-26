@@ -44,18 +44,7 @@ class Analysis(object):
         else:
             self._nl = [ buildNeighborList(self.images[0], **kwargs) ]
 
-        self._adjacencyMatrix = None
-        self._distanceMatrix = None
-        self._allBonds = None
-        self._allAngles = None
-        self._allDihedrals = None
-
-    def _delete_derived_info(self):
-        del self.adjacency_matrix
-        del self.distance_matrix
-        del self.all_bonds
-        del self.all_angles
-        del self.all_dihedrals
+        self._cache = {}
 
     def _get_slice(self, imageIdx):
         """Return a slice from user input.
@@ -109,25 +98,11 @@ class Analysis(object):
     def nl(self):
         """Neighbor Lists in this instance.
 
-        Set during initialization but can also be set later.
+        Set during initialization.
+
+        **No setter or deleter, only getter**
         """
         return self._nl
-
-    @nl.setter
-    def nl(self, nl):
-        """Set Neighbor Lists"""
-        if isinstance(nl, list):
-            assert len(nl) == self.nImages
-            self._nl = nl
-        else:
-            self._nl = [ nl ]
-
-        self._delete_derived_info()
-
-    @nl.deleter
-    def nl(self):
-        """Delete Neighbor Lists"""
-        self._nl = None
 
     def _get_all_x(self, distance):
         """Helper function to get bonds, angles, dihedrals"""
@@ -149,18 +124,12 @@ class Analysis(object):
         Atom i is connected to all atoms inside result[i]. Duplicates from PBC are
         removed. See also :data:`unique_bonds`.
 
-        **No setter, only getter and deleter**
+        **No setter or deleter, only getter**
         """
-        if self._allBonds is None:
-            self._allBonds = self._get_all_x(1)
+        if not 'allBonds' in self._cache:
+            self._cache['allBonds'] = self._get_all_x(1)
 
-        return self._allBonds
-
-    @all_bonds.deleter
-    def all_bonds(self):
-        """Delete all_bonds"""
-        self._allBonds = None
-
+        return self._cache['allBonds']
 
     @property
     def all_angles(self):
@@ -171,17 +140,17 @@ class Analysis(object):
         i -- result[i][x][0] -- result[i][x][1]
         where x is in range(number of angles from i). See also :data:`unique_angles`.
 
-        **No setter, only getter and deleter**
+        **No setter or deleter, only getter**
         """
-        if self._allAngles is None:
-            self._allAngles = []
+        if not 'allAngles' in self._cache:
+            self._cache['allAngles'] = []
             distList = self._get_all_x(2)
 
             for imI in range(len(distList)):
-                self._allAngles.append([])
+                self._cache['allAngles'].append([])
                 #iterate over second neighbors of all atoms
                 for iAtom, secNeighs in enumerate(distList[imI]):
-                    self._allAngles[-1].append([])
+                    self._cache['allAngles'][-1].append([])
                     if len(secNeighs) == 0:
                         continue
                     firstNeighs = self.all_bonds[imI][iAtom]
@@ -190,15 +159,9 @@ class Analysis(object):
                         relevantFirstNeighs = [ idx for idx in firstNeighs if kAtom in self.all_bonds[imI][idx] ]
                         #iterate over all atoms that are connected to iAtom and kAtom
                         for jAtom in relevantFirstNeighs:
-                            self._allAngles[-1][-1].append((jAtom, kAtom))
+                            self._cache['allAngles'][-1][-1].append((jAtom, kAtom))
 
-        return self._allAngles
-
-    @all_angles.deleter
-    def all_angles(self):
-        """Delete all_angles"""
-        self._allAngles = None
-
+        return self._cache['allAngles']
 
     @property
     def all_dihedrals(self):
@@ -209,16 +172,16 @@ class Analysis(object):
         i -- result[i][x][0] -- result[i][x][1] -- result[i][x][2]
         where x is in range(number of dihedrals from i). See also :data:`unique_dihedrals`.
 
-        **No setter, only getter and deleter**
+        **No setter or deleter, only getter**
         """
-        if self._allDihedrals is None:
-            self._allDihedrals = []
+        if not 'allDihedrals' in self._cache:
+            self._cache['allDihedrals'] = []
             distList = self._get_all_x(3)
 
             for imI in range(len(distList)):
-                self._allDihedrals.append([])
+                self._cache['allDihedrals'].append([])
                 for iAtom, thirdNeighs in enumerate(distList[imI]):
-                    self._allDihedrals[-1].append([])
+                    self._cache['allDihedrals'][-1].append([])
                     if len(thirdNeighs) == 0:
                         continue
                     anglesI = self.all_angles[imI][iAtom]
@@ -235,18 +198,13 @@ class Analysis(object):
                             if len(set((iAtom, ) + tupl)) != 4:
                                 continue
                             #avoid duplicates
-                            elif tupl in self._allDihedrals[-1][-1]:
+                            elif tupl in self._cache['allDihedrals'][-1][-1]:
                                 continue
                             elif iAtom in tupl:
                                 raise RuntimeError("Something is wrong in analysis.all_dihedrals!")
-                            self._allDihedrals[-1][-1].append((jAtom, kAtom, lAtom))
+                            self._cache['allDihedrals'][-1][-1].append((jAtom, kAtom, lAtom))
 
-        return self._allDihedrals
-
-    @all_dihedrals.deleter
-    def all_dihedrals(self):
-        """Delete all_dihedrals"""
-        self._allDihedrals = None
+        return self._cache['allDihedrals']
 
     @property
     def adjacency_matrix(self):
@@ -254,20 +212,15 @@ class Analysis(object):
 
         If not already done, build a list of adjacency matrices for all :data:`nl`.
 
-        **No setter, only getter and deleter**
+        **No setter or deleter, only getter**
         """
 
-        if self._adjacencyMatrix is None:
-            self._adjacencyMatrix = []
+        if not 'adjacencyMatrix' in self._cache:
+            self._cache['adjacencyMatrix'] = []
             for i in range(len(self.nl)):
-                self._adjacencyMatrix.append(self.nl[i].get_connectivity_matrix())
+                self._cache['adjacencyMatrix'].append(self.nl[i].get_connectivity_matrix())
 
-        return self._adjacencyMatrix
-
-    @adjacency_matrix.deleter
-    def adjacency_matrix(self):
-        """Delete adjacency_matrix"""
-        self._adjacencyMatrix = None
+        return self._cache['adjacencyMatrix']
 
     @property
     def distance_matrix(self):
@@ -276,30 +229,24 @@ class Analysis(object):
         If not already done, build a list of distance matrices for all :data:`nl`. See
         :meth:`ase.neighborlist.get_distance_matrix`.
 
-        **No setter, only getter and deleter**
+        **No setter or deleter, only getter**
         """
 
-        if self._distanceMatrix is None:
-            self._distanceMatrix = []
+        if not 'distanceMatrix' in self._cache:
+            self._cache['distanceMatrix'] = []
             for i in range(len(self.nl)):
-                self._distanceMatrix.append(get_distance_matrix(self.adjacency_matrix[i]))
+                self._cache['distanceMatrix'].append(get_distance_matrix(self.adjacency_matrix[i]))
 
-        return self._distanceMatrix
-
-    @distance_matrix.deleter
-    def distance_matrix(self):
-        """Delete distance_matrix"""
-        self._distanceMatrix = None
+        return self._cache['distanceMatrix']
 
 
     @property
     def unique_bonds(self):
-        """Unique Bonds.
+        """Get Unique Bonds.
 
         :data:`all_bonds` i-j without j-i. This is the upper triangle of the
         connectivity matrix (i,j), `i < j`
 
-        **No setter or deleter, only getter**
         """
         bonds = []
         for imI in range(len(self.all_bonds)):
@@ -324,23 +271,25 @@ class Analysis(object):
                 r[-1].append([ x for x in tuples if i < x[-1]  ])
         return r
 
+    def clear_cache(self):
+        """Delete all cached information."""
+        self._cache = {}
+
     @property
     def unique_angles(self):
-        """Unique Angles.
+        """Get Unique Angles.
 
         :data:`all_angles` i-j-k without k-j-i.
 
-        **No setter or deleter, only getter**
         """
         return self._filter_unique(self.all_angles)
 
     @property
     def unique_dihedrals(self):
-        """Unique Dihedrals.
+        """Get Unique Dihedrals.
 
         :data:`all_dihedrals` i-j-k-l without l-k-j-i.
 
-        **No setter or deleter, only getter**
         """
         return self._filter_unique(self.all_dihedrals)
 
