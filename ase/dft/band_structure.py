@@ -81,8 +81,13 @@ def get_band_structure(atoms=None, calc=None, _bandpath=None):
 
 
     if _bandpath is None:
-        from ase.dft.kpoints import BandPath
-        _bandpath = BandPath(cell=atoms.cell, scaled_kpts=kpts)
+        from ase.dft.kpoints import BandPath, get_cellinfo, labels_from_kpts
+        cellinfo = get_cellinfo(cell=atoms.cell)
+        special_points = cellinfo.special_points
+        _, _, labels = labels_from_kpts(kpts, cell=atoms.cell,
+                                        special_points=special_points)
+        _bandpath = BandPath(labelseq=labels, cell=atoms.cell, scaled_kpts=kpts,
+                             special_points=special_points)
 
     return BandStructure(path=_bandpath,
                          energies=energies,
