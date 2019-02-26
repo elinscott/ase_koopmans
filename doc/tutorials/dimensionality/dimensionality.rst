@@ -30,3 +30,6 @@ __ http://arxiv.org/abs/1808.02114
 
     More examples here: `Dimensionality analysis of ICSD and COD databases
     <https://cmr.fysik.dtu.dk/lowdim/lowdim.html>`_.
+
+
+.. autofunction:: ase.geometry.dimensionality.analyze_dimensionality
