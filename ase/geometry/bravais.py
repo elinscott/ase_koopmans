@@ -710,7 +710,7 @@ class MCLC(BravaisLattice):
         return points
 
 
-@bravais('trigonal', ('a', 'b', 'c', 'alpha', 'beta', 'gamma'),
+@bravais('triclinic', ('a', 'b', 'c', 'alpha', 'beta', 'gamma'),
          [['TRI1a', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG', None],  # XXX labels, paths
           ['TRI2a', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG', None],  # are all the same.
           ['TRI1b', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG', None],
@@ -927,36 +927,23 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
 
     if all_lengths_different and noduplicates(BC_CA_AB):
         permutation = np.argsort(BC_CA_AB)
-        lat = ORCF(*(2 * np.sqrt(BC_CA_AB[permutation])))
-        par1 = lat.cellpar()
-        par2 = uc.new(uc.array[permutation]).cellpar()
-        assert allclose(par1, par2)
-        return lat, {}  # XXX permutation
-        #print('ORCF', 
-        #print(par1)
-        #print(par2)
-        # XXX permutation
-        #obj = check(ORCF, *(2 * np.sqrt(BC_CA_AB[permutation])))
-        #if obj:
-        #    return obj
+        if all(BC_CA_AB > 0):
+            lat = ORCF(*(2 * np.sqrt(BC_CA_AB[permutation])))
+            par1 = lat.cellpar()
+            par2 = uc.new(uc[permutation]).cellpar()
+            if allclose(par1, par2):
+                return lat, {}  # XXX permutation
 
     if all_lengths_equal:
         dims2 = -2 * np.array([BC_CA_AB[1] + BC_CA_AB[2],
                                BC_CA_AB[2] + BC_CA_AB[0],
                                BC_CA_AB[0] + BC_CA_AB[1]])
-        #mindifference = min(abs(dims2[1] - dims2[0]),
-        #                    (dims2[2] - dims2[1]),
-        #                    (dims2[0] - dims2[2]))
         if all(dims2 > 0) and noduplicates(dims2):#mindifference > eps:
             dims = np.sqrt(dims2)
             permutation = np.argsort(dims)
             lat = ORCI(*dims[permutation])
             assert allclose(lat.tocell(), uc[permutation])
             return lat, {}  # perm
-            #obj = check(ORCI, *dims)
-            #xxxxxx
-            #if obj:
-            #    return obj
 
     if all_lengths_equal:
         cosa = BC_CA_AB[0] / A**2
@@ -1029,9 +1016,10 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
 
     obj = check(TRI, A, B, C, *angles)
     if obj:
-        xxxxxxxxxxx
+        cls, op = obj
+        #xxxxxxxxxxx
         # Should always be true
-        return obj
+        return cls(A, B, C, *angles), op
 
     raise RuntimeError('Cannot recognize cell at all somehow!')
 
