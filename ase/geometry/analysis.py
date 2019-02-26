@@ -78,13 +78,11 @@ class Analysis(object):
         else:
             self._images = [ images ]
 
-        self._nImages = len(images)
 
     @images.deleter
     def images(self):
         """Delete images"""
         self._images = None
-        self._nImages = None
 
     @property
     def nImages(self):
