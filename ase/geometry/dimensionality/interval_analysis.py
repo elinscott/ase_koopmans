@@ -10,8 +10,7 @@ https://arxiv.org/abs/1808.02114
 
 import numpy as np
 from ase.neighborlist import NeighborList
-from ase.data import covalent_radii as radii
-from collections import defaultdict
+from ase.data import covalent_radii
 from ase.geometry.dimensionality import rank_determination
 from ase.geometry.dimensionality import topological_scaling
 
@@ -33,15 +32,32 @@ def reduced_histogram(h):
     return tuple(h)
 
 
-def hstring(h):
+def build_dimtype(h):
 
     h = reduced_histogram(h)
     return ''.join([str(i) for i, e in enumerate(h) if e > 0]) + 'D'
 
 
+class KInterval:
+
+    def __init__(self, a, b, h, components, cdim, score=None):
+
+        self.a = a
+        self.b = b
+        self.h = h
+        self.components = components
+        self.cdim = cdim
+
+        self.dimtype = build_dimtype(h)
+        if score is not None:
+            self.score = score
+        else:
+            self.score = calculate_score(a, b)
+
+
 def merge_intervals(intervals):
 
-    """Merges intervals of the same type (same reduced histogram).
+    """Merges intervals of the same dimensionality type.
 
     For example, two histograms with component histograms [10, 4, 0, 0] and
     [6, 2, 0, 0] are both 01D structures so they will be merged.
@@ -56,20 +72,19 @@ def merge_intervals(intervals):
     that the scores sum to 1.
     """
 
-    merged = defaultdict(list)
-    for (a, b, h, components, cdim) in intervals:
-        hr = hstring(h)
-        merged[hr] += [(b - a, a, b, components, h, cdim)]
+    dimtypes = set([e.dimtype for e in intervals])
 
     merged_intervals = []
-    for hr, intervals in merged.items():
-        amin = min([a for _, a, b, _, _, _ in intervals])
-        bmax = max([b for _, a, b, _, _, _ in intervals])
-        score = sum([calculate_score(a, b) for _, a, b, _, _, _ in intervals])
-        _, _, _, components, h, cdim = max(intervals)
-        merged_intervals += [(score, amin, bmax, hr, h, components, cdim)]
-
-    return sorted(merged_intervals, reverse=True)
+    for dimtype in dimtypes:
+        relevant = [e for e in intervals if e.dimtype == dimtype]
+        combined_score = sum([e.score for e in relevant])
+        amin = min([e.a for e in relevant])
+        bmax = max([e.b for e in relevant])
+        best = max(intervals, key=lambda x: x.score)
+        merged = KInterval(amin, bmax, best.h, best.components, best.cdim,
+                           score=combined_score)
+        merged_intervals.append(merged)
+    return merged_intervals
 
 
 def get_bond_list(atoms, nl, rs):
@@ -79,9 +94,8 @@ def get_bond_list(atoms, nl, rs):
     Parameters:
 
     atoms: ASE atoms object
-        The periodic solid to analyze
     nl: ASE neighborlist
-    rs: Scaled covalent radii (k-value times covalent radii)
+    rs: covalent radii
 
     Returns:
 
@@ -105,63 +119,24 @@ def get_bond_list(atoms, nl, rs):
             q = atoms.positions[j] + np.dot(offset, atoms.get_cell())
             d = np.linalg.norm(p - q)
             k = d / (rs[i] + rs[j])
-            bonds += [(k, i, j, tuple(offset))]
+            bonds.append((k, i, j, tuple(offset)))
     return sorted(bonds)
 
 
-def analyze_kintervals(atoms, method='RDA'):
-
-    """Performs a k-interval analysis of a periodic solid.
-
-    In each k-interval the components (connected clusters) are identified.
-    The intervals are sorted according to the scoring parameter, from high
-    to low.
-
-
-    Parameters:
-
-    atoms: ASE atoms object
-        The periodic solid to analyze
-    method: string
-        Analysis method to use, either 'RDA' (default option) or 'TSA'.
-        These correspond to the Rank Determination Algorithm of Mounet et al.
-        and the Topological Scaling Algorithm (TSA) of Ashton et al.
-
-    Returns:
-
-    intervals: list
-        List of tuples for each interval identified.  Each tuple contains
-        (score, amin, bmax, hr, components)
-
-        score: float
-            Dimensionality score in the range [0, 1]
-        amin: float
-            The start of the k-interval
-        bmax: float
-            The end of the k-interval
-        hr: str
-            The reduced histogram of the interval
-        h: tuple
-            The histogram of the number of components
-        components: array
-            The component ID of each atom.
-        cdim: dict
-            The component dimensionalities
-    """
+def build_kintervals(atoms, method):
 
     if method == 'RDA':
         method = rank_determination.RDA
     elif method == 'TSA':
         method = topological_scaling.TSA
 
-    # Interval analysis requires a periodic solid
-    assert tuple(atoms.pbc) == (1, 1, 1)
+    assert all([e in [0, 1] for e in atoms.pbc])
     num_atoms = len(atoms)
-    rs = radii[atoms.get_atomic_numbers()]
+    rs = covalent_radii[atoms.get_atomic_numbers()]
 
     """
     The interval analysis is performed by iteratively expanding the neighbor
-    lists, until the component analysis finds a single 3D component.  To avoid
+    lists, until the component analysis finds a single component.  To avoid
     repeat analyses after expanding the neighbor lists, we keep track of the
     previously inserted bonds.
     """
@@ -171,6 +146,15 @@ def analyze_kintervals(atoms, method='RDA'):
     kprev = 0
     calc = method(num_atoms)
     hprev, components_prev, cdim_prev = calc.check()
+
+    """
+    The end state is a single component, whose dimensionality depends on
+    the periodic boundary conditions:
+    """
+    end_state = np.zeros(4)
+    end_dim = sum(atoms.pbc)
+    end_state[end_dim] = 1
+    end_state = tuple(end_state)
 
     kmax = 0
     while 1:
@@ -199,13 +183,66 @@ def analyze_kintervals(atoms, method='RDA'):
                 continue
 
             # If any components were merged, create a new interval
-            intervals += [(kprev, k, hprev, tuple(components_prev), cdim_prev)]
+            kinterval = KInterval(kprev, k, hprev, components_prev, cdim_prev)
+            intervals.append(kinterval)
             kprev = k
             hprev = h
             components_prev = components
             cdim_prev = cdim
 
-            # Stop once all components are merged (a single 3D component)
-            if h == (0, 0, 0, 1):
-                intervals += [(k, float("inf"), h, tuple(components), cdim)]
-                return merge_intervals(intervals)
+            # Stop once all components are merged
+            if h == end_state:
+                kinterval = KInterval(k, float("inf"), h, components, cdim)
+                intervals.append(kinterval)
+                return intervals
+
+
+def analyze_kintervals(atoms, method='RDA', merge=True):
+
+    """Performs a k-interval analysis.
+
+    In each k-interval the components (connected clusters) are identified.
+    The intervals are sorted according to the scoring parameter, from high
+    to low.
+
+
+    Parameters:
+
+    atoms: ASE atoms object
+        The system to analyze.
+    method: string
+        Analysis method to use, either 'RDA' (default option) or 'TSA'.
+        These correspond to the Rank Determination Algorithm of Mounet et al.
+        and the Topological Scaling Algorithm (TSA) of Ashton et al.
+    merge: boolean
+        Decides if k-intervals of the same type (e.g. 01D or 3D) should be
+        merged.  Default: true
+
+    Returns:
+
+    intervals: list
+        List of KIntervals for each interval identified.  A KInterval is a
+        namedtuple with the following field names:
+
+        score: float
+            Dimensionality score in the range [0, 1]
+        a: float
+            The start of the k-interval
+        b: float
+            The end of the k-interval
+        dimtype: str
+            The dimensionality type
+        h: tuple
+            The histogram of the number of components of each dimensionality.
+            For example, (8, 0, 3, 0) means eight 0D and three 2D components.
+        components: array
+            The component ID of each atom.
+        cdim: dict
+            The component dimensionalities
+    """
+
+    intervals = build_kintervals(atoms, method)
+    if merge:
+        intervals = merge_intervals(intervals)
+
+    return sorted(intervals, reverse=True, key=lambda x: x.score)
