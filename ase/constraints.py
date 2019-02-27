@@ -353,7 +353,7 @@ def FixBondLength(a1, a2):
 class FixLinearTriatomic(FixConstraint):
     """Holonomic constraints for rigid linear triatomic molecules."""
 
-    def __init__(self, atoms, pairs, centers, bondlengths=None):
+    def __init__(self, pairs, centers, bondlengths=None):
         """Apply RATTLE-type bond constraints between outer atoms a and b
            and linear vectorial constraints to the position of central
            atoms b to fix the geometry of linear triatomic molecules of the
@@ -378,79 +378,91 @@ class FixLinearTriatomic(FixConstraint):
            http://dx.doi.org/10.1080/00268978200100942
         """
         self.pairs = np.asarray(pairs)
+        self.n = self.pairs[:, 0]
+        self.m = self.pairs[:, 1]
         self.centers = centers
-        self.masses = atoms.get_masses()
-        n = self.pairs[:, 0]
-        m = self.pairs[:, 1]
-        s = self.centers
+        self.bondlengths = bondlengths
 
-        if bondlengths is None:
+        self.removed_dof = len(pairs) + 3 * len(centers)
+
+    def initialize(self, atoms):
+        self.masses = atoms.get_masses()
+
+        if self.bondlengths is None:
             self.bondlengths = self.initialize_bond_lengths(atoms)
         else:
-            self.bondlengths = np.asarray(bondlengths)
-
+            self.bondlengths = np.asarray(self.bondlengths)
         self.bondlength = self.bondlengths.sum(axis=1)
+
         C = self.bondlengths[:, ::-1] / self.bondlength[:, None]
-        S = (C[:, 0]**2 * self.masses[s] * self.masses[m] +
-             C[:, 1]**2 * self.masses[n] * self.masses[s] +
-             self.masses[n] * self.masses[m])
+        S = (C[:, 0]**2 * self.masses[self.centers] * self.masses[self.m] +
+             C[:, 1]**2 * self.masses[self.n] * self.masses[self.centers] +
+             self.masses[self.n] * self.masses[self.m])
         M = C / S[:, None]
-        D = self.masses[n] * C[:, 1] - self.masses[m] * C[:, 0]
-        L = M * self.masses[s, None] * D[:, None]
+        D = self.masses[self.n] * C[:, 1] - self.masses[self.m] * C[:, 0]
+        L = M * self.masses[self.centers, None] * D[:, None]
         L[:, 1] *= -1
-        L = (L + 1) / np.vstack((self.masses[n], self.masses[m])).T
+        L = (L + 1) / np.vstack((self.masses[self.n], self.masses[self.m])).T
         SN = (C[:, 0]**2 + C[:, 1]**2 + 1)
         N = C / SN[:, None]
+
         self.C = C
         self.M = M
         self.L = L
-        self.N = N 
- 
-        self.removed_dof = len(pairs) + 3 * len(centers)
+        self.N = N
 
     def adjust_positions(self, atoms, new):
         old = atoms.positions
 
-        n = self.pairs[:, 0]
-        m = self.pairs[:, 1]
-        s = self.centers
-        r0 = old[n] - old[m]
+        if self.bondlengths is None:
+            self.initialize(atoms)
+
+        r0 = old[self.n] - old[self.m]
         d0 = find_mic([r0], atoms.cell, atoms._pbc)[0][0]
-        d1 = new[n] - new[m] - r0 + d0
-        a = np.einsum('ij,ij->i', d0, d0) * (self.L[0]**2 + self.L[1]**2 + 
-                                             2 * self.L[0] * self.L[1]) 
+        d1 = new[self.n] - new[self.m] - r0 + d0
+        a = np.einsum('ij,ij->i', d0, d0) * (self.L[:, 0]**2 +
+                                             self.L[:, 1]**2 +
+                                             2 * self.L[:, 0] * self.L[:, 1])
         b = np.einsum('ij,ij->i', d1, d0) * (self.L.sum(axis=1))
         c = np.einsum('ij,ij->i', d1, d1) - self.bondlength**2
         g = (b - (b**2 - a * c)**0.5) / a
         g = g[:, None] * self.L
-        new[n] -= g[:, 0, None] * d0
-        new[m] += g[:, 1, None] * d0
+        new[self.n] -= g[:, 0, None] * d0
+        new[self.m] += g[:, 1, None] * d0
         if np.allclose(d0, r0):
-            new[s] = self.C[:, 0, None] * new[n] + self.C[:, 1, None] * new[m]
+            new[self.centers] = self.C[:, 0, None] * new[self.n] \
+                                + self.C[:, 1, None] * new[self.m]
         else:
-            v1 = find_mic([new[n]], atoms.cell, atoms._pbc)[0][0] 
-            v2 = find_mic([new[m]], atoms.cell, atoms._pbc)[0][0]
+            v1 = find_mic([new[self.n]], atoms.cell, atoms._pbc)[0][0]
+            v2 = find_mic([new[self.m]], atoms.cell, atoms._pbc)[0][0]
             rb = self.C[:, 0, None] * v1 + self.C[:, 1, None] * v2
-            new[s] = wrap_positions(rb, atoms.cell, atoms.pbc)
+            new[self.centers] = wrap_positions(rb, atoms.cell, atoms.pbc)
 
     def adjust_momenta(self, atoms, p):
         old = atoms.positions
 
+        if self.bondlengths is None:
+            self.initialize(atoms)
+
         masses = self.masses
-        n = self.pairs[:, 0]
-        m = self.pairs[:, 1]
-        s = self.centers
-        d = old[n] - old[m]
+        d = old[self.n] - old[self.m]
         d = find_mic([d], atoms.cell, atoms._pbc)[0][0]
-        dv = p[n] / masses[n, None] - p[m] / masses[m, None]
+        dv = p[self.n] / masses[self.n, None] \
+             - p[self.m] / masses[self.m, None]
         k = np.einsum('ij,ij->i', dv, d) / self.bondlength**2
         k = self.L / (self.L.sum(axis=1)[:, None]) * k[:, None]
-        p[n] -= k[:, 0, None] * masses[n, None] * d
-        p[m] += k[:, 1, None] * masses[m, None] * d
-        p[s] = masses[s, None] * (self.C[:, 0, None] * p[n] / masses[n, None] +
-                                  self.C[:, 1, None] * p[m] / masses[m, None])
+        p[self.n] -= k[:, 0, None] * masses[self.n, None] * d
+        p[self.m] += k[:, 1, None] * masses[self.m, None] * d
+        p[self.centers] = masses[self.centers, None] \
+                          * (self.C[:, 0, None] * p[self.n]
+                             / masses[self.n, None] + self.C[:, 1, None]
+                             * p[self.m] / masses[self.m, None])
 
     def adjust_forces(self, atoms, forces):
+
+        if self.bondlengths is None:
+            self.initialize(atoms)
+
         A = self.N * np.diff(self.C)
         A[:, 0] *= -1
         A -= 1
@@ -460,17 +472,14 @@ class FixLinearTriatomic(FixConstraint):
         self.constraint_forces = -forces
         old = atoms.positions
 
-        n = self.pairs[:, 0]
-        m = self.pairs[:, 1]
-        s = self.centers
-        fr = self.redistribute_forces(forces, n, m, s)
-        d = old[n] - old[m]
+        fr = self.redistribute_forces(forces, self.n, self.m, self.centers)
+        d = old[self.n] - old[self.m]
         d = find_mic([d], atoms.cell, atoms._pbc)[0][0]
-        df = fr[n] - fr[m]
+        df = fr[self.n] - fr[self.m]
         k = -np.einsum('ij,ij->i', df, d) / self.bondlength**2 
-        forces[n] = fr[n] + k[:, None] * d * A[:, 0, None]
-        forces[m] = fr[m] - k[:, None] * d * A[:, 1, None]
-        forces[s] = fr[s] + k[:, None] * d * B
+        forces[self.n] = fr[self.n] + k[:, None] * d * A[:, 0, None]
+        forces[self.m] = fr[self.m] - k[:, None] * d * A[:, 1, None]
+        forces[self.centers] = fr[self.centers] + k[:, None] * d * B
 
         self.constraint_forces += forces
 
@@ -490,23 +499,21 @@ class FixLinearTriatomic(FixConstraint):
         return fr
 
     def redistribute_forces_md(self, forces):
-        n = self.pairs[:, 0]
-        m = self.pairs[:, 1]
-        s = self.centers
+
         masses = self.masses
 
-        f_n = ((1 - self.M[:, 0, None] * self.C[:, 0, None] * masses[s, None]
-                * masses[m, None]) * forces[n] - self.M[:, 0, None]
-               * (self.C[:, 1, None] * masses[s, None] * masses[n, None]
-                  * forces[m] - masses[m, None] * masses[n, None] * forces[s]))
-        f_m = ((1 - self.M[:, 1, None] * self.C[:, 1, None] * masses[s, None]
-                * masses[n, None]) * forces[m] - self.M[:, 1, None]
-               * (self.C[:, 0, None] * masses[s, None] * masses[m, None]
-                  * forces[n] - masses[m, None] * masses[n, None] * forces[s]))
+        f_n = ((1 - self.M[:, 0, None] * self.C[:, 0, None] * masses[self.centers, None]
+                * masses[self.m, None]) * forces[self.n] - self.M[:, 0, None]
+               * (self.C[:, 1, None] * masses[self.centers, None] * masses[self.n, None]
+                  * forces[self.m] - masses[self.m, None] * masses[self.n, None] * forces[self.centers]))
+        f_m = ((1 - self.M[:, 1, None] * self.C[:, 1, None] * masses[self.centers, None]
+                * masses[self.n, None]) * forces[self.m] - self.M[:, 1, None]
+               * (self.C[:, 0, None] * masses[self.centers, None] * masses[self.m, None]
+                  * forces[self.n] - masses[self.m, None] * masses[self.n, None] * forces[self.centers]))
 
-        forces[n] = f_n
-        forces[m] = f_m
-        forces[s] = 0.0
+        forces[self.n] = f_n
+        forces[self.m] = f_m
+        forces[self.centers] = 0.0
 
     def initialize_bond_lengths(self, atoms):
         bondlengths = np.zeros((len(self.pairs), 2))
@@ -526,8 +533,7 @@ class FixLinearTriatomic(FixConstraint):
         return {'name': 'FixLinearTriatomic',
                 'kwargs': {'pairs': self.pairs,
                            'centers': self.centers,
-                           'distances': self.distances,
-                           'masses': self.masses}}
+                           'bondlengths': self.bondlengths}}
 
     def index_shuffle(self, atoms, ind):
         """Shuffle the indices of the two atoms in this constraint"""

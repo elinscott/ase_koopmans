@@ -20,18 +20,15 @@ for wrap in [False, True]:
     d0 = co2.get_distance(-3, -2)
     d1 = co2.get_distance(-3, -1)
     d2 = co2.get_distance(-2, -1)
-    masses = co2.get_masses()
-    m_o = masses[1]
-    m_c = masses[0]
 
     calc = EMT()
     slab.set_calculator(calc)
     if wrap:
         # Remap into the cell so bond is actually wrapped:
         slab.set_scaled_positions(slab.get_scaled_positions() % 1.0)
-    constraint = FixLinearTriatomic(pairs=[(-2, -1)], centers=[-3], 
-                                    distances=[d0,d1], masses=[m_o,m_c,m_o])
+    constraint = FixLinearTriatomic(pairs=[(-2, -1)], centers=[-3])
     slab.set_constraint(constraint)
+
     dyn = BFGS(slab, trajectory='relax_%d.traj' % wrap)
     dyn.run(fmax=0.05)
     assert abs(slab.get_distance(-3, -2, mic=1) - d0) < 1e-9
