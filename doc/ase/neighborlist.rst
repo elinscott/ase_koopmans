@@ -20,7 +20,7 @@ more complex :class:`~ase.atoms.Atoms` objects.
 
 Both implementations can be used via the :class:`~ase.neighborlist.NeighborList`
 class. It also provides easy access to the two implementations methods and functions.
-Constructing such an object can be done manually or with the :func:`~ase.neighborlist.buildNeighborList` function.
+Constructing such an object can be done manually or with the :func:`~ase.neighborlist.build_neighbor_list` function.
 
 Further functions provide access to some derived results like graph-analysis etc.:
 
