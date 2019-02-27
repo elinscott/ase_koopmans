@@ -353,7 +353,7 @@ def FixBondLength(a1, a2):
 class FixLinearTriatomic(FixConstraint):
     """Holonomic constraints for rigid linear triatomic molecules."""
 
-    def __init__(self, pairs, centers, bondlengths=None):
+    def __init__(self, pairs, centers):
         """Apply RATTLE-type bond constraints between outer atoms a and b
            and linear vectorial constraints to the position of central
            atoms b to fix the geometry of linear triatomic molecules of the
@@ -381,7 +381,7 @@ class FixLinearTriatomic(FixConstraint):
         self.n = self.pairs[:, 0]
         self.m = self.pairs[:, 1]
         self.centers = centers
-        self.bondlengths = bondlengths
+        self.bondlengths = None
 
         self.removed_dof = len(pairs) + 3 * len(centers)
 
@@ -391,10 +391,7 @@ class FixLinearTriatomic(FixConstraint):
         self.m_m = masses[self.m]
         self.m_c = masses[self.centers]
 
-        if self.bondlengths is None:
-            self.bondlengths = self.initialize_bond_lengths(atoms)
-        else:
-            self.bondlengths = np.asarray(self.bondlengths)
+        self.bondlengths = self.initialize_bond_lengths(atoms)
         self.bondlength = self.bondlengths.sum(axis=1)
 
         C = self.bondlengths[:, ::-1] / self.bondlength[:, None]
