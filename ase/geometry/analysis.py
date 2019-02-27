@@ -8,11 +8,6 @@ from ase import Atoms
 
 __all__ = ['Analysis']
 
-#memory-friendly iterator based zip for python2
-try:
-    from itertools import izip as zip
-except ImportError:
-    pass
 
 class Analysis(object):
     """Analysis class
