@@ -386,7 +386,10 @@ class FixLinearTriatomic(FixConstraint):
         self.removed_dof = len(pairs) + 3 * len(centers)
 
     def initialize(self, atoms):
-        self.masses = atoms.get_masses()
+        masses = atoms.get_masses()
+        self.m_n = masses[self.n]
+        self.m_m = masses[self.m]
+        self.m_c = masses[self.centers]
 
         if self.bondlengths is None:
             self.bondlengths = self.initialize_bond_lengths(atoms)
@@ -395,14 +398,13 @@ class FixLinearTriatomic(FixConstraint):
         self.bondlength = self.bondlengths.sum(axis=1)
 
         C = self.bondlengths[:, ::-1] / self.bondlength[:, None]
-        S = (C[:, 0]**2 * self.masses[self.centers] * self.masses[self.m] +
-             C[:, 1]**2 * self.masses[self.n] * self.masses[self.centers] +
-             self.masses[self.n] * self.masses[self.m])
+        S = (C[:, 0]**2 * self.m_c * self.m_m +
+             C[:, 1]**2 * self.m_n * self.m_c + self.m_n * self.m_m)
         M = C / S[:, None]
-        D = self.masses[self.n] * C[:, 1] - self.masses[self.m] * C[:, 0]
-        L = M * self.masses[self.centers, None] * D[:, None]
+        D = self.m_n * C[:, 1] - self.m_m * C[:, 0]
+        L = M * self.m_c[:, None] * D[:, None]
         L[:, 1] *= -1
-        L = (L + 1) / np.vstack((self.masses[self.n], self.masses[self.m])).T
+        L = (L + 1) / np.vstack((self.m_n, self.m_m)).T
         SN = (C[:, 0]**2 + C[:, 1]**2 + 1)
         N = C / SN[:, None]
 
@@ -444,19 +446,17 @@ class FixLinearTriatomic(FixConstraint):
         if self.bondlengths is None:
             self.initialize(atoms)
 
-        masses = self.masses
         d = old[self.n] - old[self.m]
         d = find_mic([d], atoms.cell, atoms._pbc)[0][0]
-        dv = p[self.n] / masses[self.n, None] \
-             - p[self.m] / masses[self.m, None]
+        dv = p[self.n] / self.m_n[:, None] - p[self.m] / self.m_m[:, None]
         k = np.einsum('ij,ij->i', dv, d) / self.bondlength**2
         k = self.L / (self.L.sum(axis=1)[:, None]) * k[:, None]
-        p[self.n] -= k[:, 0, None] * masses[self.n, None] * d
-        p[self.m] += k[:, 1, None] * masses[self.m, None] * d
-        p[self.centers] = masses[self.centers, None] \
-                          * (self.C[:, 0, None] * p[self.n]
-                             / masses[self.n, None] + self.C[:, 1, None]
-                             * p[self.m] / masses[self.m, None])
+        p[self.n] -= k[:, 0, None] * self.m_n[:, None] * d
+        p[self.m] += k[:, 1, None] * self.m_m[:, None] * d
+        p[self.centers] = self.m_c[:, None] * (self.C[:, 0, None]
+                                               * p[self.n] / self.m_n[:, None]
+                                               + self.C[:, 1, None]
+                                               * p[self.m] / self.m_m[:, None])
 
     def adjust_forces(self, atoms, forces):
 
@@ -500,16 +500,16 @@ class FixLinearTriatomic(FixConstraint):
 
     def redistribute_forces_md(self, forces):
 
-        masses = self.masses
-
-        f_n = ((1 - self.M[:, 0, None] * self.C[:, 0, None] * masses[self.centers, None]
-                * masses[self.m, None]) * forces[self.n] - self.M[:, 0, None]
-               * (self.C[:, 1, None] * masses[self.centers, None] * masses[self.n, None]
-                  * forces[self.m] - masses[self.m, None] * masses[self.n, None] * forces[self.centers]))
-        f_m = ((1 - self.M[:, 1, None] * self.C[:, 1, None] * masses[self.centers, None]
-                * masses[self.n, None]) * forces[self.m] - self.M[:, 1, None]
-               * (self.C[:, 0, None] * masses[self.centers, None] * masses[self.m, None]
-                  * forces[self.n] - masses[self.m, None] * masses[self.n, None] * forces[self.centers]))
+        f_n = ((1 - self.M[:, 0, None] * self.C[:, 0, None] * self.m_c[:, None]
+                * self.m_m[:, None]) * forces[self.n] - self.M[:, 0, None]
+               * (self.C[:, 1, None] * self.m_c[:, None] * self.m_n[:, None]
+                  * forces[self.m] - self.m_m[:, None] * self.m_n[:, None]
+                  * forces[self.centers]))
+        f_m = ((1 - self.M[:, 1, None] * self.C[:, 1, None] * self.m_c[:, None]
+                * self.m_n[:, None]) * forces[self.m] - self.M[:, 1, None]
+               * (self.C[:, 0, None] * self.m_c[:, None] * self.m_m[:, None]
+                  * forces[self.n] - self.m_m[:, None] * self.m_n[:, None]
+                  * forces[self.centers]))
 
         forces[self.n] = f_n
         forces[self.m] = f_m
