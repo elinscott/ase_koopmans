@@ -1,7 +1,7 @@
 from ase import Atoms
 from ase.constraints import FixLinearTriatomic
-from ase.calculators.acn import (ACN, m_me, m_c,
-                                 m_n, r_mec, r_cn)
+from ase.calculators.acn import (ACN, m_me,
+                                 r_mec, r_cn)
 from ase.md import Langevin
 import ase.units as units
 from ase.io import Trajectory
