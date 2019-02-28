@@ -37,10 +37,10 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
 
     atoms.get_potential_energy()
 
-    if hasattr(calc, 'get_fermi_energy'):  # XXX FreeElectrons
+    if hasattr(calc, 'get_fermi_level'):
         # What is the protocol for a calculator to tell whether
         # it has fermi_energy?
-        eref = calc.get_fermi_energy()
+        eref = calc.get_fermi_level()
     else:
         eref = 0.0
 
@@ -58,11 +58,11 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
                            'of the band path we just used; '
                            'err={} > tol={}'.format(kpts_err, kpts_tol))
 
-    bs = get_band_structure(atoms, _bandpath=path)
+    bs = get_band_structure(atoms, _bandpath=path, _reference=eref)
     return bs
 
 
-def get_band_structure(atoms=None, calc=None, _bandpath=None):
+def get_band_structure(atoms=None, calc=None, _bandpath=None, _reference=None):
     """Create band structure object from Atoms or calculator."""
     # XXX We throw away info about the bandpath when we create the calculator.
     # If we have kept the bandpath, we can provide it as an argument here.
@@ -89,9 +89,13 @@ def get_band_structure(atoms=None, calc=None, _bandpath=None):
         _bandpath = BandPath(labelseq=labels, cell=atoms.cell, scaled_kpts=kpts,
                              special_points=special_points)
 
+    if _reference is None:
+        # Fermi level should come from the GS calculation, not the BS one!
+        reference = calc.get_fermi_level()
+
     return BandStructure(path=_bandpath,
                          energies=energies,
-                         reference=calc.get_fermi_level())
+                         reference=_reference)
 
 
 class BandStructurePlot:
