@@ -249,12 +249,10 @@ def read_aims_output(filename, index=-1):
     f = None
     pbc = False
     found_aims_calculator = False
-    while True:
-        line = fd.readline()
-        if not line:
-            break
+    stress = None
+    for line in fd:
         # if "List of parameters used to initialize the calculator:" in line:
-        #     fd.readline()
+        #     next(fd)
         #     calc = read_aims_calculator(fd)
         #     calc.out = filename
         #     found_aims_calculator = True
@@ -265,7 +263,7 @@ def read_aims_output(filename, index=-1):
             if not pbc:
                 pbc = True
                 for i in range(3):
-                    inp = fd.readline().split()
+                    inp = next(fd).split()
                     cell.append([inp[1], inp[2], inp[3]])
         if "Found relaxation constraint for atom" in line:
             xyz = [0, 0, 0]
@@ -290,36 +288,36 @@ def read_aims_output(filename, index=-1):
                 else:
                     fix_cart[n].mask[xyz.index(1)] = 0
         if "Atomic structure:" in line and not molecular_dynamics:
-            fd.readline()
+            next(fd)
             atoms = Atoms()
             for i in range(n_atoms):
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 atoms.append(Atom(inp[3], (inp[4], inp[5], inp[6])))
         if "Complete information for previous time-step:" in line:
             molecular_dynamics = True
         if "Updated atomic structure:" in line and not molecular_dynamics:
-            fd.readline()
+            next(fd)
             atoms = Atoms()
             for i in range(n_atoms):
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 if "lattice_vector" in inp[0]:
                     cell = []
                     for i in range(3):
                         cell += [[float(inp[1]), float(inp[2]), float(inp[3])]]
-                        inp = fd.readline().split()
+                        inp = next(fd).split()
                     atoms.set_cell(cell)
-                    inp = fd.readline().split()
+                    inp = next(fd).split()
                 atoms.append(Atom(inp[4], (inp[1], inp[2], inp[3])))
                 if molecular_dynamics:
-                    inp = fd.readline().split()
+                    inp = next(fd).split()
         if "Atomic structure (and velocities)" in line:
-            fd.readline()
+            next(fd)
             atoms = Atoms()
             velocities = []
             for i in range(n_atoms):
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 atoms.append(Atom(inp[4], (inp[1], inp[2], inp[3])))
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 floatvect = [v_unit * float(l) for l in inp[1:4]]
                 velocities.append(floatvect)
             atoms.set_velocities(velocities)
@@ -328,20 +326,37 @@ def read_aims_output(filename, index=-1):
             else:
                 atoms.set_constraint(fix_cart)
             images.append(atoms)
+
+        # FlK: add analytical stress and replace stress=None
+        if "Analytical stress tensor - Symmetrized" in line:
+            # scroll to significant lines
+            for _ in range(4):
+                next(fd)
+            stress = []
+            for _ in range(3):
+                inp = next(fd)
+                stress.append([float(i) for i in inp.split()[2:5]])
+
         if "Total atomic forces" in line:
             f = []
             for i in range(n_atoms):
-                inp = fd.readline().split()
+                inp = next(fd).split()
                 # FlK: use inp[-3:] instead of inp[1:4] to make sure this works
                 # when atom number is not preceded by a space.
                 f.append([float(i) for i in inp[-3:]])
             if not found_aims_calculator:
                 e = images[-1].get_potential_energy()
-                images[-1].set_calculator(
-                    SinglePointCalculator(atoms, energy=e, forces=f)
-                )
+                # FlK: Add the stress if it has been computed
+                if stress is None:
+                    calc = SinglePointCalculator(atoms, energy=e, forces=f)
+                else:
+                    calc = SinglePointCalculator(
+                        atoms, energy=e, forces=f, stress=stress
+                    )
+                images[-1].set_calculator(calc)
             e = None
             f = None
+
         if "Total energy corrected" in line:
             e = float(line.split()[5])
             if pbc:
@@ -359,6 +374,28 @@ def read_aims_output(filename, index=-1):
             # if found_aims_calculator:
             # calc.set_results(images[-1])
             # images[-1].set_calculator(calc)
+
+        # FlK: add stress per atom
+        if "Per atom stress (eV) used for heat flux calculation" in line:
+            # scroll to boundary
+            next(l for l in fd if "-------------" in l)
+
+            stresses = []
+            for l in [next(fd) for _ in range(n_atoms)]:
+                # Read stresses
+                xx, yy, zz, xy, xz, yz = [float(d) for d in l.split()[2:8]]
+                stresses.append([[xx, xy, xz], [xy, yy, yz], [xz, yz, zz]])
+
+            if not found_aims_calculator:
+                e = images[-1].get_potential_energy()
+                f = images[-1].get_forces()
+                stress = images[-1].get_stress(voigt=False)
+
+                calc = SinglePointCalculator(
+                    atoms, energy=e, forces=f, stress=stress, stresses=stresses
+                )
+                images[-1].set_calculator(calc)
+
     fd.close()
     if molecular_dynamics:
         images = images[1:]

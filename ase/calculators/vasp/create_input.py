@@ -776,6 +776,8 @@ class GenerateVaspInput(object):
                         'param1': 0.1234, 'param2': 1.0},
         'vdw-df2': {'gga': 'ML', 'luse_vdw': True, 'aggac': 0.0,
                     'zab_vdw': -1.8867},
+        'rev-vdw-df2': {'gga': 'MK', 'luse_vdw': True, 'param1': 0.1234,
+                        'param2':0.711357, 'zab_vdw': -1.8867, 'aggac': 0.0},
         'beef-vdw': {'gga': 'BF', 'luse_vdw': True,
                      'zab_vdw': -1.8867},
         # Hartree-Fock and hybrids
@@ -786,7 +788,8 @@ class GenerateVaspInput(object):
         'pbe0': {'gga': 'PE', 'lhfcalc': True},
         'hse03': {'gga': 'PE', 'lhfcalc': True, 'hfscreen': 0.3},
         'hse06': {'gga': 'PE', 'lhfcalc': True, 'hfscreen': 0.2},
-        'hsesol': {'gga': 'PS', 'lhfcalc': True, 'hfscreen': 0.2}}
+        'hsesol': {'gga': 'PS', 'lhfcalc': True, 'hfscreen': 0.2}
+    }
 
     def __init__(self, restart=None):
         self.float_params = {}
@@ -836,7 +839,9 @@ class GenerateVaspInput(object):
             # of reciprocal lattice vectors:
             'reciprocal': False,
             # Switch to disable writing constraints to POSCAR
-            'ignore_constraints': False
+            'ignore_constraints': False,
+            # Net charge for the whole system; determines nelect if not 0
+            'net_charge': None,
         }
 
     def set_xc_params(self, xc):
@@ -963,7 +968,9 @@ class GenerateVaspInput(object):
         self.check_xc()
         self.all_symbols = atoms.get_chemical_symbols()
         self.natoms = len(atoms)
-        self.spinpol = atoms.get_initial_magnetic_moments().any()
+
+        self.spinpol = (atoms.get_initial_magnetic_moments().any()
+                        or self.int_params['ispin'] == 2)
         atomtypes = atoms.get_chemical_symbols()
 
         # Determine the number of atoms of each atomic species
@@ -1109,8 +1116,28 @@ class GenerateVaspInput(object):
                 PBE:  $VASP_PP_PATH/potpaw_PBE/
                 PW91: $VASP_PP_PATH/potpaw_GGA/''' % potcar)
                 raise RuntimeError('No pseudopotential for %s!' % symbol)
+
         self.converged = None
         self.setups_changed = None
+
+    def default_nelect_from_ppp(self):
+        """ Get default number of electrons from ppp_list and symbol_count
+
+        "Default" here means that the resulting cell would be neutral.
+        """
+        symbol_valences = []
+        for filename in self.ppp_list:
+            ppp_file = open_potcar(filename=filename)
+            r = read_potcar_numbers_of_electrons(ppp_file)
+            symbol_valences.extend(r)
+            ppp_file.close()
+        assert len(self.symbol_count) == len(symbol_valences)
+        default_nelect = 0
+        for ((symbol1, count), (symbol2, valence)) in zip(self.symbol_count,
+                                                          symbol_valences):
+            assert symbol1 == symbol2
+            default_nelect += count * valence
+        return default_nelect
 
     def write_input(self, atoms, directory='./'):
         from ase.io.vasp import write_vasp
@@ -1174,6 +1201,7 @@ class GenerateVaspInput(object):
 
     def write_incar(self, atoms, directory='./', **kwargs):
         """Writes the INCAR file."""
+        p = self.input_params
         # jrk 1/23/2015 I added this flag because this function has
         # two places where magmoms get written. There is some
         # complication when restarting that often leads to magmom
@@ -1182,6 +1210,22 @@ class GenerateVaspInput(object):
         incar = open(join(directory, 'INCAR'), 'w')
         incar.write('INCAR created by Atomic Simulation Environment\n')
         for key, val in self.float_params.items():
+            if key == 'nelect':
+                # We need to determine the nelect resulting from a given net
+                # charge in any case if it's != 0, but if nelect is
+                # additionally given explicitly, then we need to determine it
+                # even for net charge of 0 to check for conflicts
+                if 'net_charge' in p and p['net_charge'] is not None \
+                and (p['net_charge'] != 0 or val is not None):
+                    net_charge = p['net_charge']
+                    default_nelect = self.default_nelect_from_ppp()
+                    nelect_from_net_charge = default_nelect + net_charge
+                    if val is not None and val != nelect_from_net_charge:
+                        raise ValueError('incompatible input parameters: '
+                                         'nelect=%s, but net_charge=%s '
+                                         '(neutral nelect is %s)'
+                                         % (val, net_charge, default_nelect))
+                    val = nelect_from_net_charge
             if val is not None:
                 incar.write(' %s = %5.6f\n' % (key.upper(), val))
         for key, val in self.exp_params.items():
@@ -1229,22 +1273,39 @@ class GenerateVaspInput(object):
                   (self.dict_params['ldau_luj'] is not None)):
                 pass
             elif key == 'magmom':
+                if not len(val) == len(atoms):
+                    msg = ('Expected length of magmom tag to be'
+                           ' {}, i.e. 1 value per atom, but got {}').format(
+                               len(atoms), len(val))
+                    raise ValueError(msg)
+
+                # Check if user remembered to specify ispin
+                # note: we do not overwrite ispin if ispin=1
+                if not self.int_params['ispin']:
+                    self.spinpol = True
+                    incar.write(' ispin = 2\n'.upper())
+
                 incar.write(' %s = ' % key.upper())
                 magmom_written = True
                 # Work out compact a*x b*y notation and write in this form
-                list = [[1, val[0]]]
+                # Assume 1 magmom per atom, ordered as our atoms object
+
+                val = val[self.sort]  # Order in VASP format
+
+                # Compactify the magmom list to symbol order
+                lst = [[1, val[0]]]
                 for n in range(1, len(val)):
                     if val[n] == val[n - 1]:
-                        list[-1][0] += 1
+                        lst[-1][0] += 1
                     else:
-                        list.append([1, val[n]])
-                    [incar.write('%i*%.4f ' % (mom[0], mom[1]))
-                     for mom in list]
-                    incar.write('\n')
+                        lst.append([1, val[n]])
+                incar.write(' '.join(['{:d}*{:.4f}'.format(mom[0], mom[1])
+                                      for mom in lst]))
+                incar.write('\n')
             else:
-                    incar.write(' %s = ' % key.upper())
-                    [incar.write('%.4f ' % x) for x in val]
-                    incar.write('\n')
+                incar.write(' %s = ' % key.upper())
+                [incar.write('%.4f ' % x) for x in val]
+                incar.write('\n')
 
         for key, val in self.bool_params.items():
             if val is not None:
@@ -1267,6 +1328,12 @@ class GenerateVaspInput(object):
         for key, val in self.dict_params.items():
             if val is not None:
                 if key == 'ldau_luj':
+                    # User didn't turn on LDAU tag.
+                    # Only turn on if ldau is unspecified
+                    if self.bool_params['ldau'] is None:
+                        self.bool_params['ldau'] = True
+                        # At this point we have already parsed our bool params
+                        incar.write(' LDAU = .TRUE.\n')
                     llist = ulist = jlist = ''
                     for symbol in self.symbol_count:
                         #  default: No +U
@@ -1278,7 +1345,11 @@ class GenerateVaspInput(object):
                     incar.write(' LDAUU =%s\n' % ulist)
                     incar.write(' LDAUJ =%s\n' % jlist)
 
-        if self.spinpol and not magmom_written:
+        if (self.spinpol
+            and not magmom_written
+            # We don't want to write magmoms if they are all 0.
+            # but we could still be doing a spinpol calculation
+            and atoms.get_initial_magnetic_moments().any()):
             if not self.int_params['ispin']:
                 incar.write(' ispin = 2\n'.upper())
             # Write out initial magnetic moments
@@ -1350,18 +1421,12 @@ class GenerateVaspInput(object):
 
     def write_potcar(self, suffix="", directory='./'):
         """Writes the POTCAR file."""
-        import tempfile
         potfile = open(join(directory, 'POTCAR' + suffix), 'w')
         for filename in self.ppp_list:
-            if filename.endswith('R'):
-                for line in open(filename, 'r'):
-                    potfile.write(line)
-            elif filename.endswith('.Z'):
-                file_tmp = tempfile.NamedTemporaryFile()
-                os.system('gunzip -c %s > %s' % (filename, file_tmp.name))
-                for line in file_tmp.readlines():
-                    potfile.write(line)
-                file_tmp.close()
+            ppp_file = open_potcar(filename=filename)
+            for line in ppp_file:
+                potfile.write(line)
+            ppp_file.close()
         potfile.close()
 
     def write_sort_file(self, directory='./'):
@@ -1521,20 +1586,18 @@ class GenerateVaspInput(object):
                              for line in lines[3:]])
         self.set(kpts=kpts)
 
-    def read_potcar(self):
+    def read_potcar(self, filename='POTCAR'):
         """ Read the pseudopotential XC functional from POTCAR file.
         """
-        file = open('POTCAR', 'r')
-        lines = file.readlines()
-        file.close()
 
         # Search for key 'LEXCH' in POTCAR
         xc_flag = None
-        for line in lines:
-            key = line.split()[0].upper()
-            if key == 'LEXCH':
-                xc_flag = line.split()[-1].upper()
-                break
+        with open(filename, 'r') as f:
+            for line in f:
+                key = line.split()[0].upper()
+                if key == 'LEXCH':
+                    xc_flag = line.split()[-1].upper()
+                    break
 
         if xc_flag is None:
             raise ValueError('LEXCH flag not found in POTCAR file.')
@@ -1624,3 +1687,27 @@ def _to_vasp_bool(x):
         return '.TRUE.'
     else:
         return '.FALSE.'
+
+def open_potcar(filename):
+    """ Open POTCAR file with transparent decompression if it's an archive (.Z)
+    """
+    import gzip
+    if filename.endswith('R'):
+        return open(filename, 'r')
+    elif filename.endswith('.Z'):
+        return gzip.open(filename)
+    else:
+        raise ValueError('Invalid POTCAR filename: "%s"' % filename)
+
+def read_potcar_numbers_of_electrons(file_obj):
+    """ Read list of tuples (atomic symbol, number of valence electrons)
+    for each atomtype from a POTCAR file."""
+    nelect = []
+    lines = file_obj.readlines()
+    for n, line in enumerate(lines):
+        if 'TITEL' in line:
+            symbol = line.split('=')[1].split()[1].split('_')[0].strip()
+            valence = float(lines[n + 4].split(';')[1]
+                            .split('=')[1].split()[0].strip())
+            nelect.append((symbol, valence))
+    return nelect

@@ -206,12 +206,15 @@ class PreconLBFGS(Optimizer):
             self.r0, self.f0, self.e0, self.task = self.load()
         self.load_restart = True
 
-    def step(self, f):
+    def step(self, f=None):
         """Take a single step
 
         Use the given forces, update the history and calculate the next step --
         then take it"""
         r = self.atoms.get_positions()
+
+        if f is None:
+            f = self.atoms.get_forces()
 
         previously_reset_hessian = self._just_reset_hessian
         self.update(r, f, self.r0, self.f0)
@@ -372,7 +375,9 @@ class PreconLBFGS(Optimizer):
         self.smax = smax
         return Optimizer.run(self, fmax, steps)
 
-    def log(self, forces):
+    def log(self, forces=None):
+        if forces is None:
+            forces = self.atoms.get_forces()
         if isinstance(self.atoms, UnitCellFilter):
             natoms = len(self.atoms.atoms)
             forces, stress = forces[:natoms], self.atoms.stress

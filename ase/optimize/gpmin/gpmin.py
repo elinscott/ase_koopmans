@@ -103,7 +103,7 @@ class GPMin(Optimizer, GaussianProcess):
 
         if prior is None:
             self.update_prior = True
-            prior = ConstantPrior(constant = None) 
+            prior = ConstantPrior(constant = None)
 
         else:
             self.update_prior = False
@@ -167,9 +167,13 @@ class GPMin(Optimizer, GaussianProcess):
         except Exception:
             pass
 
-    def step(self, f):
+    def step(self, f=None):
 
         atoms = self.atoms
+
+        if f is None:
+            f = atoms.get_forces()
+
         r0 = atoms.get_positions().reshape(-1)
         e0 = atoms.get_potential_energy(force_consistent=self.force_consistent)
         self.update(r0, e0, f)
@@ -213,4 +217,3 @@ class GPMin(Optimizer, GaussianProcess):
 
     def read(self):
         self.x_list, self.y_list = self.load()
-

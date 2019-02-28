@@ -48,17 +48,17 @@ class Langevin(MolecularDynamics):
     # Helps Asap doing the right thing.  Increment when changing stuff:
     _lgv_version = 3
 
-    def __init__(self, atoms, timestep, temperature, friction,
-                 fixcm=True, trajectory=None, logfile=None,
-                 loginterval=1, communicator=world, rng=np.random):
-
+    def __init__(self, atoms, timestep, temperature, friction, fixcm=True,
+                 trajectory=None, logfile=None, loginterval=1,
+                 communicator=world, rng=np.random, append_trajectory=False):
         self.temp = temperature
         self.fr = friction
         self.fixcm = fixcm  # will the center of mass be held fixed?
         self.communicator = communicator
         self.rng = rng
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
-                                   logfile, loginterval)
+                                   logfile, loginterval,
+                                   append_trajectory=append_trajectory)
         self.updatevars()
 
     def todict(self):
@@ -107,9 +107,12 @@ class Langevin(MolecularDynamics):
         # Works in parallel Asap, #GLOBAL number of atoms:
         self.natoms = self.atoms.get_number_of_atoms()
 
-    def step(self, f):
+    def step(self, f=None):
         atoms = self.atoms
         natoms = len(atoms)
+
+        if f is None:
+            f = atoms.get_forces()
 
         # This velocity as well as xi, eta and a few other variables are stored
         # as attributes, so Asap can do its magic when atoms migrate between
