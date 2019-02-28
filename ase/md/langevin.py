@@ -23,14 +23,6 @@ class Langevin(MolecularDynamics):
     friction
         A friction coefficient, typically 1e-4 to 1e-2.
 
-    selectlinear
-        Selection of atoms that are not part of rigid linear triatomic
-        molecules. Default is None, which means that the atoms object
-        should not include molecules kept rigid using FixLinearTriatomic
-        constraints. If these are present, "selectlinear" must be specified
-        and a sequence ABCABC... of atoms of linear triatomic molecules of
-        the same type is assumed.
-
     fixcm
         If True, the position and momentum of the center of mass is
         kept unperturbed.  Default: True.
@@ -57,58 +49,16 @@ class Langevin(MolecularDynamics):
     _lgv_version = 3
 
     def __init__(self, atoms, timestep, temperature, friction,
-                 selectlinear=None, fixcm=True, trajectory=None, logfile=None,
+                 fixcm=True, trajectory=None, logfile=None,
                  loginterval=1, communicator=world, rng=np.random):
-        for constraint in atoms.constraints:
-            if (constraint.todict()['name'] == 'FixLinearTriatomic' and
-               selectlinear is None):
-                raise ValueError('Specify "selectlinear" when using'
-                                 'FixLinearTriatomic constraints')
+
         self.temp = temperature
         self.fr = friction
-        self.selectlinear = selectlinear
         self.fixcm = fixcm  # will the center of mass be held fixed?
         self.communicator = communicator
         self.rng = rng
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
                                    logfile, loginterval)
-
-        if self.selectlinear is not None:
-            self.mask = np.zeros(len(atoms), bool)
-            self.mask[self.selectlinear] = True
-
-            # Friction on central atom must be zero
-            if np.isscalar(self.fr):
-                self.fr = np.full((len(atoms), 3), self.fr)
-                frl = self.fr[~self.mask]
-                frl[1::3] = 0.0
-                self.fr[~self.mask] = frl
-            else:
-                frl = self.fr[~self.mask]
-                frl[1::3] = 0.0
-                self.fr[~self.mask] = frl
-
-            masseslinear = self.masses[~self.mask]
-            m_a = masseslinear[0]
-            m_b = masseslinear[1]
-            m_c = masseslinear[2]
-            atomslinear = atoms[~self.mask]
-            r_ab = atomslinear.get_distance(0, 1)
-            r_bc = atomslinear.get_distance(1, 2)
-            r_ac = r_ab + r_bc
-            self.m_ab = m_a * m_b
-            self.m_bc = m_b * m_c
-            self.m_ac = m_a * m_c
-            self.c_a = r_bc / r_ac
-            self.c_c = r_ab / r_ac
-            self.mr_bc = (m_b / m_c)**0.5
-            self.mr_ba = (m_b / m_a)**0.5
-            self.mr_ca = (m_c / m_a)**0.5
-            self.mr_ac = (m_a / m_c)**0.5
-            self.n_a = self.c_a / (self.c_a**2 * self.m_bc +
-                                   self.c_c**2 * self.m_ab + self.m_ac)
-            self.n_c = self.c_c / (self.c_a**2 * self.m_bc +
-                                   self.c_c**2 * self.m_ab + self.m_ac)
 
         self.updatevars()
 
@@ -134,6 +84,17 @@ class Langevin(MolecularDynamics):
     def updatevars(self):
         dt = self.dt
         T = self.temp
+
+        for con in self.atoms.constraints:
+            if con.todict()['name'] == 'FixLinearTriatomic':
+                if con.bondlengths is None:
+                    con.initialize(self.atoms)
+
+            # Friction on central atoms must be zero
+            if np.isscalar(self.fr):
+                self.fr = np.full((len(self.atoms), 3), self.fr)
+            self.fr[con.centers] = 0.0
+
         fr = self.fr
         masses = self.masses
         sigma = np.sqrt(2 * T * fr / masses)
@@ -159,8 +120,9 @@ class Langevin(MolecularDynamics):
         self.xi = self.rng.standard_normal(size=(natoms, 3))
         self.eta = self.rng.standard_normal(size=(natoms, 3))
 
-        if self.selectlinear is not None:
-            self.xi, self.eta = self.redistribute()
+        for con in self.atoms.constraints:
+            if con.todict()['name'] == 'FixLinearTriatomic':
+                con.redistribute_forces_rand(self.xi, self.eta)
 
         if self.communicator is not None:
             self.communicator.broadcast(self.xi, 0)
@@ -199,50 +161,6 @@ class Langevin(MolecularDynamics):
         atoms.set_momenta(self.v * self.masses)
 
         return f
-
-    def redistribute(self):
-        m_ab = self.m_ab
-        m_bc = self.m_bc
-        m_ac = self.m_ac
-        c_a = self.c_a
-        c_c = self.c_c
-        mr_bc = self.mr_bc
-        mr_ba = self.mr_ba
-        mr_ca = self.mr_ca
-        mr_ac = self.mr_ac
-        n_a = self.n_a
-        n_c = self.n_c
-
-        xi = self.xi
-        eta = self.eta
-        xilin = xi[~self.mask]
-        etalin = eta[~self.mask]
-        xinew = np.zeros_like(xi)
-        etanew = np.zeros_like(eta)
-        xir = np.zeros_like(xilin)
-        etar = np.zeros_like(etalin)
-
-        # Avoid redistributing for atoms in selectlinear
-        xinew[self.mask] = xi[self.mask]
-        etanew[self.mask] = eta[self.mask]
-
-        xir[::3, :] = ((1 - n_a * m_bc * c_a) * xilin[::3, :] -
-                       n_a * (m_ab * c_c * mr_ca * xilin[2::3, :] -
-                       m_ac * mr_ba * xilin[1::3, :]))
-        etar[::3, :] = ((1 - n_a * m_bc * c_a) * etalin[::3, :] -
-                        n_a * (m_ab * c_c * mr_ca * etalin[2::3, :] -
-                        m_ac * mr_ba * etalin[1::3, :]))
-        xir[2::3, :] = ((1 - n_c * m_ab * c_c) * xilin[2::3, :] -
-                        n_c * (m_bc * c_a * mr_ac * xilin[::3, :] -
-                        m_ac * mr_bc * xilin[1::3, :]))
-        etar[2::3, :] = ((1 - n_c * m_ab * c_c) * etalin[2::3, :] -
-                         n_c * (m_bc * c_a * mr_ac * etalin[::3, :] -
-                         m_ac * mr_bc * etalin[1::3, :]))
-
-        xinew[~self.mask] = xir
-        etanew[~self.mask] = etar
-
-        return xinew, etanew
 
     def _get_com_velocity(self):
         """Return the center of mass velocity.

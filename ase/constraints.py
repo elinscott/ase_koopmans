@@ -469,7 +469,7 @@ class FixLinearTriatomic(FixConstraint):
         self.constraint_forces = -forces
         old = atoms.positions
 
-        fr = self.redistribute_forces(forces, self.n, self.m, self.centers)
+        fr = self.redistribute_forces(forces)
         d = old[self.n] - old[self.m]
         d = find_mic([d], atoms.cell, atoms._pbc)[0][0]
         df = fr[self.n] - fr[self.m]
@@ -480,37 +480,88 @@ class FixLinearTriatomic(FixConstraint):
 
         self.constraint_forces += forces
 
-    def redistribute_forces(self, forces, n, m, s):
+    def redistribute_forces(self, forces):
+        n = self.n
+        m = self.m
+        c = self.centers
+        N = self.N
+        C = self.C
         fr = np.zeros_like(forces)
         
-        fr[n] = ((1 - self.N[:, 0, None] * self.C[:, 0, None]) * forces[n] -
-                 self.N[:, 0, None] * (self.C[:, 1, None] * forces[m] -
-                                       forces[s]))
-        fr[m] = ((1 - self.N[:, 1, None] * self.C[:, 1, None]) * forces[m] -
-                 self.N[:, 1, None] * (self.C[:, 0, None] * forces[n]
-                                       - forces[s]))
-        fr[s] = ((1 - 1 / (self.C[:, 0, None]**2 + self.C[:, 1, None]**2 + 1))
-                 * forces[s] + self.N[:, 0, None] * forces[n] +
-                 self.N[:, 1, None] * forces[m])
+        fr[n] = ((1 - N[:, 0, None] * C[:, 0, None]) * forces[n] -
+                 N[:, 0, None] * (C[:, 1, None] * forces[m] - forces[c]))
+        fr[m] = ((1 - N[:, 1, None] * C[:, 1, None]) * forces[m] -
+                 N[:, 1, None] * (C[:, 0, None] * forces[n] - forces[c]))
+        fr[c] = ((1 - 1 / (C[:, 0, None]**2 + C[:, 1, None]**2 + 1))
+                 * forces[c] + N[:, 0, None] * forces[n] +
+                 N[:, 1, None] * forces[m])
 
         return fr
 
     def redistribute_forces_md(self, forces):
+        n = self.n
+        m = self.m
+        c = self.centers
+        M = self.M
+        C = self.C
+        m_n = self.m_n
+        m_m = self.m_m
+        m_c = self.m_c
 
-        f_n = ((1 - self.M[:, 0, None] * self.C[:, 0, None] * self.m_c[:, None]
-                * self.m_m[:, None]) * forces[self.n] - self.M[:, 0, None]
-               * (self.C[:, 1, None] * self.m_c[:, None] * self.m_n[:, None]
-                  * forces[self.m] - self.m_m[:, None] * self.m_n[:, None]
-                  * forces[self.centers]))
-        f_m = ((1 - self.M[:, 1, None] * self.C[:, 1, None] * self.m_c[:, None]
-                * self.m_n[:, None]) * forces[self.m] - self.M[:, 1, None]
-               * (self.C[:, 0, None] * self.m_c[:, None] * self.m_m[:, None]
-                  * forces[self.n] - self.m_m[:, None] * self.m_n[:, None]
-                  * forces[self.centers]))
+        f_n = ((1 - M[:, 0, None] * C[:, 0, None] * m_c[:, None]
+                * m_m[:, None]) * forces[n] - M[:, 0, None]
+               * (C[:, 1, None] * m_c[:, None] * m_n[:, None]
+                  * forces[m] - m_m[:, None] * m_n[:, None] * forces[c]))
+        f_m = ((1 - M[:, 1, None] * C[:, 1, None] * m_c[:, None]
+                * m_n[:, None]) * forces[m] - M[:, 1, None]
+               * (C[:, 0, None] * m_c[:, None] * m_m[:, None]
+                  * forces[n] - m_m[:, None] * m_n[:, None] * forces[c]))
 
-        forces[self.n] = f_n
-        forces[self.m] = f_m
-        forces[self.centers] = 0.0
+        forces[n] = f_n
+        forces[m] = f_m
+        forces[c] = 0.0
+
+    def redistribute_forces_rand(self, xi, eta):
+        n = self.n
+        m = self.m
+        c = self.centers
+        M = self.M
+        C = self.C
+        m_n = self.m_n
+        m_m = self.m_m
+        m_c = self.m_c
+
+        xir_n = ((1 - M[:, 0, None] * m_c[:, None] * m_m[:, None]
+                  * C[:, 0, None]) * xi[n] - M[:, 0, None] *
+                 (m_c[:, None] * m_n[:, None] * C[:, 1, None]
+                  * (m_m[:, None] / m_n[:, None])**0.5 * xi[m]
+                  - m_m[:, None] * m_n[:, None] *
+                  (m_c[:, None] / m_n[:, None]) ** 0.5 * xi[c]))
+        etar_n = ((1 - M[:, 0, None] * m_c[:, None] * m_m[:, None]
+                   * C[:, 0, None]) * eta[n] - M[:, 0, None] *
+                  (m_c[:, None] * m_n[:, None] * C[:, 1, None]
+                   * (m_m[:, None] / m_n[:, None])**0.5 * eta[m]
+                   - m_m[:, None] * m_n[:, None] *
+                   (m_c[:, None] / m_n[:, None]) ** 0.5 * eta[c]))
+        xir_m = ((1 - M[:, 1, None] * m_c[:, None] * m_n[:, None]
+                  * C[:, 1, None]) * xi[m] - M[:, 1, None] *
+                 (m_c[:, None] * m_m[:, None] * C[:, 0, None]
+                  * (m_m[:, None] / m_n[:, None])**0.5 * xi[n]
+                  - m_m[:, None] * m_n[:, None] *
+                  (m_c[:, None] / m_m[:, None]) ** 0.5 * xi[c]))
+        etar_m = ((1 - M[:, 1, None] * m_c[:, None] * m_n[:, None]
+                   * C[:, 1, None]) * eta[m] - M[:, 1, None] *
+                  (m_c[:, None] * m_m[:, None] * C[:, 0, None]
+                   * (m_m[:, None] / m_n[:, None])**0.5 * eta[n]
+                   - m_m[:, None] * m_n[:, None] *
+                   (m_c[:, None] / m_m[:, None]) ** 0.5 * eta[c]))
+
+        xi[n] = xir_n
+        eta[n] = etar_n
+        xi[m] = xir_m
+        eta[m] = etar_m
+        xi[c] = 0.0
+        eta[c] = 0.0
 
     def initialize_bond_lengths(self, atoms):
         bondlengths = np.zeros((len(self.pairs), 2))
@@ -529,8 +580,7 @@ class FixLinearTriatomic(FixConstraint):
     def todict(self):
         return {'name': 'FixLinearTriatomic',
                 'kwargs': {'pairs': self.pairs,
-                           'centers': self.centers,
-                           'bondlengths': self.bondlengths}}
+                           'centers': self.centers}}
 
     def index_shuffle(self, atoms, ind):
         """Shuffle the indices of the two atoms in this constraint"""
