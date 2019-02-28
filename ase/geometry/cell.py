@@ -78,9 +78,6 @@ class Cell:
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
         return Cell(cell, pbc=pbc)
 
-    #def crystal_structure(self, eps=2e-4, niggli_reduce=True):
-    #    return crystal_structure_from_cell(self.array, eps, niggli_reduce)
-
     def bravais(self, eps=2e-4, _niggli_reduce=False):
         # We want to always reduce (so things are as robust as possible)
         # ...or not.  It is not very reliable somehow.
@@ -90,10 +87,10 @@ class Cell:
 
     def complete(self):
         """Convert missing cell vectors into orthogonal unit vectors."""
-        return Cell(complete_cell(self.array), self.pbc)
+        return Cell(complete_cell(self.array), self.pbc.copy())
 
     def copy(self):
-        return Cell(self.array.copy(), self.pbc)
+        return Cell(self.array.copy(), self.pbc.copy())
 
     @property
     def dtype(self):
@@ -118,11 +115,13 @@ class Cell:
 
     @property
     def orthorhombic(self):
-        return orthorhombic(self.array)
-
-    @property
-    def is_orthorhombic(self):
         return is_orthorhombic(self.array)
+
+    def lengths(self):
+        return np.array([np.linalg.norm(v) for v in self.array])
+
+    def angles(self):
+        return self.cellpar()[3:].copy()
 
     @property
     def ndim(self):
@@ -190,30 +189,6 @@ class Cell:
         from ase.build.tools import niggli_reduce_cell
         cell, op = niggli_reduce_cell(self.array)
         return Cell(cell, self.pbc), op
-
-    #def bandpath(self, path, npoints=50):
-    #    from ase.dft.kpoints import bandpath, BandPath
-    #    objs = bandpath(path, self.array, npoints=npoints)
-    #    return BandPath(*objs, names=path)
-
-    #def special_points(self, eps=2e-4):
-    #    from ase.dft.kpoints import get_special_points
-    #    return get_special_points(self.array, eps=eps)
-
-    #def special_paths(self, eps=2e-4):
-    #    from ase.dft.kpoints import special_paths
-    #    structure = self.crystal_structure(eps=eps)
-    #    pathstring = special_paths[structure]
-    #    paths = pathstring.split(',')
-    #    return paths
-
-    #def bravais_type(self, eps=2e-4):
-    #    """Get bravais lattice and lattice parameters as (lattice, par).
-
-    #    lattice, par = uc.bravais()
-    #    print(uc.cellpar())
-    #    print(lattice(**par).cellpar())"""
-    #    return get_bravais_lattice(self, eps=eps)
 
 
 def unit_vector(x):
