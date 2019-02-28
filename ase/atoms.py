@@ -719,6 +719,8 @@ class Atoms(object):
             # Like Hookean.
             for constraint in self.constraints:
                 if md and hasattr(constraint, 'redistribute_forces_md'):
+                    if constraint.bondlengths is None:
+                        constraint.initialize(self)
                     constraint.redistribute_forces_md(forces)
                 if not md or hasattr(constraint, 'adjust_potential_energy'):
                     constraint.adjust_forces(self, forces)
