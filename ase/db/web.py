@@ -4,8 +4,9 @@ import os
 from ase.db.core import default_key_descriptions
 
 
-def process_metadata(db, html=True):
-    meta = {}
+def process_metadata(db, html: bool = True):  # -> Dict
+    """Process metadata dict from database and/or Python file."""
+    meta = db.metadata
 
     if db.python:
         if isinstance(db.python, str):
@@ -46,29 +47,27 @@ def process_metadata(db, html=True):
 
     sk = []
     for special in meta['special_keys']:
-        kind = special[0]
+        kind, key = special[:2]
+        if key in kd:
+            description = kd[key][1]
+        else:
+            description = key
         if kind == 'SELECT':
-            key = special[1]
             choises = sorted({row.get(key)
                               for row in
                               db.select(key,
                                         columns=['key_value_pairs'],
                                         include_data=False)})
-            if key in kd:
-                longkey = kd[key][1]
-            else:
-                longkey = key
-            special = ['SELECT', key, longkey, choises]
+            special = ['SELECT', key, description, choises]
         elif kind == 'BOOL':
-            key = special[1]
-            if key in kd:
-                longkey = kd[key][1]
-            else:
-                longkey = key
-            special = ['BOOL', key, longkey]
-        else:
-            # RANGE
+            special = ['BOOL', key, description]
+        elif kind == 'RANGE':
             pass
+        else:
+            # SRANGE
+            choises = special[2]
+            special = ['SRANGE', key, description, choises]
+
         sk.append(special)
     meta['special_keys'] = sk
 

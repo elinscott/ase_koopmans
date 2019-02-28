@@ -96,6 +96,9 @@ class DevNull:
     def isatty(self):
         return False
 
+    def read(self, n=-1):
+        return ''
+
 
 devnull = DevNull()
 
@@ -382,3 +385,34 @@ def natural_cutoffs(atoms, mult=1, **kwargs):
 def longsum(x):
     """128-bit floating point sum."""
     return float(np.asarray(x, dtype=np.longdouble).sum())
+
+
+def iofunction(func, mode):
+    """Decorate func so it accepts either str or file.
+
+    (Won't work on functions that return a generator.)"""
+
+    @functools.wraps(func)
+    def iofunc(file, *args, **kwargs):
+        openandclose = isinstance(file, basestring)
+        fd = None
+        try:
+            if openandclose:
+                fd = open(file, mode)
+            else:
+                fd = file
+            obj = func(fd, *args, **kwargs)
+            return obj
+        finally:
+            if openandclose and fd is not None:
+                # fd may be None if open() failed
+                fd.close()
+    return iofunc
+
+
+def writer(func):
+    return iofunction(func, 'w')
+
+
+def reader(func):
+    return iofunction(func, 'r')

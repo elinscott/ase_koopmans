@@ -38,7 +38,10 @@ def get_tests(files=None):
 
         files = set()
         for fname in fnames:
-            files.update(glob(fname))
+            newfiles = glob(fname)
+            if not newfiles:
+                raise OSError('No such test: {}'.format(fname))
+            files.update(newfiles)
         files = list(files)
     else:
         files = glob(os.path.join(dirname, '*'))
@@ -174,6 +177,7 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             t = test.replace('\\', '/')
             if t in ['bandstructure.py', 'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
+                     'forcecurve.py',
                      'fio/animate.py', 'db/db_web.py', 'x3d.py']:
                 result = Result(name=test, status='please run on master')
                 result_queue.put(result)

@@ -66,7 +66,7 @@ def symbols2numbers(symbols):
         if isinstance(s, basestring):
             numbers.append(atomic_numbers[s])
         else:
-            numbers.append(s)
+            numbers.append(int(s))
     return numbers
 
 

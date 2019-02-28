@@ -11,7 +11,8 @@ n2 = Atoms('N2',
 QuasiNewton(n2).run(fmax=0.01)
 vib = Vibrations(n2)
 vib.run()
-print(vib.get_frequencies())
+freqs = vib.get_frequencies()
+print(freqs)
 vib.summary()
 print(vib.get_mode(-1))
 vib.write_mode(n=None, nimages=20)
@@ -32,3 +33,15 @@ d = dict(vib.iterdisplace(inplace=False))
 
 for name, atoms in vib.iterdisplace(inplace=True):
     assert d[name] == atoms
+
+vib = Vibrations(n2)
+vib.run()
+assert vib.combine() == 13
+assert (freqs == vib.get_frequencies()).all()
+
+vib = Vibrations(n2)
+assert vib.split() == 1
+assert (freqs == vib.get_frequencies()).all()
+
+assert vib.combine() == 13
+assert vib.clean() == 1

@@ -48,8 +48,19 @@ class StartGenerator(object):
         else:
             self.box = box_to_place_in
 
-    def get_new_candidate(self):
-        """ Returns a new candidate. """
+    def get_new_candidate(self, maxiter=None):
+        """ Returns a new candidate.
+
+        maxiter: upper bound on the total number of times
+                 the random position generator is called
+                 when generating the new candidate.
+
+                 By default (maxiter=None) no such bound
+                 is imposed. If the generator takes too
+                 long time to create a new candidate, it
+                 may be suitable to specify a finite value.
+                 When the bound is exceeded, None is returned.
+        """
         N = len(self.atom_numbers)
         cell = self.slab.get_cell()
         pbc = self.slab.get_pbc()
@@ -64,13 +75,14 @@ class StartGenerator(object):
         blmin = self.blmin
 
         # Runs until we have found a valid candidate.
+        niter = 0
+        candidate = None
         while True:
             pos = np.zeros((N, 3))
             # Make each new position one at a time.
             for i in range(N):
-                pos_found = False
                 pi = None
-                while not pos_found:
+                while maxiter is None or niter < maxiter:
                     pi = random_pos(self.box)
                     if i == 0:
                         break
@@ -88,7 +100,12 @@ class StartGenerator(object):
                     # A new atom must be near something already there,
                     # but not too close.
                     if not isolated and not too_close:
-                        pos_found = True
+                        break
+                    niter += 1
+                else:
+                    # Reached upper bound on iteration count
+                    break
+
                 pos[i] = pi
 
             # Put everything back in the original order.
@@ -111,6 +128,9 @@ class StartGenerator(object):
                         break
                 if tf:
                     break
+
             if not tf:
+                candidate = self.slab + top
                 break
-        return self.slab + top
+
+        return candidate
