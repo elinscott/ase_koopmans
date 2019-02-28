@@ -354,12 +354,12 @@ class FixLinearTriatomic(FixConstraint):
     """Holonomic constraints for rigid linear triatomic molecules."""
 
     def __init__(self, pairs, centers):
-        """Apply RATTLE-type bond constraints between outer atoms a and b
+        """Apply RATTLE-type bond constraints between outer atoms n and m
            and linear vectorial constraints to the position of central
-           atoms b to fix the geometry of linear triatomic molecules of the
+           atoms c to fix the geometry of linear triatomic molecules of the
            type:
 
-           a--b--c
+           n--c--m
 
            Parameters:
 
@@ -367,11 +367,6 @@ class FixLinearTriatomic(FixConstraint):
                Pairs of indices for the outer atoms forming the bonds to fix.
            centers: list
                Indices of central atoms.
-           bondlengths: list
-               Distances between outer and central atoms of the reference
-               molecular geometry.
-           masses: list
-               Masses of the three atoms.
 
            References:
 
