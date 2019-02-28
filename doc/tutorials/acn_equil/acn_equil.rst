@@ -12,7 +12,7 @@ is an interaction potential between three-site linear molecules, in which
 the atoms of the methyl group are treated as a single site centered on the 
 methyl carbon, i.e. hydrogens are not considered explicitely. For this reason, 
 while setting up a box of acetonitrile one has to assign the mass of a methyl 
-to the outer carbon atom. Furthermore, the calculator requires the atomic 
+to the outer carbon atom. The calculator requires the atomic
 sequence to be MeCN ... MeCN or NCMeNCMe ... NCMe, where Me represents the 
 methyl site.
 
@@ -23,10 +23,6 @@ as is done for TIPnP water. Instead, we must use the class :class:`FixLinearTria
 
 
 The MD procedure we use for the equilibration closely follows the one 
-presented in the tutorial :ref:`tipnp water box equilibration`. A difference
-is represented by the specification of the keyword *selectlinear*, which is
-used to select molecules in the simulation box that are not linear triatomics. 
-In this case, since all acetonitrile molecules are linear triatomics *selectlinear*
-is given the value of an empty list.  
+presented in the tutorial :ref:`tipnp water box equilibration`.
 
 .. literalinclude:: acn_equil.py

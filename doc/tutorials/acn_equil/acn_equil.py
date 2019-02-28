@@ -34,9 +34,7 @@ nm = 27
 atoms.constraints = FixLinearTriatomic(
                     pairs=[(3 * i, 3 * i + 2)
                            for i in range(nm)],
-                    centers=[j * 3 + 1 for j in range(nm)],
-                    distances=[r_mec,r_cn],
-                    masses=[m_me,m_c,m_n])
+                    centers=[j * 3 + 1 for j in range(nm)])
 
 tag = 'acn_27mol_300K'
 atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
@@ -44,7 +42,6 @@ atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
 # Create Langevin object 
 md = Langevin(atoms, 1 * units.fs, 
               temperature=300 * units.kB,
-              selectlinear=[],
               friction=0.01, 
               logfile=tag + '.log')
 
@@ -53,22 +50,20 @@ md.attach(traj.write, interval=1)
 md.run(5000)
 
 # Repeat box and equilibrate further
-tag = 'acn_216mol_300K'
 atoms.set_constraint()
 atoms = atoms.repeat((2, 2, 2))
 nm = 216
 atoms.constraints = FixLinearTriatomic(
                     pairs=[(3 * i, 3 * i + 2)
                            for i in range(nm)],
-                    centers=[j * 3 + 1 for j in range(nm)],
-                    distances=[r_mec,r_cn],
-                    masses=[m_me,m_c,m_n])
+                    centers=[j * 3 + 1 for j in range(nm)])
+
+tag = 'acn_216mol_300K'
 atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
 
 # Create Langevin object
 md = Langevin(atoms, 2 * units.fs,
               temperature=300 * units.kB,
-              selectlinear=[],
               friction=0.01,
               logfile=tag + '.log')
 
