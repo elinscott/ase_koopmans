@@ -81,6 +81,7 @@ class ACN(Calculator):
         self.width = width
         self.forces = None
         Calculator.__init__(self)
+        self.sites_per_mol = 3
 
     def calculate(self, atoms=None,
                   properties=['energy'],
