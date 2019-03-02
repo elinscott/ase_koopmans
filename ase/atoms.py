@@ -487,7 +487,7 @@ class Atoms(object):
         Parameters:
 
         mode: str
-            There are three different modes available:
+            There are four different modes available:
 
             'all': The list of chemical symbols are contracted to a string,
             e.g. ['C', 'H', 'H', 'H', 'O', 'H'] becomes 'CHHHOH'.
