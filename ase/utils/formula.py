@@ -30,7 +30,8 @@ def _empirical_symbols(count):
     """Find the least common multiple of all symbols"""
     counts = [c for c in count.values()]
     i = counts[0]
-    _gcd = 1
+
+    _gcd = i
     for j in counts[1:]:
         _gcd = gcd(i,j)
         i = _gcd
