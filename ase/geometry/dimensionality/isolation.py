@@ -150,7 +150,7 @@ def isolate_chain(atoms, components, k, v):
     pos = np.dot(scaled, init_cell)
     rmax = np.max(np.linalg.norm(pos[:, :2], axis=1))
     rmax = max(1, rmax)
-    cell = np.diag([4 * rmax, 4 * rmax, 1])
+    cell = np.diag([4 * rmax, 4 * rmax, norm])
 
     # construct a new atoms object containing the isolated chain
     return ase.Atoms(numbers=numbers, positions=pos, cell=cell, pbc=[0, 0, 1])
