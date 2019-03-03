@@ -8,6 +8,8 @@ assert Atoms('SnO2').get_chemical_formula(mode='metal') == 'SnO2'
 for sym in ['', 'Pu', 'Pu2', 'U2Pu2', 'U2(2(Pu2)H)']:
     for mode in ['all', 'reduce', 'hill', 'metal']:
         for empirical in [False, True]:
+            if empirical and mode in ['all', 'reduce']:
+                continue
             atoms = Atoms(sym)
             formula = atoms.get_chemical_formula(mode=mode,
                                                  empirical=empirical)
