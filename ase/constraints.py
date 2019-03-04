@@ -365,7 +365,7 @@ class FixLinearTriatomic(FixConstraint):
 
            triples: list
                Indices of the atoms forming the linear molecules to constrain
-               as triples. Sequence should be nom or mon.
+               as triples. Sequence should be (n, o, m) or (m, o, n).
 
            References:
 
@@ -399,21 +399,21 @@ class FixLinearTriatomic(FixConstraint):
         self.bondlengths = self.initialize_bond_lengths(atoms)
         self.bondlength = self.bondlengths.sum(axis=1)
 
-        C = self.bondlengths[:, ::-1] / self.bondlength[:, None]
-        S = (C[:, 0] ** 2 * self.m_o * self.m_m +
-             C[:, 1] ** 2 * self.m_n * self.m_o + self.m_n * self.m_m)
-        M = C / S[:, None]
-        D = self.m_n * C[:, 1] - self.m_m * C[:, 0]
-        L = M * self.m_o[:, None] * D[:, None]
-        L[:, 1] *= -1
-        L = (L + 1) / np.vstack((self.m_n, self.m_m)).T
-        SN = (C[:, 0]**2 + C[:, 1]**2 + 1)
-        N = C / SN[:, None]
+        C1 = self.bondlengths[:, ::-1] / self.bondlength[:, None]
+        C2 = (C1[:, 0] ** 2 * self.m_o * self.m_m +
+             C1[:, 1] ** 2 * self.m_n * self.m_o + self.m_n * self.m_m)
+        C2 = C1 / C2[:, None]
+        C3 = self.m_n * C1[:, 1] - self.m_m * C1[:, 0]
+        C3 = C2 * self.m_o[:, None] * C3[:, None]
+        C3[:, 1] *= -1
+        C3 = (C3 + 1) / np.vstack((self.m_n, self.m_m)).T
+        C4 = (C1[:, 0]**2 + C1[:, 1]**2 + 1)
+        C4 = C1 / C4[:, None]
 
-        self.C = C
-        self.M = M
-        self.L = L
-        self.N = N
+        self.C1 = C1
+        self.C2 = C2
+        self.C3 = C3
+        self.C4 = C4
 
     def adjust_positions(self, atoms, new):
         old = atoms.positions
@@ -424,22 +424,22 @@ class FixLinearTriatomic(FixConstraint):
         r0 = old[self.n_ind] - old[self.m_ind]
         d0 = find_mic([r0], atoms.cell, atoms.pbc)[0][0]
         d1 = new[self.n_ind] - new[self.m_ind] - r0 + d0
-        a = np.einsum('ij,ij->i', d0, d0) * (self.L[:, 0]**2 +
-                                             self.L[:, 1]**2 +
-                                             2 * self.L[:, 0] * self.L[:, 1])
-        b = np.einsum('ij,ij->i', d1, d0) * (self.L.sum(axis=1))
+        a = np.einsum('ij,ij->i', d0, d0) * (self.C3[:, 0] ** 2 +
+                                             self.C3[:, 1] ** 2 +
+                                             2 * self.C3[:, 0] * self.C3[:, 1])
+        b = np.einsum('ij,ij->i', d1, d0) * (self.C3.sum(axis=1))
         c = np.einsum('ij,ij->i', d1, d1) - self.bondlength**2
         g = (b - (b**2 - a * c)**0.5) / a
-        g = g[:, None] * self.L
+        g = g[:, None] * self.C3
         new[self.n_ind] -= g[:, 0, None] * d0
         new[self.m_ind] += g[:, 1, None] * d0
         if np.allclose(d0, r0):
-            new[self.o_ind] = self.C[:, 0, None] * new[self.n_ind] \
-                              + self.C[:, 1, None] * new[self.m_ind]
+            new[self.o_ind] = self.C1[:, 0, None] * new[self.n_ind] \
+                              + self.C1[:, 1, None] * new[self.m_ind]
         else:
             v1 = find_mic([new[self.n_ind]], atoms.cell, atoms.pbc)[0][0]
             v2 = find_mic([new[self.m_ind]], atoms.cell, atoms.pbc)[0][0]
-            rb = self.C[:, 0, None] * v1 + self.C[:, 1, None] * v2
+            rb = self.C1[:, 0, None] * v1 + self.C1[:, 1, None] * v2
             new[self.o_ind] = wrap_positions(rb, atoms.cell, atoms.pbc)
 
     def adjust_momenta(self, atoms, p):
@@ -452,12 +452,12 @@ class FixLinearTriatomic(FixConstraint):
         d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
         dv = p[self.n_ind] / self.m_n[:, None] - p[self.m_ind] / self.m_m[:, None]
         k = np.einsum('ij,ij->i', dv, d) / self.bondlength**2
-        k = self.L / (self.L.sum(axis=1)[:, None]) * k[:, None]
+        k = self.C3 / (self.C3.sum(axis=1)[:, None]) * k[:, None]
         p[self.n_ind] -= k[:, 0, None] * self.m_n[:, None] * d
         p[self.m_ind] += k[:, 1, None] * self.m_m[:, None] * d
-        p[self.o_ind] = self.m_o[:, None] * (self.C[:, 0, None]
+        p[self.o_ind] = self.m_o[:, None] * (self.C1[:, 0, None]
                                              * p[self.n_ind] / self.m_n[:, None]
-                                             + self.C[:, 1, None]
+                                             + self.C1[:, 1, None]
                                              * p[self.m_ind] / self.m_m[:, None])
 
     def adjust_forces(self, atoms, forces):
@@ -465,10 +465,10 @@ class FixLinearTriatomic(FixConstraint):
         if self.bondlengths is None:
             self.initialize(atoms)
 
-        A = self.N * np.diff(self.C)
+        A = self.C4 * np.diff(self.C1)
         A[:, 0] *= -1
         A -= 1
-        B = np.diff(self.N) / (A.sum(axis=1))[:, None]
+        B = np.diff(self.C4) / (A.sum(axis=1))[:, None]
         A /= (A.sum(axis=1))[:, None]
 
         self.constraint_forces = -forces
@@ -489,17 +489,17 @@ class FixLinearTriatomic(FixConstraint):
         n_ind = self.n_ind
         m_ind = self.m_ind
         o_ind = self.o_ind
-        N = self.N
-        C = self.C
+        C4 = self.C4
+        C1 = self.C1
         fr = np.zeros_like(forces)
         
-        fr[n_ind] = ((1 - N[:, 0, None] * C[:, 0, None]) * forces[n_ind] -
-                 N[:, 0, None] * (C[:, 1, None] * forces[m_ind] - forces[o_ind]))
-        fr[m_ind] = ((1 - N[:, 1, None] * C[:, 1, None]) * forces[m_ind] -
-                 N[:, 1, None] * (C[:, 0, None] * forces[n_ind] - forces[o_ind]))
-        fr[o_ind] = ((1 - 1 / (C[:, 0, None]**2 + C[:, 1, None]**2 + 1))
-                 * forces[o_ind] + N[:, 0, None] * forces[n_ind] +
-                 N[:, 1, None] * forces[m_ind])
+        fr[n_ind] = ((1 - C4[:, 0, None] * C1[:, 0, None]) * forces[n_ind] -
+                     C4[:, 0, None] * (C1[:, 1, None] * forces[m_ind] - forces[o_ind]))
+        fr[m_ind] = ((1 - C4[:, 1, None] * C1[:, 1, None]) * forces[m_ind] -
+                     C4[:, 1, None] * (C1[:, 0, None] * forces[n_ind] - forces[o_ind]))
+        fr[o_ind] = ((1 - 1 / (C1[:, 0, None]**2 + C1[:, 1, None]**2 + 1)) *
+                     forces[o_ind] + C4[:, 0, None] * forces[n_ind] +
+                     C4[:, 1, None] * forces[m_ind])
 
         return fr
 
@@ -507,19 +507,19 @@ class FixLinearTriatomic(FixConstraint):
         n_ind = self.n_ind
         m_ind = self.m_ind
         o_ind = self.o_ind
-        M = self.M
-        C = self.C
+        C2 = self.C2
+        C1 = self.C1
         m_n = self.m_n
         m_m = self.m_m
         m_o = self.m_o
 
-        f_n = ((1 - M[:, 0, None] * C[:, 0, None] * m_o[:, None]
-                * m_m[:, None]) * forces[n_ind] - M[:, 0, None]
-               * (C[:, 1, None] * m_o[:, None] * m_n[:, None]
+        f_n = ((1 - C2[:, 0, None] * C1[:, 0, None] * m_o[:, None]
+                * m_m[:, None]) * forces[n_ind] - C2[:, 0, None]
+               * (C1[:, 1, None] * m_o[:, None] * m_n[:, None]
                   * forces[m_ind] - m_m[:, None] * m_n[:, None] * forces[o_ind]))
-        f_m = ((1 - M[:, 1, None] * C[:, 1, None] * m_o[:, None]
-                * m_n[:, None]) * forces[m_ind] - M[:, 1, None]
-               * (C[:, 0, None] * m_o[:, None] * m_m[:, None]
+        f_m = ((1 - C2[:, 1, None] * C1[:, 1, None] * m_o[:, None]
+                * m_n[:, None]) * forces[m_ind] - C2[:, 1, None]
+               * (C1[:, 0, None] * m_o[:, None] * m_m[:, None]
                   * forces[n_ind] - m_m[:, None] * m_n[:, None] * forces[o_ind]))
 
         forces[n_ind] = f_n
@@ -530,21 +530,21 @@ class FixLinearTriatomic(FixConstraint):
         n_ind = self.n_ind
         m_ind = self.m_ind
         o_ind = self.o_ind
-        M = self.M
-        C = self.C
+        C2 = self.C2
+        C1 = self.C1
         m_n = self.m_n
         m_m = self.m_m
         m_o = self.m_o
 
-        f_n = ((1 - M[:, 0, None] * m_o[:, None] * m_m[:, None] *
-                C[:, 0, None]) * forces[n_ind] - M[:, 0, None] *
-               (m_o[:, None] * m_n[:, None] * C[:, 1, None] *
+        f_n = ((1 - C2[:, 0, None] * m_o[:, None] * m_m[:, None] *
+                C1[:, 0, None]) * forces[n_ind] - C2[:, 0, None] *
+               (m_o[:, None] * m_n[:, None] * C1[:, 1, None] *
                 (m_m[:, None] / m_n[:, None]) ** 0.5 * forces[m_ind] -
                 m_m[:, None] * m_n[:, None] *
                 (m_o[:, None] / m_n[:, None]) ** 0.5 * forces[o_ind]))
-        f_m = ((1 - M[:, 1, None] * m_o[:, None] * m_n[:, None] *
-                C[:, 1, None]) * forces[m_ind] - M[:, 1, None] *
-               (m_o[:, None] * m_m[:, None] * C[:, 0, None] *
+        f_m = ((1 - C2[:, 1, None] * m_o[:, None] * m_n[:, None] *
+                C1[:, 1, None]) * forces[m_ind] - C2[:, 1, None] *
+               (m_o[:, None] * m_m[:, None] * C1[:, 0, None] *
                 (m_m[:, None] / m_n[:, None]) ** 0.5 * forces[n_ind] -
                 m_m[:, None] * m_n[:, None] *
                 (m_o[:, None] / m_m[:, None]) ** 0.5 * forces[o_ind]))
