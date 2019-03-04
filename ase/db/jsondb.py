@@ -78,6 +78,11 @@ class JSONDatabase(Database, object):
             bigdct = decode(self.filename.read())
             if self.filename is not sys.stdin:
                 self.filename.seek(0)
+
+        if not isinstance(bigdct, dict) or 'ids' not in bigdct:
+            from ase.io.formats import UnknownFileTypeError
+            raise UnknownFileTypeError('Does not resemble ASE JSON database')
+
         ids = bigdct.get('ids')
         if ids is None:
             # Allow for missing "ids" and "nextid":
