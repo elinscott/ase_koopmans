@@ -124,7 +124,8 @@ class Langevin(MolecularDynamics):
 
         for con in self.atoms.constraints:
             if con.todict()['name'] == 'FixLinearTriatomic':
-                con.redistribute_forces_rand(self.xi, self.eta)
+                con.redistribute_forces_lang(self.xi)
+                con.redistribute_forces_lang(self.eta)
 
         if self.communicator is not None:
             self.communicator.broadcast(self.xi, 0)
