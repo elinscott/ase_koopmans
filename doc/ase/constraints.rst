@@ -109,8 +109,8 @@ atom using the RATTLE-constrained positions of the outer atoms (read
 more about the method here: G. Ciccotti, M. Ferrario, J.-P. Ryckaert, 
 Molecular Physics 47, 1253 (1982)). 
 
-When setting these constraints one has to specify a list with the indices
-of the outer atoms and a list with the indices of the central atoms.
+When setting these constraints one has to specify a list of triples
+of atomic indices, each triple representing a specific triatomic molecule.
 
 .. autoclass:: FixLinearTriatomic
 
@@ -121,9 +121,12 @@ molecules::
     >>> from ase.constraints import FixLinearTriatomic 
     >>> atoms = molecule('CO2')
     >>> dimer = atoms + atoms.copy()
-    >>> c = FixLinearTriatomic(pairs=[(1, 2), (4, 5)],
-                               centers=[0, 3])
+    >>> c = FixLinearTriatomic(pairs=[(1, 0, 2), (4, 3, 5)])
     >>> dimer.set_constraint(c)
+
+.. note::
+    When specifying a triple of indices, the second element must correspond
+    to the index of the central atom.
 
 The FixedLine class
 ===================
