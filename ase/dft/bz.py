@@ -115,10 +115,12 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
     ax.set_aspect('equal')
 
     ax.view_init(azim=azim / pi * 180, elev=elev / pi * 180)
-    return {'fig': fig, 'ax': ax}
+    return ax
 
 
 def bz2d_plot(cell, vectors=False, paths=None, points=None):
+    # XXXX lots of copypaste from 3d plot, delete and rewrite!
+
     import matplotlib.pyplot as plt
     # 2d in x-y plane
     assert all(abs(cell[2][0:2]) < 1e-6) and all(abs(cell.T[2][0:2]) < 1e-6)
@@ -174,6 +176,8 @@ def bz2d_plot(cell, vectors=False, paths=None, points=None):
 
 
 def bz1d_plot(cell, vectors=False, paths=None, points=None):
+    # XXXX lots of copypaste from 3d plot, delete and rewrite!
+
     import matplotlib.pyplot as plt
     # 1d in x
     assert (all(abs(cell[2][0:2]) < 1e-6) and
