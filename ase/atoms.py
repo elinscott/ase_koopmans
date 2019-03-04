@@ -828,8 +828,8 @@ class Atoms(object):
 
         uc = self._cellobj
         if uc:
-            if uc.is_orthorhombic:
-                cell = uc.box().tolist()
+            if uc.orthorhombic:
+                cell = uc.lengths().tolist()
             else:
                 cell = uc.tolist()
             tokens.append('cell={0}'.format(cell))

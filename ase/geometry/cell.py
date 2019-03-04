@@ -127,11 +127,6 @@ class Cell:
     def ndim(self):
         return self.array.ndim
 
-    def box(self):
-        """Return cell lengths if orthorhombic, else raise ValueError."""
-        # XXX More intelligent name for thos method?
-        return orthorhombic(self.array)
-
     def __array__(self, dtype=float):
         if dtype != float:
             raise ValueError('Cannot convert cell to array of type {}'
@@ -173,8 +168,8 @@ class Cell:
     #    return analyse_cell(self, eps=eps)
 
     def __repr__(self):
-        if self.is_orthorhombic:
-            numbers = self.box().tolist()
+        if self.orthorhombic:
+            numbers = self.lengths().tolist()
         else:
             numbers = self.tolist()
 

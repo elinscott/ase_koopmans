@@ -91,7 +91,7 @@ def get_band_structure(atoms=None, calc=None, _bandpath=None, _reference=None):
 
     if _reference is None:
         # Fermi level should come from the GS calculation, not the BS one!
-        reference = calc.get_fermi_level()
+        _reference = calc.get_fermi_level()
 
     return BandStructure(path=_bandpath,
                          energies=energies,
@@ -296,7 +296,8 @@ class BandStructure:
     def __init__(self, path, energies, reference=0.0):
         self.path = path
         self.energies = np.asarray(energies)
-        self.reference=reference
+        assert np.isscalar(reference)
+        self.reference = reference
 
     def todict(self):
         return dict(__ase_type__=self.ase_objtype,
