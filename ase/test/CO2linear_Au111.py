@@ -26,7 +26,7 @@ for wrap in [False, True]:
     if wrap:
         # Remap into the cell so bond is actually wrapped:
         slab.set_scaled_positions(slab.get_scaled_positions() % 1.0)
-    constraint = FixLinearTriatomic(pairs=[(-2, -1)], centers=[-3])
+    constraint = FixLinearTriatomic(triples=[(-2, -3, -1)])
     slab.set_constraint(constraint)
 
     dyn = BFGS(slab, trajectory='relax_%d.traj' % wrap)
