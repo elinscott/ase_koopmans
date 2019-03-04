@@ -412,7 +412,7 @@ class FixLinearTriatomic(FixConstraint):
             self.initialize(atoms)
 
         r0 = old[self.n] - old[self.m]
-        d0 = find_mic([r0], atoms.cell, atoms._pbc)[0][0]
+        d0 = find_mic([r0], atoms.cell, atoms.pbc)[0][0]
         d1 = new[self.n] - new[self.m] - r0 + d0
         a = np.einsum('ij,ij->i', d0, d0) * (self.L[:, 0]**2 +
                                              self.L[:, 1]**2 +
@@ -427,8 +427,8 @@ class FixLinearTriatomic(FixConstraint):
             new[self.centers] = self.C[:, 0, None] * new[self.n] \
                                 + self.C[:, 1, None] * new[self.m]
         else:
-            v1 = find_mic([new[self.n]], atoms.cell, atoms._pbc)[0][0]
-            v2 = find_mic([new[self.m]], atoms.cell, atoms._pbc)[0][0]
+            v1 = find_mic([new[self.n]], atoms.cell, atoms.pbc)[0][0]
+            v2 = find_mic([new[self.m]], atoms.cell, atoms.pbc)[0][0]
             rb = self.C[:, 0, None] * v1 + self.C[:, 1, None] * v2
             new[self.centers] = wrap_positions(rb, atoms.cell, atoms.pbc)
 
@@ -439,7 +439,7 @@ class FixLinearTriatomic(FixConstraint):
             self.initialize(atoms)
 
         d = old[self.n] - old[self.m]
-        d = find_mic([d], atoms.cell, atoms._pbc)[0][0]
+        d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
         dv = p[self.n] / self.m_n[:, None] - p[self.m] / self.m_m[:, None]
         k = np.einsum('ij,ij->i', dv, d) / self.bondlength**2
         k = self.L / (self.L.sum(axis=1)[:, None]) * k[:, None]
@@ -466,7 +466,7 @@ class FixLinearTriatomic(FixConstraint):
 
         fr = self.redistribute_forces(forces)
         d = old[self.n] - old[self.m]
-        d = find_mic([d], atoms.cell, atoms._pbc)[0][0]
+        d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
         df = fr[self.n] - fr[self.m]
         k = -np.einsum('ij,ij->i', df, d) / self.bondlength**2 
         forces[self.n] = fr[self.n] + k[:, None] * d * A[:, 0, None]
