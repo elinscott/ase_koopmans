@@ -99,7 +99,7 @@ def parse_path_string(s):
 
 def resolve_kpt_path_string(path, special_points):
     paths = parse_path_string(path)
-    coords = [np.array([special_points[sym] for sym in subpath])
+    coords = [np.array([special_points[sym] for sym in subpath]).reshape(-1, 3)
               for subpath in paths]
     return paths, coords
 
@@ -116,7 +116,9 @@ class BandPath:
             special_points = {}
 
         if labelseq is None:
-            labelseq = []
+            labelseq = ''
+        elif not isinstance(labelseq, str):
+            labelseq = ''.join(labelseq)
 
         assert cell.shape == (3, 3)
         assert scaled_kpts.ndim == 2 and scaled_kpts.shape[1] == 3
@@ -124,6 +126,7 @@ class BandPath:
         self.icell = self.cell.reciprocal()
         self.scaled_kpts = scaled_kpts
         self.special_points = special_points
+        assert isinstance(labelseq, str)
         self.labelseq = labelseq
 
     @classmethod
@@ -184,8 +187,8 @@ class BandPath:
     def cartesian_kpts(self):
         return self._scale(self.scaled_kpts)
 
-    def plot(self, **plotkwargs):
-        from ase.dft.bz import bz3d_plot
+    def plot(self, dimension=3, **plotkwargs):
+        import ase.dft.bz as bz
 
         special_points = self.special_points
         labelseq, coords = resolve_kpt_path_string(self.labelseq,
@@ -194,6 +197,7 @@ class BandPath:
         paths = []
         points_already_plotted = set()
         for subpath_labels, subpath_coords in zip(labelseq, coords):
+            subpath_coords = np.array(subpath_coords)
             points_already_plotted.update(subpath_labels)
             paths.append((subpath_labels, self._scale(subpath_coords)))
 
@@ -203,9 +207,18 @@ class BandPath:
             if label not in points_already_plotted:
                 paths.append(([label], [self._scale(point)]))
 
+        if dimension == 3:
+            bznd_plot = bz.bz3d_plot
+        elif dimension == 2:
+            bznd_plot = bz.bz2d_plot
+        else:
+            assert dimension == 1
+            bznd_plot = bz.bz1d_plot
+
         kw = {'vectors': True}
         kw.update(plotkwargs)
-        return bz3d_plot(self.cell, paths=paths, points=self.cartesian_kpts(),
+        return bznd_plot(self.cell, paths=paths,
+                         points=self.cartesian_kpts(),
                          pointstyle={'marker': '.'},
                          **kw)
 
