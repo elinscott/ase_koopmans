@@ -10,58 +10,6 @@ from ase.calculators.calculator import ReadError
 from ase.calculators.calculator import Calculator
 import numpy as np
 
-
-def update_nested(d, u):
-    for k, v in u.items():
-        if isinstance(v, Mapping):
-            d[k] = update_nested(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
-
-
-class OrderedParameters(OrderedDict):
-    '''Dictionary for parameters.
-    Since ACE-Molecule input section depends on order, we need OrderedDict.
-    Nothing different with ase.calculators.calculator.Parameters
-    '''
-
-    def __init__(self, *args, **kwargs):
-        super(OrderedParameters, self).__init__(*args, **kwargs)
-
-    def __getattr__(self, key):
-        if not key.startswith('_'):
-            if key not in self:
-                return OrderedDict.__getattribute__(self, key)
-            return self[key]
-        else:
-            return super(OrderedParameters, self).__getattr__(key)
-
-    def __setattr__(self, key, value):
-        if not key.startswith('_'):
-            self[key] = value
-        else:
-            return super(OrderedParameters, self).__setattr__(key, value)
-
-    @classmethod
-    def read(cls, filename):
-        '''Read parameters from file.'''
-        file = open(os.path.expanduser(filename))
-        parameters = cls(eval(file.read()))
-        file.close()
-        return parameters
-
-    def tostring(self):
-        keys = sorted(self)
-        return 'OrderedDict(' + ',\n     '.join(
-            '{}={!r}'.format(key, self[key]) for key in keys) + ')\n'
-
-    def write(self, filename):
-        file = open(filename, 'w')
-        file.write(self.tostring())
-        file.close()
-
-
 class ACE(FileIOCalculator,Calculator):
     '''
     ACE-Molecule logfile reader
@@ -69,7 +17,7 @@ class ACE(FileIOCalculator,Calculator):
     name = 'ace'
     implemented_properties = ['energy', 'forces',
                               'geometry', 'excitation-energy']
-    system_changes = None
+#    system_changes = None
     # defaults is default value of ACE-input
     basic_list = [{
         'Type': 'Scaling', 'Scaling': '0.35', 'Basis': 'Sinc',
@@ -127,9 +75,7 @@ class ACE(FileIOCalculator,Calculator):
                 force_in_param = 1
                 self.results = {}
                 self.write_input(atoms)
-        print('?????????')
         result = super().get_property(name, atoms, allow_calculation)
-        print('zzzzzzzzzzzzzz')
         if(force_in_param ==1):
             self.parameters['order'].pop()
            
