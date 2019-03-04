@@ -7,6 +7,7 @@ from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
 from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import ReadError
+from ase.calculators.calculator import Calculator
 import numpy as np
 
 
@@ -61,7 +62,7 @@ class OrderedParameters(OrderedDict):
         file.close()
 
 
-class ACE(FileIOCalculator):
+class ACE(FileIOCalculator,Calculator):
     '''
     ACE-Molecule logfile reader
     '''
@@ -105,7 +106,7 @@ class ACE(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command=command, **kwargs)
 
-    def compare_parameters(self, parameters, key2, val2):
+    def compare_parameters(self, parameters, val2):
         '''Replace parameters that users want'''
         for val_key, val_val in val2.items():
             for key, val in parameters.items():
@@ -113,40 +114,25 @@ class ACE(FileIOCalculator):
                     parameters[key] = str(val2[key])
                 elif (val_key == key and isinstance(val_val, dict)):
                     parameters[key] = self.compare_parameters(
-                        parameters[key], key, val_val)
+                        parameters[key], val_val)
 
         return parameters
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)'''
-        if name not in self.implemented_properties:
-            print('{} property not implemented'.format(name))
-        if atoms is None:
-            atoms = self.atoms
-            system_changes = []
-        else:
-            system_changes = self.check_state(atoms)
-            if system_changes:
-                self.reset()
+        force_in_param = 0
         if(name=='forces'):
             if not 3 in self.parameters["order"]:
-                self.parameters["order"].append(3)
+                self.parameters['order'].append(3)
+                force_in_param = 1
                 self.results = {}
-        self.write_input(atoms)
-
-        if name not in self.results:
-            if not allow_calculation:
-                return None
-            self.calculate(atoms, [name], system_changes)
-
-        if name not in self.results:
-            # For some reason the calculator was not able to do what we want,
-            # and that is OK.
-            print('{} not present in this calculation'.format(name))
-        result = self.results[name]
-        if isinstance(result, np.ndarray):
-            result = result.copy()
-
+                self.write_input(atoms)
+        print('?????????')
+        result = super().get_property(name, atoms, allow_calculation)
+        print('zzzzzzzzzzzzzz')
+        if(force_in_param ==1):
+            self.parameters['order'].pop()
+           
         return result
 
     def set(self, **kwargs):
@@ -184,7 +170,7 @@ class ACE(FileIOCalculator):
                 # kwargs[key] : basic_list, force_lsit ....
                 for val in kwargs[key]:
                     element = self.compare_parameters(
-                        changed_parameters[key][i], key, val)
+                        changed_parameters[key][i], val)
                     if(element == changed_parameters[key][i]):
                         changed_parameters[key][i].update(val)
                     else:
