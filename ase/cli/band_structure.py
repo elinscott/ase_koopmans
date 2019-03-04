@@ -8,7 +8,8 @@ from ase.io.jsonio import read_json
 from ase.geometry import crystal_structure_from_cell
 from ase.dft.kpoints import (get_monkhorst_pack_size_and_offset,
                              monkhorst_pack_interpolate,
-                             bandpath, BandPath)
+                             bandpath, BandPath,
+                             get_special_points)
 from ase.dft.band_structure import BandStructure
 
 
@@ -43,7 +44,7 @@ class CLICommand:
     def run(args, parser):
         main(args, parser)
 
-def atoms2bandstructure(atoms, args):
+def atoms2bandstructure(atoms, parser, args):
     cell = atoms.get_cell()
     calc = atoms.calc
     bzkpts = calc.get_bz_k_points()
@@ -88,12 +89,11 @@ def atoms2bandstructure(atoms, args):
                                          icell, bz2ibz, size, offset)
         eps = eps.transpose(1, 0, 2)
 
+    special_points = get_special_points(cell)
+    path = BandPath(atoms.cell, scaled_kpts=path_kpts,
+                    special_points=special_points)
 
-    path = BandPath(atoms.cell, scaled_kpts=path_kpts)
-
-    #bs = BandStructure(atoms.cell, path, eps, reference=efermi)
-    bs = BandStructure(path, eps, reference=efermi)
-    return bs
+    return BandStructure(path, eps, reference=efermi)
 
 
 def main(args, parser):
@@ -102,6 +102,6 @@ def main(args, parser):
     except UnknownFileTypeError:
         bs = read_json(args.calculation)
     else:
-        bs = atoms2bandstructure(atoms, args)
+        bs = atoms2bandstructure(atoms, parser, args)
     emin, emax = (float(e) for e in args.range)
     bs.plot(emin=emin, emax=emax)
