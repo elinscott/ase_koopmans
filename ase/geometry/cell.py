@@ -10,8 +10,6 @@ from __future__ import print_function, division
 #
 # Implement total ordering of Bravais classes 1-14
 
-import os
-import re
 import numpy as np
 from numpy import pi, sin, cos, arccos, sqrt, dot
 from numpy.linalg import norm

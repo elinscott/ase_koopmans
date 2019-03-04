@@ -1,12 +1,10 @@
 from __future__ import division
 from abc import abstractmethod, ABC
-import re
 
 import numpy as np
 
 from ase.geometry.cell import Cell
-from ase.dft.kpoints import (parse_path_string, ibz_points, BandPath,
-                             resolve_kpt_path_string)
+from ase.dft.kpoints import parse_path_string, ibz_points, BandPath
 
 
 _degrees = np.pi / 180
