@@ -92,7 +92,7 @@ class Langevin(MolecularDynamics):
             # Friction on central atoms must be zero
             if np.isscalar(self.fr):
                 self.fr = np.full((len(self.atoms), 3), self.fr)
-            self.fr[con.centers] = 0.0
+            self.fr[con.o_ind] = 0.0
 
         fr = self.fr
         masses = self.masses
