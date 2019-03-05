@@ -32,9 +32,8 @@ atoms.set_pbc(True)
 # Set constraints for rigid triatomic molecules   
 nm = 27
 atoms.constraints = FixLinearTriatomic(
-                    pairs=[(3 * i, 3 * i + 2)
-                           for i in range(nm)],
-                    centers=[j * 3 + 1 for j in range(nm)])
+                    triples=[(3 * i, 3 * i + 1, 3 * i + 2)
+                             for i in range(nm)])
 
 tag = 'acn_27mol_300K'
 atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
@@ -54,9 +53,8 @@ atoms.set_constraint()
 atoms = atoms.repeat((2, 2, 2))
 nm = 216
 atoms.constraints = FixLinearTriatomic(
-                    pairs=[(3 * i, 3 * i + 2)
-                           for i in range(nm)],
-                    centers=[j * 3 + 1 for j in range(nm)])
+                    triples=[(3 * i, 3 * i + 1, 3 * i + 2)
+                             for i in range(nm)])
 
 tag = 'acn_216mol_300K'
 atoms.calc = ACN(rc=np.min(np.diag(atoms.cell))/2)
