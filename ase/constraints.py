@@ -397,9 +397,9 @@ class FixLinearTriatomic(FixConstraint):
         self.mass_o = masses[self.o_ind]
 
         self.bondlengths = self.initialize_bond_lengths(atoms)
-        self.bondlength = self.bondlengths.sum(axis=1)
+        self.bondlengths_nm = self.bondlengths.sum(axis=1)
 
-        C1 = self.bondlengths[:, ::-1] / self.bondlength[:, None]
+        C1 = self.bondlengths[:, ::-1] / self.bondlengths_nm[:, None]
         C2 = (C1[:, 0] ** 2 * self.mass_o * self.mass_m +
               C1[:, 1] ** 2 * self.mass_n * self.mass_o +
               self.mass_n * self.mass_m)
@@ -429,7 +429,7 @@ class FixLinearTriatomic(FixConstraint):
                                              self.C3[:, 1] ** 2 +
                                              2 * self.C3[:, 0] * self.C3[:, 1])
         b = np.einsum('ij,ij->i', d1, d0) * (self.C3.sum(axis=1))
-        c = np.einsum('ij,ij->i', d1, d1) - self.bondlength**2
+        c = np.einsum('ij,ij->i', d1, d1) - self.bondlengths_nm ** 2
         g = (b - (b**2 - a * c)**0.5) / a
         g = g[:, None] * self.C3
         new[self.n_ind] -= g[:, 0, None] * d0
@@ -453,7 +453,7 @@ class FixLinearTriatomic(FixConstraint):
         d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
         dv = (p[self.n_ind] / self.mass_n[:, None] -
               p[self.m_ind] / self.mass_m[:, None])
-        k = np.einsum('ij,ij->i', dv, d) / self.bondlength**2
+        k = np.einsum('ij,ij->i', dv, d) / self.bondlengths_nm ** 2
         k = self.C3 / (self.C3.sum(axis=1)[:, None]) * k[:, None]
         p[self.n_ind] -= k[:, 0, None] * self.mass_n[:, None] * d
         p[self.m_ind] += k[:, 1, None] * self.mass_m[:, None] * d
@@ -481,7 +481,7 @@ class FixLinearTriatomic(FixConstraint):
         d = old[self.n_ind] - old[self.m_ind]
         d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
         df = fr[self.n_ind] - fr[self.m_ind]
-        k = -np.einsum('ij,ij->i', df, d) / self.bondlength**2 
+        k = -np.einsum('ij,ij->i', df, d) / self.bondlengths_nm ** 2
         forces[self.n_ind] = fr[self.n_ind] + k[:, None] * d * A[:, 0, None]
         forces[self.m_ind] = fr[self.m_ind] - k[:, None] * d * A[:, 1, None]
         forces[self.o_ind] = fr[self.o_ind] + k[:, None] * d * B
