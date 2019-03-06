@@ -9,6 +9,8 @@ Git master branch
 
 :git:`master <>`.
 
+* :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting bond lengths and angles from atoms.
+
 * Multiple improvements to the ONETEP Calculator. Input files can now be
   written that specify LDOS, bsunfolding and many other functionalities.
 
