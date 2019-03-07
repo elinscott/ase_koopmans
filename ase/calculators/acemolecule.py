@@ -8,7 +8,7 @@ from ase.io.acemolecule import read_acemolecule_out
 from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import ReadError
 from ase.calculators.calculator import Calculator
-import numpy as np
+#import numpy as np
 
 class ACE(FileIOCalculator,Calculator):
     '''
@@ -82,7 +82,11 @@ class ACE(FileIOCalculator,Calculator):
         return result
 
     def set(self, **kwargs):
-        changed_parameters = deepcopy(self.parameters)
+        new_parameters = deepcopy(self.parameters)
+        changed_parameters = FileIOCalculator.set(self, **kwargs)
+        print(new_parameters)
+#        print('changed_parameters_end')
+        print(kwargs)
         duplication = []
         if 'order' in kwargs:
             order_list = []
@@ -94,7 +98,7 @@ class ACE(FileIOCalculator,Calculator):
                     mod = 1
             if(mod == 1):
                 kwargs['order'] = order_list
-            changed_parameters['order'] = kwargs['order']
+            new_parameters['order'] = kwargs['order']
             for i in range(10):
                 j = 0
                 for value in kwargs['order']:
@@ -102,7 +106,7 @@ class ACE(FileIOCalculator,Calculator):
                         j = j + 1
                         if(j > 1):
                             for num in range(j - 1):
-                                changed_parameters[self.order_key_list[i]
+                                new_parameters[self.order_key_list[i]
                                                    ] += self.default_parameters[self.order_key_list[i]]
 
         for key in self.order_key_list:  # key : BasicInformation, Force, Scf and so on
@@ -116,17 +120,17 @@ class ACE(FileIOCalculator,Calculator):
                 # kwargs[key] : basic_list, force_lsit ....
                 for val in kwargs[key]:
                     element = self.compare_parameters(
-                        changed_parameters[key][i], val)
-                    if(element == changed_parameters[key][i]):
-                        changed_parameters[key][i].update(val)
+                        new_parameters[key][i], val)
+                    if(element == new_parameters[key][i]):
+                        new_parameters[key][i].update(val)
                     else:
                         duplication.append(element)
                         modified = True
                     i = i + 1
                     if(modified):
-                        changed_parameters[key] = duplication
+                        new_parameters[key] = duplication
                         duplication = []
-        self.parameters = changed_parameters
+        self.parameters = new_parameters
         return changed_parameters
 
     def read(self, label):
