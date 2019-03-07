@@ -1,7 +1,5 @@
 from __future__ import print_function
 import os
-from collections import OrderedDict
-from collections import Mapping
 from copy import deepcopy
 from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
