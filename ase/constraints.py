@@ -367,8 +367,13 @@ class FixLinearTriatomic(FixConstraint):
                Indices of the atoms forming the linear molecules to constrain
                as triples. Sequence should be (n, o, m) or (m, o, n).
 
+           These constraints have been tested and are known to work with
+           VelocityVerlet and Langevin molecular dynamics, and quasi-Newton
+           optimization algorithms as BFGS.
+
            References:
 
+           Ciccotti et al. Molecular Physics 47 (1982)
            http://dx.doi.org/10.1080/00268978200100942
         """
         self.triples = np.asarray(triples)
@@ -509,6 +514,9 @@ class FixLinearTriatomic(FixConstraint):
         return fr
 
     def redistribute_forces_md(self, atoms, forces):
+        """Redistribute deterministic forces from the central to the outer
+        atoms for molecular dynamics (see Ciccotti et al. Molecular Physics
+        47 (1982))."""
 
         if self.bondlengths is None:
             self.initialize(atoms)
@@ -538,7 +546,8 @@ class FixLinearTriatomic(FixConstraint):
         forces[o_ind] = 0.0
 
     def redistribute_forces_lang(self, atoms, forces):
-
+        """Redistribute random force terms from the central to the outer
+        atoms for molecular dynamics with Langevin."""
         if self.bondlengths is None:
             self.initialize(atoms)
 

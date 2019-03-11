@@ -712,7 +712,10 @@ class Atoms(object):
         forces.
 
         For molecular dynamics (md=True) we don't apply the constraint
-        to the forces but to the momenta."""
+        to the forces but to the momenta. When holonomic constraints for
+        rigid linear triatomic molecules are present, ask the constraints
+        to redistribute the forces (required for molecular dynamics with
+        this type of constraints)."""
 
         if self._calc is None:
             raise RuntimeError('Atoms object has no calculator.')
