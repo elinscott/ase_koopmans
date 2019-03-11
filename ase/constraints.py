@@ -508,7 +508,11 @@ class FixLinearTriatomic(FixConstraint):
 
         return fr
 
-    def redistribute_forces_md(self, forces):
+    def redistribute_forces_md(self, atoms, forces):
+
+        if self.bondlengths is None:
+            self.initialize(atoms)
+
         n_ind = self.n_ind
         m_ind = self.m_ind
         o_ind = self.o_ind
@@ -533,7 +537,11 @@ class FixLinearTriatomic(FixConstraint):
         forces[m_ind] = f_m
         forces[o_ind] = 0.0
 
-    def redistribute_forces_lang(self, forces):
+    def redistribute_forces_lang(self, atoms, forces):
+
+        if self.bondlengths is None:
+            self.initialize(atoms)
+
         n_ind = self.n_ind
         m_ind = self.m_ind
         o_ind = self.o_ind

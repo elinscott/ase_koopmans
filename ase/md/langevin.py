@@ -86,13 +86,10 @@ class Langevin(MolecularDynamics):
 
         for con in self.atoms.constraints:
             if con.todict()['name'] == 'FixLinearTriatomic':
-                if con.bondlengths is None:
-                    con.initialize(self.atoms)
-
-            # Friction on central atoms must be zero
-            if np.isscalar(self.fr):
-                self.fr = np.full((len(self.atoms), 3), self.fr)
-            self.fr[con.o_ind] = 0.0
+                # Friction on central atoms must be zero
+                if np.isscalar(self.fr):
+                    self.fr = np.full((len(self.atoms), 3), self.fr)
+                self.fr[con.o_ind] = 0.0
 
         fr = self.fr
         masses = self.masses
@@ -124,8 +121,8 @@ class Langevin(MolecularDynamics):
 
         for con in self.atoms.constraints:
             if con.todict()['name'] == 'FixLinearTriatomic':
-                con.redistribute_forces_lang(self.xi)
-                con.redistribute_forces_lang(self.eta)
+                con.redistribute_forces_lang(atoms, self.xi)
+                con.redistribute_forces_lang(atoms, self.eta)
 
         if self.communicator is not None:
             self.communicator.broadcast(self.xi, 0)
