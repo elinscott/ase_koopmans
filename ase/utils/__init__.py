@@ -23,13 +23,12 @@ except ImportError:
 import numpy as np
 
 from ase.utils.formula import formula_hill, formula_metal
-from ase.data import covalent_radii
 
 __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'devnull', 'gcd', 'convert_string_to_fd', 'Lock',
            'opencew', 'OpenLock', 'rotate', 'irotate', 'givens',
            'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
-           'formula_hill', 'formula_metal', 'PurePath', 'natural_cutoffs']
+           'formula_hill', 'formula_metal', 'PurePath']
 
 
 # Python 2+3 compatibility stuff:
@@ -377,6 +376,7 @@ def natural_cutoffs(atoms, mult=1, **kwargs):
     * kwargs: Symbol of the atom and its corresponding cutoff, used to override
       the covalent radii
     """
+    from ase.data import covalent_radii
     return [kwargs.get(atom.symbol, covalent_radii[atom.number] * mult)
             for atom in atoms]
 
@@ -400,15 +400,19 @@ def iofunction(func, mode):
     (Won't work on functions that return a generator.)"""
 
     @functools.wraps(func)
-    def iofunc(fd, *args, **kwargs):
-        openandclose = isinstance(fd, basestring)
+    def iofunc(file, *args, **kwargs):
+        openandclose = isinstance(file, basestring)
+        fd = None
         try:
             if openandclose:
-                fd = open(fd, mode)
+                fd = open(file, mode)
+            else:
+                fd = file
             obj = func(fd, *args, **kwargs)
             return obj
         finally:
-            if openandclose:
+            if openandclose and fd is not None:
+                # fd may be None if open() failed
                 fd.close()
     return iofunc
 

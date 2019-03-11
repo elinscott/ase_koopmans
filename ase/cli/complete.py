@@ -121,6 +121,13 @@ def complete(word, previous, line, point):
     return words
 
 
+if sys.version_info[0] == 2:
+    import warnings
+    warnings.warn('Command-line completion running with python2.  '
+                  'Your ASE autocompletion setup is probably outdated.  '
+                  'Please consider rerunning \'ase completion\'.')
+
+
 word, previous = sys.argv[2:]
 line = os.environ['COMP_LINE']
 point = int(os.environ['COMP_POINT'])
