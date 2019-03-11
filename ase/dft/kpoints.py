@@ -166,14 +166,6 @@ class BandPath:
         with paropen(filename, 'w') as fd:
             fd.write(encode(self))
 
-    @classmethod
-    def read(cls, filename):
-        # XXX unify handling of JSONable objects
-        with open(filename, 'r') as fd:
-            bandpath = decode(fd.read())
-        assert isinstance(bandpath, cls)
-        return bandpath
-
     def _scale(self, coords):
         return np.dot(coords, self.icell)
 
