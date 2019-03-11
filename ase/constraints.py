@@ -369,7 +369,7 @@ class FixLinearTriatomic(FixConstraint):
 
            These constraints have been tested and are known to work with
            VelocityVerlet and Langevin molecular dynamics, and quasi-Newton
-           optimization algorithms as BFGS.
+           optimization algorithms like BFGS.
 
            References:
 
