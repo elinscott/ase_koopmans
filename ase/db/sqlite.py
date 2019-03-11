@@ -265,7 +265,7 @@ class SQLite3Database(Database, object):
             row = atoms
 
             # Extract the external tables from AtomsRow
-            names = self.get_external_table_names(db_con=con)
+            names = self._get_external_table_names(db_con=con)
             for name in names:
                 new_table = row.get(name, {})
                 if new_table:
@@ -366,7 +366,7 @@ class SQLite3Database(Database, object):
             try:
                 # Guess the type of the value
                 dtype = self._guess_type(v)
-                self.create_table_if_not_exists(k, dtype, db_con=con)
+                self._create_table_if_not_exists(k, dtype, db_con=con)
                 v["id"] = id
                 valid_entries.append(k)
             except ValueError as exc:
@@ -472,10 +472,10 @@ class SQLite3Database(Database, object):
             dct['data'] = decode(values[26])
 
         # Now we need to update with info from the external tables
-        external_tab = self.get_external_table_names()
+        external_tab = self._get_external_table_names()
         tables = {}
         for tab in external_tab:
-            row = self.read_external_table(tab, dct["id"])
+            row = self._read_external_table(tab, dct["id"])
             tables[tab] = row
 
         dct.update(tables)
@@ -703,7 +703,7 @@ class SQLite3Database(Database, object):
             return
         con = self._connect()
         self._delete(con.cursor(), ids,
-                     tables=self.get_external_table_names(db_con=con))
+                     tables=self._get_external_table_names(db_con=con))
         self._delete(con.cursor(), ids)
         con.commit()
         con.close()
@@ -738,7 +738,7 @@ class SQLite3Database(Database, object):
                         ('metadata', md))
         con.commit()
 
-    def get_external_table_names(self, db_con=None):
+    def _get_external_table_names(self, db_con=None):
         """Return a list with the external table names."""
         con = db_con or self.connection or self._connect()
         cur = con.cursor()
@@ -750,11 +750,11 @@ class SQLite3Database(Database, object):
             con.close()
         return ext_tab_names
 
-    def external_table_exists(self, name):
+    def _external_table_exists(self, name):
         """Return True if an external table name exists."""
-        return name in self.get_external_table_names()
+        return name in self._get_external_table_names()
 
-    def create_table_if_not_exists(self, name, dtype, db_con=None):
+    def _create_table_if_not_exists(self, name, dtype, db_con=None):
         """Create a new table if it does not exits.
 
         Arguments
@@ -768,7 +768,7 @@ class SQLite3Database(Database, object):
             raise ValueError("External table can not be any of {}"
                              "".format(all_tables))
 
-        if self.external_table_exists(name):
+        if self._external_table_exists(name):
             return
 
         con = db_con or self.connection or self._connect()
@@ -788,7 +788,7 @@ class SQLite3Database(Database, object):
 
     def delete_external_table(self, name):
         """Delete an external table."""
-        if not self.external_table_exists(name):
+        if not self._external_table_exists(name):
             return
 
         con = self.connection or self._connect()
@@ -872,7 +872,7 @@ class SQLite3Database(Database, object):
         cursor.execute(sql, (tab_name,))
         return cursor.fetchone()[0]
 
-    def read_external_table(self, name, id):
+    def _read_external_table(self, name, id):
         """Read row from external table."""
         con = self.connection or self._connect()
         cur = con.cursor()
