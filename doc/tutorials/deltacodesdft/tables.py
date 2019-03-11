@@ -25,8 +25,8 @@ for name in ['volume', 'B', 'Bp']:
                       for code in ['emt', 'exp', 'wien2k']]
             if name == 'B':
                 values = [val * 1e24 / kJ for val in values]
-            print(f'{symbol},',
-                  ', '.join(f'{value:.2f}' for value in values),
+            print('{},'.format(symbol),
+                  ', '.join('{:.2f}'.format(value) for value in values),
                   file=f)
 
 with open('delta.csv', 'w') as f:
@@ -37,7 +37,7 @@ with open('delta.csv', 'w') as f:
                              dct[code + '_B'],
                              dct[code + '_Bp'])
                             for code in ['emt', 'exp', 'wien2k']]
-        print(f'{symbol},',
+        print('{},'.format(symbol),
               '{:.1f}, {:.1f}, {:.1f}'.format(delta(*emt, *exp) * 1000,
                                               delta(*emt, *wien2k) * 1000,
                                               delta(*exp, *wien2k) * 1000),
