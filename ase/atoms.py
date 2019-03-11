@@ -1222,14 +1222,23 @@ class Atoms(object):
         v = string2vector(v)
         if a is None:
             a = norm(v) * 180 / pi  # old API
+
+        normv = norm(v)
+
+        if normv == 0.0:
+            raise ZeroDivisionError('Cannot rotate: norm(v) == 0')
+
         if isinstance(a, (float, int)):
             a *= pi / 180
-            v /= norm(v)
+            v /= normv
             c = cos(a)
             s = sin(a)
         else:
             v2 = string2vector(a)
-            v /= norm(v)
+            v /= normv
+            normv2 = np.linalg.norm(v2)
+            if normv2 == 0:
+                raise ZeroDivisionError('Cannot rotate: norm(a) == 0')
             v2 /= norm(v2)
             c = np.dot(v, v2)
             v = np.cross(v, v2)
