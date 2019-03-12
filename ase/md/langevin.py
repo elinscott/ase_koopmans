@@ -83,7 +83,6 @@ class Langevin(MolecularDynamics):
     def updatevars(self):
         dt = self.dt
         T = self.temp
-
         fr = self.fr
         masses = self.masses
         sigma = np.sqrt(2 * T * fr / masses)
