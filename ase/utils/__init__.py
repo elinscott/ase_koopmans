@@ -5,6 +5,7 @@ import pickle
 import sys
 import time
 import string
+import warnings
 from importlib import import_module
 from math import sin, cos, radians, atan2, degrees
 from contextlib import contextmanager
@@ -412,3 +413,18 @@ def writer(func):
 
 def reader(func):
     return iofunction(func, 'r')
+
+
+class ExperimentalFeatureWarning(Warning):
+    pass
+
+
+def experimental(func):
+    """Decorator for functions not ready for production use."""
+    @functools.wraps(func)
+    def expfunc(*args, **kwargs):
+        warnings.warn('This function may change or misbehave: {}()'
+                      .format(func.__qualname__),
+                      ExperimentalFeatureWarning)
+        return func(*args, **kwargs)
+    return expfunc
