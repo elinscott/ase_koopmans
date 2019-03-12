@@ -112,7 +112,7 @@ class Langevin(MolecularDynamics):
         self.eta = self.rng.standard_normal(size=(natoms, 3))
 
         for con in self.atoms.constraints:
-            if con.todict()['name'] == 'FixLinearTriatomic':
+            if hasattr(constraint, 'redistribute_forces_lang'):
                 con.redistribute_forces_lang(atoms, self.xi)
                 con.redistribute_forces_lang(atoms, self.eta)
 
