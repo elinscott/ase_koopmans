@@ -14,7 +14,7 @@ import warnings
 import numpy as np
 
 from ase.calculators.calculator import names as calc_names, get_calculator
-from ase.utils import devnull
+from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
 NotAvailable = unittest.SkipTest
@@ -115,6 +115,10 @@ def run_single_test(filename, verbose, strict):
             warnings.filterwarnings('ignore',
                                     'Using or importing the ABCs from',
                                     category=DeprecationWarning)
+
+            # It is okay that we are testing our own experimental features:
+            warnings.filterwarnings('ignore',
+                                    category=ExperimentalFeatureWarning)
             runtest_almost_no_magic(filename)
     except KeyboardInterrupt:
         raise

@@ -780,6 +780,8 @@ class TRI(BravaisLattice):
         return points
 
 
+from ase.utils import experimental
+@experimental
 def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
     # XXX we need to figure out a way to reduce the cell to standard
     # forms, Niggli or otherwise.  Else we will not always get the

@@ -10,6 +10,7 @@ from __future__ import print_function, division
 #
 # Implement total ordering of Bravais classes 1-14
 
+import warnings
 import numpy as np
 from numpy import pi, sin, cos, arccos, sqrt, dot
 from numpy.linalg import norm
@@ -76,7 +77,7 @@ class Cell:
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
         return Cell(cell, pbc=pbc)
 
-    def bravais(self, eps=2e-4, _niggli_reduce=False):
+    def bravais(self, eps=2e-4, _niggli_reduce=False, _warn=True):
         # We want to always reduce (so things are as robust as possible)
         # ...or not.  It is not very reliable somehow.
         from ase.geometry.bravais import get_bravais_lattice
@@ -165,10 +166,6 @@ class Cell:
 
     def reciprocal(self):
         return np.linalg.pinv(self.array).transpose()
-
-    #def lattice_type(self, eps=2e-4):
-    #    from ase.geometry.crystal_info import analyse_cell
-    #    return analyse_cell(self, eps=eps)
 
     def __repr__(self):
         if self.orthorhombic:
