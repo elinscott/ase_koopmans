@@ -84,13 +84,6 @@ class Langevin(MolecularDynamics):
         dt = self.dt
         T = self.temp
 
-        for con in self.atoms.constraints:
-            if con.todict()['name'] == 'FixLinearTriatomic':
-                # Friction on central atoms must be zero
-                if np.isscalar(self.fr):
-                    self.fr = np.full((len(self.atoms), 3), self.fr)
-                self.fr[con.o_ind] = 0.0
-
         fr = self.fr
         masses = self.masses
         sigma = np.sqrt(2 * T * fr / masses)

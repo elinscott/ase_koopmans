@@ -548,6 +548,7 @@ class FixLinearTriatomic(FixConstraint):
     def redistribute_forces_lang(self, atoms, forces):
         """Redistribute random force terms from the central to the outer
         atoms for molecular dynamics with Langevin."""
+
         if self.bondlengths is None:
             self.initialize(atoms)
 
