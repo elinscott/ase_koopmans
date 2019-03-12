@@ -5,8 +5,69 @@ from ase.io.jsonio import encode, decode
 from ase.parallel import paropen
 
 
-def get_band_structure(atoms=None, calc=None):
+def calculate_band_structure(atoms, path=None, scf_kwargs=None,
+                             bs_kwargs=None, kpts_tol=1e-6, cell_tol=1e-6):
+    if path is None:
+        lat, op = atoms.cell.bravais()
+        path = lat.bandpath()  # Default bandpath
+
+    cellpar1 = path.cell.cellpar()
+    cellpar2 = atoms.cell.cellpar()
+    cellpar_err = np.abs(cellpar2 - cellpar1).max()
+    if cellpar_err > cell_tol:
+        # For many cells this will be okay, but we are not smart enough
+        # to guarantee this.
+        #
+        # User must therefore create a new bandpath for each cell.
+        #
+        # (In principle we should have different tolerance for lengths/angles)
+        raise ValueError('Atoms and band path have different unit cells.  '
+                         'Please reduce atoms to standard form.  '
+                         'Cell lengths and angles are {} vs {}'
+                         .format(cellpar1, cellpar2))
+
+    calc = atoms.calc
+    if calc is None:
+        raise ValueError('Atoms have no calculator')
+
+
+
+    if scf_kwargs is not None:
+        calc.set(**scf_kwargs)
+
+    atoms.get_potential_energy()
+
+    if hasattr(calc, 'get_fermi_level'):
+        # What is the protocol for a calculator to tell whether
+        # it has fermi_energy?
+        eref = calc.get_fermi_level()
+    else:
+        eref = 0.0
+
+    if bs_kwargs is None:
+        bs_kwargs = {}
+
+    calc.set(kpts=path.scaled_kpts, **bs_kwargs)
+    calc.results.clear()  # XXX get rid of me
+    atoms.get_potential_energy()
+
+    ibzkpts = calc.get_ibz_k_points()
+    kpts_err = np.abs(path.scaled_kpts - ibzkpts).max()
+    if kpts_err > kpts_tol:
+        raise RuntimeError('Kpoints of calculator differ from those '
+                           'of the band path we just used; '
+                           'err={} > tol={}'.format(kpts_err, kpts_tol))
+
+    bs = get_band_structure(atoms, _bandpath=path, _reference=eref)
+    return bs
+
+
+def get_band_structure(atoms=None, calc=None, _bandpath=None, _reference=None):
     """Create band structure object from Atoms or calculator."""
+    # XXX We throw away info about the bandpath when we create the calculator.
+    # If we have kept the bandpath, we can provide it as an argument here.
+    # It would be wise to check that the bandpath kpoints are the same as
+    # those stored in the calculator.
     atoms = atoms if atoms is not None else calc.atoms
     calc = calc if calc is not None else atoms.calc
 
@@ -18,10 +79,23 @@ def get_band_structure(atoms=None, calc=None):
                          for k in range(len(kpts))])
     energies = np.array(energies)
 
-    return BandStructure(cell=atoms.cell,
-                         kpts=kpts,
+
+    if _bandpath is None:
+        from ase.dft.kpoints import BandPath, get_cellinfo, labels_from_kpts
+        cellinfo = get_cellinfo(cell=atoms.cell)
+        special_points = cellinfo.special_points
+        _, _, labels = labels_from_kpts(kpts, cell=atoms.cell,
+                                        special_points=special_points)
+        _bandpath = BandPath(labelseq=labels, cell=atoms.cell, scaled_kpts=kpts,
+                             special_points=special_points)
+
+    if _reference is None:
+        # Fermi level should come from the GS calculation, not the BS one!
+        _reference = calc.get_fermi_level()
+
+    return BandStructure(path=_bandpath,
                          energies=energies,
-                         reference=calc.get_fermi_level())
+                         reference=_reference)
 
 
 class BandStructurePlot:
@@ -77,6 +151,7 @@ class BandStructurePlot:
             else:
                 lbl = label
             ax.plot(self.xcoords, e_kn[:, 0], label=lbl, **kwargs)
+
             for e_k in e_kn.T[1:]:
                 ax.plot(self.xcoords, e_k, **kwargs)
 
@@ -131,14 +206,17 @@ class BandStructurePlot:
         emax += self.bs.reference
 
         self.xcoords, label_xcoords, orig_labels = self.bs.get_labels()
-
+        label_xcoords = list(label_xcoords)
         labels = [pretty(name) for name in orig_labels]
+
         i = 1
         while i < len(labels):
             if label_xcoords[i - 1] == label_xcoords[i]:
-                labels[i - 1] = labels[i - 1][:-1] + ',' + labels[i][1:]
-                labels[i] = ''
-            i += 1
+                labels[i - 1] = labels[i - 1] + ',' + labels[i]
+                labels.pop(i)
+                label_xcoords.pop(i)
+            else:
+                i += 1
 
         for x in label_xcoords[1:-1]:
             ax.axvline(x, color='0.5')
@@ -170,7 +248,8 @@ class BandStructurePlot:
             plt.show()
 
 
-class BandStructure:
+# XXX delete me
+class OldBandStructure:
     def __init__(self, cell, kpts, energies, reference=0.0):
         """Create band structure object from energies and k-points."""
         assert cell.shape == (3, 3)
@@ -195,17 +274,57 @@ class BandStructure:
         with paropen(filename, 'w') as f:
             f.write(encode(self))
 
-    @staticmethod
-    def read(filename):
+    @classmethod
+    def read(cls, filename):
         """Read from json file."""
         with open(filename, 'r') as f:
             bs = decode(f.read())
             # Handle older BS files without __ase_type__:
-            if not isinstance(bs, BandStructure):
-                return BandStructure(**bs)
+            if not isinstance(bs, cls):
+                return cls(**bs)
             return bs
 
     def plot(self, *args, **kwargs):
         bsp = BandStructurePlot(self)
         # Maybe return bsp?  But for now run the plot, for compatibility
         return bsp.plot(*args, **kwargs)
+
+
+class BandStructure:
+    ase_objtype = 'bandstructure'
+
+    def __init__(self, path, energies, reference=0.0):
+        self.path = path
+        self.energies = np.asarray(energies)
+        assert np.isscalar(reference)
+        self.reference = reference
+
+    def todict(self):
+        return dict(__ase_type__=self.ase_objtype,
+                    path=self.path.todict(),
+                    energies=self.energies,
+                    reference=self.reference)
+
+    def get_labels(self):
+        return labels_from_kpts(self.path.scaled_kpts, self.path.cell,
+                                special_points=self.path.special_points)
+
+    def write(self, filename):
+        with paropen(filename, 'w') as f:
+            f.write(encode(self))
+
+    @classmethod
+    def read(cls, filename):
+        with open(filename, 'r') as f:
+            return decode(f.read())
+
+    def plot(self, *args, **kwargs):
+        bsp = BandStructurePlot(self)
+        # Maybe return bsp?  But for now run the plot, for compatibility
+        return bsp.plot(*args, **kwargs)
+
+    def __repr__(self):
+        return ('{}(path={!r}, energies=[{} values], reference={})'
+                .format(self.__class__.__name__, self.path,
+                        '{}x{}x{}'.format(*self.energies.shape),
+                        self.reference))

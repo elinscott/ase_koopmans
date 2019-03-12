@@ -47,9 +47,18 @@ def object_hook(dct):
         dct = numpyfy(dct)
         if objtype == 'bandstructure':
             from ase.dft.band_structure import BandStructure
-            return BandStructure(**dct)
+            obj = BandStructure(**dct)
+        elif objtype == 'bandpath':
+            from ase.dft.kpoints import BandPath
+            from ase.geometry.cell import Cell
+            dct['cell'] = Cell(dct['cell'])
+            # XXX We will need Cell to read/write itself so it also has pbc!
+            obj = BandPath(**dct)
         else:
             raise KeyError('Cannot handle type: {}'.format(objtype))
+
+        assert obj.ase_objtype == objtype
+        return obj
 
     return dct
 

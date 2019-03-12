@@ -62,23 +62,6 @@ def info(gui):
 
         add()
 
-        lattice, par = uc.bravais()
-        lattice_string = _('Lattice: {}').format(lattice.name)
-        add(lattice_string)
-
-        pretty = dict(alpha='α', beta='β', gamma='γ')
-        if lattice.type != 'tri':
-            parts = []
-            for varname in lattice.varnames:
-                prettyname = pretty.get(varname, varname)
-                unit = ' Å' if varname in 'abc' else '°'
-                part = '{}={:.3f}{}'.format(prettyname,
-                                            par[varname],
-                                            unit)
-                parts.append(part)
-            add(format(', '.join(parts)))
-
-
         if nimg > 1:
             if all((atoms.cell == img.cell).all() for img in images):
                 add(_('Unit cell is fixed.'))

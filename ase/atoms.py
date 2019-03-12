@@ -17,10 +17,10 @@ import numpy as np
 import ase.units as units
 from ase.atom import Atom
 from ase.constraints import FixConstraint, FixBondLengths
-from ase.geometry.cell import Cell
 from ase.data import atomic_masses
 from ase.utils import basestring
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
+from ase.geometry.cell import Cell
 from ase.symbols import Symbols, symbols2numbers
 
 
@@ -828,8 +828,8 @@ class Atoms(object):
 
         uc = self._cellobj
         if uc:
-            if uc.is_orthorhombic:
-                cell = uc.box().tolist()
+            if uc.orthorhombic:
+                cell = uc.lengths().tolist()
             else:
                 cell = uc.tolist()
             tokens.append('cell={0}'.format(cell))

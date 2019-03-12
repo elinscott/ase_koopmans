@@ -90,23 +90,129 @@ def parse_path_string(s):
     """
     paths = []
     for path in s.split(','):
-        names = [name if name != 'Gamma' else 'G'
+        names = [name
                  for name in re.split(r'([A-Z][a-z0-9]*)', path)
                  if name]
         paths.append(names)
     return paths
 
 
-class BandPath:
-    def __init__(self, kpt_kc, xcoords, xspecial, names=None):
-        self.kpt_kc = kpt_kc
-        self.xcoords = xcoords
-        self.xspecial = xspecial
-        self.names = names
+def resolve_kpt_path_string(path, special_points):
+    paths = parse_path_string(path)
+    coords = [np.array([special_points[sym] for sym in subpath]).reshape(-1, 3)
+              for subpath in paths]
+    return paths, coords
 
-    @property
-    def kpts(self):
-        return self.kpt_kc
+
+class BandPath:
+    ase_objtype = 'bandpath'
+
+    def __init__(self, cell, scaled_kpts=None,
+                 special_points=None, labelseq=None):
+        if scaled_kpts is None:
+            scaled_kpts = np.empty((0, 3))
+
+        if special_points is None:
+            special_points = {}
+
+        if labelseq is None:
+            labelseq = ''
+        elif not isinstance(labelseq, str):
+            labelseq = ''.join(labelseq)
+
+        assert cell.shape == (3, 3)
+        assert scaled_kpts.ndim == 2 and scaled_kpts.shape[1] == 3
+        self.cell = cell.copy()
+        self.icell = self.cell.reciprocal()
+        self.scaled_kpts = scaled_kpts
+        self.special_points = special_points
+        assert isinstance(labelseq, str)
+        self.labelseq = labelseq
+
+    @classmethod
+    def fromdict(cls, d):
+        kwargs = dict(d)
+        assert kwargs.pop('_ase_objtype') == 'bandpath'
+        return cls(**kwargs)
+
+    def todict(self):
+        return {'__ase_type__': self.ase_objtype,
+                'scaled_kpts': self.scaled_kpts,
+                'special_points': self.special_points,
+                'labelseq': self.labelseq,
+                'cell': self.cell}
+
+    def interpolate(self, path=None, npoints=50, special_points=None):
+        # default for npoints should depend on the length of the path
+        if path is None:
+            path = self.labelseq
+
+        special_points = {} if special_points is None else dict(special_points)
+        special_points.update(self.special_points)
+        pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
+        kpts, x, X = paths2kpts(pathcoords, self.cell, npoints)
+        return BandPath(self.cell, kpts, labelseq=path,
+                        special_points=special_points)
+
+
+    def write(self, filename):
+        # XXX could be provided by a class decorator,
+        # e.g., @jsonio('bandpath').
+        # That decorator should also provide a static read() function.
+        #
+        # WIP: get rid of similar stuff in BandStructure class.
+        from ase.parallel import paropen
+        from ase.io.jsonio import encode
+        with paropen(filename, 'w') as fd:
+            fd.write(encode(self))
+
+    def _scale(self, coords):
+        return np.dot(coords, self.icell)
+
+    def __repr__(self):
+        return ('{}(path={}, special_points={}, kpts=[{} kpoints])'
+                .format(self.__class__.__name__,
+                        self.labelseq,
+                        ''.join(sorted(self.special_points)),
+                        len(self.scaled_kpts)))
+
+    def cartesian_kpts(self):
+        return self._scale(self.scaled_kpts)
+
+    def plot(self, dimension=3, **plotkwargs):
+        import ase.dft.bz as bz
+
+        special_points = self.special_points
+        labelseq, coords = resolve_kpt_path_string(self.labelseq,
+                                                   special_points)
+
+        paths = []
+        points_already_plotted = set()
+        for subpath_labels, subpath_coords in zip(labelseq, coords):
+            subpath_coords = np.array(subpath_coords)
+            points_already_plotted.update(subpath_labels)
+            paths.append((subpath_labels, self._scale(subpath_coords)))
+
+        # Add each special point as a single-point subpath if they were
+        # not plotted already:
+        for label, point in special_points.items():
+            if label not in points_already_plotted:
+                paths.append(([label], [self._scale(point)]))
+
+        if dimension == 3:
+            bznd_plot = bz.bz3d_plot
+        elif dimension == 2:
+            bznd_plot = bz.bz2d_plot
+        else:
+            assert dimension == 1
+            bznd_plot = bz.bz1d_plot
+
+        kw = {'vectors': True}
+        kw.update(plotkwargs)
+        return bznd_plot(self.cell, paths=paths,
+                         points=self.cartesian_kpts(),
+                         pointstyle={'marker': '.'},
+                         **kw)
 
 
 def bandpath(path, cell, npoints=50):
@@ -126,7 +232,6 @@ def bandpath(path, cell, npoints=50):
     Return list of k-points, list of x-coordinates and list of
     x-coordinates of special points."""
 
-
     if isinstance(path, basestring):
         cellinfo = get_cellinfo(cell)
         special = cellinfo.special_points
@@ -145,6 +250,11 @@ def bandpath(path, cell, npoints=50):
     else:
         paths = path
 
+    # XXX should return BandPath object
+    return paths2kpts(paths, cell, npoints)
+
+
+def paths2kpts(paths, cell, npoints):
     points = np.concatenate(paths)
     dists = points[1:] - points[:-1]
     lengths = [np.linalg.norm(d) for d in kpoint_convert(cell, skpts_kc=dists)]
@@ -176,7 +286,7 @@ def bandpath(path, cell, npoints=50):
 get_bandpath = bandpath  # old name
 
 
-def labels_from_kpts(kpts, cell, eps=1e-5):
+def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     """Get an x-axis to be used when plotting a band structure.
 
     The first of the returned lists can be used as a x-axis when plotting
@@ -197,7 +307,8 @@ def labels_from_kpts(kpts, cell, eps=1e-5):
     the second is x coordinates of the special points,
     the third is the special points as strings.
     """
-    special_points = get_special_points(cell)
+    if special_points is None:
+        special_points = get_special_points(cell)
     points = np.asarray(kpts)
     diffs = points[1:] - points[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
@@ -234,43 +345,6 @@ def labels_from_kpts(kpts, cell, eps=1e-5):
 
     xcoords = np.array(xcoords)
     return xcoords, xcoords[indices], labels
-
-
-special_points = {
-    'cubic': {'G': [0, 0, 0],
-              'M': [1 / 2, 1 / 2, 0],
-              'R': [1 / 2, 1 / 2, 1 / 2],
-              'X': [0, 1 / 2, 0]},
-    'fcc': {'G': [0, 0, 0],
-            'K': [3 / 8, 3 / 8, 3 / 4],
-            'L': [1 / 2, 1 / 2, 1 / 2],
-            'U': [5 / 8, 1 / 4, 5 / 8],
-            'W': [1 / 2, 1 / 4, 3 / 4],
-            'X': [1 / 2, 0, 1 / 2]},
-    'bcc': {'G': [0, 0, 0],
-            'H': [1 / 2, -1 / 2, 1 / 2],
-            'P': [1 / 4, 1 / 4, 1 / 4],
-            'N': [0, 0, 1 / 2]},
-    'tetragonal': {'G': [0, 0, 0],
-                   'A': [1 / 2, 1 / 2, 1 / 2],
-                   'M': [1 / 2, 1 / 2, 0],
-                   'R': [0, 1 / 2, 1 / 2],
-                   'X': [0, 1 / 2, 0],
-                   'Z': [0, 0, 1 / 2]},
-    'orthorhombic': {'G': [0, 0, 0],
-                     'R': [1 / 2, 1 / 2, 1 / 2],
-                     'S': [1 / 2, 1 / 2, 0],
-                     'T': [0, 1 / 2, 1 / 2],
-                     'U': [1 / 2, 0, 1 / 2],
-                     'X': [1 / 2, 0, 0],
-                     'Y': [0, 1 / 2, 0],
-                     'Z': [0, 0, 1 / 2]},
-    'hexagonal': {'G': [0, 0, 0],
-                  'A': [0, 0, 1 / 2],
-                  'H': [1 / 3, 1 / 3, 1 / 2],
-                  'K': [1 / 3, 1 / 3, 0],
-                  'L': [1 / 2, 0, 1 / 2],
-                  'M': [1 / 2, 0, 0]}}
 
 
 special_paths = {
@@ -357,7 +431,7 @@ def get_cellinfo(cell, lattice=None, eps=2e-4):
                   'X': [nu, 0, -nu],
                   'Z': [0.5, 0.5, 0.5]}
     else:
-        points = special_points[latt]
+        points = ibz_points[latt]
 
     myspecial_points = {label: np.dot(M, kpt) for label, kpt in points.items()}
     return CellInfo(rcell=rcell, lattice=latt,
@@ -550,33 +624,33 @@ cc162_1x1 = np.array([
 # (In units of the reciprocal basis vectors)
 # See http://en.wikipedia.org/wiki/Brillouin_zone
 
-ibz_points = {'cubic': {'Gamma': [0, 0, 0],
+ibz_points = {'cubic': {'G': [0, 0, 0],
                         'X': [0, 0 / 2, 1 / 2],
                         'R': [1 / 2, 1 / 2, 1 / 2],
                         'M': [0 / 2, 1 / 2, 1 / 2]},
-              'fcc': {'Gamma': [0, 0, 0],
+              'fcc': {'G': [0, 0, 0],
                       'X': [1 / 2, 0, 1 / 2],
                       'W': [1 / 2, 1 / 4, 3 / 4],
                       'K': [3 / 8, 3 / 8, 3 / 4],
                       'U': [5 / 8, 1 / 4, 5 / 8],
                       'L': [1 / 2, 1 / 2, 1 / 2]},
-              'bcc': {'Gamma': [0, 0, 0],
+              'bcc': {'G': [0, 0, 0],
                       'H': [1 / 2, -1 / 2, 1 / 2],
                       'N': [0, 0, 1 / 2],
                       'P': [1 / 4, 1 / 4, 1 / 4]},
-              'hexagonal': {'Gamma': [0, 0, 0],
+              'hexagonal': {'G': [0, 0, 0],
                             'M': [0, 1 / 2, 0],
                             'K': [-1 / 3, 1 / 3, 0],
                             'A': [0, 0, 1 / 2],
                             'L': [0, 1 / 2, 1 / 2],
                             'H': [-1 / 3, 1 / 3, 1 / 2]},
-              'tetragonal': {'Gamma': [0, 0, 0],
+              'tetragonal': {'G': [0, 0, 0],
                              'X': [1 / 2, 0, 0],
                              'M': [1 / 2, 1 / 2, 0],
                              'Z': [0, 0, 1 / 2],
                              'R': [1 / 2, 0, 1 / 2],
                              'A': [1 / 2, 1 / 2, 1 / 2]},
-              'orthorhombic': {'Gamma': [0, 0, 0],
+              'orthorhombic': {'G': [0, 0, 0],
                                'R': [1 / 2, 1 / 2, 1 / 2],
                                'S': [1 / 2, 1 / 2, 0],
                                'T': [0, 1 / 2, 1 / 2],
