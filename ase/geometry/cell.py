@@ -84,7 +84,6 @@ class Cell:
                                    _niggli_reduce=_niggli_reduce)
 
     def bandpath(self, path, npoints=50, eps=2e-4):
-        from ase.dft.kpoints import BandPath
         bravais, _ = self.bravais()
         # XXX We need to make sure that the rotation is correct.
         return bravais.bandpath(path, npoints=npoints)
