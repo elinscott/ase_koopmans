@@ -10,7 +10,7 @@ for name in bravais1:
 def check_single(name, cell):
     c = Cell(cell)
     lattice, _ = c.bravais()
-    name1 = lattice.type.lower()
+    name1 = lattice.name.lower()
     ok = name.split('@')[0] == name1
     print(name, '-->', name1, 'OK' if ok else 'ERR', c.cellpar())
     assert ok

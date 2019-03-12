@@ -1,14 +1,12 @@
+import numpy as np
 from ase.geometry.bravais import bravais_lattices, _test_all_variants
 
 for name in bravais_lattices:
     latcls = bravais_lattices[name]
-    assert latcls.type == name
-    assert latcls.type is not None
-    assert latcls.name is not None
+    assert latcls.name == name
+    assert latcls.longname is not None
     for par in latcls.parameters:
         assert par in ['a', 'b', 'c', 'alpha', 'beta', 'gamma']
-
-    # Check variants?
 
 
 for lat in _test_all_variants():
@@ -16,7 +14,12 @@ for lat in _test_all_variants():
     for par in lat.parameters:
         print(par, getattr(lat, par))
 
-    print('cell', lat.tocell())  # tocell().bravais()[0] should evaluate back to same lattice
+    print('cell', lat.tocell())
+    cell = lat.tocell()
+    lat1, _ = cell.bravais()
+    assert lat1.name == lat.name
+    assert lat1.variant.name == lat.variant.name
+    assert np.abs(cell - lat1.tocell()).max() < 1e-13
     print('cellpar', lat.cellpar())
     print('special path', lat.special_path)
     arr = lat.get_special_points_array()
