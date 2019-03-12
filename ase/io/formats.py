@@ -65,6 +65,7 @@ all_formats = {
     'db': ('ASE SQLite database file', '+S'),
     'dftb': ('DftbPlus input file', '1S'),
     'dlp4': ('DL_POLY_4 CONFIG file', '1F'),
+    'dlp-history': ('DL_POLY HISTORY file', '+F'),
     'dmol-arc': ('DMol3 arc file', '+S'),
     'dmol-car': ('DMol3 structure file', '1S'),
     'dmol-incoor': ('DMol3 structure file', '1S'),
@@ -138,6 +139,7 @@ format2modulename = {
     'castep-phonon': 'castep',
     'dacapo-text': 'dacapo',
     'dlp4': 'dlp4',
+    'dlp-history': 'dlp4',
     'espresso-in': 'espresso',
     'espresso-out': 'espresso',
     'gaussian-out': 'gaussian',
@@ -644,6 +646,8 @@ def filetype(filename, read=True, guess=True):
             return 'iwm'
         if 'CONFIG' in basename:
             return 'dlp4'
+        if basename == 'HISTORY':
+            return 'dlp-history'
 
         if not read:
             if ext is None:
