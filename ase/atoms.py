@@ -19,8 +19,8 @@ from ase.atom import Atom
 from ase.constraints import FixConstraint, FixBondLengths
 from ase.data import atomic_masses
 from ase.utils import basestring
-from ase.geometry.cell import Cell
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
+from ase.geometry.cell import Cell
 from ase.symbols import Symbols, symbols2numbers
 
 
