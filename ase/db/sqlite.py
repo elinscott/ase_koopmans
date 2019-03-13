@@ -355,12 +355,13 @@ class SQLite3Database(Database, object):
 
         mtime = now()
 
-        cur.execute("UPDATE systems SET mtime={}, key_value_pairs='{}' WHERE id={}"\
-                    .format(mtime, encode(key_value_pairs), id))
+        cur.execute(
+            "UPDATE systems SET mtime={}, key_value_pairs='{}' WHERE id={}"
+            .format(mtime, encode(key_value_pairs), id))
         if data:
-            cur.execute("UPDATE systems set data='{}' where id={}"\
+            cur.execute("UPDATE systems set data='{}' where id={}"
                         .format(encode(data), id))
-        
+
         self._delete(cur, [id], ['keys', 'text_key_values',
                                  'number_key_values'])
 
@@ -385,7 +386,7 @@ class SQLite3Database(Database, object):
             con.close()
 
         return id
-            
+
     def get_last_id(self, cur):
         cur.execute('SELECT seq FROM sqlite_sequence WHERE name="systems"')
         result = cur.fetchone()
