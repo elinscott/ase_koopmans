@@ -497,10 +497,10 @@ def read_castep_cell(fd, index=None, calculator_args={}, find_spg=False,
 
     aargs['symbols'] = []
     pos_type = 'positions'
-    pos_block = celldict.pop('positions_abs', None)[0]
+    pos_block = celldict.pop('positions_abs', [None])[0]
     if pos_block is None:
         pos_type = 'scaled_positions'
-        pos_block = celldict.pop('positions_frac', None)[0]
+        pos_block = celldict.pop('positions_frac', [None])[0]
     aargs[pos_type] = []
 
     lines = pos_block.split('\n')
