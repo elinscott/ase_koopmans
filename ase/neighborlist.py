@@ -3,16 +3,120 @@ from math import sqrt
 import numpy as np
 from scipy import sparse as sp
 
-from ase.data import atomic_numbers
+from ase.data import atomic_numbers, covalent_radii
 from ase.geometry import complete_cell
+
+
+def natural_cutoffs(atoms, mult=1, **kwargs):
+    """Generate a radial cutoff for every atom based on covalent radii.
+
+    The covalent radii are a reasonable cutoff estimation for bonds in
+    many applications such as neighborlists, so function generates an
+    atoms length list of radii based on this idea.
+
+    * atoms: An atoms object
+    * mult: A multiplier for all cutoffs, useful for coarse grained adjustment
+    * kwargs: Symbol of the atom and its corresponding cutoff, used to override the covalent radii
+    """
+    return [kwargs.get(atom.symbol, covalent_radii[atom.number] * mult)
+            for atom in atoms]
+
+
+def build_neighbor_list(atoms, cutoffs=None, **kwargs):
+    """Automatically build and update a NeighborList.
+
+    Parameters:
+
+    atoms : :class:`~ase.Atoms` object
+        Atoms to build Neighborlist for.
+    cutoffs: list of floats
+        Radii for each atom. If not given it will be produced by calling :func:`ase.neighborlist.natural_cutoffs`
+    kwargs: arbitrary number of options
+        Will be passed to the constructor of :class:`~ase.neighborlist.NeighborList`
+
+    Returns:
+
+    return: :class:`~ase.neighborlist.NeighborList`
+        A :class:`~ase.neighborlist.NeighborList` instance (updated).
+    """
+    if cutoffs is None:
+        cutoffs = natural_cutoffs(atoms)
+
+    nl = NeighborList(cutoffs, **kwargs)
+    nl.update(atoms)
+
+    return nl
+
+
+def get_distance_matrix(graph, limit=3):
+    """Get Distance Matrix from a Graph.
+
+    Parameters:
+
+    graph: array, matrix or sparse matrix, 2 dimensions (N, N)
+        Graph representation of the connectivity. See `scipy doc <https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.dijkstra.html#scipy.sparse.csgraph.dijkstra>`_
+        for reference.
+    limit: integer
+        Maximum number of steps to analyze. For most molecular information,
+        three should be enough.
+
+    Returns:
+
+    return: scipy.sparse.csr_matrix, shape (N, N)
+        A scipy.sparse.csr_matrix. All elements that are not connected within
+        *limit* steps are set to zero.
+
+    This is a potential memory bottleneck, as csgraph.dijkstra produces a
+    dense output matrix. Here we replace all np.inf values with 0 and
+    transform back to csr_matrix.
+    Why not dok_matrix like the connectivity-matrix? Because row-picking
+    is most likely and this is super fast with csr.
+    """
+    mat = sp.csgraph.dijkstra(graph, directed=False, limit=limit)
+    mat[mat == np.inf] = 0
+    return sp.csr_matrix(mat, dtype=np.int8)
+
+def get_distance_indices(distanceMatrix, distance):
+    """Get indices for each node that are distance or less away.
+
+    Parameters:
+
+    distanceMatrix: any one of scipy.sparse matrices (NxN)
+        Matrix containing distance information of atoms. Get it e.g. with
+        :func:`~ase.neighborlist.get_distance_matrix`
+    distance: integer
+        Number of steps to allow.
+
+    Returns:
+
+    return: list of length N
+        A list of length N. return[i] has all indices that are connected to item i.
+
+    The distance matrix only contains shortest paths, so when looking for
+    distances longer than one, we need to add the lower values for cases
+    where atoms are connected via a shorter path too.
+    """
+    shape = distanceMatrix.get_shape()
+    indices = []
+    #iterate over rows
+    for i in range(shape[0]):
+        row = distanceMatrix.getrow(i)[0]
+        #find all non-zero
+        found = sp.find(row)
+        #screen for smaller or equal distance
+        equal = np.where( found[-1] <= distance )[0]
+        #found[1] contains the indexes
+        indices.append([ found[1][x] for x in equal ])
+    return indices
+
 
 
 def mic(dr, cell, pbc=None):
     """
     Apply minimum image convention to an array of distance vectors.
 
-    Parameters
-    ----------
+    Parameters:
+
     dr : array_like
         Array of distance vectors.
     cell : array_like
@@ -21,8 +125,8 @@ def mic(dr, cell, pbc=None):
         Periodic boundary conditions in x-, y- and z-direction. Default is to
         assume periodic boundaries in all directions.
 
-    Returns
-    -------
+    Returns:
+
     dr : array
         Array of distance vectors, wrapped according to the minimum image
         convention.
@@ -83,7 +187,7 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
               Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
             * A list/array with a per atom value: This specifies the radius of
               an atomic sphere for each atoms. If spheres overlap, atoms are
-              within each others neighborhood. See :func:`~ase.utils.natural_cutoffs`
+              within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
               for an example on how to get such a list.
     self_interaction: bool
         Return the atom itself as its own neighbor if set to true.
@@ -440,7 +544,7 @@ def neighbor_list(quantities, a, cutoff, self_interaction=False,
               Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
             * A list/array with a per atom value: This specifies the radius of
               an atomic sphere for each atoms. If spheres overlap, atoms are
-              within each others neighborhood. See :func:`~ase.utils.natural_cutoffs`
+              within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
               for an example on how to get such a list.
 
     self_interaction: bool
@@ -522,16 +626,16 @@ def first_neighbors(natoms, first_atom):
     Compute an index array pointing to the ranges within the neighbor list that
     contain the neighbors for a certain atom.
 
-    Parameters
-    ----------
+    Parameters:
+
     natoms : int
         Total number of atom.
     first_atom : array_like
         Array containing the first atom 'i' of the neighbor tuple returned
         by the neighbor list.
 
-    Returns
-    -------
+    Returns:
+
     seed : array
         Array containing pointers to the start and end location of the
         neighbors of a certain atom. Neighbors of atom k have indices from s[k]
@@ -586,10 +690,9 @@ def get_connectivity_matrix(nl, sparse=True):
 
     >>> from ase import neighborlist
     >>> from ase.build import molecule
-    >>> from ase.utils import natural_cutoffs
     >>> from scipy import sparse
     >>> mol = molecule('CH3CH2OH')
-    >>> cutOff = natural_cutoffs(mol)
+    >>> cutOff = neighborlist.natural_cutoffs(mol)
     >>> neighborList = neighborlist.NeighborList(cutOff, self_interaction=False, bothways=True)
     >>> neighborList.update(mol)
     >>> matrix = neighborList.get_connectivity_matrix()
@@ -906,7 +1009,7 @@ class NeighborList:
     cutoffs: list of float
         List of cutoff radii - one for each atom. If the spheres (defined by
         their cutoff radii) of two atoms overlap, they will be counted as
-        neighbors. See :func:`~ase.utils.natural_cutoffs` for an example on how to
+        neighbors. See :func:`~ase.neighborlist.natural_cutoffs` for an example on how to
         get such a list.
 
     skin: float
