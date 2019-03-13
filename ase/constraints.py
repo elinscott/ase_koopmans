@@ -569,7 +569,7 @@ class FixLinearTriatomic(FixConstraint):
         if self.bondlengths is None:
             self.initialize(atoms)
 
-        fr_n, fr_m = self.redistribute(forces, rand=True)
+        fr_n, fr_m = self.redistribute_forces_md(forces, rand=True)
 
         self.set_slices(fr_n, fr_m, 0.0, forces)
 
