@@ -17,7 +17,8 @@ def bz_vertices(icell):
 
 
 def bz3d_plot(cell, vectors=False, paths=None, points=None,
-              elev=None, scale=1, interactive=False):
+              elev=None, scale=1, interactive=False,
+              pointstyle=None, fig=None, ax=None):
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     from mpl_toolkits.mplot3d import proj3d
@@ -37,8 +38,10 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
 
     icell = np.linalg.inv(cell).T
     kpoints = points
-    fig = plt.figure(figsize=(5, 5))
-    ax = fig.gca(projection='3d')
+    if ax is None:
+        if fig is None:
+            fig = plt.gcf() #figure(figsize=(6, 5))
+        ax = fig.gca(projection='3d')
 
     azim = pi / 5
     elev = elev or pi / 6
@@ -79,20 +82,29 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
     if paths is not None:
         for names, points in paths:
             x, y, z = np.array(points).T
-            ax.plot(x, y, z, c='r', ls='-')
+            ax.plot(x, y, z, c='r', ls='-', marker='.')
 
             for name, point in zip(names, points):
                 x, y, z = point
                 if name == 'G':
                     name = '\\Gamma'
                 elif len(name) > 1:
-                    name = name[0] + '_' + name[1]
+                    import re
+                    m = re.match(r'^(\D+?)(\d*)$', name)
+                    if m is None:
+                        raise ValueError('Bad label: {}'.format(name))
+                    name, num = m.group(1, 2)
+                    if num:
+                        name = '{}_{{{}}}'.format(name, num)
                 ax.text(x, y, z, '$' + name + '$',
                         ha='center', va='bottom', color='r')
 
     if kpoints is not None:
+        kw = {'c': 'b'}
+        if pointstyle is not None:
+            kw.update(pointstyle)
         for p in kpoints:
-            ax.scatter(p[0], p[1], p[2], c='b')
+            ax.scatter(p[0], p[1], p[2], **kw)
 
     ax.set_axis_off()
     ax.autoscale_view(tight=True)
@@ -103,9 +115,12 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
     ax.set_aspect('equal')
 
     ax.view_init(azim=azim / pi * 180, elev=elev / pi * 180)
+    return ax
 
 
 def bz2d_plot(cell, vectors=False, paths=None, points=None):
+    # XXXX lots of copypaste from 3d plot, delete and rewrite!
+
     import matplotlib.pyplot as plt
     # 2d in x-y plane
     assert all(abs(cell[2][0:2]) < 1e-6) and all(abs(cell.T[2][0:2]) < 1e-6)
@@ -161,6 +176,8 @@ def bz2d_plot(cell, vectors=False, paths=None, points=None):
 
 
 def bz1d_plot(cell, vectors=False, paths=None, points=None):
+    # XXXX lots of copypaste from 3d plot, delete and rewrite!
+
     import matplotlib.pyplot as plt
     # 1d in x
     assert (all(abs(cell[2][0:2]) < 1e-6) and

@@ -19,9 +19,8 @@ from ase.atom import Atom
 from ase.constraints import FixConstraint, FixBondLengths
 from ase.data import atomic_masses
 from ase.utils import basestring
-from ase.geometry import (wrap_positions, find_mic, cellpar_to_cell,
-                          cell_to_cellpar, complete_cell, is_orthorhombic,
-                          get_angles, get_distances)
+from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
+from ase.geometry.cell import Cell
 from ase.symbols import Symbols, symbols2numbers
 
 
@@ -216,7 +215,7 @@ class Atoms(object):
                 positions = np.zeros((len(self.arrays['numbers']), 3))
             else:
                 assert self.number_of_lattice_vectors == 3
-                positions = np.dot(scaled_positions, self._cell)
+                positions = np.dot(scaled_positions, self.cell)
         else:
             if scaled_positions is not None:
                 raise RuntimeError('Both scaled and cartesian positions set!')
@@ -268,7 +267,7 @@ class Atoms(object):
     @property
     def number_of_lattice_vectors(self):
         """Number of (non-zero) lattice vectors."""
-        return self._cell.any(1).sum()
+        return self._cellobj.celldim
 
     def set_constraint(self, constraint=None):
         """Apply one or more constrains.
@@ -334,21 +333,17 @@ class Atoms(object):
         >>> atoms.set_cell([a, a, a, alpha, alpha, alpha])
         """
 
-        cell = np.array(cell, float)
-
-        if cell.shape == (3,):
-            cell = np.diag(cell)
-        elif cell.shape == (6,):
-            cell = cellpar_to_cell(cell)
-        elif cell.shape != (3, 3):
-            raise ValueError('Cell must be length 3 sequence, length 6 '
-                             'sequence or 3x3 matrix!')
+        uc = Cell.new(cell)
 
         if scale_atoms:
-            M = np.linalg.solve(self.get_cell(complete=True),
-                                complete_cell(cell))
+            M = np.linalg.solve(self._cellobj.complete(),
+                                uc.complete())
             self.positions[:] = np.dot(self.positions, M)
-        self._cell = cell
+
+        if hasattr(self, '_cellobj'):
+            # Copy the existing pbcs into the new cell object
+            uc.pbc = self.pbc
+        self._cellobj = uc
 
     def set_celldisp(self, celldisp):
         """Set the unit cell displacement vectors."""
@@ -362,9 +357,15 @@ class Atoms(object):
     def get_cell(self, complete=False):
         """Get the three unit cell vectors as a 3x3 ndarray."""
         if complete:
-            return complete_cell(self._cell)
+            cell = self._cellobj.complete()
         else:
-            return self._cell.copy()
+            cell = self._cellobj.copy()
+
+        # We want to return the cell object if we have the corresponding
+        # debug option enabled, else the old-style 3x3 array:
+        if self._cellobj._atoms_use_cellobj:
+            return cell
+        return cell.array
 
     def get_cell_lengths_and_angles(self):
         """Get unit cell parameters. Sequence of 6 numbers.
@@ -376,7 +377,7 @@ class Atoms(object):
 
         in degrees.
         """
-        return cell_to_cellpar(self._cell)
+        return self._cellobj.cellpar()
 
     def get_reciprocal_cell(self):
         """Get the three reciprocal lattice vectors as a 3x3 ndarray.
@@ -384,18 +385,17 @@ class Atoms(object):
         Note that the commonly used factor of 2 pi for Fourier
         transforms is not included here."""
 
-        rec_unit_cell = np.linalg.pinv(self.get_cell()).transpose()
-        return rec_unit_cell
+        return self._cellobj.reciprocal()
 
     def set_pbc(self, pbc):
         """Set periodic boundary condition flags."""
         if isinstance(pbc, int):
             pbc = (pbc,) * 3
-        self._pbc = np.array(pbc, bool)
+        self._cellobj.pbc = np.array(pbc, bool)
 
     def get_pbc(self):
         """Get periodic boundary condition flags."""
-        return self._pbc.copy()
+        return self.pbc.copy()
 
     def new_array(self, name, a, dtype=None, shape=None):
         """Add new array.
@@ -644,7 +644,7 @@ class Atoms(object):
         """
         if wrap:
             scaled = self.get_scaled_positions()
-            return np.dot(scaled, self._cell)
+            return np.dot(scaled, self.cell)
         else:
             return self.arrays['positions'].copy()
 
@@ -785,7 +785,7 @@ class Atoms(object):
 
     def copy(self):
         """Return a copy."""
-        atoms = self.__class__(cell=self._cell, pbc=self._pbc, info=self.info)
+        atoms = self.__class__(cell=self.cell, pbc=self.pbc, info=self.info)
 
         atoms.arrays = {}
         for name, a in self.arrays.items():
@@ -822,15 +822,16 @@ class Atoms(object):
         tokens.append("symbols='{0}'".format(symbols))
 
         if self.pbc.any() and not self.pbc.all():
-            tokens.append('pbc={0}'.format(self._pbc.tolist()))
+            tokens.append('pbc={0}'.format(self.pbc.tolist()))
         else:
-            tokens.append('pbc={0}'.format(self._pbc[0]))
+            tokens.append('pbc={0}'.format(self.pbc[0]))
 
-        if self._cell.any():
-            if is_orthorhombic(self._cell):
-                cell = self._cell.diagonal().tolist()
+        uc = self._cellobj
+        if uc:
+            if uc.orthorhombic:
+                cell = uc.lengths().tolist()
             else:
-                cell = self._cell.tolist()
+                cell = uc.tolist()
             tokens.append('cell={0}'.format(cell))
 
         for name in sorted(self.arrays):
@@ -938,7 +939,7 @@ class Atoms(object):
                 except IndexError:
                     pass
 
-        atoms = self.__class__(cell=self._cell, pbc=self._pbc, info=self.info,
+        atoms = self.__class__(cell=self.cell, pbc=self.pbc, info=self.info,
                                # should be communicated to the slice as well
                                celldisp=self._celldisp)
         # TODO: Do we need to shuffle indices in adsorbate_info too?
@@ -991,7 +992,7 @@ class Atoms(object):
         if isinstance(m, int):
             m = (m, m, m)
 
-        for x, vec in zip(m, self._cell):
+        for x, vec in zip(m, self.cell):
             if x != 1 and not vec.any():
                 raise ValueError('Cannot repeat along undefined lattice '
                                  'vector')
@@ -1008,13 +1009,13 @@ class Atoms(object):
             for m1 in range(m[1]):
                 for m2 in range(m[2]):
                     i1 = i0 + n
-                    positions[i0:i1] += np.dot((m0, m1, m2), self._cell)
+                    positions[i0:i1] += np.dot((m0, m1, m2), self.cell)
                     i0 = i1
 
         if self.constraints is not None:
             self.constraints = [c.repeat(m, n) for c in self.constraints]
 
-        self._cell = np.array([m[c] * self._cell[c] for c in range(3)])
+        self.cell = np.array([m[c] * self.cell[c] for c in range(3)])
 
         return self
 
@@ -1058,7 +1059,7 @@ class Atoms(object):
         """
 
         # Find the orientations of the faces of the unit cell
-        cell = self.get_cell(complete=True)
+        cell = self._cellobj.complete()
         dirs = np.zeros_like(cell)
         for i in range(3):
             dirs[i] = np.cross(cell[i - 1], cell[i - 2])
@@ -1098,8 +1099,8 @@ class Atoms(object):
         translation = np.zeros(3)
         for i in axes:
             nowlen = np.sqrt(np.dot(cell[i], cell[i]))
-            if vacuum is not None or self._cell[i].any():
-                self._cell[i] = cell[i] * (1 + longer[i] / nowlen)
+            if vacuum is not None or self.cell[i].any():
+                self.cell[i] = cell[i] * (1 + longer[i] / nowlen)
                 translation += shift[i] * cell[i] / nowlen
         self.arrays['positions'] += translation
 
@@ -1117,7 +1118,7 @@ class Atoms(object):
         m = self.get_masses()
         com = np.dot(m, self.arrays['positions']) / m.sum()
         if scaled:
-            return np.linalg.solve(self._cell.T, com)
+            return np.linalg.solve(self.cell.T, com)
         else:
             return com
 
@@ -1372,7 +1373,7 @@ class Atoms(object):
         b = self.positions[a3] - self.positions[a2]
         c = self.positions[a4] - self.positions[a3]
         if mic:
-            a, b, c = find_mic([a, b, c], self._cell, self._pbc)[0]
+            a, b, c = find_mic([a, b, c], self.cell, self.pbc)[0]
         bxa = np.cross(b, a)
         cxb = np.cross(c, b)
         bxanorm = np.linalg.norm(bxa)
@@ -1513,8 +1514,8 @@ class Atoms(object):
         pbc = None
 
         if mic:
-            cell = self._cell
-            pbc = self._pbc
+            cell = self.cell
+            pbc = self.pbc
 
         return get_angles(v12, v32, cell=cell, pbc=pbc)[0]
 
@@ -1542,8 +1543,8 @@ class Atoms(object):
         pbc = None
 
         if mic:
-            cell = self._cell
-            pbc = self._pbc
+            cell = self.cell
+            pbc = self.pbc
 
         return get_angles(v12, v32, cell=cell, pbc=pbc)
 
@@ -1629,8 +1630,8 @@ class Atoms(object):
         pbc = None
 
         if mic:
-            cell = self._cell
-            pbc = self._pbc
+            cell = self.cell
+            pbc = self.pbc
 
         D, D_len = get_distances(p1, p2, cell=cell, pbc=pbc)
 
@@ -1655,8 +1656,8 @@ class Atoms(object):
         pbc = None
 
         if mic:
-            cell = self._cell
-            pbc = self._pbc
+            cell = self.cell
+            pbc = self.pbc
 
         D, D_len = get_distances(p1, p2, cell=cell, pbc=pbc)
 
@@ -1679,8 +1680,8 @@ class Atoms(object):
         pbc = None
 
         if mic:
-            cell = self._cell
-            pbc = self._pbc
+            cell = self.cell
+            pbc = self.pbc
 
         D, D_len = get_distances(R, cell=cell, pbc=pbc)
 
@@ -1720,7 +1721,7 @@ class Atoms(object):
         D = np.array([R[a1] - R[a0]])
 
         if mic:
-            D, D_len = find_mic(D, self._cell, self._pbc)
+            D, D_len = find_mic(D, self.cell, self.pbc)
         else:
             D_len = np.array([np.sqrt((D**2).sum())])
         x = 1.0 - distance / D_len[0]
@@ -1744,8 +1745,7 @@ class Atoms(object):
         the cell in those directions with periodic boundary conditions
         so that the scaled coordinates are between zero and one."""
 
-        fractional = np.linalg.solve(self.get_cell(complete=True).T,
-                                     self.positions.T).T
+        fractional = self._cellobj.scaled_positions(self.positions)
 
         if wrap:
             for i, periodic in enumerate(self.pbc):
@@ -1759,7 +1759,7 @@ class Atoms(object):
 
     def set_scaled_positions(self, scaled):
         """Set positions relative to unit cell."""
-        self.positions[:] = np.dot(scaled, self.get_cell(complete=True))
+        self.positions[:] = self._cellobj.cartesian_positions(scaled)
 
     def wrap(self, center=(0.5, 0.5, 0.5), pbc=None, eps=1e-7):
         """Wrap positions to unit cell.
@@ -1791,6 +1791,7 @@ class Atoms(object):
 
         if pbc is None:
             pbc = self.pbc
+
         self.positions[:] = wrap_positions(self.positions, self.cell,
                                            pbc, center, eps)
 
@@ -1814,8 +1815,8 @@ class Atoms(object):
         return (len(self) == len(other) and
                 (a['positions'] == b['positions']).all() and
                 (a['numbers'] == b['numbers']).all() and
-                (self._cell == other.cell).all() and
-                (self._pbc == other.pbc).all())
+                (self.cell == other.cell).all() and
+                (self.pbc == other.pbc).all())
 
     def __ne__(self, other):
         """Check if two atoms objects are not equal.
@@ -1833,11 +1834,11 @@ class Atoms(object):
 
     def get_volume(self):
         """Get volume of unit cell."""
-        if self.number_of_lattice_vectors != 3:
+        if self._cellobj.celldim != 3:
             raise ValueError(
                 'You have {0} lattice vectors: volume not defined'
-                .format(self.number_of_lattice_vectors))
-        return abs(np.linalg.det(self._cell))
+                .format(self._cellobj.celldim))
+        return self._cellobj.volume
 
     def _get_positions(self):
         """Return reference to positions-array for in-place manipulations."""
@@ -1879,16 +1880,23 @@ class Atoms(object):
                        doc='Attribute for direct ' +
                        'manipulation of the atomic numbers.')
 
+    # We need a better name for this.
+    @property
+    def unitcell(self):
+        return self._cellobj
+
     def _get_cell(self):
         """Return reference to unit cell for in-place manipulations."""
-        return self._cell
+        if self._cellobj._atoms_use_cellobj:
+            return self._cellobj
+        return self._cellobj.array
 
     cell = property(_get_cell, set_cell, doc='Attribute for direct ' +
                     'manipulation of the unit cell.')
 
     def _get_pbc(self):
         """Return reference to pbc-flags for in-place manipulations."""
-        return self._pbc
+        return self._cellobj.pbc
 
     pbc = property(_get_pbc, set_pbc,
                    doc='Attribute for direct manipulation ' +

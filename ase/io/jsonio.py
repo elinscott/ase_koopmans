@@ -6,7 +6,11 @@ from ase.utils import reader, writer
 
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, np.ndarray):
+        if isinstance(obj, np.ndarray) or hasattr(obj, '__array__'):
+            # XXX the __array__ check will save cells as numpy arrays.
+            # In the future we should perhaps save it as a Cell, so that
+            # it can be restored as a Cell.  We should allow this with
+            # other objects as well through todict().
             if obj.dtype == complex:
                 return {'__complex_ndarray__': (obj.real.tolist(),
                                                 obj.imag.tolist())}
@@ -19,10 +23,14 @@ class MyEncoder(json.JSONEncoder):
             return {'__datetime__': obj.isoformat()}
         if hasattr(obj, 'todict'):
             d = obj.todict()
+
             if not isinstance(d, dict):
                 raise RuntimeError('todict() of {} returned object of type {} '
                                    'but should have returned dict'
                                    .format(obj, type(d)))
+            if hasattr(obj, 'ase_objtype'):
+                d['__ase_objtype__'] = obj.ase_objtype
+
             return d
         return json.JSONEncoder.default(self, obj)
 
@@ -38,14 +46,23 @@ def object_hook(dct):
         r, i = (np.array(x) for x in dct['__complex_ndarray__'])
         return r + i * 1j
 
-    if '__ase_type__' in dct:
-        objtype = dct.pop('__ase_type__')
+    if '__ase_objtype__' in dct:
+        objtype = dct.pop('__ase_objtype__')
         dct = numpyfy(dct)
         if objtype == 'bandstructure':
             from ase.dft.band_structure import BandStructure
-            return BandStructure(**dct)
+            obj = BandStructure(**dct)
+        elif objtype == 'bandpath':
+            from ase.dft.kpoints import BandPath
+            from ase.geometry.cell import Cell
+            dct['cell'] = Cell(dct['cell'])
+            # XXX We will need Cell to read/write itself so it also has pbc!
+            obj = BandPath(**dct)
         else:
             raise KeyError('Cannot handle type: {}'.format(objtype))
+
+        assert obj.ase_objtype == objtype
+        return obj
 
     return dct
 
