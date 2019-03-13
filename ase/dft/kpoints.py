@@ -129,15 +129,8 @@ class BandPath:
         assert isinstance(labelseq, str)
         self.labelseq = labelseq
 
-    @classmethod
-    def fromdict(cls, d):
-        kwargs = dict(d)
-        assert kwargs.pop('_ase_objtype') == 'bandpath'
-        return cls(**kwargs)
-
     def todict(self):
-        return {'__ase_type__': self.ase_objtype,
-                'scaled_kpts': self.scaled_kpts,
+        return {'scaled_kpts': self.scaled_kpts,
                 'special_points': self.special_points,
                 'labelseq': self.labelseq,
                 'cell': self.cell}

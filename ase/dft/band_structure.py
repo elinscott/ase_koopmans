@@ -7,6 +7,14 @@ from ase.parallel import paropen
 
 def calculate_band_structure(atoms, path=None, scf_kwargs=None,
                              bs_kwargs=None, kpts_tol=1e-6, cell_tol=1e-6):
+    """Calculate band structure.
+
+    First trigger SCF calculation if necessary, then set arguments
+    on the calculator for band structure calculation, then return
+    calculated band structure.
+
+    The difference from get_band_structure() is that the latter
+    expects the calculation to already have been done."""
     if path is None:
         lat, op = atoms.cell.bravais()
         path = lat.bandpath()  # Default bandpath
@@ -64,6 +72,9 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
 
 def get_band_structure(atoms=None, calc=None, _bandpath=None, _reference=None):
     """Create band structure object from Atoms or calculator."""
+    # _bandpath and _reference are used internally at the moment, but
+    # the exact implementation will probably change.  WIP.
+    #
     # XXX We throw away info about the bandpath when we create the calculator.
     # If we have kept the bandpath, we can provide it as an argument here.
     # It would be wise to check that the bandpath kpoints are the same as
@@ -266,7 +277,6 @@ class OldBandStructure:
         dct = dict((key, getattr(self, key))
                    for key in
                    ['cell', 'kpts', 'energies', 'reference'])
-        dct['__ase_type__'] = 'bandstructure'
         return dct
 
     def write(self, filename):
@@ -279,7 +289,7 @@ class OldBandStructure:
         """Read from json file."""
         with open(filename, 'r') as f:
             bs = decode(f.read())
-            # Handle older BS files without __ase_type__:
+            # Handle older BS files without __ase_objtype__:
             if not isinstance(bs, cls):
                 return cls(**bs)
             return bs
@@ -300,8 +310,7 @@ class BandStructure:
         self.reference = reference
 
     def todict(self):
-        return dict(__ase_type__=self.ase_objtype,
-                    path=self.path.todict(),
+        return dict(path=self.path,
                     energies=self.energies,
                     reference=self.reference)
 
