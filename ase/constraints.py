@@ -367,9 +367,12 @@ class FixLinearTriatomic(FixConstraint):
                Indices of the atoms forming the linear molecules to constrain
                as triples. Sequence should be (n, o, m) or (m, o, n).
 
-           These constraints have been tested and are known to work with
-           VelocityVerlet and Langevin molecular dynamics, and quasi-Newton
-           optimization algorithms like BFGS.
+           When using these constraints in molecular dynamics or structure
+           optimizations, atomic forces need to be redistributed within a
+           triple. The function redistribute_forces_optimization implements
+           the redistribution of forces for structure optimization, while
+           the function redistribute_forces_md implments the redistribution
+           for molecular dynamics.
 
            References:
 
@@ -499,6 +502,11 @@ class FixLinearTriatomic(FixConstraint):
         self.constraint_forces += forces
 
     def redistribute_forces_optimization(self, forces):
+        """Redistribute forces within a triple when performing structure
+        optimizations.
+
+        The redistributed forces needs to be further adjusted using the
+        appropriate Lagrange multipliers as implemented in adjust_forces."""
         forces_n, forces_m, forces_o = self.get_slices(forces)
         C1_1 = self.C1[:, 0, None]
         C1_2 = self.C1[:, 1, None]
@@ -515,6 +523,13 @@ class FixLinearTriatomic(FixConstraint):
         return fr_n, fr_m, fr_o
 
     def redistribute_forces_md(self, forces, rand=False):
+        """Base function to redistribute forces within a triple when
+        performing molecular dynamics.
+
+        When rand=True, use the equations for random force terms, as
+        used e.g. by Langevin dynamics, otherwise apply the standard
+        equations for deterministic forces (see Ciccotti et al. Molecular
+        Physics 47 (1982))."""
         forces_n, forces_m, forces_o = self.get_slices(forces)
         C1_1 = self.C1[:, 0, None]
         C1_2 = self.C1[:, 1, None]
@@ -543,10 +558,6 @@ class FixLinearTriatomic(FixConstraint):
         return fr_n, fr_m
 
     def redistribute_forces_md_deterministic(self, atoms, forces):
-        """Redistribute deterministic forces from the central to the outer
-        atoms for molecular dynamics (see Ciccotti et al. Molecular Physics
-        47 (1982))."""
-
         if self.bondlengths is None:
             self.initialize(atoms)
 
@@ -555,9 +566,6 @@ class FixLinearTriatomic(FixConstraint):
         self.set_slices(fr_n, fr_m, 0.0, forces)
 
     def redistribute_forces_md_random(self, atoms, forces):
-        """Redistribute random force terms from the central to the outer
-        atoms for molecular dynamics with Langevin."""
-
         if self.bondlengths is None:
             self.initialize(atoms)
 
