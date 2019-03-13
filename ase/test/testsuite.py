@@ -176,7 +176,8 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * gui/run may deadlock for unknown reasons in subprocess
 
             t = test.replace('\\', '/')
-            if t in ['bandstructure.py', 'doctests.py', 'gui/run.py',
+            if t in ['bandstructure.py', 'bandstructure2.py',
+                     'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
                      'forcecurve.py',
                      'fio/animate.py', 'db/db_web.py', 'x3d.py']:
