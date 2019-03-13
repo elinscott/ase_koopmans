@@ -112,9 +112,9 @@ class Langevin(MolecularDynamics):
         self.eta = self.rng.standard_normal(size=(natoms, 3))
 
         for constraint in self.atoms.constraints:
-            if hasattr(constraint, 'redistribute_forces_lang'):
-                constraint.redistribute_forces_lang(atoms, self.xi)
-                constraint.redistribute_forces_lang(atoms, self.eta)
+            if hasattr(constraint, 'redistribute_forces_md_random'):
+                constraint.redistribute_forces_md_random(atoms, self.xi)
+                constraint.redistribute_forces_md_random(atoms, self.eta)
 
         if self.communicator is not None:
             self.communicator.broadcast(self.xi, 0)

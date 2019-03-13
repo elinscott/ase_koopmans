@@ -397,9 +397,7 @@ class FixLinearTriatomic(FixConstraint):
 
     def initialize(self, atoms):
         masses = atoms.get_masses()
-        self.mass_n = masses[self.n_ind]
-        self.mass_m = masses[self.m_ind]
-        self.mass_o = masses[self.o_ind]
+        self.mass_n, self.mass_m, self.mass_o = self.get_slices(masses)
 
         self.bondlengths = self.initialize_bond_lengths(atoms)
         self.bondlengths_nm = self.bondlengths.sum(axis=1)
@@ -423,13 +421,14 @@ class FixLinearTriatomic(FixConstraint):
 
     def adjust_positions(self, atoms, new):
         old = atoms.positions
+        new_n, new_m, new_o = self.get_slices(new)
 
         if self.bondlengths is None:
             self.initialize(atoms)
 
         r0 = old[self.n_ind] - old[self.m_ind]
         d0 = find_mic([r0], atoms.cell, atoms.pbc)[0][0]
-        d1 = new[self.n_ind] - new[self.m_ind] - r0 + d0
+        d1 = new_n - new_m - r0 + d0
         a = np.einsum('ij,ij->i', d0, d0) * (self.C3[:, 0] ** 2 +
                                              self.C3[:, 1] ** 2 +
                                              2 * self.C3[:, 0] * self.C3[:, 1])
@@ -437,36 +436,41 @@ class FixLinearTriatomic(FixConstraint):
         c = np.einsum('ij,ij->i', d1, d1) - self.bondlengths_nm ** 2
         g = (b - (b**2 - a * c)**0.5) / a
         g = g[:, None] * self.C3
-        new[self.n_ind] -= g[:, 0, None] * d0
-        new[self.m_ind] += g[:, 1, None] * d0
+        new_n -= g[:, 0, None] * d0
+        new_m += g[:, 1, None] * d0
         if np.allclose(d0, r0):
-            new[self.o_ind] = self.C1[:, 0, None] * new[self.n_ind] \
-                              + self.C1[:, 1, None] * new[self.m_ind]
+            new_o = (self.C1[:, 0, None] * new_n
+                     + self.C1[:, 1, None] * new_m)
         else:
-            v1 = find_mic([new[self.n_ind]], atoms.cell, atoms.pbc)[0][0]
-            v2 = find_mic([new[self.m_ind]], atoms.cell, atoms.pbc)[0][0]
+            v1 = find_mic([new_n], atoms.cell, atoms.pbc)[0][0]
+            v2 = find_mic([new_m], atoms.cell, atoms.pbc)[0][0]
             rb = self.C1[:, 0, None] * v1 + self.C1[:, 1, None] * v2
-            new[self.o_ind] = wrap_positions(rb, atoms.cell, atoms.pbc)
+            new_o = wrap_positions(rb, atoms.cell, atoms.pbc)
+
+        self.set_slices(new_n, new_m, new_o, new)
 
     def adjust_momenta(self, atoms, p):
         old = atoms.positions
+        p_n, p_m, p_o = self.get_slices(p)
 
         if self.bondlengths is None:
             self.initialize(atoms)
 
+        mass_nn = self.mass_n[:, None]
+        mass_mm = self.mass_m[:, None]
+        mass_oo = self.mass_o[:, None]
+
         d = old[self.n_ind] - old[self.m_ind]
         d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
-        dv = (p[self.n_ind] / self.mass_n[:, None] -
-              p[self.m_ind] / self.mass_m[:, None])
+        dv = p_n / mass_nn - p_m / mass_mm
         k = np.einsum('ij,ij->i', dv, d) / self.bondlengths_nm ** 2
         k = self.C3 / (self.C3.sum(axis=1)[:, None]) * k[:, None]
-        p[self.n_ind] -= k[:, 0, None] * self.mass_n[:, None] * d
-        p[self.m_ind] += k[:, 1, None] * self.mass_m[:, None] * d
-        p[self.o_ind] = (self.mass_o[:, None] *
-                         (self.C1[:, 0, None] * p[self.n_ind] /
-                          self.mass_n[:, None] +
-                          self.C1[:, 1, None] * p[self.m_ind] /
-                          self.mass_m[:, None]))
+        p_n -= k[:, 0, None] * mass_nn * d
+        p_m += k[:, 1, None] * mass_mm * d
+        p_o = (mass_oo * (self.C1[:, 0, None] * p_n / mass_nn +
+                          self.C1[:, 1, None] * p_m / mass_mm))
+
+        self.set_slices(p_n, p_m, p_o, p)
 
     def adjust_forces(self, atoms, forces):
 
@@ -482,38 +486,63 @@ class FixLinearTriatomic(FixConstraint):
         self.constraint_forces = -forces
         old = atoms.positions
 
-        fr = self.redistribute_forces(forces)
+        fr_n, fr_m, fr_o = self.redistribute_forces_optimization(forces)
+
         d = old[self.n_ind] - old[self.m_ind]
         d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
-        df = fr[self.n_ind] - fr[self.m_ind]
+        df = fr_n - fr_m
         k = -np.einsum('ij,ij->i', df, d) / self.bondlengths_nm ** 2
-        forces[self.n_ind] = fr[self.n_ind] + k[:, None] * d * A[:, 0, None]
-        forces[self.m_ind] = fr[self.m_ind] - k[:, None] * d * A[:, 1, None]
-        forces[self.o_ind] = fr[self.o_ind] + k[:, None] * d * B
+        forces[self.n_ind] = fr_n + k[:, None] * d * A[:, 0, None]
+        forces[self.m_ind] = fr_m - k[:, None] * d * A[:, 1, None]
+        forces[self.o_ind] = fr_o + k[:, None] * d * B
 
         self.constraint_forces += forces
 
-    def redistribute_forces(self, forces):
-        n_ind = self.n_ind
-        m_ind = self.m_ind
-        o_ind = self.o_ind
-        C4 = self.C4
-        C1 = self.C1
-        fr = np.zeros_like(forces)
+    def redistribute_forces_optimization(self, forces):
+        forces_n, forces_m, forces_o = self.get_slices(forces)
+        C1_1 = self.C1[:, 0, None]
+        C1_2 = self.C1[:, 1, None]
+        C4_1 = self.C4[:, 0, None]
+        C4_2 = self.C4[:, 1, None]
         
-        fr[n_ind] = ((1 - C4[:, 0, None] * C1[:, 0, None]) * forces[n_ind] -
-                     C4[:, 0, None] * (C1[:, 1, None] * forces[m_ind] -
-                                       forces[o_ind]))
-        fr[m_ind] = ((1 - C4[:, 1, None] * C1[:, 1, None]) * forces[m_ind] -
-                     C4[:, 1, None] * (C1[:, 0, None] * forces[n_ind] -
-                                       forces[o_ind]))
-        fr[o_ind] = ((1 - 1 / (C1[:, 0, None]**2 + C1[:, 1, None]**2 + 1)) *
-                     forces[o_ind] + C4[:, 0, None] * forces[n_ind] +
-                     C4[:, 1, None] * forces[m_ind])
+        fr_n = ((1 - C4_1 * C1_1) * forces_n -
+                C4_1 * (C1_2 * forces_m - forces_o))
+        fr_m = ((1 - C4_2 * C1_2) * forces_m -
+                C4_2 * (C1_1 * forces_n - forces_o))
+        fr_o = ((1 - 1 / (C1_1**2 + C1_2**2 + 1)) * forces_o +
+                C4_1 * forces_n + C4_2 * forces_m)
 
-        return fr
+        return fr_n, fr_m, fr_o
 
-    def redistribute_forces_md(self, atoms, forces):
+    def redistribute_forces_md(self, forces, rand=False):
+        forces_n, forces_m, forces_o = self.get_slices(forces)
+        C1_1 = self.C1[:, 0, None]
+        C1_2 = self.C1[:, 1, None]
+        C2_1 = self.C2[:, 0, None]
+        C2_2 = self.C2[:, 1, None]
+        mass_nn = self.mass_n[:, None]
+        mass_mm = self.mass_m[:, None]
+        mass_oo = self.mass_o[:, None]
+        if rand:
+            mr1 = (mass_mm / mass_nn) ** 0.5
+            mr2 = (mass_oo / mass_nn) ** 0.5
+            mr3 = (mass_oo / mass_mm) ** 0.5
+        else:
+            mr1 = 1.0
+            mr2 = 1.0
+            mr3 = 1.0
+
+        fr_n = ((1 - C1_1 * C2_1 * mass_oo * mass_mm) * forces_n -
+                C2_1 * (C1_2 * mr1 * mass_oo * mass_nn * forces_m -
+                        mr2 * mass_mm * mass_nn * forces_o))
+
+        fr_m = ((1 - C1_2 * C2_2 * mass_oo * mass_nn) * forces_m -
+                C2_2 * (C1_1 * mr1 * mass_oo * mass_mm * forces_n -
+                        mr3 * mass_mm * mass_nn * forces_o))
+
+        return fr_n, fr_m
+
+    def redistribute_forces_md_deterministic(self, atoms, forces):
         """Redistribute deterministic forces from the central to the outer
         atoms for molecular dynamics (see Ciccotti et al. Molecular Physics
         47 (1982))."""
@@ -521,62 +550,32 @@ class FixLinearTriatomic(FixConstraint):
         if self.bondlengths is None:
             self.initialize(atoms)
 
-        n_ind = self.n_ind
-        m_ind = self.m_ind
-        o_ind = self.o_ind
-        C2 = self.C2
-        C1 = self.C1
-        mass_n = self.mass_n
-        mass_m = self.mass_m
-        mass_o = self.mass_o
+        fr_n, fr_m = self.redistribute_forces_md(forces)
 
-        f_n = ((1 - C2[:, 0, None] * C1[:, 0, None] * mass_o[:, None]
-                * mass_m[:, None]) * forces[n_ind] - C2[:, 0, None]
-               * (C1[:, 1, None] * mass_o[:, None] * mass_n[:, None]
-                  * forces[m_ind] - mass_m[:, None] * mass_n[:, None]
-                  * forces[o_ind]))
-        f_m = ((1 - C2[:, 1, None] * C1[:, 1, None] * mass_o[:, None]
-                * mass_n[:, None]) * forces[m_ind] - C2[:, 1, None]
-               * (C1[:, 0, None] * mass_o[:, None] * mass_m[:, None]
-                  * forces[n_ind] - mass_m[:, None] * mass_n[:, None]
-                  * forces[o_ind]))
+        self.set_slices(fr_n, fr_m, 0.0, forces)
 
-        forces[n_ind] = f_n
-        forces[m_ind] = f_m
-        forces[o_ind] = 0.0
-
-    def redistribute_forces_lang(self, atoms, forces):
+    def redistribute_forces_md_random(self, atoms, forces):
         """Redistribute random force terms from the central to the outer
         atoms for molecular dynamics with Langevin."""
 
         if self.bondlengths is None:
             self.initialize(atoms)
 
-        n_ind = self.n_ind
-        m_ind = self.m_ind
-        o_ind = self.o_ind
-        C2 = self.C2
-        C1 = self.C1
-        mass_n = self.mass_n
-        mass_m = self.mass_m
-        mass_o = self.mass_o
+        fr_n, fr_m = self.redistribute(forces, rand=True)
 
-        f_n = ((1 - C2[:, 0, None] * mass_o[:, None] * mass_m[:, None] *
-                C1[:, 0, None]) * forces[n_ind] - C2[:, 0, None] *
-               (mass_o[:, None] * mass_n[:, None] * C1[:, 1, None] *
-                (mass_m[:, None] / mass_n[:, None]) ** 0.5 * forces[m_ind] -
-                mass_m[:, None] * mass_n[:, None] *
-                (mass_o[:, None] / mass_n[:, None]) ** 0.5 * forces[o_ind]))
-        f_m = ((1 - C2[:, 1, None] * mass_o[:, None] * mass_n[:, None] *
-                C1[:, 1, None]) * forces[m_ind] - C2[:, 1, None] *
-               (mass_o[:, None] * mass_m[:, None] * C1[:, 0, None] *
-                (mass_m[:, None] / mass_n[:, None]) ** 0.5 * forces[n_ind] -
-                mass_m[:, None] * mass_n[:, None] *
-                (mass_o[:, None] / mass_m[:, None]) ** 0.5 * forces[o_ind]))
+        self.set_slices(fr_n, fr_m, 0.0, forces)
 
-        forces[n_ind] = f_n
-        forces[m_ind] = f_m
-        forces[o_ind] = 0.0
+    def get_slices(self, a):
+        a_n = a[self.n_ind]
+        a_m = a[self.m_ind]
+        a_o = a[self.o_ind]
+
+        return a_n, a_m, a_o
+
+    def set_slices(self, a_n, a_m, a_o, a):
+        a[self.n_ind] = a_n
+        a[self.m_ind] = a_m
+        a[self.o_ind] = a_o
 
     def initialize_bond_lengths(self, atoms):
         bondlengths = np.zeros((len(self.triples), 2))
