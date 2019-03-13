@@ -1026,30 +1026,11 @@ class MinModeTranslate(Optimizer):
         self.r0 = None
         self.f0 = None
 
-    def run(self, fmax=0.05, steps=100000000):
-        """Run structure optimization algorithm.
-
-        This method will return when the forces on all individual
-        atoms are less than *fmax* or when the number of steps exceeds
-        *steps*.
-
-        """
-
-        self.fmax = fmax
-        step = 0
-        while step < steps:
-            f = self.atoms.get_forces()
-            self.call_observers()
-            if self.converged(f):
-                self.log(f, None)
-                return
-            self.step(f)
-            self.nsteps += 1
-            step += 1
-
-    def step(self, f):
+    def step(self, f=None):
         """Perform the optimization step."""
         atoms = self.atoms
+        if f is None:
+            f = atoms.get_forces()
         r = atoms.get_positions()
         curv = atoms.get_curvature()
         f0p = f.copy()
@@ -1094,8 +1075,10 @@ class MinModeTranslate(Optimizer):
         self.direction_old = direction.copy()
         return self.cg_direction.copy()
 
-    def log(self, f, stepsize):
+    def log(self, f=None, stepsize=None):
         """Log each step of the optimization."""
+        if f is None:
+            f = self.atoms.get_forces()
         if self.logfile is not None:
             T = time.localtime()
             e = self.atoms.get_potential_energy()

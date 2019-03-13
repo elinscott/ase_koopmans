@@ -38,7 +38,10 @@ def get_tests(files=None):
 
         files = set()
         for fname in fnames:
-            files.update(glob(fname))
+            newfiles = glob(fname)
+            if not newfiles:
+                raise OSError('No such test: {}'.format(fname))
+            files.update(newfiles)
         files = list(files)
     else:
         files = glob(os.path.join(dirname, '*'))

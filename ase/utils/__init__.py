@@ -23,13 +23,12 @@ except ImportError:
 import numpy as np
 
 from ase.utils.formula import formula_hill, formula_metal
-from ase.data import covalent_radii
 
 __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'devnull', 'gcd', 'convert_string_to_fd', 'Lock',
            'opencew', 'OpenLock', 'rotate', 'irotate', 'givens',
            'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
-           'formula_hill', 'formula_metal', 'PurePath', 'natural_cutoffs']
+           'formula_hill', 'formula_metal', 'PurePath']
 
 
 # Python 2+3 compatibility stuff:
@@ -157,7 +156,7 @@ def opencew(filename, world=None):
 
 
 class Lock:
-    def __init__(self, name='lock', world=None):
+    def __init__(self, name='lock', world=None, timeout=float('inf')):
         self.name = str(name)
 
         if world is None:
@@ -165,11 +164,17 @@ class Lock:
         self.world = world
 
     def acquire(self):
+        dt = 0.2
+        t1 = time.time()
         while True:
             fd = opencew(self.name, self.world)
             if fd is not None:
                 break
-            time.sleep(1.0)
+            time_left = self.timeout - (time.time() - t1)
+            if time_left <= 0:
+                raise TimeoutError
+            time.sleep(min(dt, time_left))
+            dt *= 2
 
     def release(self):
         self.world.barrier()
@@ -218,7 +223,7 @@ def search_current_git_hash(arg, world=None):
     else:
         # Assume arg is module
         dpath = os.path.dirname(arg.__file__)
-    #dpath = os.path.abspath(dpath)
+    # dpath = os.path.abspath(dpath)
     # in case this is just symlinked into $PYTHONPATH
     dpath = os.path.realpath(dpath)
     dpath = os.path.dirname(dpath)  # Go to the parent directory
@@ -359,21 +364,6 @@ def hsv(array, s=.9, v=.9):
     return np.reshape(result, array.shape + (3,))
 
 
-def natural_cutoffs(atoms, mult=1, **kwargs):
-    """Generate a radial cutoff for every atom based on covalent radii.
-
-    The covalent radii are a reasonable cutoff estimation for bonds in
-    many applications such as neighborlists, so function generates an
-    atoms length list of radii based on this idea.
-
-    * atoms: An atoms object
-    * mult: A multiplier for all cutoffs, useful for coarse grained adjustment
-    * kwargs: Symbol of the atom and its corresponding cutoff, used to override the covalent radii
-    """
-    return [kwargs.get(atom.symbol, covalent_radii[atom.number] * mult)
-            for atom in atoms]
-
-
 # This code does the same, but requires pylab
 # def cmap(array, name='hsv'):
 #     import pylab
@@ -393,15 +383,19 @@ def iofunction(func, mode):
     (Won't work on functions that return a generator.)"""
 
     @functools.wraps(func)
-    def iofunc(fd, *args, **kwargs):
-        openandclose = isinstance(fd, basestring)
+    def iofunc(file, *args, **kwargs):
+        openandclose = isinstance(file, basestring)
+        fd = None
         try:
             if openandclose:
-                fd = open(fd, mode)
+                fd = open(file, mode)
+            else:
+                fd = file
             obj = func(fd, *args, **kwargs)
             return obj
         finally:
-            if openandclose:
+            if openandclose and fd is not None:
+                # fd may be None if open() failed
                 fd.close()
     return iofunc
 
