@@ -347,20 +347,12 @@ class GUI(View, Status):
         self.observers.append((function, args, kwargs))
 
     def call_observers(self):
-        todel = []  # Store indices of observers to be marked for deletion
-        for ii, (function, args, kwargs) in enumerate(self.observers):
-            # Use function return value to determine if we keep observer
+        # Use function return value to determine if we keep observer
 
-            # XXX: Allow for return value to be None,
-            # assume that we never delete?
-            ok = function(*args, **kwargs)
-            if bool(ok) is False:
-                todel.append(ii)
-
-        # Remove the observers marked for deletion
-        if todel:
-            for index in sorted(todel, reverse=True):
-                del self.observers[index]
+        # XXX: Allow for return value to be None,
+        # assume that we never delete?
+        self.observers = [(function, args, kwargs) for (function, args, kwargs)
+                          in self.observers if function(*args, **kwargs)]
 
     def bulk_window(self):
         SetupBulkCrystal(self)
