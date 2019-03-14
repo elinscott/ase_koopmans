@@ -409,6 +409,51 @@ def reader(func):
     return iofunction(func, 'r')
 
 
+# The next two functions are for hotplugging into a JSONable class
+# using the jsonable decorator.  We are supposed to have this kind of stuff
+# in ase.io.jsonio, but we'd rather import them from a 'basic' module
+# like ase/utils than one which triggers a lot of extra (cyclic) imports.
+
+def write_json(self, fd):
+    """Write to JSON file."""
+    from ase.io.jsonio import write_json as _write_json
+    _write_json(fd, self)
+
+
+@classmethod
+def read_json(cls, fd):
+    """Read new instance from JSON file."""
+    from ase.io.jsonio import read_json as _read_json
+    obj = _read_json(fd)
+    assert type(obj) is cls
+    return obj
+
+
+def jsonable(name):
+    """Decorator for facilitating JSON I/O with a class.
+
+    Pokes JSON-based read and write functions into the class.
+
+    In order to write an object to JSON, it needs to be a known simple type
+    (such as ndarray, float, ...) or implement todict().  If the class
+    defines a string called ase_objtype, the decoder will want to convert
+    the object back into its original type when reading."""
+    def jsonableclass(cls):
+        cls.ase_objtype = name
+        if not hasattr(cls, 'todict'):
+            raise TypeError('Class must implement todict()')
+
+        # We may want the write and read to be optional.
+        # E.g. a calculator might want to be JSONable, but not
+        # that .write() produces a JSON file.
+        #
+        # This is mostly for 'lightweight' object IO.
+        cls.write = write_json
+        cls.read = read_json
+        return cls
+    return jsonableclass
+
+
 class ExperimentalFeatureWarning(Warning):
     pass
 
