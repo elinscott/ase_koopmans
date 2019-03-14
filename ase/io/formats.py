@@ -205,8 +205,8 @@ def initialize(format):
     try:
         module = import_module('ase.io.' + module_name)
     except ImportError as err:
-        raise ValueError('File format not recognized: %s.  Error: %s'
-                         % (format, err))
+        raise UnknownFileTypeError('File format not recognized: %s.  Error: %s'
+                                   % (format, err))
 
     read = getattr(module, 'read_' + _format, None)
     write = getattr(module, 'write_' + _format, None)
@@ -214,7 +214,7 @@ def initialize(format):
     if read and not inspect.isgeneratorfunction(read):
         read = functools.partial(wrap_read_function, read)
     if not read and not write:
-        raise ValueError('File format not recognized: ' + format)
+        raise UnknownFileTypeError('File format not recognized: ' + format)
     code = all_formats[format][1]
     single = code[0] == '1'
     assert code[1] in 'BFS'
