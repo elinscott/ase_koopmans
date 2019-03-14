@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import json
 import numpy as np
 
 from ase.io import read
@@ -96,12 +97,28 @@ def atoms2bandstructure(atoms, parser, args):
     return BandStructure(path, eps, reference=efermi)
 
 
-def main(args, parser):
+def read_band_structure(args, parser):
+    # Read first as Atoms object, then try as JSON band structure:
     try:
         atoms = read(args.calculation)
     except UnknownFileTypeError:
-        bs = read_json(args.calculation)
+        pass
     else:
-        bs = atoms2bandstructure(atoms, parser, args)
+        return atoms2bandstructure(atoms, parser, args)
+
+    try:
+        bs = read_json(args.calculation)
+    except json.decoder.JSONDecodeError:
+        parser.error('File resembles neither atoms nor band structure')
+
+    objtype = getattr(bs, 'ase_objtype', None)
+    if objtype != 'bandstructure':
+        parser.error('Expected band structure, but this file contains a {}'
+                     .format(objtype or type(bs)))
+
+    return bs
+
+def main(args, parser):
+    bs = read_band_structure(args, parser)
     emin, emax = (float(e) for e in args.range)
     bs.plot(emin=emin, emax=emax)
