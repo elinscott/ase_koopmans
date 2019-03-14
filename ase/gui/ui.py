@@ -74,9 +74,11 @@ class BaseWindow(object):
             self.win.protocol('WM_DELETE_WINDOW', self.close)
 
         self.things = []
+        self.exists = True
 
     def close(self):
         self.win.destroy()
+        self.exists = False
 
     def title(self, txt):
         self.win.title(txt)
