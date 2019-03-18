@@ -6,8 +6,8 @@ This uses the rank-determination method described in:
 Definition of a scoring parameter to identify low-dimensional materials
 components
 P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
-https://arxiv.org/abs/1808.02114
-2018
+Phys. Rev. Materials 3 034003, 2019
+https://doi.org/10.1103/PhysRevMaterials.3.034003
 """
 
 

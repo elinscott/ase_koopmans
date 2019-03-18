@@ -22,9 +22,9 @@ The method is described in the article:
 
   | P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
   | `Definition of a scoring parameter to identify low-dimensional materials components`__
-  | 2018
+  | Phys. Rev. Materials 3 034003, 2019
 
-__ http://arxiv.org/abs/1808.02114
+__ https://doi.org/10.1103/PhysRevMaterials.3.034003
 
 .. seealso::
 
