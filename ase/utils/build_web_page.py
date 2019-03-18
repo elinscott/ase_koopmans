@@ -49,7 +49,7 @@ cp dist/ase-*.tar.gz ase-web-page/
 cp dist/ase-*.tar.gz ase-web-page/dev/
 find ase-web-page -name install.html | xargs sed -i s/snapshot.tar.gz/{tgz}/g
 tar -czf ase-web-page.tar.gz ase-web-page
-cp ase-web-page.tar.gz {1}/tmp-ase-web-page.tar.gz
+cp ase-web-page.tar.gz {folder}/tmp-ase-web-page.tar.gz
 mv {folder}/tmp-ase-web-page.tar.gz {folder}/ase-web-page.tar.gz"""
 
 cmds = cmds.format(
