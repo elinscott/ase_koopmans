@@ -335,6 +335,7 @@ class GUI(View, Status):
         info_win = ui.Window(_('Quick Info'))
         info_win.add(info(self))
 
+        # Update quickinfo window when we change frame
         def update(window):
             exists = window.exists
             if exists:
@@ -342,17 +343,6 @@ class GUI(View, Status):
                 window.things[0].text = info(self)
             return exists
         self.attach(update, info_win)
-
-    def attach(self, function, *args, **kwargs):
-        self.observers.append((function, args, kwargs))
-
-    def call_observers(self):
-        # Use function return value to determine if we keep observer
-
-        # XXX: Allow for return value to be None,
-        # assume that we never delete?
-        self.observers = [(function, args, kwargs) for (function, args, kwargs)
-                          in self.observers if function(*args, **kwargs)]
 
     def bulk_window(self):
         SetupBulkCrystal(self)
@@ -537,6 +527,14 @@ class GUI(View, Status):
                                      webpage='https://wiki.fysik.dtu.dk/'
                                      'ase/ase/gui/gui.html')),
               M(_('Webpage ...'), webpage)])]
+
+    def attach(self, function, *args, **kwargs):
+        self.observers.append((function, args, kwargs))
+
+    def call_observers(self):
+        # Use function return value to determine if we keep observer
+        self.observers = [(function, args, kwargs) for (function, args, kwargs)
+                          in self.observers if function(*args, **kwargs)]
 
     def repeat_poll(self, callback, ms, ensure_update=True):
         """Invoke callback(gui=self) every ms milliseconds.
