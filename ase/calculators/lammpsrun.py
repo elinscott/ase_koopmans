@@ -646,8 +646,16 @@ class LAMMPS:
                     positions_atoms = np.dot(positions, rotation_lammps2ase)
                     velocities_atoms = np.dot(velocities, rotation_lammps2ase)
                     forces_atoms = np.dot(forces, rotation_lammps2ase)
-                    stress_atoms = np.dot(self.prism.R, self.stress)
+
+                    xx, yy, zz, yz, xz, xy = self.stress[:]
+                    stress_tensor = np.array(
+                        [[xx, xy, xz],
+                         [xy, yy, yz],
+                         [xz, yz, zz], ])
+                    stress_atoms = np.dot(self.prism.R, stress_tensor)
                     stress_atoms = np.dot(stress_atoms, rotation_lammps2ase)
+                    stress_atoms = stress_atoms[[0, 1, 2, 1, 0, 0],
+                                                [0, 1, 2, 2, 2, 1]]
 
                 if set_atoms:
                     # assume periodic boundary conditions here (as in
