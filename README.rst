@@ -10,7 +10,7 @@ Webpage: http://wiki.fysik.dtu.dk/ase
 Requirements
 ------------
 
-* Python_ 2.7, 3.4-3.6
+* Python_ 3.4 or later
 * NumPy_ (base N-dimensional array package)
 
 Optional:
@@ -67,6 +67,8 @@ BFGS:   3  19:10:51    -31.492848     0.0023
 >>> write('H2.xyz', h2)
 >>> h2.get_potential_energy()  # ASE's units are eV and Ang
 -31.492847800329216
+
+This example requires NWChem to be installed.
 
 ::
 
