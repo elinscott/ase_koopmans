@@ -55,7 +55,7 @@ mv {folder}/tmp-ase-web-page.tar.gz {folder}/ase-web-page.tar.gz"""
 cmds = cmds.format(
     tgz='ase-' + __version__ + '.tar.gz',
     folder=os.environ['WEB_PAGE_FOLDER'],
-    warnings='PYTHONWARNINGS=ignore::ExperimentalFeatureWarning')
+    warnings='PYTHONWARNINGS="ignore:This function may change or misbehave"')
 
 
 def build():
