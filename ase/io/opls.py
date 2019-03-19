@@ -97,7 +97,7 @@ class OPLSff:
                     return False
                 line = line.split('#')[0]  # get rid of comments
                 if len(line) > symlen:
-                    symbol = line[:symlen].strip()
+                    symbol = line[:symlen]
                     words = line[symlen:].split()
                     if len(words) >= nvalues:
                         if nvalues == 1:
