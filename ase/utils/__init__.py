@@ -159,7 +159,7 @@ def opencew(filename, world=None):
 class Lock:
     def __init__(self, name='lock', world=None, timeout=float('inf')):
         self.name = str(name)
-
+        self.timeout = timeout
         if world is None:
             from ase.parallel import world
         self.world = world
