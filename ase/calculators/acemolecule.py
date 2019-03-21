@@ -158,7 +158,7 @@ class ACE(FileIOCalculator):
 def update_recursively(oldpar, newpar):
     for key, val in newpar.items():
         if isinstance(val, dict):
-            print('update_recursively if')
+#            print('update_recursively if')
             if isinstance(oldpar.get(key), dict):
                 update_recursively(old, val)
             else:
