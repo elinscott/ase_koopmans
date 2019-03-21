@@ -92,7 +92,7 @@ Each (sub)section is represented as dictionary.
 
 An example for updating parameters::
 
-    basic = dict(Cell = 12.0, VerboseLevel = 2)]
+    basic = dict(Cell = 12.0, VerboseLevel = 2)
     ace.set(BasicInformation = basic)
 
 An example for updating subsection parameters::

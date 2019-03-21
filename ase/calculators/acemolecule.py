@@ -53,7 +53,7 @@ class ACE(FileIOCalculator,Calculator):
                                   label, atoms, command=command, **kwargs)
 
     def compare_parameters(self, parameters, val2):
-        '''Replace parameters that users want'''
+        '''Compare new parameters with existing parameters and replace parameters that users want'''
         for val_key, val_val in val2.items():
             for key, val in parameters.items():
                 if val_key == key and (isinstance(val_val, str) or isinstance(val_val, float) or isinstance(val_val, int) or isinstance(val_val, list)):
@@ -82,9 +82,7 @@ class ACE(FileIOCalculator,Calculator):
     def set(self, **kwargs):
         new_parameters = deepcopy(self.parameters)
         changed_parameters = FileIOCalculator.set(self, **kwargs)
-        print(new_parameters)
 #        print('changed_parameters_end')
-        print(kwargs)
         duplication = []
         if 'order' in kwargs:
             order_list = []
@@ -172,16 +170,16 @@ class ACE(FileIOCalculator,Calculator):
                 fpt.write('\t' * indent + str(key) + " " + str(val) + "\n")
             elif isinstance(val, dict):
                 fpt.write('\t' * indent + "%% " + str(key) + "\n")
-                indent = indent + 1
-                self.write_acemolecule_section(fpt, val, indent)
-                indent = indent - 1
+                #indent = indent + 1
+                self.write_acemolecule_section(fpt, val, indent +1)
+                #indent = indent - 1
                 fpt.write('\t' * indent + "%% End\n")
 
         return
 
-    def write_acemolecule_input(self, fpt, param2, indent=0):
+    def write_acemolecule_input(self, fpt, param, indent=0):
         prefix = "    " * indent
-        param = deepcopy(param2)
+        #param = deepcopy(param2)
         for i in param['order']:
             fpt.write(prefix + "%% " + self.order_key_list[i] + "\n")
             section_list = param[self.order_key_list[i]]

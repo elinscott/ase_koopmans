@@ -50,10 +50,9 @@ class ACEMoleculeReader:
         for i in range(start_line + 1, end_line):
             atomic_number = lines[i].split()[0]
             atoms.append(str(chemical_symbols[int(atomic_number)]))
-            x = lines[i].split()[1]
-            y = lines[i].split()[2]
-            z = lines[i].split()[3]
-            positions.append((x, y, z))
+            xyz = [float(n) for n in lines[i].split()[1:4]]
+            positions.append(xyz)
+            
         new_dict["Atomic_numbers"] = atoms
         new_dict["Positions"] = positions
         self.data = new_dict
@@ -68,11 +67,11 @@ def read_acemolecule_out(filename, quantity='atoms'):
 
     f = open(filename, 'r')
     lines = f.readlines()
+    f.close()
     geometry = zip(atom_symbol, positions)
 #    energy = 0.0
 
     if(quantity == 'excitation-energy'):
-        f.close()
         # ee is excitation-energy
         ee = 1
         return ee
@@ -83,7 +82,6 @@ def read_acemolecule_out(filename, quantity='atoms'):
             if(line[0] == 'Total' and line[1] == 'energy'):
                 energy = float(line[3])
                 break
-    f.close()
     energy *= ase.units.Hartree
     # energy must be modified, hartree to eV
 
@@ -110,24 +108,22 @@ def read_acemolecule_out(filename, quantity='atoms'):
     if(quantity == 'forces'):
         return forces
     if(quantity == 'geometry'):
-        #        f.close()
         return geometry
     if(quantity == 'atoms'):
-        #        f.close()
         return atoms
 
 
-def read_acemolecule_input(Label):
+def read_acemolecule_input(label):
     '''Reads a Acemolecule input file'''
-    filename = Label
+    filename = label
     inputtemplate = open(filename, 'r')
     lines = inputtemplate.readlines()
+    inputtemplate.close()
     for line in lines:
         if(len(line.split('GeometryFilename')) > 1):
             geometryfile = line.split()[2]
             break
     atoms = read(geometryfile, format='xyz')
-    inputtemplate.close()
     return atoms
 
 if __name__ == "__main__":
