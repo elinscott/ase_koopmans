@@ -68,47 +68,51 @@ def read_acemolecule_out(filename, quantity='atoms'):
     f = open(filename, 'r')
     lines = f.readlines()
     f.close()
-    geometry = zip(atom_symbol, positions)
-#    energy = 0.0
-
+    energy = 0
+    forces = None
+    calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
+    atoms.set_calculator(calc)
+    
+    
     if(quantity == 'excitation-energy'):
         # ee is excitation-energy
         ee = 1
         return ee
 
-    for i in range(len(lines) - 1, 1, -1):
-        line = lines[i].split()
-        if(len(line) > 2):
-            if(line[0] == 'Total' and line[1] == 'energy'):
-                energy = float(line[3])
-                break
-    energy *= ase.units.Hartree
-    # energy must be modified, hartree to eV
-
-    for i in range(len(lines) - 1, 1, -1):
-        if (lines[i] == '!================================================\n'):
-            endline_num = i
-        if (lines[i] == '! Atom           x         y         z\n'):
-            forces = []
-            startline_num = i
-            for j in range(startline_num + 1, endline_num):
-                forces += [[float(lines[j].split()[3]),
-                            float(lines[j].split()[4]),
-                            float(lines[j].split()[5])]]
-            convert = ase.units.Hartree / ase.units.Bohr
-            forces = np.array(forces) * convert
-            break
-        if(i == 30):
-            forces = None
-            break
-    calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
-    atoms.set_calculator(calc)
     if(quantity == 'energy'):
+        for i in range(len(lines) - 1, 1, -1):
+            line = lines[i].split()
+            if(len(line) > 2):
+                if(line[0] == 'Total' and line[1] == 'energy'):
+                    energy = float(line[3])
+                    break
+        energy *= ase.units.Hartree
+        # energy must be modified, hartree to eV
         return energy
+    
     if(quantity == 'forces'):
+        for i in range(len(lines) - 1, 1, -1):
+            if ( '!============================' in lines[i]):
+                endline_num = i
+            if ('! Atom        ' in lines[i]):
+                forces = []
+                startline_num = i
+                for j in range(startline_num + 1, endline_num):
+                    forces += [[float(lines[j].split()[3]),
+                                float(lines[j].split()[4]),
+                                float(lines[j].split()[5])]]
+                convert = ase.units.Hartree / ase.units.Bohr
+                forces = np.array(forces) * convert
+                break
+            if(i == 30):
+                forces = None
+                break
         return forces
+    
     if(quantity == 'geometry'):
+        geometry = zip(atom_symbol, positions)
         return geometry
+    
     if(quantity == 'atoms'):
         return atoms
 

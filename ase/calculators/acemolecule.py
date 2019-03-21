@@ -23,7 +23,7 @@ class ACE(FileIOCalculator,Calculator):
                   'KineticMatrix': 'Finite_Difference', 'DerivativesOrder': '7',
                   'GeometryFilename': None, 'NumElectrons': None}
                   ]
-    guess_list = []  # now not need this
+    guess_list = [{}]  # now not need this
     scf_list = [{
         'ExchangeCorrelation': {'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},
         'NumberOfEigenvalues': None,
@@ -34,11 +34,11 @@ class ACE(FileIOCalculator,Calculator):
         'SortOrbital': 'Order', 'MaximumOrder': '10',
         'ExchangeCorrelation': {'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},\
     }]
-    order_list = [0, 1, 2]
-    cis_list = []
-    cisd_list = []
-    dda_list = []
-    order_key_list = ['BasicInformation', 'Guess', 'Scf', 'Force', 'TDDFT','CIS', 'CISD', 'DDA', 'AVAS', 'LOCS', 'EnsembleKSScf', 'Charge', 'Analysis', 'DeltaScf', 'TAOScf', 'ExDFT', 'SigamScf']
+    order_list = ['BasicInformation', 'Guess', 'Scf']
+    cis_list = [{}]
+    cisd_list = [{}]
+    dda_list = [{}]
+#    order_key_list = ['BasicInformation', 'Guess', 'Scf', 'Force', 'TDDFT','CIS', 'CISD', 'DDA', 'AVAS', 'LOCS', 'EnsembleKSScf', 'Charge', 'Analysis', 'DeltaScf', 'TAOScf', 'ExDFT', 'SigamScf']
 
     default_parameters = {'BasicInformation': basic_list, 'Guess': guess_list,
                           'Scf': scf_list, 'Force': force_list, 'TDDFT': tddft_list, 'order': order_list}
@@ -68,11 +68,11 @@ class ACE(FileIOCalculator,Calculator):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)'''
         force_in_param = 0
         if(name=='forces'):
-            if not 3 in self.parameters["order"]:
-                self.parameters['order'].append(3)
+            if not 'Force' in self.parameters["order"]:
+                self.parameters['order'].append('Force')
                 force_in_param = 1
-                self.results = {}
-                self.write_input(atoms)
+        self.results = {}
+        self.write_input(atoms)
         result = super().get_property(name, atoms, allow_calculation)
         if(force_in_param ==1):
             self.parameters['order'].pop()
@@ -82,50 +82,68 @@ class ACE(FileIOCalculator,Calculator):
     def set(self, **kwargs):
         new_parameters = deepcopy(self.parameters)
         changed_parameters = FileIOCalculator.set(self, **kwargs)
-#        print('changed_parameters_end')
-        duplication = []
+#        print('This is kwargs')
+#        print(kwargs)        
+        ######### This is for changing order's val
         if 'order' in kwargs:
-            order_list = []
-            for element in kwargs['order']:
-                mod = 0
-                if(element in self.order_key_list):
-                    order_element = self.order_key_list.index(element)
-                    order_list.append(order_element)
-                    mod = 1
-            if(mod == 1):
-                kwargs['order'] = order_list
             new_parameters['order'] = kwargs['order']
-            for i in range(10):
-                j = 0
-                for value in kwargs['order']:
-                    if(i in self.order_list and i == value):
-                        j = j + 1
-                        if(j > 1):
-                            for num in range(j - 1):
-                                new_parameters[self.order_key_list[i]
-                                                   ] += self.default_parameters[self.order_key_list[i]]
-
-        for key in self.order_key_list:  # key : BasicInformation, Force, Scf and so on
-            modified = False
+            append_default_parameter = list(set(kwargs['order']))
+            for value in append_default_parameter:
+                ##### This is for adding default values of repeated section
+                repeat = kwargs['order'].count(value)
+#                print(repeat)
+                if(repeat-1 > 0):
+                    for i in range(repeat-1):
+                        if value in self.default_parameters.keys():
+                            new_parameters[value] += self.default_parameters[value]
+#        print('new_parameters order : ', new_parameters['order'])
+#        print('new_parameters keys : ', new_parameters)
+        ################ This is for update parameters by using kwargs                                                   
+        for key in new_parameters['order']:  # key : BasicInformation, Force, Scf and so on
+#            print('why??')
+#            print(key)
+#            modified = False
             if key in kwargs.keys():  # kwargs.key() : BasicInformation, Force, ....
                 if(isinstance(kwargs[key], dict)):
                     dict_to_list = []
                     dict_to_list.append(kwargs[key])
                     kwargs[key] = dict_to_list
-                i = 0
                 # kwargs[key] : basic_list, force_lsit ....
+                i = 0
                 for val in kwargs[key]:
-                    element = self.compare_parameters(
-                        new_parameters[key][i], val)
-                    if(element == new_parameters[key][i]):
-                        new_parameters[key][i].update(val)
-                    else:
-                        duplication.append(element)
-                        modified = True
-                    i = i + 1
-                    if(modified):
-                        new_parameters[key] = duplication
-                        duplication = []
+                    #element = val
+#                    print('TEST')
+#                    print(val)
+                    ### This routine for update parameters' value.
+                    if(len(new_parameters[key])>0):
+#                        print('1st')
+#                        print(new_parameters[key][i])
+                        new_parameters[key][i] = update_recursively(new_parameters[key][i], val)
+                        print('after')
+                        print(new_parameters[key][i])
+                    else:    
+                        print('2nd')
+                        print(new_parameters[key])
+                        new_parameters[key] = [val] 
+                        print('after')
+                        print(new_parameters[key])
+                    i = i+1
+#                        if(element == new_parameters[key][i]):
+#                            new_parameters[key][i].update(val)
+#                        else:
+#                            modified = True
+#                    else:
+                        ### This is for dealing with (new_parameters[key] = [])
+#                        modified = True
+#                    if(modified):
+                        ### If kwargs' key doesn't exist defualt_parameters' keys, update kwargs' key, val into new_parameters
+#                        print('modified is true and element : ', element)
+#                        if(len(new_parameters[key])>0):
+#                            new_parameters[key][i] = [element]
+#                        else:
+#                            new_parameters[key][i] = [element]
+
+#                        modified = False
         self.parameters = new_parameters
         return changed_parameters
 
@@ -141,6 +159,9 @@ class ACE(FileIOCalculator,Calculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         '''Writes the input file and xyz file'''
+#        print('????????????????????')
+#        print(self.parameters)
+#        print('????????????????????')
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         inputfile = open(self.label + '.inp', 'w')
         self.make_xyz_file(atoms)
@@ -177,12 +198,12 @@ class ACE(FileIOCalculator,Calculator):
 
         return
 
-    def write_acemolecule_input(self, fpt, param, indent=0):
+    def write_acemolecule_input(self, fpt, param2, indent=0):
         prefix = "    " * indent
-        #param = deepcopy(param2)
-        for i in param['order']:
-            fpt.write(prefix + "%% " + self.order_key_list[i] + "\n")
-            section_list = param[self.order_key_list[i]]
+        param = deepcopy(param2)
+        for i in range(len(param['order'])):
+            fpt.write(prefix + "%% " + param['order'][i] + "\n")
+            section_list = param[param['order'][i]]
             if(len(section_list) > 0):
                 section = section_list.pop(0)
                 self.write_acemolecule_section(fpt, section, 1)
@@ -190,7 +211,44 @@ class ACE(FileIOCalculator,Calculator):
         return
 
 
+def update_recursively(oldpar, newpar):
+    for key, val in newpar.items():
+        if isinstance(val, dict):
+            print('update_recursively if')
+            if isinstance(oldpar.get(key), dict):
+                update_parameters(old, val)
+            else:
+                print('recursively end')
+                print(key)
+                print(val)
+                oldpar[key] = val
+        else:
+            print('update_recursively else')
+            oldpar[key] = val
+    print("This is final oldpar")
+    print(oldpar)
+    return oldpar
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
-    ace = ACE()
-    ace.set(ACEtemplate="test.a")
-    ace.write_input(Atoms("H2", positions=[[0, 0, 0], [0, 0, 1.0]]))
+    old = {
+        'Type': 'Scaling', 'Scaling': '0.35', 'Basis': 'Sinc',
+                  'Grid': 'Sphere',
+                  'KineticMatrix': 'Finite_Difference', 'DerivativesOrder': '7',
+                  'GeometryFilename': None, 'NumElectrons': None}
+    new = dict(GeometryFilename= '/home/khs/hs_file/programs/ACE-Molecule/aseinput/tddft_example/xyz/benzene.xyz')
+    old = update_recursively(old,new)
+    print(old)
+    new = {'Pseudopotential' : {'Pseudopotential':1,'Format': 'upf', 'PSFilePath':'/home/khs/DATA/UPF', 'PSFileSuffix':'.pbe-theos.UPF'}}
+    old = update_recursively(old,new)
+    print(old)
+    
+
+
