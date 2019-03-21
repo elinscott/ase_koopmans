@@ -38,9 +38,9 @@ class ACEMoleculeReader:
         start_line = 0
         end_line = 0
         for i in range(len(lines)):
-            if(lines[i] == '====================  Atoms  =====================\n'):
+            if lines[i] == '====================  Atoms  =====================\n':
                 start_line = i
-            if(start_line != '' and len(lines[i].split('=')) == '3'):
+            if start_line != '' and len(lines[i].split('=')) == '3':
                 end_line = i
                 break
         self.data = []
@@ -52,7 +52,7 @@ class ACEMoleculeReader:
             atoms.append(str(chemical_symbols[int(atomic_number)]))
             xyz = [float(n) for n in lines[i].split()[1:4]]
             positions.append(xyz)
-            
+
         new_dict["Atomic_numbers"] = atoms
         new_dict["Positions"] = positions
         self.data = new_dict
@@ -75,7 +75,6 @@ def read_acemolecule_out(filename, quantity='atoms'):
     
     
     if(quantity == 'excitation-energy'):
-        # ee is excitation-energy
         ee = 1
         return ee
 
@@ -124,11 +123,12 @@ def read_acemolecule_input(label):
     lines = inputtemplate.readlines()
     inputtemplate.close()
     for line in lines:
-        if(len(line.split('GeometryFilename')) > 1):
+        if len(line.split('GeometryFilename')) > 1:
             geometryfile = line.split()[2]
             break
     atoms = read(geometryfile, format='xyz')
     return atoms
+
 
 if __name__ == "__main__":
     import sys
