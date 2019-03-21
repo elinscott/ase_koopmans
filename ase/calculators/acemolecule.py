@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os
 from copy import deepcopy
+#import sys
 #from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
 from ase.calculators.calculator import ReadError
@@ -15,7 +16,6 @@ class ACE(FileIOCalculator):
     name = 'ace'
     implemented_properties = ['energy', 'forces',
                               'geometry', 'excitation-energy']
-#    system_changes = None
     # defaults is default value of ACE-input
     basic_list = [{
         'Type': 'Scaling', 'Scaling': '0.35', 'Basis': 'Sinc',
@@ -64,16 +64,9 @@ class ACE(FileIOCalculator):
                 It means implimented_properties
             atoms : ase.atoms
         '''
-        force_in_param = 0
-        if(name=='forces'):
-            if not 'Force' in self.parameters["order"]:
-                self.parameters['order'].append('Force')
-                force_in_param = 1
         self.results = {}
-        self.write_input(atoms)
+        self.write_input(atoms,properties = [name])
         result = super().get_property(name, atoms, allow_calculation)
-        if force_in_param:
-            self.parameters['order'].pop()
 
         return result
 
@@ -130,11 +123,14 @@ class ACE(FileIOCalculator):
         '''
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         inputfile = open(self.label + '.inp', 'w')
+        copy_parameters = deepcopy(self.parameters)
+        if properties == ['forces'] and not 'Force' in copy_parameters['order']:
+            copy_parameters['order'].append('Force')
         self.make_xyz_file(atoms)
-        self.parameters["BasicInformation"][0]["GeometryFilename"] = "{}_opt.xyz".format(
+        copy_parameters["BasicInformation"][0]["GeometryFilename"] = "{}_opt.xyz".format(
             self.label)
-        self.parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"
-        self.write_acemolecule_input(inputfile, self.parameters)
+        copy_parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"
+        self.write_acemolecule_input(inputfile, copy_parameters)
 
         inputfile.close()
 
@@ -165,7 +161,7 @@ class ACE(FileIOCalculator):
 
         return
 
-    def write_acemolecule_input(self, fpt, param2, indent=0):
+    def write_acemolecule_input(self, fpt, param, indent=0):
         '''Write ACE-Molecule input 
 
             Our input format Examples
@@ -218,7 +214,7 @@ class ACE(FileIOCalculator):
         
          '''
         prefix = "    " * indent
-        param = deepcopy(param2)
+        
         for i in range(len(param['order'])):
             fpt.write(prefix + "%% " + param['order'][i] + "\n")
             section_list = param[param['order'][i]]
@@ -230,13 +226,12 @@ class ACE(FileIOCalculator):
 
 
 def update_parameter(oldpar, newpar):
+    '''Replace val of dict or add new dict into oldpar from newpar '''
     for key, val in newpar.items():
         if key in oldpar:
             if isinstance(val,dict):
                 update_parameter(oldpar[key],val)
             else:
-                print('newpar update')
-                print(newpar)
                 oldpar.update(newpar)
         else:
             oldpar.update(newpar)
@@ -253,17 +248,6 @@ def update_parameter(oldpar, newpar):
 
 
 if __name__ == "__main__":
-    old = {
-        'Type': 'Scaling', 'Scaling': '0.35', 'Basis': 'Sinc',
-                  'Grid': 'Sphere',
-                  'KineticMatrix': 'Finite_Difference', 'DerivativesOrder': '7',
-                  'GeometryFilename': None, 'NumElectrons': None}
-    new = dict(GeometryFilename= '/home/khs/hs_file/programs/ACE-Molecule/aseinput/tddft_example/xyz/benzene.xyz')
-    old = update_recursively(old,new)
-    print(old)
-    new = {'Pseudopotential' : {'Pseudopotential':1,'Format': 'upf', 'PSFilePath':'/home/khs/DATA/UPF', 'PSFileSuffix':'.pbe-theos.UPF'}}
-    old = update_recursively(old,new)
-    print(old)
-    
+   print('khs') 
 
 
