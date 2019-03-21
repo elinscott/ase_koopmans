@@ -1,7 +1,7 @@
 from __future__ import print_function
 import os
 from copy import deepcopy
-from ase.atoms import Atoms
+#from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
 from ase.calculators.calculator import ReadError
 from ase.calculators.calculator import FileIOCalculator
@@ -51,16 +51,6 @@ class ACE(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command=command, **kwargs)
 
-    def compare_parameters(self, old_parameters, new_parameters):
-        '''Compare new parameters with existing parameters and replace parameters that users want'''
-        for new_key, new_value in new_parameters.items():
-            for old_key, old_val in old_parameters.items():
-                if new_key == old_key and (isinstance(new_value, str) or isinstance(new_value, float) or isinstance(new_value, int) or isinstance(new_value, list)):
-                    old_parameters[old_key] = str(new_parameters[key])
-                elif new_key == key and isinstance(new_value, dict):
-                    old_parameters[old_key] = self.compare_parameters(old_parameters[old_key], new_value)
-
-        return parameters
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)'''
@@ -170,17 +160,11 @@ def update_recursively(oldpar, newpar):
         if isinstance(val, dict):
             print('update_recursively if')
             if isinstance(oldpar.get(key), dict):
-                update_parameters(old, val)
+                update_recursively(old, val)
             else:
-                print('recursively end')
-                print(key)
-                print(val)
                 oldpar[key] = val
         else:
-            print('update_recursively else')
             oldpar[key] = val
-    print("This is final oldpar")
-    print(oldpar)
     return oldpar
 
 
