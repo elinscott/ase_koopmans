@@ -3,13 +3,12 @@ import os
 from copy import deepcopy
 from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
-from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import ReadError
-from ase.calculators.calculator import Calculator
+from ase.calculators.calculator import FileIOCalculator
 #import numpy as np
 
 
-class ACE(FileIOCalculator, Calculator):
+class ACE(FileIOCalculator):
     '''
     ACE-Molecule logfile reader
     '''
