@@ -38,9 +38,9 @@ class ACEMoleculeReader:
         start_line = 0
         end_line = 0
         for i in range(len(lines)):
-            if(lines[i] == '====================  Atoms  =====================\n'):
+            if lines[i] == '====================  Atoms  =====================\n':
                 start_line = i
-            if(start_line != '' and len(lines[i].split('=')) == '3'):
+            if start_line != '' and len(lines[i].split('=')) == '3':
                 end_line = i
                 break
         self.data = []
@@ -52,7 +52,7 @@ class ACEMoleculeReader:
             atoms.append(str(chemical_symbols[int(atomic_number)]))
             xyz = [float(n) for n in lines[i].split()[1:4]]
             positions.append(xyz)
-            
+
         new_dict["Atomic_numbers"] = atoms
         new_dict["Positions"] = positions
         self.data = new_dict
@@ -69,26 +69,25 @@ def read_acemolecule_out(filename, quantity='atoms'):
     lines = f.readlines()
     f.close()
     geometry = zip(atom_symbol, positions)
-#    energy = 0.0
 
-    if(quantity == 'excitation-energy'):
+    if quantity == 'excitation-energy':
         # ee is excitation-energy
         ee = 1
         return ee
 
     for i in range(len(lines) - 1, 1, -1):
         line = lines[i].split()
-        if(len(line) > 2):
-            if(line[0] == 'Total' and line[1] == 'energy'):
+        if len(line) > 2:
+            if line[0] == 'Total' and line[1] == 'energy':
                 energy = float(line[3])
                 break
     energy *= ase.units.Hartree
     # energy must be modified, hartree to eV
 
     for i in range(len(lines) - 1, 1, -1):
-        if (lines[i] == '!================================================\n'):
+        if lines[i] == '!================================================\n':
             endline_num = i
-        if (lines[i] == '! Atom           x         y         z\n'):
+        if lines[i] == '! Atom           x         y         z\n':
             forces = []
             startline_num = i
             for j in range(startline_num + 1, endline_num):
@@ -98,18 +97,18 @@ def read_acemolecule_out(filename, quantity='atoms'):
             convert = ase.units.Hartree / ase.units.Bohr
             forces = np.array(forces) * convert
             break
-        if(i == 30):
+        if i == 30:
             forces = None
             break
     calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
     atoms.set_calculator(calc)
-    if(quantity == 'energy'):
+    if quantity == 'energy':
         return energy
-    if(quantity == 'forces'):
+    if quantity == 'forces':
         return forces
-    if(quantity == 'geometry'):
+    if quantity == 'geometry':
         return geometry
-    if(quantity == 'atoms'):
+    if quantity == 'atoms':
         return atoms
 
 
@@ -120,11 +119,12 @@ def read_acemolecule_input(label):
     lines = inputtemplate.readlines()
     inputtemplate.close()
     for line in lines:
-        if(len(line.split('GeometryFilename')) > 1):
+        if len(line.split('GeometryFilename')) > 1:
             geometryfile = line.split()[2]
             break
     atoms = read(geometryfile, format='xyz')
     return atoms
+
 
 if __name__ == "__main__":
     import sys

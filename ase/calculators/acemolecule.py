@@ -8,7 +8,8 @@ from ase.calculators.calculator import ReadError
 from ase.calculators.calculator import Calculator
 #import numpy as np
 
-class ACE(FileIOCalculator,Calculator):
+
+class ACE(FileIOCalculator, Calculator):
     '''
     ACE-Molecule logfile reader
     '''
@@ -32,13 +33,14 @@ class ACE(FileIOCalculator,Calculator):
     force_list = [{'ForceDerivative': 'Potential'}]
     tddft_list = [{
         'SortOrbital': 'Order', 'MaximumOrder': '10',
-        'ExchangeCorrelation': {'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},\
+        'ExchangeCorrelation': {'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},
     }]
     order_list = [0, 1, 2]
     cis_list = []
     cisd_list = []
     dda_list = []
-    order_key_list = ['BasicInformation', 'Guess', 'Scf', 'Force', 'TDDFT','CIS', 'CISD', 'DDA', 'AVAS', 'LOCS', 'EnsembleKSScf', 'Charge', 'Analysis', 'DeltaScf', 'TAOScf', 'ExDFT', 'SigamScf']
+    order_key_list = ['BasicInformation', 'Guess', 'Scf', 'Force', 'TDDFT', 'CIS', 'CISD', 'DDA',
+                      'AVAS', 'LOCS', 'EnsembleKSScf', 'Charge', 'Analysis', 'DeltaScf', 'TAOScf', 'ExDFT', 'SigamScf']
 
     default_parameters = {'BasicInformation': basic_list, 'Guess': guess_list,
                           'Scf': scf_list, 'Force': force_list, 'TDDFT': tddft_list, 'order': order_list}
@@ -52,78 +54,74 @@ class ACE(FileIOCalculator,Calculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command=command, **kwargs)
 
-    def compare_parameters(self, parameters, val2):
+    def compare_parameters(self, old_parameters, new_parameters):
         '''Compare new parameters with existing parameters and replace parameters that users want'''
-        for val_key, val_val in val2.items():
-            for key, val in parameters.items():
-                if val_key == key and (isinstance(val_val, str) or isinstance(val_val, float) or isinstance(val_val, int) or isinstance(val_val, list)):
-                    parameters[key] = str(val2[key])
-                elif (val_key == key and isinstance(val_val, dict)):
-                    parameters[key] = self.compare_parameters(
-                        parameters[key], val_val)
+        for new_key, new_value in new_parameters.items():
+            for old_key, old_val in old_parameters.items():
+                if new_key == old_key and (isinstance(new_value, str) or isinstance(new_value, float) or isinstance(new_value, int) or isinstance(new_value, list)):
+                    old_parameters[old_key] = str(new_parameters[key])
+                elif new_key == key and isinstance(new_value, dict):
+                    old_parameters[old_key] = self.compare_parameters(old_parameters[old_key], new_value)
 
         return parameters
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)'''
-        force_in_param = 0
-        if(name=='forces'):
+        force_in_param = False
+        if name == 'forces':
             if not 3 in self.parameters["order"]:
                 self.parameters['order'].append(3)
-                force_in_param = 1
+                force_in_param = True
                 self.results = {}
                 self.write_input(atoms)
         result = super().get_property(name, atoms, allow_calculation)
-        if(force_in_param ==1):
+        if force_in_param:
             self.parameters['order'].pop()
-           
+
         return result
 
     def set(self, **kwargs):
         new_parameters = deepcopy(self.parameters)
         changed_parameters = FileIOCalculator.set(self, **kwargs)
-#        print('changed_parameters_end')
         duplication = []
         if 'order' in kwargs:
             order_list = []
             for element in kwargs['order']:
                 mod = 0
-                if(element in self.order_key_list):
+                if element in self.order_key_list :
                     order_element = self.order_key_list.index(element)
                     order_list.append(order_element)
                     mod = 1
-            if(mod == 1):
+            if mod == 1:
                 kwargs['order'] = order_list
             new_parameters['order'] = kwargs['order']
             for i in range(10):
                 j = 0
                 for value in kwargs['order']:
-                    if(i in self.order_list and i == value):
-                        j = j + 1
-                        if(j > 1):
+                    if i in self.order_list and i == value:
+                        j += 1
+                        if j > 1:
                             for num in range(j - 1):
-                                new_parameters[self.order_key_list[i]
-                                                   ] += self.default_parameters[self.order_key_list[i]]
+                                new_parameters[self.order_key_list[i]] += self.default_parameters[self.order_key_list[i]]
 
         for key in self.order_key_list:  # key : BasicInformation, Force, Scf and so on
             modified = False
             if key in kwargs.keys():  # kwargs.key() : BasicInformation, Force, ....
-                if(isinstance(kwargs[key], dict)):
+                if isinstance(kwargs[key], dict):
                     dict_to_list = []
                     dict_to_list.append(kwargs[key])
                     kwargs[key] = dict_to_list
                 i = 0
                 # kwargs[key] : basic_list, force_lsit ....
                 for val in kwargs[key]:
-                    element = self.compare_parameters(
-                        new_parameters[key][i], val)
-                    if(element == new_parameters[key][i]):
+                    element = self.compare_parameters(new_parameters[key][i], val)
+                    if element == new_parameters[key][i]:
                         new_parameters[key][i].update(val)
                     else:
                         duplication.append(element)
                         modified = True
-                    i = i + 1
-                    if(modified):
+                    i += 1
+                    if modified:
                         new_parameters[key] = duplication
                         duplication = []
         self.parameters = new_parameters
@@ -156,7 +154,7 @@ class ACE(FileIOCalculator,Calculator):
         filename = self.label + '.log'
         f = open(filename, "r")
         tddft = len(f.read().split("TDDFT"))
-        if(tddft > 2):
+        if tddft > 2 :
             quantities = ['excitation-energy']
         else:
             quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
@@ -166,14 +164,12 @@ class ACE(FileIOCalculator,Calculator):
 
     def write_acemolecule_section(self, fpt, section, indent=0):
         for key, val in section.items():
-            if(isinstance(val, str) or isinstance(val, int) or isinstance(val, float)):
-                fpt.write('\t' * indent + str(key) + " " + str(val) + "\n")
+            if isinstance(val, str) or isinstance(val, int) or isinstance(val, float):
+                fpt.write('    ' * indent + str(key) + " " + str(val) + "\n")
             elif isinstance(val, dict):
-                fpt.write('\t' * indent + "%% " + str(key) + "\n")
-                #indent = indent + 1
-                self.write_acemolecule_section(fpt, val, indent +1)
-                #indent = indent - 1
-                fpt.write('\t' * indent + "%% End\n")
+                fpt.write('    ' * indent + "%% " + str(key) + "\n")
+                self.write_acemolecule_section(fpt, val, indent + 1)
+                fpt.write('    ' * indent + "%% End\n")
 
         return
 
@@ -183,7 +179,7 @@ class ACE(FileIOCalculator,Calculator):
         for i in param['order']:
             fpt.write(prefix + "%% " + self.order_key_list[i] + "\n")
             section_list = param[self.order_key_list[i]]
-            if(len(section_list) > 0):
+            if len(section_list) > 0:
                 section = section_list.pop(0)
                 self.write_acemolecule_section(fpt, section, 1)
             fpt.write("%% End\n")
