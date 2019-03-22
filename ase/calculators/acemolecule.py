@@ -20,7 +20,7 @@ class ACE(FileIOCalculator):
     name = 'ace'
     implemented_properties = ['energy', 'forces',
                               'geometry', 'excitation-energy']
-    # defaults is default value of ACE-input
+    # defaults is default section_name of ACE-input
     basic_list = [{
         'Type': 'Scaling', 'Scaling': '0.35', 'Basis': 'Sinc',
                   'Grid': 'Sphere',
@@ -39,10 +39,6 @@ class ACE(FileIOCalculator):
     }]
 
     order_list = ['BasicInformation', 'Guess', 'Scf']
-    guess_list = [{}]  # now not need this
-    cis_list = [{}]
-    cisd_list = [{}]
-    dda_list = [{}]
 
     default_parameters = {'BasicInformation': basic_list, 'Guess': guess_list,
                           'Scf': scf_list, 'Force': force_list, 'TDDFT': tddft_list, 'order': order_list}
@@ -57,168 +53,190 @@ class ACE(FileIOCalculator):
                                   label, atoms, command=command, **kwargs)
 
     def set(self, **kwargs):
-        '''Change or add parameters and return changed parameter
-            Parameters
-            ==========
-            kwargs: It is parameter that we want to change and type is dictionary
-            
-            
-            Returns
-            =======
-            kwargs
+        '''Update parameters self.parameter member variable.
+        1. Add default values for repeated parameter sections with self.default_parameters using order.
+        2. Also add empty dictionary as an indicator for section existence if no relevant default_parameters exist.
+        3. Update parameters from arguments.
+        
+        Returns
+        =======
+        Updated parameter
         '''
         new_parameters = deepcopy(self.parameters)
         changed_parameters = FileIOCalculator.set(self, **kwargs)
+
+        # Add default values for repeated parameter sections with self.default_parameters using order.
+        # Also add empty dictionary as an indicator for section existence if no relevant default_parameters exist.
         if 'order' in kwargs:
             new_parameters['order'] = kwargs['order']
-            append_default_parameter = list(set(kwargs['order']))
-            for value in append_default_parameter:
-                # This is for adding default values of repeated section
-                repeat = kwargs['order'].count(value)
-                if repeat > 1:
-                    for i in range(repeat - 1):
-                        if value in self.default_parameters.keys():
-                            new_parameters[value] += self.default_parameters[value]
-        for key in new_parameters['order']:
-            if key in kwargs.keys():      # key : BasicInformation, Force, Scf and so on
-                if isinstance(kwargs[key], dict):
-                    dict_to_list = []
-                    dict_to_list.append(kwargs[key])
-                    # kwargs[key] : basic_list, force_lsit ....
-                    kwargs[key] = dict_to_list
-                i = 0
-                for val in kwargs[key]:
-                    if len(new_parameters[key]) > 0:
-                        new_parameters[key][i] = update_parameter(
-                            new_parameters[key][i], val)
+            section_sets = set(kwargs['order'])
+            for section_name in section_sets:
+                repeat = kwargs['order'].count(section_name)
+                if section_name in self.default_parameters.keys():
+                    for i in range(repeat-1):
+                        new_parameters[section_name] += deepcopy(self.default_parameters[section_name])
+                else:
+                    new_parameters[section_name] = []
+                    for i in range(repeat):
+                        new_parameters[section_name].append({})
 
-                    else:
-                        new_parameters[key] = [val]
-                    i = i + 1
+        # Update parameters
+        for section in new_parameters['order']:
+            if section in kwargs.keys():
+                if isinstance(kwargs[section], dict):
+                    kwargs[section] = [kwargs[section]]
+                    
+                i = 0
+                for section_param in kwargs[section]:
+                    new_parameters[section][i] = update_parameter(new_parameters[section][i], section_param)
+                    i += 1
         self.parameters = new_parameters
         return changed_parameters
 
     def read(self, label):
         FileIOCalculator.read(self, label)
         filename = self.label + ".log"
+
         if not os.path.isfile(filename):
-            raise ReadError
+            raise ReadError("Wrong ACE-Molecule log file {}.".format(filename))
+
         self.read_results()
 
-    def make_xyz_file(self, atoms):
-        '''Writes the xyz file '''
-        atoms.write("{}_opt.xyz".format(self.label))
-
     def write_input(self, atoms, properties=None, system_changes=None):
-        '''Writes the input file and xyz file. And if properties is ['forces'], add'Force' to parameters['order']
+        '''Initializes input parameters and xyz files. If force calculation is requested, add Force section to parameters if not exists.
             
-            Parameters
-            ==========
-            atoms : ASE atoms
-            properties : one of Implement_properties, and type is list 
+        Parameters
+        ==========
+        atoms: ASE atoms object.
+        properties: List of properties to be calculated. Should be element of self.implemented_properties.
+        system_chages: Ignored.
         
         '''
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         inputfile = open(self.label + '.inp', 'w')
-        copy_parameters = deepcopy(self.parameters)
-        if properties == ['forces'] and not 'Force' in copy_parameters['order']:
-            copy_parameters['order'].append('Force')
-        self.make_xyz_file(atoms)
-        copy_parameters["BasicInformation"][0]["GeometryFilename"] = "{}_opt.xyz".format(
-            self.label)
-        copy_parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"
-        self.write_acemolecule_input(inputfile, copy_parameters)
 
+        xyz_name = "{}.xyz".format(self.label)
+        atoms.write(xyz_name)
+
+        run_parameters = self.prepare_input(xyz_name, properties)
+        self.write_acemolecule_input(inputfile, run_parameters)
         inputfile.close()
 
-    def read_results(self):
-        '''Read results from logfile. results consist of quantites. And default quantities = [energy, forces, atoms, excitation-energy]
-            temporarily excitation-energy value is 1. This is becuase preferentially we want to calculate TDDFT by using ase.
+    def prepare_input(self, geometry_filename, properties):
+        '''Initialize parameters dictionary based on geometry filename and calculated properties.
         
+        Parameters
+        ==========
+        geometry_filename: Geometry (XYZ format) file path.
+        properties: Properties to be calculated.
+
+        Returns
+        =======
+        Updated version of self.parameters; geometry file and optionally Force section are updated.
+        '''
+        copied_parameters = deepcopy(self.parameters)
+        if "force" in properties and not 'Force' in copied_parameters['order']:
+            copied_parameters['order'].append('Force')
+        copied_parameters["BasicInformation"][0]["GeometryFilename"] = "{}.xyz".format(self.label)
+        copied_parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"
+        return copied_parameters
+
+    def read_results(self):
+        '''Read calculation results, speficied by 'quantities' variable, from the log file.
+        TODO
         '''
         filename = self.label + '.log'
-        f = open(filename, "r")
-        tddft = len(f.read().split("TDDFT"))
+        tddft = 0
+        with open(filename, "r") as f:
+            tddft = len(f.read().split("TDDFT"))
         if tddft > 2:
             quantities = ['excitation-energy']
         else:
             quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
-        for value in quantities:
-            self.results[value] = read_acemolecule_out(
-                filename, quantity=value)
+        for section_name in quantities:
+            self.results[section_name] = read_acemolecule_out(filename, quantity=section_name)
 
-    def write_acemolecule_section(self, fpt, section, indent=0):
+    def write_acemolecule_section(self, fpt, section, depth=0):
         '''Write parameters in each section of input 
             
-            Parameters
-            ==========
-            fpt : ACE-Moleucle input file name
-            section : self.parameters
-
+        Parameters
+        ==========
+        fpt: ACE-Moleucle input file object. Should be write mode.
+        section: Dictionary of a parameter section.
+        depth: Nested input depth.
         '''
-        for key, val in section.items():
-            if isinstance(val, str) or isinstance(val, int) or isinstance(val, float):
-                fpt.write('    ' * indent + str(key) + " " + str(val) + "\n")
-            elif isinstance(val, dict):
-                fpt.write('    ' * indent + "%% " + str(key) + "\n")
-                self.write_acemolecule_section(fpt, val, indent + 1)
-                fpt.write('    ' * indent + "%% End\n")
+        for section, section_param in section.items():
+            if isinstance(section_param, str) or isinstance(section_param, int) or isinstance(section_param, float):
+                fpt.write('    ' * depth + str(section) + " " + str(section_param) + "\n")
+            elif isinstance(section_param, dict):
+                fpt.write('    ' * depth + "%% " + str(section) + "\n")
+                self.write_acemolecule_section(fpt, section_param, depth + 1)
+                fpt.write('    ' * depth + "%% End\n")
 
-        return
-
-    def write_acemolecule_input(self, fpt, param, indent=0):
+    def write_acemolecule_input(self, fpt, param, depth=0):
         '''Write ACE-Molecule input 
 
-            Our input format Examples
-            ========================= 
+        ACE-Molecule input examples (not minimal)
         %% BasicInformation
-            Type	Scaling
-            Scaling	0.4
-            Basis	Sinc
-            Cell	10.0
-            Grid	Sphere
-            GeometryFormat		xyz
-            SpinMultiplicity	3.0
+            Type    Scaling
+            Scaling 0.4
+            Basis   Sinc
+            Cell    10.0
+            Grid    Sphere
+            GeometryFormat      xyz
+            SpinMultiplicity    3.0
             Polarize    1
-            Centered		0
-            OccupationMethod		ZeroTemp
+            Centered    0
             %% Pseudopotential
-                Pseudopotential	1
+                Pseudopotential 1
                 UsingDoubleGrid 0
-                FilterType Sinc
-                Format	upf
-                PSFilePath	/home/khs/DATA/UPF
-                PSFileSuffix	.pbe-theos.UPF
+                FilterType      Sinc
+                Format          upf
+                PSFilePath      /PATH/TO/UPF
+                PSFileSuffix    .pbe-theos.UPF
             %% End
-            GeometryFilename	xyz/C.xyz
+            GeometryFilename    xyz/C.xyz
         %% End
         %% Guess
+            InitialGuess        3
+            InitialFilenames    001.cube
+            InitialFilenames    002.cube
         %% End
         %% Scf
-            IterateMaxCycle	150
-            ConvergenceType	Energy
-            ConvergenceTolerance	0.00001
-            EnergyDecomposition		1
-            ComputeInitialEnergy		1
+            IterateMaxCycle     150
+            ConvergenceType     Energy
+            ConvergenceTolerance    0.00001
+            EnergyDecomposition	    1
+            ComputeInitialEnergy    1
             %% Diagonalize
-                DiagonalizeMaxIter	10
-                Tolerance	0.000001
-                FullOrthogonalize		1
+                Tolerance           0.000001
             %% End
             %% ExchangeCorrelation
-                XFunctional		GGA_X_PBE
-                CFunctional		GGA_C_PBE
+                XFunctional     GGA_X_PBE
+                CFunctional     GGA_C_PBE
             %% End
             %% Mixing
-                MixingMethod	1
-                MixingType	Density
-                MixingParameter	0.5
-                PulayMixingParameter	0.1
+                MixingMethod         1
+                MixingType           Density
+                MixingParameter      0.5
+                PulayMixingParameter 0.1
             %% End
         %% End
 
-         '''
-        prefix = "    " * indent
+        Parameters
+        ==========
+        fpt: File object, should be write mode.
+        param: Dictionary of parameters. Also should contain special 'order' section_name for parameter section ordering.
+        depth: Nested input depth.
+
+        Notes
+        =====
+         - Order of parameter section (denoted using %% -- %% BasicInformation, %% Guess, etc.) is important, because it determines calculation order.
+           For example, if Guess section comes after Scf section, calculation will not run because Scf will tries to run without initial Hamiltonian.
+         - Order of each parameter section-section_name pair is not important unless their keys are the same.
+         - Indentation unimportant and capital letters are important.
+        '''
+        prefix = "    " * depth
 
         for i in range(len(param['order'])):
             fpt.write(prefix + "%% " + param['order'][i] + "\n")
@@ -231,30 +249,29 @@ class ACE(FileIOCalculator):
 
 
 def update_parameter(oldpar, newpar):
-    '''Replace or add dict into oldpar from newpar 
+    '''Update each section of parameter (oldpar) using newpar keys and values.
+    If section of newpar exist in oldpar, 
+        - Replace the section_name with newpar's section_name if oldvar section_name type is not dict.
+        - Append the section_name with newpar's section_name if oldvar section_name type is list.
+        - If oldpar section_name type is dict, it is subsection. So call update_parameter again.
+    otherwise, add the parameter section and section_name from newpar.
         
-        Parameters
-        ==========
-        oldpar : original parameters
-        newpar : new dictionary that we want to change or add to origianl parameters.
+    Parameters
+    ==========
+    oldpar: dictionary of original parameters to be updated.
+    newpar: dictionary containing parameter section and values to update.
 
-
-        Return
-        ======
-        oldpar
-
+    Return
+    ======
+    Updated parameter dictionary.
     '''
-    for key, val in newpar.items():
-        if key in oldpar:
-            if isinstance(val, dict):
-                update_parameter(oldpar[key], val)
+    for section, section_param in newpar.items():
+        if section in oldpar:
+            if isinstance(section_param, dict):
+                oldpar[section] = update_parameter(oldpar[section], section_param)
             else:
-                oldpar.update(newpar)
+                oldpar[section] = section_param
         else:
-            oldpar.update(newpar)
-
+            oldpar[section] = section_param
     return oldpar
 
-
-if __name__ == "__main__":
-    print('khs')
