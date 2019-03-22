@@ -33,8 +33,7 @@ class ACE(FileIOCalculator):
         'SortOrbital': 'Order', 'MaximumOrder': '10',
         'ExchangeCorrelation': {'XFunctional': 'GGA_X_PBE', 'CFunctional': 'GGA_C_PBE'},
     }]
-    
-    
+
     order_list = ['BasicInformation', 'Guess', 'Scf']
     guess_list = [{}]  # now not need this
     cis_list = [{}]
@@ -53,7 +52,6 @@ class ACE(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command=command, **kwargs)
 
-
     def get_property(self, name, atoms=None, allow_calculation=True):
         '''Make input, xyz after that calculate and get_property(energy, forces, and so on)
            And when you want to calculate optimziation calculation and input doesn't have Force section, this fuctions automatically wrtie Force section in input.
@@ -65,7 +63,7 @@ class ACE(FileIOCalculator):
             atoms : ase.atoms
         '''
         self.results = {}
-        self.write_input(atoms,properties = [name])
+        self.write_input(atoms, properties=[name])
         result = super().get_property(name, atoms, allow_calculation)
 
         return result
@@ -83,27 +81,28 @@ class ACE(FileIOCalculator):
             new_parameters['order'] = kwargs['order']
             append_default_parameter = list(set(kwargs['order']))
             for value in append_default_parameter:
-                ##### This is for adding default values of repeated section
+                # This is for adding default values of repeated section
                 repeat = kwargs['order'].count(value)
-                if(repeat-1 > 0):
-                    for i in range(repeat-1):
+                if repeat > 1:
+                    for i in range(repeat - 1):
                         if value in self.default_parameters.keys():
                             new_parameters[value] += self.default_parameters[value]
-        for key in new_parameters['order']:             
+        for key in new_parameters['order']:
             if key in kwargs.keys():      # key : BasicInformation, Force, Scf and so on
                 if isinstance(kwargs[key], dict):
                     dict_to_list = []
                     dict_to_list.append(kwargs[key])
-                    kwargs[key] = dict_to_list         # kwargs[key] : basic_list, force_lsit ....
+                    # kwargs[key] : basic_list, force_lsit ....
+                    kwargs[key] = dict_to_list
                 i = 0
                 for val in kwargs[key]:
-                    if(len(new_parameters[key])>0):
-                        new_parameters[key][i] = update_parameter(new_parameters[key][i], val)
-                            
-                            
-                    else:    
-                        new_parameters[key] = [val] 
-                    i = i+1
+                    if len(new_parameters[key]) > 0:
+                        new_parameters[key][i] = update_parameter(
+                            new_parameters[key][i], val)
+
+                    else:
+                        new_parameters[key] = [val]
+                    i = i + 1
         self.parameters = new_parameters
         return changed_parameters
 
@@ -141,7 +140,7 @@ class ACE(FileIOCalculator):
         filename = self.label + '.log'
         f = open(filename, "r")
         tddft = len(f.read().split("TDDFT"))
-        if tddft > 2 :
+        if tddft > 2:
             quantities = ['excitation-energy']
         else:
             quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
@@ -211,14 +210,14 @@ class ACE(FileIOCalculator):
                 PulayMixingParameter	0.1
             %% End
         %% End
-        
+
          '''
         prefix = "    " * indent
-        
+
         for i in range(len(param['order'])):
             fpt.write(prefix + "%% " + param['order'][i] + "\n")
             section_list = param[param['order'][i]]
-            if(len(section_list) > 0):
+            if len(section_list) > 0:
                 section = section_list.pop(0)
                 self.write_acemolecule_section(fpt, section, 1)
             fpt.write("%% End\n")
@@ -229,25 +228,15 @@ def update_parameter(oldpar, newpar):
     '''Replace val of dict or add new dict into oldpar from newpar '''
     for key, val in newpar.items():
         if key in oldpar:
-            if isinstance(val,dict):
-                update_parameter(oldpar[key],val)
+            if isinstance(val, dict):
+                update_parameter(oldpar[key], val)
             else:
                 oldpar.update(newpar)
         else:
             oldpar.update(newpar)
-            
-             
+
     return oldpar
 
 
-
-
-
-
-
-
-
 if __name__ == "__main__":
-   print('khs') 
-
-
+    print('khs')
