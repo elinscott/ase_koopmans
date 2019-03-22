@@ -1,12 +1,9 @@
 from __future__ import print_function
 import os
 from copy import deepcopy
-#import sys
-#from ase.atoms import Atoms
 from ase.io.acemolecule import read_acemolecule_out
 from ase.calculators.calculator import ReadError
 from ase.calculators.calculator import FileIOCalculator
-#import numpy as np
 
 
 class ACE(FileIOCalculator):
@@ -40,7 +37,7 @@ class ACE(FileIOCalculator):
 
     order_list = ['BasicInformation', 'Guess', 'Scf']
 
-    default_parameters = {'BasicInformation': basic_list, 'Guess': guess_list,
+    default_parameters = {'BasicInformation': basic_list,
                           'Scf': scf_list, 'Force': force_list, 'TDDFT': tddft_list, 'order': order_list}
     parameters = default_parameters
     command = 'mpirun -np 1 ../ace PREFIX.inp > PREFIX.log'
@@ -97,8 +94,15 @@ class ACE(FileIOCalculator):
         FileIOCalculator.read(self, label)
         filename = self.label + ".log"
 
-        if not os.path.isfile(filename):
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+        if 'WARNING' in lines:
+            raise ReadError("Not convergy energy in log file {}.".format(filename))
+        if not '! total energy' in lines:
             raise ReadError("Wrong ACE-Molecule log file {}.".format(filename))
+
+        if not os.path.isfile(filename):
+            raise ReadError("Wrong ACE-Molecule input file {}.".format(filename))
 
         self.read_results()
 
@@ -135,7 +139,7 @@ class ACE(FileIOCalculator):
         Updated version of self.parameters; geometry file and optionally Force section are updated.
         '''
         copied_parameters = deepcopy(self.parameters)
-        if "force" in properties and not 'Force' in copied_parameters['order']:
+        if not properties is None and "force" in properties and not 'Force' in copied_parameters['order']:
             copied_parameters['order'].append('Force')
         copied_parameters["BasicInformation"][0]["GeometryFilename"] = "{}.xyz".format(self.label)
         copied_parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"
@@ -143,16 +147,18 @@ class ACE(FileIOCalculator):
 
     def read_results(self):
         '''Read calculation results, speficied by 'quantities' variable, from the log file.
-        TODO
+        quantities
+        =======
+        energy : obtaing single point energy(eV) from log file
+        forces : obtaing force of each atom form log file
+        excitation-energy : it able to calculate TDDFT. Return value is None. Result is not used.
+        atoms : ASE atoms object
         '''
         filename = self.label + '.log'
         tddft = 0
         with open(filename, "r") as f:
             tddft = len(f.read().split("TDDFT"))
-        if tddft > 2:
-            quantities = ['excitation-energy']
-        else:
-            quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
+        quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
         for section_name in quantities:
             self.results[section_name] = read_acemolecule_out(filename, quantity=section_name)
 
