@@ -155,9 +155,6 @@ class ACE(FileIOCalculator):
         atoms : ASE atoms object
         '''
         filename = self.label + '.log'
-        tddft = 0
-        with open(filename, "r") as f:
-            tddft = len(f.read().split("TDDFT"))
         quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
         for section_name in quantities:
             self.results[section_name] = read_acemolecule_out(filename, quantity=section_name)
