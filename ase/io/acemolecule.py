@@ -6,7 +6,7 @@ from ase.io import read
 from ase.data import chemical_symbols
 
 
-def parse_geometry(self, filename):
+def parse_geometry(filename):
     '''Read atoms geometry from ACE-Molecule log file and put it to self.data.
     Parameters
     ==========
@@ -62,11 +62,11 @@ def read_acemolecule_out(filename, quantity='atoms'):
     positions = np.array(data["Positions"])
     atoms = Atoms(atom_symbol, positions=positions)
 
-    with open(filename, 'r'):
+    with open(filename, 'r') as f:
         lines = f.readlines()
-    energy = 0
-    forces = None
-    calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
+    
+    # Set calculator to 
+    calc = SinglePointCalculator(atoms)
     atoms.set_calculator(calc)
 
     if quantity == 'excitation-energy':
@@ -79,47 +79,43 @@ def read_acemolecule_out(filename, quantity='atoms'):
                 if line[0] == 'Total' and line[1] == 'energy':
                     energy = float(line[3])
                     break
-        energy *= ase.units.Hartree
         # energy must be modified, hartree to eV
+        energy *= ase.units.Hartree
         return energy
 
     if quantity == 'forces':
         for i in range(len(lines) - 1, 1, -1):
-            if ('!============================' in lines[i]):
+            if '!============================' in lines[i]:
                 endline_num = i
-            if ('! Atom        ' in lines[i]):
+            if '! Force:: List of total force in atomic unit' in lines[i]:
                 forces = []
-                startline_num = i
-                for j in range(startline_num + 1, endline_num):
-                    forces += [[float(lines[j].split()[3]),
-                                float(lines[j].split()[4]),
-                                float(lines[j].split()[5])]]
+                startline_num = i+2
+                for j in range(startline_num, endline_num):
+                    forces.append(lines[j].split()[3:6])
                 convert = ase.units.Hartree / ase.units.Bohr
-                forces = np.array(forces) * convert
-                break
-            if i == 30:
-                forces = None
+                forces = np.array(forces, dtype=float) * convert
                 break
         return forces
-
-    if quantity == 'geometry':
-        geometry = zip(atom_symbol, positions)
-        return geometry
 
     if quantity == 'atoms':
         return atoms
 
 
-def read_acemolecule_input(label):
-    '''Reads a ACE-Molecule input file'''
-    filename = label
-    inputtemplate = open(filename, 'r')
-    lines = inputtemplate.readlines()
-    inputtemplate.close()
-    for line in lines:
-        if len(line.split('GeometryFilename')) > 1:
-            geometryfile = line.split()[2]
-            break
+def read_acemolecule_input(filename):
+    '''Reads a ACE-Molecule input file
+    Parameters
+    ==========
+    filename: ACE-Molecule input file name
+
+    Returns
+    =======
+    ASE atoms object containing geometry only.
+    '''
+    with open(filename, 'r') as f:
+        for line in f:
+            if len(line.split('GeometryFilename')) > 1:
+                geometryfile = line.split()[2]
+                break
     atoms = read(geometryfile, format='xyz')
     return atoms
 
@@ -127,8 +123,8 @@ def read_acemolecule_input(label):
 if __name__ == "__main__":
     import sys
     from ase.io import read as ACE_read
-    Label = str(sys.argv[1].split('.inp')[0])
+    label = str(sys.argv[1].split('.inp')[0])
     system_changes = None
-    a = ACE_read(Label + '.inp', format='acemolecule-input')
+    a = ACE_read(label + '.inp', format='acemolecule-input')
 
-    filename = Label + '.log'
+    filename = label + '.log'

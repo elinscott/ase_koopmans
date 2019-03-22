@@ -52,22 +52,6 @@ class ACE(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command=command, **kwargs)
 
-    def get_property(self, name, atoms=None, allow_calculation=True):
-        '''Make input, xyz after that calculate and get_property(energy, forces, and so on)
-           And when you want to calculate optimziation calculation and input doesn't have Force section, this fuctions automatically wrtie Force section in input.
-
-            Parameters
-            ==========
-            name:str
-                It means implimented_properties
-            atoms : ase.atoms
-        '''
-        self.results = {}
-        self.write_input(atoms, properties=[name])
-        result = super().get_property(name, atoms, allow_calculation)
-
-        return result
-
     def set(self, **kwargs):
         '''Change or add parameters and return changed parameter
             Parameters
