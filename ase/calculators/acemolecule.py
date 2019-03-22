@@ -12,7 +12,11 @@ from ase.calculators.calculator import FileIOCalculator
 class ACE(FileIOCalculator):
     '''
     ACE-Molecule logfile reader
+    It has default parameters of each input section
+    And parameters' type = list of dictionaries
     '''
+
+
     name = 'ace'
     implemented_properties = ['energy', 'forces',
                               'geometry', 'excitation-energy']
@@ -56,8 +60,12 @@ class ACE(FileIOCalculator):
         '''Change or add parameters and return changed parameter
             Parameters
             ==========
-            kwargs:dict
-                It is parameter that we want to change
+            kwargs: It is parameter that we want to change and type is dictionary
+            
+            
+            Returns
+            =======
+            kwargs
         '''
         new_parameters = deepcopy(self.parameters)
         changed_parameters = FileIOCalculator.set(self, **kwargs)
@@ -102,7 +110,13 @@ class ACE(FileIOCalculator):
         atoms.write("{}_opt.xyz".format(self.label))
 
     def write_input(self, atoms, properties=None, system_changes=None):
-        '''Writes the input file and xyz file. 
+        '''Writes the input file and xyz file. And if properties is ['forces'], add'Force' to parameters['order']
+            
+            Parameters
+            ==========
+            atoms : ASE atoms
+            properties : one of Implement_properties, and type is list 
+        
         '''
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         inputfile = open(self.label + '.inp', 'w')
@@ -120,6 +134,7 @@ class ACE(FileIOCalculator):
     def read_results(self):
         '''Read results from logfile. results consist of quantites. And default quantities = [energy, forces, atoms, excitation-energy]
             temporarily excitation-energy value is 1. This is becuase preferentially we want to calculate TDDFT by using ase.
+        
         '''
         filename = self.label + '.log'
         f = open(filename, "r")
@@ -133,7 +148,14 @@ class ACE(FileIOCalculator):
                 filename, quantity=value)
 
     def write_acemolecule_section(self, fpt, section, indent=0):
-        '''Write parameters in each section of input '''
+        '''Write parameters in each section of input 
+            
+            Parameters
+            ==========
+            fpt : ACE-Moleucle input file name
+            section : self.parameters
+
+        '''
         for key, val in section.items():
             if isinstance(val, str) or isinstance(val, int) or isinstance(val, float):
                 fpt.write('    ' * indent + str(key) + " " + str(val) + "\n")
@@ -209,7 +231,19 @@ class ACE(FileIOCalculator):
 
 
 def update_parameter(oldpar, newpar):
-    '''Replace val of dict or add new dict into oldpar from newpar '''
+    '''Replace or add dict into oldpar from newpar 
+        
+        Parameters
+        ==========
+        oldpar : original parameters
+        newpar : new dictionary that we want to change or add to origianl parameters.
+
+
+        Return
+        ======
+        oldpar
+
+    '''
     for key, val in newpar.items():
         if key in oldpar:
             if isinstance(val, dict):

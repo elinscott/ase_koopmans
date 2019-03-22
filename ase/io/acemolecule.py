@@ -61,7 +61,8 @@ def read_acemolecule_out(filename, quantity='atoms'):
     atom_symbol = np.array(data["Atomic_numbers"])
     positions = np.array(data["Positions"])
     atoms = Atoms(atom_symbol, positions=positions)
-
+#    energy = None
+#    force = None
     with open(filename, 'r') as f:
         lines = f.readlines()
     
@@ -84,17 +85,19 @@ def read_acemolecule_out(filename, quantity='atoms'):
         return energy
 
     if quantity == 'forces':
+        forces = []
         for i in range(len(lines) - 1, 1, -1):
             if '!============================' in lines[i]:
                 endline_num = i
             if '! Force:: List of total force in atomic unit' in lines[i]:
-                forces = []
                 startline_num = i+2
                 for j in range(startline_num, endline_num):
                     forces.append(lines[j].split()[3:6])
                 convert = ase.units.Hartree / ase.units.Bohr
                 forces = np.array(forces, dtype=float) * convert
                 break
+        if not len(forces)>0:
+            forces = None
         return forces
 
     if quantity == 'atoms':
