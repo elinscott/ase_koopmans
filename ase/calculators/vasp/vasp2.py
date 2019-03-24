@@ -196,6 +196,9 @@ class Vasp2(GenerateVaspInput, Calculator):
             atoms = kwargs.pop('atoms')
             self.set_atoms(atoms)  # Resets results
 
+        if 'command' in kwargs:
+            self.command = kwargs.pop('command')
+
         changed_parameters.update(Calculator.set(self, **kwargs))
 
         # We might at some point add more to changed parameters, or use it
