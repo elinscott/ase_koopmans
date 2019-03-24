@@ -12,11 +12,14 @@ Requirements
 
 * Python_ 3.4 or later
 * NumPy_ (base N-dimensional array package)
+* SciPy_ (library for scientific computing)
 
 Optional:
 
-* SciPy_ (library for scientific computing)
+
 * For ASE's GUI: Matplotlib_ (2D Plotting)
+* tkinter (for ase.gui)
+* Flask (for ase.db web-interface)
 
 
 Installation
