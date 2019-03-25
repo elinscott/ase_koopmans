@@ -43,7 +43,7 @@ class MinimaHopping:
 
         # when a MD sim. has passed a local minimum:
         self._passedminimum = PassedMinimum()
-        
+
         # Misc storage.
         self._previous_optimum = None
         self._previous_energy = None
@@ -206,12 +206,13 @@ class MinimaHopping:
         self._temperature *= self._beta3
         self._log('msg', 'Found a new minimum.')
         self._log('par')
-        if (self._atoms.get_potential_energy() <
-            self._previous_energy + self._Ediff):
-                self._log('msg', 'Accepted new minimum.')
-                self._Ediff *= self._alpha1
-                self._log('par')
-                self._record_minimum()
+        if (self._previous_energy is None or
+            (self._atoms.get_potential_energy() <
+                self._previous_energy + self._Ediff)):
+            self._log('msg', 'Accepted new minimum.')
+            self._Ediff *= self._alpha1
+            self._log('par')
+            self._record_minimum()
         else:
             self._log('msg', 'Rejected new minimum due to energy. '
                              'Restoring last minimum.')
@@ -553,7 +554,7 @@ class MHPlot:
         ediffax = fig.add_axes((lm, bm + 2. * epotheight + vg1 + vg2,
                                 figwidth, parfigheight))
         tempax = fig.add_axes((lm, (bm + 2 * epotheight + vg1 + 2 * vg2 +
-                               parfigheight), figwidth, parfigheight))
+                                    parfigheight), figwidth, parfigheight))
         for ax in [ax2, tempax, ediffax]:
             ax.set_xticklabels([])
         ax1.set_xlabel('step')
@@ -667,6 +668,7 @@ def floatornan(value):
 class CombinedAxis:
     """Helper class for MHPlot to plot on split y axis and adjust limits
     simultaneously."""
+
     def __init__(self, ax1, ax2, tempax, ediffax):
         self.ax1 = ax1
         self.ax2 = ax2
