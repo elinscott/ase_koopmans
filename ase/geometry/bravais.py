@@ -97,13 +97,16 @@ class BravaisLattice(ABC):
                                  npoints=0)
         return bandpath.plot(**plotkwargs)
 
-    def bandpath(self, path=None, npoints=50, special_points=None):
-        # npoints should depend on the length of the path
+    def bandpath(self, path=None, npoints=None, special_points=None):
         if special_points is None:
             special_points = self.get_special_points()
 
         if path is None:
             path = self.variant.special_path
+
+        if npoints is None:
+            # set npoints using the length of the path
+            npoints = 10 * ( len(path) - 1 - path.count(',')*2 )    # 10 points times # of segments
 
         bandpath = BandPath(cell=self.tocell(), labelseq=path,
                             special_points=special_points)
