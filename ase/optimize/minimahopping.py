@@ -272,7 +272,6 @@ class MinimaHopping:
         exists = os.path.exists(self._minima_traj)
         if exists:
             empty = os.path.getsize(self._minima_traj) == 0
-        if os.path.exists(self._minima_traj):
             if not empty:
                 traj = io.Trajectory(self._minima_traj, 'r')
                 self._minima = [atoms for atoms in traj]
