@@ -156,7 +156,7 @@ class ACE(FileIOCalculator):
         atoms : ASE atoms object
         '''
         filename = self.label + '.log'
-        quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
+#        quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
         #for section_name in quantities:
         self.results = read_acemolecule_out(filename,self.results)
 

@@ -62,7 +62,7 @@ def read_acemolecule_out(filename,results={}):
     positions = np.array(data["Positions"])
     atoms = Atoms(atom_symbol, positions=positions)
     energy = None
-    force = None
+    forces = None
     excitation_energy = None
 #    results = {}
     if len(results)<1:
