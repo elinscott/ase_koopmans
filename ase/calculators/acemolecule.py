@@ -16,6 +16,7 @@ class ACE(FileIOCalculator):
 
     name = 'ace'
     implemented_properties = ['energy', 'forces', 'excitation-energy' ]
+#    results = {}
                              # 'geometry', 'excitation-energy']
     # defaults is default section_name of ACE-input
     basic_list = [{
@@ -36,8 +37,8 @@ class ACE(FileIOCalculator):
     }]
 
     order_list = ['BasicInformation', 'Guess', 'Scf']
-
-    default_parameters = {'BasicInformation': basic_list,
+    guess_list = [{}]
+    default_parameters = {'BasicInformation': basic_list, 'Guess' : guess_list,
                           'Scf': scf_list, 'Force': force_list, 'TDDFT': tddft_list, 'order': order_list}
     parameters = default_parameters
     command = 'mpirun -np 1 ../ace PREFIX.inp > PREFIX.log'
@@ -139,7 +140,7 @@ class ACE(FileIOCalculator):
         Updated version of self.parameters; geometry file and optionally Force section are updated.
         '''
         copied_parameters = deepcopy(self.parameters)
-        if not properties is None and "force" in properties and not 'Force' in copied_parameters['order']:
+        if not properties is None and "forces" in properties and not 'Force' in copied_parameters['order']:
             copied_parameters['order'].append('Force')
         copied_parameters["BasicInformation"][0]["GeometryFilename"] = "{}.xyz".format(self.label)
         copied_parameters["BasicInformation"][0]["GeometryFormat"] = "xyz"
@@ -156,8 +157,8 @@ class ACE(FileIOCalculator):
         '''
         filename = self.label + '.log'
         quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
-        for section_name in quantities:
-            self.results[section_name] = read_acemolecule_out(filename, quantity=section_name)
+        #for section_name in quantities:
+        self.results = read_acemolecule_out(filename,self.results)
 
     def write_acemolecule_section(self, fpt, section, depth=0):
         '''Write parameters in each section of input 

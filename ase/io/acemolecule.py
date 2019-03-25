@@ -39,7 +39,7 @@ def parse_geometry(filename):
         return {"Atomic_numbers": atoms, "Positions": positions}
 
 
-def read_acemolecule_out(filename, quantity='atoms'):
+def read_acemolecule_out(filename,results={}):
     '''Interface to ACEMoleculeReader and return values for corresponding quantity
     Parameters
     ==========
@@ -61,19 +61,18 @@ def read_acemolecule_out(filename, quantity='atoms'):
     atom_symbol = np.array(data["Atomic_numbers"])
     positions = np.array(data["Positions"])
     atoms = Atoms(atom_symbol, positions=positions)
-#    energy = None
-#    force = None
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-    
-    # Set calculator to 
-    calc = SinglePointCalculator(atoms)
-    atoms.set_calculator(calc)
-
-    if quantity == 'excitation-energy':
-        return None
-
-    if quantity == 'energy':
+    energy = None
+    force = None
+    excitation_energy = None
+#    results = {}
+    if len(results)<1:
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+        
+        # Set calculator to 
+        calc = SinglePointCalculator(atoms)
+        atoms.set_calculator(calc)
+        
         for i in range(len(lines) - 1, 1, -1):
             line = lines[i].split()
             if len(line) > 2:
@@ -82,9 +81,7 @@ def read_acemolecule_out(filename, quantity='atoms'):
                     break
         # energy must be modified, hartree to eV
         energy *= ase.units.Hartree
-        return energy
-
-    if quantity == 'forces':
+        
         forces = []
         for i in range(len(lines) - 1, 1, -1):
             if '!============================' in lines[i]:
@@ -98,10 +95,13 @@ def read_acemolecule_out(filename, quantity='atoms'):
                 break
         if not len(forces)>0:
             forces = None
-        return forces
+        
+        results['energy'] = energy
+        results['atoms'] = atoms
+        results['forces'] = forces
+        results['excitation-energy'] = excitation_energy
 
-    if quantity == 'atoms':
-        return atoms
+    return results
 
 
 def read_acemolecule_input(filename):
