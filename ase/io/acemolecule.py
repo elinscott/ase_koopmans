@@ -39,7 +39,7 @@ def parse_geometry(filename):
         return {"Atomic_numbers": atoms, "Positions": positions}
 
 
-def read_acemolecule_out(filename,results={}):
+def read_acemolecule_out(filename):
     '''Interface to ACEMoleculeReader and return values for corresponding quantity
     Parameters
     ==========
@@ -65,41 +65,41 @@ def read_acemolecule_out(filename,results={}):
     forces = None
     excitation_energy = None
 #    results = {}
-    if len(results)<1:
-        with open(filename, 'r') as f:
-            lines = f.readlines()
-        
-        # Set calculator to 
-        calc = SinglePointCalculator(atoms)
-        atoms.set_calculator(calc)
-        
-        for i in range(len(lines) - 1, 1, -1):
-            line = lines[i].split()
-            if len(line) > 2:
-                if line[0] == 'Total' and line[1] == 'energy':
-                    energy = float(line[3])
-                    break
-        # energy must be modified, hartree to eV
-        energy *= ase.units.Hartree
-        
-        forces = []
-        for i in range(len(lines) - 1, 1, -1):
-            if '!============================' in lines[i]:
-                endline_num = i
-            if '! Force:: List of total force in atomic unit' in lines[i]:
-                startline_num = i+2
-                for j in range(startline_num, endline_num):
-                    forces.append(lines[j].split()[3:6])
-                convert = ase.units.Hartree / ase.units.Bohr
-                forces = np.array(forces, dtype=float) * convert
+#    if len(results)<1:
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+    
+    # Set calculator to 
+    calc = SinglePointCalculator(atoms)
+    atoms.set_calculator(calc)
+    
+    for i in range(len(lines) - 1, 1, -1):
+        line = lines[i].split()
+        if len(line) > 2:
+            if line[0] == 'Total' and line[1] == 'energy':
+                energy = float(line[3])
                 break
-        if not len(forces)>0:
-            forces = None
-        
-        results['energy'] = energy
-        results['atoms'] = atoms
-        results['forces'] = forces
-        results['excitation-energy'] = excitation_energy
+    # energy must be modified, hartree to eV
+    energy *= ase.units.Hartree
+    
+    forces = []
+    for i in range(len(lines) - 1, 1, -1):
+        if '!============================' in lines[i]:
+            endline_num = i
+        if '! Force:: List of total force in atomic unit' in lines[i]:
+            startline_num = i+2
+            for j in range(startline_num, endline_num):
+                forces.append(lines[j].split()[3:6])
+            convert = ase.units.Hartree / ase.units.Bohr
+            forces = np.array(forces, dtype=float) * convert
+            break
+    if not len(forces)>0:
+        forces = None
+    results = {}
+    results['energy'] = energy
+    results['atoms'] = atoms
+    results['forces'] = forces
+    results['excitation-energy'] = excitation_energy
 
     return results
 

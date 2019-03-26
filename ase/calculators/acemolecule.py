@@ -158,7 +158,7 @@ class ACE(FileIOCalculator):
         filename = self.label + '.log'
 #        quantities = ['energy', 'forces', 'atoms', 'excitation-energy']
         #for section_name in quantities:
-        self.results = read_acemolecule_out(filename,self.results)
+        self.results = read_acemolecule_out(filename)
 
     def write_acemolecule_section(self, fpt, section, depth=0):
         '''Write parameters in each section of input 
