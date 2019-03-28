@@ -80,7 +80,7 @@ def merge_intervals(intervals):
         combined_score = sum([e.score for e in relevant])
         amin = min([e.a for e in relevant])
         bmax = max([e.b for e in relevant])
-        best = max(intervals, key=lambda x: x.score)
+        best = max(relevant, key=lambda x: x.score)
         merged = KInterval(amin, bmax, best.h, best.components, best.cdim,
                            score=combined_score)
         merged_intervals.append(merged)
