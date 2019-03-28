@@ -178,8 +178,8 @@ def build_kintervals(atoms, method):
                 continue
 
             # If any components were merged, create a new interval
-            # Only keep intervals of non-zero width
             if k != kprev:
+                # Only keep intervals of non-zero width
                 intervals.append(build_kinterval(kprev, k, hprev,
                                                  components_prev, cdim_prev))
 
@@ -243,4 +243,5 @@ def analyze_kintervals(atoms, method='RDA', merge=True):
     if merge:
         intervals = merge_intervals(intervals)
 
+    # Sort intervals by score. Interval width resolves ambiguity when score=0.
     return sorted(intervals, reverse=True, key=lambda x: (x.score, x.b - x.a))
