@@ -226,7 +226,7 @@ def isolate_cluster(atoms, components, k, v):
     positions, numbers = build_supercomponent(atoms, components, k, v)
     positions -= np.min(positions, axis=0)
     cell = np.diag(np.max(positions, axis=0))
-    
+
     atoms = ase.Atoms(numbers=numbers, positions=positions, cell=cell,
                       pbc=[0, 0, 0])
     return atoms
@@ -234,7 +234,39 @@ def isolate_cluster(atoms, components, k, v):
 
 def isolate_components(atoms, k):
 
-    result = collections.defaultdict(list)
+    """Isolates components by dimensionality type.
+
+    Given a k-value cutoff the components (connected clusters) are
+    identified.  For each component an Atoms object is created, which contains
+    that component only.  The geometry of the resulting Atoms object depends
+    on the component dimensionality type:
+
+        0D: The cell is a tight box around the atoms.  pbc=[0,0,0].
+            The cell has no physical meaning.
+
+        1D: The chain is aligned along the z-axis.  pbc=[0,0,1].
+            The x and y cell directions have no physical meaning.
+
+        2D: The layer is aligned in the x-y plane.  pbc=[1,1,0].
+            The z cell direction has no physical meaning.
+
+        3D: The original cell is used. pbc=[1,1,1].
+
+    Parameters:
+
+    atoms: ASE atoms object
+        The system to analyze.
+    k: float
+        The k-value cutoff to use.
+
+    Returns:
+
+    components: dict
+        key: the component dimenionalities.
+        values: a list of Atoms objects for each dimensionality type.
+    """
+
+    data = {}
     components, all_visited = traverse_graph(atoms, k)
 
     for k, v in all_visited.items():
@@ -247,12 +279,15 @@ def isolate_components(atoms, k):
         rank = rank_determination.calc_rank(cells)
 
         if rank == 0:
-            result['0D'].append(isolate_cluster(atoms, components, k, v))
+            data[('0D', key)] = isolate_cluster(atoms, components, k, v)
         elif rank == 1:
-            result['1D'].append(isolate_chain(atoms, components, k, v))
+            data[('1D', key)] = isolate_chain(atoms, components, k, v)
         elif rank == 2:
-            result['2D'].append(isolate_monolayer(atoms, components, k, v))
+            data[('2D', key)] = isolate_monolayer(atoms, components, k, v)
         elif rank == 3:
-            result['3D'].append(isolate_bulk(atoms, components, k, v))
+            data[('3D', key)] = isolate_bulk(atoms, components, k, v)
 
+    result = collections.defaultdict(list)
+    for (dim, _), atoms in data.items():
+        result[dim].append(atoms)
     return result
