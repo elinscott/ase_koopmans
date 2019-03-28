@@ -209,7 +209,9 @@ def analyze_kintervals(atoms, method='RDA', merge=True):
     Parameters:
 
     atoms: ASE atoms object
-        The system to analyze.
+        The system to analyze. The periodic boundary conditions determine
+        the maximum achievable component dimensionality, i.e. pbc=[1,1,0] sets
+        a maximum dimensionality of 2.
     method: string
         Analysis method to use, either 'RDA' (default option) or 'TSA'.
         These correspond to the Rank Determination Algorithm of Mounet et al.
