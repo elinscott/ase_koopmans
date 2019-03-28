@@ -104,10 +104,6 @@ class BravaisLattice(ABC):
         if path is None:
             path = self.variant.special_path
 
-        if npoints is None:
-            # set npoints using the length of the path
-            npoints = 10 * ( len(path) - 1 - path.count(',')*2 )    # 10 points times # of segments
-
         bandpath = BandPath(cell=self.tocell(), labelseq=path,
                             special_points=special_points)
         return bandpath.interpolate(npoints=npoints)

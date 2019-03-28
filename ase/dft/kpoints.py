@@ -135,8 +135,7 @@ class BandPath:
                 'labelseq': self.labelseq,
                 'cell': self.cell}
 
-    def interpolate(self, path=None, npoints=50, special_points=None):
-        # default for npoints should depend on the length of the path
+    def interpolate(self, path=None, npoints=None, special_points=None):
         if path is None:
             path = self.labelseq
 
@@ -247,6 +246,7 @@ def bandpath(path, cell, npoints=50):
     return paths2kpts(paths, cell, npoints)
 
 
+DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
 def paths2kpts(paths, cell, npoints):
     points = np.concatenate(paths)
     dists = points[1:] - points[:-1]
@@ -258,6 +258,11 @@ def paths2kpts(paths, cell, npoints):
         lengths[i - 1] = 0
 
     length = sum(lengths)
+
+    if npoints is None:
+        # set npoints using the length of the path
+        npoints = max(10 * DEFAULT_KPTS_DENSITY, int(round(length * DEFAULT_KPTS_DENSITY)))
+
     kpts = []
     x0 = 0
     x = []
