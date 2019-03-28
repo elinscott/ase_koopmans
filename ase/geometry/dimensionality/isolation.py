@@ -19,6 +19,7 @@ import ase
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 
+from ase.geometry.dimensionality import analyze_dimensionality
 from ase.geometry.dimensionality import interval_analysis
 from ase.geometry.dimensionality import rank_determination
 from ase.geometry.dimensionality.disjoint_set import DisjointSet
@@ -51,11 +52,24 @@ def orthogonal_basis(X, Y=None):
     return Q
 
 
-def traverse_graph(atoms, k):
+def select_cutoff(atoms):
+
+    intervals = analyze_dimensionality(atoms, method='RDA')
+    m = intervals[0]
+    if m.b == float("inf"):
+        return m.a + 0.1
+    else:
+        return (m.a + m.b) / 2
+
+
+def traverse_graph(atoms, kcutoff):
+
+    if kcutoff is None:
+        kcutoff = select_cutoff(atoms)
 
     num_atoms = len(atoms)
     rs = covalent_radii[atoms.get_atomic_numbers()]
-    nl = NeighborList(k * rs, skin=0, self_interaction=False)
+    nl = NeighborList(kcutoff * rs, skin=0, self_interaction=False)
     nl.update(atoms)
     bonds = interval_analysis.get_bond_list(atoms, nl, rs)
 
@@ -232,7 +246,7 @@ def isolate_cluster(atoms, components, k, v):
     return atoms
 
 
-def isolate_components(atoms, k):
+def isolate_components(atoms, kcutoff=None):
 
     """Isolates components by dimensionality type.
 
@@ -256,8 +270,9 @@ def isolate_components(atoms, k):
 
     atoms: ASE atoms object
         The system to analyze.
-    k: float
-        The k-value cutoff to use.
+    kcutoff: float
+        The k-value cutoff to use.  Default=None, in which case the
+        dimensionality scoring parameter is used to select the cutoff.
 
     Returns:
 
@@ -267,7 +282,7 @@ def isolate_components(atoms, k):
     """
 
     data = {}
-    components, all_visited = traverse_graph(atoms, k)
+    components, all_visited = traverse_graph(atoms, kcutoff)
 
     for k, v in all_visited.items():
         v = sorted(list(v))

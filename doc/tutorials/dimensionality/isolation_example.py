@@ -2,7 +2,6 @@ import numpy as np
 import ase.build
 from ase import Atoms
 from ase.visualize import view
-from ase.geometry.dimensionality import analyze_dimensionality
 from ase.geometry.dimensionality import isolate_components
 
 
@@ -17,16 +16,8 @@ atoms = Atoms(numbers=numbers, positions=positions, cell=cell, pbc=[1, 1, 1])
 atoms.cell[2, 2] = 14.0
 
 
-# analyze the dimensionality to get an appropriate k-threshold
-intervals = analyze_dimensionality(atoms, method='RDA')
-m = intervals[0]
-if m.b == float("inf"):
-    k = m.a + 0.1
-else:
-    k = (m.a + m.b) / 2
-
 # isolate each component in the whole material
-result = isolate_components(atoms, k)
+result = isolate_components(atoms)
 print("counts:", [(k, len(v)) for k, v in sorted(result.items())])
 
 for dim, components in result.items():
