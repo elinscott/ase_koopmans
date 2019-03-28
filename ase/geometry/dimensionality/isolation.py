@@ -22,7 +22,6 @@ from ase.neighborlist import NeighborList
 from ase.geometry.dimensionality import analyze_dimensionality
 from ase.geometry.dimensionality import interval_analysis
 from ase.geometry.dimensionality import rank_determination
-from ase.geometry.dimensionality.disjoint_set import DisjointSet
 
 
 def orthogonal_basis(X, Y=None):
@@ -67,23 +66,17 @@ def traverse_graph(atoms, kcutoff):
     if kcutoff is None:
         kcutoff = select_cutoff(atoms)
 
-    num_atoms = len(atoms)
     rs = covalent_radii[atoms.get_atomic_numbers()]
     nl = NeighborList(kcutoff * rs, skin=0, self_interaction=False)
     nl.update(atoms)
     bonds = interval_analysis.get_bond_list(atoms, nl, rs)
 
-    graph_bonds = []
-    graph = DisjointSet(num_atoms)
+    rda = rank_determination.RDA(len(atoms))
     for (k, i, j, offset) in bonds:
-        roffset = tuple(-np.array(offset))
-        graph_bonds.append((i, j, offset))
-        graph_bonds.append((j, i, roffset))
-        if offset == (0, 0, 0):
-            graph.merge(i, j)
-    components = graph.get_components()
+        rda.insert_bond(i, j, offset)
 
-    adj = rank_determination.build_adjacency_list(components, graph_bonds)
+    components = rda.graph.get_components()
+    adj = rank_determination.build_adjacency_list(components, rda.bonds)
     all_visited, ranks = rank_determination.traverse_component_graphs(adj)
     return components, all_visited
 
