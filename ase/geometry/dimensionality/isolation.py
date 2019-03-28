@@ -12,6 +12,7 @@ https://doi.org/10.1103/PhysRevMaterials.3.034003
 
 
 import itertools
+import collections
 import numpy as np
 
 import ase
@@ -73,9 +74,9 @@ def traverse_graph(atoms, k):
     return components, all_visited
 
 
-def build_supercomponent(atoms, components, k, v):
+def build_supercomponent(atoms, components, k, v, anchor=True):
 
-    # build superlayer/superchain by mapping components into visited cells
+    # build supercomponent by mapping components into visited cells
     positions = []
     numbers = []
     seen = set()
@@ -96,8 +97,8 @@ def build_supercomponent(atoms, components, k, v):
 
     # select an 'anchor' atom, which will lie at the origin
     anchor_index = next((i for i in range(len(atoms)) if components[i] == k))
-    anchor = atoms.positions[anchor_index]
-    positions -= anchor
+    if anchor:
+        positions -= atoms.positions[anchor_index]
     return positions, numbers
 
 
@@ -210,10 +211,30 @@ def isolate_monolayer(atoms, components, k, v):
     return ase.Atoms(numbers=numbers, positions=pos, cell=cell, pbc=[1, 1, 0])
 
 
+def isolate_bulk(atoms, components, k, v):
+
+    positions, numbers = build_supercomponent(atoms, components, k, v,
+                                              anchor=False)
+    atoms = ase.Atoms(numbers=numbers, positions=positions, cell=atoms.cell,
+                      pbc=[1, 1, 1])
+    atoms.wrap()
+    return atoms
+
+
+def isolate_cluster(atoms, components, k, v):
+
+    positions, numbers = build_supercomponent(atoms, components, k, v)
+    positions -= np.min(positions, axis=0)
+    cell = np.diag(np.max(positions, axis=0))
+    
+    atoms = ase.Atoms(numbers=numbers, positions=positions, cell=cell,
+                      pbc=[0, 0, 0])
+    return atoms
+
+
 def isolate_components(atoms, k):
 
-    chains = {}
-    monolayers = {}
+    result = collections.defaultdict(list)
     components, all_visited = traverse_graph(atoms, k)
 
     for k, v in all_visited.items():
@@ -225,9 +246,13 @@ def isolate_components(atoms, k):
         cells = np.array([offset for c, offset in v if c == k])
         rank = rank_determination.calc_rank(cells)
 
-        if rank == 1:
-            chains[key] = isolate_chain(atoms, components, k, v)
+        if rank == 0:
+            result['0D'].append(isolate_cluster(atoms, components, k, v))
+        elif rank == 1:
+            result['1D'].append(isolate_chain(atoms, components, k, v))
         elif rank == 2:
-            monolayers[key] = isolate_monolayer(atoms, components, k, v)
+            result['2D'].append(isolate_monolayer(atoms, components, k, v))
+        elif rank == 3:
+            result['3D'].append(isolate_bulk(atoms, components, k, v))
 
-    return list(chains.values()), list(monolayers.values())
+    return result
