@@ -56,7 +56,7 @@ all_formats = {
     'castep-md': ('CASTEP molecular dynamics file', '+F'),
     'castep-phonon': ('CASTEP phonon file', '1F'),
     'cfg': ('AtomEye configuration', '1F'),
-    'cif': ('CIF-file', '+F'),
+    'cif': ('CIF-file', '+B'),
     'cmdft': ('CMDFT-file', '1F'),
     'crystal': ('Crystal fort.34 format', '1S'),
     'cube': ('CUBE file', '1F'),
