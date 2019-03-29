@@ -299,6 +299,11 @@ class SymmetryEquivalenceCheck(object):
             # we need potentially to swap s1 and s2 for robust comparison
             self._least_frequent_element_to_origin(self.s2)
             switch = self._switch_reference_struct()
+            if switch:
+                old_matrices = matrices
+                old_translations = translations
+                matrices, translations = \
+                    self._get_rotation_reflection_matrices()
 
             # Calculate tolerance on positions
             self.position_tolerance = \
@@ -311,6 +316,8 @@ class SymmetryEquivalenceCheck(object):
             self.s1 = s1.copy()
             if switch:
                 self.expanded_s1 = self.expanded_s2
+                matrices = old_matrices
+                translations = old_translations
         return False
 
     def _set_least_frequent_element(self, atoms):
