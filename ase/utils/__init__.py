@@ -475,3 +475,25 @@ def experimental(func):
                       ExperimentalFeatureWarning)
         return func(*args, **kwargs)
     return expfunc
+
+
+def lazymethod(meth):
+    """Decorator for lazy evaluation and caching of data."""
+    name = meth.__name__
+    @functools.wraps(meth)
+    def getter(self):
+        try:
+            cache = self._lazy_cache
+        except AttributeError:
+            cache = self._lazy_cache = {}
+
+        if name not in cache:
+            cache[name] = meth(self)
+        return cache[name]
+    return getter
+
+
+def lazyproperty(meth):
+    """Lazy method which is a property."""
+    name = meth.__name__
+    return property(lazymethod(meth))
