@@ -98,8 +98,6 @@ init_statements = [
     value TEXT)""",
 
     "INSERT INTO information VALUES ('version', '{}')".format(VERSION),
-
-    """CREATE TABLE external_table_info (name TEXT, datatype TEXT)"""
     ]
 
 index_statements = [
@@ -228,16 +226,6 @@ class SQLite3Database(Database, object):
         if self.version < 5 and not self._allow_reading_old_format:
             raise IOError('Please convert to new format. ' +
                           'Use: python -m ase.db.convert ' + self.filename)
-
-        # Check that external_tables_info is present
-        cur = con.execute(
-            'SELECT COUNT(*) FROM sqlite_master '
-            'WHERE name="external_table_info"')
-
-        if cur.fetchone()[0] == 0:
-            sql = "CREATE TABLE external_table_info (name TEXT, datatype TEXT)"
-            cur.execute(sql)
-            con.commit()
 
         self.initialized = True
 
@@ -742,7 +730,7 @@ class SQLite3Database(Database, object):
         """Return a list with the external table names."""
         con = db_con or self.connection or self._connect()
         cur = con.cursor()
-        sql = "SELECT name FROM external_table_info"
+        sql = "SELECT value FROM information WHERE name='external_table_name'"
         cur.execute(sql)
         ext_tab_names = [x[0] for x in cur.fetchall()]
 
@@ -778,9 +766,11 @@ class SQLite3Database(Database, object):
         sql += "FOREIGN KEY (id) REFERENCES systems(id))"
         cur.execute(sql)
 
-        # Insert the new table name in external_table_info
-        sql = "INSERT INTO external_table_info VALUES (?, ?)"
-        cur.execute(sql, (name, dtype))
+        sql = "INSERT INTO information VALUES (?, ?)"
+        # Insert an entry saying that there is a new external table
+        # present and an entry with the datatype
+        cur.execute(sql, ("external_table_name", name))
+        cur.execute(sql, (name+"_dtype", dtype))
 
         if self.connection is None and db_con is None:
             con.commit()
@@ -797,8 +787,10 @@ class SQLite3Database(Database, object):
         sql = "DROP TABLE {}".format(name)
         cur.execute(sql)
 
-        sql = "DELETE FROM external_table_info WHERE name=?"
+        sql = "DELETE FROM information WHERE value=?"
         cur.execute(sql, (name,))
+        sql = "DELETE FROM information WHERE name=?"
+        cur.execute(sql, (name+"_dtype",))
 
         if self.connection is None:
             con.commit()
@@ -868,8 +860,8 @@ class SQLite3Database(Database, object):
 
     def _get_value_type_of_table(self, cursor, tab_name):
         """Return the expected value name."""
-        sql = "SELECT datatype FROM external_table_info WHERE name=?"
-        cursor.execute(sql, (tab_name,))
+        sql = "SELECT value FROM information WHERE name=?"
+        cursor.execute(sql, (tab_name+"_dtype",))
         return cursor.fetchone()[0]
 
     def _read_external_table(self, name, id):
