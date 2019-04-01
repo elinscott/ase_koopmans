@@ -12,15 +12,16 @@ https://doi.org/10.1103/PhysRevMaterials.3.034003
 
 
 import itertools
+import collections
 import numpy as np
 
 import ase
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 
+from ase.geometry.dimensionality import analyze_dimensionality
 from ase.geometry.dimensionality import interval_analysis
 from ase.geometry.dimensionality import rank_determination
-from ase.geometry.dimensionality.disjoint_set import DisjointSet
 
 
 def orthogonal_basis(X, Y=None):
@@ -50,32 +51,39 @@ def orthogonal_basis(X, Y=None):
     return Q
 
 
-def traverse_graph(atoms, k):
+def select_cutoff(atoms):
 
-    num_atoms = len(atoms)
+    intervals = analyze_dimensionality(atoms, method='RDA')
+    m = intervals[0]
+    if m.b == float("inf"):
+        return m.a + 0.1
+    else:
+        return (m.a + m.b) / 2
+
+
+def traverse_graph(atoms, kcutoff):
+
+    if kcutoff is None:
+        kcutoff = select_cutoff(atoms)
+
     rs = covalent_radii[atoms.get_atomic_numbers()]
-    nl = NeighborList(k * rs, skin=0, self_interaction=False)
+    nl = NeighborList(kcutoff * rs, skin=0, self_interaction=False)
     nl.update(atoms)
     bonds = interval_analysis.get_bond_list(atoms, nl, rs)
 
-    graph_bonds = []
-    graph = DisjointSet(num_atoms)
+    rda = rank_determination.RDA(len(atoms))
     for (k, i, j, offset) in bonds:
-        roffset = tuple(-np.array(offset))
-        graph_bonds.append((i, j, offset))
-        graph_bonds.append((j, i, roffset))
-        if offset == (0, 0, 0):
-            graph.merge(i, j)
-    components = graph.get_components()
+        rda.insert_bond(i, j, offset)
 
-    adj = rank_determination.build_adjacency_list(components, graph_bonds)
+    components = rda.graph.get_components()
+    adj = rank_determination.build_adjacency_list(components, rda.bonds)
     all_visited, ranks = rank_determination.traverse_component_graphs(adj)
     return components, all_visited
 
 
-def build_supercomponent(atoms, components, k, v):
+def build_supercomponent(atoms, components, k, v, anchor=True):
 
-    # build superlayer/superchain by mapping components into visited cells
+    # build supercomponent by mapping components into visited cells
     positions = []
     numbers = []
     seen = set()
@@ -96,8 +104,8 @@ def build_supercomponent(atoms, components, k, v):
 
     # select an 'anchor' atom, which will lie at the origin
     anchor_index = next((i for i in range(len(atoms)) if components[i] == k))
-    anchor = atoms.positions[anchor_index]
-    positions -= anchor
+    if anchor:
+        positions -= atoms.positions[anchor_index]
     return positions, numbers
 
 
@@ -210,11 +218,64 @@ def isolate_monolayer(atoms, components, k, v):
     return ase.Atoms(numbers=numbers, positions=pos, cell=cell, pbc=[1, 1, 0])
 
 
-def isolate_components(atoms, k):
+def isolate_bulk(atoms, components, k, v):
 
-    chains = {}
-    monolayers = {}
-    components, all_visited = traverse_graph(atoms, k)
+    positions, numbers = build_supercomponent(atoms, components, k, v,
+                                              anchor=False)
+    atoms = ase.Atoms(numbers=numbers, positions=positions, cell=atoms.cell,
+                      pbc=[1, 1, 1])
+    atoms.wrap()
+    return atoms
+
+
+def isolate_cluster(atoms, components, k, v):
+
+    positions, numbers = build_supercomponent(atoms, components, k, v)
+    positions -= np.min(positions, axis=0)
+    cell = np.diag(np.max(positions, axis=0))
+
+    atoms = ase.Atoms(numbers=numbers, positions=positions, cell=cell,
+                      pbc=[0, 0, 0])
+    return atoms
+
+
+def isolate_components(atoms, kcutoff=None):
+
+    """Isolates components by dimensionality type.
+
+    Given a k-value cutoff the components (connected clusters) are
+    identified.  For each component an Atoms object is created, which contains
+    that component only.  The geometry of the resulting Atoms object depends
+    on the component dimensionality type:
+
+        0D: The cell is a tight box around the atoms.  pbc=[0,0,0].
+            The cell has no physical meaning.
+
+        1D: The chain is aligned along the z-axis.  pbc=[0,0,1].
+            The x and y cell directions have no physical meaning.
+
+        2D: The layer is aligned in the x-y plane.  pbc=[1,1,0].
+            The z cell direction has no physical meaning.
+
+        3D: The original cell is used. pbc=[1,1,1].
+
+    Parameters:
+
+    atoms: ASE atoms object
+        The system to analyze.
+    kcutoff: float
+        The k-value cutoff to use.  Default=None, in which case the
+        dimensionality scoring parameter is used to select the cutoff.
+
+    Returns:
+
+    components: dict
+        key: the component dimenionalities.
+        values: a list of Atoms objects for each dimensionality type.
+    """
+
+    data = {}
+    components, all_visited = traverse_graph(atoms, kcutoff)
 
     for k, v in all_visited.items():
         v = sorted(list(v))
@@ -225,9 +286,16 @@ def isolate_components(atoms, k):
         cells = np.array([offset for c, offset in v if c == k])
         rank = rank_determination.calc_rank(cells)
 
-        if rank == 1:
-            chains[key] = isolate_chain(atoms, components, k, v)
+        if rank == 0:
+            data[('0D', key)] = isolate_cluster(atoms, components, k, v)
+        elif rank == 1:
+            data[('1D', key)] = isolate_chain(atoms, components, k, v)
         elif rank == 2:
-            monolayers[key] = isolate_monolayer(atoms, components, k, v)
+            data[('2D', key)] = isolate_monolayer(atoms, components, k, v)
+        elif rank == 3:
+            data[('3D', key)] = isolate_bulk(atoms, components, k, v)
 
-    return list(chains.values()), list(monolayers.values())
+    result = collections.defaultdict(list)
+    for (dim, _), atoms in data.items():
+        result[dim].append(atoms)
+    return result
