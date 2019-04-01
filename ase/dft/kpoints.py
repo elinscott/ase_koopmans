@@ -135,14 +135,14 @@ class BandPath:
                 'labelseq': self.labelseq,
                 'cell': self.cell}
 
-    def interpolate(self, path=None, npoints=None, special_points=None):
+    def interpolate(self, path=None, npoints=None, special_points=None, density=None):
         if path is None:
             path = self.labelseq
 
         special_points = {} if special_points is None else dict(special_points)
         special_points.update(self.special_points)
         pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
-        kpts, x, X = paths2kpts(pathcoords, self.cell, npoints)
+        kpts, x, X = paths2kpts(pathcoords, self.cell, npoints, density)
         return BandPath(self.cell, kpts, labelseq=path,
                         special_points=special_points)
 
@@ -207,7 +207,7 @@ class BandPath:
                          **kw)
 
 
-def bandpath(path, cell, npoints=50):
+def bandpath(path, cell, npoints=None, density=None):
     """Make a list of kpoints defining the path between the given points.
 
     path: list or str
@@ -219,7 +219,18 @@ def bandpath(path, cell, npoints=50):
     cell: 3x3
         Unit cell of the atoms.
     npoints: int
-        Length of the output kpts list.
+        Length of the output kpts list. If too small, at least the beginning
+        and ending point of each path segment will be used. If None (default),
+        it will be calculated using the supplied density or a default one.
+    density: float
+        k-points per A⁻¹ on the output kpts list. If npoints is None,
+        the number of k-points in the output list will be:
+        npoints = density * path total length (in Angstroms).
+        If density is None (default), a value of 5 k-points per A⁻¹ will be used.
+        If the calculated npoints value is less than 50, a mimimum value of 50
+        will be used.
+
+    You may define npoints or density but not both.
 
     Return list of k-points, list of x-coordinates and list of
     x-coordinates of special points."""
@@ -243,11 +254,13 @@ def bandpath(path, cell, npoints=50):
         paths = path
 
     # XXX should return BandPath object
-    return paths2kpts(paths, cell, npoints)
+    return paths2kpts(paths, cell, npoints, density)
 
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
-def paths2kpts(paths, cell, npoints):
+def paths2kpts(paths, cell, npoints=None, density=None):
+    if not(npoints is None or density is None):
+        raise ValueError('You may define npoints or density, but not both.')
     points = np.concatenate(paths)
     dists = points[1:] - points[:-1]
     lengths = [np.linalg.norm(d) for d in kpoint_convert(cell, skpts_kc=dists)]
@@ -260,8 +273,10 @@ def paths2kpts(paths, cell, npoints):
     length = sum(lengths)
 
     if npoints is None:
+        if density is None:
+            density = DEFAULT_KPTS_DENSITY
         # set npoints using the length of the path
-        npoints = max(10 * DEFAULT_KPTS_DENSITY, int(round(length * DEFAULT_KPTS_DENSITY)))
+        npoints = max(10 * DEFAULT_KPTS_DENSITY, int(round(length * density)))
 
     kpts = []
     x0 = 0
