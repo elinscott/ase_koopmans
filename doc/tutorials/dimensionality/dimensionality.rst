@@ -18,6 +18,12 @@ dimensionality.
 Coloring the atoms by their tags shows the distinct bonded clusters, which in
 this case are separate layers.
 
+Each component in the material can be extracted, or "*isolated*",
+using the :func:`ase.geometry.dimensionality.isolate_components` function as
+the example below demonstrates.
+
+.. literalinclude:: isolation_example.py
+
 The method is described in the article:
 
   | P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
