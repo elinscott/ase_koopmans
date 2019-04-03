@@ -4,23 +4,9 @@ import json
 import numpy as np
 from ase.utils import reader, writer
 
+
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, np.ndarray) or hasattr(obj, '__array__'):
-            # XXX the __array__ check will save cells as numpy arrays.
-            # In the future we should perhaps save it as a Cell, so that
-            # it can be restored as a Cell.  We should allow this with
-            # other objects as well through todict().
-            if obj.dtype == complex:
-                return {'__complex_ndarray__': (obj.real.tolist(),
-                                                obj.imag.tolist())}
-            return obj.tolist()
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.bool_):
-            return bool(obj)
-        if isinstance(obj, datetime.datetime):
-            return {'__datetime__': obj.isoformat()}
         if hasattr(obj, 'todict'):
             d = obj.todict()
 
@@ -32,6 +18,17 @@ class MyEncoder(json.JSONEncoder):
                 d['__ase_objtype__'] = obj.ase_objtype
 
             return d
+        if isinstance(obj, np.ndarray) or hasattr(obj, '__array__'):
+            if obj.dtype == complex:
+                return {'__complex_ndarray__': (obj.real.tolist(),
+                                                obj.imag.tolist())}
+            return obj.tolist()
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+        if isinstance(obj, datetime.datetime):
+            return {'__datetime__': obj.isoformat()}
         return json.JSONEncoder.default(self, obj)
 
 
@@ -49,17 +46,22 @@ def object_hook(dct):
     if '__ase_objtype__' in dct:
         objtype = dct.pop('__ase_objtype__')
         dct = numpyfy(dct)
-        if objtype == 'bandstructure':
+
+        # We just try each object type one after another and instantiate
+        # them manually, depending on which kind it is.
+        # We can formalize this later if it ever becomes necessary.
+        if objtype == 'cell':
+            from ase.geometry.cell import Cell
+            obj = Cell(**dct)
+        elif objtype == 'bandstructure':
             from ase.dft.band_structure import BandStructure
             obj = BandStructure(**dct)
         elif objtype == 'bandpath':
             from ase.dft.kpoints import BandPath
-            from ase.geometry.cell import Cell
-            dct['cell'] = Cell(dct['cell'])
-            # XXX We will need Cell to read/write itself so it also has pbc!
             obj = BandPath(**dct)
         else:
-            raise KeyError('Cannot handle type: {}'.format(objtype))
+            raise RuntimeError('Do not know how to decode object type {} '
+                               'into an actual object'.format(objtype))
 
         assert obj.ase_objtype == objtype
         return obj

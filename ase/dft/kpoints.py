@@ -6,6 +6,7 @@ from math import sin, cos
 
 import numpy as np
 
+from ase.utils import jsonable
 from ase.geometry import cell_to_cellpar, crystal_structure_from_cell
 
 
@@ -104,9 +105,8 @@ def resolve_kpt_path_string(path, special_points):
     return paths, coords
 
 
+@jsonable('bandpath')
 class BandPath:
-    ase_objtype = 'bandpath'
-
     def __init__(self, cell, scaled_kpts=None,
                  special_points=None, labelseq=None):
         if scaled_kpts is None:
@@ -145,18 +145,6 @@ class BandPath:
         kpts, x, X = paths2kpts(pathcoords, self.cell, npoints, density)
         return BandPath(self.cell, kpts, labelseq=path,
                         special_points=special_points)
-
-
-    def write(self, filename):
-        # XXX could be provided by a class decorator,
-        # e.g., @jsonio('bandpath').
-        # That decorator should also provide a static read() function.
-        #
-        # WIP: get rid of similar stuff in BandStructure class.
-        from ase.parallel import paropen
-        from ase.io.jsonio import encode
-        with paropen(filename, 'w') as fd:
-            fd.write(encode(self))
 
     def _scale(self, coords):
         return np.dot(coords, self.icell)
