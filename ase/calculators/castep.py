@@ -2101,12 +2101,14 @@ def get_castep_version(castep_command):
         stdout, stderr = subprocess.Popen(
             castep_command.split() + ['--version'],
             stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE, cwd=temp_dir).communicate()
+            stdout=subprocess.PIPE, cwd=temp_dir,
+            universal_newlines=True).communicate()
         if 'CASTEP version' not in stdout:
             stdout, stderr = subprocess.Popen(
                 castep_command.split() + [jname],
                 stderr=subprocess.PIPE,
-                stdout=subprocess.PIPE, cwd=temp_dir).communicate()
+                stdout=subprocess.PIPE, cwd=temp_dir,
+                universal_newlines=True).communicate()
     except:
         msg = ''
         msg += 'Could not determine the version of your CASTEP binary \n'
