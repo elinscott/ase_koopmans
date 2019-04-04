@@ -744,6 +744,18 @@ def generate_input(atoms, kwargs, normalized2pretty):
     return '\n'.join(_lines)
 
 
+def read_static_info_stress(fd):
+    stress_cv = np.empty((3, 3))
+
+    headers = next(fd)
+    assert headers.strip().startswith('T_{ij}')
+    for i in range(3):
+        line = next(fd)
+        tokens = line.split()
+        vec = np.array(tokens[1:4]).astype(float)
+        stress_cv[i] = vec
+    return stress_cv
+
 def read_static_info_kpoints(fd):
     for line in fd:
         if line.startswith('List of k-points'):
@@ -840,6 +852,11 @@ def read_static_info(fd):
         elif line.startswith('Energy ['):
             unit = get_energy_unit(line)
             results.update(read_static_info_energy(fd, unit))
+        elif line.startswith('Stress tensor'):
+            assert line.split()[-1] == '[H/b^3]'
+            stress = read_static_info_stress(fd)
+            stress *= Hartree / Bohr**3
+            results.update(stress=stress)
         elif line.startswith('Total Magnetic Moment'):
             if 0:
                 line = next(fd)
@@ -908,7 +925,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     The label is always assumed to be a directory."""
 
     implemented_properties = ['energy', 'forces',
-                              'dipole',
+                              'dipole', 'stress',
                               #'magmom', 'magmoms'
     ]
 
