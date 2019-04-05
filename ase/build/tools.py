@@ -548,7 +548,7 @@ def niggli_reduce_cell(cell, epsfactor=None):
     abc = np.sqrt(g[:3])
     cosangles = g[3:] / (2 * abc.prod() / abc)
     angles = 180 * np.arccos(cosangles) / np.pi
-    newcell = np.array(cellpar_to_cell(np.concatenate(abc, angles)),
+    newcell = np.array(cellpar_to_cell(np.concatenate([abc, angles])),
                        dtype=float)
 
     return newcell, C
