@@ -467,23 +467,30 @@ def niggli_reduce_cell(cell, epsfactor=None):
             g = g[[0, 2, 1, 3, 5, 4]]
             continue
 
-        if gt(np.prod(g[3:]), 0, eps**3):
-            ijk = -2 * lt(g[3:], 0) + 1
+        lmn = np.array(gt(g[3:], 0), dtype=int)
+        lmn -= np.array(lt(g[3:], 0), dtype=int)
+
+        if lmn.prod() == 1:
+            ijk = lmn.copy()
+            for idx in range(3):
+                if ijk[idx] == 0:
+                    ijk[idx] = 1
         else:
-            ijk = -2 * gt(g[3:], 0) + 1
+            ijk = np.ones(3, dtype=int)
+            if np.any(lmn != -1):
+                r = None
+                for idx in range(3):
+                    if lmn[idx] == 1:
+                        ijk[idx] = -1
+                    elif lmn[idx] == 0:
+                        r = idx
+                if ijk.prod() == -1:
+                    ijk[r] = -1
 
-            if ijk.prod() == -1:
-                if eq(g[3], 0):
-                    ijk[2] = -1
-                elif eq(g[4], 0):
-                    ijk[1] = -1
-                elif eq(g[5], 0):
-                    ijk[0] = -1
-                else:
-                    raise RuntimeError('p unassigned and i*j*k < 0!')
-
+        g[3] *= ijk[1] * ijk[2]
+        g[4] *= ijk[0] * ijk[2]
+        g[5] *= ijk[0] * ijk[1]
         A = np.diag(ijk)
-        g[3:] *= ijk
         C = np.dot(C, A)
 
         if (gt(abs(g[3]), g[1])
