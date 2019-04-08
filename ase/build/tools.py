@@ -432,11 +432,11 @@ def niggli_reduce_cell(cell, epsfactor=None):
         epsfactor = 1e-5
     eps = epsfactor * abs(np.linalg.det(cell))**(1./3.)
 
-    cell = np.array(np.asarray(cell), dtype=np.float128)
+    cell = np.asarray(cell)
 
     C = np.eye(3, dtype=int)
 
-    g = np.zeros(6, dtype=np.float128)
+    g = np.zeros(6, dtype=float)
     g[0] = np.dot(cell[0], cell[0])
     g[1] = np.dot(cell[1], cell[1])
     g[2] = np.dot(cell[2], cell[2])
