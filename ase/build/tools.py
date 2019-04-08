@@ -434,12 +434,7 @@ def niggli_reduce_cell(cell, epsfactor=None):
 
     cell = np.array(np.asarray(cell), dtype=np.float128)
 
-    # First rotate the cell into standard orientation
-    if np.any(cell[0, 1:] != 0) or cell[1, 2] != 0:
-        C = rotation_matrix(cell[0], [1, 0, 0], cell[1], [0, 1, 0])
-        cell = np.dot(cell, C.T)
-    else:
-        C = np.eye(3, dtype=int)
+    C = np.eye(3, dtype=int)
 
     g = np.zeros(6, dtype=np.float128)
     g[0] = np.dot(cell[0], cell[0])
