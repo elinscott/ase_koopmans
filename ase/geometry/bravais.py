@@ -793,6 +793,9 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
     # forms, Niggli or otherwise.  Else we will not always get the
     # right type.
 
+    if not uc.pbc[2]:
+        get_2d_bravais_lattice(uc, eps, _niggli_reduce)
+    
     # orig_uc = uc
     if _niggli_reduce:
         uc, niggli_op = uc.niggli_reduce()
@@ -1028,6 +1031,43 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
         return cls(A, B, C, *angles), op
 
     raise RuntimeError('Cannot recognize cell at all somehow!')
+
+
+def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
+    # XXX we need to figure out a way to reduce the cell to standard
+    # forms, Niggli or otherwise.  Else we will not always get the
+    # right type.
+
+    # orig_uc = uc
+    if _niggli_reduce:
+        uc, niggli_op = uc.niggli_reduce()
+
+    cellpar = uc.cellpar()
+    a, b = cellpar[:2]
+    gamma = cellpar[-1]
+
+    all_lengths_equal = abs(a - b) < eps
+
+    def allclose(a, b):
+        return np.allclose(a, b, atol=eps)
+
+    if all_lengths_equal:
+        if allclose(gamma, 90):
+            lat = SQR(a), {}
+        elif allclose(gamma, 60):
+            lat = HEX2D(a), {}
+        else:
+            lat = CRECT(a, gamma)
+    else:
+        if allclose(gamma, 90):
+            lat = RECT(a, b), {}
+        else:
+            lat = OBL(a, b, gamma)
+
+    if not allclose(lat._cell - uc._cell, 0):
+        raise RuntimeError('Cannot recognize cell at all somehow!')
+
+    return lat
 
 
 def _test_all_variants():
