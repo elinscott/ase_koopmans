@@ -1150,7 +1150,7 @@ def _test_all_variants():
     yield tri2b
 
 
-def get_2d_points(names, points):
+def get_subset_points(names, points):
     newpoints = {}
     for name in names:
         newpoints[name] = points[name]
