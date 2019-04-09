@@ -1161,77 +1161,97 @@ def get_2d_points(names, points):
 ibz_mono = None  # ibz_points['monoclinic']
 
 
-@bravaisclass('oblique (monoclinic)', 'a',
-              [['OBL', 'GYHCH1X', 'GYHCH1XG',
-                get_2d_points('GHCH1X', ibz_mono)]],
+@bravaisclass('oblique (monoclinic)', ('a', 'b', 'alpha'),
+              [['OBL', 'GYHCH1X', 'GYHCH1XG', None]],
               ndim=2)
 class OBL(BravaisLattice):
-    def __init__(self, a):
+    def __init__(self, a, b):
         BravaisLattice.__init__(self, a)
 
-    def _cell(self, a, c):
-        x = 0.5 * np.sqrt(3)
-        
-        return np.array([[0.5 * a, -x * a, 0], [0.5 * a, x * a, 0],
-                         [0., 0., c]])  # XXX implement me
+    def _cell(self, a, b, alpha):
+        cosa = np.cos(alpha)
+        sina = np.sin(alpha)
 
-    def _special_points():
-        ...  # Implement me
+        return np.array([[a, 0, 0],
+                         [b * cosa, b * sina, 0],
+                         [0., 0., 1]])  # XXX implement me
+
+    def _special_points(self, a, b, alpha):
+        # XXX Check me
+        cosa = np.cos(alpha * _degrees)
+        eta = (1 - a * cosa / b) / (2 * np.sin(alpha * _degrees)**2)
+        nu = .5 - eta * b * cosa / a
+
+        points = [[0, 0, 0],
+                  [.5, .5, 0],
+                  [eta, 1 - nu, 0],
+                  [1 - eta, nu, 0],
+                  [eta, -nu, 0],
+                  [.5, 0, 0],
+                  [0, .5, 0],
+                  [0, -.5, 0]]
+        return points
 
 
 @bravaisclass('hexagonal 2d', 'a',
-              [['HEX2D', 'GMK', 'GMKG', get_2d_points('GMK', ibz_hex)]],
+              [['HEX2D', 'GMK', 'GMKG',
+                get_subset_points('GMK',
+                                  ibz_points['hexagonal'])]],
               ndim=2)
 class HEX2D(BravaisLattice):
     def __init__(self, a):
         BravaisLattice.__init__(self, a)
 
-    def _cell(self, a, c):
+    def _cell(self, a):
         x = 0.5 * np.sqrt(3)
-        return np.array([[0.5 * a, -x * a, 0], [0.5 * a, x * a, 0],
-                         [0., 0., c]])
+        return np.array([[a, 0, 0],
+                         [-0.5 * a, x * a, 0],
+                         [0., 0., 1]])
 
 
 @bravaisclass('rectangular (orthorhombic)', 'ab',
-              [['RECT', 'GMX', 'MGXM', get_2d_points('GMX', ibz_hex)]],
+              [['RECT', 'GXSY', 'GXSYGS',
+                get_subset_points('GXSY',
+                                  ibz_points['orthorhombic'])]],
               ndim=2)
 class RECT(BravaisLattice):
     def __init__(self, a):
         BravaisLattice.__init__(self, a)
 
-    def _cell(self, a, b, c):
+    def _cell(self, a, b):
         return np.array([[a, 0, 0],
                          [0, b, 0],
-                         [0, 0, c]])
+                         [0, 0, 1]])
 
 
+# XXX This should have another path
 @bravaisclass('centered rectangular (orthorhombic)', ('a', 'alpha'),
               [['CRECT', 'GXSY', 'GXSYGS',
-                get_2d_points('GXSY', ibz_points['orthorhombic'])]],
+                get_subset_points('GXSY', ibz_points['orthorhombic'])]],
               ndim=2)
 class CRECT(BravaisLattice):
     def __init__(self, a):
         BravaisLattice.__init__(self, a)
 
-    def _cell(self, a, c, alpha):
+    def _cell(self, a, alpha):
         x = np.cos(alpha / 2)
         y = np.sin(alpha / 2)
         return np.array([[a * x, -a * y, 0],
                          [a * x, a * y, 0],
-                         [0, 0, c]])
+                         [0, 0, 1]])
 
 
 @bravaisclass('square (tetragonal)', ('a'),
               [['SQR', 'GMX', 'MGXM',
-                get_2d_points('GMX', ibz_points['tetragonal'])]],
+                get_subset_points('GMX', ibz_points['tetragonal'])]],
               ndim=2)
 class SQR(BravaisLattice):
     def __init__(self, a):
         BravaisLattice.__init__(self, a)
 
-    def _cell(self, a, c, alpha):
+    def _cell(self, a, alpha):
         x = np.cos(alpha / 2)
         y = np.sin(alpha / 2)
         return np.array([[a * x, -a * y, 0],
                          [a * x, a * y, 0],
-                         [0, 0, c]])
+                         [0, 0, 1]])
