@@ -202,7 +202,7 @@ bravais_names = []
 bravais_lattices = {}
 
 
-def bravaisclass(longname, parameters, variants):
+def bravaisclass(longname, parameters, variants, ndim=3):
     """Decorator for Bravais lattice classes.
 
     This sets a number of class variables and processes the information
@@ -215,7 +215,8 @@ def bravaisclass(longname, parameters, variants):
         cls.parameters = tuple(parameters)
         cls.variant_names = []
         cls.variants = {}
-
+        cls.ndim = ndim
+        
         for [name, special_point_names, special_path,
              special_points] in variants:
             cls.variant_names.append(name)
