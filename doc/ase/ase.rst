@@ -66,7 +66,7 @@ List of all modules:
    geometry
    db/db
    neb
-   ga
+   ga/ga
    gui/gui
    lattice
    cluster/cluster

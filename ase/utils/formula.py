@@ -30,10 +30,12 @@ def _empirical_symbols(count):
     """Find the least common multiple of all symbols"""
     counts = [c for c in count.values()]
     i = counts[0]
+
+    _gcd = i
     for j in counts[1:]:
         _gcd = gcd(i,j)
-        i=_gcd
-    return {k : v//_gcd for k, v in count.items()}
+        i = _gcd
+    return {k : v // _gcd for k, v in count.items()}
 
 
 def formula_hill(numbers, empirical=False):

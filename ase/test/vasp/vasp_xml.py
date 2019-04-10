@@ -26,12 +26,14 @@ def main():
                pbc=True)
     co.center(vacuum=5.)
 
-    calc = Vasp(xc='PBE',
+    calc = Vasp(xc='LDA',
                 prec='Low',
                 algo='Fast',
                 ismear=0,
                 sigma=1.,
+                nbands=12,
                 istart=0,
+                nelm=3,
                 lwave=False,
                 lcharg=False,
                 ldipol=True)

@@ -89,6 +89,9 @@ keyword         type       default value   description
 ``reciprocal``  ``bool``   None            Use reciprocal units if
                                            **k**-points are specified
                                            explicitly
+``net_charge``  ``int``    None            Net charge per unit cell (as
+                                           an alternative to specifying
+                                           the total charge ``nelect``)
 ``prec``        ``str``                    Accuracy of calculation
 ``encut``       ``float``                  Kinetic energy cutoff
 ``ediff``       ``float``                  Convergence break condition

@@ -279,6 +279,24 @@ def test_one_vs_many():
     assert comp.compare(s1, s2_list)
 
 
+def test_supercell_w_periodic_atom_removed(comparator):
+    s1 = Atoms(['H', 'H', 'He', 'He', 'He'], positions=[[.1, .1, .1],
+                                                        [-.1, -.1, -.1],
+                                                        [.4, .3, .2],
+                                                        [.3, .6, .3],
+                                                        [.8, .5, .6]],
+               cell=[1, 1, 1], pbc=True)
+    s1 *= (2, 1, 1)
+    a0 = s1.copy()
+    del a0[0]
+
+    a5 = s1.copy()
+    del a5[5]
+
+    assert comparator.compare(a0, a5)
+    assert comparator.compare(a5, a0) == comparator.compare(a0, a5)
+
+
 def run_all_tests(comparator):
     test_compare(comparator)
     test_fcc_bcc(comparator)
@@ -298,6 +316,7 @@ def run_all_tests(comparator):
     test_order_of_candidates(comparator)
     test_one_vs_many()
     test_original_paper_structures()
+    test_supercell_w_periodic_atom_removed(comparator)
 
 
 comparator = SymmetryEquivalenceCheck()

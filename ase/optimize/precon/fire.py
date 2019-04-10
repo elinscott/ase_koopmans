@@ -66,8 +66,12 @@ class PreconFIRE(Optimizer):
     def read(self):
         self.v, self.dt = self.load()
 
-    def step(self, f):
+    def step(self, f=None):
         atoms = self.atoms
+
+        if f is None:
+            f = atoms.get_forces()
+
         r = atoms.get_positions()
 
         if self.precon is not None:
@@ -161,7 +165,9 @@ class PreconFIRE(Optimizer):
             fmax_sq = (forces**2).sum(axis=1).max()
             return fmax_sq < self.fmax**2
 
-    def log(self, forces):
+    def log(self, forces=None):
+        if forces is None:
+            forces = self.atoms.get_forces()
         if isinstance(self.atoms, UnitCellFilter):
             natoms = len(self.atoms.atoms)
             forces, stress = forces[:natoms], self.atoms.stress

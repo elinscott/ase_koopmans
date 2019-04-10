@@ -129,6 +129,8 @@ class View:
 
         self.window.title = title
 
+        self.call_observers()
+
         if focus:
             self.focus()
         else:

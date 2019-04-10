@@ -104,7 +104,7 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 # Recognized names of calculators sorted alphabetically:
 names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
-         'demon', 'dftb', 'dmol', 'eam', 'elk', 'emt', 'espresso',
+         'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
          'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
          'hotbit', 'jacapo', 'lammpsrun',
          'lammpslib', 'lj', 'mopac', 'morse', 'nwchem', 'octopus', 'onetep',
@@ -112,6 +112,7 @@ names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
 
 
 special = {'cp2k': 'CP2K',
+           'dftd3': 'DFTD3',
            'dmol': 'DMol3',
            'eam': 'EAM',
            'elk': 'ELK',
@@ -148,7 +149,7 @@ def get_calculator(name):
 
 def equal(a, b, tol=None):
     """ndarray-enabled comparison function."""
-    if isinstance(a, np.ndarray):
+    if isinstance(a, np.ndarray) or hasattr(a, '__array__'):
         b = np.array(b)
         if a.shape != b.shape:
             return False
@@ -156,7 +157,7 @@ def equal(a, b, tol=None):
             return (a == b).all()
         else:
             return np.allclose(a, b, rtol=tol, atol=tol)
-    if isinstance(b, np.ndarray):
+    if isinstance(b, np.ndarray) or hasattr(b, '__array__'):
         return equal(b, a, tol)
     if isinstance(a, dict) and isinstance(b, dict):
         if a.keys() != b.keys():
@@ -681,7 +682,7 @@ class Calculator(object):
 class FileIOCalculator(Calculator):
     """Base class for calculators that write/read input/output files."""
 
-    command = None
+    command = None  # str
     'Command used to start calculation'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,

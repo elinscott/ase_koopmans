@@ -50,6 +50,8 @@ from ase.calculators.lammps import CALCULATION_END_MARK
 from ase.calculators.lammps import convert
 
 __all__ = ["LAMMPS"]
+from ase.units import GPa, Ang, fs
+from ase.utils import basestring
 
 
 class LAMMPS(Calculator):
@@ -58,6 +60,8 @@ class LAMMPS(Calculator):
     files: list
         Short explanation XXX
     parameters: dict
+        Short explanation XXX
+    specorder: list
         Short explanation XXX
     keep_tmp_files: bool
         Retain any temporary files created. Mostly useful for debugging.
@@ -280,6 +284,10 @@ class LAMMPS(Calculator):
         """
         name = "ASE_" + self.name.upper() + "_COMMAND"
         self.command = os.environ.get(name, self.command)
+
+    def get_stress(self, atoms):
+        self.update(atoms)
+        return self.stress.copy()
 
         if self.command is not None:
             return
