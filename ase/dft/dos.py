@@ -104,7 +104,8 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
     energies: 1-d array-like
         Energies where the DOS is calculated (must be a uniform grid).
     weights: (n1, n2, n3, nbands, nweights)-shaped ndarray
-        Weights.  Defaults to 1.
+        Weights.  Defaults to a (n1, n2, n3, nbands, 1)-shaped ndarray
+        filled with ones.
     """
 
     from scipy.spatial import Delaunay
@@ -120,14 +121,12 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
 
     nweights = len(weights)
     dos = np.zeros((nweights, len(energies)))
-    print(ltidos, ltidos.__module__)
     ltidos(indices[dt.simplices], eigs, weights, energies, dos, world)
     return dos
 
 
 @cextension
 def ltidos(simplices, eigs, weights, energies, dos, world):
-    print(simplices, eigs, weights, energies, dos, world)
     I, J, K = eigs.shape[:3]
     n = -1
     for i in range(I):
