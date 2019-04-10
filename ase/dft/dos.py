@@ -127,33 +127,93 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
 
 @cextension
 def ltidos(simplices, eigs, weights, energies, dos, world):
-    I, J, K = eigs.shape[:3]
+    shape = eigs.shape[:3]
     n = -1
-    for i in range(I):
-        for j in range(J):
-            for k in range(K):
-                for indices in simplices:
-                    print(indices)
-                    n += 1
-                    if n % world.size != world.rank:
-                        continue
-
-                    E = []
-                    W = []
-                    for a, b, c in indices:
-                        E.append(eigs[(i + a) % I,
-                                      (j + b) % J,
-                                      (k + c) % K])
-                        W.append(weights[(i + a) % I,
-                                         (j + b) % J,
-                                         (k + c) % K])
-                    for e1, e2, e3, e4, w1, w2, w3, w4 in zip(*E, *W):
-                        ltidos1(sorted([(e1, w1), (e2, w2),
-                                        (e3, w3), (e4, w4)]),
-                                energies, dos)
+    for index in np.indices(shape).reshape((3, -1)).T:
+        n += 1
+        if n % world.size != world.rank:
+            continue
+        i = ((index + simplices) % shape).T
+        E = eigs[i[0], i[1], i[2]]
+        W = weights[i[0], i[1], i[2]]
+        for e, w in zip(E.T, W.T):
+            ltidos1(e, w, energies, dos)
     world.sum(dos)
 
 
-def ltidos1(ew, energies, dos):
-    print(ew)
+def ltidos1(e, w, energies, dos):
+    i = e.argsort()
+    e0, e1, e2, e3 = e[i]
 
+    f10 = (enerigies - e0) / (e1 - e0)
+    f20 = (enerigies - e0) / (e2 - e0)
+    f21 = (enerigies - e1) / (e2 - e1)
+    f30 = (enerigies - e0) / (e3 - e0)
+    f31 = (enerigies - e1) / (e3 - e1)
+    f32 = (enerigies - e2) / (e3 - e2)
+    f01 = 1 - f10
+    f02 = 1 - f20
+    f03 = 1 - f30
+    f12 = 1 - f21
+    f13 = 1 - f31
+    f23 = 1 - f32
+
+      if (et_k[1] != et_k[0] && et_k[0] <= omega && omega <= et_k[1])
+        {
+          gw = 3 * f20 * f30 / (et_k[1] - et_k[0]);
+          switch (relk) {
+          case 0:
+            Iw = (f01 + f02 + f03) / 3;
+            break;
+          case 1:
+            Iw = f10 / 3;
+            break;
+          case 2:
+            Iw = f20 / 3;
+            break;
+          case 3:
+            Iw = f30 / 3;
+            break;
+          }
+        }
+      else if (et_k[1] != et_k[2] && et_k[1] < omega && omega < et_k[2])
+        {
+          gw = 3 / delta * (f12 * f20 + f21 * f13);
+          switch (relk) {
+          case 0:
+            Iw = f03 / 3 + f02 * f20 * f12 / (gw * delta);
+            break;
+          case 1:
+            Iw = f12 / 3 + f13 * f13 * f21 / (gw * delta);
+            break;
+          case 2:
+            Iw = f21 / 3 + f20 * f20 * f12 / (gw * delta);
+            break;
+          case 3:
+            Iw = f30 / 3 + f31 * f13 * f21 / (gw * delta);
+            break;
+          }
+        }
+      else if (et_k[2] != et_k[3] && et_k[2] <= omega && omega <= et_k[3])
+        {
+          gw = 3 * f03 * f13 / (et_k[3] - et_k[2]);
+          switch (relk) {
+          case 0:
+            Iw = f03 / 3;
+            break;
+          case 1:
+            Iw = f13 / 3;
+            break;
+          case 2:
+            Iw = f23 / 3;
+            break;
+          case 3:
+            Iw = (f30 + f31 + f32) / 3;
+            break;
+          }
+        }
+      else {
+        continue;
+      }
+      W_w[w] += v_s[s] * Iw * gw;
+    }
