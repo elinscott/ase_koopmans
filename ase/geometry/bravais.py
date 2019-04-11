@@ -98,7 +98,7 @@ class BravaisLattice(ABC):
         # Create a generic bandpath (no actual kpoints):
         bandpath = self.bandpath(path=path, special_points=special_points,
                                  npoints=0)
-        return bandpath.plot(**plotkwargs)
+        return bandpath.plot(dimension=self.ndim, **plotkwargs)
 
     def bandpath(self, path=None, npoints=None, special_points=None, density=None):
         if special_points is None:
@@ -1167,9 +1167,6 @@ def get_subset_points(names, points):
     return newpoints
 
 
-ibz_mono = None  # ibz_points['monoclinic']
-
-
 @bravaisclass('oblique (monoclinic)', ('a', 'b', 'alpha'),
               [['OBL', 'GYHCH1X', 'GYHCH1XG', None]],
               ndim=2)
@@ -1231,10 +1228,8 @@ class RECT(BravaisLattice):
                          [0, 0, 1]])
 
 
-# XXX This should have another path
 @bravaisclass('centered rectangular (orthorhombic)', ('a', 'alpha'),
-              [['CRECT', 'GXSY', 'GXSYGS',
-                get_subset_points('GXSY', ibz_points['orthorhombic'])]],
+              [['CRECT', 'GXA1Y', 'GXA1YG', None]],
               ndim=2)
 class CRECT(BravaisLattice):
     def __init__(self, a, alpha):
@@ -1246,6 +1241,18 @@ class CRECT(BravaisLattice):
         return np.array([[a * x, -a * y, 0],
                          [a * x, a * y, 0],
                          [0, 0, 1]])
+
+    def _special_points(self, a, alpha, variant):
+        sina2 = np.sin(alpha / 2 * _degrees)**2
+        sina = np.sin(alpha * _degrees)**2
+        eta = sina2 / sina
+        cosa = np.cos(alpha * _degrees)
+        xi = eta * cosa
+        points = [[0, 0, 0],
+                  [eta, - eta, 0],
+                  [0.5 + xi, 0.5 - xi, 0],
+                  [0.5, 0.5, 0]]
+        return points
 
 
 @bravaisclass('square (tetragonal)', ('a'),
