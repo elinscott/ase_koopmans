@@ -116,9 +116,9 @@ class Langevin(MolecularDynamics):
         # triple defined in the constraints. This is needed to achieve the
         # correct target temperature.
         for constraint in self.atoms.constraints:
-            if hasattr(constraint, 'redistribute_forces_md_random'):
-                constraint.redistribute_forces_md_random(atoms, self.xi)
-                constraint.redistribute_forces_md_random(atoms, self.eta)
+            if hasattr(constraint, 'redistribute_forces_md'):
+                constraint.redistribute_forces_md(atoms, self.xi, rand=True)
+                constraint.redistribute_forces_md(atoms, self.eta, rand=True)
 
         if self.communicator is not None:
             self.communicator.broadcast(self.xi, 0)
