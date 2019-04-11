@@ -432,12 +432,10 @@ class FixLinearTriatomic(FixConstraint):
         r0 = old[self.n_ind] - old[self.m_ind]
         d0 = find_mic([r0], atoms.cell, atoms.pbc)[0][0]
         d1 = new_n - new_m - r0 + d0
-        a = np.einsum('ij,ij->i', d0, d0) * (self.C3[:, 0] ** 2 +
-                                             self.C3[:, 1] ** 2 +
-                                             2 * self.C3[:, 0] * self.C3[:, 1])
-        b = np.einsum('ij,ij->i', d1, d0) * (self.C3.sum(axis=1))
+        a = np.einsum('ij,ij->i', d0, d0)
+        b = np.einsum('ij,ij->i', d1, d0)
         c = np.einsum('ij,ij->i', d1, d1) - self.bondlengths_nm ** 2
-        g = (b - (b**2 - a * c)**0.5) / a
+        g = (b - (b**2 - a * c)**0.5) / (a * (self.C3[:, 0] + self.C3[:, 1]))
         g = g[:, None] * self.C3
         new_n -= g[:, 0, None] * d0
         new_m += g[:, 1, None] * d0
@@ -541,19 +539,21 @@ class FixLinearTriatomic(FixConstraint):
         if rand:
             mr1 = (mass_mm / mass_nn) ** 0.5
             mr2 = (mass_oo / mass_nn) ** 0.5
-            mr3 = (mass_oo / mass_mm) ** 0.5
+            mr3 = (mass_nn / mass_mm) ** 0.5
+            mr4 = (mass_oo / mass_mm) ** 0.5
         else:
             mr1 = 1.0
             mr2 = 1.0
             mr3 = 1.0
+            mr4 = 1.0
 
         fr_n = ((1 - C1_1 * C2_1 * mass_oo * mass_mm) * forces_n -
                 C2_1 * (C1_2 * mr1 * mass_oo * mass_nn * forces_m -
                         mr2 * mass_mm * mass_nn * forces_o))
 
         fr_m = ((1 - C1_2 * C2_2 * mass_oo * mass_nn) * forces_m -
-                C2_2 * (C1_1 * mr1 * mass_oo * mass_mm * forces_n -
-                        mr3 * mass_mm * mass_nn * forces_o))
+                C2_2 * (C1_1 * mr3 * mass_oo * mass_mm * forces_n -
+                        mr4 * mass_mm * mass_nn * forces_o))
 
         return fr_n, fr_m
 
