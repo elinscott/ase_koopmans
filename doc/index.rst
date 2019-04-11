@@ -162,6 +162,7 @@ Contents
     gallery/gallery
     releasenotes
     contact
+    otherprojects
     development/development
     faq
 
