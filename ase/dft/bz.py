@@ -118,7 +118,7 @@ def bz3d_plot(cell, vectors=False, paths=None, points=None,
     return ax
 
 
-def bz2d_plot(cell, vectors=False, paths=None, points=None):
+def bz2d_plot(cell, vectors=False, paths=None, points=None, **kwargs):
     # XXXX lots of copypaste from 3d plot, delete and rewrite!
 
     import matplotlib.pyplot as plt
