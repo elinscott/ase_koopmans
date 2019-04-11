@@ -521,8 +521,8 @@ class FixLinearTriatomic(FixConstraint):
         return fr_n, fr_m, fr_o
 
     def redistribute_forces_md(self, atoms, forces, rand=False):
-        """Function to redistribute forces within a triple when
-        performing molecular dynamics.
+        """Redistribute forces within a triple when performing molecular
+        dynamics.
 
         When rand=True, use the equations for random force terms, as
         used e.g. by Langevin dynamics, otherwise apply the standard
