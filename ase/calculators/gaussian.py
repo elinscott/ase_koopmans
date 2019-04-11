@@ -18,8 +18,9 @@ University of Science and Technology (KAUST), Saudi Arabia.
 See accompanying license files for details.
 """
 import os
+from shutil import which
 
-from ase.calculators.calculator import FileIOCalculator, Parameters, ReadError
+from ase.calculators.calculator import EnvironmentError, FileIOCalculator, Parameters, ReadError
 
 """
 Gaussian has two generic classes of keywords:  link0 and route.
@@ -110,7 +111,8 @@ class Gaussian(FileIOCalculator):
     name = 'Gaussian'
 
     implemented_properties = ['energy', 'forces', 'dipole']
-    command = 'g09 < PREFIX.com > PREFIX.log'
+
+    command = 'GAUSSIAN < PREFIX.com > PREFIX.log'
 
     default_parameters = {'charge': 0,
                           'method': 'hf',
@@ -118,7 +120,7 @@ class Gaussian(FileIOCalculator):
                           'force': 'force'}
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label='g09', atoms=None, scratch=None, ioplist=list(),
+                 label=None, atoms=None, scratch=None, ioplist=list(),
                  basisfile=None, extra=None, addsec=None, **kwargs):
 
         """Constructs a Gaussian-calculator object.
@@ -127,6 +129,15 @@ class Gaussian(FileIOCalculator):
         addsec: a list of strings to be included as "additional sections"
 
         """
+
+        gaussians = ('g16', 'g09', 'g03')
+        for gau in gaussians:
+            if which(gau):
+                self.command = self.command.replace('GAUSSIAN', gau)
+                label = label or gau
+                break
+        else:
+            raise EnvironmentError('missing Gaussian executable {}'.format(gaussians))
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
