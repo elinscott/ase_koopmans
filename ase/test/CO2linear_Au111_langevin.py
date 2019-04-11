@@ -49,7 +49,7 @@ assert abs(slab.get_distance(-3, -2, mic=1) - d0) < 1e-9
 assert abs(slab.get_distance(-3, -1, mic=1) - d1) < 1e-9
 assert abs(slab.get_distance(-2, -1, mic=1) - d2) < 1e-9
 
-# If the enenrgy differs from the reference energy 
+# If the energy differs from the reference energy
 # it is most probable that the redistribution of 
 # random forces in Langevin is not working properly
 assert abs(slab.get_potential_energy() - eref) < 1e-4
