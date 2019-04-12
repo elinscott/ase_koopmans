@@ -52,9 +52,9 @@ def run_server(launchclient=True):
 
     perr = np.abs(refatoms.positions - atoms.positions).max()
     print('errs e={} f={} pos={}'.format(eerr, ferr, perr))
-    assert eerr < 1e-12, eerr
-    assert ferr < 1e-12, ferr
-    assert perr < 1e-12, perr
+    assert eerr < 1e-11, eerr
+    assert ferr < 1e-11, ferr
+    assert perr < 1e-11, perr
 
 def run_normal():
     atoms = getatoms()

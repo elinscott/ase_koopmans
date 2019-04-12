@@ -7,7 +7,7 @@ from ase.io import read
 def fit(symbol: str):  # -> Tuple[float, float, float]
     V = []
     E = []
-    for atoms in read(f'{symbol}.traj@:'):
+    for atoms in read('{}.traj@:'.format(symbol)):
         V.append(atoms.get_volume() / len(atoms))
         E.append(atoms.get_potential_energy() / len(atoms))
     eos = EOS(V, E, 'birchmurnaghan')

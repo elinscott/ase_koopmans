@@ -4,11 +4,12 @@ Method is described in:
 Definition of a scoring parameter to identify low-dimensional materials
 components
 P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
-https://arxiv.org/abs/1808.02114
-2018
+Phys. Rev. Materials 3 034003, 2019
+https://doi.org/10.1103/PhysRevMaterials.3.034003
 """
 
 import numpy as np
+from collections import namedtuple
 from ase.neighborlist import NeighborList
 from ase.data import covalent_radii
 from ase.geometry.dimensionality import rank_determination
@@ -38,21 +39,15 @@ def build_dimtype(h):
     return ''.join([str(i) for i, e in enumerate(h) if e > 0]) + 'D'
 
 
-class KInterval:
+def build_kinterval(a, b, h, components, cdim, score=None):
 
-    def __init__(self, a, b, h, components, cdim, score=None):
+    Kinterval = namedtuple('KInterval', 'dimtype score a b h components cdim')
 
-        self.a = a
-        self.b = b
-        self.h = h
-        self.components = components
-        self.cdim = cdim
+    if score is None:
+        score = calculate_score(a, b)
 
-        self.dimtype = build_dimtype(h)
-        if score is not None:
-            self.score = score
-        else:
-            self.score = calculate_score(a, b)
+    return Kinterval(dimtype=build_dimtype(h), score=score,
+                     a=a, b=b, h=h, components=components, cdim=cdim)
 
 
 def merge_intervals(intervals):
@@ -80,9 +75,9 @@ def merge_intervals(intervals):
         combined_score = sum([e.score for e in relevant])
         amin = min([e.a for e in relevant])
         bmax = max([e.b for e in relevant])
-        best = max(intervals, key=lambda x: x.score)
-        merged = KInterval(amin, bmax, best.h, best.components, best.cdim,
-                           score=combined_score)
+        best = max(relevant, key=lambda x: x.score)
+        merged = build_kinterval(amin, bmax, best.h, best.components,
+                                 best.cdim, score=combined_score)
         merged_intervals.append(merged)
     return merged_intervals
 
@@ -183,8 +178,11 @@ def build_kintervals(atoms, method):
                 continue
 
             # If any components were merged, create a new interval
-            kinterval = KInterval(kprev, k, hprev, components_prev, cdim_prev)
-            intervals.append(kinterval)
+            if k != kprev:
+                # Only keep intervals of non-zero width
+                intervals.append(build_kinterval(kprev, k, hprev,
+                                                 components_prev, cdim_prev))
+
             kprev = k
             hprev = h
             components_prev = components
@@ -192,8 +190,8 @@ def build_kintervals(atoms, method):
 
             # Stop once all components are merged
             if h == end_state:
-                kinterval = KInterval(k, float("inf"), h, components, cdim)
-                intervals.append(kinterval)
+                intervals.append(build_kinterval(k, float("inf"), h,
+                                                 components, cdim))
                 return intervals
 
 
@@ -209,7 +207,9 @@ def analyze_kintervals(atoms, method='RDA', merge=True):
     Parameters:
 
     atoms: ASE atoms object
-        The system to analyze.
+        The system to analyze. The periodic boundary conditions determine
+        the maximum achievable component dimensionality, i.e. pbc=[1,1,0] sets
+        a maximum dimensionality of 2.
     method: string
         Analysis method to use, either 'RDA' (default option) or 'TSA'.
         These correspond to the Rank Determination Algorithm of Mounet et al.
@@ -245,4 +245,5 @@ def analyze_kintervals(atoms, method='RDA', merge=True):
     if merge:
         intervals = merge_intervals(intervals)
 
-    return sorted(intervals, reverse=True, key=lambda x: x.score)
+    # Sort intervals by score. Interval width resolves ambiguity when score=0.
+    return sorted(intervals, reverse=True, key=lambda x: (x.score, x.b - x.a))

@@ -50,7 +50,8 @@ class EMT(Calculator):
     older EMT implementations, although the results are not
     bitwise identical.
     """
-    implemented_properties = ['energy', 'forces', 'stress']
+    implemented_properties = ['energy', 'forces', 'stress',
+                              'magmom', 'magmoms']
 
     nolabel = True
 

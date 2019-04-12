@@ -49,6 +49,18 @@ def info(gui):
         periodic = [[_('no'), _('yes')][periodic] for periodic in atoms.pbc]
         # TRANSLATORS: This has the form Periodic: no, no, yes
         add(_('Periodic: {}, {}, {}').format(*periodic))
+        add()
+
+        uc = atoms.unitcell
+        cellpar = uc.cellpar()
+        add()
+        add(_('Lengths [Å]: {:.3f}, {:.3f}, {:.3f}').format(*cellpar[:3]))
+        add(_('Angles: {:.1f}°, {:.1f}°, {:.1f}°').format(*cellpar[3:]))
+
+        if atoms.number_of_lattice_vectors == 3:
+            add(_('Volume: {:.3f} Å³').format(atoms.get_volume()))
+
+        add()
 
         if nimg > 1:
             if all((atoms.cell == img.cell).all() for img in images):
@@ -56,8 +68,6 @@ def info(gui):
             else:
                 add(_('Unit cell varies.'))
 
-        if atoms.number_of_lattice_vectors == 3:
-            add(_('Volume: {:.3f} Å³').format(atoms.get_volume()))
 
         # Print electronic structure information if we have a calculator
         if atoms.calc:

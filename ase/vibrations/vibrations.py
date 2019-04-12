@@ -238,7 +238,7 @@ class Vibrations:
                                    name + ' is missing or empty.')
             with open(name, 'rb') as fl:
                 f = pickleload(fl)
-            combined_data.update({name: f})
+            combined_data.update({op.basename(name): f})
         filename = self.name + '.all.pckl'
         fd = opencew(filename)
         if fd is None:
@@ -274,7 +274,10 @@ class Vibrations:
                     'Cannot split. File ' + filename + 'already exists.')
         for name in filenames:
             fd = opencew(name)
-            pickle.dump(combined_data[name], fd, protocol=2)
+            try:
+                pickle.dump(combined_data[op.basename(name)], fd, protocol=2)
+            except KeyError:
+                pickle.dump(combined_data[name], fd, protocol=2)  # Old version
             fd.close()
         os.remove(combined_name)
         return 1  # One file removed
@@ -290,7 +293,10 @@ class Vibrations:
                 with open(fname, 'rb') as fl:
                     f = pickleload(fl)
             else:
-                f = combined_data[fname]
+                try:
+                    f = combined_data[op.basename(fname)]
+                except KeyError:
+                    f = combined_data[fname]  # Old version
             if not hasattr(f, 'shape') and not hasattr(f, 'keys'):
                 # output from InfraRed
                 return f[0]

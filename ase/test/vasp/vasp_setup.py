@@ -36,6 +36,11 @@ try:
     calc.write_potcar()
     check_potcar(('Ca_sv', 'Gd_3', 'Cs_sv'), filename=potcar)
 
+    calc = Vasp(xc='pbe', setups='materialsproject')
+    calc.initialize(atoms)
+    calc.write_potcar()
+    check_potcar(('Ca_sv', 'Gd', 'Cs_sv'), filename=potcar)
+
     atoms = Atoms('CaInI',
                   positions=[[0, 0, 1], [0, 0, 2], [0, 0, 3]], cell=[5, 5, 5])
     calc = Vasp(xc='pbe', setups={'base': 'gw'})

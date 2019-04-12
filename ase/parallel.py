@@ -43,8 +43,6 @@ def parprint(*args, **kwargs):
         print(*args, **kwargs)
 
 
-
-
 class DummyMPI:
     rank = 0
     size = 1
@@ -54,6 +52,8 @@ class DummyMPI:
         # returned, or on arrays, in-place.
         if np.isscalar(a):
             return a
+        if hasattr(a, '__array__'):
+            a = a.__array__()
         assert isinstance(a, np.ndarray)
         return None
 
