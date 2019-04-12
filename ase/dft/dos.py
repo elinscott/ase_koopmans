@@ -1,4 +1,3 @@
-import functools
 from math import pi, sqrt
 
 import numpy as np
@@ -85,7 +84,7 @@ class DOS:
         if self.width == 0.0:
             dos = linear_tetrahedron_integration(self.cell, self.e_skn[spin],
                                                  self.energies)
-            return dos[0]
+            return dos
 
         dos = np.zeros(self.npts)
         for w, e_n in zip(self.w_k, self.e_skn[spin]):
@@ -103,9 +102,15 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
         Eigenvalues on a Monkhorst-Pack grid (not reduced).
     energies: 1-d array-like
         Energies where the DOS is calculated (must be a uniform grid).
-    weights: (n1, n2, n3, nbands, nweights)-shaped ndarray
-        Weights.  Defaults to a (n1, n2, n3, nbands, 1)-shaped ndarray
-        filled with ones.
+    weights: ndarray of shape (n1, n2, n3, nbands) or (n1, n2, n3, nbands, nw)
+        Weights.  Defaults to a (n1, n2, n3, nbands)-shaped ndarray
+        filled with ones.  Can also have an extra dimednsion if there are
+        nw weights.
+
+    Returns:
+
+        DOS as an ndarray of same length as energies or as an
+        ndarray of shape (nw, len(energies)).
     """
 
     from scipy.spatial import Delaunay
@@ -117,103 +122,99 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
     dt = Delaunay(np.dot(indices, B))
 
     if weights is None:
-        weights = np.ones_like(eigs)[..., np.newaxis]
+        weights = np.ones_like(eigs)
 
-    nweights = len(weights)
-    dos = np.zeros((nweights, len(energies)))
+    if weights.ndim == 4:
+        extra_dimension_added = True
+        weights = weights[:, :, :, :, np.newaxis]
+    else:
+        extra_dimension_added = False
+
+    nweights = weights.shape[4]
+    dos = np.empty((nweights, len(energies)))
     ltidos(indices[dt.simplices], eigs, weights, energies, dos, world)
+    dos *= abs(np.linalg.det(B))
+
+    if extra_dimension_added:
+        return dos[0]
     return dos
 
 
 @cextension
 def ltidos(simplices, eigs, weights, energies, dos, world):
     shape = eigs.shape[:3]
+    nweights = weights.shape[-1]
+    dos[:] = 0.0
     n = -1
     for index in np.indices(shape).reshape((3, -1)).T:
         n += 1
         if n % world.size != world.rank:
             continue
         i = ((index + simplices) % shape).T
-        E = eigs[i[0], i[1], i[2]]
-        W = weights[i[0], i[1], i[2]]
-        for e, w in zip(E.T, W.T):
+        E = eigs[i[0], i[1], i[2]].reshape((4, -1))
+        W = weights[i[0], i[1], i[2]].reshape((4, -1, nweights))
+        for e, w in zip(E.T, W.transpose((1, 0, 2))):
             ltidos1(e, w, energies, dos)
+    dos /= 6.0
     world.sum(dos)
 
 
 def ltidos1(e, w, energies, dos):
     i = e.argsort()
-    e0, e1, e2, e3 = e[i]
+    e0, e1, e2, e3 = en = e[i]
+    w = w[i]
 
-    f10 = (enerigies - e0) / (e1 - e0)
-    f20 = (enerigies - e0) / (e2 - e0)
-    f21 = (enerigies - e1) / (e2 - e1)
-    f30 = (enerigies - e0) / (e3 - e0)
-    f31 = (enerigies - e1) / (e3 - e1)
-    f32 = (enerigies - e2) / (e3 - e2)
-    f01 = 1 - f10
-    f02 = 1 - f20
-    f03 = 1 - f30
-    f12 = 1 - f21
-    f13 = 1 - f31
-    f23 = 1 - f32
+    zero = energies[0]
+    if len(energies) > 1:
+        de = energies[1] - zero
+        nn = (((en - zero) / de).astype(int) + 1).clip(0, len(energies))
+    else:
+        nn = (en > zero).astype(int)
 
-      if (et_k[1] != et_k[0] && et_k[0] <= omega && omega <= et_k[1])
-        {
-          gw = 3 * f20 * f30 / (et_k[1] - et_k[0]);
-          switch (relk) {
-          case 0:
-            Iw = (f01 + f02 + f03) / 3;
-            break;
-          case 1:
-            Iw = f10 / 3;
-            break;
-          case 2:
-            Iw = f20 / 3;
-            break;
-          case 3:
-            Iw = f30 / 3;
-            break;
-          }
-        }
-      else if (et_k[1] != et_k[2] && et_k[1] < omega && omega < et_k[2])
-        {
-          gw = 3 / delta * (f12 * f20 + f21 * f13);
-          switch (relk) {
-          case 0:
-            Iw = f03 / 3 + f02 * f20 * f12 / (gw * delta);
-            break;
-          case 1:
-            Iw = f12 / 3 + f13 * f13 * f21 / (gw * delta);
-            break;
-          case 2:
-            Iw = f21 / 3 + f20 * f20 * f12 / (gw * delta);
-            break;
-          case 3:
-            Iw = f30 / 3 + f31 * f13 * f21 / (gw * delta);
-            break;
-          }
-        }
-      else if (et_k[2] != et_k[3] && et_k[2] <= omega && omega <= et_k[3])
-        {
-          gw = 3 * f03 * f13 / (et_k[3] - et_k[2]);
-          switch (relk) {
-          case 0:
-            Iw = f03 / 3;
-            break;
-          case 1:
-            Iw = f13 / 3;
-            break;
-          case 2:
-            Iw = f23 / 3;
-            break;
-          case 3:
-            Iw = (f30 + f31 + f32) / 3;
-            break;
-          }
-        }
-      else {
-        continue;
-      }
-      W_w[w] += v_s[s] * Iw * gw;
-    }
+    n0, n1, n2, n3 = nn
+
+    if n1 > n0:
+        s = slice(n0, n1)
+        x = energies[s] - e0
+        f10 = x / (e1 - e0)
+        f20 = x / (e2 - e0)
+        f30 = x / (e3 - e0)
+        f01 = 1 - f10
+        f02 = 1 - f20
+        f03 = 1 - f30
+        gw = f20 * f30 / (e1 - e0)
+        dos[:, s] += w.T.dot([f01 + f02 + f03,
+                              f10,
+                              f20,
+                              f30]) * gw
+    if n2 > n1:
+        delta = e3 - e0
+        s = slice(n1, n2)
+        x = energies[s]
+        f20 = (x - e0) / (e2 - e0)
+        f30 = (x - e0) / (e3 - e0)
+        f21 = (x - e1) / (e2 - e1)
+        f31 = (x - e1) / (e3 - e1)
+        f02 = 1 - f20
+        f03 = 1 - f30
+        f12 = 1 - f21
+        f13 = 1 - f31
+        gw = 1 / delta * (f12 * f20 + f21 * f13)
+        dos[:, s] += w.T.dot([gw * f03 + f02 * f20 * f12 / delta,
+                              gw * f12 + f13 * f13 * f21 / delta,
+                              gw * f21 + f20 * f20 * f12 / delta,
+                              gw * f30 + f31 * f13 * f21 / delta])
+    if n3 > n2:
+        s = slice(n2, n3)
+        x = energies[s] - e3
+        f03 = x / (e0 - e3)
+        f13 = x / (e1 - e3)
+        f23 = x / (e2 - e3)
+        f30 = 1 - f03
+        f31 = 1 - f13
+        f32 = 1 - f23
+        gw = f03 * f13 / (e3 - e2)
+        dos[:, s] += w.T.dot([f03,
+                              f13,
+                              f23,
+                              f30 + f31 + f32]) * gw
