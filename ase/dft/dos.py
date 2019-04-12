@@ -115,6 +115,7 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
 
     from scipy.spatial import Delaunay
 
+    # Find the 6 tetrahedra:
     size = eigs.shape[:3]
     B = (np.linalg.inv(cell) / size).T
     indices = np.array([[i, j, k]
@@ -132,7 +133,9 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
 
     nweights = weights.shape[4]
     dos = np.empty((nweights, len(energies)))
+
     ltidos(indices[dt.simplices], eigs, weights, energies, dos, world)
+
     dos *= abs(np.linalg.det(B))
 
     if extra_dimension_added:
