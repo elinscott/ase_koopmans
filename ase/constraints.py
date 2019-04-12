@@ -371,7 +371,7 @@ class FixLinearTriatomic(FixConstraint):
            optimizations, atomic forces need to be redistributed within a
            triple. The function redistribute_forces_optimization implements
            the redistribution of forces for structure optimization, while
-           the function redistribute_forces_md implments the redistribution
+           the function redistribute_forces_md implements the redistribution
            for molecular dynamics.
 
            References:
