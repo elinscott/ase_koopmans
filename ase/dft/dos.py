@@ -136,7 +136,7 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
 
     ltidos(indices[dt.simplices], eigs, weights, energies, dos, world)
 
-    dos *= abs(np.linalg.det(B))
+    dos /= np.prod(size)
 
     if extra_dimension_added:
         return dos[0]
