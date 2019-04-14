@@ -10,6 +10,10 @@ Git master branch
 :git:`master <>`.
 
 * Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
+
+* New holonomic :class:`constraint <ase.constraints.FixLinearTriatomic>`
+  for trilinear molecules.
+
 * Dynamics and structure optimizers can now run as an iterator using the
   new ``irun()`` mechanism::
 
