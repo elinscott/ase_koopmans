@@ -40,6 +40,7 @@ Supported :mod:`Calculators <ase.calculators>`:
 |fhi-aims| |fleur| |gpaw| |gromacs|
 |hotbit| |jacapo| |jdftx| |lammps| |nwchem|
 |octopus| |onetep| |openmx| |q_espresso| |siesta| |turbomole| |vasp|
+:mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
 Gaussian_

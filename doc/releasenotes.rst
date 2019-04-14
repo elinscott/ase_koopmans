@@ -9,11 +9,13 @@ Git master branch
 
 :git:`master <>`.
 
+* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
+
 * Multiple improvements to the ONETEP Calculator. Input files can now be
   written that specify LDOS, bsunfolding and many other functionalities.
 
 * NWChem calculator now supports TDDFT runs.
-  
+
 * The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`ga_bulk_tutorial`.
 
 * New :func:`ase.geometry.analyze_dimensionality` function.  See:
