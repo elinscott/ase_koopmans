@@ -40,8 +40,6 @@ class ACE(FileIOCalculator):
     guess_list = [{}]
     default_parameters = {'BasicInformation': basic_list, 'Guess' : guess_list,
                           'Scf': scf_list, 'Force': force_list, 'TDDFT': tddft_list, 'order': order_list}
-    parameters = default_parameters
-    command = 'mpirun -np 1 ../ace PREFIX.inp > PREFIX.log'
 
     def __init__(
             self, restart=None, ignore_bad_restart_file=False,
