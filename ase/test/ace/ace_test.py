@@ -1,5 +1,6 @@
 import os
 from ase import Atoms
+from ase.test import NotAvailable
 from ase.calculators.acemolecule import ACE
 
 label = "test"
