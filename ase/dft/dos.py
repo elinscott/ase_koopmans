@@ -4,7 +4,6 @@ import numpy as np
 
 from ase.dft.kpoints import get_monkhorst_pack_size_and_offset
 from ase.parallel import world
-from ase.utils.cext import cextension
 
 
 class DOS:
@@ -134,7 +133,7 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
     nweights = weights.shape[4]
     dos = np.empty((nweights, len(energies)))
 
-    ltidos(indices[dt.simplices], eigs, weights, energies, dos, world)
+    lti_dos(indices[dt.simplices], eigs, weights, energies, dos, world)
 
     dos /= np.prod(size)
 
@@ -143,8 +142,7 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
     return dos
 
 
-@cextension
-def ltidos(simplices, eigs, weights, energies, dos, world):
+def lti_dos(simplices, eigs, weights, energies, dos, world):
     shape = eigs.shape[:3]
     nweights = weights.shape[-1]
     dos[:] = 0.0
@@ -157,12 +155,12 @@ def ltidos(simplices, eigs, weights, energies, dos, world):
         E = eigs[i[0], i[1], i[2]].reshape((4, -1))
         W = weights[i[0], i[1], i[2]].reshape((4, -1, nweights))
         for e, w in zip(E.T, W.transpose((1, 0, 2))):
-            ltidos1(e, w, energies, dos)
+            lti_dos1(e, w, energies, dos)
     dos /= 6.0
     world.sum(dos)
 
 
-def ltidos1(e, w, energies, dos):
+def lti_dos1(e, w, energies, dos):
     i = e.argsort()
     e0, e1, e2, e3 = en = e[i]
     w = w[i]
