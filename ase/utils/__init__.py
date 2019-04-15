@@ -5,6 +5,7 @@ import pickle
 import sys
 import time
 import string
+import warnings
 from importlib import import_module
 from math import sin, cos, radians, atan2, degrees
 from contextlib import contextmanager
@@ -23,13 +24,12 @@ except ImportError:
 import numpy as np
 
 from ase.utils.formula import formula_hill, formula_metal
-from ase.data import covalent_radii
 
 __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'devnull', 'gcd', 'convert_string_to_fd', 'Lock',
            'opencew', 'OpenLock', 'rotate', 'irotate', 'givens',
            'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
-           'formula_hill', 'formula_metal', 'PurePath', 'natural_cutoffs']
+           'formula_hill', 'formula_metal', 'PurePath']
 
 
 # Python 2+3 compatibility stuff:
@@ -157,19 +157,25 @@ def opencew(filename, world=None):
 
 
 class Lock:
-    def __init__(self, name='lock', world=None):
+    def __init__(self, name='lock', world=None, timeout=float('inf')):
         self.name = str(name)
-
+        self.timeout = timeout
         if world is None:
             from ase.parallel import world
         self.world = world
 
     def acquire(self):
+        dt = 0.2
+        t1 = time.time()
         while True:
             fd = opencew(self.name, self.world)
             if fd is not None:
                 break
-            time.sleep(1.0)
+            time_left = self.timeout - (time.time() - t1)
+            if time_left <= 0:
+                raise TimeoutError
+            time.sleep(min(dt, time_left))
+            dt *= 2
 
     def release(self):
         self.world.barrier()
@@ -218,7 +224,7 @@ def search_current_git_hash(arg, world=None):
     else:
         # Assume arg is module
         dpath = os.path.dirname(arg.__file__)
-    #dpath = os.path.abspath(dpath)
+    # dpath = os.path.abspath(dpath)
     # in case this is just symlinked into $PYTHONPATH
     dpath = os.path.realpath(dpath)
     dpath = os.path.dirname(dpath)  # Go to the parent directory
@@ -359,21 +365,6 @@ def hsv(array, s=.9, v=.9):
     return np.reshape(result, array.shape + (3,))
 
 
-def natural_cutoffs(atoms, mult=1, **kwargs):
-    """Generate a radial cutoff for every atom based on covalent radii.
-
-    The covalent radii are a reasonable cutoff estimation for bonds in
-    many applications such as neighborlists, so function generates an
-    atoms length list of radii based on this idea.
-
-    * atoms: An atoms object
-    * mult: A multiplier for all cutoffs, useful for coarse grained adjustment
-    * kwargs: Symbol of the atom and its corresponding cutoff, used to override the covalent radii
-    """
-    return [kwargs.get(atom.symbol, covalent_radii[atom.number] * mult)
-            for atom in atoms]
-
-
 # This code does the same, but requires pylab
 # def cmap(array, name='hsv'):
 #     import pylab
@@ -416,3 +407,63 @@ def writer(func):
 
 def reader(func):
     return iofunction(func, 'r')
+
+
+# The next two functions are for hotplugging into a JSONable class
+# using the jsonable decorator.  We are supposed to have this kind of stuff
+# in ase.io.jsonio, but we'd rather import them from a 'basic' module
+# like ase/utils than one which triggers a lot of extra (cyclic) imports.
+
+def write_json(self, fd):
+    """Write to JSON file."""
+    from ase.io.jsonio import write_json as _write_json
+    _write_json(fd, self)
+
+
+@classmethod
+def read_json(cls, fd):
+    """Read new instance from JSON file."""
+    from ase.io.jsonio import read_json as _read_json
+    obj = _read_json(fd)
+    assert type(obj) is cls
+    return obj
+
+
+def jsonable(name):
+    """Decorator for facilitating JSON I/O with a class.
+
+    Pokes JSON-based read and write functions into the class.
+
+    In order to write an object to JSON, it needs to be a known simple type
+    (such as ndarray, float, ...) or implement todict().  If the class
+    defines a string called ase_objtype, the decoder will want to convert
+    the object back into its original type when reading."""
+    def jsonableclass(cls):
+        cls.ase_objtype = name
+        if not hasattr(cls, 'todict'):
+            raise TypeError('Class must implement todict()')
+
+        # We may want the write and read to be optional.
+        # E.g. a calculator might want to be JSONable, but not
+        # that .write() produces a JSON file.
+        #
+        # This is mostly for 'lightweight' object IO.
+        cls.write = write_json
+        cls.read = read_json
+        return cls
+    return jsonableclass
+
+
+class ExperimentalFeatureWarning(Warning):
+    pass
+
+
+def experimental(func):
+    """Decorator for functions not ready for production use."""
+    @functools.wraps(func)
+    def expfunc(*args, **kwargs):
+        warnings.warn('This function may change or misbehave: {}()'
+                      .format(func.__qualname__),
+                      ExperimentalFeatureWarning)
+        return func(*args, **kwargs)
+    return expfunc

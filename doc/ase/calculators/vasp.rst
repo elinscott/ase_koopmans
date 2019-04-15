@@ -49,7 +49,7 @@ Set both environment variables in your shell configuration file:
   $ export VASP_PP_PATH=$HOME/vasp/mypps
 
 .. _VASP vdW wiki: https://cms.mpi.univie.ac.at/vasp/vasp/vdW_DF_functional_Langreth_Lundqvist_et_al.html
-  
+
 The following environment variable can be used to automatically copy the
 van der Waals kernel to the calculation directory. The kernel is needed for
 vdW calculations, see `VASP vdW wiki`_, for more details. The kernel is looked
@@ -58,7 +58,7 @@ for, whenever ``luse_vdw=True``.
 .. highlight:: bash
 
 ::
-   
+
    $ export ASE_VASP_VDW=$HOME/<path-to-vdw_kernel.bindat-folder>
 
 The environment variable :envvar:`ASE_VASP_VDW` should point to the folder where
@@ -186,6 +186,8 @@ Three base setups are provided:
         with the least electrons has been chosen.
     recommended:
         corresponds to the `table of recommended PAW setups <https://cms.mpi.univie.ac.at/vasp/vasp/Recommended_PAW_potentials_DFT_calculations_using_vasp_5_2.html>`_ supplied by the VASP developers.
+    materialsproject:
+        corresponds to the `Materials Project recommended PAW setups <https://wiki.materialsproject.org/Pseudopotentials_Choice>`_.
     gw:
         corresponds to the `table of recommended setups for GW <https://cms.mpi.univie.ac.at/vasp/vasp/Recommended_GW_PAW_potentials_vasp_5_2.html>`_ supplied by the VASP developers.
 
@@ -356,7 +358,7 @@ For example:
 .. code-block:: python
 
     calc = Vasp(ldau_luj={'Si': {'L': 1, 'U': 3, 'J': 0}})
-    
+
 will set ``U=3`` on the Si p-orbitals, and will automatically set ``ldau=True`` as well.
 
 

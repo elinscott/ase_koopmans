@@ -1,4 +1,4 @@
-from ase.utils import natural_cutoffs
+from ase.neighborlist import natural_cutoffs
 from ase import Atoms
 import numpy as np
 

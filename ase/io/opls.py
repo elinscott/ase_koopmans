@@ -220,7 +220,10 @@ minimize        1.0e-14 1.0e-5 100000 100000
             molid = [1] * len(atoms)
         for i, r in enumerate(
             p.positions_to_lammps_strs(atoms.get_positions())):
-            q = self.data['one'][atoms.types[tag[i]]][2]
+            atype = atoms.types[tag[i]]
+            if len(atype) < 2:
+                atype = atype + ' '
+            q = self.data['one'][atype][2]
             fileobj.write('%6d %3d %3d %s %s %s %s' % ((i + 1, molid[i],
                                                         tag[i] + 1,
                                                         q) + tuple(r)))

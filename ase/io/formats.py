@@ -56,7 +56,7 @@ all_formats = {
     'castep-md': ('CASTEP molecular dynamics file', '+F'),
     'castep-phonon': ('CASTEP phonon file', '1F'),
     'cfg': ('AtomEye configuration', '1F'),
-    'cif': ('CIF-file', '+F'),
+    'cif': ('CIF-file', '+B'),
     'cmdft': ('CMDFT-file', '1F'),
     'crystal': ('Crystal fort.34 format', '1S'),
     'cube': ('CUBE file', '1F'),
@@ -65,6 +65,7 @@ all_formats = {
     'db': ('ASE SQLite database file', '+S'),
     'dftb': ('DftbPlus input file', '1S'),
     'dlp4': ('DL_POLY_4 CONFIG file', '1F'),
+    'dlp-history': ('DL_POLY HISTORY file', '+F'),
     'dmol-arc': ('DMol3 arc file', '+S'),
     'dmol-car': ('DMol3 structure file', '1S'),
     'dmol-incoor': ('DMol3 structure file', '1S'),
@@ -138,6 +139,7 @@ format2modulename = {
     'castep-phonon': 'castep',
     'dacapo-text': 'dacapo',
     'dlp4': 'dlp4',
+    'dlp-history': 'dlp4',
     'espresso-in': 'espresso',
     'espresso-out': 'espresso',
     'gaussian-out': 'gaussian',
@@ -203,8 +205,8 @@ def initialize(format):
     try:
         module = import_module('ase.io.' + module_name)
     except ImportError as err:
-        raise ValueError('File format not recognized: %s.  Error: %s'
-                         % (format, err))
+        raise UnknownFileTypeError('File format not recognized: %s.  Error: %s'
+                                   % (format, err))
 
     read = getattr(module, 'read_' + _format, None)
     write = getattr(module, 'write_' + _format, None)
@@ -212,7 +214,7 @@ def initialize(format):
     if read and not inspect.isgeneratorfunction(read):
         read = functools.partial(wrap_read_function, read)
     if not read and not write:
-        raise ValueError('File format not recognized: ' + format)
+        raise UnknownFileTypeError('File format not recognized: ' + format)
     code = all_formats[format][1]
     single = code[0] == '1'
     assert code[1] in 'BFS'
@@ -644,6 +646,8 @@ def filetype(filename, read=True, guess=True):
             return 'iwm'
         if 'CONFIG' in basename:
             return 'dlp4'
+        if basename == 'HISTORY':
+            return 'dlp-history'
 
         if not read:
             if ext is None:

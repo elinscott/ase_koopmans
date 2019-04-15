@@ -9,6 +9,18 @@ Git master branch
 
 :git:`master <>`.
 
+* Dynamics and structure optimizers can now run as an iterator using the
+  new ``irun()`` mechanism::
+
+    for conv in opt.irun(fmax=0.05):
+        print('hello')
+
+  This makes it easier to execute custom code during runs.  The ``conv``
+  variable indicates whether the current iteration meets the convergence
+  criterion, although this behaviour may change in future versions.
+
+* :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting bond lengths and angles from atoms.
+
 * Multiple improvements to the ONETEP Calculator. Input files can now be
   written that specify LDOS, bsunfolding and many other functionalities.
 
@@ -250,8 +262,8 @@ Version 3.15.0
 
 * The :class:`ase.dft.dos.DOS` object will now use linear tetrahedron
   interpolation of the band-structure if you set ``width=0.0``.  It's slow,
-  but sometimes worth waiting for.  It uses the :func:`ase.dft.dos.ltidos`
-  helper function.
+  but sometimes worth waiting for.  It uses the
+  :func:`ase.dft.dos.linear_tetrahedron_integration` helper function.
 
 * :func:`ase.io.read` can now read QBox output files.
 
