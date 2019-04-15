@@ -58,7 +58,11 @@ class ACE(FileIOCalculator):
         =======
         Updated parameter
         '''
-        new_parameters = deepcopy(self.parameters)
+        try:
+            new_parameters = deepcopy(self.parameters)
+        except:
+            new_parameters = deepcopy(self.default_parameters)
+        
         changed_parameters = FileIOCalculator.set(self, **kwargs)
 
         # Add default values for repeated parameter sections with self.default_parameters using order.

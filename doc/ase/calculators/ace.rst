@@ -1,4 +1,4 @@
-.. module:: ase.calculators.ace_cal
+.. module:: ase.calculators.acemolecule
 
 ============
 ACE-Molecule
