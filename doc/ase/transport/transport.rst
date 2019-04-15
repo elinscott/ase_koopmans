@@ -84,8 +84,10 @@ This module is stand-alone in the sense that it makes no requirement
 on the origin of these five matrices. They can be model Hamiltonians
 or derived from different kinds of electronic structure codes.
 
-For an example of how to use the :mod:`ase.transport` module, see the GPAW
-exercise on `electron transport`_
+For an example of how to use the :mod:`ase.transport` module, see section 9.2
+in the ASE-paper:
 
-.. _electron transport: http://wiki.fysik.dtu.dk/gpaw/exercises/transport/
-                        transport.html
+  J. Phys. Condens. Matter:
+  `The Atomic Simulation Environment | A Python library for working with
+  atoms <https://doi.org/10.1088/1361-648X/aa680e>`__
+  (7 June 2017).

@@ -268,7 +268,7 @@ for a in natoms:
 
 # read/write
 fname = 'testfile.cif'
-with open(fname, 'w') as fd:
+with open(fname, 'wb') as fd:
     write(fd, natoms, format='cif')
 
 with open(fname) as fd:

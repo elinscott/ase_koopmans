@@ -1,7 +1,7 @@
 """ Read/Write DL_POLY_4 CONFIG files """
 import re
 
-from numpy import zeros
+from numpy import zeros, isscalar
 
 from ase.atoms import Atoms
 from ase.data import chemical_symbols
@@ -12,8 +12,71 @@ __all__ = ['read_dlp4', 'write_dlp4']
 # dlp4 labels will be registered in atoms.arrays[DLP4_LABELS_KEY]
 DLP4_LABELS_KEY = 'dlp4_labels'
 
+def _get_frame_positions(f):
+    """Get positions of frames in HISTORY file."""
+    #header line contains name of system
+    init_pos = f.tell()
+    f.seek(0)
+    f.readline() #system name
+    items = f.readline().strip().split()
+    if len(items) == 5:
+        classic = False
+    elif len(items) == 3:
+        classic = True
+    else:
+        raise RuntimeError("Cannot determine version of HISTORY file format.")
 
-def read_dlp4(f):
+    levcfg,imcon,natoms = [int(x) for x in items[0:3]]
+    if classic:
+        #we have to iterate over the entire file
+        startpos = f.tell()
+        pos = []
+        line = True
+        while line:
+            line = f.readline()
+            if 'timestep' in line:
+                pos.append(f.tell())
+        f.seek(startpos)
+    else:
+        nFrames = int(line[4])
+        pos = [(natoms * 2 + 1) * i + 2 for i in range(nFrames)]
+
+    f.seek(init_pos)
+    return levcfg,imcon,natoms,pos
+
+def read_dlp_history(f, index=-1, symbols=None):
+    """Read a HISTORY file.
+
+    Compatible with DLP4 and DLP_CLASSIC.
+
+    *Index* can be integer or slice.
+
+    Provide a list of element strings to symbols to ignore naming from the HISTORY file.
+    """
+    levcfg,imcon,natoms,pos = _get_frame_positions(f)
+    if isscalar(index):
+        selected = [pos[index]]
+    else:
+        selected = pos[index]
+
+    images = []
+    for fpos in selected:
+        f.seek(fpos+1)
+        images.append(read_single_image(f, levcfg, imcon, natoms, is_trajectory=True, symbols=symbols))
+
+    return images
+
+
+def iread_dlp_history(f, symbols=None):
+    """Generator version of read_history"""
+    levcfg,imcon,natoms,pos = _get_frame_positions(f)
+    for p in pos:
+        f.seek(p+1)
+        yield read_single_image(f, levcfg, imcon, natoms, is_trajectory=True, symbols=symbols)
+
+
+
+def read_dlp4(f, symbols=None):
     """Read a DL_POLY_4 config/revcon file.
 
     Typically used indirectly through read('filename', atoms, format='dlp4').
@@ -41,11 +104,11 @@ def read_dlp4(f):
             natoms = int(tokens[2])
         else:
             natoms = None
-        yield read_single_image(f, levcfg, imcon, natoms, is_trajectory)
+        yield read_single_image(f, levcfg, imcon, natoms, is_trajectory, symbols)
         line = f.readline()
 
 
-def read_single_image(f, levcfg, imcon, natoms, is_trajectory):
+def read_single_image(f, levcfg, imcon, natoms, is_trajectory, symbols=None):
     cell = zeros((3, 3))
     ispbc = imcon > 0
     if ispbc or is_trajectory:
@@ -57,7 +120,10 @@ def read_single_image(f, levcfg, imcon, natoms, is_trajectory):
                     cell[j, i] = float(line[i])
                 except ValueError:
                     raise RuntimeError("error reading cell")
-    symbols = []
+    if symbols:
+        sym = symbols
+    else:
+        sym = []
     positions = []
     velocities = []
     forces = []
@@ -73,15 +139,18 @@ def read_single_image(f, levcfg, imcon, natoms, is_trajectory):
     for a in counter:
         line = f.readline()
         if not line:
+            a -= 1
             break
 
         symbol = line.split()[0]
-        m = re.match(r'\s*([A-Z][a-z]?)(\S*)', line)
+        m = re.match(r'\s*([A-Za-z][a-z]?)(\S*)', line)
         assert m is not None, line
         symbol, label = m.group(1, 2)
+        symbol = symbol.capitalize()
 
-        assert symbol in chemical_symbols
-        symbols.append(symbol)
+        if not symbols:
+            assert symbol in chemical_symbols
+            sym.append(symbol)
         labels.append(label)
 
         x, y, z = f.readline().split()[:3]
@@ -93,6 +162,9 @@ def read_single_image(f, levcfg, imcon, natoms, is_trajectory):
             fx, fy, fz = f.readline().split()[:3]
             forces.append([float(fx), float(fy), float(fz)])
 
+    if symbols:
+        assert a+1 == len(symbols), ("Error, counter is at {:} but you gave {:} symbols".format(a+1,len(symbols)))
+
     if imcon == 0:
         pbc = False
     elif imcon == 6:
@@ -102,7 +174,7 @@ def read_single_image(f, levcfg, imcon, natoms, is_trajectory):
         pbc = True
 
     atoms = Atoms(positions=positions,
-                  symbols=symbols,
+                  symbols=sym,
                   cell=cell,
                   pbc=pbc,
                   # Cell is centered around (0, 0, 0) in dlp4:

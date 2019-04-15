@@ -151,7 +151,7 @@ def get_calculator(name):
 
 def equal(a, b, tol=None):
     """ndarray-enabled comparison function."""
-    if isinstance(a, np.ndarray):
+    if isinstance(a, np.ndarray) or hasattr(a, '__array__'):
         b = np.array(b)
         if a.shape != b.shape:
             return False
@@ -159,7 +159,7 @@ def equal(a, b, tol=None):
             return (a == b).all()
         else:
             return np.allclose(a, b, rtol=tol, atol=tol)
-    if isinstance(b, np.ndarray):
+    if isinstance(b, np.ndarray) or hasattr(b, '__array__'):
         return equal(b, a, tol)
     if isinstance(a, dict) and isinstance(b, dict):
         if a.keys() != b.keys():
@@ -704,16 +704,15 @@ class FileIOCalculator(Calculator):
             name = 'ASE_' + self.name.upper() + '_COMMAND'
             self.command = os.environ.get(name, self.command)
 
+    def calculate(self, atoms=None, properties=['energy'],
+                  system_changes=all_changes):
+        Calculator.calculate(self, atoms, properties, system_changes)
+        self.write_input(self.atoms, properties, system_changes)
         if self.command is None:
             raise CalculatorSetupError(
                 'Please set ${} environment variable '
                 .format('ASE_' + self.name.upper() + '_COMMAND') +
                 'or supply the command keyword')
-
-    def calculate(self, atoms=None, properties=['energy'],
-                  system_changes=all_changes):
-        Calculator.calculate(self, atoms, properties, system_changes)
-        self.write_input(self.atoms, properties, system_changes)
         command = self.command.replace('PREFIX', self.prefix)
         errorcode = subprocess.call(command, shell=True, cwd=self.directory)
 

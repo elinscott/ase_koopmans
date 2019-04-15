@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 from ase import Atoms
 from ase.calculators.emt import EMT
 from ase.optimize import QuasiNewton
@@ -44,4 +45,9 @@ assert vib.split() == 1
 assert (freqs == vib.get_frequencies()).all()
 
 assert vib.combine() == 13
+# Read the data from other working directory
+dirname = os.path.basename(os.getcwd())
+os.chdir('..')  # Change working directory
+vib = Vibrations(n2, name=os.path.join(dirname, 'vib'))
+assert (freqs == vib.get_frequencies()).all()
 assert vib.clean() == 1

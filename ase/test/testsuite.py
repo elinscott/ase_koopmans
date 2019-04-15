@@ -14,7 +14,7 @@ import warnings
 import numpy as np
 
 from ase.calculators.calculator import names as calc_names, get_calculator
-from ase.utils import devnull
+from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
 NotAvailable = unittest.SkipTest
@@ -38,7 +38,10 @@ def get_tests(files=None):
 
         files = set()
         for fname in fnames:
-            files.update(glob(fname))
+            newfiles = glob(fname)
+            if not newfiles:
+                raise OSError('No such test: {}'.format(fname))
+            files.update(newfiles)
         files = list(files)
     else:
         files = glob(os.path.join(dirname, '*'))
@@ -115,6 +118,10 @@ def run_single_test(filename, verbose, strict):
             warnings.filterwarnings('ignore',
                                     'Using or importing the ABCs from',
                                     category=DeprecationWarning)
+
+            # It is okay that we are testing our own experimental features:
+            warnings.filterwarnings('ignore',
+                                    category=ExperimentalFeatureWarning)
             runtest_almost_no_magic(filename)
     except KeyboardInterrupt:
         raise
@@ -172,7 +179,8 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * gui/run may deadlock for unknown reasons in subprocess
 
             t = test.replace('\\', '/')
-            if t in ['bandstructure.py', 'doctests.py', 'gui/run.py',
+            if t in ['bandstructure.py', 'bandstructure2.py',
+                     'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
                      'forcecurve.py',
                      'fio/animate.py', 'db/db_web.py', 'x3d.py']:

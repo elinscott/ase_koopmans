@@ -2,9 +2,191 @@ from __future__ import print_function, division
 # Copyright (C) 2010, Jesper Friis
 # (see accompanying license files for details).
 
+# XXX bravais objects need to hold tolerance eps, *or* temember variant
+# from the beginning.
+#
+# Should they hold a 'cycle' argument or other data to reconstruct a particular
+# cell?  (E.g. rotation, niggli transform)
+#
+# Implement total ordering of Bravais classes 1-14
+
 import numpy as np
 from numpy import pi, sin, cos, arccos, sqrt, dot
 from numpy.linalg import norm
+
+from ase.utils.arraywrapper import arraylike
+
+
+@arraylike
+class Cell:
+    """Parallel epipedal unit cell of up to three dimensions.
+
+    This wraps a 3x3 array whose [i, j]-th element is the jth
+    Cartesian coordinate of the ith unit vector.
+
+    Cells of less than three dimensions are represented by placeholder
+    unit vectors that are zero."""
+
+    # This overridable variable tells an Atoms object whether atoms.cell
+    # and atoms.get_cell() should be a Cell object or an array.
+    ase_objtype = 'cell'  # For JSON'ing
+    _atoms_use_cellobj = 1#bool(os.environ.get('ASE_DEBUG_CELLOBJ'))
+
+    def __init__(self, array=None, pbc=None):
+        if array is None:
+            array = np.zeros((3, 3))
+
+        if pbc is None:
+            pbc = np.ones(3, bool)
+
+        # We could have lazy attributes for structure (bcc, fcc, ...)
+        # and other things.  However this requires making the cell
+        # array readonly, else people will modify it and things will
+        # be out of synch.
+        assert array.shape == (3, 3)
+        assert array.dtype == float
+        assert pbc.shape == (3,)
+        assert pbc.dtype == bool
+        self.array = array
+        self.pbc = pbc
+
+    def cellpar(self, radians=False):
+        return cell_to_cellpar(self.array, radians)
+
+    def todict(self):
+        return dict(array=self.array, pbc=self.pbc)
+
+    @property
+    def shape(self):
+        return self.array.shape
+
+    @classmethod
+    def new(cls, cell, pbc=None):
+        cell = np.array(cell, float)
+
+        if cell.shape == (3,):
+            cell = np.diag(cell)
+        elif cell.shape == (6,):
+            cell = cellpar_to_cell(cell)
+        elif cell.shape != (3, 3):
+            raise ValueError('Cell must be length 3 sequence, length 6 '
+                             'sequence or 3x3 matrix!')
+
+        return cls(cell, pbc=pbc)
+
+    @classmethod
+    def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None,
+                    pbc=None):
+        cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
+        return Cell(cell, pbc=pbc)
+
+    def bravais(self, eps=2e-4, _niggli_reduce=False, _warn=True):
+        # We want to always reduce (so things are as robust as possible)
+        # ...or not.  It is not very reliable somehow.
+        from ase.geometry.bravais import get_bravais_lattice
+        return get_bravais_lattice(self, eps=eps,
+                                   _niggli_reduce=_niggli_reduce)
+
+    def bandpath(self, path, npoints=50, eps=2e-4):
+        bravais, _ = self.bravais()
+        # XXX We need to make sure that the rotation is correct.
+        return bravais.bandpath(path, npoints=npoints)
+
+    def complete(self):
+        """Convert missing cell vectors into orthogonal unit vectors."""
+        return Cell(complete_cell(self.array), self.pbc.copy())
+
+    def copy(self):
+        return Cell(self.array.copy(), self.pbc.copy())
+
+    @property
+    def dtype(self):
+        return self.array.dtype
+
+    @property
+    def size(self):
+        return self.array.size
+
+    @property
+    def T(self):
+        return self.array.T
+
+    @property
+    def flat(self):
+        return self.array.flat
+
+    @property
+    def celldim(self):
+        # XXX Would name it ndim, but this clashes with ndarray.ndim
+        return self.array.any(1).sum()
+
+    @property
+    def orthorhombic(self):
+        return is_orthorhombic(self.array)
+
+    def lengths(self):
+        return np.array([np.linalg.norm(v) for v in self.array])
+
+    def angles(self):
+        return self.cellpar()[3:].copy()
+
+    @property
+    def ndim(self):
+        return self.array.ndim
+
+    def __array__(self, dtype=float):
+        if dtype != float:
+            raise ValueError('Cannot convert cell to array of type {}'
+                             .format(dtype))
+        return self.array
+
+    def __bool__(self):
+        return bool(self.array.any())
+
+    def __ne__(self, other):
+        return self.array != other
+
+    def __eq__(self, other):
+        return self.array == other
+
+    __nonzero__ = __bool__
+
+    @property
+    def volume(self):
+        # Fail or 0 for <3D cells?
+        # Definitely 0 since this is currently a property.
+        # I think normally it is more convenient just to get zero
+        return np.abs(np.linalg.det(self.array))
+
+    def tolist(self):
+        return self.array.tolist()
+
+    def scaled_positions(self, positions):
+        return np.linalg.solve(self.complete().array.T, positions.T).T
+
+    def cartesian_positions(self, scaled_positions):
+        return np.dot(scaled_positions, self.complete().array)
+
+    def reciprocal(self):
+        return np.linalg.pinv(self.array).transpose()
+
+    def __repr__(self):
+        if self.orthorhombic:
+            numbers = self.lengths().tolist()
+        else:
+            numbers = self.tolist()
+
+        pbc = self.pbc
+        if all(pbc):
+            pbc = True
+        elif not any(pbc):
+            pbc = False
+        return 'Cell({}, pbc={})'.format(numbers, pbc)
+
+    def niggli_reduce(self):
+        from ase.build.tools import niggli_reduce_cell
+        cell, op = niggli_reduce_cell(self.array)
+        return Cell(cell, self.pbc), op
 
 
 def unit_vector(x):

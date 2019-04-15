@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 from numpy.random import RandomState
 
 from ase.build import molecule
@@ -34,6 +35,13 @@ assert (ints == ir.intensities).all()
 
 vib = Vibrations(atoms, name='ir')
 assert (freqs == vib.get_frequencies()).all()
+
+# Read the data from other working directory
+dirname = os.path.basename(os.getcwd())
+os.chdir('..')  # Change working directory
+ir = Infrared(atoms, name=os.path.join(dirname, 'ir'))
+assert (freqs == ir.get_frequencies()).all()
+os.chdir(dirname)
 
 ir = Infrared(atoms)
 assert ir.split() == 1

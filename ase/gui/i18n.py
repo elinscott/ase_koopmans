@@ -1,5 +1,5 @@
 # i18n = i(18 letters omitted)n = internationalization
-"""Module for localization with gettext.
+"""Module for l10n (localization) with gettext.
 
 When this module is imported, ASE-GUI will use translations depending
 on system settings.  Usually language is taken from the LANG or LANGUAGE

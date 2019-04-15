@@ -59,8 +59,12 @@ class BFGS(Optimizer):
     def read(self):
         self.H, self.r0, self.f0, self.maxstep = self.load()
 
-    def step(self, f):
+    def step(self, f=None):
         atoms = self.atoms
+
+        if f is None:
+            f = atoms.get_forces()
+
         r = atoms.get_positions()
         f = f.reshape(-1)
         self.update(r.flat, f, self.r0, self.f0)
