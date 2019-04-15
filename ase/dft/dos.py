@@ -110,6 +110,14 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
 
         DOS as an ndarray of same length as energies or as an
         ndarray of shape (nw, len(energies)).
+
+    See:
+
+        Extensions of the tetrahedron method for evaluating
+        spectral properties of solids,
+        A. H. MacDonald, S. H. Vosko and P. T. Coleridge,
+        1979 J. Phys. C: Solid State Phys. 12 2991,
+        https://doi.org/10.1088/0022-3719/12/15/008
     """
 
     from scipy.spatial import Delaunay
@@ -185,11 +193,11 @@ def lti_dos1(e, w, energies, dos):
         f01 = 1 - f10
         f02 = 1 - f20
         f03 = 1 - f30
-        gw = f20 * f30 / (e1 - e0)
+        g = f20 * f30 / (e1 - e0)
         dos[:, s] += w.T.dot([f01 + f02 + f03,
                               f10,
                               f20,
-                              f30]) * gw
+                              f30]) * g
     if n2 > n1:
         delta = e3 - e0
         s = slice(n1, n2)
@@ -202,11 +210,11 @@ def lti_dos1(e, w, energies, dos):
         f03 = 1 - f30
         f12 = 1 - f21
         f13 = 1 - f31
-        gw = 1 / delta * (f12 * f20 + f21 * f13)
-        dos[:, s] += w.T.dot([gw * f03 + f02 * f20 * f12 / delta,
-                              gw * f12 + f13 * f13 * f21 / delta,
-                              gw * f21 + f20 * f20 * f12 / delta,
-                              gw * f30 + f31 * f13 * f21 / delta])
+        g = 3 / delta * (f12 * f20 + f21 * f13)
+        dos[:, s] += w.T.dot([g * f03 / 3 + f02 * f20 * f12 / delta,
+                              g * f12 / 3 + f13 * f13 * f21 / delta,
+                              g * f21 / 3 + f20 * f20 * f12 / delta,
+                              g * f30 / 3 + f31 * f13 * f21 / delta])
     if n3 > n2:
         s = slice(n2, n3)
         x = energies[s] - e3
@@ -216,11 +224,11 @@ def lti_dos1(e, w, energies, dos):
         f30 = 1 - f03
         f31 = 1 - f13
         f32 = 1 - f23
-        gw = f03 * f13 / (e3 - e2)
+        g = f03 * f13 / (e3 - e2)
         dos[:, s] += w.T.dot([f03,
                               f13,
                               f23,
-                              f30 + f31 + f32]) * gw
+                              f30 + f31 + f32]) * g
 
 
 def ltidos(*args, **kwargs):
