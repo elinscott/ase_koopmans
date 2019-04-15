@@ -262,8 +262,8 @@ Version 3.15.0
 
 * The :class:`ase.dft.dos.DOS` object will now use linear tetrahedron
   interpolation of the band-structure if you set ``width=0.0``.  It's slow,
-  but sometimes worth waiting for.  It uses the :func:`ase.dft.dos.ltidos`
-  helper function.
+  but sometimes worth waiting for.  It uses the
+  :func:`ase.dft.dos.linear_tetrahedron_integration` helper function.
 
 * :func:`ase.io.read` can now read QBox output files.
 
