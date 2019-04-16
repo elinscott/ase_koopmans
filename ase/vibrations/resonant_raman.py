@@ -70,9 +70,11 @@ class ResonantRaman(Vibrations):
                     is the transition energy in Hartrees
         indices: list
         gsname: string
-            name for ground state calculations
+            name for ground state calculations, used in run() and
+            for reading of forces (default 'rraman')
         exname: string
-            name for excited state calculations
+            name for excited state calculations (defaults to gsname),
+            used for reading excitations
         delta: float
             Finite difference displacement in Angstrom.
         nfree: float
