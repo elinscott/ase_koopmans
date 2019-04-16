@@ -43,8 +43,6 @@ def parprint(*args, **kwargs):
         print(*args, **kwargs)
 
 
-
-
 class DummyMPI:
     rank = 0
     size = 1
