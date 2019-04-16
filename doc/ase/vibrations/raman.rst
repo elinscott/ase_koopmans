@@ -9,8 +9,12 @@ the modules are intended to work with other calculators also.
 The strategy is to calculate vibrational properties first and
 obtain the spectra from these later.
 
+---------------------------------
 1. Finite difference calculations
 ---------------------------------
+
+1a. Forces
+----------
 
 It is recommended to do a vibrational analysis first by using
 the :class:`~ase.vibrations.Vibrations` or  :class:`~ase.vibrations.Infrared`
@@ -18,7 +22,15 @@ modules. In the example of molecular hydrogen this is
 
 .. literalinclude:: H2_ir.py
 
+This produces a calculation with rather accurate forces in order
+to get the Hessian and thus the vibrational frequencies as well
+as Eigenstates correctly.
+
+1b. Excitations
+---------------
+
 In the next step we perform a finite difference optical calculation
+with less accuracy,
 where the optical spectra are evaluated using TDDFT
 
 .. literalinclude:: H2_optical.py
