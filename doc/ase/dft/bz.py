@@ -5,13 +5,6 @@
 # creates: 15.MCL.svg 16.MCLC1.svg 17.MCLC3.svg 18.MCLC5.svg 19.TRI1a.svg
 # creates: 20.TRI1b.svg 21.TRI2a.svg 22.TRI2b.svg
 
-import numpy as np
-import matplotlib.pyplot as plt
-
-from ase.dft.kpoints import (get_special_points, special_paths,
-                             parse_path_string)
-from ase.dft.bz import bz3d_plot
-
 from ase.geometry.bravais import all_variants
 
 
