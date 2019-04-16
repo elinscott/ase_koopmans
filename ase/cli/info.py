@@ -63,11 +63,11 @@ class CLICommand:
 def print_info():
     versions = [('platform', platform.platform()),
                 ('python-' + sys.version.split()[0], sys.executable)]
-    for name in ['ase', 'numpy', 'scipy', 'asecext']:
+    for name in ['ase', 'numpy', 'scipy', 'ase_ext']:
         try:
             module = import_module(name)
         except ImportError:
-            if name != 'asecext':
+            if name != 'ase_ext':
                 versions.append((name, 'no'))
         else:
             # Search for git hash
