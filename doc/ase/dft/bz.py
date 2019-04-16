@@ -1,5 +1,4 @@
-# creates: cubic.svg, fcc.svg, bcc.svg, tetragonal.svg, orthorhombic.svg
-# creates: hexagonal.svg, monoclinic.svg
+# creates: bztable.rst
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -7,33 +6,38 @@ from ase.dft.kpoints import (get_special_points, special_paths,
                              parse_path_string)
 from ase.dft.bz import bz3d_plot
 
+from ase.geometry.bravais import all_variants
 
-for X, cell in [
-    ('cubic', np.eye(3)),
-    ('fcc', [[0, 1, 1], [1, 0, 1], [1, 1, 0]]),
-    ('bcc', [[-1, 1, 1], [1, -1, 1], [1, 1, -1]]),
-    ('tetragonal', [[1, 0, 0], [0, 1, 0], [0, 0, 1.3]]),
-    ('orthorhombic', [[1, 0, 0], [0, 1.2, 0], [0, 0, 1.4]]),
-    ('hexagonal', [[1, 0, 0], [-0.5, 3**0.5 / 2, 0], [0, 0, 1]]),
-    ('monoclinic', [[1, 0, 0], [0, 1, 0], [0, 0.2, 1]])]:
 
-    icell = np.linalg.inv(cell)
-    print(cell, X)
-    special_points = get_special_points(cell, X)
-    paths = []
-    for names in parse_path_string(special_paths[X]):
-        points = []
-        for name in names:
-            points.append(np.dot(icell, special_points[name]))
-        paths.append((names, points))
+header = """\
 
-    if X == 'bcc':
-        scale = 0.6
-        elev = 0.24
-        # pi / 13
-    else:
-        scale = 1
-        elev = None
+Brillouin zone data
+-------------------
 
-    bz3d_plot(cell=cell, paths=paths, elev=elev, scale=scale)
-    plt.savefig(X + '.svg')
+.. list-table::
+    :widths: 10 15 45
+"""
+
+
+entry = """\
+    * - {name} ({longname})
+      - {bandpath}
+      - .. image:: {fname}
+            :width: 40 %
+"""
+
+with open('bztable.rst', 'w') as fd:
+    print(header, file=fd)
+
+    for i, lat in enumerate(all_variants()):
+        id = '{:02d}.{}'.format(i, lat.variant.name)
+        imagefname = '{}.svg'.format(id)
+        txt = entry.format(name=lat.variant.name,
+                           longname=lat.longname,
+                           bandpath=lat.bandpath().labelseq,
+                           fname=imagefname)
+        print(txt, file=fd)
+        ax = lat.plot_bz()
+        fig = ax.get_figure()
+        fig.savefig(imagefname, bbox_inches='tight')
+        fig.clear()
