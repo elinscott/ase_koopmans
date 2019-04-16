@@ -16,7 +16,7 @@ import numpy as np
 
 import ase.units as units
 from ase.atom import Atom
-from ase.constraints import FixConstraint, FixBondLengths
+from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
 from ase.data import atomic_masses
 from ase.utils import basestring
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
@@ -712,7 +712,11 @@ class Atoms(object):
         forces.
 
         For molecular dynamics (md=True) we don't apply the constraint
-        to the forces but to the momenta."""
+        to the forces but to the momenta. When holonomic constraints for
+        rigid linear triatomic molecules are present, ask the constraints
+        to redistribute the forces within each triple defined in the
+        constraints (required for molecular dynamics with this type of
+        constraints)."""
 
         if self._calc is None:
             raise RuntimeError('Atoms object has no calculator.')
@@ -723,6 +727,8 @@ class Atoms(object):
             # to skip real constraints but include special "constraints"
             # Like Hookean.
             for constraint in self.constraints:
+                if md and hasattr(constraint, 'redistribute_forces_md'):
+                    constraint.redistribute_forces_md(self, forces)
                 if not md or hasattr(constraint, 'adjust_potential_energy'):
                     constraint.adjust_forces(self, forces)
         return forces
@@ -932,7 +938,8 @@ class Atoms(object):
         conadd = []
         # Constraints need to be deepcopied, but only the relevant ones.
         for con in copy.deepcopy(self.constraints):
-            if isinstance(con, (FixConstraint, FixBondLengths)):
+            if isinstance(con, (FixConstraint, FixBondLengths,
+                                FixLinearTriatomic)):
                 try:
                     con.index_shuffle(self, i)
                     conadd.append(con)

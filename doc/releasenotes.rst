@@ -9,6 +9,7 @@ Git master branch
 
 :git:`master <>`.
 
+* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 * Dynamics and structure optimizers can now run as an iterator using the
   new ``irun()`` mechanism::
 
@@ -25,6 +26,8 @@ Git master branch
   written that specify LDOS, bsunfolding and many other functionalities.
 
 * NWChem calculator now supports TDDFT runs.
+
+* The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`ga_bulk_tutorial`.
 
 * The genetic algorithm module :mod:`ase.ga` now has operators for crystal
   structure prediction. See :ref:`ga_bulk_tutorial`.
@@ -262,8 +265,8 @@ Version 3.15.0
 
 * The :class:`ase.dft.dos.DOS` object will now use linear tetrahedron
   interpolation of the band-structure if you set ``width=0.0``.  It's slow,
-  but sometimes worth waiting for.  It uses the :func:`ase.dft.dos.ltidos`
-  helper function.
+  but sometimes worth waiting for.  It uses the
+  :func:`ase.dft.dos.linear_tetrahedron_integration` helper function.
 
 * :func:`ase.io.read` can now read QBox output files.
 

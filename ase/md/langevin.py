@@ -111,6 +111,15 @@ class Langevin(MolecularDynamics):
         self.xi = self.rng.standard_normal(size=(natoms, 3))
         self.eta = self.rng.standard_normal(size=(natoms, 3))
 
+        # When holonomic constraints for rigid linear triatomic molecules are
+        # present, ask the constraints to redistribute xi and eta within each
+        # triple defined in the constraints. This is needed to achieve the
+        # correct target temperature.
+        for constraint in self.atoms.constraints:
+            if hasattr(constraint, 'redistribute_forces_md'):
+                constraint.redistribute_forces_md(atoms, self.xi, rand=True)
+                constraint.redistribute_forces_md(atoms, self.eta, rand=True)
+
         if self.communicator is not None:
             self.communicator.broadcast(self.xi, 0)
             self.communicator.broadcast(self.eta, 0)
