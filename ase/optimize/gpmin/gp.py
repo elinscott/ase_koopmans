@@ -111,7 +111,7 @@ class GaussianProcess():
         return f
 
 
-    def neg_log_likelihood(self, l, *args):
+    def neg_log_likelihood(self, params, *args):
         '''Negative logarithm of the marginal likelihood and its derivative.
         It has been built in the form that suits the best its optimization, 
         with the scipy minimize module, to find the optimal hyperparameters.
@@ -123,7 +123,7 @@ class GaussianProcess():
                in the training set- '''
 
         X, Y = args
-        self.kernel.set_params(np.array([self.kernel.weight, l[0] , self.noise]))
+        self.kernel.set_params(np.array([params[0], params[1] , self.noise])) #Come back to this
         self.train(X, Y)
 
         y = Y.flatten()
@@ -143,7 +143,7 @@ class GaussianProcess():
         DlogP = 0.5 * np.trace(D_P_input - D_complexity, axis1=1, axis2=2)
         return -logP, -DlogP
 
-    def fit_hyperparameters(self, X, Y):
+    def fit_hyperparameters(self, X, Y, tol=1e-2):
         '''Given a set of observations, X, Y; optimize the scale
         of the Gaussian Process maximizing the marginal log-likelihood.
         This method calls TRAIN there is no need to call the TRAIN method again.
@@ -155,19 +155,23 @@ class GaussianProcess():
         X: observations(i.e. positions). numpy array with shape: nsamples x D
         Y: targets (i.e. energy and forces). 
            numpy array with shape (nsamples, D+1)
+        tol: tolerance on the maximum component of the gradient of the log-likelihood.
+           (See scipy's L-BFGS-B documentation:
+           https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html )
         '''
 
-        l = np.copy(self.hyperparams)[1]
+        params = np.copy(self.hyperparams)[:2]
         arguments = (X, Y)
-        result = minimize(self.neg_log_likelihood, l, args=arguments,
-                          method='L-BFGS-B', jac=True)
+        result = minimize(self.neg_log_likelihood, params, args=arguments,
+                          method='L-BFGS-B', jac=True,
+                          options = {'gtol':tol, 'ftol':0.01*tol})
 
         if not result.success:
             print(result)
             raise NameError("The Gaussian Process could not be fitted.")
         else:
             self.hyperparams = np.array(
-                [self.kernel.weight, result.x.copy()[0], self.noise])
+                [result.x.copy()[0], result.x.copy()[1], self.noise]) # review this line
             
         self.set_hyperparams(self.hyperparams)
         return self.hyperparams
