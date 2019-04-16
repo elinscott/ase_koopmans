@@ -103,7 +103,7 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 
 # Recognized names of calculators sorted alphabetically:
-names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
+names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
          'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
          'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
          'hotbit', 'jacapo', 'lammpsrun',
@@ -140,6 +140,8 @@ def get_calculator(name):
         from hotbit import Calculator
     elif name == 'vasp2':
         from ase.calculators.vasp import Vasp2 as Calculator
+    elif name == 'ace':
+        from ase.calculators.acemolecule import ACE as Calculator
     else:
         classname = special.get(name, name.title())
         module = __import__('ase.calculators.' + name, {}, None, [classname])

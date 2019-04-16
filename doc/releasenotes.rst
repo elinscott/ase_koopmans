@@ -9,6 +9,7 @@ Git master branch
 
 :git:`master <>`.
 
+* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 * Dynamics and structure optimizers can now run as an iterator using the
   new ``irun()`` mechanism::
 
@@ -25,6 +26,8 @@ Git master branch
   written that specify LDOS, bsunfolding and many other functionalities.
 
 * NWChem calculator now supports TDDFT runs.
+
+* The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`ga_bulk_tutorial`.
 
 * The genetic algorithm module :mod:`ase.ga` now has operators for crystal
   structure prediction. See :ref:`ga_bulk_tutorial`.
