@@ -1,7 +1,7 @@
 from __future__ import division
 from math import sqrt
 from warnings import warn
-from ase.geometry import find_mic
+from ase.geometry import find_mic, wrap_positions
 from ase.calculators.calculator import PropertyNotImplementedError
 
 import numpy as np
@@ -10,7 +10,8 @@ from scipy.linalg import expm
 __all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
            'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled', 'StrainFilter',
            'FixCom', 'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
-           'FixBondLengths', 'FixInternals', 'Hookean', 'ExternalForce']
+           'FixBondLengths', 'FixLinearTriatomic', 'FixInternals', 'Hookean',
+           'ExternalForce', 'MirrorForce', 'MirrorTorque']
 
 
 def dict2constraint(dct):
@@ -347,6 +348,258 @@ class FixBondLengths(FixConstraint):
 def FixBondLength(a1, a2):
     """Fix distance between atoms with indices a1 and a2."""
     return FixBondLengths([(a1, a2)])
+
+
+class FixLinearTriatomic(FixConstraint):
+    """Holonomic constraints for rigid linear triatomic molecules."""
+
+    def __init__(self, triples):
+        """Apply RATTLE-type bond constraints between outer atoms n and m
+           and linear vectorial constraints to the position of central
+           atoms o to fix the geometry of linear triatomic molecules of the
+           type:
+
+           n--o--m
+
+           Parameters:
+
+           triples: list
+               Indices of the atoms forming the linear molecules to constrain
+               as triples. Sequence should be (n, o, m) or (m, o, n).
+
+           When using these constraints in molecular dynamics or structure
+           optimizations, atomic forces need to be redistributed within a
+           triple. The function redistribute_forces_optimization implements
+           the redistribution of forces for structure optimization, while
+           the function redistribute_forces_md implements the redistribution
+           for molecular dynamics.
+
+           References:
+
+           Ciccotti et al. Molecular Physics 47 (1982)
+           http://dx.doi.org/10.1080/00268978200100942
+        """
+        self.triples = np.asarray(triples)
+        if self.triples.shape[1] != 3:
+            raise ValueError('"triples" has wrong size')
+        self.bondlengths = None
+
+        self.removed_dof = 4 * len(triples)
+
+    @property
+    def n_ind(self):
+        return self.triples[:, 0]
+
+    @property
+    def m_ind(self):
+        return self.triples[:, 2]
+
+    @property
+    def o_ind(self):
+        return self.triples[:, 1]
+
+    def initialize(self, atoms):
+        masses = atoms.get_masses()
+        self.mass_n, self.mass_m, self.mass_o = self.get_slices(masses)
+
+        self.bondlengths = self.initialize_bond_lengths(atoms)
+        self.bondlengths_nm = self.bondlengths.sum(axis=1)
+
+        C1 = self.bondlengths[:, ::-1] / self.bondlengths_nm[:, None]
+        C2 = (C1[:, 0] ** 2 * self.mass_o * self.mass_m +
+              C1[:, 1] ** 2 * self.mass_n * self.mass_o +
+              self.mass_n * self.mass_m)
+        C2 = C1 / C2[:, None]
+        C3 = self.mass_n * C1[:, 1] - self.mass_m * C1[:, 0]
+        C3 = C2 * self.mass_o[:, None] * C3[:, None]
+        C3[:, 1] *= -1
+        C3 = (C3 + 1) / np.vstack((self.mass_n, self.mass_m)).T
+        C4 = (C1[:, 0]**2 + C1[:, 1]**2 + 1)
+        C4 = C1 / C4[:, None]
+
+        self.C1 = C1
+        self.C2 = C2
+        self.C3 = C3
+        self.C4 = C4
+
+    def adjust_positions(self, atoms, new):
+        old = atoms.positions
+        new_n, new_m, new_o = self.get_slices(new)
+
+        if self.bondlengths is None:
+            self.initialize(atoms)
+
+        r0 = old[self.n_ind] - old[self.m_ind]
+        d0 = find_mic([r0], atoms.cell, atoms.pbc)[0][0]
+        d1 = new_n - new_m - r0 + d0
+        a = np.einsum('ij,ij->i', d0, d0)
+        b = np.einsum('ij,ij->i', d1, d0)
+        c = np.einsum('ij,ij->i', d1, d1) - self.bondlengths_nm ** 2
+        g = (b - (b**2 - a * c)**0.5) / (a * self.C3.sum(axis=1))
+        g = g[:, None] * self.C3
+        new_n -= g[:, 0, None] * d0
+        new_m += g[:, 1, None] * d0
+        if np.allclose(d0, r0):
+            new_o = (self.C1[:, 0, None] * new_n
+                     + self.C1[:, 1, None] * new_m)
+        else:
+            v1 = find_mic([new_n], atoms.cell, atoms.pbc)[0][0]
+            v2 = find_mic([new_m], atoms.cell, atoms.pbc)[0][0]
+            rb = self.C1[:, 0, None] * v1 + self.C1[:, 1, None] * v2
+            new_o = wrap_positions(rb, atoms.cell, atoms.pbc)
+
+        self.set_slices(new_n, new_m, new_o, new)
+
+    def adjust_momenta(self, atoms, p):
+        old = atoms.positions
+        p_n, p_m, p_o = self.get_slices(p)
+
+        if self.bondlengths is None:
+            self.initialize(atoms)
+
+        mass_nn = self.mass_n[:, None]
+        mass_mm = self.mass_m[:, None]
+        mass_oo = self.mass_o[:, None]
+
+        d = old[self.n_ind] - old[self.m_ind]
+        d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
+        dv = p_n / mass_nn - p_m / mass_mm
+        k = np.einsum('ij,ij->i', dv, d) / self.bondlengths_nm ** 2
+        k = self.C3 / (self.C3.sum(axis=1)[:, None]) * k[:, None]
+        p_n -= k[:, 0, None] * mass_nn * d
+        p_m += k[:, 1, None] * mass_mm * d
+        p_o = (mass_oo * (self.C1[:, 0, None] * p_n / mass_nn +
+                          self.C1[:, 1, None] * p_m / mass_mm))
+
+        self.set_slices(p_n, p_m, p_o, p)
+
+    def adjust_forces(self, atoms, forces):
+
+        if self.bondlengths is None:
+            self.initialize(atoms)
+
+        A = self.C4 * np.diff(self.C1)
+        A[:, 0] *= -1
+        A -= 1
+        B = np.diff(self.C4) / (A.sum(axis=1))[:, None]
+        A /= (A.sum(axis=1))[:, None]
+
+        self.constraint_forces = -forces
+        old = atoms.positions
+
+        fr_n, fr_m, fr_o = self.redistribute_forces_optimization(forces)
+
+        d = old[self.n_ind] - old[self.m_ind]
+        d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
+        df = fr_n - fr_m
+        k = -np.einsum('ij,ij->i', df, d) / self.bondlengths_nm ** 2
+        forces[self.n_ind] = fr_n + k[:, None] * d * A[:, 0, None]
+        forces[self.m_ind] = fr_m - k[:, None] * d * A[:, 1, None]
+        forces[self.o_ind] = fr_o + k[:, None] * d * B
+
+        self.constraint_forces += forces
+
+    def redistribute_forces_optimization(self, forces):
+        """Redistribute forces within a triple when performing structure
+        optimizations.
+
+        The redistributed forces needs to be further adjusted using the
+        appropriate Lagrange multipliers as implemented in adjust_forces."""
+        forces_n, forces_m, forces_o = self.get_slices(forces)
+        C1_1 = self.C1[:, 0, None]
+        C1_2 = self.C1[:, 1, None]
+        C4_1 = self.C4[:, 0, None]
+        C4_2 = self.C4[:, 1, None]
+
+        fr_n = ((1 - C4_1 * C1_1) * forces_n -
+                C4_1 * (C1_2 * forces_m - forces_o))
+        fr_m = ((1 - C4_2 * C1_2) * forces_m -
+                C4_2 * (C1_1 * forces_n - forces_o))
+        fr_o = ((1 - 1 / (C1_1**2 + C1_2**2 + 1)) * forces_o +
+                C4_1 * forces_n + C4_2 * forces_m)
+
+        return fr_n, fr_m, fr_o
+
+    def redistribute_forces_md(self, atoms, forces, rand=False):
+        """Redistribute forces within a triple when performing molecular
+        dynamics.
+
+        When rand=True, use the equations for random force terms, as
+        used e.g. by Langevin dynamics, otherwise apply the standard
+        equations for deterministic forces (see Ciccotti et al. Molecular
+        Physics 47 (1982))."""
+        if self.bondlengths is None:
+            self.initialize(atoms)
+        forces_n, forces_m, forces_o = self.get_slices(forces)
+        C1_1 = self.C1[:, 0, None]
+        C1_2 = self.C1[:, 1, None]
+        C2_1 = self.C2[:, 0, None]
+        C2_2 = self.C2[:, 1, None]
+        mass_nn = self.mass_n[:, None]
+        mass_mm = self.mass_m[:, None]
+        mass_oo = self.mass_o[:, None]
+        if rand:
+            mr1 = (mass_mm / mass_nn) ** 0.5
+            mr2 = (mass_oo / mass_nn) ** 0.5
+            mr3 = (mass_nn / mass_mm) ** 0.5
+            mr4 = (mass_oo / mass_mm) ** 0.5
+        else:
+            mr1 = 1.0
+            mr2 = 1.0
+            mr3 = 1.0
+            mr4 = 1.0
+
+        fr_n = ((1 - C1_1 * C2_1 * mass_oo * mass_mm) * forces_n -
+                C2_1 * (C1_2 * mr1 * mass_oo * mass_nn * forces_m -
+                        mr2 * mass_mm * mass_nn * forces_o))
+
+        fr_m = ((1 - C1_2 * C2_2 * mass_oo * mass_nn) * forces_m -
+                C2_2 * (C1_1 * mr3 * mass_oo * mass_mm * forces_n -
+                        mr4 * mass_mm * mass_nn * forces_o))
+
+        self.set_slices(fr_n, fr_m, 0.0, forces)
+
+    def get_slices(self, a):
+        a_n = a[self.n_ind]
+        a_m = a[self.m_ind]
+        a_o = a[self.o_ind]
+
+        return a_n, a_m, a_o
+
+    def set_slices(self, a_n, a_m, a_o, a):
+        a[self.n_ind] = a_n
+        a[self.m_ind] = a_m
+        a[self.o_ind] = a_o
+
+    def initialize_bond_lengths(self, atoms):
+        bondlengths = np.zeros((len(self.triples), 2))
+
+        for i in range(len(self.triples)):
+            bondlengths[i, 0] = atoms.get_distance(self.n_ind[i], self.o_ind[i],
+                                                   mic=True)
+            bondlengths[i, 1] = atoms.get_distance(self.o_ind[i], self.m_ind[i],
+                                                   mic=True)
+
+        return bondlengths
+
+    def get_indices(self):
+        return np.unique(self.triples.ravel())
+
+    def todict(self):
+        return {'name': 'FixLinearTriatomic',
+                'kwargs': {'triples': self.triples}}
+
+    def index_shuffle(self, atoms, ind):
+        """Shuffle the indices of the three atoms in this constraint"""
+        map = np.zeros(len(atoms), int)
+        map[ind] = 1
+        n = map.sum()
+        map[:] = -1
+        map[ind] = range(n)
+        triples = map[self.triples]
+        self.triples = triples[(triples != -1).all(1)]
+        if len(self.triples) == 0:
+            raise IndexError('Constraint not part of slice')
 
 
 class FixedMode(FixConstraint):
@@ -1032,7 +1285,8 @@ class ExternalForce(FixConstraint):
     """Constraint object for pulling two atoms apart by an external force.
 
     You can combine this constraint for example with FixBondLength but make
-    sure that the ExternalForce-constraint comes first in the list:
+    sure that *ExternalForce* comes first in the list if there are overlaps
+    between atom1-2 and atom3-4:
 
     >>> con1 = ExternalForce(atom1, atom2, f_ext)
     >>> con2 = FixBondLength(atom3, atom4)
@@ -1076,6 +1330,244 @@ class ExternalForce(FixConstraint):
         return {'name': 'ExternalForce',
                 'kwargs': {'a1': self.indices[0], 'a2': self.indices[1],
                            'f_ext': self.external_force}}
+
+
+class MirrorForce(FixConstraint):
+    """Constraint object for mirroring the force between two atoms.
+
+    This class is designed to find a transition state with the help of a
+    single optimization. It can be used if the transition state belongs to a
+    bond breaking reaction. First the given bond length will be fixed until
+    all other degrees of freedom are optimized, then the forces of the two
+    atoms will be mirrored to find the transition state. The mirror plane is
+    perpenticular to the connecting line of the atoms. Transition states in
+    dependence of the force can be obtained by stretching the molecule and
+    fixing its total length with *FixBondLength* or by using *ExternalForce*
+    during the optimization with *MirrorForce*.
+
+    Parameters
+    ----------
+    a1: int
+        First atom index.
+    a2: int
+        Second atom index.
+    max_dist: float
+        Upper limit of the bond length interval where the transition state
+        can be found.
+    min_dist: float
+        Lower limit of the bond length interval where the transition state
+        can be found.
+    fmax: float
+        Maximum force used for the optimization.
+
+    Notes
+    -----
+    You can combine this constraint for example with FixBondLength but make
+    sure that *MirrorForce* comes first in the list if there are overlaps
+    between atom1-2 and atom3-4:
+
+    >>> con1 = MirrorForce(atom1, atom2)
+    >>> con2 = FixBondLength(atom3, atom4)
+    >>> atoms.set_constraint([con1, con2])
+
+    """
+
+    def __init__(self, a1, a2, max_dist=2.5, min_dist=1., fmax=0.1):
+        self.indices = [a1, a2]
+        self.min_dist = min_dist
+        self.max_dist = max_dist
+        self.fmax = fmax
+
+    def adjust_positions(self, atoms, new):
+        pass
+
+    def adjust_forces(self, atoms, forces):
+        dist = np.subtract.reduce(atoms.positions[self.indices])
+        d = np.linalg.norm(dist)
+        if (d < self.min_dist) or (d > self.max_dist):
+            # Stop structure optimization
+            forces[:] *= 0
+            return
+        dist /= d
+        df = np.subtract.reduce(forces[self.indices])
+        f = df.dot(dist)
+        con_saved = atoms.constraints
+        try:
+            con = [con for con in con_saved
+                   if not isinstance(con, MirrorForce)]
+            atoms.set_constraint(con)
+            forces_copy = atoms.get_forces()
+        finally:
+            atoms.set_constraint(con_saved)
+        df1 = -1 / 2. * f * dist
+        forces_copy[self.indices] += (df1, -df1)
+        # Check if forces would be converged if the bond with mirrored forces
+        # would also be fixed
+        if (forces_copy**2).sum(axis=1).max() < self.fmax**2:
+            factor = 1.
+        else:
+            factor = 0.
+        df1 = -(1 + factor) / 2. * f * dist
+        forces[self.indices] += (df1, -df1)
+
+    def index_shuffle(self, atoms, ind):
+        """Shuffle the indices of the two atoms in this constraint
+
+        """
+        newa = [-1, -1]  # Signal error
+        for new, old in slice2enlist(ind, len(atoms)):
+            for i, a in enumerate(self.indices):
+                if old == a:
+                    newa[i] = new
+        if newa[0] == -1 or newa[1] == -1:
+            raise IndexError('Constraint not part of slice')
+        self.indices = newa
+
+    def __repr__(self):
+        return 'MirrorForce(%d, %d, %f, %f, %f)' % (
+            self.indices[0], self.indices[1], self.max_dist, self.min_dist,
+            self.fmax)
+
+    def todict(self):
+        return {'name': 'MirrorForce',
+                'kwargs': {'a1': self.indices[0], 'a2': self.indices[1],
+                           'max_dist': self.max_dist,
+                           'min_dist': self.min_dist, 'fmax': self.fmax}}
+
+
+class MirrorTorque(FixConstraint):
+    """Constraint object for mirroring the torque acting on a dihedral
+    angle defined by four atoms.
+
+    This class is designed to find a transition state with the help of a
+    single optimization. It can be used if the transition state belongs to a
+    cis-trans-isomerization with a change of dihedral angle. First the given
+    dihedral angle will be fixed until all other degrees of freedom are
+    optimized, then the torque acting on the dihedral angle will be mirrored
+    to find the transition state. Transition states in
+    dependence of the force can be obtained by stretching the molecule and
+    fixing its total length with *FixBondLength* or by using *ExternalForce*
+    during the optimization with *MirrorTorque*.
+
+    This constraint can be used to find
+    transition states of cis-trans-isomerization.
+
+    a1    a4
+    |      |
+    a2 __ a3
+
+    Parameters
+    ----------
+    a1: int
+        First atom index.
+    a2: int
+        Second atom index.
+    a3: int
+        Third atom index.
+    a4: int
+        Fourth atom index.
+    max_angle: float
+        Upper limit of the dihedral angle interval where the transition state
+        can be found.
+    min_angle: float
+        Lower limit of the dihedral angle interval where the transition state
+        can be found.
+    fmax: float
+        Maximum force used for the optimization.
+
+    Notes
+    -----
+    You can combine this constraint for example with FixBondLength but make
+    sure that *MirrorTorque* comes first in the list if there are overlaps
+    between atom1-4 and atom5-6:
+
+    >>> con1 = MirrorTorque(atom1, atom2, atom3, atom4)
+    >>> con2 = FixBondLength(atom5, atom6)
+    >>> atoms.set_constraint([con1, con2])
+
+    """
+
+    def __init__(self, a1, a2, a3, a4, max_angle=2 * np.pi, min_angle=0.,
+                 fmax=0.1):
+        self.indices = [a1, a2, a3, a4]
+        self.min_angle = min_angle
+        self.max_angle = max_angle
+        self.fmax = fmax
+
+    def adjust_positions(self, atoms, new):
+        pass
+
+    def adjust_forces(self, atoms, forces):
+        angle = atoms.get_dihedral(self.indices[0], self.indices[1],
+                                   self.indices[2], self.indices[3])
+        angle *= np.pi / 180.
+        if (angle < self.min_angle) or (angle > self.max_angle):
+            # Stop structure optimization
+            forces[:] *= 0
+            return
+        p = atoms.positions[self.indices]
+        f = forces[self.indices]
+
+        f0 = (f[1] + f[2]) / 2.
+        ff = f - f0
+        p0 = (p[2] + p[1]) / 2.
+        m0 = np.cross(p[1] - p0, ff[1]) / (p[1] - p0).dot(p[1] - p0)
+        fff = ff - np.cross(m0, p - p0)
+        d1 = np.cross(np.cross(p[1] - p0, p[0] - p[1]), p[1] - p0) / \
+            (p[1] - p0).dot(p[1] - p0)
+        d2 = np.cross(np.cross(p[2] - p0, p[3] - p[2]), p[2] - p0) / \
+            (p[2] - p0).dot(p[2] - p0)
+        omegap1 = (np.cross(d1, fff[0]) / d1.dot(d1)).dot(p[1] - p0) / \
+            np.linalg.norm(p[1] - p0)
+        omegap2 = (np.cross(d2, fff[3]) / d2.dot(d2)).dot(p[2] - p0) / \
+            np.linalg.norm(p[2] - p0)
+        omegap = omegap1 + omegap2
+        con_saved = atoms.constraints
+        try:
+            con = [con for con in con_saved
+                   if not isinstance(con, MirrorTorque)]
+            atoms.set_constraint(con)
+            forces_copy = atoms.get_forces()
+        finally:
+            atoms.set_constraint(con_saved)
+        df1 = -1 / 2. * omegap * np.cross(p[1] - p0, d1) / \
+            np.linalg.norm(p[1] - p0)
+        df2 = -1 / 2. * omegap * np.cross(p[2] - p0, d2) / \
+            np.linalg.norm(p[2] - p0)
+        forces_copy[self.indices] += (df1, [0., 0., 0.], [0., 0., 0.], df2)
+        # Check if forces would be converged if the dihedral angle with
+        # mirrored torque would also be fixed
+        if (forces_copy**2).sum(axis=1).max() < self.fmax**2:
+            factor = 1.
+        else:
+            factor = 0.
+        df1 = -(1 + factor) / 2. * omegap * np.cross(p[1] - p0, d1) / \
+            np.linalg.norm(p[1] - p0)
+        df2 = -(1 + factor) / 2. * omegap * np.cross(p[2] - p0, d2) / \
+            np.linalg.norm(p[2] - p0)
+        forces[self.indices] += (df1, [0., 0., 0.], [0., 0., 0.], df2)
+
+    def index_shuffle(self, atoms, ind):
+        # See docstring of superclass
+        indices = []
+        for new, old in slice2enlist(ind, len(atoms)):
+            if old in self.indices:
+                indices.append(new)
+        if len(indices) == 0:
+            raise IndexError('All indices in MirrorTorque not part of slice')
+        self.indices = np.asarray(indices, int)
+
+    def __repr__(self):
+        return 'MirrorTorque(%d, %d, %d, %d, %f, %f, %f)' % (
+            self.indices[0], self.indices[1], self.indices[2],
+            self.indices[3], self.max_angle, self.min_angle, self.fmax)
+
+    def todict(self):
+        return {'name': 'MirrorTorque',
+                'kwargs': {'a1': self.indices[0], 'a2': self.indices[1],
+                           'a3': self.indices[2], 'a4': self.indices[3],
+                           'max_angle': self.max_angle,
+                           'min_angle': self.min_angle, 'fmax': self.fmax}}
 
 
 class Filter:

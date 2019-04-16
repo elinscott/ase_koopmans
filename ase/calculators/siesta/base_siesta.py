@@ -419,10 +419,15 @@ class BaseSiesta(FileIOCalculator):
             self._write_kpts(f)
 
     def read(self, filename):
-        """Read parameters from file."""
-        if not os.path.exists(filename):
-            raise ReadError("The restart file '%s' does not exist" % filename)
-        self.atoms = xv_to_atoms(filename)
+        """Read structural parameters from file .XV file
+           Read other results from other files 
+           filename : siesta.XV 
+        """
+           
+        fname = os.path.join(self.directory, filename)
+        if not os.path.exists(fname):
+            raise ReadError("The restart file '%s' does not exist" % fname)
+        self.atoms = xv_to_atoms(fname)
         self.read_results()
 
     def _write_fdf_arguments(self, f):
