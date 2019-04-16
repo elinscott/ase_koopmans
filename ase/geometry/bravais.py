@@ -20,7 +20,8 @@ class BravaisLattice(ABC):
     #                        'BCT2': <variant object>}
     ndim = None
     
-    def __init__(self, **kwargs):
+    def __init__(self, transformation=np.eye(3),
+                 **kwargs):
         p = {}
         eps = kwargs.pop('eps', 2e-4)
         for k, v in kwargs.items():
@@ -28,6 +29,9 @@ class BravaisLattice(ABC):
         assert set(p) == set(self.parameters)
         self._parameters = p
         self._eps = eps
+
+        self.transformation = transformation
+        self.itransformation = np.linalg.inv(transformation)
 
         if len(self.variants) == 1:
             # If there's only one it has the same name as the lattice type
@@ -47,6 +51,7 @@ class BravaisLattice(ABC):
 
     def tocell(self, cycle=0):
         cell = self._cell(**self._parameters)
+        cell = self.transformation @ cell
         pbc = np.array([True if i < self.ndim else False for i in range(3)],
                        bool)
         if cycle:
@@ -62,6 +67,9 @@ class BravaisLattice(ABC):
     @property
     def special_path(self):
         return self.variant.special_path
+
+    def set_transformation(self, transformation):
+        self.transformation = np.copy(transformation)
 
     def get_special_points_array(self):
         if self.variant.special_points is not None:
@@ -85,7 +93,8 @@ class BravaisLattice(ABC):
             return self.variant.special_points
 
         labels = self.special_point_names
-        points = self.get_special_points_array()
+        points = (self.get_special_points_array()
+                  @ self.itransformation)
         return dict(zip(labels, points))
 
     @property
@@ -218,7 +227,7 @@ def bravaisclass(longname, parameters, variants, ndim=3):
         cls.variant_names = []
         cls.variants = {}
         cls.ndim = ndim
-        
+
         for [name, special_point_names, special_path,
              special_points] in variants:
             cls.variant_names.append(name)
@@ -1035,42 +1044,77 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
     raise RuntimeError('Cannot recognize cell at all somehow!')
 
 
-def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
-    # XXX we need to figure out a way to reduce the cell to standard
-    # forms, Niggli or otherwise.  Else we will not always get the
-    # right type.
+def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
+    orig_uc = uc
 
-    # orig_uc = uc
-    if _niggli_reduce:
-        uc, niggli_op = uc.niggli_reduce()
-
-    cellpar = uc.cellpar()
-    a, b = cellpar[:2]
-    gamma = cellpar[-1]
-
-    all_lengths_equal = abs(a - b) < eps
+    ops = []
+    for i in range(-1, 1):
+        for j in range(-1, 1):
+            op = [[1, 0, 0],
+                  [i, 1, j],
+                  [0, 0, 1]]
+            ops.append(np.array(op))
 
     def allclose(a, b):
         return np.allclose(a, b, atol=eps)
 
-    if all_lengths_equal:
-        if allclose(gamma, 90):
-            lat = SQR(a)
-        elif allclose(gamma, 120):
-            lat = HEX2D(a)
-        else:
-            lat = CRECT(a, gamma)
-    else:
-        if allclose(gamma, 90):
-            lat = RECT(a, b)
-        else:
-            lat = OBL(a, b, gamma)
+    symrank = 0
+    for op in ops:
+        uc = Cell(np.dot(op, orig_uc.array), pbc=orig_uc.pbc)
+        cellpar = uc.cellpar()
+        angles = cellpar[3:]
+        anglesm90 = np.abs(angles - 90)
+        # Maximum one angle different from 90 deg in 2d please
+        if np.sum(anglesm90 > eps) > 1:
+            continue
 
-    if not allclose(lat.tocell() - uc.array, 0):
-        print(a, b, gamma, cellpar)
-        raise RuntimeError('Cannot recognize cell at all somehow!')
+        # Find a and b
+        if np.sum(anglesm90 < eps) == 3:
+            a, b = cellpar[0:2]
+            gamma = 90
+        else:
+            # Find angle that is not 90
+            ind = np.argmax(anglesm90)
+            if ind == 0:
+                a, b = cellpar[1:3]
+            elif ind == 1:
+                a, b = cellpar[2], cellpar[0]
+            else:
+                a, b = cellpar[0], cellpar[1]
+            gamma = angles[ind]
 
-    return lat, {}
+        all_lengths_equal = abs(a - b) < eps
+
+        if all_lengths_equal:
+            if allclose(gamma, 90):
+                lat = SQR(a)
+                rank = 5
+            elif allclose(gamma, 120):
+                lat = HEX2D(a)
+                rank = 4
+            else:
+                lat = CRECT(a, gamma)
+                rank = 3
+        else:
+            if allclose(gamma, 90):
+                lat = RECT(a, b)
+                rank = 2
+            else:
+                lat = OBL(a, b, gamma)
+                rank = 1
+
+        # Set tranformation
+        cell = lat.tocell()
+        origcell = orig_uc.array
+        transformation = origcell @ np.linalg.inv(cell)
+        lat.set_transformation(transformation)
+
+        if not allclose(lat.tocell() - orig_uc.array, 0):
+            raise RuntimeError('Cannot recognize cell at all somehow!')
+        if rank > symrank:
+            symrank = rank
+            finallat = lat
+    return finallat, {}
 
 
 def _test_all_variants():
@@ -1167,12 +1211,15 @@ def get_subset_points(names, points):
     return newpoints
 
 
+c2d = 10000
+
+
 @bravaisclass('oblique (monoclinic)', ('a', 'b', 'alpha'),
               [['OBL', 'GYHCH1X', 'GYHCH1XG', None]],
               ndim=2)
 class OBL(BravaisLattice):
-    def __init__(self, a, b, alpha):
-        BravaisLattice.__init__(self, a=a, b=b, alpha=alpha)
+    def __init__(self, a, b, alpha, **kwargs):
+        BravaisLattice.__init__(self, a=a, b=b, alpha=alpha, **kwargs)
 
     def _cell(self, a, b, alpha):
         cosa = np.cos(alpha * _degrees)
@@ -1180,7 +1227,7 @@ class OBL(BravaisLattice):
 
         return np.array([[a, 0, 0],
                          [b * cosa, b * sina, 0],
-                         [0., 0., 1]])  # XXX implement me
+                         [0., 0., c2d]])
 
     def _special_points(self, a, b, alpha, variant):
         # XXX Check me
@@ -1203,14 +1250,14 @@ class OBL(BravaisLattice):
                                   ibz_points['hexagonal'])]],
               ndim=2)
 class HEX2D(BravaisLattice):
-    def __init__(self, a):
-        BravaisLattice.__init__(self, a=a)
+    def __init__(self, a, **kwargs):
+        BravaisLattice.__init__(self, a=a, **kwargs)
 
     def _cell(self, a):
         x = 0.5 * np.sqrt(3)
         return np.array([[a, 0, 0],
                          [-0.5 * a, x * a, 0],
-                         [0., 0., 1]])
+                         [0., 0., c2d]])
 
 
 @bravaisclass('rectangular (orthorhombic)', 'ab',
@@ -1219,28 +1266,28 @@ class HEX2D(BravaisLattice):
                                   ibz_points['orthorhombic'])]],
               ndim=2)
 class RECT(BravaisLattice):
-    def __init__(self, a, b):
-        BravaisLattice.__init__(self, a=a, b=b)
+    def __init__(self, a, b, **kwargs):
+        BravaisLattice.__init__(self, a=a, b=b, **kwargs)
 
     def _cell(self, a, b):
         return np.array([[a, 0, 0],
                          [0, b, 0],
-                         [0, 0, 1]])
+                         [0, 0, c2d]])
 
 
 @bravaisclass('centered rectangular (orthorhombic)', ('a', 'alpha'),
               [['CRECT', 'GXA1Y', 'GXA1YG', None]],
               ndim=2)
 class CRECT(BravaisLattice):
-    def __init__(self, a, alpha):
-        BravaisLattice.__init__(self, a=a, alpha=alpha)
+    def __init__(self, a, alpha, **kwargs):
+        BravaisLattice.__init__(self, a=a, alpha=alpha, **kwargs)
 
     def _cell(self, a, alpha):
-        x = np.cos(alpha / 2 * _degrees)
-        y = np.sin(alpha / 2 * _degrees)
-        return np.array([[a * x, -a * y, 0],
+        x = np.cos(alpha * _degrees)
+        y = np.sin(alpha * _degrees)
+        return np.array([[a, 0, 0],
                          [a * x, a * y, 0],
-                         [0, 0, 1]])
+                         [0, 0, c2d]])
 
     def _special_points(self, a, alpha, variant):
         sina2 = np.sin(alpha / 2 * _degrees)**2
@@ -1260,10 +1307,10 @@ class CRECT(BravaisLattice):
                 get_subset_points('GMX', ibz_points['tetragonal'])]],
               ndim=2)
 class SQR(BravaisLattice):
-    def __init__(self, a):
-        BravaisLattice.__init__(self, a=a)
+    def __init__(self, a, **kwargs):
+        BravaisLattice.__init__(self, a=a, **kwargs)
 
     def _cell(self, a):
         return np.array([[a, 0, 0],
                          [0, a, 0],
-                         [0, 0, 1]])
+                         [0, 0, c2d]])
