@@ -211,10 +211,10 @@ def bandpath(path, cell, npoints=None, density=None):
         and ending point of each path segment will be used. If None (default),
         it will be calculated using the supplied density or a default one.
     density: float
-        k-points per A⁻¹ on the output kpts list. If npoints is None,
+        k-points per 1/A on the output kpts list. If npoints is None,
         the number of k-points in the output list will be:
         npoints = density * path total length (in Angstroms).
-        If density is None (default), a value of 5 k-points per A⁻¹ will be used.
+        If density is None (default), a value of 5 k-points per 1/A will be used.
         If the calculated npoints value is less than 50, a mimimum value of 50
         will be used.
 
