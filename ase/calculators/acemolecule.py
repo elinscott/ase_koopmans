@@ -58,10 +58,7 @@ class ACE(FileIOCalculator):
         =======
         Updated parameter
         '''
-        try:
-            new_parameters = deepcopy(self.parameters)
-        except:
-            new_parameters = deepcopy(self.default_parameters)
+        new_parameters = deepcopy(self.parameters)
         
         changed_parameters = FileIOCalculator.set(self, **kwargs)
 
