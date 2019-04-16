@@ -366,11 +366,7 @@ class Atoms(object):
         else:
             cell = self._cellobj.copy()
 
-        # We want to return the cell object if we have the corresponding
-        # debug option enabled, else the old-style 3x3 array:
-        if self._cellobj._atoms_use_cellobj:
-            return cell
-        return cell.array
+        return cell
 
     def get_cell_lengths_and_angles(self):
         """Get unit cell parameters. Sequence of 6 numbers.
@@ -1890,16 +1886,9 @@ class Atoms(object):
                        doc='Attribute for direct ' +
                        'manipulation of the atomic numbers.')
 
-    # We need a better name for this.
-    @property
-    def unitcell(self):
-        return self._cellobj
-
     def _get_cell(self):
         """Return reference to unit cell for in-place manipulations."""
-        if self._cellobj._atoms_use_cellobj:
-            return self._cellobj
-        return self._cellobj.array
+        return self._cellobj
 
     cell = property(_get_cell, set_cell, doc='Attribute for direct ' +
                     'manipulation of the unit cell.')

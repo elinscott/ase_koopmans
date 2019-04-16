@@ -30,7 +30,6 @@ class Cell:
     # This overridable variable tells an Atoms object whether atoms.cell
     # and atoms.get_cell() should be a Cell object or an array.
     ase_objtype = 'cell'  # For JSON'ing
-    _atoms_use_cellobj = 1#bool(os.environ.get('ASE_DEBUG_CELLOBJ'))
 
     def __init__(self, array, pbc=None):
         if pbc is None:
