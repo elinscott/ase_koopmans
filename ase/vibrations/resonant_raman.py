@@ -102,10 +102,10 @@ class ResonantRaman(Vibrations):
         """
         assert(nfree == 2)
         Vibrations.__init__(self, atoms, indices, gsname, delta, nfree)
-        self.name = gsname + '-d%.3f' % delta
+        self.name = gsname
         if exname is None:
             exname = gsname
-        self.exname = exname + '-d%.3f' % delta
+        self.exname = exname
         self.exext = exext
 
         if directions is None:
