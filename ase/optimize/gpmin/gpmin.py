@@ -161,11 +161,16 @@ class GPMin(Optimizer, GaussianProcess):
 
     def fit_to_batch(self):
         '''Fit hyperparameters and collect exception'''
+        ratio = self.noise
         try:
             self.fit_hyperparameters(np.asarray(
                 self.x_list), np.asarray(self.y_list))
         except Exception:
             pass
+
+        else:
+            # Keeps the ratio between noise and weight fixed 
+            self.noise = ratio*self.kernel.weight
 
     def step(self, f=None):
 
