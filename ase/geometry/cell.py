@@ -32,12 +32,10 @@ class Cell:
     ase_objtype = 'cell'  # For JSON'ing
     _atoms_use_cellobj = 1#bool(os.environ.get('ASE_DEBUG_CELLOBJ'))
 
-    def __init__(self, array=None, pbc=None):
-        if array is None:
-            array = np.zeros((3, 3))
-
+    def __init__(self, array, pbc=None):
         if pbc is None:
-            pbc = np.ones(3, bool)
+            # pbc defaults to whether each cell vector is nonzero:
+            pbc = array.any(1)
 
         # We could have lazy attributes for structure (bcc, fcc, ...)
         # and other things.  However this requires making the cell
@@ -61,7 +59,13 @@ class Cell:
         return self.array.shape
 
     @classmethod
-    def new(cls, cell, pbc=None):
+    def new(cls, cell=None, pbc=None):
+        if pbc is None:
+            pbc = getattr(cell, 'pbc', None)
+
+        if cell is None:
+            cell = np.zeros((3, 3))
+
         cell = np.array(cell, float)
 
         if cell.shape == (3,):
@@ -72,7 +76,11 @@ class Cell:
             raise ValueError('Cell must be length 3 sequence, length 6 '
                              'sequence or 3x3 matrix!')
 
-        return cls(cell, pbc=pbc)
+        cellobj = cls(cell)
+        if pbc is not None:
+            cellobj.pbc[:] = pbc
+
+        return cellobj
 
     @classmethod
     def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None,

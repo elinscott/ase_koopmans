@@ -137,6 +137,8 @@ class Atoms(object):
                  calculator=None,
                  info=None):
 
+        self._cellobj = Cell.new(pbc=False)
+
         atoms = None
 
         if hasattr(symbols, 'get_positions'):
@@ -333,17 +335,17 @@ class Atoms(object):
         >>> atoms.set_cell([a, a, a, alpha, alpha, alpha])
         """
 
-        uc = Cell.new(cell)
+        # Override pbcs if and only if given a Cell object:
+        pbc = getattr(cell, 'pbc', None)
+        cell = Cell.new(cell)
 
         if scale_atoms:
-            M = np.linalg.solve(self._cellobj.complete(),
-                                uc.complete())
+            M = np.linalg.solve(self.cell.complete(), cell.complete())
             self.positions[:] = np.dot(self.positions, M)
 
-        if hasattr(self, '_cellobj'):
-            # Copy the existing pbcs into the new cell object
-            uc.pbc = self.pbc
-        self._cellobj = uc
+        self._cellobj[:] = cell
+        if pbc is not None:
+            self._cellobj.pbc[:] = pbc
 
     def set_celldisp(self, celldisp):
         """Set the unit cell displacement vectors."""
@@ -355,7 +357,10 @@ class Atoms(object):
         return self._celldisp.copy()
 
     def get_cell(self, complete=False):
-        """Get the three unit cell vectors as a 3x3 ndarray."""
+        """Get the three unit cell vectors as a Cell object.
+
+        The Cell object resembles a 3x3 ndarray, and cell[i, j]
+        is the jth Cartesian coordinate of the ith cell vector."""
         if complete:
             cell = self._cellobj.complete()
         else:
@@ -389,9 +394,7 @@ class Atoms(object):
 
     def set_pbc(self, pbc):
         """Set periodic boundary condition flags."""
-        if isinstance(pbc, int):
-            pbc = (pbc,) * 3
-        self._cellobj.pbc = np.array(pbc, bool)
+        self._cellobj.pbc[:] = pbc
 
     def get_pbc(self):
         """Get periodic boundary condition flags."""
