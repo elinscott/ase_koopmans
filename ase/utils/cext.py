@@ -4,10 +4,20 @@ This module defines a decorator that can be used to replace pure Python
 functions with faster C-implementations from the ase_ext module.
 """
 
+import functools
+
 try:
-    from ase_ext import cextension
+    import ase_ext
 except ImportError:
-    # No ase_ext module
-    def cextension(func):
-        """Just return the pure Python function."""
+    ase_ext = None
+
+
+def cextension(func):
+    if ase_ext is None:
         return func
+    cfunc = getattr(ase_ext, func.__name__, None)
+    if cfunc is None:
+        return func
+    functools.update_wrapper(cfunc, func)
+    cfunc.__pure_python_function__ = func
+    return cfunc
