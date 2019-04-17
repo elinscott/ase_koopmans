@@ -51,7 +51,7 @@ class BravaisLattice(ABC):
 
     def tocell(self, cycle=0):
         cell = self._cell(**self._parameters)
-        cell = self.transformation @ cell
+        cell = self.transformation.dot(cell)
         pbc = np.array([True if i < self.ndim else False for i in range(3)],
                        bool)
         if cycle:
@@ -94,8 +94,8 @@ class BravaisLattice(ABC):
             return self.variant.special_points
 
         labels = self.special_point_names
-        points = (self.get_special_points_array()
-                  @ self.itransformation)
+        points = self.get_special_points_array().dot(self.itransformation)
+
         return dict(zip(labels, points))
 
     @property
