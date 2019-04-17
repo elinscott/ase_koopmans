@@ -87,7 +87,7 @@ def write_xsd(fd, images, connectivity=None):
     if hasattr(images, 'get_positions'):
         images = [images]
 
-    natoms = images[0].get_number_of_atoms()
+    natoms = len(images[0])
     atom_element = images[0].get_chemical_symbols()
     atom_cell = images[0].get_cell()
     atom_positions = images[0].get_positions()
