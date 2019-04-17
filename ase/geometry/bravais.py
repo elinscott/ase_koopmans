@@ -70,6 +70,7 @@ class BravaisLattice(ABC):
 
     def set_transformation(self, transformation):
         self.transformation = np.copy(transformation)
+        self.itransformation = np.linalg.inv(transformation)
 
     def get_special_points_array(self):
         if self.variant.special_points is not None:
