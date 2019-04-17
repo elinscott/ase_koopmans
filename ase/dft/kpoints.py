@@ -7,7 +7,7 @@ from math import sin, cos
 import numpy as np
 
 from ase.utils import jsonable
-from ase.geometry import cell_to_cellpar, crystal_structure_from_cell
+from ase.geometry import cell_to_cellpar, crystal_structure_from_cell, Cell
 
 
 def monkhorst_pack(size):
@@ -122,7 +122,7 @@ class BandPath:
 
         assert cell.shape == (3, 3)
         assert scaled_kpts.ndim == 2 and scaled_kpts.shape[1] == 3
-        self.cell = cell.copy()
+        self.cell = Cell.new(cell)
         self.icell = self.cell.reciprocal()
         self.scaled_kpts = scaled_kpts
         self.special_points = special_points
