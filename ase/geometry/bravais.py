@@ -97,7 +97,8 @@ class BravaisLattice(ABC):
                                  npoints=0)
         return bandpath.plot(**plotkwargs)
 
-    def bandpath(self, path=None, npoints=None, special_points=None, density=None):
+    def bandpath(self, path=None, npoints=None, special_points=None,
+                 density=None):
         if special_points is None:
             special_points = self.get_special_points()
 
