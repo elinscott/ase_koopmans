@@ -123,8 +123,9 @@ class Cell:
         return self.array.flat
 
     @property
-    def celldim(self):
-        # XXX Would name it ndim, but this clashes with ndarray.ndim
+    def rank(self):
+        """"Dimension of the cell, i.e., number of nonzero lattice vectors."""
+        # The name ndim clashes with ndarray.ndim
         return self.array.any(1).sum()
 
     @property

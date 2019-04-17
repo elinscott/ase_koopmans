@@ -269,7 +269,7 @@ class Atoms(object):
     @property
     def number_of_lattice_vectors(self):
         """Number of (non-zero) lattice vectors."""
-        return self._cellobj.celldim
+        return self.cell.rank
 
     def set_constraint(self, constraint=None):
         """Apply one or more constrains.
@@ -343,9 +343,9 @@ class Atoms(object):
             M = np.linalg.solve(self.cell.complete(), cell.complete())
             self.positions[:] = np.dot(self.positions, M)
 
-        self._cellobj[:] = cell
+        self.cell[:] = cell
         if pbc is not None:
-            self._cellobj.pbc[:] = pbc
+            self.cell.pbc[:] = pbc
 
     def set_celldisp(self, celldisp):
         """Set the unit cell displacement vectors."""
@@ -362,9 +362,9 @@ class Atoms(object):
         The Cell object resembles a 3x3 ndarray, and cell[i, j]
         is the jth Cartesian coordinate of the ith cell vector."""
         if complete:
-            cell = self._cellobj.complete()
+            cell = self.cell.complete()
         else:
-            cell = self._cellobj.copy()
+            cell = self.cell.copy()
 
         return cell
 
@@ -378,7 +378,7 @@ class Atoms(object):
 
         in degrees.
         """
-        return self._cellobj.cellpar()
+        return self.cell.cellpar()
 
     def get_reciprocal_cell(self):
         """Get the three reciprocal lattice vectors as a 3x3 ndarray.
@@ -386,11 +386,11 @@ class Atoms(object):
         Note that the commonly used factor of 2 pi for Fourier
         transforms is not included here."""
 
-        return self._cellobj.reciprocal()
+        return self.cell.reciprocal()
 
     def set_pbc(self, pbc):
         """Set periodic boundary condition flags."""
-        self._cellobj.pbc[:] = pbc
+        self.cell.pbc[:] = pbc
 
     def get_pbc(self):
         """Get periodic boundary condition flags."""
@@ -831,12 +831,12 @@ class Atoms(object):
         else:
             tokens.append('pbc={0}'.format(self.pbc[0]))
 
-        uc = self._cellobj
-        if uc:
-            if uc.orthorhombic:
-                cell = uc.lengths().tolist()
+        cell = self.cell
+        if cell:
+            if cell.orthorhombic:
+                cell = cell.lengths().tolist()
             else:
-                cell = uc.tolist()
+                cell = cell.tolist()
             tokens.append('cell={0}'.format(cell))
 
         for name in sorted(self.arrays):
@@ -1065,7 +1065,7 @@ class Atoms(object):
         """
 
         # Find the orientations of the faces of the unit cell
-        cell = self._cellobj.complete()
+        cell = self.cell.complete()
         dirs = np.zeros_like(cell)
         for i in range(3):
             dirs[i] = np.cross(cell[i - 1], cell[i - 2])
@@ -1751,7 +1751,7 @@ class Atoms(object):
         the cell in those directions with periodic boundary conditions
         so that the scaled coordinates are between zero and one."""
 
-        fractional = self._cellobj.scaled_positions(self.positions)
+        fractional = self.cell.scaled_positions(self.positions)
 
         if wrap:
             for i, periodic in enumerate(self.pbc):
@@ -1765,7 +1765,7 @@ class Atoms(object):
 
     def set_scaled_positions(self, scaled):
         """Set positions relative to unit cell."""
-        self.positions[:] = self._cellobj.cartesian_positions(scaled)
+        self.positions[:] = self.cell.cartesian_positions(scaled)
 
     def wrap(self, center=(0.5, 0.5, 0.5), pbc=None, eps=1e-7):
         """Wrap positions to unit cell.
@@ -1840,11 +1840,11 @@ class Atoms(object):
 
     def get_volume(self):
         """Get volume of unit cell."""
-        if self._cellobj.celldim != 3:
+        if self.cell.rank != 3:
             raise ValueError(
                 'You have {0} lattice vectors: volume not defined'
-                .format(self._cellobj.celldim))
-        return self._cellobj.volume
+                .format(self.cell.rank))
+        return self.cell.volume
 
     def _get_positions(self):
         """Return reference to positions-array for in-place manipulations."""
@@ -1895,7 +1895,7 @@ class Atoms(object):
 
     def _get_pbc(self):
         """Return reference to pbc-flags for in-place manipulations."""
-        return self._cellobj.pbc
+        return self.cell.pbc
 
     pbc = property(_get_pbc, set_pbc,
                    doc='Attribute for direct manipulation ' +
