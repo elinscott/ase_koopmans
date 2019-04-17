@@ -1110,7 +1110,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
         lat.set_transformation(transformation)
 
         if not allclose(lat.tocell(), orig_uc.array):
-            raise RuntimeError('Cannot recognize cell at all somehow!')
+            msg = f'Cannot recognize cell at all somehow! {a, b, gamma}'
+            raise RuntimeError(msg)
         if rank > symrank:
             symrank = rank
             finallat = lat
