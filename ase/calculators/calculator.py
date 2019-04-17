@@ -263,6 +263,32 @@ def kpts2ndarray(kpts, atoms=None):
     return np.array(kpts)
 
 
+class KPoints:
+    def __init__(self, scaled_kpts=None):
+        if scaled_kpts is None:
+            scaled_kpts = np.zeros((1, 3))
+        self.scaled_kpts = scaled_kpts
+
+def kpts2kpts(kpts, atoms=None):
+    if kpts is None:
+        return KPoints()
+
+    if hasattr(kpts, 'scaled_kpts'):
+        return kpts
+
+    if isinstance(kpts, dict):
+        if 'path' in kpts:
+            path = bandpath(cell=atoms.cell, **kpts)
+            return path
+        size, offsets = kpts2sizeandoffsets(atoms=atoms, **kpts)
+        return KPoints(monkhorst_pack(size) + offsets)
+
+    if isinstance(kpts[0], int):
+        return KPoints(monkhorst_pack(kpts))
+
+    return KPoints(np.array(kpts))
+
+
 class EigenvalOccupationMixin:
     """Define 'eigenvalues' and 'occupations' properties on class.
 
