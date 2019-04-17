@@ -244,12 +244,16 @@ def kpts2sizeandoffsets(size=None, density=None, gamma=None, even=None,
 def kpts2ndarray(kpts, atoms=None):
     """Convert kpts keyword to 2-d ndarray of scaled k-points."""
 
+    if hasattr(kpts, 'scaled_kpts'):
+        return kpts.scaled_kpts
+
     if kpts is None:
         return np.zeros((1, 3))
 
     if isinstance(kpts, dict):
         if 'path' in kpts:
-            return bandpath(cell=atoms.cell, **kpts)[0]
+            path = bandpath(cell=atoms.cell, **kpts)
+            return path.scaled_kpts
         size, offsets = kpts2sizeandoffsets(atoms=atoms, **kpts)
         return monkhorst_pack(size) + offsets
 
