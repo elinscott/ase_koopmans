@@ -1,5 +1,5 @@
 import numpy as np
-from ase.geometry.bravais import bravais_lattices, _test_all_variants
+from ase.geometry.bravais import bravais_lattices, all_variants
 
 for name in bravais_lattices:
     latcls = bravais_lattices[name]
@@ -9,7 +9,7 @@ for name in bravais_lattices:
         assert par in ['a', 'b', 'c', 'alpha', 'beta', 'gamma']
 
 
-for lat in _test_all_variants():
+for lat in all_variants():
     print(lat.variant)
     for par in lat.parameters:
         print(par, getattr(lat, par))
