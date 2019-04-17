@@ -1107,7 +1107,7 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
         # Set tranformation
         cell = lat.tocell()
         origcell = orig_uc.array
-        transformation = origcell @ np.linalg.inv(cell)
+        transformation = origcell.dot(np.linalg.inv(cell))
         lat.set_transformation(transformation)
 
         if not allclose(lat.tocell(), orig_uc.array):
