@@ -159,6 +159,39 @@ class BandPath:
     def cartesian_kpts(self):
         return self._scale(self.scaled_kpts)
 
+
+    def __iter__(self):
+        """XXX Compatibility hack for bandpath() function.
+
+        bandpath() now returns a BandPath object, which is a Good
+        Thing.  However it used to return a tuple of (kpts, x_axis,
+        special_x_coords), and people would use tuple unpacking for
+        those.
+
+        This function makes tuple unpacking work in the same way.
+        It will be removed in the future.
+
+        """
+        import warnings
+        warnings.warn('Please do not use (kpts, x, X) = bandpath(...).  '
+                      'Use path = bandpath(...) and then use the methods '
+                      'of the path object (see the BandPath class).')
+        yield self.scaled_kpts
+
+        x, xspecial, _ = labels_from_kpts(self.scaled_kpts, self.cell,
+                                          special_points=self.special_points)
+        yield x
+        yield xspecial
+
+    def __getitem__(self, index):
+        # Temp compatibility stuff, see __iter__
+        return tuple(self)[index]
+
+    def get_linear_kpoint_axis(self):
+        x, _, _ = labels_from_kpts(self.scaled_kpts, self.cell,
+                                   special_points=self.special_points)
+        return x
+
     def plot(self, dimension=3, **plotkwargs):
         import ase.dft.bz as bz
 
@@ -224,6 +257,8 @@ def bandpath(path, cell, npoints=None, density=None):
     x-coordinates of special points."""
 
     if isinstance(path, basestring):
+        # XXX we need to update this so we use the new and more complete
+        # cell classification stuff
         cellinfo = get_cellinfo(cell)
         special = cellinfo.special_points
         paths = []
@@ -241,8 +276,9 @@ def bandpath(path, cell, npoints=None, density=None):
     else:
         paths = path
 
-    # XXX should return BandPath object
-    return paths2kpts(paths, cell, npoints, density)
+    kpts, x, X = paths2kpts(paths, cell, npoints, density)
+    return BandPath(cell, scaled_kpts=kpts,
+                    special_points=special)
 
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
