@@ -244,10 +244,10 @@ def kpts2sizeandoffsets(size=None, density=None, gamma=None, even=None,
 
 @jsonable('kpoints')
 class KPoints:
-    def __init__(self, scaled_kpts=None):
-        if scaled_kpts is None:
-            scaled_kpts = np.zeros((1, 3))
-        self.scaled_kpts = scaled_kpts
+    def __init__(self, kpts=None):
+        if kpts is None:
+            kpts = np.zeros((1, 3))
+        self.kpts = kpts
 
     def todict(self):
         return vars(self)
@@ -257,7 +257,7 @@ def kpts2kpts(kpts, atoms=None):
     if kpts is None:
         return KPoints()
 
-    if hasattr(kpts, 'scaled_kpts'):
+    if hasattr(kpts, 'kpts'):
         return kpts
 
     if isinstance(kpts, dict):
@@ -275,7 +275,7 @@ def kpts2kpts(kpts, atoms=None):
 
 def kpts2ndarray(kpts, atoms=None):
     """Convert kpts keyword to 2-d ndarray of scaled k-points."""
-    return kpts2kpts(kpts, atoms=atoms).scaled_kpts
+    return kpts2kpts(kpts, atoms=atoms).kpts
 
 
 class EigenvalOccupationMixin:

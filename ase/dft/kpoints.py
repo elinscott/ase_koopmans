@@ -107,10 +107,10 @@ def resolve_kpt_path_string(path, special_points):
 
 @jsonable('bandpath')
 class BandPath:
-    def __init__(self, cell, scaled_kpts=None,
+    def __init__(self, cell, kpts=None,
                  special_points=None, labelseq=None):
-        if scaled_kpts is None:
-            scaled_kpts = np.empty((0, 3))
+        if kpts is None:
+            kpts = np.empty((0, 3))
 
         if special_points is None:
             special_points = {}
@@ -121,16 +121,16 @@ class BandPath:
             labelseq = ''.join(labelseq)
 
         assert cell.shape == (3, 3)
-        assert scaled_kpts.ndim == 2 and scaled_kpts.shape[1] == 3
+        assert kpts.ndim == 2 and kpts.shape[1] == 3
         self.cell = Cell.new(cell)
         self.icell = self.cell.reciprocal()
-        self.scaled_kpts = scaled_kpts
+        self.kpts = kpts
         self.special_points = special_points
         assert isinstance(labelseq, str)
         self.labelseq = labelseq
 
     def todict(self):
-        return {'scaled_kpts': self.scaled_kpts,
+        return {'kpts': self.kpts,
                 'special_points': self.special_points,
                 'labelseq': self.labelseq,
                 'cell': self.cell}
@@ -154,10 +154,10 @@ class BandPath:
                 .format(self.__class__.__name__,
                         self.labelseq,
                         ''.join(sorted(self.special_points)),
-                        len(self.scaled_kpts)))
+                        len(self.kpts)))
 
     def cartesian_kpts(self):
-        return self._scale(self.scaled_kpts)
+        return self._scale(self.kpts)
 
 
     def __iter__(self):
@@ -176,9 +176,9 @@ class BandPath:
         warnings.warn('Please do not use (kpts, x, X) = bandpath(...).  '
                       'Use path = bandpath(...) and then use the methods '
                       'of the path object (see the BandPath class).')
-        yield self.scaled_kpts
+        yield self.kpts
 
-        x, xspecial, _ = labels_from_kpts(self.scaled_kpts, self.cell,
+        x, xspecial, _ = labels_from_kpts(self.kpts, self.cell,
                                           special_points=self.special_points)
         yield x
         yield xspecial
@@ -188,7 +188,7 @@ class BandPath:
         return tuple(self)[index]
 
     def get_linear_kpoint_axis(self):
-        x, _, _ = labels_from_kpts(self.scaled_kpts, self.cell,
+        x, _, _ = labels_from_kpts(self.kpts, self.cell,
                                    special_points=self.special_points)
         return x
 
@@ -277,7 +277,7 @@ def bandpath(path, cell, npoints=None, density=None):
         paths = path
 
     kpts, x, X = paths2kpts(paths, cell, npoints, density)
-    return BandPath(cell, scaled_kpts=kpts,
+    return BandPath(cell, kpts=kpts,
                     special_points=special)
 
 
