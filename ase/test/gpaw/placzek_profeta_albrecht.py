@@ -1,3 +1,4 @@
+import numpy as np
 from ase import Atoms, Atom
 from ase.vibrations.placzek import Placzek, Profeta
 from ase.vibrations.albrecht import Albrecht
@@ -48,7 +49,7 @@ if 1:
     pz.run()
 
 # ---------------------------------------------------
-# check
+# check absolute_intensity
 
 """Different Placzeck implementations should agree"""
 
@@ -81,23 +82,25 @@ pr = Profeta(H2, KSSingles, gsname=gsname, exname=exname,
              overlap=True,
              approximation='P-P', txt=txt)
 pri = pr.absolute_intensity(omega=om)[-1]
+pr_me_cc = pr.electronic_me_Qcc(om, 0.1)[-1]
 
 al = Albrecht(H2, KSSingles, gsname=gsname, exname=exname, 
              overlap=True,
              approximation='Albrecht A', txt=txt)
 ali = al.absolute_intensity(omega=om)[-1]
 equal(pri, ali, 3)
+al_me_cc = al.electronic_me_Qcc(om, 0.1)[-1]
+assert (np.abs(pr_me_cc - al_me_cc) / np.abs(pr_me_cc).max() < 0.02).all()
 
 """Albrecht B+C and Profeta are approximately equal"""
 
-pr = Profeta(H2, KSSingles, gsname=gsname, exname=exname, 
-             overlap=True,
-             approximation='Profeta', txt=txt)
+pr.approximation = 'Profeta'
 pri = pr.absolute_intensity(omega=om)[-1]
+pr_me_cc = pr.electronic_me_Qcc(om, 0.1)[-1]
 
-al = Albrecht(H2, KSSingles, gsname=gsname, exname=exname, 
-             overlap=True,
-             approximation='Albrecht BC', txt=txt)
+al.approximation = 'Albrecht BC'
 ali = al.absolute_intensity(omega=om)[-1]
 equal(pri, ali, 3)
+al_me_cc = al.electronic_me_Qcc(om, 0.1)[-1]
+assert (np.abs(pr_me_cc - al_me_cc) / np.abs(pr_me_cc).max() < 0.02).all()
 
