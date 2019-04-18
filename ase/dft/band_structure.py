@@ -15,7 +15,7 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     The difference from get_band_structure() is that the latter
     expects the calculation to already have been done."""
     if path is None:
-        lat, op = atoms.cell.bravais()
+        lat, op = atoms.cell.get_bravais_lattice()
         path = lat.bandpath()  # Default bandpath
 
     cellpar1 = path.cell.cellpar()
