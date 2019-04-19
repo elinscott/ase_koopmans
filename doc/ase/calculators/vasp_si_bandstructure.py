@@ -162,7 +162,7 @@ energies = np.array([[[ -1.8719,  -1.8719,   1.896 ,   1.896 ,   9.9847,   9.984
 # Update to new band structure stuff
 lattice, op = atoms.cell.get_bravais_lattice()
 bandpath = lattice.bandpath('WGX', npoints=30)
-maxerr = np.abs(bandpath.scaled_kpts - kpts).max()
+maxerr = np.abs(bandpath.kpts - kpts).max()
 assert maxerr < 1e-5
 
 
