@@ -1105,7 +1105,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
                 lat = OBL(a, b, gamma)
                 rank = 1
 
-        if not allclose(lat.tocell(), orig_uc.array):
+        op = lat.get_transformation(orig_uc.array)
+        if not allclose(op.dot(lat.tocell()), orig_uc.array):
             msg = ('Cannot recognize cell at all somehow! {}, {}, {}'.
                    format(a, b, gamma))
             raise RuntimeError(msg)
