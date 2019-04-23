@@ -5,6 +5,7 @@ from math import pi, sqrt
 
 import numpy as np
 
+from ase.utils import jsonable
 from ase.dft.kpoints import bandpath, monkhorst_pack
 
 
@@ -241,22 +242,40 @@ def kpts2sizeandoffsets(size=None, density=None, gamma=None, even=None,
     return size, offsets
 
 
-def kpts2ndarray(kpts, atoms=None):
-    """Convert kpts keyword to 2-d ndarray of scaled k-points."""
+@jsonable('kpoints')
+class KPoints:
+    def __init__(self, kpts=None):
+        if kpts is None:
+            kpts = np.zeros((1, 3))
+        self.kpts = kpts
 
+    def todict(self):
+        return vars(self)
+
+
+def kpts2kpts(kpts, atoms=None):
     if kpts is None:
-        return np.zeros((1, 3))
+        return KPoints()
+
+    if hasattr(kpts, 'kpts'):
+        return kpts
 
     if isinstance(kpts, dict):
         if 'path' in kpts:
-            return bandpath(cell=atoms.cell, **kpts)[0]
+            path = bandpath(cell=atoms.cell, **kpts)
+            return path
         size, offsets = kpts2sizeandoffsets(atoms=atoms, **kpts)
-        return monkhorst_pack(size) + offsets
+        return KPoints(monkhorst_pack(size) + offsets)
 
     if isinstance(kpts[0], int):
-        return monkhorst_pack(kpts)
+        return KPoints(monkhorst_pack(kpts))
 
-    return np.array(kpts)
+    return KPoints(np.array(kpts))
+
+
+def kpts2ndarray(kpts, atoms=None):
+    """Convert kpts keyword to 2-d ndarray of scaled k-points."""
+    return kpts2kpts(kpts, atoms=atoms).kpts
 
 
 class EigenvalOccupationMixin:
