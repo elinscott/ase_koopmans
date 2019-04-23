@@ -1049,7 +1049,8 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
 def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
     orig_uc = uc
 
-    ops = []
+    # Start with op = I
+    ops = [np.eye(3)]
     for i in range(-1, 1):
         for j in range(-1, 1):
             op = [[1, 0, 0],
