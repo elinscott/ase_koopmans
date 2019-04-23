@@ -261,6 +261,8 @@ def kpts2kpts(kpts, atoms=None):
         return kpts
 
     if isinstance(kpts, dict):
+        if 'kpts' in kpts:
+            return KPoints(kpts['kpts'])
         if 'path' in kpts:
             path = bandpath(cell=atoms.cell, **kpts)
             return path
