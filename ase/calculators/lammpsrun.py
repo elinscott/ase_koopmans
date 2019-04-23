@@ -83,10 +83,6 @@ class LAMMPS(Calculator):
     """
 
     name = "lammpsrun"
-
-    command = None
-    "Lammps binary used for the simulation"
-
     implemented_properties = ["energy", "forces", "stress", "energies"]
 
     # parameters to choose options in LAMMPSRUN
@@ -195,14 +191,26 @@ class LAMMPS(Calculator):
             if not os.path.isdir(self.parameters.tmp_dir):
                 os.mkdir(self.parameters.tmp_dir, 0o755)
 
-        # verify that lammps-command is available
-        self._check_env()
-        self.command += " " + self.parameters.lammps_options
-
         for f in self.parameters.files:
             shutil.copy(
                 f, os.path.join(self.parameters.tmp_dir, os.path.basename(f))
             )
+
+    def get_lammps_command(self):
+        cmd = self.parameters.get('command')
+        if cmd is None:
+            envvar = 'ASE_{}_COMMAND'.format(self.name)
+            cmd = os.environ.get(envvar)
+
+        if cmd is None:
+            cmd = 'lammps'
+
+        opts = self.parameters.get('lammps_options')
+
+        if opts is not None:
+            cmd = '{} {}'.format(cmd, opts)
+
+        return cmd
 
     def __setattr__(self, key, value):
         """Catch attribute sets to emulate legacy behavior.
@@ -277,47 +285,6 @@ class LAMMPS(Calculator):
             system_changes = all_changes
         Calculator.calculate(self, atoms, properties, system_changes)
         self.run()
-
-    # !TODO: to be removed - handles legacy commandline arguments
-    def _check_env(self):
-        """Valid LAMMPS_COMMAND pointing to lammps exectuable
-        """
-        name = "ASE_" + self.name.upper() + "_COMMAND"
-        self.command = os.environ.get(name, self.command)
-
-    def get_stress(self, atoms):
-        self.update(atoms)
-        return self.stress.copy()
-
-        if self.command is not None:
-            return
-
-        # set LAMMPS command from environment variable
-        if "LAMMPS_COMMAND" in os.environ:
-            lammps_cmd_line = shlex.split(
-                os.environ["LAMMPS_COMMAND"], posix=(os.name == "posix")
-            )
-
-            if len(lammps_cmd_line) == 0:
-                self.clean()
-                raise RuntimeError(
-                    "The ASE_LAMMPSRUN_COMMAND environment "
-                    " variable must not be empty"
-                )
-            # want always an absolute path to LAMMPS binary
-            # when calling from self.dir
-            self.command = os.path.abspath(lammps_cmd_line[0])
-
-        else:
-            self.clean()
-            raise RuntimeError(
-                "Please set ASE_LAMMPSRUN_COMMAND environment variable"
-            )
-        if "LAMMPS_OPTIONS" in os.environ:
-            lammps_options = shlex.split(
-                os.environ["LAMMPS_OPTIONS"], posix=(os.name == "posix")
-            )
-            self.command = " ".join([self.command] + lammps_options)
 
     def _lmp_alive(self):
         # Return True if this calculator is currently handling a running
@@ -421,9 +388,10 @@ class LAMMPS(Calculator):
 
         # see to it that LAMMPS is started
         if not self._lmp_alive():
+            command = self.get_lammps_command()
             # Attempt to (re)start lammps
             self._lmp_handle = Popen(
-                shlex.split(self.command, posix=(os.name == "posix")),
+                shlex.split(command, posix=(os.name == "posix")),
                 stdin=PIPE,
                 stdout=PIPE,
             )
