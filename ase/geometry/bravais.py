@@ -20,8 +20,7 @@ class BravaisLattice(ABC):
     #                        'BCT2': <variant object>}
     ndim = None
     
-    def __init__(self, transformation=np.eye(3),
-                 **kwargs):
+    def __init__(self, **kwargs):
         p = {}
         eps = kwargs.pop('eps', 2e-4)
         for k, v in kwargs.items():
@@ -29,9 +28,6 @@ class BravaisLattice(ABC):
         assert set(p) == set(self.parameters)
         self._parameters = p
         self._eps = eps
-
-        self.transformation = transformation
-        self.itransformation = np.linalg.inv(transformation)
 
         if len(self.variants) == 1:
             # If there's only one it has the same name as the lattice type
@@ -51,13 +47,16 @@ class BravaisLattice(ABC):
 
     def tocell(self, cycle=0):
         cell = self._cell(**self._parameters)
-        cell = self.transformation.dot(cell)
         pbc = np.array([True if i < self.ndim else False for i in range(3)],
                        bool)
         if cycle:
             index = (np.arange(3) + cycle) % 3
             cell = cell[index]
         return Cell(cell, pbc=pbc)
+
+    def get_transformation(self, cell):
+        # Get transformation matrix relating input cell to canonical cell
+        return cell.dot(np.linalg.inv(self.tocell()))
 
     def cellpar(self, cycle=0):
         # (Just a brute-force implementation)
@@ -67,10 +66,6 @@ class BravaisLattice(ABC):
     @property
     def special_path(self):
         return self.variant.special_path
-
-    def set_transformation(self, transformation):
-        self.transformation = np.copy(transformation)
-        self.itransformation = np.linalg.inv(transformation)
 
     def get_special_points_array(self):
         if self.variant.special_points is not None:
@@ -94,7 +89,7 @@ class BravaisLattice(ABC):
             return self.variant.special_points
 
         labels = self.special_point_names
-        points = self.get_special_points_array().dot(self.itransformation)
+        points = self.get_special_points_array()
 
         return dict(zip(labels, points))
 
@@ -110,14 +105,20 @@ class BravaisLattice(ABC):
                                  npoints=0)
         return bandpath.plot(dimension=self.ndim, **plotkwargs)
 
-    def bandpath(self, path=None, npoints=None, special_points=None, density=None):
+    def bandpath(self, path=None, npoints=None,
+                 special_points=None, density=None,
+                 transformation=None):
         if special_points is None:
             special_points = self.get_special_points()
 
         if path is None:
             path = self.variant.special_path
 
-        bandpath = BandPath(cell=self.tocell(), labelseq=path,
+        cell = self.tocell()
+        if transformation is not None:
+            cell = transformation.dot(cell)
+
+        bandpath = BandPath(cell=cell, labelseq=path,
                             special_points=special_points)
         return bandpath.interpolate(npoints=npoints, density=density)
 
@@ -877,12 +878,12 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
 
     if all_lengths_equal:
         if allclose(angles, 90):
-            return CUB(A), {}  #check(CUB, A)
+            return CUB(A)  #check(CUB, A)
         if allclose(angles, 60):
-            return FCC(np.sqrt(2) * A), {}
+            return FCC(np.sqrt(2) * A)
             #return check(FCC, np.sqrt(2) * A)
         if allclose(angles, np.arccos(-1 / 3) * 180 / np.pi):
-            return BCC(2.0 * A / np.sqrt(3)), {}
+            return BCC(2.0 * A / np.sqrt(3))
             #return check(BCC, 2.0 * A / np.sqrt(3))
 
     if all_lengths_equal and unequal_angle_dir is not None:
@@ -894,7 +895,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
         obj = check(BCT, a, c, axis=-unequal_angle_dir + 2)
         if obj:
             bct = BCT(a, c)
-            return bct, {}  # permutation
+            return bct  # permutation
             #return obj
 
     if (unequal_angle_dir is not None
@@ -904,7 +905,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
         c = ABC[unequal_scalarprod_dir]
         assert a2 > 0
         lat = HEX(np.sqrt(a2), c)
-        return lat, {}  # permutation
+        return lat  # permutation
         #xxxxxxxx
         #return check(HEX, np.sqrt(a2), c, axis=-unequal_scalarprod_dir + 2)
 
@@ -913,7 +914,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
         c = ABC[unequal_length_dir]
         xx = check(TET, a, c, axis=-unequal_length_dir + 2)
         assert xx
-        return TET(a, c), {}  # permutation
+        return TET(a, c)  # permutation
 
     if (unequal_length_dir is not None
         and abs(BC_CA_AB[unequal_length_dir]) > eps
@@ -934,7 +935,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
             orcc_a, orcc_b = orcc_b, orcc_a
             # permutation?
         lat = ORCC(orcc_a, orcc_b, orcc_c)
-        return lat, {}  # permutation
+        return lat  # permutation
         #lat.tocell()
         #obj = check(ORCC, a, b, c, axis=2 - unequal_length_dir)
         #xxxxxxxxxxxxxx
@@ -944,7 +945,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
     if allclose(angles, 90) and all_lengths_different:
         permutation = np.argsort(ABC)
         lat = ORC(*ABC[permutation])
-        return lat, {}  # permutation
+        return lat  # permutation
 
     if all_lengths_different and noduplicates(BC_CA_AB):
         permutation = np.argsort(BC_CA_AB)
@@ -953,7 +954,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
             par1 = lat.cellpar()
             par2 = uc.new(uc[permutation]).cellpar()
             if allclose(par1, par2):
-                return lat, {}  # XXX permutation
+                return lat  # XXX permutation
 
     if all_lengths_equal:
         dims2 = -2 * np.array([BC_CA_AB[1] + BC_CA_AB[2],
@@ -964,13 +965,13 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
             permutation = np.argsort(dims)
             lat = ORCI(*dims[permutation])
             assert allclose(lat.tocell(), uc[permutation])
-            return lat, {}  # perm
+            return lat  # perm
 
     if all_lengths_equal:
         cosa = BC_CA_AB[0] / A**2
         rhl_alpha = np.arccos(cosa) * 180 / np.pi
         lat = RHL(A, rhl_alpha)
-        return lat, {}
+        return lat
         #obj = check(RHL, A, alpha)
         #xxxxxxxxxxx
         #if obj:
@@ -1001,7 +1002,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
             # Or reverse somehow?
 
             lat = MCL(mcl_a, mcl_b, mcl_c, mcl_alpha)
-            return lat, {}  # permutation
+            return lat  # permutation
             #cdir = 1 + np.argmax(mcl_abc[1:])
             #mcl_c = mcl_abc[cdir]
             #mcl_b = 
@@ -1029,7 +1030,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
         assert mclc_alpha < 90
         lat = MCLC(mclc_a, mclc_b, mclc_c, mclc_alpha)
         # XXX many things wrong currently
-        return lat, {}
+        return lat
         #obj = check(MCLC, a, b, c, alpha, axis=-unequal_length_dir + 2)
         #xxxxxxxxxxx
         #if obj:
@@ -1040,7 +1041,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
         cls, op = obj
         #xxxxxxxxxxx
         # Should always be true
-        return cls(A, B, C, *angles), op
+        return cls(A, B, C, *angles)
 
     raise RuntimeError('Cannot recognize cell at all somehow!')
 
@@ -1104,12 +1105,6 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
                 lat = OBL(a, b, gamma)
                 rank = 1
 
-        # Set tranformation
-        cell = lat.tocell()
-        origcell = orig_uc.array
-        transformation = origcell.dot(np.linalg.inv(cell))
-        lat.set_transformation(transformation)
-
         if not allclose(lat.tocell(), orig_uc.array):
             msg = ('Cannot recognize cell at all somehow! {}, {}, {}'.
                    format(a, b, gamma))
@@ -1117,7 +1112,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
         if rank > symrank:
             symrank = rank
             finallat = lat
-    return finallat, {}
+
+    return finallat
 
 
 def all_variants():
