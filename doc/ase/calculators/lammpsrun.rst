@@ -57,29 +57,29 @@ development tree or some more recent version of ASE).
 
 Below follows a list with a selection of parameters
 
-===================  ==========  ============== =============================
-keyword              type        default value  description
-===================  ==========  ============== =============================
-``specorder``        ``list``    ``None``       List containing the atom
-                                                species;
-``always_triclinic`` ``bool``    ``False``      LAMMPS treats orthorombic and
-                                                tilted cells differently
-                                                (extra parameters in input
-                                                and output-files).
-``keep_alive``       ``bool``    ``True``       Do not restart LAMMPS for
-                                                each query; perform only a
-                                                reset to a clean state.
-``keep_tmp_files``   ``bool``    ``False``      Generated LAMMPS input and
-                                                output-files are not deleted.
-``tmp_dir``          ``string``  ``None``       Location to write tmp-files.
-``files``            ``list``    ``[]``         List of files needed by
-                                                LAMMPS. Typically a list of
-                                                potential files.
-``verbose``          ``bool``    ``False``      Print additional debugging
-                                                output to STDOUT.
-``write_velocities`` ``bool``    ``False``      Forward ASE velocities to
-                                                LAMMPS.
-==================== ==========  ============== =============================
+====================  ==========  ============== =============================
+keyword               type        default value  description
+====================  ==========  ============== =============================
+``specorder``         ``list``    ``None``       List containing the atom
+                                                 species;
+``always_triclinic``  ``bool``    ``False``      LAMMPS treats orthorhombic and
+                                                 tilted cells differently
+                                                 (extra parameters in input
+                                                 and output-files).
+``keep_alive``        ``bool``    ``True``       Do not restart LAMMPS for
+                                                 each query; perform only a
+                                                 reset to a clean state.
+``keep_tmp_files``    ``bool``    ``False``      Generated LAMMPS input and
+                                                 output-files are not deleted.
+``tmp_dir``           ``string``  ``None``       Location to write tmp-files.
+``files``             ``list``    ``[]``         List of files needed by
+                                                 LAMMPS. Typically a list of
+                                                 potential files.
+``verbose``           ``bool``    ``False``      Print additional debugging
+                                                 output to STDOUT.
+``write_velocities``  ``bool``    ``False``      Forward ASE velocities to
+                                                 LAMMPS.
+====================  ==========  ============== =============================
 
 
 
