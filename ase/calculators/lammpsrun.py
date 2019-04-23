@@ -50,8 +50,6 @@ from ase.calculators.lammps import CALCULATION_END_MARK
 from ase.calculators.lammps import convert
 
 __all__ = ["LAMMPS"]
-from ase.units import GPa, Ang, fs
-from ase.utils import basestring
 
 
 class LAMMPS(Calculator):

@@ -1,11 +1,9 @@
 from ase.calculators.lammpsrun import LAMMPS
 from ase.spacegroup import crystal
 from ase.data import atomic_numbers,  atomic_masses
-from ase.optimize import LBFGS, QuasiNewton
+from ase.optimize import QuasiNewton
 from ase.constraints import UnitCellFilter
-from unittest import SkipTest
 
-# raise SkipTest('WIP')
 
 a = 6.15
 n = 4
