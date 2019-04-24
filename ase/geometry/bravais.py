@@ -1063,7 +1063,7 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
 
     symrank = 0
     for op in ops:
-        uc = Cell(np.dot(op, orig_uc.array), pbc=orig_uc.pbc)
+        uc = Cell(op.dot(orig_uc), pbc=orig_uc.pbc)
         cellpar = uc.cellpar()
         angles = cellpar[3:]
         anglesm90 = np.abs(angles - 90)
@@ -1106,8 +1106,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
                 lat = OBL(a, b, gamma)
                 rank = 1
 
-        op = lat.get_transformation(orig_uc.array)
-        if not allclose(op.dot(lat.tocell()), orig_uc.array):
+        op = lat.get_transformation(orig_uc)
+        if not allclose(np.dot(op, lat.tocell()), orig_uc.array):
             msg = ('Cannot recognize cell at all somehow! {}, {}, {}'.
                    format(a, b, gamma))
             raise RuntimeError(msg)
