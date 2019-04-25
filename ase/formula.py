@@ -196,8 +196,8 @@ def parse2(f: str):  # -> Tree
             m = re.match('([A-Z][a-z]?)([0-9]*)', f)
             if m is None:
                 raise ValueError
-            symb = m[1]
-            number = m[2]
+            symb = m.group(1)
+            number = m.group(2)
             if number:
                 unit = (symb, int(number))
             else:
@@ -211,7 +211,7 @@ def parse2(f: str):  # -> Tree
 
 def strip_number(s: str):  # -> Tuple[int, str]:
     m = re.match('[0-9]*', s)
-    return int(m[0] or 1), s[m.end():]
+    return int(m.group() or 1), s[m.end():]
 
 
 def tree2str(tree,  # Tree
