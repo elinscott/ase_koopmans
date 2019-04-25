@@ -17,8 +17,9 @@ class Formula:
         >>> 'H' in f
         True
         >>> f.latex()
-        'H$_2$O'
-
+        'H$_{2}$O'
+        >>> divmod(6 * f + 'Cu', 'H2O')
+        (6, Formula('Cu'))
         """
         self._formula = formula
         self._tree = _tree or parse(formula)
@@ -26,7 +27,7 @@ class Formula:
 
     @property
     def count(self):  # -> Dict[str, int]
-        """Chemical symbol to number dictionary.
+        """Dictionary mapping chemical symbol to number.
 
         >>> Formula('H2O').count
         {'H': 2, 'O': 1}
@@ -60,9 +61,17 @@ class Formula:
         return 'Formula({!r})'.format(self._formula)
 
     def __getitem__(self, symb: str) -> int:
+        """Number of atoms with chemical symbol *symb*."""
         return self._count.get(symb, 0)
 
     def __contains__(self, f):  # (Union[str, Formula]) -> bool
+        """Check if formula contains chemical symbols in *f*.
+
+        Type of *f* must be str or Formula.
+
+        >>> 'OH' in Formula('H2O')
+        True
+        """
         if isinstance(f, str):
             f = Formula(f)
         for symb, n in f._count.items():
@@ -71,6 +80,13 @@ class Formula:
         return True
 
     def __eq__(self, other):
+        """Equality check.
+
+        Note that order is not important:
+
+        >>> Formula('CO') == Formula('OC')
+        True
+        """
         if isinstance(other, str):
             other = Formula(other)
         return self._count == other._count
@@ -112,7 +128,20 @@ class Formula:
         return sum(self._count.values())
 
     def hill(self):
-        ...
+        """Alphabetically ordered with C and H first."""
+        count = self._count.copy()
+        count2 = {symb: count.pop(symb) for symb in 'CH' if symb in count}
+        for symb, n in sorted(count.items()):
+            count2[symb] = n
+        return self.from_dict(count2)
+
+    def metal(self):
+        """Alphabetically ordered with metals first. """
+        count = self._count.copy()
+        result2 = [(s, count.pop(s)) for s in non_metals if s in count]
+        result = [(s, count[s]) for s in sorted(count)]
+        result += sorted(result2)
+        return self.from_dict(dict(result))
 
     def compact(self):
         return self.from_dict(self._count)
@@ -131,7 +160,7 @@ class Formula:
         dct, N = self._reduce()
         return self.from_dict(dct), N
 
-    def stoikeometry(self):
+    def stoichiometry(self):
         count1, N = self._reduce()
         c = ord('A')
         count2 = {}
@@ -144,13 +173,13 @@ class Formula:
         return self.from_dict(count2), self.from_dict(count3), N
 
     def latex(self):
-        return self.tostr('$_', '$')
+        return self.tostr('$_{', '}$')
 
     def html(self):
         return self.tostr('<sub>', '</sub>')
 
     def rest(self):
-        return self.tostr(r'\ :sub`', '`')
+        return self.tostr(r'\ :sub`', r'`\ ')
 
     def tostr(self, sub1, sub2):
         parts = []
@@ -243,6 +272,14 @@ def count_tree(tree):  # (Tree) -> Dict[str, int]
     return dct
 
 
+# non metals, half-metals/metalloid, halogen, noble gas:
+non_metals = ['H', 'He', 'B', 'C', 'N', 'O', 'F', 'Ne',
+              'Si', 'P', 'S', 'Cl', 'Ar',
+              'Ge', 'As', 'Se', 'Br', 'Kr',
+              'Sb', 'Te', 'I', 'Xe',
+              'Po', 'At', 'Rn']
+
+
 if __name__ == '__main__':
     for x in ['H2O', '10H2O', '2(CuO2(H2O)2)10', 'Cu20+H2', 'H' * 15,
               'AuBC2', '']:
@@ -255,7 +292,7 @@ if __name__ == '__main__':
             print(s, end='')
         print()
         print(f.compact(), f.reduce())
-        print(f.stoikeometry())
+        print(f.stoichiometry())
         print('DDDD', f, divmod(f, 'H2O'),
               f * 2,
               2 * f)
