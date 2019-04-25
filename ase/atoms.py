@@ -790,7 +790,8 @@ class Atoms(object):
 
     def copy(self):
         """Return a copy."""
-        atoms = self.__class__(cell=self.cell, pbc=self.pbc, info=self.info)
+        atoms = self.__class__(cell=self.cell, pbc=self.pbc, info=self.info,
+                               celldisp=self._celldisp.copy())
 
         atoms.arrays = {}
         for name, a in self.arrays.items():
