@@ -152,23 +152,25 @@ def get_calculator(name):
 
 def equal(a, b, tol=None):
     """ndarray-enabled comparison function."""
-    if isinstance(a, np.ndarray) or hasattr(a, '__array__'):
-        b = np.array(b)
-        if a.shape != b.shape:
-            return False
-        if tol is None:
-            return (a == b).all()
-        else:
-            return np.allclose(a, b, rtol=tol, atol=tol)
-    if isinstance(b, np.ndarray) or hasattr(b, '__array__'):
-        return equal(b, a, tol)
-    if isinstance(a, dict) and isinstance(b, dict):
-        if a.keys() != b.keys():
-            return False
-        return all(equal(a[key], b[key], tol) for key in a.keys())
+    # XXX Known bugs:
+    #  * Comparing cell objects (pbc not part of array representation)
+    #  * Infinite recursion for cyclic dicts
+    #  * Can of worms is open
     if tol is None:
-        return a == b
-    return abs(a - b) < tol * abs(b) + tol
+        return np.array_equal(a, b)
+
+    shape = np.shape(a)
+    if shape != np.shape(b):
+        return False
+
+    if not shape:
+        if isinstance(a, dict) and isinstance(b, dict):
+            if a.keys() != b.keys():
+                return False
+            return all(equal(a[key], b[key], tol) for key in a.keys())
+        return abs(a - b) < tol * abs(b) + tol
+
+    return np.allclose(a, b, rtol=tol, atol=tol)
 
 
 def kptdensity2monkhorstpack(atoms, kptdensity=3.5, even=True):

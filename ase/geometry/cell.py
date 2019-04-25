@@ -21,23 +21,18 @@ from ase.utils.arraywrapper import arraylike
 class Cell:
     """Parallel epipedal unit cell of up to three dimensions.
 
-    This wraps a 3x3 array whose [i, j]-th element is the jth
+    This object resembles a 3x3 array whose [i, j]-th element is the jth
     Cartesian coordinate of the ith unit vector.
 
     Cells of less than three dimensions are represented by placeholder
     unit vectors that are zero."""
 
-    # This overridable variable tells an Atoms object whether atoms.cell
-    # and atoms.get_cell() should be a Cell object or an array.
     ase_objtype = 'cell'  # For JSON'ing
-    _atoms_use_cellobj = 1#bool(os.environ.get('ASE_DEBUG_CELLOBJ'))
 
-    def __init__(self, array=None, pbc=None):
-        if array is None:
-            array = np.zeros((3, 3))
-
+    def __init__(self, array, pbc=None):
         if pbc is None:
-            pbc = np.ones(3, bool)
+            # pbc defaults to whether each cell vector is nonzero:
+            pbc = array.any(1)
 
         # We could have lazy attributes for structure (bcc, fcc, ...)
         # and other things.  However this requires making the cell
@@ -61,7 +56,13 @@ class Cell:
         return self.array.shape
 
     @classmethod
-    def new(cls, cell, pbc=None):
+    def new(cls, cell=None, pbc=None):
+        if pbc is None:
+            pbc = getattr(cell, 'pbc', None)
+
+        if cell is None:
+            cell = np.zeros((3, 3))
+
         cell = np.array(cell, float)
 
         if cell.shape == (3,):
@@ -72,11 +73,18 @@ class Cell:
             raise ValueError('Cell must be length 3 sequence, length 6 '
                              'sequence or 3x3 matrix!')
 
-        return cls(cell, pbc=pbc)
+        cellobj = cls(cell)
+        if pbc is not None:
+            cellobj.pbc[:] = pbc
+
+        return cellobj
 
     @classmethod
     def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None,
                     pbc=None):
+        """Return new Cell from cell parameters.
+
+        This is similar to cellpar_to_cell()."""
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
         return Cell(cell, pbc=pbc)
 
@@ -87,11 +95,10 @@ class Cell:
         return get_bravais_lattice(self, eps=eps,
                                    _niggli_reduce=_niggli_reduce)
 
-    def bandpath(self, path=None, npoints=50, eps=2e-4):
-        bravais = self.get_bravais_lattice()
+    def bandpath(self, path=None, npoints=None, density=None, eps=2e-4):
+        bravais = self.get_bravais_lattice(eps=eps)
         transformation = bravais.get_transformation(self.array)
-        return bravais.bandpath(path,
-                                npoints=npoints,
+        return bravais.bandpath(path=path, npoints=npoints, density=density,
                                 transformation=transformation)
 
     def complete(self):
@@ -118,8 +125,9 @@ class Cell:
         return self.array.flat
 
     @property
-    def celldim(self):
-        # XXX Would name it ndim, but this clashes with ndarray.ndim
+    def rank(self):
+        """"Dimension of the cell, i.e., number of nonzero lattice vectors."""
+        # The name ndim clashes with ndarray.ndim
         return self.array.any(1).sum()
 
     @property
