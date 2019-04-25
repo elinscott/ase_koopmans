@@ -1,5 +1,5 @@
 import re
-from math import gcd
+from ase.utils import gcd
 
 
 # Tree = Typedef('Tree', str, Tuple['Tree', int], List['Tree'])
