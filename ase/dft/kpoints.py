@@ -7,7 +7,7 @@ from math import sin, cos
 import numpy as np
 
 from ase.utils import jsonable
-from ase.geometry import cell_to_cellpar, crystal_structure_from_cell
+from ase.geometry import cell_to_cellpar, crystal_structure_from_cell, Cell
 
 
 def monkhorst_pack(size):
@@ -107,10 +107,10 @@ def resolve_kpt_path_string(path, special_points):
 
 @jsonable('bandpath')
 class BandPath:
-    def __init__(self, cell, scaled_kpts=None,
+    def __init__(self, cell, kpts=None,
                  special_points=None, labelseq=None):
-        if scaled_kpts is None:
-            scaled_kpts = np.empty((0, 3))
+        if kpts is None:
+            kpts = np.empty((0, 3))
 
         if special_points is None:
             special_points = {}
@@ -121,16 +121,16 @@ class BandPath:
             labelseq = ''.join(labelseq)
 
         assert cell.shape == (3, 3)
-        assert scaled_kpts.ndim == 2 and scaled_kpts.shape[1] == 3
-        self.cell = cell.copy()
+        assert kpts.ndim == 2 and kpts.shape[1] == 3
+        self.cell = Cell.new(cell)
         self.icell = self.cell.reciprocal()
-        self.scaled_kpts = scaled_kpts
+        self.kpts = kpts
         self.special_points = special_points
         assert isinstance(labelseq, str)
         self.labelseq = labelseq
 
     def todict(self):
-        return {'scaled_kpts': self.scaled_kpts,
+        return {'kpts': self.kpts,
                 'special_points': self.special_points,
                 'labelseq': self.labelseq,
                 'cell': self.cell}
@@ -154,10 +154,43 @@ class BandPath:
                 .format(self.__class__.__name__,
                         self.labelseq,
                         ''.join(sorted(self.special_points)),
-                        len(self.scaled_kpts)))
+                        len(self.kpts)))
 
     def cartesian_kpts(self):
-        return self._scale(self.scaled_kpts)
+        return self._scale(self.kpts)
+
+
+    def __iter__(self):
+        """XXX Compatibility hack for bandpath() function.
+
+        bandpath() now returns a BandPath object, which is a Good
+        Thing.  However it used to return a tuple of (kpts, x_axis,
+        special_x_coords), and people would use tuple unpacking for
+        those.
+
+        This function makes tuple unpacking work in the same way.
+        It will be removed in the future.
+
+        """
+        import warnings
+        warnings.warn('Please do not use (kpts, x, X) = bandpath(...).  '
+                      'Use path = bandpath(...) and then use the methods '
+                      'of the path object (see the BandPath class).')
+        yield self.kpts
+
+        x, xspecial, _ = labels_from_kpts(self.kpts, self.cell,
+                                          special_points=self.special_points)
+        yield x
+        yield xspecial
+
+    def __getitem__(self, index):
+        # Temp compatibility stuff, see __iter__
+        return tuple(self)[index]
+
+    def get_linear_kpoint_axis(self):
+        x, _, _ = labels_from_kpts(self.kpts, self.cell,
+                                   special_points=self.special_points)
+        return x
 
     def plot(self, dimension=3, **plotkwargs):
         import ase.dft.bz as bz
@@ -224,6 +257,8 @@ def bandpath(path, cell, npoints=None, density=None):
     x-coordinates of special points."""
 
     if isinstance(path, basestring):
+        # XXX we need to update this so we use the new and more complete
+        # cell classification stuff
         cellinfo = get_cellinfo(cell)
         special = cellinfo.special_points
         paths = []
@@ -241,8 +276,9 @@ def bandpath(path, cell, npoints=None, density=None):
     else:
         paths = path
 
-    # XXX should return BandPath object
-    return paths2kpts(paths, cell, npoints, density)
+    kpts, x, X = paths2kpts(paths, cell, npoints, density)
+    return BandPath(cell, kpts=kpts,
+                    special_points=special)
 
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom

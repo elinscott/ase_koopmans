@@ -63,9 +63,7 @@ def atoms2bandpath(atoms, path='default',
         elif ibz_k_points:
             points = atoms.calc.get_ibz_k_points()
 
-    return BandPath(cell,
-                    scaled_kpts=points,
-                    special_points=special_points)
+    return BandPath(cell, kpts=points, special_points=special_points)
 
 
 def plot_reciprocal_cell(path, output=None, dimension=3,
