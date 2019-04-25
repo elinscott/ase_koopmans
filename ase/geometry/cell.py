@@ -88,7 +88,7 @@ class Cell:
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
         return Cell(cell, pbc=pbc)
 
-    def bravais(self, eps=2e-4, _niggli_reduce=False, _warn=True):
+    def get_bravais_lattice(self, eps=2e-4, _niggli_reduce=False, _warn=True):
         # We want to always reduce (so things are as robust as possible)
         # ...or not.  It is not very reliable somehow.
         from ase.geometry.bravais import get_bravais_lattice
@@ -96,7 +96,7 @@ class Cell:
                                    _niggli_reduce=_niggli_reduce)
 
     def bandpath(self, path=None, npoints=None, density=None, eps=2e-4):
-        bravais, _ = self.bravais(eps=eps)
+        bravais, _ = self.get_bravais_lattice(eps=eps)
         # XXX We need to make sure that the rotation is correct.
         return bravais.bandpath(path=path, npoints=npoints, density=density)
 

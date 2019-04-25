@@ -1029,8 +1029,8 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
     raise RuntimeError('Cannot recognize cell at all somehow!')
 
 
-def _test_all_variants():
-    """For testing; yield every variant of every Bravais lattice."""
+def all_variants():
+    """For testing and examples; yield all variants of all lattices."""
     a, b, c = 3., 4., 5.
     alpha = 55.0
     yield CUB(a)

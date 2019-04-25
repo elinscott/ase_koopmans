@@ -9,6 +9,29 @@ Git master branch
 
 :git:`master <>`.
 
+* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
+
+* Support for reading and writing DL_POLY format.
+
+* Added :mod:`ase.geometry.bravais` module to represent primitive Bravais
+  lattices and data relating to Brillouin zones.
+
+* New :class:`~ase.dft.kpoints.BandPath` class to represent a band path
+  specification like ``'GXL'`` along with actual k-point coordinates.
+  :class:`~ase.dft.band_structure.BandStructure` objects now have a band
+  path.
+
+* Improved JSON support.  :ref:`cli` tools like :program:`ase
+  band-structure` and :program:`ase reciprocal` now work with
+  JSON representations of band structures and paths.
+
+* ``atoms.cell`` is now a :class:`~ase.geometry.cell.Cell` object.
+  This object resembles a 3x3 array and also provides shortcuts to many common
+  operations.
+
+* New holonomic :class:`constraint <ase.constraints.FixLinearTriatomic>`
+  for trilinear molecules.
+
 * Dynamics and structure optimizers can now run as an iterator using the
   new ``irun()`` mechanism::
 
@@ -19,12 +42,15 @@ Git master branch
   variable indicates whether the current iteration meets the convergence
   criterion, although this behaviour may change in future versions.
 
-* :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting bond lengths and angles from atoms.
+* :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting
+  bond lengths and angles from atoms.
 
 * Multiple improvements to the ONETEP Calculator. Input files can now be
   written that specify LDOS, bsunfolding and many other functionalities.
 
 * NWChem calculator now supports TDDFT runs.
+
+* The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`ga_bulk_tutorial`.
 
 * The genetic algorithm module :mod:`ase.ga` now has operators for crystal
   structure prediction. See :ref:`ga_bulk_tutorial`.
