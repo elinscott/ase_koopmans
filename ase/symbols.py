@@ -8,6 +8,8 @@ from ase.utils import basestring, formula_hill, formula_metal
 
 def string2symbols(s):
     """Convert string to list of chemical symbols."""
+    from ase.formula import Formula
+    return list(Formula(s))
     n = len(s)
 
     if n == 0:
