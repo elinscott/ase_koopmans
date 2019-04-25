@@ -174,6 +174,8 @@ def bz2d_plot(cell, vectors=False, paths=None, points=None, **kwargs):
     ax.set_ylim(-s, s)
     ax.set_aspect('equal')
 
+    return ax
+
 
 def bz1d_plot(cell, vectors=False, paths=None, points=None):
     # XXXX lots of copypaste from 3d plot, delete and rewrite!
