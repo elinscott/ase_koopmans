@@ -237,7 +237,7 @@ class LAMMPS(Calculator):
             temp_dict.update(value)
             value = temp_dict
         if key in self.legacy_parameters and key != "parameters":
-            print(self.legacy_warn_string.format(key))
+            warnings.warn(self.legacy_warn_string.format(key))
             self.set(**{key: value})
         elif key in self.legacy_parameters_map:
             warnings.warn(
@@ -483,9 +483,8 @@ class LAMMPS(Calculator):
                                   [xy, yy, yz],
                                   [xz, yz, zz]])
         R = self.prism.rot_mat
-        iR = np.linalg.inv(R)
         stress_atoms = np.dot(R, stress_tensor)
-        stress_atoms = np.dot(stress_atoms, iR)
+        stress_atoms = np.dot(stress_atoms, R.T)
         stress_atoms = stress_atoms[[0, 1, 2, 1, 0, 0],
                                     [0, 1, 2, 2, 2, 1]]
         stress = stress_atoms

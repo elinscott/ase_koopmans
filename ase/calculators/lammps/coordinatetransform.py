@@ -54,7 +54,7 @@ class Prism:
         self.tolerance = tolerance
         self.pbc = pbc
 
-        # LAMMPS requires positve values on the diagonal of the
+        # LAMMPS requires positive values on the diagonal of the
         # triangluar matrix -> mirror if necessary
         for i in range(3):
             if self.lammps_tilt[i][i] < 0.0:
