@@ -471,10 +471,25 @@ class LAMMPS(Calculator):
         self.results["energy"] = convert(
             tc["pe"], "energy", self.parameters["units"], "ASE"
         )
+        self.results["free_energy"] = self.results["energy"]
         self.results["forces"] = self.forces.copy()
         stress = np.array(
             [-tc[i] for i in ("pxx", "pyy", "pzz", "pyz", "pxz", "pxy")]
         )
+
+        # We need to apply the Lammps rotation stuff to the stress:
+        xx, yy, zz, yz, xz, xy = stress
+        stress_tensor = np.array([[xx, xy, xz],
+                                  [xy, yy, yz],
+                                  [xz, yz, zz]])
+        R = self.prism.rot_mat
+        iR = np.linalg.inv(R)
+        stress_atoms = np.dot(R, stress_tensor)
+        stress_atoms = np.dot(stress_atoms, iR)
+        stress_atoms = stress_atoms[[0, 1, 2, 1, 0, 0],
+                                    [0, 1, 2, 2, 2, 1]]
+        stress = stress_atoms
+
         self.results["stress"] = convert(
             stress, "pressure", self.parameters["units"], "ASE"
         )
