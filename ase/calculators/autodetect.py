@@ -68,7 +68,7 @@ def detect_calculators():
     return configs
 
 
-def report_configs(configs):
+def format_configs(configs):
     messages = []
     for name in names:
         config = configs.get(name)
