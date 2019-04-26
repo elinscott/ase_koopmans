@@ -1044,9 +1044,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
     raise RuntimeError('Cannot recognize cell at all somehow!')
 
 
-def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
-    orig_uc = uc
-
+def get_2d_bravais_lattice(origcell, eps=2e-4, _niggli_reduce=True):
     # Start with op = I
     ops = [np.eye(3)]
     for i in range(-1, 1):
@@ -1061,8 +1059,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
 
     symrank = 0
     for op in ops:
-        uc = Cell(op.dot(orig_uc), pbc=orig_uc.pbc)
-        cellpar = uc.cellpar()
+        cell = Cell(op.dot(origcell), pbc=origcell.pbc)
+        cellpar = cell.cellpar()
         angles = cellpar[3:]
         anglesm90 = np.abs(angles - 90)
         # Maximum one angle different from 90 deg in 2d please
@@ -1104,8 +1102,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
                 lat = OBL(a, b, gamma)
                 rank = 1
 
-        op = lat.get_transformation(orig_uc)
-        if not allclose(np.dot(op, lat.tocell()), orig_uc.array):
+        op = lat.get_transformation(origcell)
+        if not allclose(np.dot(op, lat.tocell()), origcell.array):
             msg = ('Cannot recognize cell at all somehow! {}, {}, {}'.
                    format(a, b, gamma))
             raise RuntimeError(msg)
