@@ -18,9 +18,11 @@ class Formula:
         """Chemical formula object.
 
         >>> f = Formula('H2O')
-        >>> f.count
+        >>> f.count()
         {'H': 2, 'O': 1}
         >>> 'H' in f
+        True
+        >>> f == 'HOH'
         True
         >>> f.latex()
         'H$_{2}$O'
@@ -31,11 +33,10 @@ class Formula:
         self._tree = _tree or parse(formula)
         self._count = _count or count_tree(self._tree)
 
-    @property
     def count(self):  # -> Dict[str, int]
         """Dictionary mapping chemical symbol to number.
 
-        >>> Formula('H2O').count
+        >>> Formula('H2O').count()
         {'H': 2, 'O': 1}
         """
         return self._count.copy()
@@ -65,6 +66,17 @@ class Formula:
 
     def __repr__(self):
         return 'Formula({!r})'.format(self._formula)
+
+    def __format__(self, fmt):
+        if fmt == 'hill':
+            return str(self.hill())
+        if fmt == 'metal':
+            return str(self.metal())
+        if fmt == 'latex':
+            return self.latex()
+        if fmt == 'html':
+            return self.html()
+        return self._formula
 
     def __getitem__(self, symb: str) -> int:
         """Number of atoms with chemical symbol *symb*."""
@@ -101,7 +113,7 @@ class Formula:
         if isinstance(other, str):
             other = Formula(other)
         N = min(self[symb] // n for symb, n in other._count.items())
-        dct = self.count
+        dct = self.count()
         if N:
             for symb, n in other._count.items():
                 dct[symb] -= n * N
@@ -113,7 +125,7 @@ class Formula:
         return divmod(self, other)[1]
 
     def __rmod__(self, other):
-        ...
+        return Formula(other) % self
 
     def __add__(self, other):  # (Union[str, Formula]) -> Formula
         if not isinstance(other, str):
@@ -131,11 +143,12 @@ class Formula:
         return self * N
 
     def __len__(self):
+        """Number of atoms."""
         return sum(self._count.values())
 
     def hill(self):
         """Alphabetically ordered with C and H first."""
-        count = self._count.copy()
+        count = self.count()
         count2 = ordereddict()
         for symb in 'CH':
             if symb in count:
@@ -146,13 +159,14 @@ class Formula:
 
     def metal(self):
         """Alphabetically ordered with metals first. """
-        count = self._count.copy()
+        count = self.count()
         result2 = [(s, count.pop(s)) for s in non_metals if s in count]
         result = [(s, count[s]) for s in sorted(count)]
         result += sorted(result2)
         return self.from_dict(ordereddict(result))
 
     def compact(self):
+        """"""
         return self.from_dict(self._count)
 
     def _reduce(self):
@@ -295,7 +309,7 @@ if __name__ == '__main__':
         f = Formula(x)
         y = f.tostr('', '')
         assert y == x
-        print(f.count, f._tree)
+        print(f.count(), f._tree)
         print(f.latex())
         for s in f:
             print(s, end='')
