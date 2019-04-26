@@ -121,6 +121,9 @@ class Formula:
                     del dct[symb]
         return N, self.from_dict(dct)
 
+    def __rdivmod__(self, other):
+        return divmod(Formula(other), self)
+
     def __mod__(self, other):
         return divmod(self, other)[1]
 
@@ -180,10 +183,22 @@ class Formula:
         return dct, N
 
     def reduce(self):
+        """Reduce formula.
+
+        >>> Formula('2H2O').reduce()
+        (Formula('H2O'), 2)
+        """
         dct, N = self._reduce()
         return self.from_dict(dct), N
 
     def stoichiometry(self):
+        """Reduce to AxByCz... to unique stoichiomerty.
+
+        >>> Formula('CO2').stoichiometry()
+        (Formula('A2B'), Formula('O2C'), 1)
+        >>> Formula('(H2O)4').stoichiometry()
+        (Formula('A2B'), Formula('H2O'), 4)
+        """
         count1, N = self._reduce()
         c = ord('A')
         count2 = ordereddict()
