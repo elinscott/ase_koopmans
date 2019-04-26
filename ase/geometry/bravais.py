@@ -47,8 +47,7 @@ class BravaisLattice(ABC):
 
     def tocell(self, cycle=0):
         cell = self._cell(**self._parameters)
-        pbc = np.array([True if i < self.ndim else False for i in range(3)],
-                       bool)
+        pbc = np.arange(3) < self.ndim
         if cycle:
             index = (np.arange(3) + cycle) % 3
             cell = cell[index]
