@@ -1,5 +1,11 @@
 import re
+import sys
 from ase.utils import gcd
+
+if sys.version_info >= (3, 6):
+    ordereddict = dict
+else:
+    from collections import OrderedDict as ordereddict
 
 
 # Tree = Typedef('Tree', str, Tuple['Tree', int], List['Tree'])
@@ -39,7 +45,7 @@ class Formula:
         return Formula(''.join(symb + (str(n) if n > 1 else '')
                                for symb, n in dct.items()),
                        _tree=[([(symb, n) for symb, n in dct.items()], 1)],
-                       _count=dct)
+                       _count=dict(dct))
 
     def __iter__(self, tree=None):
         if tree is None:
@@ -130,7 +136,10 @@ class Formula:
     def hill(self):
         """Alphabetically ordered with C and H first."""
         count = self._count.copy()
-        count2 = {symb: count.pop(symb) for symb in 'CH' if symb in count}
+        count2 = ordereddict()
+        for symb in 'CH':
+            if symb in count:
+                count2[symb] = count.pop(symb)
         for symb, n in sorted(count.items()):
             count2[symb] = n
         return self.from_dict(count2)
@@ -141,7 +150,7 @@ class Formula:
         result2 = [(s, count.pop(s)) for s in non_metals if s in count]
         result = [(s, count[s]) for s in sorted(count)]
         result += sorted(result2)
-        return self.from_dict(dict(result))
+        return self.from_dict(ordereddict(result))
 
     def compact(self):
         return self.from_dict(self._count)
@@ -163,8 +172,8 @@ class Formula:
     def stoichiometry(self):
         count1, N = self._reduce()
         c = ord('A')
-        count2 = {}
-        count3 = {}
+        count2 = ordereddict()
+        count3 = ordereddict()
         for n, symb in sorted((-n, symb)
                               for symb, n in count1.items()):
             count2[chr(c)] = -n
