@@ -1,5 +1,7 @@
 import numpy as np
 from ase import Atoms
+from ase.utils.formula import Formula
+
 
 assert Atoms('MoS2').get_chemical_formula() == 'MoS2'
 assert Atoms('SnO2').get_chemical_formula(mode='metal') == 'SnO2'
@@ -21,3 +23,23 @@ for sym in ['', 'Pu', 'Pu2', 'U2Pu2', 'U2((Pu2)2H)']:
                 reduction = len(n1) // len(n2)
                 n2 = np.repeat(n2, reduction)
             assert (n1 == n2).all()
+
+
+if 0:
+    for x in ['H2O', '10H2O', '2(CuO2(H2O)2)10', 'Cu20+H2', 'H' * 15,
+              'AuBC2', '']:
+        f = Formula(x)
+        y = f.tostr('', '')
+        assert y == x
+        print(f.count(), f._tree)
+        print(f.latex())
+        for s in f:
+            print(s, end='')
+        print()
+        print(f.compact(), f.reduce())
+        print(f.stoichiometry())
+        print('DDDD', f, divmod(f, 'H2O'),
+              f * 2,
+              2 * f)
+        print(f == 'H2O', bool(f))
+        

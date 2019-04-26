@@ -373,22 +373,3 @@ def formula_metal(numbers, empirical=False):
     result += sorted(result2)
     return ''.join('{0}{1}'.format(symbol, n) if n > 1 else symbol
                    for symbol, n in result)
-
-
-if __name__ == '__main__':
-    for x in ['H2O', '10H2O', '2(CuO2(H2O)2)10', 'Cu20+H2', 'H' * 15,
-              'AuBC2', '']:
-        f = Formula(x)
-        y = f.tostr('', '')
-        assert y == x
-        print(f.count(), f._tree)
-        print(f.latex())
-        for s in f:
-            print(s, end='')
-        print()
-        print(f.compact(), f.reduce())
-        print(f.stoichiometry())
-        print('DDDD', f, divmod(f, 'H2O'),
-              f * 2,
-              2 * f)
-        print(f == 'H2O', bool(f))
