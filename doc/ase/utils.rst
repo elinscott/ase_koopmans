@@ -8,6 +8,7 @@ This module contains utility functions and classes.
 
 .. toctree::
 
+    formula
     xrdebye
 
 .. autofunction:: ase.utils.opencew
@@ -30,7 +31,7 @@ __ https://doi.org/10.1016/j.cpc.2011.11.007
 
 .. autoclass:: ase.utils.structure_comparator.SymmetryEquivalenceCheck
    :members:
-               
+
 Symmetry analysis
 =================
 

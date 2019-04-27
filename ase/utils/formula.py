@@ -19,6 +19,14 @@ class Formula:
                  _count=None):  # Dict[str, int]
         """Chemical formula object.
 
+        Parameters
+        ----------
+        formula: str
+            Text string representation of formula.  Examples: '6CO2',
+            '30Cu+2CO', 'Pt(CO)6'.
+
+        Examples
+        --------
         >>> f = Formula('H2O')
         >>> f.count()
         {'H': 2, 'O': 1}
@@ -30,6 +38,10 @@ class Formula:
         'H$_{2}$O'
         >>> divmod(6 * f + 'Cu', 'H2O')
         (6, Formula('Cu'))
+
+        Raises
+        ------
+        ValueError on malformed formula.
         """
         self._formula = formula
         self._tree = _tree or parse(formula)
@@ -38,6 +50,8 @@ class Formula:
     def count(self):  # -> Dict[str, int]
         """Dictionary mapping chemical symbol to number.
 
+        Example
+        -------
         >>> Formula('H2O').count()
         {'H': 2, 'O': 1}
         """
