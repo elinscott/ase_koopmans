@@ -26,7 +26,7 @@ python_3_oldlibs_tests:
 python_3_tests:
   image: python:3-slim
   script:
-    - pip install flake8 psycopg2-binary netCDF4 pymysql
+    - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
     - pip install .
     - python --version
     - ase test --strict
