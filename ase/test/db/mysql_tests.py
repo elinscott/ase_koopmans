@@ -18,7 +18,7 @@ if ON_CI_SERVER:
     HOST = 'mysql'
     USER = 'root'
     PASSWD = 'ase'
-    DB_NAME = 'testase'
+    DB_NAME = 'testase_mysql'
 else:
     HOST = os.environ.get('MYSQL_HOST', None)
     USER = os.environ.get('MYSQL_USER', None)
