@@ -3,6 +3,7 @@ from ase import Atoms
 from ase.calculators.emt import EMT
 from ase.build import molecule
 import os
+from ase.test import must_raise
 
 HOST = 'localhost'
 USER = 'davidkl'
@@ -67,7 +68,22 @@ def test_update():
     assert atoms_type == 'oxide'
 
 
+def test_delete():
+    db = connect(full_db_name())
+
+    h2o = molecule('H2O')
+    uid = db.write(h2o, type='molecule')
+
+    # Make sure that we can get the value
+    db.get(id=uid)
+    db.delete([uid])
+
+    with must_raise(KeyError):
+        db.get(id=uid)
+
+
 test_connect()
 test_write_read()
 test_write_read_with_calculator()
 test_update()
+test_delete()
