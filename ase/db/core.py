@@ -146,6 +146,8 @@ def connect(name, type='extract_from_name', create_indices=True,
         elif (name.startswith('postgresql://') or
               name.startswith('postgres://')):
             type = 'postgresql'
+        elif name.startswith('mysql://'):
+            type = 'mysql'
         else:
             type = os.path.splitext(name)[1][1:]
             if type == '':
@@ -171,6 +173,10 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type == 'postgresql':
         from ase.db.postgresql import PostgreSQLDatabase
         return PostgreSQLDatabase(name)
+
+    if type == 'mysql':
+        from ase.db.mysql import MySQLDatabase
+        return MySQLDatabase(name)
     raise ValueError('Unknown database type: ' + type)
 
 
