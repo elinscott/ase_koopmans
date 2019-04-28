@@ -54,6 +54,20 @@ def test_write_read_with_calculator():
     assert calc_db.parameters['dummy_param'] == 2.4
 
 
+def test_update():
+    db = connect(full_db_name())
+
+    h2o = molecule('H2O')
+
+    uid = db.write(h2o, type='molecule')
+    db.update(id=uid, type='oxide')
+
+    atoms_type = db.get(id=uid).type
+
+    assert atoms_type == 'oxide'
+
+
 test_connect()
 test_write_read()
 test_write_read_with_calculator()
+test_update()

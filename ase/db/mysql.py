@@ -60,10 +60,9 @@ class MySQLCursor(object):
             self._is_delete_statement(sql)
 
     def _redefine_invalid_tables(self, sql):
-        return sql
         for invalid in self.invalid_mysql_tables:
             if invalid in sql:
-                sql = sql.replace(k, v)
+                sql = sql.replace('key=', '{}='.format(self.field_redefines['key']))
         return sql
 
     def execute(self, sql, params=None):
@@ -84,13 +83,11 @@ class MySQLCursor(object):
         return self.cur.fetchall()
 
     def executemany(self, sql, values):
-        #sql = self._redefine_invalid_tables(sql)
-        print(' keys ' in sql, self._is_insert_statement(sql), sql.lower())
+        sql = self._redefine_invalid_tables(sql)
         if ' keys ' in sql:
             if not self._is_known_statement(sql):
                 raise ValueError('{} is unknown'.format(sql))
             sql = sql.replace(' keys ', ' {} '.format(self.table_redefines['keys']))
-        print(sql, values)
         sql = sql.replace('?', '%s')
         self.cur.executemany(sql, values)
 
