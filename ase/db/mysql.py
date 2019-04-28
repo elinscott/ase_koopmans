@@ -1,8 +1,8 @@
 from pymysql import connect
 
-from ase.db import SQLite3Database
-from ase.db import init_statements
-from ase.db import index_statements
+from ase.db.sqlite import SQLite3Database
+from ase.db.sqlite import init_statements
+from ase.db.sqlite import index_statements
 
 
 class Connection(object):
@@ -28,8 +28,8 @@ class MySQLDatabase(SQLite3Database):
 
     def __init__(self, filename=None, create_indices=True,
                  use_lock_file=False, serial=False):
-                super(self).__init__(filename, create_indices, use_lock_file,
-                                     serial)
+                super(MySQLDatabase, self).__init__(
+                    filename, create_indices, use_lock_file, serial)
 
                 self.host = None
                 self.username = None
