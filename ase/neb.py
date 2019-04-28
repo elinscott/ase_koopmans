@@ -73,11 +73,14 @@ class NEB:
         self.parallel = parallel
         self.natoms = len(images[0])
         pbc = images[0].pbc
+        atomic_numbers = images[0].get_atomic_numbers()
         for img in images:
             if len(img) != self.natoms:
                 raise ValueError('Images have different numbers of atoms')
             if (pbc != img.pbc).any():
                 raise ValueError('Images have different boundary conditions')
+            if (atomic_numbers != img.get_atomic_numbers()).any():
+                raise ValueError('Images have atoms in different orders')
         self.nimages = len(images)
         self.emax = np.nan
 
