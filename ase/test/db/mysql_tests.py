@@ -1,7 +1,7 @@
 from ase.test import must_raise
 from ase.test import NotAvailable
 try:
-    import pymsql
+    import pymysql
 except ImportError as exc:
     raise NotAvailable('No MySQL module')
 
@@ -12,10 +12,10 @@ from ase.calculators.emt import EMT
 from ase.build import molecule
 import os
 
-HOST = 'localhost'
-USER = 'davidkl'
-PASSWD = os.environ.get('PASSWD')
-DB_NAME = 'demodb'
+HOST = 'mysql'
+USER = 'root'
+PASSWD = 'ase'
+DB_NAME = 'testase'
 
 
 def full_db_name():
