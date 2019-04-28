@@ -9,8 +9,7 @@ from ase.db.sqlite import VERSION
 
 class Connection(object):
     def __init__(self, host=None, user=None, passwd=None,
-                 db_name=None, sshtunnel=None):
-        self.sshtunnel = sshtunnel
+                 db_name=None):
         self.con = connect(host=host, user=user, passwd=passwd, db=db_name)
 
     def cursor(self):
