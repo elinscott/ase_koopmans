@@ -2,10 +2,11 @@ from ase.db import connect
 from ase import Atoms
 from ase.calculators.emt import EMT
 from ase.build import molecule
+import os
 
 HOST = 'localhost'
 USER = 'davidkl'
-PASSWD = 'davidsfedora'
+PASSWD = os.environ.get('PASSWD')
 DB_NAME = 'demodb'
 
 
