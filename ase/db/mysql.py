@@ -62,14 +62,16 @@ class MySQLCursor(object):
     def _redefine_invalid_tables(self, sql):
         for invalid in self.invalid_mysql_tables:
             if invalid in sql:
-                sql = sql.replace('key=', '{}='.format(self.field_redefines['key']))
+                sql = sql.replace(
+                    'key=', '{}='.format(self.field_redefines['key']))
         return sql
 
     def execute(self, sql, params=None):
         if ' keys ' in sql:
             if not self._is_known_statement(sql):
                 raise ValueError('{} is unknown'.format(sql))
-            sql = sql.replace(' keys ', ' {} '.format(self.table_redefines['keys']))
+            sql = sql.replace(
+                ' keys ', ' {} '.format(self.table_redefines['keys']))
 
         sql = sql.replace('?', '%s')
         if params is None:
@@ -87,7 +89,8 @@ class MySQLCursor(object):
         if ' keys ' in sql:
             if not self._is_known_statement(sql):
                 raise ValueError('{} is unknown'.format(sql))
-            sql = sql.replace(' keys ', ' {} '.format(self.table_redefines['keys']))
+            sql = sql.replace(
+                ' keys ', ' {} '.format(self.table_redefines['keys']))
         sql = sql.replace('?', '%s')
         self.cur.executemany(sql, values)
 
@@ -196,5 +199,6 @@ def schema_update(statements):
     for i, statement in enumerate(statements):
         for tab in tab_with_key_field:
             if tab in statement:
-                statements[i] = statement.replace('key TEXT', 'attribute_key TEXT')
+                statements[i] = statement.replace(
+                    'key TEXT', 'attribute_key TEXT')
     return statements
