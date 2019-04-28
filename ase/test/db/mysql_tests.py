@@ -1,9 +1,16 @@
+from ase.test import must_raise
+from ase.test import NotAvailable
+try:
+    import pymsql
+except ImportError as exc:
+    NotAvailable('No MySQL module')
+
+
 from ase.db import connect
 from ase import Atoms
 from ase.calculators.emt import EMT
 from ase.build import molecule
 import os
-from ase.test import must_raise
 
 HOST = 'localhost'
 USER = 'davidkl'
