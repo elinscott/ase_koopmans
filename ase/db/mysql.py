@@ -1,6 +1,7 @@
 from pymysql import connect
 from pymysql.err import ProgrammingError
 from copy import deepcopy
+import warnings
 
 from ase.db.sqlite import SQLite3Database
 from ase.db.sqlite import init_statements
@@ -75,7 +76,10 @@ class MySQLCursor(object):
         sql = sql.replace('?', '%s')
         if params is None:
             params = ()
-        self.cur.execute(sql, params)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self.cur.execute(sql, params)
 
     def fetchone(self):
         return self.cur.fetchone()
