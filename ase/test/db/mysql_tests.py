@@ -2,7 +2,7 @@ from ase.test import must_raise
 from ase.test import NotAvailable
 try:
     import pymysql
-except ImportError as exc:
+except ImportError:
     raise NotAvailable('No MySQL module')
 
 
