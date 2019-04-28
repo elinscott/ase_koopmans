@@ -3,7 +3,7 @@ from ase.test import NotAvailable
 try:
     import pymsql
 except ImportError as exc:
-    NotAvailable('No MySQL module')
+    raise NotAvailable('No MySQL module')
 
 
 from ase.db import connect

@@ -183,6 +183,9 @@ def schema_update(statements):
     # randint(16**31, 16**32-1) so it will contain 32
     # hex-characters
     statements[0] = statements[0].replace('TEXT UNIQUE', 'VARCHAR(32) UNIQUE')
+
+    # keys is a reserved word in MySQL redefine this table name to 
+    # attribute_keys
     statements[2] = statements[2].replace('keys', 'attribute_keys')
 
     txt2jsonb = ['calculator_parameters', 'key_value_pairs', 'data']
@@ -195,6 +198,7 @@ def schema_update(statements):
     tab_with_key_field = ['attribute_keys', 'number_key_values',
                           'text_key_values']
 
+    # key is a reserved word in MySQL redefine this to attribute_key
     for i, statement in enumerate(statements):
         for tab in tab_with_key_field:
             if tab in statement:
