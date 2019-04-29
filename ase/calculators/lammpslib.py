@@ -186,7 +186,7 @@ potentials)
 
     from ase import Atom, Atoms
     from ase.build import bulk
-    from lammpslib import LAMMPSlib
+    from ase.calculators.lammpslib import LAMMPSlib
 
     cmds = ["pair_style eam/alloy",
             "pair_coeff * * NiAlH_jea.eam.alloy Al H"]
