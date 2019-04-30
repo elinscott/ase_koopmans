@@ -10,3 +10,4 @@ Chemical formula type
 .. autoclass:: Formula
     :members:
     :member-order: bysource
+    :special-members: __format__, __contains__, __getitem__

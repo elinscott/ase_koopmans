@@ -65,6 +65,9 @@ Git master branch
 * Calculation of stress tensor implemented for
   :class:`~ase.calculators.emt.EMT` potential
 
+* Preliminary :class:`~ase.utils.formula.Formula` type added.  Collects all
+  formula manipulation functionality in one place.
+
 
 Version 3.17.0
 ==============

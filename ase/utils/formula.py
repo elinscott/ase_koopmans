@@ -41,14 +41,14 @@ class Formula:
 
         Raises
         ------
-        ValueError on malformed formula.
+        `ValueError` on malformed formula.
         """
         self._formula = formula
         self._tree = _tree or parse(formula)
         self._count = _count or count_tree(self._tree)
 
     def count(self):  # -> Dict[str, int]
-        """Dictionary mapping chemical symbol to number.
+        """Return dictionary mapping chemical symbol to number of atoms.
 
         Example
         -------
@@ -83,7 +83,17 @@ class Formula:
     def __repr__(self):
         return 'Formula({!r})'.format(self._formula)
 
-    def __format__(self, fmt):
+    def __format__(self, fmt: str) -> str:
+        """Format formula as string.
+
+        Possible formats: hill, metal, latex, html, rest.
+
+        Example
+        -------
+        >>> f = Formula('O2H')
+        >>> '{f}, {f:hill}, {f:latex}'.format(f=f)
+        'O2H, H2O, O$_{2}$H'
+        """
         if fmt == 'hill':
             return str(self.hill())
         if fmt == 'metal':
@@ -98,11 +108,13 @@ class Formula:
         """Number of atoms with chemical symbol *symb*."""
         return self._count.get(symb, 0)
 
-    def __contains__(self, f):  # (Union[str, Formula]) -> bool
+    def __contains__(self, f) -> bool:  # (Union[str, Formula])
         """Check if formula contains chemical symbols in *f*.
 
         Type of *f* must be str or Formula.
 
+        Example
+        -------
         >>> 'OH' in Formula('H2O')
         True
         """
@@ -116,8 +128,10 @@ class Formula:
     def __eq__(self, other):
         """Equality check.
 
-        Note that order is not important:
+        Note that order is not important.
 
+        Example
+        -------
         >>> Formula('CO') == Formula('OC')
         True
         """
@@ -126,6 +140,7 @@ class Formula:
         return self._count == other._count
 
     def __divmod__(self, other):
+        """"""
         if isinstance(other, str):
             other = Formula(other)
         N = min(self[symb] // n for symb, n in other._count.items())
@@ -201,6 +216,15 @@ class Formula:
     def reduce(self):
         """Reduce formula.
 
+        Retruns
+        -------
+        formula: Formula
+            Reduced formula.
+        n: int
+            Number of reduced formula units.
+
+        Example
+        -------
         >>> Formula('2H2O').reduce()
         (Formula('H2O'), 2)
         """
@@ -208,8 +232,10 @@ class Formula:
         return self.from_dict(dct), N
 
     def stoichiometry(self):
-        """Reduce to AxByCz... to unique stoichiomerty.
+        """Reduce to unique stoichiomerty using "chemical symbols" A, B, B, ...
 
+        Examples
+        --------
         >>> Formula('CO2').stoichiometry()
         (Formula('A2B'), Formula('O2C'), 1)
         >>> Formula('(H2O)4').stoichiometry()
@@ -227,12 +253,15 @@ class Formula:
         return self.from_dict(count2), self.from_dict(count3), N
 
     def latex(self):
+        """Return LaTeX representation."""
         return self.tostr('$_{', '}$')
 
     def html(self):
+        """Return html representation."""
         return self.tostr('<sub>', '</sub>')
 
     def rest(self):
+        """Return reStructuredText representation."""
         return self.tostr(r'\ :sub`', r'`\ ')
 
     def tostr(self, sub1, sub2):
