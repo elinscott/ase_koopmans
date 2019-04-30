@@ -140,7 +140,13 @@ class Formula:
         return self._count == other._count
 
     def __divmod__(self, other):
-        """"""
+        """Return the tuple (self // other, self % other).
+
+        Invariant::
+
+            div, mod = divmod(self, other)
+            div * other + mod == self
+        """
         if isinstance(other, str):
             other = Formula(other)
         N = min(self[symb] // n for symb, n in other._count.items())
@@ -161,7 +167,14 @@ class Formula:
     def __rmod__(self, other):
         return Formula(other) % self
 
+    def __floordiv__(self, other):
+        return divmod(self, other)[0]
+
+    def __rfloordiv__(self, other):
+        return Formula(other) // self
+
     def __add__(self, other):  # (Union[str, Formula]) -> Formula
+        """Add two formulas."""
         if not isinstance(other, str):
             other = other._formula
         return Formula(self._formula + '+' + other)
@@ -170,6 +183,7 @@ class Formula:
         return Formula(other) + self
 
     def __mul__(self, N: int):  # -> Formula
+        """Repeat formula `N` times."""
         return self.from_dict({symb: n * N
                                for symb, n in self._count.items()})
 
