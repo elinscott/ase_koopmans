@@ -125,6 +125,10 @@ def bz2d_plot(cell, vectors=False, paths=None, points=None, **kwargs):
     # 2d in x-y plane
     assert all(abs(cell[2][0:2]) < 1e-6) and all(abs(cell.T[2][0:2]) < 1e-6)
 
+    # We can add a third dimension for practical purposes which makes the code
+    # work much like the 3D case. Then we can just do a normal Voronoi diagram.
+    cell = cell.copy()
+    cell[2, 2] += 1.
     icell = np.linalg.inv(cell).T
     kpoints = points
     ax = plt.axes()

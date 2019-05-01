@@ -56,7 +56,7 @@ class BravaisLattice(ABC):
 
     def get_transformation(self, cell):
         # Get transformation matrix relating input cell to canonical cell
-        return cell.dot(np.linalg.inv(self.tocell()))
+        return cell.dot(np.linalg.pinv(self.tocell()))
 
     def cellpar(self, cycle=0):
         # (Just a brute-force implementation)
@@ -1047,6 +1047,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
 
 def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
     orig_uc = uc
+    pbc = orig_uc.pbc
 
     # Start with op = I
     ops = [np.eye(3)]
@@ -1062,7 +1063,7 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
 
     symrank = 0
     for op in ops:
-        uc = Cell(op.dot(orig_uc), pbc=orig_uc.pbc)
+        uc = Cell(op.dot(orig_uc), pbc=pbc)
         cellpar = uc.cellpar()
         angles = cellpar[3:]
         anglesm90 = np.abs(angles - 90)
@@ -1106,7 +1107,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
                 rank = 1
 
         op = lat.get_transformation(orig_uc)
-        if not allclose(np.dot(op, lat.tocell()), orig_uc.array):
+        if not allclose(np.dot(op, lat.tocell())[pbc][:, pbc],
+                        orig_uc.array[pbc][:, pbc]):
             msg = ('Cannot recognize cell at all somehow! {}, {}, {}'.
                    format(a, b, gamma))
             raise RuntimeError(msg)
@@ -1211,9 +1213,6 @@ def get_subset_points(names, points):
     return newpoints
 
 
-c2d = 10000
-
-
 @bravaisclass('oblique (monoclinic)', ('a', 'b', 'alpha'),
               [['OBL', 'GYHCH1X', 'GYHCH1XG', None]],
               ndim=2)
@@ -1227,7 +1226,7 @@ class OBL(BravaisLattice):
 
         return np.array([[a, 0, 0],
                          [b * cosa, b * sina, 0],
-                         [0., 0., c2d]])
+                         [0., 0., 0.]])
 
     def _special_points(self, a, b, alpha, variant):
         # XXX Check me
@@ -1257,7 +1256,7 @@ class HEX2D(BravaisLattice):
         x = 0.5 * np.sqrt(3)
         return np.array([[a, 0, 0],
                          [-0.5 * a, x * a, 0],
-                         [0., 0., c2d]])
+                         [0., 0., 0.]])
 
 
 @bravaisclass('rectangular (orthorhombic)', 'ab',
@@ -1272,7 +1271,7 @@ class RECT(BravaisLattice):
     def _cell(self, a, b):
         return np.array([[a, 0, 0],
                          [0, b, 0],
-                         [0, 0, c2d]])
+                         [0, 0, 0.]])
 
 
 @bravaisclass('centered rectangular (orthorhombic)', ('a', 'alpha'),
@@ -1287,7 +1286,7 @@ class CRECT(BravaisLattice):
         y = np.sin(alpha * _degrees)
         return np.array([[a, 0, 0],
                          [a * x, a * y, 0],
-                         [0, 0, c2d]])
+                         [0, 0, 0.]])
 
     def _special_points(self, a, alpha, variant):
         sina2 = np.sin(alpha / 2 * _degrees)**2
@@ -1313,4 +1312,4 @@ class SQR(BravaisLattice):
     def _cell(self, a):
         return np.array([[a, 0, 0],
                          [0, a, 0],
-                         [0, 0, c2d]])
+                         [0, 0, 0.]])
