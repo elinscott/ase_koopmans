@@ -47,8 +47,7 @@ class BravaisLattice(ABC):
 
     def tocell(self, cycle=0):
         cell = self._cell(**self._parameters)
-        pbc = np.array([True if i < self.ndim else False for i in range(3)],
-                       bool)
+        pbc = np.arange(3) < self.ndim
         if cycle:
             index = (np.arange(3) + cycle) % 3
             cell = cell[index]
@@ -1045,10 +1044,8 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
     raise RuntimeError('Cannot recognize cell at all somehow!')
 
 
-def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
-    orig_uc = uc
-    pbc = orig_uc.pbc
-
+def get_2d_bravais_lattice(origcell, eps=2e-4, _niggli_reduce=True):
+    pbc = origcell.pbc
     # Start with op = I
     ops = [np.eye(3)]
     for i in range(-1, 1):
@@ -1063,8 +1060,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
 
     symrank = 0
     for op in ops:
-        uc = Cell(op.dot(orig_uc), pbc=pbc)
-        cellpar = uc.cellpar()
+        cell = Cell(op.dot(origcell), pbc=pbc)
+        cellpar = cell.cellpar()
         angles = cellpar[3:]
         anglesm90 = np.abs(angles - 90)
         # Maximum one angle different from 90 deg in 2d please
@@ -1106,9 +1103,8 @@ def get_2d_bravais_lattice(uc, eps=2e-4, _niggli_reduce=True):
                 lat = OBL(a, b, gamma)
                 rank = 1
 
-        op = lat.get_transformation(orig_uc)
-        if not allclose(np.dot(op, lat.tocell())[pbc][:, pbc],
-                        orig_uc.array[pbc][:, pbc]):
+        op = lat.get_transformation(origcell)
+        if not allclose(np.dot(op, lat.tocell())[pbc][:, pbc], origcell.array):
             msg = ('Cannot recognize cell at all somehow! {}, {}, {}'.
                    format(a, b, gamma))
             raise RuntimeError(msg)
