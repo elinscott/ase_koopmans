@@ -49,6 +49,8 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
         x = sin(azim)
         y = cos(azim)
         view = [x * cos(elev), y * cos(elev), sin(elev)]
+        if ax is None:
+            ax = fig.gca(projection='3d')
     elif dimensions == 2:
         # 2d in xy
         assert all(abs(cell[2][0:2]) < 1e-6) and all(abs(cell.T[2]
@@ -68,7 +70,7 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
         # Similar to 2D we can add two extra dimensions
         cell = cell.copy()
         cell[1, 1] += 10000.
-        cell[2, 2] += 100.
+        cell[2, 2] += 10000.
         ax = plt.axes()
 
     icell = np.linalg.inv(cell).T
@@ -94,8 +96,7 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                     ax.plot(x, y, z, c='k', ls=ls)
             elif dimensions == 2:
                 ax.plot(x, y, c='k', ls='-')
-
-        maxp = max(maxp, points.max())
+            maxp = max(maxp, points.max())
 
     if vectors:
         if dimensions == 3:
