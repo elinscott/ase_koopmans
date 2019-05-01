@@ -9,7 +9,7 @@ from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import chemical_symbols, atomic_masses
 from ase.io.jsonio import decode
-from ase.utils import formula_metal, basestring
+from ase.utils.formula import Formula
 
 
 class FancyDict(dict):
@@ -68,7 +68,7 @@ class AtomsRow:
             if 'calculator_parameters' in dct:
                 # Earlier version of ASE would encode the calculator
                 # parameter dict again and again and again ...
-                while isinstance(dct['calculator_parameters'], basestring):
+                while isinstance(dct['calculator_parameters'], str):
                     dct['calculator_parameters'] = decode(
                         dct['calculator_parameters'])
         else:
@@ -152,7 +152,7 @@ class AtomsRow:
     @property
     def formula(self):
         """Chemical formula string."""
-        return formula_metal(self.numbers)
+        return Formula('', [(self.symbols, 1)]).format('metal')
 
     @property
     def symbols(self):

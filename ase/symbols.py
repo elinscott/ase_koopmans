@@ -3,21 +3,20 @@ import warnings
 import numpy as np
 
 from ase.data import atomic_numbers, chemical_symbols
-from ase.utils import basestring, formula_hill, formula_metal
+from ase.utils.formula import Formula
 
 
 def string2symbols(s):
     """Convert string to list of chemical symbols."""
-    from ase.utils.formula import Formula
     return list(Formula(s))
 
 
 def symbols2numbers(symbols):
-    if isinstance(symbols, basestring):
+    if isinstance(symbols, str):
         symbols = string2symbols(symbols)
     numbers = []
     for s in symbols:
-        if isinstance(s, basestring):
+        if isinstance(s, str):
             numbers.append(atomic_numbers[s])
         else:
             numbers.append(int(s))
@@ -92,13 +91,17 @@ class Symbols:
                 if c > 1:
                     tokens.append(str(c))
             formula = ''.join(tokens)
-        elif mode == 'hill':
-            formula = formula_hill(numbers, empirical=empirical)
         elif mode == 'all':
             formula = ''.join([chemical_symbols[n] for n in numbers])
-        elif mode == 'metal':
-            formula = formula_metal(numbers, empirical=empirical)
         else:
-            raise ValueError("Use mode = 'all', 'reduce', 'hill' or 'metal'.")
+            symbols = [chemical_symbols[Z] for Z in numbers]
+            f = Formula('', [(symbols, 1)])
+            if empirical:
+                f, _ = f.reduce()
+            if mode in {'hill', 'metal'}:
+                formula = f.format(mode)
+            else:
+                raise ValueError(
+                    "Use mode = 'all', 'reduce', 'hill' or 'metal'.")
 
         return formula

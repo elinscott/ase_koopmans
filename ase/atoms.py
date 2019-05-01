@@ -7,10 +7,11 @@ This module defines the central object in the ASE package: the Atoms
 object.
 """
 
+import copy
 import numbers
 import warnings
+from collections import Counter
 from math import cos, sin, pi
-import copy
 
 import numpy as np
 
@@ -19,6 +20,7 @@ from ase.atom import Atom
 from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
 from ase.data import atomic_masses
 from ase.utils import basestring
+from ase.utils.formula import Formula
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
 from ase.geometry.cell import Cell
 from ase.symbols import Symbols, symbols2numbers
@@ -247,6 +249,10 @@ class Atoms(object):
     def symbols(self, obj):
         new_symbols = Symbols.fromsymbols(obj)
         self.numbers[:] = new_symbols.numbers
+
+    @property
+    def formula(self):
+        return Formula.from_dict(Counter(self.get_chemical_symbols))
 
     def set_calculator(self, calc=None):
         """Attach calculator object."""

@@ -1,6 +1,5 @@
 import re
 import sys
-from collections import Counter
 from ase.utils import gcd
 from ase.data import chemical_symbols
 
@@ -34,7 +33,9 @@ class Formula:
         True
         >>> f == 'HOH'
         True
-        >>> f.latex()
+        >>> f'{f:latex}'
+        'H$_{2}$O'
+        >>> f.format('latex')
         'H$_{2}$O'
         >>> divmod(6 * f + 'Cu', 'H2O')
         (6, Formula('Cu'))
@@ -59,8 +60,8 @@ class Formula:
 
     @staticmethod
     def from_dict(dct):  # (Dict[str, int]) -> Formula
-        return Formula(''.join(symb + (str(n) if n > 1 else '')
-                               for symb, n in dct.items()),
+        """Convert dict to Formula."""
+        return Formula(dict2str(dct),
                        _tree=[([(symb, n) for symb, n in dct.items()], 1)],
                        _count=dict(dct))
 
@@ -83,26 +84,23 @@ class Formula:
     def __repr__(self):
         return 'Formula({!r})'.format(self._formula)
 
-    def __format__(self, fmt: str) -> str:
+    def format(self, fmt: str = '') -> str:
         """Format formula as string.
 
-        Possible formats: hill, metal, latex, html, rest.
+        Formats:
+
+        * hill: alphabetically ordered with C and H first
+        * metal: alphabetically ordered with metals first
+        * latex: LaTeX representation
+        * html: HTML representation
+        * rest: reStructuredText representation
 
         Example
         -------
-        >>> f = Formula('O2H')
-        >>> '{f}, {f:hill}, {f:latex}'.format(f=f)
-        'O2H, H2O, O$_{2}$H'
+        >>> Formula('H2O').format(html)
+        'H<sub>2>/sub>O'
         """
-        if fmt == 'hill':
-            return str(self.hill())
-        if fmt == 'metal':
-            return str(self.metal())
-        if fmt == 'latex':
-            return self.latex()
-        if fmt == 'html':
-            return self.html()
-        return self._formula
+        return format(self, fmt)
 
     def __getitem__(self, symb: str) -> int:
         """Number of atoms with chemical symbol *symb*."""
@@ -194,25 +192,6 @@ class Formula:
         """Number of atoms."""
         return sum(self._count.values())
 
-    def hill(self):
-        """Alphabetically ordered with C and H first."""
-        count = self.count()
-        count2 = ordereddict()
-        for symb in 'CH':
-            if symb in count:
-                count2[symb] = count.pop(symb)
-        for symb, n in sorted(count.items()):
-            count2[symb] = n
-        return self.from_dict(count2)
-
-    def metal(self):
-        """Alphabetically ordered with metals first. """
-        count = self.count()
-        result2 = [(s, count.pop(s)) for s in non_metals if s in count]
-        result = [(s, count[s]) for s in sorted(count)]
-        result += sorted(result2)
-        return self.from_dict(ordereddict(result))
-
     def compact(self):
         """"""
         return self.from_dict(self._count)
@@ -230,7 +209,7 @@ class Formula:
     def reduce(self):
         """Reduce formula.
 
-        Retruns
+        Returns
         -------
         formula: Formula
             Reduced formula.
@@ -266,19 +245,46 @@ class Formula:
             c += 1
         return self.from_dict(count2), self.from_dict(count3), N
 
-    def latex(self):
-        """Return LaTeX representation."""
-        return self.tostr('$_{', '}$')
+    def __format__(self, fmt: str) -> str:
+        """Format Formula as str.
 
-    def html(self):
-        """Return html representation."""
-        return self.tostr('<sub>', '</sub>')
+        Possible formats: hill, metal, latex, html, rest.
 
-    def rest(self):
-        """Return reStructuredText representation."""
-        return self.tostr(r'\ :sub`', r'`\ ')
+        Example
+        -------
+        >>> f = Formula('OH2')
+        >>> '{f}, {f:hill}, {f:latex}'.format(f=f)
+        'OH2, H2O, OH$_{2}$'
+        """
 
-    def tostr(self, sub1, sub2):
+        if fmt == 'hill':
+            count = self.count()
+            count2 = ordereddict()
+            for symb in 'CH':
+                if symb in count:
+                    count2[symb] = count.pop(symb)
+            for symb, n in sorted(count.items()):
+                count2[symb] = n
+            return dict2str(count2)
+
+        if fmt == 'metal':
+            count = self.count()
+            result2 = [(s, count.pop(s)) for s in non_metals if s in count]
+            result = [(s, count[s]) for s in sorted(count)]
+            result += sorted(result2)
+            return dict2str(ordereddict(result))
+
+        if fmt == 'latex':
+            return self._tostr('$_{', '}$')
+        if fmt == 'html':
+            return self._tostr('<sub>', '</sub>')
+        if fmt == 'rest':
+            return self._tostr(r'\ :sub`', r'`\ ')
+        if fmt == '':
+            return self._formula
+        raise ValueError('Invalid format specifier')
+
+    def _tostr(self, sub1, sub2):
         parts = []
         for tree, n in self._tree:
             s = tree2str(tree, sub1, sub2)
@@ -288,6 +294,11 @@ class Formula:
                 s = str(n) + s
             parts.append(s)
         return '+'.join(parts)
+
+
+def dict2str(dct):
+    return ''.join(symb + (str(n) if n > 1 else '')
+                   for symb, n in dct.items())
 
 
 def parse(f: str):  # -> Tree
@@ -377,28 +388,7 @@ non_metals = ['H', 'He', 'B', 'C', 'N', 'O', 'F', 'Ne',
               'Po', 'At', 'Rn']
 
 
-def _count_symbols(numbers):
-    """Take a list of atomic numbers and return a ditionary with elemt symbosl
-    as keys and occurences as values"""
-    if isinstance(numbers, dict):
-        count = dict(numbers)
-    else:
-        count = Counter([chemical_symbols[Z] for Z in numbers])
-    return count
-
-
-def _empirical_symbols(count):
-    """Find the least common multiple of all symbols"""
-    counts = [c for c in count.values()]
-    i = counts[0]
-
-    _gcd = i
-    for j in counts[1:]:
-        _gcd = gcd(i,j)
-        i = _gcd
-    return {k : v // _gcd for k, v in count.items()}
-
-
+# Backwards compatibility:
 def formula_hill(numbers, empirical=False):
     """Convert list of atomic numbers to a chemical formula as a string.
 
@@ -406,15 +396,14 @@ def formula_hill(numbers, empirical=False):
 
     If argument `empirical`, element counts will be divided by greatest common
     divisor to yield an empirical formula"""
-    count = _count_symbols(numbers)
+    symbols = [chemical_symbols[Z] for Z in numbers]
+    f = Formula('', [(symbols, 1)])
     if empirical:
-        count = _empirical_symbols(count)
-    result = [(s, count.pop(s)) for s in 'CH' if s in count]
-    result += [(s, count[s]) for s in sorted(count)]
-    return ''.join('{0}{1}'.format(symbol, n) if n > 1 else symbol
-                   for symbol, n in result)
+        f, _ = f.reduce()
+    return f.format('hill')
 
 
+# Backwards compatibility:
 def formula_metal(numbers, empirical=False):
     """Convert list of atomic numbers to a chemical formula as a string.
 
@@ -422,11 +411,8 @@ def formula_metal(numbers, empirical=False):
 
     If argument `empirical`, element counts will be divided by greatest common
     divisor to yield an empirical formula"""
-    count = _count_symbols(numbers)
+    symbols = [chemical_symbols[Z] for Z in numbers]
+    f = Formula('', [(symbols, 1)])
     if empirical:
-        count = _empirical_symbols(count)
-    result2 = [(s, count.pop(s)) for s in non_metals if s in count]
-    result = [(s, count[s]) for s in sorted(count)]
-    result += sorted(result2)
-    return ''.join('{0}{1}'.format(symbol, n) if n > 1 else symbol
-                   for symbol, n in result)
+        f, _ = f.reduce()
+    return f.format('metal')
