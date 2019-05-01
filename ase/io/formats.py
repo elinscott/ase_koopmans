@@ -98,6 +98,7 @@ all_formats = {
     'mol': ('MDL Molfile', '1F'),
     'mp4': ('MP4 animation', '+S'),
     'mustem': ('muSTEM xtl file', '1F'),
+    'mysql': ('ASE MySQL database file', '+S'),
     'netcdftrajectory': ('AMBER NetCDF trajectory file', '+S'),
     'nomad-json': ('JSON from Nomad archive', '+F'),
     'nwchem': ('NWChem input file', '1F'),
@@ -153,6 +154,7 @@ format2modulename = {
     'lammps-dump': 'lammpsrun',
     'lammps-data': 'lammpsdata',
     'mp4': 'animation',
+    'mysql': 'db',
     'postgresql': 'db',
     'struct': 'wien2k',
     'struct_out': 'siesta',
@@ -612,6 +614,9 @@ def filetype(filename, read=True, guess=True):
 
         if filename.startswith('postgres'):
             return 'postgresql'
+
+        if filename.startswith('mysql'):
+            return 'mysql'
 
         # strip any compression extensions that can be read
         root, compression = get_compression(filename)
