@@ -135,7 +135,7 @@ class MySQLDatabase(SQLite3Database):
         information_exists = True
         try:
             cur.execute("SELECT 1 FROM information")
-        except ProgrammingError as exc:
+        except ProgrammingError:
             information_exists = False
 
         if not information_exists:
