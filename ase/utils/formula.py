@@ -26,18 +26,18 @@ class Formula:
 
         Examples
         --------
-        >>> f = Formula('H2O')
-        >>> f.count()
+        >>> w = Formula('H2O')
+        >>> w.count()
         {'H': 2, 'O': 1}
-        >>> 'H' in f
+        >>> 'H' in w
         True
-        >>> f == 'HOH'
+        >>> w == 'HOH'
         True
-        >>> f'{f:latex}'
+        >>> f'{w:latex}'
         'H$_{2}$O'
-        >>> f.format('latex')
+        >>> w.format('latex')
         'H$_{2}$O'
-        >>> divmod(6 * f + 'Cu', 'H2O')
+        >>> divmod(6 * w + 'Cu', w)
         (6, Formula('Cu'))
 
         Raises
@@ -90,11 +90,11 @@ class Formula:
 
         Formats:
 
-        * hill: alphabetically ordered with C and H first
-        * metal: alphabetically ordered with metals first
-        * latex: LaTeX representation
-        * html: HTML representation
-        * rest: reStructuredText representation
+        * ``'hill'``: alphabetically ordered with C and H first
+        * ``'metal'``: alphabetically ordered with metals first
+        * ``'latex'``: LaTeX representation
+        * ``'html'``: HTML representation
+        * ``'rest'``: reStructuredText representation
 
         Example
         -------
@@ -124,7 +124,7 @@ class Formula:
                 return False
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """Equality check.
 
         Note that order is not important.
@@ -195,13 +195,9 @@ class Formula:
     def __rmul__(self, N: int):  # -> Formula
         return self * N
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Number of atoms."""
         return sum(self._count.values())
-
-    def compact(self):
-        """"""
-        return self.from_dict(self._count)
 
     def _reduce(self):
         N = 0
@@ -255,7 +251,8 @@ class Formula:
     def __format__(self, fmt: str) -> str:
         """Format Formula as str.
 
-        Possible formats: hill, metal, latex, html, rest.
+        Possible formats: ``'hill'``, ``'metal'``, ``'latex'``,
+        ``'html'``, ``'rest'``.
 
         Example
         -------
