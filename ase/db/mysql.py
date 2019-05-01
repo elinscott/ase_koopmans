@@ -117,10 +117,18 @@ class MySQLDatabase(SQLite3Database):
         filename = filename.replace('mysql://', '')
 
         splitted = filename.split(':')
+        self.username = splitted[0]
+
+        splitted = splitted[1].split('@')
+        self.passwd = splitted[0]
+
+        splitted = splitted[1].split('/')
         self.host = splitted[0]
-        self.username = splitted[1]
-        self.passwd = splitted[2]
-        self.db_name = splitted[3]
+
+        if '?' in splitted[1]:
+            self.db_name = splitted[1]
+        else:
+            self.db_name = splitted[1]
 
     def _connect(self):
         return Connection(host=self.host, user=self.username,
