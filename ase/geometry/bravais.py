@@ -55,7 +55,11 @@ class BravaisLattice(ABC):
 
     def get_transformation(self, cell):
         # Get transformation matrix relating input cell to canonical cell
-        return cell.dot(np.linalg.pinv(self.tocell()))
+        T = cell.dot(np.linalg.pinv(self.tocell()))
+        msg = 'This transformation changes the length/area/volume of the cell'
+        assert np.isclose(np.abs(np.linalg.det(T[:self.ndim,
+                                                 :self.ndim])), 1), msg
+        return T
 
     def cellpar(self, cycle=0):
         # (Just a brute-force implementation)
