@@ -20,20 +20,12 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql']:
                 continue
     elif name == 'mysql':
         if os.environ.get('CI_PROJECT_DIR'): # gitlab-ci
-            host = 'mysql'
-            user = 'root'
-            passwd = 'ase'
-            db_name = 'testase_mysql'
+            name = 'mysql://root:ase@mysql/testase_mysql'
         else:
-            host = os.environ.get('MYSQL_HOST')
-            user = os.environ.get('MYSQL_USER')
-            passwd = os.environ.get('MYSQL_PASSWD')
-            db_name = os.environ.get('MYSQL_DB_NAME')
+            name = os.environ.get('MYSQL_DB_URL')
 
-        if host is None or user is None or passwd is None or db_name is None:
+        if name is None:
             continue
-
-        name = 'mysql://{}:{}:{}:{}'.format(host, user, passwd, db_name)
 
     c = connect(name)
     print(name, c)

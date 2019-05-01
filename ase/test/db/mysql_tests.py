@@ -15,17 +15,19 @@ import os
 ON_CI_SERVER = 'CI_PROJECT_DIR' in os.environ.keys()
 
 if ON_CI_SERVER:
-    HOST = 'mysql'
-    USER = 'root'
-    PASSWD = 'ase'
-    DB_NAME = 'testase_mysql'
+    URL = 'mysql://root:ase@mysql/testase_mysql'
+    # HOST = 'mysql'
+    # USER = 'root'
+    # PASSWD = 'ase'
+    # DB_NAME = 'testase_mysql'
 else:
-    HOST = os.environ.get('MYSQL_HOST', None)
-    USER = os.environ.get('MYSQL_USER', None)
-    PASSWD = os.environ.get('MYSQL_PASSWD', None)
-    DB_NAME = os.environ.get('MYSQL_DB_NAME', None)
+    URL = os.environ.get('MYSQL_DB_URL')
+    # HOST = os.environ.get('MYSQL_HOST', None)
+    # USER = os.environ.get('MYSQL_USER', None)
+    # PASSWD = os.environ.get('MYSQL_PASSWD', None)
+    # DB_NAME = os.environ.get('MYSQL_DB_NAME', None)
 
-if HOST is None:
+if URL is None:
     raise NotAvailable('Not on GitLab CI server. To run this test '
                        'host, username, password and database name '
                        'must be in the environment variables '
@@ -33,16 +35,17 @@ if HOST is None:
                        'MYSQL_DB_NAME, respectively.')
 
 def full_db_name():
-    return 'mysql://{}:{}:{}:{}'.format(HOST, USER, PASSWD, DB_NAME)
+    return URL
+    #return 'mysql://{}:{}:{}:{}'.format(HOST, USER, PASSWD, DB_NAME)
 
 
 def test_connect():
     db = connect(full_db_name())
 
-    assert db.host == HOST
-    assert db.username == USER
-    assert db.passwd == PASSWD
-    assert db.db_name == DB_NAME
+    # assert db.host == HOST
+    # assert db.username == USER
+    # assert db.passwd == PASSWD
+    # assert db.db_name == DB_NAME
 
 
 def test_write_read():
