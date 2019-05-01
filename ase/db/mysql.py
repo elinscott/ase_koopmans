@@ -182,6 +182,14 @@ class MySQLDatabase(SQLite3Database):
                     "".format(self.db_name))
         return cur.fetchone()[0] - 1
 
+    def create_select_statement(self, keys, cmps,
+                                sort=None, order=None, sort_table=None,
+                                what='systems.*'):
+        sql, value = super(MySQLDatabase, self).create_select_statement(keys, cmps, sort, order, sort_table, what)
+        sql = sql.replace(' keys ', ' attribute_keys ')
+        sql = sql.replace('key=', 'attribute_key=')
+        return sql, value
+
 
 def schema_update(statements):
     for i, statement in enumerate(statements):
