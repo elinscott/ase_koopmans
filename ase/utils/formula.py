@@ -42,7 +42,8 @@ class Formula:
 
         Raises
         ------
-        `ValueError` on malformed formula.
+        ValueError
+            on malformed formula
         """
         self._formula = formula
         self._tree = _tree or parse(formula)
@@ -97,8 +98,8 @@ class Formula:
 
         Example
         -------
-        >>> Formula('H2O').format(html)
-        'H<sub>2>/sub>O'
+        >>> Formula('H2O').format('html')
+        'H<sub>2</sub>O'
         """
         return format(self, fmt)
 
@@ -138,12 +139,18 @@ class Formula:
         return self._count == other._count
 
     def __divmod__(self, other):
+        # (Union[Formula, str]) -> Tuple[int, Formula]
         """Return the tuple (self // other, self % other).
 
         Invariant::
 
             div, mod = divmod(self, other)
             div * other + mod == self
+
+        Example
+        -------
+        >>> divmod(Formula('H2O'), 'H')
+        (2, Formula('O'))
         """
         if isinstance(other, str):
             other = Formula(other)
@@ -225,7 +232,7 @@ class Formula:
         return self.from_dict(dct), N
 
     def stoichiometry(self):
-        """Reduce to unique stoichiomerty using "chemical symbols" A, B, B, ...
+        """Reduce to unique stoichiomerty using "chemical symbols" A, B, C, ...
 
         Examples
         --------

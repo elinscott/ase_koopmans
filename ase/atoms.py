@@ -252,6 +252,7 @@ class Atoms(object):
 
     @property
     def formula(self):
+        """Formula object."""
         return Formula.from_dict(Counter(self.get_chemical_symbols))
 
     def set_calculator(self, calc=None):
