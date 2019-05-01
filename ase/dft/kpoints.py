@@ -213,20 +213,12 @@ class BandPath:
             if label not in points_already_plotted:
                 paths.append(([label], [self._scale(point)]))
 
-        if dimension == 3:
-            bznd_plot = bz.bz3d_plot
-        elif dimension == 2:
-            bznd_plot = bz.bz2d_plot
-        else:
-            assert dimension == 1
-            bznd_plot = bz.bz1d_plot
-
         kw = {'vectors': True}
         kw.update(plotkwargs)
-        return bznd_plot(self.cell, paths=paths,
-                         points=self.cartesian_kpts(),
-                         pointstyle={'marker': '.'},
-                         **kw)
+        return bz.bz_plot(self.cell, paths=paths,
+                          points=self.cartesian_kpts(),
+                          pointstyle={'marker': '.'},
+                          **kw)
 
 
 def bandpath(path, cell, npoints=None, density=None):
