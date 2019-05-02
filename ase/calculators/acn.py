@@ -98,11 +98,11 @@ class ACN(Calculator):
             me = 0
             sigma = np.array([sigma_me, sigma_c, sigma_n])
             epsilon = np.array([epsilon_me, epsilon_c, epsilon_n])
-        assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
-        assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
-        assert (masses[n::3] == m_n).all(), 'Incorrect masses'
-        assert (masses[1::3] == m_c).all(), 'Incorrect masses'
-        assert (masses[me::3] == m_me).all(), 'Incorrect masses'
+        assert (Z[n::3] == 7).all(), 'incorrect atoms sequence'
+        assert (Z[1::3] == 6).all(), 'incorrect atoms sequence'
+        assert (masses[n::3] == m_n).all(), 'incorrect masses'
+        assert (masses[1::3] == m_c).all(), 'incorrect masses'
+        assert (masses[me::3] == m_me).all(), 'incorrect masses'
 
         R = self.atoms.positions.reshape((-1, 3, 3))
         pbc = self.atoms.pbc
