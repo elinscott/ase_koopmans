@@ -752,7 +752,7 @@ class GenerateVaspInput(object):
     xc_defaults = {
         'lda': {'pp': 'LDA'},
         # GGAs
-        'pw91': {'pp': 'GGA', 'gga': '91'},
+        'pw91': {'pp': 'PW91', 'gga': '91'},
         'pbe': {'pp': 'PBE', 'gga': 'PE'},
         'pbesol': {'gga': 'PS'},
         'revpbe': {'gga': 'RE'},
