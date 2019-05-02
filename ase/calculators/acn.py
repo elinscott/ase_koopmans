@@ -4,6 +4,7 @@ import numpy as np
 import ase.units as units
 from ase.calculators.calculator import Calculator, all_changes
 from ase.data import atomic_masses
+from ase.geometry import find_mic
 
 # Electrostatic constant
 k_c = units.Hartree * units.Bohr
@@ -24,17 +25,6 @@ r_men = r_mec + r_cn
 m_me = atomic_masses[6] + 3 * atomic_masses[1]
 m_c = atomic_masses[6]
 m_n = atomic_masses[7]
-
-
-def wrap(D, cd, pbc):
-    """Wrap distances to nearest neighbor (minimum image convention)."""
-    shift = np.zeros_like(D)
-    for i, periodic in enumerate(pbc):
-        if periodic:
-            d = D[:, i]
-            L = cd[i]
-            shift[:, i] = (d + L / 2) % L - L / 2 - d
-    return shift
 
 
 def combine_lj_lorenz_berthelot(sigma, epsilon):
@@ -123,35 +113,33 @@ class ACN(Calculator):
         for m in range(nm - 1):
             Dmm = R[m + 1:, 1] - R[m, 1]
             # MIC PBCs
-            shift = wrap(Dmm, cd, pbc)
+            Dmm_min, Dmm_min_len = find_mic(Dmm, atoms.cell, pbc)
+            shift = Dmm_min - Dmm
 
             # Smooth cutoff
-            Dmm += shift
-            d2 = (Dmm**2).sum(1)
-            d = d2**0.5
-            cut, dcut = self.cutoff(d)
+            cut, dcut = self.cutoff(Dmm_min_len)
 
             for j in range(3):
                 D = R[m + 1:] - R[m, j] + shift[:, np.newaxis]
-                r2 = (D**2).sum(axis=2)
-                r = r2**0.5
+                D_len2 = (D**2).sum(axis=2)
+                D_len = D_len2**0.5
                 # Coulomb interactions
-                e = charges[j] * charges / r * k_c
+                e = charges[j] * charges / D_len * k_c
                 energy += np.dot(cut, e).sum()
-                F = (e / r2 * cut[:, np.newaxis])[:, :, np.newaxis] * D
-                Fmm = -(e.sum(1) * dcut / d)[:, np.newaxis] * Dmm
+                F = (e / D_len2 * cut[:, np.newaxis])[:, :, np.newaxis] * D
+                Fmm = -(e.sum(1) * dcut / Dmm_min_len)[:, np.newaxis] * Dmm_min
                 self.forces[(m + 1) * 3:] += F.reshape((-1, 3))
                 self.forces[m * 3 + j] -= F.sum(axis=0).sum(axis=0)
                 self.forces[(m + 1) * 3 + 1::3] += Fmm
                 self.forces[m * 3 + 1] -= Fmm.sum(0)
                 # LJ interactions
-                c6 = (sigma_co[:, j]**2 / r2)**3
+                c6 = (sigma_co[:, j]**2 / D_len2)**3
                 c12 = c6**2
                 e = 4 * epsilon_co[:, j] * (c12 - c6)
                 energy += np.dot(cut, e).sum()
                 F = (24 * epsilon_co[:, j] * (2 * c12 -
-                     c6) / r2 * cut[:, np.newaxis])[:, :, np.newaxis] * D
-                Fmm = -(e.sum(1) * dcut / d)[:, np.newaxis] * Dmm
+                     c6) / D_len2 * cut[:, np.newaxis])[:, :, np.newaxis] * D
+                Fmm = -(e.sum(1) * dcut / Dmm_min_len)[:, np.newaxis] * Dmm_min
                 self.forces[(m + 1) * 3:] += F.reshape((-1, 3))
                 self.forces[m * 3 + j] -= F.sum(axis=0).sum(axis=0)
                 self.forces[(m + 1) * 3 + 1::3] += Fmm
