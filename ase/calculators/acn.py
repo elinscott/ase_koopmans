@@ -15,11 +15,9 @@ q_n = -0.453
 sigma_me = 3.775
 sigma_c = 3.650
 sigma_n = 3.200
-sigma = np.array([sigma_me, sigma_c, sigma_n])
 epsilon_me = 0.7824 * units.kJ / units.mol
 epsilon_c = 0.544 * units.kJ / units.mol
 epsilon_n = 0.6276 * units.kJ / units.mol
-epsilon = np.array([epsilon_me, epsilon_c, epsilon_n])
 r_mec = 1.458
 r_cn = 1.157
 r_men = r_mec + r_cn
@@ -88,6 +86,24 @@ class ACN(Calculator):
                   system_changes=all_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
 
+        Z = atoms.numbers
+        masses = atoms.get_masses()
+        if Z[0] == 7:
+            n = 0
+            me = 2
+            sigma = np.array([sigma_n, sigma_c, sigma_me])
+            epsilon = np.array([epsilon_n, epsilon_c, epsilon_me])
+        else:
+            n = 2
+            me = 0
+            sigma = np.array([sigma_me, sigma_c, sigma_n])
+            epsilon = np.array([epsilon_me, epsilon_c, epsilon_n])
+        assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
+        assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
+        assert (masses[n::3] == m_n).all(), 'Incorrect masses'
+        assert (masses[1::3] == m_c).all(), 'Incorrect masses'
+        assert (masses[me::3] == m_me).all(), 'Incorrect masses'
+
         R = self.atoms.positions.reshape((-1, 3, 3))
         pbc = self.atoms.pbc
         cd = self.atoms.cell.diagonal()
@@ -97,6 +113,9 @@ class ACN(Calculator):
         assert ((cd >= 2 * self.rc) | ~pbc).all(), 'cutoff too large'
 
         charges = self.get_virtual_charges(atoms[:3])
+
+        # LJ parameters
+        sigma_co, epsilon_co = combine_lj_lorenz_berthelot(sigma, epsilon)
 
         energy = 0.0
         self.forces = np.zeros((3 * nm, 3))
@@ -112,9 +131,6 @@ class ACN(Calculator):
             d = d2**0.5
             cut, dcut = self.cutoff(d)
 
-            # LJ parameters
-            sigma_c, epsilon_c = combine_lj_lorenz_berthelot(sigma, epsilon)
-
             for j in range(3):
                 D = R[m + 1:] - R[m, j] + shift[:, np.newaxis]
                 r2 = (D**2).sum(axis=2)
@@ -129,11 +145,11 @@ class ACN(Calculator):
                 self.forces[(m + 1) * 3 + 1::3] += Fmm
                 self.forces[m * 3 + 1] -= Fmm.sum(0)
                 # LJ interactions
-                c6 = (sigma_c[:, j]**2 / r2)**3
+                c6 = (sigma_co[:, j]**2 / r2)**3
                 c12 = c6**2
-                e = 4 * epsilon_c[:, j] * (c12 - c6)
+                e = 4 * epsilon_co[:, j] * (c12 - c6)
                 energy += np.dot(cut, e).sum()
-                F = (24 * epsilon_c[:, j] * (2 * c12 -
+                F = (24 * epsilon_co[:, j] * (2 * c12 -
                      c6) / r2 * cut[:, np.newaxis])[:, :, np.newaxis] * D
                 Fmm = -(e.sum(1) * dcut / d)[:, np.newaxis] * Dmm
                 self.forces[(m + 1) * 3:] += F.reshape((-1, 3))
@@ -194,8 +210,6 @@ class ACN(Calculator):
         else:
             n = 2
             me = 0
-        assert (Z[n::3] == 7).all(), 'Incorrect atoms sequence'
-        assert (Z[1::3] == 6).all(), 'Incorrect atoms sequence'
         charges[me::3] = q_me
         charges[1::3] = q_c
         charges[n::3] = q_n
