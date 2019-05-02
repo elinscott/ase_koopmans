@@ -51,7 +51,6 @@ def combine_lj_lorenz_berthelot(sigma, epsilon):
 class ACN(Calculator):
     implemented_properties = ['energy', 'forces']
     nolabel = True
-    pcpot = None
 
     def __init__(self, rc=5.0, width=1.0):
         """Three-site potential for acetonitrile.
@@ -80,6 +79,7 @@ class ACN(Calculator):
         self.forces = None
         Calculator.__init__(self)
         self.sites_per_mol = 3
+        self.pcpot = None
 
     def calculate(self, atoms=None,
                   properties=['energy'],
