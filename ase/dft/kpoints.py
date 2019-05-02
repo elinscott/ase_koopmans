@@ -469,7 +469,7 @@ def get_cellinfo(cell, lattice=None, eps=2e-4):
                   'X': [nu, 0, -nu],
                   'Z': [0.5, 0.5, 0.5]}
     else:
-        points = ibz_points[latt]
+        points = sc_special_points[latt]
 
     myspecial_points = {label: np.dot(M, kpt) for label, kpt in points.items()}
     return CellInfo(rcell=rcell, lattice=latt,
@@ -657,38 +657,80 @@ cc162_1x1 = np.array([
     0, 4, 14, 0, 7, 14, 0, 10, 14, 0, 13, 14, 0, 5, 16, 0, 8, 16, 0,
     11, 16, 0, 7, 17, 0, 10, 17, 0]).reshape((162, 3)) / 27.0
 
-# The following is a list of the critical points in the 1. Brillouin zone
-# for some typical crystal structures.
-# (In units of the reciprocal basis vectors)
-# See http://en.wikipedia.org/wiki/Brillouin_zone
 
-ibz_points = {'cubic': {'G': [0, 0, 0],
+# The following is a list of the critical points in the 1st Brillouin zone
+# for some typical crystal structures following the conventions of Setyawan
+# and Curtarolo [http://dx.doi.org/10.1016/j.commatsci.2010.05.010].
+#
+# In units of the reciprocal basis vectors.
+#
+# See http://en.wikipedia.org/wiki/Brillouin_zone
+sc_special_points = {
+    'cubic': {'G': [0, 0, 0],
+              'M': [1 / 2, 1 / 2, 0],
+              'R': [1 / 2, 1 / 2, 1 / 2],
+              'X': [0, 1 / 2, 0]},
+    'fcc': {'G': [0, 0, 0],
+            'K': [3 / 8, 3 / 8, 3 / 4],
+            'L': [1 / 2, 1 / 2, 1 / 2],
+            'U': [5 / 8, 1 / 4, 5 / 8],
+            'W': [1 / 2, 1 / 4, 3 / 4],
+            'X': [1 / 2, 0, 1 / 2]},
+    'bcc': {'G': [0, 0, 0],
+            'H': [1 / 2, -1 / 2, 1 / 2],
+            'P': [1 / 4, 1 / 4, 1 / 4],
+            'N': [0, 0, 1 / 2]},
+    'tetragonal': {'G': [0, 0, 0],
+                   'A': [1 / 2, 1 / 2, 1 / 2],
+                   'M': [1 / 2, 1 / 2, 0],
+                   'R': [0, 1 / 2, 1 / 2],
+                   'X': [0, 1 / 2, 0],
+                   'Z': [0, 0, 1 / 2]},
+    'orthorhombic': {'G': [0, 0, 0],
+                     'R': [1 / 2, 1 / 2, 1 / 2],
+                     'S': [1 / 2, 1 / 2, 0],
+                     'T': [0, 1 / 2, 1 / 2],
+                     'U': [1 / 2, 0, 1 / 2],
+                     'X': [1 / 2, 0, 0],
+                     'Y': [0, 1 / 2, 0],
+                     'Z': [0, 0, 1 / 2]},
+    'hexagonal': {'G': [0, 0, 0],
+                  'A': [0, 0, 1 / 2],
+                  'H': [1 / 3, 1 / 3, 1 / 2],
+                  'K': [1 / 3, 1 / 3, 0],
+                  'L': [1 / 2, 0, 1 / 2],
+                  'M': [1 / 2, 0, 0]}}
+
+
+# Old version of dictionary kept for backwards compatibility.
+# Not for ordinary use.
+ibz_points = {'cubic': {'Gamma': [0, 0, 0],
                         'X': [0, 0 / 2, 1 / 2],
                         'R': [1 / 2, 1 / 2, 1 / 2],
                         'M': [0 / 2, 1 / 2, 1 / 2]},
-              'fcc': {'G': [0, 0, 0],
+              'fcc': {'Gamma': [0, 0, 0],
                       'X': [1 / 2, 0, 1 / 2],
                       'W': [1 / 2, 1 / 4, 3 / 4],
                       'K': [3 / 8, 3 / 8, 3 / 4],
                       'U': [5 / 8, 1 / 4, 5 / 8],
                       'L': [1 / 2, 1 / 2, 1 / 2]},
-              'bcc': {'G': [0, 0, 0],
+              'bcc': {'Gamma': [0, 0, 0],
                       'H': [1 / 2, -1 / 2, 1 / 2],
                       'N': [0, 0, 1 / 2],
                       'P': [1 / 4, 1 / 4, 1 / 4]},
-              'hexagonal': {'G': [0, 0, 0],
+              'hexagonal': {'Gamma': [0, 0, 0],
                             'M': [0, 1 / 2, 0],
                             'K': [-1 / 3, 1 / 3, 0],
                             'A': [0, 0, 1 / 2],
                             'L': [0, 1 / 2, 1 / 2],
                             'H': [-1 / 3, 1 / 3, 1 / 2]},
-              'tetragonal': {'G': [0, 0, 0],
+              'tetragonal': {'Gamma': [0, 0, 0],
                              'X': [1 / 2, 0, 0],
                              'M': [1 / 2, 1 / 2, 0],
                              'Z': [0, 0, 1 / 2],
                              'R': [1 / 2, 0, 1 / 2],
                              'A': [1 / 2, 1 / 2, 1 / 2]},
-              'orthorhombic': {'G': [0, 0, 0],
+              'orthorhombic': {'Gamma': [0, 0, 0],
                                'R': [1 / 2, 1 / 2, 1 / 2],
                                'S': [1 / 2, 1 / 2, 0],
                                'T': [0, 1 / 2, 1 / 2],
