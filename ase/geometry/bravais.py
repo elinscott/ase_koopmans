@@ -449,8 +449,10 @@ class ORCC(BravaisLattice):
 
 
 ibz_hex = ibz_points['hexagonal'].copy()
-ibz_hex['K'][0] *= -1  # XXX
-ibz_hex['H'][0] *= -1
+for point in 'KH':
+    ibz_hex[point] = ibz_hex[point].copy()
+    ibz_hex[point][0] *= -1
+    # XXX We should use the same convention in all modules
 
 @bravaisclass('hexagonal', 'ac',
               [['HEX', 'GMKALH', 'GMKGALHA,LM,KH', ibz_hex]])
