@@ -277,9 +277,7 @@ class BandStructure:
 
     def plot(self, *args, **kwargs):
         bsp = BandStructurePlot(self)
-        # Maybe return bsp?  But for now run the plot, for compatibility
-        bsp.plot(*args, **kwargs)
-        return bsp
+        return bsp.plot(*args, **kwargs)
 
     def __repr__(self):
         return ('{}(path={!r}, energies=[{} values], reference={})'
