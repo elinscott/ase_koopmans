@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC
 import numpy as np
 
 from ase.geometry.cell import Cell
-from ase.dft.kpoints import parse_path_string, ibz_points, BandPath
+from ase.dft.kpoints import parse_path_string, sc_special_points, BandPath
 
 
 _degrees = np.pi / 180
@@ -240,26 +240,26 @@ class Cubic(BravaisLattice):
         BravaisLattice.__init__(self, a=a)
 
 @bravaisclass('cubic', 'a',
-              [['CUB', 'GXRM', 'GXMGRX,MR', ibz_points['cubic']]])
+              [['CUB', 'GXRM', 'GXMGRX,MR', sc_special_points['cubic']]])
 class CUB(Cubic):
     def _cell(self, a):
         return a * np.eye(3)
 
 @bravaisclass('face-centered cubic', 'a',
-              [['FCC', 'GKLUWX', 'GXWKGLUWLK,UX', ibz_points['fcc']]])
+              [['FCC', 'GKLUWX', 'GXWKGLUWLK,UX', sc_special_points['fcc']]])
 class FCC(Cubic):
     def _cell(self, a):
         return 0.5 * np.array([[0., a, a], [a, 0, a], [a, a, 0]])
 
 @bravaisclass('body-centered cubic', 'a',
-              [['BCC', 'GHPN', 'GHNGPH,PN', ibz_points['bcc']]])
+              [['BCC', 'GHPN', 'GHNGPH,PN', sc_special_points['bcc']]])
 class BCC(Cubic):
     def _cell(self, a):
         return 0.5 * np.array([[-a, a, a], [a, -a, a], [a, a, -a]])
 
 @bravaisclass('tetragonal', 'ac',
               [['TET', 'GAMRXZ', 'GXMGZRAZ,XR,MA',
-                ibz_points['tetragonal']]])
+                sc_special_points['tetragonal']]])
 class TET(BravaisLattice):
     def __init__(self, a, c):
         BravaisLattice.__init__(self, a=a, c=c)
@@ -327,7 +327,7 @@ class Orthorhombic(BravaisLattice):
 
 @bravaisclass('orthorhombic', 'abc',
               [['ORC', 'GRSTUXYZ', 'GXSYGZURTZ,YT,UX,SR',
-                ibz_points['orthorhombic']]])
+                sc_special_points['orthorhombic']]])
 class ORC(Orthorhombic):
     def _cell(self, a, b, c):
         return np.diag([a, b, c]).astype(float)
@@ -448,14 +448,9 @@ class ORCC(BravaisLattice):
         return points
 
 
-ibz_hex = ibz_points['hexagonal'].copy()
-for point in 'KH':
-    ibz_hex[point] = ibz_hex[point].copy()
-    ibz_hex[point][0] *= -1
-    # XXX We should use the same convention in all modules
-
 @bravaisclass('hexagonal', 'ac',
-              [['HEX', 'GMKALH', 'GMKGALHA,LM,KH', ibz_hex]])
+              [['HEX', 'GMKALH', 'GMKGALHA,LM,KH',
+                sc_special_points['hexagonal']]])
 class HEX(BravaisLattice):
     def __init__(self, a, c):
         BravaisLattice.__init__(self, a=a, c=c)
