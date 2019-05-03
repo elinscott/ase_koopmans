@@ -63,7 +63,7 @@ commands = {
          '-o', '--output', '-g', '--graph', '-t', '--terminal',
          '--interpolate', '-b', '--bonds', '-s', '--scale'],
     'info':
-        ['-v', '--verbose', '--formats'],
+        ['-v', '--verbose', '--formats', '--calculators'],
     'nomad-get':
         [],
     'nomad-upload':

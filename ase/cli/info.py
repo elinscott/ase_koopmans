@@ -28,6 +28,9 @@ class CLICommand:
                             help='Show more information about files.')
         parser.add_argument('--formats', action='store_true',
                             help='List file formats known to ASE.')
+        parser.add_argument('--calculators', action='store_true',
+                            help='List calculators known to ASE '
+                            'and whether they appear to be installed.')
 
     @staticmethod
     def run(args):
@@ -36,6 +39,16 @@ class CLICommand:
             if args.formats:
                 print()
                 print_formats()
+            if args.calculators:
+                print()
+                from ase.calculators.autodetect import (detect_calculators,
+                                                        format_configs)
+                configs = detect_calculators()
+                print('Calculators:')
+                for message in format_configs(configs):
+                    print('  {}'.format(message))
+                print()
+                print('Available: {}'.format(','.join(sorted(configs))))
             return
 
         n = max(len(filename) for filename in args.filename) + 2
