@@ -474,7 +474,7 @@ class NetCDFTrajectory:
             data = np.zeros(var.shape, dtype=var.dtype)
             s = var.shape[0]
             if s < self.chunk_size:
-                data[index] = var
+                data[index] = var[...]
             else:
                 # If this is a large data set, only read chunks from it to
                 # reduce memory footprint of the NetCDFTrajectory reader.
