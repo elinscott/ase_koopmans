@@ -1,3 +1,5 @@
+import sys
+import numpy as np
 from pymysql import connect
 from pymysql.err import ProgrammingError
 from copy import deepcopy
@@ -89,6 +91,12 @@ class MySQLCursor(object):
     def fetchall(self):
         return self.cur.fetchall()
 
+    def _replace_nan_inf_kvp(self, values):
+        for item in values:
+            if not np.isfinite(item[1]):
+                item[1] = sys.float_info.max/2
+        return values
+
     def executemany(self, sql, values):
         sql = self._redefine_invalid_tables(sql)
         if ' keys ' in sql:
@@ -97,6 +105,9 @@ class MySQLCursor(object):
             sql = sql.replace(
                 ' keys ', ' {} '.format(self.table_redefines['keys']))
         sql = sql.replace('?', '%s')
+
+        if 'number_key_values' in sql:
+            values = self._replace_nan_inf_kvp(values)
         self.cur.executemany(sql, values)
 
 
@@ -198,6 +209,7 @@ class MySQLDatabase(SQLite3Database):
     def decode(self, obj):
         if isinstance(obj, str):
             if obj.startswith('{') and obj.endswith('}'):
+                obj = obj.replace('true', 'True')
                 obj = eval(obj)
         return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
 
