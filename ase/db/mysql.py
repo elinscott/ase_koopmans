@@ -163,9 +163,10 @@ class MySQLDatabase(SQLite3Database):
             # We need to initialize the DB
             # MySQL require that id is explicitly set as primary key
             # in the systems table
-            init_statements[0] = init_statements[0][:-1] + ', PRIMARY KEY(id))'
+            init_statements_cpy = deepcopy(init_statements)
+            init_statements_cpy[0] = init_statements_cpy[0][:-1] + ', PRIMARY KEY(id))'
 
-            statements = schema_update(deepcopy(init_statements))
+            statements = schema_update(init_statements_cpy)
             for statement in statements:
                 cur.execute(statement)
 
