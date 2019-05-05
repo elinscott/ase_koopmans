@@ -6,6 +6,8 @@ import warnings
 from ase.db.sqlite import SQLite3Database
 from ase.db.sqlite import init_statements
 from ase.db.sqlite import VERSION
+from ase.db.postgresql import remove_nan_and_inf, insert_nan_and_inf
+import ase.io.jsonio
 
 
 class Connection(object):
@@ -189,6 +191,13 @@ class MySQLDatabase(SQLite3Database):
         sql = sql.replace(' keys ', ' attribute_keys ')
         sql = sql.replace('key=', 'attribute_key=')
         return sql, value
+
+    def encode(self, obj):
+        return ase.io.jsonio.encode(remove_nan_and_inf(obj))
+
+    def decode(self, obj):
+        return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
+
 
 
 def schema_update(statements):
