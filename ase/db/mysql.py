@@ -18,7 +18,7 @@ class Connection(object):
         self.con = connect(host=host, user=user, passwd=passwd, db=db_name)
 
     def cursor(self):
-        return MySQLCursor(self.con.cursor(), self)
+        return MySQLCursor(self.con.cursor())
 
     def commit(self):
         self.con.commit()
@@ -42,9 +42,8 @@ class MySQLCursor(object):
 
     invalid_mysql_tables = ['number_key_values', 'keys', 'text_key_values']
 
-    def __init__(self, cur, con):
+    def __init__(self, cur):
         self.cur = cur
-        self.con = con
 
     def _is_select_statement(self, sql):
         return sql.lower().startswith('select')
@@ -85,9 +84,6 @@ class MySQLCursor(object):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             self.cur.execute(sql, params)
-
-        if 'systems' in sql:
-            self.con.commit()
 
     def fetchone(self):
         return self.cur.fetchone()
