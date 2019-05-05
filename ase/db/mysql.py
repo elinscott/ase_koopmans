@@ -164,7 +164,8 @@ class MySQLDatabase(SQLite3Database):
             # MySQL require that id is explicitly set as primary key
             # in the systems table
             init_statements_cpy = deepcopy(init_statements)
-            init_statements_cpy[0] = init_statements_cpy[0][:-1] + ', PRIMARY KEY(id))'
+            init_statements_cpy[0] = init_statements_cpy[0][:-1] + \
+                ', PRIMARY KEY(id))'
 
             statements = schema_update(init_statements_cpy)
             for statement in statements:
@@ -199,7 +200,9 @@ class MySQLDatabase(SQLite3Database):
     def create_select_statement(self, keys, cmps,
                                 sort=None, order=None, sort_table=None,
                                 what='systems.*'):
-        sql, value = super(MySQLDatabase, self).create_select_statement(keys, cmps, sort, order, sort_table, what)
+        sql, value = super(MySQLDatabase, self).create_select_statement(
+            keys, cmps, sort, order, sort_table, what)
+
         sql = sql.replace(' keys ', ' attribute_keys ')
         sql = sql.replace('key=', 'attribute_key=')
         return sql, value
@@ -215,7 +218,6 @@ class MySQLDatabase(SQLite3Database):
         return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
 
 
-
 def schema_update(statements):
     for i, statement in enumerate(statements):
         for a, b in [('REAL', 'DOUBLE'),
@@ -229,7 +231,7 @@ def schema_update(statements):
     # hex-characters
     statements[0] = statements[0].replace('TEXT UNIQUE', 'VARCHAR(32) UNIQUE')
 
-    # keys is a reserved word in MySQL redefine this table name to 
+    # keys is a reserved word in MySQL redefine this table name to
     # attribute_keys
     statements[2] = statements[2].replace('keys', 'attribute_keys')
 
