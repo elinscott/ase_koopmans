@@ -41,6 +41,8 @@ def full_db_name():
 
 def test_connect():
     db = connect(full_db_name())
+    db.delete([row.id for row in db.select()])
+
 
     # assert db.host == HOST
     # assert db.username == USER
@@ -77,6 +79,9 @@ def test_write_read_with_calculator():
 
     calc_db = h2o_db.get_calculator()
     assert calc_db.parameters['dummy_param'] == 2.4
+    
+    # Check that get_atoms function works
+    db.get_atoms(H=2)
 
 
 def test_update():
