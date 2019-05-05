@@ -6,7 +6,7 @@ variables:
   POSTGRES_DB: testase
   POSTGRES_USER: ase
   POSTGRES_PASSWORD: "ase"
-  MYSQL_DATABASE: testase_mysql2
+  MYSQL_DATABASE: testase_mysql
   MYSQL_ROOT_PASSWORD: ase
 
 # Check oldest supported Python with oldest supported libraries.
