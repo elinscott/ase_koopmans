@@ -19,7 +19,7 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql']:
             if name is None:
                 continue
     elif name == 'mysql':
-        if os.environ.get('CI_PROJECT_DIR'): # gitlab-ci
+        if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
             name = 'mysql://root:ase@mysql/testase_mysql'
         else:
             name = os.environ.get('MYSQL_DB_URL')
