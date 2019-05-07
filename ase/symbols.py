@@ -1,4 +1,5 @@
 import warnings
+from collections import Counter
 
 import numpy as np
 
@@ -31,6 +32,10 @@ class Symbols:
     def fromsymbols(cls, symbols):
         numbers = symbols2numbers(symbols)
         return cls(np.array(numbers))
+
+    def formula(self):
+        """Formula object."""
+        return Formula.from_dict(Counter(self.get_chemical_symbols))
 
     def __getitem__(self, key):
         num = self.numbers[key]

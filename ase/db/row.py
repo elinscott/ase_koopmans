@@ -9,7 +9,7 @@ from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import chemical_symbols, atomic_masses
 from ase.io.jsonio import decode
-from ase.utils.formula import Formula
+from ase.formula import Formula
 
 
 class FancyDict(dict):

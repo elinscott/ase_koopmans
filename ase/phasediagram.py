@@ -8,7 +8,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 
 import ase.units as units
-from ase.utils.formula import Formula
+from ase.formula import Formula
 
 _solvated = []
 

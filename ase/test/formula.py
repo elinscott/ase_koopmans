@@ -1,6 +1,6 @@
 import numpy as np
 from ase import Atoms
-from ase.utils.formula import Formula
+from ase.formula import Formula
 
 
 assert Atoms('MoS2').get_chemical_formula() == 'MoS2'

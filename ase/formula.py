@@ -66,6 +66,11 @@ class Formula:
                        _tree=[([(symb, n) for symb, n in dct.items()], 1)],
                        _count=dict(dct))
 
+    def from_list(symbols):  # (List[str]) -> Formula
+        """Convert dict to Formula."""
+        return Formula(''.join(symbols),
+                       _tree=[(symbols[:], 1)])
+
     def __iter__(self, tree=None):
         if tree is None:
             tree = self._tree
@@ -136,6 +141,8 @@ class Formula:
         """
         if isinstance(other, str):
             other = Formula(other)
+        elif not isinstance(other, Formula):
+            return False
         return self._count == other._count
 
     def __divmod__(self, other):
