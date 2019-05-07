@@ -469,6 +469,16 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                     *(i + 1, s, q) + tuple(r)
                 ).encode("utf-8")
             )
+    elif atom_style == 'full':
+        charges = atoms.get_initial_charges()
+        molecule = 1 # Assign all atoms to a single molecule
+        for i, (q, r) in enumerate(zip(charges, pos)):
+            s = species.index(symbols[i]) + 1
+            f.write(
+                "{0:>6} {1>3} {2:>3} {3:>5} {4:23.17g} {5:23.17g} {6:23.17g}\n".format(
+                    *(i + 1, molecule, s, q) + tuple(r)
+                ).encode("utf-8")
+            )
     else:
         raise NotImplementedError
 

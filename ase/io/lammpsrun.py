@@ -55,7 +55,7 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp,
 
     :param data: per atom data
     :param colnames: index for data
-    :param cell: cell dimision
+    :param cell: cell dimensions
     :param celldisp: origin shift
     :param pbc: periodic boundaries
     :param atomsobj: function to create ase-Atoms object
