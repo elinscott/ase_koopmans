@@ -24,10 +24,12 @@ def test_create_and_delete_ext_tab(db_name):
 
     for tab in ext_tab:
         db._create_table_if_not_exists(tab, "INTEGER")
-    assert sorted(db._get_external_table_names()) == ext_tab
+    current_ext_tables = db._get_external_table_names()
+    for tab in ext_tab:
+        assert tab in current_ext_tables
 
     db.delete_external_table("tab1")
-    assert sorted(db._get_external_table_names()) == ["tab2", "tab3"]
+    assert "tab1" not in db._get_external_table_names()
 
 
 def test_insert_in_external_tables(db_name):
@@ -148,6 +150,7 @@ def test_write_atoms_row(db_name):
     row["unique_id"] = "uniqueIDTest"
     db.write(row)
 
+
 def test_external_table_upon_update():
     db = connect('update_table.db')
     no_features = 5
@@ -156,7 +159,6 @@ def test_external_table_upon_update():
     db.write(atoms)
     db.update(1, external_tables={'sys': ext_table})
     os.remove('update_table.db')
-
 
 
 for db_name in DB_NAMES:
