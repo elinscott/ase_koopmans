@@ -229,7 +229,7 @@ class BandPath:
                          **kw)
 
 
-def bandpath(path, cell, npoints=None, density=None):
+def bandpath(path, cell, npoints=None, density=None, special_points=None):
     """Make a list of kpoints defining the path between the given points.
 
     path: list or str
@@ -251,6 +251,9 @@ def bandpath(path, cell, npoints=None, density=None):
         If density is None (default), use 5 k-points per A⁻¹.
         If the calculated npoints value is less than 50, a mimimum value of 50
         will be used.
+    special_points: dict or None
+        Dictionary mapping names to special points.  If not set, the special
+        points will be derived from the cell.
 
     You may define npoints or density but not both.
 
@@ -260,26 +263,28 @@ def bandpath(path, cell, npoints=None, density=None):
     if isinstance(path, basestring):
         # XXX we need to update this so we use the new and more complete
         # cell classification stuff
-        cellinfo = get_cellinfo(cell)
-        special = cellinfo.special_points
+        lattice = None
+        if special_points is None:
+            cellinfo = get_cellinfo(cell)
+            special_points = cellinfo.special_points
+            lattice = cellinfo.lattice
         paths = []
         for names in parse_path_string(path):
             for name in names:
-                if name not in special:
-                    msg = ('Invalid k-point label {} for {} cell.  '
-                           'Valid labels are {}.'
-                           .format(name, cellinfo.lattice,
-                                   ', '.join(sorted(special))))
+                if name not in special_points:
+                    msg = ('K-point label {} not included in {} special '
+                           'points.  Valid labels are: {}'
+                           .format(name, lattice or 'custom dictionary of',
+                                   ', '.join(sorted(special_points))))
                     raise ValueError(msg)
-            paths.append([special[name] for name in names])
+            paths.append([special_points[name] for name in names])
     elif np.array(path[0]).ndim == 1:
         paths = [path]
     else:
         paths = path
 
     kpts, x, X = paths2kpts(paths, cell, npoints, density)
-    return BandPath(cell, kpts=kpts,
-                    special_points=special)
+    return BandPath(cell, kpts=kpts, special_points=special_points)
 
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
