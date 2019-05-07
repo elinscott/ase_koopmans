@@ -251,14 +251,14 @@ class Dftb(FileIOCalculator):
         # output to 'results.tag' file (which has proper formatting)
         outfile.write('Options { \n')
         outfile.write('   WriteResultsTag = Yes  \n')
-        if self.pcpot is not None and ('DFTB' in str(value)):
+        if self.pcpot is not None:
             outfile.write('   ReadChargesAsText = Yes  \n')
             outfile.write('   WriteChargesAsText = Yes  \n')
         outfile.write('} \n')
         outfile.write('ParserOptions { \n')
         outfile.write('   IgnoreUnprocessedNodes = Yes  \n')
         outfile.write('} \n')
-        if self.pcpot is not None and ('DFTB' in str(value)):
+        if self.pcpot is not None:  # Driver is always 1 step geom opt anyway
             outfile.write('Analysis { \n')
             outfile.write('   CalculateForces = Yes  \n')
             outfile.write('} \n')
@@ -496,7 +496,7 @@ class PointChargePotential:
 
         """
         if self.mmcharges is None:
-            print("DFTB: Warning: not writing external charges ")
+            print("DFTB: Warning: not writing exernal charges ")
             return
         charge_file = open(os.path.join(self.directory, filename), 'w')
         for [pos, charge] in zip(self.mmpositions, self.mmcharges):
