@@ -19,7 +19,6 @@ from ase.calculators.calculator import PropertyNotImplementedError
 # XXX raise ReadError upon bad read
 from ase.data import atomic_numbers
 from ase.io import read
-from ase.io.xsf import read_xsf
 from ase.units import Bohr, Angstrom, Hartree, eV, Debye
 
 
@@ -1155,6 +1154,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties=properties,
                                      system_changes=system_changes)
+        print('XXXXXXXXXXXXXXXXXXXX WRITE INPUT')
         octopus_keywords = self.octopus_keywords
         if octopus_keywords is None:
             # Will not do automatic pretty capitalization
