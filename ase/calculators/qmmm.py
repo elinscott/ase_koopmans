@@ -261,8 +261,14 @@ class Embedding:
             pos = (self.mmatoms.positions, )
             apm1 = self.molecule_size
             apm2 = self.molecule_size
-            spm1 = self.mmatoms.calc.sites_per_mol
-            spm2 = self.mmatoms.calc.sites_per_mol
+            # This is only specific to calculators where apm != spm, 
+            # i.e. TIP4P. Non-native MM calcs do not have this attr.
+            if hasattr(self.mmatoms.calc, 'sites_per_mol'):
+                spm1 = self.mmatoms.calc.sites_per_mol
+                spm2 = self.mmatoms.calc.sites_per_mol
+            else:
+                spm1 = self.molecule_size
+                spm2 = spm1
             mask1 = np.ones(len(self.mmatoms), dtype=bool)
             mask2 = mask1
 
@@ -365,19 +371,19 @@ class LJInteractionsGeneral:
 
         # loop over possible multiple mm calculators
         # currently 1 or 2, but could be generalized in the future...
-        if mmatoms.calc.name == 'combinemm':
-            mask1 = mmatoms.calc.mask
-            mask2 = ~mask1
-            apm1 = mmatoms.calc.apm1
-            apm2 = mmatoms.calc.apm2
-            apm = (apm1, apm2)
-        else:
-            apm1 = self.mms
-            mask1 = np.ones(len(mmatoms), dtype=bool)
-            mask2 = mask1
-            apm = (apm1, )
-            sigma = (sigma, )
-            epsilon = (epsilon, )
+        apm1 = self.mms
+        mask1 = np.ones(len(mmatoms), dtype=bool)
+        mask2 = mask1
+        apm = (apm1, )
+        sigma = (sigma, )
+        epsilon = (epsilon, )
+        if hasattr(mmatoms.calc, 'name'):
+            if mmatoms.calc.name == 'combinemm':
+                mask1 = mmatoms.calc.mask
+                mask2 = ~mask1
+                apm1 = mmatoms.calc.apm1
+                apm2 = mmatoms.calc.apm2
+                apm = (apm1, apm2)
 
         mask = (mask1, mask2)
         e_all = 0
@@ -705,3 +711,4 @@ class ForceQMMM(Calculator):
 
         self.results['forces'] = forces
         self.results['energy'] = 0.0
+
