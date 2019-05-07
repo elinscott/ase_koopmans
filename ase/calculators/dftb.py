@@ -102,9 +102,6 @@ class Dftb(FileIOCalculator):
             # (single point calculation)
             self.default_parameters = dict(
                 Hamiltonian_='DFTB',
-                Driver_='ConjugateGradient',
-                Driver_MaxForceComponent='1E-4',
-                Driver_MaxSteps=0,
                 Hamiltonian_SlaterKosterFiles_='Type2FileNames',
                 Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,
                 Hamiltonian_SlaterKosterFiles_Separator='"-"',
@@ -115,6 +112,7 @@ class Dftb(FileIOCalculator):
         self.lines = None
         self.atoms = None
         self.atoms_input = None
+        self.do_forces = False
         self.outfilename = 'dftb.out'
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
@@ -230,6 +228,11 @@ class Dftb(FileIOCalculator):
                               ' = ' + str(value) + '{ \n')
             elif key.count('_empty') == 1:
                 outfile.write(str(value) + ' \n')
+            elif ((key == 'Hamiltonian_ReadInitialCharges') and 
+                  (str(value) == 'YES')):
+                if not os.path.isfile(self.directory + os.sep + 'charges.dat'):
+                    print('charges.dat not found, switching off guess')
+                    value = 'NO'
             else:
                 outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
             if self.pcpot is not None and ('DFTB' in str(value)):
@@ -251,14 +254,15 @@ class Dftb(FileIOCalculator):
         # output to 'results.tag' file (which has proper formatting)
         outfile.write('Options { \n')
         outfile.write('   WriteResultsTag = Yes  \n')
-        if self.pcpot is not None:
-            outfile.write('   ReadChargesAsText = Yes  \n')
-            outfile.write('   WriteChargesAsText = Yes  \n')
+        # and also initial charge guesses for quicker MD and Opts 
+        outfile.write('   ReadChargesAsText = Yes  \n')
+        outfile.write('   WriteChargesAsText = Yes  \n')
         outfile.write('} \n')
         outfile.write('ParserOptions { \n')
         outfile.write('   IgnoreUnprocessedNodes = Yes  \n')
         outfile.write('} \n')
-        if self.pcpot is not None:  # Driver is always 1 step geom opt anyway
+        #if self.pcpot is not None:  # Driver is always 1 step geom opt anyway
+        if self.do_forces:
             outfile.write('Analysis { \n')
             outfile.write('   CalculateForces = Yes  \n')
             outfile.write('} \n')
@@ -283,6 +287,8 @@ class Dftb(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         from ase.io import write
+        if 'forces' in properties:
+            self.do_forces = True
         FileIOCalculator.write_input(
             self, atoms, properties, system_changes)
         self.write_dftb_in(os.path.join(self.directory, 'dftb_in.hsd'))
@@ -308,8 +314,9 @@ class Dftb(FileIOCalculator):
         if charges is not None:
             self.results['charges'] = charges
         self.results['energy'] = energy
-        forces = self.read_forces()
-        self.results['forces'] = forces
+        if self.do_forces:
+            forces = self.read_forces()
+            self.results['forces'] = forces
         self.mmpositions = None
 
         # stress stuff begins
