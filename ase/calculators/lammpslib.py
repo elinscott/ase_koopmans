@@ -70,6 +70,7 @@ def convert_cell(ase_cell):
         return cell, None
 
 
+# !TODO: Implement unit conversion using unitconvert module
 lammps_real = {
     "mass": 0.001 * ase.units.kg / ase.units.mol,
     "distance": ase.units.Angstrom,

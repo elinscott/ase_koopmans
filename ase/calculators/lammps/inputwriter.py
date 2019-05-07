@@ -20,6 +20,7 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
     :type prismobj: Prism
 
     """
+    # !TODO: Implement unit conversion using unitconvert module
     if parameters.units != "metal":
         raise NotImplementedError
 
@@ -122,8 +123,20 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
         if style in parameters:
             fileobj.write('{} {} \n'.format(style, parameters[style]).encode("utf-8"))
 
+    # write initialization lines needed for some LAMMPS potentials
+    if 'model_init' in parameters:
+        mlines = parameters['model_init']
+        for ii in range(0,len(mlines)):
+            fileobj.write(mlines[ii].encode('utf-8'))
+
+    # write units
+    if 'units' in parameters:
+       units_line = 'units ' + parameters['units'] + '\n'
+       fileobj.write(units_line.encode('utf-8'))
+    else:
+       fileobj.write('units metal\n'.encode('utf-8'))
+
     pbc = atoms.get_pbc()
-    fileobj.write("units metal \n".encode("utf-8"))
     if "boundary" in parameters:
         fileobj.write(
             "boundary {0} \n".format(parameters["boundary"]).encode("utf-8")
@@ -158,8 +171,16 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
             fileobj.write(
                 "pair_coeff {0} \n" "".format(pair_coeff).encode("utf-8")
             )
+        # write additional lines needed for some LAMMPS potentials
+        if 'model_post' in parameters:
+            mlines = parameters['model_post']
+            for ii in range(0,len(mlines)):
+                fileobj.write(mlines[ii].encode('utf-8'))
+
         if "mass" in parameters:
             for mass in parameters["mass"]:
+                # Note that the variable mass is a string containing
+                # the type number and value of mass separated by a space
                 fileobj.write("mass {0} \n".format(mass).encode("utf-8"))
     else:
         # simple default parameters

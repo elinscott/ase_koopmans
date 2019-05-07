@@ -395,7 +395,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                       prismobj=None, velocities=False, units="metal",
                       atom_style='atomic'):
     """Write atomic structure data to a LAMMPS data_ file."""
-    # !TODO: add unit handling
+    # !TODO: Implement unit conversion using unitconvert module
     if units != "metal":
         raise NotImplementedError
 
