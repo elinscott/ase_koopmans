@@ -390,7 +390,7 @@ def cli(command, calculator_name=None):
     proc.wait()
     if proc.returncode != 0:
         raise RuntimeError('Failed running a shell command.  '
-                           'Please set you $PATH environment variable!')
+                           'Please set your $PATH environment variable!')
 
 
 class must_raise:
