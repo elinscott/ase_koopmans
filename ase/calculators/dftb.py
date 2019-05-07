@@ -251,10 +251,18 @@ class Dftb(FileIOCalculator):
         # output to 'results.tag' file (which has proper formatting)
         outfile.write('Options { \n')
         outfile.write('   WriteResultsTag = Yes  \n')
+        if self.pcpot is not None and ('DFTB' in str(value)):
+            outfile.write('   ReadChargesAsText = Yes  \n')
+            outfile.write('   WriteChargesAsText = Yes  \n')
         outfile.write('} \n')
         outfile.write('ParserOptions { \n')
         outfile.write('   IgnoreUnprocessedNodes = Yes  \n')
         outfile.write('} \n')
+        if self.pcpot is not None and ('DFTB' in str(value)):
+            outfile.write('Analysis { \n')
+            outfile.write('   CalculateForces = Yes  \n')
+            outfile.write('} \n')
+
 
         outfile.close()
 
@@ -488,7 +496,7 @@ class PointChargePotential:
 
         """
         if self.mmcharges is None:
-            print("DFTB: Warning: not writing exernal charges ")
+            print("DFTB: Warning: not writing external charges ")
             return
         charge_file = open(os.path.join(self.directory, filename), 'w')
         for [pos, charge] in zip(self.mmpositions, self.mmcharges):
@@ -497,7 +505,7 @@ class PointChargePotential:
                               % (x, y, z, charge))
         charge_file.close()
 
-    def get_forces(self, calc, get_forces=False):
+    def get_forces(self, calc, get_forces=True):
         """ returns forces on point charges if the flag get_forces=True """
         if get_forces:
             return self.read_forces_on_pointcharges()
