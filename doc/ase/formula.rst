@@ -1,11 +1,11 @@
-.. module:: ase.utils.formula
+.. module:: ase.formula
 
 Chemical formula type
 =====================
 
 .. warning::
 
-    This module is preliminary!  API is a moving target.
+    This module is preliminary!  API may change or disappear in the future.
 
 .. autoclass:: Formula
     :members:
