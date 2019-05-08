@@ -4,7 +4,7 @@ from collections import Counter
 import numpy as np
 
 from ase.data import atomic_numbers, chemical_symbols
-from ase.utils.formula import Formula
+from ase.formula import Formula
 
 
 def string2symbols(s):
@@ -33,6 +33,7 @@ class Symbols:
         numbers = symbols2numbers(symbols)
         return cls(np.array(numbers))
 
+    @property
     def formula(self):
         """Formula object."""
         return Formula.from_dict(Counter(self.get_chemical_symbols))
