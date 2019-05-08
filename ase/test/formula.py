@@ -25,21 +25,12 @@ for sym in ['', 'Pu', 'Pu2', 'U2Pu2', 'U2((Pu2)2H)']:
             assert (n1 == n2).all()
 
 
-if 0:
-    for x in ['H2O', '10H2O', '2(CuO2(H2O)2)10', 'Cu20+H2', 'H' * 15,
-              'AuBC2', '']:
-        f = Formula(x)
-        y = f.tostr('', '')
-        assert y == x
-        print(f.count(), f._tree)
-        print(f.latex())
-        for s in f:
-            print(s, end='')
-        print()
-        print(f.compact(), f.reduce())
-        print(f.stoichiometry())
-        print('DDDD', f, divmod(f, 'H2O'),
-              f * 2,
-              2 * f)
-        print(f == 'H2O', bool(f))
-        
+for x in ['H2O', '10H2O', '2(CuO2(H2O)2)10', 'Cu20+H2', 'H' * 15,
+          'AuBC2', '']:
+    f = Formula(x)
+    y = str(f)
+    assert y == x
+    print(f.count(), '{:latex}'.format(f))
+    a, b = divmod(f, 'H2O')
+    assert a * Formula('H2O') + b == f
+    assert f != 117

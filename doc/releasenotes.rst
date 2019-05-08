@@ -70,7 +70,7 @@ Git master branch
   formula manipulation functionality in one place.
 
 * :class:`~ase.Atoms.symbol` objects now have a
-  :meth:`~ase.symbols.Symbols.formula` method.
+  :attr:`~ase.symbols.Symbols.formula` attribute.
 
 
 Version 3.17.0

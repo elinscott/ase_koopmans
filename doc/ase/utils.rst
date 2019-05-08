@@ -8,7 +8,6 @@ This module contains utility functions and classes.
 
 .. toctree::
 
-    formula
     xrdebye
 
 .. autofunction:: ase.utils.opencew

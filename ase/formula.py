@@ -196,6 +196,8 @@ class Formula:
 
     def __mul__(self, N: int):  # -> Formula
         """Repeat formula `N` times."""
+        if N == 0:
+            return Formula('')
         return self.from_dict({symb: n * N
                                for symb, n in self._count.items()})
 
