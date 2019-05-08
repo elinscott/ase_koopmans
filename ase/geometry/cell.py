@@ -174,7 +174,7 @@ class Cell:
         return np.linalg.solve(self.complete().array.T, positions.T).T
 
     def cartesian_positions(self, scaled_positions):
-        return np.dot(scaled_positions, self.complete().array)
+        return scaled_positions @ self.complete()
 
     def reciprocal(self):
         return np.linalg.pinv(self.array).transpose()
