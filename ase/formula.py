@@ -26,6 +26,7 @@ class Formula:
 
         Examples
         --------
+        >>> from ase.formula import Formula
         >>> w = Formula('H2O')
         >>> w.count()
         {'H': 2, 'O': 1}
@@ -59,36 +60,44 @@ class Formula:
         """
         return self._count.copy()
 
-    @staticmethod
-    def from_dict(dct):  # (Dict[str, int]) -> Formula
-        """Convert dict to Formula."""
-        return Formula(dict2str(dct),
-                       _tree=[([(symb, n) for symb, n in dct.items()], 1)],
-                       _count=dict(dct))
+    def reduce(self):
+        """Reduce formula.
 
-    def from_list(symbols):  # (List[str]) -> Formula
-        """Convert dict to Formula."""
-        return Formula(''.join(symbols),
-                       _tree=[(symbols[:], 1)])
+        Returns
+        -------
+        formula: Formula
+            Reduced formula.
+        n: int
+            Number of reduced formula units.
 
-    def __iter__(self, tree=None):
-        if tree is None:
-            tree = self._tree
-        if isinstance(tree, str):
-            yield tree
-        elif isinstance(tree, tuple):
-            tree, N = tree
-            for _ in range(N):
-                yield from self.__iter__(tree)
-        else:
-            for tree in tree:
-                yield from self.__iter__(tree)
+        Example
+        -------
+        >>> Formula('2H2O').reduce()
+        (Formula('H2O'), 2)
+        """
+        dct, N = self._reduce()
+        return self.from_dict(dct), N
 
-    def __str__(self):
-        return self._formula
+    def stoichiometry(self):  # -> Tuple[Formula, Formula, int]
+        """Reduce to unique stoichiomerty using "chemical symbols" A, B, C, ...
 
-    def __repr__(self):
-        return 'Formula({!r})'.format(self._formula)
+        Examples
+        --------
+        >>> Formula('CO2').stoichiometry()
+        (Formula('A2B'), Formula('O2C'), 1)
+        >>> Formula('(H2O)4').stoichiometry()
+        (Formula('A2B'), Formula('H2O'), 4)
+        """
+        count1, N = self._reduce()
+        c = ord('A')
+        count2 = ordereddict()
+        count3 = ordereddict()
+        for n, symb in sorted((-n, symb)
+                              for symb, n in count1.items()):
+            count2[chr(c)] = -n
+            count3[symb] = -n
+            c += 1
+        return self.from_dict(count2), self.from_dict(count3), N
 
     def format(self, fmt: str = '') -> str:
         """Format formula as string.
@@ -107,6 +116,62 @@ class Formula:
         'H<sub>2</sub>O'
         """
         return format(self, fmt)
+
+    def __format__(self, fmt: str) -> str:
+        """Format Formula as str.
+
+        Possible formats: ``'hill'``, ``'metal'``, ``'latex'``,
+        ``'html'``, ``'rest'``.
+
+        Example
+        -------
+        >>> f = Formula('OH2')
+        >>> '{f}, {f:hill}, {f:latex}'.format(f=f)
+        'OH2, H2O, OH$_{2}$'
+        """
+
+        if fmt == 'hill':
+            count = self.count()
+            count2 = ordereddict()
+            for symb in 'CH':
+                if symb in count:
+                    count2[symb] = count.pop(symb)
+            for symb, n in sorted(count.items()):
+                count2[symb] = n
+            return dict2str(count2)
+
+        if fmt == 'metal':
+            count = self.count()
+            result2 = [(s, count.pop(s)) for s in non_metals if s in count]
+            result = [(s, count[s]) for s in sorted(count)]
+            result += sorted(result2)
+            return dict2str(ordereddict(result))
+
+        if fmt == 'latex':
+            return self._tostr('$_{', '}$')
+        if fmt == 'html':
+            return self._tostr('<sub>', '</sub>')
+        if fmt == 'rest':
+            return self._tostr(r'\ :sub`', r'`\ ')
+        if fmt == '':
+            return self._formula
+        raise ValueError('Invalid format specifier')
+
+    @staticmethod
+    def from_dict(dct):  # (Dict[str, int]) -> Formula
+        """Convert dict to Formula."""
+        return Formula(dict2str(dct),
+                       _tree=[([(symb, n) for symb, n in dct.items()], 1)],
+                       _count=dict(dct))
+
+    def from_list(symbols):  # (List[str]) -> Formula
+        """Convert list of chemical symbols to Formula."""
+        return Formula(''.join(symbols),
+                       _tree=[(symbols[:], 1)])
+
+    def __len__(self) -> int:
+        """Number of atoms."""
+        return sum(self._count.values())
 
     def __getitem__(self, symb: str) -> int:
         """Number of atoms with chemical symbol *symb*."""
@@ -144,6 +209,25 @@ class Formula:
         elif not isinstance(other, Formula):
             return False
         return self._count == other._count
+
+    def __add__(self, other):  # (Union[str, Formula]) -> Formula
+        """Add two formulas."""
+        if not isinstance(other, str):
+            other = other._formula
+        return Formula(self._formula + '+' + other)
+
+    def __radd__(self, other: str):  # -> Formula
+        return Formula(other) + self
+
+    def __mul__(self, N: int):  # -> Formula
+        """Repeat formula `N` times."""
+        if N == 0:
+            return Formula('')
+        return self.from_dict({symb: n * N
+                               for symb, n in self._count.items()})
+
+    def __rmul__(self, N: int):  # -> Formula
+        return self * N
 
     def __divmod__(self, other):
         # (Union[Formula, str]) -> Tuple[int, Formula]
@@ -185,28 +269,24 @@ class Formula:
     def __rfloordiv__(self, other):
         return Formula(other) // self
 
-    def __add__(self, other):  # (Union[str, Formula]) -> Formula
-        """Add two formulas."""
-        if not isinstance(other, str):
-            other = other._formula
-        return Formula(self._formula + '+' + other)
+    def __iter__(self, tree=None):
+        if tree is None:
+            tree = self._tree
+        if isinstance(tree, str):
+            yield tree
+        elif isinstance(tree, tuple):
+            tree, N = tree
+            for _ in range(N):
+                yield from self.__iter__(tree)
+        else:
+            for tree in tree:
+                yield from self.__iter__(tree)
 
-    def __radd__(self, other: str):  # -> Formula
-        return Formula(other) + self
+    def __str__(self):
+        return self._formula
 
-    def __mul__(self, N: int):  # -> Formula
-        """Repeat formula `N` times."""
-        if N == 0:
-            return Formula('')
-        return self.from_dict({symb: n * N
-                               for symb, n in self._count.items()})
-
-    def __rmul__(self, N: int):  # -> Formula
-        return self * N
-
-    def __len__(self) -> int:
-        """Number of atoms."""
-        return sum(self._count.values())
+    def __repr__(self):
+        return 'Formula({!r})'.format(self._formula)
 
     def _reduce(self):
         N = 0
@@ -217,85 +297,6 @@ class Formula:
                 N = gcd(n, N)
         dct = {symb: n // N for symb, n in self._count.items()}
         return dct, N
-
-    def reduce(self):
-        """Reduce formula.
-
-        Returns
-        -------
-        formula: Formula
-            Reduced formula.
-        n: int
-            Number of reduced formula units.
-
-        Example
-        -------
-        >>> Formula('2H2O').reduce()
-        (Formula('H2O'), 2)
-        """
-        dct, N = self._reduce()
-        return self.from_dict(dct), N
-
-    def stoichiometry(self):
-        """Reduce to unique stoichiomerty using "chemical symbols" A, B, C, ...
-
-        Examples
-        --------
-        >>> Formula('CO2').stoichiometry()
-        (Formula('A2B'), Formula('O2C'), 1)
-        >>> Formula('(H2O)4').stoichiometry()
-        (Formula('A2B'), Formula('H2O'), 4)
-        """
-        count1, N = self._reduce()
-        c = ord('A')
-        count2 = ordereddict()
-        count3 = ordereddict()
-        for n, symb in sorted((-n, symb)
-                              for symb, n in count1.items()):
-            count2[chr(c)] = -n
-            count3[symb] = -n
-            c += 1
-        return self.from_dict(count2), self.from_dict(count3), N
-
-    def __format__(self, fmt: str) -> str:
-        """Format Formula as str.
-
-        Possible formats: ``'hill'``, ``'metal'``, ``'latex'``,
-        ``'html'``, ``'rest'``.
-
-        Example
-        -------
-        >>> f = Formula('OH2')
-        >>> '{f}, {f:hill}, {f:latex}'.format(f=f)
-        'OH2, H2O, OH$_{2}$'
-        """
-
-        if fmt == 'hill':
-            count = self.count()
-            count2 = ordereddict()
-            for symb in 'CH':
-                if symb in count:
-                    count2[symb] = count.pop(symb)
-            for symb, n in sorted(count.items()):
-                count2[symb] = n
-            return dict2str(count2)
-
-        if fmt == 'metal':
-            count = self.count()
-            result2 = [(s, count.pop(s)) for s in non_metals if s in count]
-            result = [(s, count[s]) for s in sorted(count)]
-            result += sorted(result2)
-            return dict2str(ordereddict(result))
-
-        if fmt == 'latex':
-            return self._tostr('$_{', '}$')
-        if fmt == 'html':
-            return self._tostr('<sub>', '</sub>')
-        if fmt == 'rest':
-            return self._tostr(r'\ :sub`', r'`\ ')
-        if fmt == '':
-            return self._formula
-        raise ValueError('Invalid format specifier')
 
     def _tostr(self, sub1, sub2):
         parts = []
