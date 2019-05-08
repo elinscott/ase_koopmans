@@ -36,7 +36,7 @@ class Symbols:
     @property
     def formula(self):
         """Formula object."""
-        return Formula.from_dict(Counter(self.get_chemical_symbols))
+        return Formula.from_list([chemical_symbols[Z] for Z in self.numbers])
 
     def __getitem__(self, key):
         num = self.numbers[key]
