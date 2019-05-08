@@ -7,10 +7,10 @@ This module defines the central object in the ASE package: the Atoms
 object.
 """
 
+import copy
 import numbers
 import warnings
 from math import cos, sin, pi
-import copy
 
 import numpy as np
 

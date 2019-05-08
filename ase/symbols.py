@@ -3,67 +3,20 @@ import warnings
 import numpy as np
 
 from ase.data import atomic_numbers, chemical_symbols
-from ase.utils import basestring, formula_hill, formula_metal
+from ase.formula import Formula
 
 
 def string2symbols(s):
     """Convert string to list of chemical symbols."""
-    n = len(s)
-
-    if n == 0:
-        return []
-
-    c = s[0]
-
-    if c.isdigit():
-        i = 1
-        while i < n and s[i].isdigit():
-            i += 1
-        return int(s[:i]) * string2symbols(s[i:])
-
-    if c == '(':
-        p = 0
-        for i, c in enumerate(s):
-            if c == '(':
-                p += 1
-            elif c == ')':
-                p -= 1
-                if p == 0:
-                    break
-        j = i + 1
-        while j < n and s[j].isdigit():
-            j += 1
-        if j > i + 1:
-            m = int(s[i + 1:j])
-        else:
-            m = 1
-        return m * string2symbols(s[1:i]) + string2symbols(s[j:])
-
-    if c.isupper():
-        i = 1
-        if 1 < n and s[1].islower():
-            i += 1
-        j = i
-        while j < n and s[j].isdigit():
-            j += 1
-        if j > i:
-            m = int(s[i:j])
-        else:
-            m = 1
-        symbol = s[:i]
-        if symbol not in atomic_numbers:
-            raise ValueError
-        return m * [symbol] + string2symbols(s[j:])
-    else:
-        raise ValueError
+    return list(Formula(s))
 
 
 def symbols2numbers(symbols):
-    if isinstance(symbols, basestring):
+    if isinstance(symbols, str):
         symbols = string2symbols(symbols)
     numbers = []
     for s in symbols:
-        if isinstance(s, basestring):
+        if isinstance(s, str):
             numbers.append(atomic_numbers[s])
         else:
             numbers.append(int(s))
@@ -78,6 +31,11 @@ class Symbols:
     def fromsymbols(cls, symbols):
         numbers = symbols2numbers(symbols)
         return cls(np.array(numbers))
+
+    @property
+    def formula(self):
+        """Formula object."""
+        return Formula.from_list([chemical_symbols[Z] for Z in self.numbers])
 
     def __getitem__(self, key):
         num = self.numbers[key]
@@ -138,13 +96,17 @@ class Symbols:
                 if c > 1:
                     tokens.append(str(c))
             formula = ''.join(tokens)
-        elif mode == 'hill':
-            formula = formula_hill(numbers, empirical=empirical)
         elif mode == 'all':
             formula = ''.join([chemical_symbols[n] for n in numbers])
-        elif mode == 'metal':
-            formula = formula_metal(numbers, empirical=empirical)
         else:
-            raise ValueError("Use mode = 'all', 'reduce', 'hill' or 'metal'.")
+            symbols = [chemical_symbols[Z] for Z in numbers]
+            f = Formula('', [(symbols, 1)])
+            if empirical:
+                f, _ = f.reduce()
+            if mode in {'hill', 'metal'}:
+                formula = f.format(mode)
+            else:
+                raise ValueError(
+                    "Use mode = 'all', 'reduce', 'hill' or 'metal'.")
 
         return formula
