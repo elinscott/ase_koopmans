@@ -242,7 +242,7 @@ class Embedding:
         """Update point-charge positions."""
         # Wrap point-charge positions to the MM-cell closest to the
         # center of the the QM box, but avoid ripping molecules apart:
-        qmcenter = self.qmatoms.cell.diagonal() / 2
+        qmcenter = self.qmatoms.positions.mean(axis=0)
         # if counter ions are used, then molecule_size has more than 1 value
         if self.mmatoms.calc.name == 'combinemm':
             mask1 = self.mmatoms.calc.mask
