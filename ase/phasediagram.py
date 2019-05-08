@@ -61,7 +61,7 @@ def solvated(symbols):
     """
 
     if isinstance(symbols, str):
-        symbols = Formula(symbols)._count.keys()
+        symbols = Formula(symbols).count().keys()
     if len(_solvated) == 0:
         for line in _aqueous.splitlines():
             energy, formula = line.split(',')
