@@ -19,7 +19,6 @@ from ase.calculators.calculator import PropertyNotImplementedError
 # XXX raise ReadError upon bad read
 from ase.data import atomic_numbers
 from ase.io import read
-from ase.io.xsf import read_xsf
 from ase.units import Bohr, Angstrom, Hartree, eV, Debye
 
 
@@ -744,6 +743,18 @@ def generate_input(atoms, kwargs, normalized2pretty):
     return '\n'.join(_lines)
 
 
+def read_static_info_stress(fd):
+    stress_cv = np.empty((3, 3))
+
+    headers = next(fd)
+    assert headers.strip().startswith('T_{ij}')
+    for i in range(3):
+        line = next(fd)
+        tokens = line.split()
+        vec = np.array(tokens[1:4]).astype(float)
+        stress_cv[i] = vec
+    return stress_cv
+
 def read_static_info_kpoints(fd):
     for line in fd:
         if line.startswith('List of k-points'):
@@ -840,6 +851,11 @@ def read_static_info(fd):
         elif line.startswith('Energy ['):
             unit = get_energy_unit(line)
             results.update(read_static_info_energy(fd, unit))
+        elif line.startswith('Stress tensor'):
+            assert line.split()[-1] == '[H/b^3]'
+            stress = read_static_info_stress(fd)
+            stress *= Hartree / Bohr**3
+            results.update(stress=stress)
         elif line.startswith('Total Magnetic Moment'):
             if 0:
                 line = next(fd)
@@ -908,7 +924,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     The label is always assumed to be a directory."""
 
     implemented_properties = ['energy', 'forces',
-                              'dipole',
+                              'dipole', 'stress',
                               #'magmom', 'magmoms'
     ]
 
@@ -1061,118 +1077,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def get_stresses(self):
         raise PropertyNotImplementedError
 
-    def _read_array(self, fname, outputkeyword=None):
-        path = self._getpath('static/%s' % fname)
-        if not os.path.exists(path):
-            msg = 'Path not found: %s' % path
-            if outputkeyword is not None:
-                msg += ('\nIt appears that the %s has not been saved.\n'
-                        'Be sure to specify Output=\'%s\' in the input.'
-                        % (outputkeyword, outputkeyword))
-            raise OctopusIOError(msg)
-        # If this causes an error now that the file exists, things are
-        # messed up.  Then it is better that the error propagates as normal
-        return read_xsf(path, read_data=True)
-
-    def read_vn(self, basefname, keywordname):
-        static_dir = self._getpath('static')
-        assert os.path.isdir(static_dir)
-
-        if self.get_spin_polarized():
-            spin1, _atoms = self._read_array('%s-sp1.xsf' % basefname,
-                                             keywordname)
-            spin2, _atoms = self._read_array('%s-sp2.xsf' % basefname,
-                                             keywordname)
-            array = np.array([spin1, spin2])  # shape 2, nx, ny, nz
-        else:
-            array, _atoms = self._read_array('%s.xsf' % basefname, keywordname)
-            array = array[None]  # shape 1, nx, ny, nx
-        assert len(array.shape) == 4
-        return array
-
-    def _unpad_periodic(self, array):
-        return unpad(self.get_atoms().pbc, array)
-
-    def _pad_unperiodic(self, array):
-        pbc = self.get_atoms().pbc
-        orig_shape = array.shape
-        newshape = [orig_shape[c] + (0 if pbc[c] else 1) for c in range(3)]
-        out = np.zeros(newshape, dtype=array.dtype)
-        nx, ny, nz = orig_shape
-        out[:nx, :ny, :nz] = array
-        return out
-
-    def _pad_correctly(self, array, pad):
-        array = self._unpad_periodic(array)
-        if pad:
-            array = self._pad_unperiodic(array)
-        return array
-
-    def get_pseudo_density(self, spin=None, pad=True):
-        """Return pseudo-density array.
-
-        If *spin* is not given, then the total density is returned.
-        Otherwise, the spin up or down density is returned (spin=0 or
-        1)."""
-        if 'density_sg' not in self.results:
-            self.results['density_sg'] = self.read_vn('density', 'density')
-        density_sg = self.results['density_sg']
-        if spin is None:
-            density_g = density_sg.sum(axis=0)
-        else:
-            assert spin == 0 or (spin == 1 and len(density_sg) == 2)
-            density_g = density_sg[spin]
-        return self._pad_correctly(density_g, pad)
-
-    def get_effective_potential(self, spin=0, pad=True):
-        if spin is None:  # Annoying case because it works as an index!
-            raise ValueError('spin=None')
-        if 'potential_sg' not in self.results:
-            self.results['potential_sg'] = self.read_vn('vks', 'potential')
-        array = self.results['potential_sg'][spin]
-        return self._pad_correctly(array, pad)
-
-    def get_pseudo_wave_function(self, band=0, kpt=0, spin=0, broadcast=True,
-                                 pad=True):
-        """Return pseudo-wave-function array."""
-        assert band < self.get_number_of_bands()
-
-        ibz_k_pts = self.get_ibz_k_points()
-
-        forcecomplex = self.kwargs.get('forcecomplex')
-        if forcecomplex is not None:
-            forcecomplex = octbool2bool(forcecomplex)
-        if len(ibz_k_pts) > 1 or ibz_k_pts.any() or forcecomplex:
-            dtype = complex
-        else:
-            dtype = float  # Might there be more issues that determine dtype?
-
-        if self.get_spin_polarized():
-            kpt_index = 2 * kpt + spin  # XXX this is *probably* correct
-        else:
-            kpt_index = kpt
-
-        # The ASE convention is that kpts and bands start from 0,
-        # whereas in Octopus they start from 1.  So always add 1
-        # when looking for filenames.
-        kpt_index += 1
-        band_index = band + 1
-
-        tokens = ['wf']
-        if len(ibz_k_pts) > 1 or self.get_spin_polarized():
-            tokens.append('-k%03d' % kpt_index)
-        tokens.append('-st%04d' % band_index)
-        name = ''.join(tokens)
-
-        if dtype == float:
-            array, _atoms = self._read_array('%s.xsf' % name, 'wfs')
-        else:
-            array_real, _atoms = self._read_array('%s.real.xsf' % name, 'wfs')
-            array_imag, _atoms = self._read_array('%s.imag.xsf' % name, 'wfs')
-            array = array_real + 1j * array_imag
-
-        return self._pad_correctly(array, pad)
-
     def get_number_of_spins(self):
         """Return the number of spins in the calculation.
            Spin-paired calculations: 1, spin-polarized calculation: 2."""
@@ -1250,6 +1154,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties=properties,
                                      system_changes=system_changes)
+        print('XXXXXXXXXXXXXXXXXXXX WRITE INPUT')
         octopus_keywords = self.octopus_keywords
         if octopus_keywords is None:
             # Will not do automatic pretty capitalization

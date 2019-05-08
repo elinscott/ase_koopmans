@@ -1,6 +1,6 @@
 """Check density of states tetrahedron code."""
 import numpy as np
-from ase.dft.dos import ltidos
+from ase.dft.dos import linear_tetrahedron_integration as lti
 from ase.dft.kpoints import monkhorst_pack
 
 cell = np.eye(3)
@@ -14,14 +14,14 @@ eigs = 0.5 * (kpts**2).sum(3)[..., np.newaxis]  # new axis for 1 band
 energies = np.linspace(0.0001, eigs.max() + 0.0001, 500)
 
 # Do 3-d, 2-d and 1-d:
-dos3 = ltidos(cell, eigs, energies)
+dos3 = lti(cell, eigs, energies)
 eigs = eigs[:, :, 4:5]
-dos2 = ltidos(cell, eigs, energies)
+dos2 = lti(cell, eigs, energies)
 eigs = eigs[5:6]
-dos1 = ltidos(cell, eigs, energies)
+dos1 = lti(cell, eigs, energies)
 
 # With weights:
-dos1w = ltidos(cell, eigs, energies, np.ones_like(eigs))
+dos1w = lti(cell, eigs, energies, np.ones_like(eigs))
 assert abs(dos1 - dos1w).max() < 2e-14
 
 # Analytic results:
@@ -34,7 +34,7 @@ dims = 1
 for dos, ref in [(dos1, ref1), (dos2, ref2), (dos3, ref3)]:
     error = abs(1 - dos / ref)[mask].max()
     norm = dos.sum() * (energies[1] - energies[0])
-    print(dims, norm)
+    print(dims, norm, error)
     assert error < 0.2, error
     assert abs(norm - 1) < 0.11**dims, norm
     if 0:

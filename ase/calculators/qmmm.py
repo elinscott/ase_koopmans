@@ -8,6 +8,7 @@ from ase.utils import convert_string_to_fd
 
 class SimpleQMMM(Calculator):
     """Simple QMMM calculator."""
+
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, selection, qmcalc, mmcalc1, mmcalc2, vacuum=None):
@@ -242,24 +243,60 @@ class Embedding:
         # Wrap point-charge positions to the MM-cell closest to the
         # center of the the QM box, but avoid ripping molecules apart:
         qmcenter = self.qmatoms.cell.diagonal() / 2
-        n = self.molecule_size
-        positions = self.mmatoms.positions.reshape((-1, n, 3)) + shift
+        # if counter ions are used, then molecule_size has more than 1 value
+        if self.mmatoms.calc.name == 'combinemm':
+            mask1 = self.mmatoms.calc.mask
+            mask2 = ~mask1
+            vmask1 = self.mmatoms.calc.virtual_mask
+            vmask2 = ~vmask1
+            apm1 = self.mmatoms.calc.apm1
+            apm2 = self.mmatoms.calc.apm2
+            spm1 = self.mmatoms.calc.atoms1.calc.sites_per_mol
+            spm2 = self.mmatoms.calc.atoms2.calc.sites_per_mol
+            pos = self.mmatoms.positions
+            pos1 = pos[mask1].reshape((-1, apm1, 3))
+            pos2 = pos[mask2].reshape((-1, apm2, 3))
+            pos = (pos1, pos2)
+        else:
+            pos = (self.mmatoms.positions, )
+            apm1 = self.molecule_size
+            apm2 = self.molecule_size
+            spm1 = self.mmatoms.calc.sites_per_mol
+            spm2 = self.mmatoms.calc.sites_per_mol
+            mask1 = np.ones(len(self.mmatoms), dtype=bool)
+            mask2 = mask1
 
-        # Distances from the center of the QM box to the first atom of
-        # each molecule:
-        distances = positions[:, 0] - qmcenter
+        wrap_pos = np.zeros_like(self.mmatoms.positions)
+        com_all = []
+        apm = (apm1, apm2)
+        mask = (mask1, mask2)
+        spm = (spm1, spm2)
+        for p, n, m, vn in zip(pos, apm, mask, spm):
+            positions = p.reshape((-1, n, 3)) + shift
 
-        wrap(distances, self.mmatoms.cell.diagonal(), self.mmatoms.pbc)
-        offsets = distances - positions[:, 0]
-        positions += offsets[:, np.newaxis] + qmcenter
+            # Distances from the center of the QM box to the first atom of
+            # each molecule:
+            distances = positions[:, 0] - qmcenter
 
-        # Geometric center positions for each mm mol for LR cut
-        com = np.array([p.mean(axis=0) for p in positions])
-        # Need per atom for C-code:
-        com_pv = np.repeat(com, self.virtual_molecule_size, axis=0)
+            wrap(distances, self.mmatoms.cell.diagonal(), self.mmatoms.pbc)
+            offsets = distances - positions[:, 0]
+            positions += offsets[:, np.newaxis] + qmcenter
 
-        positions.shape = (-1, 3)
+            # Geometric center positions for each mm mol for LR cut
+            com = np.array([p.mean(axis=0) for p in positions])
+            # Need per atom for C-code:
+            com_pv = np.repeat(com, vn, axis=0)
+            com_all.append(com_pv)
+
+            wrap_pos[m] = positions.reshape((-1, 3))
+
+        positions = wrap_pos.copy()
         positions = self.mmatoms.calc.add_virtual_sites(positions)
+
+        if self.mmatoms.calc.name == 'combinemm':
+            com_pv = np.zeros_like(positions)
+            for ii, m in enumerate((vmask1, vmask2)):
+                com_pv[m] = com_all[ii]
 
         # compatibility with gpaw versions w/o LR cut in PointChargePotential
         if 'rc2' in self.parameters:
@@ -276,25 +313,46 @@ class Embedding:
 def combine_lj_lorenz_berthelot(sigmaqm, sigmamm,
                                 epsilonqm, epsilonmm):
     """Combine LJ parameters according to the Lorenz-Berthelot rule"""
-    sigma_c = np.zeros((len(sigmaqm), len(sigmamm)))
-    epsilon_c = np.zeros_like(sigma_c)
+    sigma = []
+    epsilon = []
+    # check if input is tuple of vals for more than 1 mm calc, or only for 1.
+    if type(sigmamm) == tuple:
+        numcalcs = len(sigmamm)
+    else:
+        numcalcs = 1  # if only 1 mm calc, eps and sig are simply np arrays
+        sigmamm = (sigmamm, )
+        epsilonmm = (epsilonmm, )
+    for cc in range(numcalcs):
+        sigma_c = np.zeros((len(sigmaqm), len(sigmamm[cc])))
+        epsilon_c = np.zeros_like(sigma_c)
 
-    for ii in range(len(sigmaqm)):
-        sigma_c[ii, :] = (sigmaqm[ii] + sigmamm) / 2
-        epsilon_c[ii, :] = (epsilonqm[ii] * epsilonmm)**0.5
-    return sigma_c, epsilon_c
+        for ii in range(len(sigmaqm)):
+            sigma_c[ii, :] = (sigmaqm[ii] + sigmamm[cc]) / 2
+            epsilon_c[ii, :] = (epsilonqm[ii] * epsilonmm[cc])**0.5
+        sigma.append(sigma_c)
+        epsilon.append(epsilon_c)
+
+    if numcalcs == 1:  # retain original, 1 calc function
+        sigma = np.array(sigma[0])
+        epsilon = np.array(epsilon[0])
+
+    return sigma, epsilon
 
 
 class LJInteractionsGeneral:
     name = 'LJ-general'
 
-    def __init__(self, sigmaqm, epsilonqm, sigmamm,
-                 epsilonmm, molecule_size=3):
+    def __init__(self, sigmaqm, epsilonqm, sigmamm, epsilonmm,
+                 qm_molecule_size, mm_molecule_size=3,
+                 rc=np.Inf, width=1.0):
         self.sigmaqm = sigmaqm
         self.epsilonqm = epsilonqm
         self.sigmamm = sigmamm
         self.epsilonmm = epsilonmm
-        self.molecule_size = molecule_size
+        self.qms = qm_molecule_size
+        self.mms = mm_molecule_size
+        self.rc = rc
+        self.width = width
         self.combine_lj()
 
     def combine_lj(self):
@@ -302,33 +360,81 @@ class LJInteractionsGeneral:
             self.sigmaqm, self.sigmamm, self.epsilonqm, self.epsilonmm)
 
     def calculate(self, qmatoms, mmatoms, shift):
-        mmpositions = self.update(qmatoms, mmatoms, shift)
-        qmforces = np.zeros_like(qmatoms.positions)
-        mmforces = np.zeros_like(mmatoms.positions)
-        energy = 0.0
+        epsilon = self.epsilon
+        sigma = self.sigma
 
-        for qmi in range(len(qmatoms)):
-            if ~np.any(self.epsilon[qmi, :]):
-                continue
-            D = mmpositions - qmatoms.positions[qmi, :]
-            d2 = (D**2).sum(2)
-            c6 = (self.sigma[qmi, :]**2 / d2)**3
-            c12 = c6**2
-            e = 4 * self.epsilon[qmi, :] * (c12 - c6)
-            energy += e.sum()
-            f = (24 * self.epsilon[qmi, :] *
-                 (2 * c12 - c6) / d2)[:, :, np.newaxis] * D
-            mmforces += f.reshape((-1, 3))
-            qmforces[qmi, :] -= f.sum(0).sum(0)
+        # loop over possible multiple mm calculators
+        # currently 1 or 2, but could be generalized in the future...
+        if mmatoms.calc.name == 'combinemm':
+            mask1 = mmatoms.calc.mask
+            mask2 = ~mask1
+            apm1 = mmatoms.calc.apm1
+            apm2 = mmatoms.calc.apm2
+            apm = (apm1, apm2)
+        else:
+            apm1 = self.mms
+            mask1 = np.ones(len(mmatoms), dtype=bool)
+            mask2 = mask1
+            apm = (apm1, )
+            sigma = (sigma, )
+            epsilon = (epsilon, )
 
-        return energy, qmforces, mmforces
+        mask = (mask1, mask2)
+        e_all = 0
+        qmforces_all = np.zeros_like(qmatoms.positions)
+        mmforces_all = np.zeros_like(mmatoms.positions)
 
-    def update(self, qmatoms, mmatoms, shift):
-        """Update point-charge positions."""
+        # zip stops at shortest tuple so we dont double count
+        # cases of no counter ions.
+        for n, m, eps, sig in zip(apm, mask, epsilon, sigma):
+            mmpositions = self.update(qmatoms, mmatoms[m], n, shift)
+            qmforces = np.zeros_like(qmatoms.positions)
+            mmforces = np.zeros_like(mmatoms[m].positions)
+            energy = 0.0
+
+            qmpositions = qmatoms.positions.reshape((-1, self.qms, 3))
+
+            for q, qmpos in enumerate(qmpositions):  # molwise loop
+                # cutoff from first atom of each mol
+                R00 = mmpositions[:, 0] - qmpos[0, :]
+                d002 = (R00**2).sum(1)
+                d00 = d002**0.5
+                x1 = d00 > self.rc - self.width
+                x2 = d00 < self.rc
+                x12 = np.logical_and(x1, x2)
+                y = (d00[x12] - self.rc + self.width) / self.width
+                t = np.zeros(len(d00))
+                t[x2] = 1.0
+                t[x12] -= y**2 * (3.0 - 2.0 * y)
+                dt = np.zeros(len(d00))
+                dt[x12] -= 6.0 / self.width * y * (1.0 - y)
+                for qa in range(len(qmpos)):
+                    if ~np.any(eps[qa, :]):
+                        continue
+                    R = mmpositions - qmpos[qa, :]
+                    d2 = (R**2).sum(2)
+                    c6 = (sig[qa, :]**2 / d2)**3
+                    c12 = c6**2
+                    e = 4 * eps[qa, :] * (c12 - c6)
+                    energy += np.dot(e.sum(1), t)
+                    f = t[:, None, None] * (24 * eps[qa, :] *
+                         (2 * c12 - c6) / d2)[:, :, None] * R
+                    f00 = - (e.sum(1) * dt / d00)[:, None] * R00
+                    mmforces += f.reshape((-1, 3))
+                    qmforces[q * self.qms + qa, :] -= f.sum(0).sum(0)
+                    qmforces[q * self.qms, :] -= f00.sum(0)
+                    mmforces[::n, :] += f00
+
+                e_all += energy
+                qmforces_all += qmforces
+                mmforces_all[m] += mmforces
+
+        return e_all, qmforces_all, mmforces_all
+
+    def update(self, qmatoms, mmatoms, n, shift):
         # Wrap point-charge positions to the MM-cell closest to the
         # center of the the QM box, but avoid ripping molecules apart:
         qmcenter = qmatoms.cell.diagonal() / 2
-        n = self.molecule_size
         positions = mmatoms.positions.reshape((-1, n, 3)) + shift
 
         # Distances from the center of the QM box to the first atom of

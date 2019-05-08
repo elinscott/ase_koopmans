@@ -145,6 +145,11 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
                                        onduplicates=onduplicates,
                                        symprec=symprec)
 
+    # this is needed to handle deuterium masses
+    masses = None
+    if 'masses' in kwargs:
+        masses = kwargs['masses'][kinds]
+        del kwargs['masses']
 
     symbols = parse_symbols(symbols)
 
@@ -178,6 +183,7 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
                       # use tags to identify sites, and in particular the occupancy
                       tags=kinds,
                       pbc=pbc,
+                      masses=masses,
                       **kwargs)
 
     if isinstance(basis, ase.Atoms):
@@ -190,7 +196,11 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
     if primitive_cell:
         from ase.build import cut
         prim_cell = sg.scaled_primitive_cell
+
+        # Preserve calculator if present:
+        calc = atoms.calc
         atoms = cut(atoms, a=prim_cell[0], b=prim_cell[1], c=prim_cell[2])
+        atoms.calc = calc
 
     if size != (1, 1, 1):
         atoms = atoms.repeat(size)

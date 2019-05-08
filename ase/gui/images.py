@@ -10,6 +10,7 @@ from ase.data import covalent_radii
 from ase.gui.defaults import read_defaults
 from ase.io import read, write, string2index
 from ase.gui.i18n import _
+from ase.geometry import find_mic
 
 import warnings
 
@@ -110,8 +111,8 @@ class Images:
             # but copying actually forgets things like the attached
             # calculator (might have forces/energies
             self._images.append(atoms)
-            self.have_varying_species |= np.array_equal(self[0].numbers,
-                                                        atoms.numbers)
+            self.have_varying_species |= not np.array_equal(self[0].numbers,
+                                                            atoms.numbers)
             if hasattr(self, 'Q'):
                 assert False  # XXX askhl fix quaternions
                 self.Q[i] = atoms.get_quaternions()
@@ -165,10 +166,10 @@ class Images:
                 step = 1
             for i, img in enumerate(imgs):
                 if isinstance(start, int):
-                    names.append('{}@{}'.format(actual_filename, start + i * step))
+                    names.append('{}@{}'.format(
+                        actual_filename, start + i * step))
                 else:
                     names.append('{}@{}'.format(actual_filename, start))
-
 
         self.initialize(images, names)
 
@@ -182,7 +183,7 @@ class Images:
             # so that is an alternative option.
             try:
                 if (not atoms.calc or
-                    atoms.calc.calculation_required(atoms, [name])):
+                        atoms.calc.calculation_required(atoms, [name])):
                     quantity = None
                 else:
                     quantity = get_quantity()
@@ -367,7 +368,9 @@ class Images:
                 xy = np.empty((nvariables, nimages))
             xy[:, i] = data
             if i + 1 < nimages and not self.have_varying_species:
-                s += sqrt(((self[i + 1].positions - R)**2).sum())
+                dR = find_mic(self[i + 1].positions - R, self[i].get_cell(),
+                              self[i].get_pbc())[0]
+                s += sqrt((dR**2).sum())
         return xy
 
     def write(self, filename, rotations='', show_unit_cell=False, bbox=None,

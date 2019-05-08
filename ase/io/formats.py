@@ -56,7 +56,7 @@ all_formats = {
     'castep-md': ('CASTEP molecular dynamics file', '+F'),
     'castep-phonon': ('CASTEP phonon file', '1F'),
     'cfg': ('AtomEye configuration', '1F'),
-    'cif': ('CIF-file', '+F'),
+    'cif': ('CIF-file', '+B'),
     'cmdft': ('CMDFT-file', '1F'),
     'crystal': ('Crystal fort.34 format', '1S'),
     'cube': ('CUBE file', '1F'),
@@ -65,6 +65,7 @@ all_formats = {
     'db': ('ASE SQLite database file', '+S'),
     'dftb': ('DftbPlus input file', '1S'),
     'dlp4': ('DL_POLY_4 CONFIG file', '1F'),
+    'dlp-history': ('DL_POLY HISTORY file', '+F'),
     'dmol-arc': ('DMol3 arc file', '+S'),
     'dmol-car': ('DMol3 structure file', '1S'),
     'dmol-incoor': ('DMol3 structure file', '1S'),
@@ -79,6 +80,8 @@ all_formats = {
     'findsym': ('FINDSYM-format', '+F'),
     'gaussian': ('Gaussian com (input) file', '1S'),
     'gaussian-out': ('Gaussian output file', '1F'),
+    'acemolecule-out': ('ACE output file', '1S'),
+    'acemolecule-input':('ACE input file', '1S'),
     'gen': ('DFTBPlus GEN format', '1F'),
     'gif': ('Graphics interchange format', '+S'),
     'gpaw-out': ('GPAW text output', '+F'),
@@ -138,9 +141,12 @@ format2modulename = {
     'castep-phonon': 'castep',
     'dacapo-text': 'dacapo',
     'dlp4': 'dlp4',
+    'dlp-history': 'dlp4',
     'espresso-in': 'espresso',
     'espresso-out': 'espresso',
     'gaussian-out': 'gaussian',
+    'acemolecule-out': 'acemolecule',
+    'acemolecule-input': 'acemolecule',
     'gif': 'animation',
     'html': 'x3d',
     'json': 'db',
@@ -203,8 +209,8 @@ def initialize(format):
     try:
         module = import_module('ase.io.' + module_name)
     except ImportError as err:
-        raise ValueError('File format not recognized: %s.  Error: %s'
-                         % (format, err))
+        raise UnknownFileTypeError('File format not recognized: %s.  Error: %s'
+                                   % (format, err))
 
     read = getattr(module, 'read_' + _format, None)
     write = getattr(module, 'write_' + _format, None)
@@ -212,7 +218,7 @@ def initialize(format):
     if read and not inspect.isgeneratorfunction(read):
         read = functools.partial(wrap_read_function, read)
     if not read and not write:
-        raise ValueError('File format not recognized: ' + format)
+        raise UnknownFileTypeError('File format not recognized: ' + format)
     code = all_formats[format][1]
     single = code[0] == '1'
     assert code[1] in 'BFS'
@@ -359,8 +365,9 @@ def write(filename, images, format=None, parallel=True, append=False,
         Default is to write on master only.  Use parallel=False to write
         from all slaves.
     append: bool
-        Default is to open files in 'w' or 'wb' mode, overwriting existing files.
-        In some cases opening the file in 'a' or 'ab' mode (appending) is usefull,
+        Default is to open files in 'w' or 'wb' mode, overwriting
+        existing files.  In some cases opening the file in 'a' or 'ab'
+        mode (appending) is usefull,
         e.g. writing trajectories or saving multiple Atoms objects in one file.
         WARNING: If the file format does not support multiple entries without
         additional keywords/headers, files created using 'append=True'
@@ -385,11 +392,13 @@ def write(filename, images, format=None, parallel=True, append=False,
 
     io = get_ioformat(format)
 
-    _write(filename, fd, format, io, images, parallel=parallel, append=append, **kwargs)
+    _write(filename, fd, format, io, images, parallel=parallel, append=append,
+           **kwargs)
 
 
 @parallel_function
-def _write(filename, fd, format, io, images, parallel=None, append=False, **kwargs):
+def _write(filename, fd, format, io, images, parallel=None, append=False,
+           **kwargs):
     if isinstance(images, Atoms):
         images = [images]
 
@@ -403,11 +412,11 @@ def _write(filename, fd, format, io, images, parallel=None, append=False, **kwar
         raise ValueError("Can't write to {}-format".format(format))
 
     # Special case for json-format:
-    if format == 'json' and len(images) > 1:
+    if format == 'json' and (len(images) > 1 or append):
         if filename is not None:
-            io.write(filename, images, **kwargs)
+            io.write(filename, images, append=append, **kwargs)
             return
-        raise ValueError("Can't write more than one image to file-descriptor"
+        raise ValueError("Can't write more than one image to file-descriptor "
                          'using json-format.')
 
     if io.acceptsfd:
@@ -428,7 +437,8 @@ def _write(filename, fd, format, io, images, parallel=None, append=False, **kwar
             io.write(filename, images, append=append, **kwargs)
         elif append:
             raise ValueError("Cannot append to {}-format, write-function "
-                             "does not support the append keyword.".format(format))
+                             "does not support the append keyword."
+                             .format(format))
         else:
             io.write(filename, images, **kwargs)
 
@@ -640,6 +650,8 @@ def filetype(filename, read=True, guess=True):
             return 'iwm'
         if 'CONFIG' in basename:
             return 'dlp4'
+        if basename == 'HISTORY':
+            return 'dlp-history'
 
         if not read:
             if ext is None:

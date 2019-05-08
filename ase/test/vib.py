@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 from ase import Atoms
 from ase.calculators.emt import EMT
 from ase.optimize import QuasiNewton
@@ -11,7 +12,8 @@ n2 = Atoms('N2',
 QuasiNewton(n2).run(fmax=0.01)
 vib = Vibrations(n2)
 vib.run()
-print(vib.get_frequencies())
+freqs = vib.get_frequencies()
+print(freqs)
 vib.summary()
 print(vib.get_mode(-1))
 vib.write_mode(n=None, nimages=20)
@@ -32,3 +34,20 @@ d = dict(vib.iterdisplace(inplace=False))
 
 for name, atoms in vib.iterdisplace(inplace=True):
     assert d[name] == atoms
+
+vib = Vibrations(n2)
+vib.run()
+assert vib.combine() == 13
+assert (freqs == vib.get_frequencies()).all()
+
+vib = Vibrations(n2)
+assert vib.split() == 1
+assert (freqs == vib.get_frequencies()).all()
+
+assert vib.combine() == 13
+# Read the data from other working directory
+dirname = os.path.basename(os.getcwd())
+os.chdir('..')  # Change working directory
+vib = Vibrations(n2, name=os.path.join(dirname, 'vib'))
+assert (freqs == vib.get_frequencies()).all()
+assert vib.clean() == 1

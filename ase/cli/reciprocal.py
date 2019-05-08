@@ -2,20 +2,17 @@ from __future__ import print_function
 import numpy as np
 
 from ase.io import read
+from ase.io.jsonio import read_json
 from ase.geometry import crystal_structure_from_cell
-from ase.dft.kpoints import (get_special_points, special_paths,
+from ase.dft.kpoints import (get_special_points, special_paths, BandPath,
                              parse_path_string, labels_from_kpts,
                              get_monkhorst_pack_size_and_offset)
-from ase.dft.bz import bz1d_plot, bz2d_plot, bz3d_plot
 
-
-def plot_reciprocal_cell(atoms, path='default',
-                         k_points=False,
-                         ibz_k_points=False,
-                         plot_vectors=True, dimension=3, output=None,
-                         verbose=False):
-    import matplotlib.pyplot as plt
-
+def atoms2bandpath(atoms, path='default',
+                   k_points=False,
+                   ibz_k_points=False,
+                   dimension=3,
+                   verbose=False):
     cell = atoms.get_cell()
     icell = atoms.get_reciprocal_cell()
 
@@ -36,6 +33,7 @@ def plot_reciprocal_cell(atoms, path='default',
             print('{}: ({:16.9f},{:16.9f},{:16.9f})'.format(i + 1, *v))
 
     # band path
+    special_points = None
     if path:
         if path == 'default':
             path = special_paths[cs]
@@ -64,21 +62,15 @@ def plot_reciprocal_cell(atoms, path='default',
             points = bzk
         elif ibz_k_points:
             points = atoms.calc.get_ibz_k_points()
-        if points is not None:
-            for i in range(len(points)):
-                points[i] = np.dot(icell.T, points[i])
 
-    kwargs = {'cell': cell,
-              'vectors': plot_vectors,
-              'paths': paths,
-              'points': points}
+    return BandPath(cell, kpts=points, special_points=special_points)
 
-    if dimension == 1:
-        bz1d_plot(**kwargs)
-    elif dimension == 2:
-        bz2d_plot(**kwargs)
-    else:
-        bz3d_plot(interactive=True, **kwargs)
+
+def plot_reciprocal_cell(path, output=None, dimension=3,
+                         plot_vectors=True):
+    import matplotlib.pyplot as plt
+
+    path.plot(dimension=dimension, vectors=plot_vectors)
 
     if output:
         plt.savefig(output)
@@ -126,13 +118,26 @@ class CLICommand:
 
     @staticmethod
     def run(args, parser):
-        atoms = read(args.name)
+        from ase.io.formats import UnknownFileTypeError
 
-        plot_reciprocal_cell(atoms,
+        try:
+            atoms = read(args.name)
+        except UnknownFileTypeError:
+            # Probably a bandpath/bandstructure:
+            obj = read_json(args.name)
+            if isinstance(obj, BandPath):
+                path = obj
+            elif hasattr(obj, 'path'):  # Probably band structure
+                path = obj.path
+            else:
+                parser.error('Strange object: {}'.format(obj))
+        else:
+            path = atoms2bandpath(atoms, path=args.path,
+                                  verbose=args.verbose,
+                                  k_points=args.k_points,
+                                  ibz_k_points=args.ibz_k_points)
+
+        plot_reciprocal_cell(path,
                              output=args.output,
-                             verbose=args.verbose,
-                             path=args.path,
                              dimension=args.dimension,
-                             plot_vectors=not args.no_vectors,
-                             k_points=args.k_points,
-                             ibz_k_points=args.ibz_k_points)
+                             plot_vectors=not args.no_vectors)

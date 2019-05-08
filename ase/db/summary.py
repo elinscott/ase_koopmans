@@ -9,11 +9,11 @@ ATOMS = {'type': 'atoms'}
 UNITCELL = {'type': 'cell'}
 
 
-def create_table(row,  # type: AtomsRow
-                 header,  # type: List[str]
-                 keys,  # type: List[str]
-                 key_descriptions,  # type: Dict[str, Tuple[str, str, str]]
-                 digits=3  # type: int
+def create_table(row,  # AtomsRow
+                 header,  # List[str]
+                 keys,  # List[str]
+                 key_descriptions,  # Dict[str, Tuple[str, str, str]]
+                 digits=3  # int
                  ):  # -> Dict[str, Any]
     """Create table-dict from row."""
     table = []
@@ -37,9 +37,9 @@ def create_table(row,  # type: AtomsRow
             'rows': table}
 
 
-def default_layout(row,  # type: AtomsRow
-                   key_descriptions,  # type: Dict[str, Tuple[str, str, str]]
-                   prefix  # type: str
+def default_layout(row,  # AtomsRow
+                   key_descriptions,  # Dict[str, Tuple[str, str, str]]
+                   prefix  # str
                    ):  # -> List[Tuple[str, List[List[Dict[str, Any]]]]]
     """Default page layout.
 

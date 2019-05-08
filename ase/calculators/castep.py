@@ -788,6 +788,10 @@ End CASTEP Interface Documentation
                     no_dump_cycles = float(line.split()[-3])
                     self.param.num_dump_cycles = no_dump_cycles
                 elif 'optimization strategy' in line:
+                    lspl = line.split(":")
+                    if lspl[0].strip() != 'optimization strategy':
+                        # This can happen in iprint: 3 calculations
+                        continue
                     if 'memory' in line:
                         self.param.opt_strategy = 'Memory'
                     if 'speed' in line:
@@ -796,7 +800,11 @@ End CASTEP Interface Documentation
                     calc_limit = float(line.split()[-2])
                     self.param.run_time = calc_limit
                 elif 'type of calculation' in line:
-                    calc_type = line.split(":")[-1]
+                    lspl = line.split(":")
+                    if lspl[0].strip() != 'type of calculation':
+                        # This can happen in iprint: 3 calculations
+                        continue
+                    calc_type = lspl[-1]
                     calc_type = re.sub(r'\s+', ' ', calc_type)
                     calc_type = calc_type.strip()
                     if calc_type != 'single point energy':
@@ -1272,7 +1280,7 @@ End CASTEP Interface Documentation
             if 'Symmetry and Constraints' in line:
                 break
 
-        if self.param.iprint.value is None or self.param.iprint < 2:
+        if self.param.iprint.value is None or int(self.param.iprint.value) < 2:
             self._interface_warnings.append(
                 'Warning: No symmetry'
                 'operations could be read from %s (iprint < 2).' % f.name)
@@ -1459,8 +1467,8 @@ End CASTEP Interface Documentation
                 raise RuntimeError('Pseudopotential for species {} not unique!\n'.format(elem)
                                    + 'Found the following files in {}\n'.format(self._castep_pp_path)
                                    + '\n'.join(['    {}'.format(pp)
-                                                for pp in pps])
-                                   + '\nConsider a stricter search pattern in `find_pspots()`.')
+                                              for pp in pps]) +
+                                   '\nConsider a stricter search pattern in `find_pspots()`.')
             else:
                 self.cell.species_pot = (elem, pps[0])
 
@@ -2101,12 +2109,14 @@ def get_castep_version(castep_command):
         stdout, stderr = subprocess.Popen(
             castep_command.split() + ['--version'],
             stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE, cwd=temp_dir).communicate()
+            stdout=subprocess.PIPE, cwd=temp_dir,
+            universal_newlines=True).communicate()
         if 'CASTEP version' not in stdout:
             stdout, stderr = subprocess.Popen(
                 castep_command.split() + [jname],
                 stderr=subprocess.PIPE,
-                stdout=subprocess.PIPE, cwd=temp_dir).communicate()
+                stdout=subprocess.PIPE, cwd=temp_dir,
+                universal_newlines=True).communicate()
     except:
         msg = ''
         msg += 'Could not determine the version of your CASTEP binary \n'
@@ -2238,10 +2248,11 @@ def create_castep_keywords(castep_command, filename='castep_keywords.json',
 
             processed_n += 1
 
-            frac = (o_i+1.0)/to_process
+            frac = (o_i + 1.0) / to_process
             sys.stdout.write('\rProcessed: [{0}] {1:>3.0f}%'.format(
-                             '#'*int(frac*20)+' '*(20-int(frac*20)),
-                             100*frac))
+                             '#' * int(frac * 20) + ' ' *
+                             (20 - int(frac * 20)),
+                             100 * frac))
             sys.stdout.flush()
 
         else:
@@ -2361,7 +2372,7 @@ class CastepOption(object):
                 value = value.replace(',', ' ')
             value = list(map(float, value.split()))
 
-        value = np.array(value)*1.0
+        value = np.array(value) * 1.0
 
         if value.shape != (3,) or value.dtype != float:
             raise ValueError()
@@ -2528,11 +2539,17 @@ class CastepInputFile(object):
         return CastepOption(keyword='none', level='Unknown',
                             option_type='string', value=None)
 
-    def get_attr_dict(self):
+    def get_attr_dict(self, raw=False, types=False):
         """Settings that go into .param file in a traditional dict"""
 
-        return {k: o.value
-                for k, o in self._options.items() if o.value is not None}
+        attrdict = {k: o.raw_value if raw else o.value
+                    for k, o in self._options.items() if o.value is not None}
+
+        if types:
+            for key, val in attrdict.items():
+                attrdict[key] = (val, self._options[key].type)
+
+        return attrdict
 
 
 class CastepParam(CastepInputFile):

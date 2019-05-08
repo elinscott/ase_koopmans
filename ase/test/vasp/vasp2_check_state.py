@@ -9,6 +9,7 @@ environment variables
 
 from ase.test.vasp import installed2 as installed
 
+import os
 from ase import Atoms
 from ase.calculators.vasp import Vasp2 as Vasp
 assert installed()
@@ -40,6 +41,19 @@ atoms.set_calculator(calc)
 
 en1 = atoms.get_potential_energy()
 
+# Test JSON dumping and restarting works
+fi = 'json_test.json'
+calc.write_json(filename=fi)
+
+assert os.path.isfile(fi)
+
+calc2 = Vasp()
+calc2.read_json(fi)
+assert not calc2.calculation_required(atoms, ['energy', 'forces'])
+en2 = calc2.get_potential_energy()
+assert abs(en1 - en2) < 1e-8
+os.remove(fi)                   # Clean up the JSON file
+
 # Check that the symbols remain in order (non-sorted)
 s2 = calc.atoms.get_chemical_symbols()
 assert s1 == s2
@@ -70,6 +84,7 @@ calc.kpts = 2
 # Check that this requires a new calculation
 assert calc.check_state(atoms) == ['input_params']
 assert calc.calculation_required(atoms, ['energy', 'forces'])
+
 
 # Clean up
 calc.clean()

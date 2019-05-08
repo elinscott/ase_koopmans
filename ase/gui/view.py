@@ -4,6 +4,7 @@ from os.path import basename
 
 import numpy as np
 
+from ase.calculators.calculator import PropertyNotImplementedError
 from ase.data import atomic_numbers
 from ase.data.colors import jmol_colors
 from ase.geometry import complete_cell
@@ -17,6 +18,7 @@ from ase.utils import rotate
 GREEN = '#74DF00'
 PURPLE = '#AC58FA'
 BLACKISH = '#151515'
+
 
 def get_cell_coordinates(cell, shifted=False):
     """Get start and end points of lines segments used to draw cell."""
@@ -102,8 +104,8 @@ class View:
         self.velocity_vector_scale = self.config['velocity_vector_scale']
 
         # buttons
-        self.b1 = 1 # left
-        self.b3 = 3 # right
+        self.b1 = 1  # left
+        self.b3 = 3  # right
         if self.config['swap_mouse']:
             self.b1 = 3
             self.b3 = 1
@@ -126,6 +128,8 @@ class View:
             title = basename(fname)
 
         self.window.title = title
+
+        self.call_observers()
 
         if focus:
             self.focus()
@@ -222,7 +226,12 @@ class View:
         self.draw()
 
     def get_forces(self):
-        return self.atoms.get_forces()
+        if self.atoms.calc is not None:
+            try:
+                return self.atoms.get_forces()
+            except PropertyNotImplementedError:
+                pass
+        return np.zeros((len(self.atoms), 3))
 
     def toggle_show_forces(self, key=None):
         self.draw()
@@ -404,8 +413,7 @@ class View:
                 vector_arrays.append(v * 10.0 * self.velocity_vector_scale)
         if self.window['toggle-show-forces']:
             f = self.get_forces()
-            if f is not None:
-                vector_arrays.append(f * self.force_vector_scale)
+            vector_arrays.append(f * self.force_vector_scale)
 
         for array in vector_arrays:
             array[:] = np.dot(array, axes) + X[:n]
@@ -438,19 +446,25 @@ class View:
                         if (np.sum([v for v in site_occ.values()])) < 1.0:
                             fill = '#ffffff'
                             circle(fill, selected[a],
-                                    A[a, 0], A[a, 1], A[a, 0] + ra, A[a, 1] + ra)
+                                   A[a, 0], A[a, 1],
+                                   A[a, 0] + ra, A[a, 1] + ra)
                         start = 0
                         # start with the dominant species
-                        for sym, occ in sorted(site_occ.items(), key=lambda x: x[1], reverse=True):
+                        for sym, occ in sorted(site_occ.items(),
+                                               key=lambda x: x[1],
+                                               reverse=True):
                             if np.round(occ, decimals=4) == 1.0:
                                 circle(colors[a], selected[a],
-                                       A[a, 0], A[a, 1], A[a, 0] + ra, A[a, 1] + ra)
+                                       A[a, 0], A[a, 1],
+                                       A[a, 0] + ra, A[a, 1] + ra)
                             else:
                                 # jmol colors for the moment
                                 extent = 360. * occ
-                                arc(self.colors[atomic_numbers[sym]], selected[a],
+                                arc(self.colors[atomic_numbers[sym]],
+                                    selected[a],
                                     start, extent,
-                                    A[a, 0], A[a, 1], A[a, 0] + ra, A[a, 1] + ra)
+                                    A[a, 0], A[a, 1],
+                                    A[a, 0] + ra, A[a, 1] + ra)
                                 start += extent
                     except KeyError:
                         # legacy behavior
@@ -462,7 +476,7 @@ class View:
                                    A[a, 0] + ra + 4, A[a, 1] + ra + 4)
 
                         circle(colors[a], selected[a],
-                            A[a, 0], A[a, 1], A[a, 0] + ra, A[a, 1] + ra)
+                               A[a, 0], A[a, 1], A[a, 0] + ra, A[a, 1] + ra)
 
                     # Draw labels on the atoms
                     if self.labels is not None:

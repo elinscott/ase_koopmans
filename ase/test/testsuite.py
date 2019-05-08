@@ -14,7 +14,7 @@ import warnings
 import numpy as np
 
 from ase.calculators.calculator import names as calc_names, get_calculator
-from ase.utils import devnull
+from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
 NotAvailable = unittest.SkipTest
@@ -38,7 +38,10 @@ def get_tests(files=None):
 
         files = set()
         for fname in fnames:
-            files.update(glob(fname))
+            newfiles = glob(fname)
+            if not newfiles:
+                raise OSError('No such test: {}'.format(fname))
+            files.update(newfiles)
         files = list(files)
     else:
         files = glob(os.path.join(dirname, '*'))
@@ -92,6 +95,7 @@ def run_single_test(filename, verbose, strict):
     # Hence, create new subdir for each test:
     cwd = os.getcwd()
     testsubdir = filename.replace(os.sep, '_').replace('.', '_')
+    result.workdir = os.path.abspath(testsubdir)
     os.mkdir(testsubdir)
     os.chdir(testsubdir)
     t1 = time.time()
@@ -115,6 +119,10 @@ def run_single_test(filename, verbose, strict):
             warnings.filterwarnings('ignore',
                                     'Using or importing the ABCs from',
                                     category=DeprecationWarning)
+
+            # It is okay that we are testing our own experimental features:
+            warnings.filterwarnings('ignore',
+                                    category=ExperimentalFeatureWarning)
             runtest_almost_no_magic(filename)
     except KeyboardInterrupt:
         raise
@@ -144,7 +152,7 @@ def run_single_test(filename, verbose, strict):
 class Result:
     """Represents the result of a test; for communicating between processes."""
     attributes = ['name', 'pid', 'exception', 'traceback', 'time', 'status',
-                  'whyskipped']
+                  'whyskipped', 'workdir']
 
     def __init__(self, **kwargs):
         d = {key: None for key in self.attributes}
@@ -172,8 +180,10 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * gui/run may deadlock for unknown reasons in subprocess
 
             t = test.replace('\\', '/')
-            if t in ['bandstructure.py', 'doctests.py', 'gui/run.py',
+            if t in ['bandstructure.py', 'bandstructure2.py',
+                     'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
+                     'forcecurve.py',
                      'fio/animate.py', 'db/db_web.py', 'x3d.py']:
                 result = Result(name=test, status='please run on master')
                 result_queue.put(result)
@@ -211,6 +221,7 @@ def print_test_result(result):
     if result.traceback:
         print('=' * 78)
         print('Error in {} on pid {}:'.format(result.name, result.pid))
+        print('Workdir: {}'.format(result.workdir))
         print(result.traceback.rstrip())
         print('=' * 78)
 
@@ -381,7 +392,7 @@ def cli(command, calculator_name=None):
     proc.wait()
     if proc.returncode != 0:
         raise RuntimeError('Failed running a shell command.  '
-                           'Please set you $PATH environment variable!')
+                           'Please set your $PATH environment variable!')
 
 
 class must_raise:
