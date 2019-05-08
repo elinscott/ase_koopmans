@@ -197,7 +197,7 @@ class LAMMPS(Calculator):
     def get_lammps_command(self):
         cmd = self.parameters.get('command')
         if cmd is None:
-            envvar = 'ASE_{}_COMMAND'.format(self.name)
+            envvar = 'ASE_{}_COMMAND'.format(self.name.upper())
             cmd = os.environ.get(envvar)
 
         if cmd is None:
