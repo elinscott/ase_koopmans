@@ -12,7 +12,7 @@ variables:
 # deprecation warnings may be rampant, yet these are only important
 # for the future, not the past.
 python_3_oldlibs_tests:
-  image: python:3.4-slim
+  image: python:3.5-slim
   script:
     - pip install numpy==1.9.0 scipy==0.14.0 matplotlib==2.0.0
     - pip install --no-deps .
