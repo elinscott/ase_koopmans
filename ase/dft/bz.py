@@ -18,12 +18,11 @@ def bz_vertices(icell):
 
 def bz_plot(cell, vectors=False, paths=None, points=None,
             elev=None, scale=1, interactive=False,
-            pointstyle=None, fig=None, ax=None):
+            pointstyle=None, ax=None):
     import matplotlib.pyplot as plt
 
     if ax is None:
-        if fig is None:
-            fig = plt.gcf()
+        fig = plt.gcf()
     dimensions = np.sum(cell.pbc)
     assert dimensions > 0, 'No BZ for 0D!'
 
@@ -55,25 +54,17 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
         # 2d in xy
         assert all(abs(cell[2][0:2]) < 1e-6) and all(abs(cell.T[2]
                                                          [0:2]) < 1e-6)
-        # We can add a third dimension for practical purposes which makes
-        # the code work much like the 3D case. Then we can just do a normal
-        # Voronoi diagram.
+        ax = plt.gca()
         cell = cell.copy()
-        cell[2, 2] += 10000.
-        ax = plt.axes()
     else:
         # 1d in x
         assert (all(abs(cell[2][0:2]) < 1e-6) and
                 all(abs(cell.T[2][0:2]) < 1e-6) and
                 abs(cell[0][1]) < 1e-6 and abs(cell[1][0]) < 1e-6)
-        ax = plt.axes()
-        # Similar to 2D we can add two extra dimensions
+        ax = plt.gca()
         cell = cell.copy()
-        cell[1, 1] += 10000.
-        cell[2, 2] += 10000.
-        ax = plt.axes()
 
-    icell = np.linalg.inv(cell).T
+    icell = cell.reciprocal()
     kpoints = points
     bz1 = bz_vertices(icell)
 
