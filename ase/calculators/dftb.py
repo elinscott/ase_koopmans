@@ -233,6 +233,7 @@ class Dftb(FileIOCalculator):
                 if not os.path.isfile(self.directory + os.sep + 'charges.dat'):
                     print('charges.dat not found, switching off guess')
                     value = 'NO'
+                outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
             else:
                 outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
             if self.pcpot is not None and ('DFTB' in str(value)):
