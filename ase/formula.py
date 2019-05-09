@@ -84,18 +84,18 @@ class Formula:
         Examples
         --------
         >>> Formula('CO2').stoichiometry()
-        (Formula('A2B'), Formula('O2C'), 1)
+        (Formula('AB2'), Formula('CO2'), 1)
         >>> Formula('(H2O)4').stoichiometry()
-        (Formula('A2B'), Formula('H2O'), 4)
+        (Formula('AB2'), Formula('OH2'), 4)
         """
         count1, N = self._reduce()
         c = ord('A')
         count2 = ordereddict()
         count3 = ordereddict()
-        for n, symb in sorted((-n, symb)
+        for n, symb in sorted((n, symb)
                               for symb, n in count1.items()):
-            count2[chr(c)] = -n
-            count3[symb] = -n
+            count2[chr(c)] = n
+            count3[symb] = n
             c += 1
         return self.from_dict(count2), self.from_dict(count3), N
 
