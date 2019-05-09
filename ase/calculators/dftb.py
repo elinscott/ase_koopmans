@@ -86,8 +86,6 @@ class Dftb(FileIOCalculator):
         else:
             self.slako_dir = './'
 
-        # to run Dftb as energy and force calculator use
-        # Driver_MaxSteps=0,
         if run_manyDftb_steps:
             # minimisation of molecular dynamics is run by native DFTB+
             self.default_parameters = dict(
@@ -96,7 +94,9 @@ class Dftb(FileIOCalculator):
                 Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,
                 Hamiltonian_SlaterKosterFiles_Separator='"-"',
                 Hamiltonian_SlaterKosterFiles_Suffix='".skf"',
-                Hamiltonian_MaxAngularMomentum_='')
+                Hamiltonian_MaxAngularMomentum_='',
+                Options_='',
+                Options_WriteResultsTag='YES')
         else:
             # using ase to get forces and energy only
             # (single point calculation)
@@ -106,7 +106,9 @@ class Dftb(FileIOCalculator):
                 Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,
                 Hamiltonian_SlaterKosterFiles_Separator='"-"',
                 Hamiltonian_SlaterKosterFiles_Suffix='".skf"',
-                Hamiltonian_MaxAngularMomentum_='')
+                Hamiltonian_MaxAngularMomentum_='',
+                Options_='',
+                Options_WriteResultsTag='YES')
 
         self.pcpot = None
         self.lines = None
@@ -223,7 +225,15 @@ class Dftb(FileIOCalculator):
                     range(previous_depth - current_depth)):
                 outfile.write(3 * (1 + my_backsclash) * myspace + '} \n')
             outfile.write(3 * current_depth * myspace)
-            if key.endswith('_'):
+            if key.endswith('_') and len(value) > 0:
+                outfile.write(key.rstrip('_').rsplit('_')[-1] +
+                              ' = ' + str(value) + '{ \n')
+            elif (key.endswith('_') and (len(value) == 0) 
+                  and current_depth == 0):  # E.g. 'Options {'
+                outfile.write(key.rstrip('_').rsplit('_')[-1] +
+                              ' ' + str(value) + '{ \n')
+            elif (key.endswith('_') and (len(value) == 0) 
+                  and current_depth > 0):  # E.g. 'Hamiltonian_Max... = {'
                 outfile.write(key.rstrip('_').rsplit('_')[-1] +
                               ' = ' + str(value) + '{ \n')
             elif key.count('_empty') == 1:
@@ -252,17 +262,9 @@ class Dftb(FileIOCalculator):
         current_depth = key.rstrip('_').count('_')
         for my_backsclash in reversed(range(current_depth)):
             outfile.write(3 * my_backsclash * myspace + '} \n')
-        # output to 'results.tag' file (which has proper formatting)
-        outfile.write('Options { \n')
-        outfile.write('   WriteResultsTag = Yes  \n')
-        # and also initial charge guesses for quicker MD and Opts 
-        outfile.write('   ReadChargesAsText = Yes  \n')
-        outfile.write('   WriteChargesAsText = Yes  \n')
-        outfile.write('} \n')
         outfile.write('ParserOptions { \n')
         outfile.write('   IgnoreUnprocessedNodes = Yes  \n')
         outfile.write('} \n')
-        #if self.pcpot is not None:  # Driver is always 1 step geom opt anyway
         if self.do_forces:
             outfile.write('Analysis { \n')
             outfile.write('   CalculateForces = Yes  \n')
