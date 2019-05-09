@@ -114,11 +114,11 @@ of atomic indices, each triple representing a specific triatomic molecule.
 
 .. autoclass:: FixLinearTriatomic
 
-The example below shows how to fix the geometry of two carbon dioxide 
+The example below shows how to fix the geometry of two carbon dioxide
 molecules::
 
     >>> from ase.build import molecule
-    >>> from ase.constraints import FixLinearTriatomic 
+    >>> from ase.constraints import FixLinearTriatomic
     >>> atoms = molecule('CO2')
     >>> dimer = atoms + atoms.copy()
     >>> c = FixLinearTriatomic(pairs=[(1, 0, 2), (4, 3, 5)])

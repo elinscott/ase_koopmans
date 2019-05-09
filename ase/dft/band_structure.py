@@ -15,7 +15,7 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     The difference from get_band_structure() is that the latter
     expects the calculation to already have been done."""
     if path is None:
-        lat, op = atoms.cell.bravais()
+        lat, op = atoms.cell.get_bravais_lattice()
         path = lat.bandpath()  # Default bandpath
 
     cellpar1 = path.cell.cellpar()
@@ -54,12 +54,12 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     if bs_kwargs is None:
         bs_kwargs = {}
 
-    calc.set(kpts=path.scaled_kpts, **bs_kwargs)
+    calc.set(kpts=path, **bs_kwargs)
     calc.results.clear()  # XXX get rid of me
     atoms.get_potential_energy()
 
     ibzkpts = calc.get_ibz_k_points()
-    kpts_err = np.abs(path.scaled_kpts - ibzkpts).max()
+    kpts_err = np.abs(path.kpts - ibzkpts).max()
     if kpts_err > kpts_tol:
         raise RuntimeError('Kpoints of calculator differ from those '
                            'of the band path we just used; '
@@ -96,7 +96,7 @@ def get_band_structure(atoms=None, calc=None, _bandpath=None, _reference=None):
         special_points = cellinfo.special_points
         _, _, labels = labels_from_kpts(kpts, cell=atoms.cell,
                                         special_points=special_points)
-        _bandpath = BandPath(labelseq=labels, cell=atoms.cell, scaled_kpts=kpts,
+        _bandpath = BandPath(labelseq=labels, cell=atoms.cell, kpts=kpts,
                              special_points=special_points)
 
     if _reference is None:
@@ -272,7 +272,7 @@ class BandStructure:
                     reference=self.reference)
 
     def get_labels(self):
-        return labels_from_kpts(self.path.scaled_kpts, self.path.cell,
+        return labels_from_kpts(self.path.kpts, self.path.cell,
                                 special_points=self.path.special_points)
 
     def plot(self, *args, **kwargs):

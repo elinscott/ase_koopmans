@@ -9,6 +9,9 @@ Git master branch
 
 :git:`master <>`.
 
+* Added ``ase info --calculators`` option which shows a list of
+  calculators and whether they appear to be installed.
+
 * Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 
 * Support for reading and writing DL_POLY format.

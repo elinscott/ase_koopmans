@@ -16,7 +16,7 @@ for lat in all_variants():
 
     print('cell', lat.tocell())
     cell = lat.tocell()
-    lat1, _ = cell.bravais()
+    lat1, _ = cell.get_bravais_lattice()
     assert lat1.name == lat.name
     assert lat1.variant.name == lat.variant.name
     assert np.abs(cell - lat1.tocell()).max() < 1e-13

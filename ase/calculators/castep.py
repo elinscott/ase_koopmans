@@ -788,6 +788,10 @@ End CASTEP Interface Documentation
                     no_dump_cycles = float(line.split()[-3])
                     self.param.num_dump_cycles = no_dump_cycles
                 elif 'optimization strategy' in line:
+                    lspl = line.split(":")
+                    if lspl[0].strip() != 'optimization strategy':
+                        # This can happen in iprint: 3 calculations
+                        continue
                     if 'memory' in line:
                         self.param.opt_strategy = 'Memory'
                     if 'speed' in line:
@@ -796,7 +800,11 @@ End CASTEP Interface Documentation
                     calc_limit = float(line.split()[-2])
                     self.param.run_time = calc_limit
                 elif 'type of calculation' in line:
-                    calc_type = line.split(":")[-1]
+                    lspl = line.split(":")
+                    if lspl[0].strip() != 'type of calculation':
+                        # This can happen in iprint: 3 calculations
+                        continue
+                    calc_type = lspl[-1]
                     calc_type = re.sub(r'\s+', ' ', calc_type)
                     calc_type = calc_type.strip()
                     if calc_type != 'single point energy':
@@ -1272,7 +1280,7 @@ End CASTEP Interface Documentation
             if 'Symmetry and Constraints' in line:
                 break
 
-        if self.param.iprint.value is None or self.param.iprint < 2:
+        if self.param.iprint.value is None or int(self.param.iprint.value) < 2:
             self._interface_warnings.append(
                 'Warning: No symmetry'
                 'operations could be read from %s (iprint < 2).' % f.name)
