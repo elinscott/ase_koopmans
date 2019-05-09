@@ -1244,7 +1244,7 @@ class OBL(BravaisLattice):
 @bravaisclass('hexagonal 2d', 'a',
               [['HEX2D', 'GMK', 'GMKG',
                 get_subset_points('GMK',
-                                  ibz_points['hexagonal'])]],
+                                  sc_special_points['hexagonal'])]],
               ndim=2)
 class HEX2D(BravaisLattice):
     def __init__(self, a, **kwargs):
@@ -1260,7 +1260,7 @@ class HEX2D(BravaisLattice):
 @bravaisclass('rectangular (orthorhombic)', 'ab',
               [['RECT', 'GXSY', 'GXSYGS',
                 get_subset_points('GXSY',
-                                  ibz_points['orthorhombic'])]],
+                                  sc_special_points['orthorhombic'])]],
               ndim=2)
 class RECT(BravaisLattice):
     def __init__(self, a, b, **kwargs):
@@ -1301,7 +1301,7 @@ class CRECT(BravaisLattice):
 
 @bravaisclass('square (tetragonal)', ('a'),
               [['SQR', 'GMX', 'MGXM',
-                get_subset_points('GMX', ibz_points['tetragonal'])]],
+                get_subset_points('GMX', sc_special_points['tetragonal'])]],
               ndim=2)
 class SQR(BravaisLattice):
     def __init__(self, a, **kwargs):
