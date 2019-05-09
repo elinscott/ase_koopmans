@@ -5,10 +5,14 @@ import numpy as np
 def bz_vertices(icell, dim=3):
     from scipy.spatial import Voronoi
     icell = icell.copy()
+    if dim < 3:
+        icell[2, 2] = 1e-3
+    if dim < 2:
+        icell[1, 1] = 1e-3
 
     I = (np.indices((3, 3, 3)) - 1).reshape((3, 27))
     G = np.dot(icell.T, I).T
-    vor = Voronoi(G[:, :dim])
+    vor = Voronoi(G)
     bz1 = []
     for vertices, points in zip(vor.ridge_vertices, vor.ridge_points):
         if -1 not in vertices and 13 in points:
