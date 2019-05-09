@@ -99,9 +99,8 @@ parameters = {'pair_style': 'eam/alloy',
 files = ['NiAlH_jea.eam.alloy']
 
 Ni = bulk('Ni', cubic=True)
-Ni_supercell = Ni
 H = Atom('H', position=Ni.cell.diagonal()/2)
-NiH = Ni_supercell + H
+NiH = Ni + H
 
 lammps = LAMMPS(parameters=parameters, files=files)
 
