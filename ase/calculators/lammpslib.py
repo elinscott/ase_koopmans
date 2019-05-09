@@ -189,7 +189,7 @@ potentials)
     from ase.calculators.lammpslib import LAMMPSlib
 
     cmds = ["pair_style eam/alloy",
-            "pair_coeff * * NiAlH_jea.eam.alloy H Ni"]
+            "pair_coeff * * NiAlH_jea.eam.alloy Ni H"]
 
     Ni = bulk('Ni', cubic=True)
     H = Atom('H', position=Ni.cell.diagonal()/2)
