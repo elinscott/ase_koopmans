@@ -385,6 +385,7 @@ class SQLite3Database(Database, object):
     def _update(self, id, key_value_pairs, data=None):
         """Update key_value_pairs and data for a single row """
         encode = self.encode
+        ext_tab = key_value_pairs.pop('external_tables', {})
 
         con = self.connection or self._connect()
         self._initialize(con)
@@ -417,6 +418,20 @@ class SQLite3Database(Database, object):
                         number_key_values)
         cur.executemany('INSERT INTO keys VALUES (?, ?)',
                         [(key, id) for key in key_value_pairs])
+
+        for tabname, values in ext_tab.items():
+            values['id'] = id
+            try:
+                dtype = self._guess_type(values)
+                self._create_table_if_not_exists(tabname, dtype, db_con=con)
+                self._insert_in_external_table(
+                    cur, name=tabname, entries=values)
+            except ValueError as exc:
+                # Close the connection without committing
+                if self.connection is None:
+                    con.close()
+                # Raise the error again
+                raise ValueError(exc)
 
         if self.connection is None:
             con.commit()
