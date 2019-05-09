@@ -89,24 +89,25 @@ potentials)
 
 ::
 
-from ase import Atom, Atoms
-from ase.build import bulk
-from ase.calculators.lammpsrun import LAMMPS
+    from ase import Atom, Atoms
+    from ase.build import bulk
+    from ase.calculators.lammpsrun import LAMMPS
 
-parameters = {'pair_style': 'eam/alloy',
-              'pair_coeff': ['* * NiAlH_jea.eam.alloy H Ni']}
+    parameters = {'pair_style': 'eam/alloy',
+                  'pair_coeff': ['* * NiAlH_jea.eam.alloy H Ni']}
 
-files = ['NiAlH_jea.eam.alloy']
+    files = ['NiAlH_jea.eam.alloy']
 
-Ni = bulk('Ni', cubic=True)
-H = Atom('H', position=Ni.cell.diagonal()/2)
-NiH = Ni + H
+    Ni = bulk('Ni', cubic=True)
+    H = Atom('H', position=Ni.cell.diagonal()/2)
+    NiH = Ni + H
 
-lammps = LAMMPS(parameters=parameters, files=files)
+    lammps = LAMMPS(parameters=parameters, files=files)
 
-NiH.set_calculator(lammps)
-print("Energy ", NiH.get_potential_energy())
+    NiH.set_calculator(lammps)
+    print("Energy ", NiH.get_potential_energy())
 
+(Remember you also need to set :envar: `$LAMMPS_COMMAND`)
 
     """
 
