@@ -9,17 +9,8 @@ import warnings
 from importlib import import_module
 from math import sin, cos, radians, atan2, degrees
 from contextlib import contextmanager
-
-try:
-    from math import gcd
-except ImportError:
-    from fractions import gcd
-
-try:
-    from pathlib import PurePath
-except ImportError:
-    class PurePath:
-        pass
+from math import gcd
+from pathlib import PurePath, Path
 
 import numpy as np
 
@@ -60,8 +51,10 @@ def seterr(**kwargs):
     See np.seterr() for more details.
     """
     old = np.seterr(**kwargs)
-    yield
-    np.seterr(**old)
+    try:
+        yield
+    finally:
+        np.seterr(**old)
 
 
 def plural(n, word):
@@ -376,6 +369,20 @@ def hsv(array, s=.9, v=.9):
 def longsum(x):
     """128-bit floating point sum."""
     return float(np.asarray(x, dtype=np.longdouble).sum())
+
+
+@contextmanager
+def workdir(path, mkdir=False):
+    path = Path(path)
+    if mkdir:
+        path.mkdir(parents=True, exist_ok=True)
+
+    olddir = os.getcwd()
+    os.chdir(path.name)
+    try:
+        yield  # Yield the Path or dirname maybe?
+    finally:
+        os.chdir(olddir)
 
 
 def iofunction(func, mode):
