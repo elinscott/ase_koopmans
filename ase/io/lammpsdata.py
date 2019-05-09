@@ -3,9 +3,8 @@ import numpy as np
 
 from ase.atoms import Atoms
 from ase.parallel import paropen
-from ase.calculators.lammpslib import unit_convert
 from ase.utils import basestring
-from ase.calculators.lammps import Prism
+from ase.calculators.lammps import Prism, convert
 
 
 def read_lammps_data(fileobj, Z_of_type=None, style="full",
@@ -320,12 +319,12 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
         if masses is not None:
             masses[ind] = mass_in[type]
     # convert units
-    positions *= unit_convert("distance", units)
-    cell *= unit_convert("distance", units)
+    positions = convert(positions, "distance", units, "ASE")
+    cell = convert(cell, "distance", units, "ASE")
     if masses is not None:
-        masses *= unit_convert("mass", units)
+        masses = convert(masses, "mass", units, "ASE")
     if velocities is not None:
-        velocities *= unit_convert("velocity", units)
+        velocities = convert(velocities, "velocity", units, "ASE")
 
     # create ase.Atoms
     at = Atoms(
@@ -395,10 +394,6 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                       prismobj=None, velocities=False, units="metal",
                       atom_style='atomic'):
     """Write atomic structure data to a LAMMPS data_ file."""
-    # !TODO: Implement unit conversion using unitconvert module
-    if units != "metal":
-        raise NotImplementedError
-
     if isinstance(fileobj, basestring):
         f = paropen(fileobj, "wb")
         close_file = True
@@ -437,6 +432,14 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
         p = prismobj
     xhi, yhi, zhi, xy, xz, yz = p.get_lammps_prism()
 
+    # Convert cell parameters from ASE units to LAMMPS units
+    xhi = convert(xhi, "distance", "ASE", units)
+    yhi = convert(yhi, "distance", "ASE", units)
+    zhi = convert(zhi, "distance", "ASE", units)
+    xy = convert(xy, "distance", "ASE", units)
+    xz = convert(xz, "distance", "ASE", units)
+    yz = convert(yz, "distance", "ASE", units)
+
     f.write("0.0 {0:23.17g}  xlo xhi\n".format(xhi).encode("utf-8"))
     f.write("0.0 {0:23.17g}  ylo yhi\n".format(yhi).encode("utf-8"))
     f.write("0.0 {0:23.17g}  zlo zhi\n".format(zhi).encode("utf-8"))
@@ -454,6 +457,8 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
 
     if atom_style == 'atomic':
         for i, r in enumerate(pos):
+            # Convert position from ASE units to LAMMPS units
+            r = convert(r, "distance", "ASE", units)
             s = species.index(symbols[i]) + 1
             f.write(
                 "{0:>6} {1:>3} {2:23.17g} {3:23.17g} {4:23.17g}\n".format(
@@ -463,6 +468,9 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
     elif atom_style == 'charge':
         charges = atoms.get_initial_charges()
         for i, (q, r) in enumerate(zip(charges, pos)):
+            # Convert position and charge from ASE units to LAMMPS units
+            r = convert(r, "distance", "ASE", units)
+            q = convert(r, "charge", "ASE", units)
             s = species.index(symbols[i]) + 1
             f.write(
                 "{0:>6} {1:>3} {2:>5} {3:23.17g} {4:23.17g} {5:23.17g}\n".format(
@@ -473,6 +481,9 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
         charges = atoms.get_initial_charges()
         molecule = 1 # Assign all atoms to a single molecule
         for i, (q, r) in enumerate(zip(charges, pos)):
+            # Convert position and charge from ASE units to LAMMPS units
+            r = convert(r, "distance", "ASE", units)
+            q = convert(r, "charge", "ASE", units)
             s = species.index(symbols[i]) + 1
             f.write(
                 "{0:>6} {1>3} {2:>3} {3:>5} {4:23.17g} {5:23.17g} {6:23.17g}\n".format(
@@ -486,6 +497,8 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
         f.write("\n\nVelocities \n\n".encode("utf-8"))
         vel = p.vector_to_lammps(atoms.get_velocities())
         for i, v in enumerate(vel):
+            # Convert velocity from ASE units to LAMMPS units
+            v = convert(v, "velocity", "ASE", units)
             f.write(
                 "{0:>6} {1:23.17g} {2:23.17g} {3:23.17g}\n".format(
                     *(i + 1,) + tuple(v)

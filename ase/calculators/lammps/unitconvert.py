@@ -1,5 +1,5 @@
 """LAMMPS has the options to use several internal units (which can be different
-from hte ones used in ase).  Mapping is therefore necessary.
+from the ones used in ase).  Mapping is therefore necessary.
 
 See: https://lammps.sandia.gov/doc/units.html
  """
@@ -178,11 +178,11 @@ def convert(value, quantity, fromunits, tounits):
     """Convert units between LAMMPS and ASE.
 
     :param value: converted value
-    :param quantity: mass, distance, time, energy, veloctiy, force, torque,
+    :param quantity: mass, distance, time, energy, velocity, force, torque,
     temperature, pressure, dynamic_viscosity, charge, dipole,
     electric_field or density
-    :param fromunits: ase, metal, real or other (see lammps docs).
-    :param tounits: ase, metal, real or other
+    :param fromunits: ASE, metal, real or other (see lammps docs).
+    :param tounits: ASE, metal, real or other
     :returns: converted value
     :rtype:
     """

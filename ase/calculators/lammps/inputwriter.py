@@ -20,10 +20,6 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
     :type prismobj: Prism
 
     """
-    # !TODO: Implement unit conversion using unitconvert module
-    if parameters.units != "metal":
-        raise NotImplementedError
-
     if parameters["verbose"]:
         fileobj.write("## Original ase cell\n".encode("utf-8"))
         fileobj.write(
@@ -36,7 +32,16 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
         )
 
     fileobj.write("lattice sc 1.0\n".encode("utf-8"))
-    xhi, yhi, zhi, txy, txz, tyz = prismobj.get_lammps_prism()
+    xhi, yhi, zhi, xy, xz, yz = prismobj.get_lammps_prism()
+
+    # Convert cell parameters from ASE units to LAMMPS units
+    xhi = convert(xhi, "distance", "ASE", parameters.units)
+    yhi = convert(yhi, "distance", "ASE", parameters.units)
+    zhi = convert(zhi, "distance", "ASE", parameters.units)
+    xy = convert(xy, "distance", "ASE", parameters.units)
+    xz = convert(xz, "distance", "ASE", parameters.units)
+    yz = convert(yz, "distance", "ASE", parameters.units)
+
     if parameters["always_triclinic"] or prismobj.is_skewed():
         fileobj.write(
             "region asecell prism 0.0 {0} 0.0 {1} 0.0 {2} ".format(
@@ -44,7 +49,7 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
             ).encode("utf-8")
         )
         fileobj.write(
-            "{0} {1} {2} side in units box\n".format(txy, txz, tyz).encode(
+            "{0} {1} {2} side in units box\n".format(xy, xz, yz).encode(
                 "utf-8"
             )
         )
@@ -68,6 +73,8 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
         "create_box {0} asecell\n" "".format(len(species)).encode("utf-8")
     )
     for sym, pos in zip(symbols, atoms.get_positions()):
+        # Convert position from ASE units to LAMMPS units
+        pos = convert(pos, "distance", "ASE", parameters.units)
         if parameters["verbose"]:
             fileobj.write(
                 "# atom pos in ase cell: {0:.16} {1:.16} {2:.16}\n"
