@@ -189,7 +189,7 @@ potentials)
     from ase.calculators.lammpslib import LAMMPSlib
 
     cmds = ["pair_style eam/alloy",
-            "pair_coeff * * NiAlH_jea.eam.alloy Al H"]
+            "pair_coeff * * NiAlH_jea.eam.alloy H Ni"]
 
     Ni = bulk('Ni', cubic=True)
     H = Atom('H', position=Ni.cell.diagonal()/2)
@@ -217,7 +217,7 @@ interface are::
     lmp.extract_global(...) # extracts a global variable
     lmp.close() # close the lammps object
 
-For a single atom model the following lammps file commands would be run
+For a single Ni atom model the following lammps file commands would be run
 by invoking the get_potential_energy() method::
 
     units metal
@@ -231,10 +231,13 @@ by invoking the get_potential_energy() method::
 
     ## user lmpcmds get executed here
     pair_style eam/alloy
-    pair_coeff * * NiAlH_jea.eam.alloy Al
+    pair_coeff * * NiAlH_jea.eam.alloy Ni
     ## end of user lmmpcmds
 
     run 0
+    
+where xhi, yhi and zhi are the lattice vector lengths and xy, 
+xz and yz are the tilt of the lattice vectors, all to be edited.
 
 
 **Notes**
