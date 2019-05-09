@@ -90,7 +90,7 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                     ls = ':'
                 else:
                     ls = '-'
-                    ax.plot(x, y, z, c='k', ls=ls)
+                ax.plot(x, y, z, c='k', ls=ls)
             elif dimensions == 2:
                 ax.plot(x, y, c='k', ls='-')
             maxp = max(maxp, points.max())
@@ -137,7 +137,7 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                 ax.plot(x, y, z, c='r', ls='-', marker='.')
             elif dimensions in [1, 2]:
                 ax.plot(x, y, c='r', ls='-')
-                
+
             for name, point in zip(names, points):
                 x, y, z = point
                 if name == 'G':
