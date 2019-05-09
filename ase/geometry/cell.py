@@ -96,9 +96,10 @@ class Cell:
                                    _niggli_reduce=_niggli_reduce)
 
     def bandpath(self, path=None, npoints=None, density=None, eps=2e-4):
-        bravais, _ = self.get_bravais_lattice(eps=eps)
-        # XXX We need to make sure that the rotation is correct.
-        return bravais.bandpath(path=path, npoints=npoints, density=density)
+        bravais = self.get_bravais_lattice(eps=eps)
+        transformation = bravais.get_transformation(self.array)
+        return bravais.bandpath(path=path, npoints=npoints, density=density,
+                                transformation=transformation)
 
     def complete(self):
         """Convert missing cell vectors into orthogonal unit vectors."""
