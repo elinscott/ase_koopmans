@@ -473,7 +473,8 @@ by invoking the get_potential_energy() method::
                 self.lmp.command("pair_coeff * * 1 1")
 
                 for cmd in self.parameters.lmpcmds:
-                    if ("pair_style" in cmd) or ("pair_coeff" in cmd):
+                    if (("pair_style" in cmd) or ("pair_coeff" in cmd) or
+                            ("qeq/reax" in cmd)):
                         self.lmp.command(cmd)
 
             cmd = "create_atoms 1 random {} 1 NULL".format(n_diff)
