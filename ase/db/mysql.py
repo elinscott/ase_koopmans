@@ -195,7 +195,14 @@ class MySQLDatabase(SQLite3Database):
         cur.execute("SELECT AUTO_INCREMENT FROM information_schema.TABLES "
                     "WHERE TABLE_SCHEMA = '{}' AND TABLE_NAME = 'systems'"
                     "".format(self.db_name))
-        return cur.fetchone()[0] - 1
+        last_id = cur.fetchone()[0] - 1
+
+        # Try to get the ID by looking at the last row in the 
+        # systems table
+        cur.execute('SELECT id FROM systems')
+        last_id_brute = cur.fetchall()[-1][0]
+        assert last_id_brute == last_id
+        return last_id
 
     def create_select_statement(self, keys, cmps,
                                 sort=None, order=None, sort_table=None,
