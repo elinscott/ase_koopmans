@@ -192,17 +192,21 @@ class MySQLDatabase(SQLite3Database):
         return super(MySQLDatabase, self).blob(array).tobytes()
 
     def get_last_id(self, cur):
-        cur.execute("SELECT AUTO_INCREMENT FROM information_schema.TABLES "
-                    "WHERE TABLE_SCHEMA = '{}' AND TABLE_NAME = 'systems'"
-                    "".format(self.db_name))
-        last_id = cur.fetchone()[0] - 1
+        # cur.execute("SELECT AUTO_INCREMENT FROM information_schema.TABLES "
+        #             "WHERE TABLE_SCHEMA = '{}' AND TABLE_NAME = 'systems'"
+        #             "".format(self.db_name))
+        # last_id = cur.fetchone()[0] - 1
 
         # Try to get the ID by looking at the last row in the 
         # systems table
-        cur.execute('SELECT id FROM systems')
-        last_id_brute = cur.fetchall()[-1][0]
-        assert last_id_brute == last_id
-        return last_id
+        #cur.execute('SELECT id FROM systems')
+        #last_id_brute = cur.fetchall()[-1][0]
+        cur.execute('select max(id) as ID from systems')
+        last_id_brute = cur.fetchone()[0]
+        return last_id_brute
+        # print(last_id_brute, last_id)
+        # assert last_id_brute == last_id
+        # return last_id
 
     def create_select_statement(self, keys, cmps,
                                 sort=None, order=None, sort_table=None,
