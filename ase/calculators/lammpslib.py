@@ -252,6 +252,8 @@ by invoking the get_potential_energy() method::
     def __del__(self):
         if self.started:
             self.lmp.close()
+            self.started = False
+            self.lmp = None
 
     def set_cell(self, atoms, change=False):
         lammps_cell, self.coord_transform = convert_cell(atoms.get_cell())
