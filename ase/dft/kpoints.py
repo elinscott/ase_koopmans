@@ -153,7 +153,7 @@ class BandPath:
     def __repr__(self):
         return ('{}(path={}, special_points={}, kpts=[{} kpoints])'
                 .format(self.__class__.__name__,
-                        self.labelseq,
+                        repr(self.labelseq),
                         ''.join(sorted(self.special_points)),
                         len(self.kpts)))
 
