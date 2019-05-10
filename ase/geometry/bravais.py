@@ -803,26 +803,22 @@ class TRI(BravaisLattice):
 
 from ase.utils import experimental
 @experimental
-def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
-    # XXX we need to figure out a way to reduce the cell to standard
-    # forms, Niggli or otherwise.  Else we will not always get the
-    # right type.
-
-    if not uc.pbc[2]:
-        return get_2d_bravais_lattice(uc, eps, _niggli_reduce)
+def get_bravais_lattice(cell, eps=2e-4, _niggli_reduce=False):
+    if not cell.pbc[2]:
+        return get_2d_bravais_lattice(cell, eps, _niggli_reduce)
 
     # orig_uc = uc
     if _niggli_reduce:
-        uc, niggli_op = uc.niggli_reduce()
+        cell, niggli_op = cell.niggli_reduce()
 
-    #uc2 = uc.niggli_reduce()
-    #if 0: #np.abs(uc2 - uc).max() > eps:
+    #cell2 = cell.niggli_reduce()
+    #if 0: #np.abs(cell2 - cell).max() > eps:
     #    raise ValueError('Can only get recognize Bravais lattice of '
     #                     'Niggli-reduced cell.')
-    #if np.linalg.det(uc.array) < 0:
+    #if np.linalg.det(cell.array) < 0:
     #    raise ValueError('Cell should be right-handed')
 
-    cellpar = uc.cellpar()
+    cellpar = cell.cellpar()
     ABC = cellpar[:3]
     angles = cellpar[3:]
     A, B, C, alpha, beta, gamma = cellpar
@@ -863,10 +859,9 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
             #    d['cycle'] = axis
             return f, d
 
-    _c = uc.array
-    BC_CA_AB = np.array([np.vdot(_c[1], _c[2]),
-                         np.vdot(_c[2], _c[0]),
-                         np.vdot(_c[0], _c[1])])
+    BC_CA_AB = np.array([np.vdot(cell[1], cell[2]),
+                         np.vdot(cell[2], cell[0]),
+                         np.vdot(cell[0], cell[1])])
 
     _, _, unequal_scalarprod_dir = categorize_differences(BC_CA_AB)
 
@@ -954,7 +949,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
         if all(BC_CA_AB > 0):
             lat = ORCF(*(2 * np.sqrt(BC_CA_AB[permutation])))
             par1 = lat.cellpar()
-            par2 = uc.new(uc[permutation]).cellpar()
+            par2 = cell.new(cell[permutation]).cellpar()
             if allclose(par1, par2):
                 return lat  # XXX permutation
 
@@ -966,7 +961,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
             dims = np.sqrt(dims2)
             permutation = np.argsort(dims)
             lat = ORCI(*dims[permutation])
-            assert allclose(lat.tocell(), uc[permutation])
+            assert allclose(lat.tocell(), cell[permutation])
             return lat  # perm
 
     if all_lengths_equal:
