@@ -1,6 +1,6 @@
 services:
   - postgres:latest
-  - mysql:latest
+  - mysql:14
 
 variables:
   POSTGRES_DB: testase
