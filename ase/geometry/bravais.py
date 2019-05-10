@@ -933,6 +933,12 @@ def get_3d_bravais_lattice(cell, eps=2e-4):
     A, B, C, alpha, beta, gamma = cellpar
 
     def categorize_differences(numbers):
+        """Compare three numbers.
+
+        Returns three values characterizing them:
+         1) all three are equal
+         2) all three are different
+         3) which one of them, if any, differs from the two others"""
         a, b, c = numbers
         eq = [abs(b - c) < eps, abs(c - a) < eps, abs(a - b) < eps]
         neq = sum(eq)
