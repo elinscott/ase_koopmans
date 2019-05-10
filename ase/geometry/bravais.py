@@ -803,20 +803,10 @@ class TRI(BravaisLattice):
 
 from ase.utils import experimental
 @experimental
-def get_bravais_lattice(cell, eps=2e-4, _niggli_reduce=False):
+def get_bravais_lattice(cell, eps=2e-4):
+    cell = Cell.ascell(cell)
     if not cell.pbc[2]:
-        return get_2d_bravais_lattice(cell, eps, _niggli_reduce)
-
-    # orig_uc = uc
-    if _niggli_reduce:
-        cell, niggli_op = cell.niggli_reduce()
-
-    #cell2 = cell.niggli_reduce()
-    #if 0: #np.abs(cell2 - cell).max() > eps:
-    #    raise ValueError('Can only get recognize Bravais lattice of '
-    #                     'Niggli-reduced cell.')
-    #if np.linalg.det(cell.array) < 0:
-    #    raise ValueError('Cell should be right-handed')
+        return get_2d_bravais_lattice(cell, eps)
 
     cellpar = cell.cellpar()
     ABC = cellpar[:3]
@@ -1043,7 +1033,7 @@ def get_bravais_lattice(cell, eps=2e-4, _niggli_reduce=False):
     raise RuntimeError('Cannot recognize cell at all somehow!')
 
 
-def get_2d_bravais_lattice(origcell, eps=2e-4, _niggli_reduce=True):
+def get_2d_bravais_lattice(origcell, eps=2e-4):
     pbc = origcell.pbc
     # Start with op = I
     ops = [np.eye(3)]

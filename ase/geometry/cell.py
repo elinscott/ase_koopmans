@@ -56,6 +56,12 @@ class Cell:
         return self.array.shape
 
     @classmethod
+    def ascell(cls, cell):
+        if isinstance(cell, cls):
+            return cell
+        return cls.new(cell)
+
+    @classmethod
     def new(cls, cell=None, pbc=None):
         if pbc is None:
             pbc = getattr(cell, 'pbc', None)
@@ -88,12 +94,11 @@ class Cell:
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
         return Cell(cell, pbc=pbc)
 
-    def get_bravais_lattice(self, eps=2e-4, _niggli_reduce=False, _warn=True):
+    def get_bravais_lattice(self, eps=2e-4):
         # We want to always reduce (so things are as robust as possible)
         # ...or not.  It is not very reliable somehow.
         from ase.geometry.bravais import get_bravais_lattice
-        return get_bravais_lattice(self, eps=eps,
-                                   _niggli_reduce=_niggli_reduce)
+        return get_bravais_lattice(self, eps=eps)
 
     def bandpath(self, path=None, npoints=None, density=None, eps=2e-4):
         bravais = self.get_bravais_lattice(eps=eps)
