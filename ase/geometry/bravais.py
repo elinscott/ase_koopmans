@@ -805,9 +805,18 @@ from ase.utils import experimental
 @experimental
 def get_bravais_lattice(cell, eps=2e-4):
     cell = Cell.ascell(cell)
-    if not cell.pbc[2]:
-        return get_2d_bravais_lattice(cell, eps)
 
+    if cell.pbc.all():
+        return get_3d_bravais_lattice(cell, eps)
+    elif cell.pbc[:2].all():
+        return get_2d_bravais_lattice(cell, eps)
+    else:
+        raise ValueError('Cell must be periodic either along two first '
+                         'axes or along all three.  Got pbc={}'
+                         .format(cell.pbc))
+
+
+def get_3d_bravais_lattice(cell, eps=2e-4):
     cellpar = cell.cellpar()
     ABC = cellpar[:3]
     angles = cellpar[3:]
