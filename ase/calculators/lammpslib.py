@@ -8,11 +8,10 @@ import operator
 import numpy as np
 from numpy.linalg import norm
 
-import ase.units
 from ase.calculators.calculator import Calculator
 from ase.data import chemical_symbols, atomic_masses
 from ase.utils import basestring
-
+from ase.calculators.lammps import convert
 
 # TODO
 # 1. should we make a new lammps object each time ?
@@ -38,7 +37,7 @@ def is_upper_triangular(arr, atol=1e-8):
 
 def convert_cell(ase_cell):
     """
-    Convert a parallel piped (forming right hand basis)
+    Convert a parallelepiped (forming right hand basis)
     to lower triangular matrix LAMMPS can accept. This
     function transposes cell matrix so the bases are column vectors
     """
@@ -68,39 +67,6 @@ def convert_cell(ase_cell):
         return tri_mat, coord_transform
     else:
         return cell, None
-
-
-# !TODO: Implement unit conversion using unitconvert module
-lammps_real = {
-    "mass": 0.001 * ase.units.kg / ase.units.mol,
-    "distance": ase.units.Angstrom,
-    "time": ase.units.fs,
-    "energy": ase.units.kcal/ase.units.mol,
-    "velocity": ase.units.Angstrom / ase.units.fs,
-    "force": ase.units.kcal/ase.units.mol/ase.units.Angstrom,
-    "pressure": 101325 * ase.units.Pascal
-}
-
-lammps_metal = {
-    "mass": 0.001 * ase.units.kg / ase.units.mol,
-    "distance": ase.units.Angstrom,
-    "time": 1e-12 * ase.units.second,
-    "energy": ase.units.eV,
-    "velocity": ase.units.Angstrom / (1e-12*ase.units.second),
-    "force": ase.units.eV/ase.units.Angstrom,
-    "pressure": 1e5 * ase.units.Pascal
-}
-
-lammps_units = {"real": lammps_real,
-                "metal": lammps_metal}
-
-
-def unit_convert(quantity, units='metal'):
-    try:
-        return lammps_units[units][quantity]
-    except:
-        raise NotImplementedError("Unit {} in unit system {} is not "
-                                  "implemented.".format(quantity, units))
 
 
 class LAMMPSlib(Calculator):
@@ -289,12 +255,12 @@ by invoking the get_potential_energy() method::
 
     def set_cell(self, atoms, change=False):
         lammps_cell, self.coord_transform = convert_cell(atoms.get_cell())
-        xhi = lammps_cell[0, 0]
-        yhi = lammps_cell[1, 1]
-        zhi = lammps_cell[2, 2]
-        xy = lammps_cell[0, 1]
-        xz = lammps_cell[0, 2]
-        yz = lammps_cell[1, 2]
+        xhi = convert(lammps_cell[0, 0], "distance", "ASE", self.units)
+        yhi = convert(lammps_cell[1, 1], "distance", "ASE", self.units)
+        zhi = convert(lammps_cell[2, 2], "distance", "ASE", self.units)
+        xy = convert(lammps_cell[0, 1], "distance", "ASE", self.units)
+        xz = convert(lammps_cell[0, 2], "distance", "ASE", self.units)
+        yz = convert(lammps_cell[1, 2], "distance", "ASE", self.units)
 
         if change:
             cell_cmd = ('change_box all     '
@@ -315,7 +281,7 @@ by invoking the get_potential_energy() method::
         self.lmp.command(cell_cmd)
 
     def set_lammps_pos(self, atoms, wrap=True):
-        pos = atoms.get_positions(wrap=wrap) / unit_convert("distance", self.units)
+        pos = convert(atoms.get_positions(wrap=wrap), "distance", "ASE", self.units)
 
         # If necessary, transform the positions to new coordinate system
         if self.coord_transform is not None:
@@ -394,9 +360,9 @@ by invoking the get_potential_energy() method::
 
         if n_steps > 0:
             if velocity_field is None:
-                vel = (atoms.get_velocities() /
-                       unit_convert("velocity", self.units))
+                vel = convert(atoms.get_velocities(), "velocity", "ASE", self.units)
             else:
+                # FIXME: Do we need to worry about converting to lammps units here?
                 vel = atoms.arrays[velocity_field]
 
             # If necessary, transform the velocities to new coordinate system
@@ -417,7 +383,7 @@ by invoking the get_potential_energy() method::
                 self.lmp.command('timestep %.30f' % dt)
             else:
                 self.lmp.command('timestep %.30f' %
-                                 (dt/unit_convert("time", self.units)))
+                    convert(dt, "time", "ASE", self.units))
         self.lmp.command('run %d' % n_steps)
 
         if n_steps > 0:
@@ -426,20 +392,23 @@ by invoking the get_potential_energy() method::
                 [x for x in self.lmp.gather_atoms("x", 1, 3)]).reshape(-1, 3)
             if self.coord_transform is not None:
                 pos = np.dot(pos, self.coord_transform)
-            atoms.set_positions(
-                pos * unit_convert("distance", self.units))
+
+            # Convert from LAMMPS units to ASE units
+            pos = convert(pos, "distance", self.units, "ASE")
+
+            atoms.set_positions(pos)
 
             vel = np.array(
                 [v for v in self.lmp.gather_atoms("v", 1, 3)]).reshape(-1, 3)
             if self.coord_transform is not None:
                 vel = np.dot(vel, self.coord_transform)
             if velocity_field is None:
-                atoms.set_velocities(
-                    vel * unit_convert("velocity", self.units))
+                vel = convert(atoms.get_velocities(), "velocity", "ASE",
+                        self.units)
 
         # Extract the forces and energy
-        self.results['energy'] = (self.lmp.extract_variable('pe', None, 0) *
-                                  unit_convert("energy", self.units))
+        self.results['energy'] = convert(self.lmp.extract_variable('pe', None, 0), "energy", self.units,
+                "ASE")
 
         stress = np.empty(6)
         stress_vars = ['pxx', 'pyy', 'pzz', 'pyz', 'pxz', 'pxy']
@@ -467,21 +436,11 @@ by invoking the get_potential_energy() method::
         stress[4] = stress_mat[0, 2]
         stress[5] = stress_mat[0, 1]
 
-        self.results['stress'] = (stress *
-                                  (-unit_convert("pressure", self.units)))
+        self.results['stress'] = convert(-stress, "pressure", self.units, "ASE")
 
-        # this does not necessarily yield the forces ordered by atom-id!
-        # f = np.zeros((len(atoms), 3))
-        # force_vars = ['fx', 'fy', 'fz']
-        # for i, var in enumerate(force_vars):
-        #     f[:, i] = (
-        #         np.asarray(
-        #             self.lmp.extract_variable(var, 'all', 1)[:len(atoms)]) *
-        #         unit_convert("force", self.units))
-
-        # definitely yields atom-id ordered array
-        f = (np.array(self.lmp.gather_atoms("f", 1, 3)).reshape(-1,3) *
-                unit_convert("force", self.units))
+        # definitely yields atom-id ordered force array
+        f = convert(np.array(self.lmp.gather_atoms("f", 1, 3)).reshape(-1,3),
+                "force", self.units, "ASE")
 
         if self.coord_transform is not None:
             self.results['forces'] = np.dot(f, self.coord_transform)
@@ -644,7 +603,7 @@ by invoking the get_potential_energy() method::
                     # convert from amu (ASE) to lammps mass unit)
                     self.lmp.command('mass %d %.30f' % (
                         self.parameters.atom_types[sym],
-                        masses[i] / unit_convert("mass", self.units)))
+                        convert(masses[i], "mass", "ASE", self.units)))
                     break
 
         # Define force & energy variables for extraction
@@ -705,11 +664,12 @@ def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
     for sym in atom_types:
         for i in range(len(atoms)):
             if symbols[i] == sym:
-                sym_mass[sym] = masses[i] / unit_convert("mass", units)
+                sym_mass[sym] = convert(masses[i], "mass", "ASE", units)
                 break
             else:
-                sym_mass[sym] = (atomic_masses[chemical_symbols.index(sym)] /
-                                 unit_convert("mass", units))
+                sym_mass[sym] = convert(
+                        atomic_masses[chemical_symbols.index(sym)],
+                        "mass", "ASE", units)
 
     for (sym, typ) in sorted(atom_types.items(), key=operator.itemgetter(1)):
         fh.write('{0} {1}\n'.format(typ, sym_mass[sym]))
