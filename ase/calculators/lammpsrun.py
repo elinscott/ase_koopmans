@@ -56,11 +56,13 @@ class LAMMPS(Calculator):
     """The LAMMPS calculators object
 
     files: list
-        Short explanation XXX
+        List of files typically containing relevant potentials for the calculation
     parameters: dict
-        Short explanation XXX
+        Dictionary of settings to be passed into the input file for calculation.
     specorder: list
-        Short explanation XXX
+        Within LAAMPS, atoms are identified by an integer value starting from 1.
+        This variable allows the user to define the order of the indices assigned to the 
+        atoms in the calculation, with the default if not given being alphabetical
     keep_tmp_files: bool
         Retain any temporary files created. Mostly useful for debugging.
     tmp_dir: str
@@ -78,6 +80,35 @@ class LAMMPS(Calculator):
     always_triclinic: bool
         Force use of a triclinic cell in LAMMPS, even if the cell is
         a perfect parallelepiped.
+        
+        **Example**
+
+Provided that the respective potential file is in the working directory, one
+can simply run (note that LAMMPS needs to be compiled to work with EAM
+potentials)
+
+::
+
+    from ase import Atom, Atoms
+    from ase.build import bulk
+    from ase.calculators.lammpsrun import LAMMPS
+
+    parameters = {'pair_style': 'eam/alloy',
+                  'pair_coeff': ['* * NiAlH_jea.eam.alloy H Ni']}
+
+    files = ['NiAlH_jea.eam.alloy']
+
+    Ni = bulk('Ni', cubic=True)
+    H = Atom('H', position=Ni.cell.diagonal()/2)
+    NiH = Ni + H
+
+    lammps = LAMMPS(parameters=parameters, files=files)
+
+    NiH.set_calculator(lammps)
+    print("Energy ", NiH.get_potential_energy())
+
+(Remember you also need to set :envar: `$LAMMPS_COMMAND`)
+
     """
 
     name = "lammpsrun"

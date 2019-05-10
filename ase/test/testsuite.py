@@ -95,6 +95,7 @@ def run_single_test(filename, verbose, strict):
     # Hence, create new subdir for each test:
     cwd = os.getcwd()
     testsubdir = filename.replace(os.sep, '_').replace('.', '_')
+    result.workdir = os.path.abspath(testsubdir)
     os.mkdir(testsubdir)
     os.chdir(testsubdir)
     t1 = time.time()
@@ -151,7 +152,7 @@ def run_single_test(filename, verbose, strict):
 class Result:
     """Represents the result of a test; for communicating between processes."""
     attributes = ['name', 'pid', 'exception', 'traceback', 'time', 'status',
-                  'whyskipped']
+                  'whyskipped', 'workdir']
 
     def __init__(self, **kwargs):
         d = {key: None for key in self.attributes}
@@ -220,6 +221,7 @@ def print_test_result(result):
     if result.traceback:
         print('=' * 78)
         print('Error in {} on pid {}:'.format(result.name, result.pid))
+        print('Workdir: {}'.format(result.workdir))
         print(result.traceback.rstrip())
         print('=' * 78)
 
@@ -390,7 +392,7 @@ def cli(command, calculator_name=None):
     proc.wait()
     if proc.returncode != 0:
         raise RuntimeError('Failed running a shell command.  '
-                           'Please set you $PATH environment variable!')
+                           'Please set your $PATH environment variable!')
 
 
 class must_raise:

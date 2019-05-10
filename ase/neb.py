@@ -25,16 +25,19 @@ class NEB:
         Paper I:
 
             G. Henkelman and H. Jonsson, Chem. Phys, 113, 9978 (2000).
+            https://doi.org/10.1063/1.1323224
 
         Paper II:
 
             G. Henkelman, B. P. Uberuaga, and H. Jonsson, Chem. Phys,
             113, 9901 (2000).
+            https://doi.org/10.1063/1.1329672
 
         Paper III:
 
             E. L. Kolsbjerg, M. N. Groves, and B. Hammer, J. Chem. Phys,
-            submitted (2016)
+            145, 094107 (2016)
+            https://doi.org/10.1063/1.4961868
 
         images: list of Atoms objects
             Images defining path from initial to final state.
@@ -70,11 +73,14 @@ class NEB:
         self.parallel = parallel
         self.natoms = len(images[0])
         pbc = images[0].pbc
+        atomic_numbers = images[0].get_atomic_numbers()
         for img in images:
             if len(img) != self.natoms:
                 raise ValueError('Images have different numbers of atoms')
             if (pbc != img.pbc).any():
                 raise ValueError('Images have different boundary conditions')
+            if (atomic_numbers != img.get_atomic_numbers()).any():
+                raise ValueError('Images have atoms in different orders')
         self.nimages = len(images)
         self.emax = np.nan
 
