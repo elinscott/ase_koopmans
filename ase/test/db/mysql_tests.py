@@ -2,6 +2,7 @@ from ase.test import must_raise
 from ase.test import NotAvailable
 try:
     import pymysql
+    _ = pymysql  # Supress unused import warning
 except ImportError:
     raise NotAvailable('No MySQL module')
 
