@@ -19,7 +19,7 @@ class BravaisLattice(ABC):
     variants = None  # e.g. {'BCT1': <variant object>,
     #                        'BCT2': <variant object>}
     ndim = None
-    
+
     def __init__(self, **kwargs):
         p = {}
         eps = kwargs.pop('eps', 2e-4)
@@ -45,12 +45,10 @@ class BravaisLattice(ABC):
             return self._parameters[name]
         return self.__getattribute__(name)  # Raises error
 
-    def tocell(self, cycle=0):
+    def tocell(self):
+        """Return this lattice as a Cell object."""
         cell = self._cell(**self._parameters)
         pbc = np.arange(3) < self.ndim
-        if cycle:
-            index = (np.arange(3) + cycle) % 3
-            cell = cell[index]
         return Cell(cell, pbc=pbc)
 
     def get_transformation(self, cell):
@@ -61,9 +59,10 @@ class BravaisLattice(ABC):
                                                  :self.ndim])), 1), msg
         return T
 
-    def cellpar(self, cycle=0):
+    def cellpar(self):
+        """Get cell lengths and angles.  See ase.geometry.Cell.cellpar()."""
         # (Just a brute-force implementation)
-        cell = self.tocell(cycle=cycle)
+        cell = self.tocell()
         return cell.cellpar()
 
     @property
@@ -71,6 +70,7 @@ class BravaisLattice(ABC):
         return self.variant.special_path
 
     def get_special_points_array(self):
+        """Return special points for this lattice as an array."""
         if self.variant.special_points is not None:
             # Fixed dictionary of special points
             d = self.get_special_points()
@@ -88,6 +88,7 @@ class BravaisLattice(ABC):
         return np.array(points)
 
     def get_special_points(self):
+        """Return a dictionary of named special k-points for this lattice."""
         if self.variant.special_points is not None:
             return self.variant.special_points
 
@@ -103,6 +104,7 @@ class BravaisLattice(ABC):
         return labels[0]
 
     def plot_bz(self, path=None, special_points=None, **plotkwargs):
+        """Plot the reciprocal cell and default bandpath."""
         # Create a generic bandpath (no actual kpoints):
         bandpath = self.bandpath(path=path, special_points=special_points,
                                  npoints=0)
@@ -110,6 +112,7 @@ class BravaisLattice(ABC):
 
     def bandpath(self, path=None, npoints=None, special_points=None,
                  density=None, transformation=None):
+        """Return a BandPath for this Bravais lattice."""
         if special_points is None:
             special_points = self.get_special_points()
 
@@ -807,7 +810,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
 
     if not uc.pbc[2]:
         return get_2d_bravais_lattice(uc, eps, _niggli_reduce)
-    
+
     # orig_uc = uc
     if _niggli_reduce:
         uc, niggli_op = uc.niggli_reduce()
@@ -1004,9 +1007,9 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
             return lat  # permutation
             #cdir = 1 + np.argmax(mcl_abc[1:])
             #mcl_c = mcl_abc[cdir]
-            #mcl_b = 
+            #mcl_b =
 
-            #mcl_a = 
+            #mcl_a =
             #mcl_bc = ABC[unequal_scalarprod_dir - 1]
             #a1 = abc[unequal_scalarprod_dir - 1]
             #a1 = abc[unequal_scalarprod_dir - 2]
