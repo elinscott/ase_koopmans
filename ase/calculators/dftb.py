@@ -18,7 +18,7 @@ If restart != None
 
 The keywords are given, for instance, as follows::
 
-    Hamiltonian_SCC ='YES',
+    Hamiltonian_SCC ='Yes',
     Hamiltonian_SCCTolerance = 1.0E-008,
     Hamiltonian_MaxAngularMomentum = '',
     Hamiltonian_MaxAngularMomentum_O = '"p"',
@@ -96,7 +96,7 @@ class Dftb(FileIOCalculator):
                 Hamiltonian_SlaterKosterFiles_Suffix='".skf"',
                 Hamiltonian_MaxAngularMomentum_='',
                 Options_='',
-                Options_WriteResultsTag='YES')
+                Options_WriteResultsTag='Yes')
         else:
             # using ase to get forces and energy only
             # (single point calculation)
@@ -108,7 +108,7 @@ class Dftb(FileIOCalculator):
                 Hamiltonian_SlaterKosterFiles_Suffix='".skf"',
                 Hamiltonian_MaxAngularMomentum_='',
                 Options_='',
-                Options_WriteResultsTag='YES')
+                Options_WriteResultsTag='Yes')
 
         self.pcpot = None
         self.lines = None
@@ -239,10 +239,10 @@ class Dftb(FileIOCalculator):
             elif key.count('_empty') == 1:
                 outfile.write(str(value) + ' \n')
             elif ((key == 'Hamiltonian_ReadInitialCharges') and 
-                  (str(value) == 'YES')):
+                  (str(value).upper() == 'YES')):
                 if not os.path.isfile(self.directory + os.sep + 'charges.dat'):
                     print('charges.dat not found, switching off guess')
-                    value = 'NO'
+                    value = 'No'
                 outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
             else:
                 outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
@@ -392,7 +392,7 @@ class Dftb(FileIOCalculator):
                 break
         else:
             # print('Warning: did not find DFTB-charges')
-            # print('This is ok if flag SCC=NO')
+            # print('This is ok if flag SCC=No')
             return None, energy
 
         lines1 = lines[chargestart:(chargestart + len(self.atoms))]
