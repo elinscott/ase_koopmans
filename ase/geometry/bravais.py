@@ -486,8 +486,8 @@ class HEX(BravaisLattice):
 class RHL(BravaisLattice):
     def __init__(self, a, alpha):
         if alpha >= 120:
-            raise ValueError('Need alpha < 120 degrees, got {}'
-                             .format(alpha))
+            raise UnconventionalLattice('Need alpha < 120 degrees, got {}'
+                                        .format(alpha))
         BravaisLattice.__init__(self, a=a, alpha=alpha)
 
     def _cell(self, a, alpha):
