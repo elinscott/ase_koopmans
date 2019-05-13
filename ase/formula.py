@@ -1,5 +1,7 @@
 import re
 import sys
+from typing import Dict, Tuple, List, TypeVar
+
 from ase.utils import gcd
 from ase.data import chemical_symbols
 
@@ -9,19 +11,20 @@ else:
     from collections import OrderedDict as ordereddict
 
 
-# Tree = Typedef('Tree', str, Tuple['Tree', int], List['Tree'])
+Tree = TypeVar('Tree', str, Tuple['Tree', int], List['Tree'])
 
 
 class Formula:
-    def __init__(self, formula: str = '',
-                 _tree=None,  # Tree
-                 _count=None):  # Dict[str, int]
+    def __init__(self,
+                 formula: str = '',
+                 _tree: Tree = None,
+                 _count: Dict[str, int] = None):
         """Chemical formula object.
 
         Parameters
         ----------
         formula: str
-            Text string representation of formula.  Examples: '6CO2',
+            Text string representation of formula.  Examples: `'6CO2'`,
             '30Cu+2CO', 'Pt(CO)6'.
 
         Examples
@@ -50,7 +53,7 @@ class Formula:
         self._tree = _tree or parse(formula)
         self._count = _count or count_tree(self._tree)
 
-    def count(self):  # -> Dict[str, int]
+    def count(self) -> Dict[str, int]:
         """Return dictionary mapping chemical symbol to number of atoms.
 
         Example
@@ -60,7 +63,7 @@ class Formula:
         """
         return self._count.copy()
 
-    def reduce(self):
+    def reduce(self) -> Tuple['Formula', int]:
         """Reduce formula.
 
         Returns
@@ -78,7 +81,7 @@ class Formula:
         dct, N = self._reduce()
         return self.from_dict(dct), N
 
-    def stoichiometry(self):  # -> Tuple[Formula, Formula, int]
+    def stoichiometry(self) -> Tuple['Formula', 'Formula', int]:
         """Reduce to unique stoichiomerty using "chemical symbols" A, B, C, ...
 
         Examples
@@ -158,7 +161,7 @@ class Formula:
         raise ValueError('Invalid format specifier')
 
     @staticmethod
-    def from_dict(dct):  # (Dict[str, int]) -> Formula
+    def from_dict(dct: Dict[str, int]) -> 'Formula':
         """Convert dict to Formula."""
         return Formula(dict2str(dct),
                        _tree=[([(symb, n) for symb, n in dct.items()], 1)],
