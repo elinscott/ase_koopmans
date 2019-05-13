@@ -114,7 +114,7 @@ The default initialization command for the CASTEP calculator is
 To do a minimal run one only needs to set atoms, this will use all
 default settings of CASTEP, meaning LDA, singlepoint, etc..
 
-With a generated castep_keywords.py in place all options are accessible
+With a generated *castep_keywords.json* in place all options are accessible
 by inspection, *i.e.* tab-completion. This works best when using ``ipython``.
 All options can be accessed via ``calc.param.<TAB>`` or ``calc.cell.<TAB>``
 and documentation is printed with ``calc.param.<keyword> ?`` or
@@ -122,6 +122,12 @@ and documentation is printed with ``calc.param.<keyword> ?`` or
 using ``calc.keyword = ...`` or ``calc.KEYWORD = ...`` or even
 ``ialc.KeYwOrD`` or directly as named arguments in the call to the constructor
 (*e.g.* ``Castep(task='GeometryOptimization')``).
+If using this calculator on a machine without CASTEP, one might choose to copy
+a *castep_keywords.json* file generated elsewhere in order to access this
+feature: the file will be used if located in the working directory,
+*$HOME/.ase/* or *ase/ase/calculators/* within the ASE library. The file should
+be generated the first time it is needed, but to generate a new keywords file
+in the currect directory run ``python -m ase.calculators.castep``
 
 All options that go into the ``.param`` file are held in an ``CastepParam``
 instance, while all options that go into the ``.cell`` file and don't belong
@@ -2824,18 +2830,18 @@ def import_castep_keywords(castep_command='',
 
 if __name__ == '__main__':
     print('When called directly this calculator will fetch all available')
-    print('keywords from the binarys help function into a castep_keywords.py')
-    print('in the current directory %s' % os.getcwd())
+    print('keywords from the binarys help function into a ')
+    print('castep_keywords.json in the current directory %s' % os.getcwd())
     print('For system wide usage, it can be copied into an ase installation')
     print('at ASE/calculators.\n')
-    print('This castep_keywords.py usually only needs to be generated once')
+    print('This castep_keywords.json usually only needs to be generated once')
     print('for a CASTEP binary/CASTEP version.')
 
     import optparse
     parser = optparse.OptionParser()
     parser.add_option(
         '-f', '--force-write', dest='force_write',
-        help='Force overwriting existing castep_keywords.py', default=False,
+        help='Force overwriting existing castep_keywords.json', default=False,
         action='store_true')
     (options, args) = parser.parse_args()
 
@@ -2848,8 +2854,8 @@ if __name__ == '__main__':
 
     if generated:
         try:
-            exec(compile(open('castep_keywords.py').read(),
-                         'castep_keywords.py', 'exec'))
+            with open('castep_keywords.json') as f:
+                json.load(f)
         except Exception as e:
             print(e)
             print('Ooops, something went wrong with the CASTEP keywords')
