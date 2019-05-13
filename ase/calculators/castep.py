@@ -126,8 +126,8 @@ If using this calculator on a machine without CASTEP, one might choose to copy
 a *castep_keywords.json* file generated elsewhere in order to access this
 feature: the file will be used if located in the working directory,
 *$HOME/.ase/* or *ase/ase/calculators/* within the ASE library. The file should
-be generated the first time it is needed, but to generate a new keywords file
-in the currect directory run ``python -m ase.calculators.castep``
+be generated the first time it is needed, but you can generate a new keywords
+file in the currect directory with ``python -m ase.calculators.castep``.
 
 All options that go into the ``.param`` file are held in an ``CastepParam``
 instance, while all options that go into the ``.cell`` file and don't belong
