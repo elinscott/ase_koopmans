@@ -1,6 +1,6 @@
 import re
 import sys
-from typing import Dict, Tuple, List, TypeVar
+from typing import Dict, Tuple, List, Union
 
 from ase.utils import gcd
 from ase.data import chemical_symbols
@@ -11,7 +11,7 @@ else:
     from collections import OrderedDict as ordereddict
 
 
-Tree = TypeVar('Tree', str, Tuple['Tree', int], List['Tree'])
+Tree = Union[str, Tuple['Tree', int], List['Tree']]
 
 
 class Formula:
@@ -24,8 +24,8 @@ class Formula:
         Parameters
         ----------
         formula: str
-            Text string representation of formula.  Examples: `'6CO2'`,
-            '30Cu+2CO', 'Pt(CO)6'.
+            Text string representation of formula.  Examples: ``'6CO2'``,
+            ``'30Cu+2CO'``, ``'Pt(CO)6'``.
 
         Examples
         --------
@@ -180,7 +180,7 @@ class Formula:
         """Number of atoms with chemical symbol *symb*."""
         return self._count.get(symb, 0)
 
-    def __contains__(self, f) -> bool:  # (Union[str, Formula])
+    def __contains__(self, f: Union[str, 'Formula']) -> bool:
         """Check if formula contains chemical symbols in *f*.
 
         Type of *f* must be str or Formula.
@@ -213,7 +213,7 @@ class Formula:
             return False
         return self._count == other._count
 
-    def __add__(self, other):  # (Union[str, Formula]) -> Formula
+    def __add__(self, other: Union[str, 'Formula']) -> 'Formula':
         """Add two formulas."""
         if not isinstance(other, str):
             other = other._formula
@@ -222,7 +222,7 @@ class Formula:
     def __radd__(self, other: str):  # -> Formula
         return Formula(other) + self
 
-    def __mul__(self, N: int):  # -> Formula
+    def __mul__(self, N: int) -> 'Formula':
         """Repeat formula `N` times."""
         if N == 0:
             return Formula('')
@@ -232,8 +232,8 @@ class Formula:
     def __rmul__(self, N: int):  # -> Formula
         return self * N
 
-    def __divmod__(self, other):
-        # (Union[Formula, str]) -> Tuple[int, Formula]
+    def __divmod__(self,
+                   other: Union['Formula', str]) -> Tuple[int, 'Formula']:
         """Return the tuple (self // other, self % other).
 
         Invariant::
@@ -329,7 +329,7 @@ def parse(f: str):  # -> Tree
     return result
 
 
-def parse2(f: str):  # -> Tree
+def parse2(f: str) -> Tree:
     units = []
     while f:
         if f[0] == '(':
@@ -363,13 +363,14 @@ def parse2(f: str):  # -> Tree
     return units
 
 
-def strip_number(s: str):  # -> Tuple[int, str]:
+def strip_number(s: str) -> Tuple[int, str]:
     m = re.match('[0-9]*', s)
+    assert m is not None
     return int(m.group() or 1), s[m.end():]
 
 
-def tree2str(tree,  # Tree
-             sub1: str, sub2: str):  # -> str
+def tree2str(tree: Tree,
+             sub1: str, sub2: str) -> str:
     if isinstance(tree, str):
         return tree
     if isinstance(tree, tuple):
@@ -383,13 +384,13 @@ def tree2str(tree,  # Tree
     return '(' + ''.join(tree2str(tree, sub1, sub2) for tree in tree) + ')'
 
 
-def count_tree(tree):  # (Tree) -> Dict[str, int]
+def count_tree(tree: Tree) -> Dict[str, int]:
     if isinstance(tree, str):
         return {tree: 1}
     if isinstance(tree, tuple):
         tree, N = tree
         return {symb: n * N for symb, n in count_tree(tree).items()}
-    dct = {}
+    dct = {}  # type: Dict[str, int]
     for tree in tree:
         for symb, n in count_tree(tree).items():
             m = dct.get(symb, 0)
