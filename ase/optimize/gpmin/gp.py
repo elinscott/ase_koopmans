@@ -143,7 +143,7 @@ class GaussianProcess():
         DlogP = 0.5 * np.trace(D_P_input - D_complexity, axis1=1, axis2=2)
         return -logP, -DlogP
 
-    def fit_hyperparameters(self, X, Y, tol=1e-2):
+    def fit_hyperparameters(self, X, Y, tol=1e-2, eps=None):
         '''Given a set of observations, X, Y; optimize the scale
         of the Gaussian Process maximizing the marginal log-likelihood.
         This method calls TRAIN there is no need to call the TRAIN method again.
@@ -158,12 +158,20 @@ class GaussianProcess():
         tol: tolerance on the maximum component of the gradient of the log-likelihood.
            (See scipy's L-BFGS-B documentation:
            https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html )
+        eps: include bounds to the hyperparameters as a +- a percentage of hyperparameter
+            if eps is None, there are no bounds in the optimization
         '''
 
         params = np.copy(self.hyperparams)[:2]
         arguments = (X, Y)
+        
+        if eps is not None:
+            bounds = [((1-eps)*p, (1+eps)*p) for p in params]
+        else:
+            bounds = None
+
         result = minimize(self.neg_log_likelihood, params, args=arguments,
-                          method='L-BFGS-B', jac=True,
+                          method='L-BFGS-B', jac=True, bounds = bounds, 
                           options = {'gtol':tol, 'ftol':0.01*tol})
 
         if not result.success:

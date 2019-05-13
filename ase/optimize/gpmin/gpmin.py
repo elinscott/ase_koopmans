@@ -15,7 +15,7 @@ import pickle
 class GPMin(Optimizer, GaussianProcess):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None, prior=None,
                  master=None, noise=0.005, weight=1., update_prior_strategy='maximum',
-                 scale=0.4, force_consistent=None, batch_size=5,
+                 scale=0.4, force_consistent=None, batch_size=5, bounds = None,
                  update_hyperparams=False):
 
 
@@ -88,9 +88,20 @@ class GPMin(Optimizer, GaussianProcess):
             the hyperparameters.
             Only relevant if the optimizer is executed in update
             mode: (update = True)
+
+        bounds: float, 0<bounds<1
+            Set bounds to the optimization of the hyperparameters.
+            Let t be a hyperparameter. Then it is optimized under the
+            constraint (1-bound)*t_0 <= t <= (1+bound)*t_0 
+            where t_0 is the value of the hyperparameter in the previous
+            step.
+            If bounds is None, no constraints are set in the optimization of the
+            hyperparameters.
+
         """
 
         self.nbatch = batch_size
+        self.eps = bounds
         self.strategy = update_prior_strategy
         self.update_hp = update_hyperparams
         self.function_calls = 1
@@ -161,10 +172,10 @@ class GPMin(Optimizer, GaussianProcess):
 
     def fit_to_batch(self):
         '''Fit hyperparameters and collect exception'''
-        ratio = self.noise
+        ratio = self.noise/self.kernel.weight
         try:
             self.fit_hyperparameters(np.asarray(
-                self.x_list), np.asarray(self.y_list))
+                self.x_list), np.asarray(self.y_list), eps = self.eps)
         except Exception:
             pass
 
