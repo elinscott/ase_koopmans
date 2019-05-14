@@ -568,7 +568,7 @@ potentials)
             if 'ERROR:' in line:
                 if close_log_file:
                     fileobj.close()
-                raise RuntimeError('LAMMPS exits with error message: {}'.format(file))
+                raise RuntimeError('LAMMPS exits with error message: {}'.format(line))
 
             # get thermo output
             if line.startswith(_custom_thermo_mark):
