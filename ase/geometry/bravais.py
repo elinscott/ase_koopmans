@@ -925,8 +925,12 @@ def get_bravais_lattice(cell, eps=2e-4):
                          'axes or along all three.  Got pbc={}'
                          .format(cell.pbc))
 
-
 def get_3d_bravais_lattice(cell, eps=2e-4):
+    from ase.geometry.niggli_classes import identify_lattice
+    return identify_lattice(cell)
+
+
+def get_bravais_lattice_from_reduced_form(cell, eps=2e-4):
     cellpar = cell.cellpar()
     ABC = cellpar[:3]
     angles = cellpar[3:]
