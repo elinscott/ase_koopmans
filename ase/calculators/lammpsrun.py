@@ -61,7 +61,7 @@ class LAMMPS(Calculator):
         Dictionary of settings to be passed into the input file for calculation.
     specorder: list
         Within LAAMPS, atoms are identified by an integer value starting from 1.
-        This variable allows the user to define the order of the indices assigned to the 
+        This variable allows the user to define the order of the indices assigned to the
         atoms in the calculation, with the default if not given being alphabetical
     keep_tmp_files: bool
         Retain any temporary files created. Mostly useful for debugging.
@@ -80,7 +80,7 @@ class LAMMPS(Calculator):
     always_triclinic: bool
         Force use of a triclinic cell in LAMMPS, even if the cell is
         a perfect parallelepiped.
-        
+
         **Example**
 
 Provided that the respective potential file is in the working directory, one
@@ -564,6 +564,12 @@ potentials)
         thermo_content = []
         line = fileobj.readline().decode("utf-8")
         while line and line.strip() != CALCULATION_END_MARK:
+            # check error
+            if 'ERROR:' in line:
+                if close_log_file:
+                    fileobj.close()
+                raise RuntimeError('LAMMPS exits with error message: {}'.format(file))
+
             # get thermo output
             if line.startswith(_custom_thermo_mark):
                 bool_match = True
