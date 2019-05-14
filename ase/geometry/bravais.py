@@ -990,25 +990,24 @@ def get_3d_bravais_lattice(cell, eps=2e-4):
 
     if all_lengths_equal:
         if allclose(angles, 90):
-            return CUB(A)  #check(CUB, A)
+            return CUB(A)
         if allclose(angles, 60):
             return FCC(np.sqrt(2) * A)
-            #return check(FCC, np.sqrt(2) * A)
         if allclose(angles, np.arccos(-1 / 3) * 180 / np.pi):
             return BCC(2.0 * A / np.sqrt(3))
-            #return check(BCC, 2.0 * A / np.sqrt(3))
 
     if all_lengths_equal and unequal_angle_dir is not None:
-        # x = BC_CA_AB[unequal_angle_dir]
-        y = BC_CA_AB[(unequal_angle_dir + 1) % 3]
+        y = -BC_CA_AB[(unequal_angle_dir + 1) % 3]
+        if y > 0:
+            c = 2.0 * np.sqrt(y)
+            xx = 2.0 * A**2 - 0.5 * c**2
+            if xx > 0:
+                a = np.sqrt(xx)
+                obj = check(BCT, a, c, axis=-unequal_angle_dir + 2)
+                if obj:
+                    bct = BCT(a, c)
+                    return bct
 
-        c = 2.0 * np.sqrt(-y)
-        a = np.sqrt(2.0 * A**2 - 0.5 * c**2)
-        obj = check(BCT, a, c, axis=-unequal_angle_dir + 2)
-        if obj:
-            bct = BCT(a, c)
-            return bct  # permutation
-            #return obj
 
     if (unequal_angle_dir is not None
           and abs(angles[unequal_angle_dir] - 120) < eps
@@ -1016,17 +1015,14 @@ def get_3d_bravais_lattice(cell, eps=2e-4):
         a2 = -2 * BC_CA_AB[unequal_scalarprod_dir]
         c = ABC[unequal_scalarprod_dir]
         assert a2 > 0
-        lat = HEX(np.sqrt(a2), c)
-        return lat  # permutation
-        #xxxxxxxx
-        #return check(HEX, np.sqrt(a2), c, axis=-unequal_scalarprod_dir + 2)
+        return HEX(np.sqrt(a2), c)
 
     if allclose(angles, 90) and unequal_length_dir is not None:
         a = ABC[unequal_length_dir - 1]
         c = ABC[unequal_length_dir]
         xx = check(TET, a, c, axis=-unequal_length_dir + 2)
         assert xx
-        return TET(a, c)  # permutation
+        return TET(a, c)
 
     if (unequal_length_dir is not None
         and abs(BC_CA_AB[unequal_length_dir]) > eps
@@ -1038,67 +1034,46 @@ def get_3d_bravais_lattice(cell, eps=2e-4):
         Y = BC_CA_AB[cdir]
         X = ABC[(cdir + 1) % 3]**2
 
-        #orcc_c = np.sqrt(BC_CA_AB[cdir])
-        #sum(abs(BC_CA_AB) > eps)
-        #assert Y < 0  # ?
         orcc_a = np.sqrt(2 * (X + Y))
         orcc_b = np.sqrt(2 * (X - Y))
         if orcc_a > orcc_b:
             orcc_a, orcc_b = orcc_b, orcc_a
-            # permutation?
-        lat = ORCC(orcc_a, orcc_b, orcc_c)
-        return lat  # permutation
-        #lat.tocell()
-        #obj = check(ORCC, a, b, c, axis=2 - unequal_length_dir)
-        #xxxxxxxxxxxxxx
-        #if obj:
-        #    return obj
+        return ORCC(orcc_a, orcc_b, orcc_c)
 
     if allclose(angles, 90) and all_lengths_different:
         permutation = np.argsort(ABC)
-        lat = ORC(*ABC[permutation])
-        return lat  # permutation
+        return ORC(*ABC[permutation])
 
     if all_lengths_different and noduplicates(BC_CA_AB):
         permutation = np.argsort(BC_CA_AB)
         if all(BC_CA_AB > 0):
             lat = ORCF(*(2 * np.sqrt(BC_CA_AB[permutation])))
             par1 = lat.cellpar()
-            par2 = cell.new(cell[permutation]).cellpar()
+            par2 = Cell.new(cell[permutation]).cellpar()
             if allclose(par1, par2):
-                return lat  # XXX permutation
+                return lat
 
     if all_lengths_equal:
         dims2 = -2 * np.array([BC_CA_AB[1] + BC_CA_AB[2],
                                BC_CA_AB[2] + BC_CA_AB[0],
                                BC_CA_AB[0] + BC_CA_AB[1]])
-        if all(dims2 > 0) and noduplicates(dims2):#mindifference > eps:
+        if all(dims2 > 0) and noduplicates(dims2):
             dims = np.sqrt(dims2)
-            permutation = np.argsort(dims)
-            lat = ORCI(*dims[permutation])
-            assert allclose(lat.tocell(), cell[permutation])
-            return lat  # perm
+            return ORCI(*dims)
 
     if all_lengths_equal:
         cosa = BC_CA_AB[0] / A**2
-        rhl_alpha = np.arccos(cosa) * 180 / np.pi
-        lat = RHL(A, rhl_alpha)
-        return lat
-        #obj = check(RHL, A, alpha)
-        #xxxxxxxxxxx
-        #if obj:
-        #    return obj
+        if -1 < cosa < 1:
+            rhl_alpha = np.arccos(cosa) * 180 / np.pi
+            return RHL(A, rhl_alpha)
 
-    #if all_lengths_different and unequal_scalarprod_dir is not None:
     if unequal_scalarprod_dir is not None:
         mcl_alpha = angles[unequal_scalarprod_dir]
         other_two_angles = [angles[unequal_scalarprod_dir - 1],
                             angles[unequal_scalarprod_dir - 2]]
         if allclose(other_two_angles, 90):
             assert mcl_alpha < 90, mcl_alpha
-            #cdir = np.argmax(abc)
 
-            #mcl_abc = ABC[np.arange(-3, 0) + unequal_scalarprod_dir]
             a_dir = unequal_scalarprod_dir
             b_dir = (a_dir - 1) % 3
             c_dir = (b_dir - 1) % 3
@@ -1113,23 +1088,7 @@ def get_3d_bravais_lattice(cell, eps=2e-4):
             permutation = np.array([a_dir, b_dir, c_dir])
             # Or reverse somehow?
 
-            lat = MCL(mcl_a, mcl_b, mcl_c, mcl_alpha)
-            return lat  # permutation
-            #cdir = 1 + np.argmax(mcl_abc[1:])
-            #mcl_c = mcl_abc[cdir]
-            #mcl_b =
-
-            #mcl_a =
-            #mcl_bc = ABC[unequal_scalarprod_dir - 1]
-            #a1 = abc[unequal_scalarprod_dir - 1]
-            #a1 = abc[unequal_scalarprod_dir - 2]
-
-            #abc = ABC[np.arange(-3, 0) + unequal_scalarprod_dir]
-            #MCL(*abc, alpha=alpha)
-        #obj = check(MCL, *abc, alpha=alpha, axis=-unequal_scalarprod_dir)
-        #xxxxxxxxxxxxxx
-        #if obj:
-        #    return obj
+            return MCL(mcl_a, mcl_b, mcl_c, mcl_alpha)
 
     if unequal_length_dir is not None:
         cdir = unequal_length_dir
@@ -1137,16 +1096,18 @@ def get_3d_bravais_lattice(cell, eps=2e-4):
         L = ABC[cdir - 1]
         mclc_b = np.sqrt(2 * (L**2 + BC_CA_AB[unequal_length_dir]))
         mclc_a = np.sqrt(4 * L**2 - mclc_b**2)
-        cosa = 2 * BC_CA_AB[unequal_length_dir - 1] / (mclc_b * mclc_c)
-        mclc_alpha = np.arccos(cosa) * 180 / np.pi
-        assert mclc_alpha < 90
-        lat = MCLC(mclc_a, mclc_b, mclc_c, mclc_alpha)
-        # XXX many things wrong currently
-        return lat
-        #obj = check(MCLC, a, b, c, alpha, axis=-unequal_length_dir + 2)
-        #xxxxxxxxxxx
-        #if obj:
-        #    return obj
+        denominator = mclc_b * mclc_c
+        if denominator > eps:  # possible abuse of 'eps' ...
+            cosa = 2 * BC_CA_AB[unequal_length_dir - 1] / denominator
+            if -1 < cosa < 1:
+                mclc_alpha = np.arccos(cosa) * 180 / np.pi
+                try:
+                    lat = MCLC(mclc_a, mclc_b, mclc_c, mclc_alpha)
+                except UnconventionalLattice:
+                    pass
+                else:
+                    # XXX many things wrong currently
+                    return lat
 
     obj = check(TRI, A, B, C, *angles)
     if obj:
