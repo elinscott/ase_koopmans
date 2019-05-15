@@ -26,7 +26,7 @@ class ColorWindow:
                   _('By number of neighbors'),]
 
         self.radio = ui.RadioButtons(labels, values, self.toggle,
-                                     vertical=True, )
+                                     vertical=True)
         self.radio.value = gui.colormode
         self.win.add(self.radio)
         self.activate()
@@ -34,7 +34,7 @@ class ColorWindow:
         self.win.add(self.label)
 
     def change_mnmx(self):
-        print('change min/max value')
+        ##print('change min/max value')
         mn, mx = self.mnmx[1].value, self.mnmx[3].value
         colorscale, _, _ = self.gui.colormode_data
         self.gui.colormode_data = colorscale, mn, mx
@@ -62,25 +62,13 @@ class ColorWindow:
         else:
             scalars = np.array([self.gui.get_color_scalars(i)
                                 for i in range(len(self.gui.images))])
-            mn = scalars.min()
-            mx = scalars.max()
-            try:
-                import matplotlib as plt
-                # matplotlib diverse colormaps
-                cmaps = ['magma', 'viridis', 'plasma', 'inferno', 
-                         'rainbow', 'jet',
-                         'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
-                         'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm',
-                         'bwr', 'seismic']
-                print('set self.colormap')
-                self.colormap = ui.ComboBox(cmaps, cmaps, self.update_colormap)
-                self.gui.colormode_data = None, mn, mx
-                self.update_colormap(cmaps[0])
-                self.win.add(self.colormap)
-            except:
-                colorscale = ['#{0:02X}AA00'.format(red)
-                              for red in range(0, 240, 10)]
-                self.gui.colormode_data = colorscale, mn, mx
+            print('scalars', scalars)
+            mn = np.nanmin(scalars)
+            mx = np.nanmax(scalars)
+            print('scalars mm', mn, mx)
+            colorscale = ['#{0:02X}AA00'.format(red)
+                          for red in range(0, 240, 10)]
+            self.gui.colormode_data = colorscale, mn, mx
 
             unit = {'tag': '',
                     'force': 'eV/Ang',
@@ -90,7 +78,8 @@ class ColorWindow:
                     u'magmom': 'μB'}[value]
             text = '[{0},{1}]: [{2:.6f},{3:.6f}] {4}'.format(
                 _('Green'), _('Yellow'), mn, mx, unit)
-
+            text = ''
+            
             rng = mx - mn  # XXX what are optimal allowed range and steps ?
             self.mnmx = [_('min:'),
                          ui.SpinBox(mn, mn - 10 * rng, mx + rng, rng / 10.,
@@ -114,18 +103,3 @@ class ColorWindow:
         if not self.radio[mode].active:
             mode = 'jmol'
         self.toggle(mode)
-
-    def update_colormap(self, cmap):
-        "Called by gui when colormap has changed"
-        N = 10  # XXX change default n
-        print('gewaehlt:', cmap)
-        colorscale, mn, mx = self.gui.colormode_data
-        import pylab as plt
-        import matplotlib
-        cmap = plt.cm.get_cmap(cmap)
-        print('0 colorscale', colorscale)
-        colorscale = [matplotlib.colors.rgb2hex(c[:3]) for c in
-                      cmap(np.linspace(0, 1, N))]
-        print('1 colorscale', colorscale)
-        self.gui.colormode_data = colorscale, mn, mx
-        self.gui.draw()
