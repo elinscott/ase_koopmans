@@ -66,8 +66,8 @@ class ColorWindow:
             mn = np.nanmin(scalars)
             mx = np.nanmax(scalars)
             print('scalars mm', mn, mx)
-            colorscale = ['#{0:02X}AA00'.format(red)
-                          for red in range(0, 240, 10)]
+            colorscale = ['#{0:02X}80{0:02X}'.format(red)
+                          for red in range(0, 260, 10)]
             self.gui.colormode_data = colorscale, mn, mx
 
             unit = {'tag': '',
