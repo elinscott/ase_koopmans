@@ -217,8 +217,9 @@ Variant name: {name}
 
 
 bravais_names = []
+bravais_names_2d = []
 bravais_lattices = {}
-
+bravais_lattices_2d = {}
 
 def bravaisclass(longname, parameters, variants, ndim=3):
     """Decorator for Bravais lattice classes.
@@ -242,8 +243,14 @@ def bravaisclass(longname, parameters, variants, ndim=3):
                                          special_path, special_points)
 
         # Register in global list and dictionary
-        bravais_names.append(btype)
-        bravais_lattices[btype] = cls
+        if ndim == 3:
+            bravais_names.append(btype)
+            bravais_lattices[btype] = cls
+        elif ndim == 2:
+            bravais_names_2d.append(btype)
+            bravais_lattices_2d[btype] = cls
+        else:
+            raise ValueError('Strange lattice dimension')
         return cls
 
     return decorate

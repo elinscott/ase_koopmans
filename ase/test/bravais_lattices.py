@@ -1,5 +1,6 @@
 import numpy as np
-from ase.geometry.bravais import bravais_lattices, all_variants
+from ase.geometry.bravais import (bravais_lattices, all_variants,
+                                  get_bravais_lattice_from_reduced_form)
 
 for name in bravais_lattices:
     latcls = bravais_lattices[name]
@@ -16,8 +17,11 @@ for lat in all_variants():
 
     print('cell', lat.tocell())
     cell = lat.tocell()
-    lat1 = cell.get_bravais_lattice()
-    assert lat1.name == lat.name
+    if cell.pbc.all():
+        lat1 = get_bravais_lattice_from_reduced_form(cell)
+    else:
+        lat1 = cell.get_bravais_lattice()
+    assert lat1.name == lat.name, (lat1.name, lat.name)
     assert lat1.variant.name == lat.variant.name
     assert np.abs(cell - lat1.tocell()).max() < 1e-13
     print('cellpar', lat.cellpar())

@@ -1,15 +1,17 @@
 import numpy as np
 from ase.geometry.cell import Cell
-from ase.geometry.bravais import bravais_lattices as bravais1
+from ase.geometry.bravais import (bravais_lattices,
+                                  get_bravais_lattice_from_reduced_form)
+
 from ase.build import bulk
 
 bravais = {}
-for name in bravais1:
-    bravais[name.lower()] = bravais1[name]
+for name in bravais_lattices:
+    bravais[name.lower()] = bravais_lattices[name]
 
 def check_single(name, cell):
     c = Cell(cell)
-    lattice = c.get_bravais_lattice()
+    lattice = get_bravais_lattice_from_reduced_form(c)
     name1 = lattice.name.lower()
     ok = name.split('@')[0] == name1
     print(name, '-->', name1, 'OK' if ok else 'ERR', c.cellpar())
