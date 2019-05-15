@@ -137,9 +137,8 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 massstr = str(atomic_masses[atomic_numbers[species]])
                 parameters['mass'].append(str(i + 1) + " " + massstr)
 
-            # TODO combine options and parameters
             # Return LAMMPS calculator
-            return LAMMPS(parameters=parameters, files=param_filenames,
+            return LAMMPS(**parameters, files=param_filenames,
                           specorder=supported_species, keep_tmp_files=debug)
 
         elif simulator == 'lammpslib':
@@ -306,11 +305,9 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                     ml.startswith('atom_style full')):
                     has_charges = True
 
-            # TODO combine options and parameters
             # Return LAMMPS calculator
-            return LAMMPS(parameters=parameters, files=param_filenames,
-                          specorder=supported_species, keep_tmp_files=debug,
-                          has_charges=has_charges)
+            return LAMMPS(**parameters, files=param_filenames,
+                          specorder=supported_species, keep_tmp_files=debug)
 
         elif simulator == 'lammpslib':
             # check options
@@ -319,7 +316,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             if msg is not None:
                 raise KIMCalculatorError(msg)
 
-            # Setup LAMMPS header commands lookup table
+            # Set up LAMMPS header commands lookup table
             model_init.insert(0, 'atom_modify map array sort 0 0')
             if not any("atom_style" in s.lower() for s in model_init):
                 model_init.insert(0, 'atom_style atomic')
