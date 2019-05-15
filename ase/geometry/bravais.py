@@ -926,7 +926,7 @@ def get_bravais_lattice(cell, eps=2e-4):
                          .format(cell.pbc))
 
 def get_3d_bravais_lattice(cell, eps=2e-4):
-    from ase.geometry.niggli_classes import identify_lattice
+    from ase.geometry.bravais_type_engine import identify_lattice
     return identify_lattice(cell)
 
 
