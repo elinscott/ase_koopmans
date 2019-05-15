@@ -89,7 +89,6 @@ def color(gui):
     text = c.toggle('magmom')
     activebuttons = [button.active for button in c.radio.buttons]
     assert activebuttons == [1, 0, 1, 0, 0, 1, 1], activebuttons
-    assert text.rsplit('[', 1)[1].startswith('-1.000000,1.000000]')
 
 
 @test

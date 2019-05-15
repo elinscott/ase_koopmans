@@ -58,7 +58,6 @@ class ColorWindow:
         radio['neighbors'].active = True
 
     def toggle(self, value):
-        print('<toggle> things=', self.win.things, 'cmode=', value)
         self.gui.colormode = value
         if value == 'jmol' or value == 'neighbors':
             if hasattr(self, 'mnmx'):
