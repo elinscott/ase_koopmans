@@ -32,6 +32,8 @@ class ColorWindow:
         self.activate()
         self.label = ui.Label()
         self.win.add(self.label)
+        if hasattr(self, 'mnmx'):
+            self.win.add(self.mnmx)
 
     def change_mnmx(self):
         ##print('change min/max value')
@@ -56,16 +58,20 @@ class ColorWindow:
         radio['neighbors'].active = True
 
     def toggle(self, value):
+        print('<toggle> things=', self.win.things, 'cmode=', value)
         self.gui.colormode = value
         if value == 'jmol' or value == 'neighbors':
+            if hasattr(self, 'mnmx'):
+                "delete the min max fields by creating a new window"
+                del self.mnmx
+                self.win.close()
+                self.__init__(self.gui)
             text = ''
         else:
             scalars = np.array([self.gui.get_color_scalars(i)
                                 for i in range(len(self.gui.images))])
-            print('scalars', scalars)
             mn = np.nanmin(scalars)
             mx = np.nanmax(scalars)
-            print('scalars mm', mn, mx)
             colorscale = ['#{0:02X}80{0:02X}'.format(red)
                           for red in range(0, 260, 10)]
             self.gui.colormode_data = colorscale, mn, mx
@@ -79,7 +85,7 @@ class ColorWindow:
             text = '[{0},{1}]: [{2:.6f},{3:.6f}] {4}'.format(
                 _('Green'), _('Yellow'), mn, mx, unit)
             text = ''
-            
+
             rng = mx - mn  # XXX what are optimal allowed range and steps ?
             self.mnmx = [_('min:'),
                          ui.SpinBox(mn, mn - 10 * rng, mx + rng, rng / 10.,
@@ -89,7 +95,8 @@ class ColorWindow:
                                     self.change_mnmx),
                          _(unit)
             ]
-            self.win.add(self.mnmx)
+            self.win.close()
+            self.__init__(self.gui)
 
         self.label.text = text
         self.radio.value = value
