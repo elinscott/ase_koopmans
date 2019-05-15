@@ -205,10 +205,10 @@ def stack(atoms1, atoms2, axis=2, cell=None, fix=0.5,
     *atoms2*.
 
     An ase.geometry.IncompatibleCellError exception is raised if the
-    cells of *atoms1* and *atoms2* are incopatible, e.g. if the far
+    cells of *atoms1* and *atoms2* are incompatible, e.g. if the far
     corner of the unit cell of either *atoms1* or *atoms2* is
-    displaced more than *maxstrain*. Setting *maxstrain* to None,
-    disable this check.
+    displaced more than *maxstrain*. Setting *maxstrain* to None
+    disables this check.
 
     If *distance* is not None, the size of the final cell, along the
     direction perpendicular to the interface, will be adjusted such
@@ -216,8 +216,8 @@ def stack(atoms1, atoms2, axis=2, cell=None, fix=0.5,
     *atoms2* will be equal to *distance*. This option uses
     scipy.optimize.fmin() and hence require scipy to be installed.
 
-    If *reorder* is True, then the atoms will be reordred such that
-    all atoms with the same symbol will follow sequensially after each
+    If *reorder* is True, then the atoms will be reordered such that
+    all atoms with the same symbol will follow sequencially after each
     other, eg: 'Al2MnAl10Fe' -> 'Al12FeMn'.
 
     If *output_strained* is True, then the strained versions of
@@ -255,10 +255,14 @@ def stack(atoms1, atoms2, axis=2, cell=None, fix=0.5,
     atoms1 = atoms1.copy()
     atoms2 = atoms2.copy()
 
+    for atoms in [atoms1, atoms2]:
+        if not atoms.cell[axis].any():
+            atoms.center(vacuum=0.0, axis=axis)
+
     if (np.sign(np.linalg.det(atoms1.cell)) !=
         np.sign(np.linalg.det(atoms2.cell))):
-        raise IncompatibleCellError('*atoms1* amd *atoms2* must both either '
-                                    'have a lefthanded or a righanded cell.')
+        raise IncompatibleCellError('Cells of *atoms1* and *atoms2* must have '
+                                    'same handedness.')
 
     c1 = np.linalg.norm(atoms1.cell[axis])
     c2 = np.linalg.norm(atoms2.cell[axis])
@@ -421,172 +425,135 @@ def minimize_tilt(atoms, order=range(3), fold_atoms=True):
                 minimize_tilt_ij(atoms, c1, c2, fold_atoms)
 
 
-class _gtensor(object):
-    """The G tensor as defined in Grosse-Kunstleve."""
-    def __init__(self, cell):
+def niggli_reduce_cell(cell, epsfactor=None):
+    from ase.geometry import cellpar_to_cell
 
-        self.cell = cell
+    if epsfactor is None:
+        epsfactor = 1e-5
+    eps = epsfactor * abs(np.linalg.det(cell))**(1./3.)
 
-        self.epsilon = 1e-5 * abs(np.linalg.det(cell))**(1. / 3.)
+    cell = np.asarray(cell)
 
-        self.a = np.dot(cell[0], cell[0])
-        self.b = np.dot(cell[1], cell[1])
-        self.c = np.dot(cell[2], cell[2])
-
-        self.x = 2 * np.dot(cell[1], cell[2])
-        self.y = 2 * np.dot(cell[0], cell[2])
-        self.z = 2 * np.dot(cell[0], cell[1])
-
-        self._G = np.array([[self.a, self.z / 2., self.y / 2.],
-                            [self.z / 2., self.b, self.x / 2.],
-                            [self.y / 2., self.x / 2., self.c]])
-
-    def update(self, C):
-        """Procedure A0 as defined in Krivy."""
-        self._G = np.dot(C.T, np.dot(self._G, C))
-
-        self.a = self._G[0][0]
-        self.b = self._G[1][1]
-        self.c = self._G[2][2]
-
-        self.x = 2 * self._G[1][2]
-        self.y = 2 * self._G[0][2]
-        self.z = 2 * self._G[0][1]
-
-    def get_new_cell(self):
-        """Returns new basis vectors"""
-        a = np.sqrt(self.a)
-        b = np.sqrt(self.b)
-        c = np.sqrt(self.c)
-
-        ad = self.cell[0] / np.linalg.norm(self.cell[0])
-
-        Z = np.cross(self.cell[0], self.cell[1])
-        Z /= np.linalg.norm(Z)
-        X = ad - np.dot(ad, Z) * Z
-        X /= np.linalg.norm(X)
-        Y = np.cross(Z, X)
-
-        alpha = np.arccos(self.x / (2 * b * c))
-        beta = np.arccos(self.y / (2 * a * c))
-        gamma = np.arccos(self.z / (2 * a * b))
-
-        va = a * np.array([1, 0, 0])
-        vb = b * np.array([np.cos(gamma), np.sin(gamma), 0])
-        cx = np.cos(beta)
-        cy = (np.cos(alpha) - np.cos(beta) * np.cos(gamma)) \
-            / np.sin(gamma)
-        cz = np.sqrt(1. - cx * cx - cy * cy)
-        vc = c * np.array([cx, cy, cz])
-
-        abc = np.vstack((va, vb, vc))
-        T = np.vstack((X, Y, Z))
-        return np.dot(abc, T)
-
-
-def niggli_reduce_cell(cell):
     C = np.eye(3, dtype=int)
-    cell = np.asarray(cell, dtype=float)
-    G = _gtensor(cell)
 
-    def lt(x, y, epsilon=G.epsilon):
-        return x < y - epsilon
+    g = np.zeros(6, dtype=float)
+    g[0] = np.dot(cell[0], cell[0])
+    g[1] = np.dot(cell[1], cell[1])
+    g[2] = np.dot(cell[2], cell[2])
+    g[3] = 2 * np.dot(cell[1], cell[2])
+    g[4] = 2 * np.dot(cell[0], cell[2])
+    g[5] = 2 * np.dot(cell[0], cell[1])
 
-    def gt(x, y, epsilon=G.epsilon):
-        return lt(y, x, epsilon)
+    def lt(x, y, eps=eps):
+        return x < y - eps
 
-    def eq(x, y, epsilon=G.epsilon):
-        return not (lt(x, y, epsilon) or gt(x, y, epsilon))
+    def gt(x, y, eps=eps):
+        return lt(y, x, eps)
 
-    # Once A2 and A5-A8 all evaluate to False, the unit cell will have
-    # been fully reduced.
-    for count in range(10000):
-        if gt(G.a, G.b) or (eq(G.a, G.b) and gt(np.abs(G.x), np.abs(G.y))):
-            # Procedure A1
-            A = np.array([[0, -1, 0],
-                          [-1, 0, 0],
-                          [0, 0, -1]])
-            G.update(A)
+    def eq(x, y, eps=eps):
+        return not (lt(x, y, eps) or gt(x, y, eps))
+
+    while True:
+        if (gt(g[0], g[1])
+                or (eq(g[0], g[1]) and gt(abs(g[3]), abs(g[4])))):
+            A = -np.eye(3)[[1, 0, 2]]
             C = np.dot(C, A)
-
-        if gt(G.b, G.c) or (eq(G.b, G.c) and gt(np.abs(G.y), np.abs(G.z))):
-            # Procedure A2
-            A = np.array([[-1, 0, 0],
-                          [0, 0, -1],
-                          [0, -1, 0]])
-            G.update(A)
+            g = g[[1, 0, 2, 4, 3, 5]]
+            continue
+        elif (gt(g[1], g[2])
+                or (eq(g[1], g[2]) and gt(abs(g[4]), abs(g[5])))):
+            A = -np.eye(3)[[0, 2, 1]]
             C = np.dot(C, A)
+            g = g[[0, 2, 1, 3, 5, 4]]
             continue
 
-        if gt(G.x * G.y * G.z, 0, G.epsilon**3):
-            # Procedure A3
-            i = -1 if lt(G.x, 0) else 1
-            j = -1 if lt(G.y, 0) else 1
-            k = -1 if lt(G.z, 0) else 1
+        lmn = np.array(gt(g[3:], 0), dtype=int)
+        lmn -= np.array(lt(g[3:], 0), dtype=int)
+
+        if lmn.prod() == 1:
+            ijk = lmn.copy()
+            for idx in range(3):
+                if ijk[idx] == 0:
+                    ijk[idx] = 1
         else:
-            # Procedure A4
-            i = -1 if gt(G.x, 0) else 1
-            j = -1 if gt(G.y, 0) else 1
-            k = -1 if gt(G.z, 0) else 1
+            ijk = np.ones(3, dtype=int)
+            if np.any(lmn != -1):
+                r = None
+                for idx in range(3):
+                    if lmn[idx] == 1:
+                        ijk[idx] = -1
+                    elif lmn[idx] == 0:
+                        r = idx
+                if ijk.prod() == -1:
+                    ijk[r] = -1
 
-            if i * j * k == -1:
-                if eq(G.z, 0):
-                    k = -1
-                elif eq(G.y, 0):
-                    j = -1
-                elif eq(G.x, 0):
-                    i = -1
-                else:
-                    raise RuntimeError('p unassigned and i*j*k < 0!')
-
-        A = np.array([[i, 0, 0],
-                      [0, j, 0],
-                      [0, 0, k]])
-        G.update(A)
+        g[3] *= ijk[1] * ijk[2]
+        g[4] *= ijk[0] * ijk[2]
+        g[5] *= ijk[0] * ijk[1]
+        A = np.diag(ijk)
         C = np.dot(C, A)
 
-        if (lt(G.b, np.abs(G.x)) or
-            (eq(G.x, G.b) and lt(2 * G.y, G.z)) or
-            (eq(G.x, -G.b) and lt(G.z, 0))):
-            # Procedure A5
-            A = np.array([[1, 0, 0],
-                          [0, 1, -np.sign(G.x)],
-                          [0, 0, 1]], dtype=int)
-            G.update(A)
+        if (gt(abs(g[3]), g[1])
+                or (eq(g[3], g[1]) and lt(2 * g[4], g[5]))
+                or (eq(g[3], -g[1]) and lt(g[5], 0))):
+            A = np.eye(3, dtype=int)
+            A[1, 2] = -np.sign(g[3])
             C = np.dot(C, A)
-        elif (lt(G.a, np.abs(G.y)) or
-              (eq(G.y, G.a) and lt(2 * G.x, G.z)) or
-              (eq(G.y, -G.a) and lt(G.z, 0))):
-            # Procedure A6
-            A = np.array([[1, 0, -np.sign(G.y)],
-                          [0, 1, 0],
-                          [0, 0, 1]], dtype=int)
-            G.update(A)
+
+            s = np.sign(g[3])
+            gp = g.copy()
+            gp[2] += g[1] - s * g[3]
+            gp[3] -= 2 * s * g[1]
+            gp[4] -= s * g[5]
+            g = gp
+        elif (gt(abs(g[4]), g[0])
+                or (eq(g[4], g[0]) and lt(2 * g[3], g[5]))
+                or (eq(g[4], -g[0]) and lt(g[5], 0))):
+            A = np.eye(3, dtype=int)
+            A[0, 2] = -np.sign(g[4])
             C = np.dot(C, A)
-        elif (lt(G.a, np.abs(G.z)) or
-              (eq(G.z, G.a) and lt(2 * G.x, G.y)) or
-              (eq(G.z, -G.a) and lt(G.y, 0))):
-            # Procedure A7
-            A = np.array([[1, -np.sign(G.z), 0],
-                          [0, 1, 0],
-                          [0, 0, 1]], dtype=int)
-            G.update(A)
+
+            s = np.sign(g[4])
+            gp = g.copy()
+            gp[2] += g[0] - s * g[4]
+            gp[3] -= s * g[5]
+            gp[4] -= 2 * s * g[0]
+            g = gp
+        elif (gt(abs(g[5]), g[0])
+                or (eq(g[5], g[0]) and lt(2 * g[3], g[4]))
+                or (eq(g[5], -g[0]) and lt(g[4], 0))):
+            A = np.eye(3, dtype=int)
+            A[0, 1] = -np.sign(g[5])
             C = np.dot(C, A)
-        elif (lt(G.x + G.y + G.z + G.a + G.b, 0) or
-              (eq(G.x + G.y + G.z + G.a + G.b, 0) and
-               gt(2 * (G.a + G.y) + G.z, 0))):
-            # Procedure A8
-            A = np.array([[1, 0, 1],
-                          [0, 1, 1],
-                          [0, 0, 1]])
-            G.update(A)
+
+            s = np.sign(g[5])
+            gp = g.copy()
+            gp[1] += g[0] - s * g[5]
+            gp[3] -= s * g[4]
+            gp[5] -= 2 * s * g[0]
+            g = gp
+        elif (lt(g[[0, 1, 3, 4, 5]].sum(), 0)
+                or (eq(g[[0, 1, 3, 4, 5]].sum(), 0)
+                    and gt(2 * (g[0] + g[4]) + g[5], 0))):
+            A = np.eye(3, dtype=int)
+            A[:, 2] = 1
             C = np.dot(C, A)
+
+            gp = g.copy()
+            gp[2] = g.sum()
+            gp[3] += 2 * g[1] + g[5]
+            gp[4] += 2 * g[0] + g[5]
+            g = gp
         else:
             break
-    else:
-        raise RuntimeError('Niggli did not converge \
-                in {n} iterations!'.format(n=count))
-    return G.get_new_cell(), C
+
+    abc = np.sqrt(g[:3])
+    cosangles = g[3:] / (2 * abc.prod() / abc)
+    angles = 180 * np.arccos(cosangles) / np.pi
+    newcell = np.array(cellpar_to_cell(np.concatenate([abc, angles])),
+                       dtype=float)
+
+    return newcell, C
 
 
 def niggli_reduce(atoms):
@@ -610,7 +577,7 @@ def niggli_reduce(atoms):
 
     assert all(atoms.pbc), 'Can only reduce 3d periodic unit cells!'
     new_cell, C = niggli_reduce_cell(atoms.cell)
-    scpos = np.dot(atoms.get_scaled_positions(), np.linalg.inv(C).T)
+    scpos = np.linalg.solve(C, atoms.get_scaled_positions().T).T
     scpos %= 1.0
     scpos %= 1.0
 

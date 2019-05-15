@@ -28,8 +28,8 @@ def read_db(filename, index, **kwargs):
             yield row.toatoms()
 
 
-def write_db(filename, images, **kwargs):
-    con = ase.db.connect(filename, serial=True, **kwargs)
+def write_db(filename, images, append=False, **kwargs):
+    con = ase.db.connect(filename, serial=True, append=append, **kwargs)
     for atoms in images:
         con.write(atoms)
 

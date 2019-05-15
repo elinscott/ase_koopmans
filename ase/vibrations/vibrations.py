@@ -13,7 +13,9 @@ import numpy as np
 import ase.units as units
 from ase.io.trajectory import Trajectory
 from ase.parallel import rank, paropen
+
 from ase.utils import opencew, pickleload, basestring
+from ase.calculators.singlepoint import SinglePointCalculator
 
 
 class Vibrations:
@@ -91,6 +93,7 @@ class Vibrations:
     def __init__(self, atoms, indices=None, name='vib', delta=0.01, nfree=2):
         assert nfree in [2, 4]
         self.atoms = atoms
+        self.calc = atoms.get_calculator()
         if indices is None:
             indices = range(len(atoms))
         self.indices = np.asarray(indices)
@@ -115,36 +118,61 @@ class Vibrations:
         simultaneously by several independent processes. This feature relies
         on the existence of files and the subsequent creation of the file in
         case it is not found.
+
+        If the program you want to use does not have a calculator in ASE, use
+        ``iterdisplace`` to get all displaced structures and calculate the forces
+        on your own.
         """
 
-        filename = self.name + '.eq.pckl'
-        fd = opencew(filename)
-        if fd is not None:
-            self.calculate(filename, fd)
-
-        p = self.atoms.positions.copy()
-        for filename, a, i, disp in self.displacements():
+        if op.isfile(self.name + '.all.pckl'):
+            raise RuntimeError(
+                'Cannot run calculation. ' +
+                self.name + '.all.pckl must be removed or split in order ' +
+                'to have only one sort of data structure at a time.')
+        for dispName, atoms in self.iterdisplace(inplace=True):
+            filename = dispName + '.pckl'
             fd = opencew(filename)
             if fd is not None:
-                self.atoms.positions[a, i] = p[a, i] + disp
-                self.calculate(filename, fd)
-                self.atoms.positions[a, i] = p[a, i]
+                self.calculate(atoms, filename, fd)
+
+    def iterdisplace(self, inplace=False):
+        """Yield name and atoms object for initial and displaced structures.
+
+        Use this to export the structures for each single-point calculation
+        to an external program instead of using ``run()``. Then save the
+        calculated gradients to <name>.pckl and continue using this instance.
+        """
+        atoms = self.atoms if inplace else self.atoms.copy()
+        yield self.name + '.eq', atoms
+        for dispName, a, i, disp in self.displacements():
+            if not inplace:
+                atoms = self.atoms.copy()
+            pos0 = atoms.positions[a, i]
+            atoms.positions[a, i] += disp
+            yield dispName, atoms
+            if inplace:
+                atoms.positions[a, i] = pos0
+
+    def iterimages(self):
+        """Yield initial and displaced structures."""
+        for name, atoms in self.iterdisplace():
+            yield atoms
 
     def displacements(self):
         for a in self.indices:
             for i in range(3):
                 for sign in [-1, 1]:
                     for ndis in range(1, self.nfree // 2 + 1):
-                        filename = ('%s.%d%s%s.pckl' %
+                        dispName = ('%s.%d%s%s' %
                                     (self.name, a, 'xyz'[i],
                                      ndis * ' +-'[sign]))
                         disp = ndis * sign * self.delta
-                        yield filename, a, i, disp
+                        yield dispName, a, i, disp
 
-    def calculate(self, filename, fd):
-        forces = self.atoms.get_forces()
+    def calculate(self, atoms, filename, fd):
+        forces = self.calc.get_forces(atoms)
         if self.ir:
-            dipole = self.calc.get_dipole_moment(self.atoms)
+            dipole = self.calc.get_dipole_moment(atoms)
         if self.ram:
             freq, noninPol, pol = self.get_polarizability()
         if rank == 0:
@@ -164,17 +192,23 @@ class Vibrations:
             fd.close()
         sys.stdout.flush()
 
-    def clean(self, empty_files=False):
+    def clean(self, empty_files=False, combined=True):
         """Remove pickle-files.
 
-        Use empty_files=True to remove only empty files."""
+        Use empty_files=True to remove only empty files and
+        combined=False to not remove the combined file.
+
+        """
 
         if rank != 0:
             return 0
 
         n = 0
         filenames = [self.name + '.eq.pckl']
-        for filename, a, i, disp in self.displacements():
+        if combined:
+            filenames.append(self.name + '.all.pckl')
+        for dispName, a, i, disp in self.displacements():
+            filename = dispName + '.pckl'
             filenames.append(filename)
 
         for name in filenames:
@@ -184,16 +218,86 @@ class Vibrations:
                     n += 1
         return n
 
+    def combine(self):
+        """Combine pickle-files to one file ending with '.all.pckl'.
+
+        The other pickle-files will be removed in order to have only one sort
+        of data structure at a time.
+
+        """
+        if rank != 0:
+            return 0
+        filenames = [self.name + '.eq.pckl']
+        for dispName, a, i, disp in self.displacements():
+            filename = dispName + '.pckl'
+            filenames.append(filename)
+        combined_data = {}
+        for name in filenames:
+            if not op.isfile(name) or op.getsize(name) == 0:
+                raise RuntimeError('Calculation is not complete. ' +
+                                   name + ' is missing or empty.')
+            with open(name, 'rb') as fl:
+                f = pickleload(fl)
+            combined_data.update({op.basename(name): f})
+        filename = self.name + '.all.pckl'
+        fd = opencew(filename)
+        if fd is None:
+            raise RuntimeError(
+                'Cannot write file ' + filename +
+                '. Remove old file if it exists.')
+        else:
+            pickle.dump(combined_data, fd, protocol=2)
+            fd.close()
+        return self.clean(combined=False)
+
+    def split(self):
+        """Split combined pickle-file.
+
+        The combined pickle-file will be removed in order to have only one
+        sort of data structure at a time.
+
+        """
+        if rank != 0:
+            return 0
+        combined_name = self.name + '.all.pckl'
+        if not op.isfile(combined_name):
+            raise RuntimeError('Cannot find combined file: ' +
+                               combined_name + '.')
+        with open(combined_name, 'rb') as fl:
+            combined_data = pickleload(fl)
+        filenames = [self.name + '.eq.pckl']
+        for dispName, a, i, disp in self.displacements():
+            filename = dispName + '.pckl'
+            filenames.append(filename)
+            if op.isfile(filename):
+                raise RuntimeError(
+                    'Cannot split. File ' + filename + 'already exists.')
+        for name in filenames:
+            fd = opencew(name)
+            try:
+                pickle.dump(combined_data[op.basename(name)], fd, protocol=2)
+            except KeyError:
+                pickle.dump(combined_data[name], fd, protocol=2)  # Old version
+            fd.close()
+        os.remove(combined_name)
+        return 1  # One file removed
+
     def read(self, method='standard', direction='central'):
         self.method = method.lower()
         self.direction = direction.lower()
         assert self.method in ['standard', 'frederiksen']
         assert self.direction in ['central', 'forward', 'backward']
 
-        def load(fname):
-            with open(fname, 'rb') as fl:
-                f = pickleload(fl)
-            if not hasattr(f, 'shape'):
+        def load(fname, combined_data=None):
+            if combined_data is None:
+                with open(fname, 'rb') as fl:
+                    f = pickleload(fl)
+            else:
+                try:
+                    f = combined_data[op.basename(fname)]
+                except KeyError:
+                    f = combined_data[fname]  # Old version
+            if not hasattr(f, 'shape') and not hasattr(f, 'keys'):
                 # output from InfraRed
                 return f[0]
             return f
@@ -201,19 +305,24 @@ class Vibrations:
         n = 3 * len(self.indices)
         H = np.empty((n, n))
         r = 0
+        if op.isfile(self.name + '.all.pckl'):
+            # Open the combined pickle-file
+            combined_data = load(self.name + '.all.pckl')
+        else:
+            combined_data = None
         if direction != 'central':
-            feq = load(self.name + '.eq.pckl')
+            feq = load(self.name + '.eq.pckl', combined_data)
         for a in self.indices:
             for i in 'xyz':
                 name = '%s.%d%s' % (self.name, a, i)
-                fminus = load(name + '-.pckl')
-                fplus = load(name + '+.pckl')
+                fminus = load(name + '-.pckl', combined_data)
+                fplus = load(name + '+.pckl', combined_data)
                 if self.method == 'frederiksen':
                     fminus[a] -= fminus.sum(0)
                     fplus[a] -= fplus.sum(0)
                 if self.nfree == 4:
-                    fminusminus = load(name + '--.pckl')
-                    fplusplus = load(name + '++.pckl')
+                    fminusminus = load(name + '--.pckl', combined_data)
+                    fplusplus = load(name + '++.pckl', combined_data)
                     if self.method == 'frederiksen':
                         fminusminus[a] -= fminusminus.sum(0)
                         fplusplus[a] -= fplusplus.sum(0)
@@ -338,6 +447,12 @@ class Vibrations:
         self.atoms.set_positions(p)
         self.atoms.set_calculator(calc)
         traj.close()
+
+    def show_as_force(self, n, scale=0.2):
+        mode = self.get_mode(n) * len(self.hnu) * scale
+        calc = SinglePointCalculator(self.atoms, forces=mode)
+        self.atoms.set_calculator(calc)
+        self.atoms.edit()
 
     def write_jmol(self):
         """Writes file for viewing of the modes with jmol."""

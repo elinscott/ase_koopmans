@@ -4,6 +4,8 @@ from os.path import basename
 
 import numpy as np
 
+from ase.calculators.calculator import PropertyNotImplementedError
+from ase.data import atomic_numbers
 from ase.data.colors import jmol_colors
 from ase.geometry import complete_cell
 from ase.gui.repeat import Repeat
@@ -13,12 +15,12 @@ from ase.gui.colors import ColorWindow
 from ase.gui.utils import get_magmoms
 from ase.utils import rotate
 
-
 GREEN = '#74DF00'
 PURPLE = '#AC58FA'
+BLACKISH = '#151515'
 
 
-def get_cell_coordinates(cell):
+def get_cell_coordinates(cell, shifted=False):
     """Get start and end points of lines segments used to draw cell."""
     nn = []
     for c in range(3):
@@ -46,6 +48,9 @@ def get_cell_coordinates(cell):
         n1 = n2
     B1.shape = (-1, 3)
     B2.shape = (-1, 3)
+    if shifted:
+        B1 -= 0.5
+        B2 -= 0.5
     return B1, B2
 
 
@@ -94,6 +99,17 @@ class View:
             self.colors[i] = ('#{0:02X}{1:02X}{2:02X}'
                               .format(*(int(x * 255) for x in rgb)))
 
+        # scaling factors for vectors
+        self.force_vector_scale = self.config['force_vector_scale']
+        self.velocity_vector_scale = self.config['velocity_vector_scale']
+
+        # buttons
+        self.b1 = 1  # left
+        self.b3 = 3  # right
+        if self.config['swap_mouse']:
+            self.b1 = 3
+            self.b3 = 1
+
     @property
     def atoms(self):
         return self.images[self.frame]
@@ -113,6 +129,8 @@ class View:
 
         self.window.title = title
 
+        self.call_observers()
+
         if focus:
             self.focus()
         else:
@@ -122,7 +140,8 @@ class View:
         natoms = len(atoms)
 
         if self.showing_cell():
-            B1, B2 = get_cell_coordinates(atoms.cell)
+            B1, B2 = get_cell_coordinates(atoms.cell,
+                                          self.config['shift_cell'])
         else:
             B1 = B2 = np.zeros((0, 3))
 
@@ -207,7 +226,12 @@ class View:
         self.draw()
 
     def get_forces(self):
-        return self.atoms.get_forces()
+        if self.atoms.calc is not None:
+            try:
+                return self.atoms.get_forces()
+            except PropertyNotImplementedError:
+                pass
+        return np.zeros((len(self.atoms), 3))
 
     def toggle_show_forces(self, key=None):
         self.draw()
@@ -250,6 +274,7 @@ class View:
         P[:n] += 2 * covalent_radii[:, None]
         P2 = P.max(0)
         self.center = np.dot(self.axes, (P1 + P2) / 2)
+        self.center += self.atoms.get_celldisp().reshape((3,)) / 2
         # Add 30% of whitespace on each side of the atoms
         S = 1.3 * (P2 - P1)
         w, h = self.window.size
@@ -314,10 +339,11 @@ class View:
                     for _rgb in self.get_colors()]
 
         if self.colormode == 'jmol':
-            return [self.colors[Z] for Z in self.atoms.numbers]
+            return [self.colors.get(Z, BLACKISH) for Z in self.atoms.numbers]
 
         if self.colormode == 'neighbors':
-            return [self.colors[Z] for Z in self.get_color_scalars()]
+            return [self.colors.get(Z, BLACKISH)
+                    for Z in self.get_color_scalars()]
 
         colorscale, cmin, cmax = self.colormode_data
         N = len(colorscale)
@@ -362,6 +388,10 @@ class View:
         offset[:2] -= 0.5 * self.window.size
         X = np.dot(self.X, axes) - offset
         n = len(self.atoms)
+
+        # extension for partial occupancies
+        tags = self.atoms.get_tags()
+
         # The indices enumerate drawable objects in z order:
         self.indices = X[:, 2].argsort()
         r = self.get_covalent_radii() * self.scale
@@ -380,17 +410,17 @@ class View:
             # Scale ugly?
             v = self.atoms.get_velocities()
             if v is not None:
-                vector_arrays.append(v * 10.0)
+                vector_arrays.append(v * 10.0 * self.velocity_vector_scale)
         if self.window['toggle-show-forces']:
             f = self.get_forces()
-            if f is not None:
-                vector_arrays.append(f)
+            vector_arrays.append(f * self.force_vector_scale)
 
         for array in vector_arrays:
             array[:] = np.dot(array, axes) + X[:n]
 
         colors = self.get_colors()
         circle = self.window.circle
+        arc = self.window.arc
         line = self.window.line
         constrained = ~self.images.get_dynamic(self.atoms)
 
@@ -410,15 +440,43 @@ class View:
             if a < n:
                 ra = d[a]
                 if visible[a]:
-                    # Draw the atoms
-                    if (self.moving and a < len(self.move_atoms_mask)
-                        and self.move_atoms_mask[a]):
-                        circle(movecolor, False,
-                               A[a, 0] - 4, A[a, 1] - 4,
-                               A[a, 0] + ra + 4, A[a, 1] + ra + 4)
+                    try:
+                        site_occ = self.atoms.info['occupancy'][tags[a]]
+                        # first an empty circle if a site is not fully occupied
+                        if (np.sum([v for v in site_occ.values()])) < 1.0:
+                            fill = '#ffffff'
+                            circle(fill, selected[a],
+                                   A[a, 0], A[a, 1],
+                                   A[a, 0] + ra, A[a, 1] + ra)
+                        start = 0
+                        # start with the dominant species
+                        for sym, occ in sorted(site_occ.items(),
+                                               key=lambda x: x[1],
+                                               reverse=True):
+                            if np.round(occ, decimals=4) == 1.0:
+                                circle(colors[a], selected[a],
+                                       A[a, 0], A[a, 1],
+                                       A[a, 0] + ra, A[a, 1] + ra)
+                            else:
+                                # jmol colors for the moment
+                                extent = 360. * occ
+                                arc(self.colors[atomic_numbers[sym]],
+                                    selected[a],
+                                    start, extent,
+                                    A[a, 0], A[a, 1],
+                                    A[a, 0] + ra, A[a, 1] + ra)
+                                start += extent
+                    except KeyError:
+                        # legacy behavior
+                        # Draw the atoms
+                        if (self.moving and a < len(self.move_atoms_mask)
+                            and self.move_atoms_mask[a]):
+                            circle(movecolor, False,
+                                   A[a, 0] - 4, A[a, 1] - 4,
+                                   A[a, 0] + ra + 4, A[a, 1] + ra + 4)
 
-                    circle(colors[a], selected[a],
-                           A[a, 0], A[a, 1], A[a, 0] + ra, A[a, 1] + ra)
+                        circle(colors[a], selected[a],
+                               A[a, 0], A[a, 1], A[a, 0] + ra, A[a, 1] + ra)
 
                     # Draw labels on the atoms
                     if self.labels is not None:
@@ -447,8 +505,8 @@ class View:
                     line((X1[a, 0] + disp[0], X1[a, 1] + disp[1],
                           X2[a, 0] + disp[0], X2[a, 1] + disp[1]))
                 else:
-                    line((X1[a, 0] + disp[0], X1[a, 1] + disp[1],
-                          X2[a, 0] + disp[0], X2[a, 1] + disp[1]),
+                    line((X1[a, 0], X1[a, 1],
+                          X2[a, 0], X2[a, 1]),
                          width=bond_linewidth)
 
         if self.window['toggle-show-axes']:
@@ -504,7 +562,7 @@ class View:
             self.scroll_event(event)
             return
 
-        if event.button != 1:
+        if event.button != self.b1:
             return
 
         selected = self.images.selected
@@ -568,7 +626,7 @@ class View:
         x = event.x
         y = event.y
         x0, y0 = self.xy
-        if self.button == 1:
+        if self.button == self.b1:
             x0 = int(round(x0))
             y0 = int(round(y0))
             self.draw()

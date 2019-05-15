@@ -2,6 +2,7 @@
 
 """Infrared intensities"""
 
+import os.path as op
 from math import sqrt
 from sys import stdout
 
@@ -29,7 +30,7 @@ class Infrared(Vibrations):
 
     The calculator object (calc) linked to the Atoms object (atoms) must
     have the attribute:
-    
+
     >>> calc.get_dipole_moment(atoms)
 
     In addition to the methods included in the ``Vibrations`` class
@@ -66,7 +67,7 @@ class Infrared(Vibrations):
         use the dipole moment in all directions.
 
     Example:
-    
+
     >>> from ase.io import read
     >>> from ase.calculators.vasp import Vasp
     >>> from ase.vibrations import Infrared
@@ -106,7 +107,7 @@ class Infrared(Vibrations):
 
     Example:
 
-    >>> #!/usr/bin/env python
+    >>> #!/usr/bin/env python3
 
     >>> from ase.io import read
     >>> from ase.calculators.siesta import Siesta
@@ -140,19 +141,11 @@ class Infrared(Vibrations):
     """
     def __init__(self, atoms, indices=None, name='ir', delta=0.01,
                  nfree=2, directions=None):
-        assert nfree in [2, 4]
-        self.atoms = atoms
+        Vibrations.__init__(self, atoms, indices=indices, name=name,
+                            delta=delta, nfree=nfree)
         if atoms.constraints:
             print('WARNING! \n Your Atoms object is constrained. '
                   'Some forces may be unintended set to zero. \n')
-        self.calc = atoms.get_calculator()
-        if indices is None:
-            indices = range(len(atoms))
-        self.indices = np.asarray(indices)
-        self.nfree = nfree
-        self.name = name + '-d%.3f' % delta
-        self.delta = delta
-        self.H = None
         if directions is None:
             self.directions = np.asarray([0, 1, 2])
         else:
@@ -164,13 +157,27 @@ class Infrared(Vibrations):
         self.method = method.lower()
         self.direction = direction.lower()
         assert self.method in ['standard', 'frederiksen']
+
+        def load(fname, combined_data=None):
+            if combined_data is not None:
+                try:
+                    return combined_data[op.basename(fname)]
+                except KeyError:
+                    return combined_data[fname]  # Old version
+            return pickleload(open(fname, 'rb'))
+
         if direction != 'central':
             raise NotImplementedError(
                 'Only central difference is implemented at the moment.')
 
+        if op.isfile(self.name + '.all.pckl'):
+            # Open the combined pickle-file
+            combined_data = load(self.name + '.all.pckl')
+        else:
+            combined_data = None
         # Get "static" dipole moment and forces
         name = '%s.eq.pckl' % self.name
-        [forces_zero, dipole_zero] = pickleload(open(name, 'rb'))
+        [forces_zero, dipole_zero] = load(name, combined_data)
         self.dipole_zero = (sum(dipole_zero**2)**0.5) / units.Debye
         self.force_zero = max([sum((forces_zero[j])**2)**0.5
                                for j in self.indices])
@@ -182,15 +189,13 @@ class Infrared(Vibrations):
         for a in self.indices:
             for i in 'xyz':
                 name = '%s.%d%s' % (self.name, a, i)
-                [fminus, dminus] = pickleload(
-                    open(name + '-.pckl', 'rb'))
-                [fplus, dplus] = pickleload(
-                    open(name + '+.pckl', 'rb'))
+                [fminus, dminus] = load(name + '-.pckl', combined_data)
+                [fplus, dplus] = load(name + '+.pckl', combined_data)
                 if self.nfree == 4:
-                    [fminusminus, dminusminus] = pickleload(
-                        open(name + '--.pckl', 'rb'))
-                    [fplusplus, dplusplus] = pickleload(
-                        open(name + '++.pckl', 'rb'))
+                    [fminusminus, dminusminus] = load(
+                        name + '--.pckl', combined_data)
+                    [fplusplus, dplusplus] = load(
+                        name + '++.pckl', combined_data)
                 if self.method == 'frederiksen':
                     fminus[a] += -fminus.sum(0)
                     fplus[a] += -fplus.sum(0)
@@ -332,5 +337,5 @@ class Infrared(Vibrations):
         fd.close()
         # np.savetxt(out, outdata, fmt='%.3f  %15.5e  %15.5e')
 
-        
+
 InfraRed = Infrared  # old name

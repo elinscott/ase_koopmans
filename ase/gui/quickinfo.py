@@ -49,6 +49,17 @@ def info(gui):
         periodic = [[_('no'), _('yes')][periodic] for periodic in atoms.pbc]
         # TRANSLATORS: This has the form Periodic: no, no, yes
         add(_('Periodic: {}, {}, {}').format(*periodic))
+        add()
+
+        cellpar = atoms.cell.cellpar()
+        add()
+        add(_('Lengths [Å]: {:.3f}, {:.3f}, {:.3f}').format(*cellpar[:3]))
+        add(_('Angles: {:.1f}°, {:.1f}°, {:.1f}°').format(*cellpar[3:]))
+
+        if atoms.number_of_lattice_vectors == 3:
+            add(_('Volume: {:.3f} Å³').format(atoms.get_volume()))
+
+        add()
 
         if nimg > 1:
             if all((atoms.cell == img.cell).all() for img in images):
@@ -56,8 +67,6 @@ def info(gui):
             else:
                 add(_('Unit cell varies.'))
 
-        if atoms.number_of_lattice_vectors == 3:
-            add(_('Volume: {:.3f} Å³').format(atoms.get_volume()))
 
         # Print electronic structure information if we have a calculator
         if atoms.calc:
@@ -87,14 +96,14 @@ def info(gui):
             if isinstance(calc, SinglePointCalculator):
                 add(_('Calculator: {} (cached)').format(calc.name))
             else:
-                add(_('Calculator: {} (attached)'.format(calc.name)))
+                add(_('Calculator: {} (attached)').format(calc.name))
 
             energy = getresult('energy', atoms.get_potential_energy)
             forces = getresult('forces', atoms.get_forces)
             magmom = getresult('magmom', atoms.get_magnetic_moment)
 
             if energy is not None:
-                energy_str = _('Energy: {:.3f} eV'.format(energy))
+                energy_str = _('Energy: {:.3f} eV').format(energy)
                 add(energy_str)
 
             if forces is not None:
@@ -103,7 +112,7 @@ def info(gui):
                 add(forces_str)
 
             if magmom is not None:
-                mag_str = _('Magmom: {:.3f} µ'.format(magmom))
+                mag_str = _('Magmom: {:.3f} µ').format(magmom)
                 add(mag_str)
 
     return '\n'.join(tokens)

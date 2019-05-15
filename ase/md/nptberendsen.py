@@ -8,7 +8,7 @@ import ase.units as units
 
 class NPTBerendsen(NVTBerendsen):
     """Berendsen (constant N, P, T) molecular dynamics.
-    
+
     This dynamics scale the velocities and volumes to maintain a constant
     pressure and temperature.  The shape of the simulation cell is not
     altered, if that is desired use Inhomogenous_NPTBerendsen.
@@ -17,7 +17,7 @@ class NPTBerendsen(NVTBerendsen):
 
     atoms
         The list of atoms.
-        
+
     timestep
         The time step.
 
@@ -45,11 +45,11 @@ class NPTBerendsen(NVTBerendsen):
     def __init__(self, atoms, timestep, temperature, taut=0.5e3 *
                  units.fs, pressure=1.01325, taup=1e3 * units.fs,
                  compressibility=4.57e-5, fixcm=True, trajectory=None,
-                 logfile=None, loginterval=1):
+                 logfile=None, loginterval=1, append_trajectory=False):
 
         NVTBerendsen.__init__(self, atoms, timestep, temperature,
                               taut, fixcm, trajectory, logfile,
-                              loginterval)
+                              loginterval, append_trajectory=append_trajectory)
         self.taup = taup
         self.pressure = pressure
         self.compressibility = compressibility
@@ -95,7 +95,7 @@ class NPTBerendsen(NVTBerendsen):
         cell = scl_pressure * cell
         self.atoms.set_cell(cell, scale_atoms=True)
 
-    def step(self, f):
+    def step(self, f=None):
         """ move one timestep forward using Berenden NPT molecular dynamics."""
 
         NVTBerendsen.scale_velocities(self)
@@ -103,6 +103,10 @@ class NPTBerendsen(NVTBerendsen):
 
         #one step velocity verlet
         atoms = self.atoms
+
+        if f is None:
+            f = atoms.get_forces()
+
         p = self.atoms.get_momenta()
         p += 0.5 * self.dt * f
 
@@ -128,10 +132,10 @@ class NPTBerendsen(NVTBerendsen):
 
         return f
 
-        
+
 class Inhomogeneous_NPTBerendsen(NPTBerendsen):
     """Berendsen (constant N, P, T) molecular dynamics.
-    
+
     This dynamics scale the velocities and volumes to maintain a constant
     pressure and temperature.  The size of the unit cell is allowed to change
     independently in the three directions, but the angles remain constant.
@@ -140,7 +144,7 @@ class Inhomogeneous_NPTBerendsen(NPTBerendsen):
 
     atoms
         The list of atoms.
-        
+
     timestep
         The time step.
 
@@ -168,7 +172,7 @@ class Inhomogeneous_NPTBerendsen(NPTBerendsen):
         means that all axes participate, set any of them to zero to disable
         the barostat in that direction.
     """
-    def __init__(self, atoms, timestep, temperature, 
+    def __init__(self, atoms, timestep, temperature,
                  taut=0.5e3 * units.fs, pressure=1.01325, taup=1e3 * units.fs,
                  compressibility=4.57e-5, mask=(1, 1, 1),
                  fixcm=True, trajectory=None,

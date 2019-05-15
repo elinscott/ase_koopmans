@@ -3,6 +3,7 @@
 See http://www.iucr.org/resources/cif/spec/version1.1/cifsyntax for a
 description of the file format.  STAR extensions as save frames,
 global blocks, nested loops and multi-data values are not supported.
+The "latin-1" encoding is required by the IUCR specification.
 """
 
 import re
@@ -11,10 +12,13 @@ import warnings
 
 import numpy as np
 
+from ase import Atoms
 from ase.parallel import paropen
 from ase.spacegroup import crystal
-from ase.spacegroup.spacegroup import spacegroup_from_data
+from ase.spacegroup.spacegroup import spacegroup_from_data, Spacegroup
 from ase.utils import basestring
+from ase.data import atomic_numbers, atomic_masses
+from ase.io.cif_unicode import format_unicode
 
 
 # Old conventions:
@@ -29,7 +33,7 @@ def convert_value(value):
     """Convert CIF value string to corresponding python type."""
     value = value.strip()
     if re.match('(".*")|(\'.*\')$', value):
-        return value[1:-1]
+        return format_unicode(value[1:-1])
     elif re.match(r'[+-]?\d+$', value):
         return int(value)
     elif re.match(r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$', value):
@@ -42,7 +46,7 @@ def convert_value(value):
         warnings.warn('Badly formed number: "{0}"'.format(value))
         return float(value[:value.index('(')])  # strip off uncertainties
     else:
-        return value
+        return format_unicode(value)
 
 
 def parse_multiline_string(lines, line):
@@ -167,13 +171,32 @@ def parse_block(lines, line):
     return blockname, tags
 
 
-def parse_cif(fileobj):
+def parse_cif(fileobj, reader='ase'):
     """Parse a CIF file. Returns a list of blockname and tag
     pairs. All tag names are converted to lower case."""
-    if isinstance(fileobj, basestring):
-        fileobj = open(fileobj)
-    lines = [''] + fileobj.readlines()[::-1]  # all lines (reversed)
+
+    if reader == 'ase':
+        return parse_cif_ase(fileobj)
+    elif reader == 'pycodcif':
+        return parse_cif_pycodcif(fileobj)
+
+
+def parse_cif_ase(fileobj):
+    """Parse a CIF file using ase CIF parser"""
     blocks = []
+    if isinstance(fileobj, basestring):
+        fileobj = open(fileobj, 'rb')
+
+    data = fileobj.read()
+    if isinstance(data, bytes):
+        data = data.decode('latin1')
+    data = [e for e in data.split('\n') if len(e) > 0]
+    if len(data) > 0 and data[0].rstrip() == '#\\#CIF_2.0':
+        warnings.warn('CIF v2.0 file format detected; `ase` CIF reader might '
+                      'incorrectly interpret some syntax constructions, use '
+                      '`pycodcif` reader instead')
+    lines = [''] + data[::-1]    # all lines (reversed)
+
     while True:
         if not lines:
             break
@@ -182,11 +205,40 @@ def parse_cif(fileobj):
         if not line or line.startswith('#'):
             continue
         blocks.append(parse_block(lines, line))
+
+    return blocks
+
+
+def parse_cif_pycodcif(fileobj):
+    """Parse a CIF file using pycodcif CIF parser"""
+    blocks = []
+    if not isinstance(fileobj, basestring):
+        fileobj = fileobj.name
+
+    try:
+        from pycodcif import parse
+    except ImportError:
+        raise ImportError(
+            'parse_cif_pycodcif requires pycodcif ' +
+            '(http://wiki.crystallography.net/cod-tools/pycodcif/)')
+
+    data,_,_ = parse(fileobj)
+
+    for datablock in data:
+        tags = datablock['values']
+        for tag in tags.keys():
+            values = [convert_value(x) for x in tags[tag]]
+            if len(values) == 1:
+                tags[tag] = values[0]
+            else:
+                tags[tag] = values
+        blocks.append((datablock['name'], tags))
+
     return blocks
 
 
 def tags2atoms(tags, store_tags=False, primitive_cell=False,
-               subtrans_included=True):
+               subtrans_included=True, fractional_occupancies=True):
     """Returns an Atoms object from a cif tags dictionary.  See read_cif()
     for a description of the arguments."""
     if primitive_cell and subtrans_included:
@@ -195,16 +247,37 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
             'are included in the symmetry operations listed in the CIF file, '
             'i.e. when `subtrans_included` is True.')
 
-    a = tags['_cell_length_a']
-    b = tags['_cell_length_b']
-    c = tags['_cell_length_c']
-    alpha = tags['_cell_angle_alpha']
-    beta = tags['_cell_angle_beta']
-    gamma = tags['_cell_angle_gamma']
+    cell_tags = ['_cell_length_a', '_cell_length_b', '_cell_length_c',
+                 '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma']
 
-    scaled_positions = np.array([tags['_atom_site_fract_x'],
-                                 tags['_atom_site_fract_y'],
-                                 tags['_atom_site_fract_z']]).T
+    # If any value is missing, ditch periodic boundary conditions
+    has_pbc = True
+    try:
+        cell_values = [tags[ct] for ct in cell_tags]
+        a, b, c, alpha, beta, gamma = cell_values
+    except KeyError:
+        has_pbc = False
+
+    # Now get positions
+    try:
+        scaled_positions = np.array([tags['_atom_site_fract_x'],
+                                     tags['_atom_site_fract_y'],
+                                     tags['_atom_site_fract_z']]).T
+    except KeyError:
+        scaled_positions = None
+
+    try:
+        positions = np.array([tags['_atom_site_cartn_x'],
+                              tags['_atom_site_cartn_y'],
+                              tags['_atom_site_cartn_z']]).T
+    except KeyError:
+        positions = None
+
+    if (positions is None) and (scaled_positions is None):
+        raise RuntimeError('No positions found in structure')
+    elif scaled_positions is not None and not has_pbc:
+        raise RuntimeError('Structure has fractional coordinates but not '
+                           'lattice parameters')
 
     symbols = []
     if '_atom_site_type_symbol' in tags:
@@ -249,11 +322,14 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
     else:
         sitesym = None
 
+    # The setting needs to be passed as either 1 or two, not None (default)
+    setting = 1
     spacegroup = 1
     if sitesym is not None:
         subtrans = [(0.0, 0.0, 0.0)] if subtrans_included else None
         spacegroup = spacegroup_from_data(
-            no=no, symbol=symbolHM, sitesym=sitesym, subtrans=subtrans)
+            no=no, symbol=symbolHM, sitesym=sitesym, subtrans=subtrans,
+            setting=setting)
     elif no is not None:
         spacegroup = no
     elif symbolHM is not None:
@@ -261,10 +337,9 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
     else:
         spacegroup = 1
 
+    kwargs = {}
     if store_tags:
-        kwargs = {'info': tags.copy()}
-    else:
-        kwargs = {}
+        kwargs['info'] = tags.copy()
 
     if 'D' in symbols:
         deuterium = [symbol == 'D' for symbol in symbols]
@@ -272,21 +347,89 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
     else:
         deuterium = False
 
-    atoms = crystal(symbols, basis=scaled_positions,
-                    cellpar=[a, b, c, alpha, beta, gamma],
-                    spacegroup=spacegroup, primitive_cell=primitive_cell,
-                    **kwargs)
-    if deuterium:
-        masses = atoms.get_masses()
-        masses[atoms.numbers == 1] = 1.00783
-        masses[deuterium] = 2.01355
-        atoms.set_masses(masses)
+    setting_name = None
+    if '_space_group_crystal_system' in tags:
+        setting_name = tags['_space_group_crystal_system']
+    elif '_symmetry_cell_setting' in tags:
+        setting_name = tags['_symmetry_cell_setting']
+    if setting_name:
+        no = Spacegroup(spacegroup).no
+        # rhombohedral systems
+        if no in (146, 148, 155, 160, 161, 166, 167):
+            if setting_name == 'hexagonal':
+                setting = 1
+            elif setting_name in ('trigonal', 'rhombohedral'):
+                setting = 2
+            else:
+                warnings.warn(
+                    'unexpected crystal system %r for space group %r' % (
+                        setting_name, spacegroup))
+        # FIXME - check for more crystal systems...
+        else:
+            warnings.warn(
+                'crystal system %r is not interpreted for space group %r. '
+                'This may result in wrong setting!' % (
+                    setting_name, spacegroup))
+
+    occupancies = None
+    if fractional_occupancies:
+        try:
+            occupancies = tags['_atom_site_occupancy']
+            # no warnings in this case
+            kwargs['onduplicates'] = 'keep'
+        except KeyError:
+            pass
+    else:
+        try:
+            if not np.allclose(tags['_atom_site_occupancy'], 1.):
+                warnings.warn(
+                    'Cif file containes mixed/fractional occupancies. '
+                    'Consider using `fractional_occupancies=True`')
+                kwargs['onduplicates'] = 'keep'
+        except KeyError:
+            pass
+
+    if has_pbc:
+        if scaled_positions is None:
+            _ = Atoms(symbols, positions=positions,
+                      cell=[a, b, c, alpha, beta, gamma])
+            scaled_positions = _.get_scaled_positions()
+
+        if deuterium:
+            numbers = np.array([atomic_numbers[s] for s in symbols])
+            masses = atomic_masses[numbers]
+            masses[deuterium] = 2.01355
+            kwargs['masses'] = masses
+
+        atoms = crystal(symbols, basis=scaled_positions,
+                        cellpar=[a, b, c, alpha, beta, gamma],
+                        spacegroup=spacegroup,
+                        occupancies=occupancies,
+                        setting=setting,
+                        primitive_cell=primitive_cell,
+                        **kwargs)
+    else:
+        atoms = Atoms(symbols, positions=positions,
+                      info=kwargs.get('info', None))
+        if occupancies is not None:
+            # Compile an occupancies dictionary
+            occ_dict = {}
+            for i, sym in enumerate(symbols):
+                occ_dict[i] = {sym: occupancies[i]}
+            atoms.info['occupancy'] = occ_dict
+
+        if deuterium:
+            masses = atoms.get_masses()
+            masses[atoms.numbers == 1] = 1.00783
+            masses[deuterium] = 2.01355
+            atoms.set_masses(masses)
 
     return atoms
 
 
 def read_cif(fileobj, index, store_tags=False, primitive_cell=False,
-             subtrans_included=True):
+             subtrans_included=True, fractional_occupancies=True,
+             reader='ase'):
     """Read Atoms object from CIF file. *index* specifies the data
     block number or name (if string) to return.
 
@@ -308,14 +451,24 @@ def read_cif(fileobj, index, store_tags=False, primitive_cell=False,
     1 of the extracted space group.  A result of setting this flag to
     true, is that it will not be possible to determine the primitive
     cell.
+
+    If *fractional_occupancies* is true, the resulting atoms object will be
+    tagged equipped with an array `occupancy`. Also, in case of mixed
+    occupancies, the atom's chemical symbol will be that of the most dominant
+    species.
+
+    String *reader* is used to select CIF reader. Value `ase` selects
+    built-in CIF reader (default), while `pycodcif` selects CIF reader based
+    on `pycodcif` package.
     """
-    blocks = parse_cif(fileobj)
+    blocks = parse_cif(fileobj, reader)
     # Find all CIF blocks with valid crystal data
     images = []
     for name, tags in blocks:
         try:
             atoms = tags2atoms(tags, store_tags, primitive_cell,
-                               subtrans_included)
+                               subtrans_included,
+                               fractional_occupancies=fractional_occupancies)
             images.append(atoms)
         except KeyError:
             pass
@@ -326,21 +479,26 @@ def read_cif(fileobj, index, store_tags=False, primitive_cell=False,
 def split_chem_form(comp_name):
     """Returns e.g. AB2  as ['A', '1', 'B', '2']"""
     split_form = re.findall(r'[A-Z][a-z]*|\d+',
-                            re.sub('[A-Z][a-z]*(?![\da-z])',
+                            re.sub(r'[A-Z][a-z]*(?![\da-z])',
                                    r'\g<0>1', comp_name))
     return split_form
+
+
+def write_enc(fileobj, s):
+    """Write string in latin-1 encoding."""
+    fileobj.write(s.encode("latin-1"))
 
 
 def write_cif(fileobj, images, format='default'):
     """Write *images* to CIF file."""
     if isinstance(fileobj, basestring):
-        fileobj = paropen(fileobj, 'w')
+        fileobj = paropen(fileobj, 'wb')
 
     if hasattr(images, 'get_positions'):
         images = [images]
 
     for i, atoms in enumerate(images):
-        fileobj.write('data_image%d\n' % i)
+        write_enc(fileobj, 'data_image%d\n' % i)
 
         a, b, c, alpha, beta, gamma = atoms.get_cell_lengths_and_angles()
 
@@ -355,69 +513,95 @@ def write_cif(fileobj, images, format='default'):
                 ii = ii + 2
 
             formula_sum = str(formula_sum)
-            fileobj.write('_chemical_formula_structural       %s\n' %
-                          atoms.get_chemical_formula(mode='reduce'))
-            fileobj.write('_chemical_formula_sum      "%s"\n' % formula_sum)
+            write_enc(fileobj, '_chemical_formula_structural       %s\n' %
+                      atoms.get_chemical_formula(mode='reduce'))
+            write_enc(fileobj, '_chemical_formula_sum      "%s"\n' %
+                      formula_sum)
 
-        fileobj.write('_cell_length_a       %g\n' % a)
-        fileobj.write('_cell_length_b       %g\n' % b)
-        fileobj.write('_cell_length_c       %g\n' % c)
-        fileobj.write('_cell_angle_alpha    %g\n' % alpha)
-        fileobj.write('_cell_angle_beta     %g\n' % beta)
-        fileobj.write('_cell_angle_gamma    %g\n' % gamma)
-        fileobj.write('\n')
+        # Do this only if there's three non-zero lattice vectors
+        if atoms.number_of_lattice_vectors == 3:
+            write_enc(fileobj, '_cell_length_a       %g\n' % a)
+            write_enc(fileobj, '_cell_length_b       %g\n' % b)
+            write_enc(fileobj, '_cell_length_c       %g\n' % c)
+            write_enc(fileobj, '_cell_angle_alpha    %g\n' % alpha)
+            write_enc(fileobj, '_cell_angle_beta     %g\n' % beta)
+            write_enc(fileobj, '_cell_angle_gamma    %g\n' % gamma)
+            write_enc(fileobj, '\n')
 
-        if atoms.pbc.all():
-            fileobj.write('_symmetry_space_group_name_H-M    %s\n' % '"P 1"')
-            fileobj.write('_symmetry_int_tables_number       %d\n' % 1)
-            fileobj.write('\n')
+            write_enc(fileobj, '_symmetry_space_group_name_H-M    %s\n' %
+                      '"P 1"')
+            write_enc(fileobj, '_symmetry_int_tables_number       %d\n' % 1)
+            write_enc(fileobj, '\n')
 
-            fileobj.write('loop_\n')
-            fileobj.write('  _symmetry_equiv_pos_as_xyz\n')
-            fileobj.write("  'x, y, z'\n")
-            fileobj.write('\n')
+            write_enc(fileobj, 'loop_\n')
+            write_enc(fileobj, '  _symmetry_equiv_pos_as_xyz\n')
+            write_enc(fileobj, "  'x, y, z'\n")
+            write_enc(fileobj, '\n')
 
-        fileobj.write('loop_\n')
+        write_enc(fileobj, 'loop_\n')
+
+        # Is it a periodic system?
+        coord_type = 'fract' if atoms.pbc.all() else 'Cartn'
 
         if format == 'mp':
-            fileobj.write('  _atom_site_type_symbol\n')
-            fileobj.write('  _atom_site_label\n')
-            fileobj.write('   _atom_site_symmetry_multiplicity\n')
-            fileobj.write('  _atom_site_fract_x\n')
-            fileobj.write('  _atom_site_fract_y\n')
-            fileobj.write('  _atom_site_fract_z\n')
-            fileobj.write('  _atom_site_occupancy\n')
+            write_enc(fileobj, '  _atom_site_type_symbol\n')
+            write_enc(fileobj, '  _atom_site_label\n')
+            write_enc(fileobj, '  _atom_site_symmetry_multiplicity\n')
+            write_enc(fileobj, '  _atom_site_{0}_x\n'.format(coord_type))
+            write_enc(fileobj, '  _atom_site_{0}_y\n'.format(coord_type))
+            write_enc(fileobj, '  _atom_site_{0}_z\n'.format(coord_type))
+            write_enc(fileobj, '  _atom_site_occupancy\n')
         else:
-            fileobj.write('  _atom_site_label\n')
-            fileobj.write('  _atom_site_occupancy\n')
-            fileobj.write('  _atom_site_fract_x\n')
-            fileobj.write('  _atom_site_fract_y\n')
-            fileobj.write('  _atom_site_fract_z\n')
-            fileobj.write('  _atom_site_thermal_displace_type\n')
-            fileobj.write('  _atom_site_B_iso_or_equiv\n')
-            fileobj.write('  _atom_site_type_symbol\n')
+            write_enc(fileobj, '  _atom_site_label\n')
+            write_enc(fileobj, '  _atom_site_occupancy\n')
+            write_enc(fileobj, '  _atom_site_{0}_x\n'.format(coord_type))
+            write_enc(fileobj, '  _atom_site_{0}_y\n'.format(coord_type))
+            write_enc(fileobj, '  _atom_site_{0}_z\n'.format(coord_type))
+            write_enc(fileobj, '  _atom_site_thermal_displace_type\n')
+            write_enc(fileobj, '  _atom_site_B_iso_or_equiv\n')
+            write_enc(fileobj, '  _atom_site_type_symbol\n')
 
-        scaled = atoms.get_scaled_positions()
+        if coord_type == 'fract':
+            coords = atoms.get_scaled_positions().tolist()
+        else:
+            coords = atoms.get_positions().tolist()
+        symbols = atoms.get_chemical_symbols()
+        occupancies = [1 for i in range(len(symbols))]
+
+        # try to fetch occupancies // rely on the tag - occupancy mapping
+        try:
+            occ_info = atoms.info['occupancy']
+            for i, tag in enumerate(atoms.get_tags()):
+                occupancies[i] = occ_info[tag][symbols[i]]
+                # extend the positions array in case of mixed occupancy
+                for sym, occ in occ_info[tag].items():
+                    if sym != symbols[i]:
+                        symbols.append(sym)
+                        coords.append(coords[i])
+                        occupancies.append(occ)
+        except KeyError:
+            pass
+
         no = {}
-        for i, atom in enumerate(atoms):
-            symbol = atom.symbol
+
+        for symbol, pos, occ in zip(symbols, coords, occupancies):
             if symbol in no:
                 no[symbol] += 1
             else:
                 no[symbol] = 1
             if format == 'mp':
-                fileobj.write(
-                    '  %-2s  %4s  %4s  %7.5f  %7.5f  %7.5f  %6.1f\n' %
-                    (symbol, symbol + str(no[symbol]), 1,
-                     scaled[i][0], scaled[i][1], scaled[i][2], 1.0))
+                write_enc(fileobj,
+                          '  %-2s  %4s  %4s  %7.5f  %7.5f  %7.5f  %6.1f\n' %
+                          (symbol, symbol + str(no[symbol]), 1,
+                           pos[0], pos[1], pos[2], occ))
             else:
-                fileobj.write(
-                    '  %-8s %6.4f %7.5f  %7.5f  %7.5f  %4s  %6.3f  %s\n' %
-                    ('%s%d' % (symbol, no[symbol]),
-                     1.0,
-                     scaled[i][0],
-                     scaled[i][1],
-                     scaled[i][2],
-                     'Biso',
-                     1.0,
-                     symbol))
+                write_enc(fileobj,
+                          '  %-8s %6.4f %7.5f  %7.5f  %7.5f  %4s  %6.3f  %s\n'
+                          % ('%s%d' % (symbol, no[symbol]),
+                             occ,
+                             pos[0],
+                             pos[1],
+                             pos[2],
+                             'Biso',
+                             1.0,
+                             symbol))

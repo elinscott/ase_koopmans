@@ -7,50 +7,79 @@ from ase.build import bulk
 from ase.io import read, write
 from ase.visualize import view
 from ase.build import molecule
-from ase.atoms import Atoms, string2symbols
+from ase.atoms import Atoms
+from ase.symbols import string2symbols
 from ase.data import ground_state_magnetic_moments
 from ase.data import atomic_numbers, covalent_radii
 
 
 class CLICommand:
-    short_description = 'Build an atom, molecule or bulk structure'
+    """Build an atom, molecule or bulk structure.
+
+    Atom:
+
+        ase build <chemical symbol> ...
+
+    Molecule:
+
+        ase build <formula> ...
+
+    where <formula> must be one of the formulas known to ASE
+    (see here: https://wiki.fysik.dtu.dk/ase/ase/build/build.html#molecules).
+
+    Bulk:
+
+        ase build -x <crystal structure> <formula> ...
+
+    Examples:
+
+        ase build Li  # lithium atom
+        ase build Li -M 1  # ... with a magnetic moment of 1
+        ase build Li -M 1 -V 3.5 # ... in a 7x7x7 Ang cell
+        ase build H2O  # water molecule
+        ase build -x fcc Cu -a 3.6  # FCC copper
+    """
 
     @staticmethod
     def add_arguments(parser):
         add = parser.add_argument
-        add('name', metavar='name/input-file')
-        add('output', nargs='?')
+        add('name', metavar='formula/input-file',
+            help='Chemical formula or input filename.')
+        add('output', nargs='?', help='Output file.')
         add('-M', '--magnetic-moment',
             metavar='M1,M2,...',
-            help='Magnetic moment(s).  '
-            'Use "-M 1" or "-M 2.3,-2.3".')
+            help='Magnetic moments.  '
+            'Use "-M 1" or "-M 2.3,-2.3"')
         add('--modify', metavar='...',
             help='Modify atoms with Python statement.  '
-            'Example: --modify="atoms.positions[-1,2]+=0.1".')
+            'Example: --modify="atoms.positions[-1,2]+=0.1"')
         add('-V', '--vacuum', type=float,
             help='Amount of vacuum to add around isolated atoms '
-            '(in Angstrom).')
+            '(in Angstrom)')
         add('-v', '--vacuum0', type=float,
-            help='Deprecated.  Use -V or --vacuum instead.')
-        add('--unit-cell',
-            help='Unit cell.  Examples: "10.0" or "9,10,11" (in Angstrom).')
-        add('--bond-length', type=float,
-            help='Bond length of dimer in Angstrom.')
+            help='Deprecated.  Use -V or --vacuum instead')
+        add('--unit-cell', metavar='CELL',
+            help='Unit cell in Angstrom.  Examples: "10.0" or "9,10,11"')
+        add('--bond-length', type=float, metavar='LENGTH',
+            help='Bond length of dimer in Angstrom')
         add('-x', '--crystal-structure',
-            help='Crystal structure.',
+            help='Crystal structure',
             choices=['sc', 'fcc', 'bcc', 'hcp', 'diamond',
                      'zincblende', 'rocksalt', 'cesiumchloride',
                      'fluorite', 'wurtzite'])
-        add('-a', '--lattice-constant', default='',
-            help='Lattice constant(s) in Angstrom.')
+        add('-a', '--lattice-constant', default='', metavar='LENGTH',
+            help='Lattice constant or comma-separated lattice constantes in '
+            'Angstrom')
         add('--orthorhombic', action='store_true',
-            help='Use orthorhombic unit cell.')
+            help='Use orthorhombic unit cell')
         add('--cubic', action='store_true',
-            help='Use cubic unit cell.')
+            help='Use cubic unit cell')
         add('-r', '--repeat',
-            help='Repeat unit cell.  Use "-r 2" or "-r 2,3,1".')
-        add('-g', '--gui', action='store_true')
-        add('--periodic', action='store_true')
+            help='Repeat unit cell.  Use "-r 2" or "-r 2,3,1"')
+        add('-g', '--gui', action='store_true',
+            help='open ase gui')
+        add('--periodic', action='store_true',
+            help='make structure fully periodic')
 
     @staticmethod
     def run(args, parser):

@@ -63,6 +63,7 @@ string_keys = [
     'xc',
     'species_dir',
     'run_command',
+    'plus_u',
 ]
 
 int_keys = [
@@ -82,6 +83,7 @@ bool_keys = [
     'compute_kinetic',
     'compute_numerical_stress',
     'compute_analytical_stress',
+    'compute_heat_flux',
     'distributed_spline_storage',
     'evaluate_work_function',
     'final_forces_cleaned',
@@ -123,7 +125,8 @@ class Aims(FileIOCalculator):
     __command_default = 'aims.version.serial.x > aims.out'
     __outfilename_default = 'aims.out'
 
-    implemented_properties = ['energy', 'forces', 'stress', 'dipole', 'magmom']
+    implemented_properties = ['energy', 'forces', 'stress', 'stresses',
+                              'dipole', 'magmom']
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label=os.curdir, atoms=None, cubes=None, radmul=None,
@@ -196,6 +199,8 @@ class Aims(FileIOCalculator):
             File into which the stdout of the FHI aims run is piped into. Note
             that this will be only of any effect, if the <run_command> does not
             yet contain a '>' directive.
+        plus_u : dict
+            For DFT+U. Adds a +U term to one specific shell of the species.
 
         kwargs : dict
             Any of the base class arguments.
@@ -408,7 +413,7 @@ class Aims(FileIOCalculator):
                      'List of parameters used to initialize the calculator:',
                      ]:
             output.write('# ' + line + '\n')
-        for p,v in self.parameters.iteritems():
+        for p, v in self.parameters.items():
             s = '#     {} : {}\n'.format(p, v)
             output.write(s)
         output.write(lim + '\n')
@@ -425,6 +430,8 @@ class Aims(FileIOCalculator):
                 dk = 0.5 - 0.5 / np.array(mp)
                 output.write('%-35s%f %f %f\n' % (('k_offset',) + tuple(dk)))
             elif key == 'species_dir' or key == 'run_command':
+                continue
+            elif key == 'plus_u':
                 continue
             elif key == 'smearing':
                 name = self.parameters.smearing[0].lower()
@@ -455,7 +462,9 @@ class Aims(FileIOCalculator):
         output.write(lim + '\n\n')
         output.close()
 
-    def read(self, label):
+    def read(self, label=None):
+        if label is None:
+            label = self.label
         FileIOCalculator.read(self, label)
         geometry = os.path.join(self.directory, 'geometry.in')
         control = os.path.join(self.directory, 'control.in')
@@ -480,9 +489,20 @@ class Aims(FileIOCalculator):
         if ('compute_forces' in self.parameters or
             'sc_accuracy_forces' in self.parameters):
             self.read_forces()
-        if ('compute_numerical_stress' in self.parameters or
-            'compute_analytical_stress' in self.parameters):
+
+        if ('sc_accuracy_stress' in self.parameters or
+            ('compute_numerical_stress' in self.parameters
+            and self.parameters['compute_numerical_stress']) or
+            ('compute_analytical_stress' in self.parameters
+            and self.parameters['compute_analytical_stress']) or
+            ('compute_heat_flux' in self.parameters
+            and self.parameters['compute_heat_flux'])):
             self.read_stress()
+            
+        if ('compute_heat_flux' in self.parameters
+            and self.parameters['compute_heat_flux']):
+            self.read_stresses()
+
         if ('dipole' in self.parameters.get('output', []) and
             not self.atoms.pbc.any()):
             self.read_dipole()
@@ -527,6 +547,10 @@ class Aims(FileIOCalculator):
                 raise RuntimeError(
                     "Basis tier %i not found for element %s" %
                     (self.targettier, symbol))
+            if self.parameters.get('plus_u') is not None:
+                if symbol in self.parameters.plus_u.keys():
+                    control.write('plus_u %s \n' %
+                                  self.parameters.plus_u[symbol])
         control.close()
 
         if self.radmul is not None:
@@ -644,6 +668,44 @@ class Aims(FileIOCalculator):
         # rearrange in 6-component form and return
         self.results['stress'] = np.array([stress[0], stress[4], stress[8],
                                            stress[5], stress[2], stress[1]])
+
+    def read_stresses(self):
+        """ Read stress per atom """
+        with open(self.out) as f:
+            next(l for l in f if
+                 'Per atom stress (eV) used for heat flux calculation' in l)
+            # scroll to boundary
+            next(l for l in f if '-------------' in l)
+
+            stresses = []
+            for l in [next(f) for _ in range(len(self.atoms))]:
+                # Read stresses and rearrange from
+                # (xx, yy, zz, xy, xz, yz) to (xx, yy, zz, yz, xz, xy)
+                xx, yy, zz, xy, xz, yz = [float(d) for d in l.split()[2:8]]
+                stresses.append([xx, yy, zz, yz, xz, xy])
+
+            self.results['stresses'] = np.array(stresses)
+
+    def get_stresses(self, voigt=False):
+        """ Return stress per atom
+
+        Returns an array of the six independent components of the
+        symmetric stress tensor per atom, in the traditional Voigt order
+        (xx, yy, zz, yz, xz, xy) or as a 3x3 matrix.  Default is 3x3 matrix.
+        """
+
+        voigt_stresses = self.results['stresses']
+
+        if voigt:
+            return voigt_stresses
+        else:
+            stresses = np.zeros((len(self.atoms), 3, 3))
+            for ii, stress in enumerate(voigt_stresses):
+                xx, yy, zz, yz, xz, xy = stress
+                stresses[ii] = np.array([(xx, xy, xz),
+                                         (xy, yy, yz),
+                                         (xz, yz, zz)])
+            return stresses
 
     def read_convergence(self):
         converged = False

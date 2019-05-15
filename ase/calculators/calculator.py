@@ -5,15 +5,70 @@ from math import pi, sqrt
 
 import numpy as np
 
+from ase.utils import jsonable
 from ase.dft.kpoints import bandpath, monkhorst_pack
 
 
-class ReadError(Exception):
-    pass
+class CalculatorError(RuntimeError):
+    """Base class of error types related to ASE calculators."""
+
+
+class CalculatorSetupError(CalculatorError):
+    """Calculation cannot be performed with the given parameters.
+
+    Reasons to raise this errors are:
+      * The calculator is not properly configured
+        (missing executable, environment variables, ...)
+      * The given atoms object is not supported
+      * Calculator parameters are unsupported
+
+    Typically raised before a calculation."""
+
+
+class EnvironmentError(CalculatorSetupError):
+    """Raised if calculator is not properly set up with ASE.
+
+    May be missing an executable or environment variables."""
+
+
+class InputError(CalculatorSetupError):
+    """Raised if inputs given to the calculator were incorrect.
+
+    Bad input keywords or values, or missing pseudopotentials.
+
+    This may be raised before or during calculation, depending on
+    when the problem is detected."""
+
+
+class CalculationFailed(CalculatorError):
+    """Calculation failed unexpectedly.
+
+    Reasons to raise this error are:
+      * Calculation did not converge
+      * Calculation ran out of memory
+      * Segmentation fault or other abnormal termination
+      * Arithmetic trouble (singular matrices, NaN, ...)
+
+    Typically raised during calculation."""
+
+
+class SCFError(CalculationFailed):
+    """SCF loop did not converge."""
+
+
+class ReadError(CalculatorError):
+    """Unexpected irrecoverable error while reading calculation results."""
 
 
 class PropertyNotImplementedError(NotImplementedError):
-    pass
+    """Raised if a calculator does not implement the requested property."""
+
+
+class PropertyNotPresent(CalculatorError):
+    """Requested property is missing.
+
+    Maybe it was never calculated, or for some reason was not extracted
+    with the rest of the results, without being a fatal ReadError."""
 
 
 def compare_atoms(atoms1, atoms2, tol=1e-15):
@@ -40,7 +95,7 @@ def compare_atoms(atoms1, atoms2, tol=1e-15):
     return system_changes
 
 
-all_properties = ['energy', 'forces', 'stress', 'dipole',
+all_properties = ['energy', 'forces', 'stress', 'stresses', 'dipole',
                   'charges', 'magmom', 'magmoms', 'free_energy']
 
 
@@ -49,15 +104,16 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 
 # Recognized names of calculators sorted alphabetically:
-names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
-         'demon', 'dftb', 'dmol', 'eam', 'elk', 'emt', 'espresso',
+names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
+         'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
          'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
          'hotbit', 'jacapo', 'lammpsrun',
          'lammpslib', 'lj', 'mopac', 'morse', 'nwchem', 'octopus', 'onetep',
-         'siesta', 'tip3p', 'turbomole', 'vasp']
+         'openmx', 'siesta', 'tip3p', 'turbomole', 'vasp']
 
 
 special = {'cp2k': 'CP2K',
+           'dftd3': 'DFTD3',
            'dmol': 'DMol3',
            'eam': 'EAM',
            'elk': 'ELK',
@@ -71,6 +127,7 @@ special = {'cp2k': 'CP2K',
            'mopac': 'MOPAC',
            'morse': 'MorsePotential',
            'nwchem': 'NWChem',
+           'openmx': 'OpenMX',
            'tip3p': 'TIP3P'}
 
 
@@ -82,6 +139,10 @@ def get_calculator(name):
         from gpaw import GPAW as Calculator
     elif name == 'hotbit':
         from hotbit import Calculator
+    elif name == 'vasp2':
+        from ase.calculators.vasp import Vasp2 as Calculator
+    elif name == 'ace':
+        from ase.calculators.acemolecule import ACE as Calculator
     else:
         classname = special.get(name, name.title())
         module = __import__('ase.calculators.' + name, {}, None, [classname])
@@ -91,23 +152,25 @@ def get_calculator(name):
 
 def equal(a, b, tol=None):
     """ndarray-enabled comparison function."""
-    if isinstance(a, np.ndarray):
-        b = np.array(b)
-        if a.shape != b.shape:
-            return False
-        if tol is None:
-            return (a == b).all()
-        else:
-            return np.allclose(a, b, rtol=tol, atol=tol)
-    if isinstance(b, np.ndarray):
-        return equal(b, a, tol)
-    if isinstance(a, dict) and isinstance(b, dict):
-        if a.keys() != b.keys():
-            return False
-        return all(equal(a[key], b[key], tol) for key in a.keys())
+    # XXX Known bugs:
+    #  * Comparing cell objects (pbc not part of array representation)
+    #  * Infinite recursion for cyclic dicts
+    #  * Can of worms is open
     if tol is None:
-        return a == b
-    return abs(a - b) < tol * abs(b) + tol
+        return np.array_equal(a, b)
+
+    shape = np.shape(a)
+    if shape != np.shape(b):
+        return False
+
+    if not shape:
+        if isinstance(a, dict) and isinstance(b, dict):
+            if a.keys() != b.keys():
+                return False
+            return all(equal(a[key], b[key], tol) for key in a.keys())
+        return abs(a - b) < tol * abs(b) + tol
+
+    return np.allclose(a, b, rtol=tol, atol=tol)
 
 
 def kptdensity2monkhorstpack(atoms, kptdensity=3.5, even=True):
@@ -181,22 +244,42 @@ def kpts2sizeandoffsets(size=None, density=None, gamma=None, even=None,
     return size, offsets
 
 
-def kpts2ndarray(kpts, atoms=None):
-    """Convert kpts keyword to 2-d ndarray of scaled k-points."""
+@jsonable('kpoints')
+class KPoints:
+    def __init__(self, kpts=None):
+        if kpts is None:
+            kpts = np.zeros((1, 3))
+        self.kpts = kpts
 
+    def todict(self):
+        return vars(self)
+
+
+def kpts2kpts(kpts, atoms=None):
     if kpts is None:
-        return np.zeros((1, 3))
+        return KPoints()
+
+    if hasattr(kpts, 'kpts'):
+        return kpts
 
     if isinstance(kpts, dict):
+        if 'kpts' in kpts:
+            return KPoints(kpts['kpts'])
         if 'path' in kpts:
-            return bandpath(cell=atoms.cell, **kpts)[0]
+            path = bandpath(cell=atoms.cell, **kpts)
+            return path
         size, offsets = kpts2sizeandoffsets(atoms=atoms, **kpts)
-        return monkhorst_pack(size) + offsets
+        return KPoints(monkhorst_pack(size) + offsets)
 
     if isinstance(kpts[0], int):
-        return monkhorst_pack(kpts)
+        return KPoints(monkhorst_pack(kpts))
 
-    return np.array(kpts)
+    return KPoints(np.array(kpts))
+
+
+def kpts2ndarray(kpts, atoms=None):
+    """Convert kpts keyword to 2-d ndarray of scaled k-points."""
+    return kpts2kpts(kpts, atoms=atoms).kpts
 
 
 class EigenvalOccupationMixin:
@@ -325,7 +408,7 @@ class Calculator(object):
                 # Atoms were read from file.  Update atoms:
                 if not (equal(atoms.numbers, self.atoms.numbers) and
                         (atoms.pbc == self.atoms.pbc).all()):
-                    raise RuntimeError('Atoms not compatible with file')
+                    raise CalculatorError('Atoms not compatible with file')
                 atoms.positions = self.atoms.positions
                 atoms.cell = self.atoms.cell
 
@@ -442,13 +525,15 @@ class Calculator(object):
 
     def check_state(self, atoms, tol=1e-15):
         """Check for system changes since last calculation."""
-        return compare_atoms(self.atoms, atoms)
+        return compare_atoms(self.atoms, atoms, tol)
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         energy = self.get_property('energy', atoms)
         if force_consistent:
             if 'free_energy' not in self.results:
                 name = self.__class__.__name__
+                # XXX but we don't know why the energy is not there.
+                # We should raise PropertyNotPresent.  Discuss
                 raise PropertyNotImplementedError(
                     'Force consistent/free energy ("free_energy") '
                     'not provided by {0} calculator'.format(name))
@@ -461,6 +546,9 @@ class Calculator(object):
 
     def get_stress(self, atoms=None):
         return self.get_property('stress', atoms)
+
+    def get_stresses(self, atoms=None):
+        return self.get_property('stresses', atoms)
 
     def get_dipole_moment(self, atoms=None):
         return self.get_property('dipole', atoms)
@@ -619,7 +707,7 @@ class Calculator(object):
 class FileIOCalculator(Calculator):
     """Base class for calculators that write/read input/output files."""
 
-    command = None
+    command = None  # str
     'Command used to start calculation'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
@@ -644,7 +732,7 @@ class FileIOCalculator(Calculator):
         Calculator.calculate(self, atoms, properties, system_changes)
         self.write_input(self.atoms, properties, system_changes)
         if self.command is None:
-            raise RuntimeError(
+            raise CalculatorSetupError(
                 'Please set ${} environment variable '
                 .format('ASE_' + self.name.upper() + '_COMMAND') +
                 'or supply the command keyword')
@@ -652,8 +740,9 @@ class FileIOCalculator(Calculator):
         errorcode = subprocess.call(command, shell=True, cwd=self.directory)
 
         if errorcode:
-            raise RuntimeError('{} in {} returned an error: {}'
-                               .format(self.name, self.directory, errorcode))
+            raise CalculationFailed('{} in {} returned an error: {}'
+                                    .format(self.name, self.directory,
+                                            errorcode))
         self.read_results()
 
     def write_input(self, atoms, properties=None, system_changes=None):

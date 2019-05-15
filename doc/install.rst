@@ -7,13 +7,13 @@ Installation
 Requirements
 ============
 
-* Python_ 2.7, 3.4-3.6
-* NumPy_ 1.9 or newer (base N-dimensional array package)
-* SciPy_ (library for scientific computing)
+* Python_ 3.5 or newer
+* NumPy_ 1.10 or newer (base N-dimensional array package)
+* SciPy_ 0.16 or newer (library for scientific computing)
 
 Optional:
 
-* Matplotlib_ (plotting)
+* Matplotlib_ 2.0.0 or newer (plotting)
 * :mod:`tkinter` (for :mod:`ase.gui`)
 * Flask_ (for :mod:`ase.db` web-interface)
 
@@ -105,13 +105,13 @@ from Git.
 :Tar-file:
 
     You can get the source as a `tar-file <http://xkcd.com/1168/>`__ for the
-    latest stable release (ase-3.16.0.tar.gz_) or the latest
+    latest stable release (ase-3.17.0.tar.gz_) or the latest
     development snapshot (`<snapshot.tar.gz>`_).
 
     Unpack and make a soft link::
 
-        $ tar -xf ase-3.16.0.tar.gz
-        $ ln -s ase-3.16.0 ase
+        $ tar -xf ase-3.17.0.tar.gz
+        $ ln -s ase-3.17.0 ase
 
     Here is a `list of tarballs <https://pypi.org/simple/ase/>`__.
 
@@ -120,7 +120,7 @@ from Git.
     Alternatively, you can get the source for the latest stable release from
     https://gitlab.com/ase/ase like this::
 
-        $ git clone -b 3.16.0 https://gitlab.com/ase/ase.git
+        $ git clone -b 3.17.0 https://gitlab.com/ase/ase.git
 
     or if you want the development version::
 
@@ -151,7 +151,7 @@ Finally, please `run the tests`_.
     dates of older releases can be found there.
 
 
-.. _ase-3.16.0.tar.gz: https://pypi.org/packages/source/a/ase/ase-3.16.0.tar.gz
+.. _ase-3.17.0.tar.gz: https://pypi.org/packages/source/a/ase/ase-3.17.0.tar.gz
 
 
 Environment variables

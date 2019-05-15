@@ -15,8 +15,13 @@ calculation.
 
 
 .. _VASP: http://cms.mpi.univie.ac.at/vasp/
+.. _Vasp 2.0: vasp2.html
 
-
+.. note::
+   A new VASP_ calculator is currently in BETA testing, see
+   :mod:`~ase.calculators.vasp.vasp2`,
+   which implements the calculator using the
+   :class:`~ase.calculators.calculator.FileIOCalculator`.
 
 Environment variables
 =====================
@@ -43,9 +48,21 @@ Set both environment variables in your shell configuration file:
   $ export VASP_SCRIPT=$HOME/vasp/run_vasp.py
   $ export VASP_PP_PATH=$HOME/vasp/mypps
 
-.. highlight:: python
+.. _VASP vdW wiki: https://cms.mpi.univie.ac.at/vasp/vasp/vdW_DF_functional_Langreth_Lundqvist_et_al.html
 
+The following environment variable can be used to automatically copy the
+van der Waals kernel to the calculation directory. The kernel is needed for
+vdW calculations, see `VASP vdW wiki`_, for more details. The kernel is looked
+for, whenever ``luse_vdw=True``.
 
+.. highlight:: bash
+
+::
+
+   $ export ASE_VASP_VDW=$HOME/<path-to-vdw_kernel.bindat-folder>
+
+The environment variable :envvar:`ASE_VASP_VDW` should point to the folder where
+the :file:`vdw_kernel.bindat` file is located.
 
 VASP Calculator
 ===============
@@ -72,6 +89,9 @@ keyword         type       default value   description
 ``reciprocal``  ``bool``   None            Use reciprocal units if
                                            **k**-points are specified
                                            explicitly
+``net_charge``  ``int``    None            Net charge per unit cell (as
+                                           an alternative to specifying
+                                           the total charge ``nelect``)
 ``prec``        ``str``                    Accuracy of calculation
 ``encut``       ``float``                  Kinetic energy cutoff
 ``ediff``       ``float``                  Convergence break condition
@@ -83,6 +103,7 @@ keyword         type       default value   description
 ``sigma``       ``float``                  Width of smearing
 ``nelm``        ``int``                    Maximum number of
                                            SC-iterations
+``ldau_luj``    ``dict``                   LD(S)A+U parameters
 ==============  =========  ==============  ============================
 
 For parameters in the list without default value given, VASP will set
@@ -165,6 +186,8 @@ Three base setups are provided:
         with the least electrons has been chosen.
     recommended:
         corresponds to the `table of recommended PAW setups <https://cms.mpi.univie.ac.at/vasp/vasp/Recommended_PAW_potentials_DFT_calculations_using_vasp_5_2.html>`_ supplied by the VASP developers.
+    materialsproject:
+        corresponds to the `Materials Project recommended PAW setups <https://wiki.materialsproject.org/Pseudopotentials_Choice>`_.
     gw:
         corresponds to the `table of recommended setups for GW <https://cms.mpi.univie.ac.at/vasp/vasp/Recommended_GW_PAW_potentials_vasp_5_2.html>`_ supplied by the VASP developers.
 
@@ -322,6 +345,23 @@ For example:
 
 returns an acceptable ``kpts`` array (for use with ``reciprocal=True``) as well as plotting information.
 
+LD(S)A+U
+========
+The VASP +U corrections can be turned on using the default VASP parameters explicitly, by manually setting
+the ``ldaul``, ``ldauu`` and ``ldauj`` parameters, as well as enabling ``ldau``.
+
+However, ASE offers a convenient ASE specific keyword to enable these, by using a dictionary construction, through the
+``ldau_luj`` keyword. If the user does not explicitly set ``ldau=False``, then ``ldau=True`` will automatically
+be set if ``ldau_luj`` is set.
+For example:
+
+.. code-block:: python
+
+    calc = Vasp(ldau_luj={'Si': {'L': 1, 'U': 3, 'J': 0}})
+
+will set ``U=3`` on the Si p-orbitals, and will automatically set ``ldau=True`` as well.
+
+
 Restart old calculation
 =======================
 
@@ -351,3 +391,14 @@ calculations, in the directory of the previous calculation do:
 >>> atoms = calc.get_atoms()
 >>> atoms.get_potential_energy()
 -4.7386889999999999
+
+New Calculator
+==============
+
+A new VASP_ calculator is currently in BETA testing, see
+:mod:`~ase.calculators.vasp.vasp2`, which implements the calculator using the
+:class:`~ase.calculators.calculator.FileIOCalculator`.
+
+.. toctree::
+
+   vasp2

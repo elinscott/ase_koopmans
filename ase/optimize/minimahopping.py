@@ -43,7 +43,7 @@ class MinimaHopping:
 
         # when a MD sim. has passed a local minimum:
         self._passedminimum = PassedMinimum()
-        
+
         # Misc storage.
         self._previous_optimum = None
         self._previous_energy = None
@@ -206,12 +206,13 @@ class MinimaHopping:
         self._temperature *= self._beta3
         self._log('msg', 'Found a new minimum.')
         self._log('par')
-        if (self._atoms.get_potential_energy() <
-            self._previous_energy + self._Ediff):
-                self._log('msg', 'Accepted new minimum.')
-                self._Ediff *= self._alpha1
-                self._log('par')
-                self._record_minimum()
+        if (self._previous_energy is None or
+            (self._atoms.get_potential_energy() <
+                self._previous_energy + self._Ediff)):
+            self._log('msg', 'Accepted new minimum.')
+            self._Ediff *= self._alpha1
+            self._log('par')
+            self._record_minimum()
         else:
             self._log('msg', 'Rejected new minimum due to energy. '
                              'Restoring last minimum.')
@@ -271,7 +272,6 @@ class MinimaHopping:
         exists = os.path.exists(self._minima_traj)
         if exists:
             empty = os.path.getsize(self._minima_traj) == 0
-        if os.path.exists(self._minima_traj):
             if not empty:
                 traj = io.Trajectory(self._minima_traj, 'r')
                 self._minima = [atoms for atoms in traj]
@@ -314,7 +314,7 @@ class MinimaHopping:
                                          force_temp=True)
         traj = io.Trajectory('md%05i.traj' % self._counter, 'a',
                              self._atoms)
-        dyn = VelocityVerlet(self._atoms, dt=self._timestep * units.fs)
+        dyn = VelocityVerlet(self._atoms, timestep=self._timestep * units.fs)
         log = MDLogger(dyn, self._atoms, 'md%05i.log' % self._counter,
                        header=True, stress=False, peratom=False)
         dyn.attach(log, interval=1)
@@ -553,14 +553,14 @@ class MHPlot:
         ediffax = fig.add_axes((lm, bm + 2. * epotheight + vg1 + vg2,
                                 figwidth, parfigheight))
         tempax = fig.add_axes((lm, (bm + 2 * epotheight + vg1 + 2 * vg2 +
-                               parfigheight), figwidth, parfigheight))
+                                    parfigheight), figwidth, parfigheight))
         for ax in [ax2, tempax, ediffax]:
             ax.set_xticklabels([])
         ax1.set_xlabel('step')
         tempax.set_ylabel('$T$, K')
         ediffax.set_ylabel(r'$E_\mathrm{diff}$, eV')
         for ax in [ax1, ax2]:
-            ax.set_ylabel('r$E_\mathrm{pot}$, eV')
+            ax.set_ylabel(r'$E_\mathrm{pot}$, eV')
         ax = CombinedAxis(ax1, ax2, tempax, ediffax)
         self._set_zoomed_range(ax)
         ax1.spines['top'].set_visible(False)
@@ -667,6 +667,7 @@ def floatornan(value):
 class CombinedAxis:
     """Helper class for MHPlot to plot on split y axis and adjust limits
     simultaneously."""
+
     def __init__(self, ax1, ax2, tempax, ediffax):
         self.ax1 = ax1
         self.ax2 = ax2

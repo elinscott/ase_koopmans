@@ -17,26 +17,29 @@ Quick links:
     - :mod:`~ase.db`
     - :mod:`~ase.dft`
   * - :mod:`~ase.data`
+    - :mod:`~ase.formula`
     - :mod:`~ase.ga`
     - :mod:`~ase.geometry`
-    - :mod:`~ase.gui`
-  * - :mod:`~ase.io`
+  * - :mod:`~ase.gui`
+    - :mod:`~ase.io`
     - :mod:`~ase.lattice`
     - :mod:`~ase.md`
-    - :mod:`~ase.neb`
-  * - :mod:`~ase.neighborlist`
+  * - :mod:`~ase.neb`
+    - :mod:`~ase.neighborlist`
     - :mod:`~ase.optimize`
     - :mod:`~ase.parallel`
-    - :mod:`~ase.phasediagram`
-  * - :mod:`~ase.phonons`
+  * - :mod:`~ase.phasediagram`
+    - :mod:`~ase.phonons`
     - :mod:`~ase.spacegroup`
     - :mod:`~ase.transport`
-    - :mod:`~ase.thermochemistry`
-  * - :mod:`~ase.units`
+  * - :mod:`~ase.thermochemistry`
+    - :mod:`~ase.units`
     - :mod:`~ase.utils`
     - :mod:`~ase.vibrations`
-    - :mod:`~ase.visualize`
-
+  * - :mod:`~ase.visualize`
+    -
+    -
+    -
 
 .. seealso::
 
@@ -56,6 +59,7 @@ List of all modules:
    io/io
    build/build
    eos
+   formula
    collections
    data
    optimize
@@ -66,7 +70,7 @@ List of all modules:
    geometry
    db/db
    neb
-   ga
+   ga/ga
    gui/gui
    lattice
    cluster/cluster

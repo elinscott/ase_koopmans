@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 this is pure laziness to submit python scripts to PBS
 without the usual cd $PBS_O_WORKDIR stuff
 '''
 
-import os,sys, tempfile
+import os, tempfile
 from optparse import OptionParser
 
 parser = OptionParser(usage='pysub',

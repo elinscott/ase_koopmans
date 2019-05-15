@@ -210,13 +210,15 @@ def get_angles(v1, v2, cell=None, pbc=None):
             raise ValueError("cell or pbc must be both set or both be None")
 
         v1 = find_mic(v1, cell, pbc)[0]
-        v2= find_mic(v2, cell, pbc)[0]
+        v2 = find_mic(v2, cell, pbc)[0]
 
 
     v1 /= np.linalg.norm(v1, axis=1)[:, np.newaxis]
     v2 /= np.linalg.norm(v2, axis=1)[:, np.newaxis]
 
-    angles = np.arccos(np.einsum('ij,ij->i', v1, v2))
+    # We just normalized the vectors, but in some cases we can get
+    # bad things like 1+2e-16.  These we clip away:
+    angles = np.arccos(np.einsum('ij,ij->i', v1, v2).clip(-1.0, 1.0))
 
     return angles * f
 

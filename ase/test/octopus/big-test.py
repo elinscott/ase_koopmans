@@ -59,7 +59,7 @@ if 1:
     dipole_err = np.abs(dipole - [0., 0., -0.37]).max()
     assert dipole_err < 0.02, dipole_err
     energy_err = abs(-463.5944954 - E)
-    assert energy_err < 0.001, energy_err
+    assert energy_err < 0.01, energy_err
 
 if 1:
     atoms = g2['O2']

@@ -12,7 +12,7 @@ params['pair_style'] = 'lj/cut 8.0'
 params['pair_coeff'] = ['1 1 0.0108102 3.345']
 params['mass'] = ['1 {}'.format(atomic_masses[atomic_numbers['Ar']])]
 
-calc = LAMMPS(specorder=['Ar'], parameters=params)
+calc = LAMMPS(specorder=['Ar'], **params)
 
 ar_nc.set_calculator(calc)
 
@@ -25,7 +25,7 @@ assert abs(norm(ar_nc.positions) - 23.588) < 1E-3
 
 
 params['minimize'] = '1.0e-15 1.0e-6 2000 4000'   # add minimize
-calc.params = params
+calc.parameters = params
 
 # set_atoms=True to read final coordinates after minimization
 calc.run(set_atoms=True)
