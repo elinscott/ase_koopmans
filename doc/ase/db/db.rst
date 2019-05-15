@@ -482,15 +482,16 @@ You can also write/read to/from JSON using::
 
 External Tables
 ----------------
-If the number of key_value_pairs becomes large, ASE DB offers an alternative way of 
-storing them. Internally ASE creates a dedicated table can be created to store a certain group of
-key_value_pairs. To store the a group of key_value_pairs associated with thermodynamics in a separate
-table named *thermodynamics* 
+If the number of *key_value_pairs* becomes large, ASE DB offers an alternative way of 
+storing them. Internally ASE can create a dedicated table to store groups of
+*key_value_pairs*. You can store a group of *key_value_pairs* associated with thermodynamics in a separate
+table named *thermodynamics* by: 
 
 >>> atoms = Atoms()
 >>> id = db.write(atoms, external_tables={'thermodynamics': {'heat_capacity': 3.0, 'internal_energy': -2.0}})
 
-To access the value from an row object
+Values stored in external tables can be accessed using:
+
 >>> row = db.get(id=id)
 >>> heat_capacity = row['thermodynamics']['heat_capacity']
 >>> internal_energy = row['thermodynamics']['internal_energy']
