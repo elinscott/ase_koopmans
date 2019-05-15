@@ -71,7 +71,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     # options set internally in this calculator
     kimmodel_not_allowed_options = ['modelname', 'debug']
     lammpsrun_not_allowed_options = ['parameters', 'files', 'specorder',
-                                     'keep_tmp_files', 'has_charges']
+                                     'keep_tmp_files']
     lammpslib_not_allowed_options = ['lammps_header', 'lmpcmds',
                                      'atom_types', 'log_file', 'keep_alive']
     asap_kimmo_not_allowed_options = ['name', 'verbose']
@@ -296,14 +296,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
             # Add init lines to parameter list
             _add_init_lines_to_parameters(parameters, model_init)
-
-            # Determine whether this model has charges
-            has_charges = False
-            for ii, mline in enumerate(model_init):
-                ml = re.sub(' +', ' ', mline).strip().lower()
-                if (ml.startswith('atom_style charge') or
-                    ml.startswith('atom_style full')):
-                    has_charges = True
 
             # Return LAMMPS calculator
             return LAMMPS(**parameters, files=param_filenames,
