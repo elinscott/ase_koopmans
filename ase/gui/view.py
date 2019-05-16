@@ -375,6 +375,8 @@ class View:
                               skin=0, self_interaction=False, bothways=True)
             nl.update(self.atoms)
             return [len(nl.get_neighbors(i)[0]) for i in range(n)]
+        else:
+            return self.atoms.get_array(self.colormode)
 
     def get_covalent_radii(self, atoms=None):
         if atoms is None:

@@ -83,12 +83,15 @@ class ColorWindow:
                           for red in range(0, 260, 10)]
             self.gui.colormode_data = colorscale, mn, mx
 
-            unit = {'tag': '',
-                    'force': 'eV/Ang',
-                    'velocity': '??',
-                    'charge': '|e|',
-                    'initial charge': '|e|',
-                    u'magmom': 'μB'}[value]
+            try:
+                unit = {'tag': '',
+                        'force': 'eV/Ang',
+                        'velocity': '??',
+                        'charge': '|e|',
+                        'initial charge': '|e|',
+                        u'magmom': 'μB'}[value]
+            except KeyError:
+                unit = ''
             text = ''
 
             rng = mx - mn  # XXX what are optimal allowed range and steps ?
