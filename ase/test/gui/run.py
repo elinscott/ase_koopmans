@@ -83,13 +83,18 @@ def color(gui):
     a = Atoms('C10', magmoms=np.linspace(1, -1, 10))
     a.positions[:] = np.linspace(0, 9, 10)[:, None]
     a.calc = SinglePointCalculator(a, forces=a.positions)
-    a.set_array('corehole_energies', np.linspace(100, 110, 10))
+    che = np.linspace(100, 110, 10)
+    che[5] = None
+    a.set_array('corehole_energies', che)
     gui.new_atoms(a)
     c = gui.colors_window()
     c.toggle('force')
     c.toggle('magmom')
     activebuttons = [button.active for button in c.radio.buttons]
     assert activebuttons == [1, 0, 1, 0, 0, 1, 1, 1], activebuttons
+    c.toggle('corehole_energies')
+    c.change_mnmx(101, 120)
+
 
 @test
 def settings(gui):

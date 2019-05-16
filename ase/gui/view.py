@@ -347,6 +347,7 @@ class View:
 
         colorscale, cmin, cmax = self.colormode_data
         N = len(colorscale)
+        colorswhite = colorscale + ['#ffffff']
         if cmin == cmax:
             indices = [N // 2] * len(self.atoms)
         else:
@@ -354,7 +355,8 @@ class View:
             indices = np.clip(((scalars - cmin) / (cmax - cmin) * N +
                                0.5).astype(int),
                               0, N - 1)
-        return [colorscale[i] for i in indices]
+            indices = np.where(np.isnan(scalars), N, indices)
+        return [colorswhite[i] for i in indices]
 
     def get_color_scalars(self, frame=None):
         if self.colormode == 'tag':

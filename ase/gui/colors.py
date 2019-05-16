@@ -43,8 +43,11 @@ class ColorWindow:
         if hasattr(self, 'mnmx'):
             self.win.add(self.mnmx)
 
-    def change_mnmx(self):
-        ##print('change min/max value')
+    def change_mnmx(self, mn=None, mx=None):
+        if mn:
+            self.mnmx[1].value = mn
+        if mx:
+            self.mnmx[3].value = mx
         mn, mx = self.mnmx[1].value, self.mnmx[3].value
         colorscale, _, _ = self.gui.colormode_data
         self.gui.colormode_data = colorscale, mn, mx
