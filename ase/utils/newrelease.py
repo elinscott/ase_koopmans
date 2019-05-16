@@ -129,7 +129,7 @@ Git master branch
 
 :git:`master <>`.
 
-* Database now support external tables for fast read/write/update of large number of key_value_pairs
+* No changes yet
 
 
 {header}
