@@ -21,8 +21,9 @@ General:
 * :class:`~ase.symbols.Symbols` objects now have a
   :attr:`~ase.symbols.Symbols.formula` attribute.
 
-* Added :mod:`ase.geometry.bravais` module to represent primitive Bravais
-  lattices and data relating to Brillouin zones.
+* Added :mod:`ase.geometry.bravais` module to represent primitive
+  Bravais lattices and data relating to Brillouin zones.  Includes 2D
+  lattices.
 
 * New :class:`~ase.dft.kpoints.BandPath` class to represent a band path
   specification like ``'GXL'`` along with actual k-point coordinates.
@@ -32,11 +33,9 @@ General:
 * New holonomic :class:`constraint <ase.constraints.FixLinearTriatomic>`
   for trilinear molecules.
 
-
-CLI tools:
-
 * Added ``ase info --calculators`` option which shows a list of
   calculators and whether they appear to be installed.
+
 
 Calculators:
 
@@ -49,6 +48,16 @@ Calculators:
 
 * Calculation of stress tensor implemented for
   :class:`~ase.calculators.emt.EMT` potential
+
+* :class:`~ase.calculators.octopus.Octopus` calculator provides stress tensor.
+
+* Reworked :class:`~ase.calculators.lammpsrun.LAMMPS` calculator.  The
+  calculator should now behave more consistently with other ASE
+  calculators.
+
+* Gromacs calculator updated to work with newer Gromacs
+
+* Added :class:`~ase.calculators.ACN`, a QM/MM forcefield for acetonitrile.
 
 Algorithms:
 
@@ -78,6 +87,9 @@ Algorithms:
   difference between two DFT equation-of-states.  See the new :ref:`dcdft tut`
   tutorial.
 
+* Holonomic :class:`~ase.constraints.FixLinearTriatomic` for QM/MM
+  calculations.
+
 I/O:
 
 * Database supports user defined tables
@@ -91,6 +103,14 @@ I/O:
   band-structure` and :program:`ase reciprocal` now work with
   JSON representations of band structures and paths.
 
+* Support reading CIF files through the `Pycodcif
+  <http://wiki.crystallography.net/cod-tools/CIF-parser/>_` library.
+  This can be useful for CIF features that are not supported by the
+  internal CIF parser.
+
+GUI:
+
+ * Quickinfo dialog automatically updates when switching image.
 
 Version 3.17.0
 ==============
