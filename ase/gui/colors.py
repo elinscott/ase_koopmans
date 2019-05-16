@@ -25,6 +25,13 @@ class ColorWindow:
                   _('By magnetic moment'),
                   _('By number of neighbors'),]
 
+        haveit = ['numbers', 'positions', 'forces', 'momenta',
+                  'initial_charges', 'initial_magmoms']
+        for key in self.gui.atoms.arrays:
+            if key not in haveit:
+                values.append(key)
+                labels.append('By ' + key)
+
         self.radio = ui.RadioButtons(labels, values, self.toggle,
                                      vertical=True)
         self.radio.value = gui.colormode
@@ -32,6 +39,7 @@ class ColorWindow:
         self.activate()
         self.label = ui.Label()
         self.win.add(self.label)
+
         if hasattr(self, 'mnmx'):
             self.win.add(self.mnmx)
 
@@ -81,8 +89,6 @@ class ColorWindow:
                     'charge': '|e|',
                     'initial charge': '|e|',
                     u'magmom': 'μB'}[value]
-            text = '[{0},{1}]: [{2:.6f},{3:.6f}] {4}'.format(
-                _('Green'), _('Yellow'), mn, mx, unit)
             text = ''
 
             rng = mx - mn  # XXX what are optimal allowed range and steps ?
