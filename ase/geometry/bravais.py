@@ -937,6 +937,16 @@ def get_3d_bravais_lattice(cell, eps=2e-4):
     return identify_lattice(cell)
 
 
+def celldiff(cell1, cell2):
+    cell1 = Cell.ascell(cell1)
+    cell2 = Cell.ascell(cell2)
+    scale = (cell1.volume * cell2.volume)**(-1. / 3.)  # --> 1/Ang^2
+    x1 = cell1 @ cell1.T
+    x2 = cell2 @ cell2.T
+    dev = scale * np.abs(x2 - x1).max()
+    return dev
+
+
 def get_bravais_lattice_from_reduced_form(cell, eps=2e-4):
     cellpar = cell.cellpar()
     ABC = cellpar[:3]
