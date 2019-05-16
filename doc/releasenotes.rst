@@ -9,7 +9,7 @@ Git master branch
 
 :git:`master <>`.
 
-General:
+General changes:
 
 * ``atoms.cell`` is now a :class:`~ase.geometry.cell.Cell` object.
   This object resembles a 3x3 array and also provides shortcuts to many common
@@ -18,7 +18,7 @@ General:
 * Preliminary :class:`~ase.formula.Formula` type added.  Collects all
   formula manipulation functionality in one place.
 
-* :class:`~ase.symbols.Symbols` objects now have a
+* :class:`~ase.symbols.Symbols` objects, like ``atoms.symbols``, now have a
   :attr:`~ase.symbols.Symbols.formula` attribute.
 
 * Added :mod:`ase.geometry.bravais` module to represent primitive
@@ -39,7 +39,7 @@ General:
 
 Calculators:
 
-* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
+* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`.
 
 * NWChem calculator now supports TDDFT runs.
 
@@ -47,15 +47,16 @@ Calculators:
   written that specify LDOS, bsunfolding and many other functionalities.
 
 * Calculation of stress tensor implemented for
-  :class:`~ase.calculators.emt.EMT` potential
+  :class:`~ase.calculators.emt.EMT` potential.
 
-* :class:`~ase.calculators.octopus.Octopus` calculator provides stress tensor.
+* The :class:`~ase.calculators.octopus.Octopus` calculator now
+  provides the stress tensor.
 
 * Reworked :class:`~ase.calculators.lammpsrun.LAMMPS` calculator.  The
   calculator should now behave more consistently with other ASE
   calculators.
 
-* Gromacs calculator updated to work with newer Gromacs
+* Gromacs calculator updated to work with newer Gromacs.
 
 * Added :class:`~ase.calculators.ACN`, a QM/MM forcefield for acetonitrile.
 
@@ -103,10 +104,10 @@ I/O:
   band-structure` and :program:`ase reciprocal` now work with
   JSON representations of band structures and paths.
 
-* Support reading CIF files through the `Pycodcif
-  <http://wiki.crystallography.net/cod-tools/CIF-parser/>_` library.
-  This can be useful for CIF features that are not supported by the
-  internal CIF parser.
+* Support reading CIF files through the
+  `Pycodcif <http://wiki.crystallography.net/cod-tools/CIF-parser/>`_
+  library.  This can be useful for CIF features that are not supported
+  by the internal CIF parser.
 
 GUI:
 
