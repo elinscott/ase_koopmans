@@ -70,8 +70,7 @@ Git master branch
   :class:`~ase.calculators.emt.EMT` potential
 
 * Database supports user defined tables
-  See :ref:`db`
-  
+
 * Preliminary :class:`~ase.formula.Formula` type added.  Collects all
   formula manipulation functionality in one place.
 
