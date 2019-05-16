@@ -9,12 +9,17 @@ Git master branch
 
 :git:`master <>`.
 
-* Added ``ase info --calculators`` option which shows a list of
-  calculators and whether they appear to be installed.
+General:
 
-* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
+* ``atoms.cell`` is now a :class:`~ase.geometry.cell.Cell` object.
+  This object resembles a 3x3 array and also provides shortcuts to many common
+  operations.
 
-* Support for reading and writing DL_POLY format.
+* Preliminary :class:`~ase.formula.Formula` type added.  Collects all
+  formula manipulation functionality in one place.
+
+* :class:`~ase.symbols.Symbols` objects now have a
+  :attr:`~ase.symbols.Symbols.formula` attribute.
 
 * Added :mod:`ase.geometry.bravais` module to represent primitive Bravais
   lattices and data relating to Brillouin zones.
@@ -24,16 +29,31 @@ Git master branch
   :class:`~ase.dft.band_structure.BandStructure` objects now have a band
   path.
 
-* Improved JSON support.  :ref:`cli` tools like :program:`ase
-  band-structure` and :program:`ase reciprocal` now work with
-  JSON representations of band structures and paths.
-
-* ``atoms.cell`` is now a :class:`~ase.geometry.cell.Cell` object.
-  This object resembles a 3x3 array and also provides shortcuts to many common
-  operations.
-
 * New holonomic :class:`constraint <ase.constraints.FixLinearTriatomic>`
   for trilinear molecules.
+
+
+CLI tools:
+
+* Added ``ase info --calculators`` option which shows a list of
+  calculators and whether they appear to be installed.
+
+Calculators:
+
+* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`
+
+* NWChem calculator now supports TDDFT runs.
+
+* Multiple improvements to the ONETEP Calculator. Input files can now be
+  written that specify LDOS, bsunfolding and many other functionalities.
+
+* Calculation of stress tensor implemented for
+  :class:`~ase.calculators.emt.EMT` potential
+
+Algorithms:
+
+* :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting
+  bond lengths and angles from atoms.
 
 * Dynamics and structure optimizers can now run as an iterator using the
   new ``irun()`` mechanism::
@@ -44,14 +64,6 @@ Git master branch
   This makes it easier to execute custom code during runs.  The ``conv``
   variable indicates whether the current iteration meets the convergence
   criterion, although this behaviour may change in future versions.
-
-* :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting
-  bond lengths and angles from atoms.
-
-* Multiple improvements to the ONETEP Calculator. Input files can now be
-  written that specify LDOS, bsunfolding and many other functionalities.
-
-* NWChem calculator now supports TDDFT runs.
 
 * The genetic algorithm module :mod:`ase.ga` now has operators for crystal
   structure prediction. See :ref:`ga_bulk_tutorial`.
@@ -66,16 +78,18 @@ Git master branch
   difference between two DFT equation-of-states.  See the new :ref:`dcdft tut`
   tutorial.
 
-* Calculation of stress tensor implemented for
-  :class:`~ase.calculators.emt.EMT` potential
+I/O:
 
 * Database supports user defined tables
 
 * Preliminary :class:`~ase.formula.Formula` type added.  Collects all
   formula manipulation functionality in one place.
 
-* :class:`~ase.Atoms.symbol` objects now have a
-  :attr:`~ase.symbols.Symbols.formula` attribute.
+* Support for reading and writing DL_POLY format.
+
+* Improved JSON support.  :ref:`cli` tools like :program:`ase
+  band-structure` and :program:`ase reciprocal` now work with
+  JSON representations of band structures and paths.
 
 
 Version 3.17.0
