@@ -302,9 +302,13 @@ potentials)
         if not self.parameters.keep_tmp_files or force:
             shutil.rmtree(self.parameters.tmp_dir)
 
-    def check_state(self, atoms, tol=1.0e-4):
-        # differenct convention for unit-cell and limit precision in
-        # LAMMPS-input file will lead to small rounding errors
+    def check_state(self, atoms, tol=1.0e-10):
+        # Transforming the unit cell to conform to LAMMPS' convention for
+        # orientation (c.f. https://lammps.sandia.gov/doc/Howto_triclinic.html)
+        # results in some precision loss, so we use bit larger tolerance than
+        # machine precision here.  Note that there can also be precision loss
+        # related to how many significant digits are specified for things in
+        # the LAMMPS input file.
         return Calculator.check_state(self, atoms, tol)
 
     def calculate(self, atoms=None, properties=None, system_changes=None):
