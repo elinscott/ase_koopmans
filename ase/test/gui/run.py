@@ -86,7 +86,7 @@ def color(gui):
     gui.new_atoms(a)
     c = gui.colors_window()
     c.toggle('force')
-    text = c.toggle('magmom')
+    c.toggle('magmom')
     activebuttons = [button.active for button in c.radio.buttons]
     assert activebuttons == [1, 0, 1, 0, 0, 1, 1], activebuttons
 
@@ -114,13 +114,13 @@ def open_and_save(gui):
     gui.open(filename='h2o.json')
     save_dialog(gui, 'h2o.cif@-1')
 
+
 @test
 def test_fracocc(gui):
     from ase.test.fio.cif import content
     with open('./fracocc.cif', 'w') as f:
         f.write(content)
     gui.open(filename='fracocc.cif')
-
 
 
 p = argparse.ArgumentParser()
@@ -149,8 +149,6 @@ for name in args.tests or alltests:
         if not args.pause:
             gui.exit()
     gui.run(test=f)
-
-
 
 
 import os
