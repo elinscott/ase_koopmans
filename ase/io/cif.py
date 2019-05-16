@@ -367,7 +367,7 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
         # FIXME - check for more crystal systems...
         else:
             warnings.warn(
-                'crystal system %r is not interpreated for space group %r. '
+                'crystal system %r is not interpreted for space group %r. '
                 'This may result in wrong setting!' % (
                     setting_name, spacegroup))
 

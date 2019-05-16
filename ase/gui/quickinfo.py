@@ -51,8 +51,7 @@ def info(gui):
         add(_('Periodic: {}, {}, {}').format(*periodic))
         add()
 
-        uc = atoms.unitcell
-        cellpar = uc.cellpar()
+        cellpar = atoms.cell.cellpar()
         add()
         add(_('Lengths [Å]: {:.3f}, {:.3f}, {:.3f}').format(*cellpar[:3]))
         add(_('Angles: {:.1f}°, {:.1f}°, {:.1f}°').format(*cellpar[3:]))
