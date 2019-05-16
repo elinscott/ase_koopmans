@@ -68,6 +68,8 @@ Git master branch
 * Calculation of stress tensor implemented for
   :class:`~ase.calculators.emt.EMT` potential
 
+* Database supports user defined tables
+
 
 Version 3.17.0
 ==============
