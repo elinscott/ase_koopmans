@@ -38,8 +38,8 @@ params['fix'] = ['freeze_lower_atoms lower_atoms setforce 0.0 0.0 0.0']
 params['run'] = 100
 params['timestep'] = 0.0005
 params['dump_period'] = 10
+params['write_velocities'] = True
 calc.parameters = params
-calc.write_velocities = True
 # set_atoms=True to read final coordinates and velocities after NVE simulation
 calc.run(set_atoms=True)
 
@@ -55,7 +55,7 @@ T = calc.thermo_content[-1]['temp']
 assert abs(Ek - Ek2) < 1E-4
 assert abs(Ek - 2.53) < 1E-2
 assert abs(E - -2761.17) < 1E-2
-# !TODO set "right" positions 
+# !TODO set "right" positions
 # assert abs(norm(new_slab.positions) - 871.993) < 1E-3
 
 os.remove(pot_fn)
