@@ -41,6 +41,7 @@ class ColorWindow:
         self.win.add(self.label)
 
         if hasattr(self, 'mnmx'):
+            self.win.add(self.cmaps)
             self.win.add(self.mnmx)
 
     def change_mnmx(self, mn=None, mx=None):
@@ -86,6 +87,19 @@ class ColorWindow:
                           for red in range(0, 260, 10)]
             self.gui.colormode_data = colorscale, mn, mx
 
+            cmaps = ['default', 'old']
+            try:
+                import pylab as plt
+                import matplotlib  # for self.update_colormap
+                cmaps += [m for m in plt.cm.datad if not m.endswith("_r")]
+            except ModuleNotFoundError:
+                pass
+            self.cmaps = [_('map:'),
+                          ui.ComboBox(cmaps, cmaps, self.update_colormap),
+                          #_('N:'),
+                          #ui.SpinBox(26, 0, 100, self.update_colormap),
+            ]
+
             try:
                 unit = {'tag': '',
                         'force': 'eV/Ang',
@@ -121,3 +135,22 @@ class ColorWindow:
         if not self.radio[mode].active:
             mode = 'jmol'
         self.toggle(mode)
+
+    def update_colormap(self, cmap):
+        "Called by gui when colormap has changed"
+        N = 26  # XXX change default n
+        colorscale, mn, mx = self.gui.colormode_data
+        if cmap == 'default':
+            colorscale = ['#{0:02X}80{0:02X}'.format(int(red))
+                          for red in np.linspace(0, 250, N)]
+        elif cmap == 'old':
+            colorscale = ['#{0:02X}AA00'.format(int(red))
+                          for red in np.linspace(0, 230, N)]
+        else:
+            import pylab as plt
+            import matplotlib
+            cmap = plt.cm.get_cmap(cmap)
+            colorscale = [matplotlib.colors.rgb2hex(c[:3]) for c in
+                          cmap(np.linspace(0, 1, N))]
+        self.gui.colormode_data = colorscale, mn, mx
+        self.gui.draw()
