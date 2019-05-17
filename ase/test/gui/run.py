@@ -84,8 +84,9 @@ def color(gui):
     a.positions[:] = np.linspace(0, 9, 10)[:, None]
     a.calc = SinglePointCalculator(a, forces=a.positions)
     che = np.linspace(100, 110, 10)
-    che[5] = None
-    a.set_array('corehole_energies', che)
+    mask = [0] * 10
+    mask[5] = 1
+    a.set_array('corehole_energies', np.ma.array(che, mask=mask))
     gui.new_atoms(a)
     c = gui.colors_window()
     c.toggle('force')

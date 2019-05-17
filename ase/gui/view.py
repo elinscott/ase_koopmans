@@ -352,6 +352,10 @@ class View:
             indices = [N // 2] * len(self.atoms)
         else:
             scalars = self.get_color_scalars()
+            try:  # fill masked arrays with NaNs
+                scalars = scalars.filled(np.nan)
+            except AttributeError:
+                pass
             indices = np.clip(((scalars - cmin) / (cmax - cmin) * N +
                                0.5).astype(int),
                               0, N - 1)
