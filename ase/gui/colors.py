@@ -75,6 +75,7 @@ class ColorWindow:
             if hasattr(self, 'mnmx'):
                 "delete the min max fields by creating a new window"
                 del self.mnmx
+                del self.cmaps
                 self.win.close()
                 self.__init__(self.gui)
             text = ''
@@ -83,9 +84,7 @@ class ColorWindow:
                                    for i in range(len(self.gui.images))])
             mn = np.min(scalars)
             mx = np.max(scalars)
-            colorscale = ['#{0:02X}80{0:02X}'.format(red)
-                          for red in range(0, 260, 10)]
-            self.gui.colormode_data = colorscale, mn, mx
+            self.gui.colormode_data = None, mn, mx
 
             cmaps = ['default', 'old']
             try:
@@ -94,11 +93,12 @@ class ColorWindow:
                 cmaps += [m for m in plt.cm.datad if not m.endswith("_r")]
             except ModuleNotFoundError:
                 pass
-            self.cmaps = [_('map:'),
+            self.cmaps = [_('cmap:'),
                           ui.ComboBox(cmaps, cmaps, self.update_colormap),
-                          #_('N:'),
-                          #ui.SpinBox(26, 0, 100, self.update_colormap),
+                          _('N:'),
+                          ui.SpinBox(26, 0, 100, 1, self.update_colormap),
             ]
+            self.update_colormap('default')
 
             try:
                 unit = {'tag': '',
@@ -136,9 +136,14 @@ class ColorWindow:
             mode = 'jmol'
         self.toggle(mode)
 
-    def update_colormap(self, cmap):
+    def update_colormap(self, cmap=None, N=26):
         "Called by gui when colormap has changed"
-        N = 26  # XXX change default n
+        if cmap is None:
+            cmap = self.cmaps[1].value
+        try:
+            N = int(self.cmaps[3].value)
+        except AttributeError:
+            N = 26
         colorscale, mn, mx = self.gui.colormode_data
         if cmap == 'default':
             colorscale = ['#{0:02X}80{0:02X}'.format(int(red))
