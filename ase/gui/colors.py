@@ -78,10 +78,10 @@ class ColorWindow:
                 self.__init__(self.gui)
             text = ''
         else:
-            scalars = np.array([self.gui.get_color_scalars(i)
-                                for i in range(len(self.gui.images))])
-            mn = np.nanmin(scalars)
-            mx = np.nanmax(scalars)
+            scalars = np.ma.array([self.gui.get_color_scalars(i)
+                                   for i in range(len(self.gui.images))])
+            mn = np.min(scalars)
+            mx = np.max(scalars)
             colorscale = ['#{0:02X}80{0:02X}'.format(red)
                           for red in range(0, 260, 10)]
             self.gui.colormode_data = colorscale, mn, mx
