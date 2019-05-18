@@ -23,7 +23,7 @@ class ColorWindow:
                   _('By velocity'),
                   _('By initial charge'),
                   _('By magnetic moment'),
-                  _('By number of neighbors'),]
+                  _('By number of neighbors'), ]
 
         haveit = ['numbers', 'positions', 'forces', 'momenta',
                   'initial_charges', 'initial_magmoms']
@@ -89,15 +89,13 @@ class ColorWindow:
             cmaps = ['default', 'old']
             try:
                 import pylab as plt
-                import matplotlib  # for self.update_colormap
                 cmaps += [m for m in plt.cm.datad if not m.endswith("_r")]
-            except ModuleNotFoundError:
+            except ImportError:
                 pass
             self.cmaps = [_('cmap:'),
                           ui.ComboBox(cmaps, cmaps, self.update_colormap),
                           _('N:'),
-                          ui.SpinBox(26, 0, 100, 1, self.update_colormap),
-            ]
+                          ui.SpinBox(26, 0, 100, 1, self.update_colormap)]
             self.update_colormap('default')
 
             try:
@@ -118,8 +116,7 @@ class ColorWindow:
                          _('max:'),
                          ui.SpinBox(mx, mn - 10 * rng, mx + rng, rng / 10.,
                                     self.change_mnmx),
-                         _(unit)
-            ]
+                         _(unit)]
             self.win.close()
             self.__init__(self.gui)
 
