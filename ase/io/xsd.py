@@ -74,7 +74,7 @@ def CPK_or_BnS(element):
     return visualization_choice
 
 
-def write_xsd(fd, atoms, connectivity=None):
+def write_xsd(fd, images, connectivity=None):
     """Takes Atoms object, and write materials studio file
     atoms: Atoms object
     filename: path of the output file
@@ -84,11 +84,13 @@ def write_xsd(fd, atoms, connectivity=None):
     note: material studio file cannot use a partial periodic system. If partial
     perodic system was inputted, full periodicity was assumed.
     """
+    if hasattr(images, 'get_positions'):
+        images = [images]
 
-    natoms = atoms.get_number_of_atoms()
-    atom_element = atoms.get_chemical_symbols()
-    atom_cell = atoms.get_cell()
-    atom_positions = atoms.get_positions()
+    natoms = len(images[0])
+    atom_element = images[0].get_chemical_symbols()
+    atom_cell = images[0].get_cell()
+    atom_positions = images[0].get_positions()
 
     XSD = ET.Element('XSD')
     XSD.set('Version', '6.0')
@@ -306,7 +308,7 @@ def write_xsd(fd, atoms, connectivity=None):
                     bonds.append([i,j])
 
     # non-periodic system
-    if not atoms.pbc.all():
+    if not images[0].pbc.all():
         Molecule = ET.SubElement(AtomisticTreeRootElement, 'Molecule')
         Molecule.set('ID', '2')
         Molecule.set('NumChildren', str(natoms+len(bonds)))
