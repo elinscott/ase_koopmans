@@ -1214,10 +1214,10 @@ class Atoms(object):
                        'where v is a vector to rotate around and '
                        'a is the angle in degrees.')
             if isinstance(v, (float, int)):
-                warnings.warn(warning)
+                warnings.warn(warning, FutureWarning)
                 a, v = v * 180 / pi, a
             elif v is None:
-                warnings.warn(warning)
+                warnings.warn(warning, FutureWarning)
                 v = a
                 a = None
             else:
@@ -1291,7 +1291,7 @@ class Atoms(object):
         warnings.warn(
             'Please use this method instead: '
             'euler_rotate(phi=0, theta=0, psi=0, center=(0, 0, 0)) '
-            'where the angles are given in degrees')
+            'where the angles are given in degrees', FutureWarning)
         self.euler_rotate(phi * 180 / pi, theta * 180 / pi, psi * 180 / pi,
                           center)
 
@@ -1368,7 +1368,7 @@ class Atoms(object):
             warnings.warn(
                 'Please use new API (which will return the angle in degrees): '
                 'atoms_obj.get_dihedral(a1,a2,a3,a4)*pi/180 instead of '
-                'atoms_obj.get_dihedral([a1,a2,a3,a4])')
+                'atoms_obj.get_dihedral([a1,a2,a3,a4])', FutureWarning)
             assert a3 is None and a4 is None
             a1, a2, a3, a4 = a1
             f = pi / 180
@@ -1453,7 +1453,7 @@ class Atoms(object):
             warnings.warn(
                 'Please use new API: '
                 'atoms_obj.set_dihedral(a1,a2,a3,a4,angle) '
-                'where angle is given in degrees')
+                'where angle is given in degrees', FutureWarning)
             if angle is None:
                 angle = a2
                 if mask is None:
@@ -1490,7 +1490,7 @@ class Atoms(object):
             warnings.warn(
                 'Please use new API: '
                 'atoms_obj.rotate_dihedral(a1,a2,a3,a4,angle) '
-                'where angle is given in degrees')
+                'where angle is given in degrees', FutureWarning)
             if angle is None:
                 angle = a2
                 if mask is None and indices is None:
@@ -1562,7 +1562,7 @@ class Atoms(object):
             warnings.warn(
                 'Please use new API: '
                 'atoms_obj.set_angle(a1,a2,a3,angle) '
-                'where angle is given in degrees')
+                'where angle is given in degrees', FutureWarning)
             if angle is None:
                 angle = a2
                 if mask is None:
