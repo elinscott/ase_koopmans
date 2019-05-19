@@ -1375,6 +1375,9 @@ class Atoms(object):
         else:
             f = 1
 
+        if any(a is None for a in [a2, a3, a4]):
+            raise ValueError('a2, a3 and a4 must not be None')
+
         # vector 1->2, 2->3, 3->4 and their normalized cross products:
         a = self.positions[a2] - self.positions[a1]
         b = self.positions[a3] - self.positions[a2]
@@ -1443,6 +1446,8 @@ class Atoms(object):
         """
 
         if isinstance(a1, int):
+            if any(a is None for a in [a2, a3, a4, angle]):
+                raise ValueError('a2, a3, a4, and angle must not be None')
             angle *= pi / 180
         else:
             warnings.warn(
@@ -1482,6 +1487,8 @@ class Atoms(object):
         predefined dihedral angle, starting from its current configuration.
         """
         if isinstance(a1, int):
+            if any(a is None for a in [a2, a3, a4, angle]):
+                raise ValueError('a2, a3, a4, and angle must not be None')
             start = self.get_dihedral(a1, a2, a3, a4)
             self.set_dihedral(a1, a2, a3, a4, angle + start, mask, indices)
         else:
@@ -1581,6 +1588,9 @@ class Atoms(object):
             else:
                 assert a2 is None and a3 is None
             angle *= 180 / pi
+
+        if any(a is None for a in [a2, a3, angle]):
+            raise ValueError('a2, a3, and angle must not be None')
 
         # If not provided, set mask to the last atom in the angle description
         if mask is None and indices is None:
@@ -1714,6 +1724,9 @@ class Atoms(object):
 
         It is assumed that the atoms in *mask*/*indices* move together
         with *a1*. If *fix=1*, only *a0* will therefore be moved."""
+
+        if a0 % len(self) == a1 % len(self):
+            raise ValueError('a0 and a1 must not be the same')
 
         if add:
             oldDist = self.get_distance(a0, a1, mic=mic)
