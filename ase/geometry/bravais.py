@@ -918,8 +918,6 @@ class SQR(BravaisLattice):
                          [0, 0, 0.]])
 
 
-from ase.utils import experimental
-@experimental
 def get_bravais_lattice(cell, eps=2e-4):
     cell = Cell.ascell(cell)
 
