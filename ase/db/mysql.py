@@ -77,6 +77,10 @@ class MySQLCursor(object):
             sql = sql.replace(
                 ' keys ', ' {} '.format(self.table_redefines['keys']))
 
+        # Replace external table key -> attribute_key
+        sql = sql.replace('key TEXT', 'attribute_key TEXT')
+        sql = sql.replace('SELECT key FROM', 'SELECT attribute_key FROM')
+
         sql = sql.replace('?', '%s')
         if params is None:
             params = ()
