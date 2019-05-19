@@ -1486,12 +1486,7 @@ class Atoms(object):
         Same usage as in :meth:`ase.Atoms.set_dihedral`: Rotate a group by a
         predefined dihedral angle, starting from its current configuration.
         """
-        if isinstance(a1, int):
-            if any(a is None for a in [a2, a3, a4, angle]):
-                raise ValueError('a2, a3, a4, and angle must not be None')
-            start = self.get_dihedral(a1, a2, a3, a4)
-            self.set_dihedral(a1, a2, a3, a4, angle + start, mask, indices)
-        else:
+        if not isinstance(a1, int):
             warnings.warn(
                 'Please use new API: '
                 'atoms_obj.rotate_dihedral(a1,a2,a3,a4,angle) '
@@ -1502,8 +1497,13 @@ class Atoms(object):
                     mask = a3
             else:
                 assert a2 is None and a3 is None and a4 is None
-            start = self.get_dihedral(a1)
-            self.set_dihedral(a1, angle + start, mask, indices)
+            a1, a2, a3, a4 = a1
+
+        if any(a is None for a in [a2, a3, a4, angle]):
+            raise ValueError('a2, a3, a4, and angle must not be None')
+
+        start = self.get_dihedral(a1, a2, a3, a4)
+        self.set_dihedral(a1, a2, a3, a4, angle + start, mask, indices)
 
     def get_angle(self, a1, a2, a3, mic=False):
         """Get angle formed by three atoms.
@@ -1515,24 +1515,7 @@ class Atoms(object):
         angle across periodic boundaries.
         """
 
-        indices = np.array([[a1, a2, a3]])
-
-        a1s = self.positions[indices[:, 0]]
-        a2s = self.positions[indices[:, 1]]
-        a3s = self.positions[indices[:, 2]]
-
-        v12 = a1s - a2s
-        v32 = a3s - a2s
-
-        cell = None
-        pbc = None
-
-        if mic:
-            cell = self.cell
-            pbc = self.pbc
-
-        return get_angles(v12, v32, cell=cell, pbc=pbc)[0]
-
+        return self.get_angles([[a1, a2, a3]], mic=mic)[0]
 
     def get_angles(self, indices, mic=False):
         """Get angle formed by three atoms for multiple groupings.
@@ -1639,24 +1622,7 @@ class Atoms(object):
         vector=True gives the distance vector (from a0 to a1).
         """
 
-        R = self.arrays['positions']
-        p1 = [R[a0]]
-        p2 = [R[a1]]
-
-        cell = None
-        pbc = None
-
-        if mic:
-            cell = self.cell
-            pbc = self.pbc
-
-        D, D_len = get_distances(p1, p2, cell=cell, pbc=pbc)
-
-        if vector:
-            return D[0, 0]
-        else:
-            return D_len[0, 0]
-
+        return self.get_distances(a0, [a1], mic=mic, vector=vector)[0]
 
     def get_distances(self, a, indices, mic=False, vector=False):
         """Return distances of atom No.i with a list of atoms.
