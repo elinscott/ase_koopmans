@@ -10,7 +10,7 @@ Webpage: http://wiki.fysik.dtu.dk/ase
 Requirements
 ------------
 
-* Python_ 3.4 or later
+* Python_ 3.5 or later
 * NumPy_ (base N-dimensional array package)
 * SciPy_ (library for scientific computing)
 

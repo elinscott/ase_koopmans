@@ -18,7 +18,7 @@ If restart != None
 
 The keywords are given, for instance, as follows::
 
-    Hamiltonian_SCC ='YES',
+    Hamiltonian_SCC ='Yes',
     Hamiltonian_SCCTolerance = 1.0E-008,
     Hamiltonian_MaxAngularMomentum = '',
     Hamiltonian_MaxAngularMomentum_O = '"p"',
@@ -86,8 +86,6 @@ class Dftb(FileIOCalculator):
         else:
             self.slako_dir = './'
 
-        # to run Dftb as energy and force calculator use
-        # Driver_MaxSteps=0,
         if run_manyDftb_steps:
             # minimisation of molecular dynamics is run by native DFTB+
             self.default_parameters = dict(
@@ -96,25 +94,27 @@ class Dftb(FileIOCalculator):
                 Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,
                 Hamiltonian_SlaterKosterFiles_Separator='"-"',
                 Hamiltonian_SlaterKosterFiles_Suffix='".skf"',
-                Hamiltonian_MaxAngularMomentum_='')
+                Hamiltonian_MaxAngularMomentum_='',
+                Options_='',
+                Options_WriteResultsTag='Yes')
         else:
             # using ase to get forces and energy only
             # (single point calculation)
             self.default_parameters = dict(
                 Hamiltonian_='DFTB',
-                Driver_='ConjugateGradient',
-                Driver_MaxForceComponent='1E-4',
-                Driver_MaxSteps=0,
                 Hamiltonian_SlaterKosterFiles_='Type2FileNames',
                 Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,
                 Hamiltonian_SlaterKosterFiles_Separator='"-"',
                 Hamiltonian_SlaterKosterFiles_Suffix='".skf"',
-                Hamiltonian_MaxAngularMomentum_='')
+                Hamiltonian_MaxAngularMomentum_='',
+                Options_='',
+                Options_WriteResultsTag='Yes')
 
         self.pcpot = None
         self.lines = None
         self.atoms = None
         self.atoms_input = None
+        self.do_forces = False
         self.outfilename = 'dftb.out'
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
@@ -225,11 +225,25 @@ class Dftb(FileIOCalculator):
                     range(previous_depth - current_depth)):
                 outfile.write(3 * (1 + my_backsclash) * myspace + '} \n')
             outfile.write(3 * current_depth * myspace)
-            if key.endswith('_'):
+            if key.endswith('_') and len(value) > 0:
+                outfile.write(key.rstrip('_').rsplit('_')[-1] +
+                              ' = ' + str(value) + '{ \n')
+            elif (key.endswith('_') and (len(value) == 0) 
+                  and current_depth == 0):  # E.g. 'Options {'
+                outfile.write(key.rstrip('_').rsplit('_')[-1] +
+                              ' ' + str(value) + '{ \n')
+            elif (key.endswith('_') and (len(value) == 0) 
+                  and current_depth > 0):  # E.g. 'Hamiltonian_Max... = {'
                 outfile.write(key.rstrip('_').rsplit('_')[-1] +
                               ' = ' + str(value) + '{ \n')
             elif key.count('_empty') == 1:
                 outfile.write(str(value) + ' \n')
+            elif ((key == 'Hamiltonian_ReadInitialCharges') and 
+                  (str(value).upper() == 'YES')):
+                if not os.path.isfile(self.directory + os.sep + 'charges.dat'):
+                    print('charges.dat not found, switching off guess')
+                    value = 'No'
+                outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
             else:
                 outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
             if self.pcpot is not None and ('DFTB' in str(value)):
@@ -248,13 +262,14 @@ class Dftb(FileIOCalculator):
         current_depth = key.rstrip('_').count('_')
         for my_backsclash in reversed(range(current_depth)):
             outfile.write(3 * my_backsclash * myspace + '} \n')
-        # output to 'results.tag' file (which has proper formatting)
-        outfile.write('Options { \n')
-        outfile.write('   WriteResultsTag = Yes  \n')
-        outfile.write('} \n')
         outfile.write('ParserOptions { \n')
         outfile.write('   IgnoreUnprocessedNodes = Yes  \n')
         outfile.write('} \n')
+        if self.do_forces:
+            outfile.write('Analysis { \n')
+            outfile.write('   CalculateForces = Yes  \n')
+            outfile.write('} \n')
+
 
         outfile.close()
 
@@ -275,6 +290,8 @@ class Dftb(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         from ase.io import write
+        if 'forces' in properties:
+            self.do_forces = True
         FileIOCalculator.write_input(
             self, atoms, properties, system_changes)
         self.write_dftb_in(os.path.join(self.directory, 'dftb_in.hsd'))
@@ -300,8 +317,9 @@ class Dftb(FileIOCalculator):
         if charges is not None:
             self.results['charges'] = charges
         self.results['energy'] = energy
-        forces = self.read_forces()
-        self.results['forces'] = forces
+        if self.do_forces:
+            forces = self.read_forces()
+            self.results['forces'] = forces
         self.mmpositions = None
 
         # stress stuff begins
@@ -374,7 +392,7 @@ class Dftb(FileIOCalculator):
                 break
         else:
             # print('Warning: did not find DFTB-charges')
-            # print('This is ok if flag SCC=NO')
+            # print('This is ok if flag SCC=No')
             return None, energy
 
         lines1 = lines[chargestart:(chargestart + len(self.atoms))]
@@ -497,7 +515,7 @@ class PointChargePotential:
                               % (x, y, z, charge))
         charge_file.close()
 
-    def get_forces(self, calc, get_forces=False):
+    def get_forces(self, calc, get_forces=True):
         """ returns forces on point charges if the flag get_forces=True """
         if get_forces:
             return self.read_forces_on_pointcharges()
