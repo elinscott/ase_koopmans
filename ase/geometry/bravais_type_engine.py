@@ -137,7 +137,7 @@ def find_all_niggli_ops(length_grid, angle_grid):
     return all_niggli_ops
 
 
-def check_type(rcell, name):
+def check_type(rcell, name, eps):
     testlat = bravais_lattices[name]
     niggli_ops = niggli_op_table[name]
     results = []
@@ -146,25 +146,26 @@ def check_type(rcell, name):
         op = np.array(op, int).reshape(3, 3)
         candidate = Cell(np.linalg.inv(op.T) @ rcell)
         try:
-            lat = get_bravais_lattice_from_reduced_form(candidate)
+            lat = get_bravais_lattice_from_reduced_form(candidate, eps)
         except (AssertionError, UnconventionalLattice, RuntimeError) as err:
             continue
         if lat.name in ['TRI', 'MCL', 'MCLC']:
             continue
         results.append(lat)
+
     return results
 
 
-def identify_lattice(cell):
+def identify_lattice(cell, eps):
+    cell = Cell.ascell(cell)
     rcell, op = cell.niggli_reduce()
-    results = []
     for testlat in bravais_names:
         if testlat in ['MCL', 'MCLC', 'TRI']:
             continue
         if bravais_lattices[testlat].ndim < 3:
             continue
 
-        results = check_type(rcell, testlat)
+        results = check_type(rcell, testlat, eps)
 
         for name in bravais_names:
             for lat in results:
@@ -189,6 +190,9 @@ def generate_niggli_op_table():
 def test():
     length_grid = np.logspace(-0.5, 1.5, 11).round(3)
     angle_grid = np.linspace(10, 179, 11).round()
+    #all_ops = find_all_niggli_ops(length_grid, angle_grid)
+    #niggli_op_table.clear()
+    #niggli_op_table.update(all_ops)
 
     for latname in bravais_names:
         if latname in ['MCL', 'MCLC', 'TRI']:
@@ -202,7 +206,7 @@ def test():
 
         for lat in lattice_loop(latcls, length_grid, angle_grid):
             cell = lat.tocell()
-            out_lat = identify_lattice(cell)
+            out_lat = identify_lattice(cell, eps=2e-4)
 
             # Some lattices represent simpler lattices,
             # e.g. TET(a, a) is cubic.  What we need to check is that
