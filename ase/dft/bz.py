@@ -75,6 +75,7 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
     bz1 = bz_vertices(icell, dim=dimensions)
 
     maxp = 0.0
+    minp = 0.0
     if dimensions == 1:
         x = np.array([-0.5 * icell[0, 0],
                       0.5 * icell[0, 0],
@@ -94,6 +95,7 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
             elif dimensions == 2:
                 ax.plot(x, y, c='k', ls='-')
             maxp = max(maxp, points.max())
+            minp = min(minp, points.min())
 
     if vectors:
         if dimensions == 3:
@@ -175,16 +177,34 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                 ax.scatter(p[0], 0, c='b')
 
     ax.set_axis_off()
-    ax.autoscale_view(tight=True)
-    if dimensions == 3:
-        s = maxp / 0.5 * 0.45 * scale
-    elif dimensions in [1, 2]:
+
+    if dimensions in [1, 2]:
+        ax.autoscale_view(tight=True)
         s = maxp * 1.05
-    ax.set_xlim(-s, s)
-    ax.set_ylim(-s, s)
+        ax.set_xlim(-s, s)
+        ax.set_ylim(-s, s)
+        ax.set_aspect('equal')
+
     if dimensions == 3:
-        ax.set_zlim(-s, s)
-    ax.set_aspect('equal')
-    if dimensions == 3:
+        # ax.set_aspect('equal') <-- won't work anymore in 3.1.0
         ax.view_init(azim=azim / pi * 180, elev=elev / pi * 180)
+        # We want aspect 'equal', but apparently there was a bug in
+        # matplotlib causing wrong behaviour.  Matplotlib raises
+        # NotImplementedError as of v3.1.0.  This is a bit unfortunate
+        # because the workarounds known to StackOverflow and elsewhere
+        # all involve using set_aspect('equal') and then doing
+        # something more.
+        #
+        # We try to get square axes here by setting a square figure,
+        # but this is probably rather inexact.
+        fig = ax.get_figure()
+        xx = plt.figaspect(1.0)
+        fig.set_figheight(xx[1])
+        fig.set_figwidth(xx[0])
+        ax.set_proj_type('ortho')
+        minp0 = 0.9 * minp  # Here we cheat a bit to trim spacings
+        maxp0 = 0.9 * maxp
+        ax.set_xlim3d(minp0, maxp0)
+        ax.set_ylim3d(minp0, maxp0)
+        ax.set_zlim3d(minp0, maxp0)
     return ax
