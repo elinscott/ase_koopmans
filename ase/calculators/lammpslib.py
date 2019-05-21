@@ -428,6 +428,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         # Extract the forces and energy
         self.results['energy'] = convert(self.lmp.extract_variable('pe', None, 0), "energy", self.units,
                 "ASE")
+        self.results['free_energy'] = self.results['energy']
 
         stress = np.empty(6)
         stress_vars = ['pxx', 'pyy', 'pzz', 'pyz', 'pxz', 'pxy']
