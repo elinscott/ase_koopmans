@@ -472,9 +472,25 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         if not self.parameters.keep_alive:
             self.lmp.close()
 
-    # Handle nonperiodic cases where the cell size
-    # in some directions is small (for example for a dimer).
     def lammpsbc(self, atoms):
+        """
+        Determine LAMMPS boundary types based on ASE pbc settings. Specific
+        attention is paid to directions which are non-periodic and along which
+        the extent of the atoms in the system is small.  In such cases, using
+        shrink-wrapped boundaries is generally a bad idea because atoms can be
+        lost.  This can occur in two ways:  (1) during the initial shrink wrap
+        if the cell is much larger than the extent of the atoms along such a
+        direction (see https://lammps.sandia.gov/doc/boundary.html), and (2)
+        because the neighbor skin is larger than the cell size, atoms can
+        potentially move all the way across (and out of) the cell before a
+        neighbor list rebuild is triggered.  Moreover, if one is using the
+        binning method of neighbor list construction (as is done here since
+        it's the default), having a box size much smaller than the neighbor
+        list cutoff would cause an huge number of bins to be created and,
+        accordingly, LAMMPS will return an error and exit.  Therefore, in this
+        case, we use 'm' boundary conditions, which are shrink-wrapped but are
+        constrained to be at least as large as the cell size.
+        """
         retval = ''
         pbc = atoms.get_pbc()
         if np.all(pbc):
