@@ -5,7 +5,7 @@ from ase.eos import EquationOfState as EOS
 from ase.io import read
 
 
-def fit(symbol: str) -> Tuple[float, float, float]:
+def fit(symbol: str) -> Tuple[float, float, float, float]:
     V = []
     E = []
     for atoms in read('{}.traj@:'.format(symbol)):
