@@ -26,6 +26,7 @@ from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
 from ase.utils import basestring
 from ase.constraints import FixAtoms, FixCartesian
+from ase.io.formats import index2range
 
 __all__ = ['read_xyz', 'write_xyz', 'iread_xyz']
 
@@ -593,33 +594,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
         if last_frame is not None and len(frames) > last_frame:
             break
 
-    if isinstance(index, int):
-        if index < 0:
-            tmpsnp = len(frames) + index
-            trbl = range(tmpsnp, tmpsnp + 1, 1)
-        else:
-            trbl = range(index, index + 1, 1)
-    elif isinstance(index, slice):
-        start = index.start
-        stop = index.stop
-        step = index.step
-
-        if start is None:
-            start = 0
-        elif start < 0:
-            start = len(frames) + start
-
-        if step is None:
-            step = 1
-
-        if stop is None:
-            stop = len(frames)
-        elif stop < 0:
-            stop = len(frames) + stop
-
-        trbl = range(start, stop, step)
-        if step < 0:
-            trbl.reverse()
+    trbl = index2range(index, len(frames))
 
     for index in trbl:
         frame_pos, natoms, nvec = frames[index]

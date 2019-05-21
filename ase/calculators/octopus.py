@@ -110,6 +110,12 @@ def read_eigenvalues_file(fd):
                 #fermilevel = float(m.group(1))
             else:
                 spin, eig, occ = m.group(1, 2, 3)
+
+                if not eigs:
+                    # Only initialized if kpoint header was written
+                    eigs.append({})
+                    occs.append({})
+
                 eigs[-1].setdefault(spin, []).append(float(eig))
                 occs[-1].setdefault(spin, []).append(float(occ))
 
@@ -676,7 +682,7 @@ def generate_input(atoms, kwargs, normalized2pretty):
         append('')
 
     def setvar(key, var):
-        prettykey = normalized2pretty[key]
+        prettykey = normalized2pretty.get(key, key)
         append('%s = %s' % (prettykey, var))
 
     for kw in ['lsize', 'latticevectors', 'latticeparameters']:
@@ -718,15 +724,8 @@ def generate_input(atoms, kwargs, normalized2pretty):
     # Even though the forces are written in the same format no matter
     # OutputFormat.  Thus we have to make one up:
 
-    # Old Octopus has 'OutputHow' but new Octopus has 'OutputFormat'.
-    # We have to write the right one.
-    outputkw = 'outputformat'
-    if outputkw not in normalized2pretty:
-        outputkw = 'outputhow'
-    assert outputkw in normalized2pretty
-
-    if outputkw not in kwargs:
-        setvar(outputkw, 'xcrysden')
+    if 'outputformat' not in kwargs:
+        setvar('outputformat', 'xcrysden')
 
     for key, val in kwargs.items():
         # Most datatypes are straightforward but blocks require some attention.
@@ -1029,18 +1028,9 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         # XXX should use 'Parameters' but don't know how
 
     def check_keywords_exist(self, kwargs):
-        keywords = list(kwargs.keys())
-        for keyword in keywords:
+        for keyword in kwargs:
             if (keyword not in self.octopus_keywords
-                and keyword not in self.special_ase_keywords):
-                if self._autofix_outputformats:
-                    if (keyword == 'outputhow' and 'outputformat'
-                            in self.octopus_keywords):
-                        kwargs['outputformat'] = kwargs.pop('outputhow')
-                    if (keyword == 'outputformat' and 'outputhow'
-                            in self.octopus_keywords):
-                        kwargs['outputhow'] = kwargs.pop('outputformat')
-                    continue
+                  and keyword not in self.special_ase_keywords):
 
                 msg = ('Unknown Octopus keyword %s.  Use oct-help to list '
                        'available keywords.') % keyword

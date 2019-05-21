@@ -449,11 +449,11 @@ class Vasp2(GenerateVaspInput, Calculator):
                 raise ReadError(
                     'VASP outputfile {} was not found'.format(filename))
 
-        # Read atoms
-        self.atoms = self.read_atoms()
-
         # Build sorting and resorting lists
         self.read_sort()
+
+        # Read atoms
+        self.atoms = self.read_atoms()
 
         # Read parameters
         self.read_incar(filename=self._indir('INCAR'))
@@ -488,7 +488,7 @@ class Vasp2(GenerateVaspInput, Calculator):
         """Read the atoms from file located in the VASP
         working directory. Defaults to CONTCAR."""
         filename = self._indir(filename)
-        return read(filename)
+        return read(filename)[self.resort]
 
     def update_atoms(self, atoms):
         """Update the atoms object with new positions and cell"""
