@@ -100,6 +100,8 @@ I/O:
 
 * Support for reading and writing DL_POLY format.
 
+* Support for reading CP2K DCD format.
+
 * Improved JSON support.  :ref:`cli` tools like :program:`ase
   band-structure` and :program:`ase reciprocal` now work with
   JSON representations of band structures and paths.
