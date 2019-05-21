@@ -430,15 +430,10 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
         p = Prism(atoms.get_cell())
     else:
         p = prismobj
-    xhi, yhi, zhi, xy, xz, yz = p.get_lammps_prism()
 
-    # Convert cell parameters from ASE units to LAMMPS units
-    xhi = convert(xhi, "distance", "ASE", units)
-    yhi = convert(yhi, "distance", "ASE", units)
-    zhi = convert(zhi, "distance", "ASE", units)
-    xy = convert(xy, "distance", "ASE", units)
-    xz = convert(xz, "distance", "ASE", units)
-    yz = convert(yz, "distance", "ASE", units)
+    # Get cell parameters and convert from ASE units to LAMMPS units
+    xhi, yhi, zhi, xy, xz, yz = convert(p.get_lammps_prism(), "distance",
+            "ASE", units)
 
     f.write("0.0 {0:23.17g}  xlo xhi\n".format(xhi).encode("utf-8"))
     f.write("0.0 {0:23.17g}  ylo yhi\n".format(yhi).encode("utf-8"))

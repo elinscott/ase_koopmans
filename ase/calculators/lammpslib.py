@@ -271,12 +271,9 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
     def set_cell(self, atoms, change=False):
         lammps_cell, self.coord_transform = convert_cell(atoms.get_cell())
-        xhi = convert(lammps_cell[0, 0], "distance", "ASE", self.units)
-        yhi = convert(lammps_cell[1, 1], "distance", "ASE", self.units)
-        zhi = convert(lammps_cell[2, 2], "distance", "ASE", self.units)
-        xy = convert(lammps_cell[0, 1], "distance", "ASE", self.units)
-        xz = convert(lammps_cell[0, 2], "distance", "ASE", self.units)
-        yz = convert(lammps_cell[1, 2], "distance", "ASE", self.units)
+
+        xhi, xy, xz, _, yhi, yz, _, _, zhi = convert(
+                lammps_cell.flatten(order='C'), "distance", "ASE", self.units)
 
         if change:
             cell_cmd = ('change_box all     '
