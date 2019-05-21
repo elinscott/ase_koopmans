@@ -347,14 +347,15 @@ class View:
 
         colorscale, cmin, cmax = self.colormode_data
         N = len(colorscale)
+        colorswhite = colorscale + ['#ffffff']
         if cmin == cmax:
             indices = [N // 2] * len(self.atoms)
         else:
-            scalars = self.get_color_scalars()
+            scalars = np.ma.array(self.get_color_scalars())
             indices = np.clip(((scalars - cmin) / (cmax - cmin) * N +
                                0.5).astype(int),
                               0, N - 1)
-        return [colorscale[i] for i in indices]
+        return [colorswhite[i] for i in indices.filled(N)]
 
     def get_color_scalars(self, frame=None):
         if self.colormode == 'tag':
@@ -375,6 +376,10 @@ class View:
                               skin=0, self_interaction=False, bothways=True)
             nl.update(self.atoms)
             return [len(nl.get_neighbors(i)[0]) for i in range(n)]
+        else:
+            scalars = np.array(self.atoms.get_array(self.colormode),
+                               dtype=float)
+            return np.ma.array(scalars, mask=np.isnan(scalars))
 
     def get_covalent_radii(self, atoms=None):
         if atoms is None:
