@@ -932,7 +932,7 @@ def get_bravais_lattice(cell, eps=2e-4):
 
 def get_3d_bravais_lattice(cell, eps=2e-4):
     from ase.geometry.bravais_type_engine import identify_lattice
-    return identify_lattice(cell, eps=eps)
+    return identify_lattice(cell, eps=eps)[0]
 
 
 def celldiff(cell1, cell2):

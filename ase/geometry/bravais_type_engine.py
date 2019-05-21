@@ -151,7 +151,7 @@ def check_type(rcell, name, eps):
             continue
         if lat.name in ['TRI', 'MCL', 'MCLC']:
             continue
-        results.append(lat)
+        results.append((lat, op))
 
     return results
 
@@ -168,9 +168,9 @@ def identify_lattice(cell, eps):
         results = check_type(rcell, testlat, eps)
 
         for name in bravais_names:
-            for lat in results:
+            for lat, std_op in results:
                 if lat.name == name:
-                    return lat
+                    return lat, std_op
 
     raise RuntimeError('Cannot recognize cell: {}'.format(cell.cellpar()))
 
@@ -206,7 +206,7 @@ def test():
 
         for lat in lattice_loop(latcls, length_grid, angle_grid):
             cell = lat.tocell()
-            out_lat = identify_lattice(cell, eps=2e-4)
+            out_lat, op = identify_lattice(cell, eps=2e-4)
 
             # Some lattices represent simpler lattices,
             # e.g. TET(a, a) is cubic.  What we need to check is that
