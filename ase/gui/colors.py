@@ -12,6 +12,10 @@ from ase.gui.utils import get_magmoms
 class ColorWindow:
     """A window for selecting how to color the atoms."""
     def __init__(self, gui):
+        self.reset(gui)
+
+    def reset(self, gui):
+        """create a new color window"""
         self.win = ui.Window(_('Colors'))
         self.gui = gui
         self.win.add(ui.Label(_('Choose how the atoms are colored:')))
@@ -30,7 +34,7 @@ class ColorWindow:
         for key in self.gui.atoms.arrays:
             if key not in haveit:
                 values.append(key)
-                labels.append('By ' + key)
+                labels.append('By user-defined "{}"'.format(key))
 
         self.radio = ui.RadioButtons(labels, values, self.toggle,
                                      vertical=True)
@@ -45,6 +49,7 @@ class ColorWindow:
             self.win.add(self.mnmx)
 
     def change_mnmx(self, mn=None, mx=None):
+        """change min and/or max values for colormap"""
         if mn:
             self.mnmx[1].value = mn
         if mx:
@@ -77,7 +82,7 @@ class ColorWindow:
                 del self.mnmx
                 del self.cmaps
                 self.win.close()
-                self.__init__(self.gui)
+                self.reset(self.gui)
             text = ''
         else:
             scalars = np.ma.array([self.gui.get_color_scalars(i)
@@ -101,7 +106,7 @@ class ColorWindow:
             try:
                 unit = {'tag': '',
                         'force': 'eV/Ang',
-                        'velocity': '??',
+                        'velocity': '(eV/amu)^(1/2)',
                         'charge': '|e|',
                         'initial charge': '|e|',
                         u'magmom': 'μB'}[value]
@@ -118,7 +123,7 @@ class ColorWindow:
                                     self.change_mnmx),
                          _(unit)]
             self.win.close()
-            self.__init__(self.gui)
+            self.reset(self.gui)
 
         self.label.text = text
         self.radio.value = value
@@ -149,10 +154,14 @@ class ColorWindow:
             colorscale = ['#{0:02X}AA00'.format(int(red))
                           for red in np.linspace(0, 230, N)]
         else:
-            import pylab as plt
-            import matplotlib
-            cmap = plt.cm.get_cmap(cmap)
-            colorscale = [matplotlib.colors.rgb2hex(c[:3]) for c in
-                          cmap(np.linspace(0, 1, N))]
+            try:
+                import pylab as plt
+                import matplotlib
+                cmap = plt.cm.get_cmap(cmap)
+                colorscale = [matplotlib.colors.rgb2hex(c[:3]) for c in
+                              cmap(np.linspace(0, 1, N))]
+            except (ImportError, ValueError) as e:
+                raise RuntimeError('Can not load colormap {0}: {1}'.format(
+                    cmap, str(e)))
         self.gui.colormode_data = colorscale, mn, mx
         self.gui.draw()
