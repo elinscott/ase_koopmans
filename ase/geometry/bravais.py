@@ -14,7 +14,7 @@ class BravaisLattice(ABC):
     # These parameters can be set by the @bravais decorator for a subclass.
     # (We could also use metaclasses to do this, but that's more abstract)
     name = None  # e.g. 'CUB', 'BCT', 'ORCF', ...
-    longname = None  # e.g. 'cubic', 'body-centered tetragonal', ...
+    longname = None  # e.g. 'cubic', 'body-centred tetragonal', ...
     parameters = None  # e.g. ('a', 'c')
     variants = None  # e.g. {'BCT1': <variant object>,
     #                        'BCT2': <variant object>}
@@ -215,9 +215,11 @@ Variant name: {name}
 
 bravais_names = []
 bravais_lattices = {}
+bravais_classes = {}
 
 
-def bravaisclass(longname, parameters, variants, ndim=3):
+def bravaisclass(longname, crystal_family, lattice_system, pearson_symbol,
+                 parameters, variants, ndim=3):
     """Decorator for Bravais lattice classes.
 
     This sets a number of class variables and processes the information
@@ -227,6 +229,9 @@ def bravaisclass(longname, parameters, variants, ndim=3):
         btype = cls.__name__
         cls.name = btype
         cls.longname = longname
+        cls.crystal_family = crystal_family
+        cls.lattice_system = lattice_system
+        cls.pearson_symbol = pearson_symbol
         cls.parameters = tuple(parameters)
         cls.variant_names = []
         cls.variants = {}
@@ -241,6 +246,7 @@ def bravaisclass(longname, parameters, variants, ndim=3):
         # Register in global list and dictionary
         bravais_names.append(btype)
         bravais_lattices[btype] = cls
+        bravais_classes[pearson_symbol] = cls
         return cls
 
     return decorate
@@ -255,25 +261,29 @@ class Cubic(BravaisLattice):
     def __init__(self, a):
         BravaisLattice.__init__(self, a=a)
 
-@bravaisclass('cubic', 'a',
+
+@bravaisclass('primitive cubic', 'cubic', 'cubic', 'cP', 'a',
               [['CUB', 'GXRM', 'GXMGRX,MR', sc_special_points['cubic']]])
 class CUB(Cubic):
     def _cell(self, a):
         return a * np.eye(3)
 
-@bravaisclass('face-centered cubic', 'a',
+
+@bravaisclass('face-centred cubic', 'cubic', 'cubic', 'cF', 'a',
               [['FCC', 'GKLUWX', 'GXWKGLUWLK,UX', sc_special_points['fcc']]])
 class FCC(Cubic):
     def _cell(self, a):
         return 0.5 * np.array([[0., a, a], [a, 0, a], [a, a, 0]])
 
-@bravaisclass('body-centered cubic', 'a',
+
+@bravaisclass('body-centred cubic', 'cubic', 'cubic', 'cI', 'a',
               [['BCC', 'GHPN', 'GHNGPH,PN', sc_special_points['bcc']]])
 class BCC(Cubic):
     def _cell(self, a):
         return 0.5 * np.array([[-a, a, a], [a, -a, a], [a, a, -a]])
 
-@bravaisclass('tetragonal', 'ac',
+
+@bravaisclass('primitive tetragonal', 'tetragonal', 'tetragonal', 'tP', 'ac',
               [['TET', 'GAMRXZ', 'GXMGZRAZ,XR,MA',
                 sc_special_points['tetragonal']]])
 class TET(BravaisLattice):
@@ -283,9 +293,11 @@ class TET(BravaisLattice):
     def _cell(self, a, c):
         return np.diag(np.array([a, a, c]))
 
+
 # XXX in BCT2 we use S for Sigma.
 # Also in other places I think
-@bravaisclass('body-centered tetragonal', 'ac',
+@bravaisclass('body-centred tetragonal', 'tetragonal', 'tetragonal', 'tI',
+              'ac',
               [['BCT1', 'GMNPXZZ1', 'GXMGZPNZ1M,XP', None],
                ['BCT2', 'GNPSS1XYY1Z', 'GXYSGZS1NPY1Z,XP', None]])
 class BCT(BravaisLattice):
@@ -341,7 +353,8 @@ class Orthorhombic(BravaisLattice):
         BravaisLattice.__init__(self, a=a, b=b, c=c)
 
 
-@bravaisclass('orthorhombic', 'abc',
+@bravaisclass('primitive orthorhombic', 'orthorhombic', 'orthorhombic', 'oP',
+              'abc',
               [['ORC', 'GRSTUXYZ', 'GXSYGZURTZ,YT,UX,SR',
                 sc_special_points['orthorhombic']]])
 class ORC(Orthorhombic):
@@ -349,7 +362,8 @@ class ORC(Orthorhombic):
         return np.diag([a, b, c]).astype(float)
 
 
-@bravaisclass('face-centered orthorhombic', 'abc',
+@bravaisclass('face-centred orthorhombic', 'orthorhombic', 'orthorhombic',
+              'oF', 'abc',
               [['ORCF1', 'GAA1LTXX1YZ', 'GYTZGXA1Y,TX1,XAZ,LG', None],
                ['ORCF2', 'GCC1DD1LHH1XYZ', 'GYCDXGZD1HC,C1Z,XH1,HY,LG', None],
                ['ORCF3', 'GAA1LTXX1YZ', 'GYTZGXA1Y,XAZ,LG', None]])
@@ -403,7 +417,9 @@ class ORCF(Orthorhombic):
             return 'ORCF3'
         return 'ORCF1' if diff > 0 else 'ORCF2'
 
-@bravaisclass('body-centered orthorhombic', 'abc',
+
+@bravaisclass('body-centred orthorhombic', 'orthorhombic', 'orthorhombic',
+              'oI', 'abc',
               [['ORCI', 'GLL1L2RSTWXX1YY1Z', 'GXLTWRX1ZGYSW,L1Y,Y1Z', None]])
 class ORCI(Orthorhombic):
     def _cell(self, a, b, c):
@@ -435,7 +451,8 @@ class ORCI(Orthorhombic):
         return points
 
 
-@bravaisclass('c-centered orthorhombic', 'abc',
+@bravaisclass('base-centred orthorhombic', 'orthorhombic', 'orthorhombic',
+              'oC', 'abc',
               [['ORCC', 'GAA1RSTXX1YZ', 'GXSRAZGYX1A1TY,ZT', None]])
 class ORCC(BravaisLattice):
     def __init__(self, a, b, c):
@@ -464,7 +481,8 @@ class ORCC(BravaisLattice):
         return points
 
 
-@bravaisclass('hexagonal', 'ac',
+@bravaisclass('primitive hexagonal', 'hexagonal', 'hexagonal', 'hP',
+              'ac',
               [['HEX', 'GMKALH', 'GMKGALHA,LM,KH',
                 sc_special_points['hexagonal']]])
 class HEX(BravaisLattice):
@@ -477,7 +495,8 @@ class HEX(BravaisLattice):
                          [0., 0., c]])
 
 
-@bravaisclass('rhombohedral', ('a', 'alpha'),
+@bravaisclass('primitive rhombohedral', 'hexagonal', 'rhombohedral', 'hR',
+              ('a', 'alpha'),
               [['RHL1', 'GBB1FLL1PP1P2QXZ', 'GLB1,BZGX,QFP1Z,LP', None],
                ['RHL2', 'GFLPP1QQ1Z', 'GPZQGFP1Q1LZ', None]])
 class RHL(BravaisLattice):
@@ -539,7 +558,8 @@ def check_mcl(a, b, c, alpha):
                                     .format(a, b, c, alpha))
 
 
-@bravaisclass('monoclinic', ('a', 'b', 'c', 'alpha'),
+@bravaisclass('primitive monoclinic', 'monoclinic', 'monoclinic', 'mP',
+              ('a', 'b', 'c', 'alpha'),
               [['MCL', 'GACDD1EHH1H2MM1M2XYY1Z', 'GYHCEM1AXH1,MDZ,YD', None]])
 class MCL(BravaisLattice):
     def __init__(self, a, b, c, alpha):
@@ -578,7 +598,8 @@ class MCL(BravaisLattice):
         return 'MCL'
 
 
-@bravaisclass('c-centered monoclinic', ('a', 'b', 'c', 'alpha'),
+@bravaisclass('base-centred monoclinic', 'monoclinic', 'monoclinic', 'mC',
+              ('a', 'b', 'c', 'alpha'),
               [['MCLC1', 'GNN1FF1F2F3II1LMXX1X2YY1Z',
                 'GYFLI,I1ZF1,YX1,XGN,MG', None],
                ['MCLC2', 'GNN1FF1F2F3II1LMXX1X2YY1Z',
@@ -726,7 +747,8 @@ class MCLC(BravaisLattice):
 
 
 # XXX labels, paths, are all the same.
-@bravaisclass('triclinic', ('a', 'b', 'c', 'alpha', 'beta', 'gamma'),
+@bravaisclass('primitive triclinic', 'triclinic', 'triclinic', 'aP',
+              ('a', 'b', 'c', 'alpha', 'beta', 'gamma'),
               [['TRI1a', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG', None],
                ['TRI2a', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG', None],
                ['TRI1b', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG', None],
@@ -1211,8 +1233,8 @@ def get_subset_points(names, points):
     return newpoints
 
 
-@bravaisclass('oblique (monoclinic)', ('a', 'b', 'alpha'),
-              [['OBL', 'GYHCH1X', 'GYHCH1XG', None]],
+@bravaisclass('primitive oblique', 'monoclinic', None, 'mp',
+              ('a', 'b', 'alpha'), [['OBL', 'GYHCH1X', 'GYHCH1XG', None]],
               ndim=2)
 class OBL(BravaisLattice):
     def __init__(self, a, b, alpha, **kwargs):
@@ -1241,7 +1263,7 @@ class OBL(BravaisLattice):
         return points
 
 
-@bravaisclass('hexagonal 2d', 'a',
+@bravaisclass('primitive hexagonal', 'hexagonal', None, 'hp', 'a',
               [['HEX2D', 'GMK', 'GMKG',
                 get_subset_points('GMK',
                                   sc_special_points['hexagonal'])]],
@@ -1257,7 +1279,7 @@ class HEX2D(BravaisLattice):
                          [0., 0., 0.]])
 
 
-@bravaisclass('rectangular (orthorhombic)', 'ab',
+@bravaisclass('primitive rectangular', 'orthorhombic', None, 'op', 'ab',
               [['RECT', 'GXSY', 'GXSYGS',
                 get_subset_points('GXSY',
                                   sc_special_points['orthorhombic'])]],
@@ -1272,9 +1294,8 @@ class RECT(BravaisLattice):
                          [0, 0, 0.]])
 
 
-@bravaisclass('centered rectangular (orthorhombic)', ('a', 'alpha'),
-              [['CRECT', 'GXA1Y', 'GXA1YG', None]],
-              ndim=2)
+@bravaisclass('centred rectangular', 'orthorhombic', None, 'oc',
+              ('a', 'alpha'), [['CRECT', 'GXA1Y', 'GXA1YG', None]], ndim=2)
 class CRECT(BravaisLattice):
     def __init__(self, a, alpha, **kwargs):
         BravaisLattice.__init__(self, a=a, alpha=alpha, **kwargs)
@@ -1299,7 +1320,7 @@ class CRECT(BravaisLattice):
         return points
 
 
-@bravaisclass('square (tetragonal)', ('a'),
+@bravaisclass('primitive square', 'tetragonal', None, 'tp', ('a'),
               [['SQR', 'GMX', 'MGXM',
                 get_subset_points('GMX', sc_special_points['tetragonal'])]],
               ndim=2)
