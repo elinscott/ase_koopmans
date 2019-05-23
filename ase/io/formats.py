@@ -58,6 +58,7 @@ all_formats = {
     'cfg': ('AtomEye configuration', '1F'),
     'cif': ('CIF-file', '+B'),
     'cmdft': ('CMDFT-file', '1F'),
+    'cp2k-dcd': ('CP2K DCD file', '+B'),
     'crystal': ('Crystal fort.34 format', '1S'),
     'cube': ('CUBE file', '1F'),
     'dacapo': ('Dacapo netCDF output file', '1F'),
@@ -139,6 +140,7 @@ format2modulename = {
     'castep-geom': 'castep',
     'castep-md': 'castep',
     'castep-phonon': 'castep',
+    'cp2k-dcd': 'cp2k',
     'dacapo-text': 'dacapo',
     'dlp4': 'dlp4',
     'dlp-history': 'dlp4',
@@ -173,6 +175,7 @@ extension2format = {
     'com': 'gaussian',
     'con': 'eon',
     'config': 'dlp4',
+    'dcd': 'cp2k-dcd',
     'exi': 'exciting',
     'f34': 'crystal',
     '34': 'crystal',
@@ -733,3 +736,39 @@ def filetype(filename, read=True, guess=True):
         raise UnknownFileTypeError('Could not guess file type')
 
     return format
+
+
+def index2range(index, nsteps):
+    """Method to convert a user given *index* option to a list of indices.
+
+    Returns a range.
+    """
+    if isinstance(index, int):
+        if index < 0:
+            tmpsnp = nsteps + index
+            trbl = range(tmpsnp, tmpsnp + 1, 1)
+        else:
+            trbl = range(index, index + 1, 1)
+    elif isinstance(index, slice):
+        start = index.start
+        stop = index.stop
+        step = index.step
+
+        if start is None:
+            start = 0
+        elif start < 0:
+            start = nsteps + start
+
+        if step is None:
+            step = 1
+
+        if stop is None:
+            stop = nsteps
+        elif stop < 0:
+            stop = nsteps + stop
+
+        trbl = range(start, stop, step)
+    else:
+        raise RuntimeError("index2range handles integers and slices only.")
+    return trbl
+

@@ -3,21 +3,28 @@ import numpy as np
 from ase.eos import birchmurnaghan
 
 
-def delta(v1, B1, Bp1,
-          v2, B2, Bp2,
-          symmetric=True):
+def delta(v1: float, B1: float, Bp1: float,
+          v2: float, B2: float, Bp2: float,
+          symmetric=True) -> float:
     """Calculate Delta-value between two equation of states.
 
-    v1, v2: float
+    .. seealso:: https://github.com/molmod/DeltaCodesDFT
+
+    Parameters
+    ----------
+    v1,v2: float
         Volume per atom.
-    B1, B2: float
+    B1,B2: float
         Bulk-modulus (in eV/Ang^3).
-    Bp1, Bp2: float
+    Bp1,Bp2: float
         Pressure derivative of bulk-modulus.
     symmetric: bool
         Default is to calculate a symmetric delta.
 
-    Retruns Delta value in eV/atom.
+    Returns
+    -------
+    delta: float
+        Delta value in eV/atom.
     """
     if symmetric:
         va = 0.94 * (v1 + v2) / 2
