@@ -100,6 +100,16 @@ class Cell:
         from ase.geometry.bravais import get_bravais_lattice
         return get_bravais_lattice(self, eps=eps)
 
+    def bandpath1(self, path=None, npoints=None, density=None, eps=2e-4):
+        # XXX WIP try to always map bandpath all the way from standard
+        # cell back to this cell.
+        #
+        # TODO: Combine with the rotation transformation from bandpath()
+        from ase.geometry.bravais_type_engine import identify_lattice
+        lat, op = identify_lattice(self, eps=eps)
+        path = lat.bandpath()
+        return path.transform(op)
+
     def bandpath(self, path=None, npoints=None, density=None, eps=2e-4):
         bravais = self.get_bravais_lattice(eps=eps)
         transformation = bravais.get_transformation(self.array)
