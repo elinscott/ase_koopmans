@@ -17,6 +17,8 @@ for lat in all_variants():
     check(recognize_canonical_cell(cell))
 
     if lat.name not in ['MCL', 'MCLC', 'TRI']:
-        check(identify_lattice(cell, 1e-4))
+        stdcell, op = identify_lattice(cell, 1e-4)
+        check(stdcell)
         rcell, op = cell.niggli_reduce()
-        check(identify_lattice(rcell, 1e-4))
+        stdcell, op = identify_lattice(rcell, 1e-4)
+        check(stdcell)
