@@ -129,6 +129,19 @@ class BandPath:
         assert isinstance(labelseq, str)
         self.labelseq = labelseq
 
+    def transform(self, op):
+        # XXX acceptable operations are probably only those
+        # who come from Niggli reductions (permutations etc.)
+        #
+        # We should insert a check
+        special_points = {}
+        for name, value in self.special_points.items():
+            special_points[name] = value @ op
+
+        return BandPath(op.T @ self.cell, kpts=self.kpts @ op,
+                        special_points=special_points,
+                        labelseq=self.labelseq)
+
     def todict(self):
         return {'kpts': self.kpts,
                 'special_points': self.special_points,
