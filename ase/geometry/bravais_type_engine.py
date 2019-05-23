@@ -138,7 +138,6 @@ def find_all_niggli_ops(length_grid, angle_grid):
 
 
 def check_type(rcell, name, eps):
-    testlat = bravais_lattices[name]
     niggli_ops = niggli_op_table[name]
     results = []
 
@@ -186,6 +185,7 @@ def generate_niggli_op_table():
     for latname, ops in all_niggli_ops_and_counts.items():
         niggli_op_table[latname] = list(ops)
 
+    import pprint
     print(pprint.pformat(niggli_op_table))
 
 
