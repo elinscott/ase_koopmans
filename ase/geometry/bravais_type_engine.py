@@ -156,6 +156,7 @@ def check_type(rcell, name, eps):
     return results
 
 
+
 def identify_lattice(cell, eps):
     cell = Cell.ascell(cell)
     rcell, op = cell.niggli_reduce()
@@ -170,9 +171,10 @@ def identify_lattice(cell, eps):
         for name in bravais_names:
             for lat, std_op in results:
                 if lat.name == name:
-                    return lat, std_op
+                    return lat, std_op @ np.linalg.inv(op)
 
     raise RuntimeError('Cannot recognize cell: {}'.format(cell.cellpar()))
+
 
 
 def generate_niggli_op_table():
