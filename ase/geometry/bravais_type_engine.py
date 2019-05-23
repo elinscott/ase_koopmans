@@ -144,9 +144,10 @@ def check_type(rcell, name, eps):
     for op in niggli_ops:
         op = np.array(op, int).reshape(3, 3)
         candidate = Cell(np.linalg.inv(op.T) @ rcell)
+        # XXX Think about what errors and why
         try:
             lat = get_bravais_lattice_from_reduced_form(candidate, eps)
-        except (AssertionError, UnconventionalLattice, RuntimeError) as err:
+        except (AssertionError, UnconventionalLattice, RuntimeError):
             continue
         if lat.name in ['TRI', 'MCL', 'MCLC']:
             continue
