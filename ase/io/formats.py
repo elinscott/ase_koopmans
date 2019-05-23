@@ -120,7 +120,7 @@ all_formats = {
     'v-sim': ('V_Sim ascii file', '1F'),
     'vasp': ('VASP POSCAR/CONTCAR file', '1F'),
     'vasp-out': ('VASP OUTCAR file', '+F'),
-    'vasp-xdatcar': ('VASP XDATCAR file', '+S'),
+    'vasp-xdatcar': ('VASP XDATCAR file', '+F'),
     'vasp-xml': ('VASP vasprun.xml file', '+F'),
     'vti': ('VTK XML Image Data', '1F'),
     'vtu': ('VTK XML Unstructured Grid', '1F'),
