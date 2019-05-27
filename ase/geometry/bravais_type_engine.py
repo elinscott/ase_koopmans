@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 from ase.geometry.bravais import (bravais_lattices, UnconventionalLattice,
                                   bravais_names,
-                                  get_bravais_lattice_from_reduced_form)
+                                  get_lattice_from_canonical_cell)
 from ase.geometry import Cell
 
 """This module implements a crude method to recognize most Bravais lattices.
@@ -146,7 +146,7 @@ def check_type(rcell, name, eps):
         candidate = Cell(np.linalg.inv(op.T) @ rcell)
         # XXX Think about what errors and why
         try:
-            lat = get_bravais_lattice_from_reduced_form(candidate, eps)
+            lat = get_lattice_from_canonical_cell(candidate, eps)
         except (AssertionError, UnconventionalLattice, RuntimeError):
             continue
         if lat.name in ['TRI', 'MCL', 'MCLC']:

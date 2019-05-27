@@ -1,6 +1,6 @@
 import numpy as np
 from ase.geometry.bravais import (bravais_lattices, all_variants,
-                                  get_bravais_lattice_from_reduced_form)
+                                  get_lattice_from_canonical_cell)
 
 for name in bravais_lattices:
     latcls = bravais_lattices[name]
@@ -18,7 +18,7 @@ for lat in all_variants():
     print('cell', lat.tocell())
     cell = lat.tocell()
     if cell.pbc.all():
-        lat1 = get_bravais_lattice_from_reduced_form(cell)
+        lat1 = get_lattice_from_canonical_cell(cell)
     else:
         lat1 = cell.get_bravais_lattice()
     assert lat1.name == lat.name, (lat1.name, lat.name)
