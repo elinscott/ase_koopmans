@@ -180,8 +180,8 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
             for ii in range(0,len(mlines)):
                 fileobj.write(mlines[ii].encode('utf-8'))
 
-        if "mass" in parameters:
-            for mass in parameters["mass"]:
+        if "masses" in parameters:
+            for mass in parameters["masses"]:
                 # Note that the variable mass is a string containing
                 # the type number and value of mass separated by a space
                 fileobj.write("mass {0} \n".format(mass).encode("utf-8"))
