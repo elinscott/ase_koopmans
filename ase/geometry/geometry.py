@@ -15,8 +15,24 @@ import numpy as np
 from ase.geometry import complete_cell
 
 
+def translate_pretty(fractional, pbc):
+    """Translates atoms such that fractional positions are minimized."""
+
+    for i in range(3):
+        if not pbc[i]:
+            continue
+
+        indices = np.argsort(fractional[:, i])
+        sp = fractional[indices, i]
+
+        widths = (np.roll(sp, 1) - sp) % 1.0
+        fractional[:, i] -= sp[np.argmin(widths)]
+        fractional[:, i] %= 1.0
+    return fractional
+
+
 def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
-                   eps=1e-7):
+                   pretty_translation=False, eps=1e-7):
     """Wrap positions to unit cell.
 
     Returns positions changed by a multiple of the unit cell vectors to
@@ -35,6 +51,8 @@ def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
     center: three float
         The positons in fractional coordinates that the new positions
         will be nearest possible to.
+    pretty_translation: bool
+        Translates atoms such that fractional coordinates are minimized.
     eps: float
         Small number to prevent slightly negative coordinates from being
         wrapped.
@@ -65,10 +83,16 @@ def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
     fractional = np.linalg.solve(cell.T,
                                  np.asarray(positions).T).T - shift
 
-    for i, periodic in enumerate(pbc):
-        if periodic:
-            fractional[:, i] %= 1.0
-            fractional[:, i] += shift[i]
+    if pretty_translation:
+        fractional = translate_pretty(fractional, pbc)
+        shift = np.asarray(center) - 0.5
+        shift[np.logical_not(pbc)] = 0.0
+        fractional += shift
+    else:
+        for i, periodic in enumerate(pbc):
+            if periodic:
+                fractional[:, i] %= 1.0
+                fractional[:, i] += shift[i]
 
     return np.dot(fractional, cell)
 
@@ -243,7 +267,7 @@ def get_distances(p1, p2=None, cell=None, pbc=None):
     D = np.zeros((len(p1), len(p2), 3))
 
     for offset, pos1 in enumerate(p1):
-        D[offset, :, :] = p2 - pos1 
+        D[offset, :, :] = p2 - pos1
 
     # Collapse to linear indexing
     D.shape = (-1, 3)

@@ -155,6 +155,27 @@ correct_pos = [[4.7425, 1.2575, 8.7425],
                [0.67, -0.1, 10.1]]
 assert np.allclose(correct_pos, result_positions)
 
+# Test pretty_translation keyword
+positions = np.array([
+    [0, 0, 0],
+    [0, 1, 1],
+    [1, 0, 1],
+    [1, 1, 0.]])
+cell = np.diag([2, 2, 2])
+result = wrap_positions(positions, cell, pbc=[True, True, True],
+                        pretty_translation=True)
+assert np.max(result) < 1 + 1E-10
+assert np.min(result) > -1E-10
+
+result = wrap_positions(positions - 5, cell, pbc=[True, True, True],
+                        pretty_translation=True)
+assert np.max(result) < 1 + 1E-10
+
+result = wrap_positions(positions - 5, cell, pbc=[False, True, True],
+                        pretty_translation=True)
+assert np.max(result[:, 0]) < -3
+assert np.max(result[:, 1:]) < 1 + 1E-10
+
 # Get the correct crystal structure from a range of different cells
 assert crystal_structure_from_cell(bulk('Al').get_cell()) == 'fcc'
 assert crystal_structure_from_cell(bulk('Fe').get_cell()) == 'bcc'
