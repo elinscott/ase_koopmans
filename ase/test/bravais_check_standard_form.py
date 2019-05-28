@@ -1,5 +1,12 @@
+"""Bravais lattice type check.
+
+1) For each Bravais variant, check that we recognize the
+standard cell correctly.
+
+2) For those Bravais lattices that we can recognize in non-standard form,
+   Niggli-reduce them and recognize them as well."""
 import numpy as np
-from ase.geometry.bravais import (recognize_canonical_cell,
+from ase.geometry.bravais import (get_lattice_from_canonical_cell,
                                   all_variants)
 from ase.geometry.bravais_type_engine import identify_lattice
 
@@ -14,7 +21,7 @@ for lat in all_variants():
         err = np.abs(cell.cellpar() - lat1.cellpar()).max()
         assert err < 1e-5, err
 
-    check(recognize_canonical_cell(cell))
+    check(get_lattice_from_canonical_cell(cell))
 
     if lat.name not in ['MCL', 'MCLC', 'TRI']:
         stdcell, op = identify_lattice(cell, 1e-4)

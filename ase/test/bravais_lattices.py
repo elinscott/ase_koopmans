@@ -17,7 +17,9 @@ for lat in all_variants():
 
     print('cell', lat.tocell())
     cell = lat.tocell()
-    if cell.pbc.all():
+    if lat.name in ['MCL', 'MCLC', 'TRI']:
+        # Automatic check not implemented for these cell types, but we
+        # can still recognize the canonical form:
         lat1 = get_lattice_from_canonical_cell(cell)
     else:
         lat1 = cell.get_bravais_lattice()
