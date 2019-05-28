@@ -1545,7 +1545,6 @@ class Atoms(object):
 
         return get_angles(v12, v32, cell=cell, pbc=pbc)
 
-
     def set_angle(self, a1, a2=None, a3=None, angle=None, mask=None, indices=None, add=False):
         """Set angle (in degrees) formed by three atoms.
 
@@ -1599,7 +1598,6 @@ class Atoms(object):
         center = self.positions[a2]
         self._masked_rotate(center, axis, diff, mask)
 
-
     def rattle(self, stdev=0.001, seed=42):
         """Randomly displace atoms.
 
@@ -1651,7 +1649,6 @@ class Atoms(object):
             D_len.shape = (-1,)
             return D_len
 
-
     def get_all_distances(self, mic=False, vector=False):
         """Return distances of all of the atoms with all of the atoms.
 
@@ -1672,7 +1669,6 @@ class Atoms(object):
             return D
         else:
             return D_len
-
 
     def set_distance(self, a0, a1, distance, fix=0.5, mic=False, mask=None, indices=None, add=False, factor=False):
         """Set the distance between two atoms.
@@ -1713,16 +1709,15 @@ class Atoms(object):
         x = 1.0 - distance / D_len[0]
 
         if mask is None and indices is None:
-            indices = [ a0, a1 ]
+            indices = [a0, a1]
         elif mask:
-            indices = [ i for i in range(len(self)) if mask[i] ]
+            indices = [i for i in range(len(self)) if mask[i]]
 
         for i in indices:
             if i == a0:
                 R[a0] += (x * fix) * D[0]
             else:
                 R[i] -= (x * (1.0 - fix)) * D[0]
-
 
     def get_scaled_positions(self, wrap=True):
         """Get positions relative to unit cell.
@@ -1747,7 +1742,8 @@ class Atoms(object):
         """Set positions relative to unit cell."""
         self.positions[:] = self.cell.cartesian_positions(scaled)
 
-    def wrap(self, center=(0.5, 0.5, 0.5), pbc=None, eps=1e-7):
+    def wrap(self, center=(0.5, 0.5, 0.5), pbc=None, pretty_translation=False,
+             eps=1e-7):
         """Wrap positions to unit cell.
 
         Parameters:
@@ -1759,6 +1755,8 @@ class Atoms(object):
             For each axis in the unit cell decides whether the positions
             will be moved along this axis.  By default, the boundary
             conditions of the Atoms object will be used.
+        pretty_translation: bool
+            Translates atoms such that fractional coordinates are minimized.
         eps: float
             Small number to prevent slightly negative coordinates from being
             wrapped.
@@ -1779,7 +1777,8 @@ class Atoms(object):
             pbc = self.pbc
 
         self.positions[:] = wrap_positions(self.positions, self.cell,
-                                           pbc, center, eps)
+                                           pbc, center, pretty_translation,
+                                           eps)
 
     def get_temperature(self):
         """Get the temperature in Kelvin."""
