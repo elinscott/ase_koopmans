@@ -212,9 +212,12 @@ def get_angles(v1, v2, cell=None, pbc=None):
         v1 = find_mic(v1, cell, pbc)[0]
         v2 = find_mic(v2, cell, pbc)[0]
 
-
-    v1 /= np.linalg.norm(v1, axis=1)[:, np.newaxis]
-    v2 /= np.linalg.norm(v2, axis=1)[:, np.newaxis]
+    nv1 = np.linalg.norm(v1, axis=1)[:, np.newaxis]
+    nv2 = np.linalg.norm(v2, axis=1)[:, np.newaxis]
+    if (nv1 <= 0).any() or (nv2 <= 0).any():
+        raise ZeroDivisionError('Undefined angle')
+    v1 /= nv1
+    v2 /= nv2
 
     # We just normalized the vectors, but in some cases we can get
     # bad things like 1+2e-16.  These we clip away:

@@ -1214,10 +1214,10 @@ class Atoms(object):
                        'where v is a vector to rotate around and '
                        'a is the angle in degrees.')
             if isinstance(v, (float, int)):
-                warnings.warn(warning)
+                warnings.warn(warning, FutureWarning)
                 a, v = v * 180 / pi, a
             elif v is None:
-                warnings.warn(warning)
+                warnings.warn(warning, FutureWarning)
                 v = a
                 a = None
             else:
@@ -1291,7 +1291,7 @@ class Atoms(object):
         warnings.warn(
             'Please use this method instead: '
             'euler_rotate(phi=0, theta=0, psi=0, center=(0, 0, 0)) '
-            'where the angles are given in degrees')
+            'where the angles are given in degrees', FutureWarning)
         self.euler_rotate(phi * 180 / pi, theta * 180 / pi, psi * 180 / pi,
                           center)
 
@@ -1368,12 +1368,15 @@ class Atoms(object):
             warnings.warn(
                 'Please use new API (which will return the angle in degrees): '
                 'atoms_obj.get_dihedral(a1,a2,a3,a4)*pi/180 instead of '
-                'atoms_obj.get_dihedral([a1,a2,a3,a4])')
+                'atoms_obj.get_dihedral([a1,a2,a3,a4])', FutureWarning)
             assert a3 is None and a4 is None
             a1, a2, a3, a4 = a1
             f = pi / 180
         else:
             f = 1
+
+        if any(a is None for a in [a2, a3, a4]):
+            raise ValueError('a2, a3 and a4 must not be None')
 
         # vector 1->2, 2->3, 3->4 and their normalized cross products:
         a = self.positions[a2] - self.positions[a1]
@@ -1443,12 +1446,14 @@ class Atoms(object):
         """
 
         if isinstance(a1, int):
+            if any(a is None for a in [a2, a3, a4, angle]):
+                raise ValueError('a2, a3, a4, and angle must not be None')
             angle *= pi / 180
         else:
             warnings.warn(
                 'Please use new API: '
                 'atoms_obj.set_dihedral(a1,a2,a3,a4,angle) '
-                'where angle is given in degrees')
+                'where angle is given in degrees', FutureWarning)
             if angle is None:
                 angle = a2
                 if mask is None:
@@ -1481,22 +1486,24 @@ class Atoms(object):
         Same usage as in :meth:`ase.Atoms.set_dihedral`: Rotate a group by a
         predefined dihedral angle, starting from its current configuration.
         """
-        if isinstance(a1, int):
-            start = self.get_dihedral(a1, a2, a3, a4)
-            self.set_dihedral(a1, a2, a3, a4, angle + start, mask, indices)
-        else:
+        if not isinstance(a1, int):
             warnings.warn(
                 'Please use new API: '
                 'atoms_obj.rotate_dihedral(a1,a2,a3,a4,angle) '
-                'where angle is given in degrees')
+                'where angle is given in degrees', FutureWarning)
             if angle is None:
                 angle = a2
                 if mask is None and indices is None:
                     mask = a3
             else:
                 assert a2 is None and a3 is None and a4 is None
-            start = self.get_dihedral(a1)
-            self.set_dihedral(a1, angle + start, mask, indices)
+            a1, a2, a3, a4 = a1
+
+        if any(a is None for a in [a2, a3, a4, angle]):
+            raise ValueError('a2, a3, a4, and angle must not be None')
+
+        start = self.get_dihedral(a1, a2, a3, a4)
+        self.set_dihedral(a1, a2, a3, a4, angle + start, mask, indices)
 
     def get_angle(self, a1, a2, a3, mic=False):
         """Get angle formed by three atoms.
@@ -1508,24 +1515,7 @@ class Atoms(object):
         angle across periodic boundaries.
         """
 
-        indices = np.array([[a1, a2, a3]])
-
-        a1s = self.positions[indices[:, 0]]
-        a2s = self.positions[indices[:, 1]]
-        a3s = self.positions[indices[:, 2]]
-
-        v12 = a1s - a2s
-        v32 = a3s - a2s
-
-        cell = None
-        pbc = None
-
-        if mic:
-            cell = self.cell
-            pbc = self.pbc
-
-        return get_angles(v12, v32, cell=cell, pbc=pbc)[0]
-
+        return self.get_angles([[a1, a2, a3]], mic=mic)[0]
 
     def get_angles(self, indices, mic=False):
         """Get angle formed by three atoms for multiple groupings.
@@ -1572,7 +1562,7 @@ class Atoms(object):
             warnings.warn(
                 'Please use new API: '
                 'atoms_obj.set_angle(a1,a2,a3,angle) '
-                'where angle is given in degrees')
+                'where angle is given in degrees', FutureWarning)
             if angle is None:
                 angle = a2
                 if mask is None:
@@ -1581,6 +1571,9 @@ class Atoms(object):
             else:
                 assert a2 is None and a3 is None
             angle *= 180 / pi
+
+        if any(a is None for a in [a2, a3, angle]):
+            raise ValueError('a2, a3, and angle must not be None')
 
         # If not provided, set mask to the last atom in the angle description
         if mask is None and indices is None:
@@ -1629,24 +1622,7 @@ class Atoms(object):
         vector=True gives the distance vector (from a0 to a1).
         """
 
-        R = self.arrays['positions']
-        p1 = [R[a0]]
-        p2 = [R[a1]]
-
-        cell = None
-        pbc = None
-
-        if mic:
-            cell = self.cell
-            pbc = self.pbc
-
-        D, D_len = get_distances(p1, p2, cell=cell, pbc=pbc)
-
-        if vector:
-            return D[0, 0]
-        else:
-            return D_len[0, 0]
-
+        return self.get_distances(a0, [a1], mic=mic, vector=vector)[0]
 
     def get_distances(self, a, indices, mic=False, vector=False):
         """Return distances of atom No.i with a list of atoms.
@@ -1714,6 +1690,9 @@ class Atoms(object):
 
         It is assumed that the atoms in *mask*/*indices* move together
         with *a1*. If *fix=1*, only *a0* will therefore be moved."""
+
+        if a0 % len(self) == a1 % len(self):
+            raise ValueError('a0 and a1 must not be the same')
 
         if add:
             oldDist = self.get_distance(a0, a1, mic=mic)
