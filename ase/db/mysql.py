@@ -117,7 +117,7 @@ class MySQLDatabase(SQLite3Database):
     create_indices: bool
         Carried over from parent class. Currently indices are not
         created for MySQL, as TEXT fields cannot be hashed by MySQL.
-    use_loc_file: bool
+    use_lock_file: bool
         See SQLite
     serial: bool
         See SQLite
