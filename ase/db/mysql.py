@@ -34,11 +34,13 @@ class MySQLCursor(object):
     # simply rename them during initialization
     sql_replace = [
         (' key TEXT', ' attribute_key TEXT'),
+        ('(key TEXT', '(attribute_key TEXT'),
         ('SELECT key FROM', 'SELECT attribute_key FROM'),
         ('?', '%s'),
         (' keys ', ' attribute_keys '),
         (' key=', ' attribute_key='),
-        ('table.key', 'table.attribute_key')
+        ('table.key', 'table.attribute_key'),
+        (' IF NOT EXISTS', '')
     ]
 
     def __init__(self, cur):
