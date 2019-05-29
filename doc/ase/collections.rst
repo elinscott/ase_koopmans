@@ -85,7 +85,18 @@ wien2k_volume  : 11.951
     :ref:`dcdft tut`.
 
 
-G2 ...
-======
+G2 neutral test set of molecules
+================================
 
 .. data:: g2
+
+Molecules from [Curtiss1997]_.
+
+.. [Curtiss1997]
+
+    Larry A. Curtiss, Krishnan Raghavachari, Paul C. Redfern,
+    John A. Pople:
+    "Assessment of Gaussian-2 and density functional theories for the
+    computation of enthalpies of formation",
+    J. Chem. Phys. 106, 1063 (1997).
+    https://doi.org/10.1063/1.473182

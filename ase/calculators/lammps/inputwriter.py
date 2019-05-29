@@ -3,6 +3,7 @@ Stream input commands to lammps to perform desired simulations
 """
 from ase.parallel import paropen
 from ase.utils import basestring as asestring
+from ase.calculators.lammps.unitconvert import convert
 
 # "End mark" used to indicate that the calculation is done
 CALCULATION_END_MARK = "__end_of_ase_invoked_calculation__"
@@ -20,9 +21,6 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
     :type prismobj: Prism
 
     """
-    if parameters.units != "metal":
-        raise NotImplementedError
-
     if parameters["verbose"]:
         fileobj.write("## Original ase cell\n".encode("utf-8"))
         fileobj.write(
@@ -35,7 +33,11 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
         )
 
     fileobj.write("lattice sc 1.0\n".encode("utf-8"))
-    xhi, yhi, zhi, txy, txz, tyz = prismobj.get_lammps_prism()
+
+    # Get cell parameters and convert from ASE units to LAMMPS units
+    xhi, yhi, zhi, xy, xz, yz = convert(prismobj.get_lammps_prism(),
+            "distance", "ASE", parameters.units)
+
     if parameters["always_triclinic"] or prismobj.is_skewed():
         fileobj.write(
             "region asecell prism 0.0 {0} 0.0 {1} 0.0 {2} ".format(
@@ -43,7 +45,7 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
             ).encode("utf-8")
         )
         fileobj.write(
-            "{0} {1} {2} side in units box\n".format(txy, txz, tyz).encode(
+            "{0} {1} {2} side in units box\n".format(xy, xz, yz).encode(
                 "utf-8"
             )
         )
@@ -67,6 +69,8 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
         "create_box {0} asecell\n" "".format(len(species)).encode("utf-8")
     )
     for sym, pos in zip(symbols, atoms.get_positions()):
+        # Convert position from ASE units to LAMMPS units
+        pos = convert(pos, "distance", "ASE", parameters.units)
         if parameters["verbose"]:
             fileobj.write(
                 "# atom pos in ase cell: {0:.16} {1:.16} {2:.16}\n"
@@ -122,8 +126,20 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
         if style in parameters:
             fileobj.write('{} {} \n'.format(style, parameters[style]).encode("utf-8"))
 
+    # write initialization lines needed for some LAMMPS potentials
+    if 'model_init' in parameters:
+        mlines = parameters['model_init']
+        for ii in range(0,len(mlines)):
+            fileobj.write(mlines[ii].encode('utf-8'))
+
+    # write units
+    if 'units' in parameters:
+       units_line = 'units ' + parameters['units'] + '\n'
+       fileobj.write(units_line.encode('utf-8'))
+    else:
+       fileobj.write('units metal\n'.encode('utf-8'))
+
     pbc = atoms.get_pbc()
-    fileobj.write("units metal \n".encode("utf-8"))
     if "boundary" in parameters:
         fileobj.write(
             "boundary {0} \n".format(parameters["boundary"]).encode("utf-8")
@@ -158,8 +174,16 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
             fileobj.write(
                 "pair_coeff {0} \n" "".format(pair_coeff).encode("utf-8")
             )
-        if "mass" in parameters:
-            for mass in parameters["mass"]:
+        # write additional lines needed for some LAMMPS potentials
+        if 'model_post' in parameters:
+            mlines = parameters['model_post']
+            for ii in range(0,len(mlines)):
+                fileobj.write(mlines[ii].encode('utf-8'))
+
+        if "masses" in parameters:
+            for mass in parameters["masses"]:
+                # Note that the variable mass is a string containing
+                # the type number and value of mass separated by a space
                 fileobj.write("mass {0} \n".format(mass).encode("utf-8"))
     else:
         # simple default parameters
