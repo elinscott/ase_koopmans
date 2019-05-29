@@ -12,6 +12,25 @@ import ase.io.jsonio
 
 
 class Connection(object):
+    """
+    Wrapper for the MySQL connection
+
+    Arguments
+    =========
+    host: str
+        Hostname. For a local database this is localhost.
+    user: str
+        Username.
+    passwd: str
+        Password
+    db_name: str
+        Name of the database
+    binary_prefix: bool
+        MySQL checks if an argument can be interpreted as a UTF-8 string. This
+        check fails for binary values. Binary values need to have _binary
+        prefix in MySQL. By setting this to True, the prefix is automatically
+        added for binary values.
+    """
     def __init__(self, host=None, user=None, passwd=None,
                  db_name=None, binary_prefix=False):
         self.con = connect(host=host, user=user, passwd=passwd, db=db_name,
@@ -28,10 +47,12 @@ class Connection(object):
 
 
 class MySQLCursor(object):
-    # MySQL has some reserved words that is not reserved
-    # in SQLite. Hence, we need to redefine those words
-    # As these words are hardcoded into the code, we cannot
-    # simply rename them during initialization
+    """
+    Wrapper for the MySQL cursor. The most important task performed by this
+    class is to translate SQLite queries to MySQL. Translation is needed
+    because ASE DB uses some field names that are reserved words in MySQL.
+    Thus, these has to mapped onto other field names.
+    """
     sql_replace = [
         (' key TEXT', ' attribute_key TEXT'),
         ('(key TEXT', '(attribute_key TEXT'),
@@ -79,6 +100,28 @@ class MySQLCursor(object):
 
 
 class MySQLDatabase(SQLite3Database):
+    """
+    ASE interface to a MySQL database (via pymysql package).
+
+    Arguments
+    ==========
+    url: str
+        URL to the database. It should have the form
+        mysql://username:password@host/database_name.
+        Example URL with the following credentials
+            username: john
+            password: johnspasswd
+            host: localhost (i.e. server is running locally)
+            database: johns_calculations
+        mysql://john:johnspasswd@localhost/johns_calculations
+    create_indices: bool
+        Carried over from parent class. Currently indices are not
+        created for MySQL, as TEXT fields cannot be hashed by MySQL.
+    use_loc_file: bool
+        See SQLite
+    serial: bool
+        See SQLite
+    """
     type = 'mysql'
     default = 'DEFAULT'
 
@@ -94,6 +137,9 @@ class MySQLDatabase(SQLite3Database):
                 self._parse_url(url)
 
     def _parse_url(self, url):
+        """
+        Parse the URL
+        """
         url = url.replace('mysql://', '')
 
         splitted = url.split(':')
