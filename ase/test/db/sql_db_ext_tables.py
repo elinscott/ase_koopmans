@@ -4,7 +4,7 @@ from ase import Atoms
 from ase.test import must_raise
 import numpy as np
 
-DB_NAMES = ["test_ext_tables.db", "postgresql", "mysql"]
+DB_NAMES = ["test_ext_tables.db", "postgresql", "mysql", "mariadb"]
 
 
 def get_db_name(name):
