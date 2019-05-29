@@ -25,13 +25,15 @@ class Connection(object):
         Password
     db_name: str
         Name of the database
+    port: int
+        Port
     binary_prefix: bool
         MySQL checks if an argument can be interpreted as a UTF-8 string. This
         check fails for binary values. Binary values need to have _binary
         prefix in MySQL. By setting this to True, the prefix is automatically
         added for binary values.
     """
-    def __init__(self, host=None, user=None, passwd=None,
+    def __init__(self, host=None, user=None, passwd=None, port=3306,
                  db_name=None, binary_prefix=False):
         self.con = connect(host=host, user=user, passwd=passwd, db=db_name,
                            binary_prefix=binary_prefix)
@@ -107,13 +109,14 @@ class MySQLDatabase(SQLite3Database):
     ==========
     url: str
         URL to the database. It should have the form
-        mysql://username:password@host/database_name.
+        mysql://username:password@host:port/database_name.
         Example URL with the following credentials
             username: john
             password: johnspasswd
             host: localhost (i.e. server is running locally)
             database: johns_calculations
-        mysql://john:johnspasswd@localhost/johns_calculations
+            port: 3306
+        mysql://john:johnspasswd@localhost:3306/johns_calculations
     create_indices: bool
         Carried over from parent class. Currently indices are not
         created for MySQL, as TEXT fields cannot be hashed by MySQL.
@@ -134,6 +137,7 @@ class MySQLDatabase(SQLite3Database):
                 self.username = None
                 self.passwd = None
                 self.db_name = None
+                self.port = 3306
                 self._parse_url(url)
 
     def _parse_url(self, url):
@@ -142,24 +146,22 @@ class MySQLDatabase(SQLite3Database):
         """
         url = url.replace('mysql://', '')
 
-        splitted = url.split(':')
+        splitted = url.split(':', 1)
         self.username = splitted[0]
 
         splitted = splitted[1].split('@')
         self.passwd = splitted[0]
 
         splitted = splitted[1].split('/')
-        self.host = splitted[0]
-
-        if '?' in splitted[1]:
-            self.db_name = splitted[1]
-        else:
-            self.db_name = splitted[1]
+        host_and_port = splitted[0].split(':')
+        self.host = host_and_port[0]
+        self.port = int(host_and_port[1])
+        self.db_name = splitted[1]
 
     def _connect(self):
         return Connection(host=self.host, user=self.username,
                           passwd=self.passwd, db_name=self.db_name,
-                          binary_prefix=True)
+                          port=self.port, binary_prefix=True)
 
     def _initialize(self, con):
         if self.initialized:
