@@ -82,21 +82,21 @@ class MySQLDatabase(SQLite3Database):
     type = 'mysql'
     default = 'DEFAULT'
 
-    def __init__(self, filename=None, create_indices=True,
+    def __init__(self, url=None, create_indices=True,
                  use_lock_file=False, serial=False):
                 super(MySQLDatabase, self).__init__(
-                    filename, create_indices, use_lock_file, serial)
+                    url, create_indices, use_lock_file, serial)
 
                 self.host = None
                 self.username = None
                 self.passwd = None
                 self.db_name = None
-                self._parse_filename(filename)
+                self._parse_url(url)
 
-    def _parse_filename(self, filename):
-        filename = filename.replace('mysql://', '')
+    def _parse_url(self, url):
+        url = url.replace('mysql://', '')
 
-        splitted = filename.split(':')
+        splitted = url.split(':')
         self.username = splitted[0]
 
         splitted = splitted[1].split('@')
