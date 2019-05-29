@@ -1,6 +1,7 @@
 services:
   - postgres:latest
   - mysql:latest
+  - mariadb:latest
 
 variables:
   POSTGRES_DB: testase

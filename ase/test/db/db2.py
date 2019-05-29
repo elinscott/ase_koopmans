@@ -10,7 +10,7 @@ from ase.build import molecule
 from ase.test import must_raise
 
 
-for name in ['testase.json', 'testase.db', 'postgresql', 'mysql']:
+for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
     if name == 'postgresql':
         if os.environ.get('POSTGRES_DB'):  # gitlab-ci
             name = 'postgresql://ase:ase@postgres:5432/testase'
@@ -26,11 +26,19 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql']:
 
         if name is None:
             continue
+    elif name == 'mariadb':
+        if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
+            name = 'mariadb://root:ase@mariadb:3306/testase_mysql'
+        else:
+            name = os.environ.get('MYSQL_DB_URL')
+
+        if name is None:
+            continue
 
     c = connect(name)
     print(name, c)
 
-    if 'postgres' in name or 'mysql' in name:
+    if 'postgres' in name or 'mysql' in name or 'mariadb' in name:
         c.delete([row.id for row in c.select()])
 
     id = c.reserve(abc=7)
