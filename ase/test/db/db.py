@@ -21,7 +21,7 @@ def count(n, *args, **kwargs):
 
 
 t0 = time.time()
-for name in ['testase.json', 'testase.db', 'postgresql', 'mysql']:
+for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
     if name == 'postgresql':
         if os.environ.get('POSTGRES_DB'):  # gitlab-ci
             name = 'postgresql://ase:ase@postgres:5432/testase'
@@ -37,10 +37,18 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql']:
 
         if name is None:
             continue
+    elif name == 'mariadb':
+        if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
+            name = 'mariadb://root:ase@mariadb:3306/testase_mysql'
+        else:
+            name = os.environ.get('MYSQL_DB_URL')
+
+        if name is None:
+            continue
 
     con = connect(name)
     t1 = time.time()
-    if 'postgres' in name or 'mysql' in name:
+    if 'postgres' in name or 'mysql' in name or 'mariadb' in name:
         con.delete([row.id for row in con.select()])
 
     cli(cmd.replace('testase.json', name))
