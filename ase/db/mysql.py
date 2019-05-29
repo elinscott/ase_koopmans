@@ -32,10 +32,6 @@ class MySQLCursor(object):
     # in SQLite. Hence, we need to redefine those words
     # As these words are hardcoded into the code, we cannot
     # simply rename them during initialization
-    table_redefines = {
-        'keys': 'attribute_keys',
-    }
-
     sql_replace = [
         (' key TEXT', ' attribute_key TEXT'),
         ('SELECT key FROM', 'SELECT attribute_key FROM'),
