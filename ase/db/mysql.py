@@ -3,7 +3,6 @@ import numpy as np
 from pymysql import connect
 from pymysql.err import ProgrammingError
 from copy import deepcopy
-import warnings
 
 from ase.db.sqlite import SQLite3Database
 from ase.db.sqlite import init_statements
@@ -14,8 +13,9 @@ import ase.io.jsonio
 
 class Connection(object):
     def __init__(self, host=None, user=None, passwd=None,
-                 db_name=None):
-        self.con = connect(host=host, user=user, passwd=passwd, db=db_name)
+                 db_name=None, binary_prefix=False):
+        self.con = connect(host=host, user=user, passwd=passwd, db=db_name,
+                           binary_prefix=binary_prefix)
 
     def cursor(self):
         return MySQLCursor(self.con.cursor())
@@ -55,9 +55,7 @@ class MySQLCursor(object):
         if params is None:
             params = ()
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.cur.execute(sql, params)
+        self.cur.execute(sql, params)
 
     def fetchone(self):
         return self.cur.fetchone()
@@ -114,7 +112,8 @@ class MySQLDatabase(SQLite3Database):
 
     def _connect(self):
         return Connection(host=self.host, user=self.username,
-                          passwd=self.passwd, db_name=self.db_name)
+                          passwd=self.passwd, db_name=self.db_name,
+                          binary_prefix=True)
 
     def _initialize(self, con):
         if self.initialized:
