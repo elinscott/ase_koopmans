@@ -618,7 +618,7 @@ def filetype(filename, read=True, guess=True):
         if filename.startswith('postgres'):
             return 'postgresql'
 
-        if filename.startswith('mysql'):
+        if filename.startswith('mysql') or filename.startswith('mariadb'):
             return 'mysql'
 
         # strip any compression extensions that can be read
