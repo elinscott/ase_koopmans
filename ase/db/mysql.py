@@ -145,6 +145,7 @@ class MySQLDatabase(SQLite3Database):
         Parse the URL
         """
         url = url.replace('mysql://', '')
+        url = url.replace('mariadb://', '')
 
         splitted = url.split(':', 1)
         self.username = splitted[0]

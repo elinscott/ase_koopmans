@@ -151,7 +151,7 @@ def connect(name, type='extract_from_name', create_indices=True,
         elif (name.startswith('postgresql://') or
               name.startswith('postgres://')):
             type = 'postgresql'
-        elif name.startswith('mysql://'):
+        elif name.startswith('mysql://') or name.startswith('mariadb://'):
             type = 'mysql'
         else:
             type = os.path.splitext(name)[1][1:]
