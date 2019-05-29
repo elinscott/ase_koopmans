@@ -36,52 +36,22 @@ class MySQLCursor(object):
         'keys': 'attribute_keys',
     }
 
-    field_redefines = {
-        'key': 'attribute'
-    }
-
-    invalid_mysql_tables = ['number_key_values', 'keys', 'text_key_values']
+    sql_replace = [
+        (' key TEXT', ' attribute_key TEXT'),
+        ('SELECT key FROM', 'SELECT attribute_key FROM'),
+        ('?', '%s'),
+        (' keys ', ' attribute_keys ')
+    ]
 
     def __init__(self, cur):
         self.cur = cur
 
-    def _is_select_statement(self, sql):
-        return sql.lower().startswith('select')
-
-    def _is_update_statement(self, sql):
-        return sql.lower().startswith('update')
-
-    def _is_insert_statement(self, sql):
-        return sql.lower().startswith('insert into')
-
-    def _is_delete_statement(self, sql):
-        return sql.lower().startswith('delete')
-
-    def _is_known_statement(self, sql):
-        return self._is_select_statement(sql) or \
-            self._is_update_statement(sql) or \
-            self._is_insert_statement(sql) or \
-            self._is_delete_statement(sql)
-
-    def _redefine_invalid_tables(self, sql):
-        for invalid in self.invalid_mysql_tables:
-            if invalid in sql:
-                sql = sql.replace(
-                    'key=', '{}='.format(self.field_redefines['key']))
-        return sql
-
     def execute(self, sql, params=None):
-        if ' keys ' in sql:
-            if not self._is_known_statement(sql):
-                raise ValueError('{} is unknown'.format(sql))
-            sql = sql.replace(
-                ' keys ', ' {} '.format(self.table_redefines['keys']))
 
         # Replace external table key -> attribute_key
-        sql = sql.replace('key TEXT', 'attribute_key TEXT')
-        sql = sql.replace('SELECT key FROM', 'SELECT attribute_key FROM')
+        for substibution in self.sql_replace:
+            sql = sql.replace(substibution[0], substibution[1])
 
-        sql = sql.replace('?', '%s')
         if params is None:
             params = ()
 
@@ -102,16 +72,11 @@ class MySQLCursor(object):
         return values
 
     def executemany(self, sql, values):
-        sql = self._redefine_invalid_tables(sql)
-        if ' keys ' in sql:
-            if not self._is_known_statement(sql):
-                raise ValueError('{} is unknown'.format(sql))
-            sql = sql.replace(
-                ' keys ', ' {} '.format(self.table_redefines['keys']))
-        sql = sql.replace('?', '%s')
-
         if 'number_key_values' in sql:
             values = self._replace_nan_inf_kvp(values)
+
+        for substibution in self.sql_replace:
+            sql = sql.replace(substibution[0], substibution[1])
         self.cur.executemany(sql, values)
 
 
