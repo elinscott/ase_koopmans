@@ -138,11 +138,6 @@ class MySQLDatabase(SQLite3Database):
             statements = schema_update(init_statements_cpy)
             for statement in statements:
                 cur.execute(statement)
-
-            if self.create_indices:
-                print("Warning! The MySQL implementation does currently "
-                      "not support indexing because of the datatype TEXT "
-                      "cannot be hashed.")
             con.commit()
             self.version = VERSION
         else:
