@@ -36,7 +36,9 @@ class MySQLCursor(object):
         (' key TEXT', ' attribute_key TEXT'),
         ('SELECT key FROM', 'SELECT attribute_key FROM'),
         ('?', '%s'),
-        (' keys ', ' attribute_keys ')
+        (' keys ', ' attribute_keys '),
+        (' key=', ' attribute_key='),
+        ('table.key', 'table.attribute_key')
     ]
 
     def __init__(self, cur):
@@ -167,8 +169,8 @@ class MySQLDatabase(SQLite3Database):
         sql, value = super(MySQLDatabase, self).create_select_statement(
             keys, cmps, sort, order, sort_table, what)
 
-        sql = sql.replace(' keys ', ' attribute_keys ')
-        sql = sql.replace('key=', 'attribute_key=')
+        for subst in MySQLCursor.sql_replace:
+            sql = sql.replace(subst[0], subst[1])
         return sql, value
 
     def encode(self, obj):
