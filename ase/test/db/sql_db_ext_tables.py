@@ -18,6 +18,11 @@ def get_db_name(name):
             name = 'mysql://root:ase@mysql:3306/testase_mysql'
         else:
             name = os.environ.get('MYSQL_DB_URL')
+    elif name == 'mariadb':
+        if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
+            name = 'mariadb://root:ase@mariadb:3306/testase_mysql'
+        else:
+            name = os.environ.get('MYSQL_DB_URL')
     return name
 
 
@@ -172,7 +177,7 @@ for db_name in DB_NAMES:
     if name is None:
         continue
 
-    if db_name in ["postgresql", "mysql"]:
+    if db_name in ["postgresql", "mysql", "mariadb"]:
         c = connect(name)
         c.delete([row.id for row in c.select()])
     test_create_and_delete_ext_tab(name)
@@ -181,5 +186,5 @@ for db_name in DB_NAMES:
     test_write_atoms_row(name)
     test_external_table_upon_update()
 
-    if db_name not in ["postgresql", "mysql"]:
+    if db_name not in ["postgresql", "mysql", "mariadb"]:
         os.remove(name)
