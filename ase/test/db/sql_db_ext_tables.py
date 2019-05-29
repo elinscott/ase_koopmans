@@ -15,7 +15,7 @@ def get_db_name(name):
             name = os.environ.get('ASE_TEST_POSTGRES_URL')
     elif name == "mysql":
         if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
-            name = 'mysql://root:ase@mysql/testase_mysql'
+            name = 'mysql://root:ase@mysql:3306/testase_mysql'
         else:
             name = os.environ.get('MYSQL_DB_URL')
     return name

@@ -16,7 +16,7 @@ import os
 ON_CI_SERVER = 'CI_PROJECT_DIR' in os.environ.keys()
 
 if ON_CI_SERVER:
-    URL = 'mysql://root:ase@mysql/testase_mysql'
+    URL = 'mysql://root:ase@mysql:3306/testase_mysql'
     # HOST = 'mysql'
     # USER = 'root'
     # PASSWD = 'ase'
