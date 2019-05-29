@@ -130,10 +130,17 @@ class BandPath:
         self.labelseq = labelseq
 
     def transform(self, op):
+        """Transform bandpath applying a 3x3 matrix as an operation.
+
+        This is useful for converting the band path to another cell.
+        The operation will typically be a permutation/flipping
+        established by a function such as Niggli reduction."""
         # XXX acceptable operations are probably only those
         # who come from Niggli reductions (permutations etc.)
         #
-        # We should insert a check
+        # We should insert a check.
+        # I wonder which operations are valid?  They won't be valid
+        # if they change lengths, volume etc.
         special_points = {}
         for name, value in self.special_points.items():
             special_points[name] = value @ op
