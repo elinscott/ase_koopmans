@@ -140,7 +140,7 @@ def find_optimal_cell_shape(
     return optimal_P
 
 
-def make_supercell(prim, P, info={}, wrap=True, tol=1e-5):
+def make_supercell(prim, P, wrap=True, tol=1e-5):
     """Generate a supercell by applying a general transformation (*P*) to
     the input configuration (*prim*).
 
@@ -156,8 +156,6 @@ def make_supercell(prim, P, info={}, wrap=True, tol=1e-5):
         Input configuration.
     P: 3x3 integer matrix
         Transformation matrix `\mathbf{P}`.
-    info: dict
-        info dict to be attached to the supercell Atoms object
     wrap: bool
         wrap in the end
     tol: float
@@ -171,7 +169,7 @@ def make_supercell(prim, P, info={}, wrap=True, tol=1e-5):
     lattice_points_frac = lattice_points_in_supercell(supercell_matrix)
     lattice_points = np.dot(lattice_points_frac, supercell)
 
-    superatoms = Atoms(cell=supercell, pbc=True, info=info)
+    superatoms = Atoms(cell=supercell, pbc=True)
 
     for lp in lattice_points:
         shifted_atoms = prim.copy()
