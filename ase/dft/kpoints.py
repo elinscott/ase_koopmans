@@ -271,11 +271,19 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None):
     Return list of k-points, list of x-coordinates and list of
     x-coordinates of special points."""
 
+    cell = Cell.ascell(cell)
+    return cell.bandpath(path, npoints=npoints, density=density,
+                         special_points=special_points)
+
+    # XXX old code for bandpath() function, should be removed once we
+    # weed out any trouble
     if isinstance(path, basestring):
         # XXX we need to update this so we use the new and more complete
         # cell classification stuff
         lattice = None
         if special_points is None:
+            cell = Cell.ascell(cell)
+            cell.bandpath()
             cellinfo = get_cellinfo(cell)
             special_points = cellinfo.special_points
             lattice = cellinfo.lattice
