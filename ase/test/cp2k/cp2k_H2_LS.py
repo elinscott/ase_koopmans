@@ -8,15 +8,15 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 
 from __future__ import division, print_function
 import os
+import unittest
 
-from ase.test import NotAvailable
 from ase.build import molecule
 from ase.calculators.cp2k import CP2K
 
 
 def main():
     if "ASE_CP2K_COMMAND" not in os.environ:
-        raise NotAvailable('$ASE_CP2K_COMMAND not defined')
+        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
 
     inp = """&FORCE_EVAL
                &DFT

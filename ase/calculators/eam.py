@@ -9,7 +9,8 @@
 
 import os
 import numpy as np
-from ase.test import NotAvailable
+import unittest
+
 from ase.neighborlist import NeighborList
 from ase.calculators.calculator import Calculator, all_changes
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
@@ -887,7 +888,7 @@ End EAM Interface Documentation
             import matplotlib.pyplot as plt
 
         except ImportError:
-            raise NotAvailable('This needs matplotlib module.')
+            raise unittest.SkipTest('This needs matplotlib module.')
 
         if self.form == 'eam' or self.form == 'alloy' or self.form == 'fs':
             nrow = 2
