@@ -534,8 +534,13 @@ def get_special_points(cell, lattice=None, eps=2e-4):
                       'argument')
         lattice, cell = cell, lattice
 
-    cellinfo = get_cellinfo(cell=cell, lattice=lattice, eps=eps)
-    return cellinfo.special_points
+    cell = Cell.ascell(cell)
+    # We create the bandpath because we want to transform the kpoints too,
+    # from the canonical cell to the given one.
+    #
+    # Note that this function is missing a tolerance, epsilon.
+    path = cell.bandpath(npoints=0)
+    return path.special_points
 
 
 def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
