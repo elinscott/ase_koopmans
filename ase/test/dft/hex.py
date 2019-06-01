@@ -12,7 +12,10 @@ for cell in [[[1, 0, 0], [0.5, 3**0.5 / 2, 0], [0, 0, 1]],
     a = Atoms(cell=cell, pbc=True)
     a.cell *= 3
     a.calc = FreeElectrons(nvalence=1, kpts={'path': 'GMKG'})
-    print(crystal_structure_from_cell(a.cell))
+    lat = a.cell.get_bravais_lattice()
+    assert lat.name == 'HEX'
+    print(repr(a.cell.get_bravais_lattice()))
+    #print(crystal_structure_from_cell(a.cell))
     r = a.get_reciprocal_cell()
     k = get_special_points(a.cell)['K']
     print(np.dot(k, r))
