@@ -9,7 +9,6 @@
 
 import os
 import numpy as np
-import unittest
 
 from ase.neighborlist import NeighborList
 from ase.calculators.calculator import Calculator, all_changes
@@ -884,11 +883,7 @@ End EAM Interface Documentation
     def plot(self, name=''):
         """Plot the individual curves"""
 
-        try:
-            import matplotlib.pyplot as plt
-
-        except ImportError:
-            raise unittest.SkipTest('This needs matplotlib module.')
+        import matplotlib.pyplot as plt
 
         if self.form == 'eam' or self.form == 'alloy' or self.form == 'fs':
             nrow = 2
