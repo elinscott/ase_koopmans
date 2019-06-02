@@ -1,4 +1,5 @@
-from ase.test import NotAvailable
+import unittest
+
 from ase.build import bulk
 from ase.dft.bandgap import bandgap
 from ase.calculators.calculator import get_calculator
@@ -48,5 +49,5 @@ names = ['abinit', 'aims', 'elk', 'openmx']  # , 'gpaw']
 for name in names:
     try:
         run(name)
-    except NotAvailable:
+    except unittest.SkipTest:
         pass

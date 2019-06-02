@@ -8,19 +8,19 @@ from ase import Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.build import molecule
 from ase.gui.i18n import _
-from ase.test import NotAvailable
+import unittest
 
 try:
     import ase.gui.ui as ui
 except ImportError:
-    raise NotAvailable
+    raise unittest.SkipTest
 
 from ase.gui.gui import GUI
 from ase.gui.save import save_dialog
 
 
 if not os.environ.get('DISPLAY'):
-    raise NotAvailable
+    raise unittest.SkipTest
 
 
 class Error:
@@ -160,16 +160,16 @@ for name in args.tests or alltests:
 import os
 from functools import partial
 
-from ase.test import NotAvailable
+import unittest
 
 try:
     import ase.gui.ui as ui
 except ImportError:
-    raise NotAvailable
+    raise unittest.SkipTest
 
 
 if not os.environ.get('DISPLAY'):
-    raise NotAvailable
+    raise unittest.SkipTest
 
 
 def window():

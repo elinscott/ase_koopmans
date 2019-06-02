@@ -17,8 +17,6 @@ from ase.calculators.calculator import names as calc_names, get_calculator
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
-NotAvailable = unittest.SkipTest
-
 test_calculator_names = []
 
 if sys.version_info[0] == 2:
@@ -28,7 +26,7 @@ if sys.version_info[0] == 2:
 
 def require(calcname):
     if calcname not in test_calculator_names:
-        raise NotAvailable('use --calculators={0} to enable'.format(calcname))
+        raise unittest.SkipTest('use --calculators={0} to enable'.format(calcname))
 
 
 def get_tests(files=None):
@@ -74,7 +72,7 @@ def runtest_almost_no_magic(test):
         skip += ['db_web', 'h2.py', 'bandgap.py', 'al.py',
                  'runpy.py', 'oi.py']
         if any(s in test for s in skip):
-            raise NotAvailable('not on windows')
+            raise unittest.SkipTest('not on windows')
     try:
         with open(path) as fd:
             exec(compile(fd.read(), path, 'exec'), {})
@@ -371,7 +369,7 @@ def disable_calculators(names):
         else:
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
-                    raise NotAvailable('use --calculators={0} to enable'
+                    raise unittest.SkipTest('use --calculators={0} to enable'
                                        .format(name))
                 return mock_init
 

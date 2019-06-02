@@ -1,4 +1,7 @@
 from __future__ import print_function
+import numpy as np
+import unittest
+
 from ase.units import Ry
 from ase.calculators.openmx import OpenMX
 from ase.io.trajectory import Trajectory
@@ -6,8 +9,6 @@ from ase.optimize import QuasiNewton
 from ase.constraints import UnitCellFilter
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase import Atoms
-from ase.test.testsuite import NotAvailable
-import numpy as np
 """ Only OpenMX 3.8 or higher version pass this test"""
 
 
@@ -32,7 +33,7 @@ bud.set_calculator(calc)
 try:
     e = bud.get_stress()
 except PropertyNotImplementedError as err:
-    raise NotAvailable(err)
+    raise unittest.SkipTest(err)
 
 traj = Trajectory('example.traj', 'w', bud)
 ucf = UnitCellFilter(bud, mask=[True, True, False, False, False, False])
