@@ -169,7 +169,7 @@ def make_supercell(prim, P, wrap=True, tol=1e-5):
     lattice_points_frac = lattice_points_in_supercell(supercell_matrix)
     lattice_points = np.dot(lattice_points_frac, supercell)
 
-    superatoms = Atoms(cell=supercell, pbc=True)
+    superatoms = Atoms(cell=supercell, pbc=prim.pbc)
 
     for lp in lattice_points:
         shifted_atoms = prim.copy()
