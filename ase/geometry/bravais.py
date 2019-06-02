@@ -936,17 +936,15 @@ def get_bravais_lattice(cell, eps=2e-4):
     cell = Cell.ascell(cell)
 
     if cell.pbc.all():
-        return get_3d_bravais_lattice(cell, eps)
+        from ase.geometry.bravais_type_engine import identify_lattice
+        lat, op = identify_lattice(cell, eps=eps)
+        return lat
     elif cell.pbc[:2].all():
         return get_2d_bravais_lattice(cell, eps)
     else:
         raise ValueError('Cell must be periodic either along two first '
                          'axes or along all three.  Got pbc={}'
                          .format(cell.pbc))
-
-def get_3d_bravais_lattice(cell, eps=2e-4):
-    from ase.geometry.bravais_type_engine import identify_lattice
-    return identify_lattice(cell, eps=eps)[0]
 
 
 def celldiff(cell1, cell2):
@@ -976,8 +974,6 @@ def get_lattice_from_canonical_cell(cell, eps=2e-4):
         err = celldiff(cell, testcell)
         if err <= eps:
             return lat
-        #if result:
-        #    return result
 
     raise RuntimeError('Could not find lattice type for {}'.format(cell))
 
