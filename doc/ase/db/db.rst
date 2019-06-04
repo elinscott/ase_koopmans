@@ -22,7 +22,7 @@ MariaDB_:
     Server based database.
 
 The JSON and SQLite3 back-ends work "out of the box", whereas PostgreSQL, MySQL 
-and MariaDB requires a :ref:`server`.
+and MariaDB requires a server (See :ref:`server` or :ref:`MySQL_server`).
 
 There is a command-line tool called :ref:`ase-db` that can be
 used to query and manipulate databases and also a `Python interface`_.
