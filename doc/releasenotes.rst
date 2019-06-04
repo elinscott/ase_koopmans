@@ -111,6 +111,8 @@ I/O:
   library.  This can be useful for CIF features that are not supported
   by the internal CIF parser.
 
+* MySQL and MariaDB is supported as database backend
+
 GUI:
 
  * Quickinfo dialog automatically updates when switching image.
