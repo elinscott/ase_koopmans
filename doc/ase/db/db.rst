@@ -7,7 +7,7 @@ A database for atoms
 ASE has its own database that can be used for storing and retrieving atoms and
 associated data in a compact and convenient way.
 
-There are currently three back-ends:
+There are currently five back-ends:
 
 JSON_:
     Simple human-readable text file with a ``.json`` extension.
@@ -15,6 +15,10 @@ SQLite3_:
     Self-contained, server-less, zero-configuration database.  Lives in a file
     with a ``.db`` extension.
 PostgreSQL_:
+    Server based database.
+MySQL_:
+    Server based database.
+MariaDB_:
     Server based database.
 
 The JSON and SQLite3 back-ends work "out of the box", whereas PostgreSQL
@@ -26,7 +30,8 @@ used to query and manipulate databases and also a `Python interface`_.
 .. _JSON: http://www.json.org/
 .. _SQLite3: http://www.sqlite.org/
 .. _PostgreSQL: http://www.postgresql.org/
-
+.. _MySQL: https://www.mysql.com/
+.. _MariaDB: https://mariadb.org/
 
 .. contents::
 
