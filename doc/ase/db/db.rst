@@ -599,7 +599,7 @@ We need to give the ase user privileges to edit this database::
 
   mysql> GRANT ALL PRIVILEGES ON my_awesome_project.* TO 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
 
-Now, from a Python script we can connect to the database via
+From a Python script we can now connect to the database via
 
   >>> mysql_url = 'mysql://ase:strongPassword@localhost:3306/my_awesome_project'
   >>> connect(mysql_url)  # doctest: +SKIP
