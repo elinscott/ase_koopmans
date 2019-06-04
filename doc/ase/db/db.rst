@@ -560,6 +560,8 @@ and then start the server with::
 .. _WSGI: https://www.python.org/dev/peps/pep-3333/
 .. _Twisted: https://twistedmatrix.com/
 
+.. _MySQL_server:
+
 Running a MySQL server
 ========================
 
