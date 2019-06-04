@@ -271,9 +271,9 @@ class BandStructure:
                     energies=self.energies,
                     reference=self.reference)
 
-    def get_labels(self):
-        return labels_from_kpts(self.path.kpts, self.path.cell,
-                                special_points=self.path.special_points)
+    def get_labels(self, eps=1e-5):
+        """"See ase.dft.kpoints.labels_from_kpts()."""
+        return self.path.get_linear_kpoint_axis(eps=eps)
 
     def plot(self, *args, **kwargs):
         bsp = BandStructurePlot(self)

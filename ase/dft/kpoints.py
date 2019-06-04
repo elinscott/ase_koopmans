@@ -208,10 +208,10 @@ class BandPath:
         # Temp compatibility stuff, see __iter__
         return tuple(self)[index]
 
-    def get_linear_kpoint_axis(self):
-        x, _, _ = labels_from_kpts(self.kpts, self.cell,
-                                   special_points=self.special_points)
-        return x
+    def get_linear_kpoint_axis(self, eps=1e-5):
+        """See labels_from_kpts()."""
+        return labels_from_kpts(self.kpts, self.cell, eps=eps,
+                                special_points=self.special_points)
 
     def plot(self, dimension=3, **plotkwargs):
         import ase.dft.bz as bz
