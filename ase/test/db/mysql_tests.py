@@ -1,10 +1,10 @@
 from ase.test import must_raise
-from ase.test import NotAvailable
+import unittest
 try:
     import pymysql
     _ = pymysql  # Supress unused import warning
 except ImportError:
-    raise NotAvailable('No MySQL module')
+    raise unittest.SkipTest('No MySQL module')
 
 
 from ase.db import connect
@@ -29,26 +29,20 @@ else:
     # DB_NAME = os.environ.get('MYSQL_DB_NAME', None)
 
 if URL is None:
-    raise NotAvailable('Not on GitLab CI server. To run this test '
-                       'host, username, password and database name '
-                       'must be in the environment variables '
-                       'MYSQL_HOST, MYSQL_USER, MYSQL_PASSWD and '
-                       'MYSQL_DB_NAME, respectively.')
+    raise unittest.SkipTest('Not on GitLab CI server. To run this test '
+                            'host, username, password and database name '
+                            'must be in the environment variables '
+                            'MYSQL_HOST, MYSQL_USER, MYSQL_PASSWD and '
+                            'MYSQL_DB_NAME, respectively.')
+
 
 def full_db_name():
     return URL
-    #return 'mysql://{}:{}:{}:{}'.format(HOST, USER, PASSWD, DB_NAME)
 
 
 def test_connect():
     db = connect(full_db_name())
     db.delete([row.id for row in db.select()])
-
-
-    # assert db.host == HOST
-    # assert db.username == USER
-    # assert db.passwd == PASSWD
-    # assert db.db_name == DB_NAME
 
 
 def test_write_read():
@@ -80,7 +74,7 @@ def test_write_read_with_calculator():
 
     calc_db = h2o_db.get_calculator()
     assert calc_db.parameters['dummy_param'] == 2.4
-    
+
     # Check that get_atoms function works
     db.get_atoms(H=2)
 
