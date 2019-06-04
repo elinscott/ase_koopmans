@@ -9,7 +9,7 @@
 
 import os
 import numpy as np
-from ase.test import NotAvailable
+
 from ase.neighborlist import NeighborList
 from ase.calculators.calculator import Calculator, all_changes
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
@@ -883,11 +883,7 @@ End EAM Interface Documentation
     def plot(self, name=''):
         """Plot the individual curves"""
 
-        try:
-            import matplotlib.pyplot as plt
-
-        except ImportError:
-            raise NotAvailable('This needs matplotlib module.')
+        import matplotlib.pyplot as plt
 
         if self.form == 'eam' or self.form == 'alloy' or self.form == 'fs':
             nrow = 2

@@ -395,9 +395,11 @@ def complete_cell(cell):
         cell.flat[::4] = 1.0
     if len(missing) == 2:
         # Must decide two vectors:
-        i = 3 - missing.sum()
-        assert abs(cell[i, missing]).max() < 1e-16, "Don't do that"
-        cell[missing, missing] = 1.0
+        V, s, WT = np.linalg.svd(cell.T)
+        sf = [s[0], 1, 1]
+        cell = (V @ np.diag(sf) @ WT).T
+        if np.sign(np.linalg.det(cell)) < 0:
+            cell[missing[0]] = -cell[missing[0]]
     elif len(missing) == 1:
         i = missing[0]
         cell[i] = np.cross(cell[i - 2], cell[i - 1])
