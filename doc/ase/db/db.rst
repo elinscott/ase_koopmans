@@ -554,3 +554,45 @@ and then start the server with::
 .. _Flask: http://flask.pocoo.org/
 .. _WSGI: https://www.python.org/dev/peps/pep-3333/
 .. _Twisted: https://twistedmatrix.com/
+
+Running a MySQL server
+========================
+
+ASE DB can also be run with a MySQL server. First, we need to get the MySQL server
+up and running. There are many online resources describing how to to that, but on 
+a Ubuntu system the following should work::
+
+  $ sudo apt-get install mysql-server
+  $ sudo mysql_secure_installation
+
+Then we need to check if the server is running::
+
+  $ systemctl status mysql.service
+
+if it is not running you can start the service by::
+
+  $ systemctl start mysql.service
+
+Note that on some Linux distributions *mysql.service* should be replaced by *mysqld.service*.
+
+Once the service is running, we can enter the MySQL shell::
+
+    $ mysql -u root -p
+
+where we assume that there is a user named **root**, that will be promptet for a password.
+Now, we can create a user:: 
+
+  mysql> CREATE USER 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
+
+and then a database for our project::
+
+  mysql> CREATE DATABASE my_awesome_project;
+
+We need to give the ase users **grants** to edit this database::
+
+  mysql> GRANT ALL PRIVELEGES ON my_awesome_project.* TO 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
+
+Now, from a Python script we can connect to the database via
+
+  >>> mysql_url = 'mysql://ase:strongPassword@localhost:3306/my_awesome_project'
+  >>> connect(mysql_url)  # doctest: +SKIP
