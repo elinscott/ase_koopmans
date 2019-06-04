@@ -38,3 +38,5 @@ read_json = read_db
 write_json = write_db
 read_postgresql = read_db
 write_postgresql = write_db
+read_mysql = read_db
+write_mysql = write_db
