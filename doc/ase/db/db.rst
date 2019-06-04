@@ -595,7 +595,7 @@ and then a database for our project::
 
 We need to give the ase users **grants** to edit this database::
 
-  mysql> GRANT ALL PRIVELEGES ON my_awesome_project.* TO 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
+  mysql> GRANT ALL PRIVILEGES ON my_awesome_project.* TO 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
 
 Now, from a Python script we can connect to the database via
 
