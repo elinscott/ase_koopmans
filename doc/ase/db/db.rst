@@ -586,7 +586,7 @@ Once the service is running, we can enter the MySQL shell::
 
     $ mysql -u root -p
 
-where we assume that there is a user named **root**, that will be promptet for a password.
+where we assume that there is a user named **root**, that will be prompted for a password.
 Now, we can create a user:: 
 
   mysql> CREATE USER 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
@@ -595,7 +595,7 @@ and then a database for our project::
 
   mysql> CREATE DATABASE my_awesome_project;
 
-We need to give the ase users **grants** to edit this database::
+We need to give the ase user privileges to edit this database::
 
   mysql> GRANT ALL PRIVILEGES ON my_awesome_project.* TO 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
 
