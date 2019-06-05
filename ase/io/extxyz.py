@@ -243,6 +243,10 @@ def key_val_dict_to_str(d, sep=' '):
             continue
         if hasattr(val, '__iter__'):
             val = np.array(val)
+            if val.dtype == object:
+                # Any big information that is not the conventional stuff
+                # will probably just clutter the file
+                continue
             val = ' '.join(str(type_val_map.get((type(x), x), x))
                            for x in val.reshape(val.size, order='F'))
             val.replace('[', '')
