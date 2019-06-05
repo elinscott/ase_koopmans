@@ -225,6 +225,7 @@ class MySQLDatabase(SQLite3Database):
         if isinstance(obj, str):
             if obj.startswith('{') and obj.endswith('}'):
                 obj = obj.replace('true', 'True')
+                obj = obj.replace('false', 'False')
                 obj = eval(obj)
         return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
 
