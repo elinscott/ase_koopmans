@@ -25,6 +25,7 @@ from ase.calculators.calculator import FileIOCalculator, ReadError
 from ase.calculators.calculator import Parameters, all_changes
 from ase.calculators.siesta.parameters import PAOBasisBlock, Species
 from ase.calculators.siesta.parameters import format_fdf
+from collections import OrderedDict
 
 meV = 0.001 * eV
 
@@ -401,7 +402,7 @@ class BaseSiesta(FileIOCalculator):
             self._write_fdf_arguments(f)
 
             # Use the saved density matrix if only 'cell' and 'positions'
-            # haved changes.
+            # have changed.
             if (system_changes is None or
                 ('numbers' not in system_changes and
                  'initial_magmoms' not in system_changes and
@@ -756,6 +757,7 @@ class BaseSiesta(FileIOCalculator):
         self.read_energy()
         self.read_forces_stress()
         self.read_eigenvalues()
+        self.read_kpoints()
         self.read_dipole()
         self.read_pseudo_density()
         self.read_hsx()
@@ -947,53 +949,50 @@ class BaseSiesta(FileIOCalculator):
         self.results['forces'] *= Ry / Bohr
 
     def read_eigenvalues(self):
-        """Read eigenvalues from the '.EIG' file.
-        This is done pr. kpoint.
-        """
-        fname_woext = os.path.join(self.directory, self.label)
-        assert os.access(fname_woext + '.EIG', os.F_OK)
-        assert os.access(fname_woext + '.KP', os.F_OK)
+        """ A robust procedure using the suggestion by Federico Marchesin """
 
-        # Read k point weights
-        text = open(fname_woext + '.KP', 'r').read()
-        lines = text.split('\n')
-        n_kpts = int(lines[0].strip())
-        self.weights = np.zeros((n_kpts,))
-        for i in range(n_kpts):
-            l = lines[i + 1].split()
-            self.weights[i] = float(l[4])
+        fname = os.path.join(self.directory, self.label) + '.EIG'
+        try:
+            f = open(fname, "r")
+            self.results['fermi_energy'] = float(f.readline())
+            n, nspin, nkp = map(int, f.readline().split())
+            _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
+        except (IOError):
+            return 1
 
-        # Read eigenvalues and fermi-level
-        with open(fname_woext + '.EIG', 'r') as f:
-            text = f.read()
-        lines = text.split('\n')
-        e_fermi = float(lines[0].split()[0])
-        tmp = lines[1].split()
-        self.n_bands = int(tmp[0])
-        n_spin_bands = int(tmp[1])
-        self.spin_pol = n_spin_bands == 2
-        lines = lines[2:-1]
-        lines_per_kpt = (self.n_bands * n_spin_bands / 10 +
-                         int((self.n_bands * n_spin_bands) % 10 != 0))
-        lines_per_kpt = int(lines_per_kpt)
-        eig = dict()
-        for i in range(len(self.weights)):
-            tmp = lines[i * lines_per_kpt:(i + 1) * lines_per_kpt]
-            v = [float(v) for v in tmp[0].split()[1:]]
-            for l in tmp[1:]:
-                v.extend([float(t) for t in l.split()])
-            if self.spin_pol:
-                eig[(i, 0)] = np.array(v[0:self.n_bands])
-                eig[(i, 1)] = np.array(v[self.n_bands:])
-            else:
-                eig[(i, 0)] = np.array(v)
+        ksn2e = np.delete(_ee, 0, 1).reshape([nkp, nspin, n])
 
-        self.results['fermi_energy'] = e_fermi
-        self.results['eigenvalues'] = eig
+        eig = OrderedDict()
+        for k, sn2e in enumerate(ksn2e):
+            for s, n2e in enumerate(sn2e):
+                eig[(k,s)] = n2e
+
+        self.results['eigenvalues'] = eig 
+        return 0
+
+    def read_kpoints(self):
+        """ Reader of the .KP files """
+
+        fname = os.path.join(self.directory, self.label)+ '.KP'
+        try:
+            f = open(fname, "r")
+            nkp = int(f.readline())
+            _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
+        except (IOError):
+            return 1
+            
+        i2xyzw = np.delete(_ee, 0, 1)
+        
+        kpoints, kweights = OrderedDict(), OrderedDict()
+        for i, xyzw in enumerate(i2xyzw):
+            kpoints[i], kweights[i] = xyzw[0:3], xyzw[3]
+        
+        self.results['kpoints'] = kpoints 
+        self.results['kweights'] = kweights
+        return 0
 
     def read_dipole(self):
-        """Read dipole moment.
-        """
+        """Read dipole moment. """
         dipole = np.zeros([1, 3])
         fname_woext = os.path.join(self.directory, self.label)
         with open(fname_woext + '.out', 'r') as f:
