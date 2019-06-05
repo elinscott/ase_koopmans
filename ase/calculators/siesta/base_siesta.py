@@ -65,6 +65,8 @@ class BaseSiesta(FileIOCalculator):
     allowed_xc = {}
     allowed_fdf_keywords = {}
     unit_fdf_keywords = {}
+    name = 'Siesta'
+    command = 'siesta < PREFIX.fdf > PREFIX.out'
     implemented_properties = (
         'energy',
         'forces',
@@ -77,7 +79,7 @@ class BaseSiesta(FileIOCalculator):
     # Dictionary of valid input vaiables.
     default_parameters = SiestaParameters()
 
-    def __init__(self, **kwargs):
+    def __init__(self, command=None, **kwargs):
         """ASE interface to the SIESTA code.
 
         Parameters:
@@ -136,34 +138,22 @@ class BaseSiesta(FileIOCalculator):
 
         # Put in the default arguments.
         parameters = self.default_parameters.__class__(**kwargs)
-        
-        # Setup the siesta command based on number of nodes.
-        command = os.environ.get('SIESTA_COMMAND')
-        if command is None:
-            mess = "The 'SIESTA_COMMAND' environment is not defined."
-            raise ValueError(mess)
-
         label = parameters['label']
         self.label = label
 
-        runfile = label + '.fdf'
-        outfile = label + '.out'
-        try:
-            command = command % (runfile, outfile)
-        except TypeError:
-            raise ValueError(
-                "The 'SIESTA_COMMAND' environment must " +
-                "be a format string" +
-                " with two string arguments.\n" +
-                "Example : 'siesta < ./%s > ./%s'.\n" +
-                "Got '%s'" % command)
 
         # Call the base class.
         FileIOCalculator.__init__(
             self,
             command=command,
             **parameters)
-        
+
+        # For compatibility with old variable name:
+        commandvar = os.environ.get('SIESTA_COMMAND')
+        if commandvar is not None:
+            runfile = label + '.fdf'
+            outfile = label + '.out'
+            self.command = commandvar % (runfile, outfile)
 
     def __getitem__(self, key):
         """Convenience method to retrieve a parameter as
@@ -331,13 +321,16 @@ class BaseSiesta(FileIOCalculator):
         See base FileIocalculator for documentation.
         """
 
-        try:
-            FileIOCalculator.calculate(
-                self,
-                atoms=atoms,
-                properties=properties,
-                system_changes=system_changes)
+        FileIOCalculator.calculate(
+            self,
+            atoms=atoms,
+            properties=properties,
+            system_changes=system_changes)
 
+        # The below snippet would run if calculate() failed but I have
+        # disabled it for now since it looks to be just for debugging.
+        # --askhl
+        """
         # Here a test to check if the potential are in the right place!!!
         except RuntimeError as e:
             try:
@@ -352,6 +345,7 @@ class BaseSiesta(FileIOCalculator):
                 raise e
             except:
                 raise e
+        """
 
     def set_directory(self, directory='.'):
         """Set directory in which the calculation will be setup.
