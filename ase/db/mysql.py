@@ -9,6 +9,7 @@ from ase.db.sqlite import init_statements
 from ase.db.sqlite import VERSION
 from ase.db.postgresql import remove_nan_and_inf, insert_nan_and_inf
 import ase.io.jsonio
+import json
 
 
 class Connection(object):
