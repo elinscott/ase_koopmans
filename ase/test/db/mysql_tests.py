@@ -106,6 +106,16 @@ def test_delete():
         db.get(id=uid)
 
 
+def test_read_write_bool_key_value_pair():
+    db = connect(full_db_name())
+    h2o = molecule('H2O')
+
+    # Make sure we can read and write boolean key value pairs
+    uid = db.write(h2o, is_water=True, is_solid=False)
+    row = db.get(id=uid)
+    assert row.is_water
+    assert not row.is_solid
+
 test_connect()
 test_write_read()
 test_write_read_with_calculator()
