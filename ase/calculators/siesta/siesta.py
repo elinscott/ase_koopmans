@@ -80,6 +80,7 @@ class Siesta3_2(BaseSiesta):
         ('PAO.SoftDefault', False),
         ('PAO.SoftInnerRadius', 0.9),
         ('PAO.SoftPotential', 40.0),  # Ry
+        ('WriteIonPlotFiles', False),
         ('PS.lmax', None),
         ('PS.KBprojectors', None),
         ('FilterCutoff', None),

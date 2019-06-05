@@ -10,25 +10,14 @@ from ase.calculators.calculator import FileIOCalculator
 from ase import Atoms
 from ase.utils import basestring
 
-# Create temporary directory for running tests.
-test_path = 'tmp_siesta'
-if not os.path.exists(test_path):
-    os.makedirs(test_path)
-os.chdir(test_path)
-run_path = 'run_directory'
 pseudo_path = 'pseudos'
 if not os.path.exists(pseudo_path):
     os.makedirs(pseudo_path)
-if not os.path.exists(run_path):
-    os.makedirs(run_path)
 
 # Make dummy pseudopotentials.
 for symbol in 'HCO':
     with open('{0}/{1}.lda.psf'.format(pseudo_path, symbol), 'w') as fd:
         fd.close()
-
-# Change to test directory.
-os.chdir(run_path)
 
 # Setup test structures.
 h = Atoms('H', [(0.0, 0.0, 0.0)])
@@ -41,7 +30,7 @@ ch4 = Atoms('CH4', np.array([
     [0.682793, -0.682793, -0.682793]]))
 
 # Setup required environment variables.
-os.environ['SIESTA_PP_PATH'] = '../' + pseudo_path
+os.environ['SIESTA_PP_PATH'] = pseudo_path
 
 # Test the initialization.
 siesta = Siesta()
@@ -137,6 +126,3 @@ lines = [line.split() for line in lines]
 assert ['%block', 'PAO.Basis'] in lines
 assert ['%endblock', 'PAO.Basis'] in lines
 
-# Remove the test directory.
-os.chdir('../..')
-os.system('rm -rf %s' % test_path)

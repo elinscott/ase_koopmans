@@ -6,12 +6,6 @@ from ase.constraints import FixAtoms, FixedLine, FixedPlane
 from ase import Atoms
 
 
-# Create temporary directory for running tests.
-test_path = 'tmp_siesta'
-if not os.path.exists(test_path): os.makedirs(test_path)
-os.chdir(test_path)
-
-run_path = '.'
 pseudo_path = 'pseudos'
 if not os.path.exists(pseudo_path): os.makedirs(pseudo_path)
 
@@ -19,9 +13,6 @@ if not os.path.exists(pseudo_path): os.makedirs(pseudo_path)
 for symbol in 'HCO':
     with open('{0}/{1}.lda.psf'.format(pseudo_path, symbol), 'w') as fd:
         fd.close()
-
-# Change to test directory.
-os.chdir(run_path)
 
 atoms = Atoms('CO2', [(0.0, 0.0, 0.0), (-1.178, 0.0, 0.0), (1.178, 0.0, 0.0)])
 
@@ -58,8 +49,3 @@ assert ['MD.TypeOfRun', 'CG'] in lsl
 assert any([line.split()[4:9] == ['0', '0', '0', '1', 'C'] for line in lines])
 assert any([line.split()[4:9] == ['0', '1', '0', '2', 'O'] for line in lines])
 assert any([line.split()[4:9] == ['0', '1', '1', '3', 'O'] for line in lines])
-
-
-# Remove the test directory.
-os.chdir('../')
-os.system('rm -rf {}'.format(test_path))
