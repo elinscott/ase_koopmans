@@ -171,6 +171,7 @@ class MySQLDatabase(SQLite3Database):
         cur = con.cursor()
 
         information_exists = True
+        self._metadata = {}
         try:
             cur.execute("SELECT 1 FROM information")
         except ProgrammingError:
@@ -195,6 +196,8 @@ class MySQLDatabase(SQLite3Database):
             for name, value in cur.fetchall():
                 if name == 'version':
                     self.version = int(value)
+                elif name == 'metadata':
+                    self._metadata = json.loads(value)
 
         self.initialized = True
 
