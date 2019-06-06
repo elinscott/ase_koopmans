@@ -132,7 +132,7 @@ class BaseSiesta(FileIOCalculator):
                             the block AtomicCoordinatesAndAtomicSpecies) and
                             a recent method via the block Zmatrix. The block
                             Zmatrix allows to specify basic geometry constrains
-                            such as realized through the ASE classes FixAtom, 
+                            such as realized through the ASE classes FixAtom,
                             FixedLine and FixedPlane.
         """
 
@@ -404,8 +404,8 @@ class BaseSiesta(FileIOCalculator):
 
     def read(self, filename):
         """Read structural parameters from file .XV file
-           Read other results from other files 
-           filename : siesta.XV 
+           Read other results from other files
+           filename : siesta.XV
         """
 
         fname = self.getpath(filename)
@@ -511,7 +511,7 @@ class BaseSiesta(FileIOCalculator):
         elif af=='zmatrix':
             self._write_atomic_coordinates_zmatrix(f, atoms)
         else:
-            raise RuntimeError('Unknown atomic_coord_format: {}'.format(af))			
+            raise RuntimeError('Unknown atomic_coord_format: {}'.format(af))
 
 
     def _write_atomic_coordinates_xyz(self, f, atoms):
@@ -569,14 +569,14 @@ class BaseSiesta(FileIOCalculator):
             f.write('\n')
 
     def make_xyz_constraints(self, atoms):
-        """ Create coordinate-resolved list of constraints [natoms, 0:3] 
+        """ Create coordinate-resolved list of constraints [natoms, 0:3]
         The elements of the list must be integers 0 or 1
           1 -- means that the coordinate will be updated during relaxation procedure
           0 -- mains that the coordinate will be fixed during geometry relaxation
         """
         from ase.constraints import FixAtoms, FixedLine, FixedPlane
         import warnings, sys
-        
+
         a = atoms
         a2c = np.ones((len(a), 3), dtype = int)
         for c in a.constraints:
@@ -596,7 +596,7 @@ class BaseSiesta(FileIOCalculator):
                 warnings.warn('Constraint {} is ignored at {}'.format( str(c), sys._getframe().f_code ))
         return a2c
 
-    
+
     def _write_kpts(self, f):
         """Write kpts.
 
@@ -959,7 +959,7 @@ class BaseSiesta(FileIOCalculator):
             for s, n2e in enumerate(sn2e):
                 eig[(k,s)] = n2e
 
-        self.results['eigenvalues'] = eig 
+        self.results['eigenvalues'] = eig
         return 0
 
     def read_kpoints(self):
@@ -972,14 +972,14 @@ class BaseSiesta(FileIOCalculator):
             _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
         except (IOError):
             return 1
-            
+
         i2xyzw = np.delete(_ee, 0, 1)
-        
+
         kpoints, kweights = OrderedDict(), OrderedDict()
         for i, xyzw in enumerate(i2xyzw):
             kpoints[i], kweights[i] = xyzw[0:3], xyzw[3]
-        
-        self.results['kpoints'] = kpoints 
+
+        self.results['kpoints'] = kpoints
         self.results['kweights'] = kweights
         return 0
 
@@ -999,7 +999,7 @@ class BaseSiesta(FileIOCalculator):
                           run_tddft=True,
                           save_kernel = True,
                           kernel_name = "tddft_kernel.npy",
-                          fname="pol_tensor.npy", 
+                          fname="pol_tensor.npy",
                           fname_nonin = "noninpol_tensor.npy", **kw):
         """
         Perform TDDFT calculation using the pyscf.nao module for a molecule.
@@ -1195,7 +1195,7 @@ class BaseSiesta(FileIOCalculator):
         Returns
         -------
         tddft:
-            if running pyscf_tddft_eels in a loop over the velocity or the 
+            if running pyscf_tddft_eels in a loop over the velocity or the
             impact parameter, there is no point to initialize again the tddft
             calculation (vertex and kernel will be the same)
 
@@ -1303,7 +1303,7 @@ class BaseSiesta(FileIOCalculator):
 
 
         self.results['eel spectra nonin'] = tddft.get_spectrum_nonin(velec=velec,
-                                                                  beam_offset = b, 
+                                                                  beam_offset = b,
                                                                   tmp_fname=tmp_fname)
 
         self.results['eel spectra inter'] = tddft.get_spectrum_inter(velec=velec,
