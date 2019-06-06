@@ -9,6 +9,7 @@ from ase.db.sqlite import init_statements
 from ase.db.sqlite import VERSION
 from ase.db.postgresql import remove_nan_and_inf, insert_nan_and_inf
 import ase.io.jsonio
+import json
 
 
 class Connection(object):
@@ -171,6 +172,7 @@ class MySQLDatabase(SQLite3Database):
         cur = con.cursor()
 
         information_exists = True
+        self._metadata = {}
         try:
             cur.execute("SELECT 1 FROM information")
         except ProgrammingError:
@@ -195,6 +197,8 @@ class MySQLDatabase(SQLite3Database):
             for name, value in cur.fetchall():
                 if name == 'version':
                     self.version = int(value)
+                elif name == 'metadata':
+                    self._metadata = json.loads(value)
 
         self.initialized = True
 
@@ -225,6 +229,7 @@ class MySQLDatabase(SQLite3Database):
         if isinstance(obj, str):
             if obj.startswith('{') and obj.endswith('}'):
                 obj = obj.replace('true', 'True')
+                obj = obj.replace('false', 'False')
                 obj = eval(obj)
         return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
 
