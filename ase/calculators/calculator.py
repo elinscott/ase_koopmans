@@ -768,9 +768,9 @@ class FileIOCalculator(Calculator):
         errorcode = subprocess.call(command, shell=True, cwd=self.directory)
 
         if errorcode:
+            path = os.path.abspath(self.directory)
             raise CalculationFailed('{} in {} returned an error: {}'
-                                    .format(self.name, self.directory,
-                                            errorcode))
+                                    .format(self.name, path, errorcode))
         self.read_results()
 
     def write_input(self, atoms, properties=None, system_changes=None):
@@ -779,7 +779,8 @@ class FileIOCalculator(Calculator):
         Call this method first in subclasses so that directories are
         created automatically."""
 
-        if self.directory != os.curdir and not os.path.isdir(self.directory):
+        absdir = os.path.abspath(self.directory)
+        if absdir != os.curdir and not os.path.isdir(self.directory):
             os.makedirs(self.directory)
 
     def read_results(self):
