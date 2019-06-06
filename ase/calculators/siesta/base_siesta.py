@@ -408,7 +408,7 @@ class BaseSiesta(FileIOCalculator):
            filename : siesta.XV 
         """
 
-        fname = os.path.join(self.directory, filename)
+        fname = self.getpath(filename)
         if not os.path.exists(fname):
             raise ReadError("The restart file '%s' does not exist" % fname)
         self.atoms = xv_to_atoms(fname)
@@ -878,8 +878,8 @@ class BaseSiesta(FileIOCalculator):
 
     def read_number_of_grid_points(self):
         """Read number of grid points from SIESTA's text-output file. """
-        
-        fname = os.path.join(self.directory, self.label + '.out')
+
+        fname = self.getpath(ext='out')
         with open(fname, 'r') as f:
             for line in f:
                 line = line.strip().lower()
@@ -893,7 +893,7 @@ class BaseSiesta(FileIOCalculator):
     def read_energy(self):
         """Read energy from SIESTA's text-output file.
         """
-        fname = os.path.join(self.directory, self.label + '.out')
+        fname = self.getpath(ext='out')
         with open(fname, 'r') as f:
             text = f.read().lower()
 
@@ -915,7 +915,7 @@ class BaseSiesta(FileIOCalculator):
     def read_forces_stress(self):
         """Read the forces and stress from the FORCE_STRESS file.
         """
-        fname = os.path.join(self.directory, 'FORCE_STRESS')
+        fname = self.getpath('FORCE_STRESS')
         with open(fname, 'r') as f:
             lines = f.readlines()
 
@@ -943,7 +943,7 @@ class BaseSiesta(FileIOCalculator):
     def read_eigenvalues(self):
         """ A robust procedure using the suggestion by Federico Marchesin """
 
-        fname = os.path.join(self.directory, self.label) + '.EIG'
+        fname = self.getpath(ext='EIG')
         try:
             f = open(fname, "r")
             self.results['fermi_energy'] = float(f.readline())
@@ -965,7 +965,7 @@ class BaseSiesta(FileIOCalculator):
     def read_kpoints(self):
         """ Reader of the .KP files """
 
-        fname = os.path.join(self.directory, self.label)+ '.KP'
+        fname = self.getpath(ext='KP')
         try:
             f = open(fname, "r")
             nkp = int(f.readline())
@@ -986,8 +986,7 @@ class BaseSiesta(FileIOCalculator):
     def read_dipole(self):
         """Read dipole moment. """
         dipole = np.zeros([1, 3])
-        fname_woext = os.path.join(self.directory, self.label)
-        with open(fname_woext + '.out', 'r') as f:
+        with open(self.getpath(ext='out'), 'r') as f:
             for line in f:
                 if line.rfind('Electric dipole (Debye)') > -1:
                     dipole = np.array([float(f) for f in line.split()[5:8]])
