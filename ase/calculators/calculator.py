@@ -363,6 +363,7 @@ class Calculator(object):
     'Default parameters'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
+                 directory=None,
                  atoms=None, **kwargs):
         """Basic calculator implementation.
 
@@ -372,8 +373,12 @@ class Calculator(object):
         ignore_bad_restart_file: bool
             Ignore broken or missing restart file.  By default, it is an
             error if the restart file is missing or broken.
+        directory: str or None
+            Working directory in which to read and write files and
+            perform calculations.
         label: str
-            Name used for all files.  May contain a directory.
+            Name used for all files.  Not supported by all calculators.
+            May contain a directory.
         atoms: Atoms object
             Optional Atoms object to which the calculator will be
             attached.  When restarting, atoms will get its positions and
@@ -392,11 +397,13 @@ class Calculator(object):
                 else:
                     raise
 
-        self.label = None
-        self.directory = None
+        self.directory = directory
         self.prefix = None
-
-        self.set_label(label)
+        if directory is not None and label is not None and '/' in label:
+            raise ValueError('Both directory and label imply a directory.  '
+                             'Please omit "/" in label.')
+        if label is not None:
+            self.set_label(label)
 
         if self.parameters is None:
             # Use default parameters if they were not read from file:
@@ -417,6 +424,30 @@ class Calculator(object):
         if not hasattr(self, 'name'):
             self.name = self.__class__.__name__.lower()
 
+    @property
+    def label(self):
+        if self.directory is None:
+            return self.prefix
+
+        if self.prefix is None:
+            return self.directory + '/'
+
+        return '{}/{}'.format(self.directory, self.prefix)
+
+    @label.setter
+    def label(self, label):
+        tokens = label.rsplit('/', 1)
+        if len(tokens) == 2:
+            directory, prefix = tokens
+        else:
+            assert len(tokens) == 1
+            directory = None
+            prefix = tokens[0]
+        if prefix == '':
+            prefix = None
+        self.directory = directory
+        self.prefix = prefix
+
     def set_label(self, label):
         """Set label and convert label to directory and prefix.
 
@@ -428,16 +459,7 @@ class Calculator(object):
         Calculators that must write results to files with fixed names
         can overwrite this method so that the directory is set to all
         of label."""
-
         self.label = label
-
-        if label is None:
-            self.directory = None
-            self.prefix = None
-        else:
-            self.directory, self.prefix = os.path.split(label)
-            if self.directory == '':
-                self.directory = os.curdir
 
     def get_default_parameters(self):
         return Parameters(copy.deepcopy(self.default_parameters))
