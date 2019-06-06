@@ -12,7 +12,7 @@ http://www.uam.es/departamentos/ciencias/fismateriac/siesta
 """
 
 from __future__ import print_function
-import os
+import os, warnings
 from os.path import join, isfile, islink
 import numpy as np
 import shutil
@@ -432,8 +432,8 @@ class BaseSiesta(FileIOCalculator):
         self.read_results()
 
     def _write_fdf_arguments(self, f):
-        """Write directly given fdf-arguments.
-        """
+        """Write directly given fdf-arguments. """
+        
         fdf_arguments = self.parameters['fdf_arguments']
         if fdf_arguments is None:
             fdf_arguments = {}
@@ -451,14 +451,17 @@ class BaseSiesta(FileIOCalculator):
             fdf_arguments["SpinPolarized"] = True
             fdf_arguments["NonCollinearSpin"] = True
 
-        for key, value in self.allowed_fdf_keywords.items():
-            if key in fdf_arguments.keys():
+        for key in fdf_arguments.keys():
+            if key in self.allowed_fdf_keywords.keys():
                 if key in self.unit_fdf_keywords:
                     val = '%.8f %s' % (fdf_arguments[key],
                                        self.unit_fdf_keywords[key])
                     f.write(format_fdf(key, val))
-                elif fdf_arguments[key] != value:
+                else:
                     f.write(format_fdf(key, fdf_arguments[key]))
+            else:
+                warnings.warn('Ignoring unknown keyword "{}"'.format(key))
+
 
     def remove_analysis(self):
         """ Remove all analysis files"""
@@ -1456,7 +1459,6 @@ class BaseSiesta(FileIOCalculator):
         """
         from ase.calculators.siesta.mbpt_lcao import MBPT_LCAO
         from ase.calculators.siesta.mbpt_lcao_io import read_mbpt_lcao_output
-        import warnings
 
         warnings.warn("Out dated version, try get_polarizability_pyscf")
 
