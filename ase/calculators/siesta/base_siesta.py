@@ -138,9 +138,6 @@ class BaseSiesta(FileIOCalculator):
 
         # Put in the default arguments.
         parameters = self.default_parameters.__class__(**kwargs)
-        label = parameters['label']
-        self.label = label
-
 
         # Call the base class.
         FileIOCalculator.__init__(
@@ -151,8 +148,8 @@ class BaseSiesta(FileIOCalculator):
         # For compatibility with old variable name:
         commandvar = os.environ.get('SIESTA_COMMAND')
         if commandvar is not None:
-            runfile = label + '.fdf'
-            outfile = label + '.out'
+            runfile = self.prefix + '.fdf'
+            outfile = self.prefix + '.out'
             self.command = commandvar % (runfile, outfile)
 
     def __getitem__(self, key):
@@ -347,14 +344,6 @@ class BaseSiesta(FileIOCalculator):
                 raise e
         """
 
-    def set_directory(self, directory='.'):
-        """Set directory in which the calculation will be setup.
-
-        This is the most transparent solution for SIESTA calculator for which 
-        label should be a filename without path."""
-
-        self.directory = directory
-        
     def write_input(self, atoms, properties=None, system_changes=None):
         """Write input (fdf)-file.
         See calculator.py for further details.
@@ -374,7 +363,7 @@ class BaseSiesta(FileIOCalculator):
         if system_changes is None and properties is None:
             return
 
-        filename = os.path.join(self.directory, self.label+'.fdf')
+        filename = os.path.join(self.directory, self.prefix + '.fdf')
 
         # On any changes, remove all analysis files.
         if system_changes is not None:
@@ -383,8 +372,8 @@ class BaseSiesta(FileIOCalculator):
         # Start writing the file.
         with open(filename, 'w') as f:
             # Write system name and label.
-            f.write(format_fdf('SystemName', self.label))
-            f.write(format_fdf('SystemLabel', self.label))
+            f.write(format_fdf('SystemName', self.prefix))
+            f.write(format_fdf('SystemLabel', self.prefix))
             f.write("\n")
 
             # Write the minimal arg
@@ -418,7 +407,7 @@ class BaseSiesta(FileIOCalculator):
            Read other results from other files 
            filename : siesta.XV 
         """
-           
+
         fname = os.path.join(self.directory, filename)
         if not os.path.exists(fname):
             raise ReadError("The restart file '%s' does not exist" % fname)
@@ -457,9 +446,16 @@ class BaseSiesta(FileIOCalculator):
                 warnings.warn('Ignoring unknown keyword "{}"'.format(key))
 
 
+    def getpath(self, fname=None, ext=None):
+        if fname is None:
+            fname = self.prefix
+        if ext is not None:
+            fname = '{}.{}'.format(fname, ext)
+        return os.path.join(self.directory, fname)
+
     def remove_analysis(self):
         """ Remove all analysis files"""
-        filename = os.path.join(self.directory, self.label + '.RHO')
+        filename = self.getpath(ext='RHO')
         if os.path.exists(filename):
             os.remove(filename)
 
@@ -786,10 +782,9 @@ class BaseSiesta(FileIOCalculator):
             if spec['pseudopotential'] is None:
                 if self.pseudo_qualifier() == '':
                     label = symbol
-                    pseudopotential = os.path.join(self.directory, label + '.psf')
                 else:
                     label = '.'.join([symbol, self.pseudo_qualifier()])
-                    pseudopotential = os.path.join(self.directory, label + '.psf')
+                pseudopotential = self.getpath(label, 'psf')
             else:
                 pseudopotential = spec['pseudopotential']
                 label = os.path.basename(pseudopotential)
@@ -806,7 +801,7 @@ class BaseSiesta(FileIOCalculator):
             label = '.'.join(np.array(name.split('.'))[:-1])
 
             if label not in self.results['ion']:
-                fname = os.path.join(self.directory, label + '.ion.xml')
+                fname = self.getpath(label, 'ion.xml')
                 if os.path.isfile(fname):
                     self.results['ion'][label] = get_ion(fname)
 
@@ -820,7 +815,7 @@ class BaseSiesta(FileIOCalculator):
         """
         from ase.calculators.siesta.import_functions import readHSX
 
-        filename = os.path.join(self.directory, self.label + '.HSX')
+        filename = self.getpath(ext='HSX')
         if isfile(filename):
             self.results['hsx'] = readHSX(filename)
         else:
@@ -835,7 +830,7 @@ class BaseSiesta(FileIOCalculator):
         """
         from ase.calculators.siesta.import_functions import readDIM
 
-        filename = os.path.join(self.directory, self.label + '.DIM')
+        filename = self.getpath(ext='DIM')
         if isfile(filename):
             self.results['dim'] = readDIM(filename)
         else:
@@ -850,7 +845,7 @@ class BaseSiesta(FileIOCalculator):
         """
         from ase.calculators.siesta.import_functions import readPLD
 
-        filename = os.path.join(self.directory, self.label + '.PLD')
+        filename = self.getpath(ext='PLD')
         if isfile(filename):
             self.results['pld'] = readPLD(filename, norb, natms)
         else:
@@ -862,8 +857,8 @@ class BaseSiesta(FileIOCalculator):
         Return a namedtuple with the following arguments:
         """
         from ase.calculators.siesta.import_functions import readWFSX
-        
-        fname_woext = os.path.join(self.directory, self.label)
+
+        fname_woext = os.path.join(self.directory, self.prefix)
 
         if isfile(fname_woext + '.WFSX'):
             filename = fname_woext + '.WFSX'
@@ -877,7 +872,7 @@ class BaseSiesta(FileIOCalculator):
 
     def read_pseudo_density(self):
         """Read the density if it is there."""
-        filename = os.path.join(self.directory, self.label + '.RHO')
+        filename = self.getpath(ext='RHO')
         if isfile(filename):
             self.results['density'] = read_rho(filename)
 
