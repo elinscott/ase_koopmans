@@ -363,7 +363,7 @@ class Calculator(object):
     'Default parameters'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
-                 directory=None,
+                 directory='.',
                  atoms=None, **kwargs):
         """Basic calculator implementation.
 
@@ -373,12 +373,13 @@ class Calculator(object):
         ignore_bad_restart_file: bool
             Ignore broken or missing restart file.  By default, it is an
             error if the restart file is missing or broken.
-        directory: str or None
+        directory: str
             Working directory in which to read and write files and
             perform calculations.
         label: str
             Name used for all files.  Not supported by all calculators.
-            May contain a directory.
+            May contain a directory, but please use the directory parameter
+            for that instead.
         atoms: Atoms object
             Optional Atoms object to which the calculator will be
             attached.  When restarting, atoms will get its positions and
@@ -399,10 +400,10 @@ class Calculator(object):
 
         self.directory = directory
         self.prefix = None
-        if directory is not None and label is not None and '/' in label:
-            raise ValueError('Both directory and label imply a directory.  '
-                             'Please omit "/" in label.')
         if label is not None:
+            if directory != '.' and '/' in label:
+                raise ValueError('Both directory and label imply a '
+                                 'directory.  Please omit "/" in label.')
             self.set_label(label)
 
         if self.parameters is None:
@@ -426,9 +427,14 @@ class Calculator(object):
 
     @property
     def label(self):
-        if self.directory is None:
+        if self.directory == '.':
             return self.prefix
 
+        # Generally, label ~ directory/prefix
+        #
+        # We use '/' rather than os.pathsep because
+        #   1) directory/prefix does not represent any actual path
+        #   2) We want the same string to work the same on all platforms
         if self.prefix is None:
             return self.directory + '/'
 
@@ -441,7 +447,7 @@ class Calculator(object):
             directory, prefix = tokens
         else:
             assert len(tokens) == 1
-            directory = None
+            directory = '.'
             prefix = tokens[0]
         if prefix == '':
             prefix = None
