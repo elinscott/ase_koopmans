@@ -174,8 +174,8 @@ class BandPath:
         """
         import warnings
         warnings.warn('Please do not use (kpts, x, X) = bandpath(...).  '
-                      'Use path = bandpath(...) and then '
-                      '(kpts, x, X) = path.get_linear_kpoint_axis().')
+                      'Use path = bandpath(...) and then kpts = path.kpts and '
+                      '(x, X, labels) = path.get_linear_kpoint_axis().')
         yield self.kpts
 
         x, xspecial, _ = labels_from_kpts(self.kpts, self.cell,
