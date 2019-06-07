@@ -242,12 +242,15 @@ def key_val_dict_to_str(d, sep=' ', tolerant=False):
         if isinstance(val, dict):
             continue
         if hasattr(val, '__iter__'):
-            val = np.array(list(val))
             try:
+                val = np.array(list(val))
                 val = ' '.join(str(type_val_map.get((type(x), x), x))
                                for x in val.reshape(val.size, order='F'))
-            except TypeError as exc:
+            except (TypeError, ValueError) as exc:
                 # It may fail if the type is unhashable
+                # ValueError is only relevant for non-uniform arrays
+                # with older numpy (1.10.4) and affects the creation
+                # of the array.  Can be removed in the future.
                 if tolerant:
                     warnings.warn('Skipping unhashable information '
                                   '{0}'.format(key))
