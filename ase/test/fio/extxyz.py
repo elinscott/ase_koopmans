@@ -15,8 +15,9 @@ from ase.build import bulk
 # in commit r4541
 at = bulk('Si')
 # Check that unashable data type in info does not break output
-at.info['test_info'] = [[1, np.array([0,1])], [2, np.array([0,1])]]
-ase.io.write('to.xyz', at, format='extxyz')
+at.info['bad-info'] = [[1, np.array([0,1])], [2, np.array([0,1])]]
+ase.io.write('to.xyz', at, format='extxyz', tolerant=True)
+del at.info['bad-info']
 at.arrays['ns_extra_data'] = np.zeros((len(at), 1))
 assert at.arrays['ns_extra_data'].shape == (2, 1)
 
