@@ -2,6 +2,7 @@ from __future__ import print_function
 import os
 import sys
 import subprocess
+from contextlib import contextmanager
 from multiprocessing import Process, cpu_count, Queue
 import tempfile
 import unittest
@@ -407,6 +408,13 @@ class must_raise:
         if exc_type is None:
             raise RuntimeError('Failed to fail: ' + str(self.exception))
         return issubclass(exc_type, self.exception)
+
+
+@contextmanager
+def no_warn():
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        yield
 
 
 class CLICommand:
