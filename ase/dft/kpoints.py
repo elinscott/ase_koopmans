@@ -160,7 +160,6 @@ class BandPath:
     def cartesian_kpts(self):
         return self._scale(self.kpts)
 
-
     def __iter__(self):
         """XXX Compatibility hack for bandpath() function.
 
@@ -280,6 +279,8 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None):
 
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
+
+
 def paths2kpts(paths, cell, npoints=None, density=None):
     if not(npoints is None or density is None):
         raise ValueError('You may define npoints or density, but not both.')
@@ -471,7 +472,6 @@ def get_cellinfo(cell, lattice=None, eps=2e-4):
     myspecial_points = {label: np.dot(M, kpt) for label, kpt in points.items()}
     return CellInfo(rcell=rcell, lattice=latt,
                     special_points=myspecial_points)
-
 
 
 def get_special_points(cell, lattice=None, eps=2e-4):

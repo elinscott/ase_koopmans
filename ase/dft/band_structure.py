@@ -37,8 +37,6 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     if calc is None:
         raise ValueError('Atoms have no calculator')
 
-
-
     if scf_kwargs is not None:
         calc.set(**scf_kwargs)
 
@@ -88,7 +86,6 @@ def get_band_structure(atoms=None, calc=None, _bandpath=None, _reference=None):
         energies.append([calc.get_eigenvalues(kpt=k, spin=s)
                          for k in range(len(kpts))])
     energies = np.array(energies)
-
 
     if _bandpath is None:
         from ase.dft.kpoints import BandPath, get_cellinfo, labels_from_kpts
