@@ -197,7 +197,7 @@ def _write_xsd_html(images,connectivity=None):
         Props['NumDefects']= '2'
         IdentMappng = SetChild(MappngFamily, 'IdentityMapping',Props)
         
-        MappngRepairs = SetChild(MappngFamily,'MappingRepairs',{'NumRepairs':'0'})
+        SetChild(MappngFamily,'MappingRepairs',{'NumRepairs':'0'})
         
         # writing atoms
         for x in range(natoms):
