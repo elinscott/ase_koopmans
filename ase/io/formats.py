@@ -128,6 +128,7 @@ all_formats = {
     'x3d': ('X3D', '1S'),
     'xsd': ('Materials Studio file', '1F'),
     'xsf': ('XCrySDen Structure File', '+F'),
+    'xtd': ('Materials Studio file', '+F'),
     'xyz': ('XYZ-file', '+F')}
 
 # Special cases:
