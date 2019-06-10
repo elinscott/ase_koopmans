@@ -363,8 +363,7 @@ class Calculator(object):
     'Default parameters'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
-                 directory='.',
-                 atoms=None, **kwargs):
+                 atoms=None, directory='.', **kwargs):
         """Basic calculator implementation.
 
         restart: str
@@ -402,8 +401,9 @@ class Calculator(object):
         self.prefix = None
         if label is not None:
             if directory != '.' and '/' in label:
-                raise ValueError('Both directory and label imply a '
-                                 'directory.  Please omit "/" in label.')
+                raise ValueError('Both directory="{}" and label="{}" both '
+                                 'specify a directory.  Please omit "/" in '
+                                 'label.'.format(directory, label))
             self.set_label(label)
 
         if self.parameters is None:
@@ -442,6 +442,11 @@ class Calculator(object):
 
     @label.setter
     def label(self, label):
+        if label is None:
+            self.directory = '.'
+            self.prefix = None
+            return
+
         tokens = label.rsplit('/', 1)
         if len(tokens) == 2:
             directory, prefix = tokens
