@@ -19,7 +19,7 @@ from ase.utils import basestring
 class NEB:
     def __init__(self, images, k=0.1, fmax=0.05, climb=False, parallel=False,
                  remove_rotation_and_translation=False, world=None,
-                 method='aseneb', dynamic_relaxation=False):
+                 method='aseneb', dynamic_relaxation=False, scale_fmax=0.):
         """Nudged elastic band.
 
         Paper I:
@@ -61,6 +61,9 @@ class NEB:
             can speed up calculations if convergence is non-uniform.
             Convergence criterion should be the same as that given to
             the optimizer. Not efficient when parallelizing over images.
+        scale_fmax: float
+            Scale convergence criteria along band based on the distance
+            between a state and the state with the highest potential energy.
         method: string of method
             Choice betweeen three method:
 
@@ -87,6 +90,11 @@ class NEB:
         self.remove_rotation_and_translation = remove_rotation_and_translation
         self.dynamic_relaxation = dynamic_relaxation
         self.fmax = fmax
+        self.scale_fmax = scale_fmax
+        if not self.dynamic_relaxation and self.scale_fmax:
+            msg = ('Scaled convergence criteria only implemented in series '
+                   'with dynamic_relaxation=True.')
+            raise ValueError(msg)
 
         if method in ['aseneb', 'eb', 'improvedtangent']:
             self.method = method
@@ -250,8 +258,8 @@ class NEB:
         self.real_forces = np.zeros((self.nimages, self.natoms, 3))
         self.real_forces[1:-1] = forces
 
-        imax = 1 + np.argsort(energies[1:-1])[-1]
-        self.emax = energies[imax]
+        self.imax = 1 + np.argsort(energies[1:-1])[-1]
+        self.emax = energies[self.imax]
 
         t1 = find_mic(images[1].get_positions() -
                       images[0].get_positions(),
@@ -296,9 +304,9 @@ class NEB:
                 # Normalize the tangent vector
                 tangent /= np.linalg.norm(tangent)
             else:
-                if i < imax:
+                if i < self.imax:
                     tangent = t2
-                elif i > imax:
+                elif i > self.imax:
                     tangent = t1
                 else:
                     tangent = t1 + t2
@@ -307,7 +315,7 @@ class NEB:
             f = forces[i - 1]
             ft = np.vdot(f, tangent)
 
-            if i == imax and self.climb:
+            if i == self.imax and self.climb:
                 # imax not affected by the spring forces. The full force
                 # with component along the elestic band converted
                 # (formula 5 of Paper II)
@@ -321,7 +329,7 @@ class NEB:
                 # (formula C1, C5, C6 and C7 of Paper III)
                 f1 = -(nt1 - eqlength) * t1 / nt1 * self.k[i - 1]
                 f2 = (nt2 - eqlength) * t2 / nt2 * self.k[i]
-                if self.climb and abs(i - imax) == 1:
+                if self.climb and abs(i - self.imax) == 1:
                     deltavmax = max(abs(energies[i + 1] - energies[i]),
                                     abs(energies[i - 1] - energies[i]))
                     deltavmin = min(abs(energies[i + 1] - energies[i]),
@@ -341,6 +349,24 @@ class NEB:
             t1 = t2
             nt1 = nt2
 
+            if self.dynamic_relaxation:
+                n = self.natoms
+                k = i - 1
+                n1 = n * k
+                n2 = n1 + n
+                force_i = np.sqrt((forces.reshape((-1, 3))[n1:n2]**2.)
+                                  .sum(axis=1)).max()
+
+                n1_imax = (self.imax - 1) * n
+                positions = self.get_positions()
+                pos_imax = positions[n1_imax:n1_imax + n]
+                rel_pos = np.sqrt(((positions[n1:n2] - pos_imax)**2).sum())
+
+                if force_i < self.fmax * (1 + rel_pos * self.scale_fmax):
+                    if k == self.imax - 1:
+                        pass
+                    else:
+                        forces[k, :, :] = np.zeros((1, self.natoms, 3))
         return forces.reshape((-1, 3))
 
     def get_potential_energy(self, force_consistent=False):
