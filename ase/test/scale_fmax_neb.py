@@ -3,7 +3,7 @@ from ase import Atoms
 from ase.build import fcc111
 from ase.optimize import BFGS
 from ase.calculators.emt import EMT as OrigEMT
-from neb import NEB
+from ase.neb import NEB
 
 # Global counter of force evaluations:
 force_evaluations = [0]

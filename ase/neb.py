@@ -93,7 +93,7 @@ class NEB:
         self.scale_fmax = scale_fmax
         if not self.dynamic_relaxation and self.scale_fmax:
             msg = ('Scaled convergence criteria only implemented in series '
-                   'with dynamic_relaxation=True.')
+                   'with dynamic_relaxation.')
             raise ValueError(msg)
 
         if method in ['aseneb', 'eb', 'improvedtangent']:
