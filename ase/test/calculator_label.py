@@ -3,6 +3,7 @@ from ase.calculators.calculator import Calculator
 calc = Calculator()
 assert calc.directory == '.'
 assert calc.prefix is None
+assert calc.label is None
 
 calc.label = 'dir/pref'
 assert calc.directory == 'dir'
@@ -18,3 +19,8 @@ calc.label = 'hello'
 assert calc.directory == '.'
 assert calc.prefix == 'hello'
 assert calc.label == 'hello'
+
+calc.label = None
+assert calc.label is None
+assert calc.prefix is None
+assert calc.directory == '.'
