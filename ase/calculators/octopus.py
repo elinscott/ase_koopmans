@@ -943,11 +943,11 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def __init__(self,
                  restart=None,
                  label=None,
+                 directory=None,
                  atoms=None,
                  command=None,
                  ignore_troublesome_keywords=None,
                  check_keywords=True,
-                 _autofix_outputformats=False,
                  **kwargs):
         """Create Octopus calculator.
 
@@ -974,16 +974,14 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         else:
             octopus_keywords = None
         self.octopus_keywords = octopus_keywords
-        self._autofix_outputformats = _autofix_outputformats
 
-        if restart is not None:
-            if label is not None and restart != label:
-                raise ValueError('restart and label are mutually exclusive '
-                                 'or must at the very least coincide.')
-            label = restart
+        if label is not None:
+            import warnings
+            warnings.warn('Please use directory=... instead of label')
+            directory = label.rstrip('/')
 
-        if label is None:
-            label = 'ink-pool'
+        if directory is None:
+            directory = 'ink-pool'
 
         if ignore_troublesome_keywords:
             trouble = set(self.troublesome_keywords)
@@ -995,17 +993,10 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
 
         FileIOCalculator.__init__(self, restart=restart,
                                   ignore_bad_restart_file=False,
-                                  label=label,
+                                  directory=directory,
                                   atoms=atoms,
                                   command=command, **kwargs)
         # The above call triggers set() so we can update self.kwargs.
-
-    def set_label(self, label):
-        # Octopus does not support arbitrary namings of all the output files.
-        # But we can decide that we always dump everything in a directory.
-        if not label.endswith('/'):
-            label += '/'
-        FileIOCalculator.set_label(self, label)
 
     def set(self, **kwargs):
         """Set octopus input file parameters."""
@@ -1144,7 +1135,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties=properties,
                                      system_changes=system_changes)
-        print('XXXXXXXXXXXXXXXXXXXX WRITE INPUT')
         octopus_keywords = self.octopus_keywords
         if octopus_keywords is None:
             # Will not do automatic pretty capitalization
@@ -1155,14 +1145,13 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         fd.write(txt)
         fd.close()
 
-    def read(self, label):
+    def read(self, directory):
         # XXX label of restart file may not be the same as actual label!
         # This makes things rather tricky.  We first set the label to
         # that of the restart file and arbitrarily expect the remaining code
         # to rectify any consequent inconsistencies.
-        self.set_label(label)
+        self.directory = directory
 
-        FileIOCalculator.read(self, label)
         inp_path = self._getpath('inp')
         fd = open(inp_path)
         kwargs = parse_input_file(fd)
