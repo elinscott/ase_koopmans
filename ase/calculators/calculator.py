@@ -401,9 +401,10 @@ class Calculator(object):
         self.prefix = None
         if label is not None:
             if directory != '.' and '/' in label:
-                raise ValueError('Both directory="{}" and label="{}" both '
-                                 'specify a directory.  Please omit "/" in '
-                                 'label.'.format(directory, label))
+                raise ValueError('Directory redundantly specified though '
+                                 'directory="{}" and label="{}".  '
+                                 'Please omit "/" in label.'
+                                 .format(directory, label))
             self.set_label(label)
 
         if self.parameters is None:
@@ -466,9 +467,10 @@ class Calculator(object):
 
         * label='abc': (directory='.', prefix='abc')
         * label='dir1/abc': (directory='dir1', prefix='abc')
+        * label=None: (directory='.', prefix=None)
 
         Calculators that must write results to files with fixed names
-        can overwrite this method so that the directory is set to all
+        can override this method so that the directory is set to all
         of label."""
         self.label = label
 
@@ -769,7 +771,9 @@ class FileIOCalculator(Calculator):
                 'Please set ${} environment variable '
                 .format('ASE_' + self.name.upper() + '_COMMAND') +
                 'or supply the command keyword')
-        command = self.command.replace('PREFIX', self.prefix)
+        command = self.command
+        if 'PREFIX' in command:
+            command = command.replace('PREFIX', self.prefix)
         errorcode = subprocess.call(command, shell=True, cwd=self.directory)
 
         if errorcode:
