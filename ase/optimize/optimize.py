@@ -121,6 +121,13 @@ class Dynamics:
         >>>     opt1.run()
         """
 
+        # let the user inspect the atoms before algorithm is started
+        yield False
+
+        # log the first step
+        if self.nsteps == 0:
+            self.log()
+
         # run the algorithm until converged or max_steps reached
         while not self.converged() and self.nsteps < self.max_steps:
 
