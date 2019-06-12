@@ -66,7 +66,7 @@ class BaseSiesta(FileIOCalculator):
     allowed_xc = {}
     allowed_fdf_keywords = {}
     unit_fdf_keywords = {}
-    name = 'Siesta'
+    name = 'siesta'
     command = 'siesta < PREFIX.fdf > PREFIX.out'
     implemented_properties = (
         'energy',
