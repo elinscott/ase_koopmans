@@ -1,10 +1,10 @@
 """Test to ensure that md logger and trajectory contain same data"""
 from pathlib import Path
 
-try:
-    import pytest
-except ModuleNotFoundError:
-    pass
+# try:
+#     import pytest
+# except ModuleNotFoundError:
+#     pass
 
 import numpy as np
 
