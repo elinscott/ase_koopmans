@@ -27,9 +27,10 @@ custom_dir = './dir1/'
 # Test simple fdf-argument case.
 siesta = Siesta(
     label=custom_dir + 'test_label',
+    symlink_pseudos=False,
     atomic_coord_format='zmatrix',
     fdf_arguments={
-        'MD.TypeOfRun': 'CG', 
+        'MD.TypeOfRun': 'CG',
         'MD.NumCGsteps': 1000
         })
 

@@ -47,6 +47,7 @@ class SiestaParameters(Parameters):
             species=tuple(),
             pseudo_qualifier=None,
             pseudo_path=None,
+            symlink_pseudos=None,
             atoms=None,
             restart=None,
             ignore_bad_restart_file=False,
@@ -111,6 +112,10 @@ class BaseSiesta(FileIOCalculator):
                             pseudopotential path that will be retrieved.
                             For hydrogen with qualifier "abc" the
                             pseudopotential "H.abc.psf" will be retrieved.
+           - symlink_pseudos: None|bool
+                            If true, symlink pseudopotentials
+                            into the calculation directory, else copy them.
+                            Defaults to true on Unix and false on Windows.
            - atoms        : The Atoms object.
            - restart      : str.  Prefix for restart file.
                             May contain a directory.
@@ -698,7 +703,15 @@ class BaseSiesta(FileIOCalculator):
             if join(os.getcwd(), name) != pseudopotential:
                 if islink(pseudo_targetpath) or isfile(pseudo_targetpath):
                     os.remove(pseudo_targetpath)
-                shutil.copy(pseudopotential, pseudo_targetpath)
+                symlink_pseudos = self['symlink_pseudos']
+
+                if symlink_pseudos is None:
+                    symlink_pseudos = not os.name == 'nt'
+
+                if symlink_pseudos:
+                    os.symlink(pseudopotential, pseudo_targetpath)
+                else:
+                    shutil.copy(pseudopotential, pseudo_targetpath)
 
             if not spec['excess_charge'] is None:
                 atomic_number += 200
