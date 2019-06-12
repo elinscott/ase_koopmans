@@ -36,9 +36,9 @@ def fmax(forces):
     return np.sqrt((forces ** 2).sum(axis=1).max())
 
 
-@pytest.mark.parametrize("cls", [FIRE, BFGS])
-@pytest.mark.parametrize("atoms", [dimer])
-@pytest.mark.parametrize("calc", [calc])
+# @pytest.mark.parametrize("cls", [FIRE, BFGS])
+# @pytest.mark.parametrize("atoms", [dimer])
+# @pytest.mark.parametrize("calc", [calc])
 def test_opt(cls, atoms, calc, logfile="opt.log", trajectory="opt.traj"):
     """run optimization and verify that log and trajectory coincide"""
 
@@ -64,9 +64,9 @@ def test_opt(cls, atoms, calc, logfile="opt.log", trajectory="opt.traj"):
             assert np.allclose(fmax1, fmax2, atol=0.01), (fmax1, fmax2)
 
 
-@pytest.mark.parametrize("cls, kwargs", md_cls_and_kwargs)
-@pytest.mark.parametrize("atoms", [dimer])
-@pytest.mark.parametrize("calc", [calc])
+# @pytest.mark.parametrize("cls, kwargs", md_cls_and_kwargs)
+# @pytest.mark.parametrize("atoms", [dimer])
+# @pytest.mark.parametrize("calc", [calc])
 def test_md(
     cls, atoms, calc, kwargs, logfile="md.log", timestep=1 * u.fs, trajectory="md.traj"
 ):
