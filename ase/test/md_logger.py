@@ -106,12 +106,12 @@ def clear_files(suffixes=None, verbose=False):
         suffixes = ["log", "traj"]
 
     for suffix in suffixes:
-        files = Path().glob(f"*.{suffix}")
+        files = Path().glob("*.{}".format(suffix))
         for file in files:
             if file.exists():
                 file.unlink()
                 if verbose:
-                    print(f".. {file} removed.")
+                    print(".. {} removed.".format(file))
 
 
 if __name__ == "__main__":
