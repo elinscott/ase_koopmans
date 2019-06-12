@@ -65,6 +65,8 @@ class BaseSiesta(FileIOCalculator):
     allowed_xc = {}
     allowed_fdf_keywords = {}
     unit_fdf_keywords = {}
+    name = 'Siesta'
+    command = 'siesta < PREFIX.fdf > PREFIX.out'
     implemented_properties = (
         'energy',
         'forces',
@@ -77,7 +79,7 @@ class BaseSiesta(FileIOCalculator):
     # Dictionary of valid input vaiables.
     default_parameters = SiestaParameters()
 
-    def __init__(self, **kwargs):
+    def __init__(self, command=None, **kwargs):
         """ASE interface to the SIESTA code.
 
         Parameters:
@@ -130,40 +132,33 @@ class BaseSiesta(FileIOCalculator):
                             the block AtomicCoordinatesAndAtomicSpecies) and
                             a recent method via the block Zmatrix. The block
                             Zmatrix allows to specify basic geometry constrains
-                            such as realized through the ASE classes FixAtom, 
+                            such as realized through the ASE classes FixAtom,
                             FixedLine and FixedPlane.
         """
 
         # Put in the default arguments.
         parameters = self.default_parameters.__class__(**kwargs)
-        
-        # Setup the siesta command based on number of nodes.
-        command = os.environ.get('SIESTA_COMMAND')
-        if command is None:
-            mess = "The 'SIESTA_COMMAND' environment is not defined."
-            raise ValueError(mess)
-
-        label = parameters['label']
-        self.label = label
-
-        runfile = label + '.fdf'
-        outfile = label + '.out'
-        try:
-            command = command % (runfile, outfile)
-        except TypeError:
-            raise ValueError(
-                "The 'SIESTA_COMMAND' environment must " +
-                "be a format string" +
-                " with two string arguments.\n" +
-                "Example : 'siesta < ./%s > ./%s'.\n" +
-                "Got '%s'" % command)
 
         # Call the base class.
         FileIOCalculator.__init__(
             self,
             command=command,
             **parameters)
-        
+
+        # For compatibility with old variable name:
+        commandvar = os.environ.get('SIESTA_COMMAND')
+        if commandvar is not None:
+            runfile = self.prefix + '.fdf'
+            outfile = self.prefix + '.out'
+            try:
+                self.command = commandvar % (runfile, outfile)
+            except TypeError:
+                raise ValueError(
+                    "The 'SIESTA_COMMAND' environment must " +
+                    "be a format string" +
+                    " with two string arguments.\n" +
+                    "Example : 'siesta < %s > %s'.\n" +
+                    "Got '%s'" % commandvar)
 
     def __getitem__(self, key):
         """Convenience method to retrieve a parameter as
@@ -331,13 +326,16 @@ class BaseSiesta(FileIOCalculator):
         See base FileIocalculator for documentation.
         """
 
-        try:
-            FileIOCalculator.calculate(
-                self,
-                atoms=atoms,
-                properties=properties,
-                system_changes=system_changes)
+        FileIOCalculator.calculate(
+            self,
+            atoms=atoms,
+            properties=properties,
+            system_changes=system_changes)
 
+        # The below snippet would run if calculate() failed but I have
+        # disabled it for now since it looks to be just for debugging.
+        # --askhl
+        """
         # Here a test to check if the potential are in the right place!!!
         except RuntimeError as e:
             try:
@@ -352,15 +350,8 @@ class BaseSiesta(FileIOCalculator):
                 raise e
             except:
                 raise e
+        """
 
-    def set_directory(self, directory='.'):
-        """Set directory in which the calculation will be setup.
-
-        This is the most transparent solution for SIESTA calculator for which 
-        label should be a filename without path."""
-
-        self.directory = directory
-        
     def write_input(self, atoms, properties=None, system_changes=None):
         """Write input (fdf)-file.
         See calculator.py for further details.
@@ -380,7 +371,7 @@ class BaseSiesta(FileIOCalculator):
         if system_changes is None and properties is None:
             return
 
-        filename = os.path.join(self.directory, self.label+'.fdf')
+        filename = os.path.join(self.directory, self.prefix + '.fdf')
 
         # On any changes, remove all analysis files.
         if system_changes is not None:
@@ -389,8 +380,8 @@ class BaseSiesta(FileIOCalculator):
         # Start writing the file.
         with open(filename, 'w') as f:
             # Write system name and label.
-            f.write(format_fdf('SystemName', self.label))
-            f.write(format_fdf('SystemLabel', self.label))
+            f.write(format_fdf('SystemName', self.prefix))
+            f.write(format_fdf('SystemLabel', self.prefix))
             f.write("\n")
 
             # Write the minimal arg
@@ -421,11 +412,11 @@ class BaseSiesta(FileIOCalculator):
 
     def read(self, filename):
         """Read structural parameters from file .XV file
-           Read other results from other files 
-           filename : siesta.XV 
+           Read other results from other files
+           filename : siesta.XV
         """
-           
-        fname = os.path.join(self.directory, filename)
+
+        fname = self.getpath(filename)
         if not os.path.exists(fname):
             raise ReadError("The restart file '%s' does not exist" % fname)
         self.atoms = xv_to_atoms(fname)
@@ -463,9 +454,16 @@ class BaseSiesta(FileIOCalculator):
                 warnings.warn('Ignoring unknown keyword "{}"'.format(key))
 
 
+    def getpath(self, fname=None, ext=None):
+        if fname is None:
+            fname = self.prefix
+        if ext is not None:
+            fname = '{}.{}'.format(fname, ext)
+        return os.path.join(self.directory, fname)
+
     def remove_analysis(self):
         """ Remove all analysis files"""
-        filename = os.path.join(self.directory, self.label + '.RHO')
+        filename = self.getpath(ext='RHO')
         if os.path.exists(filename):
             os.remove(filename)
 
@@ -521,7 +519,7 @@ class BaseSiesta(FileIOCalculator):
         elif af=='zmatrix':
             self._write_atomic_coordinates_zmatrix(f, atoms)
         else:
-            raise RuntimeError('Unknown atomic_coord_format: {}'.format(af))			
+            raise RuntimeError('Unknown atomic_coord_format: {}'.format(af))
 
 
     def _write_atomic_coordinates_xyz(self, f, atoms):
@@ -579,14 +577,14 @@ class BaseSiesta(FileIOCalculator):
             f.write('\n')
 
     def make_xyz_constraints(self, atoms):
-        """ Create coordinate-resolved list of constraints [natoms, 0:3] 
+        """ Create coordinate-resolved list of constraints [natoms, 0:3]
         The elements of the list must be integers 0 or 1
           1 -- means that the coordinate will be updated during relaxation procedure
           0 -- mains that the coordinate will be fixed during geometry relaxation
         """
         from ase.constraints import FixAtoms, FixedLine, FixedPlane
         import warnings, sys
-        
+
         a = atoms
         a2c = np.ones((len(a), 3), dtype = int)
         for c in a.constraints:
@@ -606,7 +604,7 @@ class BaseSiesta(FileIOCalculator):
                 warnings.warn('Constraint {} is ignored at {}'.format( str(c), sys._getframe().f_code ))
         return a2c
 
-    
+
     def _write_kpts(self, f):
         """Write kpts.
 
@@ -792,10 +790,9 @@ class BaseSiesta(FileIOCalculator):
             if spec['pseudopotential'] is None:
                 if self.pseudo_qualifier() == '':
                     label = symbol
-                    pseudopotential = os.path.join(self.directory, label + '.psf')
                 else:
                     label = '.'.join([symbol, self.pseudo_qualifier()])
-                    pseudopotential = os.path.join(self.directory, label + '.psf')
+                pseudopotential = self.getpath(label, 'psf')
             else:
                 pseudopotential = spec['pseudopotential']
                 label = os.path.basename(pseudopotential)
@@ -812,7 +809,7 @@ class BaseSiesta(FileIOCalculator):
             label = '.'.join(np.array(name.split('.'))[:-1])
 
             if label not in self.results['ion']:
-                fname = os.path.join(self.directory, label + '.ion.xml')
+                fname = self.getpath(label, 'ion.xml')
                 if os.path.isfile(fname):
                     self.results['ion'][label] = get_ion(fname)
 
@@ -826,7 +823,7 @@ class BaseSiesta(FileIOCalculator):
         """
         from ase.calculators.siesta.import_functions import readHSX
 
-        filename = os.path.join(self.directory, self.label + '.HSX')
+        filename = self.getpath(ext='HSX')
         if isfile(filename):
             self.results['hsx'] = readHSX(filename)
         else:
@@ -841,7 +838,7 @@ class BaseSiesta(FileIOCalculator):
         """
         from ase.calculators.siesta.import_functions import readDIM
 
-        filename = os.path.join(self.directory, self.label + '.DIM')
+        filename = self.getpath(ext='DIM')
         if isfile(filename):
             self.results['dim'] = readDIM(filename)
         else:
@@ -856,7 +853,7 @@ class BaseSiesta(FileIOCalculator):
         """
         from ase.calculators.siesta.import_functions import readPLD
 
-        filename = os.path.join(self.directory, self.label + '.PLD')
+        filename = self.getpath(ext='PLD')
         if isfile(filename):
             self.results['pld'] = readPLD(filename, norb, natms)
         else:
@@ -868,8 +865,8 @@ class BaseSiesta(FileIOCalculator):
         Return a namedtuple with the following arguments:
         """
         from ase.calculators.siesta.import_functions import readWFSX
-        
-        fname_woext = os.path.join(self.directory, self.label)
+
+        fname_woext = os.path.join(self.directory, self.prefix)
 
         if isfile(fname_woext + '.WFSX'):
             filename = fname_woext + '.WFSX'
@@ -883,14 +880,14 @@ class BaseSiesta(FileIOCalculator):
 
     def read_pseudo_density(self):
         """Read the density if it is there."""
-        filename = os.path.join(self.directory, self.label + '.RHO')
+        filename = self.getpath(ext='RHO')
         if isfile(filename):
             self.results['density'] = read_rho(filename)
 
     def read_number_of_grid_points(self):
         """Read number of grid points from SIESTA's text-output file. """
-        
-        fname = os.path.join(self.directory, self.label + '.out')
+
+        fname = self.getpath(ext='out')
         with open(fname, 'r') as f:
             for line in f:
                 line = line.strip().lower()
@@ -904,7 +901,7 @@ class BaseSiesta(FileIOCalculator):
     def read_energy(self):
         """Read energy from SIESTA's text-output file.
         """
-        fname = os.path.join(self.directory, self.label + '.out')
+        fname = self.getpath(ext='out')
         with open(fname, 'r') as f:
             text = f.read().lower()
 
@@ -926,7 +923,7 @@ class BaseSiesta(FileIOCalculator):
     def read_forces_stress(self):
         """Read the forces and stress from the FORCE_STRESS file.
         """
-        fname = os.path.join(self.directory, 'FORCE_STRESS')
+        fname = self.getpath('FORCE_STRESS')
         with open(fname, 'r') as f:
             lines = f.readlines()
 
@@ -954,7 +951,7 @@ class BaseSiesta(FileIOCalculator):
     def read_eigenvalues(self):
         """ A robust procedure using the suggestion by Federico Marchesin """
 
-        fname = os.path.join(self.directory, self.label) + '.EIG'
+        fname = self.getpath(ext='EIG')
         try:
             f = open(fname, "r")
             self.results['fermi_energy'] = float(f.readline())
@@ -970,35 +967,34 @@ class BaseSiesta(FileIOCalculator):
             for s, n2e in enumerate(sn2e):
                 eig[(k,s)] = n2e
 
-        self.results['eigenvalues'] = eig 
+        self.results['eigenvalues'] = eig
         return 0
 
     def read_kpoints(self):
         """ Reader of the .KP files """
 
-        fname = os.path.join(self.directory, self.label)+ '.KP'
+        fname = self.getpath(ext='KP')
         try:
             f = open(fname, "r")
             nkp = int(f.readline())
             _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
         except (IOError):
             return 1
-            
+
         i2xyzw = np.delete(_ee, 0, 1)
-        
+
         kpoints, kweights = OrderedDict(), OrderedDict()
         for i, xyzw in enumerate(i2xyzw):
             kpoints[i], kweights[i] = xyzw[0:3], xyzw[3]
-        
-        self.results['kpoints'] = kpoints 
+
+        self.results['kpoints'] = kpoints
         self.results['kweights'] = kweights
         return 0
 
     def read_dipole(self):
         """Read dipole moment. """
         dipole = np.zeros([1, 3])
-        fname_woext = os.path.join(self.directory, self.label)
-        with open(fname_woext + '.out', 'r') as f:
+        with open(self.getpath(ext='out'), 'r') as f:
             for line in f:
                 if line.rfind('Electric dipole (Debye)') > -1:
                     dipole = np.array([float(f) for f in line.split()[5:8]])
@@ -1011,7 +1007,7 @@ class BaseSiesta(FileIOCalculator):
                           run_tddft=True,
                           save_kernel = True,
                           kernel_name = "tddft_kernel.npy",
-                          fname="pol_tensor.npy", 
+                          fname="pol_tensor.npy",
                           fname_nonin = "noninpol_tensor.npy", **kw):
         """
         Perform TDDFT calculation using the pyscf.nao module for a molecule.
@@ -1207,7 +1203,7 @@ class BaseSiesta(FileIOCalculator):
         Returns
         -------
         tddft:
-            if running pyscf_tddft_eels in a loop over the velocity or the 
+            if running pyscf_tddft_eels in a loop over the velocity or the
             impact parameter, there is no point to initialize again the tddft
             calculation (vertex and kernel will be the same)
 
@@ -1315,7 +1311,7 @@ class BaseSiesta(FileIOCalculator):
 
 
         self.results['eel spectra nonin'] = tddft.get_spectrum_nonin(velec=velec,
-                                                                  beam_offset = b, 
+                                                                  beam_offset = b,
                                                                   tmp_fname=tmp_fname)
 
         self.results['eel spectra inter'] = tddft.get_spectrum_inter(velec=velec,

@@ -22,9 +22,11 @@ c3 = FixedPlane(2, [1.0, 0.0, 0.0])
 
 atoms.set_constraint([c1,c2,c3])
 
+custom_dir = './dir1/'
+
 # Test simple fdf-argument case.
 siesta = Siesta(
-    label='test_label',
+    label=custom_dir + 'test_label',
     atomic_coord_format='zmatrix',
     fdf_arguments={
         'MD.TypeOfRun': 'CG', 
@@ -32,9 +34,6 @@ siesta = Siesta(
         })
 
 atoms.set_calculator(siesta)
-
-custom_dir = './dir1/'
-siesta.set_directory(custom_dir)
 siesta.write_input(atoms, properties=['energy'])
 
 assert os.path.isfile(os.path.join(custom_dir, 'C.lda.1.psf'))
