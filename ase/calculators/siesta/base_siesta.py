@@ -150,7 +150,15 @@ class BaseSiesta(FileIOCalculator):
         if commandvar is not None:
             runfile = self.prefix + '.fdf'
             outfile = self.prefix + '.out'
-            self.command = commandvar % (runfile, outfile)
+            try:
+                self.command = commandvar % (runfile, outfile)
+            except TypeError:
+                raise ValueError(
+                    "The 'SIESTA_COMMAND' environment must " +
+                    "be a format string" +
+                    " with two string arguments.\n" +
+                    "Example : 'siesta < %s > %s'.\n" +
+                    "Got '%s'" % commandvar)
 
     def __getitem__(self, key):
         """Convenience method to retrieve a parameter as
