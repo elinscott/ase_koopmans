@@ -124,7 +124,9 @@ class Dynamics:
         # let the user inspect the atoms before algorithm is started
         yield False
 
-        # log the first step
+        # compute inital structure and log the first step
+        self.atoms.get_forces()
+
         if self.nsteps == 0:
             self.log()
             self.call_observers()
@@ -164,9 +166,13 @@ class Dynamics:
         return False
 
     def log(self, *args):
-        """" a dummy function as placeholder for a real logger, e.g. in
+        """ a dummy function as placeholder for a real logger, e.g. in
         Optimizer """
         return True
+
+    def step(self):
+        """this needs to be implemented by subclasses"""
+        raise RuntimeError('step not implemented.')
 
 
 class Optimizer(Dynamics):
