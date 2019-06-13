@@ -313,8 +313,12 @@ def paths2kpts(paths, cell, npoints=None, density=None):
             x.append(x0 + t * L)
         x0 += L
         X.append(x0)
-    kpts.append(points[-1])
-    x.append(x0)
+    if len(points):
+        kpts.append(points[-1])
+        x.append(x0)
+
+    if len(kpts) == 0:
+        kpts = np.empty((0, 3))
 
     return np.array(kpts), np.array(x), np.array(X)
 
