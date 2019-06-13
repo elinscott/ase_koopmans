@@ -460,6 +460,7 @@ class BaseSiesta(FileIOCalculator):
 
 
     def getpath(self, fname=None, ext=None):
+        """ Returns the directory/fname string """
         if fname is None:
             fname = self.prefix
         if ext is not None:
