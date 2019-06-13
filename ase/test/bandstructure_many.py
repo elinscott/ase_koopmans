@@ -12,7 +12,7 @@ def test():
         if lat.ndim == 2:
             break
         xid = '{:02d}.{}'.format(i, lat.variant.name)
-        path = lat.bandpath(density=60)
+        path = lat.bandpath(density=10)
         path.write('path.{}.json'.format(xid))
         atoms = Atoms(cell=lat.tocell())
         atoms.calc = FreeElectrons(nvalence=0, kpts=path.kpts)
