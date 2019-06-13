@@ -1,11 +1,6 @@
 """Test to ensure that md logger and trajectory contain same data"""
 from pathlib import Path
 
-# try:
-#     import pytest
-# except ModuleNotFoundError:
-#     pass
-
 import numpy as np
 
 from ase.optimize import FIRE, BFGS
@@ -14,14 +9,13 @@ from ase.calculators.tip3p import TIP3P
 from ase.constraints import FixBondLengths
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
-import ase.units as u
 from ase.io import Trajectory
+import ase.units as u
 
 md_cls_and_kwargs = [
     (VelocityVerlet, {}),
     (Langevin, {"temperature": 300 * u.kB, "friction": 0.02}),
 ]
-
 
 # prepare atoms object for testing
 dimer = s22.create_s22_system("Water_dimer")
@@ -36,13 +30,12 @@ def fmax(forces):
     return np.sqrt((forces ** 2).sum(axis=1).max())
 
 
-# @pytest.mark.parametrize("cls", [FIRE, BFGS])
-# @pytest.mark.parametrize("atoms", [dimer])
-# @pytest.mark.parametrize("calc", [calc])
 def test_opt(cls, atoms, calc, logfile="opt.log", trajectory="opt.traj"):
     """run optimization and verify that log and trajectory coincide"""
 
-    clear_files()
+    # clean files to make sure the correct ones are tested
+    for file in (*Path().glob("*.log"), *Path().glob("*.traj")):
+        file.unlink()
 
     opt_atoms = atoms.copy()
     opt_atoms.constraints = atoms.constraints
@@ -64,15 +57,14 @@ def test_opt(cls, atoms, calc, logfile="opt.log", trajectory="opt.traj"):
             assert np.allclose(fmax1, fmax2, atol=0.01), (fmax1, fmax2)
 
 
-# @pytest.mark.parametrize("cls, kwargs", md_cls_and_kwargs)
-# @pytest.mark.parametrize("atoms", [dimer])
-# @pytest.mark.parametrize("calc", [calc])
 def test_md(
     cls, atoms, calc, kwargs, logfile="md.log", timestep=1 * u.fs, trajectory="md.traj"
 ):
     """ run MD for 10 steps and verify that trajectory and log coincide """
 
-    clear_files()
+    # clean files to make sure the correct ones are tested
+    for file in (*Path().glob("*.log"), *Path().glob("*.traj")):
+        file.unlink()
 
     if hasattr(atoms, "constraints"):
         del atoms.constraints
@@ -99,29 +91,11 @@ def test_md(
             assert np.allclose(Epot1, Epot2, atol=0.01), (Epot1, Epot2)
 
 
-# clear previous runs
-def clear_files(suffixes=None, verbose=False):
-    """clear all files with given suffix"""
-    if suffixes is None:
-        suffixes = ["log", "traj"]
+# test optimizer
+for cls in (FIRE, BFGS):
+    test_opt(cls, dimer, calc)
 
-    for suffix in suffixes:
-        files = Path().glob("*.{}".format(suffix))
-        for file in files:
-            if file.exists():
-                file.unlink()
-                if verbose:
-                    print(".. {} removed.".format(file))
-
-
-if __name__ == "__main__":
-    clear_files()
-
-    # test optimizer
-    for cls in (FIRE, BFGS):
-        test_opt(cls, dimer, calc)
-
-    # test md
-    del dimer.constraints
-    for cls, kwargs in md_cls_and_kwargs:
-        test_md(cls, dimer, calc, kwargs=kwargs)
+# test md
+del dimer.constraints
+for cls, kwargs in md_cls_and_kwargs:
+    test_md(cls, dimer, calc, kwargs=kwargs)
