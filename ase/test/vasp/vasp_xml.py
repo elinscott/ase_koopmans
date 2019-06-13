@@ -5,18 +5,19 @@ environment variables
 
 """
 
-from ase.test import NotAvailable
+import unittest
+import numpy as np
+import sys
+
 from ase.test.vasp import installed
 from ase import Atoms
 from ase.calculators.vasp import Vasp
 from ase.io import read
-import numpy as np
-import sys
 
 
 def main():
     if sys.version_info < (2, 7):
-        raise NotAvailable('read_xml requires Python version 2.7 or greater')
+        raise unittest.SkipTest('read_xml requires Python version 2.7 or greater')
 
     assert installed()
 

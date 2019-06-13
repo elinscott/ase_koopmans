@@ -37,8 +37,6 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     if calc is None:
         raise ValueError('Atoms have no calculator')
 
-
-
     if scf_kwargs is not None:
         calc.set(**scf_kwargs)
 
@@ -88,7 +86,6 @@ def get_band_structure(atoms=None, calc=None, _bandpath=None, _reference=None):
         energies.append([calc.get_eigenvalues(kpt=k, spin=s)
                          for k in range(len(kpts))])
     energies = np.array(energies)
-
 
     if _bandpath is None:
         from ase.dft.kpoints import BandPath, get_cellinfo, labels_from_kpts
@@ -212,9 +209,6 @@ class BandStructurePlot:
                 kpt = kpt[0] + '$_' + kpt[1] + '$'
             return kpt
 
-        emin += self.bs.reference
-        emax += self.bs.reference
-
         self.xcoords, label_xcoords, orig_labels = self.bs.get_labels()
         label_xcoords = list(label_xcoords)
         labels = [pretty(name) for name in orig_labels]
@@ -235,9 +229,9 @@ class BandStructurePlot:
 
         ax.set_xticks(label_xcoords)
         ax.set_xticklabels(labels)
-        ax.axis(xmin=0, xmax=self.xcoords[-1], ymin=emin, ymax=emax)
         ax.set_ylabel(ylabel)
         ax.axhline(self.bs.reference, color='k', ls=':')
+        ax.axis(xmin=0, xmax=self.xcoords[-1], ymin=emin, ymax=emax)
         self.ax = ax
         return ax
 

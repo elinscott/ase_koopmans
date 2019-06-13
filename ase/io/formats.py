@@ -99,6 +99,7 @@ all_formats = {
     'mol': ('MDL Molfile', '1F'),
     'mp4': ('MP4 animation', '+S'),
     'mustem': ('muSTEM xtl file', '1F'),
+    'mysql': ('ASE MySQL database file', '+S'),
     'netcdftrajectory': ('AMBER NetCDF trajectory file', '+S'),
     'nomad-json': ('JSON from Nomad archive', '+F'),
     'nwchem': ('NWChem input file', '1F'),
@@ -120,7 +121,7 @@ all_formats = {
     'v-sim': ('V_Sim ascii file', '1F'),
     'vasp': ('VASP POSCAR/CONTCAR file', '1F'),
     'vasp-out': ('VASP OUTCAR file', '+F'),
-    'vasp-xdatcar': ('VASP XDATCAR file', '+S'),
+    'vasp-xdatcar': ('VASP XDATCAR file', '+F'),
     'vasp-xml': ('VASP vasprun.xml file', '+F'),
     'vti': ('VTK XML Image Data', '1F'),
     'vtu': ('VTK XML Unstructured Grid', '1F'),
@@ -155,6 +156,7 @@ format2modulename = {
     'lammps-dump': 'lammpsrun',
     'lammps-data': 'lammpsdata',
     'mp4': 'animation',
+    'mysql': 'db',
     'postgresql': 'db',
     'struct': 'wien2k',
     'struct_out': 'siesta',
@@ -615,6 +617,9 @@ def filetype(filename, read=True, guess=True):
 
         if filename.startswith('postgres'):
             return 'postgresql'
+
+        if filename.startswith('mysql') or filename.startswith('mariadb'):
+            return 'mysql'
 
         # strip any compression extensions that can be read
         root, compression = get_compression(filename)

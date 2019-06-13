@@ -15,6 +15,34 @@ from ase.parallel import world
 from ase import units
 
 
+class UnitError(Exception):
+    """Exception raised when wrong units are specified"""
+
+
+def force_temperature(atoms, temperature, unit="K"):
+    """ force (nucl.) temperature to have a precise value
+
+    Parameters:
+    atoms: ase.Atoms
+        the structure
+    temperature: float
+        nuclear temperature to set
+    unit: str
+        'K' or 'eV' as unit for the temperature
+    """
+
+    if unit == "K":
+        E_temp = temperature * units.kB
+    elif unit == "eV":
+        E_temp = temperature
+    else:
+        raise UnitError("'{}' is not supported, use 'K' or 'eV'.".format(unit))
+
+    E_kin0 = atoms.get_kinetic_energy() / len(atoms) / 1.5
+    gamma = E_temp / E_kin0
+    atoms.set_momenta(atoms.get_momenta() * np.sqrt(gamma))
+
+
 def _maxwellboltzmanndistribution(
     masses, temp, communicator=world, rng=np.random
 ):
@@ -35,18 +63,19 @@ def MaxwellBoltzmannDistribution(
     temp should be fed in energy units; i.e., for 300 K use
     temp=300.*units.kB. If force_temp is set to True, it scales the
     random momenta such that the temperature request is precise."""
-    momenta = _maxwellboltzmanndistribution(
-        atoms.get_masses(), temp, communicator, rng
-    )
+    masses = atoms.get_masses()
+    momenta = _maxwellboltzmanndistribution(masses, temp, communicator, rng)
     atoms.set_momenta(momenta)
     if force_temp:
-        temp0 = atoms.get_kinetic_energy() / len(atoms) / 1.5
-        gamma = temp / temp0
-        atoms.set_momenta(atoms.get_momenta() * np.sqrt(gamma))
+        force_temperature(atoms, temperature=temp, unit="eV")
 
 
-def Stationary(atoms):
+def Stationary(atoms, preserve_temperature=True):
     "Sets the center-of-mass momentum to zero."
+
+    # Save initial temperature
+    temp0 = atoms.get_temperature()
+
     p = atoms.get_momenta()
     p0 = np.sum(p, 0)
     # We should add a constant velocity, not momentum, to the atoms
@@ -56,9 +85,16 @@ def Stationary(atoms):
     p -= v0 * m[:, np.newaxis]
     atoms.set_momenta(p)
 
+    if preserve_temperature:
+        force_temperature(atoms, temp0)
 
-def ZeroRotation(atoms):
+
+def ZeroRotation(atoms, preserve_temperature=True):
     "Sets the total angular momentum to zero by counteracting rigid rotations."
+
+    # Save initial temperature
+    temp0 = atoms.get_temperature()
+
     # Find the principal moments of inertia and principal axes basis vectors
     Ip, basis = atoms.get_moments_of_inertia(vectors=True)
     # Calculate the total angular momentum and transform to principal basis
@@ -72,6 +108,9 @@ def ZeroRotation(atoms):
     positions -= com  # translate center of mass to origin
     velocities = atoms.get_velocities()
     atoms.set_velocities(velocities - np.cross(omega, positions))
+
+    if preserve_temperature:
+        force_temperature(atoms, temp0)
 
 
 def n_BE(temp, omega):
@@ -184,17 +223,13 @@ def phonon_harmonics(
         zeros = w2_s[:3]
         worst_zero = np.abs(zeros).max()
         if worst_zero > 1e-3:
-            raise ValueError(
-                "Translational modes have suspiciously large "
-                "energies; should be close to zero: {}".format(w2_s[:3])
-            )
+            msg = "Translational deviate from 0 significantly: "
+            raise ValueError(msg + "{}".format(w2_s[:3]))
 
         w2min = w2_s[3:].min()
         if w2min < 0:
-            raise ValueError(
-                "Dynamical matrix has negative eigenvalues "
-                "such as {}".format(w2min)
-            )
+            msg = "Dynamical matrix has negative eigenvalues such as "
+            raise ValueError(msg + "{}".format(w2min))
 
     # First three modes are translational so ignore:
     nw = len(w2_s) - 3

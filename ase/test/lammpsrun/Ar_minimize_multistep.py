@@ -10,7 +10,7 @@ ar_nc.pbc = True
 params = {}
 params['pair_style'] = 'lj/cut 8.0'
 params['pair_coeff'] = ['1 1 0.0108102 3.345']
-params['mass'] = ['1 {}'.format(atomic_masses[atomic_numbers['Ar']])]
+params['masses'] = ['1 {}'.format(atomic_masses[atomic_numbers['Ar']])]
 
 calc = LAMMPS(specorder=['Ar'], **params)
 

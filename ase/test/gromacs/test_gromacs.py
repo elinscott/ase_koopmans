@@ -1,11 +1,12 @@
 """ test run for gromacs calculator """
 
-from ase.test import NotAvailable
+import unittest
+
 from ase.calculators.gromacs import Gromacs
 
 g = Gromacs()
 if g.command is None:
-    raise NotAvailable(getattr(g, "missing_gmx", "missing gromacs"))
+    raise unittest.SkipTest(getattr(g, "missing_gmx", "missing gromacs"))
 
 GRO_INIT_FILE = 'hise_box.gro'
 

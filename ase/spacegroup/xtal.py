@@ -9,6 +9,7 @@ knowledge of the space group.
 """
 
 import numpy as np
+from scipy import spatial
 
 import ase
 from ase.symbols import string2symbols
@@ -121,25 +122,23 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
         basis_coords = np.array(basis, dtype=float, copy=False, ndmin=2)
 
     if occupancies is not None:
-        # find the identical sites (doubt this will ever become performance
-        # critical -- and if so, maybe use the neighborlist module)
-        ident_sites = np.linalg.norm(basis_coords[:, None]-basis_coords[None,:], axis=-1) < symprec
-
-        # for convenience, only look at the upper triangle (i.e. set the remainder to False)
-        np.fill_diagonal(ident_sites, False)
-
-        # this is already the reduced form...
-        unique = [i for i in range(len(basis_coords))]
         occupancies_dict = {}
-        for i, mask in enumerate(ident_sites):
-            if i not in unique:
-                continue
-            occ = {symbols[i] : occupancies[i]}
-            for close in np.nonzero(mask):
-                for j in close:
-                    occ.update({symbols[j] : occupancies[j]})
-
-            occupancies_dict[i] = occ.copy()
+    
+        for index, coord in enumerate(basis_coords):
+            # Compute all distances and get indices of nearest atoms
+            dist = spatial.distance.cdist(coord.reshape(1, 3), basis_coords)
+            indices_dist = np.flatnonzero(dist < symprec)
+            
+            occ = {symbols[index]: occupancies[index]}
+            
+            # Check nearest and update occupancy
+            for index_dist in indices_dist:
+                if index == index_dist:
+                    continue
+                else:
+                    occ.update({symbols[index_dist]: occupancies[index_dist]})
+            
+            occupancies_dict[index] = occ.copy()
 
     sites, kinds = sg.equivalent_sites(basis_coords,
                                        onduplicates=onduplicates,

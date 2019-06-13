@@ -9,7 +9,7 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 from __future__ import division, print_function
 import os
 
-from ase.test import NotAvailable
+import unittest
 from ase.build import molecule
 from ase import units
 from ase.calculators.cp2k import CP2K
@@ -17,7 +17,7 @@ from ase.calculators.cp2k import CP2K
 
 def main():
     if "ASE_CP2K_COMMAND" not in os.environ:
-        raise NotAvailable('$ASE_CP2K_COMMAND not defined')
+        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
 
     calc = CP2K(label='test_O2', uks=True, cutoff=150 * units.Rydberg,
                 basis_set="SZV-MOLOPT-SR-GTH")

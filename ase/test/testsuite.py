@@ -2,6 +2,7 @@ from __future__ import print_function
 import os
 import sys
 import subprocess
+from contextlib import contextmanager
 from multiprocessing import Process, cpu_count, Queue
 import tempfile
 import unittest
@@ -17,8 +18,6 @@ from ase.calculators.calculator import names as calc_names, get_calculator
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
-NotAvailable = unittest.SkipTest
-
 test_calculator_names = []
 
 if sys.version_info[0] == 2:
@@ -28,7 +27,7 @@ if sys.version_info[0] == 2:
 
 def require(calcname):
     if calcname not in test_calculator_names:
-        raise NotAvailable('use --calculators={0} to enable'.format(calcname))
+        raise unittest.SkipTest('use --calculators={0} to enable'.format(calcname))
 
 
 def get_tests(files=None):
@@ -74,7 +73,7 @@ def runtest_almost_no_magic(test):
         skip += ['db_web', 'h2.py', 'bandgap.py', 'al.py',
                  'runpy.py', 'oi.py']
         if any(s in test for s in skip):
-            raise NotAvailable('not on windows')
+            raise unittest.SkipTest('not on windows')
     try:
         with open(path) as fd:
             exec(compile(fd.read(), path, 'exec'), {})
@@ -180,7 +179,8 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * gui/run may deadlock for unknown reasons in subprocess
 
             t = test.replace('\\', '/')
-            if t in ['bandstructure.py', 'bandstructure2.py',
+            if t in ['bandstructure.py',
+                     'bandstructure_many.py',
                      'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
                      'forcecurve.py',
@@ -371,7 +371,7 @@ def disable_calculators(names):
         else:
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
-                    raise NotAvailable('use --calculators={0} to enable'
+                    raise unittest.SkipTest('use --calculators={0} to enable'
                                        .format(name))
                 return mock_init
 
@@ -409,6 +409,13 @@ class must_raise:
         if exc_type is None:
             raise RuntimeError('Failed to fail: ' + str(self.exception))
         return issubclass(exc_type, self.exception)
+
+
+@contextmanager
+def no_warn():
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        yield
 
 
 class CLICommand:

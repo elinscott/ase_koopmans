@@ -18,13 +18,13 @@ pair_style = 'buck/coul/long 12.0'
 pair_coeff = ['1 1 3796.9 0.2603 124.90']
 pair_coeff += ['2 2 1227.2 0.3214 124.90']
 pair_coeff += ['1 2 4117.9 0.3048 0.0']
-mass = ['1 {}'.format(atomic_masses[atomic_numbers['Na']]),
+masses = ['1 {}'.format(atomic_masses[atomic_numbers['Na']]),
         '2 {}'.format(atomic_masses[atomic_numbers['Cl']])]
 
 calc = LAMMPS(specorder=['Na', 'Cl'],
               pair_style=pair_style,
               pair_coeff=pair_coeff,
-              mass=mass,
+              masses=masses,
               atom_style='charge',
               kspace_style='pppm 1.0e-5',
               keep_tmp_files=True,

@@ -98,7 +98,7 @@ def test(format):
         # Complex dependencies; see animate.py test
         return
 
-    if format in ['postgresql', 'trj', 'vti', 'vtu']:
+    if format in ['postgresql', 'trj', 'vti', 'vtu', 'mysql']:
         # Let's not worry about these.
         return
 

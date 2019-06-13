@@ -180,7 +180,6 @@ class BandPath:
     def cartesian_kpts(self):
         return self._scale(self.kpts)
 
-
     def __iter__(self):
         """XXX Compatibility hack for bandpath() function.
 
@@ -195,8 +194,8 @@ class BandPath:
         """
         import warnings
         warnings.warn('Please do not use (kpts, x, X) = bandpath(...).  '
-                      'Use path = bandpath(...) and then use the methods '
-                      'of the path object (see the BandPath class).')
+                      'Use path = bandpath(...) and then kpts = path.kpts and '
+                      '(x, X, labels) = path.get_linear_kpoint_axis().')
         yield self.kpts
 
         x, xspecial, _ = labels_from_kpts(self.kpts, self.cell,
@@ -300,6 +299,8 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None):
 
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
+
+
 def paths2kpts(paths, cell, npoints=None, density=None):
     if not(npoints is None or density is None):
         raise ValueError('You may define npoints or density, but not both.')
@@ -325,15 +326,23 @@ def paths2kpts(paths, cell, npoints=None, density=None):
     x = []
     X = [0]
     for P, d, L in zip(points[:-1], dists, lengths):
-        n = max(2, int(round(L * (npoints - len(x)) / (length - x0))))
+        diff = length - x0
+        if abs(diff) < 1e-6:
+            n = 0
+        else:
+            n = max(2, int(round(L * (npoints - len(x)) / diff)))
 
         for t in np.linspace(0, 1, n)[:-1]:
             kpts.append(P + t * d)
             x.append(x0 + t * L)
         x0 += L
         X.append(x0)
-    kpts.append(points[-1])
-    x.append(x0)
+    if len(points):
+        kpts.append(points[-1])
+        x.append(x0)
+
+    if len(kpts) == 0:
+        kpts = np.empty((0, 3))
 
     return np.array(kpts), np.array(x), np.array(X)
 
@@ -368,9 +377,11 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     diffs = points[1:] - points[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
     N = len(points)
-    indices = [0]
-    indices.extend(np.arange(1, N - 1)[kinks])
-    indices.append(N - 1)
+    indices = []
+    if N > 0:
+        indices.append(0)
+        indices.extend(np.arange(1, N - 1)[kinks])
+        indices.append(N - 1)
 
     labels = []
     for kpt in points[indices]:
@@ -491,7 +502,6 @@ def get_cellinfo(cell, lattice=None, eps=2e-4):
     myspecial_points = {label: np.dot(M, kpt) for label, kpt in points.items()}
     return CellInfo(rcell=rcell, lattice=latt,
                     special_points=myspecial_points)
-
 
 
 def get_special_points(cell, lattice=None, eps=2e-4):

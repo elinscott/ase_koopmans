@@ -10,28 +10,29 @@ from ase.calculators.interfacechecker import check_interface
 
 def calculate(name, system, **kwargs):
     print('Calculate', name, system)
-    label = 'ink-%s' % name
+    directory = 'ink-%s' % name
 
     kwargs0 = dict(stdout="'stdout.txt'",
+                   stderr="'stderr.txt'",
                    FromScratch=True,
                    RestartWrite=False,
-                   command='mpirun -np 4 octopus')
+                   command='octopus')
     kwargs.update(**kwargs0)
 
-    calc = Octopus(label=label, **kwargs)
+    calc = Octopus(directory=directory, **kwargs)
     system.calc = calc
     E = system.get_potential_energy()
     eig = calc.get_eigenvalues()
     check_interface(calc)
 
-    restartcalc = Octopus(label)
+    restartcalc = Octopus(directory)
     check_interface(restartcalc)
 
     # Check reconstruction of Atoms object
     new_atoms = restartcalc.get_atoms()
     print('new')
     print(new_atoms.positions)
-    calc2 = Octopus(label='ink-restart-%s' % name, **kwargs)
+    calc2 = Octopus(directory='ink-restart-%s' % name, **kwargs)
     new_atoms.calc = calc2
     E2 = new_atoms.get_potential_energy()
     #print('energy', E, E2)
@@ -101,18 +102,6 @@ if 0:  # This calculation does not run will in Octopus
     eF = calc.get_fermi_level()
     assert abs(eF - 5.33) < 1e-1
     # XXXX octopus does not get magnetic state?
-if 1:
-    calc = calculate('Si',
-                     bulk('Si', orthorhombic=True),
-                     KPointsGrid=[[4, 4, 4]],
-                     SpinComponents='spin_polarized',
-                     ExtraStates=2,
-                     SmearingFunction='fermi_dirac',
-                     Smearing='0.1 * eV',
-                     KPointsUseSymmetries=True,
-                     ExperimentalFeatures=True,
-                     Spacing='0.35 * Angstrom')
-    #eF = calc.get_fermi_level()
     print('eF', eF)
 
 if 0:

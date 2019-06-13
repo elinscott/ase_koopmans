@@ -1,4 +1,4 @@
-from ase.test import NotAvailable
+import unittest
 from ase.build import bulk
 from ase.calculators.calculator import get_calculator
 
@@ -40,5 +40,5 @@ names = ['abinit', 'aims', 'elk', 'cp2k', 'openmx']
 for name in names:
     try:
         run(name)
-    except NotAvailable:
+    except unittest.SkipTest:
         pass
