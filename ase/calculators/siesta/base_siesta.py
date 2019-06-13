@@ -967,10 +967,10 @@ class BaseSiesta(FileIOCalculator):
 
         fname = self.getpath(ext='EIG')
         try:
-            f = open(fname, "r")
-            self.results['fermi_energy'] = float(f.readline())
-            n, nspin, nkp = map(int, f.readline().split())
-            _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
+            with open(fname, "r") as f:
+                self.results['fermi_energy'] = float(f.readline())
+                n, nspin, nkp = map(int, f.readline().split())
+                _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
         except (IOError):
             return 1
 
@@ -989,9 +989,9 @@ class BaseSiesta(FileIOCalculator):
 
         fname = self.getpath(ext='KP')
         try:
-            f = open(fname, "r")
-            nkp = int(f.readline())
-            _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
+            with open(fname, "r") as f:
+                nkp = int(f.readline())
+                _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
         except (IOError):
             return 1
 
