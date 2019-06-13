@@ -460,6 +460,7 @@ class BaseSiesta(FileIOCalculator):
 
 
     def getpath(self, fname=None, ext=None):
+        """ Returns the directory/fname string """
         if fname is None:
             fname = self.prefix
         if ext is not None:
@@ -1193,7 +1194,7 @@ class BaseSiesta(FileIOCalculator):
                                kernel_name = "tddft_kernel.npy",
                                tmp_fname = None,
                                **kw):
-        """
+        r"""
         Perform TDDFT calculation using the pyscf.nao module for a molecule.
         The external pertubation is created by a electron moving at the velocity velec
         and with an impact parameter b
@@ -1301,9 +1302,7 @@ class BaseSiesta(FileIOCalculator):
         ax2.set_title(r"Interacting")
 
         fig.tight_layout()
-
         plt.show()
-
         """
 
 
