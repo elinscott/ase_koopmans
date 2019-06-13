@@ -209,9 +209,6 @@ class BandStructurePlot:
                 kpt = kpt[0] + '$_' + kpt[1] + '$'
             return kpt
 
-        emin += self.bs.reference
-        emax += self.bs.reference
-
         self.xcoords, label_xcoords, orig_labels = self.bs.get_labels()
         label_xcoords = list(label_xcoords)
         labels = [pretty(name) for name in orig_labels]
@@ -232,9 +229,9 @@ class BandStructurePlot:
 
         ax.set_xticks(label_xcoords)
         ax.set_xticklabels(labels)
-        ax.axis(xmin=0, xmax=self.xcoords[-1], ymin=emin, ymax=emax)
         ax.set_ylabel(ylabel)
         ax.axhline(self.bs.reference, color='k', ls=':')
+        ax.axis(xmin=0, xmax=self.xcoords[-1], ymin=emin, ymax=emax)
         self.ax = ax
         return ax
 

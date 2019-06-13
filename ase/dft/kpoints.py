@@ -306,15 +306,23 @@ def paths2kpts(paths, cell, npoints=None, density=None):
     x = []
     X = [0]
     for P, d, L in zip(points[:-1], dists, lengths):
-        n = max(2, int(round(L * (npoints - len(x)) / (length - x0))))
+        diff = length - x0
+        if abs(diff) < 1e-6:
+            n = 0
+        else:
+            n = max(2, int(round(L * (npoints - len(x)) / diff)))
 
         for t in np.linspace(0, 1, n)[:-1]:
             kpts.append(P + t * d)
             x.append(x0 + t * L)
         x0 += L
         X.append(x0)
-    kpts.append(points[-1])
-    x.append(x0)
+    if len(points):
+        kpts.append(points[-1])
+        x.append(x0)
+
+    if len(kpts) == 0:
+        kpts = np.empty((0, 3))
 
     return np.array(kpts), np.array(x), np.array(X)
 
@@ -349,9 +357,11 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     diffs = points[1:] - points[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
     N = len(points)
-    indices = [0]
-    indices.extend(np.arange(1, N - 1)[kinks])
-    indices.append(N - 1)
+    indices = []
+    if N > 0:
+        indices.append(0)
+        indices.extend(np.arange(1, N - 1)[kinks])
+        indices.append(N - 1)
 
     labels = []
     for kpt in points[indices]:
