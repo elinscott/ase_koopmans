@@ -306,7 +306,11 @@ def paths2kpts(paths, cell, npoints=None, density=None):
     x = []
     X = [0]
     for P, d, L in zip(points[:-1], dists, lengths):
-        n = max(2, int(round(L * (npoints - len(x)) / (length - x0))))
+        diff = length - x0
+        if abs(diff) < 1e-6:
+            n = 0
+        else:
+            n = max(2, int(round(L * (npoints - len(x)) / diff)))
 
         for t in np.linspace(0, 1, n)[:-1]:
             kpts.append(P + t * d)
