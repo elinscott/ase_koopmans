@@ -66,7 +66,7 @@ class BaseSiesta(FileIOCalculator):
     allowed_xc = {}
     allowed_fdf_keywords = {}
     unit_fdf_keywords = {}
-    name = 'Siesta'
+    name = 'siesta'
     command = 'siesta < PREFIX.fdf > PREFIX.out'
     implemented_properties = (
         'energy',
@@ -1194,7 +1194,7 @@ class BaseSiesta(FileIOCalculator):
                                kernel_name = "tddft_kernel.npy",
                                tmp_fname = None,
                                **kw):
-        """
+        r"""
         Perform TDDFT calculation using the pyscf.nao module for a molecule.
         The external pertubation is created by a electron moving at the velocity velec
         and with an impact parameter b
@@ -1302,9 +1302,7 @@ class BaseSiesta(FileIOCalculator):
         ax2.set_title(r"Interacting")
 
         fig.tight_layout()
-
         plt.show()
-
         """
 
 
