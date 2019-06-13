@@ -353,9 +353,11 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     diffs = points[1:] - points[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
     N = len(points)
-    indices = [0]
-    indices.extend(np.arange(1, N - 1)[kinks])
-    indices.append(N - 1)
+    indices = []
+    if N > 0:
+        indices.append(0)
+        indices.extend(np.arange(1, N - 1)[kinks])
+        indices.append(N - 1)
 
     labels = []
     for kpt in points[indices]:
