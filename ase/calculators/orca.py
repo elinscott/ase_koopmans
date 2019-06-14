@@ -27,7 +27,11 @@ class KPoint:
 
 class ORCA(FileIOCalculator):
     implemented_properties = ['energy', 'forces']
-    command = 'orca PREFIX.inp > PREFIX.out'
+
+    if 'ORCA_COMMAND' in os.environ:
+        command = os.environ['ORCA_COMMAND'] + ' PREFIX.inp > PREFIX.out'
+    else:
+        command = 'orca PREFIX.inp > PREFIX.out'
 
     default_parameters = dict(
         charge=0, mult=1,
@@ -104,7 +108,10 @@ class ORCA(FileIOCalculator):
         getgrad="no"
         for i, line in enumerate(lines):
             if line.find('# The current gradient') >= 0:
-                getgrad="yes";gradients = [];tempgrad=[];continue
+                getgrad="yes";
+                gradients = []
+                tempgrad=[]
+                continue
             if getgrad=="yes" and "#" not in line:
                 grad=line.split()[-1]
                 tempgrad.append(float(grad))
