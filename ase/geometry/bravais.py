@@ -566,10 +566,11 @@ def check_mcl(a, b, c, alpha):
               [['MCL', 'GACDD1EHH1H2MM1M2XYY1Z', 'GYHCEM1AXH1,MDZ,YD', None]])
 class MCL(BravaisLattice):
     def __init__(self, a, b, c, alpha):
+        check_mcl(a, b, c, alpha)
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
 
     def _cell(self, a, b, c, alpha):
-        alpha *= np.pi / 180
+        alpha *= _degrees
         return np.array([[a, 0, 0], [0, b, 0],
                          [0, c * np.cos(alpha), c * np.sin(alpha)]])
 
@@ -615,6 +616,7 @@ class MCL(BravaisLattice):
                 'GYFLI,I1ZHF1,H1Y1XGN,MG', None]])
 class MCLC(BravaisLattice):
     def __init__(self, a, b, c, alpha):
+        check_mcl(a, b, c, alpha)
         BravaisLattice.__init__(self, a=a, b=b, c=c, alpha=alpha)
 
     def _cell(self, a, b, c, alpha):
