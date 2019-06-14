@@ -1078,11 +1078,9 @@ def get_2d_bravais_lattice(origcell, eps=2e-4, _niggli_reduce=True):
                   [i, 1]]
             if np.abs(np.linalg.det(op)) > 1e-5:
                 # Only touch periodic dirs:
-                print(nonperiodic)
                 op = np.insert(op, nonperiodic, [0, 0], 0)
                 op = np.insert(op, nonperiodic,
                                [0 if per else 1 for per in pbc], 1)
-                print(op)
                 ops.append(np.array(op))
 
     def allclose(a, b):
@@ -1090,12 +1088,11 @@ def get_2d_bravais_lattice(origcell, eps=2e-4, _niggli_reduce=True):
 
     symrank = 0
     for op in ops:
-        print('op:', op)
         cell = Cell(op.dot(origcell), pbc=pbc)
         cellpar = cell.cellpar()
         angles = cellpar[3:]
         # Find a, b and gamma
-        gamma = angles[[i for i, pbc in enumerate(angles) if not pbc]][0]
+        gamma = angles[[i for i, per in enumerate(pbc) if not per][0]]
         a, b = cellpar[:3][cell.pbc]
 
         anglesm90 = np.abs(angles - 90)
