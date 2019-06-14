@@ -827,7 +827,7 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
     # forms, Niggli or otherwise.  Else we will not always get the
     # right type.
 
-    if np.sum(uc.pbc) == 2:
+    if not uc.pbc[2]:
         return get_2d_bravais_lattice(uc, eps, _niggli_reduce)
     
     # orig_uc = uc
