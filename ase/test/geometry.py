@@ -5,8 +5,7 @@ from __future__ import division
 import numpy as np
 
 from ase.build import cut, bulk
-from ase.geometry import (Cell, get_layers, wrap_positions,
-                          crystal_structure_from_cell)
+from ase.geometry import Cell, get_layers, wrap_positions
 from ase.spacegroup import crystal, get_spacegroup
 
 al = crystal('Al', [(0, 0, 0)], spacegroup=225, cellpar=4.05)

@@ -88,7 +88,6 @@ def get_band_structure(atoms=None, calc=None, path=None, reference=None):
     energies = np.array(energies)
 
     if path is None:
-        from ase.dft.kpoints import BandPath, get_cellinfo, labels_from_kpts
         path = atoms.cell.bandpath(npoints=0)
         # Kpoints are already evaluated, we just need to put them into
         # the path (whether they fit our idea of what the path is, or not).

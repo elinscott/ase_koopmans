@@ -2,7 +2,6 @@
 import numpy as np
 from ase import Atoms
 from ase.calculators.test import FreeElectrons
-from ase.geometry import crystal_structure_from_cell
 from ase.dft.kpoints import get_special_points
 
 firsttime = True

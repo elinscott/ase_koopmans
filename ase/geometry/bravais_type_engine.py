@@ -260,7 +260,6 @@ def identify_lattice(cell, eps):
         for name in bravais_names:
             for lat, std_op in results:
                 if lat.name == name:
-                    theop = std_op @ np.linalg.inv(op)
                     return lat, std_op @ np.linalg.inv(op)
 
     raise RuntimeError('Cannot recognize cell: {}'.format(cell.cellpar()))
