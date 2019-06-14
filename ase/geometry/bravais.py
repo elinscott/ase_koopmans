@@ -1123,7 +1123,6 @@ def get_2d_bravais_lattice(origcell, eps=2e-4, _niggli_reduce=True):
                 lat = OBL(a, b, gamma)
                 rank = 1
 
-        print('a, b, gamma', a, b, gamma)
         op = lat.get_transformation(origcell)
         if not allclose(np.dot(op, lat.tocell())[pbc][:, pbc],
                         origcell.array[pbc][:, pbc]):
