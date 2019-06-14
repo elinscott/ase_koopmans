@@ -1,4 +1,4 @@
-from ase.test import NotAvailable
+import unittest
 from ase.build import molecule
 from ase.calculators.calculator import get_calculator
 
@@ -48,5 +48,5 @@ names = ['abinit', 'aims', 'gaussian', 'nwchem', 'cp2k']
 for name in names:
     try:
         h2dft(name)
-    except NotAvailable:
+    except unittest.SkipTest:
         pass

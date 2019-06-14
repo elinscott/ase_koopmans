@@ -32,7 +32,7 @@ atoms object:
 Environment variables
 =====================
 
-The environment variable :envvar:`OPENMX_COMMAND` must point to that file.
+The environment variable :envvar:`ASE_OPENMX_COMMAND` must point to that file.
 
 A directory containing the pseudopotential directories :file:`VPS`, and it
 is to be put in the environment variable :envvar:`OPENMX_DFT_DATA_PATH`.
@@ -44,7 +44,7 @@ Set both environment variables in your shell configuration file:
 ::
 
   $ export OPENMX_DFT_DATA_PATH=/openmx/DFT_DATA13
-  $ export OPENMX_COMMAND='openmx'
+  $ export ASE_OPENMX_COMMAND='openmx'
 
 .. highlight:: python
 
@@ -178,7 +178,7 @@ Similarly, You can use PBS method by specifying kwargs,
 
 .. code-block:: python
 
-  calc = OpenMX(pbs={'processes':20, 'threads':3, 'walltime'='100:00:00'}, ...)
+  calc = OpenMX(pbs={'processes':20, 'threads':3, 'walltime':'100:00:00'}, ...)
 
 .. note::
 

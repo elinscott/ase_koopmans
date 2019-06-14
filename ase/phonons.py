@@ -531,7 +531,7 @@ class Phonons(Displacement):
         return self.C_N
 
     def get_band_structure(self, path, modes=False, born=False, verbose=True):
-        omega_kl = self.band_structure(path.scaled_kpts, modes, born, verbose)
+        omega_kl = self.band_structure(path.kpts, modes, born, verbose)
         if modes:
             assert 0
             omega_kl, modes = omega_kl

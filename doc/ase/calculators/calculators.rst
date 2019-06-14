@@ -234,7 +234,7 @@ the :meth:`set` method:
    others
    test
    ase_qmmm_manyqm
-
+   ace
 
 .. _calculator interface:
 

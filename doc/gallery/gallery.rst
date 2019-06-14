@@ -29,9 +29,9 @@ Phase diagrams
 Brillouin zones
 ===============
 
-.. |bzcubic| image:: ../ase/dft/cubic.svg
+.. |bzcubic| image:: ../ase/dft/00.CUB.svg
    :width: 25%
-.. |bzbcc| image:: ../ase/dft/bcc.svg
+.. |bzbcc| image:: ../ase/dft/02.BCC.svg
    :width: 25%
 
 |bzcubic| |bzbcc|

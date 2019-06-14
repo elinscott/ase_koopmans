@@ -48,39 +48,12 @@ Special points in the Brillouin zone
 
 .. data:: special_points
 
-Special points from [Setyawana-Curtarolo]_:
+The below table lists the special points from [Setyawana-Curtarolo]_.
 
-.. list-table::
-    :widths: 10 30 35
 
-    * - Cubic
-      - GXMGRX,MR
-      - .. image:: cubic.svg
-            :width: 25 %
-    * - FCC
-      - GXWKGLUWLK,UX
-      - .. image:: fcc.svg
-            :width: 25 %
-    * - BCC
-      - GHNGPH,PN
-      - .. image:: bcc.svg
-            :width: 25 %
-    * - Tetragonal
-      - GXMGZRAZ,XR,MA
-      - .. image:: tetragonal.svg
-            :width: 25 %
-    * - Orthorhombic
-      - GXSYGZURTZ,YT,UX,SR
-      - .. image:: orthorhombic.svg
-            :width: 25 %
-    * - Hexagonal
-      - GMKGALHA,LM,KH
-      - .. image:: hexagonal.svg
-            :width: 25 %
-    * - Monoclinic
-      - GYHCEM1AXH1,MDZ,YD
-      - .. image:: monoclinic.svg
-            :width: 25 %
+.. toctree:: bztable
+
+.. include:: bztable.rst
 
 .. [Setyawana-Curtarolo]
     High-throughput electronic band structure calculations:

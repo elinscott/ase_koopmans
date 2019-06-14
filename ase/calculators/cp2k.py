@@ -174,8 +174,9 @@ class CP2K(Calculator):
         else:
             self.command = 'cp2k_shell'  # default
 
-        Calculator.__init__(self, restart, ignore_bad_restart_file,
-                            label, atoms, **kwargs)
+        Calculator.__init__(self, restart=restart,
+                            ignore_bad_restart_file=ignore_bad_restart_file,
+                            label=label, atoms=atoms, **kwargs)
 
         self._shell = Cp2kShell(self.command, self._debug)
 

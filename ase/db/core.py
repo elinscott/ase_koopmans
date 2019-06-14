@@ -83,6 +83,11 @@ numeric_keys = set(['id', 'energy', 'magmom', 'charge', 'natoms'])
 
 def check(key_value_pairs):
     for key, value in key_value_pairs.items():
+        if key == "external_tables":
+            # Checks for external_tables are not
+            # performed
+            continue
+
         if not word.match(key) or key in reserved_keys:
             raise ValueError('Bad key: {}'.format(key))
         try:
@@ -146,6 +151,8 @@ def connect(name, type='extract_from_name', create_indices=True,
         elif (name.startswith('postgresql://') or
               name.startswith('postgres://')):
             type = 'postgresql'
+        elif name.startswith('mysql://') or name.startswith('mariadb://'):
+            type = 'mysql'
         else:
             type = os.path.splitext(name)[1][1:]
             if type == '':
@@ -158,7 +165,7 @@ def connect(name, type='extract_from_name', create_indices=True,
         if isinstance(name, str) and os.path.isfile(name):
             os.remove(name)
 
-    if type != 'postgresql' and isinstance(name, basestring):
+    if type not in ['postgresql', 'mysql'] and isinstance(name, basestring):
         name = os.path.abspath(name)
 
     if type == 'json':
@@ -171,6 +178,10 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type == 'postgresql':
         from ase.db.postgresql import PostgreSQLDatabase
         return PostgreSQLDatabase(name)
+
+    if type == 'mysql':
+        from ase.db.mysql import MySQLDatabase
+        return MySQLDatabase(name)
     raise ValueError('Unknown database type: ' + type)
 
 

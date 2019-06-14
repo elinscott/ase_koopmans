@@ -77,7 +77,8 @@ os.mkdir(testdir)
 
 
 def test(format):
-    if format in ['abinit', 'castep-cell', 'dftb', 'eon', 'gaussian']:
+    if format in ['abinit', 'castep-cell', 'dftb', 'eon', 'gaussian',
+                  'lammps-data']:
         # Someone should do something ...
         return
 
@@ -97,7 +98,7 @@ def test(format):
         # Complex dependencies; see animate.py test
         return
 
-    if format in ['postgresql', 'trj', 'vti', 'vtu']:
+    if format in ['postgresql', 'trj', 'vti', 'vtu', 'mysql']:
         # Let's not worry about these.
         return
 

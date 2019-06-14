@@ -15,7 +15,7 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     The difference from get_band_structure() is that the latter
     expects the calculation to already have been done."""
     if path is None:
-        lat, op = atoms.cell.bravais()
+        lat, op = atoms.cell.get_bravais_lattice()
         path = lat.bandpath()  # Default bandpath
 
     cellpar1 = path.cell.cellpar()
@@ -37,8 +37,6 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     if calc is None:
         raise ValueError('Atoms have no calculator')
 
-
-
     if scf_kwargs is not None:
         calc.set(**scf_kwargs)
 
@@ -54,12 +52,12 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     if bs_kwargs is None:
         bs_kwargs = {}
 
-    calc.set(kpts=path.scaled_kpts, **bs_kwargs)
+    calc.set(kpts=path, **bs_kwargs)
     calc.results.clear()  # XXX get rid of me
     atoms.get_potential_energy()
 
     ibzkpts = calc.get_ibz_k_points()
-    kpts_err = np.abs(path.scaled_kpts - ibzkpts).max()
+    kpts_err = np.abs(path.kpts - ibzkpts).max()
     if kpts_err > kpts_tol:
         raise RuntimeError('Kpoints of calculator differ from those '
                            'of the band path we just used; '
@@ -89,14 +87,13 @@ def get_band_structure(atoms=None, calc=None, _bandpath=None, _reference=None):
                          for k in range(len(kpts))])
     energies = np.array(energies)
 
-
     if _bandpath is None:
         from ase.dft.kpoints import BandPath, get_cellinfo, labels_from_kpts
         cellinfo = get_cellinfo(cell=atoms.cell)
         special_points = cellinfo.special_points
         _, _, labels = labels_from_kpts(kpts, cell=atoms.cell,
                                         special_points=special_points)
-        _bandpath = BandPath(labelseq=labels, cell=atoms.cell, scaled_kpts=kpts,
+        _bandpath = BandPath(labelseq=labels, cell=atoms.cell, kpts=kpts,
                              special_points=special_points)
 
     if _reference is None:
@@ -212,9 +209,6 @@ class BandStructurePlot:
                 kpt = kpt[0] + '$_' + kpt[1] + '$'
             return kpt
 
-        emin += self.bs.reference
-        emax += self.bs.reference
-
         self.xcoords, label_xcoords, orig_labels = self.bs.get_labels()
         label_xcoords = list(label_xcoords)
         labels = [pretty(name) for name in orig_labels]
@@ -235,9 +229,9 @@ class BandStructurePlot:
 
         ax.set_xticks(label_xcoords)
         ax.set_xticklabels(labels)
-        ax.axis(xmin=0, xmax=self.xcoords[-1], ymin=emin, ymax=emax)
         ax.set_ylabel(ylabel)
         ax.axhline(self.bs.reference, color='k', ls=':')
+        ax.axis(xmin=0, xmax=self.xcoords[-1], ymin=emin, ymax=emax)
         self.ax = ax
         return ax
 
@@ -271,13 +265,12 @@ class BandStructure:
                     energies=self.energies,
                     reference=self.reference)
 
-    def get_labels(self):
-        return labels_from_kpts(self.path.scaled_kpts, self.path.cell,
-                                special_points=self.path.special_points)
+    def get_labels(self, eps=1e-5):
+        """"See ase.dft.kpoints.labels_from_kpts()."""
+        return self.path.get_linear_kpoint_axis(eps=eps)
 
     def plot(self, *args, **kwargs):
         bsp = BandStructurePlot(self)
-        # Maybe return bsp?  But for now run the plot, for compatibility
         return bsp.plot(*args, **kwargs)
 
     def __repr__(self):

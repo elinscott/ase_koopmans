@@ -12,6 +12,7 @@ extensions = ['ext',
               'sphinx.ext.doctest',
               'sphinx.ext.mathjax',
               'sphinx.ext.viewcode',
+              'sphinx.ext.napoleon',
               'sphinx.ext.intersphinx']
 source_suffix = '.rst'
 master_doc = 'index'

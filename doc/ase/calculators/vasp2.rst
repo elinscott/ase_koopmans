@@ -1,4 +1,3 @@
-.. module:: ase
 .. module:: ase.calculators.vasp.vasp2
 
 ===========

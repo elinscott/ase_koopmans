@@ -4,7 +4,7 @@ from ase.io.jsonio import read_json
 from ase.calculators.test import FreeElectrons
 
 atoms = bulk('Au')
-lat, _ = atoms.cell.bravais()
+lat = atoms.cell.get_bravais_lattice()
 path = lat.bandpath(npoints=100)
 
 atoms.calc = FreeElectrons()
