@@ -121,6 +121,16 @@ class Dynamics:
         >>>     opt1.run()
         """
 
+        # let the user inspect the atoms before algorithm is started
+        yield False
+
+        # compute inital structure and log the first step
+        self.atoms.get_forces()
+
+        if self.nsteps == 0:
+            self.log()
+            self.call_observers()
+
         # run the algorithm until converged or max_steps reached
         while not self.converged() and self.nsteps < self.max_steps:
 
@@ -156,9 +166,13 @@ class Dynamics:
         return False
 
     def log(self, *args):
-        """" a dummy function as placeholder for a real logger, e.g. in
+        """ a dummy function as placeholder for a real logger, e.g. in
         Optimizer """
         return True
+
+    def step(self):
+        """this needs to be implemented by subclasses"""
+        raise RuntimeError('step not implemented.')
 
 
 class Optimizer(Dynamics):
