@@ -134,7 +134,7 @@ special = {'cp2k': 'CP2K',
 external_calculators = {}
 
 
-def register_calculator(name, cls):
+def register_calculator_class(name, cls):
     assert name not in external_calculators
     external_calculators[name] = cls
     names.append(name)
