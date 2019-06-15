@@ -290,7 +290,7 @@ class Dftb(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         from ase.io import write
-        if 'forces' in properties:
+        if properties is not None and 'forces' in properties:
             self.do_forces = True
         FileIOCalculator.write_input(
             self, atoms, properties, system_changes)
