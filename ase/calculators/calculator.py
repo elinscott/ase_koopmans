@@ -135,13 +135,14 @@ external_calculators = {}
 
 
 def register_calculator_class(name, cls):
+    """ Add the class into the database. """
     assert name not in external_calculators
     external_calculators[name] = cls
     names.append(name)
     names.sort()
 
 
-def get_calculator(name):
+def get_calculator_class(name):
     """Return calculator class."""
     if name == 'asap':
         from asap3 import EMT as Calculator
