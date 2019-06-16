@@ -1184,7 +1184,9 @@ def all_variants():
     assert rhl2.variant.name == 'RHL2'
     yield rhl2
 
-    yield MCL(a, b, c, alpha)
+    # With these lengths, alpha < 65 (or so) would result in a lattice that
+    # could also be represented with alpha > 65, which is more conventional.
+    yield MCL(a, b, c, alpha=70.0)
 
     mclc1 = MCLC(a, b, c, 80)
     assert mclc1.variant.name == 'MCLC1'
@@ -1196,7 +1198,7 @@ def all_variants():
     yield mclc3
     # mclc4 has same special points as mclc3
 
-    mclc5 = MCLC(b, b, 1.1 * b, 50)
+    mclc5 = MCLC(b, b, 1.1 * b, 70)
     assert mclc5.variant.name == 'MCLC5'
     yield mclc5
 
