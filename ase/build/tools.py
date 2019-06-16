@@ -453,16 +453,24 @@ def niggli_reduce_cell(cell, epsfactor=None):
     def eq(x, y, eps=eps):
         return not (lt(x, y, eps) or gt(x, y, eps))
 
+    i = 0
     while True:
+        i += 1
+        if i >= 10000:
+            raise RuntimeError('Niggli reduction not done in 10000 steps!\n'
+                               'cell={}\n'
+                               'operation={}'
+                               .format(cell.tolist(), C.tolist()))
+
         if (gt(g[0], g[1])
                 or (eq(g[0], g[1]) and gt(abs(g[3]), abs(g[4])))):
-            A = -np.eye(3)[[1, 0, 2]]
+            A = -np.eye(3, dtype=int)[[1, 0, 2]]
             C = np.dot(C, A)
             g = g[[1, 0, 2, 4, 3, 5]]
             continue
         elif (gt(g[1], g[2])
                 or (eq(g[1], g[2]) and gt(abs(g[4]), abs(g[5])))):
-            A = -np.eye(3)[[0, 2, 1]]
+            A = -np.eye(3, dtype=int)[[0, 2, 1]]
             C = np.dot(C, A)
             g = g[[0, 2, 1, 3, 5, 4]]
             continue
