@@ -16,8 +16,9 @@ def process_metadata(db, html: bool = True):  # -> Dict
             mod = {}
             code = 'import sys; sys.path[:0] = ["{}"]; {}'.format(path, code)
 
-            # We use eval here instead of exec because it works on both
-            # Python 2 and 3.
+            # The filename from where the code is read comes from a
+            # command line argument (ase db <db-file> -M <python-file>)
+            # or from a configuration file.  So, eval() is safe here:
             eval(compile(code, db.python, 'exec'), mod, mod)
         else:
             mod = db.python
