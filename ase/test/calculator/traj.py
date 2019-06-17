@@ -1,6 +1,6 @@
 import os
 
-from ase.calculators.calculator import get_calculator
+from ase.calculators.calculator import get_calculator_class
 from ase.io import read, write
 from ase.build import molecule
 from ase.test import test_calculator_names
@@ -9,7 +9,7 @@ from ase.test import test_calculator_names
 def h2(name, par):
     h2 = molecule('H2', pbc=par.pop('pbc', False))
     h2.center(vacuum=2.0)
-    h2.calc = get_calculator(name)(**par)
+    h2.calc = get_calculator_class(name)(**par)
     e = h2.get_potential_energy()
     assert not h2.calc.calculation_required(h2, ['energy'])
     f = h2.get_forces()
