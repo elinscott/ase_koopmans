@@ -7,6 +7,9 @@ from os import remove
 from os.path import isfile
 from ase.atoms import Atoms
 from ase.calculators.vasp import Vasp
+from ase.test.vasp import installed
+
+assert installed()
 
 
 def check_potcar(setups, filename='POTCAR'):
