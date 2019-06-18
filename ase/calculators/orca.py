@@ -1,4 +1,4 @@
-"""This module defines an ASE interface to ORCA 3.0.3
+"""This module defines an ASE interface to ORCA 4
 by Ragnar Bjornsson
 Based on NWchem interface but simplified.
 Only supports energies and gradients (no dipole moments, orbital energies etc.) for now.
@@ -7,6 +7,8 @@ Instead two keywords, orcasimpleinput and orcablock are used to define
 the ORCA simple-inputline and the ORCA-block input.
 This allows for more flexible use of any ORCA method or keyword available in ORCA
 instead of hardcoding stuff.
+
+Point Charge IO functionality added by A. Dohn.
 """
 import os
 import numpy as np
@@ -55,6 +57,14 @@ class ORCA(FileIOCalculator):
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         p = self.parameters
+
+        if self.pcpot:  # also write point charge file and add things to input
+            pcstring = '% pointcharges \"' +\
+                        self.label +\
+                        '.pc\"\n\n% method \nDoEQ true \nend\n\n' 
+            p['orcablocks'] += pcstring
+            self.pcpot.write_mmcharges(self.label)
+
         p.write(self.label + '.ase')
         f = open(self.label + '.inp', 'w')
         f.write("! tightscf engrad %s \n" % p.orcasimpleinput);
@@ -62,9 +72,6 @@ class ORCA(FileIOCalculator):
 
         write_orca(f, atoms, p.charge, p.mult)
         f.close()
-
-        if self.pcpot:  # also write point charge file
-            self.pcpot.write_mmcharges(self.label)
 
     def read(self, label):
         FileIOCalculator.read(self, label)
