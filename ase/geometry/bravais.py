@@ -555,8 +555,8 @@ class RHL(BravaisLattice):
 
 
 def check_mcl(a, b, c, alpha):
-    if not (a <= c and b <= c and alpha < 90):
-        raise UnconventionalLattice('Expected a <= c, b <= c, alpha < 90; '
+    if not (b <= c and alpha < 90):
+        raise UnconventionalLattice('Expected b <= c, alpha < 90; '
                                     'got a={}, b={}, c={}, alpha={}'
                                     .format(a, b, c, alpha))
 
@@ -789,7 +789,7 @@ class TRI(BravaisLattice):
                 var = '2b'
             else:
                 # Is this possible?  Maybe due to epsilon
-                assert 0, 'unexpected combination of angles'
+                raise UnconventionalLattice('Unexpected combination of angles')
         elif all(kangles > 90):# and kgamma < min(kalpha, kbeta):
             var = '1a'
         elif all(kangles < 90):# and kgamma > max(kalpha, kbeta):
@@ -980,6 +980,153 @@ def get_lattice_from_canonical_cell(cell, eps=2e-4):
     raise RuntimeError('Could not find lattice type for {}'.format(cell))
 
 
+class LatticeChecker:
+    # The check order is slightly different than elsewhere listed order
+    # as we need to check HEX/RHL before the ORCx family.
+    check_order = ['CUB', 'FCC', 'BCC', 'TET', 'BCT', 'HEX', 'RHL',
+                   'ORC', 'ORCF', 'ORCI', 'ORCC', 'MCL', 'MCLC', 'TRI']
+
+    def __init__(self, cell, eps=2e-4):
+        """Generate Bravais lattices that look (or not) like the given cell.
+
+        The cell must be reduced to canonical form, i.e., it must
+        be possible to produce a cell with the same lengths and angles
+        by directly through one of the Bravais lattice classes.
+
+        Generally for internal use (this module).
+
+        For each of the 14 Bravais lattices, this object can produce
+        a lattice object which represents the same cell, or None if
+        the tolerance eps is not met."""
+        self.cell = cell
+        self.eps = eps
+
+        self.cellpar = cell.cellpar()
+        self.lengths = self.A, self.B, self.C = self.cellpar[:3]
+        self.angles = self.cellpar[3:]
+
+        # Use a 'neutral' length for checking cubic lattices
+        self.A0 = self.lengths.mean()
+
+        # Vector of the diagonal and then off-diagonal dot products:
+        #   [a1 · a1, a2 · a2, a3 · a3, a2 · a3, a3 · a1, a1 · a2]
+        self.prods = (cell @ cell.T).flat[[0, 4, 8, 5, 2, 1]]
+
+    def _check(self, latcls, *args):
+        if any(arg <= 0 for arg in args):
+            return None
+        try:
+            lat = latcls(*args)
+        except UnconventionalLattice:
+            return None
+
+        newcell = lat.tocell()
+        err = celldiff(self.cell, newcell)
+        if err < self.eps:
+            return lat
+
+    def match(self):
+        for name in self.check_order:
+            latfunc = getattr(self, name)
+            lat = latfunc()
+            if lat:
+                return lat
+        else:
+            raise RuntimeError('Cell did not match any canonical form')
+
+    def CUB(self):
+        return self._check(CUB, self.A0)
+
+    def FCC(self):
+        return self._check(FCC, np.sqrt(2) * self.A0)
+
+    def BCC(self):
+        return self._check(BCC, 2.0 * self.A0 / np.sqrt(3))
+
+    def TET(self):
+        return self._check(TET, self.A, self.C)
+
+    def _bct_orci_lengths(self):
+        # Coordinate-system independent relation for BCT and ORCI
+        # standard cells:
+        #   a1 · a1 + a2 · a3 == a² / 2
+        #   a2 · a2 + a3 · a1 == a² / 2 (BCT)
+        #                     == b² / 2 (ORCI)
+        #   a3 · a3 + a1 · a2 == c² / 2
+        # We use these to get a, b, and c in those cases.
+        prods = self.prods
+        lengthsqr = 2.0 * (prods[:3] + prods[3:])
+        if any(lengthsqr) < 0:
+            return None
+        return np.sqrt(lengthsqr)
+
+    def BCT(self):
+        lengths = self._bct_orci_lengths()
+        if lengths is None:
+            return None
+        return self._check(BCT, lengths[0], lengths[2])
+
+    def HEX(self):
+        return self._check(HEX, self.A, self.C)
+
+    def RHL(self):
+        return self._check(RHL, self.A, self.angles[0])
+
+    def ORC(self):
+        return self._check(ORC, *self.lengths)
+
+    def ORCF(self):
+        # ORCF standard cell:
+        #   a2 · a3 = a²/4
+        #   a3 · a1 = b²/4
+        #   a1 · a2 = c²/4
+        prods = self.prods
+        if all(prods[3:] > 0):
+            orcf_abc = 2 * np.sqrt(prods[3:])
+            return self._check(ORCF, *orcf_abc)
+
+    def ORCI(self):
+        lengths = self._bct_orci_lengths()
+        if lengths is None:
+            return None
+        return self._check(ORCI, *lengths)
+
+    def _orcc_ab(self):
+        # ORCC: a1 · a1 + a2 · a3 = a²/2
+        #       a2 · a2 - a2 · a3 = b²/2
+        prods = self.prods
+        orcc_sqr_ab = np.empty(2)
+        orcc_sqr_ab[0] = 2.0 * (prods[0] + prods[5])
+        orcc_sqr_ab[1] = 2.0 * (prods[1] - prods[5])
+        if all(orcc_sqr_ab > 0):
+            return np.sqrt(orcc_sqr_ab)
+
+    def ORCC(self):
+        orcc_lengths_ab = self._orcc_ab()
+        if orcc_lengths_ab is None:
+            return None
+        return self._check(ORCC, *orcc_lengths_ab, self.C)
+
+    def MCL(self):
+        return self._check(MCL, *self.lengths, self.angles[0])
+
+    def MCLC(self):
+        # MCLC is similar to ORCC:
+        ab = self._orcc_ab()
+        if ab is None:
+            return None
+
+        mclc_a, mclc_b = ab
+        mclc_cosa = 2.0 * self.prods[3] / (mclc_b * self.C)
+        if -1 < mclc_cosa < 1:
+            mclc_alpha = np.arccos(mclc_cosa) * 180 / np.pi
+            return self._check(MCLC, mclc_a, mclc_b, self.C, mclc_alpha)
+
+    def TRI(self):
+        return self._check(TRI, *self.cellpar)
+
+
+
 def map_cell_to_all_lattices(cell):
     """Generate Bravais lattices that look (or not) like the given cell.
 
@@ -989,6 +1136,7 @@ def map_cell_to_all_lattices(cell):
     For each of the 14 Bravais lattices, yield a tuple like (name,
     lattice object) to suggest a Bravais lattice for comparing to
     the input cell.  Lattice may be None or omitted if undefined."""
+
     cellpar = cell.cellpar()
     A, B, C = lengths = cellpar[:3]
 
