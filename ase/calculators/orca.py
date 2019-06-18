@@ -13,8 +13,6 @@ Point Charge IO functionality added by A. Dohn.
 import os
 import numpy as np
 
-from warnings import warn
-from ase.atoms import Atoms
 from ase.units import Hartree, Bohr
 from ase.io.orca import write_orca
 from ase.calculators.calculator import FileIOCalculator, Parameters, ReadError
