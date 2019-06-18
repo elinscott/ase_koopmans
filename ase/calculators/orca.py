@@ -60,8 +60,7 @@ class ORCA(FileIOCalculator):
 
         if self.pcpot:  # also write point charge file and add things to input
             pcstring = '% pointcharges \"' +\
-                        self.label +\
-                        '.pc\"\n\n% method \nDoEQ true \nend\n\n' 
+                        self.label + '.pc\"\n\n' 
             p['orcablocks'] += pcstring
             self.pcpot.write_mmcharges(self.label)
 
@@ -113,7 +112,7 @@ class ORCA(FileIOCalculator):
 
     def read_forces(self):
         """Read Forces from ORCA output file."""
-        file = open('orca.engrad', 'r')
+        file = open(self.label + '.engrad', 'r')
         lines = file.readlines()
         file.close()
         getgrad="no"
