@@ -136,12 +136,12 @@ class ORCA(FileIOCalculator):
     def embed(self, mmcharges=None, **parameters):
         """Embed atoms in point-charges (mmcharges)
         """
-        self.pcpot = PointChargePotential(mmcharges)
+        self.pcpot = PointChargePotential(mmcharges, label=self.label)
         return self.pcpot
         
 
 class PointChargePotential:
-    def __init__(self, mmcharges, positions=None, directory=None):
+    def __init__(self, mmcharges, label=None, positions=None, directory=None):
         """ Point Charge Potential Interface to ORCA """
         if positions is not None:
             self.set_positions(positions)
@@ -150,6 +150,7 @@ class PointChargePotential:
 
         self.directory = directory + os.sep
         self.mmcharges = mmcharges
+        self.label = label 
 
     def set_positions(self, positions):
         self.positions = positions
@@ -167,8 +168,19 @@ class PointChargePotential:
             pc_file.write('{0:12.6f} {1:12.6f} {2:12.6f} {3:12.6f}\n'
                           .format(pc, x, y, z))
 
+    def get_forces(self, calc):
+        ''' reads forces on point charges from .pcgrad file '''
+        with open(os.path.join(self.directory, self.label + '.pcgrad'), 'r') as f:
+            lines = f.readlines()
+        numpc = int(lines[0])
+        forces = np.zeros((numpc, 3))
+        for i in range(numpc):
+            [fx, fy, fz] = [float(f) for f in lines[i + 1].split()]
+            forces[i, :] = fx, fy, fz
 
+        return -forces * Hartree / Bohr
 
+        
 
 
 
