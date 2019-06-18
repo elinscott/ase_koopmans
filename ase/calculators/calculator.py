@@ -131,7 +131,18 @@ special = {'cp2k': 'CP2K',
            'tip3p': 'TIP3P'}
 
 
-def get_calculator(name):
+external_calculators = {}
+
+
+def register_calculator_class(name, cls):
+    """ Add the class into the database. """
+    assert name not in external_calculators
+    external_calculators[name] = cls
+    names.append(name)
+    names.sort()
+
+
+def get_calculator_class(name):
     """Return calculator class."""
     if name == 'asap':
         from asap3 import EMT as Calculator
@@ -143,6 +154,8 @@ def get_calculator(name):
         from ase.calculators.vasp import Vasp2 as Calculator
     elif name == 'ace':
         from ase.calculators.acemolecule import ACE as Calculator
+    elif name in external_calculators:
+        Calculator = external_calculators[name]
     else:
         classname = special.get(name, name.title())
         module = __import__('ase.calculators.' + name, {}, None, [classname])

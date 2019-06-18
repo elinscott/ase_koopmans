@@ -2,7 +2,7 @@ import unittest
 
 from ase.build import bulk
 from ase.dft.bandgap import bandgap
-from ase.calculators.calculator import get_calculator
+from ase.calculators.calculator import get_calculator_class
 
 kpts = (4, 4, 4)
 
@@ -16,7 +16,7 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001, chksymbreak=0),
 
 
 def run(name):
-    Calculator = get_calculator(name)
+    Calculator = get_calculator_class(name)
     par = required.get(name, {})
     calc = Calculator(label=name + '_bandgap', xc='PBE',
                       # abinit, aims, elk - do not recognize the syntax below:

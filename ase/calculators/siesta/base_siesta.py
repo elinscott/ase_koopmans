@@ -66,7 +66,7 @@ class BaseSiesta(FileIOCalculator):
     allowed_xc = {}
     allowed_fdf_keywords = {}
     unit_fdf_keywords = {}
-    name = 'Siesta'
+    name = 'siesta'
     command = 'siesta < PREFIX.fdf > PREFIX.out'
     implemented_properties = (
         'energy',
@@ -460,6 +460,7 @@ class BaseSiesta(FileIOCalculator):
 
 
     def getpath(self, fname=None, ext=None):
+        """ Returns the directory/fname string """
         if fname is None:
             fname = self.prefix
         if ext is not None:
@@ -966,10 +967,10 @@ class BaseSiesta(FileIOCalculator):
 
         fname = self.getpath(ext='EIG')
         try:
-            f = open(fname, "r")
-            self.results['fermi_energy'] = float(f.readline())
-            n, nspin, nkp = map(int, f.readline().split())
-            _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
+            with open(fname, "r") as f:
+                self.results['fermi_energy'] = float(f.readline())
+                n, nspin, nkp = map(int, f.readline().split())
+                _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
         except (IOError):
             return 1
 
@@ -988,9 +989,9 @@ class BaseSiesta(FileIOCalculator):
 
         fname = self.getpath(ext='KP')
         try:
-            f = open(fname, "r")
-            nkp = int(f.readline())
-            _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
+            with open(fname, "r") as f:
+                nkp = int(f.readline())
+                _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
         except (IOError):
             return 1
 
@@ -1193,7 +1194,7 @@ class BaseSiesta(FileIOCalculator):
                                kernel_name = "tddft_kernel.npy",
                                tmp_fname = None,
                                **kw):
-        """
+        r"""
         Perform TDDFT calculation using the pyscf.nao module for a molecule.
         The external pertubation is created by a electron moving at the velocity velec
         and with an impact parameter b
@@ -1301,9 +1302,7 @@ class BaseSiesta(FileIOCalculator):
         ax2.set_title(r"Interacting")
 
         fig.tight_layout()
-
         plt.show()
-
         """
 
 

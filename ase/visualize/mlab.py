@@ -6,7 +6,7 @@ import numpy as np
 from ase.data import covalent_radii
 from ase.io.cube import read_cube_data
 from ase.data.colors import cpk_colors
-from ase.calculators.calculator import get_calculator
+from ase.calculators.calculator import get_calculator_class
 
 
 def plot(atoms, data, contours):
@@ -92,7 +92,7 @@ def main(args=None):
     if arg.endswith('.cube'):
         data, atoms = read_cube_data(arg)
     else:
-        calc = get_calculator(opts.calculator_name)(arg, txt=None)
+        calc = get_calculator_class(opts.calculator_name)(arg, txt=None)
         atoms = calc.get_atoms()
         if opts.band_index is None:
             if opts.electrostatic_potential:

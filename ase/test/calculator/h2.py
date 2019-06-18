@@ -1,6 +1,6 @@
 import unittest
 from ase.build import molecule
-from ase.calculators.calculator import get_calculator
+from ase.calculators.calculator import get_calculator_class
 
 
 required = {'abinit': dict(ecut=200, toldfe=0.0001),
@@ -10,7 +10,7 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001),
 
 
 def h2dft(name):
-    Calculator = get_calculator(name)
+    Calculator = get_calculator_class(name)
     par = required.get(name, {})
     calc = Calculator(label=name, xc='LDA', **par)
     h2 = molecule('H2', calculator=calc)

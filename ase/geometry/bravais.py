@@ -1069,14 +1069,19 @@ def get_bravais_lattice(uc, eps=2e-4, _niggli_reduce=False):
 
 def get_2d_bravais_lattice(origcell, eps=2e-4, _niggli_reduce=True):
     pbc = origcell.pbc
+    assert pbc.sum() == 2
+    nonperiodic = pbc.argmin()
     # Start with op = I
     ops = [np.eye(3)]
     for i in range(-1, 1):
         for j in range(-1, 1):
-            op = [[1, 0, 0],
-                  [i, 1, j],
-                  [0, 0, 1]]
-            ops.append(np.array(op))
+            op = [[1, j],
+                  [i, 1]]
+            if np.abs(np.linalg.det(op)) > 1e-5:
+                # Only touch periodic dirs:
+                op = np.insert(op, nonperiodic, [0, 0], 0)
+                op = np.insert(op, nonperiodic, ~pbc, 1)
+                ops.append(np.array(op))
 
     def allclose(a, b):
         return np.allclose(a, b, atol=eps)
@@ -1086,25 +1091,14 @@ def get_2d_bravais_lattice(origcell, eps=2e-4, _niggli_reduce=True):
         cell = Cell(op.dot(origcell), pbc=pbc)
         cellpar = cell.cellpar()
         angles = cellpar[3:]
+        # Find a, b and gamma
+        gamma = angles[~pbc][0]
+        a, b = cellpar[:3][cell.pbc]
+
         anglesm90 = np.abs(angles - 90)
         # Maximum one angle different from 90 deg in 2d please
         if np.sum(anglesm90 > eps) > 1:
             continue
-
-        # Find a and b
-        if np.sum(anglesm90 < eps) == 3:
-            a, b = cellpar[0:2]
-            gamma = 90
-        else:
-            # Find angle that is not 90
-            ind = np.argmax(anglesm90)
-            if ind == 0:
-                a, b = cellpar[1:3]
-            elif ind == 1:
-                a, b = cellpar[2], cellpar[0]
-            else:
-                a, b = cellpar[0], cellpar[1]
-            gamma = angles[ind]
 
         all_lengths_equal = abs(a - b) < eps
 
