@@ -59,8 +59,12 @@ class ORCA(FileIOCalculator):
         f = open(self.label + '.inp', 'w')
         f.write("! tightscf engrad %s \n" % p.orcasimpleinput);
         f.write("%s \n" % p.orcablocks)
-        write_orca(f,atoms,p.charge,p.mult)
+
+        write_orca(f, atoms, p.charge, p.mult)
         f.close()
+
+        if self.pcpot:  # also write point charge file
+            self.pcpot.write_mmcharges(self.label)
 
     def read(self, label):
         FileIOCalculator.read(self, label)
@@ -121,4 +125,45 @@ class ORCA(FileIOCalculator):
             if '# The at' in line:
                 getgrad="no"
         self.results['forces'] = -np.array(gradients) * Hartree / Bohr
+
+    def embed(self, mmcharges=None, **parameters):
+        """Embed atoms in point-charges (mmcharges)
+        """
+        self.pcpot = PointChargePotential(mmcharges)
+        return self.pcpot
+        
+
+class PointChargePotential:
+    def __init__(self, mmcharges, positions=None, directory=None):
+        """ Point Charge Potential Interface to ORCA """
+        if positions is not None:
+            self.set_positions(positions)
+        if directory is None:
+            directory = os.getcwd()
+
+        self.directory = directory + os.sep
+        self.mmcharges = mmcharges
+
+    def set_positions(self, positions):
+        self.positions = positions
+
+    def set_charges(self, mmcharges):
+        self.q_p = mmcharges
+
+    def write_mmcharges(self, filename='orca_mm'):
+        pc_file = open(os.path.join(self.directory, 
+                                    filename + '.pc'), 'w')
+
+        pc_file.write('{0:d}\n'.format(len(self.mmcharges)))
+        for [pos, pc] in zip(self.positions, self.mmcharges):
+            [x, y, z] = pos
+            pc_file.write('{0:12.6f} {1:12.6f} {2:12.6f} {3:12.6f}\n'
+                          .format(pc, x, y, z))
+
+
+
+
+
+
+
 
