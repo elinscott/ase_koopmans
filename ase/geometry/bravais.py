@@ -938,8 +938,7 @@ def get_bravais_lattice(cell, eps=2e-4):
     cell = Cell.ascell(cell)
 
     if cell.pbc.all():
-        from ase.geometry.bravais_type_engine import identify_lattice
-        lat, op = identify_lattice(cell, eps=eps)
+        lat, op = new_identify_lattice(cell, eps=eps)
         return lat
     elif cell.pbc[:2].all():
         return get_2d_bravais_lattice(cell, eps)
@@ -976,6 +975,31 @@ def get_lattice_from_canonical_cell(cell, eps=2e-4):
         err = celldiff(cell, testcell)
         if err <= eps:
             return lat
+
+    raise RuntimeError('Could not find lattice type for {}'.format(cell))
+
+
+def new_identify_lattice(cell, eps=2e-4):
+    from ase.geometry.bravais_type_engine import niggli_op_table
+    rcell, reduction_op = cell.niggli_reduce()
+
+    cache = {}
+
+    for latname in LatticeChecker.check_order:
+        for op_key in niggli_op_table[latname]:
+            checker_and_op = cache.get(op_key)
+            if checker_and_op is None:
+                normalization_op = np.array(op_key).reshape(3, 3)
+                candidate = Cell(np.linalg.inv(normalization_op.T) @ rcell)
+                checker = LatticeChecker(candidate, eps=eps)
+                cache[op_key] = (checker, normalization_op)
+            else:
+                checker, normalization_op = checker_and_op
+
+            lat = checker.query(latname)
+            if lat is not None:
+                op = normalization_op @ np.linalg.inv(reduction_op)
+                return lat, op
 
     raise RuntimeError('Could not find lattice type for {}'.format(cell))
 
@@ -1027,12 +1051,16 @@ class LatticeChecker:
 
     def match(self):
         for name in self.check_order:
-            latfunc = getattr(self, name)
-            lat = latfunc()
+            lat = self.query(name)
             if lat:
                 return lat
         else:
             raise RuntimeError('Cell did not match any canonical form')
+
+    def query(self, latname):
+        meth = getattr(self, latname)
+        lat = meth()
+        return lat
 
     def CUB(self):
         return self._check(CUB, self.A0)
@@ -1056,7 +1084,7 @@ class LatticeChecker:
         # We use these to get a, b, and c in those cases.
         prods = self.prods
         lengthsqr = 2.0 * (prods[:3] + prods[3:])
-        if any(lengthsqr) < 0:
+        if any(lengthsqr < 0):
             return None
         return np.sqrt(lengthsqr)
 
