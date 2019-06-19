@@ -4,7 +4,7 @@ import numpy as np
 
 from ase import Atoms
 from ase.constraints import dict2constraint
-from ase.calculators.calculator import get_calculator, all_properties
+from ase.calculators.calculator import get_calculator_class, all_properties
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import chemical_symbols, atomic_masses
@@ -227,7 +227,7 @@ class AtomsRow:
 
         if attach_calculator:
             params = self.get('calculator_parameters', {})
-            atoms.calc = get_calculator(self.calculator)(**params)
+            atoms.calc = get_calculator_class(self.calculator)(**params)
         else:
             results = {}
             for prop in all_properties:
