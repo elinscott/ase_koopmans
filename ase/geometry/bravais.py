@@ -1023,7 +1023,7 @@ def identify_lattice(cell, eps=2e-4):
                     if lat.alpha > best_angle:
                         best_angle = lat.alpha
                         best = (lat, op)
-            elif latname == 'BCT':
+            elif latname in ['BCT', 'ORCI']:
                 best = matching_lattices[0]  # XXX which one??
             else:
                 assert len(matching_lattices) == 1, matching_lattices
