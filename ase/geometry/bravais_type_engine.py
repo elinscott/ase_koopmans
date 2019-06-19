@@ -1,8 +1,7 @@
 import itertools
 import numpy as np
 from ase.geometry.bravais import (bravais_lattices, UnconventionalLattice,
-                                  bravais_names,
-                                  get_lattice_from_canonical_cell)
+                                  bravais_names)
 from ase.geometry import Cell
 
 """This module implements a crude method to recognize most Bravais lattices.
