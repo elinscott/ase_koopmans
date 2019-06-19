@@ -30,8 +30,10 @@ def check(name, cell):
 
     # Check all three positive permutations:
     check_single(name + '@012', cell[[0, 1, 2]], pbc=pbc)
-    check_single(name + '@201', cell[[2, 0, 1]], pbc=pbc)
-    check_single(name + '@120', cell[[1, 2, 0]], pbc=pbc)
+    # XXX 2D lattice determination not implemented for arbitrary permutations
+    if pbc.sum() == 3:
+        check_single(name + '@201', cell[[2, 0, 1]], pbc=pbc)
+        check_single(name + '@120', cell[[1, 2, 0]], pbc=pbc)
 
 
 check('cub', bravais['cub'](3.3).tocell())
