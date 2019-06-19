@@ -983,25 +983,56 @@ def new_identify_lattice(cell, eps=2e-4):
     from ase.geometry.bravais_type_engine import niggli_op_table
     rcell, reduction_op = cell.niggli_reduce()
 
-    cache = {}
+    # We tabulate the cell's Niggli-mapped versions so we don't need to
+    # redo any work when the same Niggli-operation appears multiple times
+    # in the table:
+    memory = {}
 
+    # We loop through the most symmetric kinds (CUB etc.) and return
+    # the first one we find:
     for latname in LatticeChecker.check_order:
+        # There may be multiple Niggli operations that produce valid
+        # lattices, at least for MCL.  In that case we will pick the
+        # one whose angle is closest to 90, but it means we cannot
+        # just return the first one we find so we must remember then:
+        matching_lattices = []
+
+        ident = (1, 0, 0, 0, 1, 0, 0, 0, 1)
+
         for op_key in niggli_op_table[latname]:
-            checker_and_op = cache.get(op_key)
+            checker_and_op = memory.get(op_key)
             if checker_and_op is None:
                 normalization_op = np.array(op_key).reshape(3, 3)
                 candidate = Cell(np.linalg.inv(normalization_op.T) @ rcell)
                 checker = LatticeChecker(candidate, eps=eps)
-                cache[op_key] = (checker, normalization_op)
+                memory[op_key] = (checker, normalization_op)
             else:
                 checker, normalization_op = checker_and_op
 
             lat = checker.query(latname)
             if lat is not None:
                 op = normalization_op @ np.linalg.inv(reduction_op)
-                return lat, op
+                matching_lattices.append((lat, op))
 
-    raise RuntimeError('Could not find lattice type for {}'.format(cell))
+        # Now find the best lattice among the valid ones:
+        if matching_lattices:
+            if latname in ['MCL', 'MCLC']:
+                best = None
+                best_angle = 0
+                for lat, op in matching_lattices:
+                    if lat.alpha > best_angle:
+                        best_angle = lat.alpha
+                        best = (lat, op)
+            elif latname == 'BCT':
+                best = matching_lattices[0]  # XXX which one??
+            else:
+                assert len(matching_lattices) == 1, matching_lattices
+                best = matching_lattices[0]
+
+            return best
+
+    raise RuntimeError('Could not find lattice type for cell with lengths '
+                       'and angles {}'.format(cell.cellpar().tolist()))
 
 
 class LatticeChecker:
@@ -1140,15 +1171,17 @@ class LatticeChecker:
 
     def MCLC(self):
         # MCLC is similar to ORCC:
-        ab = self._orcc_ab()
-        if ab is None:
+        orcc_ab = self._orcc_ab()
+        if orcc_ab is None:
             return None
 
-        mclc_a, mclc_b = ab
-        mclc_cosa = 2.0 * self.prods[3] / (mclc_b * self.C)
+        prods = self.prods
+        C = self.C
+        mclc_a, mclc_b = orcc_ab[::-1]  # a, b reversed wrt. ORCC
+        mclc_cosa = 2.0 * prods[3] / (mclc_b * C)
         if -1 < mclc_cosa < 1:
             mclc_alpha = np.arccos(mclc_cosa) * 180 / np.pi
-            return self._check(MCLC, mclc_a, mclc_b, self.C, mclc_alpha)
+            return self._check(MCLC, mclc_a, mclc_b, C, mclc_alpha)
 
     def TRI(self):
         return self._check(TRI, *self.cellpar)
