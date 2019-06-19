@@ -964,6 +964,7 @@ def get_bravais_lattice(cell, eps=2e-4):
 
 
 def celldiff(cell1, cell2):
+    """Return a unitless measure of the difference between two cells."""
     cell1 = Cell.ascell(cell1).complete()
     cell2 = Cell.ascell(cell2).complete()
     v1v2 = cell1.volume * cell2.volume
@@ -1085,6 +1086,9 @@ class LatticeChecker:
             return lat
 
     def match(self):
+        """Match cell against all lattices, returning most symmetric match.
+
+        Returns the lattice object.  Raises RuntimeError on failure."""
         for name in self.check_order:
             lat = self.query(name)
             if lat:
@@ -1095,11 +1099,16 @@ class LatticeChecker:
                                .format(self.cell.cellpar().tolist()))
 
     def query(self, latname):
+        """Match cell against named Bravais lattice.
+
+        Return lattice object on success, None on failure."""
         meth = getattr(self, latname)
         lat = meth()
         return lat
 
     def CUB(self):
+        # These methods (CUB, FCC, ...) all return a lattice object if
+        # it matches, else None.
         return self._check(CUB, self.A0)
 
     def FCC(self):

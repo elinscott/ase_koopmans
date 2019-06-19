@@ -23,9 +23,15 @@ for lat in all_variants():
 
     check(get_lattice_from_canonical_cell(cell))
 
-    if lat.name not in ['TRI']:
-        stdcell, op = identify_lattice(cell, 1e-4)
-        check(stdcell)
-        rcell, op = cell.niggli_reduce()
-        stdcell, op = identify_lattice(rcell, 1e-4)
-        check(stdcell)
+    if lat.name == 'TRI':
+        # The TRI lattices generally permute (the ones we produce as
+        # all_variants() are reduced to a form with smaller
+        # orthogonality defect) which might be desirable but would
+        # trigger an error in this test.
+        continue
+
+    stdcell, op = identify_lattice(cell, 1e-4)
+    check(stdcell)
+    rcell, op = cell.niggli_reduce()
+    stdcell, op = identify_lattice(rcell, 1e-4)
+    check(stdcell)

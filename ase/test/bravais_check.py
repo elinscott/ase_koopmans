@@ -56,7 +56,7 @@ check('hex', bravais['hex'](5., 6.).tocell())
 check('rhl', bravais['rhl'](4., 54.).tocell())
 check('mcl', bravais['mcl'](2., 3., 4., 62.).tocell())
 check('mclc', bravais['mclc'](3., 4., 5., 75.).tocell())
-#check('tri', bravais['tri'](7., 6., 5., 65., 70., 80.).tocell())
+check('tri', bravais['tri'](7., 6., 5., 65., 70., 80.).tocell())
 
 # For 2D materials we have to check both the tocell() method
 # but also for realistic cell nonzero nonperiodic axis.
