@@ -92,7 +92,7 @@ class Cell:
 
         This is similar to cellpar_to_cell()."""
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
-        return Cell(cell, pbc=pbc)
+        return cls(cell, pbc=pbc)
 
     def get_bravais_lattice(self, eps=2e-4):
         # We want to always reduce (so things are as robust as possible)
@@ -213,9 +213,9 @@ class Cell:
             pbc = False
         return 'Cell({}, pbc={})'.format(numbers, pbc)
 
-    def niggli_reduce(self):
+    def niggli_reduce(self, eps=1e-5):
         from ase.build.tools import niggli_reduce_cell
-        cell, op = niggli_reduce_cell(self.array)
+        cell, op = niggli_reduce_cell(self.array, epsfactor=1e-5)
         return Cell(cell, self.pbc), op
 
 
