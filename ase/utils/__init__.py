@@ -19,7 +19,7 @@ from ase.formula import formula_hill, formula_metal
 __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'devnull', 'gcd', 'convert_string_to_fd', 'Lock',
            'opencew', 'OpenLock', 'rotate', 'irotate', 'givens',
-           'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
+          'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
            'formula_hill', 'formula_metal', 'PurePath']
 
 
@@ -478,7 +478,19 @@ def experimental(func):
 
 
 def lazymethod(meth):
-    """Decorator for lazy evaluation and caching of data."""
+    """Decorator for lazy evaluation and caching of data.
+
+    Example::
+
+      class MyClass:
+
+         @lazymethod
+         def thing(self):
+             return expensive_calculation()
+
+    The method body is only executed first time thing() is called, and
+    its return value is stored.  Subsequent calls return the cached
+    value."""
     name = meth.__name__
     @functools.wraps(meth)
     def getter(self):
