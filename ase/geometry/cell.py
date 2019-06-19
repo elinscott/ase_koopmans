@@ -330,7 +330,9 @@ def cellpar_to_cell(cellpar, ab_normal=(0, 0, 1), a_direction=None):
     vb = b * np.array([cos_gamma, sin_gamma, 0])
     cx = cos_beta
     cy = (cos_alpha - cos_beta * cos_gamma) / sin_gamma
-    cz = sqrt(1. - cx * cx - cy * cy)
+    cz_sqr = 1. - cx * cx - cy * cy
+    assert cz_sqr >= 0
+    cz = sqrt(cz_sqr)
     vc = c * np.array([cx, cy, cz])
 
     # Convert to the Cartesian x,y,z-system
