@@ -938,7 +938,7 @@ def get_bravais_lattice(cell, eps=2e-4):
     cell = Cell.ascell(cell)
 
     if cell.pbc.all():
-        lat, op = new_identify_lattice(cell, eps=eps)
+        lat, op = identify_lattice(cell, eps=eps)
         return lat
     elif cell.pbc[:2].all():
         return get_2d_bravais_lattice(cell, eps)
@@ -979,7 +979,7 @@ def get_lattice_from_canonical_cell(cell, eps=2e-4):
     raise RuntimeError('Could not find lattice type for {}'.format(cell))
 
 
-def new_identify_lattice(cell, eps=2e-4):
+def identify_lattice(cell, eps=2e-4):
     from ase.geometry.bravais_type_engine import niggli_op_table
     rcell, reduction_op = cell.niggli_reduce()
 

@@ -104,7 +104,7 @@ class Cell:
                  special_points=None, eps=2e-4):
         # TODO: Combine with the rotation transformation from bandpath()
         if special_points is None:
-            from ase.geometry.bravais_type_engine import identify_lattice
+            from ase.geometry.bravais import identify_lattice
             lat, op = identify_lattice(self, eps=eps)
             path = lat.bandpath(path, npoints=npoints, density=density)
             return path.transform(op)

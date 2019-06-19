@@ -292,7 +292,7 @@ def check_type(rcell, name, eps):
 
 
 
-def identify_lattice(cell, eps):
+def old_identify_lattice(cell, eps):
     cell = Cell.ascell(cell)
     rcell, op = cell.niggli_reduce()
     for testlat in bravais_names:
@@ -352,6 +352,7 @@ def test():
 
         for lat in lattice_loop(latcls, length_grid, angle_grid):
             cell = lat.tocell()
+            from ase.geometry.bravais import identify_lattice
             out_lat, op = identify_lattice(cell, eps=2e-4)
 
             # Some lattices represent simpler lattices,

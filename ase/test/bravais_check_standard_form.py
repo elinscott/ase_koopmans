@@ -8,7 +8,7 @@ standard cell correctly.
 import numpy as np
 from ase.geometry.bravais import (get_lattice_from_canonical_cell,
                                   all_variants)
-from ase.geometry.bravais_type_engine import identify_lattice
+from ase.geometry.bravais import identify_lattice
 
 for lat in all_variants():
     if lat.ndim == 2:
