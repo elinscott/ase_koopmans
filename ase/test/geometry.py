@@ -183,11 +183,11 @@ assert bulk('Zn').cell.get_bravais_lattice().name == 'HEX'
 def checkcell(cell, name):
     cell = Cell.ascell(cell)
     lat = cell.get_bravais_lattice()
-    assert lat.name == name
+    assert lat.name == name, (lat.name, name)
 
 checkcell([[1, 0, 0], [0, 1, 0], [0, 0, 1]], 'CUB')
 checkcell([[1, 0, 0], [0, 1, 0], [0, 0, 2]], 'TET')
 checkcell([[1, 0, 0], [0, 2, 0], [0, 0, 3]], 'ORC')
-#cell = [[1, 0, 0], [0, 2, 0], [0.5, 0, 3]]
-#assert crystal_structure_from_cell(cell) == 'monoclinic'
+checkcell([[1, 0, 0], [0, 2, 0], [0.5, 0, 3]], 'ORCC')
+checkcell([[1, 0, 0], [0, 2, 0], [0.501, 0, 3]], 'MCL')
 checkcell([[1, 0, 0], [0.5, 3**0.5 / 2, 0], [0, 0, 3]], 'HEX')
