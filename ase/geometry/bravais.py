@@ -1012,8 +1012,6 @@ def identify_lattice(cell, eps=2e-4):
         # just return the first one we find so we must remember then:
         matching_lattices = []
 
-        ident = (1, 0, 0, 0, 1, 0, 0, 0, 1)
-
         for op_key in niggli_op_table[latname]:
             checker_and_op = memory.get(op_key)
             if checker_and_op is None:
@@ -1029,21 +1027,19 @@ def identify_lattice(cell, eps=2e-4):
                 op = normalization_op @ np.linalg.inv(reduction_op)
                 matching_lattices.append((lat, op))
 
-        # Now find the best lattice among the valid ones:
-        if matching_lattices:
-            if latname in ['MCL', 'MCLC']:
-                best = None
-                best_angle = 0
-                for lat, op in matching_lattices:
-                    if lat.alpha > best_angle:
-                        best_angle = lat.alpha
-                        best = (lat, op)
-            elif latname in ['BCT', 'ORCI']:
-                best = matching_lattices[0]  # XXX which one??
-            else:
-                assert len(matching_lattices) == 1, matching_lattices
-                best = matching_lattices[0]
+        # Among any matching lattices, return the one with lowest
+        # orthogonality defect:
+        best = None
+        best_defect = np.inf
+        for lat, op in matching_lattices:
+            cell = lat.tocell()
+            lengths = cell.lengths()
+            defect = np.prod(lengths) / cell.volume
+            if defect < best_defect:
+                best = lat, op
+                best_defect = defect
 
+        if best is not None:
             return best
 
     raise RuntimeError('Could not find lattice type for cell with lengths '
