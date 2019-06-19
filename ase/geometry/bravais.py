@@ -982,16 +982,7 @@ def get_lattice_from_canonical_cell(cell, eps=2e-4):
 
     If the given cell does not resemble the known form of a Bravais
     lattice, raise RuntimeError."""
-    for latname, lat in map_cell_to_all_lattices(cell):
-        if lat is None:
-            continue
-
-        testcell = lat.tocell()
-        err = celldiff(cell, testcell)
-        if err <= eps:
-            return lat
-
-    raise RuntimeError('Could not find lattice type for {}'.format(cell))
+    return LatticeChecker(cell, eps).match()
 
 
 def identify_lattice(cell, eps=2e-4):
@@ -1047,9 +1038,6 @@ def identify_lattice(cell, eps=2e-4):
         if best is not None:
             return best
 
-    raise RuntimeError('Could not find lattice type for cell with lengths '
-                       'and angles {}'.format(cell.cellpar().tolist()))
-
 
 class LatticeChecker:
     # The check order is slightly different than elsewhere listed order
@@ -1102,7 +1090,9 @@ class LatticeChecker:
             if lat:
                 return lat
         else:
-            raise RuntimeError('Cell did not match any canonical form')
+            raise RuntimeError('Could not find lattice type for cell '
+                               'with lengths and angles {}'
+                               .format(self.cell.cellpar().tolist()))
 
     def query(self, latname):
         meth = getattr(self, latname)
@@ -1201,98 +1191,6 @@ class LatticeChecker:
 
     def TRI(self):
         return self._check(TRI, *self.cellpar)
-
-
-
-def map_cell_to_all_lattices(cell):
-    """Generate Bravais lattices that look (or not) like the given cell.
-
-    This is for determining the cell's Bravais lattice.  Generally for
-    internal use (this module).
-
-    For each of the 14 Bravais lattices, yield a tuple like (name,
-    lattice object) to suggest a Bravais lattice for comparing to
-    the input cell.  Lattice may be None or omitted if undefined."""
-
-    cellpar = cell.cellpar()
-    A, B, C = lengths = cellpar[:3]
-
-    if any(lengths == 0):
-        return
-
-    angles = cellpar[3:]
-
-    # Vector of the diagonal and then off-diagonal dot products:
-    #   [a1 · a1, a2 · a2, a3 · a3, a2 · a3, a3 · a1, a1 · a2]
-    prods = (cell @ cell.T).flat[[0, 4, 8, 5, 2, 1]]
-
-    def check(latcls, *args):
-        if any(arg <= 0 for arg in args):
-            return None
-        try:
-            lat =latcls(*args)
-        except UnconventionalLattice:
-            return latcls.name, None
-
-        return latcls.name, lat
-
-    A0 = lengths.mean()  # Use a 'neutral' length for checking vs. epsilon
-    yield check(CUB, A0)
-    yield check(FCC, np.sqrt(2) * A0)
-    yield check(BCC, 2.0 * A0 / np.sqrt(3))
-    yield check(TET, A, C)
-
-    # Coordinate-system independent relation for BCT and ORCI standard cells:
-    #   a1 · a1 + a2 · a3 == a² / 2
-    #   a2 · a2 + a3 · a1 == a² / 2 (BCT)
-    #                     == b² / 2 (ORCI)
-    #   a3 · a3 + a1 · a2 == c² / 2
-    # We use these to get a, b, and c in those cases.
-    bct_orci_lengths = 2.0 * (prods[:3] + prods[3:])
-    if all(bct_orci_lengths > 0):
-        bct_orci_lengths = np.sqrt(bct_orci_lengths)
-    else:
-        bct_orci_lengths = None
-
-    if bct_orci_lengths is not None:
-        yield check(BCT, bct_orci_lengths[0], bct_orci_lengths[2])
-
-    yield check(HEX, A, C)
-    yield check(RHL, A, angles[0])
-    yield check(ORC, A, B, C)
-
-    # ORCF standard cell:
-    #   a2 · a3 = a²/4
-    #   a3 · a1 = b²/4
-    #   a1 · a2 = c²/4
-    if all(prods[3:] > 0):
-        orcf_abc = 2 * np.sqrt(prods[3:])
-        yield check(ORCF, *orcf_abc)
-
-    if bct_orci_lengths is not None:
-        yield check(ORCI, *bct_orci_lengths)
-
-    # ORCC: a1 · a1 + a2 · a3 = a²/2
-    #       a2 · a2 - a2 · a3 = b²/2
-    orcc_a2 = 2.0 * (prods[0] + prods[5])
-    orcc_b2 = 2.0 * (prods[1] - prods[5])
-    if orcc_a2 > 0 and orcc_b2 > 0:
-        orcc_a = np.sqrt(orcc_a2)
-        orcc_b = np.sqrt(orcc_b2)
-        yield check(ORCC, np.sqrt(orcc_a2), np.sqrt(orcc_b2), C)
-
-    yield check(MCL, A, B, C, angles[0])
-
-    # MCLC is similar to ORCC:
-    if orcc_a2 > 0 and orcc_b2 > 0:
-        mclc_a = orcc_b
-        mclc_b = orcc_a
-        mclc_cosa = 2.0 * prods[3] / (mclc_b * C)
-        if -1 < mclc_cosa < 1:
-            mclc_alpha = np.arccos(mclc_cosa) * 180 / np.pi
-            yield check(MCLC, mclc_a, mclc_b, C, mclc_alpha)
-
-    yield check(TRI, *cellpar)
 
 
 def get_2d_bravais_lattice(origcell, eps=2e-4):
