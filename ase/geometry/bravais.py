@@ -751,6 +751,14 @@ class MCLC(BravaisLattice):
         return points
 
 
+tri_angles_explanation = """\
+Angles kalpha, kbeta and kgamma of TRI lattice must be 1) all greater \
+than 90 degrees with kgamma being the smallest, or 2) all smaller than \
+90 with kgamma being the largest, or 3) kgamma=90 being the \
+smallest of the three, or 4) kgamma=90 being the largest of the three.  \
+Angles of reciprocal lattice are kalpha={}, kbeta={}, kgamma={}.  \
+If you don't care, please use Cell.fromcellpar() instead."""
+
 # XXX labels, paths, are all the same.
 @bravaisclass('primitive triclinic', 'triclinic', 'triclinic', 'aP',
               ('a', 'b', 'c', 'alpha', 'beta', 'gamma'),
@@ -777,9 +785,13 @@ class TRI(BravaisLattice):
                          [a3x, a3y, a3z]])
 
     def _variant_name(self, a, b, c, alpha, beta, gamma):
-        c = Cell.new([a, b, c, alpha, beta, gamma])
-        icellpar = Cell(c.reciprocal()).cellpar()
+        cell = Cell.new([a, b, c, alpha, beta, gamma])
+        icellpar = Cell(cell.reciprocal()).cellpar()
         kangles = kalpha, kbeta, kgamma = icellpar[3:]
+
+        def raise_unconventional():
+            raise UnconventionalLattice(tri_angles_explanation
+                                        .format(*kangles))
 
         eps = self._eps
         if abs(kgamma - 90) < eps:
@@ -789,15 +801,18 @@ class TRI(BravaisLattice):
                 var = '2b'
             else:
                 # Is this possible?  Maybe due to epsilon
-                raise UnconventionalLattice('Unexpected combination of angles')
-        elif all(kangles > 90):# and kgamma < min(kalpha, kbeta):
+                raise_unconventional()
+        elif all(kangles > 90):
+            if kgamma > min(kangles):
+                raise_unconventional()
             var = '1a'
         elif all(kangles < 90):# and kgamma > max(kalpha, kbeta):
+            if kgamma < max(kangles):
+                raise_unconventional()
             var = '1b'
         else:
-            raise UnconventionalLattice(
-                'Reciprocal lattice has unexpected angles: kalpha={}, '
-                'kbeta={}, kgamma={}'.format(kalpha, kbeta, kgamma))
+            raise_unconventional()
+
         return 'TRI' + var
 
     def _special_points(self, a, b, c, alpha, beta, gamma, variant):
