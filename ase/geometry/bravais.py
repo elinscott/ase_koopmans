@@ -995,6 +995,11 @@ def get_lattice_from_canonical_cell(cell, eps=2e-4):
 
 
 def identify_lattice(cell, eps=2e-4):
+    """Find Bravais lattice representing this cell.
+
+    Returns Bravais lattice object representing the cell along with
+    and operation that, applied to the cell, yields the same lengths
+    and angles as the Bravais lattice object."""
     from ase.geometry.bravais_type_engine import niggli_op_table
     rcell, reduction_op = cell.niggli_reduce()
 
