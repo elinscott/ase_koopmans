@@ -283,7 +283,6 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None):
         lattice = None
         if special_points is None:
             cell = Cell.ascell(cell)
-            cell.bandpath()
             cellinfo = get_cellinfo(cell)
             special_points = cellinfo.special_points
             lattice = cellinfo.lattice
