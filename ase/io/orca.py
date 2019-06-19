@@ -74,12 +74,11 @@ def write_orca(filename, atoms, charge, mult):
         f = filename
     f.write('*xyz');f.write(" %d" % charge);f.write(" %d \n" % mult)
     for atom in atoms:
-        # This ghost specification does not apply. To be fixed for ORCA
-        if atom.tag == -71:  # 71 is ascii G (Ghost)
-            symbol = 'bq' + atom.symbol
+        if atom.tag == 71:  # 71 is ascii G (Ghost)
+            symbol = atom.symbol + ' : '
         else:
-            symbol = atom.symbol
-        f.write(symbol + ' ' +
+            symbol = atom.symbol + '   '
+        f.write(symbol +
                 str(atom.position[0]) + ' ' +
                 str(atom.position[1]) + ' ' +
                 str(atom.position[2]) + '\n')

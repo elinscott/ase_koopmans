@@ -46,6 +46,8 @@ class ORCA(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
 
+        self.pcpot = None
+
     def set(self, **kwargs):
         changed_parameters = FileIOCalculator.set(self, **kwargs)
         if changed_parameters:
