@@ -129,6 +129,26 @@ class BandPath:
         assert isinstance(labelseq, str)
         self.labelseq = labelseq
 
+    def transform(self, op):
+        """Transform bandpath applying a 3x3 matrix as an operation.
+
+        This is useful for converting the band path to another cell.
+        The operation will typically be a permutation/flipping
+        established by a function such as Niggli reduction."""
+        # XXX acceptable operations are probably only those
+        # who come from Niggli reductions (permutations etc.)
+        #
+        # We should insert a check.
+        # I wonder which operations are valid?  They won't be valid
+        # if they change lengths, volume etc.
+        special_points = {}
+        for name, value in self.special_points.items():
+            special_points[name] = value @ op
+
+        return BandPath(op.T @ self.cell, kpts=self.kpts @ op,
+                        special_points=special_points,
+                        labelseq=self.labelseq)
+
     def todict(self):
         return {'kpts': self.kpts,
                 'special_points': self.special_points,
@@ -251,11 +271,18 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None):
     Return list of k-points, list of x-coordinates and list of
     x-coordinates of special points."""
 
+    cell = Cell.ascell(cell)
+    return cell.bandpath(path, npoints=npoints, density=density,
+                         special_points=special_points)
+
+    # XXX old code for bandpath() function, should be removed once we
+    # weed out any trouble
     if isinstance(path, basestring):
         # XXX we need to update this so we use the new and more complete
         # cell classification stuff
         lattice = None
         if special_points is None:
+            cell = Cell.ascell(cell)
             cellinfo = get_cellinfo(cell)
             special_points = cellinfo.special_points
             lattice = cellinfo.lattice
@@ -506,8 +533,13 @@ def get_special_points(cell, lattice=None, eps=2e-4):
                       'argument')
         lattice, cell = cell, lattice
 
-    cellinfo = get_cellinfo(cell=cell, lattice=lattice, eps=eps)
-    return cellinfo.special_points
+    cell = Cell.ascell(cell)
+    # We create the bandpath because we want to transform the kpoints too,
+    # from the canonical cell to the given one.
+    #
+    # Note that this function is missing a tolerance, epsilon.
+    path = cell.bandpath(npoints=0)
+    return path.special_points
 
 
 def monkhorst_pack_interpolate(path, values, icell, bz2ibz,

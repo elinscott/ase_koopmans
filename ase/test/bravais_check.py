@@ -1,16 +1,19 @@
 import numpy as np
 from ase.geometry.cell import Cell
-from ase.geometry.bravais import bravais_lattices as bravais1
-from ase.build import bulk
+from ase.geometry.bravais import bravais_lattices
+from ase.build import bulk, fcc111
 
 bravais = {}
-for name in bravais1:
-    bravais[name.lower()] = bravais1[name]
-
+for name in bravais_lattices:
+    bravais[name.lower()] = bravais_lattices[name]
 
 def check_single(name, cell, pbc=None):
     c = Cell(cell, pbc=pbc)
-    lattice = c.get_bravais_lattice()
+    try:
+        lattice = c.get_bravais_lattice()
+    except RuntimeError:
+        print('error checking {}'.format(name))
+        raise
     name1 = lattice.name.lower()
     latname = name.split('@')[0]
     ok = latname == name1
@@ -27,8 +30,11 @@ def check(name, cell):
 
     # Check all three positive permutations:
     check_single(name + '@012', cell[[0, 1, 2]], pbc=pbc)
-    # check_single(name + '@201', cell[[2, 0, 1]])
-    # check_single(name + '@120', cell[[1, 2, 0]])
+    # 2D lattice determination only supports pbc=(1,1,0) and hence we
+    # check the permutations only for 3D lattices:
+    if pbc.sum() == 3:
+        check_single(name + '@201', cell[[2, 0, 1]], pbc=pbc)
+        check_single(name + '@120', cell[[1, 2, 0]], pbc=pbc)
 
 
 check('cub', bravais['cub'](3.3).tocell())
@@ -42,14 +48,14 @@ check('tet', np.diag([5., 4., 5.]))
 check('tet', np.diag([5., 5., 4.]))
 check('bct', bravais['bct'](3., 4.).tocell())
 check('orc', bravais['orc'](3., 4., 5.).tocell())
-# check('orc', bravais['orc'](4., 5., 3.).tocell())
 check('orcf', bravais['orcf'](4., 5., 7.).tocell())
 check('orci', bravais['orci'](2., 5., 6.).tocell())
 check('orcc', bravais['orcc'](3., 4., 5.).tocell())
+check('hex', fcc111('Au', size=(1, 1, 3), periodic=True).cell)
 check('hex', bravais['hex'](5., 6.).tocell())
 check('rhl', bravais['rhl'](4., 54.).tocell())
 check('mcl', bravais['mcl'](2., 3., 4., 62.).tocell())
-check('mclc', bravais['mclc'](3., 4., 5., 70.).tocell())
+check('mclc', bravais['mclc'](3., 4., 5., 75.).tocell())
 check('tri', bravais['tri'](7., 6., 5., 65., 70., 80.).tocell())
 
 # For 2D materials we have to check both the tocell() method
