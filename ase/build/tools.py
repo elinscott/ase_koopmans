@@ -434,15 +434,21 @@ def niggli_reduce_cell(cell, epsfactor=None):
 
     cell = np.asarray(cell)
 
-    C = np.eye(3, dtype=int)
+    I3 = np.eye(3, dtype=int)
+    I6 = np.eye(6, dtype=int)
 
-    g = np.zeros(6, dtype=float)
-    g[0] = np.dot(cell[0], cell[0])
-    g[1] = np.dot(cell[1], cell[1])
-    g[2] = np.dot(cell[2], cell[2])
-    g[3] = 2 * np.dot(cell[1], cell[2])
-    g[4] = 2 * np.dot(cell[0], cell[2])
-    g[5] = 2 * np.dot(cell[0], cell[1])
+    C = I3.copy()
+    D = I6.copy()
+
+    g0 = np.zeros(6, dtype=float)
+    g0[0] = np.dot(cell[0], cell[0])
+    g0[1] = np.dot(cell[1], cell[1])
+    g0[2] = np.dot(cell[2], cell[2])
+    g0[3] = 2 * np.dot(cell[1], cell[2])
+    g0[4] = 2 * np.dot(cell[0], cell[2])
+    g0[5] = 2 * np.dot(cell[0], cell[1])
+
+    g = np.dot(D, g0)
 
     def lt(x, y, eps=eps):
         return x < y - eps
@@ -453,30 +459,22 @@ def niggli_reduce_cell(cell, epsfactor=None):
     def eq(x, y, eps=eps):
         return not (lt(x, y, eps) or gt(x, y, eps))
 
-    i = 0
-    while True:
-        i += 1
-        if i >= 10000:
-            raise RuntimeError('Niggli reduction not done in 10000 steps!\n'
-                               'cell={}\n'
-                               'operation={}'
-                               .format(cell.tolist(), C.tolist()))
-
+    for _ in range(10000):
         if (gt(g[0], g[1])
                 or (eq(g[0], g[1]) and gt(abs(g[3]), abs(g[4])))):
-            A = -np.eye(3, dtype=int)[[1, 0, 2]]
-            C = np.dot(C, A)
-            g = g[[1, 0, 2, 4, 3, 5]]
+            C = np.dot(C, -I3[[1, 0, 2]])
+            D = np.dot(I6[[1, 0, 2, 4, 3, 5]], D)
+            g = np.dot(D, g0)
             continue
         elif (gt(g[1], g[2])
                 or (eq(g[1], g[2]) and gt(abs(g[4]), abs(g[5])))):
-            A = -np.eye(3, dtype=int)[[0, 2, 1]]
-            C = np.dot(C, A)
-            g = g[[0, 2, 1, 3, 5, 4]]
+            C = np.dot(C, -I3[[0, 2, 1]])
+            D = np.dot(I6[[0, 2, 1, 3, 5, 4]], D)
+            g = np.dot(D, g0)
             continue
 
-        lmn = np.array(gt(g[3:], 0), dtype=int)
-        lmn -= np.array(lt(g[3:], 0), dtype=int)
+        lmn = np.array(gt(g[3:], 0, eps=eps/2), dtype=int)
+        lmn -= np.array(lt(g[3:], 0, eps=eps/2), dtype=int)
 
         if lmn.prod() == 1:
             ijk = lmn.copy()
@@ -495,65 +493,83 @@ def niggli_reduce_cell(cell, epsfactor=None):
                 if ijk.prod() == -1:
                     ijk[r] = -1
 
-        g[3] *= ijk[1] * ijk[2]
-        g[4] *= ijk[0] * ijk[2]
-        g[5] *= ijk[0] * ijk[1]
-        A = np.diag(ijk)
-        C = np.dot(C, A)
+        C *= ijk[np.newaxis]
+
+        D[3] *= ijk[1] * ijk[2]
+        D[4] *= ijk[0] * ijk[2]
+        D[5] *= ijk[0] * ijk[1]
+        g = np.dot(D, g0)
 
         if (gt(abs(g[3]), g[1])
                 or (eq(g[3], g[1]) and lt(2 * g[4], g[5]))
                 or (eq(g[3], -g[1]) and lt(g[5], 0))):
-            A = np.eye(3, dtype=int)
-            A[1, 2] = -np.sign(g[3])
+            s = np.int(np.sign(g[3]))
+
+            A = I3.copy()
+            A[1, 2] = -s
             C = np.dot(C, A)
 
-            s = np.sign(g[3])
-            gp = g.copy()
-            gp[2] += g[1] - s * g[3]
-            gp[3] -= 2 * s * g[1]
-            gp[4] -= s * g[5]
-            g = gp
+            B = I6.copy()
+            B[2, 1] = 1
+            B[2, 3] = -s
+            B[3, 1] = -2 * s
+            B[4, 5] = -s
+            D = np.dot(B, D)
+            g = np.dot(D, g0)
         elif (gt(abs(g[4]), g[0])
                 or (eq(g[4], g[0]) and lt(2 * g[3], g[5]))
                 or (eq(g[4], -g[0]) and lt(g[5], 0))):
-            A = np.eye(3, dtype=int)
-            A[0, 2] = -np.sign(g[4])
+            s = np.int(np.sign(g[4]))
+
+            A = I3.copy()
+            A[0, 2] = -s
             C = np.dot(C, A)
 
-            s = np.sign(g[4])
-            gp = g.copy()
-            gp[2] += g[0] - s * g[4]
-            gp[3] -= s * g[5]
-            gp[4] -= 2 * s * g[0]
-            g = gp
+            B = I6.copy()
+            B[2, 0] = 1
+            B[2, 4] = -s
+            B[3, 5] = -s
+            B[4, 0] = -2 * s
+            D = np.dot(B, D)
+            g = np.dot(D, g0)
         elif (gt(abs(g[5]), g[0])
                 or (eq(g[5], g[0]) and lt(2 * g[3], g[4]))
                 or (eq(g[5], -g[0]) and lt(g[4], 0))):
-            A = np.eye(3, dtype=int)
-            A[0, 1] = -np.sign(g[5])
+            s = np.int(np.sign(g[5]))
+
+            A = I3.copy()
+            A[0, 1] = -s
             C = np.dot(C, A)
 
-            s = np.sign(g[5])
-            gp = g.copy()
-            gp[1] += g[0] - s * g[5]
-            gp[3] -= s * g[4]
-            gp[5] -= 2 * s * g[0]
-            g = gp
+            B = I6.copy()
+            B[1, 0] = 1
+            B[1, 5] = -s
+            B[3, 4] = -s
+            B[5, 0] = -2 * s
+            D = np.dot(B, D)
+            g = np.dot(D, g0)
         elif (lt(g[[0, 1, 3, 4, 5]].sum(), 0)
                 or (eq(g[[0, 1, 3, 4, 5]].sum(), 0)
                     and gt(2 * (g[0] + g[4]) + g[5], 0))):
-            A = np.eye(3, dtype=int)
+            A = I3.copy()
             A[:, 2] = 1
             C = np.dot(C, A)
 
-            gp = g.copy()
-            gp[2] = g.sum()
-            gp[3] += 2 * g[1] + g[5]
-            gp[4] += 2 * g[0] + g[5]
-            g = gp
+            B = I6.copy()
+            B[2, :] = 1
+            B[3, 1] = 2
+            B[3, 5] = 1
+            B[4, 0] = 2
+            B[4, 5] = 1
+            D = np.dot(B, D)
+            g = np.dot(D, g0)
         else:
             break
+    else:
+        raise RuntimeError('Niggli reduction not done in 10000 steps!\n'
+                           'cell={}\n'
+                           'operation={}'
+                           .format(cell.tolist(), C.tolist()))
 
     abc = np.sqrt(g[:3])
     cosangles = g[3:] / (2 * abc.prod() / abc)
