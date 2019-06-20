@@ -19,6 +19,7 @@ import ase
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 
+from ase.geometry.cell import complete_cell
 from ase.geometry.dimensionality import analyze_dimensionality
 from ase.geometry.dimensionality import interval_analysis
 from ase.geometry.dimensionality import rank_determination
@@ -27,19 +28,17 @@ from ase.geometry.dimensionality import rank_determination
 def orthogonal_basis(X, Y=None):
 
     is_1d = Y is None
-    if Y is None:
-        while 1:
-            Y = np.random.uniform(-1, 1, 3)
-            if abs(np.dot(X, Y)) < 0.5:
-                break
+    b = np.zeros((3, 3))
+    b[0] = X
+    if not is_1d:
+        b[1] = Y
+    b = complete_cell(b)
 
-    b = np.array([X, Y, np.cross(X, Y)])
     Q = np.linalg.qr(b.T)[0].T
-
-    if np.dot(X, Q[0]) < 0:
+    if np.dot(b[0], Q[0]) < 0:
         Q[0] = -Q[0]
 
-    if np.dot(Y, Q[1]) < 0:
+    if np.dot(b[2], Q[1]) < 0:
         Q[1] = -Q[1]
 
     if np.linalg.det(Q) < 0:
@@ -75,10 +74,8 @@ def traverse_graph(atoms, kcutoff):
     for (k, i, j, offset) in bonds:
         rda.insert_bond(i, j, offset)
 
-    components = rda.graph.get_components()
-    adj = rank_determination.build_adjacency_list(components, rda.bonds)
-    all_visited, ranks = rank_determination.traverse_component_graphs(adj)
-    return components, all_visited
+    rda.check()
+    return rda.graph.get_components(), rda.all_visited, rda.ranks
 
 
 def build_supercomponent(atoms, components, k, v, anchor=True):
@@ -86,19 +83,12 @@ def build_supercomponent(atoms, components, k, v, anchor=True):
     # build supercomponent by mapping components into visited cells
     positions = []
     numbers = []
-    seen = set()
-    for c, offset in v:
 
-        # only want one copy of each sub-component
-        if c in seen:
-            continue
-        else:
-            seen.add(c)
-
+    for c, offset in dict(v[::-1]).items():
         indices = np.where(components == c)[0]
-        ps = atoms.positions[indices] + np.dot(offset, atoms.get_cell())
-        positions += list(ps)
-        numbers += list(atoms.numbers[indices])
+        ps = atoms.positions + np.dot(offset, atoms.get_cell())
+        positions.extend(ps[indices])
+        numbers.extend(atoms.numbers[indices])
     positions = np.array(positions)
     numbers = np.array(numbers)
 
@@ -275,24 +265,22 @@ def isolate_components(atoms, kcutoff=None):
     """
 
     data = {}
-    components, all_visited = traverse_graph(atoms, kcutoff)
+    components, all_visited, ranks = traverse_graph(atoms, kcutoff)
 
     for k, v in all_visited.items():
         v = sorted(list(v))
 
         # identify the components which constitute the component
         key = tuple(np.unique([c for c, offset in v]))
+        dim = ranks[k]
 
-        cells = np.array([offset for c, offset in v if c == k])
-        rank = rank_determination.calc_rank(cells)
-
-        if rank == 0:
+        if dim == 0:
             data[('0D', key)] = isolate_cluster(atoms, components, k, v)
-        elif rank == 1:
+        elif dim == 1:
             data[('1D', key)] = isolate_chain(atoms, components, k, v)
-        elif rank == 2:
+        elif dim == 2:
             data[('2D', key)] = isolate_monolayer(atoms, components, k, v)
-        elif rank == 3:
+        elif dim == 3:
             data[('3D', key)] = isolate_bulk(atoms, components, k, v)
 
     result = collections.defaultdict(list)

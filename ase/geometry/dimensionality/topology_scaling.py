@@ -1,4 +1,4 @@
-"""Implements the Topological Scaling Algorithm (TSA)
+"""Implements the Topology-Scaling Algorithm (TSA)
 
 Method is described in:
 Topology-Scaling Identification of Layered Solids and Stable Exfoliated
@@ -66,15 +66,7 @@ class TSA:
             self.gsuper.merge(a + i, b + j)
             self.gsuper.merge(b + i, a + j)
 
-    def check(self):
-
-        """Determines the dimensionality of each component with the TSA method.
-
-        Returns:
-
-        hist : tuple         Dimensionality histogram.
-        components: array    The component ID every atom
-        """
+    def _get_component_dimensionalities(self):
 
         n = self.n
         offsets = self.offsets
@@ -82,17 +74,40 @@ class TSA:
         super_components = self.gsuper.get_components()
 
         component_dim = {}
-        hist = np.zeros(4).astype(np.int)
         for i in single_roots:
 
             num_clusters = len(np.unique(super_components[offsets + i]))
             dim = {n**3: 0, n**2: 1, n: 2, 1: 3}[num_clusters]
-            hist[dim] += 1
             component_dim[i] = dim
+        return component_dim
 
-        relabelled_components = self.gsingle.get_components(relabel=True)
+    def check(self):
+
+        """Determines the dimensionality histogram.
+
+        Returns:
+        hist : tuple         Dimensionality histogram.
+        """
+
+        cdim = self._get_component_dimensionalities()
+        hist = np.zeros(4).astype(np.int)
+        bc = np.bincount(list(cdim.values()))
+        hist[:len(bc)] = bc
+        return tuple(hist)
+
+    def get_components(self):
+
+        """Determines the dimensionality and constituent atoms of each
+        component.
+
+        Returns:
+        components: array    The component ID every atom
+        """
+
         relabelled_dim = {}
-        for k, v in component_dim.items():
+        relabelled_components = self.gsingle.get_components(relabel=True)
+        cdim = self._get_component_dimensionalities()
+        for k, v in cdim.items():
             relabelled_dim[relabelled_components[k]] = v
 
-        return tuple(hist), relabelled_components, relabelled_dim
+        return relabelled_components, relabelled_dim
