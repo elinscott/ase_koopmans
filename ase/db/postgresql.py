@@ -84,7 +84,7 @@ class PostgreSQLDatabase(SQLite3Database):
         return ase.io.jsonio.encode(remove_nan_and_inf(obj))
 
     def decode(self, obj):
-        return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
+        return insert_nan_and_inf(ase.io.jsonio.decode(obj))
 
     def blob(self, array):
         """Convert array to blob/buffer object."""
