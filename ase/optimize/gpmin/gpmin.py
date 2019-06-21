@@ -1,4 +1,5 @@
 from __future__ import print_function
+import warnings
 
 from ase.optimize.optimize import Optimizer
 import numpy as np
@@ -151,9 +152,22 @@ class GPMin(Optimizer, GaussianProcess):
             if weight is None: 
                 weight = 1.
 
-            
-            self.eps = bounds
-            self.nbathc = batch_size 
+            if bounds is not None:
+                warning = ('The paramter bounds is of no use '
+                           'if update_hyperparams is False. '
+                           'The value provided by the user '
+                           'is being ignored.')
+                warnings.warn(warning, UserWarning)  
+            if batch_size is not None:
+                warning = ('The paramter batch_size is of no use '
+                           'if update_hyperparams is False. '
+                           'The value provived by the user '
+                           'is being ignored.')
+                warnings.warn(warning, UserWarning) 
+
+            #Set the variables to something anyways
+            self.eps = False
+            self.nbatch = None
         
         self.strategy = update_prior_strategy
         self.update_hp = update_hyperparams
