@@ -340,11 +340,28 @@ class Parameters(dict):
     @classmethod
     def read(cls, filename):
         """Read parameters from file."""
+        # We use ast to evaluate literals, avoiding eval()
+        # for security reasons.
         import ast
         with open(filename) as fd:
-            txt = fd.read()
-        obj = ast.literal_eval(txt)
-        parameters = cls(obj)
+            txt = fd.read().strip()
+        assert txt.startswith('dict(')
+        assert txt.endswith(')')
+        txt = txt[5:-1]
+
+        # The tostring() representation "dict(...)" is not actually
+        # a literal, so we manually parse that along with the other
+        # formatting that we did manually:
+        dct = {}
+        for line in txt.splitlines():
+            key, val = line.split('=', 1)
+            key = key.strip()
+            val = val.strip()
+            if val[-1] == ',':
+                val = val[:-1]
+            dct[key] = ast.literal_eval(val)
+
+        parameters = cls(dct)
         return parameters
 
     def tostring(self):
