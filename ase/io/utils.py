@@ -8,119 +8,120 @@ from ase.data import covalent_radii, atomic_numbers
 from ase.data.colors import jmol_colors
 from ase.utils import basestring
 
-
-def generate_writer_variables(writer, atoms, rotation='', show_unit_cell=0,
+class generate_writer_variables:
+    # removed writer - self
+    def __init__(self, atoms, rotation='', show_unit_cell=0,
                               radii=None, bbox=None, colors=None, scale=20,
                               maxwidth=500, extra_offset=(0., 0.)):
-    writer.numbers = atoms.get_atomic_numbers()
-    writer.colors = colors
-    if colors is None:
-        writer.colors = jmol_colors[writer.numbers]
+        self.numbers = atoms.get_atomic_numbers()
+        self.colors = colors
+        if colors is None:
+            self.colors = jmol_colors[self.numbers]
 
-    if radii is None:
-        radii = covalent_radii[writer.numbers]
-    elif isinstance(radii, float):
-        radii = covalent_radii[writer.numbers] * radii
-    else:
-        radii = np.array(radii)
+        if radii is None:
+            radii = covalent_radii[self.numbers]
+        elif isinstance(radii, float):
+            radii = covalent_radii[self.numbers] * radii
+        else:
+            radii = np.array(radii)
 
-    natoms = len(atoms)
+        natoms = len(atoms)
 
-    if isinstance(rotation, basestring):
-        rotation = rotate(rotation)
+        if isinstance(rotation, basestring):
+            rotation = rotate(rotation)
 
-    cell = atoms.get_cell()
-    disp = atoms.get_celldisp().flatten()
+        cell = atoms.get_cell()
+        disp = atoms.get_celldisp().flatten()
 
-    if show_unit_cell > 0:
-        L, T, D = cell_to_lines(writer, cell)
-        cell_vertices = np.empty((2, 2, 2, 3))
-        for c1 in range(2):
-            for c2 in range(2):
-                for c3 in range(2):
-                    cell_vertices[c1, c2, c3] = np.dot([c1, c2, c3],
-                                                       cell) + disp
-        cell_vertices.shape = (8, 3)
-        cell_vertices = np.dot(cell_vertices, rotation)
-    else:
-        L = np.empty((0, 3))
-        T = None
-        D = None
-        cell_vertices = None
+        if show_unit_cell > 0:
+            L, T, D = cell_to_lines(writer, cell)
+            cell_vertices = np.empty((2, 2, 2, 3))
+            for c1 in range(2):
+                for c2 in range(2):
+                    for c3 in range(2):
+                        cell_vertices[c1, c2, c3] = np.dot([c1, c2, c3],
+                                                           cell) + disp
+            cell_vertices.shape = (8, 3)
+            cell_vertices = np.dot(cell_vertices, rotation)
+        else:
+            L = np.empty((0, 3))
+            T = None
+            D = None
+            cell_vertices = None
 
-    nlines = len(L)
+        nlines = len(L)
 
-    positions = np.empty((natoms + nlines, 3))
-    R = atoms.get_positions()
-    positions[:natoms] = R
-    positions[natoms:] = L
+        positions = np.empty((natoms + nlines, 3))
+        R = atoms.get_positions()
+        positions[:natoms] = R
+        positions[natoms:] = L
 
-    r2 = radii**2
-    for n in range(nlines):
-        d = D[T[n]]
-        if ((((R - L[n] - d)**2).sum(1) < r2) &
-            (((R - L[n] + d)**2).sum(1) < r2)).any():
-            T[n] = -1
+        r2 = radii**2
+        for n in range(nlines):
+            d = D[T[n]]
+            if ((((R - L[n] - d)**2).sum(1) < r2) &
+                (((R - L[n] + d)**2).sum(1) < r2)).any():
+                T[n] = -1
 
-    positions = np.dot(positions, rotation)
-    R = positions[:natoms]
+        positions = np.dot(positions, rotation)
+        R = positions[:natoms]
 
-    if bbox is None:
-        X1 = (R - radii[:, None]).min(0)
-        X2 = (R + radii[:, None]).max(0)
-        if show_unit_cell == 2:
-            X1 = np.minimum(X1, cell_vertices.min(0))
-            X2 = np.maximum(X2, cell_vertices.max(0))
-        M = (X1 + X2) / 2
-        S = 1.05 * (X2 - X1)
-        w = scale * S[0]
-        if w > maxwidth:
-            w = maxwidth
-            scale = w / S[0]
-        h = scale * S[1]
-        offset = np.array([scale * M[0] - w / 2, scale * M[1] - h / 2, 0])
-    else:
-        w = (bbox[2] - bbox[0]) * scale
-        h = (bbox[3] - bbox[1]) * scale
-        offset = np.array([bbox[0], bbox[1], 0]) * scale
+        if bbox is None:
+            X1 = (R - radii[:, None]).min(0)
+            X2 = (R + radii[:, None]).max(0)
+            if show_unit_cell == 2:
+                X1 = np.minimum(X1, cell_vertices.min(0))
+                X2 = np.maximum(X2, cell_vertices.max(0))
+            M = (X1 + X2) / 2
+            S = 1.05 * (X2 - X1)
+            w = scale * S[0]
+            if w > maxwidth:
+                w = maxwidth
+                scale = w / S[0]
+            h = scale * S[1]
+            offset = np.array([scale * M[0] - w / 2, scale * M[1] - h / 2, 0])
+        else:
+            w = (bbox[2] - bbox[0]) * scale
+            h = (bbox[3] - bbox[1]) * scale
+            offset = np.array([bbox[0], bbox[1], 0]) * scale
 
-    offset[0] = offset[0] - extra_offset[0]
-    offset[1] = offset[1] - extra_offset[1]
-    writer.w = w + extra_offset[0]
-    writer.h = h + extra_offset[1]
+        offset[0] = offset[0] - extra_offset[0]
+        offset[1] = offset[1] - extra_offset[1]
+        self.w = w + extra_offset[0]
+        self.h = h + extra_offset[1]
 
-    positions *= scale
-    positions -= offset
+        positions *= scale
+        positions -= offset
 
-    if nlines > 0:
-        D = np.dot(D, rotation)[:, :2] * scale
+        if nlines > 0:
+            D = np.dot(D, rotation)[:, :2] * scale
 
-    if cell_vertices is not None:
-        cell_vertices *= scale
-        cell_vertices -= offset
+        if cell_vertices is not None:
+            cell_vertices *= scale
+            cell_vertices -= offset
 
-    cell = np.dot(cell, rotation)
-    cell *= scale
+        cell = np.dot(cell, rotation)
+        cell *= scale
 
-    writer.cell = cell
-    writer.positions = positions
-    writer.D = D
-    writer.T = T
-    writer.cell_vertices = cell_vertices
-    writer.natoms = natoms
-    writer.d = 2 * scale * radii
+        self.cell = cell
+        self.positions = positions
+        self.D = D
+        self.T = T
+        self.cell_vertices = cell_vertices
+        self.natoms = natoms
+        self.d = 2 * scale * radii
 
-    # extension for partial occupancies
-    writer.frac_occ = False
-    writer.tags = None
-    writer.occs = None
+        # extension for partial occupancies
+        self.frac_occ = False
+        self.tags = None
+        self.occs = None
 
-    try:
-        writer.occs = atoms.info['occupancy']
-        writer.tags = atoms.get_tags()
-        writer.frac_occ = True
-    except KeyError:
-        pass
+        try:
+            self.occs = atoms.info['occupancy']
+            self.tags = atoms.get_tags()
+            self.frac_occ = True
+        except KeyError:
+            pass
 
 
 def cell_to_lines(writer, cell):
