@@ -60,7 +60,7 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
 
     row = c.get(id)
     print(row.data['1-butyne'], row.data.chi)
-    assert (row.data.chi == chi).all()
+    assert (row.data.chi == chi).all(), (row.data.chi, chi)
     print(row)
 
     assert len(c.get_atoms(C=1).constraints) == 2
