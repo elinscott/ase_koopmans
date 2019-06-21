@@ -340,9 +340,11 @@ class Parameters(dict):
     @classmethod
     def read(cls, filename):
         """Read parameters from file."""
-        file = open(os.path.expanduser(filename))
-        parameters = cls(eval(file.read()))
-        file.close()
+        import ast
+        with open(filename) as fd:
+            txt = fd.read()
+        obj = ast.literal_eval(txt)
+        parameters = cls(obj)
         return parameters
 
     def tostring(self):
