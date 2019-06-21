@@ -121,11 +121,11 @@ class Dynamics:
         >>>     opt1.run()
         """
 
-        # let the user inspect the atoms before algorithm is started
-        yield False
-
         # compute inital structure and log the first step
         self.atoms.get_forces()
+
+        # yield the first time to inspect before logging
+        yield False
 
         if self.nsteps == 0:
             self.log()

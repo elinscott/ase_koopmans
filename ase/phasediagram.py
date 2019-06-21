@@ -225,7 +225,12 @@ class Pourbaix:
             from scipy.optimize import linprog
         except ImportError:
             from ase.utils._linprog import linprog
-        result = linprog(energies, None, None, np.transpose(eq2), eq1, bounds)
+        result = linprog(c=energies,
+                         A_eq=np.transpose(eq2),
+                         b_eq=eq1,
+                         bounds=bounds,
+                         options={'lstsq': True,
+                                  'presolve': True})
 
         if verbose:
             print_results(zip(names, result.x, energies))

@@ -56,6 +56,12 @@ class Cell:
         return self.array.shape
 
     @classmethod
+    def ascell(cls, cell):
+        if isinstance(cell, cls):
+            return cell
+        return cls.new(cell)
+
+    @classmethod
     def new(cls, cell=None, pbc=None):
         if pbc is None:
             pbc = getattr(cell, 'pbc', None)
@@ -86,16 +92,30 @@ class Cell:
 
         This is similar to cellpar_to_cell()."""
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
-        return Cell(cell, pbc=pbc)
+        return cls(cell, pbc=pbc)
 
-    def get_bravais_lattice(self, eps=2e-4, _niggli_reduce=False, _warn=True):
+    def get_bravais_lattice(self, eps=2e-4):
         # We want to always reduce (so things are as robust as possible)
         # ...or not.  It is not very reliable somehow.
         from ase.geometry.bravais import get_bravais_lattice
-        return get_bravais_lattice(self, eps=eps,
-                                   _niggli_reduce=_niggli_reduce)
+        return get_bravais_lattice(self, eps=eps)
 
-    def bandpath(self, path=None, npoints=None, density=None, eps=2e-4):
+    def bandpath(self, path=None, npoints=None, density=None,
+                 special_points=None, eps=2e-4):
+        # TODO: Combine with the rotation transformation from bandpath()
+        if special_points is None:
+            from ase.geometry.bravais import identify_lattice
+            lat, op = identify_lattice(self, eps=eps)
+            path = lat.bandpath(path, npoints=npoints, density=density)
+            return path.transform(op)
+        else:
+            from ase.dft.kpoints import BandPath
+            path = BandPath(path, special_points=special_points)
+            return path.interpolate(npoints=npoints, density=density)
+
+
+    # XXX adapt the transformation stuff and include in the bandpath method.
+    def oldbandpath(self, path=None, npoints=None, density=None, eps=2e-4):
         bravais = self.get_bravais_lattice(eps=eps)
         transformation = bravais.get_transformation(self.array)
         return bravais.bandpath(path=path, npoints=npoints, density=density,
@@ -193,9 +213,9 @@ class Cell:
             pbc = False
         return 'Cell({}, pbc={})'.format(numbers, pbc)
 
-    def niggli_reduce(self):
+    def niggli_reduce(self, eps=1e-5):
         from ase.build.tools import niggli_reduce_cell
-        cell, op = niggli_reduce_cell(self.array)
+        cell, op = niggli_reduce_cell(self.array, epsfactor=1e-5)
         return Cell(cell, self.pbc), op
 
 
@@ -310,7 +330,9 @@ def cellpar_to_cell(cellpar, ab_normal=(0, 0, 1), a_direction=None):
     vb = b * np.array([cos_gamma, sin_gamma, 0])
     cx = cos_beta
     cy = (cos_alpha - cos_beta * cos_gamma) / sin_gamma
-    cz = sqrt(1. - cx * cx - cy * cy)
+    cz_sqr = 1. - cx * cx - cy * cy
+    assert cz_sqr >= 0
+    cz = sqrt(cz_sqr)
     vc = c * np.array([cx, cy, cz])
 
     # Convert to the Cartesian x,y,z-system
