@@ -7,7 +7,7 @@ import os
 
 import numpy as np
 
-from ase.io.eps import EPS
+from ase.io.utils import generate_writer_variables
 from ase.constraints import FixAtoms
 from ase.utils import basestring
 
@@ -62,7 +62,7 @@ def get_bondpairs(atoms, radius=1.1):
     return bondpairs
 
 
-class POVRAY(EPS):
+class POVRAY(generate_writer_variables):
     default_settings = {
         # x, y is the image plane, z is *out* of the screen
         'display': True,  # display while rendering
@@ -91,7 +91,7 @@ class POVRAY(EPS):
     def __init__(self, atoms, scale=1.0, **parameters):
         for k, v in self.default_settings.items():
             setattr(self, k, parameters.pop(k, v))
-        EPS.__init__(self, atoms, scale=scale, **parameters)
+        generate_writer_variables.__init__(self, atoms, scale=scale, **parameters)
         constr = atoms.constraints
         self.constrainatoms = []
         for c in constr:

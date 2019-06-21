@@ -3,7 +3,7 @@ from distutils.version import LooseVersion
 from ase.io.utils import generate_writer_variables, make_patch_list
 
 
-class EPS:
+class EPS(generate_writer_variables):
     def __init__(self, atoms,
                  rotation='', show_unit_cell=0, radii=None,
                  bbox=None, colors=None, scale=20, maxwidth=500):
@@ -13,7 +13,7 @@ class EPS:
             0: Don't show unit cell (default).  1: Show unit cell.
             2: Show unit cell and make sure all of it is visible.
         """
-        generate_writer_variables(
+        generate_writer_variables.__init__(
             self, atoms, rotation=rotation,
             show_unit_cell=show_unit_cell,
             radii=radii, bbox=bbox, colors=colors, scale=scale,
