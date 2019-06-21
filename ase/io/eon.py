@@ -31,9 +31,10 @@ def read_eon(fileobj, index = -1):
     more_images_to_read = True
     images = []
 
-    while more_images_to_read == True:
+    first_line = f.readline()
+    while more_images_to_read:
 
-        comment = f.readline().strip()
+        comment = first_line.strip()
         f.readline()  # 0.0000 TIME  (??)
         cell_lengths = f.readline().split()
         cell_angles = f.readline().split()
@@ -69,12 +70,10 @@ def read_eon(fileobj, index = -1):
 
         images.append(atoms)
 
-        last_pos = f.tell()
-        if f.readline() == '':
+
+        first_line = f.readline()
+        if first_line == '':
             more_images_to_read = False
-        f.seek(last_pos) # reset to file position before f.readline()
-        #print( f.readline())
-        #f.seek(last_pos)
 
 
     if isinstance(fileobj, basestring):
