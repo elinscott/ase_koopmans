@@ -121,6 +121,7 @@ class BandPath:
             labelseq = ''.join(labelseq)
 
         assert cell.shape == (3, 3)
+        kpts = np.asarray(kpts)
         assert kpts.ndim == 2 and kpts.shape[1] == 3
         self.cell = Cell.new(cell)
         self.icell = self.cell.reciprocal()

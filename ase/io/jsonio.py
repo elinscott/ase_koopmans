@@ -18,11 +18,19 @@ class MyEncoder(json.JSONEncoder):
                 d['__ase_objtype__'] = obj.ase_objtype
 
             return d
-        if isinstance(obj, np.ndarray) or hasattr(obj, '__array__'):
+        if isinstance(obj, np.ndarray):
+            d = {'__ase_objtype__': 'ndarray',
+                 'dtype': obj.dtype.name,
+                 'shape': list(obj.shape)}
             if obj.dtype == complex:
-                return {'__complex_ndarray__': (obj.real.tolist(),
-                                                obj.imag.tolist())}
-            return obj.tolist()
+                # Cast into float array of twice the size:
+                flatbuf = obj.ravel()
+                flatbuf.dtype = float
+                assert 2 * obj.size == flatbuf.size
+                d['data'] = flatbuf.tolist()
+            else:
+                d['data'] = obj.ravel().tolist()
+            return d
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.bool_):
@@ -45,14 +53,23 @@ def object_hook(dct):
 
     if '__ase_objtype__' in dct:
         objtype = dct.pop('__ase_objtype__')
-        dct = numpyfy(dct)
 
         # We just try each object type one after another and instantiate
         # them manually, depending on which kind it is.
         # We can formalize this later if it ever becomes necessary.
-        if objtype == 'cell':
+        if objtype == 'ndarray':
+            array = np.empty(dct['shape'], dtype=dct['dtype'])
+            if array.dtype == complex:
+                flatbuf = array.ravel()
+                flatbuf.dtype = float
+                flatbuf[:] = dct['data']
+            else:
+                array.flat[:] = dct['data']
+            return array
+
+        elif objtype == 'cell':
             from ase.geometry.cell import Cell
-            obj = Cell(**dct)
+            obj = Cell.new(dct['array'], dct['pbc'])
         elif objtype == 'bandstructure':
             from ase.dft.band_structure import BandStructure
             obj = BandStructure(**dct)
@@ -98,13 +115,16 @@ def numpyfy(obj):
     return obj
 
 
-def decode(txt):
-    return numpyfy(mydecode(txt))
+def decode(txt, always_array=True):
+    obj = mydecode(txt)
+    if always_array:
+        obj = numpyfy(obj)
+    return obj
 
 
 @reader
-def read_json(fd):
-    dct = decode(fd.read())
+def read_json(fd, always_array=True):
+    dct = decode(fd.read(), always_array=always_array)
     return dct
 
 
