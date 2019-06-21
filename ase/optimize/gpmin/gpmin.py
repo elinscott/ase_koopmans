@@ -14,8 +14,8 @@ import pickle
 
 class GPMin(Optimizer, GaussianProcess):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None, prior=None,
-                 master=None, noise=0.005, weight=1., update_prior_strategy='maximum',
-                 scale=0.4, force_consistent=None, batch_size=5, bounds = None,
+                 master=None, noise=None, weight=None, update_prior_strategy='maximum',
+                 scale=None, force_consistent=None, batch_size=None, bounds = None,
                  update_hyperparams=False):
 
 
@@ -23,6 +23,26 @@ class GPMin(Optimizer, GaussianProcess):
         both potential energies and forces information to build a PES
         via Gaussian Process (GP) regression and then minimizes it.
 
+        Default behaviour: The default values of the following
+        parameters: scale, noise, weight, batch_size and bounds depend
+        on the value of update_hyperparams. In order to get the default 
+        value of any of them, they should be set up to None. 
+        Default values are:
+ 
+        update_hyperparams = True
+            scale : 0.3
+            noise : 0.004
+            weight: 2. 
+            bounds: 0.1
+            batch_size: 1
+
+        update_hyperparams = False
+            scale : 0.4
+            noise : 0.005
+            weight: 1.
+            bounds: irrelevant
+            batch_size: irrelevant
+ 
         Parameters:
 
         atoms: Atoms object
@@ -95,13 +115,46 @@ class GPMin(Optimizer, GaussianProcess):
             constraint (1-bound)*t_0 <= t <= (1+bound)*t_0 
             where t_0 is the value of the hyperparameter in the previous
             step.
-            If bounds is None, no constraints are set in the optimization of the
+            If bounds is False, no constraints are set in the optimization of the
             hyperparameters.
 
         """
 
-        self.nbatch = batch_size
-        self.eps = bounds
+        # Give it default hyperparameters
+
+        if update_hyperparams:       # Updated GPMin 
+            if scale is None:
+                scale = 0.3
+            if noise is None:
+                noise = 0.004
+            if weight is None:
+                weight = 2.
+
+            if bounds is None:
+               self.eps = 0.1
+            elif bounds is False:
+               self.eps = None
+            else:
+               self.eps = bounds
+
+            if batch_size is None:
+               self.nbatch = 1
+            else:
+               self.nbatch = batch_size
+
+
+        else:                        # GPMin without updates
+            if scale is None:
+                scale = 0.4       
+            if noise is None:
+                noise = 0.005
+            if weight is None: 
+                weight = 1.
+
+            
+            self.eps = bounds
+            self.nbathc = batch_size 
+        
         self.strategy = update_prior_strategy
         self.update_hp = update_hyperparams
         self.function_calls = 1
