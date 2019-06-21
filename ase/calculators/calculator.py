@@ -5,6 +5,7 @@ from math import pi, sqrt
 
 import numpy as np
 
+from ase.utils import jsonable
 from ase.dft.kpoints import bandpath, monkhorst_pack
 
 
@@ -103,7 +104,7 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 
 # Recognized names of calculators sorted alphabetically:
-names = ['abinit', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
+names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
          'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
          'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
          'hotbit', 'jacapo', 'lammpsrun',
@@ -130,7 +131,18 @@ special = {'cp2k': 'CP2K',
            'tip3p': 'TIP3P'}
 
 
-def get_calculator(name):
+external_calculators = {}
+
+
+def register_calculator_class(name, cls):
+    """ Add the class into the database. """
+    assert name not in external_calculators
+    external_calculators[name] = cls
+    names.append(name)
+    names.sort()
+
+
+def get_calculator_class(name):
     """Return calculator class."""
     if name == 'asap':
         from asap3 import EMT as Calculator
@@ -140,6 +152,10 @@ def get_calculator(name):
         from hotbit import Calculator
     elif name == 'vasp2':
         from ase.calculators.vasp import Vasp2 as Calculator
+    elif name == 'ace':
+        from ase.calculators.acemolecule import ACE as Calculator
+    elif name in external_calculators:
+        Calculator = external_calculators[name]
     else:
         classname = special.get(name, name.title())
         module = __import__('ase.calculators.' + name, {}, None, [classname])
@@ -149,23 +165,25 @@ def get_calculator(name):
 
 def equal(a, b, tol=None):
     """ndarray-enabled comparison function."""
-    if isinstance(a, np.ndarray):
-        b = np.array(b)
-        if a.shape != b.shape:
-            return False
-        if tol is None:
-            return (a == b).all()
-        else:
-            return np.allclose(a, b, rtol=tol, atol=tol)
-    if isinstance(b, np.ndarray):
-        return equal(b, a, tol)
-    if isinstance(a, dict) and isinstance(b, dict):
-        if a.keys() != b.keys():
-            return False
-        return all(equal(a[key], b[key], tol) for key in a.keys())
+    # XXX Known bugs:
+    #  * Comparing cell objects (pbc not part of array representation)
+    #  * Infinite recursion for cyclic dicts
+    #  * Can of worms is open
     if tol is None:
-        return a == b
-    return abs(a - b) < tol * abs(b) + tol
+        return np.array_equal(a, b)
+
+    shape = np.shape(a)
+    if shape != np.shape(b):
+        return False
+
+    if not shape:
+        if isinstance(a, dict) and isinstance(b, dict):
+            if a.keys() != b.keys():
+                return False
+            return all(equal(a[key], b[key], tol) for key in a.keys())
+        return abs(a - b) < tol * abs(b) + tol
+
+    return np.allclose(a, b, rtol=tol, atol=tol)
 
 
 def kptdensity2monkhorstpack(atoms, kptdensity=3.5, even=True):
@@ -239,22 +257,42 @@ def kpts2sizeandoffsets(size=None, density=None, gamma=None, even=None,
     return size, offsets
 
 
-def kpts2ndarray(kpts, atoms=None):
-    """Convert kpts keyword to 2-d ndarray of scaled k-points."""
+@jsonable('kpoints')
+class KPoints:
+    def __init__(self, kpts=None):
+        if kpts is None:
+            kpts = np.zeros((1, 3))
+        self.kpts = kpts
 
+    def todict(self):
+        return vars(self)
+
+
+def kpts2kpts(kpts, atoms=None):
     if kpts is None:
-        return np.zeros((1, 3))
+        return KPoints()
+
+    if hasattr(kpts, 'kpts'):
+        return kpts
 
     if isinstance(kpts, dict):
+        if 'kpts' in kpts:
+            return KPoints(kpts['kpts'])
         if 'path' in kpts:
-            return bandpath(cell=atoms.cell, **kpts)[0]
+            path = bandpath(cell=atoms.cell, **kpts)
+            return path
         size, offsets = kpts2sizeandoffsets(atoms=atoms, **kpts)
-        return monkhorst_pack(size) + offsets
+        return KPoints(monkhorst_pack(size) + offsets)
 
     if isinstance(kpts[0], int):
-        return monkhorst_pack(kpts)
+        return KPoints(monkhorst_pack(kpts))
 
-    return np.array(kpts)
+    return KPoints(np.array(kpts))
+
+
+def kpts2ndarray(kpts, atoms=None):
+    """Convert kpts keyword to 2-d ndarray of scaled k-points."""
+    return kpts2kpts(kpts, atoms=atoms).kpts
 
 
 class EigenvalOccupationMixin:
@@ -302,9 +340,28 @@ class Parameters(dict):
     @classmethod
     def read(cls, filename):
         """Read parameters from file."""
-        file = open(os.path.expanduser(filename))
-        parameters = cls(eval(file.read()))
-        file.close()
+        # We use ast to evaluate literals, avoiding eval()
+        # for security reasons.
+        import ast
+        with open(filename) as fd:
+            txt = fd.read().strip()
+        assert txt.startswith('dict(')
+        assert txt.endswith(')')
+        txt = txt[5:-1]
+
+        # The tostring() representation "dict(...)" is not actually
+        # a literal, so we manually parse that along with the other
+        # formatting that we did manually:
+        dct = {}
+        for line in txt.splitlines():
+            key, val = line.split('=', 1)
+            key = key.strip()
+            val = val.strip()
+            if val[-1] == ',':
+                val = val[:-1]
+            dct[key] = ast.literal_eval(val)
+
+        parameters = cls(dct)
         return parameters
 
     def tostring(self):
@@ -338,7 +395,7 @@ class Calculator(object):
     'Default parameters'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
-                 atoms=None, **kwargs):
+                 atoms=None, directory='.', **kwargs):
         """Basic calculator implementation.
 
         restart: str
@@ -347,8 +404,13 @@ class Calculator(object):
         ignore_bad_restart_file: bool
             Ignore broken or missing restart file.  By default, it is an
             error if the restart file is missing or broken.
+        directory: str
+            Working directory in which to read and write files and
+            perform calculations.
         label: str
-            Name used for all files.  May contain a directory.
+            Name used for all files.  Not supported by all calculators.
+            May contain a directory, but please use the directory parameter
+            for that instead.
         atoms: Atoms object
             Optional Atoms object to which the calculator will be
             attached.  When restarting, atoms will get its positions and
@@ -367,11 +429,15 @@ class Calculator(object):
                 else:
                     raise
 
-        self.label = None
-        self.directory = None
+        self.directory = directory
         self.prefix = None
-
-        self.set_label(label)
+        if label is not None:
+            if directory != '.' and '/' in label:
+                raise ValueError('Directory redundantly specified though '
+                                 'directory="{}" and label="{}".  '
+                                 'Please omit "/" in label.'
+                                 .format(directory, label))
+            self.set_label(label)
 
         if self.parameters is None:
             # Use default parameters if they were not read from file:
@@ -392,6 +458,40 @@ class Calculator(object):
         if not hasattr(self, 'name'):
             self.name = self.__class__.__name__.lower()
 
+    @property
+    def label(self):
+        if self.directory == '.':
+            return self.prefix
+
+        # Generally, label ~ directory/prefix
+        #
+        # We use '/' rather than os.pathsep because
+        #   1) directory/prefix does not represent any actual path
+        #   2) We want the same string to work the same on all platforms
+        if self.prefix is None:
+            return self.directory + '/'
+
+        return '{}/{}'.format(self.directory, self.prefix)
+
+    @label.setter
+    def label(self, label):
+        if label is None:
+            self.directory = '.'
+            self.prefix = None
+            return
+
+        tokens = label.rsplit('/', 1)
+        if len(tokens) == 2:
+            directory, prefix = tokens
+        else:
+            assert len(tokens) == 1
+            directory = '.'
+            prefix = tokens[0]
+        if prefix == '':
+            prefix = None
+        self.directory = directory
+        self.prefix = prefix
+
     def set_label(self, label):
         """Set label and convert label to directory and prefix.
 
@@ -399,20 +499,12 @@ class Calculator(object):
 
         * label='abc': (directory='.', prefix='abc')
         * label='dir1/abc': (directory='dir1', prefix='abc')
+        * label=None: (directory='.', prefix=None)
 
         Calculators that must write results to files with fixed names
-        can overwrite this method so that the directory is set to all
+        can override this method so that the directory is set to all
         of label."""
-
         self.label = label
-
-        if label is None:
-            self.directory = None
-            self.prefix = None
-        else:
-            self.directory, self.prefix = os.path.split(label)
-            if self.directory == '':
-                self.directory = os.curdir
 
     def get_default_parameters(self):
         return Parameters(copy.deepcopy(self.default_parameters))
@@ -702,23 +794,24 @@ class FileIOCalculator(Calculator):
             name = 'ASE_' + self.name.upper() + '_COMMAND'
             self.command = os.environ.get(name, self.command)
 
+    def calculate(self, atoms=None, properties=['energy'],
+                  system_changes=all_changes):
+        Calculator.calculate(self, atoms, properties, system_changes)
+        self.write_input(self.atoms, properties, system_changes)
         if self.command is None:
             raise CalculatorSetupError(
                 'Please set ${} environment variable '
                 .format('ASE_' + self.name.upper() + '_COMMAND') +
                 'or supply the command keyword')
-
-    def calculate(self, atoms=None, properties=['energy'],
-                  system_changes=all_changes):
-        Calculator.calculate(self, atoms, properties, system_changes)
-        self.write_input(self.atoms, properties, system_changes)
-        command = self.command.replace('PREFIX', self.prefix)
+        command = self.command
+        if 'PREFIX' in command:
+            command = command.replace('PREFIX', self.prefix)
         errorcode = subprocess.call(command, shell=True, cwd=self.directory)
 
         if errorcode:
+            path = os.path.abspath(self.directory)
             raise CalculationFailed('{} in {} returned an error: {}'
-                                    .format(self.name, self.directory,
-                                            errorcode))
+                                    .format(self.name, path, errorcode))
         self.read_results()
 
     def write_input(self, atoms, properties=None, system_changes=None):
@@ -727,7 +820,8 @@ class FileIOCalculator(Calculator):
         Call this method first in subclasses so that directories are
         created automatically."""
 
-        if self.directory != os.curdir and not os.path.isdir(self.directory):
+        absdir = os.path.abspath(self.directory)
+        if absdir != os.curdir and not os.path.isdir(self.directory):
             os.makedirs(self.directory)
 
     def read_results(self):

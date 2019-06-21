@@ -26,7 +26,7 @@ class Matplotlib(generate_writer_variables):
             self.ax.add_patch(patch)
 
 
-def animate(images, fig=None, ax=None,
+def animate(images, ax=None,
             interval=200,  # in ms; same default value as in FuncAnimation
             save_count=100,
             **parameters):
@@ -37,14 +37,15 @@ def animate(images, fig=None, ax=None,
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
-    if fig is None:
-        fig = plt.gcf()
     if ax is None:
         ax = plt.gca()
+
+    fig = ax.get_figure()
 
     nframes = [0]
     def drawimage(atoms):
         ax.clear()
+        ax.axis('off')
         plot_atoms(atoms, ax=ax, **parameters)
         nframes[0] += 1
         # Animation will stop without warning if we don't have len().

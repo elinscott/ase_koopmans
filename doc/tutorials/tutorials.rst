@@ -28,6 +28,7 @@ but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
    lattice_constant
    eos/eos
    db/db
+   deltacodesdft/deltacodesdft
    constraints/diffusion
    selfdiffusion/al110
    neb/diffusion
@@ -35,6 +36,7 @@ but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
    dissociation
    md/md
    tipnp_equil/tipnp_equil
+   acn_equil/acn_equil
    wannier/wannier
    minimahopping/minimahopping
    ga/ga_optimize

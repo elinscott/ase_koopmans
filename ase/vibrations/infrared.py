@@ -160,7 +160,10 @@ class Infrared(Vibrations):
 
         def load(fname, combined_data=None):
             if combined_data is not None:
-                return combined_data[fname]
+                try:
+                    return combined_data[op.basename(fname)]
+                except KeyError:
+                    return combined_data[fname]  # Old version
             return pickleload(open(fname, 'rb'))
 
         if direction != 'central':

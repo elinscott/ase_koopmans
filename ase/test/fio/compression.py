@@ -10,7 +10,7 @@ import numpy as np
 from ase import io
 from ase.io import formats
 from ase.build import bulk
-from ase.test import NotAvailable
+import unittest
 
 
 single = bulk('Au')
@@ -115,6 +115,6 @@ if __name__ in ('__main__', '__builtin__'):
         test_modes('xz')
     except ImportError as ex:
         if 'lzma' in ex.args[0] or 'backports' in ex.args[0]:
-            raise NotAvailable('no backports.lzma module')
+            raise unittest.SkipTest('no backports.lzma module')
         else:
             raise

@@ -95,6 +95,38 @@ Example of use::
     indices 0 and 2 will be fixed. The constraint is for the same purpose
     as the FixBondLength class.
 
+The FixLinearTriatomic class
+============================
+
+This class is used to keep the geometry of linear triatomic molecules
+rigid in geometry optimizations or molecular dynamics runs. Rigidness 
+of linear triatomic molecules is impossible to attain by constraining 
+all interatomic distances using :class:`FixBondLength`, as this won't
+remove an adequate number of degrees of freedom. To overcome this, 
+:class:`FixLinearTriatomic` fixes the distance between the outer atoms 
+with RATTLE and applies a linear vectorial constraint to the central 
+atom using the RATTLE-constrained positions of the outer atoms (read 
+more about the method here: G. Ciccotti, M. Ferrario, J.-P. Ryckaert, 
+Molecular Physics 47, 1253 (1982)). 
+
+When setting these constraints one has to specify a list of triples
+of atomic indices, each triple representing a specific triatomic molecule.
+
+.. autoclass:: FixLinearTriatomic
+
+The example below shows how to fix the geometry of two carbon dioxide
+molecules::
+
+    >>> from ase.build import molecule
+    >>> from ase.constraints import FixLinearTriatomic
+    >>> atoms = molecule('CO2')
+    >>> dimer = atoms + atoms.copy()
+    >>> c = FixLinearTriatomic(pairs=[(1, 0, 2), (4, 3, 5)])
+    >>> dimer.set_constraint(c)
+
+.. note::
+    When specifying a triple of indices, the second element must correspond
+    to the index of the central atom.
 
 The FixedLine class
 ===================

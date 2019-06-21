@@ -392,7 +392,8 @@ class Writer:
                                   dict, list, tuple, basestring,
                                   type(None))):
                 self.data[name] = value
-            elif isinstance(value, np.ndarray):
+            elif hasattr(value, '__array__'):
+                value = np.asarray(value)
                 if value.ndim == 0:
                     self.data[name] = value.item()
                 else:

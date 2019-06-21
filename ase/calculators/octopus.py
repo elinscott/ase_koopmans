@@ -19,7 +19,6 @@ from ase.calculators.calculator import PropertyNotImplementedError
 # XXX raise ReadError upon bad read
 from ase.data import atomic_numbers
 from ase.io import read
-from ase.io.xsf import read_xsf
 from ase.units import Bohr, Angstrom, Hartree, eV, Debye
 
 
@@ -111,6 +110,12 @@ def read_eigenvalues_file(fd):
                 #fermilevel = float(m.group(1))
             else:
                 spin, eig, occ = m.group(1, 2, 3)
+
+                if not eigs:
+                    # Only initialized if kpoint header was written
+                    eigs.append({})
+                    occs.append({})
+
                 eigs[-1].setdefault(spin, []).append(float(eig))
                 occs[-1].setdefault(spin, []).append(float(occ))
 
@@ -677,7 +682,7 @@ def generate_input(atoms, kwargs, normalized2pretty):
         append('')
 
     def setvar(key, var):
-        prettykey = normalized2pretty[key]
+        prettykey = normalized2pretty.get(key, key)
         append('%s = %s' % (prettykey, var))
 
     for kw in ['lsize', 'latticevectors', 'latticeparameters']:
@@ -719,15 +724,8 @@ def generate_input(atoms, kwargs, normalized2pretty):
     # Even though the forces are written in the same format no matter
     # OutputFormat.  Thus we have to make one up:
 
-    # Old Octopus has 'OutputHow' but new Octopus has 'OutputFormat'.
-    # We have to write the right one.
-    outputkw = 'outputformat'
-    if outputkw not in normalized2pretty:
-        outputkw = 'outputhow'
-    assert outputkw in normalized2pretty
-
-    if outputkw not in kwargs:
-        setvar(outputkw, 'xcrysden')
+    if 'outputformat' not in kwargs:
+        setvar('outputformat', 'xcrysden')
 
     for key, val in kwargs.items():
         # Most datatypes are straightforward but blocks require some attention.
@@ -743,6 +741,18 @@ def generate_input(atoms, kwargs, normalized2pretty):
     extend(coord_block)
     return '\n'.join(_lines)
 
+
+def read_static_info_stress(fd):
+    stress_cv = np.empty((3, 3))
+
+    headers = next(fd)
+    assert headers.strip().startswith('T_{ij}')
+    for i in range(3):
+        line = next(fd)
+        tokens = line.split()
+        vec = np.array(tokens[1:4]).astype(float)
+        stress_cv[i] = vec
+    return stress_cv
 
 def read_static_info_kpoints(fd):
     for line in fd:
@@ -840,6 +850,11 @@ def read_static_info(fd):
         elif line.startswith('Energy ['):
             unit = get_energy_unit(line)
             results.update(read_static_info_energy(fd, unit))
+        elif line.startswith('Stress tensor'):
+            assert line.split()[-1] == '[H/b^3]'
+            stress = read_static_info_stress(fd)
+            stress *= Hartree / Bohr**3
+            results.update(stress=stress)
         elif line.startswith('Total Magnetic Moment'):
             if 0:
                 line = next(fd)
@@ -908,7 +923,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     The label is always assumed to be a directory."""
 
     implemented_properties = ['energy', 'forces',
-                              'dipole',
+                              'dipole', 'stress',
                               #'magmom', 'magmoms'
     ]
 
@@ -928,11 +943,11 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def __init__(self,
                  restart=None,
                  label=None,
+                 directory=None,
                  atoms=None,
                  command=None,
                  ignore_troublesome_keywords=None,
                  check_keywords=True,
-                 _autofix_outputformats=False,
                  **kwargs):
         """Create Octopus calculator.
 
@@ -959,16 +974,14 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         else:
             octopus_keywords = None
         self.octopus_keywords = octopus_keywords
-        self._autofix_outputformats = _autofix_outputformats
 
-        if restart is not None:
-            if label is not None and restart != label:
-                raise ValueError('restart and label are mutually exclusive '
-                                 'or must at the very least coincide.')
-            label = restart
+        if label is not None:
+            import warnings
+            warnings.warn('Please use directory=... instead of label')
+            directory = label.rstrip('/')
 
-        if label is None:
-            label = 'ink-pool'
+        if directory is None:
+            directory = 'ink-pool'
 
         if ignore_troublesome_keywords:
             trouble = set(self.troublesome_keywords)
@@ -980,17 +993,10 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
 
         FileIOCalculator.__init__(self, restart=restart,
                                   ignore_bad_restart_file=False,
-                                  label=label,
+                                  directory=directory,
                                   atoms=atoms,
                                   command=command, **kwargs)
         # The above call triggers set() so we can update self.kwargs.
-
-    def set_label(self, label):
-        # Octopus does not support arbitrary namings of all the output files.
-        # But we can decide that we always dump everything in a directory.
-        if not label.endswith('/'):
-            label += '/'
-        FileIOCalculator.set_label(self, label)
 
     def set(self, **kwargs):
         """Set octopus input file parameters."""
@@ -1013,18 +1019,9 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         # XXX should use 'Parameters' but don't know how
 
     def check_keywords_exist(self, kwargs):
-        keywords = list(kwargs.keys())
-        for keyword in keywords:
+        for keyword in kwargs:
             if (keyword not in self.octopus_keywords
-                and keyword not in self.special_ase_keywords):
-                if self._autofix_outputformats:
-                    if (keyword == 'outputhow' and 'outputformat'
-                            in self.octopus_keywords):
-                        kwargs['outputformat'] = kwargs.pop('outputhow')
-                    if (keyword == 'outputformat' and 'outputhow'
-                            in self.octopus_keywords):
-                        kwargs['outputhow'] = kwargs.pop('outputformat')
-                    continue
+                  and keyword not in self.special_ase_keywords):
 
                 msg = ('Unknown Octopus keyword %s.  Use oct-help to list '
                        'available keywords.') % keyword
@@ -1060,118 +1057,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
 
     def get_stresses(self):
         raise PropertyNotImplementedError
-
-    def _read_array(self, fname, outputkeyword=None):
-        path = self._getpath('static/%s' % fname)
-        if not os.path.exists(path):
-            msg = 'Path not found: %s' % path
-            if outputkeyword is not None:
-                msg += ('\nIt appears that the %s has not been saved.\n'
-                        'Be sure to specify Output=\'%s\' in the input.'
-                        % (outputkeyword, outputkeyword))
-            raise OctopusIOError(msg)
-        # If this causes an error now that the file exists, things are
-        # messed up.  Then it is better that the error propagates as normal
-        return read_xsf(path, read_data=True)
-
-    def read_vn(self, basefname, keywordname):
-        static_dir = self._getpath('static')
-        assert os.path.isdir(static_dir)
-
-        if self.get_spin_polarized():
-            spin1, _atoms = self._read_array('%s-sp1.xsf' % basefname,
-                                             keywordname)
-            spin2, _atoms = self._read_array('%s-sp2.xsf' % basefname,
-                                             keywordname)
-            array = np.array([spin1, spin2])  # shape 2, nx, ny, nz
-        else:
-            array, _atoms = self._read_array('%s.xsf' % basefname, keywordname)
-            array = array[None]  # shape 1, nx, ny, nx
-        assert len(array.shape) == 4
-        return array
-
-    def _unpad_periodic(self, array):
-        return unpad(self.get_atoms().pbc, array)
-
-    def _pad_unperiodic(self, array):
-        pbc = self.get_atoms().pbc
-        orig_shape = array.shape
-        newshape = [orig_shape[c] + (0 if pbc[c] else 1) for c in range(3)]
-        out = np.zeros(newshape, dtype=array.dtype)
-        nx, ny, nz = orig_shape
-        out[:nx, :ny, :nz] = array
-        return out
-
-    def _pad_correctly(self, array, pad):
-        array = self._unpad_periodic(array)
-        if pad:
-            array = self._pad_unperiodic(array)
-        return array
-
-    def get_pseudo_density(self, spin=None, pad=True):
-        """Return pseudo-density array.
-
-        If *spin* is not given, then the total density is returned.
-        Otherwise, the spin up or down density is returned (spin=0 or
-        1)."""
-        if 'density_sg' not in self.results:
-            self.results['density_sg'] = self.read_vn('density', 'density')
-        density_sg = self.results['density_sg']
-        if spin is None:
-            density_g = density_sg.sum(axis=0)
-        else:
-            assert spin == 0 or (spin == 1 and len(density_sg) == 2)
-            density_g = density_sg[spin]
-        return self._pad_correctly(density_g, pad)
-
-    def get_effective_potential(self, spin=0, pad=True):
-        if spin is None:  # Annoying case because it works as an index!
-            raise ValueError('spin=None')
-        if 'potential_sg' not in self.results:
-            self.results['potential_sg'] = self.read_vn('vks', 'potential')
-        array = self.results['potential_sg'][spin]
-        return self._pad_correctly(array, pad)
-
-    def get_pseudo_wave_function(self, band=0, kpt=0, spin=0, broadcast=True,
-                                 pad=True):
-        """Return pseudo-wave-function array."""
-        assert band < self.get_number_of_bands()
-
-        ibz_k_pts = self.get_ibz_k_points()
-
-        forcecomplex = self.kwargs.get('forcecomplex')
-        if forcecomplex is not None:
-            forcecomplex = octbool2bool(forcecomplex)
-        if len(ibz_k_pts) > 1 or ibz_k_pts.any() or forcecomplex:
-            dtype = complex
-        else:
-            dtype = float  # Might there be more issues that determine dtype?
-
-        if self.get_spin_polarized():
-            kpt_index = 2 * kpt + spin  # XXX this is *probably* correct
-        else:
-            kpt_index = kpt
-
-        # The ASE convention is that kpts and bands start from 0,
-        # whereas in Octopus they start from 1.  So always add 1
-        # when looking for filenames.
-        kpt_index += 1
-        band_index = band + 1
-
-        tokens = ['wf']
-        if len(ibz_k_pts) > 1 or self.get_spin_polarized():
-            tokens.append('-k%03d' % kpt_index)
-        tokens.append('-st%04d' % band_index)
-        name = ''.join(tokens)
-
-        if dtype == float:
-            array, _atoms = self._read_array('%s.xsf' % name, 'wfs')
-        else:
-            array_real, _atoms = self._read_array('%s.real.xsf' % name, 'wfs')
-            array_imag, _atoms = self._read_array('%s.imag.xsf' % name, 'wfs')
-            array = array_real + 1j * array_imag
-
-        return self._pad_correctly(array, pad)
 
     def get_number_of_spins(self):
         """Return the number of spins in the calculation.
@@ -1260,14 +1145,13 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         fd.write(txt)
         fd.close()
 
-    def read(self, label):
+    def read(self, directory):
         # XXX label of restart file may not be the same as actual label!
         # This makes things rather tricky.  We first set the label to
         # that of the restart file and arbitrarily expect the remaining code
         # to rectify any consequent inconsistencies.
-        self.set_label(label)
+        self.directory = directory
 
-        FileIOCalculator.read(self, label)
         inp_path = self._getpath('inp')
         fd = open(inp_path)
         kwargs = parse_input_file(fd)

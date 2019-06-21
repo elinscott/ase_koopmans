@@ -97,8 +97,7 @@ class POVRAY(generate_writer_variables):
         for c in constr:
             if isinstance(c, FixAtoms):
                 for n, i in enumerate(c.index):
-                    if i:
-                        self.constrainatoms += [n]
+                    self.constrainatoms += [i]                    
 
     def cell_to_lines(self, cell):
         return np.empty((0, 3)), None, None

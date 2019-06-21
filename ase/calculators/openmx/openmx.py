@@ -158,8 +158,8 @@ class OpenMX(FileIOCalculator):
         try:
             os.chdir(abs_dir)
             if self.command is None:
-                self.command = 'openmx %s > %s'
-            command = self.command
+                self.command = 'openmx'
+            command = self.command + ' %s > %s'
             command = command % (runfile, outfile)
             self.prind(command)
             p = subprocess.Popen(command, shell=True, universal_newlines=True)

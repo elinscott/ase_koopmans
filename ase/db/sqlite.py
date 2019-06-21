@@ -97,7 +97,8 @@ init_statements = [
     name TEXT,
     value TEXT)""",
 
-    "INSERT INTO information VALUES ('version', '{}')".format(VERSION)]
+    "INSERT INTO information VALUES ('version', '{}')".format(VERSION),
+    ]
 
 index_statements = [
     'CREATE INDEX unique_id_index ON systems(unique_id)',
@@ -229,6 +230,7 @@ class SQLite3Database(Database, object):
         self.initialized = True
 
     def _write(self, atoms, key_value_pairs, data, id):
+        ext_tables = key_value_pairs.pop("external_tables", {})
         Database._write(self, atoms, key_value_pairs, data)
         encode = self.encode
 
@@ -249,6 +251,13 @@ class SQLite3Database(Database, object):
             row.user = os.getenv('USER')
         else:
             row = atoms
+
+            # Extract the external tables from AtomsRow
+            names = self._get_external_table_names(db_con=con)
+            for name in names:
+                new_table = row.get(name, {})
+                if new_table:
+                    ext_tables[name] = new_table
 
         if id:
             self._delete(cur, [id], ['keys', 'text_key_values',
@@ -339,6 +348,91 @@ class SQLite3Database(Database, object):
         cur.executemany('INSERT INTO keys VALUES (?, ?)',
                         [(key, id) for key in key_value_pairs])
 
+        # Update external tables
+        valid_entries = []
+        for k, v in ext_tables.items():
+            try:
+                # Guess the type of the value
+                dtype = self._guess_type(v)
+                self._create_table_if_not_exists(k, dtype, db_con=con)
+                v["id"] = id
+                valid_entries.append(k)
+            except ValueError as exc:
+                # Close the connection without committing
+                if self.connection is None:
+                    con.close()
+                # Raise error again
+                raise ValueError(exc)
+
+        # Insert entries in the valid tables
+        for tabname in valid_entries:
+            try:
+                self._insert_in_external_table(
+                    cur, name=tabname, entries=ext_tables[tabname])
+            except ValueError as exc:
+                # Close the connection without committing
+                if self.connection is None:
+                    con.close()
+                # Raise the error again
+                raise ValueError(exc)
+
+        if self.connection is None:
+            con.commit()
+            con.close()
+
+        return id
+
+    def _update(self, id, key_value_pairs, data=None):
+        """Update key_value_pairs and data for a single row """
+        encode = self.encode
+        ext_tab = key_value_pairs.pop('external_tables', {})
+
+        con = self.connection or self._connect()
+        self._initialize(con)
+        cur = con.cursor()
+
+        mtime = now()
+
+        cur.execute(
+            "UPDATE systems SET mtime={}, key_value_pairs='{}' WHERE id={}"
+            .format(mtime, encode(key_value_pairs), id))
+        if data:
+            cur.execute("UPDATE systems set data='{}' where id={}"
+                        .format(encode(data), id))
+
+        self._delete(cur, [id], ['keys', 'text_key_values',
+                                 'number_key_values'])
+
+        text_key_values = []
+        number_key_values = []
+        for key, value in key_value_pairs.items():
+            if isinstance(value, (numbers.Real, np.bool_)):
+                number_key_values.append([key, float(value), id])
+            else:
+                assert isinstance(value, basestring)
+                text_key_values.append([key, value, id])
+
+        cur.executemany('INSERT INTO text_key_values VALUES (?, ?, ?)',
+                        text_key_values)
+        cur.executemany('INSERT INTO number_key_values VALUES (?, ?, ?)',
+                        number_key_values)
+        cur.executemany('INSERT INTO keys VALUES (?, ?)',
+                        [(key, id) for key in key_value_pairs])
+
+        for tabname, values in ext_tab.items():
+            values['id'] = id
+            try:
+                dtype = self._guess_type(values)
+                self._create_table_if_not_exists(tabname, dtype, db_con=con)
+                self._insert_in_external_table(
+                    cur, name=tabname, entries=values)
+            except ValueError as exc:
+                # Close the connection without committing
+                if self.connection is None:
+                    con.close()
+                # Raise the error again
+                raise ValueError(exc)
+
         if self.connection is None:
             con.commit()
             con.close()
@@ -422,6 +516,14 @@ class SQLite3Database(Database, object):
         if len(values) >= 27 and values[26] != 'null':
             dct['data'] = decode(values[26])
 
+        # Now we need to update with info from the external tables
+        external_tab = self._get_external_table_names()
+        tables = {}
+        for tab in external_tab:
+            row = self._read_external_table(tab, dct["id"])
+            tables[tab] = row
+
+        dct.update(tables)
         return AtomsRow(dct)
 
     def _old2new(self, values):
@@ -645,6 +747,8 @@ class SQLite3Database(Database, object):
         if len(ids) == 0:
             return
         con = self._connect()
+        self._delete(con.cursor(), ids,
+                     tables=self._get_external_table_names(db_con=con))
         self._delete(con.cursor(), ids)
         con.commit()
         con.close()
@@ -679,6 +783,155 @@ class SQLite3Database(Database, object):
                         ('metadata', md))
         con.commit()
 
+    def _get_external_table_names(self, db_con=None):
+        """Return a list with the external table names."""
+        con = db_con or self.connection or self._connect()
+        cur = con.cursor()
+        sql = "SELECT value FROM information WHERE name='external_table_name'"
+        cur.execute(sql)
+        ext_tab_names = [x[0] for x in cur.fetchall()]
+
+        if self.connection is None and db_con is None:
+            con.close()
+        return ext_tab_names
+
+    def _external_table_exists(self, name):
+        """Return True if an external table name exists."""
+        return name in self._get_external_table_names()
+
+    def _create_table_if_not_exists(self, name, dtype, db_con=None):
+        """Create a new table if it does not exits.
+
+        Arguments
+        ==========
+        name: str
+            Name of the new table
+        dtype: str
+            Datatype of the value field (typically REAL, INTEGER, TEXT etc.)
+        """
+        if name in all_tables:
+            raise ValueError("External table can not be any of {}"
+                             "".format(all_tables))
+
+        if self._external_table_exists(name):
+            return
+
+        con = db_con or self.connection or self._connect()
+        cur = con.cursor()
+        sql = "CREATE TABLE IF NOT EXISTS {} ".format(name)
+        sql += "(key TEXT, value {}, id INTEGER, ".format(dtype)
+        sql += "FOREIGN KEY (id) REFERENCES systems(id))"
+        cur.execute(sql)
+
+        sql = "INSERT INTO information VALUES (?, ?)"
+        # Insert an entry saying that there is a new external table
+        # present and an entry with the datatype
+        cur.execute(sql, ("external_table_name", name))
+        cur.execute(sql, (name+"_dtype", dtype))
+
+        if self.connection is None and db_con is None:
+            con.commit()
+            con.close()
+
+    def delete_external_table(self, name):
+        """Delete an external table."""
+        if not self._external_table_exists(name):
+            return
+
+        con = self.connection or self._connect()
+        cur = con.cursor()
+
+        sql = "DROP TABLE {}".format(name)
+        cur.execute(sql)
+
+        sql = "DELETE FROM information WHERE value=?"
+        cur.execute(sql, (name,))
+        sql = "DELETE FROM information WHERE name=?"
+        cur.execute(sql, (name+"_dtype",))
+
+        if self.connection is None:
+            con.commit()
+            con.close()
+
+    def _convert_to_recognized_types(self, value):
+        """Convert Numpy types to python types."""
+        if np.issubdtype(type(value), np.integer):
+            return int(value)
+        elif np.issubdtype(type(value), np.floating):
+            return float(value)
+        return value
+
+    def _insert_in_external_table(self, cursor, name=None, entries=None):
+        """Insert into external table"""
+        if name is None or entries is None:
+            # There is nothing to do
+            return
+
+        id = entries.pop("id")
+        dtype = self._guess_type(entries)
+        expected_dtype = self._get_value_type_of_table(cursor, name)
+        if dtype != expected_dtype:
+            raise ValueError("The provided data type for table {}"
+                             "is {}, while it is initialized to "
+                             "be of type {}"
+                             "".format(name, dtype, expected_dtype))
+
+        # First we check if entries already exists
+        cursor.execute("SELECT key FROM {} WHERE id=?".format(name), (id,))
+        updates = []
+        for item in cursor.fetchall():
+            value = entries.pop(item[0], None)
+            if value is not None:
+                updates.append(
+                    (value, id, self._convert_to_recognized_types(item[0])))
+
+        # Update entry if key and ID already exists
+        sql = "UPDATE {} SET value=? WHERE id=? AND key=?".format(name)
+        cursor.executemany(sql, updates)
+
+        # Insert the ones that does not already exist
+        inserts = [(k, self._convert_to_recognized_types(v), id)
+                   for k, v in entries.items()]
+        sql = "INSERT INTO {} VALUES (?, ?, ?)".format(name)
+        cursor.executemany(sql, inserts)
+
+    def _guess_type(self, entries):
+        """Guess the type based on the first entry."""
+        values = [v for _, v in entries.items()]
+
+        # Check if all datatypes are the same
+        all_types = [type(v) for v in values]
+        if any([t != all_types[0] for t in all_types]):
+            typenames = [t.__name__ for t in all_types]
+            raise ValueError("Inconsistent datatypes in the table. "
+                             "given types: {}".format(typenames))
+
+        val = values[0]
+        if isinstance(val, int) or np.issubdtype(type(val), np.integer):
+            return "INTEGER"
+        if isinstance(val, float) or np.issubdtype(type(val), np.floating):
+            return "REAL"
+        if isinstance(val, str):
+            return "TEXT"
+        raise ValueError("Unknown datatype!")
+
+    def _get_value_type_of_table(self, cursor, tab_name):
+        """Return the expected value name."""
+        sql = "SELECT value FROM information WHERE name=?"
+        cursor.execute(sql, (tab_name+"_dtype",))
+        return cursor.fetchone()[0]
+
+    def _read_external_table(self, name, id):
+        """Read row from external table."""
+        con = self.connection or self._connect()
+        cur = con.cursor()
+        cur.execute("SELECT * FROM {} WHERE id=?".format(name), (id,))
+        items = cur.fetchall()
+        dictionary = dict([(item[0], item[1]) for item in items])
+
+        if self.connection is None:
+            con.close()
+        return dictionary
 
 if __name__ == '__main__':
     import sys

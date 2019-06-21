@@ -58,6 +58,8 @@ class Dynamics:
 
         self.observers = []
         self.nsteps = 0
+        # maximum number of steps placeholder with maxint
+        self.max_steps = 100000000
 
         if trajectory is not None:
             if isinstance(trajectory, basestring):
@@ -108,6 +110,70 @@ class Dynamics:
             if call:
                 function(*args, **kwargs)
 
+    def irun(self):
+        """Run dynamics algorithm as generator. This allows, e.g.,
+        to easily run two optimizers or MD thermostats at the same time.
+
+        Examples:
+        >>> opt1 = BFGS(atoms)
+        >>> opt2 = BFGS(StrainFilter(atoms)).irun()
+        >>> for _ in opt2:
+        >>>     opt1.run()
+        """
+
+        # compute inital structure and log the first step
+        self.atoms.get_forces()
+
+        # yield the first time to inspect before logging
+        yield False
+
+        if self.nsteps == 0:
+            self.log()
+            self.call_observers()
+
+        # run the algorithm until converged or max_steps reached
+        while not self.converged() and self.nsteps < self.max_steps:
+
+            # compute the next step
+            self.step()
+            self.nsteps += 1
+
+            # let the user inspect the step and change things before logging
+            # and predicting the next step
+            yield False
+
+            # log the step
+            self.log()
+            self.call_observers()
+
+        # finally check if algorithm was converged
+        yield self.converged()
+
+    def run(self):
+        """Run dynamics algorithm.
+
+        This method will return when the forces on all individual
+        atoms are less than *fmax* or when the number of steps exceeds
+        *steps*."""
+
+        for converged in Dynamics.irun(self):
+            pass
+        return converged
+
+    def converged(self, *args):
+        """" a dummy function as placeholder for a real criterion, e.g. in
+        Optimizer """
+        return False
+
+    def log(self, *args):
+        """ a dummy function as placeholder for a real logger, e.g. in
+        Optimizer """
+        return True
+
+    def step(self):
+        """this needs to be implemented by subclasses"""
+        raise RuntimeError('step not implemented.')
+
 
 class Optimizer(Dynamics):
     """Base-class for all structure optimization classes."""
@@ -144,7 +210,11 @@ class Optimizer(Dynamics):
         """
         Dynamics.__init__(self, atoms, logfile, trajectory, master)
         self.force_consistent = force_consistent
+        if self.force_consistent is None:
+            self.set_force_consistent()
         self.restart = restart
+        # initialize attribute
+        self.fmax = None
 
         if restart is None or not isfile(restart):
             self.initialize()
@@ -160,48 +230,20 @@ class Optimizer(Dynamics):
     def initialize(self):
         pass
 
-    def irun(self, fmax=0.05, steps=100000000):
-        """Run structure optimization algorithm as generator. This allows, e.g.,
-        to easily run two optimizers at the same time.
-
-        Examples:
-        >>> opt1 = BFGS(atoms)
-        >>> opt2 = BFGS(StrainFilter(atoms)).irun()
-        >>> for _ in opt2:
-        >>>     opt1.run()
-        """
-
-        if self.force_consistent is None:
-            self.set_force_consistent()
+    def irun(self, fmax=0.05, steps=None):
+        """ call Dynamics.irun and keep track of fmax"""
         self.fmax = fmax
-        step = 0
-        while step < steps:
-            f = self.atoms.get_forces()
-            self.log(f)
-            self.call_observers()
-            if self.converged(f):
-                yield True
-                return
-            self.step(f)
-            yield False
-            self.nsteps += 1
-            step += 1
-
-        yield False
+        if steps:
+            self.max_steps = steps
+        return Dynamics.irun(self)
 
 
-    def run(self, fmax=0.05, steps=100000000):
-        """Run structure optimization algorithm.
-
-        This method will return when the forces on all individual
-        atoms are less than *fmax* or when the number of steps exceeds
-        *steps*.
-        FloK: Move functionality into self.irun to be able to run as
-              generator."""
-
-        for converged in self.irun(fmax, steps):
-            pass
-        return converged
+    def run(self, fmax=0.05, steps=None):
+        """ call Dynamics.run and keep track of fmax"""
+        self.fmax = fmax
+        if steps:
+            self.max_steps = steps
+        return Dynamics.run(self)
 
     def converged(self, forces=None):
         """Did the optimization converge?"""
@@ -212,7 +254,9 @@ class Optimizer(Dynamics):
                     self.atoms.get_curvature() < 0.0)
         return (forces**2).sum(axis=1).max() < self.fmax**2
 
-    def log(self, forces):
+    def log(self, forces=None):
+        if forces is None:
+            forces = self.atoms.get_forces()
         fmax = sqrt((forces**2).sum(axis=1).max())
         e = self.atoms.get_potential_energy(
             force_consistent=self.force_consistent)

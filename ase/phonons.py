@@ -531,14 +531,13 @@ class Phonons(Displacement):
         return self.C_N
 
     def get_band_structure(self, path, modes=False, born=False, verbose=True):
-        omega_kl = self.band_structure(path, modes, born, verbose)
+        omega_kl = self.band_structure(path.kpts, modes, born, verbose)
         if modes:
             assert 0
             omega_kl, modes = omega_kl
 
         from ase.dft.band_structure import BandStructure
-        bs = BandStructure(cell=self.atoms.cell, kpts=path,
-                           energies=omega_kl[None])
+        bs = BandStructure(path, energies=omega_kl[None])
         return bs
 
     def band_structure(self, path_kc, modes=False, born=False, verbose=True):

@@ -148,10 +148,8 @@
 {%- for c in t.columns %}
 <th class="text-center">
 
-{% set colDisplay = { 'col' : c } %}
-{% if c in meta %}
-{% set _dummy = colDisplay.update({'col' : meta[c][0]}) %}
-{% endif %}
+{% set desc, longdesc, unit = meta.get(c, (c, c, '')) %}
+{% set unit = unit and ' [' + unit + ']' %}
 
 {% if con.sort == c %}&#x2193;
 {% elif con.sort == '-' + c %}&#x2191;
@@ -161,9 +159,10 @@
 <span data-toggle="tooltip" title="key: formul">Formula</span>
 {% else %}
 <a href="/{{ project }}/?x={{ x }}&amp;sort={{ c }}"
-  data-toggle="tooltip" title="key: {{c}}">{{ colDisplay['col'] }}</a>
+  data-toggle="tooltip" title="key: {{c}}{{unit}}">{{ desc }}</a>
 {% endif %}
-<a href="/{{ project }}/?x={{ x }}&amp;toggle={{ c }}">&#x2715;</a>
+<a href="/{{ project }}/?x={{ x }}&amp;toggle={{ c }}"
+   data-toggle="tooltip" title="Remove column">&#x2715;</a>
 </th>
 {%- endfor %}
 </tr>

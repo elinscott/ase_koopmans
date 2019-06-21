@@ -1,4 +1,8 @@
-"""Get energy from a LAMMPS calculation"""
+"""
+Get energy from a LAMMPS calculation of an uncharged system.
+This was written to run with the 30 Apr 2019 version of LAMMPS,
+for which uncharged systems require the use of 'kspace_modify gewald'.
+"""
 
 from __future__ import print_function
 
@@ -185,20 +189,20 @@ header = ["units           real",
           "bond_style      harmonic",
           "angle_style     harmonic",
           "kspace_style    ewald 0.0001",
+          "kspace_modify   gewald 0.01",
           "read_data       lammps.data"]
-cmds = [] 
+cmds = []
 
 lammps = LAMMPSlib(lammps_header=header, lmpcmds=cmds, atom_types=atom_types, create_atoms=False, create_box=False, boundary=False, keep_alive=True, log_file='test.log')
 at.set_calculator(lammps)
 dyn = VelocityVerlet(at, 1 * units.fs)
 
 energy = at.get_potential_energy()
-energy_ref = 2041.41198295
+energy_ref = 2041.411982950972
 diff = abs((energy - energy_ref) / energy_ref)
 assert diff < 1e-10
-
 dyn.run(10)
 energy = at.get_potential_energy()
-energy_ref = 312.431585607
+energy_ref = 312.4315854721744
 diff = abs((energy - energy_ref) / energy_ref)
 assert diff < 1e-10, "%d" % energy
