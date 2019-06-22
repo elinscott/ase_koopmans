@@ -40,6 +40,12 @@ General changes:
   :class:`~ase.dft.band_structure.BandStructure` objects now have a band
   path.
 
+* :func:`ase.dft.kpoints.bandpath` now returns a
+  :class:`~ase.dft.kpoints.BandPath` object.  Generation
+  of band paths now works for (almost) any cell.
+
+* Use ``atoms.cell.bandpath()`` as a shortcut to generate band paths.
+
 * New holonomic :class:`constraint <ase.constraints.FixLinearTriatomic>`
   for trilinear molecules.
 
@@ -48,6 +54,15 @@ General changes:
 
 * Added :func:`ase.build.surfaces_with_termination.surfaces_with_termination`,
   a tool to build surfaces with a particular termination.
+
+* Use the shortcut ``with ase.utils.workdir('mydir', mkdir=True):
+  <code>`` to temporarily change directories.
+
+* The ``ase test`` command now properly autocompletes test names and
+  calculator names.
+
+* Added keyword, ``atoms.wrap(pretty_translation=True)``, to minimize
+  the scaled positions of the atoms.
 
 Calculators:
 
@@ -74,7 +89,23 @@ Calculators:
 
 * Added :class:`~ase.calculators.ACN`, a QM/MM forcefield for acetonitrile.
 
+* Improved eigenvalue parsing with Siesta calculator.
+
 Algorithms:
+
+* Determine Bravais lattice for any 2D or 3D cell using
+  ``atoms.cell.get_bravais_lattice()``.
+
+* Added function to Minkowski reduce a cell.
+
+* Improved stability of Niggli reduction algorithm.
+
+* Supercell generation using ``ase.build.make_supercell()`` now uses
+  a constructive algorithm instead of cutting which was prone to tolerance
+  errors.
+
+* Setting an MD velocity distribution now preserves the temperature
+  by default.
 
 * :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting
   bond lengths and angles from atoms.
@@ -129,7 +160,7 @@ I/O:
   library.  This can be useful for CIF features that are not supported
   by the internal CIF parser.
 
-* :ref:`MySQL and MariaDB <MySQL_server>` is supported as database backend
+* :ref:`MySQL and MariaDB <MySQL_server>` are supported as database backend
 
 * Support for writing isosurface information to POV format
   with :func:`ase.io.pov.add_isosurface_to_pov`
@@ -140,6 +171,8 @@ GUI:
 
  * Display information about custom arrays on Atoms objects; allow colouring
    by custom arrays.
+
+ * Improved color scales.
 
 Version 3.17.0
 ==============
