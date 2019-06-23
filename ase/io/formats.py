@@ -71,7 +71,7 @@ all_formats = {
     'dmol-car': ('DMol3 structure file', '1S'),
     'dmol-incoor': ('DMol3 structure file', '1S'),
     'elk': ('ELK atoms definition', '1S'),
-    'eon': ('EON reactant.con file', '1F'),
+    'eon': ('EON CON file', '+F'),
     'eps': ('Encapsulated Postscript', '1S'),
     'espresso-in': ('Quantum espresso in file', '1F'),
     'espresso-out': ('Quantum espresso out file', '+F'),
