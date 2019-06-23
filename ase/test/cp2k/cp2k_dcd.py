@@ -7,10 +7,9 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from __future__ import print_function
-import os, shutil, subprocess
-import numpy as np
 import unittest
-
+import shutil, subprocess
+import numpy as np
 from ase.build import molecule
 from ase.calculators.cp2k import CP2K
 from ase import io

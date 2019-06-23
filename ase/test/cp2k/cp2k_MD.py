@@ -7,9 +7,6 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from __future__ import division, print_function
-import os
-import unittest
-
 from ase import units
 from ase.atoms import Atoms
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
