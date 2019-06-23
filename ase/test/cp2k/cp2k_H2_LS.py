@@ -15,9 +15,6 @@ from ase.calculators.cp2k import CP2K
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
-
     inp = """&FORCE_EVAL
                &DFT
                  &QS

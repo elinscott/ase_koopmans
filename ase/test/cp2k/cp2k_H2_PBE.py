@@ -16,9 +16,6 @@ from ase.calculators.cp2k import CP2K
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
-
     calc = CP2K(xc='PBE', label='test_H2_PBE')
     h2 = molecule('H2', calculator=calc)
     h2.center(vacuum=2.0)

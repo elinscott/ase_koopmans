@@ -20,9 +20,6 @@ from ase.calculators.cp2k import CP2K
 def main():
     """Adopted from ase/test/stress.py"""
 
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
-
     # setup a Fist Lennard-Jones Potential
     inp = """&FORCE_EVAL
                   &MM

@@ -19,8 +19,6 @@ from ase.calculators.calculator import compare_atoms
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
     if not shutil.which("cp2k"):
         raise unittest.SkipTest('cp2k command not available')
 

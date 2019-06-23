@@ -41,9 +41,6 @@ inp = """
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
-
     # Basically, the entire CP2K input is passed in explicitly.
     # Disable ASE's input generation by setting everything to None.
     # ASE should only add the CELL and the COORD section.

@@ -16,9 +16,6 @@ from ase.calculators.cp2k import CP2K
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
-
     calc = CP2K(label='test_O2', uks=True, cutoff=150 * units.Rydberg,
                 basis_set="SZV-MOLOPT-SR-GTH")
     o2 = molecule('O2', calculator=calc)
