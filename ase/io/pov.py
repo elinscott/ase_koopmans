@@ -380,7 +380,8 @@ def add_isosurface_to_pov(file_name, pov_obj,
 
 
     spacing = tuple(1.0/np.array(rho.shape))
-    scaled_verts, faces, normals, values = measure.marching_cubes_lewiner(rho, level = cut_off, spacing=spacing, gradient_direction='ascent', allow_degenerate = False)
+    scaled_verts, faces, normals, values = measure.marching_cubes_lewiner(rho, level = cut_off,
+        spacing=spacing,gradient_direction=gradient_direction , allow_degenerate = False)
 
 
     ## The verts are scaled by default, this is the super easy way of distributing them in real space
