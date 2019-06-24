@@ -24,7 +24,8 @@ class GPMin(Optimizer, GaussianProcess):
         both potential energies and forces information to build a PES
         via Gaussian Process (GP) regression and then minimizes it.
 
-        Default behaviour: The default values of the following
+        Default behaviour: 
+        The default values of the following
         parameters: scale, noise, weight, batch_size and bounds depend
         on the value of update_hyperparams. In order to get the default 
         value of any of them, they should be set up to None. 
@@ -107,8 +108,8 @@ class GPMin(Optimizer, GaussianProcess):
         batch_size: int
             Number of new points in the sample before updating
             the hyperparameters.
-            Only relevant if the optimizer is executed in update
-            mode: (update = True)
+            Only relevant if the optimizer is executed in update_hyperparams
+            mode: (update_hyperparams = True)
 
         bounds: float, 0<bounds<1
             Set bounds to the optimization of the hyperparameters.
@@ -118,6 +119,7 @@ class GPMin(Optimizer, GaussianProcess):
             step.
             If bounds is False, no constraints are set in the optimization of the
             hyperparameters.
+            
 
         """
         # Warn the user if the number of atoms is very large
