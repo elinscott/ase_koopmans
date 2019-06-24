@@ -338,10 +338,18 @@ class POVRAY(generate_writer_variables):
 def add_isosurface_to_pov(file_name, pov_obj,
                         density_grid, cut_off,
                         closed_edges = False, gradient_ascending = False,
-                        color=[0.85, 0.80, 0.25, 0.2], material = 'ase3', verbose = False ):
+                        color=[0.85, 0.80, 0.25, 0.2], material = 'ase3',
+                        verbose = False ):
 
 
-    '''descirption'''
+    '''the first two things are the pov file you want this written to,
+    and the POVRAY class that it will work on. The density_grid should
+    be a 3D numpy array and the cut_off is where you want to isosurface.
+    closed_edges will fill in isosurface edges that touch the boundary or
+    not. gradient_ascending lets you pick the area you want to enclose,
+    i.e., should the denser or less dense area be filled in. You can use
+    povray colors with color and material lets you specify an ASE material
+    spec or pass your own povray material specification.'''
 
     rho = density_grid
     cell = pov_obj.cell
