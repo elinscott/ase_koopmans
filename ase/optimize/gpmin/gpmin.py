@@ -120,6 +120,17 @@ class GPMin(Optimizer, GaussianProcess):
             hyperparameters.
 
         """
+        # Warn the user if the number of atoms is very large
+        if len(atoms)>100:
+            warning = ('Possible Memeroy Issue. There are more than '
+                       '100 atoms in the unit cell. The memory '
+                       'of the process will increase with the number '
+                       'of steps, potentially causing a memory issue. '
+                       'Consider using a different optimizer.')
+
+            warnings.warn(warning)
+
+
 
         # Give it default hyperparameters
 
