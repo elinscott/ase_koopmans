@@ -171,7 +171,7 @@ class GPMin(Optimizer, GaussianProcess):
             if scale is None:
                 scale = 0.4       
             if noise is None:
-                noise = 0.005
+                noise = 0.001
             if weight is None: 
                 weight = 1.
 
