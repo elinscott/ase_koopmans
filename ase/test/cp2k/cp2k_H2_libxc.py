@@ -7,18 +7,11 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from __future__ import division, print_function
-
-import os
-
-import unittest
 from ase.build import molecule
 from ase.calculators.cp2k import CP2K
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
-
     calc = CP2K(xc='XC_GGA_X_PBE XC_GGA_C_PBE',
                 pseudo_potential="GTH-PBE",
                 label='test_H2_libxc')
