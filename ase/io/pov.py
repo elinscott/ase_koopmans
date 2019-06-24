@@ -26,7 +26,7 @@ def pc(array):
     if len(array) == 3:
         return 'rgb <%.2f, %.2f, %.2f>' % tuple(array)
     if len(array) == 4:  # filter
-        return 'rgbf <%.2f, %.2f, %.2f, %.2f>' % tuple(array)
+        return 'rgbt <%.2f, %.2f, %.2f, %.2f>' % tuple(array)
     if len(array) == 5:  # filter and transmit
         return 'rgbft <%.2f, %.2f, %.2f, %.2f, %.2f>' % tuple(array)
 
@@ -97,10 +97,24 @@ class POVRAY(generate_writer_variables):
         for c in constr:
             if isinstance(c, FixAtoms):
                 for n, i in enumerate(c.index):
-                    self.constrainatoms += [i]                    
+                    self.constrainatoms += [i]
+
+        self.material_styles = [
+                'simple',
+                'pale',
+                'intermediate',
+                'vmd',
+                'jmol',
+                'ase2',
+                'ase3',
+                'glass',
+                'glass2' ]
+
 
     def cell_to_lines(self, cell):
         return np.empty((0, 3)), None, None
+
+
 
     def write(self, filename, **settings):
         # Determine canvas width and height
@@ -320,15 +334,176 @@ class POVRAY(generate_writer_variables):
                     pa(loc), dia / 2., trans, tex, a))
 
 
-def write_pov(filename, atoms, run_povray=False,
-              stderr=None, **parameters):
+
+def add_isosurface_to_pov(file_name, pov_obj,
+                        density_grid, cut_off,
+                        closed_edges = False, gradient_ascending = False,
+                        color=[0.85, 0.80, 0.25, 0.2], material = 'ase3', verbose = False ):
+
+
+    '''descirption'''
+
+    rho = density_grid
+    cell = pov_obj.cell
+    POV_cell_origin = pov_obj.cell_vertices[0,0,0]
+
+    #print(POV_cell_disp)
+    from skimage import measure
+    import numpy as np
+    # Use marching cubes to obtain the surface mesh of this density grid
+    if gradient_ascending:
+        gradient_direction = 'ascent'
+        cv = 2*cut_off
+    else:
+        gradient_direction = 'descent'
+        cv = 0
+
+
+    if closed_edges:
+        shape_old = rho.shape
+        POV_cell_origin += -(1.0/np.array(shape_old)).dot(cell) # since well be padding, we need to keep the data at origin
+
+        rho = np.pad(rho, pad_width = (1,), mode = 'constant', constant_values = cv)
+        shape_new = rho.shape
+        s = np.array(shape_new)/np.array(shape_old)
+        cell = cell.dot(np.array([ [s[0],   0.0,  0.0],
+                                [ 0.0,  s[1],  0.0],
+                                [ 0.0,   0.0,  s[2]]]))
+
+
+    spacing = tuple(1.0/np.array(rho.shape))
+    scaled_verts, faces, normals, values = measure.marching_cubes_lewiner(rho, level = cut_off, spacing=spacing, gradient_direction='ascent', allow_degenerate = False)
+
+
+    ## The verts are scaled by default, this is the super easy way of distributing them in real space
+    ## but it's easier to do affine transformations/rotations on a unit cube so i leave it like that
+    #verts = scaled_verts.dot(atoms.get_cell())
+    verts = scaled_verts
+
+    #some prime numbers for debugging formatting of lines
+    #verts = verts[:31]
+    #faces = faces[:47]
+
+    ##########
+    if verbose:
+        print('faces', len(faces))
+        print('verts', len(verts))
+    #
+    fid2 = open(file_name,'a')
+    fid2.write('\n\nmesh2 {')
+
+    ############ vertex_vectors
+    verts_per_line = 4
+
+    fid2.write( '\n  vertex_vectors {  %i,' % len(verts) )
+
+    last_line_index = len(verts)//verts_per_line - 1
+    if (len(verts) % verts_per_line ) > 0:
+        last_line_index += 1
+
+    #print('vertex lines', last_line_index)
+    for line_index in range(last_line_index+1):
+        fid2.write('\n      ')
+        line = ''
+        v_index_start = line_index * verts_per_line
+        v_index_end = (line_index + 1) * verts_per_line
+        # cut short if its at the last line
+        v_index_end = min( v_index_end, len(verts))
+
+        for v_index in range(v_index_start, v_index_end):
+            line = line + '<%f, %f, %f>, '%tuple(verts[v_index])
+
+        if last_line_index == line_index:
+            line = line[:-2] + '\n  }'
+
+        fid2.write(line)
+
+    ##################### face_indices
+    faces_per_line = 5
+
+    fid2.write('\n  face_indices {  %i,' % len(faces) )
+
+    last_line_index = len(faces)//faces_per_line - 1
+    if (len(faces) % faces_per_line ) > 0:
+        last_line_index += 1
+
+    #print('face lines', last_line_index)
+    for line_index in range(last_line_index+1):
+        fid2.write('\n      ')
+        line = ''
+        f_index_start = line_index * faces_per_line
+        f_index_end = (line_index + 1) * faces_per_line
+        # cut short if its at the last line
+        f_index_end = min( f_index_end, len(faces))
+
+        line = ''
+        for f_index in range(f_index_start, f_index_end):
+            line = line + '<%i, %i, %i>, '%tuple(faces[f_index])
+
+        if last_line_index == line_index:
+            line = line[:-2] + '\n  }'
+
+        fid2.write(line)
+
+    ########### pigment and material
+
+    if material in pov_obj.material_styles:
+        material = '''
+  material {
+    texture {
+      pigment { %s }
+      finish { %s }
+    }
+  }'''%( pc(color), material )
+    fid2.writelines(material)
+
+    #Heres a crazy finish example that looks like purple-pink jelly
+    fun_material = '''
+  material {
+    texture {
+      pigment { rgbt %s }
+      finish{ diffuse 0.85 ambient 0.99 brilliance 3 specular 0.5 roughness 0.001
+        reflection { 0.05, 0.98 fresnel on exponent 1.5 }
+        conserve_energy
+      }
+    }
+    interior { ior 1.3 }
+  }
+  photons {
+      target
+      refraction on
+      reflection on
+      collect on
+  }''' % pc(color)
+
+    ###### now for the rotations of the cell
+    matrix_transform = [
+            '\n  matrix < %f, %f, %f,' % tuple(cell[0]),
+            '\n        %f, %f, %f,'    % tuple(cell[1]),
+            '\n        %f, %f, %f,'    % tuple(cell[2]),
+            '\n        %f, %f, %f>'    % tuple(POV_cell_origin)]
+    fid2.writelines(matrix_transform)
+
+    ################# close the brackets
+    fid2.writelines('\n}\n')
+
+    fid2.close()
+
+
+def write_pov(filename, atoms, run_povray=False, povray_path = 'povray',
+              stderr=None, extras = [],  **parameters):
     if isinstance(atoms, list):
         assert len(atoms) == 1
         atoms = atoms[0]
     assert 'scale' not in parameters
-    POVRAY(atoms, **parameters).write(filename)
+    pov_obj = POVRAY(atoms, **parameters)
+    pov_obj.write(filename)
+
+    for function, params in extras:
+        function(filename, pov_obj, **params)
+
     if run_povray:
-        cmd = 'povray {}.ini'.format(filename[:-4])
+        cmd = povray_path + ' {}.ini'.format(filename[:-4])
         if stderr != '-':
             if stderr is None:
                 stderr = '/dev/null'

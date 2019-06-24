@@ -34,7 +34,7 @@ class generate_writer_variables:
         disp = atoms.get_celldisp().flatten()
 
         if show_unit_cell > 0:
-            L, T, D = cell_to_lines(writer, cell)
+            L, T, D = cell_to_lines(self, cell)
             cell_vertices = np.empty((2, 2, 2, 3))
             for c1 in range(2):
                 for c2 in range(2):
