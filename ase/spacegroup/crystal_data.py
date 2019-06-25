@@ -1,4 +1,4 @@
-from ase.bravais import bravais_classes
+from ase.lattice import bravais_classes
 
 
 _lattice_system = ('Øaammmmmmmmmmmmmoooooooooooooooooooooooooooooooooooooooooo'

@@ -1,6 +1,6 @@
 import numpy as np
 from ase.build import bulk, make_supercell
-from ase.bravais import FCC, BCC
+from ase.lattice import FCC, BCC
 from ase.calculators.emt import EMT
 
 a = 4.1

@@ -1,5 +1,5 @@
 import numpy as np
-from ase.bravais import (bravais_lattices, all_variants,
+from ase.lattice import (bravais_lattices, all_variants,
                          get_lattice_from_canonical_cell)
 
 

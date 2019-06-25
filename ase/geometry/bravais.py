@@ -1,2 +1,2 @@
 # Left for compatibility:
-from ase.bravais import *  # noqa
+from ase.lattice import *  # noqa

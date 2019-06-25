@@ -1,6 +1,6 @@
 import numpy as np
 from ase.cell import Cell
-from ase.bravais import bravais_lattices
+from ase.lattice import bravais_lattices
 from ase.build import bulk, fcc111
 
 bravais = {}

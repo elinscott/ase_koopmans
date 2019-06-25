@@ -88,14 +88,14 @@ class Cell:
     def get_bravais_lattice(self, eps=2e-4):
         # We want to always reduce (so things are as robust as possible)
         # ...or not.  It is not very reliable somehow.
-        from ase.bravais import get_bravais_lattice
+        from ase.lattice import get_bravais_lattice
         return get_bravais_lattice(self, eps=eps)
 
     def bandpath(self, path=None, npoints=None, density=None,
                  special_points=None, eps=2e-4):
         # TODO: Combine with the rotation transformation from bandpath()
         if special_points is None:
-            from ase.bravais import identify_lattice
+            from ase.lattice import identify_lattice
             lat, op = identify_lattice(self, eps=eps)
             path = lat.bandpath(path, npoints=npoints, density=density)
             return path.transform(op)

@@ -1,5 +1,5 @@
 from ase.calculators.test import FreeElectrons
-from ase.bravais import all_variants
+from ase.lattice import all_variants
 from ase.dft.band_structure import calculate_band_structure
 from ase.utils import workdir
 from ase import Atoms

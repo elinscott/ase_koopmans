@@ -21,8 +21,8 @@ General changes:
 * :class:`~ase.symbols.Symbols` objects, like ``atoms.symbols``, now have a
   :attr:`~ase.symbols.Symbols.formula` attribute.
 
-* Added :mod:`ase.bravais` module to represent primitive
-  Bravais lattices and data relating to Brillouin zones.  Includes 2D
+* Added classes to represent primitive Bravais lattices and data
+  relating to Brillouin zones to :mod:`ase.lattice`.  Includes 2D
   lattices.
 
 * New :class:`~ase.dft.kpoints.BandPath` class to represent a band path
