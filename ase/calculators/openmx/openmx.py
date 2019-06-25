@@ -460,7 +460,7 @@ class OpenMX(FileIOCalculator):
         # Contruct the command to send to the operating system
         abs_dir = os.getcwd()
         command = ''
-        print(self.command)
+        self.prind(self.command)
         if self.command is None:
             self.command = 'openmx'
         # run processes specified by the system variable OPENMX_COMMAND
