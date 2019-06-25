@@ -306,10 +306,10 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
         if travel is not None:
             travel[ind] = travel_in[id]
         if mol_id is not None:
-            mol_id[i] = mol_id_in[id]
+            mol_id[ind] = mol_id_in[id]
         if mmcharge is not None:
-            mmcharge[i] = mmcharge_in[id]
-        ids[i] = id
+            mmcharge[ind] = mmcharge_in[id]
+        ids[ind] = id
         # by type
         types[ind] = type
         if Z_of_type is None:
