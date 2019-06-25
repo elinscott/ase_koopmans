@@ -1,4 +1,4 @@
-from ase.geometry.bravais import bravais_classes
+from ase.bravais import bravais_classes
 
 
 _lattice_system = ('Øaammmmmmmmmmmmmoooooooooooooooooooooooooooooooooooooooooo'

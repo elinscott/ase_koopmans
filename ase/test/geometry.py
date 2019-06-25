@@ -4,8 +4,9 @@ from __future__ import division
 
 import numpy as np
 
-from ase.build import cut, bulk
-from ase.geometry import Cell, get_layers, wrap_positions
+from ase.build import cut, bulk, fcc111
+from ase.cell import Cell
+from ase.geometry import get_layers, wrap_positions
 from ase.spacegroup import crystal, get_spacegroup
 
 al = crystal('Al', [(0, 0, 0)], spacegroup=225, cellpar=4.05)
@@ -176,15 +177,16 @@ assert np.max(result[:, 0]) < -3
 assert np.max(result[:, 1:]) < 1 + 1E-10
 
 # Get the correct crystal structure from a range of different cells
-assert bulk('Al').cell.get_bravais_lattice().name == 'FCC'
-assert bulk('Fe').cell.get_bravais_lattice().name == 'BCC'
-assert bulk('Zn').cell.get_bravais_lattice().name == 'HEX'
 
 def checkcell(cell, name):
     cell = Cell.ascell(cell)
     lat = cell.get_bravais_lattice()
     assert lat.name == name, (lat.name, name)
 
+checkcell(bulk('Al').cell, 'FCC')
+checkcell(bulk('Fe').cell, 'BCC')
+checkcell(bulk('Zn').cell, 'HEX')
+checkcell(fcc111('Au', size=(1, 1, 3), periodic=True).cell, 'HEX')
 checkcell([[1, 0, 0], [0, 1, 0], [0, 0, 1]], 'CUB')
 checkcell([[1, 0, 0], [0, 1, 0], [0, 0, 2]], 'TET')
 checkcell([[1, 0, 0], [0, 2, 0], [0, 0, 3]], 'ORC')

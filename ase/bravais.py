@@ -3,7 +3,7 @@ from abc import abstractmethod, ABC
 
 import numpy as np
 
-from ase.geometry.cell import Cell
+from ase.cell import Cell
 from ase.dft.kpoints import parse_path_string, sc_special_points, BandPath
 
 

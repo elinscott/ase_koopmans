@@ -1,6 +1,7 @@
 import numpy as np
-from ase.geometry.bravais import (bravais_lattices, all_variants,
-                                  get_lattice_from_canonical_cell)
+from ase.bravais import (bravais_lattices, all_variants,
+                         get_lattice_from_canonical_cell)
+
 
 for name in bravais_lattices:
     latcls = bravais_lattices[name]

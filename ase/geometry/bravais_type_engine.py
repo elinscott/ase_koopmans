@@ -1,12 +1,11 @@
 import itertools
 import numpy as np
-from ase.geometry.bravais import (bravais_lattices, UnconventionalLattice,
-                                  bravais_names)
-from ase.geometry import Cell
+from ase.bravais import bravais_lattices, UnconventionalLattice, bravais_names
+from ase.cell import Cell
 
 """This module implements a crude method to recognize most Bravais lattices.
 
-Suppose we use the ase.geometry.bravais module to generate many
+Suppose we use the ase.bravais module to generate many
 lattices of some particular type, say, BCT(a, c), and then we
 Niggli-reduce all of them.  The Niggli-reduced forms are not
 immediately recognizable, but we know the mapping from each reduced
@@ -248,7 +247,7 @@ def test():
 
         for lat in lattice_loop(latcls, length_grid, angle_grid):
             cell = lat.tocell()
-            from ase.geometry.bravais import identify_lattice
+            from ase.bravais import identify_lattice
             out_lat, op = identify_lattice(cell, eps=2e-4)
 
             # Some lattices represent simpler lattices,

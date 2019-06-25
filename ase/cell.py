@@ -1,7 +1,5 @@
 import numpy as np
 from ase.utils.arraywrapper import arraylike
-from ase.geometry.cell import (complete_cell, cell_to_cellpar, cellpar_to_cell,
-                               is_orthorhombic)
 
 
 __all__ = ['Cell']
@@ -36,6 +34,7 @@ class Cell:
         self.pbc = pbc
 
     def cellpar(self, radians=False):
+        from ase.geometry.cell import cell_to_cellpar
         return cell_to_cellpar(self.array, radians)
 
     def todict(self):
@@ -64,6 +63,7 @@ class Cell:
         if cell.shape == (3,):
             cell = np.diag(cell)
         elif cell.shape == (6,):
+            from ase.geometry.cell import cellpar_to_cell
             cell = cellpar_to_cell(cell)
         elif cell.shape != (3, 3):
             raise ValueError('Cell must be length 3 sequence, length 6 '
@@ -81,20 +81,21 @@ class Cell:
         """Return new Cell from cell parameters.
 
         This is similar to cellpar_to_cell()."""
+        from ase.geometry.cell import cellpar_to_cell
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
         return cls(cell, pbc=pbc)
 
     def get_bravais_lattice(self, eps=2e-4):
         # We want to always reduce (so things are as robust as possible)
         # ...or not.  It is not very reliable somehow.
-        from ase.geometry.bravais import get_bravais_lattice
+        from ase.bravais import get_bravais_lattice
         return get_bravais_lattice(self, eps=eps)
 
     def bandpath(self, path=None, npoints=None, density=None,
                  special_points=None, eps=2e-4):
         # TODO: Combine with the rotation transformation from bandpath()
         if special_points is None:
-            from ase.geometry.bravais import identify_lattice
+            from ase.bravais import identify_lattice
             lat, op = identify_lattice(self, eps=eps)
             path = lat.bandpath(path, npoints=npoints, density=density)
             return path.transform(op)
@@ -113,6 +114,7 @@ class Cell:
 
     def complete(self):
         """Convert missing cell vectors into orthogonal unit vectors."""
+        from ase.geometry.cell import complete_cell
         return Cell(complete_cell(self.array), self.pbc.copy())
 
     def copy(self):
@@ -142,6 +144,7 @@ class Cell:
 
     @property
     def orthorhombic(self):
+        from ase.geometry.cell import is_orthorhombic
         return is_orthorhombic(self.array)
 
     def lengths(self):
