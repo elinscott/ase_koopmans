@@ -208,4 +208,7 @@ class Cell:
         cell, op = niggli_reduce_cell(self.array, epsfactor=1e-5)
         return Cell(cell, self.pbc), op
 
-
+    def minkowski_reduce(self):
+        from ase.geometry.minkowski_reduction import minkowski_reduce
+        rcell, op = minkowski_reduce(self)
+        return Cell(rcell, self.pbc), op
