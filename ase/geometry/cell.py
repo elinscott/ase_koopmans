@@ -239,4 +239,4 @@ def orthorhombic(cell):
 
 
 # We make the Cell object available for import from here for compatibility
-from ase.cell import Cell
+from ase.cell import Cell  # noqa

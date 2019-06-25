@@ -9,7 +9,7 @@ from ase.geometry.geometry import (wrap_positions,
 from ase.geometry.distance import distance
 from ase.geometry.minkowski_reduction import minkowski_reduce
 
-__all__ = ['wrap_positions', 'complete_cell',
+__all__ = ['Cell', 'wrap_positions', 'complete_cell',
            'is_orthorhombic', 'orthorhombic',
            'get_layers', 'find_mic', 'get_duplicate_atoms',
            'cell_to_cellpar', 'cellpar_to_cell',
