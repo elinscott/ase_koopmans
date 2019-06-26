@@ -11,7 +11,7 @@ Git master branch
 
 General changes:
 
-* ``atoms.cell`` is now a :class:`~ase.geometry.cell.Cell` object.
+* ``atoms.cell`` is now a :class:`~ase.cell.Cell` object.
   This object resembles a 3x3 array and also provides shortcuts to many common
   operations.
 
@@ -21,8 +21,8 @@ General changes:
 * :class:`~ase.symbols.Symbols` objects, like ``atoms.symbols``, now have a
   :attr:`~ase.symbols.Symbols.formula` attribute.
 
-* Added :mod:`ase.geometry.bravais` module to represent primitive
-  Bravais lattices and data relating to Brillouin zones.  Includes 2D
+* Added classes to represent primitive Bravais lattices and data
+  relating to Brillouin zones to :mod:`ase.lattice`.  Includes 2D
   lattices.
 
 * New :class:`~ase.dft.kpoints.BandPath` class to represent a band path

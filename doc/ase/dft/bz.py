@@ -6,7 +6,7 @@
 # creates: 20.TRI1b.svg 21.TRI2a.svg 22.TRI2b.svg
 # creates: 23.OBL.svg 24.RECT.svg 25.CRECT.svg 26.HEX2D.svg 27.SQR.svg
 
-from ase.geometry.bravais import all_variants
+from ase.lattice import all_variants
 
 
 header = """\

@@ -7,7 +7,8 @@ from math import sin, cos
 import numpy as np
 
 from ase.utils import jsonable
-from ase.geometry import cell_to_cellpar, crystal_structure_from_cell, Cell
+from ase.cell import Cell
+from ase.geometry import cell_to_cellpar, crystal_structure_from_cell
 
 
 def monkhorst_pack(size):

@@ -51,7 +51,7 @@ def object_hook(dct):
         # them manually, depending on which kind it is.
         # We can formalize this later if it ever becomes necessary.
         if objtype == 'cell':
-            from ase.geometry.cell import Cell
+            from ase.cell import Cell
             obj = Cell(**dct)
         elif objtype == 'bandstructure':
             from ase.dft.band_structure import BandStructure
