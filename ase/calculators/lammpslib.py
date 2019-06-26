@@ -294,7 +294,10 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         self.lmp.command(cell_cmd)
 
     def set_lammps_pos(self, atoms, wrap=True):
-        pos = convert(atoms.get_positions(wrap=wrap), "distance", "ASE", self.units)
+        if wrap:
+            atoms.wrap()
+
+        pos = convert(atoms.get_positions(), "distance", "ASE", self.units)
 
         # If necessary, transform the positions to new coordinate system
         if self.coord_transform is not None:
