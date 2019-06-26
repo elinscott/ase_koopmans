@@ -11,6 +11,8 @@ Git master branch
 
 General changes:
 
+* ASE no longer supports Python2.
+
 * ``atoms.cell`` is now a :class:`~ase.cell.Cell` object.
   This object resembles a 3x3 array and also provides shortcuts to many common
   operations.
@@ -101,6 +103,8 @@ I/O:
 * Support for reading and writing DL_POLY format.
 
 * Support for reading CP2K DCD format.
+
+* Support for EON .con files with multiple images.
 
 * Improved JSON support.  :ref:`cli` tools like :program:`ase
   band-structure` and :program:`ase reciprocal` now work with
