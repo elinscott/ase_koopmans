@@ -477,40 +477,26 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
     def lammpsbc(self, atoms):
         """
-        Determine LAMMPS boundary types based on ASE pbc settings. Specific
-        attention is paid to directions which are non-periodic and along which
-        the extent of the atoms in the system is small.  In such cases, using
-        shrink-wrapped boundaries is generally a bad idea because atoms can be
-        lost.  This can occur in two ways:  (1) during the initial shrink wrap
-        if the cell is much larger than the extent of the atoms along such a
-        direction (see https://lammps.sandia.gov/doc/boundary.html), and (2)
-        because the neighbor skin is larger than the cell size, atoms can
-        potentially move all the way across (and out of) the cell before a
-        neighbor list rebuild is triggered.  Moreover, if one is using the
-        binning method of neighbor list construction (as is done here since
-        it's the default), having a box size much smaller than the neighbor
-        list cutoff would cause an huge number of bins to be created and,
-        accordingly, LAMMPS will return an error and exit.  Therefore, in this
-        case, we use 'm' boundary conditions, which are shrink-wrapped but are
-        constrained to be at least as large as the cell size.
+        Determine LAMMPS boundary types based on ASE pbc settings. For non-periodic
+        dimensions, if the cell length is finite then fixed BCs ('f') are used; if the
+        cell length is approximately zero, shrink-wrapped BCs ('s') are used.
         """
         retval = ''
         pbc = atoms.get_pbc()
         if np.all(pbc):
             retval = 'p p p'
         else:
-            pos = atoms.get_positions()
-            posmin = np.amin(pos, axis=0)
-            posmax = np.amax(pos, axis=0)
+            cell = atoms.get_cell()
             for i in range(0, 3):
                 if pbc[i]:
                     retval += 'p '
                 else:
-                    # decide if to return "s" or "m"
-                    if abs(posmax[i] - posmin[i]) < 0.1:
-                        retval += 'm '  # spacing along this direction is small
-                    else:               # so use minimum size set by cell
+                    # See if we're using indefinite ASE boundaries along this direction
+                    if np.linalg.norm(cell[i]) < np.finfo(cell[i][0]).tiny:
                         retval += 's '
+                    else:
+                        retval += 'f '
+
         return retval.strip()
 
     def rebuild(self, atoms):
