@@ -337,24 +337,26 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         if not self.initialized:
             self.initialise_lammps(atoms)
         else:  # still need to reset cell
-            # reset positions so that if they are crazy from last
-            # propagation, change_box (in set_cell()) won't hang
-            # could do this only after testing for crazy positions?
-            # could also use scatter_atoms() to set values (requires
+            # Apply only requested boundary condition changes. Note this needs to happen
+            # before the call to set_cell since 'change_box' will apply any
+            # shrink-wrapping *after* it's updated the cell dimensions
+            if 'pbc' in system_changes:
+                change_box_str = 'change_box all boundary {}'
+                change_box_cmd = change_box_str.format(self.lammpsbc(atoms))
+                self.lmp.command(change_box_cmd)
+
+            # Reset positions so that if they are crazy from last
+            # propagation, change_box (in set_cell()) won't hang.
+            # Could do this only after testing for crazy positions?
+            # Could also use scatter_atoms() to set values (requires
             # MPI comm), or extra_atoms() to get pointers to local
-            # data structures to zero, but then will have to be
-            # careful with parallelism
+            # data structures to zero, but then we would have to be
+            # careful with parallelism.
             self.lmp.command("set atom * x 0.0 y 0.0 z 0.0")
             self.set_cell(atoms, change=True)
 
         if self.parameters.atom_types is None:
             raise NameError("atom_types are mandatory.")
-
-        # Deal with boundary condition change
-        if 'pbc' in system_changes:
-            change_box_str = 'change_box all boundary {}'
-            change_box_cmd = change_box_str.format(self.lammpsbc(atoms))
-            self.lmp.command(change_box_cmd)
 
         do_rebuild = (not np.array_equal(atoms.numbers, self.previous_atoms_numbers)
                       or ("numbers" in system_changes))
