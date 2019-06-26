@@ -1,11 +1,11 @@
-from ase.io.utils import generate_writer_variables, make_patch_list
+from ase.io.utils import PlottingVariables, make_patch_list
 
 
-class Matplotlib(generate_writer_variables):
+class Matplotlib(PlottingVariables):
     def __init__(self, atoms, ax,
                  rotation='', show_unit_cell=False, radii=None,
                  colors=None, scale=1, offset=(0, 0), **parameters):
-        generate_writer_variables.__init__(
+        PlottingVariables.__init__(
             self, atoms, rotation=rotation,
             show_unit_cell=show_unit_cell,
             radii=radii, colors=colors, scale=scale,

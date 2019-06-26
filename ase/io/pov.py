@@ -7,7 +7,7 @@ import os
 
 import numpy as np
 
-from ase.io.utils import generate_writer_variables
+from ase.io.utils import PlottingVariables
 from ase.constraints import FixAtoms
 from ase.utils import basestring
 
@@ -62,7 +62,7 @@ def get_bondpairs(atoms, radius=1.1):
     return bondpairs
 
 
-class POVRAY(generate_writer_variables):
+class POVRAY(PlottingVariables):
     default_settings = {
         # x, y is the image plane, z is *out* of the screen
         'display': True,  # display while rendering
@@ -91,7 +91,7 @@ class POVRAY(generate_writer_variables):
     def __init__(self, atoms, scale=1.0, **parameters):
         for k, v in self.default_settings.items():
             setattr(self, k, parameters.pop(k, v))
-        generate_writer_variables.__init__(self, atoms, scale=scale, **parameters)
+        PlottingVariables.__init__(self, atoms, scale=scale, **parameters)
         constr = atoms.constraints
         self.constrainatoms = []
         for c in constr:
@@ -338,7 +338,7 @@ class POVRAY(generate_writer_variables):
 def add_isosurface_to_pov(file_name, pov_obj,
                         density_grid, cut_off,
                         closed_edges = False, gradient_ascending = False,
-                        color=[0.85, 0.80, 0.25, 0.2], material = 'ase3',
+                        color=(0.85, 0.80, 0.25, 0.2), material = 'ase3',
                         verbose = False ):
 
 
@@ -401,58 +401,38 @@ def add_isosurface_to_pov(file_name, pov_obj,
     fid2 = open(file_name,'a')
     fid2.write('\n\nmesh2 {')
 
-    ############ vertex_vectors
-    verts_per_line = 4
 
-    fid2.write( '\n  vertex_vectors {  %i,' % len(verts) )
+    def wrapped_triples_section(name, triple_list,
+                        triple_format="<%f, %f, %f>, ", triples_per_line = 4):
 
-    last_line_index = len(verts)//verts_per_line - 1
-    if (len(verts) % verts_per_line ) > 0:
-        last_line_index += 1
+        fid2.write( '\n  %s {  %i,' % (name, len(triple_list)) )
 
-    #print('vertex lines', last_line_index)
-    for line_index in range(last_line_index+1):
-        fid2.write('\n      ')
-        line = ''
-        v_index_start = line_index * verts_per_line
-        v_index_end = (line_index + 1) * verts_per_line
-        # cut short if its at the last line
-        v_index_end = min( v_index_end, len(verts))
+        last_line_index = len(triple_list)//triples_per_line - 1
+        if (len(triple_list) % triples_per_line ) > 0:
+            last_line_index += 1
 
-        for v_index in range(v_index_start, v_index_end):
-            line = line + '<%f, %f, %f>, '%tuple(verts[v_index])
+        #print('vertex lines', last_line_index)
+        for line_index in range(last_line_index+1):
+            fid2.write('\n      ')
+            line = ''
+            index_start = line_index * triples_per_line
+            index_end = (line_index + 1) * triples_per_line
+            # cut short if its at the last line
+            index_end = min( index_end, len(triple_list))
 
-        if last_line_index == line_index:
-            line = line[:-2] + '\n  }'
+            for index in range(index_start, index_end):
+                line = line + triple_format%tuple(triple_list[index])
 
-        fid2.write(line)
+            if last_line_index == line_index:
+                line = line[:-2] + '\n  }'
 
-    ##################### face_indices
-    faces_per_line = 5
+            fid2.write(line)
+    ############ the vertex_vectors (floats) and the face_indices (ints)
+    wrapped_triples_section(name = "vertex_vectors", triple_list = verts,
+                        triple_format="<%f, %f, %f>, ", triples_per_line = 4)
 
-    fid2.write('\n  face_indices {  %i,' % len(faces) )
-
-    last_line_index = len(faces)//faces_per_line - 1
-    if (len(faces) % faces_per_line ) > 0:
-        last_line_index += 1
-
-    #print('face lines', last_line_index)
-    for line_index in range(last_line_index+1):
-        fid2.write('\n      ')
-        line = ''
-        f_index_start = line_index * faces_per_line
-        f_index_end = (line_index + 1) * faces_per_line
-        # cut short if its at the last line
-        f_index_end = min( f_index_end, len(faces))
-
-        line = ''
-        for f_index in range(f_index_start, f_index_end):
-            line = line + '<%i, %i, %i>, '%tuple(faces[f_index])
-
-        if last_line_index == line_index:
-            line = line[:-2] + '\n  }'
-
-        fid2.write(line)
+    wrapped_triples_section(name = "face_indices", triple_list = faces,
+                        triple_format="<%i, %i, %i>, ", triples_per_line = 5)
 
     ########### pigment and material
 

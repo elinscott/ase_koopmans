@@ -8,7 +8,7 @@ from ase.data import covalent_radii, atomic_numbers
 from ase.data.colors import jmol_colors
 from ase.utils import basestring
 
-class generate_writer_variables:
+class PlottingVariables:
     # removed writer - self
     def __init__(self, atoms, rotation='', show_unit_cell=0,
                               radii=None, bbox=None, colors=None, scale=20,
