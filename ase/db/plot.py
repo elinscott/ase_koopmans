@@ -12,7 +12,7 @@ def atoms2png(atoms, filename):
     else:
         scale = 20
         rotation = ''
-    write_png(filename, atoms, show_unit_cell=1,
+    write_png(filename, atoms, show_unit_cell=2,
               rotation=rotation, scale=scale)
 
 

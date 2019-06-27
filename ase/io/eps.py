@@ -5,7 +5,7 @@ from ase.io.utils import generate_writer_variables, make_patch_list
 
 class EPS:
     def __init__(self, atoms,
-                 rotation='', show_unit_cell=0, radii=None,
+                 rotation='', show_unit_cell=2, radii=None,
                  bbox=None, colors=None, scale=20, maxwidth=500):
         """Encapsulated PostScript writer.
 

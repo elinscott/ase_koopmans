@@ -3,7 +3,7 @@ from ase.io.utils import generate_writer_variables, make_patch_list
 
 class Matplotlib:
     def __init__(self, atoms, ax,
-                 rotation='', show_unit_cell=False, radii=None,
+                 rotation='', show_unit_cell=2, radii=None,
                  colors=None, scale=1, offset=(0, 0), **parameters):
         generate_writer_variables(
             self, atoms, rotation=rotation,
@@ -72,8 +72,11 @@ def plot_atoms(atoms, ax=None, **parameters):
     ax : Matplotlib subplot object
     rotation : str, optional
         In degrees. In the form '10x,20y,30z'
-    show_unit_cell : bool, optional, default False
-        Draw the bounds of the atoms object as dashed lines.
+    show_unit_cell : int, optional, default 2
+        Draw the unit cell as dashed lines depending on value:
+        0: Don't
+        1: Do
+        2: Do, making sure cell is visible
     radii : float, optional
         The radii of the atoms
     colors : list of strings, optional

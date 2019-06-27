@@ -375,6 +375,7 @@ class Images:
 
     def write(self, filename, rotations='', show_unit_cell=False, bbox=None,
               **kwargs):
+        # XXX We should show the unit cell whenever there is one
         indices = range(len(self))
         p = filename.rfind('@')
         if p != -1:
