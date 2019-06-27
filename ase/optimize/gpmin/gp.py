@@ -67,7 +67,7 @@ class GaussianProcess():
 
         n = self.X.shape[0]
         D = self.X.shape[1]
-        regularization = np.array(n*([self.noise*self.kernel.l**2] 
+        regularization = np.array(n*([self.noise*self.kernel.l] 
                                       + D*[self.noise]))
 
         K[range(K.shape[0]), range(K.shape[0])] += regularization**2
