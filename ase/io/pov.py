@@ -156,7 +156,8 @@ class POVRAY(PlottingVariables):
         del ini
 
         # Produce the .pov file
-        w = open(filename, 'w').write
+        pov_fid = open(filename, 'w')
+        w = pov_fid.write
         w('#include "colors.inc"\n')
         w('#include "finish.inc"\n')
         w('\n')
@@ -332,10 +333,11 @@ class POVRAY(PlottingVariables):
                     trans = self.transmittances[a]
                 w('constrain(%s, %.2f, Black, %s, %s) // #%i \n' % (
                     pa(loc), dia / 2., trans, tex, a))
+        return pov_fid
 
 
 
-def add_isosurface_to_pov(file_name, pov_obj,
+def add_isosurface_to_pov(pov_fid, pov_obj,
                         density_grid, cut_off,
                         closed_edges = False, gradient_ascending = False,
                         color=(0.85, 0.80, 0.25, 0.2), material = 'ase3',
@@ -398,14 +400,14 @@ def add_isosurface_to_pov(file_name, pov_obj,
         print('faces', len(faces))
         print('verts', len(verts))
     #
-    fid2 = open(file_name,'a')
-    fid2.write('\n\nmesh2 {')
+    #pov_fid = open(file_name,'a')
+    pov_fid.write('\n\nmesh2 {')
 
 
     def wrapped_triples_section(name, triple_list,
                         triple_format="<%f, %f, %f>, ", triples_per_line = 4):
 
-        fid2.write( '\n  %s {  %i,' % (name, len(triple_list)) )
+        pov_fid.write( '\n  %s {  %i,' % (name, len(triple_list)) )
 
         last_line_index = len(triple_list)//triples_per_line - 1
         if (len(triple_list) % triples_per_line ) > 0:
@@ -413,7 +415,7 @@ def add_isosurface_to_pov(file_name, pov_obj,
 
         #print('vertex lines', last_line_index)
         for line_index in range(last_line_index+1):
-            fid2.write('\n      ')
+            pov_fid.write('\n      ')
             line = ''
             index_start = line_index * triples_per_line
             index_end = (line_index + 1) * triples_per_line
@@ -426,7 +428,7 @@ def add_isosurface_to_pov(file_name, pov_obj,
             if last_line_index == line_index:
                 line = line[:-2] + '\n  }'
 
-            fid2.write(line)
+            pov_fid.write(line)
     ############ the vertex_vectors (floats) and the face_indices (ints)
     wrapped_triples_section(name = "vertex_vectors", triple_list = verts,
                         triple_format="<%f, %f, %f>, ", triples_per_line = 4)
@@ -444,7 +446,7 @@ def add_isosurface_to_pov(file_name, pov_obj,
       finish { %s }
     }
   }'''%( pc(color), material )
-    fid2.writelines(material)
+    pov_fid.writelines(material)
 
     #Heres a crazy finish example that looks like purple-pink jelly
     fun_material = '''
@@ -471,12 +473,12 @@ def add_isosurface_to_pov(file_name, pov_obj,
             '\n        %f, %f, %f,'    % tuple(cell[1]),
             '\n        %f, %f, %f,'    % tuple(cell[2]),
             '\n        %f, %f, %f>'    % tuple(POV_cell_origin)]
-    fid2.writelines(matrix_transform)
+    pov_fid.writelines(matrix_transform)
 
     ################# close the brackets
-    fid2.writelines('\n}\n')
+    pov_fid.writelines('\n}\n')
 
-    fid2.close()
+    #pov_fid.close()
 
 
 def write_pov(filename, atoms, run_povray=False, povray_path = 'povray',
@@ -486,10 +488,13 @@ def write_pov(filename, atoms, run_povray=False, povray_path = 'povray',
         atoms = atoms[0]
     assert 'scale' not in parameters
     pov_obj = POVRAY(atoms, **parameters)
-    pov_obj.write(filename)
-
+    pov_fid = pov_obj.write(filename)
+    # evalutate and write extras
     for function, params in extras:
-        function(filename, pov_obj, **params)
+        function(pov_fid, pov_obj, **params)
+    # the povray file wasn't explicitly being closed before the addition
+    # of the extras option.
+    pov_fid.close()
 
     if run_povray:
         cmd = povray_path + ' {}.ini'.format(filename[:-4])
