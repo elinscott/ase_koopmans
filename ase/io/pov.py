@@ -140,9 +140,13 @@ class POVRAY(PlottingVariables):
         ini('Input_File_Name=%s\n' % filename)
         ini('Output_to_File=True\n')
         ini('Output_File_Type=N\n')
-        ini('Output_Alpha=%s\n' % self.transparent)
+
+        if self.transparent:
+            ini('Output_Alpha=on\n')
+        else:
+            ini('Output_Alpha=off\n')
         ini('; if you adjust Height, and width, you must preserve the ratio\n')
-        ini('; Width / Height = %s\n' % repr(ratio))
+        ini('; Width / Height = %f\n' % ratio)
         ini('Width=%s\n' % self.canvas_width)
         ini('Height=%s\n' % (self.canvas_width / ratio))
         ini('Antialias=True\n')
@@ -159,7 +163,11 @@ class POVRAY(PlottingVariables):
         w('#include "finish.inc"\n')
         w('\n')
         w('global_settings {assumed_gamma 1 max_trace_level 6}\n')
-        w('background {%s}\n' % pc(self.background))
+        ## The background must be transparent for a transparent image
+        if self.transparent:
+            w('background {%s transmit 1.0}\n' % pc(self.background) )
+        else:
+            w('background {%s}\n' % pc(self.background))
         w('camera {%s\n' % self.camera_type)
         w('  right -%.2f*x up %.2f*y\n' % (self.w, self.h))
         w('  direction %.2f*z\n' % self.image_plane)
