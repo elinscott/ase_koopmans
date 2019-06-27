@@ -342,16 +342,54 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
                         closed_edges = False, gradient_ascending = False,
                         color=(0.85, 0.80, 0.25, 0.2), material = 'ase3',
                         verbose = False ):
+    """Computes an isosurface from a density grid and adds it to a .pov file.
 
+    Parameters:
 
-    '''the first two things are the pov file you want this written to,
-    and the POVRAY class that it will work on. The density_grid should
-    be a 3D numpy array and the cut_off is where you want to isosurface.
-    closed_edges will fill in isosurface edges that touch the boundary or
-    not. gradient_ascending lets you pick the area you want to enclose,
-    i.e., should the denser or less dense area be filled in. You can use
-    povray colors with color and material lets you specify an ASE material
-    spec or pass your own povray material specification.'''
+    pov_fid: file identifer
+        The file identifer of the .pov file to be written to
+    pov_obj: POVRAY instance
+        The POVRAY instance that is used for writing the atoms etc.
+    density_grid: 3D float ndarray
+        A regular grid on that spans the cell. The first dimension corresponds
+        to the first cell vector and so on.
+    cut_off: float
+        The density value of the isosurface.
+    closed_edges: bool
+        Setting this will fill in isosurface edges at the cell boundaries.
+        Filling in the edges can help with visualizing highly porous structures.
+    gradient_ascending: bool
+        Lets you pick the area you want to enclose, i.e., should the denser
+        or less dense area be filled in.
+    color: povray color string, float, or float tuple
+        1 float is interpreted as grey scale, a 3 float tuple is rgb, 4 float
+        tuple is rgbt, and 5 float tuple is rgbft, where t is transmission
+        fraction and f is filter fraction. Named Povray colors are set in
+        colors.inc (http://wiki.povray.org/content/Reference:Colors.inc)
+    material: string
+        Can be a finish macro defined by POVRAY.material_styles or a full Povray
+        material {...} specification. Using a full material specification will
+        override the color patameter.
+
+    Example:
+    material = '''
+      material { // This material looks like pink jelly
+        texture {
+          pigment { rgbt <0.8, 0.25, 0.25, 0.5> }
+          finish{ diffuse 0.85 ambient 0.99 brilliance 3 specular 0.5 roughness 0.001
+            reflection { 0.05, 0.98 fresnel on exponent 1.5 }
+            conserve_energy
+          }
+        }
+        interior { ior 1.3 }
+      }
+      photons {
+          target
+          refraction on
+          reflection on
+          collect on
+      }'''
+    """
 
     rho = density_grid
     cell = pov_obj.cell
@@ -448,7 +486,7 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
   }'''%( pc(color), material )
     pov_fid.writelines(material)
 
-    #Heres a crazy finish example that looks like purple-pink jelly
+    #Heres a crazy finish example that looks like jelly
     fun_material = '''
   material {
     texture {
