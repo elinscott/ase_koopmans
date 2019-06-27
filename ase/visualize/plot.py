@@ -3,11 +3,10 @@ from ase.io.utils import generate_writer_variables, make_patch_list
 
 class Matplotlib:
     def __init__(self, atoms, ax,
-                 rotation='', show_unit_cell=2, radii=None,
+                 rotation='', radii=None,
                  colors=None, scale=1, offset=(0, 0), **parameters):
         generate_writer_variables(
             self, atoms, rotation=rotation,
-            show_unit_cell=show_unit_cell,
             radii=radii, colors=colors, scale=scale,
             extra_offset=offset, **parameters)
 
