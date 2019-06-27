@@ -99,22 +99,19 @@ class POVRAY(PlottingVariables):
                 for n, i in enumerate(c.index):
                     self.constrainatoms += [i]
 
-        self.material_styles = [
-                'simple',
-                'pale',
-                'intermediate',
-                'vmd',
-                'jmol',
-                'ase2',
-                'ase3',
-                'glass',
-                'glass2' ]
-
+        self.material_styles_dict = {
+            'simple'       : 'finish {phong 0.7}',
+            'pale'         : 'finish {ambient 0.5 diffuse 0.85 roughness 0.001 specular 0.200 }',
+            'intermediate' : 'finish {ambient 0.3 diffuse 0.6 specular 0.1 roughness 0.04}',
+            'vmd'          : 'finish {ambient 0.0 diffuse 0.65 phong 0.1 phong_size 40.0 specular 0.5 }',
+            'jmol'         : 'finish {ambient 0.2 diffuse 0.6 specular 1 roughness 0.001 metallic}',
+            'ase2'         : 'finish {ambient 0.05 brilliance 3 diffuse 0.6 metallic specular 0.7 roughness 0.04 reflection 0.15}',
+            'ase3'         : 'finish {ambient 0.15 brilliance 2 diffuse 0.6 metallic specular 1.0 roughness 0.001 reflection 0.0}',
+            'glass'        : 'finish {ambient 0.05 diffuse 0.3 specular 1.0 roughness 0.001}',
+            'glass2'       : 'finish {ambient 0.01 diffuse 0.3 specular 1.0 reflection 0.25 roughness 0.001}' }
 
     def cell_to_lines(self, cell):
         return np.empty((0, 3)), None, None
-
-
 
     def write(self, filename, **settings):
         # Determine canvas width and height
@@ -189,56 +186,9 @@ class POVRAY(PlottingVariables):
               (dist, pc(self.background)))
 
         w('\n')
-        w('#declare simple = finish {phong 0.7}\n')
-        w('#declare pale = finish {'
-          'ambient .5 '
-          'diffuse .85 '
-          'roughness .001 '
-          'specular 0.200 }\n')
-        w('#declare intermediate = finish {'
-          'ambient 0.3 '
-          'diffuse 0.6 '
-          'specular 0.10 '
-          'roughness 0.04 }\n')
-        w('#declare vmd = finish {'
-          'ambient .0 '
-          'diffuse .65 '
-          'phong 0.1 '
-          'phong_size 40. '
-          'specular 0.500 }\n')
-        w('#declare jmol = finish {'
-          'ambient .2 '
-          'diffuse .6 '
-          'specular 1 '
-          'roughness .001 '
-          'metallic}\n')
-        w('#declare ase2 = finish {'
-          'ambient 0.05 '
-          'brilliance 3 '
-          'diffuse 0.6 '
-          'metallic '
-          'specular 0.70 '
-          'roughness 0.04 '
-          'reflection 0.15}\n')
-        w('#declare ase3 = finish {'
-          'ambient .15 '
-          'brilliance 2 '
-          'diffuse .6 '
-          'metallic '
-          'specular 1. '
-          'roughness .001 '
-          'reflection .0}\n')
-        w('#declare glass = finish {'
-          'ambient .05 '
-          'diffuse .3 '
-          'specular 1. '
-          'roughness .001}\n')
-        w('#declare glass2 = finish {'
-          'ambient .0 '
-          'diffuse .3 '
-          'specular 1. '
-          'reflection .25 '
-          'roughness .001}\n')
+        for key in self.material_styles_dict.keys():
+            w('#declare %s = %s\n' %(key, self.material_styles_dict[key]))
+
         w('#declare Rcell = %.3f;\n' % self.celllinewidth)
         w('#declare Rbond = %.3f;\n' % self.bondlinewidth)
         w('\n')
@@ -424,8 +374,9 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
         spacing=spacing,gradient_direction=gradient_direction , allow_degenerate = False)
 
 
-    ## The verts are scaled by default, this is the super easy way of distributing them in real space
-    ## but it's easier to do affine transformations/rotations on a unit cube so i leave it like that
+    ## The verts are scaled by default, this is the super easy way of
+    ## distributing them in real space but it's easier to do affine
+    ## transformations/rotations on a unit cube so I leave it like that
     #verts = scaled_verts.dot(atoms.get_cell())
     verts = scaled_verts
 
@@ -433,14 +384,9 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
     #verts = verts[:31]
     #faces = faces[:47]
 
-    ##########
     if verbose:
         print('faces', len(faces))
         print('verts', len(verts))
-    #
-    #pov_fid = open(file_name,'a')
-    pov_fid.write('\n\nmesh2 {')
-
 
     def wrapped_triples_section(name, triple_list,
                         triple_format="<%f, %f, %f>, ", triples_per_line = 4):
@@ -467,6 +413,10 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
                 line = line[:-2] + '\n  }'
 
             pov_fid.write(line)
+
+    ########## Start writting the mesh2
+    pov_fid.write('\n\nmesh2 {')
+
     ############ the vertex_vectors (floats) and the face_indices (ints)
     wrapped_triples_section(name = "vertex_vectors", triple_list = verts,
                         triple_format="<%f, %f, %f>, ", triples_per_line = 4)
@@ -476,7 +426,7 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
 
     ########### pigment and material
 
-    if material in pov_obj.material_styles:
+    if material in pov_obj.material_styles_dict.keys():
         material = '''
   material {
     texture {
