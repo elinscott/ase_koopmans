@@ -11,7 +11,7 @@ def test():
     for i, lat in enumerate(all_variants()):
         if lat.ndim == 2:
             break
-        xid = '{:02d}.{}'.format(i, lat.variant.name)
+        xid = '{:02d}.{}'.format(i, lat.variant)
         path = lat.bandpath(density=10)
         path.write('path.{}.json'.format(xid))
         atoms = Atoms(cell=lat.tocell())

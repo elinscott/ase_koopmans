@@ -19,6 +19,30 @@ _degrees = np.pi / 180
 
 
 class BravaisLattice(ABC):
+    """Represent Bravais lattices and data related to the Brillouin zone.
+
+    There are 14 3D Bravais classes: CUB, FCC, BCC, ..., and TRI, and
+    five 2D classes.
+
+    Each class stores basic static information:
+
+    >>> from ase.lattice import FCC, MCL
+    >>> FCC.name
+    'FCC'
+    >>> FCC.longname
+    'face-centred cubic'
+    >>> FCC.pearson_symbol
+    'cF'
+    >>> MCL.parameters
+    ('a', 'b', 'c', 'alpha')
+
+    Each class can be instantiated with the specific lattice parameters
+    that apply to that lattice:
+
+    >>> print(MCL(3, 4, 5, 80))
+    MCL(a=3, b=4, c=5, alpha=80)
+
+    """
     # These parameters can be set by the @bravais decorator for a subclass.
     # (We could also use metaclasses to do this, but that's more abstract)
     name = None  # e.g. 'CUB', 'BCT', 'ORCF', ...
@@ -1328,8 +1352,8 @@ def all_variants():
     yield TET(a, c)
     bct1 = BCT(2 * a, c)
     bct2 = BCT(a, c)
-    assert bct1.variant.name == 'BCT1'
-    assert bct2.variant.name == 'BCT2'
+    assert bct1.variant == 'BCT1'
+    assert bct2.variant == 'BCT2'
 
     yield bct1
     yield bct2
@@ -1340,9 +1364,9 @@ def all_variants():
     orcf1 = ORCF(0.5 * a0, b, c)
     orcf2 = ORCF(1.2 * a0, b, c)
     orcf3 = ORCF(a0, b, c)
-    assert orcf1.variant.name == 'ORCF1'
-    assert orcf2.variant.name == 'ORCF2'
-    assert orcf3.variant.name == 'ORCF3'
+    assert orcf1.variant == 'ORCF1'
+    assert orcf2.variant == 'ORCF2'
+    assert orcf3.variant == 'ORCF3'
     yield orcf1
     yield orcf2
     yield orcf3
@@ -1353,11 +1377,11 @@ def all_variants():
     yield HEX(a, c)
 
     rhl1 = RHL(a, alpha=55.0)
-    assert rhl1.variant.name == 'RHL1'
+    assert rhl1.variant == 'RHL1'
     yield rhl1
 
     rhl2 = RHL(a, alpha=105.0)
-    assert rhl2.variant.name == 'RHL2'
+    assert rhl2.variant == 'RHL2'
     yield rhl2
 
     # With these lengths, alpha < 65 (or so) would result in a lattice that
@@ -1365,17 +1389,19 @@ def all_variants():
     yield MCL(a, b, c, alpha=70.0)
 
     mclc1 = MCLC(a, b, c, 80)
-    assert mclc1.variant.name == 'MCLC1'
+    assert mclc1.variant == 'MCLC1'
     yield mclc1
     # mclc2 has same special points as mclc1
 
     mclc3 = MCLC(1.8 * a, b, c * 2, 80)
-    assert mclc3.variant.name == 'MCLC3'
+    assert mclc3.variant == 'MCLC3'
     yield mclc3
     # mclc4 has same special points as mclc3
 
+    # XXX We should add MCLC2 and MCLC4 as well.
+
     mclc5 = MCLC(b, b, 1.1 * b, 70)
-    assert mclc5.variant.name == 'MCLC5'
+    assert mclc5.variant == 'MCLC5'
     yield mclc5
 
     def get_tri(kcellpar):
@@ -1385,18 +1411,18 @@ def all_variants():
         return TRI(*cellpar)
 
     tri1a = get_tri([1., 1.2, 1.4, 120., 110., 100.])
-    assert tri1a.variant.name == 'TRI1a'
+    assert tri1a.variant == 'TRI1a'
     yield tri1a
 
     tri1b = get_tri([1., 1.2, 1.4, 50., 60., 70.])
-    assert tri1b.variant.name == 'TRI1b'
+    assert tri1b.variant == 'TRI1b'
     yield tri1b
 
     tri2a = get_tri([1., 1.2, 1.4, 120., 110., 90.])
-    assert tri2a.variant.name == 'TRI2a'
+    assert tri2a.variant == 'TRI2a'
     yield tri2a
     tri2b = get_tri([1., 1.2, 1.4, 50., 60., 90.])
-    assert tri2b.variant.name == 'TRI2b'
+    assert tri2b.variant == 'TRI2b'
     yield tri2b
 
     yield OBL(a, b, alpha=alpha)
