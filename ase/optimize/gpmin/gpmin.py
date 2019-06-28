@@ -261,17 +261,13 @@ class GPMin(Optimizer, GaussianProcess):
                 "The minimization of the acquisition function has not converged")
 
     def fit_to_batch(self):
-        '''Fit hyperparameters and collect exception'''
+        '''Fit hyperparameters keeping the ratio noise/weight fixed'''
         ratio = self.noise/self.kernel.weight
-        try:
-            self.fit_hyperparameters(np.asarray(
+       
+        result = self.fit_hyperparameters(np.asarray(
                 self.x_list), np.asarray(self.y_list), eps = self.eps)
-        except Exception:
-            pass
-
-        else:
-            # Keeps the ratio between noise and weight fixed 
-            self.noise = ratio*self.kernel.weight
+       
+        self.noise = ratio*self.kernel.weight
 
     def step(self, f=None):
 

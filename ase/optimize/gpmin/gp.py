@@ -160,6 +160,16 @@ class GaussianProcess():
            https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html )
         eps: include bounds to the hyperparameters as a +- a percentage of hyperparameter
             if eps is None, there are no bounds in the optimization
+
+        Returns:
+
+        result (dict) :
+              result = {'hyperparameters': (numpy.array) New hyperparameters,
+                        'converged': (bool) True if it converged, 
+                                            False otherwise
+                       }
+
+      
         '''
 
         params = np.copy(self.hyperparams)[:2]
@@ -175,13 +185,14 @@ class GaussianProcess():
                           options = {'gtol':tol, 'ftol':0.01*tol})
 
         if not result.success:
-            print(result)
-            raise NameError("The Gaussian Process could not be fitted.")
+            converged = False
+            
         else:
+            converged = True
             self.hyperparams = np.array(
-                [result.x.copy()[0], result.x.copy()[1], self.noise]) # review this line
+                [result.x.copy()[0], result.x.copy()[1], self.noise]) 
             
         self.set_hyperparams(self.hyperparams)
-        return self.hyperparams
+        return {'hyperparameters': self.hyperparams, 'converged': converged}
 
 
