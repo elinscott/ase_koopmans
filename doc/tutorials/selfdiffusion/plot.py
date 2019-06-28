@@ -31,6 +31,5 @@ write('Al110slab.pov', atoms,
       rotation=rotation,
       colors=colors,
       radii=radii,
-      show_unit_cell=2,
       canvas_width=500,
       transparent=False, display=False, run_povray=True)

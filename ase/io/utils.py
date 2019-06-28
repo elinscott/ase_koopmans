@@ -9,7 +9,7 @@ from ase.data.colors import jmol_colors
 from ase.utils import basestring
 
 
-def generate_writer_variables(writer, atoms, rotation='', show_unit_cell=0,
+def generate_writer_variables(writer, atoms, rotation='', show_unit_cell=2,
                               radii=None, bbox=None, colors=None, scale=20,
                               maxwidth=500, extra_offset=(0., 0.)):
     writer.numbers = atoms.get_atomic_numbers()

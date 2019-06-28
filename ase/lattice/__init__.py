@@ -180,6 +180,10 @@ class BravaisLattice(ABC):
 
         if path is None:
             path = self._variant.special_path
+        elif not isinstance(path, str):
+            from ase.dft.kpoints import resolve_custom_points
+            special_points = dict(special_points)
+            path = resolve_custom_points(path, special_points, self._eps)
 
         cell = self.tocell()
         if transformation is not None:

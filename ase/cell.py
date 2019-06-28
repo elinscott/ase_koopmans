@@ -142,8 +142,9 @@ class Cell:
             path = lat.bandpath(path, npoints=npoints, density=density)
             return path.transform(op)
         else:
-            from ase.dft.kpoints import BandPath
-            path = BandPath(path, special_points=special_points)
+            from ase.dft.kpoints import BandPath, resolve_custom_points
+            path = resolve_custom_points(path, special_points, eps=eps)
+            path = BandPath(self, labelseq=path, special_points=special_points)
             return path.interpolate(npoints=npoints, density=density)
 
 
