@@ -108,6 +108,26 @@ def resolve_kpt_path_string(path, special_points):
 
 @jsonable('bandpath')
 class BandPath:
+    """Represents a Brillouin zone path or bandpath.
+
+    A band path has a unit cell, a path specification, special points,
+    and interpolated k-points.  Band paths are typically created
+    indirectly using the :class:`~ase.geometry.Cell` or
+    :class:`~ase.lattice.BravaisLattice` classes:
+
+    >>> from ase.lattice import CUB
+    >>> path = CUB(3).bandpath()
+    >>> path
+    BandPath(path='GXMGRX,MR', special_points={GMRX}, kpts=[40 kpoints])
+
+    Band paths support JSON I/O:
+
+    >>> from ase.io.jsonio import read_json
+    >>> path.write('mybandpath.json')
+    >>> read_json('mybandpath.json')
+    BandPath(path='GXMGRX,MR', special_points={GMRX}, kpts=[40 kpoints])
+
+    """
     def __init__(self, cell, kpts=None,
                  special_points=None, labelseq=None):
         if kpts is None:
@@ -158,6 +178,7 @@ class BandPath:
 
     def interpolate(self, path=None, npoints=None, special_points=None,
                     density=None):
+        """Create new bandpath, (re-)interpolating kpoints from this one."""
         if path is None:
             path = self.labelseq
 
@@ -172,7 +193,7 @@ class BandPath:
         return np.dot(coords, self.icell)
 
     def __repr__(self):
-        return ('{}(path={}, special_points={}, kpts=[{} kpoints])'
+        return ('{}(path={}, special_points={{{}}}, kpts=[{} kpoints])'
                 .format(self.__class__.__name__,
                         repr(self.labelseq),
                         ''.join(sorted(self.special_points)),
@@ -209,11 +230,16 @@ class BandPath:
         return tuple(self)[index]
 
     def get_linear_kpoint_axis(self, eps=1e-5):
-        """See labels_from_kpts()."""
+        """Define x axis suitable for plotting a band structure.
+
+        See :func:`ase.dft.kpoints.labels_from_kpts`."""
         return labels_from_kpts(self.kpts, self.cell, eps=eps,
                                 special_points=self.special_points)
 
     def plot(self, dimension=3, **plotkwargs):
+        """Visualize this bandpath.
+
+        Plots the irreducible Brillouin zone and this bandpath."""
         import ase.dft.bz as bz
 
         special_points = self.special_points
@@ -269,8 +295,7 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None):
 
     You may define npoints or density but not both.
 
-    Return list of k-points, list of x-coordinates and list of
-    x-coordinates of special points."""
+    Return a :class:`~ase.dft.kpoints.BandPath` object."""
 
     cell = Cell.ascell(cell)
     return cell.bandpath(path, npoints=npoints, density=density,

@@ -170,6 +170,8 @@ class BravaisLattice(ABC):
                  density=None, transformation=None):
         """Return a :class:`~ase.dft.kpoints.BandPath` for this lattice.
 
+        See :meth:`ase.cell.Cell.bandpath` for description of parameters.
+
         >>> BCT(3, 5).bandpath()
         BandPath(path='GXYSGZS1NPY1Z,XP', special_points={GNPSS1XYY1Z}, kpts=[51 kpoints])
         """

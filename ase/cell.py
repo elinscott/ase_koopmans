@@ -109,8 +109,10 @@ class Cell:
 
         If special points are None, determine the Bravais lattice of
         this cell and return a suitable Brillouin zone path with
-        standard special points.  With special points, interpolate the
-        path directly without determining Bravais lattice.
+        standard special points.
+
+        If special special points are given, interpolate the path
+        directly from the available data.
 
         Parameters:
 
