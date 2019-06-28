@@ -264,7 +264,7 @@ class GPMin(Optimizer, GaussianProcess):
         '''Fit hyperparameters keeping the ratio noise/weight fixed'''
         ratio = self.noise/self.kernel.weight
        
-        result = self.fit_hyperparameters(np.asarray(
+        self.fit_hyperparameters(np.asarray(
                 self.x_list), np.asarray(self.y_list), eps = self.eps)
        
         self.noise = ratio*self.kernel.weight
