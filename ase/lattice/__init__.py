@@ -173,7 +173,7 @@ class BravaisLattice(ABC):
         See :meth:`ase.cell.Cell.bandpath` for description of parameters.
 
         >>> BCT(3, 5).bandpath()
-        BandPath(path='GXYSGZS1NPY1Z,XP', special_points={GNPSS1XYY1Z}, kpts=[51 kpoints])
+        BandPath(path='GXYSGZS1NPY1Z,XP', cell=[3x3], special_points={GNPSS1XYY1Z}, kpts=[51x3])
         """
         if special_points is None:
             special_points = self.get_special_points()
@@ -189,7 +189,7 @@ class BravaisLattice(ABC):
         if transformation is not None:
             cell = transformation.dot(cell)
 
-        bandpath = BandPath(cell=cell, labelseq=path,
+        bandpath = BandPath(cell=cell, path=path,
                             special_points=special_points)
         return bandpath.interpolate(npoints=npoints, density=density)
 

@@ -132,7 +132,7 @@ class Cell:
         -------
         >>> cell = Cell.fromcellpar([4, 4, 4, 60, 60, 60])
         >>> cell.bandpath('GXW', npoints=20)
-        BandPath(path='GXW', special_points={GKLUWX}, kpts=[20 kpoints])
+        BandPath(path='GXW', cell=[3x3], special_points={GKLUWX}, kpts=[20x3])
 
         """
         # TODO: Combine with the rotation transformation from bandpath()
@@ -144,7 +144,7 @@ class Cell:
         else:
             from ase.dft.kpoints import BandPath, resolve_custom_points
             path = resolve_custom_points(path, special_points, eps=eps)
-            path = BandPath(self, labelseq=path, special_points=special_points)
+            path = BandPath(self, path=path, special_points=special_points)
             return path.interpolate(npoints=npoints, density=density)
 
 

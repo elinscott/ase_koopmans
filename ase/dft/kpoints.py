@@ -171,18 +171,18 @@ class BandPath:
     >>> from ase.lattice import CUB
     >>> path = CUB(3).bandpath()
     >>> path
-    BandPath(path='GXMGRX,MR', special_points={GMRX}, kpts=[40 kpoints])
+    BandPath(path='GXMGRX,MR', cell=[3x3], special_points={GMRX}, kpts=[40x3])
 
     Band paths support JSON I/O:
 
     >>> from ase.io.jsonio import read_json
     >>> path.write('mybandpath.json')
     >>> read_json('mybandpath.json')
-    BandPath(path='GXMGRX,MR', special_points={GMRX}, kpts=[40 kpoints])
+    BandPath(path='GXMGRX,MR', cell=[3x3], special_points={GMRX}, kpts=[40x3])
 
     """
     def __init__(self, cell, kpts=None,
-                 special_points=None, labelseq=None):
+                 special_points=None, path=None):
         if kpts is None:
             kpts = np.empty((0, 3))
 
@@ -191,10 +191,8 @@ class BandPath:
         else:
             special_points = dict(special_points)
 
-        if labelseq is None:
-            labelseq = ''
-
-        assert isinstance(labelseq, str)
+        if path is None:
+            path = ''
 
         self.cell = cell = Cell.new(cell)
         assert cell.shape == (3, 3)
@@ -202,8 +200,8 @@ class BandPath:
         self.icell = self.cell.reciprocal()
         self.kpts = kpts
         self.special_points = special_points
-        assert isinstance(labelseq, str)
-        self.labelseq = labelseq
+        assert isinstance(path, str)
+        self.path = path
 
     def transform(self, op):
         """Apply 3x3 matrix to this BandPath and return new BandPath.
@@ -223,34 +221,34 @@ class BandPath:
 
         return BandPath(op.T @ self.cell, kpts=self.kpts @ op,
                         special_points=special_points,
-                        labelseq=self.labelseq)
+                        path=self.path)
 
     def todict(self):
         return {'kpts': self.kpts,
                 'special_points': self.special_points,
-                'labelseq': self.labelseq,
+                'labelseq': self.path,
                 'cell': self.cell}
 
     def interpolate(self, path=None, npoints=None, special_points=None,
                     density=None):
         """Create new bandpath, (re-)interpolating kpoints from this one."""
         if path is None:
-            path = self.labelseq
+            path = self.path
 
         special_points = {} if special_points is None else dict(special_points)
         special_points.update(self.special_points)
         pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
         kpts, x, X = paths2kpts(pathcoords, self.cell, npoints, density)
-        return BandPath(self.cell, kpts, labelseq=path,
+        return BandPath(self.cell, kpts, path=path,
                         special_points=special_points)
 
     def _scale(self, coords):
         return np.dot(coords, self.icell)
 
     def __repr__(self):
-        return ('{}(path={}, special_points={{{}}}, kpts=[{} kpoints])'
+        return ('{}(path={}, cell=[3x3], special_points={{{}}}, kpts=[{}x3])'
                 .format(self.__class__.__name__,
-                        repr(self.labelseq),
+                        repr(self.path),
                         ''.join(sorted(self.special_points)),
                         len(self.kpts)))
 
@@ -299,7 +297,7 @@ class BandPath:
         import ase.dft.bz as bz
 
         special_points = self.special_points
-        labelseq, coords = resolve_kpt_path_string(self.labelseq,
+        labelseq, coords = resolve_kpt_path_string(self.path,
                                                    special_points)
 
         paths = []
