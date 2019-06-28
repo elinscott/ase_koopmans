@@ -46,16 +46,24 @@ class BravaisLattice(ABC):
 
     @property
     def variant(self):
-        """Return the variant of this Bravais lattice."""
-        return self._variant
+        """Return name of lattice variant.
+
+        >>> BCT(3, 5).variant
+        'BCT2'
+        """
+        return self._variant.name
 
     def __getattr__(self, name):
         if name in self._parameters:
             return self._parameters[name]
         return self.__getattribute__(name)  # Raises error
 
+    def vars(self):
+        """Get parameter names and values of this lattice as a dictionary."""
+        return dict(self._parameters)
+
     def tocell(self):
-        """Return this lattice as a Cell object."""
+        """Return this lattice as a :class:`~ase.cell.Cell` object."""
         cell = self._cell(**self._parameters)
         pbc = np.arange(3) < self.ndim
         return Cell(cell, pbc=pbc)
@@ -69,18 +77,39 @@ class BravaisLattice(ABC):
         return T
 
     def cellpar(self):
-        """Get cell lengths and angles.  See ase.geometry.Cell.cellpar()."""
+        """Get cell lengths and angles.
+
+        See :func:`ase.geometry.Cell.cellpar`."""
         # (Just a brute-force implementation)
         cell = self.tocell()
         return cell.cellpar()
 
     @property
     def special_path(self):
-        return self.variant.special_path
+        """Get default special k-point path for this lattice as a string.
+
+        >>> BCT(3, 5).special_path
+        'GXYSGZS1NPY1Z,XP'
+        """
+        return self._variant.special_path
+
+    @property
+    def special_point_names(self):
+        """Return all special point names as a list of strings.
+
+        >>> BCT(3, 5).special_point_names
+        ['G', 'N', 'P', 'S', 'S1', 'X', 'Y', 'Y1', 'Z']
+        """
+        labels = parse_path_string(self._variant.special_point_names)
+        assert len(labels) == 1  # list of lists
+        return labels[0]
+
 
     def get_special_points_array(self):
-        """Return special points for this lattice as an array."""
-        if self.variant.special_points is not None:
+        """Return all special points for this lattice as an array.
+
+        Ordering is consistent with special_point_names."""
+        if self._variant.special_points is not None:
             # Fixed dictionary of special points
             d = self.get_special_points()
             labels = self.special_point_names
@@ -91,26 +120,20 @@ class BravaisLattice(ABC):
             return points
 
         # Special points depend on lattice parameters:
-        points = self._special_points(variant=self.variant,
+        points = self._special_points(variant=self._variant,
                                       **self._parameters)
         assert len(points) == len(self.special_point_names)
         return np.array(points)
 
     def get_special_points(self):
         """Return a dictionary of named special k-points for this lattice."""
-        if self.variant.special_points is not None:
-            return self.variant.special_points
+        if self._variant.special_points is not None:
+            return self._variant.special_points
 
         labels = self.special_point_names
         points = self.get_special_points_array()
 
         return dict(zip(labels, points))
-
-    @property
-    def special_point_names(self):
-        labels = parse_path_string(self._variant.special_point_names)
-        assert len(labels) == 1  # list of lists
-        return labels[0]
 
     def plot_bz(self, path=None, special_points=None, **plotkwargs):
         """Plot the reciprocal cell and default bandpath."""
@@ -121,12 +144,16 @@ class BravaisLattice(ABC):
 
     def bandpath(self, path=None, npoints=None, special_points=None,
                  density=None, transformation=None):
-        """Return a BandPath for this Bravais lattice."""
+        """Return a :class:`~ase.dft.kpoints.BandPath` for this lattice.
+
+        >>> BCT(3, 5).bandpath()
+        BandPath(path='GXYSGZS1NPY1Z,XP', special_points={GNPSS1XYY1Z}, kpts=[51 kpoints])
+        """
         if special_points is None:
             special_points = self.get_special_points()
 
         if path is None:
-            path = self.variant.special_path
+            path = self._variant.special_path
 
         cell = self.tocell()
         if transformation is not None:
@@ -177,6 +204,7 @@ class BravaisLattice(ABC):
         return self.__format__('.20g')
 
     def description(self):
+        """Return complete description of lattice and Brillouin zone."""
         points = self.get_special_points()
         labels = self.special_point_names
 
@@ -190,12 +218,13 @@ class BravaisLattice(ABC):
   Special point coordinates:
 {special_points}
 """.format(repr=str(self),
-           variant=self.variant,
+           variant=self._variant,
            special_points=coordstring)
         return string
 
     @classmethod
     def type_description(cls):
+        """Return complete description of this Bravais lattice type."""
         desc = """\
 Lattice name: {name}
   Long name: {longname}
