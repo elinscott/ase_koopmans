@@ -1,9 +1,18 @@
+Bravais lattices
+================
+
+.. module:: ase.lattice
+
+
+.. autoclass:: ase.lattice.BravaisLattice
+               :members:
+
+
 .. _general-crystal-section:
 
 General crystal structures and surfaces
 =======================================
 
-.. module:: ase.lattice
 
 Modules for creating crystal structures are found in the module
 :mod:`ase.lattice`.  Most Bravais lattices are implemented, as

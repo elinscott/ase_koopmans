@@ -84,6 +84,15 @@ You can find the special points in the Brillouin zone:
 .. autofunction:: labels_from_kpts
 
 
+Band path
+---------
+
+The :class:`~ase.dft.kpoints.BandPath` class represents a bandpath.
+It is typically created by helper functions such as
+:meth:`ase.cell.Cell.bandpath` or :meth:`ase.lattice.BravaisLattice.bandpath`.
+
+.. autoclass:: BandPath
+
 Band structure
 --------------
 
