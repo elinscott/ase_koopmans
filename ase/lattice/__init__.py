@@ -19,6 +19,30 @@ _degrees = np.pi / 180
 
 
 class BravaisLattice(ABC):
+    """Represent Bravais lattices and data related to the Brillouin zone.
+
+    There are 14 3D Bravais classes: CUB, FCC, BCC, ..., and TRI, and
+    five 2D classes.
+
+    Each class stores basic static information:
+
+    >>> from ase.lattice import FCC, MCL
+    >>> FCC.name
+    'FCC'
+    >>> FCC.longname
+    'face-centred cubic'
+    >>> FCC.pearson_symbol
+    'cF'
+    >>> MCL.parameters
+    ('a', 'b', 'c', 'alpha')
+
+    Each class can be instantiated with the specific lattice parameters
+    that apply to that lattice:
+
+    >>> MCL(3, 4, 5, 80)
+    MCL(a=3, b=4, c=5, alpha=80)
+
+    """
     # These parameters can be set by the @bravais decorator for a subclass.
     # (We could also use metaclasses to do this, but that's more abstract)
     name = None  # e.g. 'CUB', 'BCT', 'ORCF', ...
@@ -46,15 +70,24 @@ class BravaisLattice(ABC):
 
     @property
     def variant(self):
-        return self._variant
+        """Return name of lattice variant.
+
+        >>> BCT(3, 5).variant
+        'BCT2'
+        """
+        return self._variant.name
 
     def __getattr__(self, name):
         if name in self._parameters:
             return self._parameters[name]
         return self.__getattribute__(name)  # Raises error
 
+    def vars(self):
+        """Get parameter names and values of this lattice as a dictionary."""
+        return dict(self._parameters)
+
     def tocell(self):
-        """Return this lattice as a Cell object."""
+        """Return this lattice as a :class:`~ase.cell.Cell` object."""
         cell = self._cell(**self._parameters)
         pbc = np.arange(3) < self.ndim
         return Cell(cell, pbc=pbc)
@@ -68,18 +101,39 @@ class BravaisLattice(ABC):
         return T
 
     def cellpar(self):
-        """Get cell lengths and angles.  See ase.geometry.Cell.cellpar()."""
+        """Get cell lengths and angles as array of length 6.
+
+        See :func:`ase.geometry.Cell.cellpar`."""
         # (Just a brute-force implementation)
         cell = self.tocell()
         return cell.cellpar()
 
     @property
     def special_path(self):
-        return self.variant.special_path
+        """Get default special k-point path for this lattice as a string.
+
+        >>> BCT(3, 5).special_path
+        'GXYSGZS1NPY1Z,XP'
+        """
+        return self._variant.special_path
+
+    @property
+    def special_point_names(self):
+        """Return all special point names as a list of strings.
+
+        >>> BCT(3, 5).special_point_names
+        ['G', 'N', 'P', 'S', 'S1', 'X', 'Y', 'Y1', 'Z']
+        """
+        labels = parse_path_string(self._variant.special_point_names)
+        assert len(labels) == 1  # list of lists
+        return labels[0]
+
 
     def get_special_points_array(self):
-        """Return special points for this lattice as an array."""
-        if self.variant.special_points is not None:
+        """Return all special points for this lattice as an array.
+
+        Ordering is consistent with special_point_names."""
+        if self._variant.special_points is not None:
             # Fixed dictionary of special points
             d = self.get_special_points()
             labels = self.special_point_names
@@ -90,42 +144,42 @@ class BravaisLattice(ABC):
             return points
 
         # Special points depend on lattice parameters:
-        points = self._special_points(variant=self.variant,
+        points = self._special_points(variant=self._variant,
                                       **self._parameters)
         assert len(points) == len(self.special_point_names)
         return np.array(points)
 
     def get_special_points(self):
         """Return a dictionary of named special k-points for this lattice."""
-        if self.variant.special_points is not None:
-            return self.variant.special_points
+        if self._variant.special_points is not None:
+            return self._variant.special_points
 
         labels = self.special_point_names
         points = self.get_special_points_array()
 
         return dict(zip(labels, points))
 
-    @property
-    def special_point_names(self):
-        labels = parse_path_string(self._variant.special_point_names)
-        assert len(labels) == 1  # list of lists
-        return labels[0]
-
     def plot_bz(self, path=None, special_points=None, **plotkwargs):
         """Plot the reciprocal cell and default bandpath."""
-        # Create a generic bandpath (no actual kpoints):
+        # Create a generic bandpath (no interpolated kpoints):
         bandpath = self.bandpath(path=path, special_points=special_points,
                                  npoints=0)
         return bandpath.plot(dimension=self.ndim, **plotkwargs)
 
     def bandpath(self, path=None, npoints=None, special_points=None,
                  density=None, transformation=None):
-        """Return a BandPath for this Bravais lattice."""
+        """Return a :class:`~ase.dft.kpoints.BandPath` for this lattice.
+
+        See :meth:`ase.cell.Cell.bandpath` for description of parameters.
+
+        >>> BCT(3, 5).bandpath()
+        BandPath(path='GXYSGZS1NPY1Z,XP', cell=[3x3], special_points={GNPSS1XYY1Z}, kpts=[51x3])
+        """
         if special_points is None:
             special_points = self.get_special_points()
 
         if path is None:
-            path = self.variant.special_path
+            path = self._variant.special_path
         elif not isinstance(path, str):
             from ase.dft.kpoints import resolve_custom_points
             special_points = dict(special_points)
@@ -135,7 +189,7 @@ class BravaisLattice(ABC):
         if transformation is not None:
             cell = transformation.dot(cell)
 
-        bandpath = BandPath(cell=cell, labelseq=path,
+        bandpath = BandPath(cell=cell, path=path,
                             special_points=special_points)
         return bandpath.interpolate(npoints=npoints, density=density)
 
@@ -157,17 +211,30 @@ class BravaisLattice(ABC):
         raise NotImplementedError
 
     def _variant_name(self, **kwargs):
-        """Return the name (e.g. ORCF3) of variant.
+        """Return the name (e.g. 'ORCF3') of variant.
 
         Arguments will be the dictionary of Bravais parameters."""
         raise NotImplementedError
 
-    def __repr__(self):
-        par = ', '.join('{}={}'.format(k, v)
-                        for k, v in self._parameters.items())
-        return '{}({})'.format(self.name, par)
+    def __format__(self, spec):
+        tokens = []
+        if not spec:
+            spec = '.6g'
+        template = '{}={:%s}' % spec
+
+        for name in self.parameters:
+            value = self._parameters[name]
+            tokens.append(template.format(name, value))
+        return '{}({})'.format(self.name, ', '.join(tokens))
 
     def __str__(self):
+        return self.__format__('')
+
+    def __repr__(self):
+        return self.__format__('.20g')
+
+    def description(self):
+        """Return complete description of lattice and Brillouin zone."""
         points = self.get_special_points()
         labels = self.special_point_names
 
@@ -180,16 +247,17 @@ class BravaisLattice(ABC):
   {variant}
   Special point coordinates:
 {special_points}
-""".format(repr=repr(self),
-           variant=self.variant,
+""".format(repr=str(self),
+           variant=self._variant,
            special_points=coordstring)
         return string
 
     @classmethod
     def type_description(cls):
+        """Return complete description of this Bravais lattice type."""
         desc = """\
-Lattice name: {type}
-  Long name: {name}
+Lattice name: {name}
+  Long name: {longname}
   Parameters: {parameters}
 """.format(**vars(cls))
 
@@ -1290,8 +1358,8 @@ def all_variants():
     yield TET(a, c)
     bct1 = BCT(2 * a, c)
     bct2 = BCT(a, c)
-    assert bct1.variant.name == 'BCT1'
-    assert bct2.variant.name == 'BCT2'
+    assert bct1.variant == 'BCT1'
+    assert bct2.variant == 'BCT2'
 
     yield bct1
     yield bct2
@@ -1302,9 +1370,9 @@ def all_variants():
     orcf1 = ORCF(0.5 * a0, b, c)
     orcf2 = ORCF(1.2 * a0, b, c)
     orcf3 = ORCF(a0, b, c)
-    assert orcf1.variant.name == 'ORCF1'
-    assert orcf2.variant.name == 'ORCF2'
-    assert orcf3.variant.name == 'ORCF3'
+    assert orcf1.variant == 'ORCF1'
+    assert orcf2.variant == 'ORCF2'
+    assert orcf3.variant == 'ORCF3'
     yield orcf1
     yield orcf2
     yield orcf3
@@ -1315,11 +1383,11 @@ def all_variants():
     yield HEX(a, c)
 
     rhl1 = RHL(a, alpha=55.0)
-    assert rhl1.variant.name == 'RHL1'
+    assert rhl1.variant == 'RHL1'
     yield rhl1
 
     rhl2 = RHL(a, alpha=105.0)
-    assert rhl2.variant.name == 'RHL2'
+    assert rhl2.variant == 'RHL2'
     yield rhl2
 
     # With these lengths, alpha < 65 (or so) would result in a lattice that
@@ -1327,17 +1395,19 @@ def all_variants():
     yield MCL(a, b, c, alpha=70.0)
 
     mclc1 = MCLC(a, b, c, 80)
-    assert mclc1.variant.name == 'MCLC1'
+    assert mclc1.variant == 'MCLC1'
     yield mclc1
     # mclc2 has same special points as mclc1
 
     mclc3 = MCLC(1.8 * a, b, c * 2, 80)
-    assert mclc3.variant.name == 'MCLC3'
+    assert mclc3.variant == 'MCLC3'
     yield mclc3
     # mclc4 has same special points as mclc3
 
+    # XXX We should add MCLC2 and MCLC4 as well.
+
     mclc5 = MCLC(b, b, 1.1 * b, 70)
-    assert mclc5.variant.name == 'MCLC5'
+    assert mclc5.variant == 'MCLC5'
     yield mclc5
 
     def get_tri(kcellpar):
@@ -1347,18 +1417,18 @@ def all_variants():
         return TRI(*cellpar)
 
     tri1a = get_tri([1., 1.2, 1.4, 120., 110., 100.])
-    assert tri1a.variant.name == 'TRI1a'
+    assert tri1a.variant == 'TRI1a'
     yield tri1a
 
     tri1b = get_tri([1., 1.2, 1.4, 50., 60., 70.])
-    assert tri1b.variant.name == 'TRI1b'
+    assert tri1b.variant == 'TRI1b'
     yield tri1b
 
     tri2a = get_tri([1., 1.2, 1.4, 120., 110., 90.])
-    assert tri2a.variant.name == 'TRI2a'
+    assert tri2a.variant == 'TRI2a'
     yield tri2a
     tri2b = get_tri([1., 1.2, 1.4, 50., 60., 90.])
-    assert tri2b.variant.name == 'TRI2b'
+    assert tri2b.variant == 'TRI2b'
     yield tri2b
 
     yield OBL(a, b, alpha=alpha)

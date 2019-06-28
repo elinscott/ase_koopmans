@@ -30,11 +30,11 @@ with open('bztable.rst', 'w') as fd:
     print(header, file=fd)
 
     for i, lat in enumerate(all_variants()):
-        id = '{:02d}.{}'.format(i, lat.variant.name)
+        id = '{:02d}.{}'.format(i, lat.variant)
         imagefname = '{}.svg'.format(id)
-        txt = entry.format(name=lat.variant.name,
+        txt = entry.format(name=lat.variant,
                            longname=lat.longname,
-                           bandpath=lat.bandpath().labelseq,
+                           bandpath=lat.bandpath().path,
                            fname=imagefname)
         print(txt, file=fd)
         ax = lat.plot_bz()

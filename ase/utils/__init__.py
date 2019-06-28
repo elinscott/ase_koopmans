@@ -373,6 +373,7 @@ def longsum(x):
 
 @contextmanager
 def workdir(path, mkdir=False):
+    """Temporarily change, and optionally create, working directory."""
     path = Path(path)
     if mkdir:
         path.mkdir(parents=True, exist_ok=True)

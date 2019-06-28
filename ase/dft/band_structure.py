@@ -261,6 +261,10 @@ class BandStructurePlot:
 
 @jsonable('bandstructure')
 class BandStructure:
+    """A band structure consists of an array of eigenvalues and a bandpath.
+
+    BandStructure objects support JSON I/O.
+    """
     def __init__(self, path, energies, reference=0.0):
         self.path = path
         self.energies = np.asarray(energies)
@@ -273,10 +277,11 @@ class BandStructure:
                     reference=self.reference)
 
     def get_labels(self, eps=1e-5):
-        """"See ase.dft.kpoints.labels_from_kpts()."""
+        """"See :func:`ase.dft.kpoints.labels_from_kpts`."""
         return self.path.get_linear_kpoint_axis(eps=eps)
 
     def plot(self, *args, **kwargs):
+        """Plot this band structure."""
         bsp = BandStructurePlot(self)
         return bsp.plot(*args, **kwargs)
 

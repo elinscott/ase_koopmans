@@ -58,7 +58,7 @@ def object_hook(dct):
             obj = BandStructure(**dct)
         elif objtype == 'bandpath':
             from ase.dft.kpoints import BandPath
-            obj = BandPath(**dct)
+            obj = BandPath(path=dct.pop('labelseq'), **dct)
         else:
             raise RuntimeError('Do not know how to decode object type {} '
                                'into an actual object'.format(objtype))
