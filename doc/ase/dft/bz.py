@@ -34,7 +34,7 @@ with open('bztable.rst', 'w') as fd:
         imagefname = '{}.svg'.format(id)
         txt = entry.format(name=lat.variant,
                            longname=lat.longname,
-                           bandpath=lat.bandpath().labelseq,
+                           bandpath=lat.bandpath().path,
                            fname=imagefname)
         print(txt, file=fd)
         ax = lat.plot_bz()
