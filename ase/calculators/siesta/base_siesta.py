@@ -29,6 +29,109 @@ from collections import OrderedDict
 
 meV = 0.001 * eV
 
+def bandpath2bandlines(path):
+    lines = []
+    add = lines.append
+
+    add('BandLinesScale ReciprocalLatticeVectors')
+    add('%block BandLines')
+
+    x, X, labels = path.get_linear_kpoint_axis()
+    i = 0
+    isum = 0
+    for Xval, label in zip(X, labels):
+        i = np.searchsorted(x, Xval)
+        if isum == 0:
+            isum += 1
+            nkpts_segment = 1
+        else:
+            nkpts_segment = i
+        isum += i
+        x = x[i:]
+        add('{:3d} {:6f} {:6f} {:6f} {}'.format(nkpts_segment,
+                                    *path.special_points[label],
+                                    label))
+    add('%endblock BandLines')
+    return '\n'.join(lines)
+
+
+#@jsonable('poorbandpath')
+class PoorBandPath:
+    def __init__(self, x, X, labels):
+        self.x = x
+        self.X = X
+        self.labels = labels
+
+        self.kpts = np.zeros((len(x), 3))
+        self.kpts[:, 0] = x
+
+    def get_linear_kpoint_axis(self):
+        return self.x, self.X, self.labels
+
+
+def read_bands_file(fd):
+    l1 = next(fd) # Not sure what these numbers mean
+    l2 = next(fd)
+    l3 = next(fd)
+    header = next(fd)
+    # Header is number of bands, spins (?), and kpoints
+    nbands, nspins_probably, nkpts = np.array(header.split()).astype(int)
+
+    # one field for the x axis, then all the energies
+    ntokens = nbands + 1
+
+    # Read energies for each kpoint:
+    data = []
+    for i in range(nkpts):
+        line = next(fd)
+        tokens = line.split()
+        while len(tokens) < ntokens:
+            line = next(fd)
+            tokens += line.split()
+        assert len(tokens) == ntokens
+        values = np.array(tokens).astype(float)
+        assert len(values) == nbands + 1
+        data.append(values)
+
+    data = np.array(data)
+    assert len(data) == nkpts
+    xvalues = data[:, 0]
+    energies = data[:, 1:nbands + 1]
+
+    # Special points listed afterwards:
+    nspecial_points = int(next(fd))
+
+    X = []
+    labels = []
+    for i in range(nspecial_points):
+        try:
+            line = next(fd)
+        except StopIteration:
+            break  # wtf, apparently that number is not the number of
+                   # special points
+        xval, label = line.split()
+        xval = float(xval)
+        assert label[0] == label[-1] == "'"
+        label = label[1:-1].replace(r'\Gamma', 'G')
+        lineno = np.searchsorted(xvalues, xval)
+
+        X.append(xval)
+        labels.append(label)
+
+    from ase.dft.kpoints import BandPath
+    from ase.dft.band_structure import BandStructure
+
+    # Siesta output does not have true kpoints, only an axis for plotting!
+    false_kpts = np.zeros((nkpts, 3))
+    false_kpts[:, 0] = xvalues
+    false_special_points = {}
+    for label, Xval in zip(labels, X):
+        false_special_points[label] = np.array([Xval, 0, 0])
+    path = BandPath(cell=np.eye(3),
+                    kpts=false_kpts, special_points=false_special_points)
+    bs = BandStructure(path, energies[None, :, :])
+    return bs
+
 
 class SiestaParameters(Parameters):
     """Parameters class for the calculator.
@@ -52,7 +155,8 @@ class SiestaParameters(Parameters):
             restart=None,
             ignore_bad_restart_file=False,
             fdf_arguments=None,
-            atomic_coord_format='xyz'):
+            atomic_coord_format='xyz',
+            bandpath=None):
         kwargs = locals()
         kwargs.pop('self')
         Parameters.__init__(self, **kwargs)
@@ -414,6 +518,11 @@ class BaseSiesta(FileIOCalculator):
             # f.write(format_fdf('SCFMustConverge', True))
 
             self._write_kpts(f)
+
+            if self['bandpath'] is not None:
+                lines = bandpath2bandlines(self['bandpath'])
+                f.write(lines)
+                f.write('\n')
 
     def read(self, filename):
         """Read structural parameters from file .XV file
@@ -786,6 +895,25 @@ class BaseSiesta(FileIOCalculator):
 
         self.read_wfsx()
         self.read_ion(self.atoms)
+
+        self.read_bands()
+
+    def read_bands(self):
+        bandpath = self['bandpath']
+        if bandpath is None:
+            return
+
+        path = self['bandpath']
+        fname = self.getpath(ext='bands')
+        with open(fname) as fd:
+            bs0 = read_bands_file(fd)
+        from ase.dft.band_structure import BandStructure
+        bs = BandStructure(bandpath, bs0.energies)
+        self.bs0 = bs0
+        self.results['bandstructure'] = bs
+
+    def band_structure(self):
+        return self.results['bandstructure']
 
     def read_ion(self, atoms):
         """Read the ion.xml file of each specie

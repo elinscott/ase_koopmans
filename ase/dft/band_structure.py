@@ -268,6 +268,8 @@ class BandStructure:
     def __init__(self, path, energies, reference=0.0):
         self.path = path
         self.energies = np.asarray(energies)
+        assert self.energies.shape[0] in [1, 2]
+        assert self.energies.shape[1] == len(path.kpts)
         assert np.isscalar(reference)
         self.reference = reference
 
