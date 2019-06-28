@@ -106,6 +106,59 @@ def resolve_kpt_path_string(path, special_points):
     return paths, coords
 
 
+def resolve_custom_points(pathspec, special_points, eps):
+    # This should really run on Cartesian coordinates but we'll probably
+    # be lazy and call it on scaled ones.
+
+    if not pathspec:
+        return ''
+
+    nested_format = True
+    for element in pathspec:
+        if len(element) == 3 and np.isscalar(element[0]):
+            nested_format = False
+            break
+
+    if not nested_format:
+        pathspec = [pathspec]  # Now format is nested.
+
+    def name_generator():
+        counter = 0
+        while True:
+            name = 'Kpt{}'.format(counter)
+            yield name
+            counter += 1
+    custom_names = name_generator()
+
+    labelseq = []
+    for segment in pathspec:
+        for kpt in segment:
+            if isinstance(kpt, str):
+                if kpt not in special_points:
+                    raise KeyError('No kpoint "{}" among "{}"'.format(kpt),
+                                   ''.join(special_points))
+                labelseq.append(kpt)
+                continue
+
+            kpt = np.asarray(kpt, float)
+            for key, val in special_points.items():
+                if np.abs(kpt - val).max() < eps:
+                    labelseq.append(key)
+                    break  # Already present
+            else:
+                # New special point - search for name we haven't used yet:
+                name = next(custom_names)
+                while name in special_points:
+                    name = next(custom_names)
+                special_points[name] = kpt
+                labelseq.append(name)
+        labelseq.append(',')
+
+    last = labelseq.pop()
+    assert last == ','
+    return ''.join(labelseq)
+
+
 @jsonable('bandpath')
 class BandPath:
     def __init__(self, cell, kpts=None,
@@ -115,15 +168,17 @@ class BandPath:
 
         if special_points is None:
             special_points = {}
+        else:
+            special_points = dict(special_points)
 
         if labelseq is None:
             labelseq = ''
-        elif not isinstance(labelseq, str):
-            labelseq = ''.join(labelseq)
 
+        assert isinstance(labelseq, str)
+
+        self.cell = cell = Cell.new(cell)
         assert cell.shape == (3, 3)
         assert kpts.ndim == 2 and kpts.shape[1] == 3
-        self.cell = Cell.new(cell)
         self.icell = self.cell.reciprocal()
         self.kpts = kpts
         self.special_points = special_points
@@ -131,7 +186,7 @@ class BandPath:
         self.labelseq = labelseq
 
     def transform(self, op):
-        """Transform bandpath applying a 3x3 matrix as an operation.
+        """Apply 3x3 matrix to this BandPath and return new BandPath.
 
         This is useful for converting the band path to another cell.
         The operation will typically be a permutation/flipping
@@ -158,6 +213,7 @@ class BandPath:
 
     def interpolate(self, path=None, npoints=None, special_points=None,
                     density=None):
+        """Interpolate bandpath and return result as a new BandPath."""
         if path is None:
             path = self.labelseq
 
@@ -172,13 +228,14 @@ class BandPath:
         return np.dot(coords, self.icell)
 
     def __repr__(self):
-        return ('{}(path={}, special_points={}, kpts=[{} kpoints])'
+        return ('{}(path={}, special_points={{{}}}, kpts=[{} kpoints])'
                 .format(self.__class__.__name__,
                         repr(self.labelseq),
                         ''.join(sorted(self.special_points)),
                         len(self.kpts)))
 
     def cartesian_kpts(self):
+        """Get Cartesian kpoints from this bandpath."""
         return self._scale(self.kpts)
 
     def __iter__(self):
@@ -209,11 +266,12 @@ class BandPath:
         return tuple(self)[index]
 
     def get_linear_kpoint_axis(self, eps=1e-5):
-        """See labels_from_kpts()."""
+        """See :func:`~ase.dft.kpoints.labels_from_kpts`."""
         return labels_from_kpts(self.kpts, self.cell, eps=eps,
                                 special_points=self.special_points)
 
     def plot(self, dimension=3, **plotkwargs):
+        """"Plot this bandpath in the irreducible Brillouin zone."""
         import ase.dft.bz as bz
 
         special_points = self.special_points
@@ -241,7 +299,8 @@ class BandPath:
                           **kw)
 
 
-def bandpath(path, cell, npoints=None, density=None, special_points=None):
+def bandpath(path, cell, npoints=None, density=None, special_points=None,
+             eps=2e-4):
     """Make a list of kpoints defining the path between the given points.
 
     path: list or str
@@ -264,8 +323,10 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None):
         If the calculated npoints value is less than 50, a mimimum value of 50
         will be used.
     special_points: dict or None
-        Dictionary mapping names to special points.  If not set, the special
+        Dictionary mapping names to special points.  If None, the special
         points will be derived from the cell.
+    eps: float
+        Precision used to identify Bravais lattice, deducing special points.
 
     You may define npoints or density but not both.
 
@@ -274,7 +335,7 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None):
 
     cell = Cell.ascell(cell)
     return cell.bandpath(path, npoints=npoints, density=density,
-                         special_points=special_points)
+                         special_points=special_points, eps=eps)
 
     # XXX old code for bandpath() function, should be removed once we
     # weed out any trouble
