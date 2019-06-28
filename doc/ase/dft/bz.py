@@ -6,7 +6,7 @@
 # creates: 20.TRI1b.svg 21.TRI2a.svg 22.TRI2b.svg
 # creates: 23.OBL.svg 24.RECT.svg 25.CRECT.svg 26.HEX2D.svg 27.SQR.svg
 
-from ase.geometry.bravais import all_variants
+from ase.lattice import all_variants
 
 
 header = """\
@@ -30,11 +30,11 @@ with open('bztable.rst', 'w') as fd:
     print(header, file=fd)
 
     for i, lat in enumerate(all_variants()):
-        id = '{:02d}.{}'.format(i, lat.variant.name)
+        id = '{:02d}.{}'.format(i, lat.variant)
         imagefname = '{}.svg'.format(id)
-        txt = entry.format(name=lat.variant.name,
+        txt = entry.format(name=lat.variant,
                            longname=lat.longname,
-                           bandpath=lat.bandpath().labelseq,
+                           bandpath=lat.bandpath().path,
                            fname=imagefname)
         print(txt, file=fd)
         ax = lat.plot_bz()

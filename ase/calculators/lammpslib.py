@@ -274,6 +274,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
         xhi, xy, xz, _, yhi, yz, _, _, zhi = convert(
                 lammps_cell.flatten(order='C'), "distance", "ASE", self.units)
+        box_hi = [xhi, yhi, zhi]
 
         if change:
             cell_cmd = ('change_box all     '
@@ -286,15 +287,35 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
             # any calculation
             if self.parameters.create_box:
                 self.lmp.command('box tilt large')
+
+            # Check if there are any indefinite boundaries. If so, shrink-wrapping will
+            # end up being used, but we want to define the LAMMPS region and box fairly
+            # tight around the atoms to avoid losing any
+            lammps_boundary_conditions = self.lammpsbc(atoms).split()
+            if 's' in lammps_boundary_conditions:
+                pos = atoms.get_positions()
+                if self.coord_transform is not None:
+                    pos = np.dot(self.coord_transform, pos.transpose())
+                    pos = pos.transpose()
+                posmin = np.amin(pos, axis=0)
+                posmax = np.amax(pos, axis=0)
+
+                for i in range(0,3):
+                    if lammps_boundary_conditions[i] == 's':
+                        box_hi[i] = 1.05*abs(posmax[i] - posmin[i])
+
             cell_cmd = ('region cell prism    '
                         '0 {} 0 {} 0 {}     '
                         '{} {} {}     units box'
-                        ''.format(xhi, yhi, zhi, xy, xz, yz))
+                        ''.format(*box_hi, xy, xz, yz))
 
         self.lmp.command(cell_cmd)
 
     def set_lammps_pos(self, atoms, wrap=True):
-        pos = convert(atoms.get_positions(wrap=wrap), "distance", "ASE", self.units)
+        if wrap:
+            atoms.wrap()
+
+        pos = convert(atoms.get_positions(), "distance", "ASE", self.units)
 
         # If necessary, transform the positions to new coordinate system
         if self.coord_transform is not None:
@@ -337,24 +358,26 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         if not self.initialized:
             self.initialise_lammps(atoms)
         else:  # still need to reset cell
-            # reset positions so that if they are crazy from last
-            # propagation, change_box (in set_cell()) won't hang
-            # could do this only after testing for crazy positions?
-            # could also use scatter_atoms() to set values (requires
+            # Apply only requested boundary condition changes. Note this needs to happen
+            # before the call to set_cell since 'change_box' will apply any
+            # shrink-wrapping *after* it's updated the cell dimensions
+            if 'pbc' in system_changes:
+                change_box_str = 'change_box all boundary {}'
+                change_box_cmd = change_box_str.format(self.lammpsbc(atoms))
+                self.lmp.command(change_box_cmd)
+
+            # Reset positions so that if they are crazy from last
+            # propagation, change_box (in set_cell()) won't hang.
+            # Could do this only after testing for crazy positions?
+            # Could also use scatter_atoms() to set values (requires
             # MPI comm), or extra_atoms() to get pointers to local
-            # data structures to zero, but then will have to be
-            # careful with parallelism
+            # data structures to zero, but then we would have to be
+            # careful with parallelism.
             self.lmp.command("set atom * x 0.0 y 0.0 z 0.0")
             self.set_cell(atoms, change=True)
 
         if self.parameters.atom_types is None:
             raise NameError("atom_types are mandatory.")
-
-        # Deal with boundary condition change
-        if 'pbc' in system_changes:
-            change_box_str = 'change_box all boundary {}'
-            change_box_cmd = change_box_str.format(self.lammpsbc(atoms))
-            self.lmp.command(change_box_cmd)
 
         do_rebuild = (not np.array_equal(atoms.numbers, self.previous_atoms_numbers)
                       or ("numbers" in system_changes))
@@ -475,40 +498,26 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
     def lammpsbc(self, atoms):
         """
-        Determine LAMMPS boundary types based on ASE pbc settings. Specific
-        attention is paid to directions which are non-periodic and along which
-        the extent of the atoms in the system is small.  In such cases, using
-        shrink-wrapped boundaries is generally a bad idea because atoms can be
-        lost.  This can occur in two ways:  (1) during the initial shrink wrap
-        if the cell is much larger than the extent of the atoms along such a
-        direction (see https://lammps.sandia.gov/doc/boundary.html), and (2)
-        because the neighbor skin is larger than the cell size, atoms can
-        potentially move all the way across (and out of) the cell before a
-        neighbor list rebuild is triggered.  Moreover, if one is using the
-        binning method of neighbor list construction (as is done here since
-        it's the default), having a box size much smaller than the neighbor
-        list cutoff would cause an huge number of bins to be created and,
-        accordingly, LAMMPS will return an error and exit.  Therefore, in this
-        case, we use 'm' boundary conditions, which are shrink-wrapped but are
-        constrained to be at least as large as the cell size.
+        Determine LAMMPS boundary types based on ASE pbc settings. For non-periodic
+        dimensions, if the cell length is finite then fixed BCs ('f') are used; if the
+        cell length is approximately zero, shrink-wrapped BCs ('s') are used.
         """
         retval = ''
         pbc = atoms.get_pbc()
         if np.all(pbc):
             retval = 'p p p'
         else:
-            pos = atoms.get_positions()
-            posmin = np.amin(pos, axis=0)
-            posmax = np.amax(pos, axis=0)
+            cell = atoms.get_cell()
             for i in range(0, 3):
                 if pbc[i]:
                     retval += 'p '
                 else:
-                    # decide if to return "s" or "m"
-                    if abs(posmax[i] - posmin[i]) < 0.1:
-                        retval += 'm '  # spacing along this direction is small
-                    else:               # so use minimum size set by cell
+                    # See if we're using indefinite ASE boundaries along this direction
+                    if np.linalg.norm(cell[i]) < np.finfo(cell[i][0]).tiny:
                         retval += 's '
+                    else:
+                        retval += 'f '
+
         return retval.strip()
 
     def rebuild(self, atoms):

@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Tuple, Dict
+from typing import Tuple, Dict  # noqa
 from ase.eos import EquationOfState as EOS
 from ase.io import read
 

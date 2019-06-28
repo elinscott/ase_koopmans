@@ -1,4 +1,5 @@
-from ase.geometry.cell import (Cell, cell_to_cellpar, cellpar_to_cell,
+from ase.cell import Cell
+from ase.geometry.cell import (cell_to_cellpar, cellpar_to_cell,
                                crystal_structure_from_cell, complete_cell,
                                is_orthorhombic, orthorhombic,)
 from ase.geometry.geometry import (wrap_positions,

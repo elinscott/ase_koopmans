@@ -16,11 +16,11 @@ import numpy as np
 
 import ase.units as units
 from ase.atom import Atom
+from ase.cell import Cell
 from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
 from ase.data import atomic_masses
 from ase.utils import basestring
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
-from ase.geometry.cell import Cell
 from ase.symbols import Symbols, symbols2numbers
 
 
@@ -1598,7 +1598,7 @@ class Atoms(object):
         center = self.positions[a2]
         self._masked_rotate(center, axis, diff, mask)
 
-    def rattle(self, stdev=0.001, seed=42):
+    def rattle(self, stdev=0.001, seed=None, rng=None):
         """Randomly displace atoms.
 
         This method adds random displacements to the atomic positions,
@@ -1608,10 +1608,16 @@ class Atoms(object):
         For a parallel calculation, it is important to use the same
         seed on all processors!  """
 
-        rs = np.random.RandomState(seed)
+        if seed is not None and rng is not None:
+            raise ValueError('Please do not provide both seed and rng.')
+
+        if rng is None:
+            if seed is None:
+                seed = 42
+            rng = np.random.RandomState(seed)
         positions = self.arrays['positions']
         self.set_positions(positions +
-                           rs.normal(scale=stdev, size=positions.shape))
+                           rng.normal(scale=stdev, size=positions.shape))
 
     def get_distance(self, a0, a1, mic=False, vector=False):
         """Return distance between two atoms.
