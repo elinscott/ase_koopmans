@@ -46,6 +46,7 @@ class BravaisLattice(ABC):
 
     @property
     def variant(self):
+        """Return the variant of this Bravais lattice."""
         return self._variant
 
     def __getattr__(self, name):
@@ -113,7 +114,7 @@ class BravaisLattice(ABC):
 
     def plot_bz(self, path=None, special_points=None, **plotkwargs):
         """Plot the reciprocal cell and default bandpath."""
-        # Create a generic bandpath (no actual kpoints):
+        # Create a generic bandpath (no interpolated kpoints):
         bandpath = self.bandpath(path=path, special_points=special_points,
                                  npoints=0)
         return bandpath.plot(dimension=self.ndim, **plotkwargs)
@@ -153,17 +154,29 @@ class BravaisLattice(ABC):
         raise NotImplementedError
 
     def _variant_name(self, **kwargs):
-        """Return the name (e.g. ORCF3) of variant.
+        """Return the name (e.g. 'ORCF3') of variant.
 
         Arguments will be the dictionary of Bravais parameters."""
         raise NotImplementedError
 
-    def __repr__(self):
-        par = ', '.join('{}={}'.format(k, v)
-                        for k, v in self._parameters.items())
-        return '{}({})'.format(self.name, par)
+    def __format__(self, spec):
+        tokens = []
+        if not spec:
+            spec = '.6g'
+        template = '{}={:%s}' % spec
+
+        for name in self.parameters:
+            value = self._parameters[name]
+            tokens.append(template.format(name, value))
+        return '{}({})'.format(self.name, ', '.join(tokens))
 
     def __str__(self):
+        return self.__format__('')
+
+    def __repr__(self):
+        return self.__format__('.20g')
+
+    def description(self):
         points = self.get_special_points()
         labels = self.special_point_names
 
@@ -176,7 +189,7 @@ class BravaisLattice(ABC):
   {variant}
   Special point coordinates:
 {special_points}
-""".format(repr=repr(self),
+""".format(repr=str(self),
            variant=self.variant,
            special_points=coordstring)
         return string
@@ -184,8 +197,8 @@ class BravaisLattice(ABC):
     @classmethod
     def type_description(cls):
         desc = """\
-Lattice name: {type}
-  Long name: {name}
+Lattice name: {name}
+  Long name: {longname}
   Parameters: {parameters}
 """.format(**vars(cls))
 
