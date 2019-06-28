@@ -8,7 +8,7 @@ for i, a in enumerate(
      bulk('Cu', 'fcc', a=3.6, orthorhombic=True),
      bulk('Cu', 'fcc', a=3.6, cubic=True)]):
     write('a%d.pov' % (i + 1), a,
-          show_unit_cell=2, display=False, run_povray=True)
+          display=False, run_povray=True)
 
 cnt1 = nanotube(6, 0, length=4, vacuum=2.5)
 cnt1.rotate('x', 'z', rotate_cell=True)
@@ -17,7 +17,7 @@ cnt2.rotate('x', 'z', rotate_cell=True)
 
 for i, a in enumerate([cnt1, cnt2]):
     write('cnt%d.pov' % (i + 1), a,
-          show_unit_cell=2, display=False, run_povray=True)
+          display=False, run_povray=True)
 
 gnr1 = graphene_nanoribbon(3, 4, type='armchair', saturated=True, vacuum=2.5)
 gnr2 = graphene_nanoribbon(2, 6, type='zigzag', saturated=True,
@@ -27,4 +27,4 @@ gnr2 = graphene_nanoribbon(2, 6, type='zigzag', saturated=True,
 for i, a in enumerate([gnr1, gnr2]):
     write('gnr%d.pov' % (i + 1), a,
           rotation='90x',
-          show_unit_cell=2, display=False, run_povray=True)
+          display=False, run_povray=True)

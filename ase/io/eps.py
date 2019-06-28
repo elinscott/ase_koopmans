@@ -5,8 +5,9 @@ from ase.io.utils import generate_writer_variables, make_patch_list
 
 class EPS:
     def __init__(self, atoms,
-                 rotation='', show_unit_cell=0, radii=None,
-                 bbox=None, colors=None, scale=20, maxwidth=500):
+                 rotation='', radii=None,
+                 bbox=None, colors=None, scale=20, maxwidth=500,
+                 **kwargs):
         """Encapsulated PostScript writer.
 
         show_unit_cell: int
@@ -15,9 +16,9 @@ class EPS:
         """
         generate_writer_variables(
             self, atoms, rotation=rotation,
-            show_unit_cell=show_unit_cell,
             radii=radii, bbox=bbox, colors=colors, scale=scale,
-            maxwidth=maxwidth)
+            maxwidth=maxwidth,
+            **kwargs)
 
     def write(self, filename):
         self.filename = filename

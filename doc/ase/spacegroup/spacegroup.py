@@ -12,10 +12,9 @@ for name in ['al', 'mg', 'fe', 'diamond', 'nacl', 'rutile', 'skutterudite']:
                  display=False,
                  run_povray=True,
                  # canvas_width=128,
-                 show_unit_cell=2,
                  rotation='10x,-10y',
                  # celllinewidth=0.02,
                  celllinewidth=0.05)
-    
+
 exec(compile(open('spacegroup-cosb3.py').read(),
              'spacegroup-cosb3.py', 'exec'))
