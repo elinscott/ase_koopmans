@@ -39,7 +39,7 @@ class BravaisLattice(ABC):
     Each class can be instantiated with the specific lattice parameters
     that apply to that lattice:
 
-    >>> print(MCL(3, 4, 5, 80))
+    >>> MCL(3, 4, 5, 80)
     MCL(a=3, b=4, c=5, alpha=80)
 
     """
@@ -101,7 +101,7 @@ class BravaisLattice(ABC):
         return T
 
     def cellpar(self):
-        """Get cell lengths and angles.
+        """Get cell lengths and angles as array of length 6.
 
         See :func:`ase.geometry.Cell.cellpar`."""
         # (Just a brute-force implementation)
