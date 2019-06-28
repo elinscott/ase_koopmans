@@ -93,7 +93,7 @@ class Cell:
         return cls(cell, pbc=pbc)
 
     def get_bravais_lattice(self, eps=2e-4):
-        """Return :class:`~ase.lattice.BravaisLattice` for this cell::
+        """Return :class:`~ase.lattice.BravaisLattice` for this cell:
 
         >>> cell = Cell.fromcellpar([4, 4, 4, 60, 60, 60])
         >>> print(cell.get_bravais_lattice())

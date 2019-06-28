@@ -55,6 +55,7 @@ List of all modules:
    :maxdepth: 2
 
    atoms
+   cell
    units
    io/io
    build/build
