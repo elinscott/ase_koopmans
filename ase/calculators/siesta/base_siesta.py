@@ -29,56 +29,28 @@ from collections import OrderedDict
 
 meV = 0.001 * eV
 
-def bandpath2bandlines(path):
+
+def bandpath2bandpoints(path):
     lines = []
     add = lines.append
 
-    add('BandLinesScale ReciprocalLatticeVectors')
-    add('%block BandLines')
-
-    x, X, labels = path.get_linear_kpoint_axis()
-    i = 0
-    isum = 0
-    for Xval, label in zip(X, labels):
-        i = np.searchsorted(x, Xval)
-        if isum == 0:
-            isum += 1
-            nkpts_segment = 1
-        else:
-            nkpts_segment = i
-        isum += i
-        x = x[i:]
-        add('{:3d} {:6f} {:6f} {:6f} {}'.format(nkpts_segment,
-                                    *path.special_points[label],
-                                    label))
-    add('%endblock BandLines')
-    return '\n'.join(lines)
-
-
-#@jsonable('poorbandpath')
-class PoorBandPath:
-    def __init__(self, x, X, labels):
-        self.x = x
-        self.X = X
-        self.labels = labels
-
-        self.kpts = np.zeros((len(x), 3))
-        self.kpts[:, 0] = x
-
-    def get_linear_kpoint_axis(self):
-        return self.x, self.X, self.labels
+    add('BandLinesScale ReciprocalLatticeVectors\n')
+    #add('BandLinesScale pi/a\n')
+    add('%block BandPoints\n')
+    for kpt in path.kpts:
+        add('    {:18.15f} {:18.15f} {:18.15f}\n'.format(*kpt))
+    add('%endblock BandPoints')
+    return ''.join(lines)
 
 
 def read_bands_file(fd):
-    l1 = next(fd) # Not sure what these numbers mean
-    l2 = next(fd)
-    l3 = next(fd)
-    header = next(fd)
-    # Header is number of bands, spins (?), and kpoints
-    nbands, nspins_probably, nkpts = np.array(header.split()).astype(int)
+    efermi = float(next(fd))
+    next(fd)  # Appears to be max/min energy.  Not important for us
+    header = next(fd)  # Array shape: nbands, nspins, nkpoints
+    nbands, nspins, nkpts = np.array(header.split()).astype(int)
 
-    # one field for the x axis, then all the energies
-    ntokens = nbands + 1
+    # three fields for kpt coords, then all the energies
+    ntokens = nbands + 3
 
     # Read energies for each kpoint:
     data = []
@@ -86,50 +58,37 @@ def read_bands_file(fd):
         line = next(fd)
         tokens = line.split()
         while len(tokens) < ntokens:
+            # Multirow table.  Keep adding lines until the table ends,
+            # which should happen exactly when we have all the energies
+            # for this kpoint.
             line = next(fd)
             tokens += line.split()
         assert len(tokens) == ntokens
         values = np.array(tokens).astype(float)
-        assert len(values) == nbands + 1
         data.append(values)
 
     data = np.array(data)
     assert len(data) == nkpts
-    xvalues = data[:, 0]
-    energies = data[:, 1:nbands + 1]
+    kpts = data[:, :3]
+    energies = data[:, 3:]
+    assert energies.shape == (nkpts, nbands)
+    return kpts, energies, efermi
 
-    # Special points listed afterwards:
-    nspecial_points = int(next(fd))
 
-    X = []
-    labels = []
-    for i in range(nspecial_points):
-        try:
-            line = next(fd)
-        except StopIteration:
-            break  # wtf, apparently that number is not the number of
-                   # special points
-        xval, label = line.split()
-        xval = float(xval)
-        assert label[0] == label[-1] == "'"
-        label = label[1:-1].replace(r'\Gamma', 'G')
-        lineno = np.searchsorted(xvalues, xval)
-
-        X.append(xval)
-        labels.append(label)
-
-    from ase.dft.kpoints import BandPath
+def resolve_band_structure(path, kpts, energies, efermi):
+    """Convert input BandPath along with Siesta outputs into BS object."""
+    # Right now this function doesn't do much.
+    #
+    # Not sure how the output kpoints in the siesta.bands file are derived.
+    # They appear to be related to the lattice parameter.
+    #
+    # We should verify that they are consistent with our input path,
+    # but since their meaning is unclear, we can't quite do so.
+    #
+    # Also we should perhaps verify the cell.  If we had the cell, we
+    # could construct the bandpath from scratch (i.e., pure outputs).
     from ase.dft.band_structure import BandStructure
-
-    # Siesta output does not have true kpoints, only an axis for plotting!
-    false_kpts = np.zeros((nkpts, 3))
-    false_kpts[:, 0] = xvalues
-    false_special_points = {}
-    for label, Xval in zip(labels, X):
-        false_special_points[label] = np.array([Xval, 0, 0])
-    path = BandPath(cell=np.eye(3),
-                    kpts=false_kpts, special_points=false_special_points)
-    bs = BandStructure(path, energies[None, :, :])
+    bs = BandStructure(path, energies[None], reference=efermi)
     return bs
 
 
@@ -520,7 +479,7 @@ class BaseSiesta(FileIOCalculator):
             self._write_kpts(f)
 
             if self['bandpath'] is not None:
-                lines = bandpath2bandlines(self['bandpath'])
+                lines = bandpath2bandpoints(self['bandpath'])
                 f.write(lines)
                 f.write('\n')
 
@@ -906,10 +865,8 @@ class BaseSiesta(FileIOCalculator):
         path = self['bandpath']
         fname = self.getpath(ext='bands')
         with open(fname) as fd:
-            bs0 = read_bands_file(fd)
-        from ase.dft.band_structure import BandStructure
-        bs = BandStructure(bandpath, bs0.energies)
-        self.bs0 = bs0
+            kpts, energies, efermi = read_bands_file(fd)
+        bs = resolve_band_structure(path, kpts, energies, efermi)
         self.results['bandstructure'] = bs
 
     def band_structure(self):
