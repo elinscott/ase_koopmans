@@ -320,6 +320,18 @@ class BandPath:
                           pointstyle={'marker': '.'},
                           **kw)
 
+    def free_electron_band_structure(self, **kwargs):
+        """Return band structure of free electrons for this bandpath.
+
+        This is for mostly testing."""
+        from ase import Atoms
+        from ase.calculators.test import FreeElectrons
+        from ase.dft.band_structure import calculate_band_structure
+        atoms = Atoms(cell=self.cell, pbc=self.cell.pbc)
+        atoms.calc = FreeElectrons(**kwargs)
+        bs = calculate_band_structure(atoms, path=self)
+        return bs
+
 
 def bandpath(path, cell, npoints=None, density=None, special_points=None,
              eps=2e-4):

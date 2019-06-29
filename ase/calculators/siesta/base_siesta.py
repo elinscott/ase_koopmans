@@ -143,6 +143,11 @@ class BaseSiesta(FileIOCalculator):
     # Dictionary of valid input vaiables.
     default_parameters = SiestaParameters()
 
+    # XXX Not a ASE standard mechanism (yet).  We need to communicate to
+    # ase.dft.band_structure.calculate_band_structure() that we expect
+    # it to use the bandpath keyword.
+    accepts_bandpath_keyword = True
+
     def __init__(self, command=None, **kwargs):
         """ASE interface to the SIESTA code.
 
@@ -290,6 +295,7 @@ class BaseSiesta(FileIOCalculator):
                 -kwargs  : Dictionary containing the keywords defined in
                            SiestaParameters.
         """
+
         # Find not allowed keys.
         default_keys = list(self.__class__.default_parameters)
         offending_keys = set(kwargs) - set(default_keys)
@@ -324,7 +330,7 @@ class BaseSiesta(FileIOCalculator):
                 raise ValueError(mess)
 
         # Check the functional input.
-        xc = kwargs.get('xc')
+        xc = kwargs.get('xc', 'LDA')
         if isinstance(xc, (tuple, list)) and len(xc) == 2:
             functional, authors = xc
             if functional not in self.allowed_xc:
