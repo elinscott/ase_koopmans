@@ -45,6 +45,7 @@ _PW_STRESS = 'total   stress'
 _PW_FERMI = 'the Fermi energy is'
 _PW_KPTS = 'number of k points='
 _PW_BANDS = _PW_END
+_PW_BANDSTRUCTURE = 'End of band structure calculation'
 
 
 class Namelist(OrderedDict):
@@ -115,6 +116,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         _PW_FERMI: [],
         _PW_KPTS: [],
         _PW_BANDS: [],
+        _PW_BANDSTRUCTURE: [],
     }
 
     for idx, line in enumerate(pwo_lines):
@@ -138,7 +140,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
     if results_required:
         results_indexes = sorted(indexes[_PW_TOTEN] + indexes[_PW_FORCE] +
                                  indexes[_PW_STRESS] + indexes[_PW_MAGMOM] +
-                                 indexes[_PW_BANDS])
+                                 indexes[_PW_BANDS] +
+                                 indexes[_PW_BANDSTRUCTURE])
 
         # Prune to only configurations with results data before the next
         # configuration
@@ -146,6 +149,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         for config_index, config_index_next in zip(
                 all_config_indexes,
                 all_config_indexes[1:] + [len(pwo_lines)]):
+            print([config_index < results_index < config_index_next
+                   for results_index in results_indexes])
             if any([config_index < results_index < config_index_next
                     for results_index in results_indexes]):
                 results_config_indexes.append(config_index)
