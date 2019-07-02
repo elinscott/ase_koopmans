@@ -554,16 +554,20 @@ class BaseSiesta(FileIOCalculator):
             - f:     An open file object.
             - atoms: An atoms object.
         """
-        unit_cell = atoms.get_cell()
+        cell = atoms.cell
         f.write('\n')
 
+        if cell.rank in [1, 2]:
+            raise ValueError('Expected 3D unit cell or no unit cell.  You may '
+                             'wish to add vacuum along some directions.')
+
         # Write lattice vectors
-        if np.any(unit_cell):
+        if np.any(cell):
             f.write(format_fdf('LatticeConstant', '1.0 Ang'))
             f.write('%block LatticeVectors\n')
             for i in range(3):
                 for j in range(3):
-                    s = ('    %.15f' % unit_cell[i, j]).rjust(16) + ' '
+                    s = ('    %.15f' % cell[i, j]).rjust(16) + ' '
                     f.write(s)
                 f.write('\n')
             f.write('%endblock LatticeVectors\n')
