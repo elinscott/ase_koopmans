@@ -360,7 +360,7 @@ def plot(eos_string, e0, v0, B, x, y, v, e, ax=None):
         ax = plt.gca()
 
     ax.plot(x, y, '-r')
-    ax.plot(v, e, 'o')
+    ax.plot(v, e, 'ob')
 
     try:
         ax.set_xlabel(u'volume [Å$^3$]')
