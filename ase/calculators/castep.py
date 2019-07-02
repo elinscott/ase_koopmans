@@ -1473,7 +1473,7 @@ End CASTEP Interface Documentation
                 raise RuntimeError('Pseudopotential for species {} not unique!\n'.format(elem)
                                    + 'Found the following files in {}\n'.format(self._castep_pp_path)
                                    + '\n'.join(['    {}'.format(pp)
-                                              for pp in pps]) +
+                                                for pp in pps]) +
                                    '\nConsider a stricter search pattern in `find_pspots()`.')
             else:
                 self.cell.species_pot = (elem, pps[0])
@@ -2559,8 +2559,9 @@ class CastepInputFile(object):
 
 
 class CastepParam(CastepInputFile):
-
     """CastepParam abstracts the settings that go into the .param file"""
+
+    key_conflicts = [{'cut_off_energy', 'basis_precision'}, ]
 
     def __init__(self, castep_keywords, keyword_tolerance=1):
         self._castep_version = castep_keywords.castep_version
@@ -2593,6 +2594,40 @@ class CastepParam(CastepInputFile):
         except KeyError:
             pass
         return 'default' if (value is True) else str(value)
+
+    def __setattr__(self, attr, value):
+        super().__setattr__(attr, value)
+
+        # Then deal with conflicting keywords by resetting the other options.
+        # Don't do this for None value because a) it doesn't cause conflicts
+        # b) triggering from None would cause a feedback loop.
+        if value is not None:
+            self._nullify_conflicting_keys(attr)
+
+    def _nullify_conflicting_keys(self, attr):
+        """Check self.key_conflicts and set conflicting options to None
+
+        In self.key_conflicts, parameters are grouped into sets of conflicting
+        options, e.g.:
+
+            [{'key', 'conflict', 'conflict_in_another_file'},
+             {'other_key', 'other_conflict'}, ...]
+
+        """
+        def param_is_set(alt_attr):
+            return getattr(self, alt_attr).value is not None
+
+        for conflict in self.key_conflicts:
+            alt_attrs = conflict.difference({attr})
+            if attr in conflict:
+                active_alt_attrs = filter(param_is_set, alt_attrs)
+
+                for alt_attr in active_alt_attrs:
+                    print('Warning: option "{attr}" conflicts with '
+                          '"{alt_attr}" in calculator. Setting '
+                          '"{alt_attr}" to None.'.format(attr=attr,
+                                                         alt_attr=alt_attr))
+                    setattr(self, alt_attr, None)
 
 
 class CastepCell(CastepInputFile):
