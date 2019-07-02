@@ -538,6 +538,9 @@ End CASTEP Interface Documentation
         self._check_file = None
         self._castep_bin_file = None
 
+        # plane wave cutoff energy (may be derived during PP generation)
+        self._cut_off_energy = None
+
         # runtime information
         self._total_time = None
         self._peak_memory = None
@@ -768,8 +771,10 @@ End CASTEP Interface Documentation
                     if line.split()[-1].strip() == 'on':
                         self.param.calculate_stress = True
                 elif 'plane wave basis set cut-off' in line:
+                    # NB this is set as a private "result" attribute to avoid
+                    # conflict with input option basis_precision
                     cutoff = float(line.split()[-2])
-                    self.param.cut_off_energy = cutoff
+                    self._cut_off_energy = cutoff
                 elif 'total energy / atom convergence tol.' in line:
                     elec_energy_tol = float(line.split()[-2])
                     self.param.elec_energy_tol = elec_energy_tol
