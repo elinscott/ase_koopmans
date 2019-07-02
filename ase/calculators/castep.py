@@ -770,11 +770,15 @@ End CASTEP Interface Documentation
                 elif 'stress calculation' in line:
                     if line.split()[-1].strip() == 'on':
                         self.param.calculate_stress = True
+                elif 'basis set accuracy' in line:
+                    self.param.basis_precision = line.split()[-1]
                 elif 'plane wave basis set cut-off' in line:
                     # NB this is set as a private "result" attribute to avoid
                     # conflict with input option basis_precision
                     cutoff = float(line.split()[-2])
                     self._cut_off_energy = cutoff
+                    if self.param.basis_precision.value is None:
+                        self.param.cut_off_energy = cutoff
                 elif 'total energy / atom convergence tol.' in line:
                     elec_energy_tol = float(line.split()[-2])
                     self.param.elec_energy_tol = elec_energy_tol
