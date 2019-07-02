@@ -8,6 +8,9 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
                              bs_kwargs=None, kpts_tol=1e-6, cell_tol=1e-6):
     """Calculate band structure.
 
+    The purpose of this function is to abstract a band structure calculation
+    so the workflow does not depend on the calculator.
+
     First trigger SCF calculation if necessary, then set arguments
     on the calculator for band structure calculation, then return
     calculated band structure.
@@ -15,8 +18,7 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     The difference from get_band_structure() is that the latter
     expects the calculation to already have been done."""
     if path is None:
-        lat, op = atoms.cell.get_bravais_lattice()
-        path = lat.bandpath()  # Default bandpath
+        path = atoms.cell.bandpath()  # Default bandpath
 
     cellpar1 = path.cell.cellpar()
     cellpar2 = atoms.cell.cellpar()
@@ -39,6 +41,15 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
 
     if scf_kwargs is not None:
         calc.set(**scf_kwargs)
+
+    # Proposed standard mechanism for calculators to advertise that they
+    # use the bandpath keyword to handle band structures rather than
+    # a double (SCF + BS) run.
+    use_bandpath_kw = getattr(calc, 'accepts_bandpath_keyword', False)
+    if use_bandpath_kw:
+        calc.set(bandpath=path)
+        atoms.get_potential_energy()
+        return calc.band_structure()
 
     atoms.get_potential_energy()
 
@@ -268,6 +279,8 @@ class BandStructure:
     def __init__(self, path, energies, reference=0.0):
         self.path = path
         self.energies = np.asarray(energies)
+        assert self.energies.shape[0] in [1, 2]  # spins x kpts x bands
+        assert self.energies.shape[1] == len(path.kpts)
         assert np.isscalar(reference)
         self.reference = reference
 
