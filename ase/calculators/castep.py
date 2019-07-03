@@ -562,13 +562,76 @@ End CASTEP Interface Documentation
         for keyword, value in kwargs.items():
             # first fetch special keywords issued by ASE CLI
             if keyword == 'kpts':
-                self.__setattr__('kpoint_mp_grid', '%s %s %s' % tuple(value))
+                self.set_kpts(value)
             elif keyword == 'xc':
                 self.__setattr__('xc_functional', str(value))
             elif keyword == 'ecut':
                 self.__setattr__('cut_off_energy', str(value))
             else:  # the general case
                 self.__setattr__(keyword, value)
+
+    def set_kpts(self, kpts):
+        """Set k-point mesh using a str, tuple or ASE dictionary syntax
+
+        Args:
+            kpts (tuple, str or dict):
+
+        This method will set the CASTEP parameters kpoints_mp_grid,
+        kpoints_mp_offset and kpoints_mp_spacing as appropriate. Unused
+        parameters will be set to None (i.e. not included in input files.)
+
+        If kpts=None, all these parameters are set as unused.
+
+        The simplest useful case is to give a 3-tuple of integers specifying
+        a Monkhorst-Pack grid. This may also be formatted as a string separated
+        by spaces; this is the format used internally before writing to the
+        input files.
+
+        A more powerful set of features is available when using a python
+        dictionary with the following allowed keys:
+
+        - 'size' (3-tuple of int) mesh of mesh dimensions ()
+        - 'density' (float) for BZ sampling density in points per recip. Ang
+        - 'even' (bool) to round each direction up to the nearest even number;
+          set False for odd numbers, leave as None for no odd/even rounding.
+        - 'gamma' (bool) to offset the Monkhort-Pack grid to include (0, 0, 0);
+          set False to offset each direction avoiding 0.
+        """
+        from ase.calculators.calculator import kpts2sizeandoffsets
+
+        # Clear existing values
+        self.cell.kpoint_mp_grid = None
+        self.cell.kpoint_mp_offset = None
+        self.cell.kpoint_mp_spacing = None
+        self.cell.kpoint_list = None
+
+        # Case 1: Clear parameters with set_kpts(None)
+        if kpts is None:
+            pass
+        # Case 2: list or tuple e.g. [3, 3, 2] or ('3', '3', '2')
+        if isinstance(kpts, (tuple, list)):
+            mesh = list(map(int, kpts))
+            if len(mesh) != 3:
+                raise ValueError('Monkhorst-pack grid should have 3 values')
+            self.cell.kpoint_mp_grid = '%d %d %d' % tuple(mesh)
+
+        # Case 3: str e.g. '3 3 2'
+        elif isinstance(kpts, str):
+            self.set_kpts(kpts.split())
+
+        # Case 4: dict of options e.g. {'size': (3, 3, 2), 'gamma': True}
+        elif isinstance(kpts, dict):
+            size, offsets = kpts2sizeandoffsets(atoms=self.atoms, **kpts)
+            self.cell.kpoint_mp_grid = '%d %d %d' % tuple(size)
+            self.cell.kpoint_mp_offset = '%f %f %f' % tuple(offsets)
+
+        # Case 5: some other iterator. Try treating as a list:
+        elif hasattr(kpts, '__iter__'):
+            self.set_kpts(list(kpts))
+
+        # Otherwise, give up
+        else:
+            raise TypeError('Cannot interpret kpts of this type')
 
     def todict(self, skip_default=True):
         """Create dict with settings of .param and .cell"""
