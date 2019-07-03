@@ -63,7 +63,7 @@ commands = {
          '-o', '--output', '-g', '--graph', '-t', '--terminal',
          '--interpolate', '-b', '--bonds', '-s', '--scale'],
     'info':
-        ['-v', '--verbose', '--formats'],
+        ['-v', '--verbose', '--formats', '--calculators'],
     'nomad-get':
         [],
     'nomad-upload':
@@ -115,8 +115,14 @@ def complete(word, previous, line, point):
                      'rocksalt', 'cesiumchloride', 'fluorite', 'wurtzite']
 
     elif command == 'test':
-        if previous in ['-c', '--calculator']:
+        if previous in ['-c', '--calculators']:
             from ase.calculators.calculator import names as words
+        elif not word.startswith('-'):
+            # Suggest names of tests.  We suggest all matching tests.
+            # It might be better to autocomplete only up to directory
+            # names.
+            from ase.test.testsuite import get_tests
+            words = get_tests()
 
     return words
 

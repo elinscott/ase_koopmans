@@ -290,8 +290,8 @@ class OpenMXParameters(Parameters):
             'LDA',
             'GGA', 'PBE', 'GGA-PBE',
             'LSDA',
-            'LSDA-PW'
-            'LSDA-CA'
+            'LSDA-PW',
+            'LSDA-CA',
             'CA',
             'PW',
         ]

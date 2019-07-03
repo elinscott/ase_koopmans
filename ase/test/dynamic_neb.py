@@ -8,6 +8,7 @@ from ase.neb import NEB
 # Global counter of force evaluations:
 force_evaluations = [0]
 
+
 class EMT(OrigEMT):
     def calculate(self, *args, **kwargs):
         force_evaluations[0] += 1
@@ -22,7 +23,6 @@ oxygen.translate(initial[7].position + (0., 0., 3.5))
 initial.extend(oxygen)
 
 # EMT potential
-calc = EMT()
 initial.set_calculator(EMT())
 
 # Optimize initial state
@@ -39,9 +39,9 @@ final.set_calculator(EMT())
 opt = BFGS(final)
 opt.run(fmax=0.03)
 
-# NEB with five interior images
+# NEB with seven interior images
 images = [initial]
-for i in range(5):
+for i in range(7):
     images.append(initial.copy())
 images.append(final)
 
@@ -51,38 +51,41 @@ for i in range(1, len(images)-1):
     calc = EMT()
     images[i].set_calculator(calc)
 
-# Dynamic NEB
-neb = NEB(images, fmax=fmax, dynamic_relaxation=True)
-neb.interpolate()
 
-# Optimize and check number of calculations with dynamic NEB.
-# We use a hack with a global counter to count the force evaluations:
-force_evaluations[0] = 0
-opt = BFGS(neb)
-opt.run(fmax=fmax)
-ncalculations_dyn = force_evaluations[0]
+def run_NEB():
+    if method == 'dyn':
+        neb = NEB(images, fmax=fmax, dynamic_relaxation=True)
+        neb.interpolate()
+    elif method == 'dyn_scale':
+        neb = NEB(images, fmax=fmax, dynamic_relaxation=True, scale_fmax=6.)
+        neb.interpolate()
+    else:
+        # Default NEB
+        neb = NEB(images)
+        neb.interpolate()
 
-# Get potential energy of transition state
-Emax_dyn = np.sort([image.get_potential_energy()
-                    for image in images[1:-1]])[-1]
+    # Optimize and check number of calculations.
+    # We use a hack with a global counter to count the force evaluations:
+    force_evaluations[0] = 0
+    opt = BFGS(neb)
+    opt.run(fmax=fmax)
+    force_calls.append(force_evaluations[0])
 
-# Default NEB
-neb = NEB(images, dynamic_relaxation=False)
-neb.interpolate()
+    # Get potential energy of transition state.
+    Emax.append(np.sort([image.get_potential_energy()
+                        for image in images[1:-1]])[-1])
 
-# Optimize and check number of calculations for default NEB:
-force_evaluations[0] = 0
-opt = BFGS(neb)
-opt.run(fmax=fmax)
-ncalculations_default = force_evaluations[0]
 
-# Get potential energy of transition state
-Emax_def = np.sort([image.get_potential_energy()
-                    for image in images[1:-1]])[-1]
+force_calls, Emax = [], []
+for method in ['def', 'dyn', 'dyn_scale']:
+    run_NEB()
 
 # Check force calculation count for default and dynamic NEB implementations
-print(ncalculations_dyn, ncalculations_default)
-assert ncalculations_dyn < ncalculations_default
+print('\n# Force calls with default NEB: {}'.format(force_calls[0]))
+print('# Force calls with dynamic NEB: {}'.format(force_calls[1]))
+print('# Force calls with dynamic and scaled NEB: {}\n'.format(force_calls[2]))
+assert force_calls[2] < force_calls[1] < force_calls[0]
 
-# Assert reaction barriers are within 1 meV of each other
-assert(abs(Emax_dyn - Emax_def) < 1e-3)
+# Assert reaction barriers are within 1 meV of default NEB
+assert(abs(Emax[1] - Emax[0]) < 1e-3)
+assert(abs(Emax[2] - Emax[0]) < 1e-3)

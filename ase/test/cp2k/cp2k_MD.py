@@ -7,9 +7,6 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from __future__ import division, print_function
-import os
-
-from ase.test import NotAvailable
 from ase import units
 from ase.atoms import Atoms
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
@@ -18,9 +15,6 @@ from ase.calculators.cp2k import CP2K
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise NotAvailable('$ASE_CP2K_COMMAND not defined')
-
     calc = CP2K(label='test_H2_MD')
     positions = [(0, 0, 0), (0, 0, 0.7245595)]
     atoms = Atoms('HH', positions=positions, calculator=calc)

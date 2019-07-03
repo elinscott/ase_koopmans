@@ -96,9 +96,9 @@ class Abinit(FileIOCalculator):
         """
 
         self.scratch = scratch
-        
-        self.species = None
-        self.ppp_list = None
+
+        self.species = []
+        self.ppp_list = []
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
@@ -115,7 +115,7 @@ class Abinit(FileIOCalculator):
         if changed_parameters:
             self.reset()
 
-    def write_input(self, atoms, properties=None, system_changes=None):
+    def write_input(self, atoms, properties=tuple(), system_changes=tuple()):
         """Write input parameters to files-file."""
 
         FileIOCalculator.write_input(self, atoms, properties, system_changes)

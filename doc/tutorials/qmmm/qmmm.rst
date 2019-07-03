@@ -25,7 +25,7 @@ the calculator for the QM subsystem.
 
 
 You might also be interested in the solvent MM potentials included in ASE.
-The tutorial on :ref:`TIPnP Water Box Equillibration` could be relevant to
+The tutorial on :ref:`tipnp water box equilibration` could be relevant to
 have a look at.
 
 
@@ -36,28 +36,28 @@ The total energy expression for the full QM/MM system is:
 .. math::  E_\mathrm{TOT} = E_\mathrm{QM} + E_\mathrm{I} + E_\mathrm{MM}.
 
 The MM region is modelled using point charge force fields, with charges
-:math:`q_i` and :math:`\tau_i` denoting their spatial coordinates, so the
-QM/MM coupling term :math:`E_\mathrm{I}` will be
+`q_i` and `\tau_i` denoting their spatial coordinates, so the
+QM/MM coupling term `E_\mathrm{I}` will be
 
 .. math:: E_\mathrm{I} = \sum_{i=1}^C q_i \int \frac{n({\bf r})}{\mid\!{\bf r} -
                          \tau_i\!\mid}\mathrm{d}{\bf r} +
                          \sum_{i=1}^C\sum_{\alpha=1}^A
                          \frac{q_i Z_{\alpha}}{\mid\!{\bf R}_\alpha - \tau_i\!\mid} + E_\mathrm{RD}
 
-where :math:`n({\bf r})` is the spatial electronic density of the quantum
-region, :math:`Z_\alpha` and :math:`{\bf R}_\alpha` are the charge and
+where `n({\bf r})` is the spatial electronic density of the quantum
+region, `Z_\alpha` and `{\bf R}_\alpha` are the charge and
 coordinates of the nuclei in the QM region, respectively, and
-:math:`E_\mathrm{RD}` is the term describing the remaining, non-Coulomb
+`E_\mathrm{RD}` is the term describing the remaining, non-Coulomb
 interactions between the two subsystems.
 
 For the MM point-charge external potential in GPAW, we use the total pseudo-
-charge density :math:`\tilde{\rho}({\bf r})` for the coupling, and since the
+charge density `\tilde{\rho}({\bf r})` for the coupling, and since the
 Coloumb integral is evaluated numerically on the real space grid, thus the
 coupling term ends up like this:
 
 .. math:: E_\mathrm{I} = \sum_{i=1}^C q_i \sum_{g} \frac{\tilde{\rho}({\bf r})}{\mid\!{\bf r}_g  - \tau_i\!\mid} v_g + E_\mathrm{RD}
 
-Currently, the term for :math:`E_{\mathrm{RD}}` implemented is a Lennard-
+Currently, the term for `E_{\mathrm{RD}}` implemented is a Lennard-
 Jones-type potential:
 
 .. math:: E_\mathrm{RD} = \sum_i^C \sum_\alpha^A
@@ -132,7 +132,7 @@ sampling or dynamics studies, these are the steps:
 QM/MM MD General Strategy for A QM complex in an MM solvent:
 
 1. Equillibrate an MM solvent box using one of the MM potentials built into
-   ASE (see :ref:`TIPnP Water Box Equillibration` for water potentials), one
+   ASE (see :ref:`tipnp water box equilibration` for water potentials), one
    of the compatible external MM codes, or write your own potential
    (see :ref:`Adding new calculators`)
 2. Optimize the gas-phase structure of your QM complex in GPAW, analyze what

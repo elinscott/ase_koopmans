@@ -172,30 +172,234 @@ default_dictionary = {
     },
     'Zn': {
         'cutoff radius': 6,
-        'orbitals used': [3, 2],
-        'pseudo-potential suffix': ''
+        'orbitals used': [3, 3, 2, 2],
+        'pseudo-potential suffix': 'S'
     },
     'Ga': {
-        'cutoff radius': 6,
-        'orbitals used': [3, 2],
+        'cutoff radius': 7,
+        'orbitals used': [2, 2, 2],
         'pseudo-potential suffix': ''
     },
     'Ge': {
-        'cutoff radius': 6,
-        'orbitals used': [3, 2],
+        'cutoff radius': 7,
+        'orbitals used': [3, 3, 3, 2],
         'pseudo-potential suffix': ''
     },
     'As': {
+        'cutoff radius': 7,
+        'orbitals used': [2, 2, 2, 1],
+        'pseudo-potential suffix': ''
+    },
+    'Se': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Br': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Kr': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Rb': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Sr': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Y': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Zr': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Nb': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Mo': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Tc': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Ru': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Rh': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Pd': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Ag': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Cd': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'In': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Sn': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Sb': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Te': {
         'cutoff radius': 9,
         'orbitals used': [3, 3, 3, 2],
         'pseudo-potential suffix': ''
     },
     'I': {
         'cutoff radius': 9,
-        'orbitals used': [3, 3, 2, 1],
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Xe': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Cs': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Ba': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Hf': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Ta': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'W': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Re': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Os': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Ir': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Pt': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Au': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Hg': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Tl': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Pb': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Bi': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Po': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Rn': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Nd': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Sm': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Dy': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Ho': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
+        'pseudo-potential suffix': ''
+    },
+    'Lu': {
+        'cutoff radius': 9,
+        'orbitals used': [3, 3, 3, 2],
         'pseudo-potential suffix': ''
     }
-
 }
 
 default_kpath = [

@@ -44,8 +44,8 @@ calculated in the form
   o_{ij} = \int d\vec{r} \; \phi_i^{{\rm disp},*}(\vec{r})
   \phi_j^{{\rm eq}}(\vec{r})
    
-where :math:`\phi_j^{{\rm eq}}` is an orbital at equilibrium position
-and :math:`\phi_i^{\rm disp}` is an orbital at displaced position.
+where `\phi_j^{{\rm eq}}` is an orbital at equilibrium position
+and `\phi_i^{\rm disp}` is an orbital at displaced position.
 This is implemented in ``Overlap`` in GPAW
 (approximated by pseudo-wavefunction overlaps) and can be triggered
 in ``ResonantRaman`` by::
@@ -101,10 +101,10 @@ Albrecht
 ````````
 
 ``ResonantRaman`` calls the displaced excited state objects' function
-``overlap`` with the matrix :math:`o_{ij}` and expects the function to
+``overlap`` with the matrix `o_{ij}` and expects the function to
 return the corresponding overlap matrix for the transition dipoles.
-In case of Kohn-Sham transitions with :math:`i,j` for occupied
-and :math:`\alpha,\beta` for empty orbitals, this is
+In case of Kohn-Sham transitions with `i,j` for occupied
+and `\alpha,\beta` for empty orbitals, this is
 
 .. math::
 

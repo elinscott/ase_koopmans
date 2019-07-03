@@ -28,8 +28,8 @@ The `\Delta` value can be calculated using the
 
 .. seealso::
 
-    * :ref:`dcdft`
-    * :mod:`ase.eos`
+    * Collection of ground-state elemental crystals: :ref:`dcdft`
+    * Equation-of-state module: :mod:`ase.eos`
 
 We get the WIEN2k and experimental numbers from the :ref:`dcdft` ASE-collection
 and we calculate the EMT EOS using this script:

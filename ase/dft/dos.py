@@ -4,6 +4,7 @@ import numpy as np
 
 from ase.dft.kpoints import get_monkhorst_pack_size_and_offset
 from ase.parallel import world
+from ase.utils.cext import cextension
 
 
 class DOS:
@@ -150,6 +151,7 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
     return dos
 
 
+@cextension
 def lti_dos(simplices, eigs, weights, energies, dos, world):
     shape = eigs.shape[:3]
     nweights = weights.shape[-1]

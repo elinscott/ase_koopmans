@@ -174,8 +174,9 @@ class CP2K(Calculator):
         else:
             self.command = 'cp2k_shell'  # default
 
-        Calculator.__init__(self, restart, ignore_bad_restart_file,
-                            label, atoms, **kwargs)
+        Calculator.__init__(self, restart=restart,
+                            ignore_bad_restart_file=ignore_bad_restart_file,
+                            label=label, atoms=atoms, **kwargs)
 
         self._shell = Cp2kShell(self.command, self._debug)
 
@@ -206,14 +207,17 @@ class CP2K(Calculator):
             print("Writting restart to: ", label)
         self.atoms.write(label + '_restart.traj')
         self.parameters.write(label + '_params.ase')
-        open(label + '_results.ase', 'w').write(repr(self.results))
+        from ase.io.jsonio import write_json
+        with open(label + '_results.json', 'w') as fd:
+            write_json(fd, self.results)
 
     def read(self, label):
         'Read atoms, parameters and calculated results from restart files.'
         self.atoms = ase.io.read(label + '_restart.traj')
         self.parameters = Parameters.read(label + '_params.ase')
-        results_txt = open(label + '_results.ase').read()
-        self.results = eval(results_txt, {'array': np.array})
+        from ase.io.jsonio import read_json
+        with open(label + '_results.json') as fd:
+            self.results = read_json(fd)
 
     def calculate(self, atoms=None, properties=None,
                   system_changes=all_changes):

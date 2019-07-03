@@ -1,6 +1,6 @@
 import os
 
-from ase.calculators.calculator import get_calculator
+from ase.calculators.calculator import get_calculator_class
 from ase.io import read, write
 from ase.build import molecule
 from ase.test import test_calculator_names
@@ -9,7 +9,7 @@ from ase.test import test_calculator_names
 def h2(name, par):
     h2 = molecule('H2', pbc=par.pop('pbc', False))
     h2.center(vacuum=2.0)
-    h2.calc = get_calculator(name)(**par)
+    h2.calc = get_calculator_class(name)(**par)
     e = h2.get_potential_energy()
     assert not h2.calc.calculation_required(h2, ['energy'])
     f = h2.get_forces()
@@ -23,6 +23,7 @@ def h2(name, par):
 parameters = {
     'abinit': dict(ecut=200, toldfe=0.0001),
     'aims': dict(sc_accuracy_rho=5.e-3, sc_accuracy_forces=1e-4, xc='LDA'),
+    'crystal': dict(basis='sto-3g'),
     'gpaw': dict(mode={'name': 'lcao', 'interpolation': 'fft'},
                  basis='sz(dzp)'),
     'elk': dict(tasks=0, rgkmax=5.0, epsengy=1.0, epspot=1.0, tforce=True,

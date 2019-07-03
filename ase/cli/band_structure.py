@@ -91,7 +91,7 @@ def atoms2bandstructure(atoms, parser, args):
         eps = eps.transpose(1, 0, 2)
 
     special_points = get_special_points(cell)
-    path = BandPath(atoms.cell, scaled_kpts=path_kpts,
+    path = BandPath(atoms.cell, kpts=path_kpts,
                     special_points=special_points)
 
     return BandStructure(path, eps, reference=efermi)

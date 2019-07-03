@@ -17,7 +17,7 @@ for name, a in zip('ITF', images[::2]):
     del a.constraints
     a = a * (2, 2, 1)
     a.set_cell(cell)
-    write('diffusion-%s.pov' % name, a, show_unit_cell=True,
+    write('diffusion-%s.pov' % name, a,
           transparent=False, display=False, run_povray=True)
 
 nebtools = NEBTools(images)

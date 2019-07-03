@@ -51,14 +51,14 @@ def object_hook(dct):
         # them manually, depending on which kind it is.
         # We can formalize this later if it ever becomes necessary.
         if objtype == 'cell':
-            from ase.geometry.cell import Cell
+            from ase.cell import Cell
             obj = Cell(**dct)
         elif objtype == 'bandstructure':
             from ase.dft.band_structure import BandStructure
             obj = BandStructure(**dct)
         elif objtype == 'bandpath':
             from ase.dft.kpoints import BandPath
-            obj = BandPath(**dct)
+            obj = BandPath(path=dct.pop('labelseq'), **dct)
         else:
             raise RuntimeError('Do not know how to decode object type {} '
                                'into an actual object'.format(objtype))

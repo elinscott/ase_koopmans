@@ -393,7 +393,7 @@ class FLEUR:
         # rename the previous inp if it exists
         if os.path.isfile('inp'):
             os.rename('inp', 'inp.bak')
-        os.system('%s < inp_simple' % inpgen)
+        os.system('%s -old < inp_simple' % inpgen)
 
         # read the whole inp-file for possible modifications
         fh = open('inp', 'r')
