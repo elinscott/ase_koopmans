@@ -2346,26 +2346,31 @@ class CastepOption(object):
         """Reset the value of the option to None again"""
         self._value = None
 
-    def _parse_bool(self, value):
+    @staticmethod
+    def _parse_bool(value):
         try:
             value = _tf_table[str(value).strip().title()]
         except (KeyError, ValueError):
             raise ValueError()
         return value
 
-    def _parse_str(self, value):
+    @staticmethod
+    def _parse_str(value):
         value = str(value)
         return value
 
-    def _parse_int(self, value):
+    @staticmethod
+    def _parse_int(value):
         value = int(value)
         return value
 
-    def _parse_float(self, value):
+    @staticmethod
+    def _parse_float(value):
         value = float(value)
         return value
 
-    def _parse_int_vector(self, value):
+    @staticmethod
+    def _parse_int_vector(value):
         # Accepts either a string or an actual list/numpy array of ints
         if isinstance(value, basestring):
             if ',' in value:
@@ -2379,7 +2384,8 @@ class CastepOption(object):
 
         return list(value)
 
-    def _parse_float_vector(self, value):
+    @staticmethod
+    def _parse_float_vector(value):
         # Accepts either a string or an actual list/numpy array of floats
         if isinstance(value, basestring):
             if ',' in value:
@@ -2393,7 +2399,8 @@ class CastepOption(object):
 
         return list(value)
 
-    def _parse_float_physical(self, value):
+    @staticmethod
+    def _parse_float_physical(value):
         # If this is a string containing units, saves them
         if isinstance(value, basestring):
             value = value.split()
@@ -2419,7 +2426,8 @@ class CastepOption(object):
 
         return value
 
-    def _parse_block(self, value):
+    @staticmethod
+    def _parse_block(value):
 
         if isinstance(value, basestring):
             return value
@@ -2547,7 +2555,7 @@ class CastepInputFile(object):
         # Check for any conflicts
         cset = self._conflict_dict.get(attr.lower(), {})
         for c in cset:
-            if (c in self._options and self._options[c].value is not None):
+            if (c in self._options and self._options[c].value):
                 warnings.warn(
                     'option "{attr}" conflicts with "{conflict}" in '
                     'calculator. Setting "{conflict}" to '
