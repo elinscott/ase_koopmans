@@ -590,12 +590,18 @@ End CASTEP Interface Documentation
         A more powerful set of features is available when using a python
         dictionary with the following allowed keys:
 
-        - 'size' (3-tuple of int) mesh of mesh dimensions ()
+        - 'size' (3-tuple of int) mesh of mesh dimensions
         - 'density' (float) for BZ sampling density in points per recip. Ang
+          ( kpoint_mp_spacing = 1 / (2pi * density) ). An explicit MP mesh will
+          be set to allow for rounding/centering.
+        - 'spacing' (float) for BZ sampling density for maximum space between
+          sample points in reciprocal space. This is numerically equivalent to
+          the inbuilt ``calc.cell.kpoint_mp_spacing``, but will be converted to
+          'density' to allow for rounding/centering.
         - 'even' (bool) to round each direction up to the nearest even number;
           set False for odd numbers, leave as None for no odd/even rounding.
-        - 'gamma' (bool) to offset the Monkhort-Pack grid to include (0, 0, 0);
-          set False to offset each direction avoiding 0.
+        - 'gamma' (bool) to offset the Monkhorst-Pack grid to include
+          (0, 0, 0); set False to offset each direction avoiding 0.
         """
         from ase.calculators.calculator import kpts2sizeandoffsets
 
@@ -620,7 +626,17 @@ End CASTEP Interface Documentation
             self.set_kpts(kpts.split())
 
         # Case 4: dict of options e.g. {'size': (3, 3, 2), 'gamma': True}
+        # 'spacing' is allowed but transformed to 'density' to get mesh/offset
         elif isinstance(kpts, dict):
+            if (kpts.get('spacing') is not None
+                and kpts.get('density') is not None):
+                raise ValueError(
+                    'Cannot set kpts spacing and density simultaneously.')
+            elif kpts.get('spacing') is not None:
+                kpts = kpts.copy()
+                spacing = kpts.pop('spacing')
+                kpts['density'] = 1 / (np.pi * spacing)
+
             size, offsets = kpts2sizeandoffsets(atoms=self.atoms, **kpts)
             self.cell.kpoint_mp_grid = '%d %d %d' % tuple(size)
             self.cell.kpoint_mp_offset = '%f %f %f' % tuple(offsets)
