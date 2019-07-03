@@ -1479,11 +1479,10 @@ End CASTEP Interface Documentation
                 if self._pedantic:
                     print('Pseudopotential for species {} not found!'.format(elem))
             elif not len(pps) == 1:
-                raise RuntimeError('Pseudopotential for species {} not unique!\n'.format(elem) +
-                                   'Found the following files in {}\n'.format(self._castep_pp_path) +
-                                   '\n'.join(['    {}'.format(pp)
-                                                for pp in pps]) +
-                                   '\nConsider a stricter search pattern in `find_pspots()`.')
+                raise RuntimeError('Pseudopotential for species ''{} not unique!\n'.format(elem)
+                                   + 'Found the following files in {}\n'.format(self._castep_pp_path)
+                                   + '\n'.join(['    {}'.format(pp) for pp in pps])
+                                   + '\nConsider a stricter search pattern in `find_pspots()`.')
             else:
                 self.cell.species_pot = (elem, pps[0])
 
@@ -2484,8 +2483,8 @@ class CastepInputFile(object):
         self._perm = np.clip(keyword_tolerance, 0, 2)
 
         # Compile a dictionary for quick check of conflict sets
-        self._conflict_dict = { kw: set(cset).difference({kw})
-            for cset in self._keyword_conflicts for kw in cset }
+        self._conflict_dict = {kw: set(cset).difference({kw})
+                               for cset in self._keyword_conflicts for kw in cset}
 
     def __repr__(self):
         expr = ''
@@ -2548,11 +2547,11 @@ class CastepInputFile(object):
         # Check for any conflicts
         cset = self._conflict_dict.get(attr.lower(), {})
         for c in cset:
-            if (c in self._options and self._options[c].value is not None):            
+            if (c in self._options and self._options[c].value is not None):
                 warnings.warn(
-                'option "{attr}" conflicts with "{conflict}" in '
-                'calculator. Setting "{conflict}" to '
-                'None.'.format(attr=attr, conflict=c))
+                    'option "{attr}" conflicts with "{conflict}" in '
+                    'calculator. Setting "{conflict}" to '
+                    'None.'.format(attr=attr, conflict=c))
 
         if hasattr(self, attrparse):
             self._options[attr].value = self.__getattribute__(attrparse)(value)
@@ -2585,7 +2584,7 @@ class CastepInputFile(object):
 class CastepParam(CastepInputFile):
     """CastepParam abstracts the settings that go into the .param file"""
 
-    _keyword_conflicts = [{'cut_off_energy', 'basis_precision'},]
+    _keyword_conflicts = [{'cut_off_energy', 'basis_precision'}, ]
 
     def __init__(self, castep_keywords, keyword_tolerance=1):
         self._castep_version = castep_keywords.castep_version
@@ -2619,9 +2618,36 @@ class CastepParam(CastepInputFile):
             pass
         return 'default' if (value is True) else str(value)
 
+
 class CastepCell(CastepInputFile):
 
     """CastepCell abstracts all setting that go into the .cell file"""
+
+    _keyword_conflicts = [
+        {'kpoint_mp_grid', 'kpoint_mp_spacing', 'kpoint_list',
+         'kpoints_mp_grid', 'kpoints_mp_spacing', 'kpoints_list'},
+        {'bs_kpoint_mp_grid', 'bs_kpoint_mp_spacing', 'bs_kpoint_list',
+         'bs_kpoint_path',
+         'bs_kpoints_mp_grid', 'bs_kpoints_mp_spacing', 'bs_kpoints_list',
+         'bs_kpoints_path'},
+        {'spectral_kpoint_mp_grid', 'spectral_kpoint_mp_spacing', 'spectral_kpoint_list',
+         'spectral_kpoint_path',
+         'spectral_kpoints_mp_grid', 'spectral_kpoints_mp_spacing', 'spectral_kpoints_list',
+         'spectral_kpoints_path'}, 
+        {'phonon_kpoint_mp_grid', 'phonon_kpoint_mp_spacing', 'phonon_kpoint_list',
+         'phonon_kpoint_path',
+         'phonon_kpoints_mp_grid', 'phonon_kpoints_mp_spacing', 'phonon_kpoints_list',
+         'phonon_kpoints_path'},
+        {'fine_phonon_kpoint_mp_grid', 'fine_phonon_kpoint_mp_spacing', 'fine_phonon_kpoint_list',
+         'fine_phonon_kpoint_path'},
+        {'magres_kpoint_mp_grid', 'magres_kpoint_mp_spacing', 'magres_kpoint_list',
+         'magres_kpoint_path'},
+        {'elnes_kpoint_mp_grid', 'elnes_kpoint_mp_spacing', 'elnes_kpoint_list',
+         'elnes_kpoint_path'},
+        {'optics_kpoint_mp_grid', 'optics_kpoint_mp_spacing', 'optics_kpoint_list',
+         'optics_kpoint_path'},
+        {'supercell_kpoint_mp_grid', 'supercell_kpoint_mp_spacing', 'supercell_kpoint_list',
+         'supercell_kpoint_path'},]
 
     def __init__(self, castep_keywords, keyword_tolerance=1):
         self._castep_version = castep_keywords.castep_version
