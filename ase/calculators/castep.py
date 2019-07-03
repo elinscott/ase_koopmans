@@ -1054,8 +1054,8 @@ End CASTEP Interface Documentation
                     line = out.readline()
                     if "Pressure:" in line:
                         self._pressure = float(line.split()[-2]) * units.GPa
-                elif ('BFGS: starting iteration' in line or
-                      'BFGS: improving iteration' in line):
+                elif ('BFGS: starting iteration' in line
+                      or 'BFGS: improving iteration' in line):
                     if n_cell_const < 6:
                         lattice_real = []
                         lattice_reci = []
@@ -1122,8 +1122,8 @@ End CASTEP Interface Documentation
                     self._peak_memory = int(re.search(pattern, line).group(1))
 
             except Exception as exception:
-                sys.stderr.write(line + '|-> line triggered exception: ' +
-                                 str(exception))
+                sys.stderr.write(line + '|-> line triggered exception: '
+                                 + str(exception))
                 raise
 
         if _close:
@@ -1180,8 +1180,8 @@ End CASTEP Interface Documentation
             # castep file corresponding atomic number
             for iase in range(n_atoms):
                 for icastep in range(n_atoms):
-                    if (species[icastep] == self.atoms[iase].symbol and
-                            not atoms_assigned[icastep]):
+                    if (species[icastep] == self.atoms[iase].symbol
+                            and not atoms_assigned[icastep]):
                         positions_frac_atoms[iase] = \
                             positions_frac_castep[icastep]
                         forces_atoms[iase] = np.array(forces_castep[icastep])
@@ -1479,9 +1479,9 @@ End CASTEP Interface Documentation
                 if self._pedantic:
                     print('Pseudopotential for species {} not found!'.format(elem))
             elif not len(pps) == 1:
-                raise RuntimeError('Pseudopotential for species {} not unique!\n'.format(elem)
-                                   + 'Found the following files in {}\n'.format(self._castep_pp_path)
-                                   + '\n'.join(['    {}'.format(pp)
+                raise RuntimeError('Pseudopotential for species {} not unique!\n'.format(elem) +
+                                   'Found the following files in {}\n'.format(self._castep_pp_path) +
+                                   '\n'.join(['    {}'.format(pp)
                                                 for pp in pps]) +
                                    '\nConsider a stricter search pattern in `find_pspots()`.')
             else:
@@ -1710,9 +1710,9 @@ End CASTEP Interface Documentation
 
         # if we have new instance of the calculator,
         # move existing results out of the way, first
-        if (os.path.isdir(self._directory) and
-                self._calls == 0 and
-                self._rename_existing_dir):
+        if (os.path.isdir(self._directory)
+                and self._calls == 0
+                and self._rename_existing_dir):
             if os.listdir(self._directory) == []:
                 os.rmdir(self._directory)
             else:
@@ -1896,8 +1896,8 @@ End CASTEP Interface Documentation
             return
 
         attr = attr.lower()
-        if attr not in (list(self.cell._options.keys()) +
-                        list(self.param._options.keys())):
+        if attr not in (list(self.cell._options.keys())
+                        + list(self.param._options.keys())):
             # what is left now should be meant to be a castep keyword
             # so we first check if it defined, and if not offer some error
             # correction
@@ -2056,8 +2056,8 @@ End CASTEP Interface Documentation
         """
         # should be a '==' right? Otherwise setting _castep_pp_path is not
         # honored.
-        if (not os.environ.get('PSPOT_DIR', None) and
-                self._castep_pp_path == os.path.abspath('.')):
+        if (not os.environ.get('PSPOT_DIR', None)
+                and self._castep_pp_path == os.path.abspath('.')):
             # By default CASTEP consults the environment variable
             # PSPOT_DIR. If this contains a list of colon separated
             # directories it will check those directories for pseudo-
@@ -2097,8 +2097,8 @@ End CASTEP Interface Documentation
             for (species, pspot) in pspots.items():
                 orig_pspot_file = os.path.join(self._castep_pp_path, pspot)
                 cp_pspot_file = os.path.join(directory, pspot)
-                if (os.path.exists(orig_pspot_file) and
-                        not os.path.exists(cp_pspot_file)):
+                if (os.path.exists(orig_pspot_file)
+                        and not os.path.exists(cp_pspot_file)):
                     if self._copy_pspots:
                         shutil.copy(orig_pspot_file, directory)
                     elif self._link_pspots:
@@ -2216,9 +2216,9 @@ def create_castep_keywords(castep_command, filename='castep_keywords.json',
         doc, _ = shell_stdouterr('%s -help %s' % (castep_command, option))
 
         # Stand Back! I know regular expressions (http://xkcd.com/208/) :-)
-        match = re.match(r'(?P<before_type>.*)Type: (?P<type>.+?)\s+' +
-                         r'Level: (?P<level>[^ ]+)\n\s*\n' +
-                         r'(?P<doc>.*?)(\n\s*\n|$)', doc, re.DOTALL)
+        match = re.match(r'(?P<before_type>.*)Type: (?P<type>.+?)\s+'
+                         + r'Level: (?P<level>[^ ]+)\n\s*\n'
+                         + r'(?P<doc>.*?)(\n\s*\n|$)', doc, re.DOTALL)
 
         processed_n += 1
 
@@ -2265,8 +2265,8 @@ def create_castep_keywords(castep_command, filename='castep_keywords.json',
 
             frac = (o_i + 1.0) / to_process
             sys.stdout.write('\rProcessed: [{0}] {1:>3.0f}%'.format(
-                             '#' * int(frac * 20) + ' ' *
-                             (20 - int(frac * 20)),
+                             '#' * int(frac * 20) + ' '
+                             * (20 - int(frac * 20)),
                              100 * frac))
             sys.stdout.flush()
 
@@ -2467,6 +2467,8 @@ class CastepInputFile(object):
 
     """Master class for CastepParam and CastepCell to inherit from"""
 
+    _keyword_conflicts = []
+
     def __init__(self, options_dict=None, keyword_tolerance=1):
         object.__init__(self)
 
@@ -2480,6 +2482,10 @@ class CastepInputFile(object):
         # 1 = new attributes allowed, warning given
         # 2 = new attributes allowed, silent
         self._perm = np.clip(keyword_tolerance, 0, 2)
+
+        # Compile a dictionary for quick check of conflict sets
+        self._conflict_dict = { kw: set(cset).difference({kw})
+            for cset in self._keyword_conflicts for kw in cset }
 
     def __repr__(self):
         expr = ''
@@ -2507,8 +2513,8 @@ class CastepInputFile(object):
                 # Do we consider it a string or a block?
                 is_str = isinstance(value, basestring)
                 is_block = False
-                if ((hasattr(value, '__getitem__') and not is_str) or
-                        (is_str and len(value.split('\n')) > 1)):
+                if ((hasattr(value, '__getitem__') and not is_str)
+                        or (is_str and len(value.split('\n')) > 1)):
                     is_block = True
 
             if self._perm == 0:
@@ -2538,6 +2544,15 @@ class CastepInputFile(object):
 
         # If it is, use the appropriate parser, unless a custom one is defined
         attrparse = '_parse_%s' % attr.lower()
+
+        # Check for any conflicts
+        cset = self._conflict_dict.get(attr.lower(), {})
+        for c in cset:
+            if (c in self._options and self._options[c].value is not None):            
+                warnings.warn(
+                'option "{attr}" conflicts with "{conflict}" in '
+                'calculator. Setting "{conflict}" to '
+                'None.'.format(attr=attr, conflict=c))
 
         if hasattr(self, attrparse):
             self._options[attr].value = self.__getattribute__(attrparse)(value)
@@ -2570,7 +2585,7 @@ class CastepInputFile(object):
 class CastepParam(CastepInputFile):
     """CastepParam abstracts the settings that go into the .param file"""
 
-    key_conflicts = [{'cut_off_energy', 'basis_precision'}, ]
+    _keyword_conflicts = [{'cut_off_energy', 'basis_precision'},]
 
     def __init__(self, castep_keywords, keyword_tolerance=1):
         self._castep_version = castep_keywords.castep_version
@@ -2603,41 +2618,6 @@ class CastepParam(CastepInputFile):
         except KeyError:
             pass
         return 'default' if (value is True) else str(value)
-
-    def __setattr__(self, attr, value):
-        super().__setattr__(attr, value)
-
-        # Then deal with conflicting keywords by resetting the other options.
-        # Don't do this for None value because a) it doesn't cause conflicts
-        # b) triggering from None would cause a feedback loop.
-        if value is not None:
-            self._nullify_conflicting_keys(attr)
-
-    def _nullify_conflicting_keys(self, attr):
-        """Check self.key_conflicts and set conflicting options to None
-
-        In self.key_conflicts, parameters are grouped into sets of conflicting
-        options, e.g.:
-
-            [{'key', 'conflict', 'conflict_in_another_file'},
-             {'other_key', 'other_conflict'}, ...]
-
-        """
-        def param_is_set(alt_attr):
-            return getattr(self, alt_attr).value is not None
-
-        for conflict in self.key_conflicts:
-            alt_attrs = conflict.difference({attr})
-            if attr in conflict:
-                active_alt_attrs = filter(param_is_set, alt_attrs)
-
-                for alt_attr in active_alt_attrs:
-                    warnings.warn(
-                        'option "{attr}" conflicts with "{alt_attr}" in '
-                        'calculator. Setting "{alt_attr}" to '
-                        'None.'.format(attr=attr, alt_attr=alt_attr))
-                    setattr(self, alt_attr, None)
-
 
 class CastepCell(CastepInputFile):
 
