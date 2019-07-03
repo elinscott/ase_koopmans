@@ -29,12 +29,14 @@ import warnings
 import subprocess
 from copy import deepcopy
 from collections import namedtuple
+from itertools import product
 
 import ase
 import ase.units as units
 from ase.calculators.general import Calculator
 from ase.calculators.calculator import compare_atoms
 from ase.calculators.calculator import PropertyNotImplementedError
+from ase.calculators.calculator import kpts2sizeandoffsets
 from ase.utils import basestring
 from ase.parallel import paropen
 from ase.io.castep import read_param
@@ -603,29 +605,53 @@ End CASTEP Interface Documentation
         - 'gamma' (bool) to offset the Monkhorst-Pack grid to include
           (0, 0, 0); set False to offset each direction avoiding 0.
         """
-        from ase.calculators.calculator import kpts2sizeandoffsets
-
         # Clear existing values
-        self.cell.kpoint_mp_grid = None
-        self.cell.kpoint_mp_offset = None
-        self.cell.kpoint_mp_spacing = None
-        self.cell.kpoint_list = None
+        for kp_tag in product(('kpoint', 'kpoints'),
+                                      ('mp_grid', 'mp_offset',
+                                       'mp_spacing', 'list')):
+            setattr(self.cell, '_'.join(kp_tag), None)
 
         # Case 1: Clear parameters with set_kpts(None)
         if kpts is None:
             pass
-        # Case 2: list or tuple e.g. [3, 3, 2] or ('3', '3', '2')
-        if isinstance(kpts, (tuple, list)):
-            mesh = list(map(int, kpts))
-            if len(mesh) != 3:
+
+        # Case 2: list of explicit k-points with weights
+        # e.g. [[ 0,    0,   0,    0.125],
+        #       [ 0,   -0.5, 0,    0.375],
+        #       [-0.5,  0,  -0.5,  0.375],
+        #       [-0.5, -0.5, -0.5, 0.125]]
+
+        elif (isinstance(kpts, (tuple, list))
+              and isinstance(kpts[0], (tuple, list))):
+
+            if not all(map((lambda row: len(row) == 4), kpts)):
+                raise ValueError(
+                    'In explicit kpt list each row should have 4 elements')
+
+            self.cell.kpoint_list = [' '.join(map(str, row)) for row in kpts]
+
+        # Case 3: list of explicit kpts formatted as list of str
+        # i.e. the internal format of calc.kpoint_list
+        # e.g. ['0 0 0 0.125', '0 -0.5 0 0.375', '-0.5 0 -0.5 0.375']
+        elif isinstance(kpts, (tuple, list)) and isinstance(kpts[0], str):
+
+            if not all(map((lambda row: len(row.split()) == 4), kpts)):
+                raise ValueError(
+                    'In explicit kpt list each row should have 4 elements')
+
+            self.cell.kpoint_list = kpts
+
+        # Case 4: list or tuple of MP samples e.g. [3, 3, 2]
+        elif isinstance(kpts, (tuple, list)) and isinstance(kpts[0], int):
+            if len(kpts) != 3:
                 raise ValueError('Monkhorst-pack grid should have 3 values')
-            self.cell.kpoint_mp_grid = '%d %d %d' % tuple(mesh)
+            self.cell.kpoint_mp_grid = '%d %d %d' % tuple(kpts)
 
-        # Case 3: str e.g. '3 3 2'
+        # Case 5: str representation of Case 3 e.g. '3 3 2'
         elif isinstance(kpts, str):
-            self.set_kpts(kpts.split())
+            self.set_kpts([int(x) for x in kpts.split()])
 
-        # Case 4: dict of options e.g. {'size': (3, 3, 2), 'gamma': True}
+        # Case 6: dict of options e.g. {'size': (3, 3, 2), 'gamma': True}
         # 'spacing' is allowed but transformed to 'density' to get mesh/offset
         elif isinstance(kpts, dict):
             if (kpts.get('spacing') is not None
@@ -641,7 +667,7 @@ End CASTEP Interface Documentation
             self.cell.kpoint_mp_grid = '%d %d %d' % tuple(size)
             self.cell.kpoint_mp_offset = '%f %f %f' % tuple(offsets)
 
-        # Case 5: some other iterator. Try treating as a list:
+        # Case 7: some other iterator. Try treating as a list:
         elif hasattr(kpts, '__iter__'):
             self.set_kpts(list(kpts))
 
