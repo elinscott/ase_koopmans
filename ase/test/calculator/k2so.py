@@ -4,6 +4,14 @@ from ase.calculators.calculator import kpts2sizeandoffsets as k2so
 
 #### Cubic case ####
 
+# Default gamma pt
+size, offsets = map(tuple, k2so())
+assert (size, offsets) == ((1, 1, 1), (0, 0, 0))
+
+# Default (2, 2, 2)
+size, offsets = map(tuple, k2so(even=True))
+assert (size, offsets) == ((2, 2, 2), (0, 0, 0))
+
 # Shape from density
 kd = 25 / (2 * np.pi)
 a = 6.0
@@ -25,9 +33,13 @@ assert (size, offsets) == ((4, 4, 4), (0.125, 0.125, 0.125))
 
 # Gamma-centering from size
 size, offsets = map(tuple, k2so(size=(3, 4, 5),
-                                gamma=True,
-                                atoms=Atoms(cell=(a, a, a), pbc=True)))
+                                gamma=True))
 assert (size, offsets) == ((3, 4, 5), (0., 0.125, 0.))
+
+# Anti-Gamma-centering from default (1, 1, 1)
+size, offsets = map(tuple, k2so(gamma=False,
+                                atoms=Atoms(cell=(a, a, a), pbc=True)))
+assert (size, offsets) == ((1, 1, 1), (0.5, 0.5, 0.5))
 
 # Density with irregular shape
 cell = [[2, 1, 0], [1, 2, 2], [-1, 0, 2]]
@@ -50,19 +62,22 @@ size, offsets = map(tuple, k2so(density=kd,
 assert (size, offsets) == ((30, 22, 26), (1/60, 1/44, 1/52))
 
 # Set odd with density
-# Currently failing: kpts2sizeandoffsets does not act as described
-# size, offsets = map(tuple, k2so(density=kd,
-#                                 even=False,
-#                                 atoms=Atoms(cell=cell, pbc=True)))
-# assert (size, offsets) == ((29, 23, 27), (0, 0, 0))
+size, offsets = map(tuple, k2so(density=kd,
+                                even=False,
+                                atoms=Atoms(cell=cell, pbc=True)))
+assert (size, offsets) == ((29, 23, 27), (0, 0, 0))
 
-#
-# set even with size
-# Currently failing: rounding not implemented for size option
-# size, offsets = map(tuple, k2so(size=(3, 4, 5), even=True))
-# assert (size, offsets) == ((4, 4, 6), (0, 0, 0))
+# Set even with size
+size, offsets = map(tuple, k2so(size=(3, 4, 5), even=True))
+assert (size, offsets) == ((4, 4, 6), (0, 0, 0))
 
-# set odd with size
-# Currently failing: rounding not implemented for size option
-# size, offsets = map(tuple, k2so(size=(3, 4, 5), even=False))
-# assert (size, offsets) == ((3, 5, 5), (0, 0, 0))
+# Set odd with size
+size, offsets = map(tuple, k2so(size=(3, 4, 5), even=False))
+assert (size, offsets) == ((3, 5, 5), (0, 0, 0))
+
+# Interaction with PBC: don't shift non-periodic directions away from gamma
+size, offsets = map(tuple, k2so(size=(5, 5, 1),
+                                gamma=False,
+                                atoms=Atoms(cell=(a, a, a),
+                                            pbc=[True, True, False])))
+assert (size, offsets) == ((5, 5, 1), (0.1, 0.1, 0.))
