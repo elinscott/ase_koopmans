@@ -2632,10 +2632,10 @@ class CastepParam(CastepInputFile):
                 active_alt_attrs = filter(param_is_set, alt_attrs)
 
                 for alt_attr in active_alt_attrs:
-                    print('Warning: option "{attr}" conflicts with '
-                          '"{alt_attr}" in calculator. Setting '
-                          '"{alt_attr}" to None.'.format(attr=attr,
-                                                         alt_attr=alt_attr))
+                    warnings.warn(
+                        'option "{attr}" conflicts with "{alt_attr}" in '
+                        'calculator. Setting "{alt_attr}" to '
+                        'None.'.format(attr=attr, alt_attr=alt_attr))
                     setattr(self, alt_attr, None)
 
 
