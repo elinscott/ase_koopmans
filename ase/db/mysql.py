@@ -131,15 +131,15 @@ class MySQLDatabase(SQLite3Database):
 
     def __init__(self, url=None, create_indices=True,
                  use_lock_file=False, serial=False):
-                super(MySQLDatabase, self).__init__(
-                    url, create_indices, use_lock_file, serial)
+        super(MySQLDatabase, self).__init__(
+            url, create_indices, use_lock_file, serial)
 
-                self.host = None
-                self.username = None
-                self.passwd = None
-                self.db_name = None
-                self.port = 3306
-                self._parse_url(url)
+        self.host = None
+        self.username = None
+        self.passwd = None
+        self.db_name = None
+        self.port = 3306
+        self._parse_url(url)
 
     def _parse_url(self, url):
         """
@@ -226,7 +226,7 @@ class MySQLDatabase(SQLite3Database):
         return ase.io.jsonio.encode(remove_nan_and_inf(obj))
 
     def decode(self, obj):
-        if isinstance(obj, str):
+        if 0:  # isinstance(obj, str):
             if obj.startswith('{') and obj.endswith('}'):
                 obj = obj.replace('true', 'True')
                 obj = obj.replace('false', 'False')
