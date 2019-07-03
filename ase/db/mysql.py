@@ -226,13 +226,7 @@ class MySQLDatabase(SQLite3Database):
         return ase.io.jsonio.encode(remove_nan_and_inf(obj))
 
     def decode(self, obj):
-        assert isinstance(obj, str)
-        # if obj.startswith('{') and obj.endswith('}'):
-        #        obj = obj.replace('true', 'True')
-        #        obj = obj.replace('false', 'False')
-        #        obj = eval(obj)
         return insert_nan_and_inf(ase.io.jsonio.decode(obj))
-        # return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
 
 
 def schema_update(statements):
