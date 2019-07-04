@@ -166,7 +166,7 @@ Contents
     otherprojects
     development/development
     faq
-
+    workshop/workshop
 
 .. |abinit| image:: static/abinit.png
    :target: ase/calculators/abinit.html
