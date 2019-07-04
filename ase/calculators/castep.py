@@ -2560,6 +2560,7 @@ class CastepInputFile(object):
                     'option "{attr}" conflicts with "{conflict}" in '
                     'calculator. Setting "{conflict}" to '
                     'None.'.format(attr=attr, conflict=c))
+                self._options[c].value = None
 
         if hasattr(self, attrparse):
             self._options[attr].value = self.__getattribute__(attrparse)(value)
