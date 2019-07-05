@@ -575,6 +575,26 @@ End CASTEP Interface Documentation
             else:  # the general case
                 self.__setattr__(keyword, value)
 
+    def band_structure(self, bandfile=None):
+        from ase.dft.band_structure import BandStructure
+
+        # This doesn't work yet. How to find the file intelligently?
+        # if bandfile is None:
+        #     bandfile = os.path.join(self._directory, self._seedname) + '.band'
+
+        if not os.path.exists(bandfile):
+            raise ValueError('Cannot find band file "{}".'.format(bandfile))
+
+        from ase.io.castep import read_bands
+        kpts, weights, eigenvalues, efermi = read_bands(bandfile)
+
+        # Get definitions of high-symmetry points
+        special_points = self.atoms.cell.bandpath(npoints=0).special_points
+        bandpath = BandPath(self.atoms.cell,
+                            kpts=kpts,
+                            special_points=special_points)
+        return BandStructure(bandpath, eigenvalues, reference=efermi)
+
     def set_bandpath(self, bandpath):
         """Set a band structure path from ase.dft.kpoint.BandPath object
 
@@ -610,7 +630,7 @@ End CASTEP Interface Documentation
         """Set k-point mesh/path using a str, tuple or ASE features
 
         Args:
-            kpts (None, tuple, str, dict or :obj:`ase.dft.kpoint.BandPath`):
+            kpts (None, tuple, str, dict):
 
         This method will set the CASTEP parameters kpoints_mp_grid,
         kpoints_mp_offset and kpoints_mp_spacing as appropriate. Unused
@@ -3069,3 +3089,4 @@ if __name__ == '__main__':
             print('Ooops, something went wrong with the CASTEP keywords')
         else:
             print('Import works. Looking good!')
+
