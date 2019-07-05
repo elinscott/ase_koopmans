@@ -41,6 +41,7 @@ from ase.dft.kpoints import BandPath
 from ase.utils import basestring
 from ase.parallel import paropen
 from ase.io.castep import read_param
+from ase.io.castep import read_bands
 from ase.constraints import FixCartesian
 
 __all__ = [
@@ -515,6 +516,10 @@ End CASTEP Interface Documentation
         self._energy_free = None
         self._energy_0K = None
         self._energy_total_corr = None
+        self._efermi = None
+        self._ibz_kpts = None
+        self._ibz_weights = None
+        self._band_structure = None
 
         # dispersion corrections
         self._dispcorr_energy_total = None
@@ -578,14 +583,12 @@ End CASTEP Interface Documentation
     def band_structure(self, bandfile=None):
         from ase.dft.band_structure import BandStructure
 
-        # This doesn't work yet. How to find the file intelligently?
-        # if bandfile is None:
-        #     bandfile = os.path.join(self._directory, self._seedname) + '.band'
+        if bandfile is None:
+            bandfile = os.path.join(self._directory, self._seed) + '.bands'
 
         if not os.path.exists(bandfile):
             raise ValueError('Cannot find band file "{}".'.format(bandfile))
 
-        from ase.io.castep import read_bands
         kpts, weights, eigenvalues, efermi = read_bands(bandfile)
 
         # Get definitions of high-symmetry points
@@ -1420,6 +1423,15 @@ End CASTEP Interface Documentation
                 print(warning)
         # reset
         self._warnings = []
+
+        # Read in eigenvalues from bands file
+        if (self.param.task.value is not None
+            and self.param.task.value.lower() == 'bandstructure'):
+            self._band_structure = self.band_structure()
+        else:
+            bands_file = os.path.join(self._directory, self._seed) + '.bands'
+            (self._ibz_kpts, self._ibz_weights,
+             self._eigenvalues, self._efermi) = read_bands(filename=bands_file)
 
     def read_symops(self, castep_castep=None):
         # TODO: check that this is really backwards compatible
@@ -2811,7 +2823,7 @@ class CastepCell(CastepInputFile):
         {'spectral_kpoint_mp_grid', 'spectral_kpoint_mp_spacing', 'spectral_kpoint_list',
          'spectral_kpoint_path',
          'spectral_kpoints_mp_grid', 'spectral_kpoints_mp_spacing', 'spectral_kpoints_list',
-         'spectral_kpoints_path'}, 
+         'spectral_kpoints_path'},
         {'phonon_kpoint_mp_grid', 'phonon_kpoint_mp_spacing', 'phonon_kpoint_list',
          'phonon_kpoint_path',
          'phonon_kpoints_mp_grid', 'phonon_kpoints_mp_spacing', 'phonon_kpoints_list',
@@ -3089,4 +3101,3 @@ if __name__ == '__main__':
             print('Ooops, something went wrong with the CASTEP keywords')
         else:
             print('Import works. Looking good!')
-
