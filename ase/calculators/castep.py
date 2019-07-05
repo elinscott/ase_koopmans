@@ -566,12 +566,45 @@ End CASTEP Interface Documentation
             # first fetch special keywords issued by ASE CLI
             if keyword == 'kpts':
                 self.set_kpts(value)
+            elif keyword == 'bandpath':
+                self.set_bandpath(value)
             elif keyword == 'xc':
                 self.xc_functional = value
             elif keyword == 'ecut':
                 self.cut_off_energy = value
             else:  # the general case
                 self.__setattr__(keyword, value)
+
+    def set_bandpath(self, bandpath):
+        """Set a band structure path from ase.dft.kpoint.BandPath object
+
+        This will set the bs_kpoint_list block with a set of specific points
+        determined in ASE. bs_kpoint_spacing will not be used; to modify the
+        number of points, consider using e.g. bandpath.resample(density=20) to
+        obtain a new dense path.
+
+        Args:
+            bandpath (:obj:`ase.dft.kpoint.BandPath` or None):
+                Set to None to remove list of band structure points. Otherwise,
+                sampling will follow BandPath parameters.
+
+        """
+
+        def clear_bs_keywords():
+            bs_keywords = product({'bs_kpoint', 'bs_kpoints'},
+                                  {'path', 'list'})
+            for bs_tag in bs_keywords:
+                setattr(self.cell, '_'.join(bs_tag), None)
+
+        if bandpath is None:
+            clear_bs_keywords()
+        elif isinstance(bandpath, BandPath):
+            clear_bs_keywords()
+            self.cell.bs_kpoint_list = [' '.join(map(str, row))
+                                        for row in bandpath.kpts]
+        else:
+            raise TypeError('Band structure path must be an '
+                            'ase.dft.kpoint.BandPath object')
 
     def set_kpts(self, kpts):
         """Set k-point mesh/path using a str, tuple or ASE features
@@ -605,28 +638,18 @@ End CASTEP Interface Documentation
           set False for odd numbers, leave as None for no odd/even rounding.
         - 'gamma' (bool) to offset the Monkhorst-Pack grid to include
           (0, 0, 0); set False to offset each direction avoiding 0.
-        - 'path' (:obj:`ase.dft.kpoint.BandPath`) [See below]
-
-        A band structure path may be provided using the appropriate ASE object
-        :obj:`ase.dft.kpoint.BandPath`, and will be used to set the
-        bs_kpoint_path parameter. This will not override the MP sampling
-        options: to clear the band structure path use set_kpts({'path': None}).
-        To set mesh and path parameters simultaneously, use the dictionary
-        syntax above.
         """
 
-        keyword_groups = {'mp': ({'kpoint', 'kpoints'},
-                                 {'mp_grid', 'mp_offset',
-                                  'mp_spacing', 'list'}),
-                          'bs': ({'bs_kpoint', 'bs_kpoints'},
-                                 {'path', 'list'})}
-        def clear_keywords(group):
-            for kp_tag in product(*keyword_groups[group]):
+        def clear_mp_keywords():
+            mp_keywords = product({'kpoint', 'kpoints'},
+                                  {'mp_grid', 'mp_offset',
+                                   'mp_spacing', 'list'})
+            for kp_tag in mp_keywords:
                 setattr(self.cell, '_'.join(kp_tag), None)
 
         # Case 1: Clear parameters with set_kpts(None)
         if kpts is None:
-            clear_keywords('mp')
+            clear_mp_keywords()
             pass
 
         # Case 2: list of explicit k-points with weights
@@ -642,7 +665,7 @@ End CASTEP Interface Documentation
                 raise ValueError(
                     'In explicit kpt list each row should have 4 elements')
 
-            clear_keywords('mp')
+            clear_mp_keywords()
             self.cell.kpoint_list = [' '.join(map(str, row)) for row in kpts]
 
         # Case 3: list of explicit kpts formatted as list of str
@@ -654,14 +677,14 @@ End CASTEP Interface Documentation
                 raise ValueError(
                     'In explicit kpt list each row should have 4 elements')
 
-            clear_keywords('mp')
+            clear_mp_keywords()
             self.cell.kpoint_list = kpts
 
         # Case 4: list or tuple of MP samples e.g. [3, 3, 2]
         elif isinstance(kpts, (tuple, list)) and isinstance(kpts[0], int):
             if len(kpts) != 3:
                 raise ValueError('Monkhorst-pack grid should have 3 values')
-            clear_keywords('mp')
+            clear_mp_keywords()
             self.cell.kpoint_mp_grid = '%d %d %d' % tuple(kpts)
 
         # Case 5: str representation of Case 3 e.g. '3 3 2'
@@ -670,15 +693,8 @@ End CASTEP Interface Documentation
 
         # Case 6: dict of options e.g. {'size': (3, 3, 2), 'gamma': True}
         # 'spacing' is allowed but transformed to 'density' to get mesh/offset
-        # 'bands' is passed to another call of this method
         elif isinstance(kpts, dict):
             kpts = kpts.copy()
-            if isinstance(kpts.get('band'), BandPath):
-                # Prune band from dict so we can pass on to kpts2sizeandoffsets
-                self.set_kpts(kpts.pop('band'))
-
-            elif kpts.get('band') is not None:
-                raise TypeError('"band" item in kpts must be ASE BandPath')
 
             if (kpts.get('spacing') is not None
                 and kpts.get('density') is not None):
@@ -690,18 +706,12 @@ End CASTEP Interface Documentation
                     spacing = kpts.pop('spacing')
                     kpts['density'] = 1 / (np.pi * spacing)
 
-                clear_keywords('mp')
+                clear_mp_keywords()
                 size, offsets = kpts2sizeandoffsets(atoms=self.atoms, **kpts)
                 self.cell.kpoint_mp_grid = '%d %d %d' % tuple(size)
                 self.cell.kpoint_mp_offset = '%f %f %f' % tuple(offsets)
 
-        # Case 7: BandPath object
-        elif isinstance(kpts, BandPath):
-            clear_keywords('bs')
-            self.cell.bs_kpoint_list = [' '.join(map(str, row))
-                                        for row in kpts.kpts]
-
-        # Case 8: some other iterator. Try treating as a list:
+        # Case 7: some other iterator. Try treating as a list:
         elif hasattr(kpts, '__iter__'):
             self.set_kpts(list(kpts))
 
