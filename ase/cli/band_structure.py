@@ -119,6 +119,10 @@ def read_band_structure(args, parser):
     return bs
 
 def main(args, parser):
+    import matplotlib.pyplot as plt
     bs = read_band_structure(args, parser)
     emin, emax = (float(e) for e in args.range)
-    bs.plot(emin=emin, emax=emax)
+    fig = plt.gcf()
+    fig.canvas.set_window_title(args.calculation)
+    ax = fig.gca()
+    bs.plot(ax=ax, emin=emin, emax=emax)
