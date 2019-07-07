@@ -215,5 +215,14 @@ with open(os.path.join(tmp_dir, 'test.cell'), 'r') as f:
     assert re.search(r'Cu Cu_01\.recpot', ''.join(f.readlines())) is not None
 
 
+# test keyword conflict management
+c = Castep(cut_off_energy=300.)
+assert float(c.param.cut_off_energy.value) == 300.0
+c.basis_precision = 'MEDIUM'
+assert c.param.cut_off_energy.value is None
+assert c.param.basis_precision.value.strip() == 'MEDIUM'
+c.cut_off_energy = 200.0
+assert c.param.basis_precision.value is None
+
 os.chdir(cwd)
 shutil.rmtree(tmp_dir)
