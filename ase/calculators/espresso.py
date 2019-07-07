@@ -141,8 +141,3 @@ class Espresso(FileIOCalculator):
         if nspins is None:
             warnings.warn(warn_template % 'Number of spins')
         return nspins
-
-    def socket_driver(self, **kwargs):
-        from ase.calculators.socketio import SocketIOCalculator
-        calc = SocketIOCalculator(self, **kwargs)
-        return calc
