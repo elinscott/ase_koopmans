@@ -54,7 +54,17 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
 
     calc.set(kpts=path, **bs_kwargs)
     calc.results.clear()  # XXX get rid of me
-    atoms.get_potential_energy()
+
+    # Calculators are too inconsistent here:
+    # * atoms.get_potential_energy() will fail when total energy is
+    #   not in results after BS calculation (Espresso)
+    # * calc.calculate(atoms) doesn't ask for any quantity, so some
+    #   calculators may not calculate anything at all
+    # * 'bandstructure' is not a recognized property we can ask for
+    try:
+        atoms.get_potential_energy()
+    except PropertyNotImplementedError:
+        pass
 
     ibzkpts = calc.get_ibz_k_points()
     kpts_err = np.abs(path.kpts - ibzkpts).max()
