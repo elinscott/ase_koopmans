@@ -107,10 +107,20 @@ def resolve_kpt_path_string(path, special_points):
 
 
 def resolve_custom_points(pathspec, special_points, eps):
+    """Resolve a path specification into a string.
+
+    The path specification is a list path segments, each segment being a kpoint
+    label or kpoint coordinate, or a single such segment.
+
+    Return a string representing the same path.  Generic kpoint labels
+    are generated dynamically as necessary, updating the special_point
+    dictionary if necessary.  The tolerance eps is used to see whether
+    coordinates are close enough to a special point to deserve being
+    labelled as such."""
     # This should really run on Cartesian coordinates but we'll probably
     # be lazy and call it on scaled ones.
 
-    if not pathspec:
+    if len(pathspec) == 0:
         return ''
 
     nested_format = True
@@ -452,6 +462,19 @@ def paths2kpts(paths, cell, npoints=None, density=None):
 get_bandpath = bandpath  # old name
 
 
+def find_bandpath_kinks(cell, kpts, eps=1e-5):
+    """Find indices of those kpoints that are not interiour to a line segment."""
+    diffs = kpts[1:] - kpts[:-1]
+    kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
+    N = len(kpts)
+    indices = []
+    if N > 0:
+        indices.append(0)
+        indices.extend(np.arange(1, N - 1)[kinks])
+        indices.append(N - 1)
+    return indices
+
+
 def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     """Get an x-axis to be used when plotting a band structure.
 
@@ -473,17 +496,12 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     the second is x coordinates of the special points,
     the third is the special points as strings.
     """
+
+
     if special_points is None:
         special_points = get_special_points(cell)
     points = np.asarray(kpts)
-    diffs = points[1:] - points[:-1]
-    kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
-    N = len(points)
-    indices = []
-    if N > 0:
-        indices.append(0)
-        indices.extend(np.arange(1, N - 1)[kinks])
-        indices.append(N - 1)
+    indices = find_bandpath_kinks(cell, kpts, eps=1e-5)
 
     labels = []
     for kpt in points[indices]:
