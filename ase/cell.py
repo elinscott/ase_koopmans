@@ -99,6 +99,16 @@ class Cell:
         >>> print(cell.get_bravais_lattice())
         FCC(a=5.65685)
 
+        .. note:: The Bravais lattice object follows the AFlow
+           conventions.  `cell.get_bravais_lattice().tocell()` may
+           differ from the original cell by a permutation or other
+           operation which maps it to the AFlow convention.  For
+           example, the orthorhombic lattice enforces a < b < c.
+
+           To build a bandpath for a particular cell, use
+           :meth:`ase.cell.Cell.bandpath` instead of this method.
+           This maps the kpoints back to the original input cell.
+
         """
         from ase.lattice import get_bravais_lattice
         return get_bravais_lattice(self, eps=eps)
