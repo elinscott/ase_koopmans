@@ -2,6 +2,7 @@ import numpy as np
 
 from ase.utils import jsonable
 from ase.dft.kpoints import labels_from_kpts
+from ase.calculators.calculator import PropertyNotImplementedError
 
 
 def calculate_band_structure(atoms, path=None, scf_kwargs=None,
