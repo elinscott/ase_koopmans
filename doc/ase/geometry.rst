@@ -37,8 +37,8 @@ The entire class can be used with few commands:
 * To retrieve tuples of bonds/angles/dihedrals (they are calculated the first time they are accessed) use ``instance.all_xxx`` where *xxx* is one of bonds/angles/dihedrals.
 * If you only want those one-way (meaning e.g. not bonds i-j and j-i but just i-j) use ``instance.unique_xxx``.
 * To get selected bonds/angles/dihedrals use ``instance.get_xxx(A,B,...)``, see the API section for details on which arguments you can pass.
-* To get the actual value of a bond/angle/dihedral use ``instance.get_xxx_value(tuple)``.
-* To get a lot of bond/angle/dihedral values at once use :func:`Analysis.get_values()`.
+* To get the actual value of a bond/angle/dihedral use ``instance.get_xxx_value(tuple)``. Note that you must pass ``mic=True`` to theses calls if you're using a PBC and want the minimum image condition to be used for the calculation the values (see :class:`~ase.Atoms`).
+* To get a lot of bond/angle/dihedral values at once use :func:`Analysis.get_values()`. Note the requirement of passing ``mic=True`` to obtain correct results when using a PBC, see previous point. 
 * There is also a wrapper to get radial distribution functions :func:`Analysis.get_rdf()`.
 
 The main difference between properties (getters) and functions here is, that getters provide data that is cached.

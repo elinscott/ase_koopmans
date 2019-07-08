@@ -427,6 +427,9 @@ class Analysis(object):
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_distance`.
 
+            Note: pass ``mic=True`` if you're using PBC. :func:`ase.Atoms.get_distance` by default ignores the minimum
+            image condition and returns the value using the absolute coordinates.
+
         Returns:
 
         return: float
@@ -446,6 +449,9 @@ class Analysis(object):
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_angle`.
 
+            Note: pass ``mic=True`` if you're using PBC. :func:`ase.Atoms.get_angle` by default ignores the minimum
+            image condition and returns the value using the absolute coordinates.
+
         Returns:
 
         return: float
@@ -464,6 +470,9 @@ class Analysis(object):
             Get angle between atoms idxs[0]-idxs[1]-idxs[2]-idxs[3].
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_dihedral`.
+
+            Note: pass ``mic=True`` if you're using PB. :func:`ase.Atoms.get_dihedral` by default ignores the minimum
+            image condition and returns the value using the absolute coordinates.
 
         Returns:
 
@@ -486,6 +495,9 @@ class Analysis(object):
             See :func:`~ase.geometry.analysis.Analysis._get_slice` for details.
         kwargs: options or dict
             Passed on to the :class:`~ase.Atoms` classes functions for retrieving the values.
+
+            Note: pass ``mic=True`` if you're using PBC. :class:`ase.Atoms` by default ignores the minimum image
+            condition and returns the value using the absolute coordinates.
 
         Returns:
 
@@ -548,7 +560,7 @@ class Analysis(object):
         elements: str/int/list/tuple
             Make partial RDFs.
 
-        If elements is `None`, a full RDF is calculated. If elements is an *integer* or a *list/tuple
+        If elements is *None*, a full RDF is calculated. If elements is an *integer* or a *list/tuple
         of integers*, only those atoms will contribute to the RDF (like a mask). If elements
         is a *string* or a *list/tuple of strings*, only Atoms of those elements will contribute.
 
