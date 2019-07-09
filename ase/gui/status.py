@@ -60,6 +60,12 @@ class Status:  # Status is used as a mixin in GUI
             if charges.any():
                 text += _(' q={0:1.2f}'.format(
                     charges[indices][0]))
+            haveit = ['numbers', 'positions', 'forces', 'momenta',
+                      'initial_charges', 'initial_magmoms']
+            for key in atoms.arrays:
+                if key not in haveit:
+                    text += _(' {0}={1:g}'.format(
+                        key, atoms.get_array(key)[indices[0]]))
         elif n == 2:
             D = R[0] - R[1]
             d = sqrt(np.dot(D, D))
