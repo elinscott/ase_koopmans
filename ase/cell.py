@@ -18,14 +18,22 @@ class Cell:
     ase_objtype = 'cell'  # For JSON'ing
 
     def __init__(self, array, pbc=None):
-        if pbc is None:
-            # pbc defaults to whether each cell vector is nonzero:
-            pbc = array.any(1)
+        """Create cell.
 
-        # We could have lazy attributes for structure (bcc, fcc, ...)
-        # and other things.  However this requires making the cell
-        # array readonly, else people will modify it and things will
-        # be out of synch.
+        Parameters:
+
+        array: 3x3 arraylike object
+          The three cell vectors.
+        pbc: None or 3 booleans
+          For each cell vector, whether the system is periodic in the
+          direction of that cell vector.  If not given, the cell will
+          be periodic along directions with nonzero cell vectors.
+        """
+        if pbc is None:
+            pbc = getattr(array, 'pbc', array.any(1))
+
+        array = np.asarray(array)
+
         assert array.shape == (3, 3)
         assert array.dtype == float
         assert pbc.shape == (3,)
@@ -49,7 +57,7 @@ class Cell:
 
     @classmethod
     def ascell(cls, cell):
-        """Return argument as a Cell object.
+        """Return argument as a Cell object.  See :meth:`ase.cell.Cell.new`.
 
         A new Cell object is created if necessary."""
         if isinstance(cell, cls):
@@ -58,7 +66,13 @@ class Cell:
 
     @classmethod
     def new(cls, cell=None, pbc=None):
-        """Create new cell from any parameters."""
+        """Create new cell from any parameters.
+
+        If cell is three numbers, assume three lengths with right angles.
+
+        If cell is six numbers, assume three lengths, then three angles.
+
+        If cell is 3x3, assume three cell vectors."""
         if pbc is None:
             pbc = getattr(cell, 'pbc', None)
 
@@ -100,7 +114,7 @@ class Cell:
         FCC(a=5.65685)
 
         .. note:: The Bravais lattice object follows the AFlow
-           conventions.  `cell.get_bravais_lattice().tocell()` may
+           conventions.  ``cell.get_bravais_lattice().tocell()`` may
            differ from the original cell by a permutation or other
            operation which maps it to the AFlow convention.  For
            example, the orthorhombic lattice enforces a < b < c.
@@ -135,6 +149,7 @@ class Cell:
             density of kpoints along the path in Å⁻¹.
         special_points: dict
             Dictionary mapping special points to scaled kpoint coordinates.
+            For example ``{'G': [0, 0, 0], 'X': [1, 0, 0]}``.
         eps: float
             Tolerance for determining Bravais lattice.
 
@@ -160,6 +175,7 @@ class Cell:
 
     # XXX adapt the transformation stuff and include in the bandpath method.
     def oldbandpath(self, path=None, npoints=None, density=None, eps=2e-4):
+        """Legacy implementation, please ignore."""
         bravais = self.get_bravais_lattice(eps=eps)
         transformation = bravais.get_transformation(self.array)
         return bravais.bandpath(path=path, npoints=npoints, density=density,
@@ -247,7 +263,12 @@ class Cell:
         return self.array.tolist()
 
     def scaled_positions(self, positions):
-        """Calculate scaled positions from Cartesian positions."""
+        """Calculate scaled positions from Cartesian positions.
+
+        The scaled positions are the positions given in the basis
+        of the cell vectors.  For the purpose of defining the basis, cell
+        vectors that are zero will be replaced by unit vectors as per
+        :meth:`~ase.cell.Cell.complete`."""
         return np.linalg.solve(self.complete().array.T, positions.T).T
 
     def cartesian_positions(self, scaled_positions):
