@@ -114,7 +114,7 @@ class Analysis(object):
         """All Bonds.
 
         A list with indices of bonded atoms for each neighborlist in *self*.
-        Atom i is connected to all atoms inside result[i]. Duplicates from PBC are
+        Atom i is connected to all atoms inside result[i]. Duplicates from PBCs are
         removed. See also :data:`unique_bonds`.
 
         **No setter or deleter, only getter**
@@ -427,7 +427,7 @@ class Analysis(object):
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_distance`.
 
-            Note: pass ``mic=True`` if you're using PBC. :func:`ase.Atoms.get_distance` by default ignores the minimum
+            Note: pass ``mic=True`` if you're using PBCs. :func:`ase.Atoms.get_distance` by default ignores the minimum
             image condition and returns the value using the absolute coordinates.
 
         Returns:
@@ -449,7 +449,7 @@ class Analysis(object):
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_angle`.
 
-            Note: pass ``mic=True`` if you're using PBC. :func:`ase.Atoms.get_angle` by default ignores the minimum
+            Note: pass ``mic=True`` if you're using PBCs. :func:`ase.Atoms.get_angle` by default ignores the minimum
             image condition and returns the value using the absolute coordinates.
 
         Returns:
@@ -496,7 +496,7 @@ class Analysis(object):
         kwargs: options or dict
             Passed on to the :class:`~ase.Atoms` classes functions for retrieving the values.
 
-            Note: pass ``mic=True`` if you're using PBC. :class:`ase.Atoms` by default ignores the minimum image
+            Note: pass ``mic=True`` if you're using PBCs. :class:`ase.Atoms` by default ignores the minimum image
             condition and returns the value using the absolute coordinates.
 
         Returns:
