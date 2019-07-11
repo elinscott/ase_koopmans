@@ -2093,7 +2093,7 @@ End CASTEP Interface Documentation
             else:
                 warnings.warn('Option "%s" is not known - please set any new'
                               ' options directly in the .cell or .param '
-                              'objects')
+                              'objects' % attr)
                 return
 
         # here we know it must go into one of the component param or cell
