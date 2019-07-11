@@ -174,6 +174,12 @@ class BravaisLattice(ABC):
 
         >>> BCT(3, 5).bandpath()
         BandPath(path='GXYSGZS1NPY1Z,XP', cell=[3x3], special_points={GNPSS1XYY1Z}, kpts=[51x3])
+
+        .. note:: This produces the standard band path following AFlow
+           conventions.  If your cell does not follow this convention,
+           you will need :meth:`ase.cell.Cell.bandpath` instead or
+           the kpoints may not correspond to your particular cell.
+
         """
         if special_points is None:
             special_points = self.get_special_points()
