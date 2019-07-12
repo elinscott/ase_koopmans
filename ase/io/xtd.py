@@ -42,7 +42,7 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
         s += 'PBC=OFF\n'
         for image in images:
             s += ' '*74 + '0.0000\n'
-            s += '!DATE     Dec 16 10:36:30 2011\n' # dummy time
+            s += '!DATE     Jan 01 00:00:00 2000\n' # dummy time
             s+='\n'
             an = image.get_chemical_symbols()
             xyz = image.get_positions()
@@ -65,7 +65,7 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
         s += 'PBC=ON\n'
         for image in images:
             s += ' '*74 + '0.0000\n'
-            s += '!DATE     Dec 16 10:36:30 2011\n' # dummy time
+            s += '!DATE     Jan 01 00:00:00 2000\n' # dummy time
             s += 'PBC'
             vec = image.cell.lengths()
             s+='{:>10.4f}{:>10.4f}{:>10.4f}'.format(vec[1],vec[0],vec[2])
@@ -92,7 +92,10 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
             s += 'end\n'
 
     # print arc file
-    farcname = filename.name[:-3] + 'arc'
+    if isinstance(filename,str):
+        farcname = filename[:-3] + 'arc'
+    else:
+        farcname = filename.name[:-3] + 'arc'
     farc = open(farcname, 'w')
     farc.write(s)
     farc.close()
