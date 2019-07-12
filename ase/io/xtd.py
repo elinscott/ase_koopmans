@@ -5,6 +5,18 @@ from xml.dom import minidom
 from ase.utils import basestring
 from ase.io.xsd import SetChild, _write_xsd_html
 
+
+_image_header = ' '*74 + '0.0000\n!DATE     Jan 01 00:00:00 2000\n'
+_image_footer = 'end\nend\n'
+
+def _get_atom_str(an,xyz):
+    s = '{:<5}'.format(an)
+    s += '{:>15.9f}{:>15.9f}{:>15.9f}'.format(xyz[0],xyz[1],xyz[2])
+    s += ' XXXX 1      xx      '
+    s += '{:<2}'.format(an)
+    s += '  0.000\n'
+    return s
+
 def write_xtd(filename, images, connectivity=None, moviespeed = 10):
     """Takes Atoms object, and write materials studio file
     atoms: Atoms object
@@ -32,28 +44,22 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
                     bonds.append([i,j])
 
     # non-periodic system
+    s = '!BIOSYM archive 3\n'
     if not images[0].pbc.all():
         # Write trajectory
         SetChild(ATR,'Trajectory',{'ID':str(natoms+3+len(bonds)),'Increment':'-1','End':str(len(images)),
             'Type':'arc','Speed':str(moviespeed),'FrameClassType':'Atom'})
         
         # write frame information file
-        s = '!BIOSYM archive 3\n'
         s += 'PBC=OFF\n'
         for image in images:
-            s += ' '*74 + '0.0000\n'
-            s += '!DATE     Jan 01 00:00:00 2000\n' # dummy time
-            s+='\n'
+            s += _image_header
+            s +='\n'
             an = image.get_chemical_symbols()
             xyz = image.get_positions()
             for i in range(natoms):
-                s += '{:<5}'.format(an[i])
-                s += '{:>15.9f}{:>15.9f}{:>15.9f}'.format(xyz[i,0],xyz[i,1],xyz[i,2])
-                s += ' XXXX 1      xx      '
-                s += '{:<2}'.format(an[i])
-                s += '  0.000\n'
-            s += 'end\n'
-            s += 'end\n'
+                s += _get_atom_str(an[i],xyz[i,:])
+            s += _image_footer
 
     # periodic system
     else:
@@ -61,11 +67,9 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
             'Type':'arc','Speed':str(moviespeed),'FrameClassType':'Atom'})
             
         # write frame information file
-        s = '!BIOSYM archive 3\n'
         s += 'PBC=ON\n'
         for image in images:
-            s += ' '*74 + '0.0000\n'
-            s += '!DATE     Jan 01 00:00:00 2000\n' # dummy time
+            s += _image_header
             s += 'PBC'
             vec = image.cell.lengths()
             s+='{:>10.4f}{:>10.4f}{:>10.4f}'.format(vec[1],vec[0],vec[2])
@@ -83,13 +87,8 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
             cell[2,2] = np.sqrt(vec[2]**2-cell[2,0]**2-cell[2,1]**2)
             xyz = np.dot(image.get_scaled_positions(),cell)
             for i in range(natoms):
-                s += '{:<5}'.format(an[i])
-                s += '{:>15.9f}{:>15.9f}{:>15.9f}'.format(xyz[i,0],xyz[i,1],xyz[i,2])
-                s += ' XXXX 1      xx      '
-                s += '{:<2}'.format(an[i])
-                s += '  0.000\n'
-            s += 'end\n'
-            s += 'end\n'
+                s += _get_atom_str(an[i],xyz[i,:])
+            s += _image_footer
 
     # print arc file
     if isinstance(filename,str):
