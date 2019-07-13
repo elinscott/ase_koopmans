@@ -32,13 +32,13 @@ Quick links:
     - :mod:`~ase.phasediagram`
     - :mod:`~ase.phonons`
     - :mod:`~ase.spacegroup`
-  * - :mod:`~ase.transport`
+  * - :mod:`~ase.symbols`
+    - :mod:`~ase.transport`
     - :mod:`~ase.thermochemistry`
     - :mod:`~ase.units`
-    - :mod:`~ase.utils`
-  * - :mod:`~ase.vibrations`
+  * - :mod:`~ase.utils`
+    - :mod:`~ase.vibrations`
     - :mod:`~ase.visualize`
-    -
     -
 
 .. seealso::
@@ -61,6 +61,7 @@ List of all modules:
    build/build
    eos
    formula
+   symbols
    collections
    data
    optimize

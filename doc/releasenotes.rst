@@ -60,6 +60,8 @@ Calculators:
 
 * Gromacs calculator updated to work with newer Gromacs.
 
+* Fleur calculator updated to work with newer Fleur.
+
 * Added :class:`~ase.calculators.ACN`, a QM/MM forcefield for acetonitrile.
 
 Algorithms:
@@ -120,6 +122,9 @@ I/O:
 GUI:
 
  * Quickinfo dialog automatically updates when switching image.
+
+ * Display information about custom arrays on Atoms objects; allow colouring
+   by custom arrays.
 
 Version 3.17.0
 ==============
