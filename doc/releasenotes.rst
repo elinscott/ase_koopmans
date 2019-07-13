@@ -108,6 +108,8 @@ I/O:
 
 * Support for EON .con files with multiple images.
 
+* Support for writing Materials Studio xtd format.
+
 * Improved JSON support.  :ref:`cli` tools like :program:`ase
   band-structure` and :program:`ase reciprocal` now work with
   JSON representations of band structures and paths.
