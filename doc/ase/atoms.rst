@@ -148,13 +148,16 @@ common to all the atoms or defined for the collection of atoms:
 Unit cell and boundary conditions
 =================================
 
-The :class:`Atoms` object holds a unit cell which is a 3x3 matrix as can be
-seen from
+The :class:`Atoms` object holds a unit cell.  The unit cell
+is a :class:`~ase.cell.Cell` object which resembles resembles a 3x3 matrix
+when used with numpy, arithmetic operations, or indexing:
 
->>> a.get_cell()
-array([[ 0.,  0.,  0.],
-       [ 0.,  0.,  0.],
-       [ 0.,  0.,  0.]])
+>>> a.cell
+Cell([0.0, 0.0, 0.0], pbc=False)
+>>> a.cell[:]
+array([[0., 0., 0.],
+       [0., 0., 0.],
+       [0., 0., 0.]])
 
 The cell can be defined or changed using the
 :meth:`~Atoms.set_cell` method. Changing the unit cell
@@ -163,9 +166,7 @@ does per default not move the atoms:
 >>> import numpy as np
 >>> a.set_cell(2 * np.identity(3))
 >>> a.get_cell()
-array([[ 2.,  0.,  0.],
-       [ 0.,  2.,  0.],
-       [ 0.,  0.,  2.]])
+Cell([2.0, 2.0, 2.0], pbc=False)
 >>> a.set_positions([(2, 0, 0), (1, 1, 0), (2, 2, 0)])
 >>> a.get_positions()
 array([[ 2.,  0.,  0.],
@@ -192,7 +193,6 @@ conditions in the *z* direction is obtained through
 or
 
 >>> a.pbc = (True, True, False)
-
 
 .. _atoms_special_attributes:
 
@@ -222,6 +222,17 @@ array([7, 7, 7])
 >>> a.get_chemical_symbols()
 ['Al', 'N', 'N']
 
+The atomic numbers can also be edited using the :attr:`~Atoms.symbols`
+shortcut (see also :class:`ase.symbols.Symbols`):
+
+>>> a.symbols
+Symbols('AlN2')
+>>> a.symbols[2] = 'Cu'
+>>> a.symbols
+Symbols('AlNCu')
+>>> a.numbers
+array([13,  7, 29])
+
 Check for periodic boundary conditions:
 
 >>> a.pbc  # equivalent to a.get_pbc()
@@ -235,6 +246,16 @@ array([ True,  True,  True], dtype=bool)
 Hexagonal unit cell:
 
 >>> a.cell = [2.5, 2.5, 15, 90, 90, 120]
+
+Attributes that can be edited directly are:
+
+* :meth:`~Atoms.numbers`
+* :meth:`~Atoms.symbols`
+* :meth:`~Atoms.positions`
+* :meth:`~Atoms.cell`
+* :meth:`~Atoms.pbc`
+* :meth:`~Atoms.constraints`
+
 
 
 Adding a calculator
