@@ -415,7 +415,7 @@ class Analysis(object):
         return r
 
 
-    def get_bond_value(self, imIdx, idxs, **kwargs):
+    def get_bond_value(self, imIdx, idxs, mic=True, **kwargs):
         """Get bond length.
 
         Parameters:
@@ -424,20 +424,20 @@ class Analysis(object):
             Index of Image to get value from.
         idxs: tuple or list of integers
             Get distance between atoms idxs[0]-idxs[1].
+        mic: bool
+            Passed on to :func:`ase.Atoms.get_distance` for retrieving the value, defaults to True.
+            If the cell of the image is correctly set, there should be no reason to change this.
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_distance`.
-
-            Note: pass ``mic=True`` if you're using PBCs. :func:`ase.Atoms.get_distance` by default ignores the minimum
-            image condition and returns the value using the absolute coordinates.
 
         Returns:
 
         return: float
             Value returned by image.get_distance.
         """
-        return self.images[imIdx].get_distance(idxs[0], idxs[1], **kwargs)
+        return self.images[imIdx].get_distance(idxs[0], idxs[1], mic=mic, **kwargs)
 
-    def get_angle_value(self, imIdx, idxs, **kwargs):
+    def get_angle_value(self, imIdx, idxs, mic=True, **kwargs):
         """Get angle.
 
         Parameters:
@@ -446,20 +446,20 @@ class Analysis(object):
             Index of Image to get value from.
         idxs: tuple or list of integers
             Get angle between atoms idxs[0]-idxs[1]-idxs[2].
+        mic: bool
+            Passed on to :func:`ase.Atoms.get_angle` for retrieving the value, defaults to True.
+            If the cell of the image is correctly set, there should be no reason to change this.
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_angle`.
-
-            Note: pass ``mic=True`` if you're using PBCs. :func:`ase.Atoms.get_angle` by default ignores the minimum
-            image condition and returns the value using the absolute coordinates.
 
         Returns:
 
         return: float
             Value returned by image.get_angle.
         """
-        return self.images[imIdx].get_angle(idxs[0], idxs[1], idxs[2], **kwargs)
+        return self.images[imIdx].get_angle(idxs[0], idxs[1], idxs[2], mic=True, **kwargs)
 
-    def get_dihedral_value(self, imIdx, idxs, **kwargs):
+    def get_dihedral_value(self, imIdx, idxs, mic=True, **kwargs):
         """Get dihedral.
 
         Parameters:
@@ -468,20 +468,20 @@ class Analysis(object):
             Index of Image to get value from.
         idxs: tuple or list of integers
             Get angle between atoms idxs[0]-idxs[1]-idxs[2]-idxs[3].
+        mic: bool
+            Passed on to :func:`ase.Atoms.get_dihedral` for retrieving the value, defaults to True.
+            If the cell of the image is correctly set, there should be no reason to change this.
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_dihedral`.
-
-            Note: pass ``mic=True`` if you're using PB. :func:`ase.Atoms.get_dihedral` by default ignores the minimum
-            image condition and returns the value using the absolute coordinates.
 
         Returns:
 
         return: float
             Value returned by image.get_dihedral.
         """
-        return self.images[imIdx].get_dihedral(idxs[0], idxs[1], idxs[2], idxs[3], **kwargs)
+        return self.images[imIdx].get_dihedral(idxs[0], idxs[1], idxs[2], idxs[3], mic=mic, **kwargs)
 
-    def get_values(self, inputList, imageIdx=None, **kwargs):
+    def get_values(self, inputList, imageIdx=None, mic=True, **kwargs):
         """Get Bond/Angle/Dihedral values.
 
         Parameters:
@@ -493,11 +493,11 @@ class Analysis(object):
         imageIdx: integer or slice
             The images from :data:`images` to be analyzed. If None, all frames will be analyzed.
             See :func:`~ase.geometry.analysis.Analysis._get_slice` for details.
+        mic: bool
+            Passed on to :class:`~ase.Atoms` for retrieving the values, defaults to True.
+            If the cells of the images are correctly set, there should be no reason to change this.
         kwargs: options or dict
             Passed on to the :class:`~ase.Atoms` classes functions for retrieving the values.
-
-            Note: pass ``mic=True`` if you're using PBCs. :class:`ase.Atoms` by default ignores the minimum image
-            condition and returns the value using the absolute coordinates.
 
         Returns:
 
@@ -539,7 +539,7 @@ class Analysis(object):
             if singleNL:
                 inputIdx = 0
             for tupl in inputList[inputIdx]:
-                r[-1].append(get(imageIdx, tupl, **kwargs))
+                r[-1].append(get(imageIdx, tupl, mic=mic, **kwargs))
 
         return r
 
