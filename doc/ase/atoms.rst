@@ -149,7 +149,7 @@ Unit cell and boundary conditions
 =================================
 
 The :class:`Atoms` object holds a unit cell.  The unit cell
-is a :class:`~ase.cell.Cell` object which resembles resembles a 3x3 matrix
+is a :class:`~ase.cell.Cell` object which resembles a 3x3 matrix
 when used with numpy, arithmetic operations, or indexing:
 
 >>> a.cell
