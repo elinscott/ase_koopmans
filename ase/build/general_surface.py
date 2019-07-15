@@ -5,7 +5,7 @@ from ase.utils import gcd, basestring
 from ase.build import bulk
 
 
-def surface(lattice, indices, layers, vacuum=None, tol=1e-10, termination=0):
+def surface(lattice, indices, layers, vacuum=None, tol=1e-10):
     """Create surface from a given lattice and Miller indices.
 
     lattice: Atoms object or str
@@ -19,13 +19,6 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10, termination=0):
         Number of equivalent layers of the slab.
     vacuum: float
         Amount of vacuum added on both sides of the slab.
-    termination: str
-        the atoms you wish to be in the top layer. There may be many such
-        terminations, this function returns all terminations with the same
-        atomic composition.
-        e.g. 'O' will return oxygen terminated surfaces.
-        e.g.'TiO' will return surfaces terminated with layers containing both O
-        and Ti
 
     """
 
@@ -39,12 +32,6 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10, termination=0):
 
     h, k, l = indices
     h0, k0, l0 = (indices == 0)
-    
-    if termination != 0:  # changing termination
-        from ase.build.smart_surface import Smart_Surface
-        return Smart_Surface(lattice=lattice, indices=indices,
-                             layers=layers, vacuum=vacuum, tol=tol,
-                             termination=termination)
  
     if h0 and k0 or h0 and l0 or k0 and l0:  # if two indices are zero
         if not h0:
