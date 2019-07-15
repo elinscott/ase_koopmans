@@ -27,3 +27,8 @@ calc_hse = Vasp(xc='hse06', hfscreen=0.1, gga='RE',
 assert dict_is_subset({'hfscreen': 0.1, 'encut': 400, 'sigma': 0.5},
                       calc_hse.float_params)
 assert dict_is_subset({'gga': 'RE'}, calc_hse.string_params)
+
+calc_pw91 = Vasp(xc='pw91', kpts=(2, 2, 2), gamma=True, lreal='Auto')
+assert dict_is_subset({'pp': 'PW91',
+                       'kpts': (2, 2, 2), 'gamma': True, 'reciprocal': False},
+                      calc_pw91.input_params)

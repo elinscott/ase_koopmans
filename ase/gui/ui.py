@@ -74,9 +74,11 @@ class BaseWindow(object):
             self.win.protocol('WM_DELETE_WINDOW', self.close)
 
         self.things = []
+        self.exists = True
 
     def close(self):
         self.win.destroy()
+        self.exists = False
 
     def title(self, txt):
         self.win.title(txt)
@@ -201,7 +203,7 @@ class CheckButton(Widget):
 
 
 class SpinBox(Widget):
-    def __init__(self, value, start, end, step, callback=None, 
+    def __init__(self, value, start, end, step, callback=None,
                  rounding=None, width=6):
         self.callback = callback
         self.rounding = rounding
@@ -643,6 +645,21 @@ class ASEGUIWindow(MainWindow):
             width = 1
         self.canvas.create_oval(*tuple(int(x) for x in bbox), fill=color,
                                 outline=outline, width=width)
+
+    def arc(self, color, selected, start, extent, *bbox):
+        if selected:
+            outline = '#004500'
+            width = 3
+        else:
+            outline = 'black'
+            width = 1
+        self.canvas.create_arc(*tuple(int(x) for x in bbox),
+                                start=start,
+                                extent=extent,
+                                fill=color,
+                                outline=outline,
+                                width=width)
+
 
     def line(self, bbox, width=1):
         self.canvas.create_line(*tuple(int(x) for x in bbox), width=width)

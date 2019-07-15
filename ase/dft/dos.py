@@ -1,10 +1,10 @@
-import functools
 from math import pi, sqrt
 
 import numpy as np
 
 from ase.dft.kpoints import get_monkhorst_pack_size_and_offset
 from ase.parallel import world
+from ase.utils.cext import cextension
 
 
 class DOS:
@@ -82,7 +82,9 @@ class DOS:
                 spin = 0
 
         if self.width == 0.0:
-            return ltidos(self.cell, self.e_skn[spin], self.energies)
+            dos = linear_tetrahedron_integration(self.cell, self.e_skn[spin],
+                                                 self.energies)
+            return dos
 
         dos = np.zeros(self.npts)
         for w, e_n in zip(self.w_k, self.e_skn[spin]):
@@ -91,7 +93,7 @@ class DOS:
         return dos
 
 
-def ltidos(cell, eigs, energies, weights=None):
+def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
     """DOS from linear tetrahedron interpolation.
 
     cell: 3x3 ndarray-like
@@ -100,115 +102,136 @@ def ltidos(cell, eigs, energies, weights=None):
         Eigenvalues on a Monkhorst-Pack grid (not reduced).
     energies: 1-d array-like
         Energies where the DOS is calculated (must be a uniform grid).
-    weights: (n1, n2, n3, nbands)-shaped ndarray
-        Weights.  Defaults to 1.
+    weights: ndarray of shape (n1, n2, n3, nbands) or (n1, n2, n3, nbands, nw)
+        Weights.  Defaults to a (n1, n2, n3, nbands)-shaped ndarray
+        filled with ones.  Can also have an extra dimednsion if there are
+        nw weights.
+
+    Returns:
+
+        DOS as an ndarray of same length as energies or as an
+        ndarray of shape (nw, len(energies)).
+
+    See:
+
+        Extensions of the tetrahedron method for evaluating
+        spectral properties of solids,
+        A. H. MacDonald, S. H. Vosko and P. T. Coleridge,
+        1979 J. Phys. C: Solid State Phys. 12 2991,
+        https://doi.org/10.1088/0022-3719/12/15/008
     """
 
     from scipy.spatial import Delaunay
 
-    I, J, K = size = eigs.shape[:3]
+    # Find the 6 tetrahedra:
+    size = eigs.shape[:3]
     B = (np.linalg.inv(cell) / size).T
     indices = np.array([[i, j, k]
                         for i in [0, 1] for j in [0, 1] for k in [0, 1]])
     dt = Delaunay(np.dot(indices, B))
 
-    dos = np.zeros_like(energies)
-    integrate = functools.partial(_lti, energies, dos)
+    if weights is None:
+        weights = np.ones_like(eigs)
 
-    for s in dt.simplices:
-        kpts = dt.points[s]
-        try:
-            M = np.linalg.inv(kpts[1:, :] - kpts[0, :])
-        except np.linalg.linalg.LinAlgError:
+    if weights.ndim == 4:
+        extra_dimension_added = True
+        weights = weights[:, :, :, :, np.newaxis]
+    else:
+        extra_dimension_added = False
+
+    nweights = weights.shape[4]
+    dos = np.empty((nweights, len(energies)))
+
+    lti_dos(indices[dt.simplices], eigs, weights, energies, dos, world)
+
+    dos /= np.prod(size)
+
+    if extra_dimension_added:
+        return dos[0]
+    return dos
+
+
+@cextension
+def lti_dos(simplices, eigs, weights, energies, dos, world):
+    shape = eigs.shape[:3]
+    nweights = weights.shape[-1]
+    dos[:] = 0.0
+    n = -1
+    for index in np.indices(shape).reshape((3, -1)).T:
+        n += 1
+        if n % world.size != world.rank:
             continue
-        n = -1
-        for i in range(I):
-            for j in range(J):
-                for k in range(K):
-                    n += 1
-                    if n % world.size != world.rank:
-                        continue
-                    E = np.array([eigs[(i + a) % I, (j + b) % J, (k + c) % K]
-                                  for a, b, c in indices[s]])
-                    if weights is None:
-                        integrate(kpts, M, E)
-                    else:
-                        w = np.array([weights[(i + a) % I, (j + b) % J,
-                                              (k + c) % K]
-                                      for a, b, c in indices[s]])
-                        integrate(kpts, M, E, w)
+        i = ((index + simplices) % shape).T
+        E = eigs[i[0], i[1], i[2]].reshape((4, -1))
+        W = weights[i[0], i[1], i[2]].reshape((4, -1, nweights))
+        for e, w in zip(E.T, W.transpose((1, 0, 2))):
+            lti_dos1(e, w, energies, dos)
 
+    dos /= 6.0
     world.sum(dos)
 
-    return dos * abs(np.linalg.det(cell))
 
+def lti_dos1(e, w, energies, dos):
+    i = e.argsort()
+    e0, e1, e2, e3 = en = e[i]
+    w = w[i]
 
-def _lti(energies, dos, kpts, M, E, W=None):
     zero = energies[0]
-    de = energies[1] - zero
-    for z, e in enumerate(E.T):
-        dedk = (np.dot(M, e[1:] - e[0])**2).sum()**0.5
-        i = e.argsort()
-        k = kpts[i, :, np.newaxis]
-        e0, e1, e2, e3 = ee = e[i]
-        for j in range(3):
-            m = max(0, int((ee[j] - zero) / de) + 1)
-            n = min(len(energies) - 1, int((ee[j + 1] - zero) / de) + 1)
-            if n > m:
-                v = energies[m:n]
-                if j == 0:
-                    x10 = (e1 - v) / (e1 - e0)
-                    x01 = (v - e0) / (e1 - e0)
-                    x20 = (e2 - v) / (e2 - e0)
-                    x02 = (v - e0) / (e2 - e0)
-                    x30 = (e3 - v) / (e3 - e0)
-                    x03 = (v - e0) / (e3 - e0)
-                    k1 = k[0] * x10 + k[1] * x01
-                    k2 = k[0] * x20 + k[2] * x02 - k1
-                    k3 = k[0] * x30 + k[3] * x03 - k1
-                    if W is None:
-                        w = 0.5 / dedk
-                    else:
-                        w = np.dot(W[i, z],
-                                   [x10 + x20 + x30, x01, x02, x03])
-                        w /= 6 * dedk
-                    dos[m:n] += (np.cross(k2, k3, 0, 0)**2).sum(1)**0.5 * w
-                elif j == 1:
-                    x21 = (e2 - v) / (e2 - e1)
-                    x12 = (v - e1) / (e2 - e1)
-                    x20 = (e2 - v) / (e2 - e0)
-                    x02 = (v - e0) / (e2 - e0)
-                    x30 = (e3 - v) / (e3 - e0)
-                    x03 = (v - e0) / (e3 - e0)
-                    x31 = (e3 - v) / (e3 - e1)
-                    x13 = (v - e1) / (e3 - e1)
-                    k1 = k[1] * x21 + k[2] * x12
-                    k2 = k[0] * x20 + k[2] * x02 - k1
-                    k3 = k[0] * x30 + k[3] * x03 - k1
-                    k4 = k[1] * x31 + k[3] * x13 - k1
-                    if W is None:
-                        w = 0.5 / dedk
-                    else:
-                        w = np.dot(W[i, z],
-                                   [x20 + x30, x21 + x31,
-                                    x12 + x02, x03 + x13])
-                        w /= 8 * dedk
-                    dos[m:n] += (np.cross(k2, k3, 0, 0)**2).sum(1)**0.5 * w
-                    dos[m:n] += (np.cross(k4, k3, 0, 0)**2).sum(1)**0.5 * w
-                elif j == 2:
-                    x30 = (e3 - v) / (e3 - e0)
-                    x03 = (v - e0) / (e3 - e0)
-                    x31 = (e3 - v) / (e3 - e1)
-                    x13 = (v - e1) / (e3 - e1)
-                    x32 = (e3 - v) / (e3 - e2)
-                    x23 = (v - e2) / (e3 - e2)
-                    k1 = k[0] * x30 + k[3] * x03
-                    k2 = k[1] * x31 + k[3] * x13 - k1
-                    k3 = k[2] * x32 + k[3] * x23 - k1
-                    if W is None:
-                        w = 0.5 / dedk
-                    else:
-                        w = np.dot(W[i, z],
-                                   [x30, x31, x32, x03 + x13 + x23])
-                        w /= 6 * dedk
-                    dos[m:n] += (np.cross(k2, k3, 0, 0)**2).sum(1)**0.5 * w
+    if len(energies) > 1:
+        de = energies[1] - zero
+        nn = (np.floor((en - zero) / de).astype(int) + 1).clip(0,
+                                                               len(energies))
+    else:
+        nn = (en > zero).astype(int)
+
+    n0, n1, n2, n3 = nn
+
+    if n1 > n0:
+        s = slice(n0, n1)
+        x = energies[s] - e0
+        f10 = x / (e1 - e0)
+        f20 = x / (e2 - e0)
+        f30 = x / (e3 - e0)
+        f01 = 1 - f10
+        f02 = 1 - f20
+        f03 = 1 - f30
+        g = f20 * f30 / (e1 - e0)
+        dos[:, s] += w.T.dot([f01 + f02 + f03,
+                              f10,
+                              f20,
+                              f30]) * g
+    if n2 > n1:
+        delta = e3 - e0
+        s = slice(n1, n2)
+        x = energies[s]
+        f20 = (x - e0) / (e2 - e0)
+        f30 = (x - e0) / (e3 - e0)
+        f21 = (x - e1) / (e2 - e1)
+        f31 = (x - e1) / (e3 - e1)
+        f02 = 1 - f20
+        f03 = 1 - f30
+        f12 = 1 - f21
+        f13 = 1 - f31
+        g = 3 / delta * (f12 * f20 + f21 * f13)
+        dos[:, s] += w.T.dot([g * f03 / 3 + f02 * f20 * f12 / delta,
+                              g * f12 / 3 + f13 * f13 * f21 / delta,
+                              g * f21 / 3 + f20 * f20 * f12 / delta,
+                              g * f30 / 3 + f31 * f13 * f21 / delta])
+    if n3 > n2:
+        s = slice(n2, n3)
+        x = energies[s] - e3
+        f03 = x / (e0 - e3)
+        f13 = x / (e1 - e3)
+        f23 = x / (e2 - e3)
+        f30 = 1 - f03
+        f31 = 1 - f13
+        f32 = 1 - f23
+        g = f03 * f13 / (e3 - e2)
+        dos[:, s] += w.T.dot([f03,
+                              f13,
+                              f23,
+                              f30 + f31 + f32]) * g
+
+
+def ltidos(*args, **kwargs):
+    raise DeprecationWarning('Please use linear_tetrahedron_integration().')

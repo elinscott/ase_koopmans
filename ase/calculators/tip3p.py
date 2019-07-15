@@ -30,6 +30,7 @@ class TIP3P(Calculator):
         self.rc = rc
         self.width = width
         Calculator.__init__(self)
+        self.sites_per_mol = 3
 
     def calculate(self, atoms=None,
                   properties=['energy'],

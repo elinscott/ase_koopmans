@@ -260,13 +260,20 @@ class TrajectoryReader:
                                           self.constraints])
         if 'calculator' in b:
             results = {}
+            implemented_properties = []
             c = b.calculator
             for prop in all_properties:
                 if prop in c:
                     results[prop] = c.get(prop)
+                    implemented_properties.append(prop)
             calc = SinglePointCalculator(atoms, **results)
             calc.name = b.calculator.name
+            calc.implemented_properties = implemented_properties
+
+            if 'parameters' in c:
+                calc.parameters.update(c.parameters)
             atoms.set_calculator(calc)
+
         return atoms
 
     def __len__(self):

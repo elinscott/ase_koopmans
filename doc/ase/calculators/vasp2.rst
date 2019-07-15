@@ -4,11 +4,12 @@
 VASP 2.0
 ===========
 
+
 Introduction
 ============
 
 This module introduces an updated version of the ASE VASP_ calculator,
-which adds the functionality of the :class:`~ase.calculators.calculator.FileIOCalculator`.
+which adds the functionality of the :class:`~ase.calculators.calculator.Calculator`.
 This allows a more general usage of the other ASE methods,
 such as :class:`~ase.dft.band_structure.BandStructure`.
 
@@ -78,17 +79,76 @@ VASP specific keywords.
 .. note::
 
    Parameters can be changed after the calculator has been constructed
-   by using the :meth:`~ase.calculators.vasp.Vasp.set` method:
+   by using the :meth:`~ase.calculators.vasp.Vasp2.set` method:
 
    >>> calc.set(prec='Accurate', ediff=1E-5)
 
    This would set the precision to Accurate and the break condition
    for the electronic SC-loop to ``1E-5`` eV.
 
+
+Storing the calculator state
+============================
+The results from the Vasp2 calculator can exported as a dictionary, which can then be saved in a JSON format,
+which enables easy and compressed sharing and storing of the input & outputs of
+a VASP calculation. The following methods of :py:class:`Vasp2` can be used for this purpose:
+
+.. automethod:: ase.calculators.vasp.Vasp2.asdict
+.. automethod:: ase.calculators.vasp.Vasp2.fromdict
+.. automethod:: ase.calculators.vasp.Vasp2.write_json
+.. automethod:: ase.calculators.vasp.Vasp2.read_json
+
+First we can dump the state of the calculation using the :meth:`~ase.calculators.vasp.Vasp2.write_json` method:
+
+
+.. code-block:: python
+
+	# After a calculation
+	calc.write_json('mystate.json')
+
+	# This is equivalent to
+	from ase.io import jsonio
+	dct = calc.asdict()  # Get the calculator in a dictionary format
+	jsonio.write_json('mystate.json', dct)
+
+At a later stage, that file can be used to restore a the input and (simple) output parameters of a calculation,
+without the need to copy around all the VASP specific files, using either the :meth:`ase.io.jsonio.read_json` function
+or the Vasp2 :meth:`~ase.calculators.vasp.Vasp2.fromdict` method.
+
+.. code-block:: python
+
+	calc = Vasp2()
+	calc.read_json('mystate.json')
+	atoms = calc.get_atoms()  # Get the atoms object
+
+	# This is equivalent to
+	from ase.calculators.vasp import Vasp2
+	from ase.io import jsonio
+	dct = jsonio.read_json('mystate.json')  # Load exported dict object from the JSON file
+	calc = Vasp2()
+	calc.fromdict(dct)
+	atoms = calc.get_atoms()  # Get the atoms object
+
+The dictionary object, which is created from the :py:meth:`todict` method, also contains information about the ASE
+and VASP version which was used at the time of the calculation, through the
+:py:const:`ase_version` and :py:const:`vasp_version` keys.
+
+.. code-block:: python
+
+    import json
+    with open('mystate.json', 'r') as f:
+        dct = json.load(f)
+    print('ASE version: {}, VASP version: {}'.format(dct['ase_version'], dct['vasp_version']))
+
+.. note::
+    The ASE calculator contains no information about the wavefunctions or charge densities, so these are NOT stored
+    in the dictionary or JSON file, and therefore results may vary on a restarted calculation.
+
+
 Examples
 ========
 
-The Vasp FileIO calculator now integrates with existing ASE functions, such as
+The Vasp 2 calculator now integrates with existing ASE functions, such as
 :class:`~ase.dft.band_structure.BandStructure` or :class:`~ase.dft.bandgap.bandgap`.
 
 Band structure with VASP
@@ -165,3 +225,12 @@ Transition (v -> c):
    in the future.
 
 .. _VASP HSE band structure wiki: https://cms.mpi.univie.ac.at/wiki/index.php/Si_HSE_bandstructure#Procedure_2:_0-weight_.28Fake.29_SC_procedure_.28works_DFT_.26_hybrid_functionals.29
+
+
+Density of States
+------------------------
+
+Vasp2 also allows for quick access to the Density of States (DOS), through the ASE DOS module, see :class:`~ase.dft.dos.DOS`.
+Quick access to this function, however, can be found by using the ``get_dos()`` function:
+
+>>> energies, dos = calc.get_dos()

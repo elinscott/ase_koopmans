@@ -22,7 +22,6 @@ tex = ['jmol',] * 288 + ['glass',] * 288+ ['ase3',] * 288 + ['vmd',] * 288
 # keywords
 kwargs = { # Keywords that exist for eps, png, and pov
 'rotation': rotation,
-'show_unit_cell': 2,
 'colors': colors,
 'radii': None,
 }

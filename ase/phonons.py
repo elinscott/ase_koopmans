@@ -143,7 +143,8 @@ class Displacement:
         atoms_N.set_calculator(self.calc)
 
         # Do calculation on equilibrium structure
-        filename = self.name + '.eq.pckl'
+        self.state = 'eq.pckl'
+        filename = self.name + '.' + self.state
 
         fd = opencew(filename)
         if fd is not None:
@@ -166,8 +167,8 @@ class Displacement:
             for i in range(3):
                 for sign in [-1, 1]:
                     # Filename for atomic displacement
-                    filename = '%s.%d%s%s.pckl' % \
-                               (self.name, a, 'xyz'[i], ' +-'[sign])
+                    self.state = '%d%s%s.pckl' % (a, 'xyz'[i], ' +-'[sign])
+                    filename = self.name + '.' + self.state
                     # Wait for ranks before checking for file
                     # barrier()
                     fd = opencew(filename)
@@ -205,7 +206,7 @@ class Displacement:
 
 
 class Phonons(Displacement):
-    """Class for calculating phonon modes using the finite displacement method.
+    r"""Class for calculating phonon modes using the finite displacement method.
 
     The matrix of force constants is calculated from the finite difference
     approximation to the first-order derivative of the atomic forces as::
@@ -306,7 +307,7 @@ class Phonons(Displacement):
         return fmin, fmax, i_min, i_max
 
     def read_born_charges(self, name=None, neutrality=True):
-        """Read Born charges and dieletric tensor from pickle file.
+        r"""Read Born charges and dieletric tensor from pickle file.
 
         The charge neutrality sum-rule::
 
@@ -529,6 +530,16 @@ class Phonons(Displacement):
 
         return self.C_N
 
+    def get_band_structure(self, path, modes=False, born=False, verbose=True):
+        omega_kl = self.band_structure(path.kpts, modes, born, verbose)
+        if modes:
+            assert 0
+            omega_kl, modes = omega_kl
+
+        from ase.dft.band_structure import BandStructure
+        bs = BandStructure(path, energies=omega_kl[None])
+        return bs
+
     def band_structure(self, path_kc, modes=False, born=False, verbose=True):
         """Calculate phonon dispersion along a path in the Brillouin zone.
 
@@ -642,6 +653,14 @@ class Phonons(Displacement):
             return omega_kl, np.asarray(u_kl)
 
         return omega_kl
+
+    def get_dos(self, kpts=(10, 10, 10), npts=1000, delta=1e-3, indices=None):
+        #dos = self.dos(kpts, npts, delta, indices)
+        kpts_kc = monkhorst_pack(kpts)
+        omega_w = self.band_structure(kpts_kc).ravel()
+        from ase.dft.pdos import DOS
+        dos = DOS(omega_w, np.ones_like(omega_w)[None])
+        return dos
 
     def dos(self, kpts=(10, 10, 10), npts=1000, delta=1e-3, indices=None):
         """Calculate phonon dos as a function of energy.

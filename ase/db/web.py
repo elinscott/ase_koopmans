@@ -4,35 +4,33 @@ import os
 from ase.db.core import default_key_descriptions
 
 
-functions = []
-
-
-def creates(*filenames):
-    def decorator(func):
-        functions.append((func, filenames))
-        return func
-    return decorator
-
-
-def process_metadata(db, html=True):
+def process_metadata(db, html: bool = True):  # -> Dict
+    """Process metadata dict from database and/or Python file."""
     meta = db.metadata
 
-    mod = {}
     if db.python:
-        with open(db.python) as fd:
-            code = fd.read()
-        path = os.path.dirname(db.python)
-        code = 'import sys; sys.path[:0] = ["{}"]; {}'.format(path, code)
+        if isinstance(db.python, str):
+            with open(db.python) as fd:
+                code = fd.read()
+            path = os.path.dirname(db.python)
+            mod = {}
+            code = 'import sys; sys.path[:0] = ["{}"]; {}'.format(path, code)
 
-        # We use eval here instead of exec because it works on both
-        # Python 2 and 3.
-        eval(compile(code, db.python, 'exec'), mod, mod)
+            # The filename from where the code is read comes from a
+            # command line argument (ase db <db-file> -M <python-file>)
+            # or from a configuration file.  So, eval() is safe here:
+            eval(compile(code, db.python, 'exec'), mod, mod)
+        else:
+            mod = db.python
+    else:
+        mod = {}
 
     for key, default in [('title', 'ASE database'),
-                         ('default_columns', []),
+                         ('default_columns', None),
                          ('special_keys', []),
                          ('key_descriptions', {}),
-                         ('layout', [])]:
+                         ('layout', None),
+                         ('unique_key', 'id')]:
         meta[key] = mod.get(key, meta.get(key, default))
 
     if not meta['default_columns']:
@@ -50,38 +48,29 @@ def process_metadata(db, html=True):
 
     sk = []
     for special in meta['special_keys']:
-        kind = special[0]
-        if kind == 'SELECT':
-            key = special[1]
-            choises = sorted({row.get(key) for row in db.select(key)})
-            if key in kd:
-                longkey = kd[key][0]
-            else:
-                longkey = key
-            special = ['SELECT', key, longkey, choises]
-        elif kind == 'BOOL':
-            key = special[1]
-            if key in kd:
-                longkey = kd[key][0]
-            else:
-                longkey = key
-            special = ['BOOL', key, longkey]
+        kind, key = special[:2]
+        if key in kd:
+            description = kd[key][1]
         else:
-            # RANGE
+            description = key
+        if kind == 'SELECT':
+            choises = sorted({row.get(key)
+                              for row in
+                              db.select(key,
+                                        columns=['key_value_pairs'],
+                                        include_data=False)})
+            special = ['SELECT', key, description, choises]
+        elif kind == 'BOOL':
+            special = ['BOOL', key, description]
+        elif kind == 'RANGE':
             pass
+        else:
+            # SRANGE
+            choises = special[2]
+            special = ['SRANGE', key, description, choises]
+
         sk.append(special)
     meta['special_keys'] = sk
-
-    if not meta['layout']:
-        keys = ['id', 'formula', 'age']
-        meta['layout'] = [
-            ('Basic properties',
-             [['ATOMS', 'CELL'],
-              [('Key Value Pairs', keys), 'FORCES']])]
-
-    if mod:
-        meta['functions'] = functions[:]
-        functions[:] = []
 
     sub = re.compile(r'`(.)_(.)`')
     sup = re.compile(r'`(.*)\^\{?(.*?)\}?`')
@@ -99,7 +88,7 @@ def process_metadata(db, html=True):
         meta['key_descriptions'][key] = (short, long, unit)
 
     all_keys1 = set(meta['key_descriptions'])
-    for row in db.select():
+    for row in db.select(columns=['key_value_pairs'], include_data=False):
         all_keys1.update(row._keys)
     all_keys2 = []
     for key in all_keys1:

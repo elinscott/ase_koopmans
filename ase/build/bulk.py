@@ -1,7 +1,8 @@
 from __future__ import division
 from math import sqrt
 
-from ase.atoms import Atoms, string2symbols
+from ase.atoms import Atoms
+from ase.symbols import string2symbols
 from ase.data import reference_states, atomic_numbers, chemical_symbols
 from ase.utils import plural
 
@@ -46,7 +47,7 @@ def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
             xref = ref['symmetry']
 
     structures = {'sc': 1, 'fcc': 1, 'bcc': 1, 'hcp': 1, 'diamond': 1,
-                  'zincblende': 2, 'rocksalt':2, 'cesiumchloride':2,
+                  'zincblende': 2, 'rocksalt': 2, 'cesiumchloride': 2,
                   'fluorite': 3, 'wurtzite': 2}
 
     if crystalstructure is None:

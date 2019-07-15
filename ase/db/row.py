@@ -4,12 +4,12 @@ import numpy as np
 
 from ase import Atoms
 from ase.constraints import dict2constraint
-from ase.calculators.calculator import get_calculator, all_properties
+from ase.calculators.calculator import get_calculator_class, all_properties
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import chemical_symbols, atomic_masses
 from ase.io.jsonio import decode
-from ase.utils import formula_metal, basestring
+from ase.formula import Formula
 
 
 class FancyDict(dict):
@@ -68,13 +68,14 @@ class AtomsRow:
             if 'calculator_parameters' in dct:
                 # Earlier version of ASE would encode the calculator
                 # parameter dict again and again and again ...
-                while isinstance(dct['calculator_parameters'], basestring):
+                while isinstance(dct['calculator_parameters'], str):
                     dct['calculator_parameters'] = decode(
                         dct['calculator_parameters'])
         else:
             dct = atoms2dict(dct)
         assert 'numbers' in dct
         self._constraints = dct.pop('constraints', [])
+        self._constrained_forces = None
         self._data = dct.pop('data', {})
         kvp = dct.pop('key_value_pairs', {})
         self._keys = list(kvp.keys())
@@ -151,7 +152,7 @@ class AtomsRow:
     @property
     def formula(self):
         """Chemical formula string."""
-        return formula_metal(self.numbers)
+        return Formula('', [(self.symbols, 1)]).format('metal')
 
     @property
     def symbols(self):
@@ -167,13 +168,17 @@ class AtomsRow:
     @property
     def constrained_forces(self):
         """Forces after applying constraints."""
+        if self._constrained_forces is not None:
+            return self._constrained_forces
         forces = self.forces
         constraints = self.constraints
         if constraints:
             forces = forces.copy()
+            atoms = self.toatoms()
             for constraint in constraints:
-                constraint.adjust_forces(self.positions, forces)
+                constraint.adjust_forces(atoms, forces)
 
+        self._constrained_forces = forces
         return forces
 
     @property
@@ -191,6 +196,8 @@ class AtomsRow:
     @property
     def volume(self):
         """Volume of unit cell."""
+        if self.cell is None:
+            return None
         vol = abs(np.linalg.det(self.cell))
         if vol == 0.0:
             raise AttributeError
@@ -220,7 +227,7 @@ class AtomsRow:
 
         if attach_calculator:
             params = self.get('calculator_parameters', {})
-            atoms.calc = get_calculator(self.calculator)(**params)
+            atoms.calc = get_calculator_class(self.calculator)(**params)
         else:
             results = {}
             for prop in all_properties:

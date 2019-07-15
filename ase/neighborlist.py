@@ -1,17 +1,122 @@
 from math import sqrt
 
 import numpy as np
+from scipy import sparse as sp
 
-from ase.data import atomic_numbers
+from ase.data import atomic_numbers, covalent_radii
 from ase.geometry import complete_cell
+
+
+def natural_cutoffs(atoms, mult=1, **kwargs):
+    """Generate a radial cutoff for every atom based on covalent radii.
+
+    The covalent radii are a reasonable cutoff estimation for bonds in
+    many applications such as neighborlists, so function generates an
+    atoms length list of radii based on this idea.
+
+    * atoms: An atoms object
+    * mult: A multiplier for all cutoffs, useful for coarse grained adjustment
+    * kwargs: Symbol of the atom and its corresponding cutoff, used to override the covalent radii
+    """
+    return [kwargs.get(atom.symbol, covalent_radii[atom.number] * mult)
+            for atom in atoms]
+
+
+def build_neighbor_list(atoms, cutoffs=None, **kwargs):
+    """Automatically build and update a NeighborList.
+
+    Parameters:
+
+    atoms : :class:`~ase.Atoms` object
+        Atoms to build Neighborlist for.
+    cutoffs: list of floats
+        Radii for each atom. If not given it will be produced by calling :func:`ase.neighborlist.natural_cutoffs`
+    kwargs: arbitrary number of options
+        Will be passed to the constructor of :class:`~ase.neighborlist.NeighborList`
+
+    Returns:
+
+    return: :class:`~ase.neighborlist.NeighborList`
+        A :class:`~ase.neighborlist.NeighborList` instance (updated).
+    """
+    if cutoffs is None:
+        cutoffs = natural_cutoffs(atoms)
+
+    nl = NeighborList(cutoffs, **kwargs)
+    nl.update(atoms)
+
+    return nl
+
+
+def get_distance_matrix(graph, limit=3):
+    """Get Distance Matrix from a Graph.
+
+    Parameters:
+
+    graph: array, matrix or sparse matrix, 2 dimensions (N, N)
+        Graph representation of the connectivity. See `scipy doc <https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.dijkstra.html#scipy.sparse.csgraph.dijkstra>`_
+        for reference.
+    limit: integer
+        Maximum number of steps to analyze. For most molecular information,
+        three should be enough.
+
+    Returns:
+
+    return: scipy.sparse.csr_matrix, shape (N, N)
+        A scipy.sparse.csr_matrix. All elements that are not connected within
+        *limit* steps are set to zero.
+
+    This is a potential memory bottleneck, as csgraph.dijkstra produces a
+    dense output matrix. Here we replace all np.inf values with 0 and
+    transform back to csr_matrix.
+    Why not dok_matrix like the connectivity-matrix? Because row-picking
+    is most likely and this is super fast with csr.
+    """
+    mat = sp.csgraph.dijkstra(graph, directed=False, limit=limit)
+    mat[mat == np.inf] = 0
+    return sp.csr_matrix(mat, dtype=np.int8)
+
+def get_distance_indices(distanceMatrix, distance):
+    """Get indices for each node that are distance or less away.
+
+    Parameters:
+
+    distanceMatrix: any one of scipy.sparse matrices (NxN)
+        Matrix containing distance information of atoms. Get it e.g. with
+        :func:`~ase.neighborlist.get_distance_matrix`
+    distance: integer
+        Number of steps to allow.
+
+    Returns:
+
+    return: list of length N
+        A list of length N. return[i] has all indices that are connected to item i.
+
+    The distance matrix only contains shortest paths, so when looking for
+    distances longer than one, we need to add the lower values for cases
+    where atoms are connected via a shorter path too.
+    """
+    shape = distanceMatrix.get_shape()
+    indices = []
+    #iterate over rows
+    for i in range(shape[0]):
+        row = distanceMatrix.getrow(i)[0]
+        #find all non-zero
+        found = sp.find(row)
+        #screen for smaller or equal distance
+        equal = np.where( found[-1] <= distance )[0]
+        #found[1] contains the indexes
+        indices.append([ found[1][x] for x in equal ])
+    return indices
+
 
 
 def mic(dr, cell, pbc=None):
     """
     Apply minimum image convention to an array of distance vectors.
 
-    Parameters
-    ----------
+    Parameters:
+
     dr : array_like
         Array of distance vectors.
     cell : array_like
@@ -20,8 +125,8 @@ def mic(dr, cell, pbc=None):
         Periodic boundary conditions in x-, y- and z-direction. Default is to
         assume periodic boundaries in all directions.
 
-    Returns
-    -------
+    Returns:
+
     dr : array
         Array of distance vectors, wrapped according to the minimum image
         convention.
@@ -82,7 +187,8 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
               Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
             * A list/array with a per atom value: This specifies the radius of
               an atomic sphere for each atoms. If spheres overlap, atoms are
-              within each others neighborhood.
+              within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
+              for an example on how to get such a list.
     self_interaction: bool
         Return the atom itself as its own neighbor if set to true.
         Default: False
@@ -427,7 +533,7 @@ def neighbor_list(quantities, a, cutoff, self_interaction=False,
              between atom i and j). With the shift vector S, the
              distances D between atoms can be computed from:
              D = a.positions[j]-a.positions[i]+S.dot(a.cell)
-    a: ase.Atoms
+    a: :class:`ase.Atoms`
         Atomic configuration.
     cutoff: float or dict
         Cutoff for neighbor search. It can be:
@@ -438,7 +544,8 @@ def neighbor_list(quantities, a, cutoff, self_interaction=False,
               Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
             * A list/array with a per atom value: This specifies the radius of
               an atomic sphere for each atoms. If spheres overlap, atoms are
-              within each others neighborhood.
+              within each others neighborhood. See :func:`~ase.neighborlist.natural_cutoffs`
+              for an example on how to get such a list.
 
     self_interaction: bool
         Return the atom itself as its own neighbor if set to true.
@@ -519,16 +626,16 @@ def first_neighbors(natoms, first_atom):
     Compute an index array pointing to the ranges within the neighbor list that
     contain the neighbors for a certain atom.
 
-    Parameters
-    ----------
+    Parameters:
+
     natoms : int
         Total number of atom.
     first_atom : array_like
         Array containing the first atom 'i' of the neighbor tuple returned
         by the neighbor list.
 
-    Returns
-    -------
+    Returns:
+
     seed : array
         Array containing pointers to the start and end location of the
         neighbors of a certain atom. Neighbors of atom k have indices from s[k]
@@ -563,6 +670,58 @@ def first_neighbors(natoms, first_atom):
         mask = seed == -1
     return seed
 
+def get_connectivity_matrix(nl, sparse=True):
+    """Return connectivity matrix for a given NeighborList (dtype=numpy.int8).
+
+    A matrix of shape (nAtoms, nAtoms) will be returned.
+    Connected atoms i and j will have matrix[i,j] == 1, unconnected
+    matrix[i,j] == 0. If bothways=True the matrix will be symmetric,
+    otherwise not!
+
+    If *sparse* is True, a scipy csr matrix is returned.
+    If *sparse* is False, a numpy matrix is returned.
+
+    Note that the old and new neighborlists might give different results
+    for periodic systems if bothways=False.
+
+    Example:
+
+    Determine which molecule in a system atom 1 belongs to.
+
+    >>> from ase import neighborlist
+    >>> from ase.build import molecule
+    >>> from scipy import sparse
+    >>> mol = molecule('CH3CH2OH')
+    >>> cutOff = neighborlist.natural_cutoffs(mol)
+    >>> neighborList = neighborlist.NeighborList(cutOff, self_interaction=False, bothways=True)
+    >>> neighborList.update(mol)
+    >>> matrix = neighborList.get_connectivity_matrix()
+    >>> #or: matrix = neighborlist.get_connectivity_matrix(neighborList.nl)
+    >>> n_components, component_list = sparse.csgraph.connected_components(matrix)
+    >>> idx = 1
+    >>> molIdx = component_list[idx]
+    >>> print("There are {} molecules in the system".format(n_components))
+    >>> print("Atom {} is part of molecule {}".format(idx, molIdx))
+    >>> molIdxs = [ i for i in range(len(component_list)) if component_list[i] == molIdx ]
+    >>> print("The following atoms are part of molecule {}: {}".format(molIdx, molIdxs))
+    """
+
+    nAtoms = len(nl.cutoffs)
+
+    if nl.nupdates <= 0:
+        raise RuntimeError('Must call update(atoms) on your neighborlist first!')
+
+    if sparse:
+        matrix = sp.dok_matrix((nAtoms, nAtoms), dtype=np.int8)
+    else:
+        matrix = np.zeros((nAtoms, nAtoms), dtype=np.int8)
+
+    for i in range(nAtoms):
+        for idx in nl.get_neighbors(i)[0]:
+            matrix[i, idx] = 1
+
+    return matrix
+
 
 class NewPrimitiveNeighborList:
     """Neighbor list object. Wrapper around neighbor_list and first_neighbors.
@@ -573,10 +732,10 @@ class NewPrimitiveNeighborList:
         neighbors.
     skin: float
         If no atom has moved more than the skin-distance since the
-        last call to the ``update()`` method, then the neighbor list
-        can be reused.  This will save some expensive rebuilds of
-        the list, but extra neighbors outside the cutoff will be
-        returned.
+        last call to the :meth:`~ase.neighborlist.NewPrimitiveNeighborList.update()`
+        method, then the neighbor list can be reused. This will save
+        some expensive rebuilds of the list, but extra neighbors outside
+        the cutoff will be returned.
     sorted: bool
         Sort neighbor list.
     self_interaction: bool
@@ -673,9 +832,9 @@ class NewPrimitiveNeighborList:
         returned.  The positions of the neighbor atoms can be
         calculated like this:
 
-          indices, offsets = nl.get_neighbors(42)
-          for i, offset in zip(indices, offsets):
-              print(atoms.positions[i] + dot(offset, atoms.get_cell()))
+        >>>  indices, offsets = nl.get_neighbors(42)
+        >>>  for i, offset in zip(indices, offsets):
+        >>>      print(atoms.positions[i] + dot(offset, atoms.get_cell()))
 
         Notice that if get_neighbors(a) gives atom b as a neighbor,
         then get_neighbors(b) will not return a as a neighbor - unless
@@ -683,6 +842,7 @@ class NewPrimitiveNeighborList:
 
         return (self.pair_second[self.first_neigh[a]:self.first_neigh[a+1]],
                 self.offset_vec[self.first_neigh[a]:self.first_neigh[a+1]])
+
 
 
 class PrimitiveNeighborList:
@@ -849,18 +1009,23 @@ class NeighborList:
     cutoffs: list of float
         List of cutoff radii - one for each atom. If the spheres (defined by
         their cutoff radii) of two atoms overlap, they will be counted as
-        neighbors.
+        neighbors. See :func:`~ase.neighborlist.natural_cutoffs` for an example on how to
+        get such a list.
+
     skin: float
         If no atom has moved more than the skin-distance since the
-        last call to the ``update()`` method, then the neighbor list
-        can be reused.  This will save some expensive rebuilds of
-        the list, but extra neighbors outside the cutoff will be
-        returned.
+        last call to the :meth:`~ase.neighborlist.NeighborList.update()` method,
+        then the neighbor list can be reused.  This will save some expensive rebuilds
+        of the list, but extra neighbors outside the cutoff will be returned.
     self_interaction: bool
         Should an atom return itself as a neighbor?
     bothways: bool
         Return all neighbors.  Default is to return only "half" of
         the neighbors.
+    primitive: :class:`~ase.neighborlist.PrimitiveNeighborList` or :class:`~ase.neighborlist.NewPrimitiveNeighborList` class
+        Define which implementation to use. Older and quadratically-scaling
+        :class:`~ase.neighborlist.PrimitiveNeighborList` or newer and
+        linearly-scaling :class:`~ase.neighborlist.NewPrimitiveNeighborList`.
 
     Example::
 
@@ -876,20 +1041,37 @@ class NeighborList:
                             bothways=bothways)
 
     def update(self, atoms):
+        """
+        See :meth:`ase.neighborlist.PrimitiveNeighborList.update` or
+        :meth:`ase.neighborlist.PrimitiveNeighborList.update`.
+        """
         return self.nl.update(atoms.pbc, atoms.get_cell(complete=True),
                               atoms.positions)
 
     def get_neighbors(self, a):
+        """
+        See :meth:`ase.neighborlist.PrimitiveNeighborList.get_neighbors` or
+        :meth:`ase.neighborlist.PrimitiveNeighborList.get_neighbors`.
+        """
         return self.nl.get_neighbors(a)
+
+    def get_connectivity_matrix(self, sparse=True):
+        """
+        See :func:`~ase.neighborlist.get_connectivity_matrix`.
+        """
+        return get_connectivity_matrix(self.nl, sparse)
 
     @property
     def nupdates(self):
+        """Get number of updates."""
         return self.nl.nupdates
 
     @property
     def nneighbors(self):
+        """Get number of neighbors."""
         return self.nl.nneighbors
 
     @property
     def npbcneighbors(self):
+        """Get number of pbc neighbors."""
         return self.nl.npbcneighbors

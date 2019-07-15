@@ -78,6 +78,12 @@ class JSONDatabase(Database, object):
             bigdct = decode(self.filename.read())
             if self.filename is not sys.stdin:
                 self.filename.seek(0)
+
+        if not isinstance(bigdct, dict) or not ('ids' in bigdct
+                                                or 1 in bigdct):
+            from ase.io.formats import UnknownFileTypeError
+            raise UnknownFileTypeError('Does not resemble ASE JSON database')
+
         ids = bigdct.get('ids')
         if ids is None:
             # Allow for missing "ids" and "nextid":
@@ -128,7 +134,8 @@ class JSONDatabase(Database, object):
         return AtomsRow(dct)
 
     def _select(self, keys, cmps, explain=False, verbosity=0,
-                limit=None, offset=0, sort=None, include_data=True):
+                limit=None, offset=0, sort=None, include_data=True,
+                columns='all'):
         if explain:
             yield {'explain': (0, 0, 0, 'scan table')}
             return

@@ -9,11 +9,6 @@ from ase.data import chemical_symbols as symbols
 from ase.data import atomic_names as names
 from ase.gui.utils import get_magmoms
 
-try:
-    chr = unichr
-except NameError:
-    pass
-
 
 def formula(Z):
     hist = {}
@@ -65,6 +60,13 @@ class Status:  # Status is used as a mixin in GUI
             if charges.any():
                 text += _(' q={0:1.2f}'.format(
                     charges[indices][0]))
+            haveit = ['numbers', 'positions', 'forces', 'momenta',
+                      'initial_charges', 'initial_magmoms']
+            for key in atoms.arrays:
+                if key not in haveit:
+                    val = atoms.get_array(key)[indices[0]]
+                    if val is not None:
+                        text += ' {0}={1:g}'.format(key, val)
         elif n == 2:
             D = R[0] - R[1]
             d = sqrt(np.dot(D, D))
@@ -89,24 +91,7 @@ class Status:  # Status is used as a mixin in GUI
             text = (u' %s-%s-%s: %.1f°, %.1f°, %.1f°' %
                     tuple([symbols[z] for z in Z] + a))
         elif len(ordered_indices) == 4:
-            R = self.atoms.positions[ordered_indices]
-            Z = self.atoms.numbers[ordered_indices]
-            a = R[1] - R[0]
-            b = R[2] - R[1]
-            c = R[3] - R[2]
-            bxa = np.cross(b, a)
-            bxa /= np.sqrt(np.vdot(bxa, bxa))
-            cxb = np.cross(c, b)
-            cxb /= np.sqrt(np.vdot(cxb, cxb))
-            angle = np.vdot(bxa, cxb)
-            if angle < -1:
-                angle = -1
-            if angle > 1:
-                angle = 1
-            angle = np.arccos(angle)
-            if (np.vdot(bxa, c)) > 0:
-                angle = 2 * np.pi - angle
-            angle = angle * 180.0 / np.pi
+            angle = self.atoms.get_dihedral(*ordered_indices, mic=True)
             text = (u'%s %s → %s → %s → %s: %.1f°' %
                     tuple([_('dihedral')] + [symbols[z] for z in Z] + [angle]))
         else:

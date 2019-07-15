@@ -116,7 +116,6 @@ class Jacapo:
                      'pseudopotentials':None,
                      'extracharge':None,
                      'extpot':None,
-                     'fftgrid':None,
                      'ascii_debug':'Off',
                      'ncoutput':{'wf':'Yes',
                                  'cd':'Yes',
@@ -305,7 +304,7 @@ class Jacapo:
             if 'stress' in kwargs:
                 raise DacapoInput('stress keyword is deprecated. '
                                   'you must use calculate_stress instead')
-                
+
             #make sure to set calculator on atoms if it was in kwargs
             #and do this first, since some parameters need info from atoms
             if 'atoms' in kwargs:
@@ -479,7 +478,7 @@ class Jacapo:
         log.debug('initializing %s' % ncfile)
 
         base = os.path.split(ncfile)[0]
-        if base is not '' and not os.path.isdir(base):
+        if base != '' and not os.path.isdir(base):
             os.makedirs(base)
 
         ncf = netCDF(ncfile, 'w')
@@ -1236,7 +1235,7 @@ than density cutoff %i' % (pw, dw))
             #import shutil
             #shutil.copy(self.nc,nc)
             base = os.path.split(nc)[0]
-            if not os.path.isdir(base) and base is not '':
+            if not os.path.isdir(base) and base != '':
                 os.makedirs(base)
             status = os.system("cp '%s' '%s'" % (self.nc, nc))
             if status != 0:
@@ -2844,7 +2843,7 @@ than density cutoff %i' % (pw, dw))
             [stdout, stderr] = self._dacapo.communicate()
             output = stdout+stderr
 
-            if status is 0: #that means it ended fine!
+            if status == 0: #that means it ended fine!
                 self.ready = True
                 self.set_status('finished')
             else:
@@ -2928,7 +2927,7 @@ than density cutoff %i' % (pw, dw))
             status = self._dacapo[i].wait()
             [stdout,stderr] = self._dacapo[i].communicate()
             output = stdout+stderr
-            if status is 0: #that means it ended fine!
+            if status == 0: #that means it ended fine!
                 child.ready = True
                 child.set_status('finished')
             else:
@@ -3065,7 +3064,7 @@ than density cutoff %i' % (pw, dw))
             scriptname = 'script%s.py' % str(pid)
             scriptfile = open(scriptname, 'w')
             scriptfile.write(
-"""#!/usr/bin/env python
+"""#!/usr/bin/env python3
 from socket import *
 from sys    import version
 from string import split

@@ -4,6 +4,8 @@ import numpy as np
 from ase.units import Bohr, Hartree
 from ase.calculators.calculator import Calculator
 from ase.utils import convert_string_to_fd
+from scipy.special import erfinv, erfc
+from ase.neighborlist import neighbor_list
 
 
 # dipole polarizabilities and C6 values from
@@ -134,17 +136,19 @@ def get_logging_file_descriptor(calculator):
             return fd.fd
     if hasattr(calculator, 'txt'):
         return calculator.txt
-            
-            
+
+
 class vdWTkatchenko09prl(Calculator):
     """vdW correction after Tkatchenko and Scheffler PRL 102 (2009) 073005."""
     implemented_properties = ['energy', 'forces']
-    
+
     def __init__(self,
                  hirshfeld=None, vdwradii=None, calculator=None,
-                 Rmax=10,  # maximal radius for periodic calculations
+                 Rmax=10.,  # maximal radius for periodic calculations
+                 Ldecay=1., # decay length for the smoothing in periodic calculations
                  vdWDB_alphaC6=vdWDB_alphaC6,
-                 txt=None, sR=None):
+                 txt=None, sR=None
+                ):
         """Constructor
 
         Parameters
@@ -157,7 +161,7 @@ class vdWTkatchenko09prl(Calculator):
             self.calculator = self.hirshfeld.get_calculator()
         else:
             self.calculator = calculator
-            
+
         if txt is None:
             txt = get_logging_file_descriptor(self.calculator)
         self.txt = convert_string_to_fd(txt)
@@ -165,6 +169,7 @@ class vdWTkatchenko09prl(Calculator):
         self.vdwradii = vdwradii
         self.vdWDB_alphaC6 = vdWDB_alphaC6
         self.Rmax = Rmax
+        self.Ldecay = Ldecay
         self.atoms = None
 
         if sR is None:
@@ -179,6 +184,10 @@ class vdWTkatchenko09prl(Calculator):
 
         Calculator.__init__(self)
 
+    @property
+    def implemented_properties(self):
+        return self.calculator.implemented_properties
+
     def calculation_required(self, atoms, quantities):
         if self.calculator.calculation_required(atoms, quantities):
             return True
@@ -187,7 +196,7 @@ class vdWTkatchenko09prl(Calculator):
                 return True
         return False
 
-    def calculate(self, atoms=None, properties=['energy'],
+    def calculate(self, atoms=None, properties=['energy', 'forces'],
                   system_changes=[]):
         Calculator.calculate(self, atoms, properties, system_changes)
         self.update(atoms, properties)
@@ -198,8 +207,14 @@ class vdWTkatchenko09prl(Calculator):
 
         if atoms is None:
             atoms = self.calculator.get_atoms()
-        self.results['energy'] = self.calculator.get_potential_energy(atoms)
-        self.results['forces'] = self.calculator.get_forces(atoms)
+
+        properties = list(properties)
+        for name in 'energy', 'forces':
+            if name not in properties:
+                properties.append(name)
+
+        for name in properties:
+            self.results[name] = self.calculator.get_property(name, atoms)
         self.atoms = atoms.copy()
 
         if self.vdwradii is not None:
@@ -210,7 +225,7 @@ class vdWTkatchenko09prl(Calculator):
             vdwradii = []
             for atom in atoms:
                 self.vdwradii.append(vdWDB_Grimme06jcc[atom.symbol][1])
- 
+
         if self.hirshfeld is None:
             volume_ratios = [1.] * len(atoms)
         elif hasattr(self.hirshfeld, '__len__'):  # a list
@@ -239,48 +254,96 @@ class vdWTkatchenko09prl(Calculator):
                                    alpha_a[a] / alpha_a[b] * C6eff_a[b]))
                 C6eff_aa[b, a] = C6eff_aa[a, b]
 
-        # PBC
+        # New implementation by Miguel Caro (complaints etc to mcaroba@gmail.com)
+        # If all 3 PBC are False, we do the summation over the atom
+        # pairs in the simulation box. If any of them is True, we
+        # use the cutoff radius instead
         pbc_c = atoms.get_pbc()
-        cell_c = atoms.get_cell()
-        Rcell_c = np.sqrt(np.sum(cell_c**2, axis=1))
-        ncells_c = np.ceil(np.where(pbc_c, 1. + self.Rmax / Rcell_c, 1))
-        ncells_c = np.array(ncells_c, dtype=int)
-
-        positions = atoms.get_positions()
         EvdW = 0.0
         forces = 0. * self.results['forces']
-        # loop over all atoms in the cell
-        for ia, posa in enumerate(positions):
-            # loop over all atoms in the cell (and neighbour cells for PBC)
-            for ib, posb in enumerate(positions):
-                # loops over neighbour cells
-                for ix in range(-ncells_c[0] + 1, ncells_c[0]):
-                    for iy in range(-ncells_c[1] + 1, ncells_c[1]):
-                        for iz in range(-ncells_c[2] + 1, ncells_c[2]):
-                            i_c = np.array([ix, iy, iz])
-                            diff = posb + np.dot(i_c, cell_c) - posa
-                            r2 = np.dot(diff, diff)
-                            r6 = r2**3
-                            r = np.sqrt(r2)
-                            if r > 1.e-10 and r < self.Rmax:
-                                Edamp, Fdamp = self.damping(r,
-                                                            R0eff_a[ia],
-                                                            R0eff_a[ib],
-                                                            d=self.d,
-                                                            sR=self.sR)
-                                EvdW -= (Edamp *
-                                         C6eff_aa[ia, ib] / r6)
-                                # we neglect the C6eff contribution to the
-                                # forces
-                                forces[ia] -= ((Fdamp - 6 * Edamp / r) *
-                                               C6eff_aa[ia, ib] / r6 *
-                                               diff / r)
-        self.results['energy'] += EvdW / 2.  # double counting
-        self.results['forces'] += forces / 2.  # double counting
+        # PBC: we build a neighbor list according to the Reff criterion
+        if pbc_c.any():
+            # Effective cutoff radius
+            tol = 1.e-5
+            Reff = self.Rmax + self.Ldecay * erfinv(1. - 2.*tol)
+            # Build list of neighbors
+            n_list = neighbor_list(quantities = "ijdDS",
+                                   a = atoms,
+                                   cutoff = Reff,
+                                   self_interaction=False)
+            atom_list = [[] for _ in range(0, len(atoms))]
+            d_list = [[] for _ in range(0, len(atoms))]
+            v_list = [[] for _ in range(0, len(atoms))]
+            #r_list = [[] for _ in range(0, len(atoms))]
+            # Look for neighbor pairs
+            for k in range(0, len(n_list[0])):
+                i = n_list[0][k]
+                j = n_list[1][k]
+                dist = n_list[2][k]
+                vect = n_list[3][k] # vect is the distance rj - ri
+                #repl = n_list[4][k]
+                if j >= i:
+                    atom_list[i].append( j )
+                    d_list[i].append( dist )
+                    v_list[i].append( vect )
+                    #r_list[i].append( repl )
+        # Not PBC: we loop over all atoms in the unit cell only
+        else:
+            atom_list = []
+            d_list = []
+            v_list = []
+            #r_list = []
+            # Do this to avoid double counting
+            for i in range(0, len(atoms)):
+                atom_list.append( range(i+1, len(atoms)) )
+                d_list.append( [atoms.get_distance(i, j) for j in range(i+1, len(atoms))] )
+                v_list.append( [atoms.get_distance(i, j, vector=True) for j in range(i+1, len(atoms))] )
+                #r_list.append( [[0,0,0] for j in range(i+1, len(atoms))]) # No PBC means we are in the same cell
+        # Here goes the calculation, valid with and without PBC because we loop over
+        # independent pairwise *interactions*
+        for i in range(0,len(atoms)):
+            #for j, r, vect, repl in zip(atom_list[i], d_list[i], v_list[i], r_list[i]):
+            for j, r, vect in zip(atom_list[i], d_list[i], v_list[i]):
+                r6 = r**6
+                Edamp, Fdamp = self.damping(r,
+                                            R0eff_a[i],
+                                            R0eff_a[j],
+                                            d=self.d,
+                                            sR=self.sR)
+                if pbc_c.any():
+                    smooth = 0.5 * erfc((r - self.Rmax) / self.Ldecay)
+                    smooth_der = -1. / np.sqrt(np.pi) / self.Ldecay * np.exp(
+                                  -((r - self.Rmax) / self.Ldecay)**2 )
+                else:
+                    smooth = 1.
+                    smooth_der = 0.
+                # Here we compute the contribution to the energy
+                # Self interactions (only possible in PBC) are double counted. We correct it here
+                if i == j:
+                    EvdW -= (Edamp * C6eff_aa[i, j] / r6) / 2. * smooth
+                else:
+                    EvdW -= (Edamp * C6eff_aa[i, j] / r6) * smooth
+                # Here we compute the contribution to the forces
+                # We neglect the C6eff contribution to the forces (which can actually be larger
+                # than the other contributions)
+                # Self interactions do not contribute to the forces
+                if i != j:
+                    # Force on i due to j
+                    force_ij = -(
+                                  (Fdamp - 6 * Edamp / r) * C6eff_aa[i, j] / r6 * smooth
+                                 +(Edamp * C6eff_aa[i, j] / r6) * smooth_der
+                                ) * vect / r
+                    # Forces go both ways for every interaction
+                    forces[i] += force_ij
+                    forces[j] -= force_ij
+        self.results['energy'] += EvdW
+        self.results['forces'] += forces
+
+
 
         if self.txt:
             print(('\n' + self.__class__.__name__), file=self.txt)
-            print('vdW correction: %g' % (EvdW / 2.), file=self.txt)
+            print('vdW correction: %g' % (EvdW), file=self.txt)
             print('Energy:         %g' % self.results['energy'],
                   file=self.txt)
             print('\nForces in eV/Ang:', file=self.txt)
@@ -290,7 +353,7 @@ class vdWTkatchenko09prl(Calculator):
                       ((ia, symbol) + tuple(self.results['forces'][ia])),
                       file=self.txt)
             self.txt.flush()
-        
+
     def damping(self, RAB, R0A, R0B,
                 d=20,   # steepness of the step function for PBE
                 sR=0.94):

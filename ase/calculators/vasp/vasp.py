@@ -31,7 +31,7 @@ from ase.utils import devnull, basestring
 
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.calculators.calculator import PropertyNotImplementedError
-from .create_input import GenerateVaspInput
+from .create_input import GenerateVaspInput, read_potcar_numbers_of_electrons
 
 
 class Vasp(GenerateVaspInput, Calculator):
@@ -263,15 +263,9 @@ class Vasp(GenerateVaspInput, Calculator):
         return self.read_default_number_of_electrons(filename)
 
     def read_default_number_of_electrons(self, filename='POTCAR'):
-        nelect = []
-        lines = open(filename).readlines()
-        for n, line in enumerate(lines):
-            if line.find('TITEL') != -1:
-                symbol = line.split('=')[1].split()[1].split('_')[0].strip()
-                valence = float(lines[n + 4].split(';')[1]
-                                .split('=')[1].split()[0].strip())
-                nelect.append((symbol, valence))
-        return nelect
+        file_obj = open(filename)
+        r = read_potcar_numbers_of_electrons(file_obj=file_obj)
+        return r
 
     def get_number_of_electrons(self):
         self.update(self.atoms)
@@ -754,7 +748,7 @@ class Vasp(GenerateVaspInput, Calculator):
             'magmoms': 'magnetic_moments'
         }
         property_getter = {
-            'energy':  {'function': 'get_potential_energy', 'args': [atoms]}, 
+            'energy':  {'function': 'get_potential_energy', 'args': [atoms]},
             'forces':  {'function': 'get_forces',           'args': [atoms]},
             'dipole':  {'function': 'get_dipole_moment',    'args': [atoms]},
             'fermi':   {'function': 'get_fermi_level',      'args': []},
@@ -1077,10 +1071,32 @@ class VaspDos(object):
         n = self._site_dos.shape[1]
         if n == 4:
             norb = {'s': 1, 'p': 2, 'd': 3}
+        elif n == 5:
+            norb = {'s': 1, 'p': 2, 'd': 3, 'f': 4}
         elif n == 7:
             norb = {'s+': 1, 's-up': 1, 's-': 2, 's-down': 2,
                     'p+': 3, 'p-up': 3, 'p-': 4, 'p-down': 4,
                     'd+': 5, 'd-up': 5, 'd-': 6, 'd-down': 6}
+        elif n == 9:
+            norb = {
+                's+': 1,
+                's-up': 1,
+                's-': 2,
+                's-down': 2,
+                'p+': 3,
+                'p-up': 3,
+                'p-': 4,
+                'p-down': 4,
+                'd+': 5,
+                'd-up': 5,
+                'd-': 6,
+                'd-down': 6,
+                'f+': 7,
+                'f-up': 7,
+                'f-': 8,
+                'f-down': 8,
+            }
+
         elif n == 10:
             norb = {'s': 1, 'py': 2, 'pz': 3, 'px': 4,
                     'dxy': 5, 'dyz': 6, 'dz2': 7, 'dxz': 8,
@@ -1095,6 +1111,133 @@ class VaspDos(object):
                     'dz2+': 13, 'dz2-up': 13, 'dz2-': 14, 'dz2-down': 14,
                     'dxz+': 15, 'dxz-up': 15, 'dxz-': 16, 'dxz-down': 16,
                     'dx2+': 17, 'dx2-up': 17, 'dx2-': 18, 'dx2-down': 18}
+        elif n == 17:
+            norb = {
+                's': 1,
+                'py': 2,
+                'pz': 3,
+                'px': 4,
+                'dxy': 5,
+                'dyz': 6,
+                'dz2': 7,
+                'dxz': 8,
+                'dx2': 9,
+                'fy(3x2-y2)': 10,
+                'fxyz': 11,
+                'fyz2': 12,
+                'fz3': 13,
+                'fxz2': 14,
+                'fz(x2-y2)': 15,
+                'fx(x2-3y2)': 16,
+            }
+        elif n == 19:
+            norb = {
+                's+': 1,
+                's-up': 1,
+                's-': 2,
+                's-down': 2,
+                'py+': 3,
+                'py-up': 3,
+                'py-': 4,
+                'py-down': 4,
+                'pz+': 5,
+                'pz-up': 5,
+                'pz-': 6,
+                'pz-down': 6,
+                'px+': 7,
+                'px-up': 7,
+                'px-': 8,
+                'px-down': 8,
+                'dxy+': 9,
+                'dxy-up': 9,
+                'dxy-': 10,
+                'dxy-down': 10,
+                'dyz+': 11,
+                'dyz-up': 11,
+                'dyz-': 12,
+                'dyz-down': 12,
+                'dz2+': 13,
+                'dz2-up': 13,
+                'dz2-': 14,
+                'dz2-down': 14,
+                'dxz+': 15,
+                'dxz-up': 15,
+                'dxz-': 16,
+                'dxz-down': 16,
+                'dx2+': 17,
+                'dx2-up': 17,
+                'dx2-': 18,
+                'dx2-down': 18
+            }
+        else:
+            norb = {
+                's+': 1,
+                's-up': 1,
+                's-': 2,
+                's-down': 2,
+                'py+': 3,
+                'py-up': 3,
+                'py-': 4,
+                'py-down': 4,
+                'pz+': 5,
+                'pz-up': 5,
+                'pz-': 6,
+                'pz-down': 6,
+                'px+': 7,
+                'px-up': 7,
+                'px-': 8,
+                'px-down': 8,
+                'dxy+': 9,
+                'dxy-up': 9,
+                'dxy-': 10,
+                'dxy-down': 10,
+                'dyz+': 11,
+                'dyz-up': 11,
+                'dyz-': 12,
+                'dyz-down': 12,
+                'dz2+': 13,
+                'dz2-up': 13,
+                'dz2-': 14,
+                'dz2-down': 14,
+                'dxz+': 15,
+                'dxz-up': 15,
+                'dxz-': 16,
+                'dxz-down': 16,
+                'dx2+': 17,
+                'dx2-up': 17,
+                'dx2-': 18,
+                'dx2-down': 18,
+                'fy(3x2-y2)+': 19,
+                'fy(3x2-y2)-up': 19,
+                'fy(3x2-y2)-': 20,
+                'fy(3x2-y2)-down': 20,
+                'fxyz+': 21,
+                'fxyz-up': 21,
+                'fxyz-': 22,
+                'fxyz-down': 22,
+                'fyz2+': 23,
+                'fyz2-up': 23,
+                'fyz2-': 24,
+                'fyz2-down': 24,
+                'fz3+': 25,
+                'fz3-up': 25,
+                'fz3-': 26,
+                'fz3-down': 26,
+                'fxz2+': 27,
+                'fxz2-up': 27,
+                'fxz2-': 28,
+                'fxz2-down': 28,
+                'fz(x2-y2)+': 29,
+                'fz(x2-y2)-up': 29,
+                'fz(x2-y2)-': 30,
+                'fz(x2-y2)-down': 30,
+                'fx(x2-3y2)+': 31,
+                'fx(x2-3y2)-up': 31,
+                'fx(x2-3y2)-': 32,
+                'fx(x2-3y2)-down': 32,
+            }
+
+
         return self._site_dos[atom, norb[orbital.lower()], :]
 
     def _get_dos(self):

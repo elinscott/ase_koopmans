@@ -9,7 +9,8 @@ from time import time
 
 import numpy as np
 
-from ase.atoms import Atoms, symbols2numbers, string2symbols
+from ase.atoms import Atoms
+from ase.symbols import symbols2numbers, string2symbols
 from ase.calculators.calculator import all_properties, all_changes
 from ase.data import atomic_numbers
 from ase.db.row import AtomsRow
@@ -30,11 +31,10 @@ default_key_descriptions = {
     'energy': ('Energy', 'Total energy', 'eV'),
     'fmax': ('Maximum force', '', 'eV/Ang'),
     'smax': ('Maximum stress', '', '`\\text{eV/Ang}^3`'),
-    'pbc': ('PBC', 'Periodic boundary conditions', ''),
     'charge': ('Charge', '', '|e|'),
     'mass': ('Mass', '', 'au'),
     'magmom': ('Magnetic moment', '', 'au'),
-    'unique_id': ('Unique ID', '', ''),
+    'unique_id': ('Unique ID', 'Random (unique) ID', ''),
     'volume': ('Volume', 'Volume of unit-cell', '`\\text{Ang}^3`')}
 
 
@@ -83,6 +83,11 @@ numeric_keys = set(['id', 'energy', 'magmom', 'charge', 'natoms'])
 
 def check(key_value_pairs):
     for key, value in key_value_pairs.items():
+        if key == "external_tables":
+            # Checks for external_tables are not
+            # performed
+            continue
+
         if not word.match(key) or key in reserved_keys:
             raise ValueError('Bad key: {}'.format(key))
         try:
@@ -135,13 +140,19 @@ def connect(name, type='extract_from_name', create_indices=True,
         Use append=False to start a new database.
     """
 
+    if isinstance(name, PurePath):
+        name = str(name)
+
     if type == 'extract_from_name':
         if name is None:
             type = None
         elif not isinstance(name, basestring):
             type = 'json'
-        elif name.startswith('postgresql://'):
+        elif (name.startswith('postgresql://') or
+              name.startswith('postgres://')):
             type = 'postgresql'
+        elif name.startswith('mysql://') or name.startswith('mariadb://'):
+            type = 'mysql'
         else:
             type = os.path.splitext(name)[1][1:]
             if type == '':
@@ -150,13 +161,11 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type is None:
         return Database()
 
-    if not append and world.rank == 0 and os.path.isfile(name):
-        os.remove(name)
+    if not append and world.rank == 0:
+        if isinstance(name, str) and os.path.isfile(name):
+            os.remove(name)
 
-    if isinstance(name, PurePath):
-        name = str(name)
-
-    if type != 'postgresql' and isinstance(name, basestring):
+    if type not in ['postgresql', 'mysql'] and isinstance(name, basestring):
         name = os.path.abspath(name)
 
     if type == 'json':
@@ -169,6 +178,10 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type == 'postgresql':
         from ase.db.postgresql import PostgreSQLDatabase
         return PostgreSQLDatabase(name)
+
+    if type == 'mysql':
+        from ase.db.mysql import MySQLDatabase
+        return MySQLDatabase(name)
     raise ValueError('Unknown database type: ' + type)
 
 
@@ -403,7 +416,6 @@ class Database:
         selection: int, str or list
             See the select() method.
         """
-
         rows = list(self.select(selection, limit=2, **kwargs))
         if not rows:
             raise KeyError('no match')
@@ -413,7 +425,7 @@ class Database:
     @parallel_generator
     def select(self, selection=None, filter=None, explain=False,
                verbosity=1, limit=None, offset=0, sort=None,
-               include_data=True, **kwargs):
+               include_data=True, columns='all', **kwargs):
         """Select rows.
 
         Return AtomsRow iterator with results.  Selection is done
@@ -445,6 +457,10 @@ class Database:
             Sort rows after key.  Prepend with minus sign for a decending sort.
         include_data: bool
             Use include_data=False to skip reading data from rows.
+        columns: 'all' or list of str
+            Specify which columns from the SQL table to include.
+            For example, if only the row id and the energy is needed,
+            queries can be speeded up by setting columns=['id', 'energy'].
         """
 
         if sort:
@@ -459,7 +475,8 @@ class Database:
         for row in self._select(keys, cmps, explain=explain,
                                 verbosity=verbosity,
                                 limit=limit, offset=offset, sort=sort,
-                                include_data=include_data):
+                                include_data=include_data,
+                                columns=columns):
             if filter is None or filter(row):
                 yield row
 
@@ -510,22 +527,8 @@ class Database:
         check(add_key_value_pairs)
 
         row = self._get_row(id)
-
-        if atoms:
-            oldrow = row
-            row = AtomsRow(atoms)
-
-            # Copy over data, kvp, ctime, user and id
-            row._data = oldrow._data
-            kvp = oldrow.key_value_pairs
-            row.__dict__.update(kvp)
-            row._keys = list(kvp)
-            row.ctime = oldrow.ctime
-            row.user = oldrow.user
-            row.id = id
-
         kvp = row.key_value_pairs
-
+        
         n = len(kvp)
         for key in delete_keys:
             kvp.pop(key, None)
@@ -541,8 +544,21 @@ class Database:
         if not data:
             data = None
 
-        self._write(row, kvp, data, row.id)
+        if atoms:
+            oldrow = row
+            row = AtomsRow(atoms)
+            # Copy over data, kvp, ctime, user and id
+            row._data = oldrow._data
+            row.__dict__.update(kvp)
+            row._keys = list(kvp)
+            row.ctime = oldrow.ctime
+            row.user = oldrow.user
+            row.id = id
 
+        if atoms or os.path.splitext(self.filename)[1] == '.json':
+            self._write(row, kvp, data, row.id)
+        else:
+            self._update(row.id, kvp, data)
         return m, n
 
     def delete(self, ids):

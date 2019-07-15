@@ -48,39 +48,12 @@ Special points in the Brillouin zone
 
 .. data:: special_points
 
-Special points from [Setyawana-Curtarolo]_:
+The below table lists the special points from [Setyawana-Curtarolo]_.
 
-.. list-table::
-    :widths: 10 30 35
 
-    * - Cubic
-      - GXMGRX,MR
-      - .. image:: cubic.svg
-            :width: 25 %
-    * - FCC
-      - GXWKGLUWLK,UX
-      - .. image:: fcc.svg
-            :width: 25 %
-    * - BCC
-      - GHNGPH,PN
-      - .. image:: bcc.svg
-            :width: 25 %
-    * - Tetragonal
-      - GXMGZRAZ,XR,MA
-      - .. image:: tetragonal.svg
-            :width: 25 %
-    * - Orthorhombic
-      - GXSYGZURTZ,YT,UX,SR
-      - .. image:: orthorhombic.svg
-            :width: 25 %
-    * - Hexagonal
-      - GMKGALHA,LM,KH
-      - .. image:: hexagonal.svg
-            :width: 25 %
-    * - Monoclinic
-      - GYHCEM1AXH1,MDZ,YD
-      - .. image:: monoclinic.svg
-            :width: 25 %
+.. toctree:: bztable
+
+.. include:: bztable.rst
 
 .. [Setyawana-Curtarolo]
     High-throughput electronic band structure calculations:
@@ -96,20 +69,30 @@ Special points from [Setyawana-Curtarolo]_:
 You can find the special points in the Brillouin zone:
 
 >>> from ase.build import bulk
->>> from ase.dft.kpoints import get_special_points
->>> from ase.dft.kpoints import bandpath
 >>> si = bulk('Si', 'diamond', a=5.459)
->>> points = get_special_points('fcc', si.cell)
->>> GXW = [points[k] for k in 'GXW']
->>> kpts, x, X = bandpath(GXW, si.cell, 100)
->>> print(kpts.shape, len(x), len(X))
-(100, 3) 100 3
+>>> lat = si.cell.get_bravais_lattice()
+>>> print(list(lat.get_special_points()))
+['G', 'K', 'L', 'U', 'W', 'X']
+>>> path = si.cell.bandpath('GXW', npoints=100)
+>>> print(path.kpts.shape)
+(100, 3)
 
 .. autofunction:: get_special_points
 .. autofunction:: bandpath
 .. autofunction:: parse_path_string
 .. autofunction:: labels_from_kpts
 
+
+Band path
+---------
+
+The :class:`~ase.dft.kpoints.BandPath` class stores all the relevant
+band path information in a single object.
+It is typically created by helper functions such as
+:meth:`ase.cell.Cell.bandpath` or :meth:`ase.lattice.BravaisLattice.bandpath`.
+
+.. autoclass:: BandPath
+               :members:
 
 Band structure
 --------------

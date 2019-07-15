@@ -85,7 +85,7 @@ class TriclinicFe2O3Factory(TriclinicFactory):
 
      Example::
 
-         #!/usr/bin/env python
+         #!/usr/bin/env python3
     
          from ase.lattice.hexagonal import *
          from ase.lattice.compounds import *
@@ -131,7 +131,7 @@ class HexagonalFe2O3Factory(HexagonalFactory):
      O    .3059 0   1/4  .0068  .0083 .00046  .0042 .00058  .0012
 
      Example:
-     #!/usr/bin/env python
+     #!/usr/bin/env python3
      from ase.lattice.hexagonal import *
      from ase.lattice.compounds import *
      import ase.io as io

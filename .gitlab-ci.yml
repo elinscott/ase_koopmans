@@ -1,60 +1,61 @@
+services:
+  - postgres:latest
+  - mysql:latest
+  - mariadb:latest
 
-python_2_7_tests:
-  image: python:2.7
+variables:
+  POSTGRES_DB: testase
+  POSTGRES_USER: ase
+  POSTGRES_PASSWORD: "ase"
+  MYSQL_DATABASE: testase_mysql
+  MYSQL_ROOT_PASSWORD: ase
+
+# Check oldest supported Python with oldest supported libraries.
+# Does not install any optional libraries except matplotlib.
+# This test does not use the --strict flag because things like
+# deprecation warnings may be rampant, yet these are only important
+# for the future, not the past.
+#
+# Py3.5 wheels exist from scipy-0.16.x, July 2015.  We choose scipy-0.16.1.
+# Consistent with numpy-1.10.x (October 2015).  We choose 1.10.4.
+python_3_oldlibs_tests:
+  image: python:3.5-slim
   script:
-    # manually install ase deps
-    - pip install numpy scipy matplotlib flask
-    # extra packages for testing
-    - pip install pyflakes netCDF4
-    # using "install from source" instructions
-    - export PATH=$PATH:$CI_PROJECT_DIR/bin
-    - echo $PATH
-    - export PYTHONPATH=$CI_PROJECT_DIR
-    - echo $PYTHONPATH
-    # tests
+    - pip install numpy==1.10.4 scipy==0.16.1 matplotlib==2.0.0
+    - pip install --no-deps .
     - python --version
-    - ase info
     - ase test
-    # pyflakes code check (Python 2 version)
-    - cd $CI_PROJECT_DIR
-    - python ase/test/__init__.py
 
+# Check newest Python with all the standard dependencies at newest versions.
+#
+# We currently use scipy 1.2.1 because of failures with 1.3.0 on py3.7.
+# TODO: Make things work with 1.3.0
 python_3_tests:
-  image: python:3
+  image: python:3-slim
   script:
-    # manually install extra deps
-    - pip install netCDF4 pyflakes
-    # 'pip install' pulls in all required packages
+    - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
+    - pip install flake8 psycopg2-binary netCDF4
+    - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
-    # Run tests
     - python --version
-    - ase info
-    - ase test
-    # pyflakes code check (Python 3 version)
+    - ase test --strict
     - cd $CI_PROJECT_DIR
-    - python ase/test/__init__.py
 
 conda_tests:
    image: continuumio/anaconda3
    script:
-     # manually install extra deps
+     - apt-get update
      - apt-get install -yq libgl1-mesa-glx
-     - conda install -yq pip wheel numpy scipy pyflakes matplotlib flask
-     # 'pip install' pulls in all required packages
+     - conda install -yq pip wheel numpy scipy matplotlib flask
      - pip install .
-     # Run tests
      - python --version
-     - ase info
-     - ase test
+     - ase test --strict
 
 docs_test:
   image: python:3
   script:
-    # 'pip install' pulls in all required packages (include docs)
     - pip install .[docs]
-    # build the docs
     - ase info
     - which sphinx-build
     - cd $CI_PROJECT_DIR/doc
     - sphinx-build -W . build
-

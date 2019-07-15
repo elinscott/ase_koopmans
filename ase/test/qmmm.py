@@ -9,7 +9,7 @@ from ase.calculators.tip3p import TIP3P, epsilon0, sigma0, rOH, angleHOH
 from ase.calculators.qmmm import (SimpleQMMM, EIQMMM, LJInteractions,
                                   LJInteractionsGeneral)
 from ase.constraints import FixInternals
-from ase.optimize import BFGS
+from ase.optimize import GPMin
 
 r = rOH
 a = angleHOH * pi / 180
@@ -28,7 +28,7 @@ sigma_mm = np.array([0, 0, sigma0])
 epsilon_mm = np.array([0, 0, epsilon0])
 sigma_qm = np.array([0, 0, sigma0])
 epsilon_qm = np.array([0, 0, epsilon0])
-ig = LJInteractionsGeneral(sigma_qm, epsilon_qm, sigma_mm, epsilon_mm)
+ig = LJInteractionsGeneral(sigma_qm, epsilon_qm, sigma_mm, epsilon_mm, 3)
 
 for calc in [TIP3P(),
              SimpleQMMM([0, 1, 2], TIP3P(), TIP3P(), TIP3P()),
@@ -67,7 +67,7 @@ for calc in [TIP3P(),
         bonds=[(r, (0, 2)), (r, (1, 2)),
                (r, (3, 5)), (r, (4, 5))],
         angles=[(a, (0, 2, 1)), (a, (3, 5, 4))])
-    opt = BFGS(dimer,
+    opt = GPMin(dimer,
                trajectory=calc.name + '.traj', logfile=calc.name + 'd.log')
     opt.run(0.01)
 
@@ -81,8 +81,8 @@ for calc in [TIP3P(),
     fmt = '{0:>20}: {1:.3f} {2:.3f} {3:.3f} {4:.1f}'
     print(fmt.format(calc.name, -min(E), -e0, d0, a0))
     assert abs(e0 + eexp) < 0.002
-    assert abs(d0 - dexp) < 0.006
-    assert abs(a0 - aexp) < 2
+    assert abs(d0 - dexp) < 0.01
+    assert abs(a0 - aexp) < 4
 
 print(fmt.format('reference', 9.999, eexp, dexp, aexp))
 

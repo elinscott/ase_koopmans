@@ -7,9 +7,6 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from __future__ import division, print_function
-import os
-
-from ase.test import NotAvailable
 from ase.build import molecule
 from ase.calculators.cp2k import CP2K
 
@@ -41,9 +38,6 @@ inp = """
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise NotAvailable('$ASE_CP2K_COMMAND not defined')
-
     # Basically, the entire CP2K input is passed in explicitly.
     # Disable ASE's input generation by setting everything to None.
     # ASE should only add the CELL and the COORD section.

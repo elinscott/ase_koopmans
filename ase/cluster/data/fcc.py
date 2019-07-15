@@ -9,36 +9,36 @@ from ase.cluster.data.symmetry import (get_all_symmetries,
                                        apply_neighbor_symmetry)
 
 # Definition of symmetries
-basesymmetries = [np.matrix([[-1, 0, 0],  # Mirror x-axis
-                             [0, 1, 0],
-                             [0, 0, 1]]),
-                  np.matrix([[1, 0, 0],   # Mirror y-axis
-                             [0, -1, 0],
-                             [0, 0, 1]]),
-                  np.matrix([[1, 0, 0],   # Mirror z-axis
-                             [0, 1, 0],
-                             [0, 0, -1]]),
-                  np.matrix([[1, 0, 0],   # Rotation x-axis (4-fold)
-                             [0, 0, -1],
-                             [0, 1, 0]]),
-                  np.matrix([[0, 0, -1],  # Rotation y-axis (4-fold)
-                             [0, 1, 0],
-                             [1, 0, 0]]),
-                  np.matrix([[0, 1, 0],   # Rotation z-axis (4-fold)
-                             [-1, 0, 0],
-                             [0, 0, 1]]),
-                  np.matrix([[0, 0, 1],   # Rotation (111)-axis (3-fold)
-                             [1, 0, 0],
-                             [0, 1, 0]]),
-                  np.matrix([[0, 0, -1],  # Rotation (11-1)-axis (3-fold)
-                             [1, 0, 0],
-                             [0, -1, 0]]),
-                  np.matrix([[0, 0, 1],   # Rotation (1-11)-axis (3-fold)
-                             [-1, 0, 0],
-                             [0, -1, 0]]),
-                  np.matrix([[0, 0, -1],  # Rotation (-111)-axis (3-fold)
-                             [-1, 0, 0],
-                             [0, 1, 0]])]
+basesymmetries = [np.array([[-1, 0, 0],  # Mirror x-axis
+                            [0, 1, 0],
+                            [0, 0, 1]]),
+                  np.array([[1, 0, 0],   # Mirror y-axis
+                            [0, -1, 0],
+                            [0, 0, 1]]),
+                  np.array([[1, 0, 0],   # Mirror z-axis
+                            [0, 1, 0],
+                            [0, 0, -1]]),
+                  np.array([[1, 0, 0],   # Rotation x-axis (4-fold)
+                            [0, 0, -1],
+                            [0, 1, 0]]),
+                  np.array([[0, 0, -1],  # Rotation y-axis (4-fold)
+                            [0, 1, 0],
+                            [1, 0, 0]]),
+                  np.array([[0, 1, 0],   # Rotation z-axis (4-fold)
+                            [-1, 0, 0],
+                            [0, 0, 1]]),
+                  np.array([[0, 0, 1],   # Rotation (111)-axis (3-fold)
+                            [1, 0, 0],
+                            [0, 1, 0]]),
+                  np.array([[0, 0, -1],  # Rotation (11-1)-axis (3-fold)
+                            [1, 0, 0],
+                            [0, -1, 0]]),
+                  np.array([[0, 0, 1],   # Rotation (1-11)-axis (3-fold)
+                            [-1, 0, 0],
+                            [0, -1, 0]]),
+                  np.array([[0, 0, -1],  # Rotation (-111)-axis (3-fold)
+                            [-1, 0, 0],
+                            [0, 1, 0]])]
 
 symmetries = get_all_symmetries(basesymmetries, 48)
 
@@ -90,7 +90,7 @@ def surface_fitting(surfaces):
 
     return surfaces
 
-    
+
 def surface_centering(surfaces, basis='100', debug=0):
     if basis == '100':
         # Centering within the basis {[1,0,0], [0,1,0], [0,0,1]}
