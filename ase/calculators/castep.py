@@ -692,7 +692,7 @@ End CASTEP Interface Documentation
             self.cell.kpoint_list = [' '.join(map(str, row)) for row in kpts]
 
         # Case 3: list of explicit kpts formatted as list of str
-        # i.e. the internal format of calc.kpoint_list
+        # i.e. the internal format of calc.kpoint_list split on \n
         # e.g. ['0 0 0 0.125', '0 -0.5 0 0.375', '-0.5 0 -0.5 0.375']
         elif isinstance(kpts, (tuple, list)) and isinstance(kpts[0], str):
 
