@@ -354,6 +354,31 @@ Special features:
   set to the same directory, only the label is preceded by 'copy_of\_'  to
   avoid overwriting.
 
+``.set_kpts(kpoints)``
+  This is equivalent to initialising the calculator with
+  ``calc = Castep(kpts=kpoints)``. ``kpoints`` can be specified in many
+  convenient forms: simple Monkhorst-Pack grids can be specified e.g.
+  ``(2, 2, 3)`` or ``'2 2 3'``; lists of specific weighted k-points can be
+  given in reciprocal lattice coordinates e.g.
+  ``[[0, 0, 0, 0.25], [0.25, 0.25, 0.25, 0.75]]``; a dictionary syntax is
+  available for more complex requirements e.g.
+  ``{'size': (2, 2, 2), 'gamma': True}`` will give a Gamma-centered 2x2x2 M-P
+  grid, ``{'density': 10, 'gamma': False, 'even': False}`` will give a mesh
+  with density of at least 10 Ang (based on the unit cell of currently-attached
+  atoms) with an odd number of points in each direction and avoiding the Gamma
+  point.
+
+``.set_bandpath(bandpath)``
+  This is equivalent to initialialising the calculator with
+  ``calc=Castep(bandpath=bandpath)`` and may be set simultaneously with *kpts*.
+  It allows an electronic band structure path to be set up using ASE BandPath
+  objects. This enables a band structure calculation to be set up conveniently
+  using e.g. calc.set_bandpath(atoms.cell.bandpath().interpolate(npoints=200))
+
+``.band_structure(bandfile=None)``
+  Read a band structure from _seedname.bands_ file. This returns an ase
+  BandStructure object which may be plotted with e.g.
+  ``calc.band_structure().plot()``
 
 Notes/Issues:
 ==============
@@ -1425,11 +1450,11 @@ End CASTEP Interface Documentation
         self._warnings = []
 
         # Read in eigenvalues from bands file
+        bands_file = castep_file[:-7] + '.bands'
         if (self.param.task.value is not None
             and self.param.task.value.lower() == 'bandstructure'):
-            self._band_structure = self.band_structure()
+            self._band_structure = self.band_structure(bandfile=bands_file)
         else:
-            bands_file = os.path.join(self._directory, self._seed) + '.bands'
             (self._ibz_kpts, self._ibz_weights,
              self._eigenvalues, self._efermi) = read_bands(filename=bands_file)
 
