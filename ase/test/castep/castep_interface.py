@@ -263,7 +263,7 @@ with warnings.catch_warnings():
     c.set_kpts({'size': (2, 2, 4), 'even': False})
     assert c.cell.kpoint_mp_grid.value == '3 3 5'
     assert c.cell.kpoint_mp_offset.value == '0.0 0.0 0.0'
-    atoms=ase.build.bulk('Ag')
+    atoms = ase.build.bulk('Ag')
     atoms.set_calculator(c)
     c.set_kpts({'density': 10, 'gamma': False, 'even': None})
     assert c.cell.kpoint_mp_grid.value == '27 27 27'
@@ -271,6 +271,19 @@ with warnings.catch_warnings():
     c.set_kpts({'spacing': (1 / (np.pi *10)), 'gamma': False, 'even': True})
     assert c.cell.kpoint_mp_grid.value == '28 28 28'
     assert c.cell.kpoint_mp_offset.value == '0.0 0.0 0.0'
+
+# test band structure setup
+from ase.dft.kpoints import BandPath
+atoms = ase.build.bulk('Ag')
+bp = BandPath(cell=atoms.cell,
+              path='GX',
+              special_points={'G': [0, 0, 0], 'X': [0.5, 0, 0.5]})
+bp = bp.interpolate(npoints=10)
+c = Castep(bandpath=bp)
+kpt_list = c.cell.bs_kpoint_list.value.split('\n')
+assert len(kpt_list) == 10
+assert list(map(float, kpt_list[0].split())) == [0., 0., 0.]
+assert list(map(float, kpt_list[-1].split())) == [0.5, 0.0, 0.5]
 
 # cleanup
 os.chdir(cwd)

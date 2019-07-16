@@ -599,7 +599,7 @@ End CASTEP Interface Documentation
         return BandStructure(bandpath, eigenvalues, reference=efermi)
 
     def set_bandpath(self, bandpath):
-        """Set a band structure path from ase.dft.kpoint.BandPath object
+        """Set a band structure path from ase.dft.kpoints.BandPath object
 
         This will set the bs_kpoint_list block with a set of specific points
         determined in ASE. bs_kpoint_spacing will not be used; to modify the
@@ -607,7 +607,7 @@ End CASTEP Interface Documentation
         obtain a new dense path.
 
         Args:
-            bandpath (:obj:`ase.dft.kpoint.BandPath` or None):
+            bandpath (:obj:`ase.dft.kpoints.BandPath` or None):
                 Set to None to remove list of band structure points. Otherwise,
                 sampling will follow BandPath parameters.
 
