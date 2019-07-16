@@ -29,15 +29,19 @@ import warnings
 import subprocess
 from copy import deepcopy
 from collections import namedtuple
+from itertools import product
 
 import ase
 import ase.units as units
 from ase.calculators.general import Calculator
 from ase.calculators.calculator import compare_atoms
 from ase.calculators.calculator import PropertyNotImplementedError
+from ase.calculators.calculator import kpts2sizeandoffsets
+from ase.dft.kpoints import BandPath
 from ase.utils import basestring
 from ase.parallel import paropen
 from ase.io.castep import read_param
+from ase.io.castep import read_bands
 from ase.constraints import FixCartesian
 
 __all__ = [
@@ -350,6 +354,31 @@ Special features:
   set to the same directory, only the label is preceded by 'copy_of\_'  to
   avoid overwriting.
 
+``.set_kpts(kpoints)``
+  This is equivalent to initialising the calculator with
+  ``calc = Castep(kpts=kpoints)``. ``kpoints`` can be specified in many
+  convenient forms: simple Monkhorst-Pack grids can be specified e.g.
+  ``(2, 2, 3)`` or ``'2 2 3'``; lists of specific weighted k-points can be
+  given in reciprocal lattice coordinates e.g.
+  ``[[0, 0, 0, 0.25], [0.25, 0.25, 0.25, 0.75]]``; a dictionary syntax is
+  available for more complex requirements e.g.
+  ``{'size': (2, 2, 2), 'gamma': True}`` will give a Gamma-centered 2x2x2 M-P
+  grid, ``{'density': 10, 'gamma': False, 'even': False}`` will give a mesh
+  with density of at least 10 Ang (based on the unit cell of currently-attached
+  atoms) with an odd number of points in each direction and avoiding the Gamma
+  point.
+
+``.set_bandpath(bandpath)``
+  This is equivalent to initialialising the calculator with
+  ``calc=Castep(bandpath=bandpath)`` and may be set simultaneously with *kpts*.
+  It allows an electronic band structure path to be set up using ASE BandPath
+  objects. This enables a band structure calculation to be set up conveniently
+  using e.g. calc.set_bandpath(atoms.cell.bandpath().interpolate(npoints=200))
+
+``.band_structure(bandfile=None)``
+  Read a band structure from _seedname.bands_ file. This returns an ase
+  BandStructure object which may be plotted with e.g.
+  ``calc.band_structure().plot()``
 
 Notes/Issues:
 ==============
@@ -512,6 +541,10 @@ End CASTEP Interface Documentation
         self._energy_free = None
         self._energy_0K = None
         self._energy_total_corr = None
+        self._efermi = None
+        self._ibz_kpts = None
+        self._ibz_weights = None
+        self._band_structure = None
 
         # dispersion corrections
         self._dispcorr_energy_total = None
@@ -562,13 +595,179 @@ End CASTEP Interface Documentation
         for keyword, value in kwargs.items():
             # first fetch special keywords issued by ASE CLI
             if keyword == 'kpts':
-                self.__setattr__('kpoint_mp_grid', '%s %s %s' % tuple(value))
+                self.set_kpts(value)
+            elif keyword == 'bandpath':
+                self.set_bandpath(value)
             elif keyword == 'xc':
-                self.__setattr__('xc_functional', str(value))
+                self.xc_functional = value
             elif keyword == 'ecut':
-                self.__setattr__('cut_off_energy', str(value))
+                self.cut_off_energy = value
             else:  # the general case
                 self.__setattr__(keyword, value)
+
+    def band_structure(self, bandfile=None):
+        from ase.dft.band_structure import BandStructure
+
+        if bandfile is None:
+            bandfile = os.path.join(self._directory, self._seed) + '.bands'
+
+        if not os.path.exists(bandfile):
+            raise ValueError('Cannot find band file "{}".'.format(bandfile))
+
+        kpts, weights, eigenvalues, efermi = read_bands(bandfile)
+
+        # Get definitions of high-symmetry points
+        special_points = self.atoms.cell.bandpath(npoints=0).special_points
+        bandpath = BandPath(self.atoms.cell,
+                            kpts=kpts,
+                            special_points=special_points)
+        return BandStructure(bandpath, eigenvalues, reference=efermi)
+
+    def set_bandpath(self, bandpath):
+        """Set a band structure path from ase.dft.kpoints.BandPath object
+
+        This will set the bs_kpoint_list block with a set of specific points
+        determined in ASE. bs_kpoint_spacing will not be used; to modify the
+        number of points, consider using e.g. bandpath.resample(density=20) to
+        obtain a new dense path.
+
+        Args:
+            bandpath (:obj:`ase.dft.kpoints.BandPath` or None):
+                Set to None to remove list of band structure points. Otherwise,
+                sampling will follow BandPath parameters.
+
+        """
+
+        def clear_bs_keywords():
+            bs_keywords = product({'bs_kpoint', 'bs_kpoints'},
+                                  {'path', 'path_spacing',
+                                   'list',
+                                   'mp_grid', 'mp_spacing', 'mp_offset'})
+            for bs_tag in bs_keywords:
+                setattr(self.cell, '_'.join(bs_tag), None)
+
+        if bandpath is None:
+            clear_bs_keywords()
+        elif isinstance(bandpath, BandPath):
+            clear_bs_keywords()
+            self.cell.bs_kpoint_list = [' '.join(map(str, row))
+                                        for row in bandpath.kpts]
+        else:
+            raise TypeError('Band structure path must be an '
+                            'ase.dft.kpoint.BandPath object')
+
+    def set_kpts(self, kpts):
+        """Set k-point mesh/path using a str, tuple or ASE features
+
+        Args:
+            kpts (None, tuple, str, dict):
+
+        This method will set the CASTEP parameters kpoints_mp_grid,
+        kpoints_mp_offset and kpoints_mp_spacing as appropriate. Unused
+        parameters will be set to None (i.e. not included in input files.)
+
+        If kpts=None, all these parameters are set as unused.
+
+        The simplest useful case is to give a 3-tuple of integers specifying
+        a Monkhorst-Pack grid. This may also be formatted as a string separated
+        by spaces; this is the format used internally before writing to the
+        input files.
+
+        A more powerful set of features is available when using a python
+        dictionary with the following allowed keys:
+
+        - 'size' (3-tuple of int) mesh of mesh dimensions
+        - 'density' (float) for BZ sampling density in points per recip. Ang
+          ( kpoint_mp_spacing = 1 / (2pi * density) ). An explicit MP mesh will
+          be set to allow for rounding/centering.
+        - 'spacing' (float) for BZ sampling density for maximum space between
+          sample points in reciprocal space. This is numerically equivalent to
+          the inbuilt ``calc.cell.kpoint_mp_spacing``, but will be converted to
+          'density' to allow for rounding/centering.
+        - 'even' (bool) to round each direction up to the nearest even number;
+          set False for odd numbers, leave as None for no odd/even rounding.
+        - 'gamma' (bool) to offset the Monkhorst-Pack grid to include
+          (0, 0, 0); set False to offset each direction avoiding 0.
+        """
+
+        def clear_mp_keywords():
+            mp_keywords = product({'kpoint', 'kpoints'},
+                                  {'mp_grid', 'mp_offset',
+                                   'mp_spacing', 'list'})
+            for kp_tag in mp_keywords:
+                setattr(self.cell, '_'.join(kp_tag), None)
+
+        # Case 1: Clear parameters with set_kpts(None)
+        if kpts is None:
+            clear_mp_keywords()
+            pass
+
+        # Case 2: list of explicit k-points with weights
+        # e.g. [[ 0,    0,   0,    0.125],
+        #       [ 0,   -0.5, 0,    0.375],
+        #       [-0.5,  0,  -0.5,  0.375],
+        #       [-0.5, -0.5, -0.5, 0.125]]
+
+        elif (isinstance(kpts, (tuple, list))
+              and isinstance(kpts[0], (tuple, list))):
+
+            if not all(map((lambda row: len(row) == 4), kpts)):
+                raise ValueError(
+                    'In explicit kpt list each row should have 4 elements')
+
+            clear_mp_keywords()
+            self.cell.kpoint_list = [' '.join(map(str, row)) for row in kpts]
+
+        # Case 3: list of explicit kpts formatted as list of str
+        # i.e. the internal format of calc.kpoint_list split on \n
+        # e.g. ['0 0 0 0.125', '0 -0.5 0 0.375', '-0.5 0 -0.5 0.375']
+        elif isinstance(kpts, (tuple, list)) and isinstance(kpts[0], str):
+
+            if not all(map((lambda row: len(row.split()) == 4), kpts)):
+                raise ValueError(
+                    'In explicit kpt list each row should have 4 elements')
+
+            clear_mp_keywords()
+            self.cell.kpoint_list = kpts
+
+        # Case 4: list or tuple of MP samples e.g. [3, 3, 2]
+        elif isinstance(kpts, (tuple, list)) and isinstance(kpts[0], int):
+            if len(kpts) != 3:
+                raise ValueError('Monkhorst-pack grid should have 3 values')
+            clear_mp_keywords()
+            self.cell.kpoint_mp_grid = '%d %d %d' % tuple(kpts)
+
+        # Case 5: str representation of Case 3 e.g. '3 3 2'
+        elif isinstance(kpts, str):
+            self.set_kpts([int(x) for x in kpts.split()])
+
+        # Case 6: dict of options e.g. {'size': (3, 3, 2), 'gamma': True}
+        # 'spacing' is allowed but transformed to 'density' to get mesh/offset
+        elif isinstance(kpts, dict):
+            kpts = kpts.copy()
+
+            if (kpts.get('spacing') is not None
+                and kpts.get('density') is not None):
+                raise ValueError(
+                    'Cannot set kpts spacing and density simultaneously.')
+            else:
+                if kpts.get('spacing') is not None:
+                    kpts = kpts.copy()
+                    spacing = kpts.pop('spacing')
+                    kpts['density'] = 1 / (np.pi * spacing)
+
+                clear_mp_keywords()
+                size, offsets = kpts2sizeandoffsets(atoms=self.atoms, **kpts)
+                self.cell.kpoint_mp_grid = '%d %d %d' % tuple(size)
+                self.cell.kpoint_mp_offset = '%f %f %f' % tuple(offsets)
+
+        # Case 7: some other iterator. Try treating as a list:
+        elif hasattr(kpts, '__iter__'):
+            self.set_kpts(list(kpts))
+
+        # Otherwise, give up
+        else:
+            raise TypeError('Cannot interpret kpts of this type')
 
     def todict(self, skip_default=True):
         """Create dict with settings of .param and .cell"""
@@ -1252,6 +1451,15 @@ End CASTEP Interface Documentation
         # reset
         self._warnings = []
 
+        # Read in eigenvalues from bands file
+        bands_file = castep_file[:-7] + '.bands'
+        if (self.param.task.value is not None
+            and self.param.task.value.lower() == 'bandstructure'):
+            self._band_structure = self.band_structure(bandfile=bands_file)
+        else:
+            (self._ibz_kpts, self._ibz_weights,
+             self._eigenvalues, self._efermi) = read_bands(filename=bands_file)
+
     def read_symops(self, castep_castep=None):
         # TODO: check that this is really backwards compatible
         # with previous routine with this name...
@@ -1912,7 +2120,7 @@ End CASTEP Interface Documentation
             else:
                 warnings.warn('Option "%s" is not known - please set any new'
                               ' options directly in the .cell or .param '
-                              'objects')
+                              'objects' % attr)
                 return
 
         # here we know it must go into one of the component param or cell
@@ -2642,7 +2850,7 @@ class CastepCell(CastepInputFile):
         {'spectral_kpoint_mp_grid', 'spectral_kpoint_mp_spacing', 'spectral_kpoint_list',
          'spectral_kpoint_path',
          'spectral_kpoints_mp_grid', 'spectral_kpoints_mp_spacing', 'spectral_kpoints_list',
-         'spectral_kpoints_path'}, 
+         'spectral_kpoints_path'},
         {'phonon_kpoint_mp_grid', 'phonon_kpoint_mp_spacing', 'phonon_kpoint_list',
          'phonon_kpoint_path',
          'phonon_kpoints_mp_grid', 'phonon_kpoints_mp_spacing', 'phonon_kpoints_list',
