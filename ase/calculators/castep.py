@@ -640,7 +640,9 @@ End CASTEP Interface Documentation
 
         def clear_bs_keywords():
             bs_keywords = product({'bs_kpoint', 'bs_kpoints'},
-                                  {'path', 'list'})
+                                  {'path', 'path_spacing',
+                                   'list',
+                                   'mp_grid', 'mp_spacing', 'mp_offset'})
             for bs_tag in bs_keywords:
                 setattr(self.cell, '_'.join(bs_tag), None)
 
