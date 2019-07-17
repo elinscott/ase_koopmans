@@ -382,6 +382,9 @@ def write(filename, images, format=None, parallel=True, append=False,
 
     The use of additional keywords is format specific."""
 
+    if isinstance(filename, PurePath):
+        filename = str(filename)
+
     if isinstance(filename, basestring):
         filename = os.path.expanduser(filename)
         fd = None
@@ -777,4 +780,3 @@ def index2range(index, nsteps):
     else:
         raise RuntimeError("index2range handles integers and slices only.")
     return trbl
-
