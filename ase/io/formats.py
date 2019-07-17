@@ -111,6 +111,7 @@ all_formats = {
     'py': ('Python file', '+F'),
     'qbox': ('QBOX output file', '+F'),
     'res': ('SHELX format', '1S'),
+    'rmc6f': ('RMCProfile', '1S'),
     'sdf': ('SDF format', '1F'),
     'struct': ('WIEN2k structure file', '1S'),
     'struct_out': ('SIESTA STRUCT file', '1F'),
