@@ -123,6 +123,9 @@ I/O:
 
 * :ref:`MySQL and MariaDB <MySQL_server>` is supported as database backend
 
+* Support for writing isosurface information to POV format
+  with :func:`ase.io.pov.add_isosurface_to_pov`
+
 GUI:
 
  * Quickinfo dialog automatically updates when switching image.
