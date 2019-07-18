@@ -444,25 +444,6 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
   }'''%( pc(color), material )
     pov_fid.writelines(material)
 
-    #Heres a crazy finish example that looks like jelly
-    fun_material = '''
-  material {
-    texture {
-      pigment { rgbt %s }
-      finish{ diffuse 0.85 ambient 0.99 brilliance 3 specular 0.5 roughness 0.001
-        reflection { 0.05, 0.98 fresnel on exponent 1.5 }
-        conserve_energy
-      }
-    }
-    interior { ior 1.3 }
-  }
-  photons {
-      target
-      refraction on
-      reflection on
-      collect on
-  }''' % pc(color)
-
     ###### now for the rotations of the cell
     matrix_transform = [
             '\n  matrix < %f, %f, %f,' % tuple(cell[0]),
