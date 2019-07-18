@@ -38,6 +38,8 @@ General changes:
 * Added ``ase info --calculators`` option which shows a list of
   calculators and whether they appear to be installed.
 
+* Added :func:`ase.build.surfaces_with_termination.surfaces_with_termination`,
+  a tool to build surfaces with a particular termination.
 
 Calculators:
 
