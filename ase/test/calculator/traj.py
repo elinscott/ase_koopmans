@@ -4,6 +4,7 @@ from ase.calculators.calculator import get_calculator_class
 from ase.io import read, write
 from ase.build import molecule
 from ase.test import test_calculator_names
+from ase.utils import workdir
 
 
 def h2(name, par):
@@ -34,10 +35,9 @@ parameters = {
                      pseudopotentials={'H': 'H.pbe-rrkjus_psl.0.1.UPF'})}
 
 for name in test_calculator_names + ['emt']:
-    if name in ['cp2k', 'gromacs', 'lammpslib', 'lammpsrun', 'mopac', 'turbomole', 'amber', 'asap']:
+    if name in ['cp2k', 'gromacs', 'lammpslib', 'lammpsrun', 'mopac', 'turbomole', 'amber', 'asap', 'eam']:
+        # XXX Fix and reinstate eam: https://gitlab.com/ase/ase/issues/389
         continue
     par = parameters.get(name, {})
-    os.mkdir(name + '-test')
-    os.chdir(name + '-test')
-    h2(name, par)
-    os.chdir('..')
+    with workdir(name + '-test', mkdir=True):
+        h2(name, par)
