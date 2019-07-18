@@ -1403,7 +1403,7 @@ def read_bands(filename='', fd=None, units=units_CODATA2002):
         i_kpt, kpt, wt = _kptline_to_i_k_wt(fd.readline())
         kpts[i_kpt,:], weights[i_kpt] = kpt, wt
         for spin in range(nspin):
-            _ = fd.readline()  # Skip 'Spin component N' line
+            fd.readline()  # Skip 'Spin component N' line
             eigenvalues[spin, i_kpt, :] = [float(fd.readline())
                                            for _ in range(nbands)]
 
