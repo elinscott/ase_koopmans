@@ -181,10 +181,10 @@ News
     with open(installdoc) as fd:
         txt = fd.read()
 
-    txt, nsub = re.subn(r'ase-\d+\.\d+.\d+',
+    txt, nsub = re.subn(r'ase-\d+\.\d+\.\d+',
                         'ase-{}'.format(version), txt)
     assert nsub > 0
-    txt, nsub = re.subn(r'git clone -b \d+\.\d+.\d+',
+    txt, nsub = re.subn(r'git clone -b \d+\.\d+\.\d+',
                         'git clone -b {}'.format(version), txt)
     assert nsub == 1
 
