@@ -31,9 +31,12 @@ parameters = {
     'jacapo': dict(pbc=True),
     'vasp': dict(xc='LDA'),
     'espresso': dict(pbc=True, tprnfor=True,
-                     pseudopotentials={'H': 'H.pbe-rrkjus_psl.0.1.UPF'})}
+                     pseudopotentials={'H': 'H.pbe-rrkjus_psl.0.1.UPF'}),
+    'Psi4': dict(),
+    }
 
-for name in test_calculator_names + ['emt']:
+
+for name in test_calculator_names + ['emt', 'Psi4']:
     if name in ['cp2k', 'gromacs', 'lammpslib', 'lammpsrun', 'mopac', 'turbomole', 'amber', 'asap']:
         continue
     par = parameters.get(name, {})

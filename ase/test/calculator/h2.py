@@ -44,7 +44,7 @@ def h2dft(name):
     print(h1.get_potential_energy())
     print(Calculator.read_atoms(label).get_potential_energy())
 
-names = ['abinit', 'aims', 'gaussian', 'nwchem', 'cp2k']
+names = ['abinit', 'aims', 'gaussian', 'nwchem', 'cp2k', 'Psi4']
 for name in names:
     try:
         h2dft(name)
