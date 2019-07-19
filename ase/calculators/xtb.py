@@ -6,10 +6,18 @@ from ase.io.xyz import simple_write_xyz
 from ase.units import Hartree, Bohr
 
 class XTB(FileIOCalculator):
+    ''' XTB Interface for ASE 
+        WIPs: 
+              1. Has to calculate forces every time. (easy fix) 
+              2. Does NOT work with FIRE opt, only LFBGS. 
+              
+                                Asmus O. Dohn July 2019''' 
+
+                                    
     implemented_properties = ['energy', 'forces']
 
     name = 'xTB'
-    command = 'xtb PREFIX.xyz > PREFIX.out'
+    command = 'xtb --grad PREFIX.xyz > PREFIX.out'
 
     if not 'XTBHOME' in os.environ:  # program installed?
         warn('WARNING: $XTBHOME variable not found.\
@@ -23,6 +31,7 @@ class XTB(FileIOCalculator):
         self.uhf = unpaired_electrons
         self.gbsa = gbsa 
 
+        command = 'xtb --grad PREFIX.xyz > PREFIX.out'
         add_pfx = ''
         if charge:
             add_pfx += ' --chrg {} '.format(charge)
@@ -64,6 +73,8 @@ class XTB(FileIOCalculator):
             that for now. We could parse the .out later for more stuff. 
             'energy' and 'forces' are appended to. Read last entry '''
 
+        # XXX WIP: OOPS! energy file ONLY shows up if --grad is entered.
+        # need to read from normal file as well
         with open('energy', 'r') as f:
             lines = f.readlines()
 
@@ -76,13 +87,28 @@ class XTB(FileIOCalculator):
         ''' file has 2 headerlines, then atomic positions, then forces.'''
         with open('gradient', 'r') as f:
             lines = f.readlines()
-
-        # strip header, go to last cycle
-        lines = lines[2:-1]
+        
+        idx = len(self.atoms)
+        # strip header and footer, go to last cycle
+        #lines = lines[2:-1]
         cyc_idx = max([loc for loc, line in enumerate(lines) if 'cycle' in line])
         lines = lines[cyc_idx + 1:]
-        idx = len(atoms)
-        lines = lines[idx:]
+        ### test on positions and elements
+        xtb_out = lines[:idx]
+        xtb_pos = np.zeros((len(self.atoms), 3))
+        xtb_sym = []
+        for l, pos in enumerate(xtb_out):
+            x, y, z, sym = pos.split()
+            xtb_pos[l] = [float(x), float(y), float(z)]
+            xtb_sym.append(sym.capitalize())
+        
+        xtb_pos *= Bohr 
+        ase_pos = self.atoms.get_positions()
+        assert((xtb_pos - ase_pos < 1e6).all(), 'ERROR in force readout: Positions')
+        ase_sym = self.atoms.get_chemical_symbols()
+        assert(xtb_sym == ase_sym, 'ERROR in force readout: Atom sequence')
+
+        lines = lines[idx:-1]  # remove $end footer
         forces = np.zeros((idx, 3))
         for l, line in enumerate(lines):
             forces[l] = np.array([float(x.replace('D', 'e')) 
