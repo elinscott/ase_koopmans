@@ -39,7 +39,7 @@ parameters = {
 
 
 for name in parameters:
-    if name not in test_calculator_names and name != 'Psi4':
+    if name not in test_calculator_names:
         continue
     par = parameters[name]
     with workdir(name + '-test', mkdir=True):
