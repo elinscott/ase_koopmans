@@ -1054,6 +1054,8 @@ def celldiff(cell1, cell2):
     cell1 = Cell.ascell(cell1).complete()
     cell2 = Cell.ascell(cell2).complete()
     v1v2 = cell1.volume * cell2.volume
+    if v1v2 == 0:
+        raise ZeroDivisionError('Cell volumes are zero')
     scale = v1v2**(-1. / 3.)  # --> 1/Ang^2
     x1 = cell1 @ cell1.T
     x2 = cell2 @ cell2.T
@@ -1079,6 +1081,8 @@ def identify_lattice(cell, eps=2e-4):
     and operation that, applied to the cell, yields the same lengths
     and angles as the Bravais lattice object."""
     from ase.geometry.bravais_type_engine import niggli_op_table
+    if not cell.volume:
+        raise ValueError('Expected 3 linearly independent cell vectors')
     rcell, reduction_op = cell.niggli_reduce()
 
     # We tabulate the cell's Niggli-mapped versions so we don't need to

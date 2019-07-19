@@ -243,21 +243,41 @@ def kpts2sizeandoffsets(size=None, density=None, gamma=None, even=None,
 
     """
 
+    if size is not None and density is not None:
+        raise ValueError('Cannot specify k-point mesh size and '
+                         'density simultaneously')
+    elif density is not None and atoms is None:
+        raise ValueError('Cannot set k-points from "density" unless '
+                         'Atoms are provided (need BZ dimensions).')
+
     if size is None:
         if density is None:
             size = [1, 1, 1]
         else:
-            size = kptdensity2monkhorstpack(atoms, density, even)
+            size = kptdensity2monkhorstpack(atoms, density, None)
+
+    # Not using the rounding from kptdensity2monkhorstpack as it doesn't do
+    # rounding to odd numbers
+    if even is not None:
+        size = np.array(size)
+        remainder = size % 2
+        if even:
+            size += remainder
+        else:  # Round up to odd numbers
+            size += (1 - remainder)
 
     offsets = [0, 0, 0]
+    if atoms is None:
+        pbc = [True, True, True]
+    else:
+        pbc = atoms.pbc
 
     if gamma is not None:
         for i, s in enumerate(size):
-            if atoms.pbc[i] and s % 2 != bool(gamma):
+            if pbc[i] and s % 2 != bool(gamma):
                 offsets[i] = 0.5 / s
 
     return size, offsets
-
 
 @jsonable('kpoints')
 class KPoints:
