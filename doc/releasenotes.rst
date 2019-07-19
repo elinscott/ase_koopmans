@@ -9,6 +9,14 @@ Git master branch
 
 :git:`master <>`.
 
+* No changes yet
+
+
+Version 3.18.0
+==============
+
+19 July 2019: :git:`3.18.0 <../3.18.0>`
+
 General changes:
 
 * ASE no longer supports Python2.
