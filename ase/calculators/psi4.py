@@ -6,18 +6,12 @@ from ase.calculators.calculator import Calculator, all_properties, all_changes
 from ase.calculators.calculator import InputError, CalculationFailed, SCFError, ReadError 
 import numpy as np
 from ase.units import Bohr, Hartree
-from ase.db.row import atoms2dict, AtomsRow
 import warnings
 import multiprocessing
 import psi4
 import os
-import json
 import pickle
 import codecs
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 
 class Psi4(Calculator):
@@ -37,39 +31,20 @@ class Psi4(Calculator):
     default_parameters = {
                   "basis": "aug-cc-pvtz",
                   "num_threads": None,
-                  #"method": "hf",
                   "xc": "hf",
                   "memory": None,
-                  "D_CONVERGENCE":1e-12,
-                  "E_CONVERGENCE":1e-12,
                   'charge': None,
                   'multiplicity': None,
                   'reference': None,
                   'symmetry':'c1',
-                  'PSI_SCRATCH' : '.',
-                  "SAVE_JK": True, }
+                  'PSI_SCRATCH' : '.',}
     def __init__(self, restart=None, ignore_bad_restart=False,
                  label='psi4-calc', atoms=None, command=None,
                  **kwargs):
         Calculator.__init__(self, restart=restart, ignore_bad_restart=ignore_bad_restart,
                             label=label, atoms=atoms, command=command,
                             **kwargs)
-        """
-        self.results = {}  # calculated properties (energy, forces, ...)
-
-        # Use default parameters if they were not read from file:
-        self.parameters = self.get_default_parameters()
-
-        self.name = 'psi4'
-        if os.sep in label:
-            self.directory = os.path.join(label.split(os.sep)[:-1])
-            self.label = label.split(os.sep)[-1]
-        else:
-            self.set_label(label)
-        self.set(**kwargs)
-        """
         self.psi4 = psi4
-        #self.atoms = atoms
         # perform initial setup of psi4 python API
         self.set_psi4(atoms = atoms)
 
@@ -241,14 +216,14 @@ class Psi4(Calculator):
                 # convert to eV
                 self.results['energy'] = energy * Hartree
             if item == 'forces':
-                energy = self.psi4.energy('{}/{}'.format(method,basis),
-                                      molecule = self.molecule,)
+                grad, wf = self.psi4.driver.gradient('{}/{}'.format(method,basis),
+                                                 return_wfn=True)
+                # energy comes for free
+                energy = wf.energy()
                 self.results['energy'] = energy * Hartree
-                grad = self.psi4.driver.gradient('{}/{}'.format(method,basis),
-                                                 return_wfn=False,)
                 # convert to eV/A
                 # also note that the gradient is -1 * forces
-                self.results['forces'] = -1 * np.array(grad) * Hartree * Bohr
+                self.results['forces'] = -1 * np.array(grad) * Hartree / Bohr
         # dump the calculator info to the psi4 file
         save_atoms = self.atoms.copy()
         del save_atoms.calc
