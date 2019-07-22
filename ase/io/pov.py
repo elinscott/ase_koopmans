@@ -86,6 +86,9 @@ class POVRAY(PlottingVariables):
         'celllinewidth': 0.05,  # radius of the cylinders representing the cell
         'bondlinewidth': 0.10,  # radius of the cylinders representing bonds
         'bondatoms': [],  # [[atom1, atom2], ... ] pairs of bonding atoms
+                          # For bond order > 1: [[atom1, atom2, offset, bond_order, bond_offset], ... ]
+                          # bond_order: 1, 2, 3 for single, double, and tripple bond
+                          # bond_offset: vector for shifting bonds from original position. Coordinates are in Angstrom unit.
         'exportconstraints': False}  # honour FixAtoms and mark relevant atoms?
 
     def __init__(self, atoms, scale=1.0, **parameters):
@@ -252,11 +255,17 @@ class POVRAY(PlottingVariables):
 
         # Draw atom bonds
         for pair in self.bondatoms:
+            # Use if to make sure that each pair has 4 componets: a, b, offset, bond_order, bond_offset
+            # a, b: atom index to draw bond
+            # offset: original meaning to make offset for mid-point.
+            # bond_oder: if not supplied, set it to 1 (single bond). It can be  1, 2, 3, corresponding to single, double, tripple bond
+            # bond_offset: displacement from original bond poistion. Default is (0, 0, 0). Unit is Angstrom.
             if len(pair) == 2:
                 a, b = pair
                 offset = (0, 0, 0)
             else:
                 a, b, offset = pair
+            # Up to here, we should have all a, b, offset, bond_order, bond_offset for all bonds.
             R = np.dot(offset, self.cell)
             mida = 0.5 * (self.positions[a] + self.positions[b] + R)
             midb = 0.5 * (self.positions[a] + self.positions[b] - R)
@@ -274,6 +283,15 @@ class POVRAY(PlottingVariables):
 
             fmt = ('cylinder {%s, %s, Rbond texture{pigment '
                    '{color %s transmit %s} finish{%s}}}\n')
+
+            # Use if to draw bond, according to its bond_order.
+            # bond_order == 0: No bond is plotted
+            # bond_order == 1: use original code
+            # bond_order == 2: draw two bonds, one is shifted by bond_offset/2, and another is shifted by -bond_offset/2.
+            # bond_order == 3: draw two bonds, one is shifted by bond_offset, and one is shifted by -bond_offset, and the other has no shift.
+            # bond_order > 3 : raise inputerror
+            # To shift the bond, add the shift to the first two coordinate in write statement.
+
             w(fmt %
               (pa(self.positions[a]), pa(mida),
                   pc(self.colors[a]), transa, texa))
