@@ -392,21 +392,15 @@ def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
         atom_type_map = { 'H': 'D' }
     """
 
-    # get atom types and how many of each
+    # get atom types and how many of each (and set to order if passed)
     atom_types = set(atoms.get_chemical_symbols())
-    natom_types = []
-    for atom_type in atom_types:
-        formula_re = r'{}*(\d+)'.format(atom_type)
-        m = re.search(formula_re, atoms.get_chemical_formula())
-        if m is not None:
-            natom = 1
-            if m.group(1):
-                natom = m.group(1)
-            natom_types.append(natom)
-        else:
-            msg = "Failed to parse chemical formula: {0} for atom type: {1}"
-            formula = atoms.get_chemical_formula()
-            raise RuntimeError(msg.format(formula, atom_type))
+    if order is not None:
+        if set(atom_types) != set(order):
+            raise Exception("The order is not a set of the atom types.")
+        atom_types = order
+
+    atom_count_dict = atoms.symbols.formula.count()
+    natom_types = [ str(atom_count_dict[atom_type]) for atom_type in atom_types]
 
     # create an atom type map if one does not exist from unique atomic symbols
     if atom_type_map is None:
