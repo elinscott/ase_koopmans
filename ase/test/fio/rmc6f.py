@@ -245,16 +245,6 @@ def test_rmc6f_write_output():
         io.rmc6f._write_output(fileobj, header_lines, data, fmt)
 
 
-def test_write_rmc_get_cell_from_cellpar():
-    """Test for utility function converts cell parameters to cell
-    """
-    cellpar = [4.672816, 4.672816, 4.672816, 90.0, 90.0, 90.0]
-    cell = io.rmc6f._write_rmc_get_cell_from_cellpar(cellpar)
-    target_cell = np.zeros((3, 3), float)
-    np.fill_diagonal(target_cell, 4.672816)
-    assert np.array_equal(cell, target_cell)
-
-
 # Tests
 test_rmc6f_read()
 test_rmc6f_write()
@@ -266,4 +256,3 @@ test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell()
 test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell_padded_whitespace()
 test_rmc6f_write_output_column_format()
 test_rmc6f_write_output()
-test_write_rmc_get_cell_from_cellpar()
