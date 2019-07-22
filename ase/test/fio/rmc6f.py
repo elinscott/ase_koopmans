@@ -16,6 +16,7 @@ Number of moves accepted:            10074
 Number of prior configuration saves: 0
 Number of atoms:                     7
 Number density (Ang^-3):                 0.068606
+Supercell dimensions:                1 1 1
 Cell (Ang/deg): 4.672816 4.672816 4.672816 90.0 90.0 90.0
 Lattice vectors (Ang):
     4.672816    0.000000    0.000000
@@ -46,7 +47,7 @@ rmc6f_atoms = Atoms(symbols, positions=positions, cell=cell, pbc=[1, 1, 1])
 
 
 def test_rmc6f_read():
-    """Read rmc6f input file."""
+    """Test for reading rmc6f input file."""
     with open('input.rmc6f', 'w') as rmc6f_input_f:
         rmc6f_input_f.write(rmc6f_input_text)
 
@@ -59,7 +60,7 @@ def test_rmc6f_read():
 
 
 def test_rmc6f_write():
-    """Write rmc6f output file."""
+    """Test for writing rmc6f input file."""
     try:
         io.write('output.rmc6f', rmc6f_atoms)
         readback = io.read('output.rmc6f')
@@ -70,17 +71,21 @@ def test_rmc6f_write():
 
 
 def test_rmc6f_read_construct_regex():
+    """Test for utility function that constructs rmc6f header regex."""
     header_lines = [
         "Number of atoms:",
-        "Supercell dimensions:",
-        "Cell (Ang/deg):",
-        "Lattice vectors (Ang):"]
+        "  Supercell dimensions:  ",
+        "    Cell (Ang/deg):  ",
+        "      Lattice vectors (Ang):  "]
     result = io.rmc6f._read_construct_regex(header_lines)
     target = "(Number\\s+of\\s+atoms:|Supercell\\s+dimensions:|Cell\\s+\\(Ang/deg\\):|Lattice\\s+vectors\\s+\\(Ang\\):)"  # noqa: E501
     assert result == target
 
 
 def test_rmc6f_read_line_of_atoms_section_style_no_labels():
+    """Test for reading a line of atoms section
+    w/ 'no labels' style for rmc6f
+    """
     atom_line = "1 S 0.600452 0.525100 0.442050 1 0 0 0"
     atom_id, props = io.rmc6f._read_line_of_atoms_section(atom_line.split())
     target_id = 1
@@ -90,6 +95,9 @@ def test_rmc6f_read_line_of_atoms_section_style_no_labels():
 
 
 def test_rmc6f_read_line_of_atoms_section_style_labels():
+    """Test for reading a line of atoms section
+    w/ 'labels'-included style for rmc6f
+    """
     atom_line = "1 S [1] 0.600452 0.525100 0.442050 1 0 0 0"
     atom_id, props = io.rmc6f._read_line_of_atoms_section(atom_line.split())
     target_id = 1
@@ -99,6 +107,9 @@ def test_rmc6f_read_line_of_atoms_section_style_labels():
 
 
 def test_rmc6f_read_line_of_atoms_section_style_magnetic():
+    """Test for reading a line of atoms section
+    w/ 'magnetic' style for rmc6f
+    """
     atom_line = "1 S 0.600452 0.525100 0.442050 1 0 0 0 M: 0.1"
     atom_id, props = io.rmc6f._read_line_of_atoms_section(atom_line.split())
     target_id = 1
@@ -108,8 +119,35 @@ def test_rmc6f_read_line_of_atoms_section_style_magnetic():
 
 
 def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell():
+    """Test for utility function that processes lines of rmc6f using
+    regular expressions to capture atom properties and cell information
+    """
     lines = rmc6f_input_text.split('\n')
-    lines = [l for l in lines if l.strip() != '']
+    props, cell = io.rmc6f._read_process_rmc6f_lines_to_pos_and_cell(lines)
+
+    target_props = {
+        1: ['S', 0.600452, 0.5251, 0.44205],
+        2: ['F', 0.911952, 0.450722, 0.382733],
+        3: ['F', 0.283794, 0.616712, 0.500094],
+        4: ['F', 0.679823, 0.854839, 0.343915],
+        5: ['F', 0.53166, 0.229024, 0.535688],
+        6: ['F', 0.692514, 0.584931, 0.746683],
+        7: ['F', 0.509687, 0.44935, 0.11196]}
+
+    target_cell = np.zeros((3, 3), float)
+    np.fill_diagonal(target_cell, 4.672816)
+
+    assert props == target_props
+    assert np.array_equal(cell, target_cell)
+
+
+def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell_padded_whitespace():
+    """Test for utility function that processes lines of rmc6f using
+    regular expressions to capture atom properties and cell information
+    with puposeful whitespace padded on one line
+    """
+    lines = rmc6f_input_text.split('\n')
+    lines[14] = "    {}    ".format(lines[14])  # intentional whitespace
     props, cell = io.rmc6f._read_process_rmc6f_lines_to_pos_and_cell(lines)
 
     target_props = {
@@ -129,6 +167,9 @@ def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell():
 
 
 def test_rmc6f_write_output_column_format():
+    """Test for utility function that processes the columns in array
+    and gets back out formatting information.
+    """
     cols = ['id', 'symbols', 'scaled_positions', 'ref_num', 'ref_cell']
     arrays = {}
     arrays['id'] = np.array([1, 2, 3, 4, 5, 6, 7])
@@ -157,6 +198,8 @@ def test_rmc6f_write_output_column_format():
 
 
 def test_rmc6f_write_output():
+    """Test for utility function for writing rmc6f output
+    """
     fileobj = "output.rmc6f"
     header_lines = [
         '(Version 6f format configuration file)',
@@ -164,7 +207,7 @@ def test_rmc6f_write_output():
         "Metadata date:18-007-'2019",
         'Number of types of atoms:   2 ',
         'Atom types present:          S F',
-        'Number of each atom type:   6 6',
+        'Number of each atom type:   1 6',
         'Number of moves generated:           0',
         'Number of moves tried:               0',
         'Number of moves accepted:            0',
@@ -203,6 +246,8 @@ def test_rmc6f_write_output():
 
 
 def test_write_rmc_get_cell_from_cellpar():
+    """Test for utility function converts cell parameters to cell
+    """
     cellpar = [4.672816, 4.672816, 4.672816, 90.0, 90.0, 90.0]
     cell = io.rmc6f._write_rmc_get_cell_from_cellpar(cellpar)
     target_cell = np.zeros((3, 3), float)
@@ -218,6 +263,7 @@ test_rmc6f_read_line_of_atoms_section_style_no_labels()
 test_rmc6f_read_line_of_atoms_section_style_labels()
 test_rmc6f_read_line_of_atoms_section_style_magnetic()
 test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell()
+test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell_padded_whitespace()
 test_rmc6f_write_output_column_format()
 test_rmc6f_write_output()
 test_write_rmc_get_cell_from_cellpar()
