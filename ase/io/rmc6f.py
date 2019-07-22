@@ -35,7 +35,7 @@ def _read_line_of_atoms_section(fields):
         List of columns from line in rmc6f file.
 
 
-    Yields
+    Returns
     ------
     atom_id: int
         Atom ID
@@ -94,7 +94,7 @@ def _read_process_rmc6f_lines_to_pos_and_cell(lines):
     lines: list[str]
         List of lines from rmc6f file.
 
-    Yields
+    Returns
     ------
     pos : dict{int:list[str|float]}
         Dict for each atom id and Atoms properties based on rmc6f style.
@@ -200,7 +200,7 @@ def _write_output_column_format(columns, arrays):
         Dict with arrays for each column of rmc6f file that are
         property of Atoms object.
 
-    Yields
+    Returns
     ------
     property_ncols : list[int]
         Number of columns for each property.
@@ -305,7 +305,7 @@ def _write_rmc_get_cell_from_cellpar(cellpar):
         Cell parameters (ie [a, b, c, alpha, beta, gamma]) to
         use in constructing the cell.
 
-    Yields
+    Returns
     ------
     cell: Cell object
         The ASE Cell object created from the input cell parameters.
@@ -377,7 +377,7 @@ def read_rmc6f(fileobj, atom_type_map=None):
         Example to map deuterium to hydrogen:
         atom_type_map = { 'D': 'H' }
 
-    Yields
+    Returns
     ------
     structure : Atoms
         The Atoms object read in from the rmc6f file.
