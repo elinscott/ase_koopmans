@@ -3,7 +3,7 @@ import datetime
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.utils import basestring
+from ase.utils import reader, writer
 from ase.geometry import cellpar_to_cell
 
 __all__ = ['read_rmc6f', 'write_rmc6f']
@@ -129,7 +129,7 @@ def _read_process_rmc6f_lines_to_pos_and_cell(lines):
     header = True
 
     # Remove any lines that are blank
-    lines = [l for l in lines if l != '']
+    lines = [line for line in lines if line != '']
 
     # Process each line of rmc6f file
     pos = {}
@@ -261,13 +261,13 @@ def _write_output_column_format(columns, arrays):
     return property_ncols, dtype_obj, formats_as_str
 
 
-def _write_output(fileobj, header_lines, data, fmt, order=None):
+def _write_output(filename, header_lines, data, fmt, order=None):
     """
-    Helper function to write information to the fileobj
+    Helper function to write information to the filename
 
     Parameters
     ----------
-    fileobj : file|str
+    filename : file|str
         A file like object or filename
     header_lines : list[str]
         Header section of output rmc6f file
@@ -281,9 +281,11 @@ def _write_output(fileobj, header_lines, data, fmt, order=None):
         If not None, gives a list of atom types for the order
         to write out each.
     """
+    f = filename
+
     # Write header section
     for line in header_lines:
-        fileobj.write("%s \n" % line)
+        f.write("%s \n" % line)
 
     # If specifying the order, fix the atom id and write to file
     natoms = data.shape[0]
@@ -294,86 +296,21 @@ def _write_output(fileobj, header_lines, data, fmt, order=None):
                 if atype == data[i][1]:
                     new_id += 1
                     data[i][0] = new_id
-                    fileobj.write(fmt % tuple(data[i]))
+                    f.write(fmt % tuple(data[i]))
     # ...just write rows to file
     else:
         for i in range(natoms):
-            fileobj.write(fmt % tuple(data[i]))
+            f.write(fmt % tuple(data[i]))
 
 
-def _write_rmc_get_cell_from_cellpar(cellpar):
-    """
-    Convert RMCProfile cell paramters to ASE cell.
-
-    Parameters
-    ----------
-    cellpar: list[float]
-        Cell parameters (ie [a, b, c, alpha, beta, gamma]) to
-        use in constructing the cell.
-
-    Returns
-    ------
-    cell: Cell object
-        The ASE Cell object created from the input cell parameters.
-    """
-    a, b, c, alpha, beta, gamma = cellpar
-
-    # Handle orthorhombic cells separately to avoid rounding errors
-    eps = 2 * np.spacing(90.0, dtype=np.float64)  # around 1.4e-14
-    # alpha
-    if abs(abs(alpha) - 90) < eps:
-        cos_alpha = 0.0
-        sin_alpha = 1.0
-    else:
-        cos_alpha = np.cos(alpha * np.pi / 180.0)
-        sin_alpha = np.sin(alpha * np.pi / 180.0)
-    # beta
-    if abs(abs(beta) - 90) < eps:
-        cos_beta = 0.0
-    else:
-        cos_beta = np.cos(beta * np.pi / 180.0)
-    # gamma
-    if abs(gamma - 90) < eps:
-        cos_gamma = 0.0
-    elif abs(gamma + 90) < eps:
-        cos_gamma = 0.0
-    else:
-        cos_gamma = np.cos(gamma * np.pi / 180.0)
-
-    # Get angles
-    convert = np.pi / 180.
-    alpha, beta, gamma = convert * np.array([alpha, beta, gamma])
-
-    # Calculate volume using cell paramters
-    s = 0.5 * (alpha + beta + gamma)
-    sine_alpha = np.sin(s - alpha)
-    sine_beta = np.sin(s - beta)
-    sine_gamma = np.sin(s - gamma)
-    sine_prod = np.sin(s) * sine_alpha * sine_beta * sine_gamma
-    volume = 2. * a * b * c * np.sqrt(sine_prod)
-
-    # Use calculated volume and cell paramters to get cell vectors
-    va_0 = volume / (b * c * sin_alpha)
-    va_1 = a * cos_gamma
-    va_2 = a * cos_beta
-    va = np.array([va_0, va_1, va_2])
-    vb = b * np.array([0, sin_alpha, cos_alpha])
-    vc = c * np.array([0, 0, 1])
-
-    # Get returned cell using cell vectors
-    cell = np.vstack([va, vb, vc])
-
-    return cell
-
-
-def read_rmc6f(fileobj, atom_type_map=None):
+@reader
+def read_rmc6f(filename, atom_type_map=None):
     """
     Parse a RMCProfile rmc6f file into ASE Atoms object
 
-
     Parameters
     ----------
-    fileobj : file|str
+    filename : file|str
         A file like object or filename.
     atom_type_map: dict{str:str}
         Map of atom types for conversions. Mainly used if there is
@@ -389,9 +326,7 @@ def read_rmc6f(fileobj, atom_type_map=None):
         The Atoms object read in from the rmc6f file.
     """
 
-    if isinstance(fileobj, basestring):
-        f = open(fileobj)
-
+    f = filename
     lines = f.readlines()
 
     # Process the rmc6f file to extract positions and cell
@@ -432,13 +367,14 @@ def read_rmc6f(fileobj, atom_type_map=None):
     return atoms
 
 
-def write_rmc6f(fileobj, atoms, order=None, atom_type_map=None):
+@writer
+def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
     """
     Write output in rmc6f format - RMCProfile v6 fractional coordinates
 
     Parameters
     ----------
-    fileobj : file|str
+    filename : file|str
         A file like object or filename.
     atoms: Atoms object
         The Atoms object to be written.
@@ -455,9 +391,6 @@ def write_rmc6f(fileobj, atoms, order=None, atom_type_map=None):
         Example to map hydrogen to deuterium:
         atom_type_map = { 'H': 'D' }
     """
-
-    if isinstance(fileobj, basestring):
-        fileobj = open(fileobj, 'w')
 
     # get atom types and how many of each
     atom_types = set(atoms.get_chemical_symbols())
@@ -523,7 +456,7 @@ def write_rmc6f(fileobj, atoms, order=None, atom_type_map=None):
     # matrix
 
     cell_parameters = atoms.get_cell_lengths_and_angles()
-    cell = _write_rmc_get_cell_from_cellpar(cell_parameters)
+    cell = cellpar_to_cell(cell_parameters).T
     x_line = ' '.join(['{:12.6f}'.format(i) for i in cell[:][0]])
     y_line = ' '.join(['{:12.6f}'.format(i) for i in cell[:][1]])
     z_line = ' '.join(['{:12.6f}'.format(i) for i in cell[:][2]])
@@ -566,4 +499,4 @@ def write_rmc6f(fileobj, atoms, order=None, atom_type_map=None):
         data[i][1] = atom_type_map[data[i][1]]
 
     # Write the output
-    _write_output(fileobj, header_lines, data, fmt, order=order)
+    _write_output(filename, header_lines, data, fmt, order=order)
