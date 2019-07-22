@@ -53,9 +53,9 @@ class QChem(FileIOCalculator):
             self.command = 'qchem -pbs '
         else:
             self.command = 'qchem '
-        if not np == 1:
+        if np != 1:
             self.command += '-np %d ' % np
-        if not nt == 1:
+        if nt != 1:
             self.command += '-nt %d ' % nt
         self.command += 'PREFIX.inp PREFIX.out'
         if scratch is not None:
