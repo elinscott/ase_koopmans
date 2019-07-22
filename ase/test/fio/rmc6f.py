@@ -70,6 +70,18 @@ def test_rmc6f_write():
         os.unlink('output.rmc6f')
 
 
+def test_rmc6f_write_with_order():
+    """Test for writing rmc6f input file with order passed in."""
+    try:
+        io.write('output.rmc6f', rmc6f_atoms, order=['F', 'S'])
+        readback = io.read('output.rmc6f')
+        reordered_positions = np.vstack(
+            (rmc6f_atoms.positions[1:7], rmc6f_atoms.positions[0]))
+        assert np.allclose(reordered_positions, readback.positions)
+    finally:
+        os.unlink('output.rmc6f')
+
+
 def test_rmc6f_read_construct_regex():
     """Test for utility function that constructs rmc6f header regex."""
     header_lines = [
@@ -248,6 +260,7 @@ def test_rmc6f_write_output():
 # Tests
 test_rmc6f_read()
 test_rmc6f_write()
+test_rmc6f_write_with_order()
 test_rmc6f_read_construct_regex()
 test_rmc6f_read_line_of_atoms_section_style_no_labels()
 test_rmc6f_read_line_of_atoms_section_style_labels()
