@@ -221,6 +221,11 @@ class BaseSiesta(FileIOCalculator):
         # For compatibility with old variable name:
         commandvar = os.environ.get('SIESTA_COMMAND')
         if commandvar is not None:
+            import warnings
+            warnings.warn('Please use $ASE_SIESTA_COMMAND and not '
+                          '$SIESTA_COMMAND, which will be ignored '
+                          'in the future.',
+                          np.VisibleDeprecationWarning)
             runfile = self.prefix + '.fdf'
             outfile = self.prefix + '.out'
             try:
