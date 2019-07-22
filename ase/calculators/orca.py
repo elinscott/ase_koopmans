@@ -100,7 +100,7 @@ class ORCA(FileIOCalculator):
 
     def read_energy(self):
         """Read Energy from ORCA output file."""
-        text = open(self.label + '.out', 'r').read()
+        text = open(self.label + '.out', 'r', encoding='utf-8').read()
         lines = iter(text.split('\n'))
         # Energy:
         estring = 'FINAL SINGLE POINT ENERGY'
@@ -112,7 +112,7 @@ class ORCA(FileIOCalculator):
 
     def read_forces(self):
         """Read Forces from ORCA output file."""
-        file = open(self.label + '.engrad', 'r')
+        file = open(self.label + '.engrad', 'r', encoding='utf-8')
         lines = file.readlines()
         file.close()
         getgrad="no"
@@ -169,7 +169,7 @@ class PointChargePotential:
 
     def get_forces(self, calc):
         ''' reads forces on point charges from .pcgrad file '''
-        with open(os.path.join(self.directory, self.label + '.pcgrad'), 'r') as f:
+        with open(os.path.join(self.directory, self.label + '.pcgrad'), 'r', encoding='utf-8') as f:
             lines = f.readlines()
         numpc = int(lines[0])
         forces = np.zeros((numpc, 3))
