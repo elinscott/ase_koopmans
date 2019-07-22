@@ -7,7 +7,6 @@ from ase.calculators.calculator import InputError, CalculationFailed, SCFError, 
 import numpy as np
 from ase.units import Bohr, Hartree
 import warnings
-import multiprocessing
 import psi4
 import os
 import pickle
@@ -68,9 +67,10 @@ class Psi4(Calculator):
 
         # Threads
         if self.parameters['num_threads'] == 'max':
+            import multiprocessing
             self.psi4.set_num_threads(multiprocessing.cpu_count())
         elif  type(self.parameters['num_threads']) == int:
-            self.psi4.set_num_threads(kwargs['num_threads'])
+            self.psi4.set_num_threads(self.parameters['num_threads'])
 
         if self.parameters['xc'].lower() == 'lda':
             warnings.warn('Psi4 does not have LDA implemented, SVWN will be used instead')
@@ -104,7 +104,7 @@ class Psi4(Calculator):
         # Generate the atomic input
         result = ''
         for atom in atoms:
-            temp = '{}\t{}\t{}\t{}\n'.format(atom.symbol, \
+            temp = '{}\t{:.15f}\t{:.15f}\t{:.15f}\n'.format(atom.symbol, \
             atom.position[0],atom.position[1], \
             atom.position[2])
             result += temp
@@ -114,10 +114,12 @@ class Psi4(Calculator):
                 self.parameters['multiplicity'] is not None:
             result += '{} {}\n'.format(self.parameters['charge'],
                                      self.parameters['multiplicity'])
-        if self.parameters['charge'] is not None:
-            result += '{}\n'.format(self.parameters['charge'])
+        elif self.parameters['charge'] is not None:
+            warnings.warn('A charge was provided without a spin multiplicity.'
+                          'A multiplicity of 1 is assumed')
+            result += '{} 1\n'.format(self.parameters['charge'])
 
-        if self.parameters['multiplicity'] is not None:
+        elif self.parameters['multiplicity'] is not None:
             result += '0 {}\n'.format(self.parameters['multiplicity'])
         
 
