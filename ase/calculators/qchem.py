@@ -21,19 +21,28 @@ class QChem(FileIOCalculator):
                           'charge': 0}
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label='qchem', scratch=None, np=1, nt=1, basisfile=None,
-                 ecpfile=None, pbs=False, atoms=None, **kwargs):
+                 label='qchem', scratch=None, np=1, nt=1, pbs=False,
+                 basisfile=None, ecpfile=None, atoms=None, **kwargs):
         """
-        All options are copied verbatim to the input file.
+        The scratch directory, number of processor and threads as well as a few
+        other command line options can be set using the arguments explained
+        below. The remaining kwargs are copied verbatim as options to the input
+        file.
 
         scratch: str
-            path used for the scratch file
+            path of the scratch directory
         np: int
-            number of processors
+            number of processors for the -np command line flag
         nt: int
-            number of threads
+            number of threads for the -nt command line flag
         pbs: boolean
             command line flag for pbs scheduler (see QChem manual)
+        basisfile: str
+            path to file containing the basis. Use in combination with
+            basis='gen' keyword argument.
+        ecpfile: str
+            path to file containing the effective core potential. Use in
+            combination with ecp='gen' keyword argument.
         """
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
