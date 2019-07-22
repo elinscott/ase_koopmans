@@ -39,15 +39,6 @@ class QChem(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
 
-        if restart is not None:
-            try:
-                self.read(restart)
-            except ReadError:
-                if ignore_bad_restart_file:
-                    self.reset()
-                else:
-                    raise
-
         # Augment the command by various flags
         if pbs:
             self.command = 'qchem -pbs '
