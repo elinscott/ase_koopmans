@@ -134,7 +134,7 @@ def _read_process_rmc6f_lines_to_pos_and_cell(lines):
         # check if in a section
         m = re.match(sections_re, line)
         if m is not None:
-            section = m.group(0).rstrip().lstrip()
+            section = m.group(0).strip()
             header = False
             continue
 
