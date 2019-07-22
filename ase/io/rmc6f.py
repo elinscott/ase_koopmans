@@ -4,7 +4,7 @@ import numpy as np
 
 from ase.atoms import Atoms
 from ase.utils import reader, writer
-from ase.geometry import cellpar_to_cell
+from ase.cell import Cell
 
 __all__ = ['read_rmc6f', 'write_rmc6f']
 
@@ -175,7 +175,7 @@ def _read_process_rmc6f_lines_to_pos_and_cell(lines):
 
                 if field.startswith('Cell'):
                     cellpar = [float(x) for x in val.split()]
-                    cell = cellpar_to_cell(cellpar)
+                    cell = Cell.fromcellpar(cellpar)
 
                 if field.startswith('Lattice'):
                     pass
@@ -445,7 +445,7 @@ def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
     # matrix
 
     cell_parameters = atoms.get_cell_lengths_and_angles()
-    cell = cellpar_to_cell(cell_parameters).T
+    cell = Cell.fromcellpar(cell_parameters).T
     x_line = ' '.join(['{:12.6f}'.format(i) for i in cell[0]])
     y_line = ' '.join(['{:12.6f}'.format(i) for i in cell[1]])
     z_line = ' '.join(['{:12.6f}'.format(i) for i in cell[2]])
