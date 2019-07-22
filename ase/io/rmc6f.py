@@ -17,6 +17,7 @@ def _read_construct_regex(lines):
     """
     Utility for constructing  regular expressions used by reader.
     """
+    lines = [l.strip() for l in lines]
     lines_re = '|'.join(lines)
     lines_re = lines_re.replace(' ', r'\s+')
     lines_re = lines_re.replace('(', r'\(')
@@ -127,6 +128,9 @@ def _read_process_rmc6f_lines_to_pos_and_cell(lines):
     section = None
     header = True
 
+    # Remove any lines that are blank
+    lines = [l for l in lines if l != '']
+
     # Process each line of rmc6f file
     pos = {}
     for line in lines:
@@ -143,10 +147,12 @@ def _read_process_rmc6f_lines_to_pos_and_cell(lines):
             field = None
             val = None
 
-            m = re.match(header_lines_re + r'\s+(.*)', line)
+            # Regex that matches whitespace-separated floats
+            float_list_re = r'\s+(\d[\d|\s\.]+[\d|\.])'
+            m = re.search(header_lines_re + float_list_re, line)
             if m is not None:
-                field = m.group(1).lstrip().rstrip()
-                val = m.group(2).lstrip().rstrip()
+                field = m.group(1)
+                val = m.group(2)
 
             if field is not None and val is not None:
 
