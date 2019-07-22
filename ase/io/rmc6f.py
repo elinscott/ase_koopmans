@@ -468,7 +468,7 @@ def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
     arrays['symbols'] = np.array(atoms.get_chemical_symbols())
     arrays['ref_num'] = np.zeros(natoms, int)
     arrays['ref_cell'] = np.zeros((natoms, 3), int)
-    arrays['scaled_positions'] = np.array(atoms.get_scaled_positions(), float)
+    arrays['scaled_positions'] = np.array(atoms.get_scaled_positions())
 
     # get formatting for writing output based on atom arrays
     ncols, dtype_obj, fmt = _write_output_column_format(fr_cols, arrays)
