@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from ase import Atoms, io
+from ase.lattice.compounds import TRI_Fe2O3
 
 
 rmc6f_input_text = """
@@ -61,10 +62,11 @@ def test_rmc6f_read():
 
 def test_rmc6f_write():
     """Test for writing rmc6f input file."""
+    tol = 1e-5
     try:
         io.write('output.rmc6f', rmc6f_atoms)
         readback = io.read('output.rmc6f')
-        assert np.allclose(rmc6f_atoms.positions, readback.positions)
+        assert np.allclose(rmc6f_atoms.positions, readback.positions, rtol=tol)
         assert readback == rmc6f_atoms
     finally:
         os.unlink('output.rmc6f')
@@ -72,12 +74,43 @@ def test_rmc6f_write():
 
 def test_rmc6f_write_with_order():
     """Test for writing rmc6f input file with order passed in."""
+    tol = 1e-5
     try:
         io.write('output.rmc6f', rmc6f_atoms, order=['F', 'S'])
         readback = io.read('output.rmc6f')
         reordered_positions = np.vstack(
             (rmc6f_atoms.positions[1:7], rmc6f_atoms.positions[0]))
-        assert np.allclose(reordered_positions, readback.positions)
+        assert np.allclose(reordered_positions, readback.positions, rtol=tol)
+    finally:
+        os.unlink('output.rmc6f')
+
+
+def test_rmc6f_write_with_triclinic_system():
+    """Test for writing rmc6f input file for triclinic system
+    """
+    tol = 1e-5
+    fe4o6 = TRI_Fe2O3(
+        symbol=('Fe', 'O'),
+        latticeconstant={
+            'a': 5.143,
+            'b': 5.383,
+            'c': 14.902,
+            'alpha': 90.391,
+            'beta': 90.014,
+            'gamma': 89.834},
+        size=(1, 1, 1))
+
+    # Make sure these are the returned cells (verified correct for rmc6f file)
+    va = [5.143, 0.0, 0.0]
+    vb = [0.015596,  5.382977, 0.0]
+    vc = [-0.00364124, -0.101684, 14.901653]
+    try:
+        io.write('output.rmc6f', fe4o6)
+        readback = io.read('output.rmc6f')
+        assert np.allclose(fe4o6.positions, readback.positions, rtol=tol)
+        assert np.allclose(va, readback.cell[0], rtol=tol)
+        assert np.allclose(vb, readback.cell[1], rtol=tol)
+        assert np.allclose(vc, readback.cell[2], rtol=tol)
     finally:
         os.unlink('output.rmc6f')
 
@@ -134,6 +167,7 @@ def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell():
     """Test for utility function that processes lines of rmc6f using
     regular expressions to capture atom properties and cell information
     """
+    tol = 1e-5
     lines = rmc6f_input_text.split('\n')
     props, cell = io.rmc6f._read_process_rmc6f_lines_to_pos_and_cell(lines)
 
@@ -150,7 +184,7 @@ def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell():
     np.fill_diagonal(target_cell, 4.672816)
 
     assert props == target_props
-    assert np.array_equal(cell, target_cell)
+    assert np.allclose(cell, target_cell, rtol=tol)
 
 
 def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell_padded_whitespace():
@@ -158,6 +192,7 @@ def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell_padded_whitespace():
     regular expressions to capture atom properties and cell information
     with puposeful whitespace padded on one line
     """
+    tol = 1e-5
     lines = rmc6f_input_text.split('\n')
     lines[14] = "    {}    ".format(lines[14])  # intentional whitespace
     props, cell = io.rmc6f._read_process_rmc6f_lines_to_pos_and_cell(lines)
@@ -175,7 +210,7 @@ def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell_padded_whitespace():
     np.fill_diagonal(target_cell, 4.672816)
 
     assert props == target_props
-    assert np.array_equal(cell, target_cell)
+    assert np.allclose(cell, target_cell, rtol=tol)
 
 
 def test_rmc6f_write_output_column_format():
@@ -261,6 +296,7 @@ def test_rmc6f_write_output():
 test_rmc6f_read()
 test_rmc6f_write()
 test_rmc6f_write_with_order()
+test_rmc6f_write_with_triclinic_system()
 test_rmc6f_read_construct_regex()
 test_rmc6f_read_line_of_atoms_section_style_no_labels()
 test_rmc6f_read_line_of_atoms_section_style_labels()
