@@ -102,7 +102,7 @@ def test_rmc6f_write_with_triclinic_system():
 
     # Make sure these are the returned cells (verified correct for rmc6f file)
     va = [5.143, 0.0, 0.0]
-    vb = [0.015596,  5.382977, 0.0]
+    vb = [0.015596, 5.382977, 0.0]
     vc = [-0.00364124, -0.101684, 14.901653]
     try:
         io.write('output.rmc6f', fe4o6)

@@ -400,7 +400,7 @@ def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
         atom_types = order
 
     atom_count_dict = atoms.symbols.formula.count()
-    natom_types = [ str(atom_count_dict[atom_type]) for atom_type in atom_types]
+    natom_types = [str(atom_count_dict[atom_type]) for atom_type in atom_types]
 
     # create an atom type map if one does not exist from unique atomic symbols
     if atom_type_map is None:
