@@ -263,8 +263,22 @@ class POVRAY(PlottingVariables):
             if len(pair) == 2:
                 a, b = pair
                 offset = (0, 0, 0)
-            else:
+                bond_order = 1
+                bond_offset = (0,0,0)
+            elif len(pair) == 3:
                 a, b, offset = pair
+                bond_order = 1
+                bond_offset = (0,0,0)
+            elif len(pair) == 4:
+                a, b, offset, bond_order = pair
+                bond_offset = (.2,0,0)
+            elif len(pair) > 4:
+                a, b, offset, bond_order, bond_offset = pair
+            else:
+                raise RuntimeError('Each element in bondatom must have at least 2 entries')
+
+            if bond_order not in [0,1,2,3]:
+                raise ValueError('Bond_order must be either 0, 1, 2, or 3')
             # Up to here, we should have all a, b, offset, bond_order, bond_offset for all bonds.
             R = np.dot(offset, self.cell)
             mida = 0.5 * (self.positions[a] + self.positions[b] + R)
@@ -292,12 +306,46 @@ class POVRAY(PlottingVariables):
             # bond_order > 3 : raise inputerror
             # To shift the bond, add the shift to the first two coordinate in write statement.
 
-            w(fmt %
-              (pa(self.positions[a]), pa(mida),
-                  pc(self.colors[a]), transa, texa))
-            w(fmt %
-              (pa(self.positions[b]), pa(midb),
-                  pc(self.colors[b]), transb, texb))
+            if bond_order == 1:
+                w(fmt %
+                  (pa(self.positions[a]), pa(mida),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]), pa(midb),
+                      pc(self.colors[b]), transb, texb))
+            elif bond_order == 2:
+                bondOffSetDB = [x/2 for x in bond_offset]
+                w(fmt %
+                  (pa(self.positions[a]-bondOffSetDB), pa(mida-bondOffSetDB),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]-bondOffSetDB), pa(midb-bondOffSetDB),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a]+bondOffSetDB), pa(mida+bondOffSetDB),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]+bondOffSetDB), pa(midb+bondOffSetDB),
+                      pc(self.colors[b]), transb, texb))
+            elif bond_order == 3:
+                w(fmt %
+                  (pa(self.positions[a]), pa(mida),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]), pa(midb),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a]+bond_offset), pa(mida+bond_offset),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]+bond_offset), pa(midb+bond_offset),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a]-bond_offset), pa(mida-bond_offset),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]-bond_offset), pa(midb-bond_offset),
+                      pc(self.colors[b]), transb, texb))
 
         # Draw constraints if requested
         if self.exportconstraints:
