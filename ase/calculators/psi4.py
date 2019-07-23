@@ -2,8 +2,8 @@
 authors: Ben Comer (Georgia Tech), Xiangyun (Ray) Lei (Georgia Tech)
 
 """
-from ase.calculators.calculator import Calculator, all_properties, all_changes
-from ase.calculators.calculator import InputError, CalculationFailed, SCFError, ReadError 
+from ase.calculators.calculator import Calculator, all_changes
+from ase.calculators.calculator import InputError, ReadError 
 import numpy as np
 from ase.units import Bohr, Hartree
 import warnings
@@ -16,14 +16,13 @@ import codecs
 class Psi4(Calculator):
     """
     An ase calculator for the popular open source Q-chem code
-    psi4. This is really rudimentary
-
-    you can always use the in-built psi4 module through:
-    calc.psi4
-
+    psi4.
     xc is the generic input for whatever method you wish to use, thus
-    and quantum chemistry method implemented in psi4 can be input 
+    and quantum chemistry method implemented in psi4 can be input
     (i.e. ccsd(t))
+
+    also note that you can always use the in-built psi4 module through:
+    calc.psi4
     """
     implemented_properties = ['energy', 'forces']
     
