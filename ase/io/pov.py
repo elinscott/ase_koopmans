@@ -264,22 +264,27 @@ class POVRAY(PlottingVariables):
                 a, b = pair
                 offset = (0, 0, 0)
                 bond_order = 1
-                bond_offset = (0,0,0)
+                bond_offset = (0, 0, 0)
             elif len(pair) == 3:
                 a, b, offset = pair
                 bond_order = 1
-                bond_offset = (0,0,0)
+                bond_offset = (0, 0, 0)
             elif len(pair) == 4:
                 a, b, offset, bond_order = pair
-                bond_offset = (.2,0,0)
+                bond_offset = (self.bondlinewidth, self.bondlinewidth, 0)
             elif len(pair) > 4:
                 a, b, offset, bond_order, bond_offset = pair
             else:
-                raise RuntimeError('Each element in bondatom must have at least 2 entries')
+                raise RuntimeError('Each list in bondatom must have at least 2 entries. Error at %s' %(pair))
 
-            if bond_order not in [0,1,2,3]:
-                raise ValueError('Bond_order must be either 0, 1, 2, or 3')
+            if len(bond_offset) != 3:
+                raise ValueError('bond_offset must have 3 elements. Error at %s' %(pair))
+            if bond_order not in [0, 1, 2, 3]:
+                raise ValueError('Bond_order must be either 0, 1, 2, or 3. Error at %s' %(pair))
+
             # Up to here, we should have all a, b, offset, bond_order, bond_offset for all bonds.
+
+
             R = np.dot(offset, self.cell)
             mida = 0.5 * (self.positions[a] + self.positions[b] + R)
             midb = 0.5 * (self.positions[a] + self.positions[b] - R)
@@ -303,7 +308,6 @@ class POVRAY(PlottingVariables):
             # bond_order == 1: use original code
             # bond_order == 2: draw two bonds, one is shifted by bond_offset/2, and another is shifted by -bond_offset/2.
             # bond_order == 3: draw two bonds, one is shifted by bond_offset, and one is shifted by -bond_offset, and the other has no shift.
-            # bond_order > 3 : raise inputerror
             # To shift the bond, add the shift to the first two coordinate in write statement.
 
             if bond_order == 1:
