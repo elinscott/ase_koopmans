@@ -17,28 +17,29 @@ class XTB(FileIOCalculator):
     implemented_properties = ['energy', 'forces']
 
     name = 'xTB'
-    command = 'xtb --grad PREFIX.xyz > PREFIX.out'
+    command = 'xtb PREFIX.xyz > PREFIX.out'
 
     if not 'XTBHOME' in os.environ:  # program installed?
         warn('WARNING: $XTBHOME variable not found.\
               xTB installed?')
 
     def __init__(self, label='ase_xtb', atoms=None, charge=None,
-                 unpaired_electrons=None, gbsa=None):
+                 unpaired_electrons=None, gbsa=None, restart=True):
         self.label = label
         self.atoms = atoms
         self.charge = charge
         self.uhf = unpaired_electrons
-        self.gbsa = gbsa 
+        self.gbsa = gbsa
+        self.restart = restart
 
-        command = 'xtb --grad PREFIX.xyz > PREFIX.out'
-        add_pfx = ''
+        command = 'xtb PREFIX.xyz > PREFIX.out'
+        add_pfx = ' --grad '  #XXX WIP: currently forces always calculated.
         if charge:
             add_pfx += ' --chrg {} '.format(charge)
         if unpaired_electrons:
             add_pfx += ' --uhf {} '.format(charge)
-        if gbsa:
-            add_pfx += ' --gbsa {} '.format(gbsa)
+        if not restart:
+            add_pfx += ' --norestart '
 
         self.command = command.split(' ')[0] +\
                        add_pfx +\
@@ -52,11 +53,11 @@ class XTB(FileIOCalculator):
 
 
     def write_input(self, atoms, properties=None, system_changes=None):
-        if 'forces' in properties:
-            new_cmd = self.command.split(' ')
-            new_cmd = [new_cmd[0]] + ['--grad'] + new_cmd[1:]
-            new_cmd = ' '.join(x for x in new_cmd)
-            self.command = new_cmd
+        #if 'forces' in properties:
+        #    new_cmd = self.command.split(' ')
+        #    new_cmd = [new_cmd[0]] + ['--grad'] + new_cmd[1:]
+        #    new_cmd = ' '.join(x for x in new_cmd)
+        #    self.command = new_cmd
 
         fobj = open(self.label + '.xyz', 'w')
         simple_write_xyz(fobj, [atoms],
@@ -104,7 +105,7 @@ class XTB(FileIOCalculator):
         
         xtb_pos *= Bohr 
         ase_pos = self.atoms.get_positions()
-        assert((xtb_pos - ase_pos < 1e6).all(), 'ERROR in force readout: Positions')
+        assert((xtb_pos - ase_pos < 1e6), 'ERROR in force readout: Positions')
         ase_sym = self.atoms.get_chemical_symbols()
         assert(xtb_sym == ase_sym, 'ERROR in force readout: Atom sequence')
 
