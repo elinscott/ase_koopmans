@@ -197,6 +197,19 @@ class DFTD3(FileIOCalculator):
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
+
+        # Remove ghost atoms from calculation
+        # XXX WIP: only for GPAW, and when using list indices for labeling ghosts
+        all_atoms = atoms.copy()
+        if self.dft is not none:
+            if 'setups' in self.dft.parameters:
+                setups = self.dft.parameters['setups']
+                popidx = [k for k, v in setups.items() if v=='ghost']
+                mask = np.ones(len(atoms), bool)
+                mask[popidx] = False
+                atoms = atoms[mask]
+                self.atoms = atoms
+
         # We don't call FileIOCalculator.calculate here, because that method
         # calls subprocess.call(..., shell=True), which we don't want to do.
         # So, we reproduce some content from that method here.
@@ -229,6 +242,9 @@ class DFTD3(FileIOCalculator):
                                (self.name, errorcode))
 
         self.read_results()
+
+        # revert to original atoms object, regardless of ghosts
+        self.atoms = all_atoms
 
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties=properties,
