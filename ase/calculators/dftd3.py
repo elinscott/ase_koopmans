@@ -200,7 +200,6 @@ class DFTD3(FileIOCalculator):
 
         # Remove ghost atoms from calculation
         # XXX WIP: only for GPAW, and when using list indices for labeling ghosts
-        XXX
         all_atoms = atoms.copy()
         if self.dft is not None:
             if 'setups' in self.dft.parameters:
