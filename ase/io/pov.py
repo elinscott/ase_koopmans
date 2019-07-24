@@ -10,7 +10,7 @@ import numpy as np
 from ase.io.utils import PlottingVariables
 from ase.constraints import FixAtoms
 from ase.utils import basestring
-
+from ase import Atoms
 
 def pa(array):
     """Povray array syntax"""
@@ -284,6 +284,17 @@ class POVRAY(PlottingVariables):
 
             # Up to here, we should have all a, b, offset, bond_order, bond_offset for all bonds.
 
+            # Rotate bond_offset so that its direction is 90 degree off the bond
+            # Utilize Atoms object to rotate
+            if bond_order > 1 and np.linalg.norm( bond_offset ) > 1.e-9:
+                tmp_atoms = Atoms('H3')
+                tmp_atoms.set_cell(self.cell)
+                tmp_atoms.set_positions([self.positions[a],
+                                         self.positions[b],
+                                         self.positions[b] + np.array(bond_offset)])
+                tmp_atoms.center()
+                tmp_atoms.set_angle(0, 1, 2, 90)
+                bond_offset = tmp_atoms[2].position - tmp_atoms[1].position
 
             R = np.dot(offset, self.cell)
             mida = 0.5 * (self.positions[a] + self.positions[b] + R)
