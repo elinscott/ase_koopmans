@@ -9,7 +9,6 @@ class XTB(FileIOCalculator):
     ''' XTB Interface for ASE 
         WIPs: 
               1. Has to calculate forces every time. (easy fix) 
-              2. Does NOT work with FIRE opt, only LFBGS. 
               
                                 Asmus O. Dohn July 2019''' 
 
@@ -24,13 +23,14 @@ class XTB(FileIOCalculator):
               xTB installed?')
 
     def __init__(self, label='ase_xtb', atoms=None, charge=None,
-                 unpaired_electrons=None, gbsa=None, restart=True):
+                 unpaired_electrons=None, gbsa=None, restart=True, procs=1):
         self.label = label
         self.atoms = atoms
         self.charge = charge
         self.uhf = unpaired_electrons
         self.gbsa = gbsa
         self.restart = restart
+        self.procs = procs
 
         command = 'xtb PREFIX.xyz > PREFIX.out'
         add_pfx = ' --grad '  #XXX WIP: currently forces always calculated.
@@ -40,6 +40,8 @@ class XTB(FileIOCalculator):
             add_pfx += ' --uhf {} '.format(charge)
         if not restart:
             add_pfx += ' --norestart '
+        if procs != 1:
+            add_pfx += '-P {0:d}'.format(procs)
 
         self.command = command.split(' ')[0] +\
                        add_pfx +\
