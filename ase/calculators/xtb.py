@@ -46,7 +46,7 @@ class XTB(FileIOCalculator):
         if procs != 1:
             add_pfx += '-P {0:d} '.format(procs)
         if acc is not None:
-            add_pfx += ' --acc {0:2.4f}'.format(acc) 
+            add_pfx += ' --acc {0:2.4f} '.format(acc) 
 
         self.command = command.split(' ')[0] +\
                        add_pfx +\
