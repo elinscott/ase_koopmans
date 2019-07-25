@@ -255,11 +255,11 @@ class POVRAY(PlottingVariables):
 
         # Draw atom bonds
         for pair in self.bondatoms:
-            # Use if to make sure that each pair has 4 componets: a, b, offset, bond_order, bond_offset
+            # Make sure that each pair has 4 componets: a, b, offset, bond_order, bond_offset
             # a, b: atom index to draw bond
             # offset: original meaning to make offset for mid-point.
             # bond_oder: if not supplied, set it to 1 (single bond). It can be  1, 2, 3, corresponding to single, double, tripple bond
-            # bond_offset: displacement from original bond poistion. Default is (0, 0, 0). Unit is Angstrom.
+            # bond_offset: displacement from original bond poistion. Default is (bondlinewidth, bondlinewidth, 0) for bond_order > 1.
             if len(pair) == 2:
                 a, b = pair
                 offset = (0, 0, 0)
@@ -314,7 +314,7 @@ class POVRAY(PlottingVariables):
             fmt = ('cylinder {%s, %s, Rbond texture{pigment '
                    '{color %s transmit %s} finish{%s}}}\n')
 
-            # Use if to draw bond, according to its bond_order.
+            # draw bond, according to its bond_order.
             # bond_order == 0: No bond is plotted
             # bond_order == 1: use original code
             # bond_order == 2: draw two bonds, one is shifted by bond_offset/2, and another is shifted by -bond_offset/2.
