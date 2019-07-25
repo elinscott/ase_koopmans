@@ -23,7 +23,9 @@ class XTB(FileIOCalculator):
               xTB installed?')
 
     def __init__(self, label='ase_xtb', atoms=None, charge=None,
-                 unpaired_electrons=None, gbsa=None, restart=True, procs=1):
+                 unpaired_electrons=None, gbsa=None, restart=True, procs=1,
+                 acc=None):
+
         self.label = label
         self.atoms = atoms
         self.charge = charge
@@ -31,6 +33,7 @@ class XTB(FileIOCalculator):
         self.gbsa = gbsa
         self.restart = restart
         self.procs = procs
+        self.acc = acc
 
         command = 'xtb PREFIX.xyz > PREFIX.out'
         add_pfx = ' --grad '  #XXX WIP: currently forces always calculated.
@@ -42,6 +45,8 @@ class XTB(FileIOCalculator):
             add_pfx += ' --norestart '
         if procs != 1:
             add_pfx += '-P {0:d} '.format(procs)
+        if acc is not None:
+            add_pfx += ' --acc {0:2.4f}'.format(acc) 
 
         self.command = command.split(' ')[0] +\
                        add_pfx +\
