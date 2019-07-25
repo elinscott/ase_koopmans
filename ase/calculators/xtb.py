@@ -107,9 +107,9 @@ class XTB(FileIOCalculator):
         
         xtb_pos *= Bohr 
         ase_pos = self.atoms.get_positions()
-        assert((xtb_pos - ase_pos < 1e-6), 'ERROR in force readout: Positions')
+        assert(abs(xtb_pos - ase_pos) < 1e-6).all(), 'ERROR in force readout: Positions'
         ase_sym = self.atoms.get_chemical_symbols()
-        assert(xtb_sym == ase_sym, 'ERROR in force readout: Atom sequence')
+        assert(xtb_sym == ase_sym), 'ERROR in force readout: Atom sequence'
 
         lines = lines[idx:-1]  # remove $end footer
         forces = np.zeros((idx, 3))
