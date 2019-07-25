@@ -41,7 +41,7 @@ class XTB(FileIOCalculator):
         if not restart:
             add_pfx += ' --norestart '
         if procs != 1:
-            add_pfx += '-P {0:d}'.format(procs)
+            add_pfx += '-P {0:d} '.format(procs)
 
         self.command = command.split(' ')[0] +\
                        add_pfx +\
