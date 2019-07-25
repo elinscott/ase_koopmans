@@ -61,6 +61,35 @@ def get_bondpairs(atoms, radius=1.1):
                           for a2, offset in zip(indices, offsets)])
     return bondpairs
 
+def set_high_bondorder_pairs(bondpairs, high_bondorder_pairs = []):
+    """Set high bondorder pairs
+
+    Modify bondpairs list (from get_bondpairs((atoms)) to include high 
+    bondorder pairs.
+
+    Parameters:
+    -----------
+    bondpairs: List of pairs, generated from get_bondpairs((atoms)
+    high_bondorder_pairs: List of pairs with high bond order
+                          using the following format:
+                          [ [a, b, offset, bond_order, bond_offset], ...]
+                          offset, bond_order, bond_offset are optional.
+    """
+
+    bondpairs_ = []
+    for pair in bondpairs:
+        (a, b) = (pair[0], pair[1] )
+        n_ = 0
+        for pair_ in high_bondorder_pairs:
+            (a_, b_) = (pair_[ 0 ], pair_[1])
+            if ( a_ == a and b_ == b) or (a_ == b and b_ == a):
+                bondpairs_.append(pair_)
+                break
+            n_ += 1
+        if n_ == len(high_bondorder_pairs):
+            bondpairs_.append(pair)
+    return bondpairs_
+
 
 class POVRAY(PlottingVariables):
     default_settings = {
