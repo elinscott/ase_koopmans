@@ -46,8 +46,9 @@ conda_tests:
    script:
      - apt-get update
      - apt-get install -yq libgl1-mesa-glx
+     - export PATH=/opt/conda/bin:$PATH
      - echo $PATH
-     - /opt/conda/bin/conda install -yq pip wheel numpy scipy matplotlib flask
+     - conda install -yq pip wheel numpy scipy matplotlib flask
      - pip install .
      - python --version
      - ase test --strict
