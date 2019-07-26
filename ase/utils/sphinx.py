@@ -26,7 +26,7 @@ def mol_role(role, rawtext, text, lineno, inliner, options={}, content=[]):
         else:
             t += text[0]
             text = text[1:]
-    n.append(nodes.Text(t))
+    n.append(nodes.inline(text=t))
     return n, []
 
 
