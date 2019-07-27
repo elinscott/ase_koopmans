@@ -1,3 +1,5 @@
+import numpy as np
+
 
 def write_py(fileobj, images):
     """Write to ASE-compatible python script."""
