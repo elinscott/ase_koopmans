@@ -8,7 +8,8 @@ from ase.units import Hartree, Bohr
 class XTB(FileIOCalculator):
     ''' XTB Interface for ASE 
         WIPs: 
-              1. Has to calculate forces every time. (easy fix) 
+              1. Has to calculate forces every time. (easy fix)
+              2. Should use default_parameters dict instead. 
               
                                 Asmus O. Dohn July 2019''' 
 
@@ -44,7 +45,8 @@ class XTB(FileIOCalculator):
         if not restart:
             add_pfx += ' --norestart '
         if procs != 1:
-            add_pfx += '-P {0:d} '.format(procs)
+            #add_pfx += '-P {0:d} '.format(procs)
+            os.environ['OMP_NUM_THREADS'] = '{d}'.format(procs)
         if acc is not None:
             add_pfx += ' --acc {0:2.4f} '.format(acc) 
 
