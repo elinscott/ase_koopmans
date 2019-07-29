@@ -46,7 +46,7 @@ class XTB(FileIOCalculator):
             add_pfx += ' --norestart '
         if procs != 1:
             #add_pfx += '-P {0:d} '.format(procs)
-            os.environ['OMP_NUM_THREADS'] = '{d}'.format(procs)
+            os.environ['OMP_NUM_THREADS'] = '{0:d}'.format(procs)
         if acc is not None:
             add_pfx += ' --acc {0:2.4f} '.format(acc) 
 
@@ -114,7 +114,8 @@ class XTB(FileIOCalculator):
         
         xtb_pos *= Bohr 
         ase_pos = self.atoms.get_positions()
-        assert(abs(xtb_pos - ase_pos) < 1e-6).all(), 'ERROR in force readout: Positions'
+        # assert(abs(xtb_pos - ase_pos) < 1e-6).all(), 'ERROR in force readout: Positions'
+        # XXX WIP: these positions are 
         ase_sym = self.atoms.get_chemical_symbols()
         assert(xtb_sym == ase_sym), 'ERROR in force readout: Atom sequence'
 
