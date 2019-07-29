@@ -209,6 +209,7 @@ def _write_xsd_html(images,connectivity=None):
             Props['UserID']= str(x + 1)
             Props['DisplayStyle']= CPK_or_BnS(atom_element[x])
             Props['Components']= atom_element[x]
+            Props['XYZ']='%1.16f,%1.16f,%1.16f' %(atom_positions[x,0],atom_positions[x,1],atom_positions[x,2])
             bondstr = ['%i'% (i + 4 + natoms + 1) for i,bond in enumerate(bonds) if x in bond]
             if bondstr:
                 Props['Connections']=','.join(bondstr)
