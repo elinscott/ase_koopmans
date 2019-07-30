@@ -231,9 +231,6 @@ class DFTD3(FileIOCalculator):
 
         self.read_results()
 
-        # revert to original atoms object, regardless of ghosts
-        self.atoms = all_atoms
-
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties=properties,
                                      system_changes=system_changes)
