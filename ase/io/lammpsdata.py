@@ -345,7 +345,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
         at.arrays["mol-id"] = mol_id
     if charge is not None:
         at.arrays["initial_charges"] = charge
-        at.arrays["mmcharges"] = charge
+        at.arrays["mmcharges"] = charge.copy()
 
     if bonds is not None:
         for (type, a1, a2) in bonds_in:
