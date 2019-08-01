@@ -7,8 +7,8 @@ from ase.data import reference_states, atomic_numbers, chemical_symbols
 from ase.utils import plural
 
 
-def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
-         orthorhombic=False, cubic=False):
+def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
+         covera=None, u=None, orthorhombic=False, cubic=False):
     """Creating bulk systems.
 
     Crystal structure and lattice constant(s) will be guessed if not
@@ -21,8 +21,13 @@ def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
         rocksalt, cesiumchloride, fluorite or wurtzite.
     a: float
         Lattice constant.
+    b: float
+        Lattice constant.  If only a and b is given, b will be interpreted
+        as c instead.
     c: float
         Lattice constant.
+    alpha: float
+        Angle in degrees for rhombohedral lattice.
     covera: float
         c/a ratio used for hcp.  Default is ideal ratio: sqrt(8/3).
     u: float
@@ -33,6 +38,9 @@ def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
     cubic: bool
         Construct cubic unit cell if possible.
     """
+
+    if c is None and b is not None:
+        c, b = b, c
 
     if covera is not None and c is not None:
         raise ValueError("Don't specify both c and c/a!")
@@ -46,7 +54,17 @@ def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
         if ref is not None:
             xref = ref['symmetry']
 
-    structures = {'sc': 1, 'fcc': 1, 'bcc': 1, 'hcp': 1, 'diamond': 1,
+        if xref == 'cubic':
+            xref = 'sc'
+
+    # Mapping of name to number of atoms in primitive cell
+    structures = {'sc': 1, 'fcc': 1, 'bcc': 1,
+                  'tetragonal': 1,
+                  'hcp': 1,
+                  'rhombohedral': 1,
+                  'orthorhombic': 1,
+                  'mcl': 1,
+                  'diamond': 1,
                   'zincblende': 2, 'rocksalt': 2, 'cesiumchloride': 2,
                   'fluorite': 3, 'wurtzite': 2}
 
@@ -68,6 +86,9 @@ def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
         raise ValueError('Please specify {} for {} and not {}'
                          .format(plural(n0, 'atom'), crystalstructure, n))
 
+    if alpha is None:
+        alpha = ref.get('alpha')
+
     if a is None:
         if xref != crystalstructure:
             raise ValueError('You need to specify the lattice constant.')
@@ -76,6 +97,11 @@ def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
         except KeyError:
             raise KeyError('No reference lattice parameter "a" for "{}"'
                            .format(name))
+
+    if b is None:
+        bovera = ref.get('b/a')
+        if bovera is not None and a is not None:
+            b = bovera * a
 
     if crystalstructure in ['hcp', 'wurtzite']:
         cubic = False
@@ -86,6 +112,11 @@ def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
                 covera = ref['c/a']
             else:
                 covera = sqrt(8 / 3)
+
+    if covera is None:
+        covera = ref.get('c/a')
+        if c is None and covera is not None:
+            c = covera * a
 
     if orthorhombic and crystalstructure != 'sc':
         return _orthorhombic_bulk(name, crystalstructure, a, covera, u)
@@ -143,6 +174,14 @@ def bulk(name, crystalstructure=None, a=None, c=None, covera=None, u=None,
                             (-a / 2, a * sqrt(3) / 2, 0),
                             (0, 0, a * covera)],
                       pbc=True)
+    elif crystalstructure == 'tetragonal':
+        atoms = Atoms(name, cell=[a, a, c], pbc=True)
+    elif crystalstructure == 'rhombohedral':
+        from ase.lattice import RHL
+        lat = RHL(a, alpha)
+        atoms = Atoms(name, cell=lat.tocell(), pbc=True)
+    elif crystalstructure == 'orthorhombic':
+        atoms = Atoms(name, cell=[a, b, c], pbc=True)
     else:
         raise ValueError('Unknown crystal structure: ' + crystalstructure)
 
