@@ -79,10 +79,10 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     if options is None:
         options = dict()
 
-    # Determine whether this is a standard KIM Model or a KIM Simulator Model
-    kim_id, this_is_a_KIM_MO = _get_kim_model_id_and_type(extended_kim_id)
+    # Determine whether this is a standard KIM Portable Model or a KIM Simulator Model
+    this_is_a_KIM_MO = _is_portable_model(extended_kim_id)
 
-    # If this is a KIM Model (supports KIM API) return support through
+    # If this is a KIM Portable Model (supports KIM API), return support through
     # a KIM-compliant simulator
     if this_is_a_KIM_MO:
 
@@ -149,7 +149,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 'Unsupported simulator "{}" requested to run KIM Models.'
                 .format(simulator))
 
-    # If we get to here, the model is a KIM Simulator Model ###
+    # If we get to here, the model is a KIM Simulator Model
 
     # Initialize KIM SM object
     ksm = kimsm.ksm_object(extended_kim_id=extended_kim_id)
@@ -338,33 +338,41 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             'Unsupported simulator: "{}".'.format(simulator_name))
 
 
-def _get_kim_model_id_and_type(extended_kim_id):
+def _is_portable_model(extended_kim_id):
     '''
     Determine whether "extended_kim_id" corresponds to either a KIM Model
     or KIM Simulator Model and extract the short KIM ID
     '''
-    # Determine whether this is a KIM Model or SM
-    if kimsm.is_simulator_model(extended_kim_id):
-        if not kimsm_loaded:
-            raise KIMCalculatorError(
-                'Model "{}" is a Simulator Model, but "kimpy.simulator_models" '
-                ' is not loaded.'.format(extended_kim_id))
-        this_is_a_KIM_MO = False
-        pref = 'SM'
-    else:
-        this_is_a_KIM_MO = True
-        pref = 'MO'
-    # Try to parse model name assuming it has an extended KIM ID format
-    # to obtain short KIM_ID. This is used to name the directory
-    # containing the SM files.
-    extended_kim_id_regex = pref + '_[0-9]{12}_[0-9]{3}'
+    # Find the location of the `kim-api-collections-management-info' utility
     try:
-        kim_id = re.search(extended_kim_id_regex, extended_kim_id).group(0)
-    except AttributeError:
-        kim_id = extended_kim_id  # Model name does not contain a short KIM ID,
-        # so use full model name for the file directory.
+        libexec_path = subprocess.check_output(
+            ["pkg-config", "--variable=libexecdir", "libkim-api"],
+            universal_newlines=True).strip().rstrip("/")
+    except:
+        raise KIMCalculatorError(
+            'ERROR: Unable to obtain libexec-path for KIM API from pkg-config.')
 
-    return kim_id, this_is_a_KIM_MO
+    kim_api_cm_info_util = os.path.join(libexec_path, "kim-api",
+            "kim-api-collections-management-info")
+
+    # Determine whether this is a Portable Model or Simulator Model
+    try:
+        item_type = subprocess.check_output([kim_api_cm_info_util, extended_kim_id],
+                universal_newlines=True)
+    except:
+        raise KIMCalculatorError(
+                'ERROR: Unable to call kim-api-collections-management-info util to '
+                'determine whether item is Portable Model or Simulator Model.')
+
+    if item_type == 'portableModel':
+        this_is_a_KIM_MO = True
+    elif item_type == 'simulatorModel':
+        this_is_a_KIM_MO = False
+    else:
+        raise KIMCalculatorError("ERROR: Item {} has type {} and is not a Portable "
+            "Model or Simulator Model.")
+
+    return this_is_a_KIM_MO
 
 
 def _get_params_for_LAMMPS_calculator(model_defn, supported_species):
@@ -452,7 +460,7 @@ def KIM_get_supported_species_list(extended_kim_id, simulator='kimmodel'):
     '''
     # Determine whether this is a standard KIM Model or
     # a KIM Simulator Model
-    kim_id, this_is_a_KIM_MO = _get_kim_model_id_and_type(extended_kim_id)
+    this_is_a_KIM_MO = _is_portable_model(extended_kim_id)
 
     # If this is a KIM Model, get supported species list
     if this_is_a_KIM_MO:
