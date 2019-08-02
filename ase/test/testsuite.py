@@ -18,7 +18,7 @@ from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
-test_calculator_names = []
+test_calculator_names = ['emt']
 
 if sys.version_info[0] == 2:
     class ResourceWarning(UserWarning):

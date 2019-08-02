@@ -10,6 +10,7 @@ system.center(vacuum=2.0)
 directory = 'ink'
 
 calc0 = Octopus(directory=directory,
+                check_keywords=False,
                 FromScratch=True,
                 stdout="'stdout.txt'",
                 stderr="'stderr.txt'",

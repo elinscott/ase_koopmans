@@ -128,6 +128,7 @@ all_formats = {
     'x3d': ('X3D', '1S'),
     'xsd': ('Materials Studio file', '1F'),
     'xsf': ('XCrySDen Structure File', '+F'),
+    'xtd': ('Materials Studio file', '+F'),
     'xyz': ('XYZ-file', '+F')}
 
 # Special cases:
@@ -380,6 +381,9 @@ def write(filename, images, format=None, parallel=True, append=False,
         written without error message.
 
     The use of additional keywords is format specific."""
+
+    if isinstance(filename, PurePath):
+        filename = str(filename)
 
     if isinstance(filename, basestring):
         filename = os.path.expanduser(filename)
@@ -776,4 +780,3 @@ def index2range(index, nsteps):
     else:
         raise RuntimeError("index2range handles integers and slices only.")
     return trbl
-

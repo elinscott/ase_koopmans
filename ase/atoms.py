@@ -243,6 +243,10 @@ class Atoms(object):
 
     @property
     def symbols(self):
+        """Get chemical symbols as a :class:`ase.symbols.Symbols` object.
+
+        The object works like ``atoms.numbers`` except its values
+        are strings.  It supports in-place editing."""
         return Symbols(self.numbers)
 
     @symbols.setter
@@ -357,7 +361,7 @@ class Atoms(object):
         return self._celldisp.copy()
 
     def get_cell(self, complete=False):
-        """Get the three unit cell vectors as a Cell object.
+        """Get the three unit cell vectors as a `class`:ase.cell.Cell` object.
 
         The Cell object resembles a 3x3 ndarray, and cell[i, j]
         is the jth Cartesian coordinate of the ith cell vector."""
@@ -473,7 +477,9 @@ class Atoms(object):
         return self.arrays['numbers'].copy()
 
     def get_chemical_symbols(self):
-        """Get list of chemical symbol strings."""
+        """Get list of chemical symbol strings.
+
+        Equivalent to ``list(atoms.symbols)``."""
         return list(self.symbols)
 
     def set_chemical_symbols(self, symbols):
@@ -1876,7 +1882,7 @@ class Atoms(object):
         return self._cellobj
 
     cell = property(_get_cell, set_cell, doc='Attribute for direct ' +
-                    'manipulation of the unit cell.')
+                    'manipulation of the unit :class:`ase.cell.Cell`.')
 
     def _get_pbc(self):
         """Return reference to pbc-flags for in-place manipulations."""

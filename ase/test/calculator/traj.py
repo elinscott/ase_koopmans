@@ -1,9 +1,8 @@
-import os
-
 from ase.calculators.calculator import get_calculator_class
 from ase.io import read, write
 from ase.build import molecule
 from ase.test import test_calculator_names
+from ase.utils import workdir
 
 
 def h2(name, par):
@@ -30,14 +29,17 @@ parameters = {
                 pbc=True),
     'jacapo': dict(pbc=True),
     'vasp': dict(xc='LDA'),
-    'espresso': dict(pbc=True, tprnfor=True,
-                     pseudopotentials={'H': 'H.pbe-rrkjus_psl.0.1.UPF'})}
+    # XXX we don't have the pseudopotential for Espresso.
+    # We need some kind of installation/config system for managing that.
+    # Disabling espresso test until we get that. --askhl
+    #'espresso': dict(pbc=True, tprnfor=True,
+    #                 pseudopotentials={'H': 'H.pbe-rrkjus_psl.0.1.UPF'}),
+    'emt': {}}
 
-for name in test_calculator_names + ['emt']:
-    if name in ['cp2k', 'gromacs', 'lammpslib', 'lammpsrun', 'mopac', 'turbomole', 'amber', 'asap']:
+
+for name in parameters:
+    if name not in test_calculator_names:
         continue
-    par = parameters.get(name, {})
-    os.mkdir(name + '-test')
-    os.chdir(name + '-test')
-    h2(name, par)
-    os.chdir('..')
+    par = parameters[name]
+    with workdir(name + '-test', mkdir=True):
+        h2(name, par)
