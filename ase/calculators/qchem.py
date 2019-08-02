@@ -26,8 +26,10 @@ class QChem(FileIOCalculator):
         """
         The scratch directory, number of processor and threads as well as a few
         other command line options can be set using the arguments explained
-        below. The remaining kwargs are copied verbatim as options to the input
-        file.
+        below. The remaining kwargs are copied as options to the input file.
+        The calculator will convert these options to lower case for storage
+        and convert back to upper case (Q-Chem standard) when writting the
+        input file.
 
         scratch: str
             path of the scratch directory
@@ -36,7 +38,7 @@ class QChem(FileIOCalculator):
         nt: int
             number of threads for the -nt command line flag
         pbs: boolean
-            command line flag for pbs scheduler (see QChem manual)
+            command line flag for pbs scheduler (see Q-Chem manual)
         basisfile: str
             path to file containing the basis. Use in combination with
             basis='gen' keyword argument.
@@ -44,6 +46,8 @@ class QChem(FileIOCalculator):
             path to file containing the effective core potential. Use in
             combination with ecp='gen' keyword argument.
         """
+
+        kwargs = {k.lower(): v.lower() for k, v, in kwargs.items()}
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
@@ -128,10 +132,11 @@ class QChem(FileIOCalculator):
             fileobj.write('$rem\n')
             for prm in self.parameters:
                 if prm not in ['charge', 'multiplicity']:
-                    fileobj.write('   %-25s   %s\n' % (prm,
-                                                       self.parameters[prm]))
+                    fileobj.write('   %-25s   %s\n' % (
+                        prm.upper(), self.parameters[prm].upper()))
+
             # Not even a parameters as this is an absolute necessity
-            fileobj.write('   %-25s   %s\n' % ('sym_ignore', 'true'))
+            fileobj.write('   %-25s   %s\n' % ('SYM_IGNORE', 'TRUE'))
             fileobj.write('$end\n\n')
 
             fileobj.write('$molecule\n')
