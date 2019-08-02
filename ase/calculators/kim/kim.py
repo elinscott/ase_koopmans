@@ -91,8 +91,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         if simulator is None:   # Default
             simulator = 'kimmodel'
-        else:
-            simulator = simulator.lower().strip()
 
         if simulator == 'kimmodel':
             msg = _check_conflict_options(
