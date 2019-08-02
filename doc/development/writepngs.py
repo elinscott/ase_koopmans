@@ -14,5 +14,4 @@ for i, s in enumerate(t):
     ofname = str(i) + '.png'
     print('writing', ofname)
     io.write(ofname, s,
-             show_unit_cell=True,
              bbox=[-3, -5, 50, 22])  # set bbox by hand, try and error

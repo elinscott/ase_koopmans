@@ -12,8 +12,7 @@ def atoms2png(atoms, filename):
     else:
         scale = 20
         rotation = ''
-    write_png(filename, atoms, show_unit_cell=1,
-              rotation=rotation, scale=scale)
+    write_png(filename, atoms, rotation=rotation, scale=scale)
 
 
 def dct2plot(dct, name, filename=None, show=True):
