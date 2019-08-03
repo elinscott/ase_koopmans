@@ -4,19 +4,27 @@ import os
 from functools import partial
 import unittest
 
+
+if not os.environ.get('DISPLAY'):
+    raise unittest.SkipTest('No display')
+
+try:
+    import tkinter  # noqa
+except ImportError:
+    raise unittest.SkipTest('tkinter not available')
+
+
 import numpy as np
 
 from ase import Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.build import molecule
-from ase.gui.i18n import _
 import ase.gui.ui as ui
+from ase.gui.i18n import _
 from ase.gui.gui import GUI
 from ase.gui.save import save_dialog
 
 
-if not os.environ.get('DISPLAY'):
-    raise unittest.SkipTest('No display')
 
 
 class Error:
