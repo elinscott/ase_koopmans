@@ -811,7 +811,8 @@ class Atoms(object):
     def get_number_of_atoms(self):
         """Deprecated, please do not use.
 
-        Replaced by get_global_number_of_atoms()."""
+        You probably want len(atoms).  Or if your atoms are distributed,
+        use (and see) get_global_number_of_atoms()."""
         import warnings
         warnings.warn('Use get_global_number_of_atoms() instead',
                       np.VisibleDeprecationWarning)
