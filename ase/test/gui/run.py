@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import argparse
 import os
+from functools import partial
+import unittest
 
 import numpy as np
 
@@ -8,19 +10,13 @@ from ase import Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.build import molecule
 from ase.gui.i18n import _
-import unittest
-
-try:
-    import ase.gui.ui as ui
-except ImportError:
-    raise unittest.SkipTest
-
+import ase.gui.ui as ui
 from ase.gui.gui import GUI
 from ase.gui.save import save_dialog
 
 
 if not os.environ.get('DISPLAY'):
-    raise unittest.SkipTest
+    raise unittest.SkipTest('No display')
 
 
 class Error:
@@ -157,19 +153,7 @@ for name in args.tests or alltests:
     gui.run(test=f)
 
 
-import os
-from functools import partial
 
-import unittest
-
-try:
-    import ase.gui.ui as ui
-except ImportError:
-    raise unittest.SkipTest
-
-
-if not os.environ.get('DISPLAY'):
-    raise unittest.SkipTest
 
 
 def window():
