@@ -127,6 +127,8 @@ class Atoms(object):
     ...           pbc=(1, 0, 0))
     """
 
+    ase_objtype = 'atoms'  # For JSONability
+
     def __init__(self, symbols=None,
                  positions=None, numbers=None,
                  tags=None, momenta=None, masses=None,
@@ -804,6 +806,20 @@ class Atoms(object):
             atoms.arrays[name] = a.copy()
         atoms.constraints = copy.deepcopy(self.constraints)
         return atoms
+
+    def todict(self):
+        """For basic JSON (non-database) support."""
+        d = dict(self.arrays)
+        d['cell'] = np.asarray(self.cell)
+        d['pbc'] = self.pbc
+        if self._celldisp.any():
+            d['celldisp'] = self._celldisp
+        if self.constraints:
+            d['constraints'] = self.constraints
+        if self.info:
+            d['info'] = self.info
+        # Calculator...  trouble.
+        return d
 
     def __len__(self):
         return len(self.arrays['positions'])
