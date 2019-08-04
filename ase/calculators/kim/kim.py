@@ -389,7 +389,7 @@ def _get_model_info(extended_kim_id, requested_simulator):
                     'retrieve Simulator Model metadata.')
 
         # Parse metadata for simulator-name
-        simulator_name = re.search("\"simulator-name\"\s+\"([A-Za-z0-9]+)\"", sm_metadata)
+        simulator_name = re.search(r"\"simulator-name\"\s+\"([A-Za-z0-9]+)\"", sm_metadata)
         if simulator_name is None:
             raise KIMCalculatorError("ERROR: Unable to determine simulator name of "
                     "item {}.".format(extended_kim_id))
@@ -397,7 +397,7 @@ def _get_model_info(extended_kim_id, requested_simulator):
             simulator_name = simulator_name.groups(1)
 
         # Parse metadata for species
-        supported_species = re.search("\"supported-species\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
+        supported_species = re.search(r"\"supported-species\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
         if supported_species is None:
             raise KIMCalculatorError("ERROR: Unable to determine supported species of "
                     "item {}.".format(extended_kim_id))
