@@ -82,8 +82,10 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
     # Determine whether this is a standard KIM Portable Model or a KIM Simulator Model
     # and retrieve its supported species.  If it is a Simulator Model, also get the name
-    # of its simulator
-    this_is_a_KIM_MO, supported_species, simulator_name = _get_model_info(extended_kim_id, simulator)
+    # of its simulator and its units from its metadata
+    this_is_a_KIM_MO, supported_species, simulator_name, supported_units = _get_model_info(
+            extended_kim_id, simulator
+    )
 
     # If this is a KIM Portable Model (supports KIM API), return support through
     # a KIM-compliant simulator
@@ -194,7 +196,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             raise KIMCalculatorError(msg)
 
         # Verify units (ASAP models are expected to work with "ase" units)
-        supported_units = ksm.get_model_units().lower().strip()
         if supported_units != "ase":
             raise KIMCalculatorError(
                 'KIM Simulator Model units are "{}", but expected to '
@@ -267,9 +268,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             model_init[i] = kimsm.template_substitution(
                 model_init[i], param_filenames_for_lammps, ksm.sm_dirname,
                 atom_type_sym_list_string, atom_type_num_list_string)
-
-        # Get model supported units
-        supported_units = ksm.get_model_units().lower().strip()
 
         if simulator == 'lammpsrun':
             # check options
@@ -366,6 +364,7 @@ def _get_model_info(extended_kim_id, requested_simulator):
     if item_type == 'portableModel':
         this_is_a_KIM_MO = True
         simulator_name = None
+        supported_units = None
 
         if requested_simulator == "kimmodel":
             with KIMModelCalculator(extended_kim_id) as calc:
@@ -403,11 +402,20 @@ def _get_model_info(extended_kim_id, requested_simulator):
                     "item {}.".format(extended_kim_id))
         else:
             supported_species = supported_species.groups(1)
+
+        # Parse metadata for units
+        supported_units = re.search(r"\"units\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
+        if supported_units is None:
+            raise KIMCalculatorError("ERROR: Unable to determine supported units of "
+                    "item {}.".format(extended_kim_id))
+        else:
+            supported_units = supported_units.groups(1)
+
     else:
         raise KIMCalculatorError("ERROR: Item {} has type {} and is not a Portable "
             "Model or Simulator Model.".format(extended_kim_id, item_type))
 
-    return this_is_a_KIM_MO, supported_species, simulator_name
+    return this_is_a_KIM_MO, supported_species, simulator_name, supported_units
 
 
 def _get_params_for_LAMMPS_calculator(model_defn, supported_species):
