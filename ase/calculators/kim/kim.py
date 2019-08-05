@@ -84,9 +84,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     # Determine whether this is a standard KIM Portable Model or a KIM Simulator Model
     # and retrieve its supported species.  If it is a Simulator Model, also get the name
     # of its simulator and its units from its metadata
-    this_is_a_KIM_MO, supported_species, simulator_name, supported_units = _get_model_info(
-            extended_kim_id, simulator
-    )
+    this_is_a_KIM_MO = _is_portable_model(extended_kim_id)
 
     # If this is a KIM Portable Model (supports KIM API), return support through
     # a KIM-compliant simulator
@@ -94,6 +92,9 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         if simulator is None:   # Default
             simulator = 'kimmodel'
+
+        supported_species = _get_portable_model_supported_species(extended_kim_id,
+                simulator)
 
         if simulator == 'kimmodel':
             msg = _check_conflict_options(
@@ -119,6 +120,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                                          **options)
 
         elif simulator == 'lammpsrun':
+
             msg = _check_conflict_options(
                 options, lammpsrun_not_allowed_options, simulator)
             if msg is not None:
@@ -154,17 +156,13 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
     # If we get to here, the model is a KIM Simulator Model
 
+    simulator_name, supported_species, supported_units = _get_simulator_model_info(
+            extended_kim_id, simulator
+    )
+
     # Initialize KIM SM object
     ksm = kimsm.ksm_object(extended_kim_id=extended_kim_id)
     param_filenames = ksm.get_model_param_filenames()
-
-    # Double check that the extended KIM ID of the Simulator Model
-    # matches the expected value. (If not, the KIM SM is corrupted.)
-    SM_extended_kim_id = ksm.get_model_extended_kim_id()
-    if extended_kim_id != SM_extended_kim_id:
-        raise KIMCalculatorError(
-            'SM extended KIM ID ("{}") does not match expected value '
-            ' ("{}").'.format(SM_extended_kim_id, extended_kim_id))
 
     # determine simulator
     if simulator is None:
@@ -288,13 +286,8 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             'Unsupported simulator: "{}".'.format(simulator_name))
 
 
-def _get_model_info(extended_kim_id, requested_simulator):
-    '''
-    Determine whether a model corresponds to either a Portable Model or Simulator Model
-    and what species it supports.  If it is a Simulator Model, also return the name of
-    its simulator.
-    '''
-    # Find the location of the `kim-api-collections-management-info' utility
+def _get_kim_api_libexec_path():
+    # Find the location of the libexec path for the KIM API
     try:
         libexec_path = subprocess.check_output(
             ["pkg-config", "--variable=libexecdir", "libkim-api"],
@@ -303,10 +296,19 @@ def _get_model_info(extended_kim_id, requested_simulator):
         raise KIMCalculatorError(
             'ERROR: Unable to obtain libexec-path for KIM API from pkg-config.')
 
+    return libexec_path
+
+
+def _is_portable_model(extended_kim_id):
+    """
+    Returns True if the model specified is a KIM Portable Model (if it is not, then it
+    must be a KIM Simulator Model -- there are no other types of models in KIM)
+    """
+    # Define location of `kim-api-collections-management-info' utility
+    libexec_path = _get_kim_api_libexec_path()
     kim_api_cm_info_util = os.path.join(libexec_path, "kim-api",
             "kim-api-collections-info")
 
-    # Determine whether this is a Portable Model or Simulator Model
     try:
         item_type = subprocess.check_output([kim_api_cm_info_util, "type", extended_kim_id],
                 universal_newlines=True)
@@ -316,63 +318,67 @@ def _get_model_info(extended_kim_id, requested_simulator):
                 'ERROR: Unable to call kim-api-collections-info util to '
                 'determine whether item is Portable Model or Simulator Model.')
 
-    if item_type == 'portableModel':
-        this_is_a_KIM_MO = True
-        simulator_name = None
-        supported_units = None
+    return (item_type == 'portableModel')
 
-        if requested_simulator == "kimmodel":
-            with KIMModelCalculator(extended_kim_id) as calc:
-                supported_species = list(calc.get_kim_model_supported_species())
 
-        elif requested_simulator == "asap":
-            from asap3 import OpenKIMcalculator
-            with OpenKIMcalculator(extended_kim_id) as calc:
-                supported_species = list(calc.get_supported_elements())
+def _get_portable_model_supported_species(extended_kim_id, requested_simulator):
+    '''
+    Determines what species a KIM Portable Model or KIM Simulator Model supports
+    '''
+    if requested_simulator in ["kimmodel", "lammpsrun"]:
+        with KIMModelCalculator(extended_kim_id) as calc:
+            supported_species = list(calc.get_kim_model_supported_species())
 
-    elif item_type == 'simulatorModel':
-        this_is_a_KIM_MO = False
+    elif requested_simulator == "asap":
+        from asap3 import OpenKIMcalculator
+        with OpenKIMcalculator(extended_kim_id) as calc:
+            supported_species = list(calc.get_supported_elements())
 
-        # Retrieve Simulator Model metadata
-        try:
-            kim_api_sm_util = os.path.join(libexec_path, "kim-api",
-                "kim-api-simulator-model")
-            sm_metadata = subprocess.check_output([kim_api_sm_util, extended_kim_id,
-                "smspec-file", "data"], universal_newlines=True)
-        except subprocess.CalledProcessError:
-            raise KIMCalculatorError(
-                    'ERROR: Unable to call kim-api-collections-info util to '
-                    'retrieve Simulator Model metadata.')
+    return supported_species
 
-        # Parse metadata for simulator-name
-        simulator_name = re.search(r"\"simulator-name\"\s+\"([A-Za-z0-9]+)\"", sm_metadata)
-        if simulator_name is None:
-            raise KIMCalculatorError("ERROR: Unable to determine simulator name of "
-                    "item {}.".format(extended_kim_id))
-        else:
-            simulator_name = simulator_name.group(1)
 
-        # Parse metadata for species
-        supported_species = re.search(r"\"supported-species\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
-        if supported_species is None:
-            raise KIMCalculatorError("ERROR: Unable to determine supported species of "
-                    "item {}.".format(extended_kim_id))
-        else:
-            supported_species = supported_species.group(1)
+def _get_simulator_model_info(extended_kim_id):
+    """
+    Retrieve Simulator Model metadata including its native simulator, supported species,
+    and units
+    """
+    # FIXME: This should be updated to use the appropriate bindings in kimpy
+    libexec_path = _get_kim_api_libexec_path()
+    kim_api_sm_util = os.path.join(libexec_path, "kim-api", "kim-api-simulator-model")
 
-        # Parse metadata for units
-        supported_units = re.search(r"\"units\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
-        if supported_units is None:
-            raise KIMCalculatorError("ERROR: Unable to determine supported units of "
-                    "item {}.".format(extended_kim_id))
-        else:
-            supported_units = supported_units.group(1)
+    try:
+        sm_metadata = subprocess.check_output([kim_api_sm_util, extended_kim_id,
+            "smspec-file", "data"], universal_newlines=True)
+    except subprocess.CalledProcessError:
+        raise KIMCalculatorError(
+                'ERROR: Unable to call kim-api-collections-info util to '
+                'retrieve Simulator Model metadata.')
 
+    # Parse metadata for simulator-name
+    simulator_name = re.search(r"\"simulator-name\"\s+\"([A-Za-z0-9]+)\"", sm_metadata)
+    if simulator_name is None:
+        raise KIMCalculatorError("ERROR: Unable to determine simulator name of "
+                "item {}.".format(extended_kim_id))
     else:
-        raise KIMCalculatorError("ERROR: Item {} has type {} and is not a Portable "
-            "Model or Simulator Model.".format(extended_kim_id, item_type))
+        simulator_name = simulator_name.group(1)
 
-    return this_is_a_KIM_MO, supported_species, simulator_name, supported_units
+    # Parse metadata for species
+    supported_species = re.search(r"\"supported-species\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
+    if supported_species is None:
+        raise KIMCalculatorError("ERROR: Unable to determine supported species of "
+                "item {}.".format(extended_kim_id))
+    else:
+        supported_species = supported_species.group(1)
+
+    # Parse metadata for units
+    supported_units = re.search(r"\"units\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
+    if supported_units is None:
+        raise KIMCalculatorError("ERROR: Unable to determine supported units of "
+                "item {}.".format(extended_kim_id))
+    else:
+        supported_units = supported_units.group(1)
+
+    return simulator_name, supported_species, supported_units
 
 
 def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units, supported_species):
