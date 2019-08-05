@@ -163,12 +163,12 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
     # determine simulator
     if simulator is None:
-        if simulator_name == 'asap':
+        if simulator_name == 'ASAP':
             simulator = 'asap'
-        elif simulator_name == 'lammps':
+        elif simulator_name == 'LAMMPS':
             simulator = 'lammpslib'
 
-    if simulator_name == "asap":
+    if simulator_name == "ASAP":
         # Initialize KIM SM object
         ksm = kimsm.ksm_object(extended_kim_id=extended_kim_id)
         param_filenames = ksm.get_model_param_filenames()
@@ -234,7 +234,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             # is taken to be that of perfect FCC.)
             return calc
 
-    elif simulator_name == "lammps":
+    elif simulator_name == "LAMMPS":
 
         if simulator == 'lammpsrun':
             # check options
