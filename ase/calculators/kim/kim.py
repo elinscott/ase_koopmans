@@ -376,7 +376,7 @@ def _get_simulator_model_info(extended_kim_id):
         raise KIMCalculatorError("ERROR: Unable to determine supported species of "
                 "item {}.".format(extended_kim_id))
     else:
-        supported_species = supported_species.group(1)
+        supported_species = supported_species.group(1).split()
 
     # Parse metadata for units
     supported_units = re.search(r"\"units\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
