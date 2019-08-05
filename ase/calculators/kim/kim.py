@@ -274,7 +274,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             for i_s, s in enumerate(supported_species):
                 atom_types[s] = i_s + 1
 
-            kim_interactions = "kim_interactions {}".format(supported_species)
+            kim_interactions = ["kim_interactions {}".format((' ').join(supported_species))]
 
             # Return LAMMPSlib calculator
             return LAMMPSlib(lammps_header=model_init,
