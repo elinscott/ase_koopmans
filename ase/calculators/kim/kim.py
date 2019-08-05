@@ -335,7 +335,9 @@ def _get_model_info(extended_kim_id, requested_simulator):
 
         # Retrieve Simulator Model metadata
         try:
-            sm_metadata = subprocess.check_output([kim_api_cm_info_util, extended_kim_id,
+            kim_api_sm_util = os.path.join(libexec_path, "kim-api",
+                "kim-api-simulator-model")
+            sm_metadata = subprocess.check_output([kim_api_sm_util, extended_kim_id,
                 "smspec-file", "data"], universal_newlines=True)
         except subprocess.CalledProcessError:
             raise KIMCalculatorError(
@@ -348,7 +350,7 @@ def _get_model_info(extended_kim_id, requested_simulator):
             raise KIMCalculatorError("ERROR: Unable to determine simulator name of "
                     "item {}.".format(extended_kim_id))
         else:
-            simulator_name = simulator_name.groups(1)
+            simulator_name = simulator_name.group(1)
 
         # Parse metadata for species
         supported_species = re.search(r"\"supported-species\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
@@ -356,7 +358,7 @@ def _get_model_info(extended_kim_id, requested_simulator):
             raise KIMCalculatorError("ERROR: Unable to determine supported species of "
                     "item {}.".format(extended_kim_id))
         else:
-            supported_species = supported_species.groups(1)
+            supported_species = supported_species.group(1)
 
         # Parse metadata for units
         supported_units = re.search(r"\"units\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
@@ -364,7 +366,7 @@ def _get_model_info(extended_kim_id, requested_simulator):
             raise KIMCalculatorError("ERROR: Unable to determine supported units of "
                     "item {}.".format(extended_kim_id))
         else:
-            supported_units = supported_units.groups(1)
+            supported_units = supported_units.group(1)
 
     else:
         raise KIMCalculatorError("ERROR: Item {} has type {} and is not a Portable "
