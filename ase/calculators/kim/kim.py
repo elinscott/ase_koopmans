@@ -329,13 +329,16 @@ def _get_portable_model_supported_species(extended_kim_id, requested_simulator):
     Determines what species a KIM Portable Model or KIM Simulator Model supports
     '''
     if requested_simulator in ["kimmodel", "lammpsrun"]:
-        with KIMModelCalculator(extended_kim_id) as calc:
-            supported_species = list(calc.get_kim_model_supported_species())
+        calc = KIMModelCalculator(extended_kim_id)
+        supported_species = list(calc.get_kim_model_supported_species())
+        calc.__del__()
 
     elif requested_simulator == "asap":
         from asap3 import OpenKIMcalculator
-        with OpenKIMcalculator(extended_kim_id) as calc:
-            supported_species = list(calc.get_supported_elements())
+        calc = OpenKIMcalculator(extended_kim_id)
+        supported_species = list(calc.get_supported_elements())
+        if hasattr(calc, '__del__'):
+            calc.__del__()
 
     return supported_species
 
