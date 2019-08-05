@@ -166,8 +166,11 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
         fileobj.write("read_data {0}\n".format(lammps_data).encode("utf-8"))
 
     # Write interaction stuff
-    fileobj.write("\n### interactions \n".encode("utf-8"))
-    if ("pair_style" in parameters) and ("pair_coeff" in parameters):
+    fileobj.write("\n### interactions\n".encode("utf-8"))
+    if "kim_interactions" in parameters:
+        fileobj.write("{}\n".format(parameters["kim_interactions"]).encode("utf-8"))
+
+    elif ("pair_style" in parameters) and ("pair_coeff" in parameters):
         pair_style = parameters["pair_style"]
         fileobj.write("pair_style {0} \n".format(pair_style).encode("utf-8"))
         for pair_coeff in parameters["pair_coeff"]:

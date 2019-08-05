@@ -24,6 +24,7 @@ except Exception:
     kimsm_loaded = False
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.calculators.lammpsrun import LAMMPS
+from ase.calculators.lammps import convert
 from .kimmodel import KIMModelCalculator
 from .exceptions import KIMCalculatorError
 
@@ -131,13 +132,13 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 '* * ' + ' '.join(supported_species) + os.linesep]
             parameters['model_init'] = []
             parameters['model_post'] = []
-            parameters['mass'] = []
+            parameters['masses'] = []
             for i, species in enumerate(supported_species):
                 if species not in atomic_numbers:
                     raise KIMCalculatorError(
                         'Unknown element species {0}.'.format(species))
                 massstr = str(atomic_masses[atomic_numbers[species]])
-                parameters['mass'].append(str(i + 1) + " " + massstr)
+                parameters['masses'].append(str(i + 1) + " " + massstr)
 
             # Return LAMMPS calculator
             return LAMMPS(**parameters, files=param_filenames,
@@ -236,39 +237,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
     elif simulator_name == "lammps":
 
-        param_filenames_for_lammps = list(param_filenames)
-        if simulator == 'lammpsrun':
-            # Remove path from parameter file names since lammpsrun copies all
-            # files into a tmp directory, so path should not appear on
-            # in LAMMPS commands
-            param_filenames_for_lammps = [os.path.basename(i)
-                                          for i in param_filenames_for_lammps]
-
-        # Build atom species and type lists based on all supported species.
-        # This means that the LAMMPS simulation will be defined to have
-        # as many atom types as are supported by the SM and each atom will
-        # be assigned a type based on its species (in the order that the
-        # species are defined in the SM).
-        supported_species = ksm.get_model_supported_species()
-        atom_type_sym_list_string = ' '.join(supported_species)
-        atom_type_num_list_string = ' '.join(
-            [str(atomic_numbers[s]) for s in supported_species])
-
-        # Process KIM templates in model_defn lines
-        for i in range(0, len(model_defn)):
-            model_defn[i] = kimsm.template_substitution(
-                model_defn[i], param_filenames_for_lammps, ksm.sm_dirname,
-                atom_type_sym_list_string, atom_type_num_list_string)
-
-        # Get model init lines
-        model_init = ksm.get_model_init_lines()
-
-        # Process KIM templates in model_init lines
-        for i in range(0, len(model_init)):
-            model_init[i] = kimsm.template_substitution(
-                model_init[i], param_filenames_for_lammps, ksm.sm_dirname,
-                atom_type_sym_list_string, atom_type_num_list_string)
-
         if simulator == 'lammpsrun':
             # check options
             msg = _check_conflict_options(
@@ -276,21 +244,9 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             if msg is not None:
                 raise KIMCalculatorError(msg)
 
-            # add cross-platform line separation to model definition lines
-            model_defn = [s + os.linesep for s in model_defn]
-
-            # Extract parameters for calculator from model definition lines
-            parameters = _get_params_for_LAMMPS_calculator(model_defn,
-                                                           supported_species)
-
-            # Add units to parameters
-            parameters["units"] = supported_units
-
-            # add cross-platform line separation to model definition lines
-            model_init = [s + os.linesep for s in model_init]
-
-            # Add init lines to parameter list
-            _add_init_lines_to_parameters(parameters, model_init)
+            # Set up kim_init and kim_interactions lines
+            parameters = _get_params_for_LAMMPS_calculator(extended_kim_id,
+                    supported_units, supported_species)
 
             # Return LAMMPS calculator
             return LAMMPS(**parameters, files=param_filenames,
@@ -418,7 +374,7 @@ def _get_model_info(extended_kim_id, requested_simulator):
     return this_is_a_KIM_MO, supported_species, simulator_name, supported_units
 
 
-def _get_params_for_LAMMPS_calculator(model_defn, supported_species):
+def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units, supported_species):
     '''
     Extract parameters for LAMMPS calculator from model definition lines.
     Returns a dictionary with entries for "pair_style" and "pair_coeff".
@@ -426,50 +382,22 @@ def _get_params_for_LAMMPS_calculator(model_defn, supported_species):
     "pair_coeff" lines (result is returned as a list).
     '''
     parameters = {}
-    parameters['pair_style'] = ''
-    parameters['pair_coeff'] = []
-    parameters['model_post'] = []
-    found_pair_style = False
-    found_pair_coeff = False
-    for i in range(0, len(model_defn)):
-        c = model_defn[i]
-        if c.lower().startswith('pair_style'):
-            if found_pair_style:
-                raise KIMCalculatorError(
-                    'More than one pair_style in metadata file.')
-            found_pair_style = True
-            parameters['pair_style'] = c.split(" ", 1)[1]
-        elif c.lower().startswith('pair_coeff'):
-            found_pair_coeff = True
-            parameters['pair_coeff'].append(c.split(" ", 1)[1])
-        else:
-            parameters['model_post'].append(c)
-    if not found_pair_style:
-        raise KIMCalculatorError('pair_style not found in metadata file.')
-    if not found_pair_coeff:
-        raise KIMCalculatorError('pair_coeff not found in metadata file.')
+
+    param['model_init'] = "kim_init {} {}".format(extended_kim_id, units)
+    param['kim_interactions'] = "kim_interactions {}".format(supported_species)
 
     # For every species in "supported_species", add an entry to the
-    # "mass" key in dictionary "parameters".
-    parameters['mass'] = []
+    # "masses" key in dictionary "parameters".
+    parameters['masses'] = []
     for i, species in enumerate(supported_species):
         if species not in atomic_numbers:
             raise KIMCalculatorError(
-                'Unknown element species {0}.'.format(species))
-        massstr = str(atomic_masses[atomic_numbers[species]])
-        parameters['mass'].append(str(i + 1) + " " + massstr)
+                'Unknown element species {}.'.format(species))
+        massstr = str(convert(atomic_masses[atomic_numbers[species]], "mass", "ASE",
+            supported_units))
+        parameters['masses'].append(str(i + 1) + " " + massstr)
 
     return parameters
-
-
-def _add_init_lines_to_parameters(parameters, model_init):
-    '''
-    Add Simulator Model initialization lines to the parameter list for LAMMPS
-    if there are any.
-    '''
-    parameters['model_init'] = []
-    for i in range(0, len(model_init)):
-        parameters['model_init'].append(model_init[i])
 
 
 def _check_conflict_options(options, not_allowed_options, simulator):
