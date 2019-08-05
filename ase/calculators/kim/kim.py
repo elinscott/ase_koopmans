@@ -259,8 +259,15 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 raise KIMCalculatorError(msg)
 
             # Set up LAMMPS header commands lookup table
-            model_init = ["kim_init {} {}\n".format(extended_kim_id, supported_units)]
-            model_init.append('atom_modify map array sort 0 0')
+
+            # This units command actually has no effect, but is necessary because
+            # LAMMPSlib looks in the header lines for units in order to set them
+            # internally
+            model_init = ['units ' + supported_units + "\n"]
+
+            model_init.append("kim_init {} {}\n".format(extended_kim_id,
+                supported_units))
+            model_init.append('atom_modify map array sort 0 0\n')
 
             # Assign atom types to species
             atom_types = {}
