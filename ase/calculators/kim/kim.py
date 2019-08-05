@@ -383,8 +383,8 @@ def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units, supporte
     '''
     parameters = {}
 
-    param['model_init'] = "kim_init {} {}".format(extended_kim_id, units)
-    param['kim_interactions'] = "kim_interactions {}".format(supported_species)
+    parameters['model_init'] = "kim_init {} {}".format(extended_kim_id, supported_units)
+    parameters['kim_interactions'] = "kim_interactions {}".format(supported_species)
 
     # For every species in "supported_species", add an entry to the
     # "masses" key in dictionary "parameters".
