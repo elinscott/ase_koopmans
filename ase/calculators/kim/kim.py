@@ -17,11 +17,6 @@ import re
 import os
 import subprocess
 from ase.data import atomic_masses, atomic_numbers
-try:
-    from kimpy import simulator_models as kimsm
-    kimsm_loaded = True
-except Exception:
-    kimsm_loaded = False
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.calculators.lammpsrun import LAMMPS
 from ase.calculators.lammps import convert
@@ -170,6 +165,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
     if simulator_name == "ASAP":
         # Initialize KIM SM object
+        from kimpy import simulator_models as kimsm
         ksm = kimsm.ksm_object(extended_kim_id=extended_kim_id)
         param_filenames = ksm.get_model_param_filenames()
 
