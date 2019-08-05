@@ -242,7 +242,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             # Set up kim_init and kim_interactions lines
             parameters = _get_params_for_LAMMPS_calculator(extended_kim_id,
                     supported_units, supported_species)
-
             # Return LAMMPS calculator
             return LAMMPS(**parameters,
                           specorder=supported_species, keep_tmp_files=debug)
@@ -394,8 +393,8 @@ def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units, supporte
     '''
     parameters = {}
 
-    parameters['model_init'] = "kim_init {} {}".format(extended_kim_id, supported_units)
-    parameters['kim_interactions'] = "kim_interactions {}".format(supported_species)
+    parameters['model_init'] = "kim_init {} {}\n".format(extended_kim_id, supported_units)
+    parameters['kim_interactions'] = "kim_interactions {}\n".format((' ').join(supported_species))
 
     # For every species in "supported_species", add an entry to the
     # "masses" key in dictionary "parameters".
