@@ -260,21 +260,20 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 raise KIMCalculatorError(msg)
 
             # Set up LAMMPS header commands lookup table
-            model_init.insert(0, 'atom_modify map array sort 0 0')
-            if not any("atom_style" in s.lower() for s in model_init):
-                model_init.insert(0, 'atom_style atomic')
-            model_init.insert(
-                0, 'units ' + supported_units.strip())     # units
+            model_init = ["kim_init {} {}\n".format(extended_kim_id, supported_units)]
+            model_init.append('atom_modify map array sort 0 0')
 
             # Assign atom types to species
             atom_types = {}
             for i_s, s in enumerate(supported_species):
                 atom_types[s] = i_s + 1
 
+            kim_interactions = "kim_interactions {}".format(supported_species)
+
             # Return LAMMPSlib calculator
             return LAMMPSlib(lammps_header=model_init,
                              lammps_name=None,
-                             lmpcmds=model_defn,
+                             lmpcmds=kim_interactions,
                              atom_types=atom_types,
                              log_file='lammps.log',
                              keep_alive=True,
