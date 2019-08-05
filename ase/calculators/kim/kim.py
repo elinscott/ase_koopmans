@@ -244,7 +244,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                     supported_units, supported_species)
 
             # Return LAMMPS calculator
-            return LAMMPS(**parameters, files=param_filenames,
+            return LAMMPS(**parameters,
                           specorder=supported_species, keep_tmp_files=debug)
 
         elif simulator == 'lammpslib':
