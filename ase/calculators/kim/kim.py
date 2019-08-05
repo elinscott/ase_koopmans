@@ -154,15 +154,12 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 'Unsupported simulator "{}" requested to run KIM Models.'
                 .format(simulator))
 
+    #######################################################
     # If we get to here, the model is a KIM Simulator Model
-
+    #######################################################
     simulator_name, supported_species, supported_units = _get_simulator_model_info(
-            extended_kim_id, simulator
+            extended_kim_id
     )
-
-    # Initialize KIM SM object
-    ksm = kimsm.ksm_object(extended_kim_id=extended_kim_id)
-    param_filenames = ksm.get_model_param_filenames()
 
     # determine simulator
     if simulator is None:
@@ -171,18 +168,22 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         elif simulator_name == 'lammps':
             simulator = 'lammpslib'
 
-    #  Get model definition from SM metadata
-    model_defn = ksm.get_model_defn_lines()
-    if len(model_defn) == 0:
-        raise KIMCalculatorError(
-            'model-defn is an empty list in metadata file of '
-            'Simulator Model "{}".'.format(extended_kim_id))
-    if "" in model_defn:
-        raise KIMCalculatorError(
-            'model-defn contains one or more empty strings in metadata '
-            'file of Simulator Model "{}".'.format(extended_kim_id))
-
     if simulator_name == "asap":
+        # Initialize KIM SM object
+        ksm = kimsm.ksm_object(extended_kim_id=extended_kim_id)
+        param_filenames = ksm.get_model_param_filenames()
+
+        #  Get model definition from SM metadata
+        model_defn = ksm.get_model_defn_lines()
+        if len(model_defn) == 0:
+            raise KIMCalculatorError(
+                'model-defn is an empty list in metadata file of '
+                'Simulator Model "{}".'.format(extended_kim_id))
+        if "" in model_defn:
+            raise KIMCalculatorError(
+                'model-defn contains one or more empty strings in metadata '
+                'file of Simulator Model "{}".'.format(extended_kim_id))
+
         try:
             from asap3 import EMT, EMTMetalGlassParameters, EMTRasmussenParameters
         except ImportError as e:
