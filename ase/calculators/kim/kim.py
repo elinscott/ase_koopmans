@@ -402,6 +402,9 @@ def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units,
     # because lammpsrun writes data files and needs to know the proper format
     parameters['atom_style'] = atom_style
 
+    # Set units to prevent them from defaulting to metal
+    parameters['units'] = supported_units
+
     parameters['model_init'] = ["kim_init {} {}\n".format(extended_kim_id,
         supported_units)]
 
