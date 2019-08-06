@@ -25,6 +25,7 @@ def read_aims(filename):
     symbols = []
     velocities = []
     magmoms = []
+    symmetry_block = []
     fix = []
     fix_cart = []
     xyz = np.array([0, 0, 0])
@@ -82,6 +83,17 @@ def read_aims(filename):
             floatvect = [v_unit * float(l) for l in inp[1:4]]
             velocities.append(floatvect)
 
+        elif "symmetry_n_params" in inp[0]:
+            symmetry_block.append(" ".join(inp))
+
+        elif "symmetry_params" in inp[0]:
+            symmetry_block.append(" ".join(inp))
+
+        elif "symmetry_lv" in inp[0]:
+            symmetry_block.append(" ".join(inp))
+
+        elif "symmetry_frac" in inp[0]:
+            symmetry_block.append(" ".join(inp))
     if xyz.all():
         fix.append(i)
     elif xyz.any():
@@ -108,6 +120,8 @@ def read_aims(filename):
 
     if len(magmoms) > 0:
         atoms.set_initial_magnetic_moments(magmoms)
+    if len(symmetry_block) > 5:
+        atoms.info["symmetry_block"] = symmetry_block
     if periodic.any():
         atoms.set_cell(cell)
         atoms.set_pbc(periodic)
@@ -119,7 +133,7 @@ def read_aims(filename):
 
 
 def write_aims(
-    filename, atoms, scaled=False, velocities=False, ghosts=None, info_str=None
+    filename, atoms, scaled=False, geo_constrain=False, velocities=False, ghosts=None, info_str=None
 ):
     """Method to write FHI-aims geometry files.
 
@@ -138,6 +152,14 @@ def write_aims(
             )
         else:
             atoms = atoms[0]
+
+    if geo_constrain:
+        if "symmetry_block" not in atoms.info:
+            print("No symmetry_block detected, setting geo_constrain to False")
+            geo_constrain = False
+        if not scaled:
+            print("Setting scaled to True because a symmetry_block is detected.")
+            scaled = True
 
     fd = open(filename, "w")
     fd.write("#=======================================================\n")
@@ -220,6 +242,10 @@ def write_aims(
                     *atoms.get_velocities()[i] / v_unit
                 )
             )
+
+    if geo_constrain:
+        for line in atoms.info["symmetry_block"]:
+            fd.write(line + "\n")
 
 
 # except KeyError:
