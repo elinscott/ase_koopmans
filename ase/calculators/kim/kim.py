@@ -88,8 +88,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         if simulator is None:   # Default
             simulator = 'kimmodel'
 
-        supported_species = _get_portable_model_supported_species(extended_kim_id,
-                simulator)
+        supported_species = KIM_get_supported_species_list(extended_kim_id, simulator)
 
         if simulator == 'kimmodel':
             msg = _check_conflict_options(
@@ -325,25 +324,6 @@ def _is_portable_model(extended_kim_id):
     return (item_type == 'portableModel')
 
 
-def _get_portable_model_supported_species(extended_kim_id, requested_simulator):
-    '''
-    Determines what species a KIM Portable Model or KIM Simulator Model supports
-    '''
-    if requested_simulator in ["kimmodel", "lammpsrun"]:
-        calc = KIMModelCalculator(extended_kim_id)
-        supported_species = list(calc.get_kim_model_supported_species())
-        calc.__del__()
-
-    elif requested_simulator == "asap":
-        from asap3 import OpenKIMcalculator
-        calc = OpenKIMcalculator(extended_kim_id)
-        supported_species = list(calc.get_supported_elements())
-        if hasattr(calc, '__del__'):
-            calc.__del__()
-
-    return supported_species
-
-
 def _get_simulator_model_info(extended_kim_id):
     """
     Retrieve Simulator Model metadata including its native simulator, supported species,
@@ -404,6 +384,33 @@ def _get_simulator_model_info(extended_kim_id):
 
     return simulator_name, supported_species, supported_units, atom_style
 
+
+def KIM_get_supported_species_list(extended_kim_id, simulator='kimmodel'):
+    """
+    Gets species supported by either a KIM Portable Model or a KIM Simulator Model
+    """
+    this_is_a_KIM_MO = _is_portable_model(extended_kim_id)
+
+    if this_is_a_KIM_MO:
+
+        if simulator in ["kimmodel", "lammpsrun"]:
+            calc = KIMModelCalculator(extended_kim_id)
+            supported_species = list(calc.get_kim_model_supported_species())
+            calc.__del__()
+
+        elif simulator == "asap":
+            from asap3 import OpenKIMcalculator
+            calc = OpenKIMcalculator(extended_kim_id)
+            supported_species = list(calc.get_supported_elements())
+            if hasattr(calc, '__del__'):
+                calc.__del__()
+
+        return supported_species
+
+    else:
+        _, supported_species, _, _ = _get_simulator_model_info(extended_kim_id)
+
+    return supported_species
 
 def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units,
         supported_species, atom_style):
