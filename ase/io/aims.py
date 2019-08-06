@@ -203,7 +203,7 @@ def write_aims(
     else:
         assert len(ghosts) == len(atoms)
 
-    scaled_positions = atoms.get_scaled_positions()
+    scaled_positions = atoms.get_scaled_positions(wrap=not geo_constrain)
 
     for i, atom in enumerate(atoms):
         if ghosts[i] == 1:
