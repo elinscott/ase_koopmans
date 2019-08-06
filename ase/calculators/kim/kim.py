@@ -152,7 +152,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     #######################################################
     # If we get to here, the model is a KIM Simulator Model
     #######################################################
-    simulator_name, supported_species, supported_units = _get_simulator_model_info(
+    simulator_name, supported_species, supported_units, atom_style = _get_simulator_model_info(
             extended_kim_id
     )
 
@@ -241,7 +241,8 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
             # Set up kim_init and kim_interactions lines
             parameters = _get_params_for_LAMMPS_calculator(extended_kim_id,
-                    supported_units, supported_species)
+                    supported_units, supported_species, atom_style)
+
             # Return LAMMPS calculator
             return LAMMPS(**parameters,
                           specorder=supported_species, keep_tmp_files=debug)
@@ -387,7 +388,8 @@ def _get_simulator_model_info(extended_kim_id):
     return simulator_name, supported_species, supported_units
 
 
-def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units, supported_species):
+def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units,
+        supported_species, atom_style):
     '''
     Extract parameters for LAMMPS calculator from model definition lines.
     Returns a dictionary with entries for "pair_style" and "pair_coeff".
@@ -396,7 +398,13 @@ def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units, supporte
     '''
     parameters = {}
 
-    parameters['model_init'] = "kim_init {} {}\n".format(extended_kim_id, supported_units)
+    # In case the SM supplied its own atom_style in its model-init -- only needed
+    # because lammpsrun writes data files and needs to know the proper format
+    parameters['atom_style'] = atom_style
+
+    parameters['model_init'] = ["kim_init {} {}\n".format(extended_kim_id,
+        supported_units)]
+
     parameters['kim_interactions'] = "kim_interactions {}\n".format((' ').join(supported_species))
 
     # For every species in "supported_species", add an entry to the
