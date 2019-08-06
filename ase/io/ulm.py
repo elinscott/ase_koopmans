@@ -120,20 +120,16 @@ Versions
 3) Changed magic string from "AFFormat" to "- of Ulm".
 """
 
-from __future__ import print_function
+import builtins
 import os
-import sys
 import numbers
+from pathlib import Path
 
 import numpy as np
 
 from ase.io.jsonio import encode, decode
-from ase.utils import plural, basestring
+from ase.utils import plural
 
-if sys.version_info[0] >= 3:
-    import builtins
-else:
-    import __builtin__ as builtins
 
 VERSION = 3
 N1 = 42  # block size - max number of items: 1, N1, N1*N1, N1*N1*N1, ...
@@ -236,15 +232,18 @@ class Writer:
                 data = {}
             else:
                 data = {'_little_endian': False}
-            fd_is_string = isinstance(fd, basestring)
-            if mode == 'w' or (fd_is_string and
-                               not (os.path.isfile(fd) and
-                                    os.path.getsize(fd) > 0)):
+
+            if isinstance(fd, str):
+                fd = Path(fd)
+
+            if mode == 'w' or (isinstance(fd, Path) and
+                               not (fd.is_file() and
+                                    fd.stat().st_size > 0)):
                 self.nitems = 0
                 self.pos0 = 48
                 self.offsets = np.array([-1], np.int64)
 
-                if fd_is_string:
+                if isinstance(fd, Path):
                     fd = builtins.open(fd, 'wb')
 
                 # File format identifier and other stuff:
@@ -255,7 +254,7 @@ class Writer:
                                a.tostring() +
                                self.offsets.tostring())
             else:
-                if fd_is_string:
+                if isinstance(fd, Path):
                     fd = builtins.open(fd, 'r+b')
 
                 version, self.nitems, self.pos0, offsets = read_header(fd)[1:]
@@ -389,7 +388,7 @@ class Writer:
 
         for name, value in kwargs.items():
             if isinstance(value, (bool, int, float, complex,
-                                  dict, list, tuple, basestring,
+                                  dict, list, tuple,
                                   type(None))):
                 self.data[name] = value
             elif hasattr(value, '__array__'):
@@ -466,8 +465,10 @@ class Reader:
     def __init__(self, fd, index=0, data=None, little_endian=None):
         """Create reader."""
 
-        if isinstance(fd, basestring):
+        if isinstance(fd, str):
             fd = builtins.open(fd, 'rb')
+        elif isinstance(fd, Path):
+            fd = builtins.open(str(fd), 'rb')
 
         self._fd = fd
         self._index = index
