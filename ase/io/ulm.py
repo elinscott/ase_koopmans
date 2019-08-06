@@ -123,7 +123,7 @@ Versions
 import builtins
 import os
 import numbers
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import numpy as np
 
@@ -236,14 +236,14 @@ class Writer:
             if isinstance(fd, str):
                 fd = Path(fd)
 
-            if mode == 'w' or (isinstance(fd, Path) and
+            if mode == 'w' or (isinstance(fd, PurePath) and
                                not (fd.is_file() and
                                     fd.stat().st_size > 0)):
                 self.nitems = 0
                 self.pos0 = 48
                 self.offsets = np.array([-1], np.int64)
 
-                if isinstance(fd, Path):
+                if isinstance(fd, PurePath):
                     fd = builtins.open(fd, 'wb')
 
                 # File format identifier and other stuff:
@@ -254,7 +254,7 @@ class Writer:
                                a.tostring() +
                                self.offsets.tostring())
             else:
-                if isinstance(fd, Path):
+                if isinstance(fd, PurePath):
                     fd = builtins.open(fd, 'r+b')
 
                 version, self.nitems, self.pos0, offsets = read_header(fd)[1:]
