@@ -412,6 +412,7 @@ def KIM_get_supported_species_list(extended_kim_id, simulator='kimmodel'):
 
     return supported_species
 
+
 def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units,
         supported_species, atom_style):
     '''
@@ -424,7 +425,8 @@ def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units,
 
     # In case the SM supplied its own atom_style in its model-init -- only needed
     # because lammpsrun writes data files and needs to know the proper format
-    parameters['atom_style'] = atom_style
+    if atom_style:
+        parameters['atom_style'] = atom_style
 
     # Set units to prevent them from defaulting to metal
     parameters['units'] = supported_units
