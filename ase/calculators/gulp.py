@@ -159,6 +159,38 @@ class GULP(FileIOCalculator):
                     forces.append(G)
                 forces = np.array(forces)
                 self.results['forces'] = forces
+            
+            elif line.find('Final internal derivatives') != -1:
+                s = i + 5
+                forces = []
+                while(True):
+                    s = s + 1
+                    if lines[s].find("------------") != -1:
+                        break
+                    g = lines[s].split()[3:6]
+                     # To separate the numbers when there is no space between them, in the case of long numbers.
+                    for t in range(3-len(g)):
+                        g.append(' ')
+                    for j in range(2):
+                        min_index=[i+1 for i,e in enumerate(g[j][1:]) if e == '-']
+                        if j==0 and len(min_index) != 0:
+                            if len(min_index)==1:
+                                g[2]=g[1]
+                                g[1]=g[0][min_index[0]:]
+                                g[0]=g[0][:min_index[0]]
+                            else:
+                                g[2]=g[0][min_index[1]:]
+                                g[1]=g[0][min_index[0]:min_index[1]]
+                                g[0]=g[0][:min_index[0]]
+                                break
+                        if j==1 and len(min_index) != 0:
+                            g[2]=g[1][min_index[0]:]
+                            g[1]=g[1][:min_index[0]]
+                    print(g)
+                    G = [-float(x) * eV / Ang for x in g]
+                    forces.append(G)
+                forces = np.array(forces)
+                self.results['forces'] = forces
 
             elif line.find('Final cartesian coordinates of atoms') != -1:
                 s = i + 5
