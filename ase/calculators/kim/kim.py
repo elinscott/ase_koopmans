@@ -385,7 +385,24 @@ def _get_simulator_model_info(extended_kim_id):
     else:
         supported_units = supported_units.group(1)
 
-    return simulator_name, supported_species, supported_units
+    # See if this SM has a 'model-init' listed in its metadata that contains an
+    # atom_style command.  This is specific to LAMMPS SMs and is only required for using
+    # the LAMMPSrun calculator because it uses lammps.inputwriter to create a data file).
+    # All other content in 'model-init', if it exists, can be discarded
+    model_init = re.search(r"\"model-init\"\s+\[?\s*([\"A-Za-z0-9_\s\n]+)\s*\]?", sm_metadata)
+    atom_style = None
+    if model_init:
+        # Cast to a single line of double-quoted tokens
+        model_init = model_init.group(1).replace("\n", "")
+        # Now split this single line into each token
+        model_init_lines = re.findall(r"\"([A-Za-z0-9_\s-]+)\"", model_init)
+        for line in model_init_lines:
+            if "atom_style" in line:
+                atom_style = line.split()[1]
+    else:
+        pass
+
+    return simulator_name, supported_species, supported_units, atom_style
 
 
 def _get_params_for_LAMMPS_calculator(extended_kim_id, supported_units,
