@@ -87,6 +87,19 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
                     lammps_trj=None, lammps_data=None):
     """Write a LAMMPS in_ file with run parameters and settings."""
 
+    def write_model_post_and_masses(fileobj, parameters):
+        # write additional lines needed for some LAMMPS potentials
+        if 'model_post' in parameters:
+            mlines = parameters['model_post']
+            for ii in range(0,len(mlines)):
+                fileobj.write(mlines[ii].encode('utf-8'))
+
+        if "masses" in parameters:
+            for mass in parameters["masses"]:
+                # Note that the variable mass is a string containing
+                # the type number and value of mass separated by a space
+                fileobj.write("mass {0} \n".format(mass).encode("utf-8"))
+
     if isinstance(lammps_in, asestring):
         fileobj = paropen(lammps_in, "wb")
         close_in_file = True
@@ -169,6 +182,7 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
     fileobj.write("\n### interactions\n".encode("utf-8"))
     if "kim_interactions" in parameters:
         fileobj.write("{}\n".format(parameters["kim_interactions"]).encode("utf-8"))
+        write_model_post_and_masses(fileobj, parameters)
 
     elif ("pair_style" in parameters) and ("pair_coeff" in parameters):
         pair_style = parameters["pair_style"]
@@ -177,17 +191,8 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
             fileobj.write(
                 "pair_coeff {0} \n" "".format(pair_coeff).encode("utf-8")
             )
-        # write additional lines needed for some LAMMPS potentials
-        if 'model_post' in parameters:
-            mlines = parameters['model_post']
-            for ii in range(0,len(mlines)):
-                fileobj.write(mlines[ii].encode('utf-8'))
+        write_model_post_and_masses(fileobj, parameters)
 
-        if "masses" in parameters:
-            for mass in parameters["masses"]:
-                # Note that the variable mass is a string containing
-                # the type number and value of mass separated by a space
-                fileobj.write("mass {0} \n".format(mass).encode("utf-8"))
     else:
         # simple default parameters
         # that should always make the LAMMPS calculation run
