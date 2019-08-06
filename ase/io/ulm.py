@@ -123,7 +123,7 @@ Versions
 import builtins
 import os
 import numbers
-from pathlib import Path, PurePath
+from pathlib import Path
 
 import numpy as np
 
@@ -236,15 +236,15 @@ class Writer:
             if isinstance(fd, str):
                 fd = Path(fd)
 
-            if mode == 'w' or (isinstance(fd, PurePath) and
+            if mode == 'w' or (isinstance(fd, Path) and
                                not (fd.is_file() and
                                     fd.stat().st_size > 0)):
                 self.nitems = 0
                 self.pos0 = 48
                 self.offsets = np.array([-1], np.int64)
 
-                if isinstance(fd, PurePath):
-                    fd = builtins.open(fd, 'wb')
+                if isinstance(fd, Path):
+                    fd = builtins.open(str(fd), 'wb')
 
                 # File format identifier and other stuff:
                 a = np.array([VERSION, self.nitems, self.pos0], np.int64)
@@ -254,8 +254,8 @@ class Writer:
                                a.tostring() +
                                self.offsets.tostring())
             else:
-                if isinstance(fd, PurePath):
-                    fd = builtins.open(fd, 'r+b')
+                if isinstance(fd, Path):
+                    fd = builtins.open(str(fd), 'r+b')
 
                 version, self.nitems, self.pos0, offsets = read_header(fd)[1:]
                 assert version == VERSION
@@ -388,7 +388,7 @@ class Writer:
 
         for name, value in kwargs.items():
             if isinstance(value, (bool, int, float, complex,
-                                  dict, list, tuple,
+                                  dict, list, tuple, str,
                                   type(None))):
                 self.data[name] = value
             elif hasattr(value, '__array__'):
