@@ -479,6 +479,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
 
     if isinstance(filename, PurePath):
         filename = str(filename)
+    if filename == '-':
+        filename = sys.stdin
     if isinstance(index, basestring):
         try:
             index = string2index(index)
