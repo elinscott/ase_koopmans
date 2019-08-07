@@ -9,7 +9,9 @@ variable to point to a configuration file like this::
 
     ASE_DB_NAMES = ['/path/to/db-file/project1.db',
                     'postgresql://user:pw@localhost:5432/project2']
-    ASE_DB_HOMEPAGE = '<a href="https://home.page.dk">HOME</a> ::'
+    ASE_DB_TEMPLATES = '...'
+    ASE_DB_TMPDIR = '...'
+    ASE_DB_DOWNLOAD = False  # or True
 
 Start with something like::
 
@@ -17,7 +19,6 @@ Start with something like::
 
 """
 
-from __future__ import print_function
 import collections
 import functools
 import io
@@ -61,8 +62,6 @@ app = Flask(__name__)
 app.secret_key = 'asdf'
 
 databases = {}  # Dict[str, Database]
-home = ''  # link to homepage
-ase_db_footer = ''  # footer (for a license)
 open_ase_gui = True  # click image to open ASE's GUI
 download_button = True
 
@@ -111,13 +110,12 @@ def initialize_databases():
 
 if 'ASE_DB_APP_CONFIG' in os.environ:
     app.config.from_envvar('ASE_DB_APP_CONFIG')
-    app.template_folder = app.config['TEMPLATE_FOLDER']
+    path = app.config['ASE_DB_TEMPLATES']
+    app.jinja_loader.searchpath.insert(0, str(path))
     connect_databases(str(name) for name in app.config['ASE_DB_NAMES'])
     initialize_databases()
-    # home = app.config['ASE_DB_HOMEPAGE']
-    # ase_db_footer = app.config['ASE_DB_FOOTER']
     tmpdir = str(app.config['ASE_DB_TMPDIR'])
-    # download_button = app.config['ASE_DB_DOWNLOAD']
+    download_button = app.config['ASE_DB_DOWNLOAD']
     open_ase_gui = False
 else:
     tmpdir = tempfile.mkdtemp(prefix='ase-db-app-')  # used to cache png-files
@@ -135,9 +133,7 @@ def index(project):
     if project is None and len(projects) > 1:
         return render_template('projects.html',
                                projects=projects,
-                               home=home,
-                               md=None,
-                               ase_db_footer=ase_db_footer)
+                               md=None)
 
     if project is None:
         project = list(databases)[0]
@@ -265,8 +261,6 @@ def index(project):
                            md=meta,
                            con=con,
                            x=con_id,
-                           home=home,
-                           ase_db_footer=ase_db_footer,
                            pages=pages(page, nrows, limit),
                            nrows=nrows,
                            addcolumns=addcolumns,
@@ -339,9 +333,7 @@ def row(project, uid):
                            n1=n1,
                            n2=n2,
                            n3=n3,
-                           home=home,
                            back=True,
-                           ase_db_footer=ase_db_footer,
                            md=db.meta,
                            open_ase_gui=open_ase_gui)
 
