@@ -2,9 +2,13 @@
 authors: Ben Comer (Georgia Tech), Xiangyun (Ray) Lei (Georgia Tech)
 
 """
+from io import StringIO
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.calculator import InputError, ReadError
+import multiprocessing
+from ase import io
 import numpy as np
+import json
 from ase.units import Bohr, Hartree
 import warnings
 import psi4
@@ -17,7 +21,7 @@ class Psi4(Calculator):
     """
     An ase calculator for the popular open source Q-chem code
     psi4.
-    xc is the generic input for whatever method you wish to use, thus
+    method is the generic input for whatever method you wish to use, thus
     and quantum chemistry method implemented in psi4 can be input
     (i.e. ccsd(t))
 
@@ -29,13 +33,13 @@ class Psi4(Calculator):
     default_parameters = {
                   "basis": "aug-cc-pvtz",
                   "num_threads": None,
-                  "xc": "hf",
+                  "method": "hf",
                   "memory": None,
                   'charge': None,
                   'multiplicity': None,
                   'reference': None,
                   'symmetry': 'c1',
-                  'PSI_SCRATCH': '.'}
+                  'PSI_SCRATCH': None}
 
     def __init__(self, restart=None, ignore_bad_restart=False,
                  label='psi4-calc', atoms=None, command=None,
@@ -52,9 +56,12 @@ class Psi4(Calculator):
         This function sets the imported psi4 module to the settings the user
         defines
         """
+
+        # Set the scrath directory for electronic structure files.
+        # The default is /tmp
         if 'PSI_SCRATCH' in os.environ:
             pass
-        else:
+        elif self.parameters['PSI_SCRATCH']:
             os.environ['PSI_SCRATCH'] = self.parameters['PSI_SCRATCH']
 
         # Input spin settings
@@ -66,26 +73,22 @@ class Psi4(Calculator):
             self.psi4.set_memory(self.parameters['memory'])
 
         # Threads
-        if self.parameters['num_threads'] == 'max':
-            import multiprocessing
-            self.psi4.set_num_threads(multiprocessing.cpu_count())
-        elif type(self.parameters['num_threads']) == int:
-            self.psi4.set_num_threads(self.parameters['num_threads'])
-
-        if self.parameters['xc'].lower() == 'lda':
-            warnings.warn('Psi4 does not have LDA implemented, '
-                          'SVWN will be used instead')
-            self.parameters['xc'] = 'svwn'
+        nthreads = self.parameters.get('num_threads')
+        if nthreads is None:
+                nthreads = 1
+        elif nthreads == 'max':
+                nthreads = multiprocessing.cpu_count()
+        self.psi4.set_num_threads(nthreads)
 
         # deal with some ASE specific inputs
         if 'kpts' in self.parameters:
             warnings.warn('psi4 is a non-periodic code, and thus does not '
-                          'require k-points. This arguement will be ignored')
+                          'require k-points. This argument will be ignored')
 
-        if self.parameters['xc'].lower() == 'lda':
+        if self.parameters['method'] == 'LDA':
             warnings.warn('Psi4 does not have LDA implemented, SVWN '
                           'will be used instead')
-            self.parameters['xc'] = 'svwn'
+            self.parameters['method'] = 'svwn'
 
         if 'nbands' in self.parameters:
             warnings.warn('psi4 does is a quantum chemistry program, and'
@@ -128,24 +131,12 @@ class Psi4(Calculator):
 
         if not os.path.isdir(self.directory):
             os.mkdir(self.directory)
-        self.psi4.core.set_output_file(self.label + '.dat',
-                                       False)
         self.molecule = psi4.geometry(result)
 
     def set(self, **kwargs):
         changed_parameters = Calculator.set(self, **kwargs)
         if changed_parameters:
             self.reset()
-
-    def check_state(self, atoms):
-        system_changes = Calculator.check_state(self, atoms)
-        # Ignore boundary conditions:
-        if 'pbc' in system_changes:
-            system_changes.remove('pbc')
-        # There's no periodicity in psi4
-        if 'cell' in system_changes:
-            system_changes.remove('cell')
-        return system_changes
 
     def read(self, label):
         """Read psi4 outputs made from this ASE calculator
@@ -154,18 +145,24 @@ class Psi4(Calculator):
         if not os.path.isfile(filename):
             raise ReadError('Could not find the psi4 output file: ' + filename)
 
-        f = open(filename, 'r')
-        txt = f.read()
-        f.close()
-
+        with open(filename, 'r') as f:
+            txt = f.read()
         if '!ASE Information\n' not in txt:
             raise Exception('the output file must be made by the ase psi4 '
                             'interface to be read by it')
         info = txt.split('!ASE Information\n')[1]
-        saved_dict = pickle.loads(codecs.decode(info.encode(), "base64"))
-        self.atoms = saved_dict['atoms']
+        info = info.split('!')[0]
+        #saved_dict = pickle.loads(codecs.decode(info.encode(), "base64"))
+        saved_dict = json.loads(info)
+        # use io read to recode atoms
+        with StringIO(str(saved_dict['atoms'])) as g:
+            self.atoms = io.read(g, format = 'json')
+        #return None
         self.parameters = saved_dict['parameters']
         self.results = saved_dict['results']
+        # convert forces to numpy array
+        if 'forces' in self.results:
+            self.results['forces'] = np.array(self.results['forces'])
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes, symmetry='c1'):
@@ -179,11 +176,6 @@ class Psi4(Calculator):
             List of what has changed since last calculation.  Can be
             any combination of these six: 'positions', 'numbers', 'cell',
             'pbc', 'initial_charges' and 'initial_magmoms'.
-
-        Subclasses need to implement this, but can ignore properties
-        and system_changes if they want.  Calculated properties should
-        be inserted into results dictionary like shown in this dummy
-        example::
 
             self.results = {'energy': 0.0,
                             'forces': np.zeros((len(atoms), 3)),
@@ -203,14 +195,16 @@ class Psi4(Calculator):
                 atoms = self.atoms
         elif self.atoms is None:
             self.atoms = atoms
-        if atoms.get_initial_magnetic_moments().any() != 0:
+        if atoms.get_initial_magnetic_moments().any():
             self.parameters['reference'] = 'uhf'
             self.parameters['multiplicity'] = None
         # this inputs all the settings into psi4
         self.set_psi4(atoms=atoms)
+        self.psi4.core.set_output_file(self.label + '.dat',
+                                       False)
 
         # Set up the method
-        method = self.parameters['xc']
+        method = self.parameters['method']
         basis = self.parameters['basis']
 
         # Do the calculations
@@ -231,10 +225,18 @@ class Psi4(Calculator):
                 self.results['forces'] = -1 * np.array(grad) * Hartree / Bohr
         # dump the calculator info to the psi4 file
         save_atoms = self.atoms.copy()
-        del save_atoms.calc
+        #del save_atoms.calc
+        # use io.write to encode atoms
+        with StringIO() as f:
+            io.write(f, save_atoms, format = 'json')
+            json_atoms = f.getvalue()
+        # convert forces to list for json storage
+        save_results = self.results.copy()
+        if 'forces' in save_results:
+            save_results['forces'] = save_results['forces'].tolist()
         save_dict = {'parameters': self.parameters,
-                     'results': self.results,
-                     'atoms': save_atoms}
-        pickled = codecs.encode(pickle.dumps(save_dict), "base64").decode()
+                     'results': save_results,
+                     'atoms': json_atoms}
         self.psi4.core.print_out('!ASE Information\n')
-        self.psi4.core.print_out(pickled)
+        self.psi4.core.print_out(json.dumps(save_dict))
+        self.psi4.core.print_out('!')
