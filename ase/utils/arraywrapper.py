@@ -12,18 +12,19 @@ For most methods and attributes we can just bind the name as a property:
 
     @property
     def reshape(self):
-        return self.array.reshape
+        return np.asarray(self).reshape
 
 For 'in-place' operations like += we need to make sure to return self
 rather than the array though:
 
     def __iadd__(self, other):
-        self.array.__iadd__(other)
+        np.asarray(self).__iadd__(other)
         return self
 
+This module provides the @arraylike decorator which does these things
+for all the interesting ndarray methods.
 """
 
-py3 = sys.version_info[0] == 3
 
 inplace_methods = ['__iadd__', '__imul__', '__ipow__', '__isub__',
                    '__itruediv__', '__imatmul__']
@@ -59,7 +60,8 @@ def wrap_array_attribute(name):
         assert name == '__hash__'
         return None
     def attr(self):
-        return getattr(self.array, name)
+        array = np.asarray(self)
+        return getattr(array, name)
     attr.__name__ = wrappee.__name__
     attr.__qualname__ == wrappee.__qualname__
     return property(attr)
