@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 
 """Module for wrapping an array without being an array.
