@@ -72,10 +72,8 @@ class CLICommand:
                 print('Filtering to include info: ', ', '.join(args.info))
         if args.read_args:
             args.read_args = eval("dict({0})".format(', '.join(args.read_args)))
-            print('read_args: ', args.read_args)
         if args.write_args:
             args.write_args = eval("dict({0})".format(', '.join(args.write_args)))
-            print('write_args: ', args.write_args)
 
         configs = []
         for filename in args.input:
