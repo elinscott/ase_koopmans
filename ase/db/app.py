@@ -105,18 +105,19 @@ def initialize_databases():
         db.meta = meta
         nrows = len(db)
         projects.append((proj, db.meta.get('title', proj), nrows))
-        print('Initialized {proj}: {nrows} rows'
+        print('Initialized {proj}: (rows: {nrows})'
               .format(proj=proj, nrows=nrows))
 
 
 if 'ASE_DB_APP_CONFIG' in os.environ:
     app.config.from_envvar('ASE_DB_APP_CONFIG')
+    app.template_folder = app.config['TEMPLATE_FOLDER']
     connect_databases(str(name) for name in app.config['ASE_DB_NAMES'])
     initialize_databases()
-    home = app.config['ASE_DB_HOMEPAGE']
-    ase_db_footer = app.config['ASE_DB_FOOTER']
+    # home = app.config['ASE_DB_HOMEPAGE']
+    # ase_db_footer = app.config['ASE_DB_FOOTER']
     tmpdir = str(app.config['ASE_DB_TMPDIR'])
-    download_button = app.config['ASE_DB_DOWNLOAD']
+    # download_button = app.config['ASE_DB_DOWNLOAD']
     open_ase_gui = False
 else:
     tmpdir = tempfile.mkdtemp(prefix='ase-db-app-')  # used to cache png-files
