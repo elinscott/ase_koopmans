@@ -192,6 +192,10 @@ expected_dict = {
 parsed_dict = extxyz.key_val_str_to_dict(complex_xyz_string)
 np.testing.assert_equal(parsed_dict, expected_dict)
 
+key_val_str = extxyz.key_val_dict_to_str(expected_dict)
+parsed_dict = extxyz.key_val_str_to_dict(key_val_str)
+np.testing.assert_equal(parsed_dict, expected_dict)
+
 # Round trip through a file with complex line.
 # Create file with the complex line and re-read it afterwards.
 # Test is disabled as it requires that file io defaults to utf-8 encoding

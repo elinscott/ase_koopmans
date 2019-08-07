@@ -8,6 +8,6 @@ print(pb.decompose(1.0, 9.0))
 import numpy as np
 U = np.linspace(-2, 2, 200)
 pH = np.linspace(-2, 16, 300)
-d, names, text = pb.diagram(U, pH, plot=True)
+d, names, text = pb.diagram(U, pH, plot=True, show=False)
 import matplotlib.pyplot as plt
 plt.savefig('zno.png')

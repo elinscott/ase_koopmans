@@ -13,7 +13,7 @@ from collections import namedtuple
 from ase.neighborlist import NeighborList
 from ase.data import covalent_radii
 from ase.geometry.dimensionality import rank_determination
-from ase.geometry.dimensionality import topological_scaling
+from ase.geometry.dimensionality import topology_scaling
 
 
 def f(x):
@@ -118,12 +118,10 @@ def get_bond_list(atoms, nl, rs):
     return sorted(bonds)
 
 
-def build_kintervals(atoms, method):
+def build_kintervals(atoms, method_name):
 
-    if method == 'RDA':
-        method = rank_determination.RDA
-    elif method == 'TSA':
-        method = topological_scaling.TSA
+    method = {'RDA': rank_determination.RDA,
+              'TSA': topology_scaling.TSA}[method_name]
 
     assert all([e in [0, 1] for e in atoms.pbc])
     num_atoms = len(atoms)
@@ -140,7 +138,8 @@ def build_kintervals(atoms, method):
     seen = set()
     kprev = 0
     calc = method(num_atoms)
-    hprev, components_prev, cdim_prev = calc.check()
+    hprev = calc.check()
+    components_prev, cdim_prev = calc.get_components()
 
     """
     The end state is a single component, whose dimensionality depends on
@@ -173,9 +172,11 @@ def build_kintervals(atoms, method):
         for (k, i, j, offset) in new_bonds:
 
             calc.insert_bond(i, j, offset)
-            h, components, cdim = calc.check()
+            h = calc.check()
             if h == hprev:    # Test if any components were merged
                 continue
+
+            components, cdim = calc.get_components()
 
             # If any components were merged, create a new interval
             if k != kprev:

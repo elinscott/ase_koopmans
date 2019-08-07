@@ -7,10 +7,9 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from __future__ import print_function
-import os, shutil, subprocess
-import numpy as np
 import unittest
-
+import shutil, subprocess
+import numpy as np
 from ase.build import molecule
 from ase.calculators.cp2k import CP2K
 from ase import io
@@ -19,8 +18,6 @@ from ase.calculators.calculator import compare_atoms
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
     if not shutil.which("cp2k"):
         raise unittest.SkipTest('cp2k command not available')
 

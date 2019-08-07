@@ -69,20 +69,30 @@ The below table lists the special points from [Setyawana-Curtarolo]_.
 You can find the special points in the Brillouin zone:
 
 >>> from ase.build import bulk
->>> from ase.dft.kpoints import get_special_points
->>> from ase.dft.kpoints import bandpath
 >>> si = bulk('Si', 'diamond', a=5.459)
->>> points = get_special_points('fcc', si.cell)
->>> GXW = [points[k] for k in 'GXW']
->>> kpts, x, X = bandpath(GXW, si.cell, 100)
->>> print(kpts.shape, len(x), len(X))
-(100, 3) 100 3
+>>> lat = si.cell.get_bravais_lattice()
+>>> print(list(lat.get_special_points()))
+['G', 'K', 'L', 'U', 'W', 'X']
+>>> path = si.cell.bandpath('GXW', npoints=100)
+>>> print(path.kpts.shape)
+(100, 3)
 
 .. autofunction:: get_special_points
 .. autofunction:: bandpath
 .. autofunction:: parse_path_string
 .. autofunction:: labels_from_kpts
 
+
+Band path
+---------
+
+The :class:`~ase.dft.kpoints.BandPath` class stores all the relevant
+band path information in a single object.
+It is typically created by helper functions such as
+:meth:`ase.cell.Cell.bandpath` or :meth:`ase.lattice.BravaisLattice.bandpath`.
+
+.. autoclass:: BandPath
+               :members:
 
 Band structure
 --------------

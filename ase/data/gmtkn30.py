@@ -185,8 +185,12 @@ def read_html(filename, dir='.'):
             litem = []
             for f in item.split(separator):
                 fs = f.strip()
+                msg = """This functionality relies on eval() and has been \
+disabled for security reasons since it could result in execution of code \
+from an untrusted source."""
+                raise NotImplementedError(msg)
                 try:
-                    v = eval(fs)
+                    v = None  # eval(fs) <-- disabled, dangerous
                     if fs.isdigit() and str(v) != fs: # e.g. undesirable eval('001') = 1
                         v = fs
                 # string: NameError, .*[+-*], etc: SyntaxError
