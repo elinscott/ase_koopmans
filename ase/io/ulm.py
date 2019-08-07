@@ -120,7 +120,6 @@ Versions
 3) Changed magic string from "AFFormat" to "- of Ulm".
 """
 
-import builtins
 import os
 import numbers
 from pathlib import Path
@@ -244,7 +243,7 @@ class Writer:
                 self.offsets = np.array([-1], np.int64)
 
                 if isinstance(fd, Path):
-                    fd = builtins.open(str(fd), 'wb')
+                    fd = fd.open('wb')
 
                 # File format identifier and other stuff:
                 a = np.array([VERSION, self.nitems, self.pos0], np.int64)
@@ -255,7 +254,7 @@ class Writer:
                                self.offsets.tostring())
             else:
                 if isinstance(fd, Path):
-                    fd = builtins.open(str(fd), 'r+b')
+                    fd = fd.open('r+b')
 
                 version, self.nitems, self.pos0, offsets = read_header(fd)[1:]
                 assert version == VERSION
@@ -466,9 +465,9 @@ class Reader:
         """Create reader."""
 
         if isinstance(fd, str):
-            fd = builtins.open(fd, 'rb')
-        elif isinstance(fd, Path):
-            fd = builtins.open(str(fd), 'rb')
+            fd = Path(fd)
+        if isinstance(fd, Path):
+            fd = fd.open('rb')
 
         self._fd = fd
         self._index = index
