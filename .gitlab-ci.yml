@@ -40,6 +40,7 @@ python_3_tests:
     - python --version
     - ase test --strict
     - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
 
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
