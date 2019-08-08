@@ -601,7 +601,7 @@ class Wannier:
         return Hk
 
     def get_function(self, index, repeat=None):
-        """Get Wannier function on grid.
+        r"""Get Wannier function on grid.
 
         Returns an array with the funcion values of the indicated Wannier
         function on a grid with the size of the *repeated* unit cell.
