@@ -73,7 +73,7 @@ def download_file(url, filename, dir='.'):
 
 def read_charge_filter(s):
     try:
-        return re.search('\(([-+]\d+)\)', s).group(1)
+        return re.search(r'\(([-+]\d+)\)', s).group(1)
     except AttributeError:
         return False
 
@@ -256,7 +256,7 @@ def unzip_file(filename, dir='.'):
             outfile.close()
     fh.close()
 
-    
+
 def format_data(database, geometries, no_unpaired_electrons=[], charges=[]):
     "Return data in the custom format.  "
     data = {}
