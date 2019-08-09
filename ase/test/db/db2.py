@@ -92,6 +92,9 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
         c.write(Atoms(), pi='3.14')  # number as a string
 
     with must_raise(ValueError):
+        c.write(Atoms(), fmax=0.0)  # reserved word
+
+    with must_raise(ValueError):
         c.write(Atoms(), S=42)  # chemical symbol as key
 
     id = c.write(Atoms(),
