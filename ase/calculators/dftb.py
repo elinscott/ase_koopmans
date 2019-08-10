@@ -292,8 +292,9 @@ class Dftb(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         from ase.io import write
-        if properties is not None and 'forces' in properties:
-            self.do_forces = True
+        if properties is not None:
+            if 'forces' in properties or 'stress' in properties:
+                self.do_forces = True
         FileIOCalculator.write_input(
             self, atoms, properties, system_changes)
         self.write_dftb_in(os.path.join(self.directory, 'dftb_in.hsd'))
