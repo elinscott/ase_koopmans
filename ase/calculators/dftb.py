@@ -240,8 +240,10 @@ class Dftb(FileIOCalculator):
                 outfile.write(str(value) + ' \n')
             elif ((key == 'Hamiltonian_ReadInitialCharges') and 
                   (str(value).upper() == 'YES')):
-                if not os.path.isfile(self.directory + os.sep + 'charges.dat'):
-                    print('charges.dat not found, switching off guess')
+                f1 = os.path.isfile(self.directory + os.sep + 'charges.dat')
+                f2 = os.path.isfile(self.directory + os.sep + 'charges.bin')
+                if not (f1 or f2):
+                    print('charges.dat or .bin not found, switching off guess')
                     value = 'No'
                 outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
             else:
