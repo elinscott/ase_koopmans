@@ -74,6 +74,7 @@ reserved_keys = set(all_properties +
                     all_changes +
                     list(atomic_numbers) +
                     ['id', 'unique_id', 'ctime', 'mtime', 'user',
+                     'fmax', 'smax',
                      'momenta', 'constraints', 'natoms', 'formula', 'age',
                      'calculator', 'calculator_parameters',
                      'key_value_pairs', 'data'])
@@ -528,7 +529,7 @@ class Database:
 
         row = self._get_row(id)
         kvp = row.key_value_pairs
-        
+
         n = len(kvp)
         for key in delete_keys:
             kvp.pop(key, None)
