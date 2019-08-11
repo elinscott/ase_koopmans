@@ -81,7 +81,7 @@ def read_eigenvalues_file(fd):
     unit = None
 
     for line in fd:
-        m = re.match('Eigenvalues\s*\[(.+?)\]', line)
+        m = re.match(r'Eigenvalues\s*\[(.+?)\]', line)
         if m is not None:
             unit = m.group(1)
             break

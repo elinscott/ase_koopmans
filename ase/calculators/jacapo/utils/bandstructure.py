@@ -13,7 +13,7 @@ class BandStructure:
                  BZpath=[],
                  npoints=10,
                  outnc='harris.nc'):
-        """Headline here ... XXX.
+        r"""Headline here ... XXX.
 
         atoms is an ase.Atoms object with calculator
         attached. Presumably the self-consistent charge density has
