@@ -32,19 +32,28 @@ Atoms:
      6   F     0.692514    0.584931    0.746683     6   0   0   0
      7   F     0.509687    0.449350    0.111960     7   0   0   0
 """
-
-symbols = ['S', 'F', 'F', 'F', 'F', 'F', 'F']
-lat = 4.672816
-positions = lat * np.array([
+# Information for system
+positions = [
     [0.600452, 0.525100, 0.442050],
     [0.911952, 0.450722, 0.382733],
     [0.283794, 0.616712, 0.500094],
     [0.679823, 0.854839, 0.343915],
     [0.531660, 0.229024, 0.535688],
     [0.692514, 0.584931, 0.746683],
-    [0.509687, 0.449350, 0.111960]])
+    [0.509687, 0.449350, 0.111960]]
+symbols = ['S', 'F', 'F', 'F', 'F', 'F', 'F']
+lat = 4.672816
+
+# Intermediate data structures to test against
+symbol_xyz_list = [[s] + xyz for s, xyz in zip(symbols, positions)]
+symbol_xyz_dict = {i + 1: row for i, row in enumerate(symbol_xyz_list)}
+symbol_xyz_list_ext = [tuple([i + 1] + row + [0, 0, 0, 0])
+                       for i, row in enumerate(symbol_xyz_list)]
+
+# Target Atoms system
+lat_positions = lat * np.array(positions)
 cell = [lat, lat, lat]
-rmc6f_atoms = Atoms(symbols, positions=positions, cell=cell, pbc=[1, 1, 1])
+rmc6f_atoms = Atoms(symbols, positions=lat_positions, cell=cell, pbc=[1, 1, 1])
 
 
 def test_rmc6f_read():
@@ -171,19 +180,10 @@ def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell():
     lines = rmc6f_input_text.split('\n')
     props, cell = io.rmc6f._read_process_rmc6f_lines_to_pos_and_cell(lines)
 
-    target_props = {
-        1: ['S', 0.600452, 0.5251, 0.44205],
-        2: ['F', 0.911952, 0.450722, 0.382733],
-        3: ['F', 0.283794, 0.616712, 0.500094],
-        4: ['F', 0.679823, 0.854839, 0.343915],
-        5: ['F', 0.53166, 0.229024, 0.535688],
-        6: ['F', 0.692514, 0.584931, 0.746683],
-        7: ['F', 0.509687, 0.44935, 0.11196]}
-
     target_cell = np.zeros((3, 3), float)
     np.fill_diagonal(target_cell, 4.672816)
 
-    assert props == target_props
+    assert props == symbol_xyz_dict
     assert np.allclose(cell, target_cell, rtol=tol)
 
 
@@ -197,19 +197,10 @@ def test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell_padded_whitespace():
     lines[14] = "    {}    ".format(lines[14])  # intentional whitespace
     props, cell = io.rmc6f._read_process_rmc6f_lines_to_pos_and_cell(lines)
 
-    target_props = {
-        1: ['S', 0.600452, 0.5251, 0.44205],
-        2: ['F', 0.911952, 0.450722, 0.382733],
-        3: ['F', 0.283794, 0.616712, 0.500094],
-        4: ['F', 0.679823, 0.854839, 0.343915],
-        5: ['F', 0.53166, 0.229024, 0.535688],
-        6: ['F', 0.692514, 0.584931, 0.746683],
-        7: ['F', 0.509687, 0.44935, 0.11196]}
-
     target_cell = np.zeros((3, 3), float)
     np.fill_diagonal(target_cell, 4.672816)
 
-    assert props == target_props
+    assert props == symbol_xyz_dict
     assert np.allclose(cell, target_cell, rtol=tol)
 
 
@@ -223,7 +214,7 @@ def test_rmc6f_write_output_column_format():
     arrays['symbols'] = np.array(symbols)
     arrays['ref_num'] = np.zeros(7, int)
     arrays['ref_cell'] = np.zeros((7, 3), int)
-    arrays['scaled_positions'] = positions / lat
+    arrays['scaled_positions'] = lat_positions / lat
 
     ncols, dtype_obj, fmt = io.rmc6f._write_output_column_format(cols, arrays)
 
@@ -268,14 +259,8 @@ def test_rmc6f_write_output():
         '    0.000000     4.672816     0.000000',
         '    0.000000     0.000000     4.672816',
         'Atoms:']
-    data_array = [
-        (1, 'S', 0.600452, 0.5251, 0.44205, 0, 0, 0, 0),
-        (2, 'F', 0.911952, 0.450722, 0.382733, 0, 0, 0, 0),
-        (3, 'F', 0.283794, 0.616712, 0.500094, 0, 0, 0, 0),
-        (4, 'F', 0.679823, 0.854839, 0.343915, 0, 0, 0, 0),
-        (5, 'F', 0.53166, 0.229024, 0.535688, 0, 0, 0, 0),
-        (6, 'F', 0.692514, 0.584931, 0.746683, 0, 0, 0, 0),
-        (7, 'F', 0.509687, 0.44935, 0.11196, 0, 0, 0, 0)]
+
+    data_array = symbol_xyz_list_ext
     data_dtype = [
         ('id', '<i8'),
         ('symbols', '<U1'),

@@ -393,7 +393,7 @@ def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
     """
 
     # get atom types and how many of each (and set to order if passed)
-    atom_types = set(atoms.get_chemical_symbols())
+    atom_types = set(atoms.symbols)
     if order is not None:
         if set(atom_types) != set(order):
             raise Exception("The order is not a set of the atom types.")
@@ -404,7 +404,7 @@ def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
 
     # create an atom type map if one does not exist from unique atomic symbols
     if atom_type_map is None:
-        symbols = list(set(np.array(atoms.get_chemical_symbols())))
+        symbols = set(np.array(atoms.symbols))
         atom_type_map = {atype: atype for atype in symbols}
 
     # HEADER SECTION
@@ -450,7 +450,6 @@ def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
     y_line = ' '.join(['{:12.6f}'.format(i) for i in cell[1]])
     z_line = ' '.join(['{:12.6f}'.format(i) for i in cell[2]])
     lat_lines = ["Lattice vectors (Ang):", x_line, y_line, z_line]
-    print('lat_lines:', lat_lines)
     header_lines.extend(lat_lines)
     header_lines.extend(['Atoms:'])
 
@@ -466,7 +465,7 @@ def write_rmc6f(filename, atoms, order=None, atom_type_map=None):
 
     arrays = {}
     arrays['id'] = np.array(range(1, natoms + 1, 1), int)
-    arrays['symbols'] = np.array(atoms.get_chemical_symbols())
+    arrays['symbols'] = np.array(atoms.symbols)
     arrays['ref_num'] = np.zeros(natoms, int)
     arrays['ref_cell'] = np.zeros((natoms, 3), int)
     arrays['scaled_positions'] = np.array(atoms.get_scaled_positions())
