@@ -1,4 +1,5 @@
 import time
+import warnings
 
 from ase.units import Ang, fs
 
@@ -10,6 +11,9 @@ def read_aims(filename):
 
     Reads unitcell, atom positions and constraints from
     a geometry.in file.
+
+    If geometric constraint (symmetry parameters) are in the file
+    include that information in atoms.info["symmetry_block"]
     """
 
     from ase import Atoms
@@ -139,6 +143,23 @@ def write_aims(
 
     Writes the atoms positions and constraints (only FixAtoms is
     supported at the moment).
+
+    Args:
+        filename: str
+            Name of file to output structure to
+        atoms: ase.atoms.Atoms
+            structure to output to the file
+        scaled: bool
+            If True use fractional coordinates instead of Cartesian coordinates
+        geo_constrain: bool
+            If True use atoms.info["symmetry_block"] to add geometric as defined in:
+            https://arxiv.org/abs/1908.01610
+        velocities: bool
+            If True add the atomic velocity vectors to the file
+        ghosts: list of Atoms
+            A list of ghost atoms for the system
+        info_str: str
+            A string to be added to the header of the file
     """
 
     from ase.constraints import FixAtoms, FixCartesian
@@ -155,10 +176,10 @@ def write_aims(
 
     if geo_constrain:
         if "symmetry_block" not in atoms.info:
-            print("No symmetry_block detected, setting geo_constrain to False")
+            warnings.warn("No symmetry_block detected, setting geo_constrain to False")
             geo_constrain = False
         if not scaled:
-            print("Setting scaled to True because a symmetry_block is detected.")
+            warnings.warn("Setting scaled to True because a symmetry_block is detected.")
             scaled = True
 
     fd = open(filename, "w")
