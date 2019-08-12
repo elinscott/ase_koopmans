@@ -243,7 +243,7 @@ def get_rdf(atoms, rmax, nbins, distance_matrix=None,
 
     dm = distance_matrix
     if dm is None:
-        dm = atoms.get_all_distances()
+        dm = atoms.get_all_distances(mic=True)
     rdf = np.zeros(nbins + 1)
     dr = float(rmax / nbins)
 
