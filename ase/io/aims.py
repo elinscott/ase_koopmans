@@ -265,7 +265,7 @@ def write_aims(
             )
 
     if geo_constrain:
-        for line in atoms.info["symmetry_block"]:
+        for line in atoms.info.get("symmetry_block", []):
             fd.write(line + "\n")
 
 
