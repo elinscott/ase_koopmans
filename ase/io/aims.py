@@ -152,7 +152,7 @@ def write_aims(
         scaled: bool
             If True use fractional coordinates instead of Cartesian coordinates
         geo_constrain: bool
-            If True use atoms.info["symmetry_block"] to add geometric as defined in:
+            If True use atoms.info["symmetry_block"] to add geometric constraints as defined in:
             https://arxiv.org/abs/1908.01610
         velocities: bool
             If True add the atomic velocity vectors to the file
