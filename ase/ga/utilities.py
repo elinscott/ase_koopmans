@@ -210,10 +210,17 @@ def get_rdf(atoms, rmax, nbins, distance_matrix=None,
     and the corresponding distances of the supplied atoms object.
     If no_dists = True then only the first array is returned.
 
+    Note that the rdf is computed following the standard solid state
+    definition which uses the cell volume in the normalization.
+    This may or may not be appropriate in cases where one or more
+    directions is non-periodic.
+
     Parameters:
 
     rmax : float
         The maximum distance that will contribute to the rdf.
+        The unit cell should be large enough so that it encloses a
+        sphere with radius rmax in the periodic directions.
 
     nbins : int
         Number of bins to divide the rdf into.
