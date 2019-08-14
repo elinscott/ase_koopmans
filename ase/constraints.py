@@ -1163,7 +1163,7 @@ class FixParametricRelations(FixConstraint):
                 in_sec = [param in express_sec for param in params]
                 n_params_in_sec = len(np.where(np.array(in_sec))[0])
                 if n_params_in_sec > 1:
-                    raise IOError("The FixParamRel expressions must be linear.")
+                    raise IOError("The FixParametricRelations expressions must be linear.")
 
             evaluate_parameter = np.zeros(len(params))
             for pp, param in enumerate(params):
@@ -1183,15 +1183,12 @@ class FixParametricRelations(FixConstraint):
                     continue
                 evaluate_parameter[pp] = 1.0
                 test_1 = eval(code) - self.B[ee]
-
-                evaluate_parameter[pp] = -1.0*(math.e + math.pi)
-                test_2 = eval(code) - self.B[ee]
-
-
-                if abs(test_2 / test_1 + math.e + math.pi) > eps:
-                    raise IOError("The FixParamRel expressions must be linear.")
-
                 self.A[ee, pp] = test_1
+
+                evaluate_parameter[pp] = 2.0
+                test_2 = eval(code) - self.B[ee]
+                if abs(test_2 / test_1 - 2.0) > eps:
+                    raise IOError("The FixParametricRelations expressions must be linear.")
 
                 evaluate_parameter[pp] = 0.0
 
@@ -1233,6 +1230,7 @@ class FixParametricRelations(FixConstraint):
             self.eps
         )
 
+
 class FixScaledParametricRelations(FixParametricRelations):
     """Constrains the motion of atoms along a set of user defined parameters and expressions
 
@@ -1255,7 +1253,6 @@ class FixScaledParametricRelations(FixParametricRelations):
         eps=1e-7,
     ):
         """Initializer"""
-
         super(FixScaledParametricRelations, self).__init__(
             indices,
             params,
@@ -1310,6 +1307,7 @@ class FixScaledParametricRelations(FixParametricRelations):
         """The str representation of the constraint"""
         rep = super(FixScaledParametricRelations, self).__repr__()
         return "FixScaledParametricRelations" + rep[22:]
+
 
 class FixCartesianParametricRelations(FixParametricRelations):
     """Constrains the motion of atoms along a set of user defined parameters and expressions
@@ -1375,6 +1373,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """The str representation of the constraint"""
         rep = super(FixCartesianParametricRelations, self).__repr__()
         return "FixCartesianParametricRelations" + rep[22:]
+
 
 class Hookean(FixConstraint):
     """Applies a Hookean restorative force between a pair of atoms, an atom
