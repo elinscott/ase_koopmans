@@ -130,8 +130,6 @@ def read_aims(filename):
     fix_params = []
 
     if len(symmetry_block) > 5:
-        nparams_atomic = symmetry_block[0].split(" ")[-1]
-        nparams_lv = symmetry_block[0].split(" ")[-2]
         params = symmetry_block[1].split(" ")[1:]
 
         lattice_expressions = []
@@ -179,6 +177,8 @@ def read_aims(filename):
     else:
         atoms.set_constraint(fix_cart + fix_params)
 
+    if fix_params:
+        atoms.set_positions(atoms.get_positions())
     return atoms
 
 
@@ -273,11 +273,11 @@ def write_aims(
             elif geo_constrain and isinstance(constr, FixScaledParametricRelations):
                 atomic_sym_params += constr.params
                 for expression in constr.expressions:
-                    atomic_param_constr.append(",".join(expression))
+                    atomic_param_constr.append(", ".join(expression))
             elif geo_constrain and isinstance(constr, FixCartesianParametricRelations):
                 lv_sym_params += constr.params
                 for expression in constr.expressions:
-                    lv_param_constr.append(",".join(expression))
+                    lv_param_constr.append(", ".join(expression))
 
 
     if ghosts is None:
