@@ -1368,7 +1368,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
     def todict(self):
         """Create a dictionary representation of the constraint"""
         dct = super(FixCartesianParametricRelations, self).todict()
-        dct["name"] = "FixScaledParametricRelations"
+        dct["name"] = "FixCartesianParametricRelations"
         return dct
 
     def __repr__(self):
