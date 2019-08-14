@@ -1221,8 +1221,10 @@ class FixParametricRelations(FixConstraint):
 
         if len(self.params) > 1:
             params_str = "[{:s}, ..., {:s}]".format(self.params[0], self.params[-1])
-        else:
+        elif len(self.params) == 1:
             params_str = "[{:s}]".format(self.params[0])
+        else:
+            params_str = "[]"
 
         return 'FixParametricRelations({:s}, {:s}, ..., {:e})'.format(
             indices_str,
