@@ -11,7 +11,8 @@ __all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
            'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled', 'StrainFilter',
            'FixCom', 'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
            'FixBondLengths', 'FixLinearTriatomic', 'FixInternals', 'Hookean',
-           'ExternalForce', 'MirrorForce', 'MirrorTorque']
+           'ExternalForce', 'MirrorForce', 'MirrorTorque', "FixScaledParametricRelations",
+           "FixCartesianParametricRelations"]
 
 
 def dict2constraint(dct):
@@ -1114,6 +1115,266 @@ class FixInternals(FixConstraint):
         def __repr__(self):
             return 'FixDihedral(%s, %f)' % (tuple(self.indices), self.angle)
 
+
+class FixParametricRelations(FixConstraint):
+    """Constrains the motion of atoms along a set of user defined parameters and expressions
+
+    These constraints are based off the work in: https://arxiv.org/abs/1908.01610
+
+    Attributes:
+        indices (list of int): indices of the constrained atoms
+        params (list of str): parameters used in the parametric representation
+        expressions (list of str): expressions used to convert from the parametric to the real space representation
+        eps (float): a small number to compare the similarity of numbers
+    """
+
+    def __init__(
+        self,
+        indices,
+        params,
+        expressions,
+        eps=1e-7,
+    ):
+        """Initializer"""
+        import parser
+        import math
+
+        self.indices = indices
+
+        self.params = params
+        self.expressions = expressions
+
+        self.eps = eps
+
+        self.A = np.zeros((3*len(indices), len(self.params)))
+        self.B = np.zeros(3*len(indices))
+
+        ops = ["sqrt", "sin", "cos"]
+        flat_expressions = np.array(expressions).flatten()
+        for ee, expression in enumerate(flat_expressions):
+            expression = expression.replace(" ", "")
+            expression = expression.replace("-", "+(-1.0)*")
+
+            if expression[0] == "+":
+                expression = expression[1:]
+
+            ex_split = expression.split("+")
+            for express_sec in ex_split:
+                in_sec = [param in express_sec for param in params]
+                n_params_in_sec = len(np.where(np.array(in_sec))[0])
+                if n_params_in_sec > 1:
+                    raise IOError("The FixParamRel expressions must be linear.")
+
+            evaluate_parameter = np.zeros(len(params))
+            for pp, param in enumerate(params):
+                expression = expression.replace(param, "evaluate_parameter[{:d}]".format(pp))
+
+            expression = expression.lower()
+
+            for op in ops:
+                expression = expression.replace(op, "math." + op)
+            code = parser.expr(expression).compile()
+
+            self.B[ee] = eval(code)
+
+            for pp in range(len(params)):
+                if "evaluate_parameter[{:d}]".format(pp) not in expression:
+                    self.A[ee, pp] = 0.0
+                    continue
+                evaluate_parameter[pp] = 1.0
+                test_1 = eval(code) - self.B[ee]
+
+                evaluate_parameter[pp] = -1.0*(math.e + math.pi)
+                test_2 = eval(code) - self.B[ee]
+
+
+                if abs(test_2 / test_1 + math.e + math.pi) > eps:
+                    raise IOError("The FixParamRel expressions must be linear.")
+
+                self.A[ee, pp] = test_1
+
+                evaluate_parameter[pp] = 0.0
+
+        if self.A.shape[-1] > 0:
+            self.A_inv = np.dot(self.A.T, self.A)
+            self.A_inv = np.linalg.inv(self.A_inv)
+            self.A_inv = np.dot(self.A_inv, self.A.T)
+        else:
+            self.A = None
+            self.A_inv = None
+
+    def todict(self):
+        """Create a dictionary representation of the constraint"""
+        return {
+            "name": "FixParametricRelations",
+            "kwargs": {
+                "indices": self.indices,
+                "params": self.params,
+                "expressions": self.expressions,
+                "eps": self.eps,
+            }
+        }
+
+    def __repr__(self):
+        """The str representation of the constraint"""
+        if len(self.indices) > 1:
+            indices_str = "[{:d}, ..., {:d}]".format(self.indices[0], self.indices[-1])
+        else:
+            indices_str = "[{:d}]".format(self.indices[0])
+
+        if len(self.params) > 1:
+            params_str = "[{:s}, ..., {:s}]".format(self.params[0], self.params[-1])
+        else:
+            params_str = "[{:s}]".format(self.params[0])
+
+        return 'FixParametricRelations({:s}, {:s}, ..., {:e})'.format(
+            indices_str,
+            params_str,
+            self.eps
+        )
+
+class FixScaledParametricRelations(FixParametricRelations):
+    """Constrains the motion of atoms along a set of user defined parameters and expressions
+
+    This performs the transformations for scaled coordinates
+
+    These constraints are based off the work in: https://arxiv.org/abs/1908.01610
+
+    Attributes:
+        indices (list of int): indices of the constrained atoms
+        params (list of str): parameters used in the parametric representation
+        expressions (list of str): expressions used to convert from the parametric to the real space representation
+        eps (float): a small number to compare the similarity of numbers
+    """
+
+    def __init__(
+        self,
+        indices,
+        params,
+        expressions,
+        eps=1e-7,
+    ):
+        """Initializer"""
+
+        super(FixScaledParametricRelations, self).__init__(
+            indices,
+            params,
+            expressions,
+            eps=1e-7,
+        )
+
+    def adjust_covariant(self, cell, vecs):
+        """Adjust the values of a set of vectors that are covariant with the unit transformation"""
+        if self.A is None:
+            scaled = self.B.reshape((-1,3))
+            for ll in range(scaled.shape[0]):
+                vecs[ll, :] = np.dot(scaled[ll,:], cell)
+        else:
+            scaled = np.zeros(vecs.shape)
+            for ll in range(scaled.shape[0]):
+                scaled[ll] = np.linalg.solve(cell.T, vecs[ll].T).T
+            scaled = np.dot(self.A_inv, scaled.flatten() - self.B)
+            scaled = (np.dot(self.A, scaled) + self.B).reshape((-1, 3))
+            for ll in range(scaled.shape[0]):
+                vecs[ll] = np.dot(scaled[ll], cell)
+        return vecs
+
+    def adjust_positions(self, atoms, positions):
+        """Adjust positions of the atoms to match the constraints"""
+        positions[self.indices] = self.adjust_covariant(atoms.cell.array, positions[self.indices])
+
+    def adjust_momenta(self, atoms, momenta):
+        """Adjust momenta of the atoms to match the constraints"""
+        momenta[self.indices] = self.adjust_covariant(atoms.cell.array, momenta[self.indices])
+
+    def adjust_forces(self, atoms, forces):
+        """Adjust forces of the atoms to match the constraints"""
+        if self.A is None:
+            forces[self.indices] = np.zeros(forces[self.indices].shape)
+        else:
+            scaled_forces = np.zeros(forces[self.indices].shape)
+            for ll in range(forces[self.indices].shape[0]):
+                scaled_forces[ll] = np.dot(forces[ll], atoms.cell)
+            scaled_forces = np.dot(self.A.T, scaled_forces.flatten())
+            scaled_forces = np.dot(self.A_inv.T, scaled_forces).reshape(-1, 3)
+            for ll in range(forces[self.indices].shape[0]):
+                forces[ll] = np.linalg.solve(atoms.cell.T, scaled_forces[ll].T).T
+
+    def todict(self):
+        """Create a dictionary representation of the constraint"""
+        dct = super(FixScaledParametricRelations, self).todict()
+        dct["name"] = "FixScaledParametricRelations"
+        return dct
+
+    def __repr__(self):
+        """The str representation of the constraint"""
+        rep = super(FixScaledParametricRelations, self).__repr__()
+        return "FixScaledParametricRelations" + rep[22:]
+
+class FixCartesianParametricRelations(FixParametricRelations):
+    """Constrains the motion of atoms along a set of user defined parameters and expressions
+
+    This performs the transformations for Cartesian coordinates
+
+    These constraints are based off the work in: https://arxiv.org/abs/1908.01610
+
+    Attributes:
+        indices (list of int): indices of the constrained atoms
+        params (list of str): parameters used in the parametric representation
+        expressions (list of str): expressions used to convert from the parametric to the real space representation
+        eps (float): a small number to compare the similarity of numbers
+    """
+
+    def __init__(
+        self,
+        indices,
+        params,
+        expressions,
+        eps=1e-7,
+    ):
+        """Initializer"""
+        super(FixCartesianParametricRelations, self).__init__(
+            indices,
+            params,
+            expressions,
+            eps=1e-7,
+        )
+
+    def adjust_covariant(self, cell, vecs):
+        """Adjust the values of a set of vectors that are covariant with the unit transformation"""
+        if self.A is None:
+            vecs += self.B.reshape((-1,3))
+        else:
+            vecs = np.dot(self.A_inv, vecs.flatten() - self.B)
+            vecs = (np.dot(self.A, vecs) + self.B).reshape((-1, 3))
+        return vecs
+
+    def adjust_positions(self, atoms, positions):
+        """Adjust positions of the atoms to match the constraints"""
+        positions[self.indices] = self.adjust_covariant(atoms.cell.array, positions[self.indices])
+
+    def adjust_momenta(self, atoms, momenta):
+        """Adjust momenta of the atoms to match the constraints"""
+        momenta[self.indices] = self.adjust_covariant(atoms.cell.array, momenta[self.indices])
+
+    def adjust_forces(self, atoms, forces):
+        """Adjust forces of the atoms to match the constraints"""
+        if self.A is None:
+            forces[self.indices] = np.zeros(forces.shape)
+        else:
+            forces[self.indices] = np.dot(self.A.T, forces[self.indices].flatten())
+            forces[self.indices] = np.dot(self.A_inv.T, forces[self.indices]).reshape(-1, 3)
+
+    def todict(self):
+        """Create a dictionary representation of the constraint"""
+        dct = super(FixCartesianParametricRelations, self).todict()
+        dct["name"] = "FixScaledParametricRelations"
+        return dct
+
+    def __repr__(self):
+        """The str representation of the constraint"""
+        rep = super(FixCartesianParametricRelations, self).__repr__()
+        return "FixCartesianParametricRelations" + rep[22:]
 
 class Hookean(FixConstraint):
     """Applies a Hookean restorative force between a pair of atoms, an atom

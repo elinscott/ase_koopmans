@@ -378,13 +378,14 @@ class Aims(FileIOCalculator):
         return changed_parameters
 
     def write_input(self, atoms, properties=None, system_changes=None,
-                    ghosts=None, scaled=None, velocities=None, geo_constrain=None):
+                    ghosts=None, geo_constrain=None, scaled=None, velocities=None):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
+
+        if geo_constrain is None:
+            geo_constrain = "relax_geometry" in self.parameters
 
         if scaled is None:
             scaled = np.all(atoms.get_pbc())
-        if geo_constrain is None:
-            geo_constrain =  "symmetry_block" in atoms.info and "relax_geometry" in self.parameters
         if velocities is None:
             velocities = np.any(np.abs(atoms.get_momenta().flatten()) > 0.0)
 
@@ -487,9 +488,11 @@ class Aims(FileIOCalculator):
             if not os.path.isfile(filename):
                 raise ReadError
 
-        self.atoms = read_aims(geometry)
+        self.atoms, symmetry_block = read_aims(geometry, True)
         self.parameters = Parameters.read(os.path.join(self.directory,
                                                        'parameters.ase'))
+        if symmetry_block:
+            self.parameters["symmetry_block"] = symmetry_block
         self.read_results()
 
     def read_results(self):
