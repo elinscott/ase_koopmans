@@ -1212,21 +1212,33 @@ class FixParametricRelations(FixConstraint):
                 exp += fmt_str.format(self.B[index])
             param_exp = ""
             for param_index, param in enumerate(self.params):
-                if np.abs(self.A[index, param_index]-1.0) <= self.eps:
-                    param_exp += " + {:s}".format(param)
-                elif np.abs(self.A[index, param_index]-round(self.A[index, param_index])) <= self.eps and round(self.A[index, param_index]) > self.eps:
-                    param_exp += " + ({:d}.0*{:s})".format(int(round(self.A[index, param_index])), param)
-                elif np.abs(self.A[index, param_index]) >= self.eps:
-                    param_exp += (" + (" + fmt_str + "*{:s})").format(self.A[index, param_index], param)
+                A_val = abs(self.A[index, param_index])
+                if A_val < self.eps:
+                    continue
 
-            if exp:
-                exp += param_exp
-            else:
-                exp = param_exp[3:]
+                if param_exp or exp:
+                    if self.A[index, param_index] > -1.0*self.eps:
+                        param_exp += " + "
+                    else:
+                        param_exp += " - "
+                elif (not exp) and (not param_exp) and (self.A[index, param_index] < -1.0*self.eps):
+                        param_exp += "-"
+
+                if np.abs(A_val-1.0) <= self.eps:
+                    param_exp += "{:s}".format(param)
+                elif np.abs(A_val-round(A_val)) <= self.eps and A_val > self.eps:
+                    param_exp += "{:d}.0*{:s}".format(int(round(A_val)), param)
+                else:
+                    param_exp += (fmt_str + "*{:s}").format(A_val, param)
+
+            exp += param_exp
 
             # Increase readability of expressions by removing trailing zeros
             while "00 +" in exp:
                 exp = exp.replace("00 +", "0 +")
+
+            while "00 -" in exp:
+                exp = exp.replace("00 -", "0 -")
 
             while "00*" in exp:
                 exp = exp.replace("00*", "0*")
@@ -1341,6 +1353,7 @@ class FixScaledParametricRelations(FixParametricRelations):
         if self.A is None:
             forces[self.indices] = np.zeros(forces[self.indices].shape)
         else:
+            # Forces are contravarient to the coordinate transformation, use the inverse transformations
             scaled_forces = atoms.cell.cartesian_positions(forces[self.indices])
             scaled_forces = self.A.T @ scaled_forces.flatten()
             scaled_forces = (self.A_inv.T @ scaled_forces).reshape(-1, 3)
