@@ -1125,7 +1125,7 @@ class FixParametricRelations(FixConstraint):
         indices (list of int): indices of the constrained atoms
         params (list of str): parameters used in the parametric representation
         expressions (list of str): expressions used to convert from the parametric to the real space representation
-        eps (float): a small number to compare the similarity of numbers
+        eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
     """
 
     def __init__(
@@ -1184,9 +1184,11 @@ class FixParametricRelations(FixConstraint):
                 test_1 = eval(code) - self.B[ee]
                 self.A[ee, pp] = test_1
 
-                evaluate_parameter[pp] = 2.0
-                test_2 = eval(code) - self.B[ee]
-                if abs(test_2 / test_1 - 2.0) > eps:
+                # Using math.pi to pass the flakes.py test. math is needed to evaluate the expressions,
+                # flake8 does not recognize it is used in that way
+                evaluate_parameter[pp] = math.pi
+                test_pi = eval(code) - self.B[ee]
+                if abs(test_pi / test_1 - math.pi) > eps:
                     raise IOError("The FixParametricRelations expressions must be linear.")
 
                 evaluate_parameter[pp] = 0.0
@@ -1200,27 +1202,35 @@ class FixParametricRelations(FixConstraint):
     @property
     def expressions(self):
         """Generate the expressions represented by the current self.A and self.B objects"""
+        import math
         expressions = []
+        per = int(round(-1 * math.log10(self.eps)))
+        fmt_str = "{:." + str(per + 1) + "f}"
         for index, a_vec in enumerate(self.A):
             exp = ""
             if np.all(np.abs(a_vec) < self.eps) or np.abs(self.B[index]) > self.eps:
-                exp += "{:.13f}".format(self.B[index])
+                exp += fmt_str.format(self.B[index])
             param_exp = ""
             for param_index, param in enumerate(self.params):
                 if np.abs(self.A[index, param_index]-1.0) <= self.eps:
                     param_exp += " + {:s}".format(param)
-                elif np.abs(self.A[index, param_index]-np.round(self.A[index, param_index])) <= self.eps and np.round(self.A[index, param_index]) > self.eps:
-                    param_exp += " + ({:d}.0*{:s})".format(int(np.round(self.A[index, param_index])), param)
+                elif np.abs(self.A[index, param_index]-round(self.A[index, param_index])) <= self.eps and round(self.A[index, param_index]) > self.eps:
+                    param_exp += " + ({:d}.0*{:s})".format(int(round(self.A[index, param_index])), param)
                 elif np.abs(self.A[index, param_index]) >= self.eps:
-                    param_exp += " + ({:.13f}*{:s})".format(self.A[index, param_index], param)
+                    param_exp += (" + (" + fmt_str + "*{:s})").format(self.A[index, param_index], param)
+
             if exp:
                 exp += param_exp
             else:
                 exp = param_exp[3:]
+
+            # Increase readability of expressions by removing trailing zeros
             while "00 +" in exp:
                 exp = exp.replace("00 +", "0 +")
+
             while "00*" in exp:
                 exp = exp.replace("00*", "0*")
+
             while exp[-2:] == "00":
                 exp = exp[:-1]
 
@@ -1271,7 +1281,7 @@ class FixScaledParametricRelations(FixParametricRelations):
         indices (list of int): indices of the constrained atoms
         params (list of str): parameters used in the parametric representation
         expressions (list of str): expressions used to convert from the parametric to the real space representation
-        eps (float): a small number to compare the similarity of numbers
+        eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
     """
 
     def __init__(
@@ -1359,7 +1369,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
         indices (list of int): indices of the constrained atoms
         params (list of str): parameters used in the parametric representation
         expressions (list of str): expressions used to convert from the parametric to the real space representation
-        eps (float): a small number to compare the similarity of numbers
+        eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
     """
 
     def __init__(
