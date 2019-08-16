@@ -219,19 +219,9 @@ def test_rmc6f_write_output_column_format():
     ncols, dtype_obj, fmt = io.rmc6f._write_output_column_format(cols, arrays)
 
     target_ncols = [1, 1, 3, 1, 3]
-    target_dtype_obj = [
-        ('id', '<i8'),
-        ('symbols', '<U1'), ('scaled_positions0', '<f8'),
-        ('scaled_positions1', '<f8'),
-        ('scaled_positions2', '<f8'),
-        ('ref_num', '<i8'),
-        ('ref_cell0', '<i8'),
-        ('ref_cell1', '<i8'),
-        ('ref_cell2', '<i8')]
     target_fmt = "%8d %s%14.6f %14.6f %14.6f %8d %8d %8d %8d \n"
 
     assert ncols == target_ncols
-    assert dtype_obj == target_dtype_obj
     assert fmt == target_fmt
 
 
