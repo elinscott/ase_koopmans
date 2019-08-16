@@ -35,6 +35,7 @@ class GULPOptimizer:
         self.calc.set(**gulp_kwargs)
         self.atoms.calc = self.calc
         self.atoms.get_potential_energy()
+        self.atoms.cell = self.calc.get_atoms().cell
         self.atoms.positions[:] = self.calc.get_atoms().positions
 
 
@@ -73,6 +74,7 @@ class GULP(FileIOCalculator):
         self.conditions = conditions
         self.library_check()
         self.atom_types = []
+        self.fractional_coordinates = False # GULP prints the fractional coordinates before the Final lattice vectors so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
 
     def set(self, **kwargs):
         changed_parameters = FileIOCalculator.set(self, **kwargs)
@@ -218,6 +220,32 @@ class GULP(FileIOCalculator):
             	    res[j+3]=float(var)
                 stress=np.array(res)
                 self.results['stress']=stress
+                
+            elif line.find('Final Cartesian lattice vectors') != -1:
+                lattice_vectors = np.zeros((3,3))
+                s = i + 2
+                for j in range(s, s+3):
+                    temp=lines[j].split()
+                    for k in range(3):
+                        lattice_vectors[j-s][k]=float(temp[k])
+                self.atoms.set_cell(lattice_vectors)
+                if self.fractional_coordinates != False:
+                    self.fractional_coordinates = np.array(self.fractional_coordinates)
+                    self.atoms.set_scaled_positions(self.fractional_coordinates)
+
+            elif line.find('Final fractional coordinates of atoms') != -1:
+                s = i + 5
+                scaled_positions = []
+                while True:
+                    s = s + 1
+                    if lines[s].find("------------") != -1:
+                        break
+                    if lines[s].find(" s ") != -1:
+                        continue
+                    xyz = lines[s].split()[3:6]
+                    XYZ = [float(x) for x in xyz]
+                    scaled_positions.append(XYZ)
+                self.fractional_coordinates = scaled_positions
 
         self.steps = cycles
 
