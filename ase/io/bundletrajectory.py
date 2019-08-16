@@ -169,8 +169,7 @@ class BundleTrajectory:
         # Write 'small' data structures.  They are written jointly.
         smalldata = {'pbc': atoms.get_pbc(),
                      'cell': atoms.get_cell(),
-                     # GLOBAL number of atoms:
-                     'natoms': atoms.get_number_of_atoms(),
+                     'natoms': atoms.get_global_number_of_atoms(),
                      'constraints': atoms.constraints}
         if datatypes.get('energy'):
             try:

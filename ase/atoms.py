@@ -809,6 +809,16 @@ class Atoms(object):
         return len(self.arrays['positions'])
 
     def get_number_of_atoms(self):
+        """Deprecated, please do not use.
+
+        You probably want len(atoms).  Or if your atoms are distributed,
+        use (and see) get_global_number_of_atoms()."""
+        import warnings
+        warnings.warn('Use get_global_number_of_atoms() instead',
+                      np.VisibleDeprecationWarning)
+        return len(self)
+
+    def get_global_number_of_atoms(self):
         """Returns the global number of atoms in a distributed-atoms parallel
         simulation.
 
