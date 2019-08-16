@@ -1,6 +1,5 @@
 from scipy import stats
 from math import floor
-from random import randint
 from collections import Counter
 import numpy as np
 import builtins
@@ -10,7 +9,6 @@ import matplotlib.pyplot as plt
 
 from ase.io import read, write, ulm
 from ase.io.trajectory import Trajectory
-from ase import units
 
 
 def frange(start, stop, step=1.0):
@@ -151,7 +149,7 @@ class DiffusionCoefficient:
 	def fit_data_and_plot(self,x, y, plt, color, label=None, cont=False, cont_y=None):
 		# Generated linear fit  
 		slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-		line = slope*np.asarray(x)+intercept
+		#line = slope*np.asarray(x)+intercept
 		if label[0] != '_':
 			skip = label.index('A')
 		else:
@@ -163,7 +161,7 @@ class DiffusionCoefficient:
 			intercept_c=intercept
 		else:
 			slope, intercept_c, r_value, p_value, std_err = stats.linregress(x,cont_y)
-			line_c = slope*np.asarray(x)+intercept_c
+			#line_c = slope*np.asarray(x)+intercept_c
 			plt.plot(x, cont_y, color=color, marker=mark,label=label[skip:], linewidth=0)
 
 		if label[0] == '_':
