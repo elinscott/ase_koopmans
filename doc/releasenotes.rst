@@ -12,6 +12,11 @@ Git master branch
 * :func:`ase.build.bulk` now supports elements with tetrahedral,
   rhombohedral, and orthorhombic lattices.
 
+* Read and write support for RMCProfile (rmc6f) file format.
+
+* Gulp calculator now provides stress tensor.
+
+
 
 Version 3.18.0
 ==============
