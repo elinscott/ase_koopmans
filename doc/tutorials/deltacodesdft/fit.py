@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Tuple, Dict  # noqa
+from typing import Tuple
 from ase.eos import EquationOfState as EOS
 from ase.io import read
 
@@ -17,9 +17,9 @@ def fit(symbol: str) -> Tuple[float, float, float, float]:
     return e0, v0, B, Bp
 
 
-data = {}  # type: Dict[Dict[str, float]]
+data = {}  # Dict[str, Dict[str, float]]
 for path in Path().glob('*.traj'):
-    symbol = path.name.split('.')[0]
+    symbol = path.stem
     e0, v0, B, Bp = fit(symbol)
     data[symbol] = {'emt_energy': e0,
                     'emt_volume': v0,

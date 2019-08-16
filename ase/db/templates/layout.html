@@ -21,17 +21,6 @@
         <nav class="navbar navbar-default">
           <div class="container-fluid">
             <ul class="nav navbar-nav navbar-right">
-{% if home %}
-              <li>
-                <a href="{{ home }}">CMR</a>
-              </li>
-    {% if project %}
-              <li>
-                <a href="{{ home }}{{ project }}/{{ project }}.html">
-                More information</a>
-              </li>
-    {% endif %}
-{% endif %}
 {% if back %}
               <li>
                 <a href="/{{ project }}/">Back to search page</a>
@@ -46,8 +35,5 @@
 {% block content %}
 {% endblock %}
 
-{% if ase_db_footer %}
-  <div class="text-center">{{ ase_db_footer | safe }}</div>
-{% endif %}
-  </body>
+</body>
 </html>

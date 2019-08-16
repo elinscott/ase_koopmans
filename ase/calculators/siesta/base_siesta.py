@@ -866,7 +866,7 @@ class BaseSiesta(FileIOCalculator):
         self.read_dim()
         if self.results['hsx'] is not None:
             self.read_pld(self.results['hsx'].norbitals,
-                          self.atoms.get_number_of_atoms())
+                          len(self.atoms))
             self.atoms.cell = self.results['pld'].cell * Bohr
         else:
             self.results['pld'] = None

@@ -131,7 +131,7 @@ common to all the atoms or defined for the collection of atoms:
     -
   * - :meth:`~Atoms.get_magnetic_moment`
     -
-  * - :meth:`~Atoms.get_number_of_atoms`
+  * - :meth:`~Atoms.get_global_number_of_atoms`
     -
   * - :meth:`~Atoms.get_pbc`
     - :meth:`~Atoms.set_pbc`

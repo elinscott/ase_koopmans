@@ -51,10 +51,6 @@ class Cell:
     def todict(self):
         return dict(array=self.array, pbc=self.pbc)
 
-    @property
-    def shape(self):
-        return self.array.shape
-
     @classmethod
     def ascell(cls, cell):
         """Return argument as a Cell object.  See :meth:`ase.cell.Cell.new`.
@@ -191,22 +187,6 @@ class Cell:
         return Cell(self.array.copy(), self.pbc.copy())
 
     @property
-    def dtype(self):
-        return self.array.dtype
-
-    @property
-    def size(self):
-        return self.array.size
-
-    @property
-    def T(self):
-        return self.array.T
-
-    @property
-    def flat(self):
-        return self.array.flat
-
-    @property
     def rank(self):
         """"Return the dimension of the cell.
 
@@ -228,10 +208,6 @@ class Cell:
         """Return an array with the three angles alpha, beta, and gamma."""
         return self.cellpar()[3:].copy()
 
-    @property
-    def ndim(self):
-        return self.array.ndim
-
     def __array__(self, dtype=float):
         if dtype != float:
             raise ValueError('Cannot convert cell to array of type {}'
@@ -239,13 +215,7 @@ class Cell:
         return self.array
 
     def __bool__(self):
-        return bool(self.array.any())
-
-    def __ne__(self, other):
-        return self.array != other
-
-    def __eq__(self, other):
-        return self.array == other
+        return bool(self.array.any())  # need to convert from np.bool_
 
     __nonzero__ = __bool__
 
@@ -258,9 +228,6 @@ class Cell:
         # Definitely 0 since this is currently a property.
         # I think normally it is more convenient just to get zero
         return np.abs(np.linalg.det(self.array))
-
-    def tolist(self):
-        return self.array.tolist()
 
     def scaled_positions(self, positions):
         """Calculate scaled positions from Cartesian positions.
