@@ -15,7 +15,10 @@ writer.write(a)
 timestep = 1 #fs
 steps_between_images = 1
 
+# This needs to work without loading a file - it needs to accept an atoms object.
 diffcoeff = DiffusionCoefficient('N3.traj', timestep, steps_between_images)
+
+# This needs to be the functionality we have, rather than plot - we cannot have a plot in a test.
 ans = diffcoeff.calculate()
 
 ans_orig = 3.3333333333333335e-05
