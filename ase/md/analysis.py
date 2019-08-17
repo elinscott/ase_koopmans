@@ -53,11 +53,13 @@ class DiffusionCoefficient:
 		    symbols.append(traj[0].symbols[i])
 		
 		# Moved this local to usage - ideally we remove the external package.
-		from collections import Counter
+		# Functionality now removed by using inbuilt "set"
+		# from collections import Counter
 
 		# Condition used if user wants to calculate Diffusion Coefficients for a specific atom or group of atoms (molecule)
 		if self.molecule_index == None:
-			self.types_of_atoms = list(Counter(symbols).keys())
+			#self.types_of_atoms = list(Counter(symbols).keys())
+			self.types_of_atoms = list(set(symbols))
 			self.no_of_types_of_atoms = len(self.types_of_atoms)
 			self.no_of_atoms = list(Counter(symbols).values())
 		else:
@@ -100,7 +102,7 @@ class DiffusionCoefficient:
 		self.cont_xyz_segment_ensemble_average = 0
 		self.segment_line=[]
 		self.XYZ=['X','Y','Z']
-		self.xyz_markers = {'X':'o', 'Y':'s','Z':'^'}
+		
 
 	def calculate(self):
 		for segment_no in range(self.no_of_segments):
@@ -156,6 +158,7 @@ class DiffusionCoefficient:
 		# We need to separate things out here so all the calculations are done in "calculate", and then the stored data is plotted with "plot"
 		# Calculate should return the diffusion coefficient, not plot.
 		self.calculate()
+		
 		for segment_no in range(self.no_of_segments):
 			if segment_no>0 and self.continuous==True:
 			    for index in range(self.no_of_types_of_atoms):
@@ -208,6 +211,9 @@ class DiffusionCoefficient:
 		# Moved local to usage
 		from scipy import stats
 
+		# Moved this local to its use.
+		xyz_markers = {'X':'o', 'Y':'s','Z':'^'}
+
 		# Generated linear fit  
 		slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
 		#line = slope*np.asarray(x)+intercept
@@ -215,7 +221,7 @@ class DiffusionCoefficient:
 			skip = label.index('A')
 		else:
 			skip = 0
-		mark = self.xyz_markers[label[-1]]
+		mark = xyz_markers[label[-1]]
 
 		if cont == False:
 			plt.plot(x, y, color=color, marker=mark,label=label[skip:], linewidth=0)
