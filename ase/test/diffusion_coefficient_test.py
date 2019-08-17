@@ -16,7 +16,7 @@ timestep = 1 #fs
 steps_between_images = 1
 
 diffcoeff = DiffusionCoefficient('N3.traj', timestep, steps_between_images)
-ans = diffcoeff.plot()
+ans = diffcoeff.calculate()
 
 ans_orig = 3.3333333333333335e-05
 

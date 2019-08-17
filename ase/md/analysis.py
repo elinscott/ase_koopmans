@@ -1,15 +1,7 @@
-from scipy import stats
-from math import floor
-from collections import Counter
-import numpy as np
-import builtins
-import os
-
-import matplotlib.pyplot as plt 
-
 from ase.io import read, write, ulm
-from ase.io.trajectory import Trajectory
-
+#from ase.io.trajectory import Trajectory
+from math import floor
+import numpy as np
 
 def frange(start, stop, step=1.0):
     ''' "range()" like function which accept float type''' 
@@ -49,13 +41,17 @@ class DiffusionCoefficient:
 		self.data = data
 
 		# Getting information for types of atoms from given file so as to calculate diffusion coefficients of different types of atoms separately
-		temp=read(filename=self.input_file, index='0:1')
-		write(filename='temp.traj',images=temp)
-		traj=Trajectory('temp.traj')
+		traj=read(filename=self.input_file, index='0:1')
+		# We can just load the data directly as per above
+		#write(filename='temp.traj',images=temp)
+		#traj=Trajectory('temp.traj')
 		symbols=[]
 		for i in range(len(traj[0])):
 		    symbols.append(traj[0].symbols[i])
 		
+		# Moved this local to usage - ideally we remove the external package.
+		from collections import Counter
+
 		# Condition used if user wants to calculate Diffusion Coefficients for a specific atom or group of atoms (molecule)
 		if self.molecule_index == None:
 			self.types_of_atoms = list(Counter(symbols).keys())
@@ -82,7 +78,9 @@ class DiffusionCoefficient:
 		
 		self.time_between_images = self.timestep * self.steps_between_saved_images
 		
-		
+		# Moved this local to its use, rather than global. 
+		# It'd be good to remove this external package if possible
+		import builtins
  		# To find out total number of images in .traj file
 		self.total_images = ulm.read_header(builtins.open(self.input_file,'rb'))[2]
 		self.total_images = self.total_images - self.ignore_n_images
@@ -106,10 +104,10 @@ class DiffusionCoefficient:
 		for segment_no in range(self.no_of_segments):
 			start = self.ignore_n_images + (segment_no*floor(self.total_images/self.no_of_segments))  # Making separate .traj files for each segment, so as to prevent from loading all the images in the RAM at once
 			end = start + floor(self.total_images/self.no_of_segments)
-			temp = read(filename=self.input_file,index='%d:%d'%(start,end))
-			write(filename='temp.traj', images=temp)
-			traj = Trajectory('temp.traj') 
-		
+			traj = read(filename=self.input_file,index='%d:%d'%(start,end))
+			# Not needed if we just rename the read data
+			#write(filename='temp.traj', images=temp)
+			#traj = Trajectory('temp.traj') 
 		
 			for image_no in range(1,len(traj)): ##1,len(traj)
 				#xyz_ensemble_average = [[0.0]*3]*no_of_types_of_atoms
@@ -144,39 +142,14 @@ class DiffusionCoefficient:
 					self.segment_ensemble_average[segment_no][0].append(np.sum(xyz_ensemble_average[0][xyz]/6))
 
 		self.cont_xyz_segment_ensemble_average = self.xyz_segment_ensemble_average
-		os.remove('temp.traj')
-
-	def fit_data_and_plot(self,x, y, plt, color, label=None, cont=False, cont_y=None):
-		# Generated linear fit  
-		slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-		#line = slope*np.asarray(x)+intercept
-		if label[0] != '_':
-			skip = label.index('A')
-		else:
-			skip = 0
-		mark = self.xyz_markers[label[-1]]
-
-		if cont == False:
-			plt.plot(x, y, color=color, marker=mark,label=label[skip:], linewidth=0)
-			intercept_c=intercept
-		else:
-			slope, intercept_c, r_value, p_value, std_err = stats.linregress(x,cont_y)
-			#line_c = slope*np.asarray(x)+intercept_c
-			plt.plot(x, cont_y, color=color, marker=mark,label=label[skip:], linewidth=0)
-
-		if label[0] == '_':
-			label=label[1:]
-
-		# print(r'Intercept = %.10f $\AA^2$; Diffusion Coefficient = %.10f $\AA^2$/fs' % (intercept, slope))
-		# Converting to more common units of cm^2/s => multiply by 10^-1
-		# \AA^2 => cm^2 requires multiplying by (10^-8)^-2
-		# fs => s requires dividing by 10^-15
-		if self.data == True:
-			print('---')
-			print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (label, intercept_c/(10**8), slope*(0.1), slope*(10**-5)))
-		return slope, intercept_c
+		#os.remove('temp.traj')
 
 	def plot(self):
+		# Moved matplotlib into the function so it is not loaded unless needed
+		import matplotlib.pyplot as plt
+		
+		self.color_list = plt.cm.Set3(np.linspace(0, 1, self.no_of_types_of_atoms))
+
 		self.calculate()
 		for segment_no in range(self.no_of_segments):
 			if segment_no>0 and self.continuous==True:
@@ -228,3 +201,36 @@ class DiffusionCoefficient:
 		if self.plot_graph == True:
 			plt.show()
 		return diff
+
+	def fit_data_and_plot(self,x, y, plt, color, label=None, cont=False, cont_y=None):
+		# Moved local to usage
+		from scipy import stats
+
+		# Generated linear fit  
+		slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+		#line = slope*np.asarray(x)+intercept
+		if label[0] != '_':
+			skip = label.index('A')
+		else:
+			skip = 0
+		mark = self.xyz_markers[label[-1]]
+
+		if cont == False:
+			plt.plot(x, y, color=color, marker=mark,label=label[skip:], linewidth=0)
+			intercept_c=intercept
+		else:
+			slope, intercept_c, r_value, p_value, std_err = stats.linregress(x,cont_y)
+			#line_c = slope*np.asarray(x)+intercept_c
+			plt.plot(x, cont_y, color=color, marker=mark,label=label[skip:], linewidth=0)
+
+		if label[0] == '_':
+			label=label[1:]
+
+		# print(r'Intercept = %.10f $\AA^2$; Diffusion Coefficient = %.10f $\AA^2$/fs' % (intercept, slope))
+		# Converting to more common units of cm^2/s => multiply by 10^-1
+		# \AA^2 => cm^2 requires multiplying by (10^-8)^-2
+		# fs => s requires dividing by 10^-15
+		if self.data == True:
+			print('---')
+			print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (label, intercept_c/(10**8), slope*(0.1), slope*(10**-5)))
+		return slope, intercept_c
