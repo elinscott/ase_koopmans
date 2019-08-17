@@ -1,21 +1,24 @@
-from ase.io import read, write, ulm
+#from ase.io import read, ulm
 #from ase.io.trajectory import Trajectory
 from math import floor
 import numpy as np
 
-def frange(start, stop, step=1.0):
-    ''' "range()" like function which accept float type''' 
-    i = start
-    while i < stop:
-        yield i
-        i += step
+# Replacing with numpy.arange()
+#
+#def frange(start, stop, step=1.0):
+#    ''' "range()" like function which accept float type''' 
+#    i = start
+#    while i < stop:
+#        yield i
+#        i += step
 
 class DiffusionCoefficient:
-	def __init__(self, file_name, timestep, steps_between_saved_images, no_of_segments=1, ignore_n_images=0, continuous=True, molecule_index=None, plot=False, data=False):
+
+	def __init__(self, traj, timestep, steps_between_saved_images, no_of_segments=1, ignore_n_images=0, continuous=True, molecule_index=None, plot=False, data=False):
 		'''Caclulates Diffusion Coefficients and Plots the graph used for calculation
 
 		Parameters:
-			file_name (String): Name of the .traj file where the images are stored
+			traj (Trajectory): Trajectory of atoms objects (images)
 			timestep (Int): Timestep used between each images
 			steps_between_saved_images (Int): Interval used when writing the .traj file 
 			no_of_segments (Int): Divides the given images to segments to prevent from loading all the images in the RAM at once
@@ -30,7 +33,7 @@ class DiffusionCoefficient:
 			wiki : https://en.wikibooks.org/wiki/Molecular_Simulation/Diffusion_Coefficients
 		'''
 
-		self.input_file = file_name
+		self.traj = traj
 		self.timestep = timestep
 		self.steps_between_saved_images = steps_between_saved_images
 		self.no_of_segments = no_of_segments
@@ -41,7 +44,7 @@ class DiffusionCoefficient:
 		self.data = data
 
 		# Getting information for types of atoms from given file so as to calculate diffusion coefficients of different types of atoms separately
-		traj=read(filename=self.input_file, index='0:1')
+		#traj=read(filename=self.input_file, index='0:1')
 		# We can just load the data directly as per above
 		#write(filename='temp.traj',images=temp)
 		#traj=Trajectory('temp.traj')
@@ -80,13 +83,13 @@ class DiffusionCoefficient:
 		
 		# Moved this local to its use, rather than global. 
 		# It'd be good to remove this external package if possible
-		import builtins
+		#import builtins
  		# To find out total number of images in .traj file
-		self.total_images = ulm.read_header(builtins.open(self.input_file,'rb'))[2]
-		self.total_images = self.total_images - self.ignore_n_images
+		#self.total_images = ulm.read_header(builtins.open(self.input_file,'rb'))[2]
+		self.total_images = len(traj) - self.ignore_n_images
 
 		# List of Timestep used for plotting (x-axis)
-		self.timesteps = list(frange(0,self.total_images*self.time_between_images,self.time_between_images))
+		self.timesteps = list(np.arange(0,self.total_images*self.time_between_images,self.time_between_images))
 
 		self.slopes=[]
 		self.intercepts=[]
@@ -98,13 +101,13 @@ class DiffusionCoefficient:
 		self.segment_line=[]
 		self.XYZ=['X','Y','Z']
 		self.xyz_markers = {'X':'o', 'Y':'s','Z':'^'}
-		self.color_list = plt.cm.Set3(np.linspace(0, 1, self.no_of_types_of_atoms))
 
 	def calculate(self):
 		for segment_no in range(self.no_of_segments):
 			start = self.ignore_n_images + (segment_no*floor(self.total_images/self.no_of_segments))  # Making separate .traj files for each segment, so as to prevent from loading all the images in the RAM at once
 			end = start + floor(self.total_images/self.no_of_segments)
-			traj = read(filename=self.input_file,index='%d:%d'%(start,end))
+			traj = self.traj[start:end]
+			#traj = read(filename=self.input_file,index='%d:%d'%(start,end))
 			# Not needed if we just rename the read data
 			#write(filename='temp.traj', images=temp)
 			#traj = Trajectory('temp.traj') 
@@ -150,6 +153,8 @@ class DiffusionCoefficient:
 		
 		self.color_list = plt.cm.Set3(np.linspace(0, 1, self.no_of_types_of_atoms))
 
+		# We need to separate things out here so all the calculations are done in "calculate", and then the stored data is plotted with "plot"
+		# Calculate should return the diffusion coefficient, not plot.
 		self.calculate()
 		for segment_no in range(self.no_of_segments):
 			if segment_no>0 and self.continuous==True:
@@ -170,7 +175,6 @@ class DiffusionCoefficient:
 
 			self.segment_line.append(self.timesteps[segment_no*floor(self.total_images/self.no_of_segments)+floor(self.total_images/self.no_of_segments)-1] + self.time_between_images)
 
-
 		for index in range(self.no_of_types_of_atoms):
 			line = np.mean(self.slopes[index])*np.asarray(self.timesteps)+np.mean(self.intercepts[index])
 			plt.plot(self.timesteps, line, color='C%d'%(index), label='Mean : %s'%(self.types_of_atoms[index]))
@@ -178,9 +182,6 @@ class DiffusionCoefficient:
 				print('---')
 				print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (self.types_of_atoms[index],np.mean(self.slopes[index])*(0.1), np.mean(self.slopes[index])*(10**-5), np.std(self.slopes[index])*(0.1), np.std(self.slopes[index])*(10**-5)))
 				print('---')
-
-
-
 
 		# This plots the lines between the segments
 		for seg in self.segment_line:
@@ -200,6 +201,7 @@ class DiffusionCoefficient:
 
 		if self.plot_graph == True:
 			plt.show()
+
 		return diff
 
 	def fit_data_and_plot(self,x, y, plt, color, label=None, cont=False, cont_y=None):
