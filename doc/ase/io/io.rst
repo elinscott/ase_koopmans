@@ -106,6 +106,23 @@ Here is an example using ``bbox``
 
 .. image:: io3.png
 
+This is an axample of display bond order for molecule
+>>> from ase.build.molecule import molecule
+>>> from ase.io import write
+>>> from ase.io.pov import get_bondpairs, set_high_bondorder_pairs
+>>> C2H6 = molecule('C2H6')
+>>> r_ = {'C': 0.4, 'H':0.2}
+>>> r  = []
+>>> for at in C2H6:
+...       r.append(r_[at.symbol])
+>>> bondpairs = get_bondpairs(C2H6, radius = 1.1)
+>>> high_bondorder_pairs = {}
+>>> high_bondorder_pairs[(0, 1)] = ((0, 0, 0), 2, (0.17, 0.17, 0)) #This define offset, bond order, and bond_offset of the bond between 0 and 1
+>>> bondpairs = set_high_bondorder_pairs( bondpairs, high_bondorder_pairs )
+>>> write( 'C2H6.pov', C2H6, format = 'pov', run_povray = True, canvas_width = 500, radii = r, bondatoms = bondpairs, rotation = "90y" )
+
+.. image:: C2H6.png
+
 Note that in general the XYZ-format does not contain information about the unit cell, however, ASE uses the extended XYZ-format which stores the unitcell:
 
 >>> from ase.io import read, write
