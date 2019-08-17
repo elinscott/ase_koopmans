@@ -61,7 +61,7 @@ def get_bondpairs(atoms, radius=1.1):
                           for a2, offset in zip(indices, offsets)])
     return bondpairs
 
-def set_high_bondorder_pairs(bondpairs, high_bondorder_pairs = []):
+def set_high_bondorder_pairs(bondpairs, high_bondorder_pairs = {}):
     """Set high bondorder pairs
 
     Modify bondpairs list (from get_bondpairs((atoms)) to include high 
@@ -69,24 +69,26 @@ def set_high_bondorder_pairs(bondpairs, high_bondorder_pairs = []):
 
     Parameters:
     -----------
-    bondpairs: List of pairs, generated from get_bondpairs((atoms)
-    high_bondorder_pairs: List of pairs with high bond order
+    bondpairs: List of pairs, generated from get_bondpairs(atoms)
+    high_bondorder_pairs: Dictionary of pairs with high bond orders
                           using the following format:
-                          [ [a, b, offset, bond_order, bond_offset], ...]
-                          offset, bond_order, bond_offset are optional.
-    """
+                          { ( a1, b1 ): ( offset1, bond_order1, bond_offset1), 
+                            ( a2, b2 ): ( offset2, bond_order2, bond_offset2), 
+                            ...
+                          }
+                          offset, bond_order, bond_offset are optional. 
+                          However, if they are provided, the 1st value is offset, 2nd value is bond_order, 3rd value is bond_offset """
 
     bondpairs_ = []
     for pair in bondpairs:
         (a, b) = (pair[0], pair[1] )
-        n_ = 0
-        for pair_ in high_bondorder_pairs:
-            (a_, b_) = (pair_[ 0 ], pair_[1])
-            if ( a_ == a and b_ == b) or (a_ == b and b_ == a):
-                bondpairs_.append(pair_)
-                break
-            n_ += 1
-        if n_ == len(high_bondorder_pairs):
+        if (a, b) in high_bondorder_pairs.keys():
+            bondpair = [a, b ] + [item for item in high_bondorder_pairs[(a, b)]]
+            bondpairs_.append(bondpair)
+        elif (b, a) in high_bondorder_pairs.keys():
+            bondpair = [a, b ] + [item for item in high_bondorder_pairs[(b, a)]]
+            bondpairs_.append(bondpair)
+        else:
             bondpairs_.append(pair)
     return bondpairs_
 
