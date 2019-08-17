@@ -308,10 +308,12 @@ class POVRAY(PlottingVariables):
             else:
                 raise RuntimeError('Each list in bondatom must have at least 2 entries. Error at %s' %(pair))
 
+            if len(offset) != 3:
+                raise ValueError('offset must have 3 elements. Error at %s' %(pair))
             if len(bond_offset) != 3:
                 raise ValueError('bond_offset must have 3 elements. Error at %s' %(pair))
             if bond_order not in [0, 1, 2, 3]:
-                raise ValueError('Bond_order must be either 0, 1, 2, or 3. Error at %s' %(pair))
+                raise ValueError('bond_order must be either 0, 1, 2, or 3. Error at %s' %(pair))
 
             # Up to here, we should have all a, b, offset, bond_order, bond_offset for all bonds.
 
