@@ -191,8 +191,8 @@ class DiffusionCoefficient:
 			plt.plot([seg,seg],[np.amin(self.cont_xyz_segment_ensemble_average), np.amax(self.cont_xyz_segment_ensemble_average)], color='grey')
 		if self.molecule_index == None:
 			line = np.mean(self.slopes)*np.asarray(self.timesteps)+np.mean(self.intercepts)
-			plt.plot(self.timesteps, line, color='black',label='Mean')
 			diff=np.mean(self.slopes)*(10**-5)
+			plt.plot(self.timesteps, line, color='black',label='Mean')
 			if self.data == True:
 				print('---')
 				print('Mean Diffusion Coefficient (X, Y and Z) = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (np.mean(self.slopes)*(0.1), diff, np.std(self.slopes)*(0.1), np.std(self.slopes)*(10**-5)))
