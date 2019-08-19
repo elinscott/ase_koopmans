@@ -147,7 +147,7 @@ class DiffusionCoefficient:
 		import numpy as np
 
 		x_edited = np.vstack([np.array(x), np.ones(len(x))]).T
-		slope, intercept = np.linalg.lstsq(x_edited, np.array(y), rcond=None)[0]
+		slope, intercept = np.linalg.lstsq(x_edited, np.array(y), rcond=-1)[0]
 
 		return slope, intercept
 
