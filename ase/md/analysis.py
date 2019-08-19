@@ -139,11 +139,15 @@ class DiffusionCoefficient:
 		return np.mean(self.slopes)*(10**-5)
 
 	def fit_data(self,x, y):
-		# Moved local to usage
-		from scipy.stats import linregress
 
-		# Generated linear fit  
-		slope, intercept, r_value, p_value, std_err = linregress(x,y)
+		# Simpler implementation but disabled as fails Conda tests.
+		# from scipy.stats import linregress
+		# slope, intercept, r_value, p_value, std_err = linregress(x,y)
+
+		import numpy as np
+
+		x_edited = np.vstack([np.array(x), np.ones(len(x))]).T
+		slope, intercept = np.linalg.lstsq(x_edited, np.array(y), rcond=None)[0]
 
 		return slope, intercept
 
@@ -175,7 +179,7 @@ class DiffusionCoefficient:
 					else:
 						custom_label = '_Segment No. - %d ; Atom - %s ; %s'%(segment_no+1, self.types_of_atoms[index], xyz_labels[xyz]) # To remove label for other segments as all the segments are of same colour
 					ratio = floor(self.total_images/self.no_of_segments)
-					self.plot_data(self.timesteps[segment_no*ratio+1:segment_no*ratio+ratio], self.xyz_segment_ensemble_average[segment_no][index][xyz], self.slopes[index], self.intercept[index], plt, color_list[index], custom_label, continuous, self.cont_xyz_segment_ensemble_average[segment_no][index][xyz])
+					self.plot_data(self.timesteps[segment_no*ratio+1:segment_no*ratio+ratio], self.xyz_segment_ensemble_average[segment_no][index][xyz], self.slopes[index], self.intercepts[index], plt, color_list[index], custom_label, continuous, self.cont_xyz_segment_ensemble_average[segment_no][index][xyz])
 
 			self.segment_line.append(self.timesteps[segment_no*floor(self.total_images/self.no_of_segments)+floor(self.total_images/self.no_of_segments)-1] + self.time_between_images)
 
