@@ -1097,20 +1097,24 @@ class BaseSiesta(FileIOCalculator):
 
         fname = self.getpath(ext='KP')
         try:
-            with open(fname, "r") as f:
-                nkp = int(f.readline())
-                _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
+            with open(fname, "r") as fd:
+                nkp = int(next(fd))
+                kpoints = np.empty((nkp, 3))
+                kweights = np.empty(nkp)
+
+                for i in range(nkp):
+                    line = next(fd)
+                    tokens = line.split()
+                    numbers = np.array(tokens[1:]).astype(float)
+                    kpoints[i] = numbers[:3]
+                    kweights[i] = numbers[3]
+
         except (IOError):
             return 1
 
-        i2xyzw = np.delete(_ee, 0, 1)
-
-        kpoints, kweights = OrderedDict(), OrderedDict()
-        for i, xyzw in enumerate(i2xyzw):
-            kpoints[i], kweights[i] = xyzw[0:3], xyzw[3]
-
         self.results['kpoints'] = kpoints
         self.results['kweights'] = kweights
+
         return 0
 
     def read_dipole(self):
