@@ -115,9 +115,9 @@ class DiffusionCoefficient:
 					com_orig /= len(self.atom_index)
 					com_new /= len(self.atom_index)
 					for xyz in range(3):
-						xyz_ensemble_average[0][xyz] += np.square(com_new[xyz] - com_orig[xyz])
-						self.xyz_segment_ensemble_average[segment_no][0][xyz].append(xyz_ensemble_average[0][xyz]/2)
-					self.segment_ensemble_average[segment_no][0].append(np.sum(xyz_ensemble_average[0][xyz]/6))
+						xyz_disp[0][xyz] += np.square(com_new[xyz] - com_orig[xyz])
+						self.xyz_segment_ensemble_average[segment_no][0][xyz].append(xyz_disp[0][xyz]/2)
+					self.segment_ensemble_average[segment_no][0].append(np.sum(xyz_disp[0][xyz]/6))
 
 		self.cont_xyz_segment_ensemble_average = self.xyz_segment_ensemble_average
 
@@ -175,7 +175,7 @@ class DiffusionCoefficient:
 					else:
 						custom_label = '_Segment No. - %d ; Atom - %s ; %s'%(segment_no+1, self.types_of_atoms[index], xyz_labels[xyz]) # To remove label for other segments as all the segments are of same colour
 					ratio = floor(self.total_images/self.no_of_segments)
-					self.plot_data(self.timesteps[segment_no*ratio+1:segment_no*ratio+ratio], self.xyz_segment_ensemble_average[segment_no][index][xyz], plt, color_list[index], custom_label, continuous, self.cont_xyz_segment_ensemble_average[segment_no][index][xyz])
+					self.plot_data(self.timesteps[segment_no*ratio+1:segment_no*ratio+ratio], self.xyz_segment_ensemble_average[segment_no][index][xyz], self.slopes[index], self.intercept[index], plt, color_list[index], custom_label, continuous, self.cont_xyz_segment_ensemble_average[segment_no][index][xyz])
 
 			self.segment_line.append(self.timesteps[segment_no*floor(self.total_images/self.no_of_segments)+floor(self.total_images/self.no_of_segments)-1] + self.time_between_images)
 
@@ -205,10 +205,7 @@ class DiffusionCoefficient:
 
 		plt.show()
 
-	def plot_data(self, x, y, plt, color, label=None, cont=False, cont_y=None):
-		# Moved local to usage
-		from scipy import stats
-
+	def plot_data(self, x, y, slope, intercept, plt, color, label=None, cont=False, cont_y=None):
 		# Moved this local to its use.
 		xyz_markers = {'X':'o', 'Y':'s','Z':'^'}
 
@@ -234,4 +231,4 @@ class DiffusionCoefficient:
 		# fs => s requires dividing by 10^-15
 		if self.data == True:
 			print('---')
-			print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (label, intercept_c/(10**8), slope*(0.1), slope*(10**-5)))
+			print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (label, intercept/(10**8), slope*(0.1), slope*(10**-5)))
