@@ -140,10 +140,10 @@ class DiffusionCoefficient:
 
 	def fit_data(self,x, y):
 		# Moved local to usage
-		from scipy import stats
+		from scipy.stats import linregress
 
 		# Generated linear fit  
-		slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+		slope, intercept, r_value, p_value, std_err = linregress(x,y)
 
 		return slope, intercept
 
