@@ -166,26 +166,7 @@ class Psi4(Calculator):
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes, symmetry='c1'):
-        """Do the calculation.
 
-        properties: list of str
-            List of what needs to be calculated.  Can be any combination
-            of 'energy', 'forces', 'stress', 'dipole', 'charges', 'magmom'
-            and 'magmoms'.
-        system_changes: list of str
-            List of what has changed since last calculation.  Can be
-            any combination of these six: 'positions', 'numbers', 'cell',
-            'pbc', 'initial_charges' and 'initial_magmoms'.
-
-            self.results = {'energy': 0.0,
-                            'forces': np.zeros((len(atoms), 3)),
-                            'stress': np.zeros(6),
-                            'dipole': np.zeros(3),
-                            'charges': np.zeros(len(atoms)),
-                            'magmom': 0.0,
-                            'magmoms': np.zeros(len(atoms))}
-
-        """
         Calculator.calculate(self, atoms=atoms)
         if atoms is None:
             if self.atoms is None:
