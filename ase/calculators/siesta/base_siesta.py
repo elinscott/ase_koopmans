@@ -1080,12 +1080,16 @@ class BaseSiesta(FileIOCalculator):
 
         ksn2e = np.delete(_ee, 0, 1).reshape([nkp, nspin, n])
 
-        eig = OrderedDict()
+        eigarray = np.empty((nspin, nkp, n))
+        eigarray[:] = np.inf
+
         for k, sn2e in enumerate(ksn2e):
             for s, n2e in enumerate(sn2e):
-                eig[(k,s)] = n2e
+                eigarray[s, k, :] = n2e
 
-        self.results['eigenvalues'] = eig
+        assert np.isfinite(eigarray).all()
+
+        self.results['eigenvalues'] = eigarray
         return 0
 
     def read_kpoints(self):
@@ -1610,3 +1614,12 @@ class BaseSiesta(FileIOCalculator):
             raise ValueError('units can be only au or nm**2')
 
         return data.freq, self.results['polarizability']
+
+    def get_fermi_level(self):
+        return self.results['fermi_energy']
+
+    def get_k_point_weights(self):
+        return self.results['kweights']
+
+    def get_ibz_k_points(self):
+        return self.results['kpoints']
