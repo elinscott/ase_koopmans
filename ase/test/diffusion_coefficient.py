@@ -1,31 +1,22 @@
 from ase.md.analysis import DiffusionCoefficient
 from ase.atoms import Atoms
-#from ase.io.trajectory import TrajectoryWriter
 
-# Creating a simple traj file
-eps = 1e-10
-a = Atoms('N3', [(0, 0, 0), (1, 0, 0), (0, 0, 1)])
-traj = [a.copy()]
-#writer = TrajectoryWriter('N3.traj', mode='w')
-#writer.write(a)
-a.set_positions([(2, 0, 0), (0, 2, 2), (2, 2, 0)])
-traj.append(a.copy())
-#writer.write(a)
-a.set_positions([(4, 0, 0), (0, 4, 4), (4 ,4, 0)])
-traj.append(a.copy())
-#writer.write(a)
+# Creating a simple trajectory
+# Textbook case. The displacement coefficient should be 0.5 A^2 / fs
+a = Atoms('N', positions=[(0, 0, 0)])
+traj = [a.copy() for i in range(4)]
+traj[1].set_positions([(1, 1, 1)])
+traj[2].set_positions([(2, 2, 2)])
+traj[3].set_positions([(3, 3, 3)])
 
 timestep = 1 #fs
 steps_between_images = 1
 
-# This needs to work without loading a file - it needs to accept an atoms object.
-#diffcoeff = DiffusionCoefficient('N3.traj', timestep, steps_between_images)
-diffcoeff = DiffusionCoefficient(traj, timestep, steps_between_images)
+diffcoeff = DiffusionCoefficient(traj, timestep, steps_between_images, molecule=True)
 
-# This needs to be the functionality we have, rather than plot - we cannot have a plot in a test.
-ans = diffcoeff.calculate()
+ans = diffcoeff.calculate(ignore_n_images=0, number_of_segments=1)
+ans_orig = 5.0e-06
 
-ans_orig = 3.3333333333333335e-05
-
+eps = 1e-10
 assert(abs(ans - ans_orig) < eps)
 
