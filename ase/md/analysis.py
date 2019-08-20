@@ -38,7 +38,7 @@ class DiffusionCoefficient:
             self.types_of_atoms = ["molecule"]
             self.no_of_atoms = [1]
         else:
-            self.types_of_atoms = list(set(traj[0].get_chemical_symbols()))
+            self.types_of_atoms = sorted(list(set(np.take(traj[0].get_chemical_symbols(), self.atom_indices))))
             self.no_of_atoms = [traj[0].get_chemical_symbols().count(symbol) for symbol in self.types_of_atoms]
 
         self.no_of_types_of_atoms = len(self.types_of_atoms)
@@ -56,8 +56,8 @@ class DiffusionCoefficient:
         # This holds all the data points for the diffusion coefficients, averaged over atoms
         self.xyz_segment_ensemble_average = np.zeros((self.no_of_segments,self.no_of_types_of_atoms,3,self.len_segments))
         # This holds all the information on linear fits, from which we get the diffusion coefficients
-        self.slopes = np.zeros((self.no_of_segments,self.no_of_types_of_atoms,3))
-        self.intercepts = np.zeros((self.no_of_segments,self.no_of_types_of_atoms,3))
+        self.slopes = np.zeros((self.no_of_types_of_atoms,self.no_of_segments,3))
+        self.intercepts = np.zeros((self.no_of_types_of_atoms,self.no_of_segments,3))
 
         self.cont_xyz_segment_ensemble_average = 0
 
@@ -91,7 +91,7 @@ class DiffusionCoefficient:
             # t = 0, but this is a data point that needs fitting too and so should be included
             for image_no in range(0,len(seg)): 
                 # This object collects the xyz displacements for all atom species in the image
-                xyz_disp = [[0., 0., 0.]*self.no_of_types_of_atoms]
+                xyz_disp = np.zeros((self.no_of_types_of_atoms,3))
                 
                 # Calculating for each atom individually, grouping by species type (e.g. solid state)
                 if not self.molecule:
@@ -108,14 +108,15 @@ class DiffusionCoefficient:
 
                 # For each atom species or molecule, use xyz_disp to calculate the average data                      
                 for sym_index in range(self.no_of_types_of_atoms):
- 		    # Normalise by degrees of freedom and average overall atoms for each axes over entire segment                         
+                    # Normalise by degrees of freedom and average overall atoms for each axes over entire segment                         
                     denominator = (2*self.no_of_atoms[sym_index])
                     for xyz in range(3):
                         self.xyz_segment_ensemble_average[segment_no][sym_index][xyz][image_no] = (xyz_disp[sym_index][xyz]/denominator)
 
             # We've collected all the data for this entire segment, so now to fit the data.
             for sym_index in range(self.no_of_types_of_atoms):    
-                self.slopes[segment_no][sym_index], self.intercepts[segment_no][sym_index] = self.fit_data(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][:])
+                self.slopes[sym_index][segment_no], self.intercepts[sym_index][segment_no] = self.fit_data(self.timesteps[start:end], 
+                                                                                                           self.xyz_segment_ensemble_average[segment_no][sym_index][:])
 
     def fit_data(self, x, y):
 
@@ -135,20 +136,24 @@ class DiffusionCoefficient:
 
         return slopes, intercepts
 
-    def get_diffusion_coefficients(self):
+    def get_diffusion_coefficients(self, stddev=False):
 
         # Safety check, so we don't return garbage.
         if len(self.slopes) == 0:
             self.calculate()
 
-        #return self.slopes
-        slopes = np.zeros(self.no_of_types_of_atoms)
+        slopes = [np.mean(self.slopes[sym_index]*(0.1)) for sym_index in range(self.no_of_types_of_atoms)]
+        std = [np.std(self.slopes[sym_index]*(10**-16)) for sym_index in range(self.no_of_types_of_atoms)]
 
-        for sym_index in range(self.no_of_types_of_atoms): 
-            for segment_no in range(self.no_of_segments):
-                slopes[sym_index] += self.slopes[segment_no][sym_index] / self.no_of_segments
-
-        return slopes*(10**-5)
+        # Converted gradient from \AA^2/fs to more common units of cm^2/s => multiply by 10^-1
+        # Converted std from \AA^2 to more common units of cm^2 => multiply by 10^-16
+        # \AA^2 => cm^2 requires multiplying by (10^-8)^2 = 10^-16
+        # fs => s requires dividing by 10^-15
+        
+        if stddev:
+            return slopes, std
+       
+        return slopes
 
     def plot(self, print_data=False):
         '''
@@ -166,13 +171,12 @@ class DiffusionCoefficient:
         # Define some aesthetic variables
         color_list = plt.cm.Set3(np.linspace(0, 1, self.no_of_types_of_atoms))
         xyz_labels=['X','Y','Z']
-        xyz_markers = {'X':'o', 'Y':'s','Z':'^'}
+        xyz_markers = ['o','s','^']
 
         # Check if we have data to plot, if not calculate it.
         if len(self.slopes) == 0:
             self.calculate()
         
-	# AL: Still tidying but we are nearly there.
         for segment_no in range(self.no_of_segments):
             start = segment_no*self.len_segments  
             end = start + self.len_segments
@@ -189,39 +193,44 @@ class DiffusionCoefficient:
                     else:
                         skip = 0
 
-                    mark = xyz_markers[custom_label[-1]]
-                    
-                    plt.plot(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz], color=color_list[sym_index], marker=mark, label=custom_label[skip:], linewidth=0)
+                    plt.plot(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz],
+                             color=color_list[sym_index], marker=xyz_markers[xyz], label=custom_label[skip:], linewidth=0)
 
-                    if custom_label[0] == '_':
-                        custom_label=custom_label[1:]
-
-                    # print(r'Intercept = %.10f $\AA^2$; Diffusion Coefficient = %.10f $\AA^2$/fs' % (intercept, slope))
-                    # Converting to more common units of cm^2/s => multiply by 10^-1
-                    # \AA^2 => cm^2 requires multiplying by (10^-8)^-2
-                    # fs => s requires dividing by 10^-15
-                    if print_data:
-                        print('---')
-                        print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (custom_label, self.intercepts[segment_no][sym_index][xyz]/(10**8), self.slopes[segment_no][sym_index][xyz]*(0.1), self.slopes[segment_no][sym_index][xyz]*(10**-5)))
-
-            # Print the line of best fit for each segment      
-            line = np.mean(self.slopes[segment_no][sym_index])*self.timesteps[start:end]+np.mean(self.intercepts[segment_no][sym_index])
+            # Print the line of best fit for segment      
+            line = np.mean(self.slopes[sym_index][segment_no])*self.timesteps[start:end]+np.mean(self.intercepts[sym_index][segment_no])
             plt.plot(self.timesteps[start:end], line, color='C%d'%(sym_index), label='Mean : %s'%(self.types_of_atoms[sym_index]))
  
-            # Plot separator at end of each segment
+            # Plot separator at end of segment
             x_coord = self.timesteps[end-1]
             plt.plot([x_coord, x_coord],[np.amin(self.xyz_segment_ensemble_average), np.amax(self.xyz_segment_ensemble_average)], color='grey', linestyle=":")
 
-        for index in range(self.no_of_types_of_atoms):
-            #line = np.mean(self.slopes[index])*self.timesteps+np.mean(self.intercepts[index])
-            #plt.plot(self.timesteps, line, color='C%d'%(index), label='Mean : %s'%(self.types_of_atoms[index]))
-            if print_data:
-                print('---')
-                print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (self.types_of_atoms[index],np.mean(self.slopes[index])*(0.1), np.mean(self.slopes[index])*(10**-5), np.std(self.slopes[index])*(0.1), np.std(self.slopes[index])*(10**-5)))
-                print('---')
+        # Plot the overall mean (average of slopes) for each atom species
+        for sym_index in range(self.no_of_types_of_atoms):
+            line = np.mean(self.slopes[sym_index])*self.timesteps+np.mean(self.intercepts[sym_index])
+            plt.plot(self.timesteps, line, color='C%d'%(sym_index), label='Mean : %s'%(self.types_of_atoms[sym_index]))
+
+        if print_data: 
+            self.print_data()
 
         plt.legend(loc='best')
         plt.xlabel('Time (fs)')
         plt.ylabel(r'Mean Square Displacement ($\AA^2$)')
 
         plt.show()
+
+    def print_data(self):
+ 
+        slopes, std = self.get_diffusion_coefficients(stddev=True)
+
+        print('---')
+        for sym_index in range(self.no_of_types_of_atoms):
+            print(r'Species: %4s' % self.types_of_atoms[sym_index])
+            print('---')
+            for segment_no in range(self.no_of_segments):
+                print(r'Segment   %3d:         Diffusion Coefficient = %.10f cm^2/s; Intercept = %.10f cm^2;' % 
+                     (segment_no, np.mean(self.slopes[sym_index][segment_no])*(0.1), np.mean(self.intercepts[sym_index][segment_no])*(10**-16)))
+                print('---')
+
+            print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s; Standard Deviation = %.10f cm^2/s' % 
+                 (self.types_of_atoms[sym_index], slopes[sym_index], std[sym_index]))
+            print('---')
