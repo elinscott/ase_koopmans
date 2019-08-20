@@ -195,7 +195,7 @@ class DiffusionCoefficient:
                         print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (custom_label, self.intercepts[segment_no][sym_index][xyz]/(10**8), self.slopes[segment_no][sym_index][xyz]*(0.1), self.slopes[segment_no][sym_index][xyz]*(10**-5)))
 
             line = np.mean(self.slopes[segment_no][sym_index])*self.timesteps[start:end]+np.mean(self.intercepts[segment_no][sym_index])
-            plt.plot(self.timesteps[start:end], line, style="-", color='C%d'%(sym_index), label='Mean : %s'%(self.types_of_atoms[sym_index]))
+            plt.plot(self.timesteps[start:end], line, color='C%d'%(sym_index), label='Mean : %s'%(self.types_of_atoms[sym_index]))
 
         for index in range(self.no_of_types_of_atoms):
             #line = np.mean(self.slopes[index])*self.timesteps+np.mean(self.intercepts[index])
