@@ -1,9 +1,9 @@
-from analysis_new import DiffusionCoefficient
+from ase.md.analysis import DiffusionCoefficient
 from ase.atoms import Atoms
 
 # Creating a simple trajectory
 # Textbook case. The displacement coefficient should be 0.5 A^2 / fs
-a = Atoms('N', positions=[(0, 0, 0)])
+a = Atoms('He', positions=[(0, 0, 0)])
 traj = [a.copy() for i in range(2)]
 traj[1].set_positions([(1, 1, 1)])
 
