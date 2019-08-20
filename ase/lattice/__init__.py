@@ -1042,7 +1042,8 @@ def get_bravais_lattice(cell, eps=2e-4):
         lat, op = identify_lattice(cell, eps=eps)
         return lat
     elif cell.pbc[:2].all():
-        return get_2d_bravais_lattice(cell, eps)
+        lat, op = get_2d_bravais_lattice(cell, eps)
+        return lat
     else:
         raise ValueError('Cell must be periodic either along two first '
                          'axes or along all three.  Got pbc={}'
