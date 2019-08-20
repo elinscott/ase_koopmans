@@ -117,8 +117,6 @@ class DiffusionCoefficient:
             for sym_index in range(self.no_of_types_of_atoms):    
                 self.slopes[segment_no][sym_index], self.intercepts[segment_no][sym_index] = self.fit_data(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][:])
 
-        self.cont_xyz_segment_ensemble_average = self.xyz_segment_ensemble_average.copy()
-
         #return self.slopes
         return np.mean(self.slopes)*(10**-5)
 
@@ -194,8 +192,13 @@ class DiffusionCoefficient:
                         print('---')
                         print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (custom_label, self.intercepts[segment_no][sym_index][xyz]/(10**8), self.slopes[segment_no][sym_index][xyz]*(0.1), self.slopes[segment_no][sym_index][xyz]*(10**-5)))
 
+            # Print the line of best fit for each segment      
             line = np.mean(self.slopes[segment_no][sym_index])*self.timesteps[start:end]+np.mean(self.intercepts[segment_no][sym_index])
             plt.plot(self.timesteps[start:end], line, color='C%d'%(sym_index), label='Mean : %s'%(self.types_of_atoms[sym_index]))
+ 
+            # Plot separator at end of each segment
+            x_coord = self.timesteps[end-1]
+            plt.plot([x_coord, x_coord],[np.amin(self.xyz_segment_ensemble_average), np.amax(self.xyz_segment_ensemble_average)], color='grey', linestyle=":")
 
         for index in range(self.no_of_types_of_atoms):
             #line = np.mean(self.slopes[index])*self.timesteps+np.mean(self.intercepts[index])
@@ -205,18 +208,14 @@ class DiffusionCoefficient:
                 print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (self.types_of_atoms[index],np.mean(self.slopes[index])*(0.1), np.mean(self.slopes[index])*(10**-5), np.std(self.slopes[index])*(0.1), np.std(self.slopes[index])*(10**-5)))
                 print('---')
 
-        # This plots the lines between the segments
-        for segment_no in range(self.no_of_segments):
-            x_coordinate = self.timesteps[segment_no*self.len_segments+self.len_segments-1] + self.timestep * self.steps_between_saved_images
-            plt.plot([x_coordinate, x_coordinate],[np.amin(self.cont_xyz_segment_ensemble_average), np.amax(self.cont_xyz_segment_ensemble_average)], color='grey')
-        if self.atom_indices == None:
-            line = np.mean(self.slopes)*self.timesteps+np.mean(self.intercepts)
-            diff=np.mean(self.slopes)*(10**-5)
-            plt.plot(self.timesteps, line, color='black',label='Mean')
-            if print_data:
-                print('---')
-                print('Mean Diffusion Coefficient (X, Y and Z) = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (np.mean(self.slopes)*(0.1), diff, np.std(self.slopes)*(0.1), np.std(self.slopes)*(10**-5)))
-                print('---')
+#        if self.atom_indices == None:
+#            line = np.mean(self.slopes)*self.timesteps+np.mean(self.intercepts)
+#            diff=np.mean(self.slopes)*(10**-5)
+#            plt.plot(self.timesteps, line, color='black',label='Mean')
+#            if print_data:
+#                print('---')
+#                print('Mean Diffusion Coefficient (X, Y and Z) = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (np.mean(self.slopes)*(0.1), diff, np.std(self.slopes)*(0.1), np.std(self.slopes)*(10**-5)))
+#                print('---')
 
         plt.legend(loc='best')
         plt.xlabel('Time (fs)')
