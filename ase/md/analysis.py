@@ -117,9 +117,6 @@ class DiffusionCoefficient:
             for sym_index in range(self.no_of_types_of_atoms):    
                 self.slopes[segment_no][sym_index], self.intercepts[segment_no][sym_index] = self.fit_data(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][:])
 
-        #return self.slopes
-        return np.mean(self.slopes)*(10**-5)
-
     def fit_data(self, x, y):
 
         # Simpler implementation but disabled as fails Conda tests.
@@ -137,6 +134,21 @@ class DiffusionCoefficient:
             slopes[xyz], intercepts[xyz] = np.linalg.lstsq(x_edited, y[xyz], rcond=-1)[0]
 
         return slopes, intercepts
+
+    def get_diffusion_coefficients(self):
+
+        # Safety check, so we don't return garbage.
+        if len(self.slopes) == 0:
+            self.calculate()
+
+        #return self.slopes
+        slopes = np.zeros(self.no_of_types_of_atoms)
+
+        for sym_index in range(self.no_of_types_of_atoms): 
+            for segment_no in range(self.no_of_segments):
+                slopes[sym_index] += self.slopes[segment_no][sym_index] / self.no_of_segments
+
+        return slopes*(10**-5)
 
     def plot(self, print_data=False):
         '''
@@ -158,7 +170,7 @@ class DiffusionCoefficient:
 
         # Check if we have data to plot, if not calculate it.
         if len(self.slopes) == 0:
-            diff = self.calculate()
+            self.calculate()
         
 	# AL: Still tidying but we are nearly there.
         for segment_no in range(self.no_of_segments):
@@ -207,15 +219,6 @@ class DiffusionCoefficient:
                 print('---')
                 print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (self.types_of_atoms[index],np.mean(self.slopes[index])*(0.1), np.mean(self.slopes[index])*(10**-5), np.std(self.slopes[index])*(0.1), np.std(self.slopes[index])*(10**-5)))
                 print('---')
-
-#        if self.atom_indices == None:
-#            line = np.mean(self.slopes)*self.timesteps+np.mean(self.intercepts)
-#            diff=np.mean(self.slopes)*(10**-5)
-#            plt.plot(self.timesteps, line, color='black',label='Mean')
-#            if print_data:
-#                print('---')
-#                print('Mean Diffusion Coefficient (X, Y and Z) = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (np.mean(self.slopes)*(0.1), diff, np.std(self.slopes)*(0.1), np.std(self.slopes)*(10**-5)))
-#                print('---')
 
         plt.legend(loc='best')
         plt.xlabel('Time (fs)')

@@ -11,8 +11,8 @@ timestep = 1 #fs
 steps_between_images = 1
 
 diffcoeff = DiffusionCoefficient(traj, timestep, steps_between_images, molecule=True)
-
-ans = diffcoeff.calculate(ignore_n_images=0, number_of_segments=1)
+diffcoeff.calculate(ignore_n_images=0, number_of_segments=1)
+ans = diffcoeff.get_diffusion_coefficient()[0]
 ans_orig = 5.0e-06
 
 eps = 1e-10
