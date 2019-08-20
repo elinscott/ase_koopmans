@@ -1206,30 +1206,36 @@ class FixParametricRelations(FixConstraint):
         expressions = []
         per = int(round(-1 * math.log10(self.eps)))
         fmt_str = "{:." + str(per + 1) + "f}"
-        for index, a_vec in enumerate(self.A):
+        for index, b in enumerate(self.B):
             exp = ""
-            if np.all(np.abs(a_vec) < self.eps) or np.abs(self.B[index]) > self.eps:
-                exp += fmt_str.format(self.B[index])
+            if self.A is not None:
+                a_vec = self.A[index]
+            else:
+                a_vec = np.zeros(0)
+            if np.all(np.abs(a_vec) < self.eps) or np.abs(b) > self.eps:
+                exp += fmt_str.format(b)
             param_exp = ""
-            for param_index, param in enumerate(self.params):
-                A_val = abs(self.A[index, param_index])
-                if A_val < self.eps:
+
+            for param_index, a_val in enumerate(a_vec):
+                if a_val < self.eps:
                     continue
 
+                param = self.params[param_index]
+
                 if param_exp or exp:
-                    if self.A[index, param_index] > -1.0*self.eps:
+                    if a_val > -1.0*self.eps:
                         param_exp += " + "
                     else:
                         param_exp += " - "
-                elif (not exp) and (not param_exp) and (self.A[index, param_index] < -1.0*self.eps):
+                elif (not exp) and (not param_exp) and (a_val < -1.0*self.eps):
                         param_exp += "-"
 
-                if np.abs(A_val-1.0) <= self.eps:
+                if np.abs(a_val-1.0) <= self.eps:
                     param_exp += "{:s}".format(param)
-                elif np.abs(A_val-round(A_val)) <= self.eps and A_val > self.eps:
-                    param_exp += "{:d}.0*{:s}".format(int(round(A_val)), param)
+                elif np.abs(a_val-round(a_val)) <= self.eps and a_val > self.eps:
+                    param_exp += "{:d}.0*{:s}".format(int(round(a_val)), param)
                 else:
-                    param_exp += (fmt_str + "*{:s}").format(A_val, param)
+                    param_exp += (fmt_str + "*{:s}").format(a_val, param)
 
             exp += param_exp
 
