@@ -1040,14 +1040,13 @@ def get_bravais_lattice(cell, eps=2e-4):
 
     if cell.pbc.all():
         lat, op = identify_lattice(cell, eps=eps)
-        return lat
     elif cell.pbc[:2].all():
         lat, op = get_2d_bravais_lattice(cell, eps)
-        return lat
     else:
         raise ValueError('Cell must be periodic either along two first '
                          'axes or along all three.  Got pbc={}'
                          .format(cell.pbc))
+    return lat
 
 
 def celldiff(cell1, cell2):
@@ -1082,6 +1081,14 @@ def identify_lattice(cell, eps=2e-4):
     and operation that, applied to the cell, yields the same lengths
     and angles as the Bravais lattice object."""
     from ase.geometry.bravais_type_engine import niggli_op_table
+
+    if not cell.pbc.all():
+        assert cell.pbc[:2].all(), \
+            ('Cell must be periodic either along two first '
+             'axes or along all three.  Got pbc={}'
+             .format(cell.pbc))
+        return get_2d_bravais_lattice(cell, eps)
+
     if not cell.volume:
         raise ValueError('Expected 3 linearly independent cell vectors')
     rcell, reduction_op = cell.niggli_reduce()
