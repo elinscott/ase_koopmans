@@ -1352,10 +1352,11 @@ def get_2d_bravais_lattice(origcell, eps=2e-4):
                    format(a, b, gamma))
             raise RuntimeError(msg)
         if rank > symrank:
+            finalop = op
             symrank = rank
             finallat = lat
 
-    return finallat
+    return finallat, finalop.T
 
 
 def all_variants():
