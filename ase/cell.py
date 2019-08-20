@@ -158,8 +158,8 @@ class Cell:
         """
         # TODO: Combine with the rotation transformation from bandpath()
         if special_points is None:
-            from ase.lattice import get_bravais_lattice
-            lat, op = get_bravais_lattice(self, eps=eps)
+            from ase.lattice import identify_lattice
+            lat, op = identify_lattice(self, eps=eps)
             path = lat.bandpath(path, npoints=npoints, density=density)
             return path.transform(op)
         else:
