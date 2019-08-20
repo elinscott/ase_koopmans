@@ -108,8 +108,7 @@ class DiffusionCoefficient:
 
                 # For each atom species or molecule, use xyz_disp to calculate the average data                      
                 for sym_index in range(self.no_of_types_of_atoms):
-                    # This is the average displacement in X, Y and Z for each species in the entire segment
- 		    # Normalise by degrees of freedom and number of atoms.                            
+ 		    # Normalise by degrees of freedom and average overall atoms for each axes over entire segment                         
                     denominator = (2*self.no_of_atoms[sym_index])
                     for xyz in range(3):
                         self.xyz_segment_ensemble_average[segment_no][sym_index][xyz][image_no] = (xyz_disp[sym_index][xyz]/denominator)
@@ -141,13 +140,11 @@ class DiffusionCoefficient:
 
         return slopes, intercepts
 
-    def plot(self, continuous=True, print_data=False):
+    def plot(self, print_data=False):
         '''
         Auto-plot of Diffusion Coefficient data
 
         Parameters:
-            continuous (Bool): 
-                Set True if the user wants the graph to be continuous
             print_data (Bool): 
                 Set True to get output information for details of diffusion coefficient plots
         '''
@@ -170,12 +167,12 @@ class DiffusionCoefficient:
             start = segment_no*self.len_segments  
             end = start + self.len_segments
             
-            for index in range(self.no_of_types_of_atoms):    
+            for sym_index in range(self.no_of_types_of_atoms):    
                 for xyz in range(3):
                     if segment_no == 0:
-                        custom_label = 'Segment No. - %d ; Atom - %s ; %s'%(segment_no+1, self.types_of_atoms[index], xyz_labels[xyz])
+                        custom_label = 'Segment No. - %d ; Atom - %s ; %s'%(segment_no+1, self.types_of_atoms[sym_index], xyz_labels[xyz])
                     else:
-                        custom_label = '_Segment No. - %d ; Atom - %s ; %s'%(segment_no+1, self.types_of_atoms[index], xyz_labels[xyz]) # To remove label for other segments as all the segments are of same colour
+                        custom_label = '_Segment No. - %d ; Atom - %s ; %s'%(segment_no+1, self.types_of_atoms[sym_index], xyz_labels[xyz]) # To remove label for other segments as all the segments are of same colour
 
                     if custom_label[0] != '_':
                         skip = custom_label.index('A')
@@ -183,11 +180,8 @@ class DiffusionCoefficient:
                         skip = 0
 
                     mark = xyz_markers[custom_label[-1]]
-
-                    if continuous == False:
-                       plt.plot(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][index][xyz], color=color_list[index], marker=mark, label=custom_label[skip:], linewidth=0)
-                    else:
-                       plt.plot(self.timesteps[start:end], self.cont_xyz_segment_ensemble_average[segment_no][index][xyz], color=color_list[index], marker=mark, label=custom_label[skip:], linewidth=0)
+                    
+                    plt.plot(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz], color=color_list[sym_index], marker=mark, label=custom_label[skip:], linewidth=0)
 
                     if custom_label[0] == '_':
                         custom_label=custom_label[1:]
@@ -198,11 +192,14 @@ class DiffusionCoefficient:
                     # fs => s requires dividing by 10^-15
                     if print_data:
                         print('---')
-                        print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (label, intercept/(10**8), slope*(0.1), slope*(10**-5)))
+                        print(r'%10s: Intercept = %.10f cm^2; Diffusion Coefficient = %.10f cm^2/s, %.10f m^2/s' % (custom_label, self.intercepts[segment_no][sym_index][xyz]/(10**8), self.slopes[segment_no][sym_index][xyz]*(0.1), self.slopes[segment_no][sym_index][xyz]*(10**-5)))
+
+            line = np.mean(self.slopes[segment_no][sym_index])*self.timesteps[start:end]+np.mean(self.intercepts[segment_no][sym_index])
+            plt.plot(self.timesteps[start:end], line, style="-", color='C%d'%(sym_index), label='Mean : %s'%(self.types_of_atoms[sym_index]))
 
         for index in range(self.no_of_types_of_atoms):
-            line = np.mean(self.slopes[index])*self.timesteps+np.mean(self.intercepts[index])
-            plt.plot(self.timesteps, line, color='C%d'%(index), label='Mean : %s'%(self.types_of_atoms[index]))
+            #line = np.mean(self.slopes[index])*self.timesteps+np.mean(self.intercepts[index])
+            #plt.plot(self.timesteps, line, color='C%d'%(index), label='Mean : %s'%(self.types_of_atoms[index]))
             if print_data:
                 print('---')
                 print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s, %.10f m^2/s; Standard Deviation = %.10f cm^2/s, %.10f m^2/s' % (self.types_of_atoms[index],np.mean(self.slopes[index])*(0.1), np.mean(self.slopes[index])*(10**-5), np.std(self.slopes[index])*(0.1), np.std(self.slopes[index])*(10**-5)))
@@ -226,22 +223,3 @@ class DiffusionCoefficient:
         plt.ylabel(r'Mean Square Displacement ($\AA^2$)')
 
         plt.show()
-
-    def plot_data(self, x, y, plt, color, label=None, cont=False, cont_y=None):
-
-        if custom_label[0] != '_':
-            skip = custom_label.index('A')
-        else:
-            skip = 0
-
-        mark = xyz_markers[custom_label[-1]]
-
-        if cont == False:
-            plt.plot(x, y, color=color, marker=mark,label=label[skip:], linewidth=0)
-        else:
-            plt.plot(x, cont_y, color=color, marker=mark,label=label[skip:], linewidth=0)
-
-        if label[0] == '_':
-            label=label[1:]
-
-        return label
