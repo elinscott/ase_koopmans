@@ -166,7 +166,7 @@ def schema_update(sql):
 
     arrays_2D = ['positions', 'cell', 'forces']
 
-    txt2jsonb = ['calculator_parameters', 'key_value_pairs', 'data']
+    txt2jsonb = ['calculator_parameters', 'key_value_pairs']
 
     for column in arrays_1D:
         if column in ['numbers', 'tags']:
@@ -181,5 +181,7 @@ def schema_update(sql):
     for column in txt2jsonb:
         sql = sql.replace('{} TEXT,'.format(column),
                           '{} JSONB,'.format(column))
+
+    sql = sql.replace('data BLOB,', 'data JSONB,')
 
     return sql
