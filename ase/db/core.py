@@ -1,11 +1,13 @@
 import collections
 import functools
+import json
 import numbers
 import operator
 import os
 import re
 import warnings
 from time import time
+from typing import List, Any
 
 import numpy as np
 
@@ -591,3 +593,67 @@ def float_to_time_string(t, long=False):
         return '{:.3f} {}s'.format(x, longwords[s])
     else:
         return '{:.0f}{}'.format(round(x), s)
+
+
+def object_to_bytes(obj: Any) -> bytes:
+    parts = [b'12345678']
+    obj = o2b(obj, parts)
+    offset = sum(len(part) for part in parts)
+    x = np.array(offset, np.int64)
+    if not np.little_endian:
+        x.byteswap(True)
+    parts[0] = x.tobytes()
+    parts.append(json.dumps(obj).encode())
+    return b''.join(parts)
+
+
+def bytes_to_object(b: bytes) -> Any:
+    x = np.frombuffer(b[:8], np.int64)
+    if not np.little_endian:
+        x.byteswap(True)
+    offset = x.item()
+    obj = json.loads(b[offset:].decode())
+    return b2o(obj, b)
+
+
+def b2o(obj: Any, b: bytes) -> Any:
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+    if isinstance(obj, dict):
+        x = obj.get('__complex__')
+        if x is not None:
+            return complex(*x)
+        x = obj.get('__ndarray__')
+        if x is not None:
+            shape, name, offset, little_endian = x
+            dtype = np.dtype(name)
+            size = dtype.itemsize * np.prod(shape).astype(int)
+            a = np.frombuffer(b[offset:offset + size], dtype)
+            a.shape = shape
+            if np.little_endian != little_endian:
+                a.flags.writable = True
+                a.byteswap(True)
+            return a
+        return {key: b2o(value, b) for key, value in obj.items()}
+    return [b2o(value, b) for value in obj]
+
+
+def o2b(obj: Any, parts: List[bytes]):
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+    if isinstance(obj, dict):
+        return {key: o2b(value, parts) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [o2b(value, parts) for value in obj]
+    if isinstance(obj, np.ndarray):
+        offset = sum(len(part) for part in parts)
+        parts.append(obj.tobytes())
+        return {'__ndarray__': [obj.shape,
+                                obj.dtype.name,
+                                offset,
+                                np.little_endian]}
+    if isinstance(obj, complex):
+        return {'__complex__': [obj.real, obj.imag]}
+    else:
+        raise ValueError('Objects of type {type} not allowed'
+                         .format(type=type(obj)))
