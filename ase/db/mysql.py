@@ -226,7 +226,7 @@ class MySQLDatabase(SQLite3Database):
         return ase.io.jsonio.encode(remove_nan_and_inf(obj))
 
     def decode(self, obj, lazy=False):
-        return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
+        return insert_nan_and_inf(ase.io.jsonio.decode(obj))
 
 
 def schema_update(statements):
