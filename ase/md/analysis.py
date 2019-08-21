@@ -4,23 +4,27 @@ class DiffusionCoefficient:
 
     def __init__(self, traj, timestep, steps_between_saved_images, atom_indices=None, molecule=False):
         '''
-        Calculates Diffusion Coefficients for atoms and molecules
+        This class calculates the Diffusion Coefficient for the given Trajectory using the Einstein Equation:
+        
+        ⟨|r(t)−r(0)|**2⟩ = 2nDt 
+        
+        where r(t) is the position of atom at time t, n is the degrees of freedom and D is the Diffusion Coefficient
+        
+        Solved herein by fitting with y = mx + c, i.e. 1/(2*n) ⟨|r(t)−r(0)|**2⟩ = Dt, with m = D and c = 0
+
+        wiki : https://en.wikibooks.org/wiki/Molecular_Simulation/Diffusion_Coefficients
 
         Parameters:
             traj (Trajectory): 
                 Trajectory of atoms objects (images)
             timestep (Int): 
-                Timestep used between each images
+                Timestep used between each images, in fs
             steps_between_saved_images (Int): 
                 Interval used when writing the .traj file 
-            molecule_index (List of Int): 
-                The indices of atoms whose Diffusion Coefficient is to be calculated
-
-            This function calculates the Diffusion Coefficient for the given .traj file using the Einstein Equation:
-            ⟨|r(t)−r(0)|**2⟩ = 6Dt (where r(t) is the position of atom at time t, D is the Diffusion Coefficient)
-            Solved herein as y = mx + c, i.e. 1/6 ⟨|r(t)−r(0)|**2⟩ = Dt, so m = D, c = 0
-
-            wiki : https://en.wikibooks.org/wiki/Molecular_Simulation/Diffusion_Coefficients
+            atom_indices (List of Int): 
+                The indices of atoms whose Diffusion Coefficient is to be calculated explicitly
+            molecule (Boolean)
+                Indicate if we are studying a molecule instead of atoms, therefore use centre of mass in calculations
         '''
 
         self.traj = traj
@@ -46,7 +50,14 @@ class DiffusionCoefficient:
     def __initialise_arrays(self, ignore_n_images, number_of_segments):
 
         '''
-        
+        Private function to initialise data storage objects. This includes objects to store the total timesteps
+        sampled, the average diffusivity for species in any given segment, and objects to store gradient/intercept from fitting.
+
+        Parameters:
+            ignore_n_images (Int): 
+                Number of images you want to ignore from the start of the trajectory, e.g. during equilibration
+            number_of_segments (Int): 
+                Divides the given trajectory in to segments to allow statistical analysis
         '''
 
         from math import floor
@@ -67,9 +78,11 @@ class DiffusionCoefficient:
 
     def calculate(self, ignore_n_images=0, number_of_segments=1):
         '''
-        Calculate the diffusion coefficients.
+        Calculate the diffusion coefficients, using the previously supplied data. The user can break the data into segments and 
+        take the average over these trajectories, therefore allowing statistical analysis and derivation of standard deviations.
+        Option is also provided to ignore initial images if data is perhaps unequilibrated initially.
 
-        Parameter:
+        Parameters:
             ignore_n_images (Int): 
                 Number of images you want to ignore from the start of the trajectory, e.g. during equilibration
             number_of_segments (Int): 
@@ -125,7 +138,14 @@ class DiffusionCoefficient:
     def __fit_data(self, x, y):
 
         '''
+        Private function that returns slope/intercept for linear fit to mean square diffusion data
 
+
+        Parameters:
+            x (Array of floats): 
+                Linear list of timesteps in the calculation
+            y (Array of floats): 
+                Mean square displacement as a function of time.
         '''
 
         # Simpler implementation but disabled as fails Conda tests.
@@ -147,7 +167,12 @@ class DiffusionCoefficient:
     def get_diffusion_coefficients(self, stddev=False):
 
         '''
+        Returns diffusion coefficients for atoms (in alphabetical order) along with standard deviation.
+        All data is currently passed out in units of cm**2/s
 
+        Parameters:
+            stddev (Boolean)
+                Whether to return the standard deviation data.
         '''
 
         # Safety check, so we don't return garbage.
@@ -155,10 +180,10 @@ class DiffusionCoefficient:
             self.calculate()
 
         slopes = [np.mean(self.slopes[sym_index]*(0.1)) for sym_index in range(self.no_of_types_of_atoms)]
-        std = [np.std(self.slopes[sym_index]*(10**-16)) for sym_index in range(self.no_of_types_of_atoms)]
+        std = [np.std(self.slopes[sym_index]*(0.1)) for sym_index in range(self.no_of_types_of_atoms)]
 
-        # Converted gradient from \AA^2/fs to more common units of cm^2/s => multiply by 10^-1
-        # Converted std from \AA^2 to more common units of cm^2 => multiply by 10^-16
+        # Converting gradient from \AA^2/fs to more common units of cm^2/s => multiply by 10^-1
+        # Converting intercept from \AA^2 to more common units of cm^2 => multiply by 10^-16
         # \AA^2 => cm^2 requires multiplying by (10^-8)^2 = 10^-16
         # fs => s requires dividing by 10^-15
         
@@ -170,7 +195,7 @@ class DiffusionCoefficient:
     def plot(self):
 
         '''
-        Auto-plot of Diffusion Coefficient data
+        Auto-plot of Diffusion Coefficient data. Provides basic framework for visualising analysis.
         '''
 
         # Moved matplotlib into the function so it is not loaded unless needed
@@ -182,7 +207,7 @@ class DiffusionCoefficient:
         xyz_labels=['X','Y','Z']
         xyz_markers = ['o','s','^']
 
-        # Check if we have data to plot, if not calculate it.
+        # Safety check, so we don't return garbage.
         if len(self.slopes) == 0:
             self.calculate()
         
@@ -195,6 +220,7 @@ class DiffusionCoefficient:
                 for xyz in range(3):
                     if segment_no == 0:
                         label = 'Species: %s (%s)'%(self.types_of_atoms[sym_index], xyz_labels[xyz])
+                    # Add scatter graph  for the mean square displacement data in this segment
                     plt.scatter(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz],
                              color=color_list[sym_index], marker=xyz_markers[xyz], label=label, linewidth=1, edgecolor='grey')
 
@@ -215,6 +241,7 @@ class DiffusionCoefficient:
         #    label ='Mean, Total : %s'%(self.types_of_atoms[sym_index])
         #    plt.plot(self.timesteps, line, color='C%d'%(sym_index), label=label, linestyle="-")
 
+        # Aesthetic parts of the plot
         plt.ylim(-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average))
         plt.legend(loc='best')
         plt.xlabel('Time (fs)')
@@ -225,11 +252,17 @@ class DiffusionCoefficient:
     def print_data(self):
 
         '''
-
+        Output of statistical analysis for Diffusion Coefficient data. Provides basic framework for understanding calculation.
         '''
+
+        # Safety check, so we don't return garbage.
+        if len(self.slopes) == 0:
+            self.calculate()
  
+        # Collect statistical data for diffusion coefficient over all segments
         slopes, std = self.get_diffusion_coefficients(stddev=True)
 
+        # Print data for each atom, in each segment.
         for sym_index in range(self.no_of_types_of_atoms):
             print('---')
             print(r'Species: %4s' % self.types_of_atoms[sym_index])
@@ -238,6 +271,7 @@ class DiffusionCoefficient:
                 print(r'Segment   %3d:         Diffusion Coefficient = %.10f cm^2/s; Intercept = %.10f cm^2;' % 
                      (segment_no, np.mean(self.slopes[sym_index][segment_no])*(0.1), np.mean(self.intercepts[sym_index][segment_no])*(10**-16)))
 
+        # Print average overall data.
         print('---')
         for sym_index in range(self.no_of_types_of_atoms):
             print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s; Std. Dev. = %.10f cm^2/s' % 
