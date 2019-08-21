@@ -1,5 +1,5 @@
 from ase.md.analysis import DiffusionCoefficient
-ffrom ase.atoms import Atoms
+from ase.atoms import Atoms
 
 eps = 1e-10
 # Creating simple trajectories
