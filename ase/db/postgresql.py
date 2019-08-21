@@ -80,10 +80,10 @@ class PostgreSQLDatabase(SQLite3Database):
     type = 'postgresql'
     default = 'DEFAULT'
 
-    def encode(self, obj):
+    def encode(self, obj, binary=False):
         return ase.io.jsonio.encode(remove_nan_and_inf(obj))
 
-    def decode(self, obj):
+    def decode(self, obj, lazy=False):
         return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
 
     def blob(self, array):
