@@ -222,11 +222,11 @@ class MySQLDatabase(SQLite3Database):
             sql = sql.replace(subst[0], subst[1])
         return sql, value
 
-    def encode(self, obj):
+    def encode(self, obj, binary=False):
         return ase.io.jsonio.encode(remove_nan_and_inf(obj))
 
-    def decode(self, obj):
-        return insert_nan_and_inf(ase.io.jsonio.decode(obj))
+    def decode(self, obj, lazy=False):
+        return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
 
 
 def schema_update(statements):
