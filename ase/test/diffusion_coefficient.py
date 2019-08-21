@@ -1,5 +1,5 @@
 from ase.md.analysis import DiffusionCoefficient
-from ase.atoms import Atoms
+ffrom ase.atoms import Atoms
 
 eps = 1e-10
 # Creating simple trajectories
@@ -20,8 +20,6 @@ ans = dc_he.get_diffusion_coefficients()[0]
 # Answer in cm^2/s
 ans_orig = 5.0e-02
 
-#dc_he.plot(print_data=True)
-
 assert(abs(ans - ans_orig) < eps)
 
 ###### CO molecule
@@ -31,18 +29,18 @@ traj_co = [co.copy() for i in range(2)]
 traj_co[1].set_positions([(-1, -1, -1), (1, 1, 2)])
 
 dc_co = DiffusionCoefficient(traj_co, timestep, steps_between_images, molecule=False)
-dc_co.calculate()
+dc_co.calculate(ignore_n_images=0, number_of_segments=1)
 ans = dc_co.get_diffusion_coefficients()[0]
 assert(abs(ans - ans_orig) < eps)
 
 for index in range(2):
     dc_co = DiffusionCoefficient(traj_co, timestep, steps_between_images, atom_indices=[index], molecule=False)
-    dc_co.calculate()
+    dc_co.calculate() 
     ans = dc_co.get_diffusion_coefficients()[0]
     assert(abs(ans - ans_orig) < eps)
 
 dc_co = DiffusionCoefficient(traj_co, timestep, steps_between_images, molecule=True)
-dc_co.calculate()
+dc_co.calculate(ignore_n_images=0, number_of_segments=1)
 ans = dc_co.get_diffusion_coefficients()[0]
 ans_orig = 0.0
 assert(abs(ans - ans_orig) < eps)

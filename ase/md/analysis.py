@@ -43,7 +43,11 @@ class DiffusionCoefficient:
 
         self.no_of_types_of_atoms = len(self.types_of_atoms)
 
-    def initialise_arrays(self, ignore_n_images, number_of_segments):
+    def __initialise_arrays(self, ignore_n_images, number_of_segments):
+
+        '''
+        
+        '''
 
         from math import floor
         total_images = len(self.traj) - ignore_n_images
@@ -73,7 +77,7 @@ class DiffusionCoefficient:
         '''
 
         # Setup all the arrays we need to store information
-        self.initialise_arrays(ignore_n_images, number_of_segments)
+        self.__initialise_arrays(ignore_n_images, number_of_segments)
 
         for segment_no in range(self.no_of_segments):
             start = segment_no*self.len_segments  
@@ -115,10 +119,14 @@ class DiffusionCoefficient:
 
             # We've collected all the data for this entire segment, so now to fit the data.
             for sym_index in range(self.no_of_types_of_atoms):    
-                self.slopes[sym_index][segment_no], self.intercepts[sym_index][segment_no] = self.fit_data(self.timesteps[start:end], 
-                                                                                                           self.xyz_segment_ensemble_average[segment_no][sym_index][:])
+                self.slopes[sym_index][segment_no], self.intercepts[sym_index][segment_no] = self.__fit_data(self.timesteps[start:end], 
+                                                                                                             self.xyz_segment_ensemble_average[segment_no][sym_index][:])
 
-    def fit_data(self, x, y):
+    def __fit_data(self, x, y):
+
+        '''
+
+        '''
 
         # Simpler implementation but disabled as fails Conda tests.
         # from scipy.stats import linregress
@@ -138,6 +146,10 @@ class DiffusionCoefficient:
 
     def get_diffusion_coefficients(self, stddev=False):
 
+        '''
+
+        '''
+
         # Safety check, so we don't return garbage.
         if len(self.slopes) == 0:
             self.calculate()
@@ -155,13 +167,10 @@ class DiffusionCoefficient:
        
         return slopes
 
-    def plot(self, print_data=False):
+    def plot(self):
+
         '''
         Auto-plot of Diffusion Coefficient data
-
-        Parameters:
-            print_data (Bool): 
-                Set True to get output information for details of diffusion coefficient plots
         '''
 
         # Moved matplotlib into the function so it is not loaded unless needed
@@ -180,38 +189,33 @@ class DiffusionCoefficient:
         for segment_no in range(self.no_of_segments):
             start = segment_no*self.len_segments  
             end = start + self.len_segments
+            label = None
             
-            for sym_index in range(self.no_of_types_of_atoms):    
+            for sym_index in range(self.no_of_types_of_atoms): 
                 for xyz in range(3):
                     if segment_no == 0:
-                        custom_label = 'Segment No. - %d ; Atom - %s ; %s'%(segment_no+1, self.types_of_atoms[sym_index], xyz_labels[xyz])
-                    else:
-                        custom_label = '_Segment No. - %d ; Atom - %s ; %s'%(segment_no+1, self.types_of_atoms[sym_index], xyz_labels[xyz]) # To remove label for other segments as all the segments are of same colour
+                        label = 'Species: %s (%s)'%(self.types_of_atoms[sym_index], xyz_labels[xyz])
+                    plt.scatter(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz],
+                             color=color_list[sym_index], marker=xyz_markers[xyz], label=label, linewidth=1, edgecolor='grey')
 
-                    if custom_label[0] != '_':
-                        skip = custom_label.index('A')
-                    else:
-                        skip = 0
-
-                    plt.plot(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz],
-                             color=color_list[sym_index], marker=xyz_markers[xyz], label=custom_label[skip:], linewidth=0)
-
-            # Print the line of best fit for segment      
-            line = np.mean(self.slopes[sym_index][segment_no])*self.timesteps[start:end]+np.mean(self.intercepts[sym_index][segment_no])
-            plt.plot(self.timesteps[start:end], line, color='C%d'%(sym_index), label='Mean : %s'%(self.types_of_atoms[sym_index]))
+                # Print the line of best fit for segment      
+                line = np.mean(self.slopes[sym_index][segment_no])*self.timesteps[start:end]+np.mean(self.intercepts[sym_index][segment_no])
+                if segment_no == 0:
+                    label = 'Segment Mean : %s'%(self.types_of_atoms[sym_index])
+                plt.plot(self.timesteps[start:end], line, color='C%d'%(sym_index), label=label, linestyle='--')
  
             # Plot separator at end of segment
             x_coord = self.timesteps[end-1]
-            plt.plot([x_coord, x_coord],[np.amin(self.xyz_segment_ensemble_average), np.amax(self.xyz_segment_ensemble_average)], color='grey', linestyle=":")
+            plt.plot([x_coord, x_coord],[-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average)], color='grey', linestyle=":")
 
         # Plot the overall mean (average of slopes) for each atom species
-        for sym_index in range(self.no_of_types_of_atoms):
-            line = np.mean(self.slopes[sym_index])*self.timesteps+np.mean(self.intercepts[sym_index])
-            plt.plot(self.timesteps, line, color='C%d'%(sym_index), label='Mean : %s'%(self.types_of_atoms[sym_index]))
+        # This only makes sense if the data is all plotted on the same x-axis timeframe, which currently we are not - everything is plotted sequentially
+        #for sym_index in range(self.no_of_types_of_atoms):
+        #    line = np.mean(self.slopes[sym_index])*self.timesteps+np.mean(self.intercepts[sym_index])
+        #    label ='Mean, Total : %s'%(self.types_of_atoms[sym_index])
+        #    plt.plot(self.timesteps, line, color='C%d'%(sym_index), label=label, linestyle="-")
 
-        if print_data: 
-            self.print_data()
-
+        plt.ylim(-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average))
         plt.legend(loc='best')
         plt.xlabel('Time (fs)')
         plt.ylabel(r'Mean Square Displacement ($\AA^2$)')
@@ -219,18 +223,23 @@ class DiffusionCoefficient:
         plt.show()
 
     def print_data(self):
+
+        '''
+
+        '''
  
         slopes, std = self.get_diffusion_coefficients(stddev=True)
 
-        print('---')
         for sym_index in range(self.no_of_types_of_atoms):
+            print('---')
             print(r'Species: %4s' % self.types_of_atoms[sym_index])
             print('---')
             for segment_no in range(self.no_of_segments):
                 print(r'Segment   %3d:         Diffusion Coefficient = %.10f cm^2/s; Intercept = %.10f cm^2;' % 
                      (segment_no, np.mean(self.slopes[sym_index][segment_no])*(0.1), np.mean(self.intercepts[sym_index][segment_no])*(10**-16)))
-                print('---')
 
-            print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s; Standard Deviation = %.10f cm^2/s' % 
+        print('---')
+        for sym_index in range(self.no_of_types_of_atoms):
+            print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s; Std. Dev. = %.10f cm^2/s' % 
                  (self.types_of_atoms[sym_index], slopes[sym_index], std[sym_index]))
-            print('---')
+        print('---')
