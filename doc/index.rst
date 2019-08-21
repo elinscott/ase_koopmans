@@ -239,6 +239,9 @@ Contents
 .. |openmx| image:: static/openmx.png
    :target: ase/calculators/openmx.html
    :align: middle
+.. |psi4| image:: static/psi4.png
+   :target: ase/calculators/psi4.html
+   :align: middle
 .. |q_espresso| image:: static/espresso.png
    :target: ase/calculators/espresso.html
    :align: middle
