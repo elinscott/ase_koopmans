@@ -597,6 +597,7 @@ def float_to_time_string(t, long=False):
 
 
 def object_to_bytes(obj: Any) -> bytes:
+    """Serialize Python object to bytes."""
     parts = [b'12345678']
     obj = o2b(obj, parts)
     offset = sum(len(part) for part in parts)
@@ -609,12 +610,39 @@ def object_to_bytes(obj: Any) -> bytes:
 
 
 def bytes_to_object(b: bytes) -> Any:
+    """Deserialize bytes to Python object."""
     x = np.frombuffer(b[:8], np.int64)
     if not np.little_endian:
         x = x.byteswap()
     offset = x.item()
     obj = json.loads(b[offset:].decode())
     return b2o(obj, b)
+
+
+def o2b(obj: Any, parts: List[bytes]):
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+    if isinstance(obj, dict):
+        return {key: o2b(value, parts) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [o2b(value, parts) for value in obj]
+    if isinstance(obj, np.ndarray):
+        offset = sum(len(part) for part in parts)
+        if not np.little_endian:
+            obj = obj.byteswap()
+        parts.append(obj.tobytes())
+        return {'__ndarray__': [obj.shape,
+                                obj.dtype.name,
+                                offset]}
+    if isinstance(obj, complex):
+        return {'__complex__': [obj.real, obj.imag]}
+    objtype = getattr(obj, 'ase_objtype')
+    if objtype:
+        dct = o2b(obj.todict(), parts)
+        dct['__ase_objtype__'] = objtype
+        return dct
+    raise ValueError('Objects of type {type} not allowed'
+                     .format(type=type(obj)))
 
 
 def b2o(obj: Any, b: bytes) -> Any:
@@ -645,31 +673,4 @@ def b2o(obj: Any, b: bytes) -> Any:
     objtype = dct.pop('__ase_objtype__', None)
     if objtype is None:
         return dct
-
     return create_ase_object(objtype, dct)
-
-
-def o2b(obj: Any, parts: List[bytes]):
-    if isinstance(obj, (int, float, bool, str, type(None))):
-        return obj
-    if isinstance(obj, dict):
-        return {key: o2b(value, parts) for key, value in obj.items()}
-    if isinstance(obj, (list, tuple)):
-        return [o2b(value, parts) for value in obj]
-    if isinstance(obj, np.ndarray):
-        offset = sum(len(part) for part in parts)
-        if not np.little_endian:
-            obj = obj.byteswap()
-        parts.append(obj.tobytes())
-        return {'__ndarray__': [obj.shape,
-                                obj.dtype.name,
-                                offset]}
-    if isinstance(obj, complex):
-        return {'__complex__': [obj.real, obj.imag]}
-    objtype = getattr(obj, 'ase_objtype')
-    if objtype:
-        dct = o2b(obj.todict(), parts)
-        dct['__ase_objtype__'] = objtype
-        return dct
-    raise ValueError('Objects of type {type} not allowed'
-                     .format(type=type(obj)))

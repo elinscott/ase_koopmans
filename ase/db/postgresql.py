@@ -78,11 +78,11 @@ class Cursor:
 
 def insert_ase_objects(obj):
     if isinstance(obj, dict):
-        try:
-            return create_ase_object(obj)
-        except ValueError:
+        objtype = obj.pop('__ase_objtype__', None)
+        if objtype is None:
             return {key: insert_ase_objects(value)
                     for key, value in obj.items()}
+        return create_ase_object(objtype, obj)
     if isinstance(obj, list):
         return [insert_ase_objects(value) for value in obj]
     return obj
