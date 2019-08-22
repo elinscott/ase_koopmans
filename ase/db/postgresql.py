@@ -6,7 +6,7 @@ from psycopg2.extras import execute_values
 
 from ase.db.sqlite import (init_statements, index_statements, VERSION,
                            SQLite3Database)
-import ase.io.jsonio
+from ase.io.jsonio import encode as ase_encode, numpyfy, create_ase_object
 
 jsonb_indices = [
     'CREATE INDEX idxkeys ON systems USING GIN (key_value_pairs);',
@@ -76,15 +76,27 @@ class Cursor:
                        argslist=args[0], template=q, page_size=len(args[0]))
 
 
+def insert_ase_objects(obj):
+    if isinstance(obj, dict):
+        try:
+            return create_ase_object(obj)
+        except ValueError:
+            return {key: insert_ase_objects(value)
+                    for key, value in obj.items()}
+    if isinstance(obj, list):
+        return [insert_ase_objects(value) for value in obj]
+    return obj
+
+
 class PostgreSQLDatabase(SQLite3Database):
     type = 'postgresql'
     default = 'DEFAULT'
 
     def encode(self, obj, binary=False):
-        return ase.io.jsonio.encode(remove_nan_and_inf(obj))
+        return ase_encode(remove_nan_and_inf(obj))
 
     def decode(self, obj, lazy=False):
-        return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
+        return insert_ase_objects(insert_nan_and_inf(numpyfy(obj)))
 
     def blob(self, array):
         """Convert array to blob/buffer object."""

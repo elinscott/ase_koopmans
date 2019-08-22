@@ -16,6 +16,7 @@ from ase.symbols import symbols2numbers, string2symbols
 from ase.calculators.calculator import all_properties, all_changes
 from ase.data import atomic_numbers
 from ase.db.row import AtomsRow
+from ase.io.jsonio import create_ase_object
 from ase.parallel import world, DummyMPI, parallel_function, parallel_generator
 from ase.utils import Lock, basestring, PurePath
 
@@ -603,14 +604,14 @@ def object_to_bytes(obj: Any) -> bytes:
     if not np.little_endian:
         x.byteswap(True)
     parts[0] = x.tobytes()
-    parts.append(json.dumps(obj).encode())
+    parts.append(json.dumps(obj, separators=(',', ':')).encode())
     return b''.join(parts)
 
 
 def bytes_to_object(b: bytes) -> Any:
     x = np.frombuffer(b[:8], np.int64)
     if not np.little_endian:
-        x.byteswap(True)
+        x = x.byteswap()
     offset = x.item()
     obj = json.loads(b[offset:].decode())
     return b2o(obj, b)
@@ -619,23 +620,33 @@ def bytes_to_object(b: bytes) -> Any:
 def b2o(obj: Any, b: bytes) -> Any:
     if isinstance(obj, (int, float, bool, str, type(None))):
         return obj
-    if isinstance(obj, dict):
-        x = obj.get('__complex__')
-        if x is not None:
-            return complex(*x)
-        x = obj.get('__ndarray__')
-        if x is not None:
-            shape, name, offset, little_endian = x
-            dtype = np.dtype(name)
-            size = dtype.itemsize * np.prod(shape).astype(int)
-            a = np.frombuffer(b[offset:offset + size], dtype)
-            a.shape = shape
-            if np.little_endian != little_endian:
-                a.flags.writable = True
-                a.byteswap(True)
-            return a
-        return {key: b2o(value, b) for key, value in obj.items()}
-    return [b2o(value, b) for value in obj]
+
+    if isinstance(obj, list):
+        return [b2o(value, b) for value in obj]
+
+    assert isinstance(obj, dict)
+
+    x = obj.get('__complex__')
+    if x is not None:
+        return complex(*x)
+
+    x = obj.get('__ndarray__')
+    if x is not None:
+        shape, name, offset = x
+        dtype = np.dtype(name)
+        size = dtype.itemsize * np.prod(shape).astype(int)
+        a = np.frombuffer(b[offset:offset + size], dtype)
+        a.shape = shape
+        if not np.little_endian:
+            a = a.byteswap()
+        return a
+
+    dct = {key: b2o(value, b) for key, value in obj.items()}
+    objtype = dct.pop('__ase_objtype__', None)
+    if objtype is None:
+        return dct
+
+    return create_ase_object(objtype, dct)
 
 
 def o2b(obj: Any, parts: List[bytes]):
@@ -647,13 +658,18 @@ def o2b(obj: Any, parts: List[bytes]):
         return [o2b(value, parts) for value in obj]
     if isinstance(obj, np.ndarray):
         offset = sum(len(part) for part in parts)
+        if not np.little_endian:
+            obj = obj.byteswap()
         parts.append(obj.tobytes())
         return {'__ndarray__': [obj.shape,
                                 obj.dtype.name,
-                                offset,
-                                np.little_endian]}
+                                offset]}
     if isinstance(obj, complex):
         return {'__complex__': [obj.real, obj.imag]}
-    else:
-        raise ValueError('Objects of type {type} not allowed'
-                         .format(type=type(obj)))
+    objtype = getattr(obj, 'ase_objtype')
+    if objtype:
+        dct = o2b(obj.todict(), parts)
+        dct['__ase_objtype__'] = objtype
+        return dct
+    raise ValueError('Objects of type {type} not allowed'
+                     .format(type=type(obj)))
