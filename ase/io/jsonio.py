@@ -46,27 +46,29 @@ def object_hook(dct):
     if '__ase_objtype__' in dct:
         objtype = dct.pop('__ase_objtype__')
         dct = numpyfy(dct)
-
-        # We just try each object type one after another and instantiate
-        # them manually, depending on which kind it is.
-        # We can formalize this later if it ever becomes necessary.
-        if objtype == 'cell':
-            from ase.cell import Cell
-            obj = Cell(**dct)
-        elif objtype == 'bandstructure':
-            from ase.dft.band_structure import BandStructure
-            obj = BandStructure(**dct)
-        elif objtype == 'bandpath':
-            from ase.dft.kpoints import BandPath
-            obj = BandPath(path=dct.pop('labelseq'), **dct)
-        else:
-            raise RuntimeError('Do not know how to decode object type {} '
-                               'into an actual object'.format(objtype))
-
-        assert obj.ase_objtype == objtype
-        return obj
+        return create_ase_object(objtype, dct)
 
     return dct
+
+
+def create_ase_object(objtype, dct):
+    # We just try each object type one after another and instantiate
+    # them manually, depending on which kind it is.
+    # We can formalize this later if it ever becomes necessary.
+    if objtype == 'cell':
+        from ase.cell import Cell
+        obj = Cell(**dct)
+    elif objtype == 'bandstructure':
+        from ase.dft.band_structure import BandStructure
+        obj = BandStructure(**dct)
+    elif objtype == 'bandpath':
+        from ase.dft.kpoints import BandPath
+        obj = BandPath(path=dct.pop('labelseq'), **dct)
+    else:
+        raise ValueError('Do not know how to decode object type {} '
+                         'into an actual object'.format(objtype))
+    assert obj.ase_objtype == objtype
+    return obj
 
 
 mydecode = json.JSONDecoder(object_hook=object_hook).decode

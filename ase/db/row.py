@@ -140,8 +140,11 @@ class AtomsRow:
     @property
     def data(self):
         """Data dict."""
-        if not isinstance(self._data, dict):
+        if isinstance(self._data, str):
             self._data = decode(self._data)  # lazy decoding
+        elif isinstance(self._data, bytes):
+            from ase.db.core import bytes_to_object
+            self._data = bytes_to_object(self._data)  # lazy decoding
         return FancyDict(self._data)
 
     @property
