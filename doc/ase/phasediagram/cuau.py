@@ -7,6 +7,6 @@ refs = [('Cu', 0.0),
         ('CuAu', -0.5),
         ('Cu2Au', -0.7)]
 pd = PhaseDiagram(refs)
-pd.plot()
+pd.plot(show=False)
 plt.savefig('cuau.png')
 print(pd.decompose('Cu3Au'))

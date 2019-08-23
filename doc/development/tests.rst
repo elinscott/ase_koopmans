@@ -11,7 +11,7 @@ All additions and modifications to ASE should be tested.
 Test scripts should be put in the :git:`ase/test` directory.
 Run all tests with::
 
-  python -c "from ase.test.testsuite import test; test(verbose=True)"
+  ase test
 
 It is using the function:
 

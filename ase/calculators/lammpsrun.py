@@ -107,7 +107,7 @@ potentials)
     NiH.set_calculator(lammps)
     print("Energy ", NiH.get_potential_energy())
 
-(Remember you also need to set :envar: `$LAMMPS_COMMAND`)
+(Remember you also need to set the environment variable ``$LAMMPS_COMMAND``)
 
     """
 

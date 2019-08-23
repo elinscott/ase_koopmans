@@ -90,7 +90,7 @@ class MySQLCursor(object):
     def _replace_nan_inf_kvp(self, values):
         for item in values:
             if not np.isfinite(item[1]):
-                item[1] = sys.float_info.max/2
+                item[1] = sys.float_info.max / 2
         return values
 
     def executemany(self, sql, values):
@@ -131,15 +131,15 @@ class MySQLDatabase(SQLite3Database):
 
     def __init__(self, url=None, create_indices=True,
                  use_lock_file=False, serial=False):
-                super(MySQLDatabase, self).__init__(
-                    url, create_indices, use_lock_file, serial)
+        super(MySQLDatabase, self).__init__(
+            url, create_indices, use_lock_file, serial)
 
-                self.host = None
-                self.username = None
-                self.passwd = None
-                self.db_name = None
-                self.port = 3306
-                self._parse_url(url)
+        self.host = None
+        self.username = None
+        self.passwd = None
+        self.db_name = None
+        self.port = 3306
+        self._parse_url(url)
 
     def _parse_url(self, url):
         """
@@ -222,10 +222,10 @@ class MySQLDatabase(SQLite3Database):
             sql = sql.replace(subst[0], subst[1])
         return sql, value
 
-    def encode(self, obj):
+    def encode(self, obj, binary=False):
         return ase.io.jsonio.encode(remove_nan_and_inf(obj))
 
-    def decode(self, obj):
+    def decode(self, obj, lazy=False):
         return insert_nan_and_inf(ase.io.jsonio.decode(obj))
 
 
@@ -246,12 +246,14 @@ def schema_update(statements):
     # attribute_keys
     statements[2] = statements[2].replace('keys', 'attribute_keys')
 
-    txt2jsonb = ['calculator_parameters', 'key_value_pairs', 'data']
+    txt2jsonb = ['calculator_parameters', 'key_value_pairs']
 
     for column in txt2jsonb:
         statements[0] = statements[0].replace(
             '{} TEXT,'.format(column),
             '{} JSON,'.format(column))
+
+    statements[0] = statements[0].replace('data BLOB,', 'data JSON,')
 
     tab_with_key_field = ['attribute_keys', 'number_key_values',
                           'text_key_values']

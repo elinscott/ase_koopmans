@@ -337,7 +337,11 @@ def main(args):
         return
 
     if args.open_web_browser:
-        import ase.db.app as app
+        try:
+            import ase.db.app as app
+        except ImportError:
+            print('Please install Flask: pip install flask')
+            return
         app.databases['default'] = db
         app.initialize_databases()
         app.app.run(host='0.0.0.0', debug=True)

@@ -45,6 +45,7 @@ _PW_STRESS = 'total   stress'
 _PW_FERMI = 'the Fermi energy is'
 _PW_KPTS = 'number of k points='
 _PW_BANDS = _PW_END
+_PW_BANDSTRUCTURE = 'End of band structure calculation'
 
 
 class Namelist(OrderedDict):
@@ -115,6 +116,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         _PW_FERMI: [],
         _PW_KPTS: [],
         _PW_BANDS: [],
+        _PW_BANDSTRUCTURE: [],
     }
 
     for idx, line in enumerate(pwo_lines):
@@ -138,7 +140,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
     if results_required:
         results_indexes = sorted(indexes[_PW_TOTEN] + indexes[_PW_FORCE] +
                                  indexes[_PW_STRESS] + indexes[_PW_MAGMOM] +
-                                 indexes[_PW_BANDS])
+                                 indexes[_PW_BANDS] +
+                                 indexes[_PW_BANDSTRUCTURE])
 
         # Prune to only configurations with results data before the next
         # configuration
@@ -305,7 +308,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         kpoints_warning = "Number of k-points >= 100: " + \
                           "set verbosity='high' to print the bands."
 
-        for bands_index in indexes[_PW_BANDS]:
+        for bands_index in indexes[_PW_BANDS] + indexes[_PW_BANDSTRUCTURE]:
             if image_index < bands_index < next_index:
                 bands_index += 2
 
@@ -1631,9 +1634,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     if isinstance(koffset, int):
         koffset = (koffset, ) * 3
 
-    if isinstance(kgrid, dict):
+    # BandPath object or bandpath-as-dictionary:
+    if isinstance(kgrid, dict) or hasattr(kgrid, 'kpts'):
         pwi.append('K_POINTS crystal_b\n')
-        assert 'path' in kgrid
+        assert hasattr(kgrid, 'path') or 'path' in kgrid
         kgrid = kpts2ndarray(kgrid, atoms=atoms)
         pwi.append('%s\n' % len(kgrid))
         for k in kgrid:

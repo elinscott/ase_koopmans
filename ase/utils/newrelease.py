@@ -7,6 +7,7 @@ which ASE is installed and how - but assumes that it is run from the
 ASE root directory."""
 
 import os
+os.environ['LANGUAGE'] = 'C'
 import subprocess
 import re
 import argparse
@@ -33,9 +34,6 @@ bash = runcmd
 
 def py(cmd, output=False):
     return runcmd('python3 {}'.format(cmd))
-
-def py2(cmd, output=False):
-    return runcmd('python2 {}'.format(cmd))
 
 def git(cmd, error_ok=False):
     cmd = 'git {}'.format(cmd)
@@ -87,7 +85,7 @@ def main():
     print('New release: {}'.format(version))
 
     txt = git('status')
-    branch = re.match('On branch (\S+)', txt).group(1)
+    branch = re.match(r'On branch (\S+)', txt).group(1)
     print('Currently on branch {}'.format(repr(branch)))
     if branch != 'master':
         git('checkout master')
@@ -183,10 +181,10 @@ News
     with open(installdoc) as fd:
         txt = fd.read()
 
-    txt, nsub = re.subn(r'ase-\d+\.\d+.\d+',
+    txt, nsub = re.subn(r'ase-\d+\.\d+\.\d+',
                         'ase-{}'.format(version), txt)
     assert nsub > 0
-    txt, nsub = re.subn(r'git clone -b \d+\.\d+.\d+',
+    txt, nsub = re.subn(r'git clone -b \d+\.\d+\.\d+',
                         'git clone -b {}'.format(version), txt)
     assert nsub == 1
 
@@ -215,7 +213,6 @@ News
     git('tag -s {0} -m "ase-{0}"'.format(version))
 
     py('setup.py sdist > setup_sdist.log')
-    py2('setup.py bdist_wheel > setup_bdist_wheel2.log')
     py('setup.py bdist_wheel > setup_bdist_wheel3.log')
     bash('gpg --armor --yes --detach-sign dist/ase-{}.tar.gz'.format(version))
     git('checkout -b web-page')
@@ -241,7 +238,6 @@ News
     print('git merge {}'.format(branchname))
     print('twine upload '
           'dist/ase-{v}.tar.gz '
-          'dist/ase-{v}-py2-none-any.whl '
           'dist/ase-{v}-py3-none-any.whl '
           'dist/ase-{v}.tar.gz.asc'.format(v=version))
     print('git push --tags origin master  # Assuming your remote is "origin"')

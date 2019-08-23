@@ -193,6 +193,13 @@ Read more about this algorithm here:
 
 __ https://arxiv.org/abs/1808.08588
 
+.. warning:: The memory of the optimizer scales as O(n²N²) where
+             N is the number of atoms and n the number of steps.
+             If the number of atoms is sufficiently high, this
+             may cause a memory issue.
+             This class prints a warning if the user tries to 
+             run GPMin with more than 100 atoms in the unit cell.
+
 
 FIRE
 ----

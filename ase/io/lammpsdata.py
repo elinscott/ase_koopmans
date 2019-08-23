@@ -39,7 +39,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
     pos_in = {}
     travel_in = {}
     mol_id_in = {}
-    mmcharge_in = {}
+    charge_in = {}
     mass_in = {}
     vel_in = {}
     bonds_in = []
@@ -163,7 +163,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
                         float(fields[6]),
                     )
                     mol_id_in[id] = int(fields[1])
-                    mmcharge_in[id] = float(fields[3])
+                    charge_in[id] = float(fields[3])
                     if len(fields) == 10:
                         travel_in[id] = (
                             int(fields[7]),
@@ -269,10 +269,10 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
         mol_id = np.zeros((N), int)
     else:
         mol_id = None
-    if len(mmcharge_in) > 0:
-        mmcharge = np.zeros((N), float)
+    if len(charge_in) > 0:
+        charge = np.zeros((N), float)
     else:
-        mmcharge = None
+        charge = None
     if len(travel_in) > 0:
         travel = np.zeros((N, 3), int)
     else:
@@ -306,10 +306,10 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
         if travel is not None:
             travel[ind] = travel_in[id]
         if mol_id is not None:
-            mol_id[i] = mol_id_in[id]
-        if mmcharge is not None:
-            mmcharge[i] = mmcharge_in[id]
-        ids[i] = id
+            mol_id[ind] = mol_id_in[id]
+        if charge is not None:
+            charge[ind] = charge_in[id]
+        ids[ind] = id
         # by type
         types[ind] = type
         if Z_of_type is None:
@@ -343,8 +343,9 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
         at.arrays["travel"] = travel
     if mol_id is not None:
         at.arrays["mol-id"] = mol_id
-    if mmcharge is not None:
-        at.arrays["mmcharge"] = mmcharge
+    if charge is not None:
+        at.arrays["initial_charges"] = charge
+        at.arrays["mmcharges"] = charge.copy()
 
     if bonds is not None:
         for (type, a1, a2) in bonds_in:

@@ -16,11 +16,11 @@ import numpy as np
 
 import ase.units as units
 from ase.atom import Atom
+from ase.cell import Cell
 from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
 from ase.data import atomic_masses
 from ase.utils import basestring
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
-from ase.geometry.cell import Cell
 from ase.symbols import Symbols, symbols2numbers
 
 
@@ -243,6 +243,10 @@ class Atoms(object):
 
     @property
     def symbols(self):
+        """Get chemical symbols as a :class:`ase.symbols.Symbols` object.
+
+        The object works like ``atoms.numbers`` except its values
+        are strings.  It supports in-place editing."""
         return Symbols(self.numbers)
 
     @symbols.setter
@@ -357,7 +361,7 @@ class Atoms(object):
         return self._celldisp.copy()
 
     def get_cell(self, complete=False):
-        """Get the three unit cell vectors as a Cell object.
+        """Get the three unit cell vectors as a `class`:ase.cell.Cell` object.
 
         The Cell object resembles a 3x3 ndarray, and cell[i, j]
         is the jth Cartesian coordinate of the ith cell vector."""
@@ -473,7 +477,9 @@ class Atoms(object):
         return self.arrays['numbers'].copy()
 
     def get_chemical_symbols(self):
-        """Get list of chemical symbol strings."""
+        """Get list of chemical symbol strings.
+
+        Equivalent to ``list(atoms.symbols)``."""
         return list(self.symbols)
 
     def set_chemical_symbols(self, symbols):
@@ -803,6 +809,16 @@ class Atoms(object):
         return len(self.arrays['positions'])
 
     def get_number_of_atoms(self):
+        """Deprecated, please do not use.
+
+        You probably want len(atoms).  Or if your atoms are distributed,
+        use (and see) get_global_number_of_atoms()."""
+        import warnings
+        warnings.warn('Use get_global_number_of_atoms() instead',
+                      np.VisibleDeprecationWarning)
+        return len(self)
+
+    def get_global_number_of_atoms(self):
         """Returns the global number of atoms in a distributed-atoms parallel
         simulation.
 
@@ -1598,7 +1614,7 @@ class Atoms(object):
         center = self.positions[a2]
         self._masked_rotate(center, axis, diff, mask)
 
-    def rattle(self, stdev=0.001, seed=42):
+    def rattle(self, stdev=0.001, seed=None, rng=None):
         """Randomly displace atoms.
 
         This method adds random displacements to the atomic positions,
@@ -1608,10 +1624,16 @@ class Atoms(object):
         For a parallel calculation, it is important to use the same
         seed on all processors!  """
 
-        rs = np.random.RandomState(seed)
+        if seed is not None and rng is not None:
+            raise ValueError('Please do not provide both seed and rng.')
+
+        if rng is None:
+            if seed is None:
+                seed = 42
+            rng = np.random.RandomState(seed)
         positions = self.arrays['positions']
         self.set_positions(positions +
-                           rs.normal(scale=stdev, size=positions.shape))
+                           rng.normal(scale=stdev, size=positions.shape))
 
     def get_distance(self, a0, a1, mic=False, vector=False):
         """Return distance between two atoms.
@@ -1870,7 +1892,7 @@ class Atoms(object):
         return self._cellobj
 
     cell = property(_get_cell, set_cell, doc='Attribute for direct ' +
-                    'manipulation of the unit cell.')
+                    'manipulation of the unit :class:`ase.cell.Cell`.')
 
     def _get_pbc(self):
         """Return reference to pbc-flags for in-place manipulations."""

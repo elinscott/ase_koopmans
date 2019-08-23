@@ -1,5 +1,5 @@
 import numpy as np
-from ase.geometry.cell import Cell
+from ase.cell import Cell
 from ase.calculators.emt import EMT
 from ase import Atoms
 

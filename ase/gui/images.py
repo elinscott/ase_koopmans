@@ -373,8 +373,9 @@ class Images:
                 s += sqrt((dR**2).sum())
         return xy
 
-    def write(self, filename, rotations='', show_unit_cell=False, bbox=None,
+    def write(self, filename, rotations='', bbox=None,
               **kwargs):
+        # XXX We should show the unit cell whenever there is one
         indices = range(len(self))
         p = filename.rfind('@')
         if p != -1:
@@ -391,7 +392,7 @@ class Images:
         images = [self.get_atoms(i) for i in indices]
         if len(filename) > 4 and filename[-4:] in ['.eps', '.png', '.pov']:
             write(filename, images,
-                  rotation=rotations, show_unit_cell=show_unit_cell,
+                  rotation=rotations,
                   bbox=bbox, **kwargs)
         else:
             write(filename, images, **kwargs)

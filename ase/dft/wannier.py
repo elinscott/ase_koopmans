@@ -34,7 +34,7 @@ def gram_schmidt_single(U, n):
     del indices[indices.index(n)]
     for i in indices:
         v_i = U.T[i]
-        v_i -=  v_n * np.dot(v_n.conj(), v_i)
+        v_i -= v_n * np.dot(v_n.conj(), v_i)
 
 
 def lowdin(U, S=None):
@@ -450,7 +450,7 @@ class Wannier:
         return coord_wc
 
     def get_radii(self):
-        """Calculate the spread of the Wannier functions.
+        r"""Calculate the spread of the Wannier functions.
 
         ::
 
@@ -510,7 +510,7 @@ class Wannier:
         self.translate(w, trans)
 
     def translate_all_to_cell(self, cell=[0, 0, 0]):
-        """Translate all Wannier functions to specified cell.
+        r"""Translate all Wannier functions to specified cell.
 
         Move all Wannier orbitals to a specific unit cell.  There
         exists an arbitrariness in the positions of the Wannier
@@ -601,7 +601,7 @@ class Wannier:
         return Hk
 
     def get_function(self, index, repeat=None):
-        """Get Wannier function on grid.
+        r"""Get Wannier function on grid.
 
         Returns an array with the funcion values of the indicated Wannier
         function on a grid with the size of the *repeated* unit cell.

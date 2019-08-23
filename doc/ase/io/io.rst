@@ -50,8 +50,7 @@ multiple configurations):
 .. note::
 
     ASE can read and write directly to compressed files. Simply add ``.gz``,
-    ``.bz2`` or ``.xz`` to your filename (``.xz`` requires the
-    ``backports.lzma`` module on Python 2).
+    ``.bz2`` or ``.xz`` to your filename.
 
 The :func:`read` function is only designed to retrieve the atomic configuration
 from a file, but for the CUBE format you can import the function:

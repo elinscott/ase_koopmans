@@ -5,6 +5,10 @@ import numpy as np
 from ase.utils import reader, writer
 
 
+complex2float = {np.complex128: np.float64,
+                 np.complex128: np.float32}
+
+
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'todict'):
@@ -19,18 +23,11 @@ class MyEncoder(json.JSONEncoder):
 
             return d
         if isinstance(obj, np.ndarray):
-            d = {'__ase_objtype__': 'ndarray',
-                 'dtype': obj.dtype.name,
-                 'shape': list(obj.shape)}
-            if obj.dtype == complex:
-                # Cast into float array of twice the size:
-                flatbuf = obj.ravel()
-                flatbuf.dtype = float
-                assert 2 * obj.size == flatbuf.size
-                d['data'] = flatbuf.tolist()
-            else:
-                d['data'] = obj.ravel().tolist()
-            return d
+            flatobj = obj.ravel()
+            realtype = complex2float[obj.dtype]
+            if realtype:
+                flatobj.dtype = realtype
+            return {'__ndarray__': (obj.shape, obj.dtype.name, data.tolist())}
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.bool_):
@@ -47,43 +44,46 @@ def object_hook(dct):
     if '__datetime__' in dct:
         return datetime.datetime.strptime(dct['__datetime__'],
                                           '%Y-%m-%dT%H:%M:%S.%f')
+        if '__ndarray__':
+            shape, dtype, data = dct['__ndarray__']
+            array = np.empty(shape, dtype=dtype)
+            flatbuf = array.ravel()
+            if np.iscomplexobj(array):
+                flatbuf.dtype = complex2float[array.dtype]
+            flatbuf[:] = data
+            return array
+
+    # No longer used (only here for backwards compatibility):
     if '__complex_ndarray__' in dct:
         r, i = (np.array(x) for x in dct['__complex_ndarray__'])
         return r + i * 1j
 
     if '__ase_objtype__' in dct:
         objtype = dct.pop('__ase_objtype__')
-
-        # We just try each object type one after another and instantiate
-        # them manually, depending on which kind it is.
-        # We can formalize this later if it ever becomes necessary.
-        if objtype == 'ndarray':
-            array = np.empty(dct['shape'], dtype=dct['dtype'])
-            if array.dtype == complex:
-                flatbuf = array.ravel()
-                flatbuf.dtype = float
-                flatbuf[:] = dct['data']
-            else:
-                array.flat[:] = dct['data']
-            return array
-
-        elif objtype == 'cell':
-            from ase.geometry.cell import Cell
-            obj = Cell.new(dct['array'], dct['pbc'])
-        elif objtype == 'bandstructure':
-            from ase.dft.band_structure import BandStructure
-            obj = BandStructure(**dct)
-        elif objtype == 'bandpath':
-            from ase.dft.kpoints import BandPath
-            obj = BandPath(**dct)
-        else:
-            raise RuntimeError('Do not know how to decode object type {} '
-                               'into an actual object'.format(objtype))
-
-        assert obj.ase_objtype == objtype
-        return obj
+        dct = numpyfy(dct)
+        return create_ase_object(objtype, dct)
 
     return dct
+
+
+def create_ase_object(objtype, dct):
+    # We just try each object type one after another and instantiate
+    # them manually, depending on which kind it is.
+    # We can formalize this later if it ever becomes necessary.
+    if objtype == 'cell':
+        from ase.cell import Cell
+        obj = Cell(**dct)
+    elif objtype == 'bandstructure':
+        from ase.dft.band_structure import BandStructure
+        obj = BandStructure(**dct)
+    elif objtype == 'bandpath':
+        from ase.dft.kpoints import BandPath
+        obj = BandPath(path=dct.pop('labelseq'), **dct)
+    else:
+        raise ValueError('Do not know how to decode object type {} '
+                         'into an actual object'.format(objtype))
+    assert obj.ase_objtype == objtype
+    return obj
 
 
 mydecode = json.JSONDecoder(object_hook=object_hook).decode

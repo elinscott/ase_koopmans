@@ -108,8 +108,8 @@ def convert_string_to_fd(name, world=None):
         return devnull
     if name == '-':
         return sys.stdout
-    if isinstance(name, basestring):
-        return open(name, 'w')
+    if isinstance(name, (basestring, PurePath)):
+        return open(str(name), 'w')  # str for py3.5 pathlib
     return name  # we assume name is already a file-descriptor
 
 
@@ -373,6 +373,7 @@ def longsum(x):
 
 @contextmanager
 def workdir(path, mkdir=False):
+    """Temporarily change, and optionally create, working directory."""
     path = Path(path)
     if mkdir:
         path.mkdir(parents=True, exist_ok=True)
@@ -392,11 +393,11 @@ def iofunction(func, mode):
 
     @functools.wraps(func)
     def iofunc(file, *args, **kwargs):
-        openandclose = isinstance(file, basestring)
+        openandclose = isinstance(file, (basestring, PurePath))
         fd = None
         try:
             if openandclose:
-                fd = open(file, mode)
+                fd = open(str(file), mode)
             else:
                 fd = file
             obj = func(fd, *args, **kwargs)

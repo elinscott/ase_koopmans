@@ -24,7 +24,7 @@ def bz_vertices(icell, dim=3):
 
 def bz_plot(cell, vectors=False, paths=None, points=None,
             elev=None, scale=1, interactive=False,
-            pointstyle=None, ax=None):
+            pointstyle=None, ax=None, show=False):
     import matplotlib.pyplot as plt
 
     if ax is None:
@@ -207,4 +207,8 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
         ax.set_xlim3d(minp0, maxp0)
         ax.set_ylim3d(minp0, maxp0)
         ax.set_zlim3d(minp0, maxp0)
+
+    if show:
+        plt.show()
+
     return ax
