@@ -24,10 +24,11 @@ class MyEncoder(json.JSONEncoder):
             return d
         if isinstance(obj, np.ndarray):
             flatobj = obj.ravel()
-            realtype = complex2float[obj.dtype]
-            if realtype:
-                flatobj.dtype = realtype
-            return {'__ndarray__': (obj.shape, obj.dtype.name, data.tolist())}
+            if np.iscomplexobj(obj):
+                flatobj.dtype = obj.real.dtype
+            return {'__ndarray__': (obj.shape,
+                                    obj.dtype.name,
+                                    flatobj.tolist())}
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.bool_):
@@ -44,14 +45,14 @@ def object_hook(dct):
     if '__datetime__' in dct:
         return datetime.datetime.strptime(dct['__datetime__'],
                                           '%Y-%m-%dT%H:%M:%S.%f')
-        if '__ndarray__':
-            shape, dtype, data = dct['__ndarray__']
-            array = np.empty(shape, dtype=dtype)
-            flatbuf = array.ravel()
-            if np.iscomplexobj(array):
-                flatbuf.dtype = complex2float[array.dtype]
-            flatbuf[:] = data
-            return array
+    if '__ndarray__' in dct:
+        shape, dtype, data = dct['__ndarray__']
+        array = np.empty(shape, dtype=dtype)
+        flatbuf = array.ravel()
+        if np.iscomplexobj(array):
+            flatbuf.dtype = array.real.dtype
+        flatbuf[:] = data
+        return array
 
     # No longer used (only here for backwards compatibility):
     if '__complex_ndarray__' in dct:
