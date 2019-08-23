@@ -5,10 +5,6 @@ import numpy as np
 from ase.utils import reader, writer
 
 
-complex2float = {np.complex128: np.float64,
-                 np.complex128: np.float32}
-
-
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'todict'):
