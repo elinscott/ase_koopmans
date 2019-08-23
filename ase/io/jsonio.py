@@ -46,13 +46,7 @@ def object_hook(dct):
         return datetime.datetime.strptime(dct['__datetime__'],
                                           '%Y-%m-%dT%H:%M:%S.%f')
     if '__ndarray__' in dct:
-        shape, dtype, data = dct['__ndarray__']
-        array = np.empty(shape, dtype=dtype)
-        flatbuf = array.ravel()
-        if np.iscomplexobj(array):
-            flatbuf.dtype = array.real.dtype
-        flatbuf[:] = data
-        return array
+        return create_ndarray(*dct['__ndarray__'])
 
     # No longer used (only here for backwards compatibility):
     if '__complex_ndarray__' in dct:
@@ -65,6 +59,16 @@ def object_hook(dct):
         return create_ase_object(objtype, dct)
 
     return dct
+
+
+def create_ndarray(shape, dtype, data):
+    """Create ndarray from shape, dtype and flattened data."""
+    array = np.empty(shape, dtype=dtype)
+    flatbuf = array.ravel()
+    if np.iscomplexobj(array):
+        flatbuf.dtype = array.real.dtype
+    flatbuf[:] = data
+    return array
 
 
 def create_ase_object(objtype, dct):

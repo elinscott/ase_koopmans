@@ -117,6 +117,7 @@ def test(name):
     e = [row.get('energy') for row in c.select(sort='energy')]
     assert len(e) == 5 and abs(e[0] - 1.991) < 0.0005
 
+
 test('testase.json')
 test('testase.db')
 test('postgresql')
