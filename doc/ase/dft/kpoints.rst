@@ -48,18 +48,18 @@ Special points in the Brillouin zone
 
 .. data:: special_points
 
-The below table lists the special points from [Setyawana-Curtarolo]_.
+The below table lists the special points from [Setyawan-Curtarolo]_.
 
 
 .. toctree:: bztable
 
 .. include:: bztable.rst
 
-.. [Setyawana-Curtarolo]
+.. [Setyawan-Curtarolo]
     High-throughput electronic band structure calculations:
     Challenges and tools
 
-    Wahyu Setyawana, Stefano Curtarolo
+    Wahyu Setyawan, Stefano Curtarolo
 
     Computational Materials Science,
     Volume 49, Issue 2, August 2010, Pages 299–312
@@ -118,8 +118,19 @@ High symmetry paths
 
 .. data:: special_paths
 
-The ``special_paths`` dictionary contains suggestions for high symmetry
-paths in the BZ from the [Setyawana-Curtarolo]_ paper.
+The :mod:`ase.lattice` framework provides suggestions for high symmetry
+paths in the BZ from the [Setyawan-Curtarolo]_ paper.
+
+>>> from ase.lattice import BCC
+>>> lat = BCC(3.5)
+>>> lat.get_special_points()
+{'G': array([0, 0, 0]), 'H': array([ 0.5, -0.5,  0.5]), 'P': array([0.25, 0.25, 0.25]), 'N': array([0. , 0. , 0.5])}
+>>> lat.special_path
+'GHNGPH,PN'
+
+In case you want this information *without* providing the lattice parameter
+(which is possible for those lattices where the points do not depend on the
+lattice parameters), the data is also available as dictionaries:
 
 >>> from ase.dft.kpoints(import special_paths, sc_special_points,
 ...                      parse_path_string)
