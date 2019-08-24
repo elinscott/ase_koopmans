@@ -121,12 +121,12 @@ High symmetry paths
 The ``special_paths`` dictionary contains suggestions for high symmetry
 paths in the BZ from the [Setyawana-Curtarolo]_ paper.
 
->>> from ase.dft.kpoints(import special_paths, special_points,
+>>> from ase.dft.kpoints(import special_paths, sc_special_points,
 ...                      parse_path_string)
->>> paths = special_paths['bcc']
+>>> paths = sc_special_paths['bcc']
 >>> paths
 [['G', 'H', 'N', 'G', 'P', 'H'], ['P', 'N']]
->>> points = special_points['bcc']
+>>> points = sc_special_points['bcc']
 >>> points
 {'H': [0.5, -0.5, 0.5], 'N': [0, 0, 0.5], 'P': [0.25, 0.25, 0.25],
  'G': [0, 0, 0]}
