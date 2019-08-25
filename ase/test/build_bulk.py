@@ -2,30 +2,28 @@ from ase.data import chemical_symbols, reference_states
 from ase.build import bulk
 
 
+lat_map = dict(fcc='FCC',
+               bcc='BCC',
+               hcp='HEX',
+               tetragonal='TET',
+               diamond='FCC',
+               sc='CUB',
+               orthorhombic='ORC',
+               rhombohedral='RHL')
+lat_counts = {}
+
+
 for Z, ref in enumerate(reference_states):
     if ref is None:
         continue
 
     structure = ref['symmetry']
-    if structure == 'diatom':
-        continue  # not bulk
-    if structure == 'atom':
-        continue  # not bulk
-    if structure == 'monoclinic':
-        continue  # not implemented with bulk()
-    if structure == 'cubic':
-        continue  # (What is the meaning of the cubic (not sc) structures?)
-
-    lat_map = dict(fcc='FCC',
-                   bcc='BCC',
-                   hcp='HEX',
-                   tetragonal='TET',
-                   diamond='FCC',
-                   sc='CUB',
-                   orthorhombic='ORC',
-                   rhombohedral='RHL')
+    if structure not in lat_map:
+        continue
 
     sym = chemical_symbols[Z]
+    lat_counts.setdefault(structure, []).append(sym)
+
     atoms = bulk(sym)
     lat = atoms.cell.get_bravais_lattice()
     print(Z, atoms.symbols[0], structure, lat, atoms.cell.lengths())
@@ -48,3 +46,7 @@ for Z, ref in enumerate(reference_states):
     cub_atoms = bulk(sym, cubic=True)
     cub_lat = cub_atoms.cell.get_bravais_lattice()
     assert cub_lat.name == 'CUB', cub_lat
+
+
+for key, val in lat_counts.items():
+    print(key, len(val), ''.join(val))
