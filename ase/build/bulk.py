@@ -59,6 +59,9 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
         if ref is not None:
             xref = ref['symmetry']
 
+        if ref is None:
+            ref = {}  # easier to 'get' things from empty dictionary than None
+
         if xref == 'cubic':
             # P and Mn are listed as 'cubic' but the lattice constants
             # are 7 and 9.  They must be something other than simple cubic
@@ -93,7 +96,8 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
     natoms0 = structures[crystalstructure]
     if natoms != natoms0:
         raise ValueError('Please specify {} for {} and not {}'
-                         .format(plural(n0, 'atom'), crystalstructure, natoms))
+                         .format(plural(natoms0, 'atom'),
+                                 crystalstructure, natoms))
 
     if alpha is None:
         alpha = ref.get('alpha')
