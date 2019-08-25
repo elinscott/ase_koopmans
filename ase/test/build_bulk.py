@@ -21,8 +21,7 @@ for Z, ref in enumerate(reference_states):
                    hcp='HEX',
                    tetragonal='TET',
                    diamond='FCC',
-                   cubic='CUB',
-                   sc='CUB',  # We have CUB twice somehow?
+                   sc='CUB',
                    orthorhombic='ORC',
                    rhombohedral='RHL')
 
