@@ -9,7 +9,8 @@ Git master branch
 
 :git:`master <>`.
 
-* No changes yet
+* :func:`ase.build.bulk` now supports elements with tetrahedral,
+  rhombohedral, and orthorhombic lattices.
 
 
 Version 3.18.0
