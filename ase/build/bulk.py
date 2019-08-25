@@ -7,6 +7,11 @@ from ase.data import reference_states, atomic_numbers, chemical_symbols
 from ase.utils import plural
 
 
+def incompatible_cell(*, want, have):
+    return RuntimeError('Cannot create {} cell for {} structure'
+                        .format(want, have))
+
+
 def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
          covera=None, u=None, orthorhombic=False, cubic=False):
     """Creating bulk systems.
@@ -55,7 +60,11 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
             xref = ref['symmetry']
 
         if xref == 'cubic':
-            xref = 'sc'
+            # P and Mn are listed as 'cubic' but the lattice constants
+            # are 7 and 9.  They must be something other than simple cubic
+            # then. We used to just return the cubic one but that must
+            # have been wrong somehow.  --askhl
+            raise RuntimeError('Only simple cubic ("sc") supported')
 
     # Mapping of name to number of atoms in primitive cell
     structures = {'sc': 1, 'fcc': 1, 'bcc': 1,
@@ -80,11 +89,11 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
                          .format(crystalstructure))
 
     # Check name:
-    n = len(string2symbols(name))
-    n0 = structures[crystalstructure]
-    if n != n0:
+    natoms = len(string2symbols(name))
+    natoms0 = structures[crystalstructure]
+    if natoms != natoms0:
         raise ValueError('Please specify {} for {} and not {}'
-                         .format(plural(n0, 'atom'), crystalstructure, n))
+                         .format(plural(n0, 'atom'), crystalstructure, natoms))
 
     if alpha is None:
         alpha = ref.get('alpha')
@@ -104,7 +113,9 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
             b = bovera * a
 
     if crystalstructure in ['hcp', 'wurtzite']:
-        cubic = False
+        if cubic:
+            raise incompatible_cell(want='cubic', have=crystalstructure)
+
         if c is not None:
             covera = c / a
         elif covera is None:
@@ -118,7 +129,8 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
         if c is None and covera is not None:
             c = covera * a
 
-    if orthorhombic and crystalstructure != 'sc':
+    if orthorhombic and crystalstructure not in ['sc', 'tetragonal',
+                                                 'orthorhombic']:
         return _orthorhombic_bulk(name, crystalstructure, a, covera, u)
 
     if cubic and crystalstructure in ['bcc', 'cesiumchloride']:
@@ -185,6 +197,10 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
     else:
         raise ValueError('Unknown crystal structure: ' + crystalstructure)
 
+    if orthorhombic:
+        assert atoms.cell.orthorhombic
+    if cubic:
+        assert abs(atoms.cell.angles() - 90).all() < 1e-10
     return atoms
 
 
@@ -235,7 +251,7 @@ def _orthorhombic_bulk(name, crystalstructure, a, covera=None, u=None):
                                         (0.5, 0.5, 1 - u)],
                       pbc=True)
     else:
-        raise RuntimeError
+        raise incompatible_cell(want='orthorhombic', have=crystalstructure)
 
     return atoms
 
@@ -260,6 +276,6 @@ def _cubic_bulk(name, crystalstructure, a):
                                         (0.5, 0, 0.5), (0, 0, 0.5),
                                         (0.5, 0.5, 0), (0, 0.5, 0)])
     else:
-        raise RuntimeError
+        raise incompatible_cell(want='cubic', have=crystalstructure)
 
     return atoms
