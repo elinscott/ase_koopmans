@@ -40,7 +40,7 @@ commands = {
          '--output-format', '-f', '--force', '-n',
          '--image-number', '-e', '--exec-code', '-E',
          '--exec-file', '-a', '--arrays', '-I', '--info', '-s',
-         '--split-output'],
+         '--split-output', '--read-args', '--write-args'],
     'db':
         ['-v', '--verbose', '-q', '--quiet', '-n', '--count', '-l',
          '--long', '-i', '--insert-into', '-a',
@@ -64,6 +64,8 @@ commands = {
          '--interpolate', '-b', '--bonds', '-s', '--scale'],
     'info':
         ['-v', '--verbose', '--formats', '--calculators'],
+    'nebplot':
+        ['-i', '-x', '-y'],
     'nomad-get':
         [],
     'nomad-upload':

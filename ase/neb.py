@@ -14,6 +14,7 @@ from ase.io import read
 from ase.optimize import MDMin
 from ase.geometry import find_mic
 from ase.utils import basestring
+from ase.io.trajectory import TrajectoryReader, Trajectory
 
 
 class NEB:
@@ -631,13 +632,72 @@ def fit0(E, F, R, cell=None, pbc=None):
     return s, E, Sfit, Efit, lines
 
 
+class Images:
+    """Container to give a unified internal interface to any list of atoms
+    objects. The input images can look like any of the following:
+
+         [atoms1, atoms2, ...]
+         'trajectory.traj'
+         ase.io.TrajectoryReader (same as first)?
+         ['traj1.traj', 'traj2.traj', ...]
+         atoms1
+    """
+
+    def __init__(self, images):
+        self.images = images
+        # Find the type.
+        if hasattr(images, 'calc'):
+            self.type = 'list-of-images'
+            self.images = [images]
+        elif isinstance(images, TrajectoryReader):
+            self.type = 'list-of-traj'
+            self.images = [images]
+        elif isinstance(images, str):
+            self.images = [Trajectory(images)]
+            self.type = 'list-of-traj'
+        elif isinstance(images, list):
+            if hasattr(images[0], 'calc'):
+                self.type = 'list-of-images'
+            elif isinstance(images[0], str):
+                self.type = 'list-of-traj'
+                self.images = []
+                self.map = []
+                for traj_no, _ in enumerate(images):
+                    self.images.append(Trajectory(_))
+                    for image_no in range(len(self.images[-1])):
+                        self.map.append((traj_no, image_no))
+        if not hasattr(self, 'type'):
+            raise RuntimeError('Image format not recognized.')
+
+    def __len__(self):
+        if self.type == 'list-of-images':
+            return len(self.images)
+        if self.type == 'list-of-traj':
+            length = 0
+            for traj in self.images:
+                length += len(traj)
+            return length
+
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            #FIXME Add in the slicing thing once it's approved in ASE.
+            raise NotImplementedError()
+        if self.type == 'list-of-images':
+            return self.images[i]
+        if self.type == 'list-of-traj':
+            traj_no, image_no = self.map[i]
+            return self.images[traj_no][image_no]
+        else:
+            raise NotImplementedError()
+
+
 class NEBTools:
     """Class to make many of the common tools for NEB analysis available to
     the user. Useful for scripting the output of many jobs. Initialize with
     list of images which make up a single band."""
 
     def __init__(self, images):
-        self._images = images
+        self.images = Images(images)
 
     def get_barrier(self, fit=True, raw=False):
         """Returns the barrier estimate from the NEB, along with the
@@ -653,7 +713,7 @@ class NEBTools:
         else:
             barrier = max(E)
         if raw:
-            barrier += self._images[0].get_potential_energy()
+            barrier += self.images[0].get_potential_energy()
         return barrier, dE
 
     def plot_band(self, ax=None):
@@ -662,15 +722,56 @@ class NEBTools:
         ax = plot_band_from_fit(*self.get_fit(), ax=ax)
         return ax.figure
 
+    def plot_bands(self, constant_x=False, constant_y=False,
+            nimages=None, graphformat='pdfpages', label='neb-plots'):
+        """Given a trajectory containing many steps of a NEB, makes
+        plots of each band in the series.
+        FIXME: Define keywords."""
+        nontraj = [self.images[_] for _ in range(len(self.images))] #FIXME
+        if nimages is None:
+            nimages = self._guess_nimages()
+        if not graphformat == 'pdfpages':
+            raise NotImplementedError('need animated gif.')
+        from matplotlib import pyplot
+        if constant_x or constant_y:
+            # Plot all to one plot, then pull its x and y range.
+            fig, ax = pyplot.subplots()
+            for index in range(len(self.images) // nimages):
+                images = nontraj[index*nimages:(index+1)*nimages]
+                NEBTools(images).plot_band(ax=ax)
+                xlim = ax.get_xlim()
+                ylim = ax.get_ylim()
+            pyplot.close(fig)  # Reference counting "bug" in pyplot.
+
+        from matplotlib.backends.backend_pdf import PdfPages
+        with PdfPages(label + '.pdf') as pdf:
+            sys.stdout.write(' '* 10)
+            for index in range(len(self.images) // nimages):
+                sys.stdout.write('\b' * 39)
+                sys.stdout.write('Processing band {:10d} / {:10d}'
+                        .format(index, len(self.images)//nimages))
+                sys.stdout.flush()
+                fig, ax = pyplot.subplots()
+                # FIXME: the nontraj garbage can be replaced with
+                # images = self.images[index*nimages:(index+1)*nimages]
+                images = nontraj[index*nimages:(index+1)*nimages]
+                NEBTools(images).plot_band(ax=ax)
+                if constant_x:
+                    ax.set_xlim(xlim)
+                if constant_y:
+                    ax.set_ylim(ylim)
+                pdf.savefig(fig)
+                pyplot.close(fig)  # Reference counting "bug" in pyplot.
+
     def get_fmax(self, **kwargs):
         """Returns fmax, as used by optimizers with NEB."""
-        neb = NEB(self._images, **kwargs)
+        neb = NEB(self.images, **kwargs)
         forces = neb.get_forces()
         return np.sqrt((forces**2).sum(axis=1).max())
 
     def get_fit(self):
         """Returns the parameters for fitting images to band."""
-        images = self._images
+        images = self.images
         R = [atoms.positions for atoms in images]
         E = [atoms.get_potential_energy() for atoms in images]
         F = [atoms.get_forces() for atoms in images]
@@ -678,6 +779,33 @@ class NEBTools:
         pbc = images[0].pbc
         s, E, Sfit, Efit, lines = fit0(E, F, R, A, pbc)
         return s, E, Sfit, Efit, lines
+
+    def _guess_nimages(self):
+        """Attempts to guess the number of images per band from
+        a trajectory, based solely on the repetition of the
+        potential energy of images. This might fail for symmetric
+        cases."""
+        e_first = self.images[0].get_potential_energy()
+        nimages = None
+        #FIXME. Once MR on trajectory slicing comes through, can
+        # replace below with:
+        # for index, image in enumerate(self.images[1:], start=1):
+        short_images = [self.images[_] for _ in range(len(self.images))[1:]]
+        for index, image in enumerate(short_images, start=1):
+            e = image.get_potential_energy()
+            if e == e_first:
+                nimages = index
+                break
+        if nimages is None:
+            # Appears to be only a single band; no repetition.
+            return len(self.images)
+        # Sanity check that the last lines up too.
+        e_last = self.images[nimages - 1].get_potential_energy()
+        e_nextlast = self.images[2 * nimages - 1].get_potential_energy()
+        if not (e_last == e_nextlast):
+            raise RuntimeError('Could not guess number of images per band.')
+        print('Number of images guessed to be {:d}.'.format(nimages))
+        return nimages
 
 
 def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
@@ -723,3 +851,6 @@ if __name__ == '__main__':
     fit = pickle.load(sys.stdin)
     plot_band_from_fit(*fit)
     plt.show()
+    #FIXME: I don't think the above is actually used any more.
+    # I commented it out and both ase gui and ase-gui work
+    # with Tools > NEB.
