@@ -85,3 +85,22 @@ Tentative schedule
  +---------------+-----------------------+--------------------------+-------------------+-------------------+-------------------+-------------------+
 
 
+Talks
+-----
+
+.. list-table::
+ :widths: 3
+
+ * - Maxime van den Bosche
+ * - Erik Fransson
+ * - Morten Gjerding
+ * - Eric Hermes
+ * - Adam Jackson
+ * - Florian Knoop
+ * - Mikael Kuisma
+ * - Ask Hjorth Larsen
+ * - Marko Melander
+ * - Michael Walter
+ * - Kirsten T. Winther
+ * - ...
+
