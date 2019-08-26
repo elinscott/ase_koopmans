@@ -31,6 +31,8 @@ class MyEncoder(json.JSONEncoder):
             return bool(obj)
         if isinstance(obj, datetime.datetime):
             return {'__datetime__': obj.isoformat()}
+        if isinstance(obj, complex):
+            return {'__complex__': (obj.real, obj.imag)}
         return json.JSONEncoder.default(self, obj)
 
 
@@ -41,6 +43,10 @@ def object_hook(dct):
     if '__datetime__' in dct:
         return datetime.datetime.strptime(dct['__datetime__'],
                                           '%Y-%m-%dT%H:%M:%S.%f')
+
+    if '__complex__' in dct:
+        return complex(*dct['__complex__'])
+
     if '__ndarray__' in dct:
         return create_ndarray(*dct['__ndarray__'])
 
