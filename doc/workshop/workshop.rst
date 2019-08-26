@@ -49,7 +49,7 @@ Tentative schedule
       text-align: center;
     }
     table.program th {
-      background-color: #8dd3c780;
+      background-color: #b0b0b080;
     }
  </style>
 
