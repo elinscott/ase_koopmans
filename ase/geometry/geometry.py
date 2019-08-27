@@ -201,18 +201,27 @@ def find_mic(D, cell, pbc=True):
                 tvecs.append(latt_ab + k * cell[2])
     tvecs = np.array(tvecs)
 
-    # Translate the direct displacement vectors by each translation
-    # vector, and calculate the corresponding lengths.
-    D_trans = tvecs[np.newaxis] + D[:, np.newaxis]
-    D_trans_len = np.sqrt((D_trans**2).sum(2))
 
-    # Find mic distances and corresponding vector(s) for each given pair
-    # of atoms. For symmetrical systems, there may be more than one
-    # translation vector corresponding to the MIC distance; this finds the
-    # first one in D_trans_len.
-    D_min_len = np.min(D_trans_len, axis=1)
-    D_min_ind = D_trans_len.argmin(axis=1)
-    D_min = D_trans[list(range(len(D_min_ind))), D_min_ind]
+    # Check periodic neighbors iff the displacement vector in
+    # scaled coordinates is less than 0.5.
+    good = np.sqrt((np.linalg.solve(cell.T, D.T)**2).sum(0)) <= 0.5
+
+    D_min = D.copy()
+    D_min_len = D_len.copy()
+
+    for i, (Di, gdi) in enumerate(zip(D, good)):
+        if gdi:
+            # No need to check periodic neighbors.
+            continue
+        # Translate the direct displacement vector by each translation
+        # vector, and calculate the corresponding length.
+        Di_trans = Di[np.newaxis] + tvecs
+        Di_trans_len = np.sqrt((Di_trans**2).sum(1))
+
+        # Find mic distance and corresponding vector.
+        Di_min_ind = Di_trans_len.argmin()
+        D_min[i] = Di_trans[Di_min_ind]
+        D_min_len[i] = Di_trans_len[Di_min_ind]
 
     return D_min, D_min_len
 
