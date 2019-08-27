@@ -8,7 +8,12 @@ Chalmers University of Technology, Gothenburg, Sweden, November 19-22, 2019
 Venue
 =====
 
-`Physics building, Kemigården 1, Gothenburg <https://www.google.com/maps/place/Kemigården+1,+412+58+Göteborg>`__
+The workshop will take place at
+`Chalmers University of Technology <https://www.chalmers.se/en>`__
+in Gothenburg, Sweden.
+On Tuesday and Wednesday we meet in the PJ lecture room in
+the Physics building, entrance at
+`Kemigården 1 <https://www.google.com/maps/place/Kemigården+1,+412+58+Göteborg>`__.
 
 
 Program
