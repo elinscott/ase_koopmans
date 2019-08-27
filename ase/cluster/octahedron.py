@@ -12,12 +12,15 @@ def Octahedron(symbol, length, cutoff=0, latticeconstant=None, alloy=False):
     Returns Face Centered Cubic clusters of the octahedral class depending
     on the choice of cutoff.
 
+    ============================    =======================
     Type                            Condition
-    ----                            ---------
+    ============================    =======================
     Regular octahedron              cutoff = 0
     Truncated octahedron            cutoff > 0
     Regular truncated octahedron    length = 3 * cutoff + 1
     Cuboctahedron                   length = 2 * cutoff + 1
+    ============================    =======================
+
 
     Parameters
     ----------
