@@ -203,7 +203,7 @@ def find_mic(D, cell, pbc=True):
 
 
     # Check periodic neighbors iff the displacement vector in
-    # scaled coordinates is less than 0.5.
+    # scaled coordinates is greater than 0.5.
     good = np.sqrt((np.linalg.solve(cell.T, D.T)**2).sum(0)) <= 0.5
 
     D_min = D.copy()
