@@ -250,6 +250,8 @@ class TrajectoryReader:
         self.backend.close()
 
     def __getitem__(self, i=-1):
+        if isinstance(i, slice):
+            return SlicedTrajectory(self, i)
         b = self.backend[i]
         if 'numbers' in b:
             # numbers and other header info was written alongside the image:
@@ -282,6 +284,27 @@ class TrajectoryReader:
     def __iter__(self):
         for i in range(len(self)):
             yield self[i]
+
+
+class SlicedTrajectory(TrajectoryReader):
+    """Wrapper to return a slice from a trajectory without loading
+    from disk. Initialize with a trajectory (in read mode) and the
+    desired slice object."""
+
+    def __init__(self, trajectory, sliced):
+        self.trajectory = trajectory
+        self.map = range(len(self.trajectory))[sliced]
+
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            # Map directly to the original traj, not recursively.
+            traj = SlicedTrajectory(self.trajectory, slice(0, None))
+            traj.map = self.map[i]
+            return traj
+        return self.trajectory[self.map[i]]
+
+    def __len__(self):
+        return len(self.map)
 
 
 def get_header_data(atoms):
