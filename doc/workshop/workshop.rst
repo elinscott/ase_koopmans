@@ -6,7 +6,7 @@ The ASE package has seen continuous growth over several years and is now employe
 This fall, we are therefore organizing a workshop that will be held at **Chalmers University of Technology** in **Gothenburg, Sweden** from **November 19-22, 2019**.
 The objectives are to
 
-* to gather the community of *both* users and developers
+* gather the community of *both* users and developers
 * present new features
 * showcase packages build on ASE
 * discuss future developments
@@ -17,7 +17,8 @@ The workshop will feature
 * contributed posters
 * a hackathon
 
-as well as customized tutorials that allow users to explore more advanced applications.
+as well as customized tutorials that allow users to learn about more advanced applications.
+
 The workshop is open to doctoral and Master students, post-doctoral as well as senior researchers who are interested in software for atomic scale simulation in general and the ASE package in particular.
 
 
