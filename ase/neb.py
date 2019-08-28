@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import pickle
 import sys
 import threading
 from math import sqrt
@@ -15,7 +14,7 @@ from ase.optimize import MDMin
 from ase.geometry import find_mic
 from ase.utils import basestring
 from ase.io.trajectory import TrajectoryReader, Trajectory, SlicedTrajectory
-from ase.io.formats import parse_filename
+from ase.gui.images import Images as GUI_Images
 
 
 class NEB:
@@ -576,63 +575,6 @@ class SingleCalculatorNEB(NEB):
         return self
 
 
-def fit0(E, F, R, cell=None, pbc=None):
-    """Constructs curve parameters from the NEB images."""
-    E = np.array(E) - E[0]
-    n = len(E)
-    Efit = np.empty((n - 1) * 20 + 1)
-    Sfit = np.empty((n - 1) * 20 + 1)
-
-    s = [0]
-    dR = np.zeros_like(R)
-    for i in range(n):
-        if i < n - 1:
-            dR[i] = R[i + 1] - R[i]
-            if cell is not None and pbc is not None:
-                dR[i], _ = find_mic(dR[i], cell, pbc)
-            s.append(s[i] + sqrt((dR[i]**2).sum()))
-        else:
-            dR[i] = R[i] - R[i - 1]
-            if cell is not None and pbc is not None:
-                dR[i], _ = find_mic(dR[i], cell, pbc)
-
-    lines = []
-    dEds0 = None
-    for i in range(n):
-        d = dR[i]
-        if i == 0:
-            ds = 0.5 * s[1]
-        elif i == n - 1:
-            ds = 0.5 * (s[-1] - s[-2])
-        else:
-            ds = 0.25 * (s[i + 1] - s[i - 1])
-
-        d = d / sqrt((d**2).sum())
-        dEds = -(F[i] * d).sum()
-        x = np.linspace(s[i] - ds, s[i] + ds, 3)
-        y = E[i] + dEds * (x - s[i])
-        lines.append((x, y))
-
-        if i > 0:
-            s0 = s[i - 1]
-            s1 = s[i]
-            x = np.linspace(s0, s1, 20, endpoint=False)
-            c = np.linalg.solve(np.array([(1, s0, s0**2, s0**3),
-                                          (1, s1, s1**2, s1**3),
-                                          (0, 1, 2 * s0, 3 * s0**2),
-                                          (0, 1, 2 * s1, 3 * s1**2)]),
-                                np.array([E[i - 1], E[i], dEds0, dEds]))
-            y = c[0] + x * (c[1] + x * (c[2] + x * c[3]))
-            Sfit[(i - 1) * 20:i * 20] = x
-            Efit[(i - 1) * 20:i * 20] = y
-
-        dEds0 = dEds
-
-    Sfit[-1] = s[-1]
-    Efit[-1] = E[-1]
-    return s, E, Sfit, Efit, lines
-
-
 class Images:
     """Container to give a unified internal interface to any list of atoms
     objects. The input images can look like any of the following:
@@ -659,6 +601,9 @@ class Images:
         elif isinstance(images, str):
             self.type = 'list-of-traj'
             self.images = [Trajectory(images)]
+        elif isinstance(images, GUI_Images):
+            self.type = 'list-of-images'
+            self.images = images
         elif isinstance(images, list):
             # FIXME: Should this circle back?
             if hasattr(images[0], 'calc'):
@@ -670,13 +615,13 @@ class Images:
             elif isinstance(images[0], SlicedTrajectory):
                 self.type = 'list-of-traj'
                 self.images = images
-            elif isinstance(images[0], TrajectorReader):
+            elif isinstance(images[0], TrajectoryReader):
                 self.type = 'list-of-traj'
                 self.images = images
 
         if not hasattr(self, 'type'):
             raise RuntimeError('Image format not recognized.')
-                
+
         if self.type == 'list-of-traj':
             self.map = []
             for traj_no, traj in enumerate(self.images):
@@ -733,11 +678,10 @@ class NEBTools:
         return ax.figure
 
     def plot_bands(self, constant_x=False, constant_y=False,
-            nimages=None, graphformat='pdfpages', label='neb-plots'):
+                   nimages=None, graphformat='pdfpages', label='neb-plots'):
         """Given a trajectory containing many steps of a NEB, makes
         plots of each band in the series.
         FIXME: Define keywords."""
-        #nontraj = [self.images[_] for _ in range(len(self.images))] #FIXME
         if nimages is None:
             nimages = self._guess_nimages()
         if not graphformat == 'pdfpages':
@@ -755,16 +699,14 @@ class NEBTools:
 
         from matplotlib.backends.backend_pdf import PdfPages
         with PdfPages(label + '.pdf') as pdf:
-            sys.stdout.write(' '* 10)
+            sys.stdout.write(' ' * 10)
             for index in range(len(self.images) // nimages):
                 sys.stdout.write('\b' * 39)
                 sys.stdout.write('Processing band {:10d} / {:10d}'
-                        .format(index, len(self.images)//nimages))
+                                 .format(index, len(self.images)//nimages))
                 sys.stdout.flush()
                 fig, ax = pyplot.subplots()
-                # FIXME: the nontraj garbage can be replaced with
                 images = self.images[index*nimages:(index+1)*nimages]
-                # images = nontraj[index*nimages:(index+1)*nimages]
                 NEBTools(images).plot_band(ax=ax)
                 if constant_x:
                     ax.set_xlim(xlim)
@@ -785,9 +727,60 @@ class NEBTools:
         R = [atoms.positions for atoms in images]
         E = [atoms.get_potential_energy() for atoms in images]
         F = [atoms.get_forces() for atoms in images]
-        A = images[0].cell
+        cell = images[0].cell
         pbc = images[0].pbc
-        s, E, Sfit, Efit, lines = fit0(E, F, R, A, pbc)
+        E = np.array(E) - E[0]
+        n = len(E)
+        Efit = np.empty((n - 1) * 20 + 1)
+        Sfit = np.empty((n - 1) * 20 + 1)
+
+        s = [0]
+        dR = np.zeros_like(R)
+        for i in range(n):
+            if i < n - 1:
+                dR[i] = R[i + 1] - R[i]
+                if cell is not None and pbc is not None:
+                    dR[i], _ = find_mic(dR[i], cell, pbc)
+                s.append(s[i] + sqrt((dR[i]**2).sum()))
+            else:
+                dR[i] = R[i] - R[i - 1]
+                if cell is not None and pbc is not None:
+                    dR[i], _ = find_mic(dR[i], cell, pbc)
+
+        lines = []
+        dEds0 = None
+        for i in range(n):
+            d = dR[i]
+            if i == 0:
+                ds = 0.5 * s[1]
+            elif i == n - 1:
+                ds = 0.5 * (s[-1] - s[-2])
+            else:
+                ds = 0.25 * (s[i + 1] - s[i - 1])
+
+            d = d / sqrt((d**2).sum())
+            dEds = -(F[i] * d).sum()
+            x = np.linspace(s[i] - ds, s[i] + ds, 3)
+            y = E[i] + dEds * (x - s[i])
+            lines.append((x, y))
+
+            if i > 0:
+                s0 = s[i - 1]
+                s1 = s[i]
+                x = np.linspace(s0, s1, 20, endpoint=False)
+                c = np.linalg.solve(np.array([(1, s0, s0**2, s0**3),
+                                              (1, s1, s1**2, s1**3),
+                                              (0, 1, 2 * s0, 3 * s0**2),
+                                              (0, 1, 2 * s1, 3 * s1**2)]),
+                                    np.array([E[i - 1], E[i], dEds0, dEds]))
+                y = c[0] + x * (c[1] + x * (c[2] + x * c[3]))
+                Sfit[(i - 1) * 20:i * 20] = x
+                Efit[(i - 1) * 20:i * 20] = y
+
+            dEds0 = dEds
+
+        Sfit[-1] = s[-1]
+        Efit[-1] = E[-1]
         return s, E, Sfit, Efit, lines
 
     def _guess_nimages(self):
@@ -850,14 +843,3 @@ def interpolate(images, mic=False):
     d /= (len(images) - 1.0)
     for i in range(1, len(images) - 1):
         images[i].set_positions(pos1 + i * d)
-
-
-if __name__ == '__main__':
-    # This stuff is used by ASE's GUI
-    import matplotlib.pyplot as plt
-    fit = pickle.load(sys.stdin)
-    plot_band_from_fit(*fit)
-    plt.show()
-    #FIXME: I don't think the above is actually used any more.
-    # I commented it out and both ase gui and ase-gui work
-    # with Tools > NEB.
