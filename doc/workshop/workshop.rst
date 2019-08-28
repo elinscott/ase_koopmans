@@ -1,6 +1,6 @@
-=============================================================================
-ASE Workshop: Software Development for Atomic Scale Modeling -- Chalmers 2019
-=============================================================================
+============================================================================
+ASE Workshop: Software Development for Atomic Scale Modeling - Chalmers 2019
+============================================================================
 
 The ASE package has seen continuous growth over several years and is now employed and supported by a very active community of users and developers.
 This fall, we are therefore organizing a workshop that will be held at **Chalmers University of Technology** in **Gothenburg, Sweden** from **November 19-22, 2019**.
