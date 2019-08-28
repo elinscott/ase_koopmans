@@ -637,11 +637,12 @@ class Images:
     """Container to give a unified internal interface to any list of atoms
     objects. The input images can look like any of the following:
 
-         [atoms1, atoms2, ...]
+         [image1, image2, ...]
          'trajectory.traj'
          ase.io.TrajectoryReader (same as first)?
          ['traj1.traj', 'traj2.traj', ...]
          atoms1
+         ['traj1.traj@:10', 'traj2.traj@-30:', ...]
     """
 
     def __init__(self, images):
@@ -657,12 +658,7 @@ class Images:
             self.images = [images]
         elif isinstance(images, str):
             self.type = 'list-of-traj'
-            # FIXME: the parsing stuff could be moved to io.Trajectory
-            filename, index = parse_filename(images)
-            traj = Trajectory(filename)
-            if index is not None:
-                traj = traj[index]
-            self.images = [traj]
+            self.images = [Trajectory(images)]
         elif isinstance(images, list):
             # FIXME: Should this circle back?
             if hasattr(images[0], 'calc'):
@@ -670,15 +666,7 @@ class Images:
                 self.images = images
             elif isinstance(images[0], str):
                 self.type = 'list-of-traj'
-                self.images = []
-                # FIXME: the parsing stuff could be moved to io.Trajectory
-                for filename in images:
-                    filename, index = parse_filename(filename)
-                    traj = Trajectory(filename)
-                    if index is not None:
-                        traj = traj[index]
-                    self.images.append(traj)
-
+                self.images = [Trajectory(_) for _ in images]
             elif isinstance(images[0], SlicedTrajectory):
                 self.type = 'list-of-traj'
                 self.images = images
@@ -759,7 +747,6 @@ class NEBTools:
             # Plot all to one plot, then pull its x and y range.
             fig, ax = pyplot.subplots()
             for index in range(len(self.images) // nimages):
-                print(index)
                 images = self.images[index*nimages:(index+1)*nimages]
                 NEBTools(images).plot_band(ax=ax)
                 xlim = ax.get_xlim()
