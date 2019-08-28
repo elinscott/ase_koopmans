@@ -286,7 +286,7 @@ class TrajectoryReader:
             yield self[i]
 
 
-class SlicedTrajectory(TrajectoryReader):
+class SlicedTrajectory:
     """Wrapper to return a slice from a trajectory without loading
     from disk. Initialize with a trajectory (in read mode) and the
     desired slice object."""
