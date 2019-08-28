@@ -8,7 +8,7 @@ The objectives are to
 
 * gather the community of *both* users and developers
 * present new features
-* showcase packages build on ASE
+* showcase packages built on ASE
 * discuss future developments
 
 The workshop will feature
