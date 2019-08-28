@@ -14,7 +14,8 @@ from ase.io import read
 from ase.optimize import MDMin
 from ase.geometry import find_mic
 from ase.utils import basestring
-from ase.io.trajectory import TrajectoryReader, Trajectory
+from ase.io.trajectory import TrajectoryReader, Trajectory, SlicedTrajectory
+from ase.io.formats import parse_filename
 
 
 class NEB:
@@ -644,44 +645,65 @@ class Images:
     """
 
     def __init__(self, images):
-        self.images = images
         # Find the type.
         if hasattr(images, 'calc'):
             self.type = 'list-of-images'
+            self.images = [images]
+        elif isinstance(images, SlicedTrajectory):
+            self.type = 'list-of-traj'
             self.images = [images]
         elif isinstance(images, TrajectoryReader):
             self.type = 'list-of-traj'
             self.images = [images]
         elif isinstance(images, str):
-            self.images = [Trajectory(images)]
             self.type = 'list-of-traj'
+            # FIXME: the parsing stuff could be moved to io.Trajectory
+            filename, index = parse_filename(images)
+            traj = Trajectory(filename)
+            if index is not None:
+                traj = traj[index]
+            self.images = [traj]
         elif isinstance(images, list):
+            # FIXME: Should this circle back?
             if hasattr(images[0], 'calc'):
                 self.type = 'list-of-images'
+                self.images = images
             elif isinstance(images[0], str):
                 self.type = 'list-of-traj'
                 self.images = []
-                self.map = []
-                for traj_no, _ in enumerate(images):
-                    self.images.append(Trajectory(_))
-                    for image_no in range(len(self.images[-1])):
-                        self.map.append((traj_no, image_no))
+                # FIXME: the parsing stuff could be moved to io.Trajectory
+                for filename in images:
+                    filename, index = parse_filename(filename)
+                    traj = Trajectory(filename)
+                    if index is not None:
+                        traj = traj[index]
+                    self.images.append(traj)
+
+            elif isinstance(images[0], SlicedTrajectory):
+                self.type = 'list-of-traj'
+                self.images = images
+            elif isinstance(images[0], TrajectorReader):
+                self.type = 'list-of-traj'
+                self.images = images
+
         if not hasattr(self, 'type'):
             raise RuntimeError('Image format not recognized.')
+                
+        if self.type == 'list-of-traj':
+            self.map = []
+            for traj_no, traj in enumerate(self.images):
+                for image_no in range(len(traj)):
+                    self.map.append((traj_no, image_no))
 
     def __len__(self):
         if self.type == 'list-of-images':
             return len(self.images)
         if self.type == 'list-of-traj':
-            length = 0
-            for traj in self.images:
-                length += len(traj)
-            return length
+            return len(self.map)
 
     def __getitem__(self, i):
         if isinstance(i, slice):
-            #FIXME Add in the slicing thing once it's approved in ASE.
-            raise NotImplementedError()
+            return SlicedTrajectory(self, i)
         if self.type == 'list-of-images':
             return self.images[i]
         if self.type == 'list-of-traj':
@@ -727,7 +749,7 @@ class NEBTools:
         """Given a trajectory containing many steps of a NEB, makes
         plots of each band in the series.
         FIXME: Define keywords."""
-        nontraj = [self.images[_] for _ in range(len(self.images))] #FIXME
+        #nontraj = [self.images[_] for _ in range(len(self.images))] #FIXME
         if nimages is None:
             nimages = self._guess_nimages()
         if not graphformat == 'pdfpages':
@@ -737,7 +759,8 @@ class NEBTools:
             # Plot all to one plot, then pull its x and y range.
             fig, ax = pyplot.subplots()
             for index in range(len(self.images) // nimages):
-                images = nontraj[index*nimages:(index+1)*nimages]
+                print(index)
+                images = self.images[index*nimages:(index+1)*nimages]
                 NEBTools(images).plot_band(ax=ax)
                 xlim = ax.get_xlim()
                 ylim = ax.get_ylim()
@@ -753,8 +776,8 @@ class NEBTools:
                 sys.stdout.flush()
                 fig, ax = pyplot.subplots()
                 # FIXME: the nontraj garbage can be replaced with
-                # images = self.images[index*nimages:(index+1)*nimages]
-                images = nontraj[index*nimages:(index+1)*nimages]
+                images = self.images[index*nimages:(index+1)*nimages]
+                # images = nontraj[index*nimages:(index+1)*nimages]
                 NEBTools(images).plot_band(ax=ax)
                 if constant_x:
                     ax.set_xlim(xlim)
@@ -787,17 +810,14 @@ class NEBTools:
         cases."""
         e_first = self.images[0].get_potential_energy()
         nimages = None
-        #FIXME. Once MR on trajectory slicing comes through, can
-        # replace below with:
-        # for index, image in enumerate(self.images[1:], start=1):
-        short_images = [self.images[_] for _ in range(len(self.images))[1:]]
-        for index, image in enumerate(short_images, start=1):
+        for index, image in enumerate(self.images[1:], start=1):
             e = image.get_potential_energy()
             if e == e_first:
                 nimages = index
                 break
         if nimages is None:
             # Appears to be only a single band; no repetition.
+            print('Appears to be only one band in the images.')
             return len(self.images)
         # Sanity check that the last lines up too.
         e_last = self.images[nimages - 1].get_potential_energy()
