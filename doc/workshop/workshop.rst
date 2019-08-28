@@ -1,8 +1,35 @@
-=================
-ASE Workshop 2019
-=================
+============================================================================
+ASE Workshop: Software Development for Atomic Scale Modeling - Chalmers 2019
+============================================================================
 
-Chalmers University of Technology, Gothenburg, Sweden, November 19-22, 2019
+The ASE package has seen continuous growth over several years and is now employed and supported by a very active community of users and developers.
+This fall, we are therefore organizing a workshop that will be held at **Chalmers University of Technology** in **Gothenburg, Sweden** from **November 19-22, 2019**.
+The objectives are to
+
+* gather the community of *both* users and developers
+* present new features
+* showcase packages built on ASE
+* discuss future developments
+
+The workshop will feature
+
+* presentations by developers
+* contributed posters
+* a hackathon
+
+as well as customized tutorials that allow users to learn about more advanced applications.
+
+The workshop is open to doctoral and Master students, post-doctoral as well as senior researchers who are interested in software for atomic scale simulation in general and the ASE package in particular.
+
+
+Registration
+============
+
+To join the workshop please fill
+`the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__.
+The deadline for registration and abstracts is on **October 21, 2019**.
+There is no registration fee but space is limited.
+If you have any questions, please contact the organizers at ase-workshop@materialsmodeling.org.
 
 
 Venue
@@ -14,6 +41,8 @@ in Gothenburg, Sweden.
 On Tuesday and Wednesday we meet in the PJ lecture room in
 the Physics building, entrance at
 `Kemigården 1 <https://www.google.com/maps/place/Kemigården+1,+412+58+Göteborg>`__.
+
+Information about travel and accommodation options will be provided soon.
 
 
 Program
@@ -90,34 +119,34 @@ Tentative schedule
  +---------------+-----------------------+--------------------------+-------------------+-------------------+-------------------+-------------------+
 
 
-Talks
------
+Invited speakers
+----------------
 
 .. list-table::
- :widths: 3
+ :widths: 3 7
 
  * - Maxime van den Bosche
+   - Brown University, USA
  * - Erik Fransson
+   - Chalmers University of Technology, Sweden
  * - Morten Gjerding
+   - Technical University of Denmark
  * - Eric Hermes
+   - Sandia National Laboratories, USA
  * - Adam Jackson
+   - University College London, UK
  * - Florian Knoop
+   - Fritz-Haber-Institut, Berlin, Germany
  * - Mikael Kuisma
+   - University of Jyväskylä, Finland
  * - Ask Hjorth Larsen
+   - Universidad del País Vasco UPV/EHU, Spain
  * - Marko Melander
+   - University of Jyväskylä, Finland
  * - Michael Walter
+   - Albert-Ludwigs-Universität Freiburg, Germany
  * - Kirsten T. Winther
- * - ...
-
-
-Registration
-============
-
-To join the workshop please fill
-`the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__.
-The deadline for registration and abstracts is on **October 21, 2019**.
-There is no registration fee, but space is limited.
-If you have any questions, please contact the organizers at ase-workshop@materialsmodeling.org.
+   - Stanford University, USA
 
 
 Organizers
