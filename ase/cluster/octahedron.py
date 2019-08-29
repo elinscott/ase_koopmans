@@ -22,18 +22,24 @@ def Octahedron(symbol, length, cutoff=0, latticeconstant=None, alloy=False):
     ============================    =======================
 
 
-    Parameters
-    ----------
-    symbol: The chemical symbol or atomic number of the element(s).
+    Parameters:
 
-    length: Number of atoms on the square edges of the complete octahedron.
+    symbol: string or sequence of int
+        The chemical symbol or atomic number of the element(s).
 
-    cutoff (optional): Number of layers cut at each vertex.
+    length: int
+        Number of atoms on the square edges of the complete octahedron.
 
-    latticeconstant (optional): The lattice constant. If not given,
-    then it is extracted form ase.data.
+    cutoff (optional): int
+        Number of layers cut at each vertex.
 
-    alloy (optional): If true the L1_2 structure is used. Default is False.
+    latticeconstant (optional): float
+        The lattice constant. If not given,
+        then it is extracted form ase.data.
+
+    alloy (optional): bool
+        If true the L1_2 structure is used. Default is False.
+
     """
 
     # Check length and cutoff
