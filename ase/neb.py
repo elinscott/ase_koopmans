@@ -76,14 +76,13 @@ class NEB:
         self.climb = climb
         self.parallel = parallel
         self.natoms = len(images[0])
-        pbc = images[0].pbc
-        atomic_numbers = images[0].get_atomic_numbers()
         for img in images:
             if len(img) != self.natoms:
                 raise ValueError('Images have different numbers of atoms')
-            if (pbc != img.pbc).any():
+            if (images[0].pbc != img.pbc).any():
                 raise ValueError('Images have different boundary conditions')
-            if (atomic_numbers != img.get_atomic_numbers()).any():
+            if (images[0].get_atomic_numbers() !=
+                    img.get_atomic_numbers()).any():
                 raise ValueError('Images have atoms in different orders')
         self.nimages = len(images)
         self.emax = np.nan
@@ -117,6 +116,16 @@ class NEB:
         self.energies = None  # ndarray of shape (nimages,)
 
     def interpolate(self, method='linear', mic=False):
+        """Interpolate the positions of the interior images between the
+        initial state (image 0) and final state (image -1).
+
+        method: str
+            Method by which to interpolater: 'linear' or 'idpp'.
+            linear provides a standard straight-line interpolation, while
+            idpp uses an image-dependent pair potential.
+        mic: bool
+            Use the minimum-image convention when interpolating.
+        """
         if self.remove_rotation_and_translation:
             minimize_rotation_and_translation(self.images[0], self.images[-1])
 
@@ -127,6 +136,7 @@ class NEB:
 
     def idpp_interpolate(self, traj='idpp.traj', log='idpp.log', fmax=0.1,
                          optimizer=MDMin, mic=False, steps=100):
+        # FIXME: Move this to interpolate separate function?
         d1 = self.images[0].get_all_distances(mic=mic)
         d2 = self.images[-1].get_all_distances(mic=mic)
         d = (d2 - d1) / (self.nimages - 1)
@@ -207,8 +217,6 @@ class NEB:
         energies = np.empty(self.nimages)
 
         if self.remove_rotation_and_translation:
-            # Remove translation and rotation between
-            # images before computing forces:
             for i in range(1, self.nimages):
                 minimize_rotation_and_translation(images[i - 1], images[i])
 
@@ -575,75 +583,18 @@ class SingleCalculatorNEB(NEB):
         return self
 
 
-class Images:
-    """Container to give a unified internal interface to any list of atoms
-    objects. The input images can look like any of the following:
-
-         [image1, image2, ...]
-         'trajectory.traj'
-         ase.io.TrajectoryReader (same as first)?
-         ['traj1.traj', 'traj2.traj', ...]
-         atoms1
-         ['traj1.traj@:10', 'traj2.traj@-30:', ...]
-    """
-
-    def __init__(self, images):
-        # Find the type.
-        if hasattr(images, 'calc'):
-            self.type = 'list-of-images'
-            self.images = [images]
-        elif isinstance(images, SlicedTrajectory):
-            self.type = 'list-of-traj'
-            self.images = [images]
-        elif isinstance(images, TrajectoryReader):
-            self.type = 'list-of-traj'
-            self.images = [images]
-        elif isinstance(images, str):
-            self.type = 'list-of-traj'
-            self.images = [Trajectory(images)]
-        elif isinstance(images, GUI_Images):
-            self.type = 'list-of-images'
-            self.images = images
-        elif isinstance(images, list):
-            # FIXME: Should this circle back?
-            if hasattr(images[0], 'calc'):
-                self.type = 'list-of-images'
-                self.images = images
-            elif isinstance(images[0], str):
-                self.type = 'list-of-traj'
-                self.images = [Trajectory(_) for _ in images]
-            elif isinstance(images[0], SlicedTrajectory):
-                self.type = 'list-of-traj'
-                self.images = images
-            elif isinstance(images[0], TrajectoryReader):
-                self.type = 'list-of-traj'
-                self.images = images
-
-        if not hasattr(self, 'type'):
-            raise RuntimeError('Image format not recognized.')
-
-        if self.type == 'list-of-traj':
-            self.map = []
-            for traj_no, traj in enumerate(self.images):
-                for image_no in range(len(traj)):
-                    self.map.append((traj_no, image_no))
-
-    def __len__(self):
-        if self.type == 'list-of-images':
-            return len(self.images)
-        if self.type == 'list-of-traj':
-            return len(self.map)
-
-    def __getitem__(self, i):
-        if isinstance(i, slice):
-            return SlicedTrajectory(self, i)
-        if self.type == 'list-of-images':
-            return self.images[i]
-        if self.type == 'list-of-traj':
-            traj_no, image_no = self.map[i]
-            return self.images[traj_no][image_no]
-        else:
-            raise NotImplementedError()
+def interpolate(images, mic=False):
+    """Given a list of images, linearly interpolate the positions of the
+    interior images."""
+    # FIXME: Move IDPP here so it works outside NEB?
+    pos1 = images[0].get_positions()
+    pos2 = images[-1].get_positions()
+    d = pos2 - pos1
+    if mic:
+        d = find_mic(d, images[0].get_cell(), images[0].pbc)[0]
+    d /= (len(images) - 1.0)
+    for i in range(1, len(images) - 1):
+        images[i].set_positions(pos1 + i * d)
 
 
 class NEBTools:
@@ -733,7 +684,6 @@ class NEBTools:
         n = len(E)
         Efit = np.empty((n - 1) * 20 + 1)
         Sfit = np.empty((n - 1) * 20 + 1)
-
         s = [0]
         dR = np.zeros_like(R)
         for i in range(n):
@@ -746,7 +696,6 @@ class NEBTools:
                 dR[i] = R[i] - R[i - 1]
                 if cell is not None and pbc is not None:
                     dR[i], _ = find_mic(dR[i], cell, pbc)
-
         lines = []
         dEds0 = None
         for i in range(n):
@@ -757,13 +706,11 @@ class NEBTools:
                 ds = 0.5 * (s[-1] - s[-2])
             else:
                 ds = 0.25 * (s[i + 1] - s[i - 1])
-
             d = d / sqrt((d**2).sum())
             dEds = -(F[i] * d).sum()
             x = np.linspace(s[i] - ds, s[i] + ds, 3)
             y = E[i] + dEds * (x - s[i])
             lines.append((x, y))
-
             if i > 0:
                 s0 = s[i - 1]
                 s1 = s[i]
@@ -776,9 +723,7 @@ class NEBTools:
                 y = c[0] + x * (c[1] + x * (c[2] + x * c[3]))
                 Sfit[(i - 1) * 20:i * 20] = x
                 Efit[(i - 1) * 20:i * 20] = y
-
             dEds0 = dEds
-
         Sfit[-1] = s[-1]
         Efit[-1] = E[-1]
         return s, E, Sfit, Efit, lines
@@ -809,6 +754,9 @@ class NEBTools:
 
 
 def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
+    """Creates the standard NEB plot from the fit parameters."""
+    # (Note this needs to live outside of NEBTools so that
+    # ase.gui.pipe can use it.)
     if ax is None:
         import matplotlib.pyplot as plt
         ax = plt.gca()
@@ -829,17 +777,66 @@ def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
     return ax
 
 
-NEBtools = NEBTools  # backwards compatibility
+class Images:
+    """Container to give a unified internal interface to any list of atoms
+    objects. The input images can look like any of the following:
 
+         [image1, image2, ...]
+         'trajectory.traj'
+         ase.io.TrajectoryReader (same as first)?
+         ['traj1.traj', 'traj2.traj', ...]
+         atoms1
+         ['traj1.traj@:10', 'traj2.traj@-30:', ...]
+    """
 
-def interpolate(images, mic=False):
-    """Given a list of images, linearly interpolate the positions of the
-    interior images."""
-    pos1 = images[0].get_positions()
-    pos2 = images[-1].get_positions()
-    d = pos2 - pos1
-    if mic:
-        d = find_mic(d, images[0].get_cell(), images[0].pbc)[0]
-    d /= (len(images) - 1.0)
-    for i in range(1, len(images) - 1):
-        images[i].set_positions(pos1 + i * d)
+    def __init__(self, images):
+        # Find the type.
+        if hasattr(images, 'calc'):
+            self.type = 'list-of-images'
+            self.images = [images]
+        elif isinstance(images, (TrajectoryReader, SlicedTrajectory)):
+            self.type = 'list-of-traj'
+            self.images = [images]
+        elif isinstance(images, str):
+            self.type = 'list-of-traj'
+            self.images = [Trajectory(images)]
+        elif isinstance(images, GUI_Images):
+            self.type = 'list-of-images'
+            self.images = images
+        elif isinstance(images, list):
+            # FIXME: Below is mostly redundant. Should this circle back?
+            if hasattr(images[0], 'calc'):
+                self.type = 'list-of-images'
+                self.images = images
+            elif isinstance(images[0], str):
+                self.type = 'list-of-traj'
+                self.images = [Trajectory(_) for _ in images]
+            elif isinstance(images[0], (TrajectoryReader, SlicedTrajectory)):
+                self.type = 'list-of-traj'
+                self.images = images
+
+        if not hasattr(self, 'type'):
+            raise RuntimeError('Image format not recognized.')
+
+        if self.type == 'list-of-traj':
+            self.map = []
+            for traj_no, traj in enumerate(self.images):
+                for image_no in range(len(traj)):
+                    self.map.append((traj_no, image_no))
+
+    def __len__(self):
+        if self.type == 'list-of-images':
+            return len(self.images)
+        if self.type == 'list-of-traj':
+            return len(self.map)
+
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            return SlicedTrajectory(self, i)
+        if self.type == 'list-of-images':
+            return self.images[i]
+        if self.type == 'list-of-traj':
+            traj_no, image_no = self.map[i]
+            return self.images[traj_no][image_no]
+        else:
+            raise NotImplementedError()
