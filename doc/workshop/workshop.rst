@@ -134,7 +134,7 @@ Invited speakers
  * - Eric Hermes
    - Sandia National Laboratories, USA
  * - Adam Jackson
-   - University College London, UK
+   - STFC Rutherford Appleton Laboratory, UK
  * - Florian Knoop
    - Fritz-Haber-Institut, Berlin, Germany
  * - Mikael Kuisma
