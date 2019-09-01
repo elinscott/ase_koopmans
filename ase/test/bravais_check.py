@@ -33,11 +33,6 @@ def check(name, cell, pbc=None):
     if pbc is None:
         pbc = cell.any(1)
     pbc = np.asarray(pbc)
-    #pbc = cell.any(1)
-    #if isinstance(cell, Cell):
-    #    pbc = cell.pbc
-    #else:
-    #    pbc = np.array([True] * 3)
     cell = Cell(cell)
 
     # Check all three positive permutations:
