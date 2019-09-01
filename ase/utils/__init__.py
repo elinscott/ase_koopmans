@@ -494,6 +494,5 @@ def lazymethod(meth):
 
 
 def lazyproperty(meth):
-    """Lazy method which is a property."""
-    name = meth.__name__
+    """Decorator like lazymethod, but making item available as a property."""
     return property(lazymethod(meth))
