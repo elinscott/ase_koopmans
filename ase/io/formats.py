@@ -24,7 +24,6 @@ read_xyz() generator and a write_xyz() function.
 
 """
 
-import collections
 import functools
 import inspect
 import os
@@ -232,35 +231,6 @@ netcdfconventions2format = {
     'http://www.etsf.eu/fileformats': 'etsf',
     'AMBER': 'netcdftrajectory'
 }
-
-
-def initialize(format):
-    """Import read and write functions."""
-    if format in ioformats:
-        return  # already done
-
-    _format = format.replace('-', '_')
-    module_name = format2modulename.get(format, _format)
-
-    try:
-        module = import_module('ase.io.' + module_name)
-    except ImportError as err:
-        raise UnknownFileTypeError('File format not recognized: %s.  Error: %s'
-                                   % (format, err))
-
-    read = getattr(module, 'read_' + _format, None)
-    write = getattr(module, 'write_' + _format, None)
-
-    if read and not inspect.isgeneratorfunction(read):
-        read = functools.partial(wrap_read_function, read)
-    if not read and not write:
-        raise UnknownFileTypeError('File format not recognized: ' + format)
-    code = all_formats[format].code #[1]
-    single = code[0] == '1'
-    assert code[1] in 'BFS'
-    acceptsfd = code[1] != 'S'
-    isbinary = code[1] == 'B'
-    #ioformats[format] = IOFormat(read, write, single, acceptsfd, isbinary)
 
 
 def get_ioformat(format):
