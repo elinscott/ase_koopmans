@@ -16,4 +16,4 @@ for o1 in [1.0,
     print(o2)
     print(b1)
     print()
-    assert p1 == p2
+    assert p1 == p2, (o1, p1, p2, vars(o1), vars(p1), vars(p2))
