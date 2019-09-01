@@ -1,5 +1,5 @@
 from ase.build import bulk
-from ase.io.string import to_bytes, parse_images, parse_atoms
+from ase.io.bytes import to_bytes, parse_images, parse_atoms
 from ase.calculators.calculator import compare_atoms
 
 atoms = bulk('Ti')
