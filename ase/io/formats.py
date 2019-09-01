@@ -31,7 +31,7 @@ import os
 import sys
 
 from ase.atoms import Atoms
-from ase.utils import import_module, basestring, PurePath
+from ase.utils import import_module, basestring, PurePath, lazyproperty
 from ase.parallel import parallel_function, parallel_generator
 
 
@@ -39,137 +39,166 @@ class UnknownFileTypeError(Exception):
     pass
 
 
-IOFormat = collections.namedtuple('IOFormat',
-                                  'read, write, single, acceptsfd, isbinary')
+class IOFormat:
+    def __init__(self, name, desc, code, module_name=None):
+        self.name = name
+        self.description = desc
+        assert len(code) == 2
+        assert code[0] in list('+1')
+        assert code[1] in list('BFS')
+        self.code = code
+        self._module_name = module_name
+
+    def __getitem__(self, i):
+        return (self.description, self.code)[i]
+
+    @property
+    def single(self):
+        return self.code[0] == '1'
+
+    @property
+    def _formatname(self):
+        return self.name.replace('-', '_')
+
+    @property
+    def read(self):
+        read = getattr(self.module, 'read_' + self._formatname, None)
+        if read and not inspect.isgeneratorfunction(read):
+            read = functools.partial(wrap_read_function, read)
+        return read
+
+    @property
+    def write(self):
+        return getattr(self.module, 'write_' + self._formatname, None)
+
+    @property
+    def acceptsfd(self):
+        return self.code[1] != 'S'
+
+    @property
+    def isbinary(self):
+        return self.code[1] == 'B'
+
+    @lazyproperty
+    def module(self):
+        try:
+            return import_module('ase.io.' + self._module_name)
+        except ImportError as err:
+            raise UnknownFileTypeError('File format not recognized: %s.  '
+                                       'Error: %s' % (format, err))
+
+
 ioformats = {}  # will be filled at run-time
 
 # 1=single, +=multiple, F=accepts a file-descriptor, S=needs a file-name str,
 # B=like F, but opens in binary mode
-all_formats = {
-    'abinit': ('ABINIT input file', '1F'),
-    'aims': ('FHI-aims geometry file', '1S'),
-    'aims-output': ('FHI-aims output', '+S'),
-    'bundletrajectory': ('ASE bundle trajectory', '+S'),
-    'castep-castep': ('CASTEP output file', '+F'),
-    'castep-cell': ('CASTEP geom file', '1F'),
-    'castep-geom': ('CASTEP trajectory file', '+F'),
-    'castep-md': ('CASTEP molecular dynamics file', '+F'),
-    'castep-phonon': ('CASTEP phonon file', '1F'),
-    'cfg': ('AtomEye configuration', '1F'),
-    'cif': ('CIF-file', '+B'),
-    'cmdft': ('CMDFT-file', '1F'),
-    'cp2k-dcd': ('CP2K DCD file', '+B'),
-    'crystal': ('Crystal fort.34 format', '1S'),
-    'cube': ('CUBE file', '1F'),
-    'dacapo': ('Dacapo netCDF output file', '1F'),
-    'dacapo-text': ('Dacapo text output', '1F'),
-    'db': ('ASE SQLite database file', '+S'),
-    'dftb': ('DftbPlus input file', '1S'),
-    'dlp4': ('DL_POLY_4 CONFIG file', '1F'),
-    'dlp-history': ('DL_POLY HISTORY file', '+F'),
-    'dmol-arc': ('DMol3 arc file', '+S'),
-    'dmol-car': ('DMol3 structure file', '1S'),
-    'dmol-incoor': ('DMol3 structure file', '1S'),
-    'elk': ('ELK atoms definition', '1S'),
-    'eon': ('EON CON file', '+F'),
-    'eps': ('Encapsulated Postscript', '1S'),
-    'espresso-in': ('Quantum espresso in file', '1F'),
-    'espresso-out': ('Quantum espresso out file', '+F'),
-    'etsf': ('ETSF format', '1S'),
-    'exciting': ('exciting input', '1S'),
-    'extxyz': ('Extended XYZ file', '+F'),
-    'findsym': ('FINDSYM-format', '+F'),
-    'gaussian': ('Gaussian com (input) file', '1S'),
-    'gaussian-out': ('Gaussian output file', '1F'),
-    'acemolecule-out': ('ACE output file', '1S'),
-    'acemolecule-input':('ACE input file', '1S'),
-    'gen': ('DFTBPlus GEN format', '1F'),
-    'gif': ('Graphics interchange format', '+S'),
-    'gpaw-out': ('GPAW text output', '+F'),
-    'gpw': ('GPAW restart-file', '1S'),
-    'gromacs': ('Gromacs coordinates', '1S'),
-    'gromos': ('Gromos96 geometry file', '1F'),
-    'html': ('X3DOM HTML', '1F'),
-    'iwm': ('?', '1F'),
-    'json': ('ASE JSON database file', '+F'),
-    'jsv': ('JSV file format', '1F'),
-    'lammps-dump': ('LAMMPS dump file', '+F'),
-    'lammps-data': ('LAMMPS data file', '1F'),
-    'magres': ('MAGRES ab initio NMR data file', '1F'),
-    'mol': ('MDL Molfile', '1F'),
-    'mp4': ('MP4 animation', '+S'),
-    'mustem': ('muSTEM xtl file', '1F'),
-    'mysql': ('ASE MySQL database file', '+S'),
-    'netcdftrajectory': ('AMBER NetCDF trajectory file', '+S'),
-    'nomad-json': ('JSON from Nomad archive', '+F'),
-    'nwchem': ('NWChem input file', '1F'),
-    'octopus': ('Octopus input file', '1F'),
-    'proteindatabank': ('Protein Data Bank', '+F'),
-    'png': ('Portable Network Graphics', '1S'),
-    'postgresql': ('ASE PostgreSQL database file', '+S'),
-    'pov': ('Persistance of Vision', '1S'),
-    'py': ('Python file', '+F'),
-    'qbox': ('QBOX output file', '+F'),
-    'res': ('SHELX format', '1S'),
-    'rmc6f': ('RMCProfile', '1S'),
-    'sdf': ('SDF format', '1F'),
-    'struct': ('WIEN2k structure file', '1S'),
-    'struct_out': ('SIESTA STRUCT file', '1F'),
-    'traj': ('ASE trajectory', '+B'),
-    'trj': ('Old ASE pickle trajectory', '+S'),
-    'turbomole': ('TURBOMOLE coord file', '1F'),
-    'turbomole-gradient': ('TURBOMOLE gradient file', '+F'),
-    'v-sim': ('V_Sim ascii file', '1F'),
-    'vasp': ('VASP POSCAR/CONTCAR file', '1F'),
-    'vasp-out': ('VASP OUTCAR file', '+F'),
-    'vasp-xdatcar': ('VASP XDATCAR file', '+F'),
-    'vasp-xml': ('VASP vasprun.xml file', '+F'),
-    'vti': ('VTK XML Image Data', '1F'),
-    'vtu': ('VTK XML Unstructured Grid', '1F'),
-    'x3d': ('X3D', '1S'),
-    'xsd': ('Materials Studio file', '1F'),
-    'xsf': ('XCrySDen Structure File', '+F'),
-    'xtd': ('Materials Studio file', '+F'),
-    'xyz': ('XYZ-file', '+F')}
+all_formats = ioformats  # XXX We should keep one of these.
 
-# Special cases:
-format2modulename = {
-    'aims-output': 'aims',
-    'dmol-arc': 'dmol',
-    'dmol-car': 'dmol',
-    'dmol-incoor': 'dmol',
-    'castep-castep': 'castep',
-    'castep-cell': 'castep',
-    'castep-geom': 'castep',
-    'castep-md': 'castep',
-    'castep-phonon': 'castep',
-    'cp2k-dcd': 'cp2k',
-    'dacapo-text': 'dacapo',
-    'dlp4': 'dlp4',
-    'dlp-history': 'dlp4',
-    'espresso-in': 'espresso',
-    'espresso-out': 'espresso',
-    'gaussian-out': 'gaussian',
-    'acemolecule-out': 'acemolecule',
-    'acemolecule-input': 'acemolecule',
-    'gif': 'animation',
-    'html': 'x3d',
-    'json': 'db',
-    'lammps-dump': 'lammpsrun',
-    'lammps-data': 'lammpsdata',
-    'mp4': 'animation',
-    'mysql': 'db',
-    'postgresql': 'db',
-    'struct': 'wien2k',
-    'struct_out': 'siesta',
-    'traj': 'trajectory',
-    'trj': 'pickletrajectory',
-    'turbomole-gradient': 'turbomole',
-    'vasp-out': 'vasp',
-    'vasp-xdatcar': 'vasp',
-    'vasp-xml': 'vasp',
-    'vti': 'vtkxml',
-    'vtu': 'vtkxml'}
+
+def define_formats(formats):
+    pass
+
+
+def F(name, desc, code, module=None):
+    if module is None:
+        module = name.replace('-', '_')
+    fmt = IOFormat(name, desc, code, module_name=module)
+    ioformats[name] = fmt
+    return fmt
+
+
+define_formats([
+    F('abinit', 'ABINIT input file', '1F'),
+    F('aims', 'FHI-aims geometry file', '1S'),
+    F('aims-output', 'FHI-aims output', '+S', module='aims'),
+    F('bundletrajectory', 'ASE bundle trajectory', '+S'),
+    F('castep-castep', 'CASTEP output file', '+F', module='castep'),
+    F('castep-cell', 'CASTEP geom file', '1F', module='castep'),
+    F('castep-geom', 'CASTEP trajectory file', '+F', module='castep'),
+    F('castep-md', 'CASTEP molecular dynamics file', '+F', module='castep'),
+    F('castep-phonon', 'CASTEP phonon file', '1F', module='castep'),
+    F('cfg', 'AtomEye configuration', '1F'),
+    F('cif', 'CIF-file', '+B'),
+    F('cmdft', 'CMDFT-file', '1F'),
+    F('cp2k-dcd', 'CP2K DCD file', '+B', module='cp2k'),
+    F('crystal', 'Crystal fort.34 format', '1S'),
+    F('cube', 'CUBE file', '1F'),
+    F('dacapo', 'Dacapo netCDF output file', '1F'),
+    F('dacapo-text', 'Dacapo text output', '1F', module='dacapo'),
+    F('db', 'ASE SQLite database file', '+S'),
+    F('dftb', 'DftbPlus input file', '1S'),
+    F('dlp4', 'DL_POLY_4 CONFIG file', '1F', module='dlp4'),
+    F('dlp-history', 'DL_POLY HISTORY file', '+F', module='dlp4'),
+    F('dmol-arc', 'DMol3 arc file', '+S', module='dmol'),
+    F('dmol-car', 'DMol3 structure file', '1S', module='dmol'),
+    F('dmol-incoor', 'DMol3 structure file', '1S', module='dmol'),
+    F('elk', 'ELK atoms definition', '1S'),
+    F('eon', 'EON CON file', '+F'),
+    F('eps', 'Encapsulated Postscript', '1S'),
+    F('espresso-in', 'Quantum espresso in file', '1F',
+      module='espresso'),
+    F('espresso-out', 'Quantum espresso out file', '+F',
+      module='espresso'),
+    F('etsf', 'ETSF format', '1S'),
+    F('exciting', 'exciting input', '1S'),
+    F('extxyz', 'Extended XYZ file', '+F'),
+    F('findsym', 'FINDSYM-format', '+F'),
+    F('gaussian', 'Gaussian com (input) file', '1S'),
+    F('gaussian-out', 'Gaussian output file', '1F', module='gaussian'),
+    F('acemolecule-out', 'ACE output file', '1S', module='acemolecule'),
+    F('acemolecule-input', 'ACE input file', '1S',
+      module='acemolecule'),
+    F('gen', 'DFTBPlus GEN format', '1F'),
+    F('gif', 'Graphics interchange format', '+S', module='animation'),
+    F('gpaw-out', 'GPAW text output', '+F'),
+    F('gpw', 'GPAW restart-file', '1S'),
+    F('gromacs', 'Gromacs coordinates', '1S'),
+    F('gromos', 'Gromos96 geometry file', '1F'),
+    F('html', 'X3DOM HTML', '1F', module='x3d'),
+    F('iwm', '?', '1F'),
+    F('json', 'ASE JSON database file', '+F', module='db'),
+    F('jsv', 'JSV file format', '1F'),
+    F('lammps-dump', 'LAMMPS dump file', '+F', module='lammpsrun'),
+    F('lammps-data', 'LAMMPS data file', '1F', module='lammpsdata'),
+    F('magres', 'MAGRES ab initio NMR data file', '1F'),
+    F('mol', 'MDL Molfile', '1F'),
+    F('mp4', 'MP4 animation', '+S', module='animation'),
+    F('mustem', 'muSTEM xtl file', '1F'),
+    F('mysql', 'ASE MySQL database file', '+S', module='db'),
+    F('netcdftrajectory', 'AMBER NetCDF trajectory file', '+S'),
+    F('nomad-json', 'JSON from Nomad archive', '+F'),
+    F('nwchem', 'NWChem input file', '1F'),
+    F('octopus', 'Octopus input file', '1F'),
+    F('proteindatabank', 'Protein Data Bank', '+F'),
+    F('png', 'Portable Network Graphics', '1S'),
+    F('postgresql', 'ASE PostgreSQL database file', '+S', module='db'),
+    F('pov', 'Persistance of Vision', '1S'),
+    F('py', 'Python file', '+F'),
+    F('qbox', 'QBOX output file', '+F'),
+    F('res', 'SHELX format', '1S'),
+    F('rmc6f', 'RMCProfile', '1S'),
+    F('sdf', 'SDF format', '1F'),
+    F('struct', 'WIEN2k structure file', '1S', module='wien2k'),
+    F('struct_out', 'SIESTA STRUCT file', '1F', module='siesta'),
+    F('traj', 'ASE trajectory', '+B', module='trajectory'),
+    F('trj', 'Old ASE pickle trajectory', '+S',
+      module='pickletrajectory'),
+    F('turbomole', 'TURBOMOLE coord file', '1F'),
+    F('turbomole-gradient', 'TURBOMOLE gradient file', '+F',
+      module='turbomole'),
+    F('v-sim', 'V_Sim ascii file', '1F'),
+    F('vasp', 'VASP POSCAR/CONTCAR file', '1F'),
+    F('vasp-out', 'VASP OUTCAR file', '+F', module='vasp'),
+    F('vasp-xdatcar', 'VASP XDATCAR file', '+F', module='vasp'),
+    F('vasp-xml', 'VASP vasprun.xml file', '+F', module='vasp'),
+    F('vti', 'VTK XML Image Data', '1F', module='vtkxml'),
+    F('vtu', 'VTK XML Unstructured Grid', '1F', module='vtkxml'),
+    F('x3d', 'X3D', '1S'),
+    F('xsd', 'Materials Studio file', '1F'),
+    F('xsf', 'XCrySDen Structure File', '+F'),
+    F('xtd', 'Materials Studio file', '+F'),
+    F('xyz', 'XYZ-file', '+F')])
+
 
 extension2format = {
     'ascii': 'v-sim',
@@ -226,17 +255,17 @@ def initialize(format):
         read = functools.partial(wrap_read_function, read)
     if not read and not write:
         raise UnknownFileTypeError('File format not recognized: ' + format)
-    code = all_formats[format][1]
+    code = all_formats[format].code #[1]
     single = code[0] == '1'
     assert code[1] in 'BFS'
     acceptsfd = code[1] != 'S'
     isbinary = code[1] == 'B'
-    ioformats[format] = IOFormat(read, write, single, acceptsfd, isbinary)
+    #ioformats[format] = IOFormat(read, write, single, acceptsfd, isbinary)
 
 
 def get_ioformat(format):
     """Initialize and return IOFormat tuple."""
-    initialize(format)
+    #initialize(format)
     return ioformats[format]
 
 
