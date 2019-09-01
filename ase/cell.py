@@ -5,15 +5,13 @@ from ase.utils.arraywrapper import arraylike
 
 __all__ = ['Cell']
 
-
-# We let pbc arguments default to Deprecated().  That way we can complain
-# even if user passes None.
-class Deprecated:
-    pass
-deprecated_keyword = Deprecated()
+# We want to deprecate the pbc keyword for Cell.
+# If it defaults to None, then the user could pass None but we wouldn't
+# know.  So we have it default to a non-None placeholder object instead:
+deprecated_placeholder = object()
 deprecation_msg = 'Cell object will no longer have pbc'
 def warn_with_pbc(array, pbc):
-    if pbc is not deprecated_keyword:
+    if pbc is not deprecated_placeholder:
         import warnings
         warnings.warn(deprecation_msg, FutureWarning)
     if pbc is None:
@@ -33,10 +31,7 @@ class Cell:
 
     ase_objtype = 'cell'  # For JSON'ing
 
-    # We are deprecating pbc; pbc used to default to None, so we use a
-    # non-None default to detect and complain also if someone passes
-    # pbc=None:
-    def __init__(self, array, pbc=deprecated_keyword):
+    def __init__(self, array, pbc=deprecated_placeholder):
         """Create cell.
 
         Parameters:
@@ -46,7 +41,7 @@ class Cell:
         """
         array = np.asarray(array)
         pbc = warn_with_pbc(array, pbc)
-        if pbc is deprecated_keyword:
+        if pbc is deprecated_placeholder:
             pbc = array.any(1)
 
         assert array.shape == (3, 3)
@@ -86,7 +81,7 @@ class Cell:
         return cls.new(cell)
 
     @classmethod
-    def new(cls, cell=None, pbc=deprecated_keyword):
+    def new(cls, cell=None, pbc=deprecated_placeholder):
         """Create new cell from any parameters.
 
         If cell is three numbers, assume three lengths with right angles.
@@ -114,7 +109,7 @@ class Cell:
 
     @classmethod
     def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None,
-                    pbc=deprecated_keyword):
+                    pbc=deprecated_placeholder):
         """Return new Cell from cell lengths and angles.
 
         See also :func:`~ase.geometry.cell.cellpar_to_cell()`."""
@@ -147,7 +142,7 @@ class Cell:
         return lat
 
     def bandpath(self, path=None, npoints=None, density=None,
-                 special_points=None, eps=2e-4):
+                 special_points=None, eps=2e-4, *, pbc=None):
         """Build a :class:`~ase.dft.kpoints.BandPath` for this cell.
 
         If special points are None, determine the Bravais lattice of
@@ -171,6 +166,10 @@ class Cell:
             For example ``{'G': [0, 0, 0], 'X': [1, 0, 0]}``.
         eps: float
             Tolerance for determining Bravais lattice.
+        pbc: three bools
+            Whether cell is periodic in each direction.  Normally not
+            necessary.  If cell has three nonzero cell vectors, use
+            e.g. pbc=[1, 1, 0] to request a 2D bandpath nevertheless.
 
         Example
         -------
@@ -180,15 +179,18 @@ class Cell:
 
         """
         # TODO: Combine with the rotation transformation from bandpath()
+
+        cell = self if pbc is None else self.uncomplete(pbc)
+
         if special_points is None:
             from ase.lattice import identify_lattice
-            lat, op = identify_lattice(self, eps=eps)
+            lat, op = identify_lattice(cell, eps=eps)
             path = lat.bandpath(path, npoints=npoints, density=density)
             return path.transform(op)
         else:
             from ase.dft.kpoints import BandPath, resolve_custom_points
             path = resolve_custom_points(path, special_points, eps=eps)
-            path = BandPath(self, path=path, special_points=special_points)
+            path = BandPath(cell, path=path, special_points=special_points)
             return path.interpolate(npoints=npoints, density=density)
 
 
@@ -199,6 +201,13 @@ class Cell:
         transformation = bravais.get_transformation(self.array)
         return bravais.bandpath(path=path, npoints=npoints, density=density,
                                 transformation=transformation)
+
+    def uncomplete(self, pbc):
+        """Return new cell, zeroing cell vectors where not periodic."""
+        pbc = np.asarray(pbc, bool)
+        cell = self.copy()
+        cell[~pbc] = 0
+        return cell
 
     def complete(self):
         """Convert missing cell vectors into orthogonal unit vectors."""
