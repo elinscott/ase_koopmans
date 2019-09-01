@@ -1,35 +1,29 @@
-from io import StringIO, BytesIO
+from io import BytesIO
 from ase.io import iread, write
 
 
-def atoms_to_string(images, format=None, **kwargs):
-    """Convert atoms or multiple atoms objects to string."""
-    return _atoms_to_thing(images, str, format, **kwargs)
-
-
-def atoms_to_bytes(images, format=None, **kwargs):
+def to_bytes(images, format=None, **kwargs):
     """Convert atoms or multiple atoms objects to bytes."""
-    return _atoms_to_thing(images, bytes, format, **kwargs)
+    buf = _to_buffer(images, format=format, **kwargs)
+    btxt = buf.getvalue()
+    return btxt
 
 
-def parse_images(string, format=None, **kwargs):
+def _to_buffer(images, format=None, **kwargs):
+    buf = BytesIO()
+    write(buf, images, format=format, **kwargs)
+    buf.seek(0)
+    return buf
+
+
+def parse_images(data, format=None, **kwargs):
     """Parse string or bytes into list of atoms objects."""
-    if isinstance(string, str):
-        buf = StringIO(string)
-    else:
-        assert isinstance(string, bytes)
-        buf = BytesIO(string)
+    buf = BytesIO(data)
     images = list(iread(buf, format=format, **kwargs))
     return images
 
 
-def _atoms_to_thing(images, buftype, format, **kwargs):
-    if buftype == str:
-        buf = StringIO()
-    elif buftype == bytes:
-        assert buftype == bytes
-        buf = BytesIO()
-    write(buf, images, format=format, **kwargs)
-    txt = buf.getvalue()
-    assert isinstance(txt, buftype)
-    return txt
+def parse_atoms(data, format=None, **kwargs):
+    images = parse_images(data, format=None, index=-1, **kwargs)
+    assert len(images) == 1
+    return images[0]
