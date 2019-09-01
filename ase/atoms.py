@@ -137,7 +137,7 @@ class Atoms(object):
                  calculator=None,
                  info=None):
 
-        self._cellobj = Cell.new(pbc=False)
+        self._cellobj = Cell.new()
 
         atoms = None
 
@@ -340,7 +340,6 @@ class Atoms(object):
         """
 
         # Override pbcs if and only if given a Cell object:
-        pbc = getattr(cell, 'pbc', None)
         cell = Cell.new(cell)
 
         if scale_atoms:
@@ -348,8 +347,6 @@ class Atoms(object):
             self.positions[:] = np.dot(self.positions, M)
 
         self.cell[:] = cell
-        if pbc is not None:
-            self.cell.pbc[:] = pbc
 
     def set_celldisp(self, celldisp):
         """Set the unit cell displacement vectors."""
@@ -394,7 +391,7 @@ class Atoms(object):
 
     def set_pbc(self, pbc):
         """Set periodic boundary condition flags."""
-        self.cell.pbc[:] = pbc
+        self.cell._pbc[:] = pbc
 
     def get_pbc(self):
         """Get periodic boundary condition flags."""
@@ -1886,7 +1883,8 @@ class Atoms(object):
 
     def _get_pbc(self):
         """Return reference to pbc-flags for in-place manipulations."""
-        return self.cell.pbc
+        # XXX deprecating cell.pbc
+        return self.cell._pbc
 
     pbc = property(_get_pbc, set_pbc,
                    doc='Attribute for direct manipulation ' +
