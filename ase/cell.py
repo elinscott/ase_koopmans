@@ -147,7 +147,7 @@ class Cell:
         return lat
 
     def bandpath(self, path=None, npoints=None, density=None,
-                 special_points=None, eps=2e-4, *, pbc=None):
+                 special_points=None, eps=2e-4):
         """Build a :class:`~ase.dft.kpoints.BandPath` for this cell.
 
         If special points are None, determine the Bravais lattice of
@@ -180,9 +180,6 @@ class Cell:
 
         """
         # TODO: Combine with the rotation transformation from bandpath()
-        if pbc is None:
-            pbc = self.any(1)
-
         if special_points is None:
             from ase.lattice import identify_lattice
             lat, op = identify_lattice(self, eps=eps)
@@ -191,8 +188,7 @@ class Cell:
         else:
             from ase.dft.kpoints import BandPath, resolve_custom_points
             path = resolve_custom_points(path, special_points, eps=eps)
-            path = BandPath(self, path=path, special_points=special_points,
-                            pbc=pbc)
+            path = BandPath(self, path=path, special_points=special_points)
             return path.interpolate(npoints=npoints, density=density)
 
 

@@ -192,7 +192,7 @@ class BandPath:
 
     """
     def __init__(self, cell, kpts=None,
-                 special_points=None, path=None, *, pbc=None):
+                 special_points=None, path=None):
         if kpts is None:
             kpts = np.empty((0, 3))
 
@@ -212,12 +212,6 @@ class BandPath:
         self.special_points = special_points
         assert isinstance(path, str)
         self.path = path
-
-        if pbc is None:
-            pbc = cell.any(1)
-        else:
-            pbc = np.array(pbc, bool)
-        self.pbc = pbc
 
     def transform(self, op):
         """Apply 3x3 matrix to this BandPath and return new BandPath.
@@ -343,7 +337,7 @@ class BandPath:
         from ase import Atoms
         from ase.calculators.test import FreeElectrons
         from ase.dft.band_structure import calculate_band_structure
-        atoms = Atoms(cell=self.cell, pbc=self.pbc)
+        atoms = Atoms(cell=self.cell, pbc=True)
         atoms.calc = FreeElectrons(**kwargs)
         bs = calculate_band_structure(atoms, path=self)
         return bs
