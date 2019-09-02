@@ -22,6 +22,12 @@ but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
 .. toctree::
    :maxdepth: 1
 
+   tut01_molecule/molecule
+   tut02_h2o_structure/h2o
+   tut03_vibrations/vibrations
+   tut04_bulk/bulk
+   tut05_cluster/cluster
+   tut06_database/database
    surface
    manipulating_atoms
    atomization
