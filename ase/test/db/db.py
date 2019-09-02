@@ -74,7 +74,7 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
         count(6, sort=key)
         count(6, sort='-' + key)
 
-    cli('ase -T gui --terminal {}@3'.format(name))
+    cli('ase -T gui --terminal -n 3 {}'.format(name))
 
     con.delete([id])
 

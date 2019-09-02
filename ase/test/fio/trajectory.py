@@ -50,7 +50,7 @@ co.append(o)
 t.write(co)
 written.append(co.copy())
 
-imgs = read('1.traj@:')
+imgs = read('1.traj', index=':')
 assert len(imgs) == len(written)
 for img1, img2 in zip(imgs, written):
     assert img1 == img2
