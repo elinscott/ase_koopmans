@@ -325,7 +325,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                             eigenvalues[spin].append(bands)
                             bands = []
                     elif l == ['occupation', 'numbers']:
-                        bands_index += 3
+                        # Skip the lines with the occupation numbers
+                        bands_index += len(eigenvalues[spin][0]) // 8 + 1
                     elif l[0] == 'k' and l[1].startswith('='):
                         pass
                     elif 'SPIN' in l:
@@ -340,7 +341,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
                 if spin == 1:
                     assert len(eigenvalues[0]) == len(eigenvalues[1])
-                assert len(eigenvalues[0] + eigenvalues[1]) == len(ibzkpts)
+                assert len(eigenvalues[0]) == len(ibzkpts), (np.shape(eigenvalues), len(ibzkpts))
 
                 kpts = []
                 for s in range(spin + 1):
