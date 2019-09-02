@@ -120,7 +120,6 @@ class SinglePointDFTCalculator(SinglePointCalculator):
     def get_k_point_weights(self):
         """ Retunrs the weights of the k points """
         if not self.kpts is None:
-            N_k = len(self.kpts)
             weights = []
             for kpoint in self.kpts:
                 if kpoint.s == 0:
