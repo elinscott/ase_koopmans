@@ -337,7 +337,7 @@ class BandPath:
         from ase import Atoms
         from ase.calculators.test import FreeElectrons
         from ase.dft.band_structure import calculate_band_structure
-        atoms = Atoms(cell=self.cell, pbc=self.cell.pbc)
+        atoms = Atoms(cell=self.cell, pbc=True)
         atoms.calc = FreeElectrons(**kwargs)
         bs = calculate_band_structure(atoms, path=self)
         return bs
