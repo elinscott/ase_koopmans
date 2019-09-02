@@ -1,7 +1,13 @@
 import pickle
+import sys
+import unittest
 from ase.db.core import object_to_bytes, bytes_to_object
 from ase.cell import Cell
 import numpy as np
+
+if sys.version_info < (3, 6):
+    # pickles are not sorted
+    raise unittest.SkipTest
 
 for o1 in [1.0,
            {'a': np.zeros((2, 2), np.float32),
