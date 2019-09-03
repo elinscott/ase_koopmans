@@ -5,6 +5,8 @@ Refer to DFTB+ manual for GEN format description.
 Note: GEN format only supports single snapshot.
 """
 
+import numpy as np
+
 from ase.atoms import Atoms
 from ase.parallel import paropen
 from ase.utils import basestring
@@ -20,12 +22,9 @@ def read_gen(fileobj):
     lines = fileobj.readlines()
     line = lines[0].split()
     natoms = int(line[0])
-    if line[1] == 'S':
-        supercell = True
-    elif line[1] == 'C':
-        supercell = False
-    else:
-        raise IOError('Error in line #1: only C (Cluster) or S (Supercell) ' +
+    pb_flag = line[1]
+    if line[1] not in ['C', 'F', 'S']:
+        raise IOError('Error in line #1: only C (Cluster), S (Supercell) or F (Fraction)' +
                       'are valid options')
 
     # Read atomic symbols
@@ -48,8 +47,9 @@ def read_gen(fileobj):
     image = Atoms(symbols=symbols, positions=positions)
     del lines[:natoms]
 
-    # If Supercell, parse periodic vectors
-    if not supercell:
+    # If Supercell, parse periodic vectors.
+    # If Fraction, translate into Supercell.
+    if pb_flag == 'C':
         return image
     else:
         # Dummy line: line after atom positions is not uniquely defined 
@@ -60,8 +60,14 @@ def read_gen(fileobj):
         for i in range(3):
             x, y, z = lines[i].split()[:3]
             p.append([float(x), float(y), float(z)])
-        image.set_cell([(p[0][0], p[0][1], p[0][2]), (p[1][0], p[1][1], 
-                p[1][2]), (p[2][0], p[2][1], p[2][2])])
+        p = np.array(p)
+        image.set_cell(p)
+        if pb_flag == 'F':
+            frac_positions = image.get_positions()
+            cart_positions = frac_positions[:, :1]*p[:1, :]
+            cart_positions += frac_positions[:, 1:2]*p[1:2, :]
+            cart_positions += frac_positions[:, 2:]*p[2:, :]
+            image.set_positions(cart_positions)
         return image
         
 
