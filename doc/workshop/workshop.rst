@@ -125,37 +125,37 @@ Invited speakers
 .. list-table::
  :widths: 3 7
 
- * - Maxime van den Bosche
-   - Brown University, USA
- * - Erik Fransson
-   - Chalmers University of Technology, Sweden
- * - Morten Gjerding
-   - Technical University of Denmark
- * - Eric Hermes
-   - Sandia National Laboratories, USA
- * - Adam Jackson
-   - STFC Rutherford Appleton Laboratory, UK
- * - Florian Knoop
-   - Fritz-Haber-Institut, Berlin, Germany
- * - Mikael Kuisma
-   - University of Jyväskylä, Finland
- * - Ask Hjorth Larsen
-   - Universidad del País Vasco UPV/EHU, Spain
- * - Marko Melander
-   - University of Jyväskylä, Finland
- * - Michael Walter
-   - Albert-Ludwigs-Universität Freiburg, Germany
- * - Kirsten T. Winther
-   - Stanford University, USA
+ * - Maxime Van den Bossche, Institut des Nanosciences de Paris, France
+   - Global crystal structure optimization with ASE (and with a little help from DFTB)
+ * - Erik Fransson, Chalmers University of Technology, Sweden
+   - Development of softwares for atomic-scale modeling: Cluster expansions and force constants
+ * - Morten Gjerding, Technical University of Denmark, Denmark
+   -
+ * - Eric Hermes, Sandia National Laboratories, USA
+   -
+ * - Adam Jackson, STFC Rutherford Appleton Laboratory, UK
+   -
+ * - Florian Knoop, Fritz-Haber-Institut, Berlin, Germany
+   -
+ * - Mikael Kuisma, University of Jyväskylä, Finland
+   -
+ * - Ask Hjorth Larsen, Universidad del País Vasco UPV/EHU, Spain
+   -
+ * - Marko Melander, University of Jyväskylä, Finland
+   - Theory and modeling electrochemical thermodynamics and kinetics: The Grand Canonical Approach
+ * - Michael Walter, Albert-Ludwigs-Universität Freiburg, Germany
+   -
+ * - Kirsten T. Winther, Stanford University, USA
+   -
 
 
 Organizers
 ==========
 
-* Paul Erhart, Chalmers University of Technology
-* Tuomas Rossi, Chalmers University of Technology
-* Ask Hjorth Larsen, University of the Basque Country
-* Jens Jørgen Mortensen, Technical University of Denmark
-* Kristian Sommer Thygesen, Technical University of Denmark
+* Paul Erhart, Chalmers University of Technology, Sweden
+* Tuomas Rossi, Chalmers University of Technology, Sweden
+* Ask Hjorth Larsen, University of the Basque Country, Spain
+* Jens Jørgen Mortensen, Technical University of Denmark, Denmark
+* Kristian Sommer Thygesen, Technical University of Denmark, Denmark
 
 For questions, please contact the organizers at ase-workshop@materialsmodeling.org.
