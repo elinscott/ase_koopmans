@@ -5,8 +5,6 @@ Refer to DFTB+ manual for GEN format description.
 Note: GEN format only supports single snapshot.
 """
 
-import numpy as np
-
 from ase.atoms import Atoms
 from ase.parallel import paropen
 from ase.utils import basestring
@@ -60,14 +58,11 @@ def read_gen(fileobj):
         for i in range(3):
             x, y, z = lines[i].split()[:3]
             p.append([float(x), float(y), float(z)])
-        p = np.array(p)
-        image.set_cell(p)
+        image.set_cell([(p[0][0], p[0][1], p[0][2]), (p[1][0], p[1][1],
+                p[1][2]), (p[2][0], p[2][1], p[2][2])])
         if pb_flag == 'F':
             frac_positions = image.get_positions()
-            cart_positions = frac_positions[:, :1]*p[:1, :]
-            cart_positions += frac_positions[:, 1:2]*p[1:2, :]
-            cart_positions += frac_positions[:, 2:]*p[2:, :]
-            image.set_positions(cart_positions)
+            image.set_scaled_positions(frac_positions)
         return image
         
 
