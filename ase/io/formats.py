@@ -707,7 +707,11 @@ def parse_filename(filename, index=None, do_not_split_by_at_sign=False):
 def string2index(string):
     """Convert index string to either int or slice"""
     if ':' not in string:
-        return int(string)
+        # may contain database accessor
+        try:
+            return int(string)
+        except ValueError:
+            return string
     i = []
     for s in string.split(':'):
         if s == '':
