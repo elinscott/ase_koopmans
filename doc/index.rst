@@ -14,6 +14,7 @@ ASE provides interfaces to different codes through :mod:`Calculators
 :mod:`Atoms <ase.atoms>` object and the many available algorithms in
 ASE.
 
+
 >>> # Example: structure optimization of hydrogen molecule
 >>> from ase import Atoms
 >>> from ase.optimize import BFGS
@@ -33,7 +34,8 @@ BFGS:   3  19:10:51    -31.492848     0.0023
 >>> h2.get_potential_energy()
 -31.492847800329216
 
-Supported :mod:`Calculators <ase.calculators>`:
+Supported :mod:`Calculators <ase.calculators>`
+==============================================
 
 |abinit| |Asap| |Atomistica| |CASTEP| |CP2K| |CRYSTAL| |deMon| |dftb|
 |elk| |exciting| |EMT|
@@ -52,12 +54,6 @@ Mopac_
 
 
 `Reference publication on ASE <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e>`__
-
-
-Please go through this check-list to figure out if you need to convert your
-old ASE trajectory files to the modern file-format:
-
-See how to identify and convert old trajectory files here: :ref:`convert`.
 
 
 .. _news:
