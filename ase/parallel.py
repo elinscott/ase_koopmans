@@ -160,8 +160,10 @@ if world is None:
     # This is a standard Python interpreter:
     world = DummyMPI()
 
-rank = world.rank
-size = world.size
+# Don't use these two:
+rank = world.rank  # use world.rank instead
+size = world.size  # use world.size instead
+
 barrier = world.barrier
 
 
@@ -265,7 +267,7 @@ def register_parallel_cleanup_function():
 
     This will terminate the processes on the other nodes."""
 
-    if size == 1:
+    if world.size == 1:
         return
 
     def cleanup(sys=sys, time=time, world=world):
