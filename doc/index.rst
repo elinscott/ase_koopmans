@@ -7,7 +7,7 @@ modules for setting up, manipulating, running, visualizing and analyzing
 atomistic simulations.  The code is freely available under the :ref:`GNU LGPL
 license <license info>`.
 
-.. _Python: http://www.python.org
+.. _Python: http://www.python.org/
 
 ASE provides interfaces to different codes through :mod:`Calculators
 <ase.calculators>` which are used together with the central

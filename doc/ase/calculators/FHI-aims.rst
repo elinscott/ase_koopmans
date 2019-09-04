@@ -10,7 +10,7 @@ Introduction
 FHI-aims_ is a all-electron full-potential density functional theory
 code using a numeric local orbital basis set.
 
-.. _FHI-aims: http://www.fhi-berlin.mpg.de/aims/
+.. _FHI-aims: https://gitlab.com/ase/ase/tree/master/
 
 Running the Calculator
 ======================

@@ -11,7 +11,7 @@ ABINIT_ is a density-functional theory code based on pseudopotentials
 and a planewave basis.
 
 
-.. _ABINIT: http://www.abinit.org
+.. _ABINIT: https://www.abinit.org
 
 
 
