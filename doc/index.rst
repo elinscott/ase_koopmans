@@ -57,9 +57,6 @@ Mopac_
 Please go through this check-list to figure out if you need to convert your
 old ASE trajectory files to the modern file-format:
 
-.. image:: static/oldtraj.png
-    :align: center
-
 See how to identify and convert old trajectory files here: :ref:`convert`.
 
 
