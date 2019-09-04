@@ -22,17 +22,17 @@ def bz_vertices(icell, dim=3):
     return bz1
 
 
-def bz_plot(cell, vectors=False, paths=None, points=None,
+def bz_plot(cell, dimension=3, vectors=False, paths=None, points=None,
             elev=None, scale=1, interactive=False,
             pointstyle=None, ax=None, show=False):
     import matplotlib.pyplot as plt
 
     if ax is None:
         fig = plt.gcf()
-    dimensions = np.sum(cell.pbc)
-    assert dimensions > 0, 'No BZ for 0D!'
 
-    if dimensions == 3:
+    assert dimension > 0, 'No BZ for 0D!'
+
+    if dimension == 3:
         from mpl_toolkits.mplot3d import Axes3D
         from mpl_toolkits.mplot3d import proj3d
         from matplotlib.patches import FancyArrowPatch
@@ -56,7 +56,7 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
         view = [x * cos(elev), y * cos(elev), sin(elev)]
         if ax is None:
             ax = fig.gca(projection='3d')
-    elif dimensions == 2:
+    elif dimension == 2:
         # 2d in xy
         assert all(abs(cell[2][0:2]) < 1e-6) and all(abs(cell.T[2]
                                                          [0:2]) < 1e-6)
@@ -72,11 +72,11 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
 
     icell = cell.reciprocal()
     kpoints = points
-    bz1 = bz_vertices(icell, dim=dimensions)
+    bz1 = bz_vertices(icell, dim=dimension)
 
     maxp = 0.0
     minp = 0.0
-    if dimensions == 1:
+    if dimension == 1:
         x = np.array([-0.5 * icell[0, 0],
                       0.5 * icell[0, 0],
                       -0.5 * icell[0, 0]])
@@ -86,19 +86,19 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
     else:
         for points, normal in bz1:
             x, y, z = np.concatenate([points, points[:1]]).T
-            if dimensions == 3:
+            if dimension == 3:
                 if np.dot(normal, view) < 0 and not interactive:
                     ls = ':'
                 else:
                     ls = '-'
                 ax.plot(x, y, z, c='k', ls=ls)
-            elif dimensions == 2:
+            elif dimension == 2:
                 ax.plot(x, y, c='k', ls='-')
             maxp = max(maxp, points.max())
             minp = min(minp, points.min())
 
     if vectors:
-        if dimensions == 3:
+        if dimension == 3:
             ax.add_artist(Arrow3D([0, icell[0, 0]],
                                   [0, icell[0, 1]],
                                   [0, icell[0, 2]],
@@ -115,7 +115,7 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                                   mutation_scale=20, lw=1,
                                   arrowstyle='-|>', color='k'))
             maxp = max(maxp, 0.6 * icell.max())
-        elif dimensions == 2:
+        elif dimension == 2:
             ax.arrow(0, 0, icell[0, 0], icell[0, 1],
                      lw=1, color='k',
                      length_includes_head=True,
@@ -135,9 +135,9 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
     if paths is not None:
         for names, points in paths:
             x, y, z = np.array(points).T
-            if dimensions == 3:
+            if dimension == 3:
                 ax.plot(x, y, z, c='r', ls='-', marker='.')
-            elif dimensions in [1, 2]:
+            elif dimension in [1, 2]:
                 ax.plot(x, y, c='r', ls='-')
 
             for name, point in zip(names, points):
@@ -152,10 +152,10 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                     name, num = m.group(1, 2)
                     if num:
                         name = '{}_{{{}}}'.format(name, num)
-                if dimensions == 3:
+                if dimension == 3:
                     ax.text(x, y, z, '$' + name + '$',
                             ha='center', va='bottom', color='r')
-                elif dimensions == 2:
+                elif dimension == 2:
                     if abs(z) < 1e-6:
                         ax.text(x, y, '$' + name + '$',
                                 ha='center', va='bottom', color='r')
@@ -169,23 +169,23 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
         if pointstyle is not None:
             kw.update(pointstyle)
         for p in kpoints:
-            if dimensions == 3:
+            if dimension == 3:
                 ax.scatter(p[0], p[1], p[2], **kw)
-            elif dimensions == 2:
+            elif dimension == 2:
                 ax.scatter(p[0], p[1], c='b')
             else:
                 ax.scatter(p[0], 0, c='b')
 
     ax.set_axis_off()
 
-    if dimensions in [1, 2]:
+    if dimension in [1, 2]:
         ax.autoscale_view(tight=True)
         s = maxp * 1.05
         ax.set_xlim(-s, s)
         ax.set_ylim(-s, s)
         ax.set_aspect('equal')
 
-    if dimensions == 3:
+    if dimension == 3:
         # ax.set_aspect('equal') <-- won't work anymore in 3.1.0
         ax.view_init(azim=azim / pi * 180, elev=elev / pi * 180)
         # We want aspect 'equal', but apparently there was a bug in
