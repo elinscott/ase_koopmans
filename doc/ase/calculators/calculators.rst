@@ -1,6 +1,8 @@
 .. module:: ase.calculators
    :synopsis: Energy, force and stress calculators.
 
+.. _calculators:
+	      
 ===========
 Calculators
 ===========

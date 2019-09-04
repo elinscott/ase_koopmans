@@ -9,6 +9,7 @@ any of the :ref:`Specialized tutorials <tutorials>`.
    :maxdepth: 1
 
    tut01_molecule/molecule
+   ext_intro
    tut02_h2o_structure/h2o
    tut03_vibrations/vibrations
    tut04_bulk/bulk
