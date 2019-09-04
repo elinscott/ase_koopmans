@@ -302,8 +302,7 @@ class GUI(View, Status):
             self.bad_plot(_('Requires 3D cell.'))
             return
 
-        kwargs = dict(cell=self.atoms.cell,
-                      dimension=self.atoms.pbc.sum(),
+        kwargs = dict(cell=self.atoms.cell.uncomplete(self.atoms.pbc),
                       vectors=True)
         self.pipe('reciprocal', kwargs)
 
