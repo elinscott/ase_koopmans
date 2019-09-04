@@ -151,6 +151,7 @@ Contents
 
     about
     install
+    gettingstarted/gettingstarted
     tutorials/tutorials
     ase/ase
     cmdline

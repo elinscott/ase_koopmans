@@ -25,8 +25,9 @@
 
 .. _atommanip:
 
-Manipulating atoms
-------------------
+====================
+ Manipulating atoms
+====================
 
 We will set up a one layer slab of Ni atoms with one Ag adatom.
 
@@ -134,9 +135,8 @@ The structure now looks like this:
 .. image:: a3.png
    :scale: 35
 
-------------------
 Interface building
-------------------
+==================
 
 Now try something else. We will make an interface with Ni(111) and water.
 First we need a layer of water. One layer of water is constructed in this
