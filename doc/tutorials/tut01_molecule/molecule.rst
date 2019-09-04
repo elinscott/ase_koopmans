@@ -1,8 +1,14 @@
+Start here: Introductory ASE tutorials and exercises
+====================================================
+Welcome to the introductory ASE tutorials. This is where to start. The
+purpose of these tutorials is to teach you the essentials of ASE for
+actual production use, and they are regarded as prerequisite for
+any of the ``specialized tutorials``.
+
 Atoms and calculators
 =====================
-
 ASE allows atomistic calculations to be scripted with different
-computational codes.  In this introductory exercise, we go through the
+computational codes. In this introductory exercise, we go through the
 basic concepts and workflow of ASE and will eventually
 calculate the binding curve of :mol:`N_2`.
 
@@ -124,7 +130,7 @@ Binding curve
 -------------
 
 The strong point of ASE is that things are scriptable.
-`atoms.positions` is a numpy array with the atomic positions::
+``atoms.positions`` is a numpy array with the atomic positions::
 
   print(atoms.positions)
 
