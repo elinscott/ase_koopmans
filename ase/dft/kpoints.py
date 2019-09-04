@@ -325,7 +325,7 @@ class BandPath:
 
         kw = {'vectors': True}
         kw.update(plotkwargs)
-        return bz.bz_plot(self.cell, dimension, paths=paths,
+        return bz.bz_plot(self.cell, paths=paths,
                           points=self.cartesian_kpts(),
                           pointstyle={'marker': '.'},
                           **kw)
