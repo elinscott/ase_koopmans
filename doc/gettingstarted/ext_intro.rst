@@ -1,6 +1,5 @@
-===========================================
 Setting up an external calculator with ASE
-===========================================
+==========================================
 
 This tutorial will cover how to set up a basic calculation in ASE, using an external calculator.
 We will be using the :mod:`~ase.calculators.vasp.vasp2` module in this example, but please refer to :ref:`calculators` for a full list of supported calculators, and their respective documentation.
@@ -9,7 +8,7 @@ Important: ASE does not provide code or a license for VASP, and these must be aq
 ASE only creates an interface with VASP, so that you can use the ASE provided tools together with VASP.
 
 Setting up
-============
+----------
 
 The first step, is to tell ASE how to execute VASP, and where to find the pseudopotentials. You will need to have two environment variables defined:
 
@@ -36,7 +35,7 @@ Note, that this should target the folder, and not the file itself.
 
 
 Your first run
-===============
+--------------
 
 Now that ASE knows how to execute VASP, we can try setting up a simple calculation. First we set up an atoms object
 
