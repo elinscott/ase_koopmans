@@ -22,8 +22,6 @@ but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
 .. toctree::
    :maxdepth: 1
 
-   surface
-   manipulating_atoms
    atomization
    lattice_constant
    eos/eos
