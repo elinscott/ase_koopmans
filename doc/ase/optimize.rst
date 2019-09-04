@@ -212,7 +212,7 @@ Read about this algorithm here:
   | `Structural Relaxation Made Simple`__
   | Physical Review Letters, Vol. **97**, 170201 (2006)
 
-__ http://dx.doi.org/10.1103/PhysRevLett.97.170201
+__ https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.97.170201
 
 
 MDMin
@@ -310,7 +310,7 @@ You can read more about the theory and implementation here:
   | `A universal preconditioner for simulating condensed phase materials`__
   | J. Chem. Phys. *144*, 164109 (2016).
 
-__ http://dx.doi.org/10.1063/1.4947024
+__ https://aip.scitation.org/doi/10.1063/1.4947024
 
 Tests with a variety of solid-state systems using both DFT and classical
 interatomic potentials driven though ASE calculators show speedup factors of up
@@ -466,7 +466,7 @@ Read more about this algorithm here:
   | `Global Optimization by Basin-Hopping and the Lowest Energy Structures of Lennard-Jones Clusters Containing up to 110 Atoms`__
   | J. Phys. Chem. A, Vol. **101**, 5111-5116 (1997)
 
-__ http://pubs.acs.org/doi/abs/10.1021/jp970984n
+__ https://pubs.acs.org/doi/abs/10.1021/jp970984n
 
 and here:
 
@@ -474,7 +474,7 @@ and here:
   | `Global Optimization of Clusters, Crystals, and Biomolecules`__
   | Science, Vol. **285**, 1368 (1999)
 
-__ http://www.sciencemag.org/cgi/content/abstract/sci;285/5432/1368
+__ https://science.sciencemag.org/content/285/5432/1368.abstract
 
 Minima hopping
 --------------
@@ -485,7 +485,7 @@ The minima hopping algorithm was developed and described by Goedecker:
   | `Minima hopping: An efficient search method for the global minimum of the potential energy surface of complex molecular systems`__
   | J. Chem. Phys., Vol. **120**, 9911 (2004)
 
-__ http://dx.doi.org/10.1063/1.1724816
+__ https://aip.scitation.org/doi/10.1063/1.1724816
 
 This algorithm utilizes a series of alternating steps of NVE molecular dynamics and local optimizations, and has two parameters that the code dynamically adjusts in response to the progress of the search. The first parameter is the initial temperature of the NVE simulation. Whenever a step finds a new minimum this temperature is decreased; if the step finds a previously found minimum the temperature is increased. The second dynamically adjusted parameter is `E_\mathrm{diff}`, which is an energy threshold for accepting a newly found minimum. If the new minimum is no more than `E_\mathrm{diff}` eV higher than the previous minimum, it is acccepted and `E_\mathrm{diff}` is decreased; if it is more than `E_\mathrm{diff}` eV higher it is rejected and `E_\mathrm{diff}` is increased. The method is used as::
 

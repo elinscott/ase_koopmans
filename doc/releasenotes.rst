@@ -919,7 +919,7 @@ Version 3.5.0
 * Implementation of the Dimer method.
 
 
-.. _ASAP: http://wiki.fysik.dtu.dk/asap
+.. _ASAP: https://wiki.fysik.dtu.dk/asap
 .. _GPAW: https://wiki.fysik.dtu.dk/gpaw/documentation/xc/vdwcorrection.html
 
 

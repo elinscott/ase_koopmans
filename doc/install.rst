@@ -17,11 +17,11 @@ Optional:
 * :mod:`tkinter` (for :mod:`ase.gui`)
 * Flask_ (for :mod:`ase.db` web-interface)
 
-.. _Python: http://www.python.org/
-.. _NumPy: http://docs.scipy.org/doc/numpy/reference/
-.. _SciPy: http://docs.scipy.org/doc/scipy/reference/
-.. _Matplotlib: http://matplotlib.org/
-.. _Flask: http://flask.pocoo.org/
+.. _Python: https://www.python.org/
+.. _NumPy: https://docs.scipy.org/doc/numpy/reference/
+.. _SciPy: https://docs.scipy.org/doc/scipy/reference/
+.. _Matplotlib: https://matplotlib.org/
+.. _Flask: https://palletsprojects.com/p/flask/
 .. _PyPI: https://pypi.org/project/ase
 .. _PIP: https://pip.pypa.io/en/stable/
 
@@ -50,7 +50,7 @@ to-date version of Python 2.7.x and sets up ``pip`` for you::
 
   $ brew install python
 
-.. _Homebrew: http://brew.sh
+.. _Homebrew: https://brew.sh/
 
 
 .. index:: pip
@@ -104,7 +104,7 @@ from Git.
 
 :Tar-file:
 
-    You can get the source as a `tar-file <http://xkcd.com/1168/>`__ for the
+    You can get the source as a `tar-file <https://xkcd.com/1168/>`__ for the
     latest stable release (ase-3.18.0.tar.gz_) or the latest
     development snapshot (`<snapshot.tar.gz>`_).
 
@@ -151,7 +151,7 @@ Finally, please `run the tests`_.
     dates of older releases can be found there.
 
 
-.. _ase-3.18.0.tar.gz: https://pypi.org/packages/source/a/ase/ase-3.18.0.tar.gz
+.. _ase-3.18.0.tar.gz: https://files.pythonhosted.org/packages/b4/52/0e969df21f492fbd0a60762f1fd4327d71d158ad975fa8fbb7282bfdb884/ase-3.18.0.tar.gz
 
 
 Environment variables

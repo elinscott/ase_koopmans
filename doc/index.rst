@@ -7,7 +7,7 @@ modules for setting up, manipulating, running, visualizing and analyzing
 atomistic simulations.  The code is freely available under the :ref:`GNU LGPL
 license <license info>`.
 
-.. _Python: http://www.python.org/
+.. _Python: https://www.python.org/
 
 ASE provides interfaces to different codes through :mod:`Calculators
 <ase.calculators>` which are used together with the central
@@ -51,7 +51,7 @@ Mopac_
 :mod:`~ase.calculators.qmmm`
 
 
-`Reference publication on ASE <https://doi.org/10.1088/1361-648X/aa680e>`__
+`Reference publication on ASE <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e>`__
 
 
 Please go through this check-list to figure out if you need to convert your
@@ -82,7 +82,7 @@ News
 * :ref:`Reference paper <cite>` in
   J. Phys. Condens. Matter:
   `The Atomic Simulation Environment | A Python library for working with
-  atoms <https://doi.org/10.1088/1361-648X/aa680e>`__
+  atoms <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e>`__
   (7 June 2017).
 
 * :ref:`ASE version 3.13.0 <releasenotes>` released (7 February 2017).
@@ -99,7 +99,7 @@ News
 * :ref:`ASE version 3.10.0 <releasenotes>` released (17 March 2016).
 
 * Web-page now uses the `Read the Docs Sphinx Theme
-  <https://github.com/snide/sphinx_rtd_theme>`_ (20 February 2016).
+  <https://github.com/readthedocs/sphinx_rtd_theme>`_ (20 February 2016).
 
 * The source code is now on https://gitlab.com/ase/ase (18 September 2015).
 
@@ -171,7 +171,7 @@ Contents
    :target: ase/calculators/abinit.html
    :align: middle
 .. |Asap| image:: static/asap.png
-   :target: http://wiki.fysik.dtu.dk/asap
+   :target: https://wiki.fysik.dtu.dk/asap
    :align: middle
 .. |Atomistica| image:: static/atomistica.png
    :target: https://github.com/Atomistica/atomistica
@@ -207,7 +207,7 @@ Contents
    :target: ase/calculators/fleur.html
    :align: middle
 .. |gpaw| image:: static/gpaw.png
-   :target: http://wiki.fysik.dtu.dk/gpaw
+   :target: https://wiki.fysik.dtu.dk/gpaw/
    :align: middle
 .. |gromacs| image:: static/gromacs.png
    :target: ase/calculators/gromacs.html
@@ -251,8 +251,8 @@ Contents
    :align: middle
 
 
-.. _Gaussian: http://www.gaussian.com/
+.. _Gaussian: http://gaussian.com/
 .. _Mopac: ase/calculators/mopac.html
 .. _Sphinx: http://sphinx.pocoo.org
-.. _Asap: http://wiki.fysik.dtu.dk/asap
-.. _CAMd: http://www.camd.dtu.dk
+.. _Asap: https://wiki.fysik.dtu.dk/asap
+.. _CAMd: https://www.fysik.dtu.dk/english/research/camd/

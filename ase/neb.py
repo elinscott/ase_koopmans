@@ -25,19 +25,19 @@ class NEB:
         Paper I:
 
             G. Henkelman and H. Jonsson, Chem. Phys, 113, 9978 (2000).
-            https://doi.org/10.1063/1.1323224
+            https://aip.scitation.org/doi/10.1063/1.1323224
 
         Paper II:
 
             G. Henkelman, B. P. Uberuaga, and H. Jonsson, Chem. Phys,
             113, 9901 (2000).
-            https://doi.org/10.1063/1.1329672
+            https://aip.scitation.org/doi/10.1063/1.1329672
 
         Paper III:
 
             E. L. Kolsbjerg, M. N. Groves, and B. Hammer, J. Chem. Phys,
             145, 094107 (2016)
-            https://doi.org/10.1063/1.4961868
+            https://aip.scitation.org/doi/10.1063/1.4961868
 
         images: list of Atoms objects
             Images defining path from initial to final state.

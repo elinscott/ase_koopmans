@@ -2,7 +2,7 @@
 
 """This module defines an ASE interface to CP2K.
 
-http://www.cp2k.org
+https://www.cp2k.org/
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
