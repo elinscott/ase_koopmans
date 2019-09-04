@@ -47,8 +47,6 @@ class QChem(FileIOCalculator):
             combination with ecp='gen' keyword argument.
         """
 
-        kwargs = {k.lower(): v.lower() for k, v, in kwargs.items()}
-
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
 
