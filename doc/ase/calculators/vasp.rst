@@ -1,5 +1,7 @@
 .. module:: ase.calculators.vasp
 
+.. _vasp-calculator:
+
 ====
 VASP
 ====
