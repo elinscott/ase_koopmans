@@ -16,6 +16,10 @@ Git master branch
 
 * Gulp calculator now provides stress tensor.
 
+* More efficient storage of the "data" part of rows in the :mod:`ase.db`
+  database.  NumPy arrays are now stored in binary format instead of as text
+  thereby using approximately a factor of two less space when storing numbers
+  of `np.float64`.
 
 
 Version 3.18.0
