@@ -1,10 +1,3 @@
-Start here: Introductory ASE tutorials and exercises
-====================================================
-Welcome to the introductory ASE tutorials. This is where to start. The
-purpose of these tutorials is to teach you the essentials of ASE for
-actual production use, and they are regarded as prerequisite for
-any of the ``specialized tutorials``.
-
 Atoms and calculators
 =====================
 ASE allows atomistic calculations to be scripted with different
