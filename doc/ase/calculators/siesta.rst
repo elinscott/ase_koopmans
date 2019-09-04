@@ -11,7 +11,7 @@ SIESTA_ is a density-functional theory code for very large systems
 based on atomic orbital (LCAO) basis sets.
 
 
-.. _SIESTA: http://www.uam.es/siesta/
+.. _SIESTA: https://departments.icmab.es/leem/siesta/
 
 
 
@@ -101,7 +101,7 @@ keywords, even if it breaks calculator functionality.
 The complete list of the FDF entries can be found in the official `SIESTA
 manual`_.
 
-.. _SIESTA manual: http://departments.icmab.es/leem/siesta/Documentation/Manuals/manuals.html
+.. _SIESTA manual: https://departments.icmab.es/leem/siesta/Documentation/Manuals/manuals.html
 
 Example
 =======

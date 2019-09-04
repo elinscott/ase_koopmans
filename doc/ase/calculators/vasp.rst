@@ -14,7 +14,7 @@ also to use ASE as a post-processor for an already performed VASP_
 calculation.
 
 
-.. _VASP: http://cms.mpi.univie.ac.at/vasp/
+.. _VASP: https://cms.mpi.univie.ac.at/vasp/
 .. _Vasp 2.0: vasp2.html
 
 .. note::
@@ -110,7 +110,7 @@ For parameters in the list without default value given, VASP will set
 the default value. Most of the parameters used in the VASP :file:`INCAR` file
 are allowed keywords. See the official `VASP manual`_ for more details.
 
-.. _VASP manual: http://cms.mpi.univie.ac.at/vasp/vasp/vasp.html
+.. _VASP manual: https://cms.mpi.univie.ac.at/vasp/vasp/vasp.html
 
 
 .. note::
