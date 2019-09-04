@@ -44,6 +44,7 @@ _PW_TOTEN = '!    total energy'
 _PW_STRESS = 'total   stress'
 _PW_FERMI = 'the Fermi energy is'
 _PW_VBM = 'highest occupied level'
+_PW_VBMCBM = 'highest occupied, lowest unoccupied level'
 _PW_KPTS = 'number of k points='
 _PW_BANDS = _PW_END
 _PW_BANDSTRUCTURE = 'End of band structure calculation'
@@ -116,6 +117,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         _PW_STRESS: [],
         _PW_FERMI: [],
         _PW_VBM: [],
+        _PW_VBMCBM: [],
         _PW_KPTS: [],
         _PW_BANDS: [],
         _PW_BANDSTRUCTURE: [],
@@ -278,6 +280,11 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             for vbm_index in indexes[_PW_VBM]:
                 if image_index < vbm_index < next_index:
                     efermi = float(pwo_lines[vbm_index].split()[-1])
+
+        if efermi is None:
+            for vbmcbm_index in indexes[_PW_VBMCBM]:
+                if image_index < vbmcbm_index < next_index:
+                    efermi = float(pwo_lines[vbmcbm_index].split()[-2])
 
         # K-points
         ibzkpts = None
