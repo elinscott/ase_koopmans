@@ -302,7 +302,8 @@ class GUI(View, Status):
             self.bad_plot(_('Requires 3D cell.'))
             return
 
-        kwargs = dict(cell=self.atoms.cell, vectors=True)
+        kwargs = dict(cell=self.atoms.cell.uncomplete(self.atoms.pbc),
+                      vectors=True)
         self.pipe('reciprocal', kwargs)
 
     def open(self, button=None, filename=None):
@@ -579,6 +580,7 @@ class GUI(View, Status):
                 self.draw()
 
         self.window.win.after(ms, callbackwrapper)
+
 
 def webpage():
     import webbrowser
