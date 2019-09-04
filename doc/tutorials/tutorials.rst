@@ -9,14 +9,14 @@ Python
 If you are not familiar with Python please read :ref:`what is python`.
 
 .. toctree::
-   :maxdepth: 3
+   :hidden:
 
    ../python
 
 If your ASE scripts make extensive use of matrices you may want to familiarize yourself with :ref:`numpy`.
 
 .. toctree::
-   :maxdepth: 3
+   :hidden:
 
    ../numpy
 
@@ -27,6 +27,7 @@ Most of the tutorials will use the :mod:`EMT <ase.calculators.emt>` potential,
 but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
 
 Basic property calculations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
@@ -35,12 +36,14 @@ Basic property calculations
    lattice_constant
 
 Surface adsorption
+^^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
    db/db
 
 Global optimization
+^^^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
@@ -50,6 +53,7 @@ Global optimization
    ga/ga_convex_hull
 
 Calculating diffusion/dissociation properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
@@ -59,7 +63,22 @@ Calculating diffusion/dissociation properties
    neb/idpp
    selfdiffusion/al110
 
+ASE database
+^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
+   tut06_database/database
+
+Surface adsorption
+^^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
+   db/db
+
 Molecular Dynamics
+^^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
@@ -67,13 +86,8 @@ Molecular Dynamics
    tipnp_equil/tipnp_equil
    acn_equil/acn_equil
 
-ASE database
-.. toctree::
-   :maxdepth: 1
-
-   tut06_database/database
-
 Uncategorized
+^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
