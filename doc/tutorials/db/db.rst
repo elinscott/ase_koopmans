@@ -1,8 +1,8 @@
 .. _db tutorial:
 
-======================
-Using the ASE database
-======================
+===============================================
+Surface adsorption study using the ASE database
+===============================================
 
 In this tutorial we will adsorb C, N and O on 7 different FCC(111) surfaces
 with 1, 2 and 3 layers and we will use database files to store the results.
