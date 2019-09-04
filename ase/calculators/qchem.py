@@ -89,25 +89,21 @@ class QChem(FileIOCalculator):
                     iforces = []
                     # Skip first line containing atom numbering
                     next(lineiter)
-                    while True:
+                    # Helper function:
+                    def read_gradient_line():
                         # Get next line and cut off the component numbering and
                         # remove trailing characters ('\n' and stuff)
                         line = next(lineiter)[5:].rstrip()
                         # Cut in chunks of 12 symbols and convert into strings
                         # This is prefered over string.split() as the fields
                         # may overlap when the gradient gets large
-                        Fx = list(map(
-                            float,
-                            [line[i:i + 12] for i in range(0, len(line), 12)]))
-                        # Repeat for Fy and Fz
-                        line = next(lineiter)[5:].rstrip()
-                        Fy = list(map(
-                            float,
-                            [line[i:i + 12] for i in range(0, len(line), 12)]))
-                        line = next(lineiter)[5:].rstrip()
-                        Fz = list(map(
-                            float,
-                            [line[i:i + 12] for i in range(0, len(line), 12)]))
+                        return list(map(float, [line[i:i + 12] for i in
+                                                range(0, len(line), 12)]))
+
+                    while True:
+                        Fx = read_gradient_line()
+                        Fy = read_gradient_line()
+                        Fz = read_gradient_line()
                         iforces.extend(zip(Fx, Fy, Fz))
 
                         # After three force components we expect either a
