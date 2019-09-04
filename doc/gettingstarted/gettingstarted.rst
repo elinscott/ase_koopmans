@@ -13,7 +13,5 @@ any of the :ref:`Specialized tutorials <tutorials>`.
    ext_intro
    manipulating_atoms
    tut02_h2o_structure/h2o
-   tut03_vibrations/vibrations
    tut04_bulk/bulk
    tut05_cluster/cluster
-   tut06_database/database

@@ -22,6 +22,8 @@ but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
 .. toctree::
    :maxdepth: 1
 
+   tut03_vibrations/vibrations
+   tut06_database/database
    atomization
    lattice_constant
    eos/eos
