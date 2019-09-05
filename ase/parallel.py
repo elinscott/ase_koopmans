@@ -71,6 +71,24 @@ class DummyMPI:
         pass
 
 
+class MPI:
+    def __init__(self):
+        self.comm = None
+
+    def __getattr__(self, name):
+        if self.comm is None:
+            self.comm = get_comm()
+        return getattr(self.comm, name)
+
+
+def get_comm():
+    if '_gpaw' in sys.modules:
+        import _gpaw
+        if hasattr(_gpaw, 'Communicator'):
+            return _gpaw.Communicator()
+    return DummyMPI()
+
+
 class MPI4PY:
     def __init__(self, mpi4py_comm=None):
         if mpi4py_comm is None:
@@ -158,13 +176,15 @@ elif 'mpi4py' in sys.modules:
 
 if world is None:
     # This is a standard Python interpreter:
-    world = DummyMPI()
+    world = MPI()  # DummyMPI()
 
 # Don't use these two:
-rank = world.rank  # use world.rank instead
-size = world.size  # use world.size instead
+rank = np.nan  # world.rank  # use world.rank instead
+size = np.nan  # world.size  # use world.size instead
 
-barrier = world.barrier
+
+def barrier():
+    world.barrier()
 
 
 def broadcast(obj, root=0, comm=world):
