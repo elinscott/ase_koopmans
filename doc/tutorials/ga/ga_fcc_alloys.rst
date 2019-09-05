@@ -15,7 +15,7 @@ ammonia storage described here:
    | `Designing Mixed Metal Halide Ammines for Ammonia Storage Using Density Functional Theory and Genetic Algorithms`__
    | Physical Chemistry Chemical Physics, Vol **16**, No. 36, pp. 19732-19740, (2014)
 
-   __ http://dx.doi.org/10.1039/C4CP03133D
+   __ https://pubs.rsc.org/en/content/articlelanding/2014/CP/C4CP03133D
 
 .. contents::
 

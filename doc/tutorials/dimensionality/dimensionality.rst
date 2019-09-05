@@ -30,7 +30,7 @@ The method is described in the article:
   | `Definition of a scoring parameter to identify low-dimensional materials components`__
   | Phys. Rev. Materials 3 034003, 2019
 
-__ https://doi.org/10.1103/PhysRevMaterials.3.034003
+__ https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.3.034003
 
 .. seealso::
 

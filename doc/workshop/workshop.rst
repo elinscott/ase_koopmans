@@ -26,7 +26,7 @@ Registration
 ============
 
 To join the workshop please fill
-`the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__.
+`the registration form <https://docs.google.com/forms/d/e/1FAIpQLSc97PI8Ex5oYw1zux6YTaLLmNvxUc3T8zv5k6-XYWpwBIN9lw/viewform?usp=send_form>`__.
 The deadline for registration and abstracts is **October 21, 2019**.
 Please note that space is limited.
 There is no registration fee but the attendees need to cover travel, accommodation, and other costs themselves.
@@ -36,7 +36,7 @@ If you have any questions, please contact the organizers at ase-workshop@materia
 Venue
 =====
 
-The workshop will take place at `Chalmers University of Technology <https://www.chalmers.se/en>`__
+The workshop will take place at `Chalmers University of Technology <https://www.chalmers.se/en/Pages/default.aspx>`__
 (Physics building, `Kemigården 1 <https://www.google.com/maps/place/Kemigården+1,+412+58+Göteborg>`__)
 in Gothenburg, Sweden.
 
