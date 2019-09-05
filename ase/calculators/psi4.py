@@ -5,6 +5,7 @@ authors: Ben Comer (Georgia Tech), Xiangyun (Ray) Lei (Georgia Tech)
 from io import StringIO
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.calculator import InputError, ReadError
+from ase.calculators.calculator import CalculatorSetupError
 import multiprocessing
 from ase import io
 import numpy as np
@@ -13,8 +14,6 @@ from ase.units import Bohr, Hartree
 import warnings
 import psi4
 import os
-import pickle
-import codecs
 
 
 class Psi4(Calculator):
@@ -82,23 +81,26 @@ class Psi4(Calculator):
 
         # deal with some ASE specific inputs
         if 'kpts' in self.parameters:
-            warnings.warn('psi4 is a non-periodic code, and thus does not '
-                          'require k-points. This argument will be ignored')
+            raise InputError('psi4 is a non-periodic code, and thus does not'
+                             ' require k-points. Please remove this '
+                             'argument.')
 
         if self.parameters['method'] == 'LDA':
-            warnings.warn('Psi4 does not have LDA implemented, SVWN '
-                          'will be used instead')
+            # svwn is equivalent to LDA
             self.parameters['method'] = 'svwn'
 
         if 'nbands' in self.parameters:
-            warnings.warn('psi4 does is a quantum chemistry program, and'
-                          ' thus does not operate on the basis of bands,'
-                          ' please select a basis set instead. This input'
-                          ' is ignored.')
+            raise InputError('psi4 does not support the keyword "nbands"')
+
         if 'smearing' in self.parameters:
-            warnings.warn('Finite temperature DFT is not implemented in'
-                          ' psi4 currently,thus a smearing argument cannot'
-                          ' be utilized. This argument is ignored')
+            raise InputError('Finite temperature DFT is not implemented in'
+                             ' psi4 currently, thus a smearing argument '
+                             'cannot be utilized. please remove this '
+                             'argument')
+
+        if 'xc' in self.parameters:
+            raise InputError('psi4 does not accept the `xc` argument please'
+                             ' use the `method` argument instead')
 
         if atoms is None:
             if self.atoms is None:
@@ -148,11 +150,14 @@ class Psi4(Calculator):
         with open(filename, 'r') as f:
             txt = f.read()
         if '!ASE Information\n' not in txt:
-            raise Exception('the output file must be made by the ase psi4 '
-                            'interface to be read by it')
+            raise Exception('The output file {} could not be read because '
+                            'the file does not contain the "!ASE Information"'
+                            ' lines inserted by this calculator. This likely'
+                            ' means the output file was not made using this '
+                            'ASE calculator or has since been modified and '
+                            'thus cannot be read.'.format(filename))
         info = txt.split('!ASE Information\n')[1]
         info = info.split('!')[0]
-        #saved_dict = pickle.loads(codecs.decode(info.encode(), "base64"))
         saved_dict = json.loads(info)
         # use io read to recode atoms
         with StringIO(str(saved_dict['atoms'])) as g:
@@ -169,13 +174,9 @@ class Psi4(Calculator):
 
         Calculator.calculate(self, atoms=atoms)
         if atoms is None:
-            if self.atoms is None:
-                raise InputError('An atoms object must be provided to perform'
-                                 ' a calculation')
-            else:
-                atoms = self.atoms
-        elif self.atoms is None:
-            self.atoms = atoms
+            raise CalculatorSetupError('An Atoms object must be provided to perform a calculation')
+        atoms = self.atoms
+
         if atoms.get_initial_magnetic_moments().any():
             self.parameters['reference'] = 'uhf'
             self.parameters['multiplicity'] = None
@@ -189,21 +190,21 @@ class Psi4(Calculator):
         basis = self.parameters['basis']
 
         # Do the calculations
-        for item in properties:
-            if item == 'energy':
-                energy = self.psi4.energy('{}/{}'.format(method, basis),
-                                          molecule=self.molecule)
-                # convert to eV
-                self.results['energy'] = energy * Hartree
-            if item == 'forces':
-                grad, wf = self.psi4.driver.gradient('{}/{}'.format(method, basis),
-                                                     return_wfn=True)
-                # energy comes for free
-                energy = wf.energy()
-                self.results['energy'] = energy * Hartree
-                # convert to eV/A
-                # also note that the gradient is -1 * forces
-                self.results['forces'] = -1 * np.array(grad) * Hartree / Bohr
+        if 'forces' in properties:
+            grad, wf = self.psi4.driver.gradient('{}/{}'.format(method, basis),
+                                                 return_wfn=True)
+            # energy comes for free
+            energy = wf.energy()
+            self.results['energy'] = energy * Hartree
+            # convert to eV/A
+            # also note that the gradient is -1 * forces
+            self.results['forces'] = -1 * np.array(grad) * Hartree / Bohr
+        elif 'energy' in properties:
+            energy = self.psi4.energy('{}/{}'.format(method, basis),
+                                      molecule=self.molecule)
+            # convert to eV
+            self.results['energy'] = energy * Hartree
+
         # dump the calculator info to the psi4 file
         save_atoms = self.atoms.copy()
         #del save_atoms.calc

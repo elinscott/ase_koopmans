@@ -44,6 +44,7 @@ def animate(images, ax=None,
     nframes = [0]
     def drawimage(atoms):
         ax.clear()
+        ax.set_axis_off()
         ax.axis('off')
         plot_atoms(atoms, ax=ax, **parameters)
         nframes[0] += 1

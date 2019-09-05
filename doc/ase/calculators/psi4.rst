@@ -16,7 +16,7 @@ Setup
 
 First we need to install psi4. There are `instructions <http://www.psicode.org/psi4manual/master/external.html>`_ available on their website for compiling the best possible version of psi4. However, the easiest way to obtain psi4 by obtaining the binary package from conda::
 
-    conda install psi4 -c psi4; conda updatae psi4 -c psi4
+    conda install psi4 -c psi4; conda update psi4 -c psi4
 
 The ase calculator operates using the psi4 python API, meaning that if psi4 is installed correctly you won't need to do anything else to get psi4 working. It is, however, recommended that you set up a psi4 scratch directory by setting the ``PSI_SCRATCH`` environment variable::
 

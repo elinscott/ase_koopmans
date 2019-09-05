@@ -15,6 +15,7 @@ def write_animation(filename, images, writer=None,
 
     if ax is None:
         ax = plt.gca()
+        ax.set_axis_off()
 
     animation = animate(images, ax=ax,
                         interval=interval, save_count=save_count,
