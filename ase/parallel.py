@@ -1,9 +1,9 @@
-from __future__ import print_function, division
 import atexit
 import functools
 import pickle
 import sys
 import time
+import warnings
 
 import numpy as np
 
@@ -86,6 +86,8 @@ def get_comm():
         import _gpaw
         if hasattr(_gpaw, 'Communicator'):
             return _gpaw.Communicator()
+    elif 'mpi4py' in sys.modules:
+        return MPI4PY()
     return DummyMPI()
 
 
@@ -178,9 +180,21 @@ if world is None:
     # This is a standard Python interpreter:
     world = MPI()  # DummyMPI()
 
-# Don't use these two:
-rank = np.nan  # world.rank  # use world.rank instead
-size = np.nan  # world.size  # use world.size instead
+
+if sys.version_info < (3, 7):
+    # Don't use these two:
+    rank = np.nan  # use world.rank instead
+    size = np.nan  # use world.size instead
+
+
+def __getattr__(name):
+    if name in ['rank', 'size']:
+        warnings.warn('ase.parallel.{name} has been deprecated.  '
+                      'Please use ase.parallel.world.{name} instead.'
+                      .format(name=name))
+        return getattr(world, name)
+    raise AttributeError('Module ase.parallel has no attribute: {name}.'
+                         .format(name=name))
 
 
 def barrier():
@@ -215,12 +229,10 @@ def parallel_function(func):
     a self.serial = True.
     """
 
-    if world.size == 1:
-        return func
-
     @functools.wraps(func)
     def new_func(*args, **kwargs):
-        if (args and getattr(args[0], 'serial', False) or
+        if (world.size == 1 or
+            args and getattr(args[0], 'serial', False) or
             not kwargs.pop('parallel', True)):
             # Disable:
             return func(*args, **kwargs)
@@ -248,12 +260,10 @@ def parallel_generator(generator):
     a self.serial = True.
     """
 
-    if world.size == 1:
-        return generator
-
     @functools.wraps(generator)
     def new_generator(*args, **kwargs):
-        if (args and getattr(args[0], 'serial', False) or
+        if (world.size == 1 or
+            args and getattr(args[0], 'serial', False) or
             not kwargs.pop('parallel', True)):
             # Disable:
             for result in generator(*args, **kwargs):
