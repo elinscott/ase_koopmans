@@ -1479,8 +1479,11 @@ def all_variants():
     assert tri2b.variant == 'TRI2b'
     yield tri2b
 
+    beta = 110
     yield OBL(a, b, alpha=alpha)
+    yield OBL(a, b, alpha=beta)
     yield RECT(a, b)
     yield CRECT(a, alpha=alpha)
+    yield CRECT(a, alpha=beta)
     yield HEX2D(a)
     yield SQR(a)
