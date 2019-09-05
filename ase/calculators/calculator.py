@@ -6,7 +6,8 @@ from math import pi, sqrt
 import numpy as np
 
 from ase.utils import jsonable
-from ase.dft.kpoints import bandpath, monkhorst_pack
+from ase.dft.kpoints import monkhorst_pack
+from ase.cell import Cell
 
 
 class CalculatorError(RuntimeError):
@@ -299,8 +300,8 @@ def kpts2kpts(kpts, atoms=None):
         if 'kpts' in kpts:
             return KPoints(kpts['kpts'])
         if 'path' in kpts:
-            path = bandpath(cell=atoms.cell, **kpts)
-            return path
+            cell = Cell.ascell(atoms.cell)
+            return cell.bandpath(pbc=atoms.pbc, **kpts)
         size, offsets = kpts2sizeandoffsets(atoms=atoms, **kpts)
         return KPoints(monkhorst_pack(size) + offsets)
 
