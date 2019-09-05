@@ -27,6 +27,6 @@ for lat in all_variants():
     sp2 = set(bandpath2.special_points.keys())
     intsp = sp & sp2
     msg = ('Input and output bandpath from kpts2kpts dont agree!\n'
-           f'Input: {bandpath}\n Output: {bandpath2}')
+           'Input: {}\n Output: {}'.format(bandpath, bandpath2))
     assert not sp - intsp, msg
     assert not sp2 - intsp, msg
