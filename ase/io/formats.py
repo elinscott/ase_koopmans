@@ -290,14 +290,11 @@ def open_with_compression(filename, mode='r'):
     from the filename and open it for reading or writing as if it were
     a standard file.
 
-    Implemented for ``gz``(gzip), ``bz2``(bzip2) and ``xz``(lzma). Either
-    Python 3 or the ``backports.lzma`` module are required for ``xz``.
+    Implemented for ``gz``(gzip), ``bz2``(bzip2) and ``xz``(lzma).
 
     Supported modes are:
        * 'r', 'rt', 'w', 'wt' for text mode read and write.
        * 'rb, 'wb' for binary read and write.
-    Depending on the Python version, you may get errors trying to write the
-    wrong string type to the file.
 
     Parameters
     ==========
@@ -314,7 +311,7 @@ def open_with_compression(filename, mode='r'):
     """
 
     # Compressed formats sometimes default to binary, so force
-    # text mode in Python 3.
+    # text mode:
     if mode == 'r':
         mode = 'rt'
     elif mode == 'w':
@@ -331,12 +328,7 @@ def open_with_compression(filename, mode='r'):
         fd = gzip.open(filename, mode=mode)
     elif compression == 'bz2':
         import bz2
-        if hasattr(bz2, 'open'):
-            # Python 3 only
-            fd = bz2.open(filename, mode=mode)
-        else:
-            # Python 2
-            fd = bz2.BZ2File(filename, mode=mode)
+        fd = bz2.open(filename, mode=mode)
     elif compression == 'xz':
         try:
             from lzma import open as lzma_open
