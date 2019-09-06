@@ -4,6 +4,7 @@ imported.
 
 We run the test in a subprocess so that we have a clean Python interpreter."""
 
+import sys
 from subprocess import run
 
 # Should cover most of ASE:
@@ -13,7 +14,7 @@ modules = ['ase.optimize',
 
 imports = 'import ' + ', '.join(modules)
 
-run(['python3',
+run([sys.executable,
      '-c',
      '{imports}; from ase.parallel import world; assert world.comm is None'
      .format(imports=imports)],
