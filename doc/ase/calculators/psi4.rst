@@ -6,7 +6,7 @@ psi4
 
 `psi4 <http://www.psicode.org/>`_ is an open source quatum chemistry code out of the Sherill Group at Georgia Tech. 
 
-.. autoclass:: ase.calculators.psi4.Psi4
+.. autoclass:: Psi4
 
 
 Setup

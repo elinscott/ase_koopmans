@@ -173,7 +173,7 @@ class Psi4(Calculator):
                   system_changes=all_changes, symmetry='c1'):
 
         Calculator.calculate(self, atoms=atoms)
-        if atoms is None:
+        if self.atoms is None:
             raise CalculatorSetupError('An Atoms object must be provided to perform a calculation')
         atoms = self.atoms
 
