@@ -39,7 +39,7 @@ class UnknownFileTypeError(Exception):
 
 
 class IOFormat:
-    def __init__(self, name, desc, code, module_name, extensions, globs):
+    def __init__(self, name, desc, code, module_name):
         self.name = name
         self.description = desc
         assert len(code) == 2
@@ -47,8 +47,12 @@ class IOFormat:
         assert code[1] in list('BFS')
         self.code = code
         self.module_name = module_name
-        self.extensions = extensions
-        self.globs = globs
+
+        # (To be set by define_io_format())
+        self.extensions = []
+        self.globs = []
+        self.magic = []
+        self.search_magic = []
 
     def __repr__(self):
         tokens = ['{}={}'.format(name, repr(value))
@@ -85,8 +89,11 @@ class IOFormat:
     def isbinary(self):
         return self.code[1] == 'B'
 
-    @lazyproperty
+    @property
     def module(self):
+        if not self.module_name.startswith('ase.io.'):
+            raise ValueError('Will only import modules from ase.io, '
+                             'not {}'.format(self.module_name))
         try:
             return import_module(self.module_name)
         except ImportError as err:
@@ -94,12 +101,14 @@ class IOFormat:
                                        'Error: %s' % (format, err))
 
     def match_name(self, basename):
-        import fnmatch
-        for pattern in self.globs:
-            match = fnmatch.fnmatch(basename, pattern)
-            if match:
-                return match
-        return False
+        from fnmatch import fnmatch
+        return any(fnmatch(basename, pattern)
+                   for pattern in self.globs)
+
+    def match_magic(self, data):
+        from fnmatch import fnmatch
+        return any(fnmatch(data, magic + b'*')
+                   for magic in self.magic)
 
 
 ioformats = {}  # will be filled at run-time
@@ -111,27 +120,28 @@ all_formats = ioformats  # XXX We should keep one of these.
 #glob_patterns = {}
 extension2format = {}
 
-def define_format(name, desc, code, *, module=None, ext=None,
-                  glob=None):
+def define_io_format(name, desc, code, *, module=None, ext=None,
+                     glob=None, magic=None,
+                     search_magic=None):
     if module is None:
         module = name.replace('-', '_')
 
     def normalize_patterns(strings):
         if strings is None:
             strings = []
-        elif isinstance(strings, str):
+        elif isinstance(strings, (str, bytes)):
             strings = [strings]
         else:
             strings = list(strings)
         return strings
 
-    exts = normalize_patterns(ext)
-    globs = normalize_patterns(glob)
+    fmt = IOFormat(name, desc, code, module_name='ase.io.' + module)
+    fmt.extensions = normalize_patterns(ext)
+    fmt.globs = normalize_patterns(glob)
+    fmt.magic = normalize_patterns(magic)
+    fmt.search_magic = normalize_patterns(search_magic)
 
-    fmt = IOFormat(name, desc, code, module_name='ase.io.' + module,
-                   extensions=exts, globs=globs)
-
-    for ext in exts:
+    for ext in fmt.extensions:
         if ext in extension2format:
             raise ValueError('extension "{}" already registered'.format(ext))
         extension2format[ext] = fmt
@@ -139,7 +149,7 @@ def define_format(name, desc, code, *, module=None, ext=None,
     ioformats[name] = fmt
     return fmt
 
-F = define_format
+F = define_io_format
 F('abinit', 'ABINIT input file', '1F'),
 F('aims', 'FHI-aims geometry file', '1S'),
 F('aims-output', 'FHI-aims output', '+S',
@@ -167,7 +177,7 @@ F('dacapo', 'Dacapo netCDF output file', '1F'),
 F('dacapo-text', 'Dacapo text output', '1F',
   module='dacapo'),
 F('db', 'ASE SQLite database file', '+S'),
-F('dftb', 'DftbPlus input file', '1S'),
+F('dftb', 'DftbPlus input file', '1S', magic=b'Geometry'),
 F('dlp4', 'DL_POLY_4 CONFIG file', '1F',
   module='dlp4', ext='config', glob=['*CONFIG*']),
 F('dlp-history', 'DL_POLY HISTORY file', '+F',
@@ -203,7 +213,8 @@ F('gen', 'DFTBPlus GEN format', '1F'),
 F('gif', 'Graphics interchange format', '+S',
   module='animation'),
 F('gpaw-out', 'GPAW text output', '+F'),
-F('gpw', 'GPAW restart-file', '1S'),
+F('gpw', 'GPAW restart-file', '1S',
+  magic=[b'- of UlmGPAW', b'AFFormatGPAW']),
 F('gromacs', 'Gromacs coordinates', '1S',
   ext='gro'),
 F('gromos', 'Gromos96 geometry file', '1F', ext='g96'),
@@ -218,7 +229,7 @@ F('mol', 'MDL Molfile', '1F'),
 F('mp4', 'MP4 animation', '+S',
   module='animation'),
 F('mustem', 'muSTEM xtl file', '1F',
-  ext='stl'),
+  ext='xtl'),
 F('mysql', 'ASE MySQL database file', '+S',
   module='db'),
 F('netcdftrajectory', 'AMBER NetCDF trajectory file', '+S'),
@@ -239,14 +250,14 @@ F('rmc6f', 'RMCProfile', '1S'),
 F('sdf', 'SDF format', '1F'),
 F('struct', 'WIEN2k structure file', '1S', module='wien2k'),
 F('struct_out', 'SIESTA STRUCT file', '1F', module='siesta'),
-F('traj', 'ASE trajectory', '+B', module='trajectory'),
+F('traj', 'ASE trajectory', '+B', module='trajectory',
+  magic=[b'- of UlmASE-Trajectory', b'AFFormatASE-Trajectory']),
 F('trj', 'Old ASE pickle trajectory', '+S',
-  module='pickletrajectory'),
-F('turbomole', 'TURBOMOLE coord file', '1F', glob='coord'),
+  module='pickletrajectory', magic=b'PickleTrajectory'),
+F('turbomole', 'TURBOMOLE coord file', '1F', glob='coord',
+  magic=b'$coord'),
 F('turbomole-gradient', 'TURBOMOLE gradient file', '+F',
-  module='turbomole', glob='gradient'),
-
-
+  module='turbomole', glob='gradient', magic=b'$grad'),
 F('v-sim', 'V_Sim ascii file', '1F', ext='ascii'),
 F('vasp', 'VASP POSCAR/CONTCAR file', '1F',
   ext='poscar', glob=['*POSCAR*', '*CONTCAR*']),
@@ -269,12 +280,6 @@ netcdfconventions2format = {
     'http://www.etsf.eu/fileformats': 'etsf',
     'AMBER': 'netcdftrajectory'
 }
-
-
-def get_ioformat(format):
-    """Initialize and return IOFormat tuple."""
-    #initialize(format)
-    return ioformats[format]
 
 
 def get_compression(filename):
@@ -417,6 +422,7 @@ def write(filename, images, format=None, parallel=True, append=False,
             filename = None
         elif format is None:
             format = filetype(filename, read=False)
+            assert isinstance(format, str)
     else:
         fd = filename
         filename = None
@@ -515,7 +521,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
     if index is None:
         index = -1
     format = format or filetype(filename)
-    io = get_ioformat(format)
+
+    io = ioformats[format]
     if isinstance(index, (slice, basestring)):
         return list(_iread(filename, index, format, io, parallel=parallel,
                            **kwargs))
@@ -542,7 +549,7 @@ def iread(filename, index=None, format=None, parallel=True, **kwargs):
         index = slice(index, (index + 1) or None)
 
     format = format or filetype(filename)
-    io = get_ioformat(format)
+    io = ioformats[format]
 
     for atoms in _iread(filename, index, format, io, parallel=parallel,
                         **kwargs):
@@ -668,7 +675,12 @@ def filetype(filename, read=True, guess=True):
         if not read:
             if ext is None:
                 raise UnknownFileTypeError('Could not guess file type')
-            return extension2format.get(ext, ext)
+            ioformat = extension2format.get(ext)
+            if ioformat:
+                return ioformat.name
+
+            # askhl: This is strange, we don't know if ext is a format:
+            return ext
 
         fd = open_with_compression(filename, 'rb')
     else:
@@ -704,16 +716,9 @@ def filetype(filename, read=True, guess=True):
                 raise UnknownFileTypeError("NetCDF file does not have a "
                                            "'Conventions' attribute.")
 
-    for format, magic in [('traj', b'- of UlmASE-Trajectory'),
-                          ('traj', b'AFFormatASE-Trajectory'),
-                          ('gpw', b'- of UlmGPAW'),
-                          ('gpw', b'AFFormatGPAW'),
-                          ('trj', b'PickleTrajectory'),
-                          ('turbomole', b'$coord'),
-                          ('turbomole-gradient', b'$grad'),
-                          ('dftb', b'Geometry')]:
-        if data.startswith(magic):
-            return format
+    for ioformat in ioformats.values():
+        if ioformat.match_magic(data):
+            return ioformat.name
 
     for format, magic in [('gpaw-out', b'  ___ ___ ___ _ _ _'),
                           ('espresso-in', b'\n&system'),
@@ -733,7 +738,10 @@ def filetype(filename, read=True, guess=True):
         if magic in data:
             return format
 
-    format = extension2format.get(ext)
+    format = None
+    if ext in extension2format:
+        format = extension2format[ext].name
+
     if format is None and guess:
         format = ext
     if format is None:
@@ -743,7 +751,7 @@ def filetype(filename, read=True, guess=True):
             return 'xyz'
 
         raise UnknownFileTypeError('Could not guess file type')
-
+    assert isinstance(format, str)
     return format
 
 
