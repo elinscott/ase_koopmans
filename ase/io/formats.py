@@ -39,7 +39,7 @@ class UnknownFileTypeError(Exception):
 
 
 class IOFormat:
-    def __init__(self, name, desc, code, module_name, extensions):
+    def __init__(self, name, desc, code, module_name, extensions, globs):
         self.name = name
         self.description = desc
         assert len(code) == 2
@@ -48,6 +48,12 @@ class IOFormat:
         self.code = code
         self.module_name = module_name
         self.extensions = extensions
+        self.globs = globs
+
+    def __repr__(self):
+        tokens = ['{}={}'.format(name, repr(value))
+                  for name, value in vars(self).items()]
+        return 'IOFormat({})'.format(', '.join(tokens))
 
     def __getitem__(self, i):
         return (self.description, self.code)[i]
@@ -87,6 +93,14 @@ class IOFormat:
             raise UnknownFileTypeError('File format not recognized: %s.  '
                                        'Error: %s' % (format, err))
 
+    def match_name(self, basename):
+        import fnmatch
+        for pattern in self.globs:
+            match = fnmatch.fnmatch(basename, pattern)
+            if match:
+                return match
+        return False
+
 
 ioformats = {}  # will be filled at run-time
 
@@ -94,21 +108,30 @@ ioformats = {}  # will be filled at run-time
 # B=like F, but opens in binary mode
 all_formats = ioformats  # XXX We should keep one of these.
 
-
+#glob_patterns = {}
 extension2format = {}
 
-def define_format(name, desc, code, *, module=None, extensions=None):
+def define_format(name, desc, code, *, module=None, ext=None,
+                  glob=None):
     if module is None:
         module = name.replace('-', '_')
-    if extensions is None:
-        extensions = []
-    elif isinstance(extensions, str):
-        extensions = [extensions]
+
+    def normalize_patterns(strings):
+        if strings is None:
+            strings = []
+        elif isinstance(strings, str):
+            strings = [strings]
+        else:
+            strings = list(strings)
+        return strings
+
+    exts = normalize_patterns(ext)
+    globs = normalize_patterns(glob)
 
     fmt = IOFormat(name, desc, code, module_name='ase.io.' + module,
-                   extensions=extensions)
+                   extensions=exts, globs=globs)
 
-    for ext in extensions:
+    for ext in exts:
         if ext in extension2format:
             raise ValueError('extension "{}" already registered'.format(ext))
         extension2format[ext] = fmt
@@ -120,25 +143,25 @@ F = define_format
 F('abinit', 'ABINIT input file', '1F'),
 F('aims', 'FHI-aims geometry file', '1S'),
 F('aims-output', 'FHI-aims output', '+S',
-  module='aims', extensions='in'),
+  module='aims', ext='in'),
 F('bundletrajectory', 'ASE bundle trajectory', '+S'),
 F('castep-castep', 'CASTEP output file', '+F',
-  module='castep', extensions='castep'),
+  module='castep', ext='castep'),
 F('castep-cell', 'CASTEP geom file', '1F',
-  module='castep', extensions='cell'),
+  module='castep', ext='cell'),
 F('castep-geom', 'CASTEP trajectory file', '+F',
-  module='castep', extensions='geom'),
+  module='castep', ext='geom'),
 F('castep-md', 'CASTEP molecular dynamics file', '+F',
-  module='castep', extensions='md'),
+  module='castep', ext='md'),
 F('castep-phonon', 'CASTEP phonon file', '1F',
-  module='castep', extensions='phonon'),
+  module='castep', ext='phonon'),
 F('cfg', 'AtomEye configuration', '1F'),
 F('cif', 'CIF-file', '+B'),
-F('cmdft', 'CMDFT-file', '1F'),
+F('cmdft', 'CMDFT-file', '1F', glob='*I_info'),
 F('cp2k-dcd', 'CP2K DCD file', '+B',
-  module='cp2k', extensions='dcd'),
+  module='cp2k', ext='dcd'),
 F('crystal', 'Crystal fort.34 format', '1S',
-  extensions=['f34', '34']),
+  ext=['f34', '34'], glob=['f34', '34']),
 F('cube', 'CUBE file', '1F'),
 F('dacapo', 'Dacapo netCDF output file', '1F'),
 F('dacapo-text', 'Dacapo text output', '1F',
@@ -146,32 +169,32 @@ F('dacapo-text', 'Dacapo text output', '1F',
 F('db', 'ASE SQLite database file', '+S'),
 F('dftb', 'DftbPlus input file', '1S'),
 F('dlp4', 'DL_POLY_4 CONFIG file', '1F',
-  module='dlp4', extensions='config'),
+  module='dlp4', ext='config', glob=['*CONFIG*']),
 F('dlp-history', 'DL_POLY HISTORY file', '+F',
-  module='dlp4'),
+  module='dlp4', glob='HISTORY'),
 F('dmol-arc', 'DMol3 arc file', '+S',
   module='dmol'),
 F('dmol-car', 'DMol3 structure file', '1S',
-  module='dmol', extensions='car'),
+  module='dmol', ext='car'),
 F('dmol-incoor', 'DMol3 structure file', '1S',
   module='dmol'),
 F('elk', 'ELK atoms definition', '1S'),
 F('eon', 'EON CON file', '+F',
-  extensions='con'),
+  ext='con'),
 F('eps', 'Encapsulated Postscript', '1S'),
 F('espresso-in', 'Quantum espresso in file', '1F',
-  module='espresso', extensions='pwi'),
+  module='espresso', ext='pwi'),
 F('espresso-out', 'Quantum espresso out file', '+F',
-  module='espresso', extensions=['out', 'pwo']),
+  module='espresso', ext=['out', 'pwo']),
 F('etsf', 'ETSF format', '1S'),
 F('exciting', 'exciting input', '1S',
-  extensions='exi'),
+  ext='exi'),
 F('extxyz', 'Extended XYZ file', '+F'),
 F('findsym', 'FINDSYM-format', '+F'),
 F('gaussian', 'Gaussian com (input) file', '1S',
-  extensions='com'),
+  ext='com'),
 F('gaussian-out', 'Gaussian output file', '1F',
-  module='gaussian', extensions='log'),
+  module='gaussian', ext='log'),
 F('acemolecule-out', 'ACE output file', '1S',
   module='acemolecule'),
 F('acemolecule-input', 'ACE input file', '1S',
@@ -182,10 +205,10 @@ F('gif', 'Graphics interchange format', '+S',
 F('gpaw-out', 'GPAW text output', '+F'),
 F('gpw', 'GPAW restart-file', '1S'),
 F('gromacs', 'Gromacs coordinates', '1S',
-  extensions='gro'),
-F('gromos', 'Gromos96 geometry file', '1F', extensions='g96'),
+  ext='gro'),
+F('gromos', 'Gromos96 geometry file', '1F', ext='g96'),
 F('html', 'X3DOM HTML', '1F', module='x3d'),
-F('iwm', '?', '1F'),
+F('iwm', '?', '1F', glob='atoms.dat'),
 F('json', 'ASE JSON database file', '+F', module='db'),
 F('jsv', 'JSV file format', '1F'),
 F('lammps-dump', 'LAMMPS dump file', '+F', module='lammpsrun'),
@@ -195,22 +218,23 @@ F('mol', 'MDL Molfile', '1F'),
 F('mp4', 'MP4 animation', '+S',
   module='animation'),
 F('mustem', 'muSTEM xtl file', '1F',
-  extensions='stl'),
+  ext='stl'),
 F('mysql', 'ASE MySQL database file', '+S',
   module='db'),
 F('netcdftrajectory', 'AMBER NetCDF trajectory file', '+S'),
-F('nomad-json', 'JSON from Nomad archive', '+F'),
+F('nomad-json', 'JSON from Nomad archive', '+F',
+  ext='nomad-json'),
 F('nwchem', 'NWChem input file', '1F',
-  extensions='nw'),
-F('octopus', 'Octopus input file', '1F'),
+  ext='nw'),
+F('octopus', 'Octopus input file', '1F', glob='inp'),
 F('proteindatabank', 'Protein Data Bank', '+F',
-  extensions='pdb'),
+  ext='pdb'),
 F('png', 'Portable Network Graphics', '1S'),
 F('postgresql', 'ASE PostgreSQL database file', '+S', module='db'),
 F('pov', 'Persistance of Vision', '1S'),
 F('py', 'Python file', '+F'),
 F('qbox', 'QBOX output file', '+F'),
-F('res', 'SHELX format', '1S', extensions='shelx'),
+F('res', 'SHELX format', '1S', ext='shelx'),
 F('rmc6f', 'RMCProfile', '1S'),
 F('sdf', 'SDF format', '1F'),
 F('struct', 'WIEN2k structure file', '1S', module='wien2k'),
@@ -218,15 +242,20 @@ F('struct_out', 'SIESTA STRUCT file', '1F', module='siesta'),
 F('traj', 'ASE trajectory', '+B', module='trajectory'),
 F('trj', 'Old ASE pickle trajectory', '+S',
   module='pickletrajectory'),
-F('turbomole', 'TURBOMOLE coord file', '1F'),
+F('turbomole', 'TURBOMOLE coord file', '1F', glob='coord'),
 F('turbomole-gradient', 'TURBOMOLE gradient file', '+F',
-  module='turbomole'),
-F('v-sim', 'V_Sim ascii file', '1F', extensions='ascii'),
+  module='turbomole', glob='gradient'),
+
+
+F('v-sim', 'V_Sim ascii file', '1F', ext='ascii'),
 F('vasp', 'VASP POSCAR/CONTCAR file', '1F',
-  extensions='poscar'),
-F('vasp-out', 'VASP OUTCAR file', '+F', module='vasp'),
-F('vasp-xdatcar', 'VASP XDATCAR file', '+F', module='vasp'),
-F('vasp-xml', 'VASP vasprun.xml file', '+F', module='vasp'),
+  ext='poscar', glob=['*POSCAR*', '*CONTCAR*']),
+F('vasp-out', 'VASP OUTCAR file', '+F',
+  module='vasp', glob='*OUTCAR*'),
+F('vasp-xdatcar', 'VASP XDATCAR file', '+F',
+  module='vasp', glob='*XDATCAR*'),
+F('vasp-xml', 'VASP vasprun.xml file', '+F',
+  module='vasp', glob='*vasp*.xml'),
 F('vti', 'VTK XML Image Data', '1F', module='vtkxml'),
 F('vtu', 'VTK XML Unstructured Grid', '1F', module='vtkxml'),
 F('x3d', 'X3D', '1S'),
@@ -394,7 +423,7 @@ def write(filename, images, format=None, parallel=True, append=False,
 
     format = format or 'json'  # default is json
 
-    io = get_ioformat(format)
+    io = ioformats[format]
 
     _write(filename, fd, format, io, images, parallel=parallel, append=append,
            **kwargs)
@@ -626,41 +655,15 @@ def filetype(filename, read=True, guess=True):
         root, compression = get_compression(filename)
         basename = os.path.basename(root)
 
-        if basename == 'inp':
-            return 'octopus'
-
-        if basename.endswith('.nomad.json'):
-            return 'nomad-json'
-
         if '.' in basename:
             ext = os.path.splitext(basename)[1].strip('.').lower()
             if ext in ['xyz', 'cube', 'json', 'cif']:
                 return ext
 
-        if 'POSCAR' in basename or 'CONTCAR' in basename:
-            return 'vasp'
-        if 'OUTCAR' in basename:
-            return 'vasp-out'
-        if 'XDATCAR' in basename:
-            return 'vasp-xdatcar'
-        if 'vasp' in basename and basename.endswith('.xml'):
-            return 'vasp-xml'
-        if basename == 'coord':
-            return 'turbomole'
-        if basename == 'f34':
-            return 'crystal'
-        if basename == '34':
-            return 'crystal'
-        if basename == 'gradient':
-            return 'turbomole-gradient'
-        if basename.endswith('I_info'):
-            return 'cmdft'
-        if basename == 'atoms.dat':
-            return 'iwm'
-        if 'CONFIG' in basename:
-            return 'dlp4'
-        if basename == 'HISTORY':
-            return 'dlp-history'
+        for fmt in ioformats.values():
+            if fmt.match_name(basename):
+                return fmt.name
+
 
         if not read:
             if ext is None:
