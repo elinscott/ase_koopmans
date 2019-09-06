@@ -52,7 +52,6 @@ class IOFormat:
         self.extensions = []
         self.globs = []
         self.magic = []
-        self.search_magic = []
 
     def __repr__(self):
         tokens = ['{}={}'.format(name, repr(value))
@@ -121,8 +120,7 @@ all_formats = ioformats  # XXX We should keep one of these.
 extension2format = {}
 
 def define_io_format(name, desc, code, *, module=None, ext=None,
-                     glob=None, magic=None,
-                     search_magic=None):
+                     glob=None, magic=None):
     if module is None:
         module = name.replace('-', '_')
 
@@ -139,7 +137,6 @@ def define_io_format(name, desc, code, *, module=None, ext=None,
     fmt.extensions = normalize_patterns(ext)
     fmt.globs = normalize_patterns(glob)
     fmt.magic = normalize_patterns(magic)
-    fmt.search_magic = normalize_patterns(search_magic)
 
     for ext in fmt.extensions:
         if ext in extension2format:

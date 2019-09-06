@@ -5,10 +5,9 @@ import sys
 
 from ase.utils import import_module, FileNotFoundError
 from ase.utils import search_current_git_hash
-from ase.io.formats import filetype, all_formats, UnknownFileTypeError
+from ase.io.formats import filetype, ioformats, UnknownFileTypeError
 from ase.io.ulm import print_ulm_info
 from ase.io.bundletrajectory import print_bundletrajectory_info
-from ase.io.formats import all_formats as fmts
 
 
 class CLICommand:
@@ -62,7 +61,10 @@ class CLICommand:
                 format = '?'
                 description = '?'
             else:
-                description, code = all_formats.get(format, ('?', '?'))
+                if format in ioformats:
+                    description = ioformats[format].description
+                else:
+                    description = '?'
 
             print('{:{}}{} ({})'.format(filename + ':', n,
                                         description, format))
@@ -98,5 +100,6 @@ def print_info():
 
 def print_formats():
     print('Supported formats:')
-    for f in list(sorted(fmts)):
-        print('  {}: {}'.format(f, fmts[f][0]))
+    for fmtname in sorted(ioformats):
+        fmt = ioformats[fmtname]
+        print('  {}: {}'.format(fmt.name, fmt.description))
