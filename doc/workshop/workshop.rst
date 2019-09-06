@@ -141,7 +141,7 @@ Speakers
  * - Morten Gjerding, Technical University of Denmark, Denmark
    -
  * - Eric Hermes, Sandia National Laboratories, USA
-   -
+   - Seeking Saddle Points with Sella
  * - Adam J. Jackson, STFC Rutherford Appleton Laboratory, UK
    - Use all the codes! Enabling portable researchers
  * - Florian Knoop, Fritz-Haber-Institut, Berlin, Germany
