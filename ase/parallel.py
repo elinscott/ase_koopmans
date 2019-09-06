@@ -72,22 +72,32 @@ class DummyMPI:
 
 
 class MPI:
+    """Wrapper for MPI world object.
+
+    Decides at runtime (after all imports) which one to use:
+
+    * MPI4Py
+    * GPAW
+    * a dummy implementation for serial runs
+
+    """
     def __init__(self):
         self.comm = None
 
     def __getattr__(self, name):
         if self.comm is None:
-            self.comm = get_comm()
+            self.comm = _get_comm()
         return getattr(self.comm, name)
 
 
-def get_comm():
+def _get_comm():
+    """Get the correct MPI world object."""
+    if 'mpi4py' in sys.modules:
+        return MPI4PY()
     if '_gpaw' in sys.modules:
         import _gpaw
         if hasattr(_gpaw, 'Communicator'):
             return _gpaw.Communicator()
-    elif 'mpi4py' in sys.modules:
-        return MPI4PY()
     return DummyMPI()
 
 
@@ -156,29 +166,23 @@ if '_gpaw' in sys.builtin_module_names:
     # http://wiki.fysik.dtu.dk/gpaw
     import _gpaw
     world = _gpaw.Communicator()
-elif '_gpaw' in sys.modules:
-    # Same thing as above but for the module version
-    import _gpaw
-    if hasattr(_gpaw, 'Communicator'):
-        world = _gpaw.Communicator()
 elif '_asap' in sys.builtin_module_names:
     # Modern version of Asap
     # http://wiki.fysik.dtu.dk/asap
     # We cannot import asap3.mpi here, as that creates an import deadlock
     import _asap
     world = _asap.Communicator()
-elif 'asapparallel3' in sys.modules:
-    # Older version of Asap
-    import asapparallel3
-    world = asapparallel3.Communicator()
-elif 'Scientific_mpi' in sys.modules:
-    from Scientific.MPI import world
+
+# Check if MPI implementation has been imported already:
+elif '_gpaw' in sys.modules:
+    # Same thing as above but for the module version
+    import _gpaw
+    world = getattr(_gpaw, 'Communicator', None)
 elif 'mpi4py' in sys.modules:
     world = MPI4PY()
 
 if world is None:
-    # This is a standard Python interpreter:
-    world = MPI()  # DummyMPI()
+    world = MPI()
 
 
 if sys.version_info < (3, 7):
@@ -187,6 +191,7 @@ if sys.version_info < (3, 7):
     size = np.nan  # use world.size instead
 
 
+# This will only work for Python 3.7+:
 def __getattr__(name):
     if name in ['rank', 'size']:
         warnings.warn('ase.parallel.{name} has been deprecated.  '
