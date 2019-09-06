@@ -126,22 +126,24 @@ Tentative schedule
  +---------------+-----------------------+--------------------------+-------------------+-------------------+-------------------+-------------------+
 
 
-Invited speakers
-----------------
+Speakers
+--------
 
 .. list-table::
  :widths: 3 7
 
  * - Maxime Van den Bossche, Institut des Nanosciences de Paris, France
    - Global crystal structure optimization with ASE (and with a little help from DFTB)
+ * - Jinhyun Chang, Technical University of Denmark, Denmark
+   -
  * - Erik Fransson, Chalmers University of Technology, Sweden
    - Development of softwares for atomic-scale modeling: Cluster expansions and force constants
  * - Morten Gjerding, Technical University of Denmark, Denmark
    -
  * - Eric Hermes, Sandia National Laboratories, USA
    -
- * - Adam Jackson, STFC Rutherford Appleton Laboratory, UK
-   -
+ * - Adam J. Jackson, STFC Rutherford Appleton Laboratory, UK
+   - Use all the codes! Enabling portable researchers
  * - Florian Knoop, Fritz-Haber-Institut, Berlin, Germany
    -
  * - Mikael Kuisma, University of Jyväskylä, Finland
@@ -150,6 +152,8 @@ Invited speakers
    -
  * - Marko Melander, University of Jyväskylä, Finland
    - Theory and modeling electrochemical thermodynamics and kinetics: The Grand Canonical Approach
+ * - Jens Jørgen Mortensen, Technical University of Denmark, Denmark
+   -
  * - Michael Walter, Albert-Ludwigs-Universität Freiburg, Germany
    -
  * - Kirsten T. Winther, Stanford University, USA
