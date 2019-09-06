@@ -22,6 +22,10 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
         path = atoms.cell.bandpath()
 
     from ase.lattice import celldiff  # Should this be a method on cell?
+    if any(path.cell.any(1) != atoms.pbc):
+        raise ValueError('The band path\'s cell, {}, does not match the '
+                         'periodicity {} of the atoms'
+                         .format(path.cell, atoms.pbc))
     cell_err = celldiff(path.cell, atoms.cell.uncomplete(atoms.pbc))
     if cell_err > cell_tol:
         raise ValueError('Atoms and band path have different unit cells.  '
