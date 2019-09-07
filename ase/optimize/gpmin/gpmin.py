@@ -14,9 +14,9 @@ import pickle
 
 class GPMin(Optimizer, GaussianProcess):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None, prior=None,
-                 master=None, noise=None, weight=None, update_prior_strategy='maximum',
-                 scale=None, force_consistent=None, batch_size=None, bounds = None,
-                 update_hyperparams=False):
+                 kernel = None, master=None, noise=None, weight=None, scale = None, 
+                 force_consistent=None, batch_size=None, bounds = None,
+                 update_prior_strategy = 'maximum', update_hyperparams=False):
 
 
         """Optimize atomic positions using GPMin algorithm, which uses
@@ -76,9 +76,16 @@ class GPMin(Optimizer, GaussianProcess):
         prior: Prior object or None
             Prior for the GP regression of the PES surface
             See ase.optimize.gpmin.prior
-            If *Prior* is None, then it is set as the
+            If *prior* is None, then it is set as the
             ConstantPrior with the constant being updated
             using the update_prior_strategy specified as a parameter
+
+        kernel: Kernel object or None
+            Kernel for the GP regression of the PES surface
+            See ase.optimize.gpmin.kernel
+            If *kernel* is None, then it is set as the 
+            SquaredExponential kernel.
+            Note: It needs to be a kernel with derivatives!!!!!
 
         noise: float
             Regularization parameter for the Gaussian Process Regression.
@@ -208,8 +215,9 @@ class GPMin(Optimizer, GaussianProcess):
         else:
             self.update_prior = False
 
-        Kernel = SquaredExponential()
-        GaussianProcess.__init__(self, prior, Kernel)
+        if kernel is None:
+            kernel = SquaredExponential()
+        GaussianProcess.__init__(self, prior, kernel)
 
         self.set_hyperparams(np.array([weight, scale, noise]))
 
