@@ -17,7 +17,7 @@ class QChem(FileIOCalculator):
     # http://www.q-chem.com/qchem-website/manual/qchem43_manual/sect-METHOD.html
     default_parameters = {'method': 'hf',
                           'basis': '6-31G*',
-                          'jobtype': 'force',
+                          'jobtype': None,
                           'charge': 0}
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
@@ -124,10 +124,17 @@ class QChem(FileIOCalculator):
             fileobj.write('$comment\n   ASE generated input file\n$end\n\n')
 
             fileobj.write('$rem\n')
+            if self.parameters['jobtype'] is None:
+                if 'forces' in properties:
+                    fileobj.write('   %-25s   %s\n' % ('JOBTYPE', 'FORCE'))
+                else:
+                    fileobj.write('   %-25s   %s\n' % ('JOBTYPE', 'SP'))
+
             for prm in self.parameters:
                 if prm not in ['charge', 'multiplicity']:
-                    fileobj.write('   %-25s   %s\n' % (
-                        prm.upper(), self.parameters[prm].upper()))
+                    if self.parameters[prm] is not None:
+                        fileobj.write('   %-25s   %s\n' % (
+                            prm.upper(), self.parameters[prm].upper()))
 
             # Not even a parameters as this is an absolute necessity
             fileobj.write('   %-25s   %s\n' % ('SYM_IGNORE', 'TRUE'))
