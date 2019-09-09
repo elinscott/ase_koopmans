@@ -133,7 +133,7 @@ class Psi4(Calculator):
 
         if not os.path.isdir(self.directory):
             os.mkdir(self.directory)
-        self.molecule = psi4.geometry(result)
+        self.molecule = self.psi4.geometry(result)
 
     def set(self, **kwargs):
         changed_parameters = Calculator.set(self, **kwargs)
