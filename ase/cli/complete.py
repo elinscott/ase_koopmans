@@ -81,7 +81,7 @@ commands = {
          '--eos-type', '-o', '--output', '--modify', '--after'],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
-         '--jobs', '-v', '--verbose', '--strict'],
+         '--jobs', '-v', '--verbose', '--strict', '--nogui'],
     'ulm':
         ['-n', '--index', '-d', '--delete', '-v', '--verbose']}
 # End of computer generated data

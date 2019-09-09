@@ -629,7 +629,7 @@ class NEBTools:
         return ax.figure
 
     def plot_bands(self, constant_x=False, constant_y=False,
-                   nimages=None, graphformat='pdfpages', label='neb-plots'):
+                   nimages=None, graphformat='pdfpages', label='nebplots'):
         """Given a trajectory containing many steps of a NEB, makes
         plots of each band in the series.
         FIXME: Define keywords."""
