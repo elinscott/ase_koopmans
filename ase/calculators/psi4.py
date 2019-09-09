@@ -12,7 +12,6 @@ import numpy as np
 import json
 from ase.units import Bohr, Hartree
 import warnings
-import psi4
 import os
 
 
@@ -46,6 +45,7 @@ class Psi4(Calculator):
         Calculator.__init__(self, restart=restart,
                             ignore_bad_restart=ignore_bad_restart, label=label,
                             atoms=atoms, command=command, **kwargs)
+        import psi4
         self.psi4 = psi4
         # perform initial setup of psi4 python API
         self.set_psi4(atoms=atoms)
