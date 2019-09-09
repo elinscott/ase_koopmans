@@ -43,8 +43,8 @@ _PW_FORCE = 'Forces acting on atoms'
 _PW_TOTEN = '!    total energy'
 _PW_STRESS = 'total   stress'
 _PW_FERMI = 'the Fermi energy is'
-_PW_VBM = 'highest occupied level'
-_PW_VBMCBM = 'highest occupied, lowest unoccupied level'
+_PW_HIGHEST_OCCUPIED = 'highest occupied level'
+_PW_HIGHEST_OCCUPIED_LOWEST_FREE = 'highest occupied, lowest unoccupied level'
 _PW_KPTS = 'number of k points='
 _PW_BANDS = _PW_END
 _PW_BANDSTRUCTURE = 'End of band structure calculation'
@@ -116,8 +116,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         _PW_TOTEN: [],
         _PW_STRESS: [],
         _PW_FERMI: [],
-        _PW_VBM: [],
-        _PW_VBMCBM: [],
+        _PW_HIGHEST_OCCUPIED: [],
+        _PW_HIGHEST_OCCUPIED_LOWEST_FREE: [],
         _PW_KPTS: [],
         _PW_BANDS: [],
         _PW_BANDSTRUCTURE: [],
@@ -270,21 +270,21 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                     in pwo_lines[magmoms_index + 1:
                                  magmoms_index + 1 + len(structure)]]
 
-        # Fermi level / valence band maximum
+        # Fermi level / highest occupied level
         efermi = None
         for fermi_index in indexes[_PW_FERMI]:
             if image_index < fermi_index < next_index:
                 efermi = float(pwo_lines[fermi_index].split()[-2])
 
         if efermi is None:
-            for vbm_index in indexes[_PW_VBM]:
-                if image_index < vbm_index < next_index:
-                    efermi = float(pwo_lines[vbm_index].split()[-1])
+            for ho_index in indexes[_PW_HIGHEST_OCCUPIED]:
+                if image_index < ho_index < next_index:
+                    efermi = float(pwo_lines[ho_index].split()[-1])
 
         if efermi is None:
-            for vbmcbm_index in indexes[_PW_VBMCBM]:
-                if image_index < vbmcbm_index < next_index:
-                    efermi = float(pwo_lines[vbmcbm_index].split()[-2])
+            for holf_index in indexes[_PW_HIGHEST_OCCUPIED_LOWEST_FREE]:
+                if image_index < holf_index < next_index:
+                    efermi = float(pwo_lines[holf_index].split()[-2])
 
         # K-points
         ibzkpts = None
