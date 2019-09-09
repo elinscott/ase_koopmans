@@ -639,6 +639,8 @@ class NEBTools:
             raise NotImplementedError('need animated gif.')
         from matplotlib import pyplot
         if constant_x or constant_y:
+            sys.stdout.write('Scaling axes.\n')
+            sys.stdout.flush()
             # Plot all to one plot, then pull its x and y range.
             fig, ax = pyplot.subplots()
             for index in range(len(self.images) // nimages):
