@@ -163,7 +163,7 @@ def test_write_atoms_row(db_name):
 
 def test_external_table_upon_update():
     db = connect('update_table.db')
-    no_features = 5
+    no_features = 500
     ext_table = dict((i, i) for i in range(no_features))
     atoms = Atoms('Pb', positions=[[0, 0, 0]])
     db.write(atoms)
