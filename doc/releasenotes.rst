@@ -21,6 +21,10 @@ Git master branch
   thereby using approximately a factor of two less space when storing numbers
   of `np.float64`.
 
+* ``atoms.set_masses('most_common')`` now sets the masses of each
+  element according to most common isotope as stored in
+  ``ase.data.atomic_masses_common``.
+
 
 Version 3.18.0
 ==============
