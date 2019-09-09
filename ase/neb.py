@@ -136,7 +136,6 @@ class NEB:
 
     def idpp_interpolate(self, traj='idpp.traj', log='idpp.log', fmax=0.1,
                          optimizer=MDMin, mic=False, steps=100):
-        # FIXME: Move this to interpolate separate function?
         d1 = self.images[0].get_all_distances(mic=mic)
         d2 = self.images[-1].get_all_distances(mic=mic)
         d = (d2 - d1) / (self.nimages - 1)
@@ -586,7 +585,6 @@ class SingleCalculatorNEB(NEB):
 def interpolate(images, mic=False):
     """Given a list of images, linearly interpolate the positions of the
     interior images."""
-    # FIXME: Move IDPP here so it works outside NEB?
     pos1 = images[0].get_positions()
     pos2 = images[-1].get_positions()
     d = pos2 - pos1
@@ -600,7 +598,7 @@ def interpolate(images, mic=False):
 class NEBTools:
     """Class to make many of the common tools for NEB analysis available to
     the user. Useful for scripting the output of many jobs. Initialize with
-    list of images which make up a single band."""
+    list of images which make up one or more band of the NEB relaxation."""
 
     def __init__(self, images):
         self.images = Images(images)
@@ -629,15 +627,23 @@ class NEBTools:
         return ax.figure
 
     def plot_bands(self, constant_x=False, constant_y=False,
-                   nimages=None, graphformat='pdfpages', label='nebplots'):
+                   nimages=None, label='nebplots'):
         """Given a trajectory containing many steps of a NEB, makes
-        plots of each band in the series.
-        FIXME: Define keywords."""
+        plots of each band in the series in a single PDF.
+
+        constant_x: bool
+            Use the same x limits on all plots.
+        constant_y: bool
+            Use the same y limits on all plots.
+        nimages: int
+            Number of images per band. Guessed if not supplied.
+        label: str
+            Name for the output file. .pdf will be appended.
+        """
+        from matplotlib import pyplot
+        from matplotlib.backends.backend_pdf import PdfPages
         if nimages is None:
             nimages = self._guess_nimages()
-        if not graphformat == 'pdfpages':
-            raise NotImplementedError('need animated gif.')
-        from matplotlib import pyplot
         if constant_x or constant_y:
             sys.stdout.write('Scaling axes.\n')
             sys.stdout.flush()
@@ -649,13 +655,9 @@ class NEBTools:
                 xlim = ax.get_xlim()
                 ylim = ax.get_ylim()
             pyplot.close(fig)  # Reference counting "bug" in pyplot.
-
-        from matplotlib.backends.backend_pdf import PdfPages
         with PdfPages(label + '.pdf') as pdf:
-            sys.stdout.write(' ' * 10)
             for index in range(len(self.images) // nimages):
-                sys.stdout.write('\b' * 39)
-                sys.stdout.write('Processing band {:10d} / {:10d}'
+                sys.stdout.write('\rProcessing band {:10d} / {:10d}'
                                  .format(index, len(self.images)//nimages))
                 sys.stdout.flush()
                 fig, ax = pyplot.subplots()
@@ -667,6 +669,7 @@ class NEBTools:
                     ax.set_ylim(ylim)
                 pdf.savefig(fig)
                 pyplot.close(fig)  # Reference counting "bug" in pyplot.
+        sys.stdout.write('\n')
 
     def get_fmax(self, **kwargs):
         """Returns fmax, as used by optimizers with NEB."""
@@ -744,14 +747,15 @@ class NEBTools:
                 break
         if nimages is None:
             # Appears to be only a single band; no repetition.
-            print('Appears to be only one band in the images.')
+            sys.stdout.write('Appears to be only one band in the images.')
             return len(self.images)
         # Sanity check that the last lines up too.
         e_last = self.images[nimages - 1].get_potential_energy()
         e_nextlast = self.images[2 * nimages - 1].get_potential_energy()
         if not (e_last == e_nextlast):
             raise RuntimeError('Could not guess number of images per band.')
-        print('Number of images guessed to be {:d}.'.format(nimages))
+        sys.stdout.write('Number of images per band guessed to be {:d}.'
+                         .format(nimages))
         return nimages
 
 
@@ -759,10 +763,10 @@ def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
     """Creates the standard NEB plot from the fit parameters."""
     # (Note this needs to live outside of NEBTools so that
     # ase.gui.pipe can use it.)
+    # FIXME: Or can pipe pickle images? I guess it could.
     if ax is None:
         import matplotlib.pyplot as plt
         ax = plt.gca()
-
     ax.plot(s, E, 'o')
     for x, y in lines:
         ax.plot(x, y, '-g')

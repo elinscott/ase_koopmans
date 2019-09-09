@@ -274,9 +274,9 @@ class GUI(View, Status):
         ui.error(_('Plotting failed'), '\n'.join([str(err), msg]).strip())
 
     def neb(self):
-        from ase.neb import NEBtools
+        from ase.neb import NEBTools
         try:
-            nebtools = NEBtools(self.images)
+            nebtools = NEBTools(self.images)
             fit = nebtools.get_fit()
         except Exception as err:
             self.bad_plot(err, _('Images must have energies and forces, '
