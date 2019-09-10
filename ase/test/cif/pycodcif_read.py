@@ -6,7 +6,7 @@ try:
     from pycodcif import parse # noqa: F401
 except ImportError:
     # Skip test if pycodcif installation is broken:
-    raise unittest.SkipTest
+    raise unittest.SkipTest('pycodcif not available')
 
 cif = """data_Quartz
 loop_

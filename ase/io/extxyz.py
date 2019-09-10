@@ -241,7 +241,9 @@ def key_val_dict_to_str(d, sep=' ', tolerant=False):
         val = d[key]
         if isinstance(val, dict):
             continue
-        if hasattr(val, '__iter__'):
+        if isinstance(val, str):
+            pass
+        elif hasattr(val, '__iter__'):
             try:
                 val = np.array(list(val))
                 val = ' '.join(str(type_val_map.get((type(x), x), x))

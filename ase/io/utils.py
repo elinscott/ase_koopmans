@@ -10,7 +10,7 @@ from ase.utils import basestring
 
 class PlottingVariables:
     # removed writer - self
-    def __init__(self, atoms, rotation='', show_unit_cell=0,
+    def __init__(self, atoms, rotation='', show_unit_cell=2,
                               radii=None, bbox=None, colors=None, scale=20,
                               maxwidth=500, extra_offset=(0., 0.)):
         self.numbers = atoms.get_atomic_numbers()

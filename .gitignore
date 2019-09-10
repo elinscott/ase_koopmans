@@ -8,8 +8,10 @@ MANIFEST
 /build
 /ase.egg-info
 /ase/db/static/jsmol
+doc/ase/dft/bztable.rst
+doc/tutorials/deltacodesdft/fit.json
 
-#editor backup files
+# Editor backup files
 *.py~
 *.rst~
 
