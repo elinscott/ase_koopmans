@@ -21,6 +21,10 @@ Git master branch
   thereby using approximately a factor of two less space when storing numbers
   of `np.float64`.
 
+* The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
+  been deprecated.  Use ``world.rank`` and ``world.size`` instead
+  (and ``from ase.parallel import world``).
+
 
 Version 3.18.0
 ==============
