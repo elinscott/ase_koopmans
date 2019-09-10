@@ -185,23 +185,6 @@ if world is None:
     world = MPI()
 
 
-if sys.version_info < (3, 7):
-    # Don't use these two:
-    rank = np.nan  # use world.rank instead
-    size = np.nan  # use world.size instead
-
-
-# This will only work for Python 3.7+:
-def __getattr__(name):
-    if name in ['rank', 'size']:
-        warnings.warn('ase.parallel.{name} has been deprecated.  '
-                      'Please use ase.parallel.world.{name} instead.'
-                      .format(name=name))
-        return getattr(world, name)
-    raise AttributeError('Module ase.parallel has no attribute: {name}.'
-                         .format(name=name))
-
-
 def barrier():
     world.barrier()
 
@@ -344,12 +327,13 @@ def distribute_cpus(size, comm):
 
 
 class ParallelModuleWrapper:
-    def __getattr__(self, attr):
-        if attr == 'rank' or attr == 'size':
-            import warnings
-            warnings.warn('Deprecated: ase.parallel.{}'.format(attr),
+    def __getattr__(self, name):
+        if name == 'rank' or name == 'size':
+            warnings.warn('ase.parallel.{name} has been deprecated.  '
+                          'Please use ase.parallel.world.{name} instead.'
+                          .format(name=name),
                           FutureWarning)
-        return getattr(_parallel, attr)
+        return getattr(_parallel, name)
 
 
 _parallel = sys.modules['ase.parallel']
