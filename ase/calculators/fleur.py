@@ -502,7 +502,7 @@ class FLEUR:
 
         # total energies
         self.total_energies = []
-        pat = re.compile('(.*total energy=)(\s)*([-0-9.]*)')
+        pat = re.compile(r'(.*total energy=)(\s)*([-0-9.]*)')
         for line in lines:
             m = pat.match(line)
             if m:
@@ -511,7 +511,7 @@ class FLEUR:
 
         # free_energies
         self.free_energies = []
-        pat = re.compile('(.*free energy=)(\s)*([-0-9.]*)')
+        pat = re.compile(r'(.*free energy=)(\s)*([-0-9.]*)')
         for line in lines:
             m = pat.match(line)
             if m:

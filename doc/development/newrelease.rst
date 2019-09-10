@@ -4,6 +4,12 @@
 New release
 ===========
 
+The ``ase/utils/newrelease.py`` script generates a new release.
+The instructions below were written before this script, so some
+of these steps are in fact automatic now.
+
+
+
 * Make sure all tests pass.
 
 * Go through the git-logs and make sure all important changes since last

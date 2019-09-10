@@ -2073,15 +2073,15 @@ class ExpCellFilter(UnitCellFilter):
         >>> # this should be equivalent to the StrainFilter
         >>> atoms = Atoms(...)
         >>> atoms.set_constraint(FixAtoms(mask=[True for atom in atoms]))
-        >>> ucf = UnitCellFilter(atoms)
+        >>> ecf = ExpCellFilter(atoms)
 
-        You should not attach this UnitCellFilter object to a
+        You should not attach this ExpCellFilter object to a
         trajectory. Instead, create a trajectory for the atoms, and
         attach it to an optimizer like this:
 
         >>> atoms = Atoms(...)
-        >>> ucf = UnitCellFilter(atoms)
-        >>> qn = QuasiNewton(ucf)
+        >>> ecf = ExpCellFilter(atoms)
+        >>> qn = QuasiNewton(ecf)
         >>> traj = Trajectory('TiO2.traj', 'w', atoms)
         >>> qn.attach(traj)
         >>> qn.run(fmax=0.05)

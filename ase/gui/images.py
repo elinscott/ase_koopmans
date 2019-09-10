@@ -151,6 +151,16 @@ class Images:
             else:
                 actual_filename, index = parse_filename(filename,
                                                         default_index)
+
+            # Read from stdin:
+            if filename == '-':
+                import sys
+                from io import BytesIO
+                buf = BytesIO(sys.stdin.buffer.read())
+                buf.seek(0)
+                filename = buf
+                filetype = 'traj'
+
             imgs = read(filename, index, filetype)
             if hasattr(imgs, 'iterimages'):
                 imgs = list(imgs.iterimages())

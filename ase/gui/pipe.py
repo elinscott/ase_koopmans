@@ -16,8 +16,8 @@ def main():
         from ase.neb import plot_band_from_fit
         plot_band_from_fit(*data)
     elif task == 'reciprocal':
-        from ase.dft.bz import bz3d_plot
-        bz3d_plot(**data)
+        from ase.dft.bz import bz_plot
+        bz_plot(**data)
     elif task == 'graph':
         from ase.gui.graphs import make_plot
         make_plot(show=False, *data)

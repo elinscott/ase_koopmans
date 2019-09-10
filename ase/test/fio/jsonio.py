@@ -1,5 +1,7 @@
 """Test serialization of ndarrays and other stuff."""
 
+from datetime import datetime
+
 import numpy as np
 import io
 
@@ -20,3 +22,12 @@ obj2 = read_json(fd)
 
 print(obj1)
 print(obj2)
+
+for obj in [0.5 + 1.5j,
+            datetime.now()]:
+    s = encode(obj)
+    o = decode(s)
+    print(obj)
+    print(s)
+    print(obj)
+    assert obj == o, (obj, o, s)

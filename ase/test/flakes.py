@@ -19,8 +19,9 @@ asedocpath = asepath.parent / 'doc'
 
 def flakes(path):
     print('flake8:', path)
+    # The -j 1 disables threading; our test suite is already threaded.
     proc = Popen([sys.executable, '-m',
-                  'flake8', '--ignore', 'E,W', str(path)],
+                  'flake8', '--ignore', 'E,W', '-j', '1', str(path)],
                  stdout=PIPE)
     stdout, stderr = proc.communicate()
     code = proc.wait()

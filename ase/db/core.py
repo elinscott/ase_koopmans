@@ -1,11 +1,13 @@
 import collections
 import functools
+import json
 import numbers
 import operator
 import os
 import re
 import warnings
 from time import time
+from typing import List, Any
 
 import numpy as np
 
@@ -14,6 +16,7 @@ from ase.symbols import symbols2numbers, string2symbols
 from ase.calculators.calculator import all_properties, all_changes
 from ase.data import atomic_numbers
 from ase.db.row import AtomsRow
+from ase.io.jsonio import create_ase_object
 from ase.parallel import world, DummyMPI, parallel_function, parallel_generator
 from ase.utils import Lock, basestring, PurePath
 
@@ -74,6 +77,7 @@ reserved_keys = set(all_properties +
                     all_changes +
                     list(atomic_numbers) +
                     ['id', 'unique_id', 'ctime', 'mtime', 'user',
+                     'fmax', 'smax',
                      'momenta', 'constraints', 'natoms', 'formula', 'age',
                      'calculator', 'calculator_parameters',
                      'key_value_pairs', 'data'])
@@ -528,7 +532,7 @@ class Database:
 
         row = self._get_row(id)
         kvp = row.key_value_pairs
-        
+
         n = len(kvp)
         for key in delete_keys:
             kvp.pop(key, None)
@@ -590,3 +594,83 @@ def float_to_time_string(t, long=False):
         return '{:.3f} {}s'.format(x, longwords[s])
     else:
         return '{:.0f}{}'.format(round(x), s)
+
+
+def object_to_bytes(obj: Any) -> bytes:
+    """Serialize Python object to bytes."""
+    parts = [b'12345678']
+    obj = o2b(obj, parts)
+    offset = sum(len(part) for part in parts)
+    x = np.array(offset, np.int64)
+    if not np.little_endian:
+        x.byteswap(True)
+    parts[0] = x.tobytes()
+    parts.append(json.dumps(obj, separators=(',', ':')).encode())
+    return b''.join(parts)
+
+
+def bytes_to_object(b: bytes) -> Any:
+    """Deserialize bytes to Python object."""
+    x = np.frombuffer(b[:8], np.int64)
+    if not np.little_endian:
+        x = x.byteswap()
+    offset = x.item()
+    obj = json.loads(b[offset:].decode())
+    return b2o(obj, b)
+
+
+def o2b(obj: Any, parts: List[bytes]):
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+    if isinstance(obj, dict):
+        return {key: o2b(value, parts) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [o2b(value, parts) for value in obj]
+    if isinstance(obj, np.ndarray):
+        offset = sum(len(part) for part in parts)
+        if not np.little_endian:
+            obj = obj.byteswap()
+        parts.append(obj.tobytes())
+        return {'__ndarray__': [obj.shape,
+                                obj.dtype.name,
+                                offset]}
+    if isinstance(obj, complex):
+        return {'__complex__': [obj.real, obj.imag]}
+    objtype = getattr(obj, 'ase_objtype')
+    if objtype:
+        dct = o2b(obj.todict(), parts)
+        dct['__ase_objtype__'] = objtype
+        return dct
+    raise ValueError('Objects of type {type} not allowed'
+                     .format(type=type(obj)))
+
+
+def b2o(obj: Any, b: bytes) -> Any:
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+
+    if isinstance(obj, list):
+        return [b2o(value, b) for value in obj]
+
+    assert isinstance(obj, dict)
+
+    x = obj.get('__complex__')
+    if x is not None:
+        return complex(*x)
+
+    x = obj.get('__ndarray__')
+    if x is not None:
+        shape, name, offset = x
+        dtype = np.dtype(name)
+        size = dtype.itemsize * np.prod(shape).astype(int)
+        a = np.frombuffer(b[offset:offset + size], dtype)
+        a.shape = shape
+        if not np.little_endian:
+            a = a.byteswap()
+        return a
+
+    dct = {key: b2o(value, b) for key, value in obj.items()}
+    objtype = dct.pop('__ase_objtype__', None)
+    if objtype is None:
+        return dct
+    return create_ase_object(objtype, dct)

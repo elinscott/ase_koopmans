@@ -133,7 +133,7 @@ class XtlmuSTEMWriter:
         # 1st line: comment line
         if self.comment is None:
             s = "{0} atoms with chemical formula: {1}\n".format(
-                self.atoms.get_number_of_atoms(),
+                len(self.atoms),
                 self.atoms.get_chemical_formula())
         else:
             s = self.comment
