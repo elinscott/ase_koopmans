@@ -17,7 +17,6 @@ from __future__ import division
 
 import re
 import os
-import subprocess
 
 from ase.data import atomic_masses, atomic_numbers
 from ase.calculators.lammpslib import LAMMPSlib
@@ -327,48 +326,20 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         raise KIMCalculatorError('Unsupported simulator: "{}".'.format(simulator_name))
 
 
-def _get_kim_api_libexec_path():
-    # Find the location of the libexec path for the KIM API
-    try:
-        libexec_path = (
-            subprocess.check_output(
-                ["pkg-config", "--variable=libexecdir", "libkim-api"],
-                universal_newlines=True,
-            )
-            .strip()
-            .rstrip("/")
-        )
-    except subprocess.CalledProcessError:
-        raise KIMCalculatorError(
-            "ERROR: Unable to obtain libexec-path for KIM API from pkg-config."
-        )
-
-    return libexec_path
-
-
 def _is_portable_model(extended_kim_id):
     """
     Returns True if the model specified is a KIM Portable Model (if it is not, then it
     must be a KIM Simulator Model -- there are no other types of models in KIM)
     """
-    # Define location of `kim-api-collections-management-info' utility
-    libexec_path = _get_kim_api_libexec_path()
-    kim_api_cm_info_util = os.path.join(
-        libexec_path, "kim-api", "kim-api-collections-info"
-    )
+    col, error = kimpy.collections.create()
+    check_error(error, "kimpy.collections.create")
 
-    try:
-        item_type = subprocess.check_output(
-            [kim_api_cm_info_util, "type", extended_kim_id], universal_newlines=True
-        )
-        item_type = item_type.rstrip()
-    except subprocess.CalledProcessError:
-        raise KIMCalculatorError(
-            "ERROR: Unable to call kim-api-collections-info util to "
-            "determine whether item is Portable Model or Simulator Model."
-        )
+    model_type, error = col.get_item_type(extended_kim_id)
+    check_error(error, "kimpy.collections.Collections.get_item_type")
 
-    return item_type == "portableModel"
+    kimpy.collections.destroy(col)
+
+    return model_type == kimpy.collection_item_type.portableModel
 
 
 def _get_simulator_model_info(extended_kim_id):
