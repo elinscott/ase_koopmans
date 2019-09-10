@@ -8,6 +8,7 @@ University of Minnesota
 from __future__ import absolute_import, division, print_function
 from collections import defaultdict
 import numpy as np
+from .kim import check_error
 from .exceptions import KIMCalculatorError
 from ase.calculators.calculator import Calculator
 from ase.calculators.calculator import equal
@@ -748,11 +749,6 @@ def compute_virial_stress(forces, coords, volume):
     stress[5] = -np.dot(forces[:, 0], coords[:, 1]) / volume
 
     return stress
-
-
-def check_error(error, msg):
-    if error != 0 and error is not None:
-        raise KIMCalculatorError('Calling "{}" failed.\n'.format(msg))
 
 
 def report_error(msg):

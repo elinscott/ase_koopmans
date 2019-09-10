@@ -3,6 +3,7 @@ Knowledgebase of Interatomic Models (KIM) Calculator for ASE written by:
 
 Ellad B. Tadmor
 Mingjian Wen
+Daniel S. Karls
 University of Minnesota
 
 This calculator selects an appropriate calculator for a KIM model depending on
@@ -13,9 +14,11 @@ KIM Simulator Model. For more information on KIM, visit https://openkim.org.
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
+
 import re
 import os
 import subprocess
+
 from ase.data import atomic_masses, atomic_numbers
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.calculators.lammpsrun import LAMMPS
@@ -23,6 +26,7 @@ from ase.calculators.lammps import convert
 from .kimmodel import KIMModelCalculator
 from .exceptions import KIMCalculatorError
 
+import kimpy
 
 def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     """Calculator for interatomic models archived in the Open Knowledgebase
@@ -372,73 +376,67 @@ def _get_simulator_model_info(extended_kim_id):
     Retrieve Simulator Model metadata including its native simulator, supported species,
     and units
     """
-    # FIXME: This should be updated to use the appropriate bindings in kimpy
-    libexec_path = _get_kim_api_libexec_path()
-    kim_api_sm_util = os.path.join(libexec_path, "kim-api", "kim-api-simulator-model")
+    # Create a KIM API simulator Model object for this model
+    kim_simulator_model, error = kimpy.simulator_model.create(extended_kim_id)
+    check_error(error, "kimpy.simulator_model.create")
 
-    try:
-        sm_metadata = subprocess.check_output(
-            [kim_api_sm_util, extended_kim_id, "smspec-file", "data"],
-            universal_newlines=True,
-        )
-    except subprocess.CalledProcessError:
-        raise KIMCalculatorError(
-            "ERROR: Unable to call kim-api-collections-info util to "
-            "retrieve Simulator Model metadata."
-        )
+    # Retrieve simulator name (disregard simulator version)
+    simulator_name, _ = kim_simulator_model.get_simulator_name_and_version()
 
-    # Parse metadata for simulator-name
-    simulator_name = re.search(r"\"simulator-name\"\s+\"([A-Za-z0-9]+)\"", sm_metadata)
-    if simulator_name is None:
-        raise KIMCalculatorError(
-            "ERROR: Unable to determine simulator name of "
-            "item {}.".format(extended_kim_id)
-        )
-    else:
-        simulator_name = simulator_name.group(1)
-
-    # Parse metadata for species
-    supported_species = re.search(
-        r"\"supported-species\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata
-    )
-    if supported_species is None:
+    # Retrieve supported species
+    num_supported_species = kim_simulator_model.get_number_of_supported_species()
+    if num_supported_species == 0:
         raise KIMCalculatorError(
             "ERROR: Unable to determine supported species of "
-            "item {}.".format(extended_kim_id)
+            "simulator model {}.".format(extended_kim_id)
         )
-    else:
-        supported_species = supported_species.group(1).split()
 
-    # Parse metadata for units
-    supported_units = re.search(r"\"units\"\s+\"([A-Za-z0-9\s]+)\"", sm_metadata)
-    if supported_units is None:
+    supported_species = []
+    for spec_code in range(num_supported_species):
+        species, error = kim_simulator_model.get_supported_species(spec_code)
+        check_error(error, 'get_supported_species')
+        supported_species.append(species)
+
+    # Need to close template map to access simulator model metadata
+    kim_simulator_model.close_template_map()
+
+    # Retrieve simulator model metadata
+    sm_metadata_fields = {}
+    num_metadata_fields = kim_simulator_model.get_number_of_simulator_fields()
+    for field in range(num_metadata_fields):
+        extent, field_name, error = kim_simulator_model.get_simulator_field_metadata(field)
+        check_error(error, 'get_simulator_field_metadata')
+        sm_metadata_fields[field_name] = []
+        for ln in range(extent):
+            field_line, error = kim_simulator_model.get_simulator_field_line(field, ln)
+            check_error(error, "get_simulator_field_line")
+            sm_metadata_fields[field_name].append(field_line)
+
+    # Grab units from simulator model metadata
+    try:
+        supported_units = sm_metadata_fields['units']
+    except KeyError:
         raise KIMCalculatorError(
             "ERROR: Unable to determine supported units of "
-            "item {}.".format(extended_kim_id)
+            "simulator model {}.".format(extended_kim_id)
         )
-    else:
-        supported_units = supported_units.group(1)
 
-    # See if this SM has a 'model-init' listed in its metadata that contains an
-    # atom_style command.  This is specific to LAMMPS SMs and is only required for using
-    # the LAMMPSrun calculator because it uses lammps.inputwriter to create a data file).
-    # All other content in 'model-init', if it exists, can be discarded
-    model_init = re.search(
-        r"\"model-init\"\s+\[?\s*([\"A-Za-z0-9_\s\n]+)\s*\]?", sm_metadata
-    )
+    # See if a 'model-init' field that contains an "atom_style" command is listed in
+    # the simulator model metadata.  This is specific to LAMMPS SMs and is only required
+    # for using the LAMMPSrun calculator because it uses lammps.inputwriter to create a
+    # data file.  All other content in 'model-init', if it exists, is ignored
     atom_style = None
-    if model_init:
-        # Cast to a single line of double-quoted tokens
-        model_init = model_init.group(1).replace("\n", "")
-        # Now split this single line into each token
-        model_init_lines = re.findall(r"\"([A-Za-z0-9_\s-]+)\"", model_init)
-        for line in model_init_lines:
-            if "atom_style" in line:
-                atom_style = line.split()[1]
-    else:
+    try:
+        for ln in sm_metadata_fields['model-init']:
+            if ln.find("atom_style"):
+                atom_style = ln.split()[1]
+    except KeyError:
         pass
 
-    return simulator_name, supported_species, supported_units, atom_style
+    # Clean up KIM API Simulator Model object
+    kimpy.simulator_model.destroy(kim_simulator_model)
+
+    return simulator_name, tuple(supported_species), supported_units, atom_style
 
 
 def KIM_get_supported_species_list(extended_kim_id, simulator="kimmodel"):
@@ -511,6 +509,11 @@ def _get_params_for_LAMMPS_calculator(
         parameters["masses"].append(str(i + 1) + " " + massstr)
 
     return parameters
+
+
+def check_error(error, msg):
+    if error != 0 and error is not None:
+        raise KIMCalculatorError('Calling "{}" failed.\n'.format(msg))
 
 
 def _check_conflict_options(options, not_allowed_options, simulator):
