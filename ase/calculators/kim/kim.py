@@ -386,8 +386,8 @@ def _get_simulator_model_info(extended_kim_id):
 
     # Grab units from simulator model metadata
     try:
-        supported_units = sm_metadata_fields['units']
-    except KeyError:
+        supported_units = sm_metadata_fields['units'][0]
+    except (KeyError, IndexError):
         raise KIMCalculatorError(
             "ERROR: Unable to determine supported units of "
             "simulator model {}.".format(extended_kim_id)
