@@ -461,8 +461,10 @@ class InvalidULMFileError(IOError):
 
 
 class Reader:
-    def __init__(self, fd, index=0, data=None, little_endian=None):
+    def __init__(self, fd, index=0, data=None, _little_endian=None):
         """Create reader."""
+
+        self._little_endian = _little_endian
 
         if isinstance(fd, str):
             fd = Path(fd)
@@ -479,9 +481,6 @@ class Reader:
                 data = self._read_data(index)
             else:
                 data = {}
-            self._little_endian = data.pop('_little_endian', True)
-        else:
-            self._little_endian = little_endian
 
         self._parse_data(data)
 
@@ -505,7 +504,7 @@ class Reader:
                                           self._little_endian)
                 else:
                     value = Reader(self._fd, data=value,
-                                   little_endian=self._little_endian)
+                                   _little_endian=self._little_endian)
                 name = name[:-1]
 
             self._data[name] = value
@@ -569,6 +568,7 @@ class Reader:
         self._fd.seek(self._offsets[index])
         size = int(readints(self._fd, 1)[0])
         data = decode(self._fd.read(size).decode())
+        self._little_endian = data.pop('_little_endian', True)
         return data
 
     def __getitem__(self, index):
