@@ -107,7 +107,7 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
          'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
          'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
-         'hotbit', 'jacapo', 'KIM', 'lammpsrun',
+         'hotbit', 'jacapo', 'kim', 'lammpsrun',
          'lammpslib', 'lj', 'mopac', 'morse', 'nwchem', 'octopus', 'onetep',
          'openmx', 'siesta', 'tip3p', 'turbomole', 'vasp']
 
