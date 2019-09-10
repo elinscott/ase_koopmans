@@ -336,3 +336,16 @@ def distribute_cpus(size, comm):
     mycomm = comm.new_communicator(ranks)
 
     return mycomm, comm.size // size, tasks_rank
+
+
+class ParallelModuleWrapper:
+    def __getattr__(self, attr):
+        if attr == 'rank' or attr == 'size':
+            import warnings
+            warnings.warn('Deprecated: ase.parallel.{}'.format(attr),
+                          FutureWarning)
+        return getattr(_parallel, attr)
+
+
+_parallel = sys.modules['ase.parallel']
+sys.modules['ase.parallel'] = ParallelModuleWrapper()
