@@ -119,7 +119,7 @@ This is an axample of display bond order for molecule
 >>> high_bondorder_pairs = {}
 >>> high_bondorder_pairs[(0, 1)] = ((0, 0, 0), 2, (0.17, 0.17, 0)) #This define offset, bond order, and bond_offset of the bond between 0 and 1
 >>> bondpairs = set_high_bondorder_pairs( bondpairs, high_bondorder_pairs )
->>> write( 'C2H6.pov', C2H6, format = 'pov', run_povray = True, canvas_width = 500, radii = r, bondatoms = bondpairs, rotation = "90y" )
+>>> write( 'C2H6.pov', C2H6, format = 'pov', run_povray = True, canvas_width = 200, radii = r, bondatoms = bondpairs, rotation = "90y" )
 
 .. image:: C2H6.png
 
