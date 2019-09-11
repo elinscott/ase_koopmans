@@ -625,32 +625,17 @@ class NEBTools:
             barrier += self.images[0].get_potential_energy()
         return barrier, dE
 
+    def get_fmax(self, **kwargs):
+        """Returns fmax, as used by optimizers with NEB."""
+        neb = NEB(self.images, **kwargs)
+        forces = neb.get_forces()
+        return np.sqrt((forces**2).sum(axis=1).max())
+
     def plot_band(self, ax=None):
         """Plots the NEB band on matplotlib axes object 'ax'. If ax=None
         returns a new figure object."""
         ax = self.plot_band_from_fit(*self.get_fit(), ax=ax)
         return ax.figure
-
-    @staticmethod
-    def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
-        """Creates the standard NEB plot from the fit parameters."""
-        if ax is None:
-            from matplotlib import pyplot
-            ax = pyplot.gca()
-        ax.plot(s, E, 'o')
-        for x, y in lines:
-            ax.plot(x, y, '-g')
-        ax.plot(Sfit, Efit, 'k-')
-        ax.set_xlabel(r'path [$\AA$]')
-        ax.set_ylabel('energy [eV]')
-        Ef = max(Efit) - E[0]
-        Er = max(Efit) - E[-1]
-        dE = E[-1] - E[0]
-        ax.set_title('$E_\\mathrm{f} \\approx$ %.3f eV; '
-                     '$E_\\mathrm{r} \\approx$ %.3f eV; '
-                     '$\\Delta E$ = %.3f eV'
-                     % (Ef, Er, dE))
-        return ax
 
     def plot_bands(self, constant_x=False, constant_y=False,
                    nimages=None, label='nebplots'):
@@ -697,11 +682,26 @@ class NEBTools:
                 pyplot.close(fig)  # Reference counting "bug" in pyplot.
         sys.stdout.write('\n')
 
-    def get_fmax(self, **kwargs):
-        """Returns fmax, as used by optimizers with NEB."""
-        neb = NEB(self.images, **kwargs)
-        forces = neb.get_forces()
-        return np.sqrt((forces**2).sum(axis=1).max())
+    @staticmethod
+    def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
+        """Creates the standard NEB plot from the fit parameters."""
+        if ax is None:
+            from matplotlib import pyplot
+            ax = pyplot.gca()
+        ax.plot(s, E, 'o')
+        for x, y in lines:
+            ax.plot(x, y, '-g')
+        ax.plot(Sfit, Efit, 'k-')
+        ax.set_xlabel(r'path [$\AA$]')
+        ax.set_ylabel('energy [eV]')
+        Ef = max(Efit) - E[0]
+        Er = max(Efit) - E[-1]
+        dE = E[-1] - E[0]
+        ax.set_title('$E_\\mathrm{f} \\approx$ %.3f eV; '
+                     '$E_\\mathrm{r} \\approx$ %.3f eV; '
+                     '$\\Delta E$ = %.3f eV'
+                     % (Ef, Er, dE))
+        return ax
 
     def get_fit(self):
         """Returns the parameters for fitting images to band."""
