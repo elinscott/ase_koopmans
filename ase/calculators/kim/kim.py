@@ -172,11 +172,10 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     #######################################################
     # If we get to here, the model is a KIM Simulator Model
     #######################################################
-    simulator_name, supported_species, supported_units, atom_style = _get_simulator_model_info(
-        extended_kim_id
-    )
+    (simulator_name, supported_species, supported_units, model_defn,
+            atom_style) = _get_simulator_model_info( extended_kim_id)
 
-    # determine simulator
+    # Handle default behavior for 'simulator'
     if simulator is None:
         if simulator_name == "ASAP":
             simulator = "asap"
@@ -184,14 +183,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             simulator = "lammpslib"
 
     if simulator_name == "ASAP":
-        # Initialize KIM SM object
-        from kimpy import simulator_models as kimsm
 
-        ksm = kimsm.ksm_object(extended_kim_id=extended_kim_id)
-        param_filenames = ksm.get_model_param_filenames()
-
-        #  Get model definition from SM metadata
-        model_defn = ksm.get_model_defn_lines()
         if len(model_defn) == 0:
             raise KIMCalculatorError(
                 "model-defn is an empty list in metadata file of "
@@ -403,7 +395,8 @@ def _get_simulator_model_info(extended_kim_id):
     # Clean up KIM API Simulator Model object
     kimpy.simulator_model.destroy(kim_simulator_model)
 
-    return simulator_name, tuple(supported_species), supported_units, atom_style
+    return (simulator_name, tuple(supported_species), supported_units,
+            sm_metadata_fields['model-defn'], atom_style)
 
 
 def _get_kim_model_supported_species(extended_kim_id, simulator="kimmodel"):
