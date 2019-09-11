@@ -85,7 +85,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         "keep_alive",
     ]
     asap_kimmo_not_allowed_options = ["name", "verbose"]
-    asap_simmo_not_allowed_options = ["Params"]
+    asap_kimsm_not_allowed_options = ["Params"]
     if options is None:
         options = dict()
 
@@ -131,8 +131,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             parameters["pair_coeff"] = [
                 "* * " + " ".join(supported_species) + os.linesep
             ]
-            #parameters["model_init"] = []
-            #parameters["model_post"] = []
             parameters["masses"] = []
             for i, species in enumerate(supported_species):
                 if species not in atomic_numbers:
@@ -175,65 +173,13 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             simulator = "lammpslib"
 
     if simulator_name == "ASAP":
-
-        if len(model_defn) == 0:
-            raise KIMCalculatorError(
-                "model-defn is an empty list in metadata file of "
-                'Simulator Model "{}".'.format(extended_kim_id)
-            )
-        if "" in model_defn:
-            raise KIMCalculatorError(
-                "model-defn contains one or more empty strings in metadata "
-                'file of Simulator Model "{}".'.format(extended_kim_id)
-            )
-
-        try:
-            from asap3 import EMT, EMTMetalGlassParameters, EMTRasmussenParameters
-        except ImportError as e:
-            raise ImportError(str(e) + " You need to install asap3 first.")
-
         # check options
         _check_conflict_options(
-            options, asap_simmo_not_allowed_options, simulator
+            options, asap_kimsm_not_allowed_options, simulator
         )
 
-        # Verify units (ASAP models are expected to work with "ase" units)
-        if supported_units != "ase":
-            raise KIMCalculatorError(
-                'KIM Simulator Model units are "{}", but expected to '
-                'be "ase" for ASAP.'.format(supported_units)
-            )
-
-        # There should be only one model_defn line
-        if len(model_defn) != 1:
-            raise KIMCalculatorError(
-                "model-defn contains {} lines, but should only contain "
-                "one line for an ASAP model.".format(len(model_defn))
-            )
-
-        # Return calculator
-        if model_defn[0].lower().strip().startswith("emt"):
-            # pull out potential parameters
-            pp = ""
-            mobj = re.search(r"\(([A-Za-z0-9_\(\)]+)\)", model_defn[0])
-            if mobj is not None:
-                pp = mobj.group(1).strip().lower()
-            if pp == "":
-                calc = EMT()
-            elif pp.startswith("emtrasmussenparameters"):
-                calc = EMT(Params=EMTRasmussenParameters())
-            elif pp.startswith("emtmetalglassparameters"):
-                calc = EMT(Params=EMTMetalGlassParameters())
-            else:
-                raise KIMCalculatorError(
-                    'Unknown model "{}" for simulator ASAP.'.format(model_defn[0])
-                )
-
-        # Use undocumented feature for the EMT calculators to take the energy of an
-        # isolated atoms as zero. (Otherwise it is taken to be that of perfect FCC.)
-        calc.set_subtractE0(False)
-
-        return calc
+        return _asap_kimsm_calculator(extended_kim_id, model_defn,
+                supported_units, options)
 
     elif simulator_name == "LAMMPS":
 
@@ -395,6 +341,65 @@ def _get_kim_model_supported_species(extended_kim_id, simulator="kimmodel"):
 
     return supported_species
 
+
+def _asap_kimsm_calculator(extended_kim_id, model_defn, supported_units):
+
+    # Check model_defn to make sure there's only one element in it that is a non-empty
+    # string
+    if len(model_defn) == 0:
+        raise KIMCalculatorError(
+            "model-defn is an empty list in metadata file of Simulator Model {}"
+            "".format(extended_kim_id)
+        )
+    elif len(model_defn) > 1:
+        raise KIMCalculatorError(
+            "model-defn should contain only one entry for an ASAP model (found {} "
+            "lines)".format(len(model_defn))
+        )
+
+    if "" in model_defn:
+        raise KIMCalculatorError(
+            "model-defn contains an empty string in metadata file of Simulator Model {}"
+            "".format(extended_kim_id)
+        )
+
+    model_defn = model_defn[0].strip().lower()
+
+    try:
+        from asap3 import EMT, EMTMetalGlassParameters, EMTRasmussenParameters
+    except ImportError as e:
+        raise ImportError(str(e) + " You need to install asap3 first.")
+
+    # Verify units (ASAP models are expected to work with "ase" units)
+    if supported_units != "ase":
+        raise KIMCalculatorError(
+            'KIM Simulator Model units are "{}", but expected to '
+            'be "ase" for ASAP.'.format(supported_units)
+        )
+
+    # Return calculator
+    if model_defn.startswith("emt"):
+        # pull out potential parameters
+        mobj = re.search(r"\(([a-z0-9_\(\)]+)\)", model_defn)
+        if mobj is None:
+            calc = EMT()
+        else:
+            pp = mobj.group(1)
+
+            if pp.startswith("emtrasmussenparameters"):
+                calc = EMT(Params=EMTRasmussenParameters())
+            elif pp.startswith("emtmetalglassparameters"):
+                calc = EMT(Params=EMTMetalGlassParameters())
+            else:
+                raise KIMCalculatorError(
+                    'Unknown model "{}" for simulator ASAP.'.format(model_defn)
+                )
+
+    # Use undocumented feature for the EMT calculators to take the energy of an
+    # isolated atoms as zero. (Otherwise it is taken to be that of perfect FCC.)
+    calc.set_subtractE0(False)
+
+    return calc
 
 def _get_params_for_LAMMPS_calculator(
     extended_kim_id, supported_units, supported_species, atom_style
