@@ -102,13 +102,10 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             simulator = "kimmodel"
 
         if simulator == "kimmodel":
-            msg = _check_conflict_options(
+            _check_conflict_options(
                 options, kimmodel_not_allowed_options, simulator
             )
-            if msg is not None:
-                raise KIMCalculatorError(msg)
-            else:
-                return KIMModelCalculator(extended_kim_id, debug=debug, **options)
+            return KIMModelCalculator(extended_kim_id, debug=debug, **options)
 
         elif simulator == "asap":
             try:
@@ -116,21 +113,16 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             except ImportError as e:
                 raise ImportError(str(e) + " You need to install asap3 first.")
 
-            msg = _check_conflict_options(
+            _check_conflict_options(
                 options, asap_kimmo_not_allowed_options, simulator
             )
-            if msg is not None:
-                raise KIMCalculatorError(msg)
-            else:
-                return OpenKIMcalculator(name=extended_kim_id, verbose=debug, **options)
+            return OpenKIMcalculator(name=extended_kim_id, verbose=debug, **options)
 
         elif simulator == "lammpsrun":
 
-            msg = _check_conflict_options(
+            _check_conflict_options(
                 options, lammpsrun_not_allowed_options, simulator
             )
-            if msg is not None:
-                raise KIMCalculatorError(msg)
 
             supported_species = _get_kim_model_supported_species(extended_kim_id, simulator)
 
@@ -201,11 +193,9 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             raise ImportError(str(e) + " You need to install asap3 first.")
 
         # check options
-        msg = _check_conflict_options(
+        _check_conflict_options(
             options, asap_simmo_not_allowed_options, simulator
         )
-        if msg is not None:
-            raise KIMCalculatorError(msg)
 
         # Verify units (ASAP models are expected to work with "ase" units)
         if supported_units != "ase":
@@ -249,11 +239,9 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         if simulator == "lammpsrun":
             # check options
-            msg = _check_conflict_options(
+            _check_conflict_options(
                 options, lammpsrun_not_allowed_options, simulator
             )
-            if msg is not None:
-                raise KIMCalculatorError(msg)
 
             # Set up kim_init and kim_interactions lines
             parameters = _get_params_for_LAMMPS_calculator(
@@ -267,11 +255,9 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         elif simulator == "lammpslib":
             # check options
-            msg = _check_conflict_options(
+            _check_conflict_options(
                 options, lammpslib_not_allowed_options, simulator
             )
-            if msg is not None:
-                raise KIMCalculatorError(msg)
 
             # Set up LAMMPS header commands lookup table
 
@@ -320,10 +306,10 @@ def _is_portable_model(extended_kim_id):
     must be a KIM Simulator Model -- there are no other types of models in KIM)
     """
     col, error = kimpy.collections.create()
-    check_error(error, "kimpy.collections.create")
+    _check_error(error, "kimpy.collections.create")
 
     model_type, error = col.get_item_type(extended_kim_id)
-    check_error(error, "kimpy.collections.Collections.get_item_type")
+    _check_error(error, "kimpy.collections.Collections.get_item_type")
 
     kimpy.collections.destroy(col)
 
@@ -337,7 +323,7 @@ def _get_simulator_model_info(extended_kim_id):
     """
     # Create a KIM API simulator Model object for this model
     kim_simulator_model, error = kimpy.simulator_model.create(extended_kim_id)
-    check_error(error, "kimpy.simulator_model.create")
+    _check_error(error, "kimpy.simulator_model.create")
 
     # Retrieve simulator name (disregard simulator version)
     simulator_name, _ = kim_simulator_model.get_simulator_name_and_version()
@@ -353,7 +339,7 @@ def _get_simulator_model_info(extended_kim_id):
     supported_species = []
     for spec_code in range(num_supported_species):
         species, error = kim_simulator_model.get_supported_species(spec_code)
-        check_error(error, 'get_supported_species')
+        _check_error(error, 'get_supported_species')
         supported_species.append(species)
 
     # Need to close template map to access simulator model metadata
@@ -364,11 +350,11 @@ def _get_simulator_model_info(extended_kim_id):
     num_metadata_fields = kim_simulator_model.get_number_of_simulator_fields()
     for field in range(num_metadata_fields):
         extent, field_name, error = kim_simulator_model.get_simulator_field_metadata(field)
-        check_error(error, 'get_simulator_field_metadata')
+        _check_error(error, 'get_simulator_field_metadata')
         sm_metadata_fields[field_name] = []
         for ln in range(extent):
             field_line, error = kim_simulator_model.get_simulator_field_line(field, ln)
-            check_error(error, "get_simulator_field_line")
+            _check_error(error, "get_simulator_field_line")
             sm_metadata_fields[field_name].append(field_line)
 
     # Grab units from simulator model metadata
@@ -453,7 +439,7 @@ def _get_params_for_LAMMPS_calculator(
     return parameters
 
 
-def check_error(error, msg):
+def _check_error(error, msg):
     if error != 0 and error is not None:
         raise KIMCalculatorError('Calling "{}" failed.'.format(msg))
 
@@ -463,12 +449,12 @@ def _check_conflict_options(options, not_allowed_options, simulator):
     s1 = set(options)
     s2 = set(not_allowed_options)
     common = s1.intersection(s2)
+
     if common:
-        msg1 = 'Simulator "{}" does not support argument(s): '.format(simulator)
-        msg2 = ", ".join(['"{}"'.format(s) for s in common])
-        msg3 = ' provided in "options", because it is (they are) determined '
-        msg4 = "internally within the KIM calculator."
-        return msg1 + msg2 + msg3 + msg4
-    else:
-        msg = None
-    return msg
+        options_in_not_allowed = ", ".join(['"{}"'.format(s) for s in common])
+
+        msg = 'Simulator "{}" does not support argument(s): {} provided in "options", '
+              'because it is (they are) determined internally within the KIM '
+              'calculator'.format(simulator, options_in_not_allowed)
+
+        raise KIMCalculatorError(msg)
