@@ -5,14 +5,13 @@ from math import sqrt
 
 import numpy as np
 
-import ase.parallel as mpi
+import ase.parallel
 from ase.build import minimize_rotation_and_translation
 from ase.calculators.calculator import Calculator
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io import read
 from ase.optimize import MDMin
 from ase.geometry import find_mic
-from ase.utils import basestring
 from ase.io.trajectory import TrajectoryReader, Trajectory, SlicedTrajectory
 from ase.gui.images import Images as GUI_Images
 from ase.utils import deprecated
@@ -80,10 +79,10 @@ class NEB:
         for img in images:
             if len(img) != self.natoms:
                 raise ValueError('Images have different numbers of atoms')
-            if (images[0].pbc != img.pbc).any():
+            if (img.pbc != images[0].pbc).any():
                 raise ValueError('Images have different boundary conditions')
-            if (images[0].get_atomic_numbers() !=
-                    img.get_atomic_numbers()).any():
+            if (img.get_atomic_numbers() != images[0].get_atomic_numbers()
+                    ).any():
                 raise ValueError('Images have atoms in different orders')
         self.nimages = len(images)
         self.emax = np.nan
@@ -107,7 +106,7 @@ class NEB:
         self.k = list(k)
 
         if world is None:
-            world = mpi.world
+            world = ase.parallel.world
         self.world = world
 
         if parallel:
@@ -121,7 +120,7 @@ class NEB:
         initial state (image 0) and final state (image -1).
 
         method: str
-            Method by which to interpolater: 'linear' or 'idpp'.
+            Method by which to interpolate: 'linear' or 'idpp'.
             linear provides a standard straight-line interpolation, while
             idpp uses an image-dependent pair potential.
         mic: bool
@@ -434,7 +433,7 @@ class IDPP(Calculator):
 
 class SingleCalculatorNEB(NEB):
     def __init__(self, images, k=0.1, climb=False):
-        if isinstance(images, basestring):
+        if isinstance(images, str):
             # this is a filename
             images = read(images)
 
@@ -686,6 +685,7 @@ class NEBTools:
     @staticmethod
     def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
         """Creates the standard NEB plot from the fit parameters."""
+        # This is a static method for compatibility with ase.gui.pipe.
         if ax is None:
             from matplotlib import pyplot
             ax = pyplot.gca()
@@ -782,10 +782,9 @@ class NEBTools:
                 nimages = index  # Normal
                 break
         if nimages is None:
-            # Appears to be only a single band; no repetition.
             sys.stdout.write('Appears to be only one band in the images.\n')
             return len(self.images)
-        # Sanity check that the last lines up too.
+        # Sanity check that the energies of the last images line up too.
         e_last = self.images[nimages - 1].get_potential_energy()
         e_nextlast = self.images[2 * nimages - 1].get_potential_energy()
         if not (e_last == e_nextlast):
@@ -793,17 +792,6 @@ class NEBTools:
         sys.stdout.write('Number of images per band guessed to be {:d}.\n'
                          .format(nimages))
         return nimages
-
-
-class NEBtools(NEBTools):
-    @deprecated('NEBtools has been renamed; please use NEBTools.')
-    def __init__(self, images):
-        NEBTools.__init__(self, images)
-
-
-@deprecated('Please use NEBTools.plot_band_from_fit.')
-def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
-    NEBTools.plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None)
 
 
 class Images:
@@ -833,7 +821,7 @@ class Images:
             self.type = 'list-of-images'
             self.images = images
         elif isinstance(images, list):
-            # FIXME: Below is mostly redundant. Should this circle back?
+            # XXX: Below is mostly redundant. Should this circle back?
             if hasattr(images[0], 'calc'):
                 self.type = 'list-of-images'
                 self.images = images
@@ -869,3 +857,14 @@ class Images:
             return self.images[traj_no][image_no]
         else:
             raise NotImplementedError()
+
+
+class NEBtools(NEBTools):
+    @deprecated('NEBtools has been renamed; please use NEBTools.')
+    def __init__(self, images):
+        NEBTools.__init__(self, images)
+
+
+@deprecated('Please use NEBTools.plot_band_from_fit.')
+def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
+    NEBTools.plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None)
