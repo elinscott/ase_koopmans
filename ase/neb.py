@@ -133,34 +133,14 @@ class NEB:
         interpolate(self.images, mic)
 
         if method == 'idpp':
-            self.idpp_interpolate(traj=None, log=None, mic=mic)
+            idpp_interpolate(images=self, traj=None, log=None, mic=mic)
 
+    @deprecated("Please use NEB's interpolate(method='idpp') method or "
+                "directly call the idpp_interpolate function from ase.neb")
     def idpp_interpolate(self, traj='idpp.traj', log='idpp.log', fmax=0.1,
                          optimizer=MDMin, mic=False, steps=100):
-        #FIXME: Can this be moved to a separate function like interpolate?
-        # Note it relies on calling the optimizer on self, so we would need
-        # a way to set up a NEB within that function, or pass the current
-        # neb instance. That might be more complicated than it is worth.
-        d1 = self.images[0].get_all_distances(mic=mic)
-        d2 = self.images[-1].get_all_distances(mic=mic)
-        d = (d2 - d1) / (self.nimages - 1)
-        old = []
-        for i, image in enumerate(self.images):
-            old.append(image.calc)
-            image.calc = IDPP(d1 + i * d, mic=mic)
-        opt = optimizer(self, trajectory=traj, logfile=log)
-        # BFGS was originally used by the paper, but testing shows that
-        # MDMin results in nearly the same results in 3-4 orders of magnitude
-        # less time. Known working optimizers = BFGS, MDMin, FIRE, HessLBFGS
-        # Internal testing shows BFGS is only needed in situations where MDMIN
-        # cannot converge easily and tends to be obvious on inspection.
-        #
-        # askhl: 3-4 orders of magnitude difference cannot possibly be
-        # true unless something is actually broken.  Should it not be
-        # "3-4 times"?
-        opt.run(fmax=fmax, steps=steps)
-        for image, calc in zip(self.images, old):
-            image.calc = calc
+        idpp_interpolate(self, traj=traj, log=log, fmax=fmax,
+                         optimizer=optimizer, mic=mic, steps=steps)
 
     def get_positions(self):
         positions = np.empty(((self.nimages - 2) * self.natoms, 3))
@@ -197,7 +177,7 @@ class NEB:
         n = self.natoms
         f_i = self.get_forces()
         fmax_images = []
-        for i in range(self.nimages-2):
+        for i in range(self.nimages - 2):
             n1 = n * i
             n2 = n + n * i
             fmax_images.append(np.sqrt((f_i[n1:n2]**2).sum(axis=1)).max())
@@ -598,6 +578,27 @@ def interpolate(images, mic=False):
     d /= (len(images) - 1.0)
     for i in range(1, len(images) - 1):
         images[i].set_positions(pos1 + i * d)
+
+
+def idpp_interpolate(images, traj='idpp.traj', log='idpp.log', fmax=0.1,
+                     optimizer=MDMin, mic=False, steps=100):
+    """Interpolate using the IDPP method. 'images' can either be a plain
+    list of images or an NEB object (containing a list of images)."""
+    if hasattr(images, 'interpolate'):
+        neb = images
+    else:
+        neb = NEB(images)
+    d1 = neb.images[0].get_all_distances(mic=mic)
+    d2 = neb.images[-1].get_all_distances(mic=mic)
+    d = (d2 - d1) / (neb.nimages - 1)
+    real_calcs = []
+    for i, image in enumerate(neb.images):
+        real_calcs.append(image.calc)
+        image.calc = IDPP(d1 + i * d, mic=mic)
+    opt = optimizer(neb, trajectory=traj, logfile=log)
+    opt.run(fmax=fmax, steps=steps)
+    for image, calc in zip(neb.images, real_calcs):
+        image.calc = calc
 
 
 class NEBTools:

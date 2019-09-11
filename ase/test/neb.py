@@ -22,13 +22,13 @@ initial = Atoms('H7',
                            (0.5, 0.5, 1)],
                 constraint=[FixAtoms(range(6))],
                 calculator=calc())
-dyn = QuasiNewton(initial, trajectory='initial.traj', logfile='initial.log')
+dyn = QuasiNewton(initial)
 dyn.run(fmax=0.01)
 
 final = initial.copy()
 final.set_calculator(calc())
 final.positions[6, 1] = 2 - initial.positions[6, 1]
-dyn = QuasiNewton(final, trajectory='final.traj', logfile='final.log')
+dyn = QuasiNewton(final)
 dyn.run(fmax=0.01)
 
 # Run NEB without climbing image.
@@ -44,7 +44,7 @@ images += [final]
 neb = NEB(images)
 neb.interpolate()
 
-dyn = BFGS(neb, trajectory='mep.traj', logfile='mep.log')
+dyn = BFGS(neb)
 dyn.run(fmax=fmax)
 
 # Plot many bands:

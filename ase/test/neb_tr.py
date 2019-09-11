@@ -1,6 +1,6 @@
 from ase.calculators.lj import LennardJones
 from ase.optimize import FIRE, BFGS
-from ase.neb import NEB, NEBTools
+from ase.neb import NEB, NEBTools, idpp_interpolate
 from ase import Atoms
 
 nimages = 3
@@ -43,7 +43,7 @@ for remove_rotation_and_translation in [True, False]:
     neb.interpolate()
     # Test used these old defaults which are not optimial, but work
     # in this particular system
-    neb.idpp_interpolate(fmax=0.1, optimizer=BFGS)
+    idpp_interpolate(neb, fmax=0.1, optimizer=BFGS)
 
     qn = FIRE(neb, dt=0.005, maxmove=0.05, dtmax=0.1)
     qn.run(steps=20)
