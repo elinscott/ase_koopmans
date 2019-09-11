@@ -453,8 +453,8 @@ def _check_conflict_options(options, not_allowed_options, simulator):
     if common:
         options_in_not_allowed = ", ".join(['"{}"'.format(s) for s in common])
 
-        msg = 'Simulator "{}" does not support argument(s): {} provided in "options", '
+        msg = ('Simulator "{}" does not support argument(s): {} provided in "options", '
               'because it is (they are) determined internally within the KIM '
-              'calculator'.format(simulator, options_in_not_allowed)
+              'calculator'.format(simulator, options_in_not_allowed))
 
         raise KIMCalculatorError(msg)
