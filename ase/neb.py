@@ -137,6 +137,10 @@ class NEB:
 
     def idpp_interpolate(self, traj='idpp.traj', log='idpp.log', fmax=0.1,
                          optimizer=MDMin, mic=False, steps=100):
+        #FIXME: Can this be moved to a separate function like interpolate?
+        # Note it relies on calling the optimizer on self, so we would need
+        # a way to set up a NEB within that function, or pass the current
+        # neb instance. That might be more complicated than it is worth.
         d1 = self.images[0].get_all_distances(mic=mic)
         d2 = self.images[-1].get_all_distances(mic=mic)
         d = (d2 - d1) / (self.nimages - 1)

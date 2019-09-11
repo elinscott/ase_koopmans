@@ -250,6 +250,18 @@ A class exists to help in automating the analysis of NEB jobs. See the
 .. autoclass:: NEBTools
    :members:
 
+.. highlight:: bash
+
+You can also make NEB plots that show the relaxation of your trajectory
+directly from the command line; this will output the plots into a single PDF::
+
+    $ ase nebplot neb.traj
+
+You can find more help with::
+
+    $ ase nebplot -h
+
+.. highlight:: python
 
 AutoNEB
 =======
