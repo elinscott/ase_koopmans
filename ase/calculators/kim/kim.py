@@ -6,9 +6,9 @@ Mingjian Wen
 Daniel S. Karls
 University of Minnesota
 
-This calculator selects an appropriate calculator for a KIM model depending on
-whether it supports the KIM application programming interface (API) or is a
-KIM Simulator Model. For more information on KIM, visit https://openkim.org.
+This calculator functions as a wrapper that selects an appropriate calculator for a
+given KIM model depending on whether it supports the KIM application programming
+interface (API) or not. For more information on KIM, visit https://openkim.org.
 """
 
 from __future__ import absolute_import
@@ -41,8 +41,8 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     simulator: string (optional)
         Name of the simulator to be used. This is the name of the ASE calculator
         that will be used to run the KIM interatomic model. Supported simulators
-        include ``kimmodel``, ``lammpslib``, ``lammpsrun`` and ``asap3``.
-        If ``None``, simulator is determined automatically based on
+        include ``kimmodel``, ``lammpslib``, ``lammpsrun`` and ``asap``.  If
+        ``None``, simulator is determined automatically based on
         ``extended_kim_id``.
 
     options: dictionary (optional)
@@ -51,10 +51,10 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         options = {'neigh_skin_ratio': 0.2, 'release_GIL': False}
 
-        where ``neigh_skin_ratio`` provides the skin (in percentage of cutoff)
-        used to determine the neighbor list, and ``release_GIL`` determines
-        whether to release the python GIL, which allows a KIM model to be run
-        with multiple threads.
+        where ``neigh_skin_ratio`` provides the skin (as a factor of the model
+        cutoff) used to determine the neighbor list, and ``release_GIL``
+        determines whether to release the python GIL, which allows a KIM model
+        to be run with multiple threads.
 
         See the LAMMPS calculators doc page
         https://wiki.fysik.dtu.dk/ase/ase/calculators/lammps.html
@@ -84,20 +84,14 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         "log_file",
         "keep_alive",
     ]
-    asap_kimmo_not_allowed_options = ["name", "verbose"]
+    asap_kimpm_not_allowed_options = ["name", "verbose"]
     asap_kimsm_not_allowed_options = ["Params"]
     if options is None:
         options = dict()
 
-    # Determine whether this is a standard KIM Portable Model or a KIM Simulator Model
-    # and retrieve its supported species.  If it is a Simulator Model, also get the name
-    # of its simulator and its units from its metadata
-    this_is_a_KIM_MO = _is_portable_model(extended_kim_id)
-
     # If this is a KIM Portable Model (supports KIM API), return support through
     # a KIM-compliant simulator
-    if this_is_a_KIM_MO:
-
+    if _is_portable_model(extended_kim_id):
         if simulator is None:  # Default
             simulator = "kimmodel"
 
@@ -114,7 +108,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 raise ImportError(str(e) + " You need to install asap3 first.")
 
             _check_conflict_options(
-                options, asap_kimmo_not_allowed_options, simulator
+                options, asap_kimpm_not_allowed_options, simulator
             )
             return OpenKIMcalculator(name=extended_kim_id, verbose=debug, **options)
 
@@ -124,7 +118,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 options, lammpsrun_not_allowed_options, simulator
             )
 
-            supported_species = _get_kim_model_supported_species(extended_kim_id, simulator)
+            supported_species = _get_kim_pm_supported_species(extended_kim_id)
 
             parameters = {}
             parameters["pair_style"] = "kim " + extended_kim_id.strip() + os.linesep
@@ -150,11 +144,12 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         elif simulator == "lammpslib":
             raise KIMCalculatorError(
-                '"lammpslib" does not support KIM model. try "lammpsrun".'
+                '"lammpslib" calculator does not support KIM Portable Model. Try '
+                'using the "lammpsrun" calculator.'
             )
         else:
             raise KIMCalculatorError(
-                'Unsupported simulator "{}" requested to run KIM Models.'.format(
+                'Unsupported simulator "{}" requested to run KIM Portable Model.'.format(
                     simulator
                 )
             )
@@ -331,12 +326,12 @@ def _get_simulator_model_info(extended_kim_id):
             sm_metadata_fields['model-defn'], atom_style)
 
 
-def _get_kim_model_supported_species(extended_kim_id, simulator="kimmodel"):
+def _get_kim_pm_supported_species(extended_kim_id):
     """
     Gets species supported by either a KIM Portable Model or a KIM Simulator Model
     """
     calc = KIMModelCalculator(extended_kim_id)
-    supported_species = list(calc.get_kim_model_supported_species())
+    supported_species = list(calc.get_kim_pm_supported_species())
     calc.__del__()
 
     return supported_species
