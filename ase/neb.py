@@ -798,12 +798,16 @@ class Images:
     """Container to give a unified internal interface to any list of atoms
     objects. The input images can look like any of the following:
 
+         image1
          [image1, image2, ...]
-         'trajectory.traj'
-         ase.io.TrajectoryReader (same as first)?
+         traj1
+         [traj1, traj2]
+         'traj1.traj'
          ['traj1.traj', 'traj2.traj', ...]
-         atoms1
          ['traj1.traj@:10', 'traj2.traj@-30:', ...]
+
+    where `imageX` is an ase.Atoms instance, `trajX` is an ase.io.Trajectory
+    instance, and 'trajX.traj' is the filename of an ASE trajectory.
     """
 
     def __init__(self, images):
