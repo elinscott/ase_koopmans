@@ -333,6 +333,7 @@ class ParallelModuleWrapper:
                           'Please use ase.parallel.world.{name} instead.'
                           .format(name=name),
                           FutureWarning)
+            return getattr(world, name)
         return getattr(_parallel, name)
 
 
