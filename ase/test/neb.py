@@ -44,7 +44,7 @@ images += [final]
 neb = NEB(images)
 neb.interpolate()
 
-dyn = BFGS(neb)
+dyn = BFGS(neb, trajectory='mep.traj')
 dyn.run(fmax=fmax)
 
 # Plot many bands:
