@@ -24,7 +24,7 @@ for image in images:
    
 images.append(final)
 
-# Run IDPP interpolation
+# Run linear interpolation
 neb = NEB(images)
 neb.interpolate()
 

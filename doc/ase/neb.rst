@@ -82,11 +82,12 @@ Interpolation
    From a linear interpolation, create an improved path
    from initial to final state using the IDPP approach [4].
 
-.. method:: NEB.idpp_interpolate()
+.. function:: idpp_interpolate()
 
    Generate an idpp pathway from a set of images. This differs
-   from above in that an initial guess for the IDPP, other than
-   linear interpolation can be provided.
+   from above in that more IDPP-specific parameters can be specified,
+   and an initial guess for the IDPP other than linear interpolation
+   can be provided.
 
 Only the internal images (not the endpoints) need have
 calculators attached.
