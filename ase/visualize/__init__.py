@@ -26,7 +26,7 @@ def _pipe_to_gui(atoms, repeat, block):
 
 def view(atoms, data=None, viewer='ase', repeat=None, block=False):
     # Ignore for parallel calculations:
-    if parallel.size != 1:
+    if parallel.world.size != 1:
         return
 
     vwr = viewer.lower()

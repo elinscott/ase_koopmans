@@ -29,6 +29,7 @@ Git master branch
   element according to most common isotope as stored in
   ``ase.data.atomic_masses_common``.
 
+* Added :class:`~ase.calculators.psi4.Psi4` calculator.
 
 Version 3.18.0
 ==============
