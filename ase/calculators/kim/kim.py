@@ -101,8 +101,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         if simulator is None:  # Default
             simulator = "kimmodel"
 
-        supported_species = KIM_get_supported_species_list(extended_kim_id, simulator)
-
         if simulator == "kimmodel":
             msg = _check_conflict_options(
                 options, kimmodel_not_allowed_options, simulator
@@ -134,14 +132,15 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             if msg is not None:
                 raise KIMCalculatorError(msg)
 
-            param_filenames = []  # no parameter files to pass
+            supported_species = _get_kim_model_supported_species(extended_kim_id, simulator)
+
             parameters = {}
             parameters["pair_style"] = "kim " + extended_kim_id.strip() + os.linesep
             parameters["pair_coeff"] = [
                 "* * " + " ".join(supported_species) + os.linesep
             ]
-            parameters["model_init"] = []
-            parameters["model_post"] = []
+            #parameters["model_init"] = []
+            #parameters["model_post"] = []
             parameters["masses"] = []
             for i, species in enumerate(supported_species):
                 if species not in atomic_numbers:
@@ -154,7 +153,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             # Return LAMMPS calculator
             return LAMMPS(
                 **parameters,
-                files=param_filenames,
+                files=[],
                 specorder=supported_species,
                 keep_tmp_files=debug
             )
@@ -231,7 +230,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             )
 
         # Return calculator
-        unknown_potential = False
         if model_defn[0].lower().strip().startswith("emt"):
             # pull out potential parameters
             pp = ""
@@ -245,18 +243,15 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             elif pp.startswith("emtmetalglassparameters"):
                 calc = EMT(Params=EMTMetalGlassParameters())
             else:
-                unknown_potential = True
+                raise KIMCalculatorError(
+                    'Unknown model "{}" for simulator ASAP.'.format(model_defn[0])
+                )
 
-        if unknown_potential:
-            raise KIMCalculatorError(
-                'Unknown model "{}" for simulator ASAP.'.format(model_defn[0])
-            )
-        else:
-            calc.set_subtractE0(False)  # Use undocumented feature for the EMT
-            # calculators to take the energy of an
-            # isolated atoms as zero. (Otherwise it
-            # is taken to be that of perfect FCC.)
-            return calc
+        # Use undocumented feature for the EMT calculators to take the energy of an
+        # isolated atoms as zero. (Otherwise it is taken to be that of perfect FCC.)
+        calc.set_subtractE0(False)
+
+        return calc
 
     elif simulator_name == "LAMMPS":
 
@@ -291,12 +286,12 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             # This units command actually has no effect, but is necessary because
             # LAMMPSlib looks in the header lines for units in order to set them
             # internally
-            model_init = ["units " + supported_units + "\n"]
+            model_init = ["units " + supported_units + os.linesep]
 
             model_init.append(
-                "kim_init {} {}\n".format(extended_kim_id, supported_units)
+                "kim_init {} {}{}".format(extended_kim_id, supported_units, os.linesep)
             )
-            model_init.append("atom_modify map array sort 0 0\n")
+            model_init.append("atom_modify map array sort 0 0"+os.linesep)
 
             # Assign atom types to species
             atom_types = {}
@@ -411,31 +406,13 @@ def _get_simulator_model_info(extended_kim_id):
     return simulator_name, tuple(supported_species), supported_units, atom_style
 
 
-def KIM_get_supported_species_list(extended_kim_id, simulator="kimmodel"):
+def _get_kim_model_supported_species(extended_kim_id, simulator="kimmodel"):
     """
     Gets species supported by either a KIM Portable Model or a KIM Simulator Model
     """
-    this_is_a_KIM_MO = _is_portable_model(extended_kim_id)
-
-    if this_is_a_KIM_MO:
-
-        if simulator in ["kimmodel", "lammpsrun"]:
-            calc = KIMModelCalculator(extended_kim_id)
-            supported_species = list(calc.get_kim_model_supported_species())
-            calc.__del__()
-
-        elif simulator == "asap":
-            from asap3 import OpenKIMcalculator
-
-            calc = OpenKIMcalculator(extended_kim_id)
-            supported_species = list(calc.get_supported_elements())
-            if hasattr(calc, "__del__"):
-                calc.__del__()
-
-        return supported_species
-
-    else:
-        _, supported_species, _, _ = _get_simulator_model_info(extended_kim_id)
+    calc = KIMModelCalculator(extended_kim_id)
+    supported_species = list(calc.get_kim_model_supported_species())
+    calc.__del__()
 
     return supported_species
 
@@ -460,11 +437,11 @@ def _get_params_for_LAMMPS_calculator(
     parameters["units"] = supported_units
 
     parameters["model_init"] = [
-        "kim_init {} {}\n".format(extended_kim_id, supported_units)
+        "kim_init {} {}{}".format(extended_kim_id, supported_units, os.linesep)
     ]
 
-    parameters["kim_interactions"] = "kim_interactions {}\n".format(
-        (" ").join(supported_species)
+    parameters["kim_interactions"] = "kim_interactions {}{}".format(
+        (" ").join(supported_species, os.linesep)
     )
 
     # For every species in "supported_species", add an entry to the
@@ -485,7 +462,7 @@ def _get_params_for_LAMMPS_calculator(
 
 def check_error(error, msg):
     if error != 0 and error is not None:
-        raise KIMCalculatorError('Calling "{}" failed.\n'.format(msg))
+        raise KIMCalculatorError('Calling "{}" failed.'.format(msg))
 
 
 def _check_conflict_options(options, not_allowed_options, simulator):

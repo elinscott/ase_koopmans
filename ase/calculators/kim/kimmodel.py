@@ -754,7 +754,7 @@ def compute_virial_stress(forces, coords, volume):
 
 def check_error(error, msg):
     if error != 0 and error is not None:
-        raise KIMCalculatorError('Calling "{}" failed.\n'.format(msg))
+        raise KIMCalculatorError('Calling "{}" failed.'.format(msg))
 
 
 def report_error(msg):
