@@ -762,18 +762,27 @@ class NEBTools:
     def _guess_nimages(self):
         """Attempts to guess the number of images per band from
         a trajectory, based solely on the repetition of the
-        potential energy of images. This might fail for symmetric
+        potential energy of images. This should also work for symmetric
         cases."""
         e_first = self.images[0].get_potential_energy()
         nimages = None
         for index, image in enumerate(self.images[1:], start=1):
             e = image.get_potential_energy()
             if e == e_first:
-                nimages = index
+                # Need to check for symmetric case when e_first = e_last.
+                try:
+                    e_next = self.images[index + 1].get_potential_energy()
+                except IndexError:
+                    pass
+                else:
+                    if e_next == e_first:
+                        nimages = index + 1  # Symmetric
+                        break
+                nimages = index  # Normal
                 break
         if nimages is None:
             # Appears to be only a single band; no repetition.
-            sys.stdout.write('Appears to be only one band in the images.')
+            sys.stdout.write('Appears to be only one band in the images.\n')
             return len(self.images)
         # Sanity check that the last lines up too.
         e_last = self.images[nimages - 1].get_potential_energy()
