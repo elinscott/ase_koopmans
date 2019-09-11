@@ -503,7 +503,7 @@ class GUI(View, Status):
               M(_('Render scene ...'), self.render_window),
               M(_('_Move atoms'), self.toggle_move_mode, 'Ctrl+M'),
               M(_('_Rotate atoms'), self.toggle_rotate_mode, 'Ctrl+R'),
-              M(_('NE_B'), self.neb),
+              M(_('NE_B plot'), self.neb),
               M(_('B_ulk Modulus'), self.bulk_modulus),
               M(_('Reciprocal space ...'), self.reciprocal)]),
 
