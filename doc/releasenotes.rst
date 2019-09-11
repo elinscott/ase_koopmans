@@ -21,6 +21,14 @@ Git master branch
   thereby using approximately a factor of two less space when storing numbers
   of `np.float64`.
 
+* The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
+  been deprecated.  Use ``world.rank`` and ``world.size`` instead
+  (and ``from ase.parallel import world``).
+
+* ``atoms.set_masses('most_common')`` now sets the masses of each
+  element according to most common isotope as stored in
+  ``ase.data.atomic_masses_common``.
+
 
 Version 3.18.0
 ==============
