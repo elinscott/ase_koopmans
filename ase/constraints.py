@@ -1215,27 +1215,26 @@ class FixParametricRelations(FixConstraint):
             if np.all(np.abs(a_vec) < self.eps) or np.abs(b) > self.eps:
                 exp += fmt_str.format(b)
             param_exp = ""
-
             for param_index, a_val in enumerate(a_vec):
-                if a_val < self.eps:
+                abs_a_val = np.abs(a_val)
+                if abs_a_val < self.eps:
                     continue
 
                 param = self.params[param_index]
-
                 if param_exp or exp:
                     if a_val > -1.0*self.eps:
                         param_exp += " + "
                     else:
                         param_exp += " - "
                 elif (not exp) and (not param_exp) and (a_val < -1.0*self.eps):
-                        param_exp += "-"
+                    param_exp += "-"
 
-                if np.abs(a_val-1.0) <= self.eps:
+                if np.abs(abs_a_val-1.0) <= self.eps:
                     param_exp += "{:s}".format(param)
-                elif np.abs(a_val-round(a_val)) <= self.eps and a_val > self.eps:
-                    param_exp += "{:d}.0*{:s}".format(int(round(a_val)), param)
+                elif np.abs(abs_a_val-round(abs_a_val)) <= self.eps and abs_a_val > self.eps:
+                    param_exp += "{:d}.0*{:s}".format(int(round(abs_a_val)), param)
                 else:
-                    param_exp += (fmt_str + "*{:s}").format(a_val, param)
+                    param_exp += (fmt_str + "*{:s}").format(abs_a_val, param)
 
             exp += param_exp
 
