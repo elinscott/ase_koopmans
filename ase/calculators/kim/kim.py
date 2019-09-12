@@ -28,7 +28,6 @@ from .exceptions import KIMCalculatorError
 
 try:
     import kimpy
-    from kimpy import neighlist as nl
 except ImportError:
     raise RuntimeError("kimpy not found; KIM calculator will not work")
 
