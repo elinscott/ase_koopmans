@@ -249,11 +249,11 @@ def _is_portable_model(extended_kim_id):
     Returns True if the model specified is a KIM Portable Model (if it is not, then it
     must be a KIM Simulator Model -- there are no other types of models in KIM)
     """
-    col = _call_kimpy_func(kimpy.collections.create, True)
+    col = check_call(kimpy.collections.create)
 
-    model_type = _call_kimpy_func(col.get_item_type, True, extended_kim_id)
+    model_type = check_call(col.get_item_type, extended_kim_id)
 
-    _call_kimpy_func(kimpy.collections.destroy, False, col)
+    kimpy.collections.destroy(col)
 
     return model_type == kimpy.collection_item_type.portableModel
 
@@ -264,7 +264,7 @@ def _get_simulator_model_info(extended_kim_id):
     and units
     """
     # Create a KIM API simulator Model object for this model
-    kim_simulator_model = _call_kimpy_func(kimpy.simulator_model.create, True, extended_kim_id)
+    kim_simulator_model = check_call(kimpy.simulator_model.create, extended_kim_id)
 
     # Retrieve simulator name (disregard simulator version)
     simulator_name, _ = kim_simulator_model.get_simulator_name_and_version()
@@ -279,7 +279,7 @@ def _get_simulator_model_info(extended_kim_id):
 
     supported_species = []
     for spec_code in range(num_supported_species):
-        species = _call_kimpy_func(kim_simulator_model.get_supported_species, True, spec_code)
+        species = check_call(kim_simulator_model.get_supported_species, spec_code)
         supported_species.append(species)
 
     # Need to close template map to access simulator model metadata
@@ -289,11 +289,11 @@ def _get_simulator_model_info(extended_kim_id):
     sm_metadata_fields = {}
     num_metadata_fields = kim_simulator_model.get_number_of_simulator_fields()
     for field in range(num_metadata_fields):
-        extent, field_name = _call_kimpy_func(kim_simulator_model.get_simulator_field_metadata, True, field)
+        extent, field_name = check_call(kim_simulator_model.get_simulator_field_metadata, field)
         sm_metadata_fields[field_name] = []
         for ln in range(extent):
-            field_line = _call_kimpy_func(kim_simulator_model.get_simulator_field_line,
-                    True, field, ln)
+            field_line = check_call(kim_simulator_model.get_simulator_field_line,
+                    field, ln)
             sm_metadata_fields[field_name].append(field_line)
 
     # Grab units from simulator model metadata
@@ -442,25 +442,29 @@ def _check_error(error, msg):
         raise KIMCalculatorError('Calling "{}" failed.'.format(msg))
 
 
-def _call_kimpy_func(f, returns_error_code, *args):
+def check_call(f, *args):
     """
-    Wrapper for kimpy functions.  If `returns_error_code`==True, the last variable
-    returned by the specified function is assumed to be an error code and is checked,
-    causing an exception to be raised if it is non-zero; the remaining variables
-    are then returned.
+    Wrapper for functions that checks error codes, since many of the functions calls are
+    actually python bindings to functions written in other languages.  Functions are
+    assumed to return either an integer error code or a tuple whose last element is an
+    integer error code.
     """
     ret = f(*args)
-    if returns_error_code:
+
+    if isinstance(ret, int):
+        # Only an error code was returned
+        _check_error(ret, f.__name__)
+    else:
+        # An error code plus other variables were returned
         error = ret[-1]
         _check_error(error, f.__name__)
+
         if len(ret[:-1]) == 1:
             # Pick the single remaining element out of the tuple
             return ret[0]
         else:
             # Return the tuple containing the rest of the elements
             return ret[:-1]
-    else:
-        return ret
 
 
 def _check_conflict_options(options, not_allowed_options, simulator):
