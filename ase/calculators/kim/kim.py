@@ -137,7 +137,8 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 **parameters,
                 files=[],
                 specorder=supported_species,
-                keep_tmp_files=debug
+                keep_tmp_files=debug,
+                **options
             )
 
         elif simulator == "lammpslib":
