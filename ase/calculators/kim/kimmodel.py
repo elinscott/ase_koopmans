@@ -405,7 +405,7 @@ class KIMModelCalculator(Calculator, object):
         pbc = np.asarray(atoms.get_pbc(), dtype=np.intc)
         contributing_coords = np.asarray(atoms.get_positions(), dtype=np.double)
         contributing_species = atoms.get_chemical_symbols()
-        num_contributing = atoms.get_number_of_atoms()
+        num_contributing = atoms.get_global_number_of_atoms()
         self.num_contributing_particles = num_contributing
 
         # species support and code
