@@ -108,9 +108,9 @@ Here is an example using ``bbox``
 
 This is an axample of display bond order for molecule
 
-.. literalinclude:: save_C2H6.py
+.. literalinclude:: save_C2H4.py
 
-.. image:: C2H6.png
+.. image:: C2H4.png
 
 Note that in general the XYZ-format does not contain information about the unit cell, however, ASE uses the extended XYZ-format which stores the unitcell:
 
