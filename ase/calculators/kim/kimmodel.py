@@ -117,14 +117,15 @@ class KIMModelCalculator(Calculator, object):
             return
 
         # create model
-        units_accepted, kim_model = kim.check_call(kimpy.model.create,
+        units_accepted, kim_model = kim.check_call(
+            kimpy.model.create,
             kimpy.numbering.zeroBased,
             kimpy.length_unit.A,
             kimpy.energy_unit.eV,
             kimpy.charge_unit.e,
             kimpy.temperature_unit.K,
             kimpy.time_unit.ps,
-            self.modelname
+            self.modelname,
         )
 
         if not units_accepted:
@@ -154,8 +155,9 @@ class KIMModelCalculator(Calculator, object):
             name = kim.check_call(kimpy_arg_name.get_compute_argument_name, i)
             dtype = kim.check_call(kimpy_arg_name.get_compute_argument_data_type, name)
 
-            arg_support = kim.check_call(self.compute_args.get_argument_support_status,
-                    name)
+            arg_support = kim.check_call(
+                self.compute_args.get_argument_support_status, name
+            )
 
             if self.debug:
                 n_space_1 = 21 - len(str(name))
@@ -238,14 +240,20 @@ class KIMModelCalculator(Calculator, object):
         if self.ase_neigh:
             neigh = {}
             self.neigh = neigh
-            kim.check_call(self.compute_args.set_callback,
-                kimpy.compute_callback_name.GetNeighborList, get_neigh, neigh
+            kim.check_call(
+                self.compute_args.set_callback,
+                kimpy.compute_callback_name.GetNeighborList,
+                get_neigh,
+                neigh,
             )
         else:
             neigh = nl.initialize()
             self.neigh = neigh
-            kim.check_call(self.compute_args.set_callback_pointer,
-                kimpy.compute_callback_name.GetNeighborList, nl.get_neigh_kim(), neigh
+            kim.check_call(
+                self.compute_args.set_callback_pointer,
+                kimpy.compute_callback_name.GetNeighborList,
+                nl.get_neigh_kim(),
+                neigh,
             )
 
         self.neigh_initialized = True
@@ -450,8 +458,13 @@ class KIMModelCalculator(Calculator, object):
             need_neigh = self.particle_contributing
 
         # create neighborlist
-        kim.check_call(nl.build,
-            self.neigh, self.coords, self.influence_dist, self.cutoffs, need_neigh
+        kim.check_call(
+            nl.build,
+            self.neigh,
+            self.coords,
+            self.influence_dist,
+            self.cutoffs,
+            need_neigh,
         )
 
         if self.debug:
@@ -465,28 +478,40 @@ class KIMModelCalculator(Calculator, object):
 
         compute_arg_name = kimpy.compute_argument_name
 
-        kim.check_call(self.compute_args.set_argument_pointer,
-            compute_arg_name.numberOfParticles, self.num_particles
+        kim.check_call(
+            self.compute_args.set_argument_pointer,
+            compute_arg_name.numberOfParticles,
+            self.num_particles,
         )
 
-        kim.check_call(self.compute_args.set_argument_pointer,
-            compute_arg_name.particleSpeciesCodes, self.species_code
+        kim.check_call(
+            self.compute_args.set_argument_pointer,
+            compute_arg_name.particleSpeciesCodes,
+            self.species_code,
         )
 
-        kim.check_call(self.compute_args.set_argument_pointer,
-            compute_arg_name.particleContributing, self.particle_contributing
+        kim.check_call(
+            self.compute_args.set_argument_pointer,
+            compute_arg_name.particleContributing,
+            self.particle_contributing,
         )
 
-        kim.check_call(self.compute_args.set_argument_pointer,
-            compute_arg_name.coordinates, self.coords
+        kim.check_call(
+            self.compute_args.set_argument_pointer,
+            compute_arg_name.coordinates,
+            self.coords,
         )
 
-        kim.check_call(self.compute_args.set_argument_pointer,
-            compute_arg_name.partialEnergy, self.energy
+        kim.check_call(
+            self.compute_args.set_argument_pointer,
+            compute_arg_name.partialEnergy,
+            self.energy,
         )
 
-        kim.check_call(self.compute_args.set_argument_pointer,
-            compute_arg_name.partialForces, self.forces
+        kim.check_call(
+            self.compute_args.set_argument_pointer,
+            compute_arg_name.partialForces,
+            self.forces,
         )
 
         if self.debug:
@@ -590,8 +615,8 @@ class KIMModelCalculator(Calculator, object):
 
         for i in range(num_kim_species):
             species_name = kim.check_call(kimpy.species_name.get_species_name, i)
-            species_support, code = kim.check_call(self.kim_model.get_species_support_and_code,
-                species_name
+            species_support, code = kim.check_call(
+                self.kim_model.get_species_support_and_code, species_name
             )
             if species_support:
                 species.append(str(species_name))

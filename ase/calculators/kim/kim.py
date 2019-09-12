@@ -31,6 +31,7 @@ try:
 except ImportError:
     raise RuntimeError("kimpy not found; KIM calculator will not work")
 
+
 def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     """Calculator for interatomic models archived in the Open Knowledgebase
     of Interatomic Models (OpenKIM) at https://openkim.org
@@ -99,9 +100,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             simulator = "kimmodel"
 
         if simulator == "kimmodel":
-            _check_conflict_options(
-                options, kimmodel_not_allowed_options, simulator
-            )
+            _check_conflict_options(options, kimmodel_not_allowed_options, simulator)
             return KIMModelCalculator(extended_kim_id, debug=debug, **options)
 
         elif simulator == "asap":
@@ -110,16 +109,12 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             except ImportError as e:
                 raise ImportError(str(e) + " You need to install asap3 first.")
 
-            _check_conflict_options(
-                options, asap_kimpm_not_allowed_options, simulator
-            )
+            _check_conflict_options(options, asap_kimpm_not_allowed_options, simulator)
             return OpenKIMcalculator(name=extended_kim_id, verbose=debug, **options)
 
         elif simulator == "lammpsrun":
 
-            _check_conflict_options(
-                options, lammpsrun_not_allowed_options, simulator
-            )
+            _check_conflict_options(options, lammpsrun_not_allowed_options, simulator)
 
             supported_species = _get_kim_pm_supported_species(extended_kim_id)
 
@@ -160,8 +155,13 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     #######################################################
     # If we get to here, the model is a KIM Simulator Model
     #######################################################
-    (simulator_name, supported_species, supported_units, model_defn,
-            atom_style) = _get_simulator_model_info( extended_kim_id)
+    (
+        simulator_name,
+        supported_species,
+        supported_units,
+        model_defn,
+        atom_style,
+    ) = _get_simulator_model_info(extended_kim_id)
 
     # Handle default behavior for 'simulator'
     if simulator is None:
@@ -172,20 +172,17 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
     if simulator_name == "ASAP":
         # check options
-        _check_conflict_options(
-            options, asap_kimsm_not_allowed_options, simulator
-        )
+        _check_conflict_options(options, asap_kimsm_not_allowed_options, simulator)
 
-        return _asap_kimsm_calculator(extended_kim_id, model_defn,
-                supported_units, options)
+        return _asap_kimsm_calculator(
+            extended_kim_id, model_defn, supported_units, options
+        )
 
     elif simulator_name == "LAMMPS":
 
         if simulator == "lammpsrun":
             # check options
-            _check_conflict_options(
-                options, lammpsrun_not_allowed_options, simulator
-            )
+            _check_conflict_options(options, lammpsrun_not_allowed_options, simulator)
 
             # Set up kim_init and kim_interactions lines
             parameters = _get_params_for_LAMMPS_calculator(
@@ -199,9 +196,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         elif simulator == "lammpslib":
             # check options
-            _check_conflict_options(
-                options, lammpslib_not_allowed_options, simulator
-            )
+            _check_conflict_options(options, lammpslib_not_allowed_options, simulator)
 
             # Set up LAMMPS header commands lookup table
 
@@ -213,7 +208,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             model_init.append(
                 "kim_init {} {}{}".format(extended_kim_id, supported_units, os.linesep)
             )
-            model_init.append("atom_modify map array sort 0 0"+os.linesep)
+            model_init.append("atom_modify map array sort 0 0" + os.linesep)
 
             # Assign atom types to species
             atom_types = {}
@@ -289,16 +284,19 @@ def _get_simulator_model_info(extended_kim_id):
     sm_metadata_fields = {}
     num_metadata_fields = kim_simulator_model.get_number_of_simulator_fields()
     for field in range(num_metadata_fields):
-        extent, field_name = check_call(kim_simulator_model.get_simulator_field_metadata, field)
+        extent, field_name = check_call(
+            kim_simulator_model.get_simulator_field_metadata, field
+        )
         sm_metadata_fields[field_name] = []
         for ln in range(extent):
-            field_line = check_call(kim_simulator_model.get_simulator_field_line,
-                    field, ln)
+            field_line = check_call(
+                kim_simulator_model.get_simulator_field_line, field, ln
+            )
             sm_metadata_fields[field_name].append(field_line)
 
     # Grab units from simulator model metadata
     try:
-        supported_units = sm_metadata_fields['units'][0]
+        supported_units = sm_metadata_fields["units"][0]
     except (KeyError, IndexError):
         raise KIMCalculatorError(
             "ERROR: Unable to determine supported units of "
@@ -311,7 +309,7 @@ def _get_simulator_model_info(extended_kim_id):
     # data file.  All other content in 'model-init', if it exists, is ignored
     atom_style = None
     try:
-        for ln in sm_metadata_fields['model-init']:
+        for ln in sm_metadata_fields["model-init"]:
             if ln.find("atom_style"):
                 atom_style = ln.split()[1]
     except KeyError:
@@ -320,8 +318,13 @@ def _get_simulator_model_info(extended_kim_id):
     # Clean up KIM API Simulator Model object
     kimpy.simulator_model.destroy(kim_simulator_model)
 
-    return (simulator_name, tuple(supported_species), supported_units,
-            sm_metadata_fields['model-defn'], atom_style)
+    return (
+        simulator_name,
+        tuple(supported_species),
+        supported_units,
+        sm_metadata_fields["model-defn"],
+        atom_style,
+    )
 
 
 def _get_kim_pm_supported_species(extended_kim_id):
@@ -393,6 +396,7 @@ def _asap_kimsm_calculator(extended_kim_id, model_defn, supported_units):
     calc.set_subtractE0(False)
 
     return calc
+
 
 def _get_params_for_LAMMPS_calculator(
     extended_kim_id, supported_units, supported_species, atom_style
@@ -476,8 +480,10 @@ def _check_conflict_options(options, not_allowed_options, simulator):
     if common:
         options_in_not_allowed = ", ".join(['"{}"'.format(s) for s in common])
 
-        msg = ('Simulator "{}" does not support argument(s): {} provided in "options", '
-              'because it is (they are) determined internally within the KIM '
-              'calculator'.format(simulator, options_in_not_allowed))
+        msg = (
+            'Simulator "{}" does not support argument(s): {} provided in "options", '
+            "because it is (they are) determined internally within the KIM "
+            "calculator".format(simulator, options_in_not_allowed)
+        )
 
         raise KIMCalculatorError(msg)
