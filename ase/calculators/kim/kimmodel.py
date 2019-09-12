@@ -24,7 +24,7 @@ except ImportError:
     raise RuntimeError("kimpy not found; KIM calculator will not work")
 
 
-class KIMModelCalculator(Calculator, object):
+class KIMModelCalculator(Calculator):
     """ An ASE calculator to work with KIM interatomic models.
 
     Parameters
@@ -68,7 +68,8 @@ class KIMModelCalculator(Calculator, object):
 
         # neigh attributes
         if neigh_skin_ratio < 0:
-            neigh_skin_ratio = 0
+            raise ValueError('Argument "neigh_skin_ratio" must be non-negative')
+
         self.neigh_skin_ratio = neigh_skin_ratio
         self.neigh = None
         self.skin = None
@@ -160,14 +161,9 @@ class KIMModelCalculator(Calculator, object):
             )
 
             if self.debug:
-                n_space_1 = 21 - len(str(name))
-                n_space_2 = 7 - len(str(dtype))
                 print(
-                    'Compute Argument name "{}" '.format(name)
-                    + " " * n_space_1
-                    + 'is of type "{}" '.format(dtype)
-                    + " " * n_space_2
-                    + 'and has support status "{}".'.format(arg_support)
+                    "Compute Argument name {:21} is of type {:7} and has support "
+                    "status {}".format(*[str(x) for x in [name, dtype, arg_support]])
                 )
 
             # the simulator can handle energy and force from a kim model
@@ -215,10 +211,7 @@ class KIMModelCalculator(Calculator, object):
             [cut + self.skin for cut in model_cutoffs], dtype=np.double
         )
 
-        if padding_not_require_neigh.all():
-            self.padding_need_neigh = False
-        else:
-            self.padding_need_neigh = True
+        self.padding_need_neigh = not padding_not_require_neigh.all()
 
         if self.debug:
             print()
@@ -268,7 +261,7 @@ class KIMModelCalculator(Calculator, object):
         from the first neighbor list
         """
         syms = atoms.get_chemical_symbols()
-        n = len(atoms)
+        num_atoms = len(atoms)
         i, j, D, S, dists = neighbor_list("ijDSd", atoms, self.influence_dist)
 
         # Get coordinates for all neighbors (this has overlapping positions)
@@ -306,7 +299,7 @@ class KIMModelCalculator(Calculator, object):
                     neighbor_shifts.append(S[k])
                 neb_dict[i[k]].append(used[t])
                 neb_dists[i[k]].append(dists[k])
-        neighbor_list_size = n
+        neighbor_list_size = num_atoms
 
         # Add 2. neighbors if the potential requires them, i.e. information
         # of the padding atoms' neighbors
@@ -315,7 +308,7 @@ class KIMModelCalculator(Calculator, object):
             inv_used = dict((v, k) for k, v in used.items())
             # Loop over all the neighbors (k)
             # and the image of that neighbor in the cell (neb)
-            for k, neb in enumerate(padding_image_of[:]):
+            for k, neb in enumerate(padding_image_of):
                 # Shift from original atom in cell to neighbor
                 shift = neighbor_shifts[k]
                 for org_neb, org_dist in zip(neb_dict[neb], neb_dists[neb]):
@@ -327,17 +320,17 @@ class KIMModelCalculator(Calculator, object):
                     tot_shift = org_shift + shift
 
                     # Get the image in the cell of the original neighbor
-                    if org_neb <= n - 1:
+                    if org_neb <= num_atoms - 1:
                         org_neb_image = org_neb
                     else:
-                        org_neb_image = padding_image_of[org_neb - n]
+                        org_neb_image = padding_image_of[org_neb - num_atoms]
 
                     # If the original image with the total shift has been
                     # used before then it is also a neighbor of this atom
                     tt = (org_neb_image,) + tuple(tot_shift)
                     if tt in used:
-                        neb_dict[k + n].append(used[tt])
-                        neb_dists[k + n].append(org_dist)
+                        neb_dict[k + num_atoms].append(used[tt])
+                        neb_dists[k + num_atoms].append(org_dist)
 
         neb_lists = []
         for cut in self.cutoffs:
@@ -648,16 +641,14 @@ class KIMModelCalculator(Calculator, object):
     def check_state(self, atoms, tol=1e-15):
         return compare_atoms(self.atoms, atoms)
 
-    def __expr__(self):
-        return "KIMModelCalculator(modelname = {})".format(self.modelname)
+    def __repr__(self):
+        return "KIMModelCalculator(modelname={})".format(self.modelname)
 
     def __del__(self):
         """Garbage collection for the KIM model object and neighbor list object."""
 
         if self.neigh_initialized:
-            if self.ase_neigh:
-                self.neigh = {}
-            else:
+            if not self.ase_neigh:
                 nl.clean(self.neigh)
             self.neigh_initialized = False
 
@@ -689,7 +680,7 @@ def compare_atoms(atoms1, atoms2, tol=1e-15):
     return system_changes
 
 
-def assemble_padding_forces(forces, n, padding_image_of):
+def assemble_padding_forces(forces, num_contrib, padding_image_of):
     """
     Assemble forces on padding atoms back to contributing atoms.
 
@@ -699,7 +690,7 @@ def assemble_padding_forces(forces, n, padding_image_of):
     forces: 2D array
       forces on both contributing and padding atoms
 
-    n: int
+    num_contrib: int
       number of contributing atoms
 
     padding_image_of: 1D int array
@@ -710,12 +701,12 @@ def assemble_padding_forces(forces, n, padding_image_of):
     -------
       Total forces on contributing atoms.
     """
-    total_forces = np.array(forces[:n])
+    total_forces = np.array(forces[:num_contrib])
 
     has_padding = True if padding_image_of.size != 0 else False
 
     if has_padding:
-        pad_forces = forces[n:]
+        pad_forces = forces[num_contrib:]
         for f, org_index in zip(pad_forces, padding_image_of):
             total_forces[org_index] += f
 
@@ -763,14 +754,10 @@ def report_error(msg):
 
 def get_neigh(data, cutoffs, neighbor_list_index, particle_number):
     """Get neigh function of the ase neighbor list."""
-    try:
-        # We can only return neighbors of particles that were stored
-        number_of_particles = data["num_particles"]
-        if particle_number >= number_of_particles or particle_number < 0:
-            return (np.array([]), 1)
-
-        neighbors = data["neighbors"][neighbor_list_index][particle_number]
-        return (neighbors, 0)
-
-    except:
+    # We can only return neighbors of particles that were stored
+    number_of_particles = data["num_particles"]
+    if particle_number >= number_of_particles or particle_number < 0:
         return (np.array([]), 1)
+
+    neighbors = data["neighbors"][neighbor_list_index][particle_number]
+    return (neighbors, 0)
