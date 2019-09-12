@@ -331,7 +331,7 @@ def _get_kim_pm_supported_species(extended_kim_id):
     Gets species supported by either a KIM Portable Model or a KIM Simulator Model
     """
     calc = KIMModelCalculator(extended_kim_id)
-    supported_species = list(calc.get_kim_pm_supported_species())
+    supported_species = list(calc.get_kim_model_supported_species())
     calc.__del__()
 
     return supported_species
@@ -420,7 +420,7 @@ def _get_params_for_LAMMPS_calculator(
     ]
 
     parameters["kim_interactions"] = "kim_interactions {}{}".format(
-        (" ").join(supported_species, os.linesep)
+        (" ").join(supported_species), os.linesep
     )
 
     # For every species in "supported_species", add an entry to the
