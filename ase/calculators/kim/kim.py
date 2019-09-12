@@ -26,7 +26,11 @@ from ase.calculators.lammps import convert
 from .kimmodel import KIMModelCalculator
 from .exceptions import KIMCalculatorError
 
-import kimpy
+try:
+    import kimpy
+    from kimpy import neighlist as nl
+except ImportError:
+    raise RuntimeError("kimpy not found; KIM calculator will not work")
 
 def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     """Calculator for interatomic models archived in the Open Knowledgebase
@@ -246,13 +250,11 @@ def _is_portable_model(extended_kim_id):
     Returns True if the model specified is a KIM Portable Model (if it is not, then it
     must be a KIM Simulator Model -- there are no other types of models in KIM)
     """
-    col, error = kimpy.collections.create()
-    _check_error(error, "kimpy.collections.create")
+    col = _call_kimpy_func(kimpy.collections.create, True)
 
-    model_type, error = col.get_item_type(extended_kim_id)
-    _check_error(error, "kimpy.collections.Collections.get_item_type")
+    model_type = _call_kimpy_func(col.get_item_type, True, extended_kim_id)
 
-    kimpy.collections.destroy(col)
+    _call_kimpy_func(kimpy.collections.destroy, False, col)
 
     return model_type == kimpy.collection_item_type.portableModel
 
@@ -263,8 +265,7 @@ def _get_simulator_model_info(extended_kim_id):
     and units
     """
     # Create a KIM API simulator Model object for this model
-    kim_simulator_model, error = kimpy.simulator_model.create(extended_kim_id)
-    _check_error(error, "kimpy.simulator_model.create")
+    kim_simulator_model = _call_kimpy_func(kimpy.simulator_model.create, True, extended_kim_id)
 
     # Retrieve simulator name (disregard simulator version)
     simulator_name, _ = kim_simulator_model.get_simulator_name_and_version()
@@ -279,8 +280,7 @@ def _get_simulator_model_info(extended_kim_id):
 
     supported_species = []
     for spec_code in range(num_supported_species):
-        species, error = kim_simulator_model.get_supported_species(spec_code)
-        _check_error(error, 'get_supported_species')
+        species = _call_kimpy_func(kim_simulator_model.get_supported_species, True, spec_code)
         supported_species.append(species)
 
     # Need to close template map to access simulator model metadata
@@ -290,12 +290,11 @@ def _get_simulator_model_info(extended_kim_id):
     sm_metadata_fields = {}
     num_metadata_fields = kim_simulator_model.get_number_of_simulator_fields()
     for field in range(num_metadata_fields):
-        extent, field_name, error = kim_simulator_model.get_simulator_field_metadata(field)
-        _check_error(error, 'get_simulator_field_metadata')
+        extent, field_name = _call_kimpy_func(kim_simulator_model.get_simulator_field_metadata, True, field)
         sm_metadata_fields[field_name] = []
         for ln in range(extent):
-            field_line, error = kim_simulator_model.get_simulator_field_line(field, ln)
-            _check_error(error, "get_simulator_field_line")
+            field_line = _call_kimpy_func(kim_simulator_model.get_simulator_field_line,
+                    True, field, ln)
             sm_metadata_fields[field_name].append(field_line)
 
     # Grab units from simulator model metadata
@@ -442,6 +441,27 @@ def _get_params_for_LAMMPS_calculator(
 def _check_error(error, msg):
     if error != 0 and error is not None:
         raise KIMCalculatorError('Calling "{}" failed.'.format(msg))
+
+
+def _call_kimpy_func(f, returns_error_code, *args):
+    """
+    Wrapper for kimpy functions.  If `returns_error_code`==True, the last variable
+    returned by the specified function is assumed to be an error code and is checked,
+    causing an exception to be raised if it is non-zero; the remaining variables
+    are then returned.
+    """
+    ret = f(*args)
+    if returns_error_code:
+        error = ret[-1]
+        _check_error(error, f.__name__)
+        if len(ret[:-1]) == 1:
+            # Pick the single remaining element out of the tuple
+            return ret[0]
+        else:
+            # Return the tuple containing the rest of the elements
+            return ret[:-1]
+    else:
+        return ret
 
 
 def _check_conflict_options(options, not_allowed_options, simulator):
