@@ -329,7 +329,7 @@ def _get_kim_pm_supported_species(extended_kim_id):
     Gets species supported by either a KIM Portable Model or a KIM Simulator Model
     """
     calc = KIMModelCalculator(extended_kim_id)
-    supported_species = list(calc.get_kim_model_supported_species())
+    supported_species, _ = calc.get_kim_model_supported_species_and_codes()
     calc.__del__()
 
     return supported_species

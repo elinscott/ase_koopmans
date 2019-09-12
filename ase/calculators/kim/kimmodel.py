@@ -572,14 +572,17 @@ class KIMModelCalculator(Calculator, object):
         self.results["forces"] = forces
         self.results["stress"] = stress
 
-    def get_kim_model_supported_species(self):
-        """Get all the supported species by the KIM model.
+    def get_kim_model_supported_species_and_codes(self):
+        """Get all the supported species and corresponding integer codes for the KIM Portable Model.
 
         Returns
         -------
-
         species: list of str
-            a list of chemical symbols (e.g. ["Mo", "S"])
+            Abbreviated chemical symbols of all species the mmodel supports (e.g. ["Mo", "S"])
+
+        codes : list of int
+            Integer codes used by the model for each species (order corresponds to the
+            order of `species`)
         """
         species = []
         codes = []
@@ -608,7 +611,7 @@ class KIMModelCalculator(Calculator, object):
             value: int
                 species integer code (e.g. 1)
         """
-        supported_species, codes = self.get_kim_model_supported_species()
+        supported_species, codes = self.get_kim_model_supported_species_and_codes()
         species_map = dict()
         for i, s in enumerate(supported_species):
             species_map[s] = codes[i]
