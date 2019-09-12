@@ -118,24 +118,17 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
             supported_species = _get_kim_pm_supported_species(extended_kim_id)
 
-            parameters = {}
-            parameters["pair_style"] = "kim " + extended_kim_id.strip() + os.linesep
-            parameters["pair_coeff"] = [
-                "* * " + " ".join(supported_species) + os.linesep
-            ]
-            parameters["masses"] = []
-            for i, species in enumerate(supported_species):
-                if species not in atomic_numbers:
-                    raise KIMCalculatorError(
-                        "Unknown element species {0}.".format(species)
-                    )
-                massstr = str(atomic_masses[atomic_numbers[species]])
-                parameters["masses"].append(str(i + 1) + " " + massstr)
+            # Set up kim_init and kim_interactions lines
+            parameters = _get_params_for_LAMMPS_calculator(
+                extended_kim_id,
+                supported_units="metal",
+                supported_species=supported_species,
+                atom_style=None,
+            )
 
             # Return LAMMPS calculator
             return LAMMPS(
                 **parameters,
-                files=[],
                 specorder=supported_species,
                 keep_tmp_files=debug,
                 **options
