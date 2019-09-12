@@ -1,4 +1,4 @@
-# creates: NaCl_C6H6.png C2H6.png
+# creates: NaCl_C6H6.png
 
 import numpy as np
 
@@ -56,18 +56,4 @@ kwargs.update({
 # Write the .pov (and .ini) file. If run_povray=False, you must run command
 # `povray filename.ini` to convert .pov file to .png
 write('NaCl_C6H6.pov', atoms, **kwargs)
-
-
-# Create C2H6.png for bond order example
-from ase.io.pov import get_bondpairs, set_high_bondorder_pairs
-C2H6 = molecule('C2H6')
-r_ = {'C': 0.4, 'H':0.2}
-r  = []
-for at in C2H6:
-    r.append(r_[at.symbol])
-bondpairs = get_bondpairs(C2H6, radius = 1.1)
-high_bondorder_pairs = {}
-high_bondorder_pairs[(0, 1)] = ((0, 0, 0), 2, (0.17, 0.17, 0))
-bondpairs = set_high_bondorder_pairs( bondpairs, high_bondorder_pairs )
-write( 'C2H6.pov', C2H6, format = 'pov', run_povray = True, canvas_width = 200, radii = r, bondatoms = bondpairs, rotation = "90y" )
 
