@@ -87,9 +87,6 @@ def main():
     txt = git('status')
     branch = re.match('On branch (\S+)', txt).group(1)
     print('Currently on branch {}'.format(repr(branch)))
-    if branch != 'master':
-        git('checkout master')
-
 
     git('checkout -b {}'.format(branchname))
 
