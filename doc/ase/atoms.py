@@ -15,4 +15,4 @@ wire.cell[0, 0] = d
 #view(wire, block=1)
 write('Au-wire.pov', wire,
       rotation='12x,6y',
-      transparent=False, display=False, run_povray=True)
+      transparent=False, run_povray=True)
