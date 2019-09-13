@@ -192,16 +192,24 @@ class DiffusionCoefficient:
        
         return slopes
 
-    def plot(self):
+    def plot(self, ax=None, show=False):
 
         '''
         Auto-plot of Diffusion Coefficient data. Provides basic framework for visualising analysis.
+
+        Parameters:
+            ax (Matplotlib.axes.Axes)
+                Axes object on to which plot can be created
+            show (Boolean)
+                Whether or not to show the created plot. Default: False
         '''
 
         # Moved matplotlib into the function so it is not loaded unless needed
-        # Could be provided as an input variable, so user can work with it further?
         import matplotlib.pyplot as plt
         
+        if ax is None:
+            ax = plt.gca()
+
         # Define some aesthetic variables
         color_list = plt.cm.Set3(np.linspace(0, 1, self.no_of_types_of_atoms))
         xyz_labels=['X','Y','Z']
@@ -221,33 +229,34 @@ class DiffusionCoefficient:
                     if segment_no == 0:
                         label = 'Species: %s (%s)'%(self.types_of_atoms[sym_index], xyz_labels[xyz])
                     # Add scatter graph  for the mean square displacement data in this segment
-                    plt.scatter(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz],
+                    ax.scatter(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz],
                              color=color_list[sym_index], marker=xyz_markers[xyz], label=label, linewidth=1, edgecolor='grey')
 
                 # Print the line of best fit for segment      
                 line = np.mean(self.slopes[sym_index][segment_no])*self.timesteps[start:end]+np.mean(self.intercepts[sym_index][segment_no])
                 if segment_no == 0:
                     label = 'Segment Mean : %s'%(self.types_of_atoms[sym_index])
-                plt.plot(self.timesteps[start:end], line, color='C%d'%(sym_index), label=label, linestyle='--')
+                ax.plot(self.timesteps[start:end], line, color='C%d'%(sym_index), label=label, linestyle='--')
  
             # Plot separator at end of segment
             x_coord = self.timesteps[end-1]
-            plt.plot([x_coord, x_coord],[-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average)], color='grey', linestyle=":")
+            ax.plot([x_coord, x_coord],[-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average)], color='grey', linestyle=":")
 
         # Plot the overall mean (average of slopes) for each atom species
         # This only makes sense if the data is all plotted on the same x-axis timeframe, which currently we are not - everything is plotted sequentially
         #for sym_index in range(self.no_of_types_of_atoms):
         #    line = np.mean(self.slopes[sym_index])*self.timesteps+np.mean(self.intercepts[sym_index])
         #    label ='Mean, Total : %s'%(self.types_of_atoms[sym_index])
-        #    plt.plot(self.timesteps, line, color='C%d'%(sym_index), label=label, linestyle="-")
+        #    ax.plot(self.timesteps, line, color='C%d'%(sym_index), label=label, linestyle="-")
 
         # Aesthetic parts of the plot
-        plt.ylim(-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average))
-        plt.legend(loc='best')
-        plt.xlabel('Time (fs)')
-        plt.ylabel(r'Mean Square Displacement ($\AA^2$)')
+        ax.set_ylim(-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average))
+        ax.legend(loc='best')
+        ax.set_xlabel('Time (fs)')
+        ax.set_ylabel(r'Mean Square Displacement ($\AA^2$)')
 
-        plt.show()
+        if show:
+            plt.show()
 
     def print_data(self):
 
