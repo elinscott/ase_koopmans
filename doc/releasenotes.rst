@@ -31,6 +31,8 @@ Git master branch
 
 * Added :class:`~ase.calculators.psi4.Psi4` calculator.
 
+* The :mod:`~ase.io.pov` module can now render high-order bonds.
+
 Version 3.18.0
 ==============
 
