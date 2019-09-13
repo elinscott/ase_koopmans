@@ -8,11 +8,6 @@ calc = Siesta(kpts=[2,1,1])
 atoms.set_calculator(calc)
 atoms.get_potential_energy()
 
-assert len(calc.results['eigenvalues'])==2
-assert len(calc.results['kpoints'])==2
-assert len(calc.results['kweights'])==2
-
-for k in calc.results['eigenvalues']:
-    assert k[1]==0
-    assert len(calc.results['eigenvalues'][k])==10
-
+assert calc.results['eigenvalues'].shape[:2] == (1, 2)  # spins x bands
+assert calc.get_k_point_weights().shape == (2,)
+assert calc.get_ibz_k_points().shape == (2, 3)

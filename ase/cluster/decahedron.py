@@ -7,10 +7,10 @@ from ase.utils import basestring
 
 def Decahedron(symbol, p, q, r, latticeconstant=None):
     """
-    Returns a cluster in the decahedra class.
+    Return a decahedral cluster.
 
-    Prameters
-    ---------
+    Parameters
+    ----------
     symbol: Chemical symbol (or atomic number) of the element.
 
     p: Number of atoms on the (100) facets perpendicular to the five

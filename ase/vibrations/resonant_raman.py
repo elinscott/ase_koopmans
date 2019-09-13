@@ -2,7 +2,6 @@
 
 """Resonant Raman intensities"""
 
-from __future__ import print_function, division
 import pickle
 import os
 import sys
@@ -10,7 +9,7 @@ import sys
 import numpy as np
 
 import ase.units as u
-from ase.parallel import world, rank, parprint, paropen
+from ase.parallel import world, parprint, paropen
 from ase.vibrations import Vibrations
 from ase.utils.timing import Timer
 from ase.utils import convert_string_to_fd, basestring
@@ -166,7 +165,7 @@ class ResonantRaman(Vibrations):
         assert(atoms == self.atoms)  # XXX action required
         self.timer.start('Ground state')
         forces = self.atoms.get_forces()
-        if rank == 0:
+        if world.rank == 0:
             pickle.dump(forces, fd, protocol=2)
             fd.close()
         if self.overlap:
@@ -177,7 +176,7 @@ class ResonantRaman(Vibrations):
             """
             ov_nn = self.overlap(self.atoms.get_calculator(),
                                  self.eq_calculator)
-            if rank == 0:
+            if world.rank == 0:
                 np.save(filename + '.ov', ov_nn)
             self.timer.stop('Overlap')
         self.timer.stop('Ground state')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division
+import warnings
 
 from ase.units import kJ
 from ase.utils import basestring
@@ -212,7 +212,7 @@ class EquationOfState:
         self.eos_string = eos
         self.v0 = None
 
-    def fit(self):
+    def fit(self, warn=True):
         """Calculate volume, energy, and bulk modulus.
 
         Returns the optimal volume, the minimum energy, and the bulk
@@ -243,10 +243,6 @@ class EquationOfState:
         b = parabola_parameters[1]
         a = parabola_parameters[0]
         parabola_vmin = -b / 2 / c
-
-        if not (minvol < parabola_vmin and parabola_vmin < maxvol):
-            print('Warning the minimum volume of a fitted parabola is not in '
-                  'your volumes. You may not have a minimum in your dataset')
 
         # evaluate the parabola at the minimum to estimate the groundstate
         # energy
@@ -284,6 +280,11 @@ class EquationOfState:
             self.v0 = self.eos_parameters[3]
             self.e0 = self.eos_parameters[0]
             self.B = self.eos_parameters[1]
+
+        if warn and not (minvol < self.v0 < maxvol):
+            warnings.warn(
+                'The minimum volume of your fit is not in '
+                'your volumes.  You may not have a minimum in your dataset!')
 
         return self.v0, self.e0, self.B
 

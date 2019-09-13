@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.parallel import rank
+from ase.parallel import world
 from ase.utils import pickleload
 
 
@@ -50,7 +50,7 @@ class BEEFEnsemble:
     def get_ensemble_energies(self, size=2000, seed=0):
         """Returns an array of ensemble total energies"""
         self.seed = seed
-        if rank == 0 and self.verbose:
+        if world.rank == 0 and self.verbose:
             print(self.beef_type, 'ensemble started')
 
         if self.contribs is None:
@@ -69,7 +69,7 @@ class BEEFEnsemble:
         self.de = np.dot(coefs, self.contribs)
         self.done = True
 
-        if rank == 0 and self.verbose:
+        if world.rank == 0 and self.verbose:
             print(self.beef_type, 'ensemble finished')
 
         return self.e + self.de
@@ -123,7 +123,7 @@ class BEEFEnsemble:
         if not fname.endswith('.bee'):
             fname += '.bee'
         assert self.done
-        if rank == 0:
+        if world.rank == 0:
             if os.path.isfile(fname):
                 os.rename(fname, fname + '.old')
             obj = [self.e, self.de, self.contribs, self.seed, self.xc]

@@ -482,7 +482,8 @@ class Vasp2(GenerateVaspInput, Calculator):
                     self.resort.append(int(resort))
         else:
             # Redo the sorting
-            self.initialize(self.atoms)
+            atoms = read(self._indir('CONTCAR'))
+            self.initialize(atoms)
 
     def read_atoms(self, filename='CONTCAR'):
         """Read the atoms from file located in the VASP

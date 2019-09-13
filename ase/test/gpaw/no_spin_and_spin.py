@@ -5,8 +5,7 @@ from ase import io
 try:
     from gpaw import GPAW
 except ImportError:
-    # Skip test if GPAW installation is broken:
-    raise unittest.SkipTest
+    raise unittest.SkipTest('GPAW not available')
 
 txt = 'out.txt'
 if 1:

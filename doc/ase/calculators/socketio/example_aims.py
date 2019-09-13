@@ -19,6 +19,8 @@ atoms.rattle(stdev=0.1)
 
 aims = Aims(command=command,
             use_pimd_wrapper=('localhost', port),
+            # alternative: ('UNIX:mysocketname', 31415)
+            # (numeric port must be given even with Unix socket)
             compute_forces=True,
             xc='LDA',
             species_dir=species_dir)
@@ -26,5 +28,7 @@ aims = Aims(command=command,
 opt = BFGS(atoms, trajectory='opt.aims.traj', logfile='opt.aims.log')
 
 with SocketIOCalculator(aims, log=sys.stdout, port=port) as calc:
+    # For running with UNIX socket, put unixsocket='mysocketname'
+    # instead of port cf. aims parameters above
     atoms.calc = calc
     opt.run(fmax=0.05)

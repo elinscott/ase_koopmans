@@ -67,6 +67,14 @@ def info(gui):
             else:
                 add(_('Unit cell varies.'))
 
+        if atoms.pbc[:2].all():
+            try:
+                lat = atoms.cell.get_bravais_lattice()
+            except RuntimeError:
+                add(_('Could not recognize the lattice type'))
+            else:
+                add(_('Reduced Bravais lattice:\n{}').format(lat))
+
 
         # Print electronic structure information if we have a calculator
         if atoms.calc:
