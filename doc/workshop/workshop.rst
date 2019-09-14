@@ -27,6 +27,8 @@ Registration
 
 To join the workshop please fill
 `the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__.
+**We have currently more registrations than there is space, but we are looking for a larger place.
+You can still fill the registration form to show interest, but please wait for further information from the organizers.**
 The deadline for registration and abstracts is **October 21, 2019**.
 Please note that space is limited.
 There is no registration fee but the attendees need to cover travel, accommodation, and other costs themselves.
