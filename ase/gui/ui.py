@@ -516,7 +516,17 @@ class MainWindow(BaseWindow):
         self.configured = True
 
     def run(self):
-        tk.mainloop()
+        # Workaround for nasty issue with tkinter on Mac:
+        # https://gitlab.com/ase/ase/issues/412
+        #
+        # It is apparently a compatibility issue between Python and Tkinter.
+        # Some day we should remove this hack.
+        while True:
+            try:
+                tk.mainloop()
+                break
+            except UnicodeDecodeError:
+                pass
 
     def test(self, test, close_after_test=False):
         def callback():
