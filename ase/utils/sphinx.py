@@ -4,6 +4,7 @@ import traceback
 import warnings
 from os.path import join
 from stat import ST_MTIME
+import re
 
 from docutils import nodes
 from docutils.parsers.rst.roles import set_classes
@@ -21,8 +22,12 @@ def mol_role(role, rawtext, text, lineno, inliner, options={}, content=[]):
         if text[0] == '_':
             n.append(nodes.inline(text=t))
             t = ''
-            n.append(nodes.subscript(text=text[1]))
-            text = text[2:]
+            m = re.match(r'\d+', text[1:])
+            if m is None:
+                raise RuntimeError('Expected one or more digits after "_"')
+            digits = m.group()
+            n.append(nodes.subscript(text=digits))
+            text = text[1 + len(digits):]
         else:
             t += text[0]
             text = text[1:]

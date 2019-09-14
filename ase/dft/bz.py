@@ -29,7 +29,8 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
 
     if ax is None:
         fig = plt.gcf()
-    dimensions = np.sum(cell.pbc)
+
+    dimensions = cell.any(1).sum()
     assert dimensions > 0, 'No BZ for 0D!'
 
     if dimensions == 3:

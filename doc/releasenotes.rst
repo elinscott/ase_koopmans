@@ -9,8 +9,29 @@ Git master branch
 
 :git:`master <>`.
 
-* No changes yet
+* :func:`ase.build.bulk` now supports elements with tetrahedral,
+  rhombohedral, and orthorhombic lattices.
 
+* Read and write support for RMCProfile (rmc6f) file format.
+
+* Gulp calculator now provides stress tensor.
+
+* More efficient storage of the "data" part of rows in the :mod:`ase.db`
+  database.  NumPy arrays are now stored in binary format instead of as text
+  thereby using approximately a factor of two less space when storing numbers
+  of `np.float64`.
+
+* The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
+  been deprecated.  Use ``world.rank`` and ``world.size`` instead
+  (and ``from ase.parallel import world``).
+
+* ``atoms.set_masses('most_common')`` now sets the masses of each
+  element according to most common isotope as stored in
+  ``ase.data.atomic_masses_common``.
+
+* Added :class:`~ase.calculators.psi4.Psi4` calculator.
+
+* The :mod:`~ase.io.pov` module can now render high-order bonds.
 
 Version 3.18.0
 ==============
@@ -654,7 +675,7 @@ Version 3.11.0
 
 10 May 2016: :git:`3.11.0 <../3.11.0>`.
 
-* Special `\mathbf{k}`-points from the [Setyawana-Curtarolo]_ paper was added:
+* Special `\mathbf{k}`-points from the [Setyawan-Curtarolo]_ paper was added:
   :data:`ase.dft.kpoints.special_points`.
 
 * New :mod:`ase.collections` module added.  Currently contains the G2 database

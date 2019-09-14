@@ -18,7 +18,7 @@ import ase.units as units
 from ase.atom import Atom
 from ase.cell import Cell
 from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
-from ase.data import atomic_masses
+from ase.data import atomic_masses, atomic_masses_common
 from ase.utils import basestring
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
 from ase.symbols import Symbols, symbols2numbers
@@ -139,7 +139,7 @@ class Atoms(object):
                  calculator=None,
                  info=None):
 
-        self._cellobj = Cell.new(pbc=False)
+        self._cellobj = Cell.new()
 
         atoms = None
 
@@ -342,7 +342,6 @@ class Atoms(object):
         """
 
         # Override pbcs if and only if given a Cell object:
-        pbc = getattr(cell, 'pbc', None)
         cell = Cell.new(cell)
 
         if scale_atoms:
@@ -350,8 +349,6 @@ class Atoms(object):
             self.positions[:] = np.dot(self.positions, M)
 
         self.cell[:] = cell
-        if pbc is not None:
-            self.cell.pbc[:] = pbc
 
     def set_celldisp(self, celldisp):
         """Set the unit cell displacement vectors."""
@@ -396,7 +393,7 @@ class Atoms(object):
 
     def set_pbc(self, pbc):
         """Set periodic boundary condition flags."""
-        self.cell.pbc[:] = pbc
+        self.cell._pbc[:] = pbc
 
     def get_pbc(self):
         """Get periodic boundary condition flags."""
@@ -559,8 +556,11 @@ class Atoms(object):
         the masses argument is not given or for those elements of the
         masses list that are None, standard values are set."""
 
-        if isinstance(masses, basestring) and masses == 'defaults':
-            masses = atomic_masses[self.arrays['numbers']]
+        if isinstance(masses, basestring):
+            if masses == 'defaults':
+                masses = atomic_masses[self.arrays['numbers']]
+            elif masses == 'most_common':
+                masses = atomic_masses_common[self.arrays['numbers']]
         elif isinstance(masses, (list, tuple)):
             newmasses = []
             for m, Z in zip(masses, self.arrays['numbers']):
@@ -825,6 +825,16 @@ class Atoms(object):
         return len(self.arrays['positions'])
 
     def get_number_of_atoms(self):
+        """Deprecated, please do not use.
+
+        You probably want len(atoms).  Or if your atoms are distributed,
+        use (and see) get_global_number_of_atoms()."""
+        import warnings
+        warnings.warn('Use get_global_number_of_atoms() instead',
+                      np.VisibleDeprecationWarning)
+        return len(self)
+
+    def get_global_number_of_atoms(self):
         """Returns the global number of atoms in a distributed-atoms parallel
         simulation.
 
@@ -1902,7 +1912,8 @@ class Atoms(object):
 
     def _get_pbc(self):
         """Return reference to pbc-flags for in-place manipulations."""
-        return self.cell.pbc
+        # XXX deprecating cell.pbc
+        return self.cell._pbc
 
     pbc = property(_get_pbc, set_pbc,
                    doc='Attribute for direct manipulation ' +

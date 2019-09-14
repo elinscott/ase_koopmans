@@ -475,3 +475,15 @@ def experimental(func):
                       ExperimentalFeatureWarning)
         return func(*args, **kwargs)
     return expfunc
+
+def deprecated(msg):
+    """Return a decorator deprecating a function.
+
+    Use like @deprecated('warning message and explanation')."""
+    def deprecated_decorator(func):
+        @functools.wraps(func)
+        def deprecated_function(*args, **kwargs):
+            warnings.warn(msg, FutureWarning)
+            return func(*args, **kwargs)
+        return deprecated_function
+    return deprecated_decorator

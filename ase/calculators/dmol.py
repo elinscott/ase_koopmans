@@ -510,10 +510,10 @@ def find_transformation(atoms1, atoms2, verbose=False, only_cell=False):
 
     if only_cell:
         N = 3
-    elif atoms1.get_number_of_atoms() != atoms2.get_number_of_atoms():
+    elif len(atoms1) != len(atoms2):
         raise RuntimeError('Atoms object must be of same length')
     else:
-        N = atoms1.get_number_of_atoms() + 3
+        N = len(atoms1) + 3
 
     # Setup matrices A and B
     A = np.zeros((N, 3))

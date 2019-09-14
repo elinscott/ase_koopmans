@@ -302,7 +302,8 @@ class GUI(View, Status):
             self.bad_plot(_('Requires 3D cell.'))
             return
 
-        kwargs = dict(cell=self.atoms.cell, vectors=True)
+        kwargs = dict(cell=self.atoms.cell.uncomplete(self.atoms.pbc),
+                      vectors=True)
         self.pipe('reciprocal', kwargs)
 
     def open(self, button=None, filename=None):
@@ -500,8 +501,9 @@ class GUI(View, Status):
               M(_('Expert mode ...'), self.execute, disabled=True),
               M(_('Constraints ...'), self.constraints_window),
               M(_('Render scene ...'), self.render_window),
-              M(_('_Move atoms'), self.toggle_move_mode, 'Ctrl+M'),
-              M(_('_Rotate atoms'), self.toggle_rotate_mode, 'Ctrl+R'),
+              M(_('_Move selected atoms'), self.toggle_move_mode, 'Ctrl+M'),
+              M(_('_Rotate selected atoms'), self.toggle_rotate_mode,
+                'Ctrl+R'),
               M(_('NE_B'), self.neb),
               M(_('B_ulk Modulus'), self.bulk_modulus),
               M(_('Reciprocal space ...'), self.reciprocal)]),
@@ -579,6 +581,7 @@ class GUI(View, Status):
                 self.draw()
 
         self.window.win.after(ms, callbackwrapper)
+
 
 def webpage():
     import webbrowser
