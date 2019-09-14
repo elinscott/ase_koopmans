@@ -29,6 +29,9 @@ Git master branch
   element according to most common isotope as stored in
   ``ase.data.atomic_masses_common``.
 
+* Plotting functions (such as band structure, EOS, ...)
+  no longer show the figure by default.
+
 * Added :class:`~ase.calculators.psi4.Psi4` calculator.
 
 * The :mod:`~ase.io.pov` module can now render high-order bonds.

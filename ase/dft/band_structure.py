@@ -155,7 +155,7 @@ class BandStructurePlot:
         self.show_legend = False
 
     def plot(self, ax=None, spin=None, emin=-10, emax=5, filename=None,
-             show=None, ylabel=None, colors=None, label=None,
+             show=False, ylabel=None, colors=None, label=None,
              spin_labels=['spin up', 'spin down'], loc=None, **plotkwargs):
         """Plot band-structure.
 
@@ -210,7 +210,7 @@ class BandStructurePlot:
         return ax
 
     def plot_with_colors(self, ax=None, emin=-10, emax=5, filename=None,
-                         show=None, energies=None, colors=None,
+                         show=False, energies=None, colors=None,
                          ylabel=None, clabel='$s_z$', cmin=-1.0, cmax=1.0,
                          sortcolors=False, loc=None, s=2):
         """Plot band-structure with colors."""
@@ -286,9 +286,6 @@ class BandStructurePlot:
 
         if filename:
             plt.savefig(filename)
-
-        if show is None:
-            show = not filename
 
         if show:
             plt.show()

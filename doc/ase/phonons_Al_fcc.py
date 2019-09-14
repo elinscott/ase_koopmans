@@ -26,7 +26,7 @@ fig = plt.figure(1, figsize=(7, 4))
 ax = fig.add_axes([.12, .07, .67, .85])
 
 emax = 0.035
-bs.plot(ax=ax, show=False, emin=0.0, emax=emax)
+bs.plot(ax=ax, emin=0.0, emax=emax)
 
 dosax = fig.add_axes([.8, .07, .17, .85])
 dosax.fill_between(dos.weights[0], dos.energy, y2=0, color='grey',
