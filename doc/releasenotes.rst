@@ -33,6 +33,9 @@ Git master branch
 
 * The :mod:`~ase.io.pov` module can now render high-order bonds.
 
+* :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
+  from :mod:`ase.io.jsonio`.
+
 Version 3.18.0
 ==============
 
