@@ -18,7 +18,7 @@ class DiffusionCoefficient:
             traj (Trajectory): 
                 Trajectory of atoms objects (images)
             timestep (Int): 
-                Timestep used between each images, in fs
+                Timestep used between each images, in ASE timestep units 
             steps_between_saved_images (Int): 
                 Interval used when writing the .traj file 
             atom_indices (List of Int): 
@@ -168,7 +168,7 @@ class DiffusionCoefficient:
 
         '''
         Returns diffusion coefficients for atoms (in alphabetical order) along with standard deviation.
-        All data is currently passed out in units of cm**2/s
+        All data is currently passed out in units of \AA**2/<ASE time units>
 
         Parameters:
             stddev (Boolean)
@@ -178,15 +178,10 @@ class DiffusionCoefficient:
         # Safety check, so we don't return garbage.
         if len(self.slopes) == 0:
             self.calculate()
-
-        slopes = [np.mean(self.slopes[sym_index]*(0.1)) for sym_index in range(self.no_of_types_of_atoms)]
-        std = [np.std(self.slopes[sym_index]*(0.1)) for sym_index in range(self.no_of_types_of_atoms)]
-
-        # Converting gradient from \AA^2/fs to more common units of cm^2/s => multiply by 10^-1
-        # Converting intercept from \AA^2 to more common units of cm^2 => multiply by 10^-16
-        # \AA^2 => cm^2 requires multiplying by (10^-8)^2 = 10^-16
-        # fs => s requires dividing by 10^-15
-        
+       
+        slopes = [np.mean(self.slopes[sym_index]) for sym_index in range(self.no_of_types_of_atoms)]
+        std = [np.std(self.slopes[sym_index]) for sym_index in range(self.no_of_types_of_atoms)]
+ 
         if stddev:
             return slopes, std
        
@@ -196,17 +191,21 @@ class DiffusionCoefficient:
 
         '''
         Auto-plot of Diffusion Coefficient data. Provides basic framework for visualising analysis.
-
-        Parameters:
+ 
+         Parameters:
             ax (Matplotlib.axes.Axes)
                 Axes object on to which plot can be created
             show (Boolean)
                 Whether or not to show the created plot. Default: False
         '''
 
-        # Moved matplotlib into the function so it is not loaded unless needed
+        # Necessary if user hasn't supplied an axis. 
         import matplotlib.pyplot as plt
+
+        # Convert from ASE time units to fs (aesthetic)
+        from ase.units import fs as fs_conversion
         
+        # Should we set show=True in this if statement?
         if ax is None:
             ax = plt.gca()
 
@@ -218,6 +217,9 @@ class DiffusionCoefficient:
         # Safety check, so we don't return garbage.
         if len(self.slopes) == 0:
             self.calculate()
+
+        # Create an x-axis that is in a more intuitive format for the view
+        graph_timesteps = self.timesteps / fs_conversion
         
         for segment_no in range(self.no_of_segments):
             start = segment_no*self.len_segments  
@@ -229,25 +231,25 @@ class DiffusionCoefficient:
                     if segment_no == 0:
                         label = 'Species: %s (%s)'%(self.types_of_atoms[sym_index], xyz_labels[xyz])
                     # Add scatter graph  for the mean square displacement data in this segment
-                    ax.scatter(self.timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz],
+                    ax.scatter(graph_timesteps[start:end], self.xyz_segment_ensemble_average[segment_no][sym_index][xyz],
                              color=color_list[sym_index], marker=xyz_markers[xyz], label=label, linewidth=1, edgecolor='grey')
 
                 # Print the line of best fit for segment      
-                line = np.mean(self.slopes[sym_index][segment_no])*self.timesteps[start:end]+np.mean(self.intercepts[sym_index][segment_no])
+                line = np.mean(self.slopes[sym_index][segment_no])*fs_conversion*graph_timesteps[start:end]+np.mean(self.intercepts[sym_index][segment_no])
                 if segment_no == 0:
                     label = 'Segment Mean : %s'%(self.types_of_atoms[sym_index])
-                ax.plot(self.timesteps[start:end], line, color='C%d'%(sym_index), label=label, linestyle='--')
+                ax.plot(graph_timesteps[start:end], line, color='C%d'%(sym_index), label=label, linestyle='--')
  
             # Plot separator at end of segment
-            x_coord = self.timesteps[end-1]
+            x_coord = graph_timesteps[end-1]
             ax.plot([x_coord, x_coord],[-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average)], color='grey', linestyle=":")
 
         # Plot the overall mean (average of slopes) for each atom species
         # This only makes sense if the data is all plotted on the same x-axis timeframe, which currently we are not - everything is plotted sequentially
         #for sym_index in range(self.no_of_types_of_atoms):
-        #    line = np.mean(self.slopes[sym_index])*self.timesteps+np.mean(self.intercepts[sym_index])
+        #    line = np.mean(self.slopes[sym_index])*graph_timesteps+np.mean(self.intercepts[sym_index])
         #    label ='Mean, Total : %s'%(self.types_of_atoms[sym_index])
-        #    ax.plot(self.timesteps, line, color='C%d'%(sym_index), label=label, linestyle="-")
+        #    ax.plot(graph_timesteps, line, color='C%d'%(sym_index), label=label, linestyle="-")
 
         # Aesthetic parts of the plot
         ax.set_ylim(-0.001, 1.05*np.amax(self.xyz_segment_ensemble_average))
@@ -264,12 +266,18 @@ class DiffusionCoefficient:
         Output of statistical analysis for Diffusion Coefficient data. Provides basic framework for understanding calculation.
         '''
 
-        # Safety check, so we don't return garbage.
-        if len(self.slopes) == 0:
-            self.calculate()
- 
+        from ase.units import fs as fs_conversion
+
         # Collect statistical data for diffusion coefficient over all segments
+        # Sanity check is embedded into this function (calculate coefficients)
         slopes, std = self.get_diffusion_coefficients(stddev=True)
+
+        # Useful notes for any consideration of conversion. 
+        # Converting gradient from \AA^2/fs to more common units of cm^2/s => multiplying by (10^-8)^2 / 10^-15 = 10^-1
+        # Converting intercept from \AA^2 to more common units of cm^2 => multiply by (10^-8)^2 = 10^-16
+        #
+        # Note currently in ASE internal time units
+        # Converting into fs => divide by 1/(fs_conversion) => multiply by (fs_conversion)
 
         # Print data for each atom, in each segment.
         for sym_index in range(self.no_of_types_of_atoms):
@@ -277,12 +285,12 @@ class DiffusionCoefficient:
             print(r'Species: %4s' % self.types_of_atoms[sym_index])
             print('---')
             for segment_no in range(self.no_of_segments):
-                print(r'Segment   %3d:         Diffusion Coefficient = %.10f cm^2/s; Intercept = %.10f cm^2;' % 
-                     (segment_no, np.mean(self.slopes[sym_index][segment_no])*(0.1), np.mean(self.intercepts[sym_index][segment_no])*(10**-16)))
+                print(r'Segment   %3d:         Diffusion Coefficient = %.10f Å^2/fs; Intercept = %.10f Å^2;' % 
+                     (segment_no, np.mean(self.slopes[sym_index][segment_no])*fs_conversion, np.mean(self.intercepts[sym_index][segment_no])))
 
         # Print average overall data.
         print('---')
         for sym_index in range(self.no_of_types_of_atoms):
-            print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f cm^2/s; Std. Dev. = %.10f cm^2/s' % 
-                 (self.types_of_atoms[sym_index], slopes[sym_index], std[sym_index]))
+            print('Mean Diffusion Coefficient (X, Y and Z) : %s = %.10f Å^2/fs; Std. Dev. = %.10f Å^2/fs' % 
+                 (self.types_of_atoms[sym_index], slopes[sym_index]*fs_conversion, std[sym_index]*fs_conversion))
         print('---')

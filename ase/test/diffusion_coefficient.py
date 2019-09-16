@@ -1,5 +1,6 @@
 from ase.md.analysis import DiffusionCoefficient
 from ase.atoms import Atoms
+from ase.units import fs as fs_conversion
 
 eps = 1e-10
 # Creating simple trajectories
@@ -11,14 +12,15 @@ he = Atoms('He', positions=[(0, 0, 0)])
 traj_he = [he.copy() for i in range(2)]
 traj_he[1].set_positions([(1, 1, 1)])
 
-timestep = 1 #fs
+timestep = 1 * fs_conversion #fs
 steps_between_images = 1
 
 dc_he = DiffusionCoefficient(traj_he, timestep, steps_between_images)
 dc_he.calculate(ignore_n_images=0, number_of_segments=1)
 ans = dc_he.get_diffusion_coefficients()[0]
-# Answer in cm^2/s
-ans_orig = 5.0e-02
+# Answer in \AA^2/<ASE time unit>
+ans_orig = 5.0e-01 / fs_conversion
+#dc_he.print_data()
 
 assert(abs(ans - ans_orig) < eps)
 
@@ -31,6 +33,8 @@ traj_co[1].set_positions([(-1, -1, -1), (1, 1, 2)])
 dc_co = DiffusionCoefficient(traj_co, timestep, steps_between_images, molecule=False)
 dc_co.calculate(ignore_n_images=0, number_of_segments=1)
 ans = dc_co.get_diffusion_coefficients()[0]
+#dc_co.print_data()
+
 assert(abs(ans - ans_orig) < eps)
 
 for index in range(2):
@@ -43,4 +47,6 @@ dc_co = DiffusionCoefficient(traj_co, timestep, steps_between_images, molecule=T
 dc_co.calculate(ignore_n_images=0, number_of_segments=1)
 ans = dc_co.get_diffusion_coefficients()[0]
 ans_orig = 0.0
+#dc_co.print_data()
+
 assert(abs(ans - ans_orig) < eps)
