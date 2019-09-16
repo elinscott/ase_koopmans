@@ -24,101 +24,38 @@ except ImportError:
     raise RuntimeError("kimpy not found; KIM calculator will not work")
 
 
-class KIMModelCalculator(Calculator):
-    """ An ASE calculator to work with KIM interatomic models.
+class KIMModelData(object):
+    """ Initializes and subsequently contains the KIM API Model object, KIM API
+    ComputeArguments object, and the neighbor list object used by instances of
+    KIMModelCalculator """
 
-    Parameters
-    ----------
-
-    modelname: str
-      KIM model name
-
-    ase_neigh: bool
-      True: use ase neighbor list (usually slower than the kimpy neighlist library)
-      False: use kimpy neighbor list library
-
-    neigh_skin_ratio: double
-      The neighbor list is build using r_neigh = (1+neigh_skin_ratio)*rcut.
-
-    release_GIL: bool
-      Whether to release python GIL s.t. a KIM model can run with multiple threads
-
-    debug: bool
-      Whether to enable debug mode to print extra information.
-    """
-
-    implemented_properties = ["energy", "forces", "stress"]
-
-    def __init__(
-        self,
-        modelname,
-        ase_neigh=False,
-        neigh_skin_ratio=0.2,
-        release_GIL=False,
-        debug=False,
-        *args,
-        **kwargs
-    ):
-        super(KIMModelCalculator, self).__init__(*args, **kwargs)
-
+    def __init__(self, modelname, ase_neigh, debug=False):
         self.modelname = modelname
         self.ase_neigh = ase_neigh
-        self.release_GIL = release_GIL
         self.debug = debug
 
-        # neigh attributes
-        if neigh_skin_ratio < 0:
-            raise ValueError('Argument "neigh_skin_ratio" must be non-negative')
-
-        self.neigh_skin_ratio = neigh_skin_ratio
-        self.neigh = None
-        self.skin = None
-        self.influence_dist = None
-        self.cutoffs = None
-        self.last_update_positions = None
-        if self.ase_neigh:
-            self.update_neigh = self.update_ase_neigh
-        else:
-            self.update_neigh = self.update_kimpy_neigh
-
-        # padding atoms related
-        self.padding_need_neigh = None
-        self.num_contributing_particles = None
-        self.num_padding_particles = None
-        self.padding_image_of = None
-
-        # model and compute arguments objects
-        self.kim_model = None
-        self.compute_args = None
-
-        # model input
-        self.num_particles = None
-        self.species_code = None
-        self.particle_contributing = None
-        self.coords = None
-
-        # model output
-        self.energy = None
-        self.forces = None
-
-        # initialization flags
         self.kim_initialized = False
         self.neigh_initialized = False
 
-        self.species_map = None
+        # model object, compute arguments object, neighbor list object
+        self.kim_model = None
+        self.compute_args = None
+        self.neigh = None
 
-        self.init_kim()
-        self.init_neigh()
+        # initialize KIM API Model object and ComputeArguments object
+        self._init_kim()
 
-    def init_kim(self):
-        """Initialize KIM.
-        """
+        # initialize neighbor list object
+        self._init_neigh()
+
+    def _init_kim(self):
+        """ Create the KIM API Model object and KIM API ComputeArguments object """
 
         if self.kim_initialized:
             return
 
-        # create model
-        units_accepted, kim_model = kim.check_call(
+        # create KIM API Model object
+        units_accepted, self.kim_model = kim.check_call(
             kimpy.model.create,
             kimpy.numbering.zeroBased,
             kimpy.length_unit.A,
@@ -131,11 +68,9 @@ class KIMModelCalculator(Calculator):
 
         if not units_accepted:
             report_error("requested units not accepted in kimpy.model.create")
-        self.kim_model = kim_model
 
-        # units
         if self.debug:
-            l_unit, e_unit, c_unit, te_unit, ti_unit = kim_model.get_units()
+            l_unit, e_unit, c_unit, te_unit, ti_unit = self.kim_model.get_units()
             print("Length unit is:", str(l_unit))
             print("Energy unit is:", str(e_unit))
             print("Charge unit is:", str(c_unit))
@@ -143,8 +78,8 @@ class KIMModelCalculator(Calculator):
             print("Time unit is:", str(ti_unit))
             print()
 
-        # create compute arguments
-        self.compute_args = kim.check_call(kim_model.compute_arguments_create)
+        # create KIM API ComputeArguments object
+        self.compute_args = kim.check_call(self.kim_model.compute_arguments_create)
 
         # check compute arguments
         kimpy_arg_name = kimpy.compute_argument_name
@@ -200,36 +135,11 @@ class KIMModelCalculator(Calculator):
             if support_status == kimpy.support_status.required:
                 report_error("Unsupported required ComputeCallback: {}".format(name))
 
-        # set cutoff
-        model_influence_dist = kim_model.get_influence_distance()
-        self.skin = self.neigh_skin_ratio * model_influence_dist
-        self.influence_dist = model_influence_dist + self.skin
-
-        out = kim_model.get_neighbor_list_cutoffs_and_hints()
-        model_cutoffs, padding_not_require_neigh = out
-        self.cutoffs = np.array(
-            [cut + self.skin for cut in model_cutoffs], dtype=np.double
-        )
-
-        self.padding_need_neigh = not padding_not_require_neigh.all()
-
-        if self.debug:
-            print()
-            print("Calculator skin:", self.skin)
-            print("Model influence distance:", model_influence_dist)
-            print("Calculator influence distance (include skin):", self.influence_dist)
-            print("Number of cutoffs:", model_cutoffs.size)
-            print("Model cutoffs:", model_cutoffs)
-            print("Calculator cutoffs (include skin):", self.cutoffs)
-            print("Model padding not require neighbors:", padding_not_require_neigh)
-            print()
-
-        self.species_map = self.create_species_map()
-
         self.kim_initialized = True
 
-    def init_neigh(self):
-        """Initialize neighbor list."""
+    def _init_neigh(self):
+        """Initialize neighbor list (either an ASE-native neighborlist or one created
+        using the neighlist module in kimpy"""
         if self.ase_neigh:
             neigh = {}
             self.neigh = neigh
@@ -250,6 +160,138 @@ class KIMModelCalculator(Calculator):
             )
 
         self.neigh_initialized = True
+
+    def __del__(self):
+        """Garbage collection for the KIM API Model object, KIM API ComputeArguments
+        object, and the neighbor list object."""
+
+        if self.neigh_initialized:
+            if not self.ase_neigh:
+                nl.clean(self.neigh)
+            self.neigh_initialized = False
+
+        if self.kim_initialized:
+            kim.check_call(self.kim_model.compute_arguments_destroy, self.compute_args)
+            kimpy.model.destroy(self.kim_model)
+            self.kim_initialized = False
+
+
+class KIMModelCalculator(Calculator):
+    """ An ASE calculator to work with KIM interatomic models.
+
+    Parameters
+    ----------
+
+    modelname: str
+      KIM model name
+
+    ase_neigh: bool
+      True: use ase neighbor list (usually slower than the kimpy neighlist library)
+      False: use kimpy neighbor list library
+
+    neigh_skin_ratio: double
+      The neighbor list is build using r_neigh = (1+neigh_skin_ratio)*rcut.
+
+    release_GIL: bool
+      Whether to release python GIL s.t. a KIM model can run with multiple threads
+
+    debug: bool
+      Whether to enable debug mode to print extra information.
+    """
+
+    implemented_properties = ["energy", "forces", "stress"]
+
+    def __init__(
+        self,
+        modelname,
+        ase_neigh=False,
+        neigh_skin_ratio=0.2,
+        release_GIL=False,
+        debug=False,
+        *args,
+        **kwargs
+    ):
+        super(KIMModelCalculator, self).__init__(*args, **kwargs)
+
+        self.modelname = modelname
+        self.ase_neigh = ase_neigh
+        self.release_GIL = release_GIL
+        self.debug = debug
+
+        # neigh attributes
+        if neigh_skin_ratio < 0:
+            raise ValueError('Argument "neigh_skin_ratio" must be non-negative')
+
+        self.neigh_skin_ratio = neigh_skin_ratio
+        self.skin = None
+        self.influence_dist = None
+        self.cutoffs = None
+        self.last_update_positions = None
+        if self.ase_neigh:
+            self.update_neigh = self.update_ase_neigh
+        else:
+            self.update_neigh = self.update_kimpy_neigh
+
+        # padding atoms related
+        self.padding_need_neigh = None
+        self.num_contributing_particles = None
+        self.num_padding_particles = None
+        self.padding_image_of = None
+
+        # model input
+        self.num_particles = None
+        self.species_code = None
+        self.particle_contributing = None
+        self.coords = None
+
+        # model output
+        self.energy = None
+        self.forces = None
+
+        self.species_map = None
+
+        # create KIMModelData object. This will take care of creating and storing the
+        # KIM API Model object, KIM API ComputeArguments object, and the neighbor list
+        # object that our calculator needs
+        self.kimmodeldata = KIMModelData(self.modelname, self.ase_neigh, self.debug)
+
+        # set cutoff
+        model_influence_dist = self.kim_model.get_influence_distance()
+        self.skin = self.neigh_skin_ratio * model_influence_dist
+        self.influence_dist = model_influence_dist + self.skin
+
+        out = self.kim_model.get_neighbor_list_cutoffs_and_hints()
+        model_cutoffs, padding_not_require_neigh = out
+        self.cutoffs = np.array(
+            [cut + self.skin for cut in model_cutoffs], dtype=np.double
+        )
+
+        self.padding_need_neigh = not padding_not_require_neigh.all()
+
+        if self.debug:
+            print()
+            print("Calculator skin:", self.skin)
+            print("Model influence distance:", model_influence_dist)
+            print("Calculator influence distance (include skin):", self.influence_dist)
+            print("Number of cutoffs:", model_cutoffs.size)
+            print("Model cutoffs:", model_cutoffs)
+            print("Calculator cutoffs (include skin):", self.cutoffs)
+            print("Model padding not require neighbors:", padding_not_require_neigh)
+            print()
+
+        self.species_map = self.create_species_map()
+
+    @property
+    def kim_model(self):
+        return self.kimmodeldata.kim_model
+
+    @property
+    def compute_args(self):
+        return self.kimmodeldata.compute_args
+
+    @property
+    def neigh(self):
+        return self.kimmodeldata.neigh
 
     def build_neighbor_list(self, atoms):
         """Build the neighbor list and return an Atoms object with all
@@ -301,8 +343,7 @@ class KIMModelCalculator(Calculator):
                 neb_dists[i[k]].append(dists[k])
         neighbor_list_size = num_atoms
 
-        # Add 2. neighbors if the potential requires them, i.e. information
-        # of the padding atoms' neighbors
+        # Add neighbors of padding atoms if the potential requires them
         if self.padding_need_neigh:
             neighbor_list_size = len(ac)
             inv_used = dict((v, k) for k, v in used.items())
@@ -590,7 +631,7 @@ class KIMModelCalculator(Calculator):
         self.results["forces"] = forces
         self.results["stress"] = stress
 
-    def get_kim_model_supported_species_and_codes(self):
+    def get_model_supported_species_and_codes(self):
         """Get all the supported species and corresponding integer codes for the KIM Portable Model.
 
         Returns
@@ -629,7 +670,7 @@ class KIMModelCalculator(Calculator):
             value: int
                 species integer code (e.g. 1)
         """
-        supported_species, codes = self.get_kim_model_supported_species_and_codes()
+        supported_species, codes = self.get_model_supported_species_and_codes()
         species_map = dict()
         for i, s in enumerate(supported_species):
             species_map[s] = codes[i]
@@ -643,19 +684,6 @@ class KIMModelCalculator(Calculator):
 
     def __repr__(self):
         return "KIMModelCalculator(modelname={})".format(self.modelname)
-
-    def __del__(self):
-        """Garbage collection for the KIM model object and neighbor list object."""
-
-        if self.neigh_initialized:
-            if not self.ase_neigh:
-                nl.clean(self.neigh)
-            self.neigh_initialized = False
-
-        if self.kim_initialized:
-            kim.check_call(self.kim_model.compute_arguments_destroy, self.compute_args)
-            kimpy.model.destroy(self.kim_model)
-            self.kim_initialized = False
 
 
 def compare_atoms(atoms1, atoms2, tol=1e-15):
