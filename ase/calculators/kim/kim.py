@@ -24,12 +24,15 @@ from ase.calculators.lammpsrun import LAMMPS
 from ase.calculators.lammps import convert
 
 from .kimmodel import KIMModelCalculator
-from .exceptions import KIMCalculatorError
 
 try:
     import kimpy
 except ImportError:
     raise RuntimeError("kimpy not found; KIM calculator will not work")
+
+
+class KIMCalculatorError(Exception):
+    pass
 
 
 def KIM(extended_kim_id, simulator=None, options=None, debug=False):

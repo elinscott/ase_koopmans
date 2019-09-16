@@ -14,7 +14,6 @@ from ase.calculators.calculator import equal
 from ase import Atom
 from ase.neighborlist import neighbor_list
 
-from .exceptions import KIMCalculatorError
 from . import kim
 
 try:
@@ -796,11 +795,11 @@ def compute_virial_stress(forces, coords, volume):
 
 def check_error(error, msg):
     if error != 0 and error is not None:
-        raise KIMCalculatorError('Calling "{}" failed.'.format(msg))
+        raise kim.KIMCalculatorError('Calling "{}" failed.'.format(msg))
 
 
 def report_error(msg):
-    raise KIMCalculatorError(msg)
+    raise kim.KIMCalculatorError(msg)
 
 
 def get_neigh(data, cutoffs, neighbor_list_index, particle_number):
