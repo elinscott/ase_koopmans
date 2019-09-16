@@ -304,7 +304,7 @@ def _get_simulator_model_info(extended_kim_id):
     atom_style = None
     try:
         for ln in sm_metadata_fields["model-init"]:
-            if ln.find("atom_style"):
+            if ln.find("atom_style") != -1:
                 atom_style = ln.split()[1]
     except KeyError:
         pass
