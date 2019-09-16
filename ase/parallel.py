@@ -156,6 +156,10 @@ class MPI4PY:
 
     def broadcast(self, a, root):
         b = self.comm.bcast(a, root=root)
+        if self.rank == root:
+            if np.isscalar(a):
+                return a
+            return
         return self._returnval(a, b)
 
 
