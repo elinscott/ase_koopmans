@@ -136,7 +136,7 @@ Speakers
 
  * - Maxime Van den Bossche, Institut des Nanosciences de Paris, France
    - Global crystal structure optimization with ASE (and with a little help from DFTB)
- * - Jinhyun Chang, Technical University of Denmark, Denmark
+ * - Jin Hyun Chang, Technical University of Denmark, Denmark
    -
  * - Erik Fransson, Chalmers University of Technology, Sweden
    - Development of softwares for atomic-scale modeling: Cluster expansions and force constants
@@ -152,6 +152,8 @@ Speakers
    -
  * - Ask Hjorth Larsen, Universidad del País Vasco UPV/EHU, Spain
    -
+ * - Bjørn Lindi, Norwegian University of Science and Technology, Norway
+   - Fail forward: Development of Reproducible and Reusable software is a learning experience
  * - Marko Melander, University of Jyväskylä, Finland
    - Theory and modeling electrochemical thermodynamics and kinetics: The Grand Canonical Approach
  * - Jens Jørgen Mortensen, Technical University of Denmark, Denmark
