@@ -168,7 +168,10 @@ class DiffusionCoefficient:
 
         '''
         Returns diffusion coefficients for atoms (in alphabetical order) along with standard deviation.
+        
         All data is currently passed out in units of \AA**2/<ASE time units>
+        To convert into \AA^2/fs => multiply by ase.units.fs
+        To convert from \AA^2/fs to cm^2/s => multiply by (10^-8)^2 / 10^-15 = 10^-1
 
         Parameters:
             stddev (Boolean)
