@@ -43,10 +43,10 @@ class KIMModelData(object):
         self.neigh = None
 
         # initialize KIM API Model object and ComputeArguments object
-        self._init_kim()
+        self.init_kim()
 
         # initialize neighbor list object
-        self._init_neigh()
+        self.init_neigh()
 
     def init_kim(self):
         """ Create the KIM API Model object and KIM API ComputeArguments object """
@@ -291,6 +291,18 @@ class KIMModelCalculator(Calculator):
             print()
 
         self.species_map = self.create_species_map()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, value, traceback):
+        if exc_type is None:
+            if self.kimmodeldata is not None:
+                # Explicitly deallocate all three objects held by the KIMModelData
+                # instance referenced by our calculator
+                self.kimmodeldata.clean()
+        else:
+            return False  # reraise exception
 
     @property
     def kim_model(self):
