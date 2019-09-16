@@ -136,7 +136,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         elif simulator == "lammpslib":
             raise KIMCalculatorError(
-                '"lammpslib" calculator does not support KIM Portable Model. Try '
+                '"lammpslib" calculator does not support KIM Portable Models. Try '
                 'using the "lammpsrun" calculator.'
             )
         else:
@@ -326,7 +326,7 @@ def _get_kim_pm_supported_species(extended_kim_id):
     Gets species supported by either a KIM Portable Model or a KIM Simulator Model
     """
     with KIMModelCalculator(extended_kim_id) as calc:
-        supported_species, _ = calc.get_kim_model_supported_species_and_codes()
+        supported_species, _ = calc.get_model_supported_species_and_codes()
 
     return supported_species
 
