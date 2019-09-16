@@ -169,9 +169,9 @@ class DiffusionCoefficient:
         '''
         Returns diffusion coefficients for atoms (in alphabetical order) along with standard deviation.
         
-        All data is currently passed out in units of \\AA**2/<ASE time units>
-        To convert into \\AA^2/fs => multiply by ase.units.fs
-        To convert from \\AA^2/fs to cm^2/s => multiply by (10^-8)^2 / 10^-15 = 10^-1
+        All data is currently passed out in units of Å^2/<ASE time units>
+        To convert into Å^2/fs => multiply by ase.units.fs
+        To convert from Å^2/fs to cm^2/s => multiply by (10^-8)^2 / 10^-15 = 10^-1
 
         Parameters:
             stddev (Boolean)
@@ -276,8 +276,8 @@ class DiffusionCoefficient:
         slopes, std = self.get_diffusion_coefficients(stddev=True)
 
         # Useful notes for any consideration of conversion. 
-        # Converting gradient from \AA^2/fs to more common units of cm^2/s => multiplying by (10^-8)^2 / 10^-15 = 10^-1
-        # Converting intercept from \AA^2 to more common units of cm^2 => multiply by (10^-8)^2 = 10^-16
+        # Converting gradient from Å^2/fs to more common units of cm^2/s => multiplying by (10^-8)^2 / 10^-15 = 10^-1
+        # Converting intercept from Å^2 to more common units of cm^2 => multiply by (10^-8)^2 = 10^-16
         #
         # Note currently in ASE internal time units
         # Converting into fs => divide by 1/(fs_conversion) => multiply by (fs_conversion)
