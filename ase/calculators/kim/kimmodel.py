@@ -48,7 +48,7 @@ class KIMModelData(object):
         # initialize neighbor list object
         self._init_neigh()
 
-    def _init_kim(self):
+    def init_kim(self):
         """ Create the KIM API Model object and KIM API ComputeArguments object """
 
         if self.kim_initialized:
@@ -137,7 +137,7 @@ class KIMModelData(object):
 
         self.kim_initialized = True
 
-    def _init_neigh(self):
+    def init_neigh(self):
         """Initialize neighbor list (either an ASE-native neighborlist or one created
         using the neighlist module in kimpy"""
         if self.ase_neigh:
@@ -161,19 +161,30 @@ class KIMModelData(object):
 
         self.neigh_initialized = True
 
-    def __del__(self):
-        """Garbage collection for the KIM API Model object, KIM API ComputeArguments
-        object, and the neighbor list object."""
-
+    def clean_neigh(self):
+        """If the neighbor list method being used is the one in the kimpy neighlist
+        module, deallocate its memory"""
         if self.neigh_initialized:
             if not self.ase_neigh:
                 nl.clean(self.neigh)
             self.neigh_initialized = False
 
+    def clean_kim(self):
+        """Deallocate the memory allocated to the KIM API Model object and KIM API
+        ComputeArguments object"""
         if self.kim_initialized:
             kim.check_call(self.kim_model.compute_arguments_destroy, self.compute_args)
             kimpy.model.destroy(self.kim_model)
             self.kim_initialized = False
+
+    def clean(self):
+        """Deallocate the KIM API Model object, KIM API ComputeArguments object, and, if
+        applicable, the neighbor list object"""
+        self.clean_neigh()
+        self.clean_kim()
+
+    def __del__(self):
+        self.clean()
 
 
 class KIMModelCalculator(Calculator):
