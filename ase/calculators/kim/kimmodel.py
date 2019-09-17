@@ -24,10 +24,10 @@ except ImportError:
 
 
 class KIMModelData(object):
-    """ Initializes and subsequently contains the KIM API Model object, KIM API
-    ComputeArguments object, and the neighbor list object used by instances of
-    KIMModelCalculator """
-
+    """Initializes and subsequently stores the KIM API Model object, KIM
+    API ComputeArguments object, and the neighbor list object used by
+    instances of KIMModelCalculator
+    """
     def __init__(self, modelname, ase_neigh, debug=False):
         self.modelname = modelname
         self.ase_neigh = ase_neigh
@@ -48,7 +48,8 @@ class KIMModelData(object):
         self.init_neigh()
 
     def init_kim(self):
-        """ Create the KIM API Model object and KIM API ComputeArguments object """
+        """Create the KIM API Model object and KIM API ComputeArguments
+        object"""
 
         if self.kim_initialized:
             return
@@ -137,8 +138,9 @@ class KIMModelData(object):
         self.kim_initialized = True
 
     def init_neigh(self):
-        """Initialize neighbor list (either an ASE-native neighborlist or one created
-        using the neighlist module in kimpy"""
+        """Initialize neighbor list (either an ASE-native neighborlist
+        or one created using the neighlist module in kimpy
+        """
         if self.ase_neigh:
             neigh = {}
             self.neigh = neigh
@@ -161,24 +163,27 @@ class KIMModelData(object):
         self.neigh_initialized = True
 
     def clean_neigh(self):
-        """If the neighbor list method being used is the one in the kimpy neighlist
-        module, deallocate its memory"""
+        """If the neighbor list method being used is the one in the
+        kimpy neighlist module, deallocate its memory
+        """
         if self.neigh_initialized:
             if not self.ase_neigh:
                 nl.clean(self.neigh)
             self.neigh_initialized = False
 
     def clean_kim(self):
-        """Deallocate the memory allocated to the KIM API Model object and KIM API
-        ComputeArguments object"""
+        """Deallocate the memory allocated to the KIM API Model object
+        and KIM API ComputeArguments object
+        """
         if self.kim_initialized:
             kim.check_call(self.kim_model.compute_arguments_destroy, self.compute_args)
             kimpy.model.destroy(self.kim_model)
             self.kim_initialized = False
 
     def clean(self):
-        """Deallocate the KIM API Model object, KIM API ComputeArguments object, and, if
-        applicable, the neighbor list object"""
+        """Deallocate the KIM API Model object, KIM API ComputeArguments
+        object, and, if applicable, the neighbor list object
+        """
         self.clean_neigh()
         self.clean_kim()
 
@@ -187,28 +192,26 @@ class KIMModelData(object):
 
 
 class KIMModelCalculator(Calculator):
-    """ An ASE calculator to work with KIM interatomic models.
+    """Calculator that works with KIM Portable Models (PMs)
 
     Parameters
     ----------
-
-    modelname: str
+    modelname : str
       KIM model name
 
-    ase_neigh: bool
+    ase_neigh : bool
       True: use ase neighbor list (usually slower than the kimpy neighlist library)
       False: use kimpy neighbor list library
 
-    neigh_skin_ratio: double
+    neigh_skin_ratio : double
       The neighbor list is build using r_neigh = (1+neigh_skin_ratio)*rcut.
 
-    release_GIL: bool
+    release_GIL : bool
       Whether to release python GIL s.t. a KIM model can run with multiple threads
 
-    debug: bool
+    debug : bool
       Whether to enable debug mode to print extra information.
     """
-
     implemented_properties = ["energy", "forces", "stress"]
 
     def __init__(
@@ -319,13 +322,12 @@ class KIMModelCalculator(Calculator):
         return self.kimmodeldata.neigh
 
     def build_neighbor_list(self, atoms):
-        """Build the neighbor list and return an Atoms object with all
-        the neighbors added.
-
-        First a neighbor list is created from ase.neighbor_list, having
-        only information about first neighbors of the original atoms
-        if second neighbors are required they are calculated using information
-        from the first neighbor list
+        """Build the ASE neighbor list and return an Atoms object with
+        all of the neighbors added.  First a neighbor list is created
+        from ase.neighbor_list, having only information about the
+        neighbors of the original atoms.  If neighbors of padding atoms
+        are required, they are calculated using information from the
+        first neighbor list.
         """
         syms = atoms.get_chemical_symbols()
         num_atoms = len(atoms)
@@ -417,15 +419,17 @@ class KIMModelCalculator(Calculator):
         return ac
 
     def update_ase_neigh(self, atoms):
-        """Create the neighbor list along with the other required parameters.
-        The required parameters are:
-        - num_particles
-        - coords
-        - particle_contributing
-        - species_code
+        """Create the neighbor list along with the other required
+        parameters (which are stored as instance attributes). The
+        required parameters are:
 
-        KIM requires a neighbor list that has indices corresponding to
-        positions.
+            - num_particles
+            - coords
+            - particle_contributing
+            - species_code
+
+        Note that the KIM API requires a neighbor list that has indices
+        corresponding to each atom.
         """
         # Information of original atoms
         self.num_contributing_particles = len(atoms)
@@ -457,14 +461,17 @@ class KIMModelCalculator(Calculator):
             print()
 
     def update_kimpy_neigh(self, atoms):
-        """Create the neighbor list along with the other required parameters.
-        The required parameters are:
-        - num_particles
-        - coords
-        - particle_contributing
-        - species_code
+        """Create the neighbor list along with the other required
+        parameters (which are stored as instance attributes). The
+        required parameters are:
 
+            - num_particles
+            - coords
+            - particle_contributing
+            - species_code
 
+        Note that the KIM API requires a neighbor list that has indices
+        corresponding to each atom.
         """
 
         # get info from Atoms object
@@ -598,21 +605,22 @@ class KIMModelCalculator(Calculator):
         system_changes=["positions", "numbers", "cell", "pbc"],
     ):
         """
-        Inherited method from the ase Calculator class that is called by get_property().
+        Inherited method from the ase Calculator class that is called by
+        get_property()
 
         Parameters
         ----------
+        atoms : Atoms
+            Atoms object whose properties are desired
 
-        atoms: ASE Atoms instance
+        properties : list of str
+            List of what needs to be calculated.  Can be any combination
+            of 'energy', 'forces' and 'stress'.
 
-        properties: list of str
-          List of what needs to be calculated.  Can be any combination
-          of 'energy', 'forces' and 'stress'.
-
-        system_changes: list of str
-          List of what has changed since last calculation.  Can be
-          any combination of these six: 'positions', 'numbers', 'cell',
-          and 'pbc'.
+        system_changes : list of str
+            List of what has changed since last calculation.  Can be any
+            combination of these six: 'positions', 'numbers', 'cell',
+            and 'pbc'.
         """
 
         Calculator.calculate(self, atoms, properties, system_changes)
@@ -657,16 +665,18 @@ class KIMModelCalculator(Calculator):
         self.results["stress"] = stress
 
     def get_model_supported_species_and_codes(self):
-        """Get all the supported species and corresponding integer codes for the KIM Portable Model.
+        """Get all the supported species and corresponding integer codes
+        for the KIM Portable Model.
 
         Returns
         -------
-        species: list of str
-            Abbreviated chemical symbols of all species the mmodel supports (e.g. ["Mo", "S"])
+        species : list of str
+            Abbreviated chemical symbols of all species the mmodel
+            supports (e.g. ["Mo", "S"])
 
         codes : list of int
-            Integer codes used by the model for each species (order corresponds to the
-            order of `species`)
+            Integer codes used by the model for each species (order
+            corresponds to the order of `species`)
         """
         species = []
         codes = []
@@ -684,15 +694,15 @@ class KIMModelCalculator(Calculator):
         return species, codes
 
     def create_species_map(self):
-        """Get all the supported species of the KIM model and the corresponding codes.
+        """Get all the supported species of the KIM model and the
+        corresponding integer codes used by the model
 
         Returns
         -------
-
-        species_map: dict
-            key: str
+        species_map : dict
+            key : str
                 chemical symbols (e.g. "Ar")
-            value: int
+            value : int
                 species integer code (e.g. 1)
         """
         supported_species, codes = self.get_model_supported_species_and_codes()
@@ -712,10 +722,10 @@ class KIMModelCalculator(Calculator):
 
 
 def compare_atoms(atoms1, atoms2, tol=1e-15):
-    """Check for system changes since last calculation.
-    Since each calculate call will compute all properties, we will just
-    return the first difference to trigger a calculation.
-    It uses the default tolerance in the used numpy functions.
+    """Check for system changes since last calculation.  Since each
+    calculate call will compute all properties, we will just return the
+    first difference to trigger a calculation.  It uses the default
+    tolerance used in the applicable numpy functions.
     """
     if atoms1 is None:
         return ["positions", "numbers", "cell", "pbc"]
@@ -739,20 +749,19 @@ def assemble_padding_forces(forces, num_contrib, padding_image_of):
 
     Parameters
     ----------
+    forces : 2D array of doubles
+        Forces on both contributing and padding atoms
 
-    forces: 2D array
-      forces on both contributing and padding atoms
+    num_contrib:  int
+        Number of contributing atoms
 
-    num_contrib: int
-      number of contributing atoms
-
-    padding_image_of: 1D int array
-      atom number, of which the padding atom is an image
+    padding_image_of : 1D array of int
+        Atom number, of which the padding atom is an image
 
 
     Returns
     -------
-      Total forces on contributing atoms.
+        Total forces on contributing atoms.
     """
     total_forces = np.array(forces[:num_contrib])
 
@@ -767,22 +776,22 @@ def assemble_padding_forces(forces, num_contrib, padding_image_of):
 
 
 def compute_virial_stress(forces, coords, volume):
-    """Compute the virial stress in voigt notation.
+    """Compute the virial stress in Voigt notation.
 
     Parameters
     ----------
-      forces: 2D array
-        partial forces on all atoms (padding included)
+    forces : 2D array
+        Partial forces on all atoms (padding included)
 
-      coords: 2D array
-        coordinates of all atoms (padding included)
+    coords : 2D array
+        Coordinates of all atoms (padding included)
 
-      volume: float
-        volume of cell
+    volume : float
+        Volume of cell
 
     Returns
     -------
-      stress: 1D array
+    stress : 1D array
         stress in Voigt order (xx, yy, zz, yz, xz, xy)
     """
     stress = np.zeros(6)
@@ -796,17 +805,14 @@ def compute_virial_stress(forces, coords, volume):
     return stress
 
 
-def check_error(error, msg):
-    if error != 0 and error is not None:
-        raise kim.KIMCalculatorError('Calling "{}" failed.'.format(msg))
-
-
 def report_error(msg):
     raise kim.KIMCalculatorError(msg)
 
 
 def get_neigh(data, cutoffs, neighbor_list_index, particle_number):
-    """Get neigh function of the ase neighbor list."""
+    """Retrieves the neighbors of each atom using ASE's native neighbor
+    list library
+    """
     # We can only return neighbors of particles that were stored
     number_of_particles = data["num_particles"]
     if particle_number >= number_of_particles or particle_number < 0:

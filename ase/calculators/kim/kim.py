@@ -36,45 +36,81 @@ class KIMCalculatorError(Exception):
 
 
 def KIM(extended_kim_id, simulator=None, options=None, debug=False):
-    """Calculator for interatomic models archived in the Open Knowledgebase
-    of Interatomic Models (OpenKIM) at https://openkim.org
+    """Calculator wrapper for OpenKIM models
+
+    Returns a suitable calculator that can be used with any model
+    archived in the Open Knowledgebase of Interatomic Models (OpenKIM)
+    at https://openkim.org.  There are two kinds of models in KIM:
+    Portable Models (PMs), which contain an '__MO_' in their name and
+    can be used with any KIM-compliant simulator, and Simulator Models
+    (SMs), which have an '__SM_' in their name and are essentially just
+    wrappers around native commands in a specific simulator.  In
+    general, 'simulator' can be omitted, in which case this function
+    will automatically determine a calculator compatible with the
+    specified model and return it.
 
     Parameters
     ----------
-    extended_kim_id: string
-        Extended KIM ID of the KIM interatomic model (for details see:
-        https://openkim.org/about-kim-ids/)
+    extended_kim_id : str
+        Extended KIM ID of the interatomic model (for details, see
+        https://openkim.org/doc/schema/kim-ids)
 
-    simulator: string (optional)
-        Name of the simulator to be used. This is the name of the ASE calculator
-        that will be used to run the KIM interatomic model. Supported simulators
-        include ``kimmodel``, ``lammpslib``, ``lammpsrun`` and ``asap``.  If
-        ``None``, simulator is determined automatically based on
-        ``extended_kim_id``.
+    simulator : str, optional
+        Name of the ASE calculator that will be used.  Supported
+        simulators currently include 'kimmodel', 'lammpslib',
+        'lammpsrun' and 'asap'.  However, not all of these values are
+        compatible with all KIM models; for example, a KIM SM created
+        for LAMMPS must either use either 'lammpslib' or 'lammpsrun'.
+        If None, a compatible simulator is determined automatically
+        based on `extended_kim_id`.
 
-    options: dictionary (optional)
-        Additional options passed to the initializer of the selected simulator.
-        If the ``simulator="kimmodel"``, possible options are:
+    options : dict, optional
+        Additional options passed to the initializer of the selected
+        simulator.  If `simulator`=='kimmodel', possible options are:
 
         options = {'neigh_skin_ratio': 0.2, 'release_GIL': False}
 
-        where ``neigh_skin_ratio`` provides the skin (as a factor of the model
-        cutoff) used to determine the neighbor list, and ``release_GIL``
-        determines whether to release the python GIL, which allows a KIM model
-        to be run with multiple threads.
+        where 'neigh_skin_ratio' provides the skin (as a factor of the
+        model cutoff) used to determine the neighbor list, and
+        'release_GIL' determines whether to release the python GIL,
+        which allows a KIM model to be run with multiple threads.
 
-        See the LAMMPS calculators doc page
-        https://wiki.fysik.dtu.dk/ase/ase/calculators/lammps.html
-        for available options for ``lammpsrun`` and ``lammpslib``.
+        See the ASE LAMMPS calculators doc page
+        (https://wiki.fysik.dtu.dk/ase/ase/calculators/lammps.html) for
+        available options for the lammpslib and lammpsrun calculators.
 
-    debug: bool (optional)
-        If ``True``, turn on the debug mode to output extra information.
+    debug: bool, optional
+        If True, detailed information is printed to stdout.  If the
+        lammpsrun calculator is being used, this also serves as the
+        value of the `keep_tmp_files` option.
 
-    Note
-    ----
-    This calculator is actually a wrapper that returns a calculator based on the
-    arguments ``extended_kim_id`` and ``simulator``.
+    Returns
+    -------
+    calc : Calculator
+        An ASE calculator.  Currently, this will be an instance of
+        KIMModelCalculator, LAMMPS (the lammpsrun calculator), or
+        LAMMPSlib, which are all defined in the ASE codebase, or an
+        instance of one of either OpenKIMcalculator or EMT, which are
+        defined in the asap3 codebase.
+
+    Raises
+    ------
+    KIMCalculatorError
+        Blanket exception type used to handle errors that arise related
+        to using incompatible combinations of values for the arguments
+        or from errors produced by kimpy
+
+    See Also
+    --------
+        asap3.Internal.OpenKIMcalculator.OpenKIMcalculator
+        asap3.Internal.BuiltinPotentials.EMT
+        ase.calculators.kim.kimmodel.KIMModelCalculator
+        ase.calculators.lammpslib.LAMMPSlib
+        ase.calculators.lammpsrun.LAMMPS
     """
+
+    # calculator to return
+    calc = None
 
     # options set internally in this calculator
     kimmodel_not_allowed_options = ["modelname", "debug"]
@@ -104,7 +140,8 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
         if simulator == "kimmodel":
             _check_conflict_options(options, kimmodel_not_allowed_options, simulator)
-            return KIMModelCalculator(extended_kim_id, debug=debug, **options)
+            calc = KIMModelCalculator(extended_kim_id, debug=debug, **options)
+            return calc
 
         elif simulator == "asap":
             try:
@@ -113,7 +150,8 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 raise ImportError(str(e) + " You need to install asap3 first.")
 
             _check_conflict_options(options, asap_kimpm_not_allowed_options, simulator)
-            return OpenKIMcalculator(name=extended_kim_id, verbose=debug, **options)
+            calc = OpenKIMcalculator(name=extended_kim_id, verbose=debug, **options)
+            return calc
 
         elif simulator == "lammpsrun":
 
@@ -130,12 +168,13 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             )
 
             # Return LAMMPS calculator
-            return LAMMPS(
+            calc = LAMMPS(
                 **parameters,
                 specorder=supported_species,
                 keep_tmp_files=debug,
                 **options
             )
+            return calc
 
         elif simulator == "lammpslib":
             raise KIMCalculatorError(
@@ -185,9 +224,10 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             )
 
             # Return LAMMPS calculator
-            return LAMMPS(
+            calc = LAMMPS(
                 **parameters, specorder=supported_species, keep_tmp_files=debug
             )
+            return calc
 
         elif simulator == "lammpslib":
             # check options
@@ -215,7 +255,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             ]
 
             # Return LAMMPSlib calculator
-            return LAMMPSlib(
+            calc = LAMMPSlib(
                 lammps_header=model_init,
                 lammps_name=None,
                 lmpcmds=kim_interactions,
@@ -224,6 +264,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
                 keep_alive=True,
                 **options
             )
+            return calc
 
         else:
             raise KIMCalculatorError(
@@ -236,8 +277,9 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
 def _is_portable_model(extended_kim_id):
     """
-    Returns True if the model specified is a KIM Portable Model (if it is not, then it
-    must be a KIM Simulator Model -- there are no other types of models in KIM)
+    Returns True if the model specified is a KIM Portable Model (if it
+    is not, then it must be a KIM Simulator Model -- there are no other
+    types of models in KIM)
     """
     col = check_call(kimpy.collections.create)
 
@@ -250,8 +292,8 @@ def _is_portable_model(extended_kim_id):
 
 def _get_simulator_model_info(extended_kim_id):
     """
-    Retrieve Simulator Model metadata including its native simulator, supported species,
-    and units
+    Retrieve Simulator Model metadata including its native simulator,
+    supported species, and units
     """
     # Create a KIM API simulator Model object for this model
     kim_simulator_model = check_call(kimpy.simulator_model.create, extended_kim_id)
@@ -324,16 +366,21 @@ def _get_simulator_model_info(extended_kim_id):
 
 def _get_kim_pm_supported_species(extended_kim_id):
     """
-    Gets species supported by either a KIM Portable Model or a KIM Simulator Model
+    Gets species supported by a KIM Portable Model
     """
-    with KIMModelCalculator(extended_kim_id) as calc:
-        supported_species, _ = calc.get_model_supported_species_and_codes()
+    with KIMModelCalculator(extended_kim_id) as kim_calc:
+        supported_species, _ = kim_calc.get_model_supported_species_and_codes()
 
     return supported_species
 
 
 def _asap_kimsm_calculator(extended_kim_id, model_defn, supported_units):
-
+    """
+    Given the 'model-defn' entry from the metadata file (smspec.edn) of
+    an ASAP KIM SM, construct an applicable asap3 calculator.  The
+    supported units read from the metadata file are simply checked to
+    ensure they correspond to ASE's native units.
+    """
     # Check model_defn to make sure there's only one element in it that is a non-empty
     # string
     if len(model_defn) == 0:
@@ -372,24 +419,24 @@ def _asap_kimsm_calculator(extended_kim_id, model_defn, supported_units):
         # pull out potential parameters
         mobj = re.search(r"\(([a-z0-9_\(\)]+)\)", model_defn)
         if mobj is None:
-            calc = EMT()
+            asap_calc = EMT()
         else:
             pp = mobj.group(1)
 
             if pp.startswith("emtrasmussenparameters"):
-                calc = EMT(Params=EMTRasmussenParameters())
+                asap_calc = EMT(parameters=EMTRasmussenParameters())
             elif pp.startswith("emtmetalglassparameters"):
-                calc = EMT(Params=EMTMetalGlassParameters())
+                asap_calc = EMT(parameters=EMTMetalGlassParameters())
             else:
                 raise KIMCalculatorError(
                     'Unknown model "{}" for simulator ASAP.'.format(model_defn)
                 )
 
-    # Use undocumented feature for the EMT calculators to take the energy of an
+    # Use undocumented feature for the EMT asap_calculators to take the energy of an
     # isolated atoms as zero. (Otherwise it is taken to be that of perfect FCC.)
-    calc.set_subtractE0(False)
+    asap_calc.set_subtractE0(False)
 
-    return calc
+    return asap_calc
 
 
 def _get_params_for_LAMMPS_calculator(
@@ -442,10 +489,10 @@ def _check_error(error, msg):
 
 def check_call(f, *args):
     """
-    Wrapper for functions that checks error codes, since many of the functions calls are
-    actually python bindings to functions written in other languages.  Functions are
-    assumed to return either an integer error code or a tuple whose last element is an
-    integer error code.
+    Wrapper for functions that checks error codes, since many of the
+    functions calls are actually python bindings to functions written in
+    other languages.  Functions are assumed to return either an integer
+    error code or a tuple whose last element is an integer error code.
     """
     ret = f(*args)
 
