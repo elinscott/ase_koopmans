@@ -171,9 +171,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         # check options
         _check_conflict_options(options, asap_kimsm_not_allowed_options, simulator)
 
-        return _asap_kimsm_calculator(
-            extended_kim_id, model_defn, supported_units, options
-        )
+        return _asap_kimsm_calculator(extended_kim_id, model_defn, supported_units)
 
     elif simulator_name == "LAMMPS":
 
