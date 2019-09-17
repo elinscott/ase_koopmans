@@ -166,8 +166,8 @@ def test_external_table_upon_update(db_name):
     no_features = 500
     ext_table = dict((i, i) for i in range(no_features))
     atoms = Atoms('Pb', positions=[[0, 0, 0]])
-    db.write(atoms)
-    db.update(1, external_tables={'sys': ext_table})
+    uid = db.write(atoms)
+    db.update(uid, external_tables={'sys': ext_table})
 
 
 def test_external_table_upon_update_with_float(db_name):
