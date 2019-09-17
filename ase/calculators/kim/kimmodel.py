@@ -237,10 +237,6 @@ class KIMModelCalculator(Calculator):
         self.influence_dist = None
         self.cutoffs = None
         self.last_update_positions = None
-        if self.ase_neigh:
-            self.update_neigh = self.update_ase_neigh
-        else:
-            self.update_neigh = self.update_kimpy_neigh
 
         # padding atoms related
         self.padding_need_neigh = None
@@ -302,6 +298,13 @@ class KIMModelCalculator(Calculator):
                 self.kimmodeldata.clean()
         else:
             return False  # reraise exception
+
+    @property
+    def update_neigh(self):
+        if self.ase_neigh:
+            return self.update_ase_neigh
+        else:
+            return self.update_kimpy_neigh
 
     @property
     def kim_model(self):
