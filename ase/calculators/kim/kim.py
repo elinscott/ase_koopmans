@@ -374,7 +374,7 @@ def _get_kim_pm_supported_species(extended_kim_id):
 
 def get_model_supported_species(extended_kim_id):
     """Convenience function for simulator codes"""
-    if is_portable_model(extended_kim_id):
+    if _is_portable_model(extended_kim_id):
         supported_species = _get_kim_pm_supported_species(extended_kim_id)
     else:
         _, supported_species, _, _, _ = _get_simulator_model_info(extended_kim_id)
