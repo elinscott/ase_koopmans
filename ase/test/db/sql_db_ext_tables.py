@@ -161,15 +161,21 @@ def test_write_atoms_row(db_name):
     db.write(row)
 
 
-def test_external_table_upon_update():
-    db = connect('update_table.db')
+def test_external_table_upon_update(db_name):
+    db = connect(db_name)
     no_features = 5
     ext_table = dict((i, i) for i in range(no_features))
     atoms = Atoms('Pb', positions=[[0, 0, 0]])
     db.write(atoms)
     db.update(1, external_tables={'sys': ext_table})
-    os.remove('update_table.db')
 
+
+def test_external_table_upon_update_with_float(db_name):
+    db = connect(db_name)
+    ext_table = {'value1': 1.0, 'value2': 2.0}
+    atoms = Atoms('Pb', positions=[[0, 0, 0]])
+    uid = db.write(atoms)
+    db.update(uid, external_tables={'float_table': ext_table})
 
 for db_name in DB_NAMES:
     name = get_db_name(db_name)
@@ -184,7 +190,8 @@ for db_name in DB_NAMES:
     test_insert_in_external_tables(name)
     test_extract_from_table(name)
     test_write_atoms_row(name)
-    test_external_table_upon_update()
+    test_external_table_upon_update(name)
+    test_external_table_upon_update_with_float(name)
 
     if db_name not in ["postgresql", "mysql", "mariadb"]:
         os.remove(name)
