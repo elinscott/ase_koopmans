@@ -1,11 +1,7 @@
-# Importing kimpy here is solely done to force ASE's CI to skip
-# this calculator
-import kimpy as _kimpy
-
+import kimpy
 from .kim import KIM
 
-# Use the kimpy module imported to avoid flake8 warning (currently
-# there's no actual version requirements on kimpy)
-_ = _kimpy
+# Ensure minimal version requirement of kimpy is satsified
+assert [int(x) for x in kimpy.__version__.split(".")] >= [0, 3, 2]
 
 __all__ = ["KIM"]
