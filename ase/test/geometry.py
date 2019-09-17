@@ -4,9 +4,9 @@ from __future__ import division
 
 import numpy as np
 
-from ase.build import cut, bulk
-from ase.geometry import (get_layers, wrap_positions,
-                          crystal_structure_from_cell)
+from ase.build import cut, bulk, fcc111
+from ase.cell import Cell
+from ase.geometry import get_layers, wrap_positions
 from ase.spacegroup import crystal, get_spacegroup
 
 al = crystal('Al', [(0, 0, 0)], spacegroup=225, cellpar=4.05)
@@ -177,16 +177,19 @@ assert np.max(result[:, 0]) < -3
 assert np.max(result[:, 1:]) < 1 + 1E-10
 
 # Get the correct crystal structure from a range of different cells
-assert crystal_structure_from_cell(bulk('Al').get_cell()) == 'fcc'
-assert crystal_structure_from_cell(bulk('Fe').get_cell()) == 'bcc'
-assert crystal_structure_from_cell(bulk('Zn').get_cell()) == 'hexagonal'
-cell = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-assert crystal_structure_from_cell(cell) == 'cubic'
-cell = [[1, 0, 0], [0, 1, 0], [0, 0, 2]]
-assert crystal_structure_from_cell(cell) == 'tetragonal'
-cell = [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
-assert crystal_structure_from_cell(cell) == 'orthorhombic'
-cell = [[1, 0, 0], [0, 2, 0], [0.5, 0, 3]]
-assert crystal_structure_from_cell(cell) == 'monoclinic'
-cell = [[1, 0, 0], [0.5, 3**0.5 / 2, 0], [0, 0, 3]]
-assert crystal_structure_from_cell(cell) == 'hexagonal'
+
+def checkcell(cell, name):
+    cell = Cell.ascell(cell)
+    lat = cell.get_bravais_lattice()
+    assert lat.name == name, (lat.name, name)
+
+checkcell(bulk('Al').cell, 'FCC')
+checkcell(bulk('Fe').cell, 'BCC')
+checkcell(bulk('Zn').cell, 'HEX')
+checkcell(fcc111('Au', size=(1, 1, 3), periodic=True).cell, 'HEX')
+checkcell([[1, 0, 0], [0, 1, 0], [0, 0, 1]], 'CUB')
+checkcell([[1, 0, 0], [0, 1, 0], [0, 0, 2]], 'TET')
+checkcell([[1, 0, 0], [0, 2, 0], [0, 0, 3]], 'ORC')
+checkcell([[1, 0, 0], [0, 2, 0], [0.5, 0, 3]], 'ORCC')
+checkcell([[1, 0, 0], [0, 2, 0], [0.501, 0, 3]], 'MCL')
+checkcell([[1, 0, 0], [0.5, 3**0.5 / 2, 0], [0, 0, 3]], 'HEX')

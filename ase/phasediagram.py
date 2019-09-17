@@ -225,14 +225,19 @@ class Pourbaix:
             from scipy.optimize import linprog
         except ImportError:
             from ase.utils._linprog import linprog
-        result = linprog(energies, None, None, np.transpose(eq2), eq1, bounds)
+        result = linprog(c=energies,
+                         A_eq=np.transpose(eq2),
+                         b_eq=eq1,
+                         bounds=bounds,
+                         options={'lstsq': True,
+                                  'presolve': True})
 
         if verbose:
             print_results(zip(names, result.x, energies))
 
         return result.x, result.fun
 
-    def diagram(self, U, pH, plot=True, show=True, ax=None):
+    def diagram(self, U, pH, plot=True, show=False, ax=None):
         """Calculate Pourbaix diagram.
 
         U: list of float
@@ -445,7 +450,7 @@ class PhaseDiagram:
 
         return energy, indices, np.array(coefs)
 
-    def plot(self, ax=None, dims=None, show=True):
+    def plot(self, ax=None, dims=None, show=False):
         """Make 2-d or 3-d plot of datapoints and convex hull.
 
         Default is 2-d for 2- and 3-component diagrams and 3-d for a

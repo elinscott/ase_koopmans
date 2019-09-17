@@ -2,6 +2,7 @@ from __future__ import print_function
 import os
 import sys
 import subprocess
+from contextlib import contextmanager
 from multiprocessing import Process, cpu_count, Queue
 import tempfile
 import unittest
@@ -13,11 +14,11 @@ import warnings
 
 import numpy as np
 
-from ase.calculators.calculator import names as calc_names, get_calculator
+from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
-test_calculator_names = []
+test_calculator_names = ['emt']
 
 if sys.version_info[0] == 2:
     class ResourceWarning(UserWarning):
@@ -178,7 +179,8 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * gui/run may deadlock for unknown reasons in subprocess
 
             t = test.replace('\\', '/')
-            if t in ['bandstructure.py', 'bandstructure2.py',
+            if t in ['bandstructure.py',
+                     'bandstructure_many.py',
                      'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
                      'forcecurve.py',
@@ -363,7 +365,7 @@ def disable_calculators(names):
         if name in ['emt', 'lj', 'eam', 'morse', 'tip3p']:
             continue
         try:
-            cls = get_calculator(name)
+            cls = get_calculator_class(name)
         except ImportError:
             pass
         else:
@@ -409,6 +411,13 @@ class must_raise:
         return issubclass(exc_type, self.exception)
 
 
+@contextmanager
+def no_warn():
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        yield
+
+
 class CLICommand:
     """Run ASE's test-suite.
 
@@ -436,6 +445,8 @@ class CLICommand:
                             'Mostly useful when inspecting a single test')
         parser.add_argument('--strict', action='store_true',
                             help='convert warnings to errors')
+        parser.add_argument('--nogui', action='store_true',
+                            help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
                             help='Specify particular test files.  '
                             'Glob patterns are accepted.')
@@ -465,6 +476,9 @@ class CLICommand:
                                  '{}.\n'.format(calculator,
                                                 ', '.join(calc_names)))
                 sys.exit(1)
+
+        if args.nogui:
+            os.environ.pop('DISPLAY')
 
         ntrouble = test(calculators=calculators, jobs=args.jobs,
                         strict=args.strict,

@@ -1,10 +1,10 @@
-from __future__ import print_function
+import warnings
 
 from ase.optimize.optimize import Optimizer
 import numpy as np
 from scipy.optimize import minimize
 
-from ase.parallel import rank
+from ase.parallel import world
 
 from ase.optimize.gpmin.gp import GaussianProcess
 from ase.optimize.gpmin.kernel import SquaredExponential
@@ -14,16 +14,39 @@ import pickle
 
 class GPMin(Optimizer, GaussianProcess):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None, prior=None,
-                 master=None, noise=0.005, weight=1., update_prior_strategy='maximum',
-                 scale=0.4, force_consistent=None, batch_size=5,
-                 update_hyperparams=False):
+                 kernel = None, master=None, noise=None, weight=None, scale = None, 
+                 force_consistent=None, batch_size=None, bounds = None,
+                 update_prior_strategy = 'maximum', update_hyperparams=False):
 
 
         """Optimize atomic positions using GPMin algorithm, which uses
         both potential energies and forces information to build a PES
         via Gaussian Process (GP) regression and then minimizes it.
 
+        Default behaviour:
+        --------------------
+        The default values of the following
+        parameters: scale, noise, weight, batch_size and bounds depend
+        on the value of update_hyperparams. In order to get the default
+        value of any of them, they should be set up to None.
+        Default values are:
+
+        update_hyperparams = True
+            scale : 0.3
+            noise : 0.004
+            weight: 2.
+            bounds: 0.1
+            batch_size: 1
+
+        update_hyperparams = False
+            scale : 0.4
+            noise : 0.005
+            weight: 1.
+            bounds: irrelevant
+            batch_size: irrelevant
+
         Parameters:
+        ------------------
 
         atoms: Atoms object
             The Atoms object to relax.
@@ -53,9 +76,16 @@ class GPMin(Optimizer, GaussianProcess):
         prior: Prior object or None
             Prior for the GP regression of the PES surface
             See ase.optimize.gpmin.prior
-            If *Prior* is None, then it is set as the
+            If *prior* is None, then it is set as the
             ConstantPrior with the constant being updated
             using the update_prior_strategy specified as a parameter
+
+        kernel: Kernel object or None
+            Kernel for the GP regression of the PES surface
+            See ase.optimize.gpmin.kernel
+            If *kernel* is None, then it is set as the 
+            SquaredExponential kernel.
+            Note: It needs to be a kernel with derivatives!!!!!
 
         noise: float
             Regularization parameter for the Gaussian Process Regression.
@@ -86,11 +116,88 @@ class GPMin(Optimizer, GaussianProcess):
         batch_size: int
             Number of new points in the sample before updating
             the hyperparameters.
-            Only relevant if the optimizer is executed in update
-            mode: (update = True)
+            Only relevant if the optimizer is executed in update_hyperparams
+            mode: (update_hyperparams = True)
+
+        bounds: float, 0<bounds<1
+            Set bounds to the optimization of the hyperparameters.
+            Let t be a hyperparameter. Then it is optimized under the
+            constraint (1-bound)*t_0 <= t <= (1+bound)*t_0
+            where t_0 is the value of the hyperparameter in the previous
+            step.
+            If bounds is False, no constraints are set in the optimization of the
+            hyperparameters.
+
+
+        .. warning:: The memory of the optimizer scales as O(n²N²) where
+                     N is the number of atoms and n the number of steps.
+                     If the number of atoms is sufficiently high, this
+                     may cause a memory issue.
+                     This class prints a warning if the user tries to
+                     run GPMin with more than 100 atoms in the unit cell.
+
         """
 
-        self.nbatch = batch_size
+        # Warn the user if the number of atoms is very large
+        if len(atoms)>100:
+            warning = ('Possible Memeroy Issue. There are more than '
+                       '100 atoms in the unit cell. The memory '
+                       'of the process will increase with the number '
+                       'of steps, potentially causing a memory issue. '
+                       'Consider using a different optimizer.')
+
+            warnings.warn(warning)
+
+
+
+        # Give it default hyperparameters
+
+        if update_hyperparams:       # Updated GPMin
+            if scale is None:
+                scale = 0.3
+            if noise is None:
+                noise = 0.004
+            if weight is None:
+                weight = 2.
+
+            if bounds is None:
+               self.eps = 0.1
+            elif bounds is False:
+               self.eps = None
+            else:
+               self.eps = bounds
+
+            if batch_size is None:
+               self.nbatch = 1
+            else:
+               self.nbatch = batch_size
+
+
+        else:                        # GPMin without updates
+            if scale is None:
+                scale = 0.4
+            if noise is None:
+                noise = 0.001
+            if weight is None:
+                weight = 1.
+
+            if bounds is not None:
+                warning = ('The paramter bounds is of no use '
+                           'if update_hyperparams is False. '
+                           'The value provided by the user '
+                           'is being ignored.')
+                warnings.warn(warning, UserWarning)
+            if batch_size is not None:
+                warning = ('The paramter batch_size is of no use '
+                           'if update_hyperparams is False. '
+                           'The value provived by the user '
+                           'is being ignored.')
+                warnings.warn(warning, UserWarning)
+
+            #Set the variables to something anyways
+            self.eps = False
+            self.nbatch = None
+
         self.strategy = update_prior_strategy
         self.update_hp = update_hyperparams
         self.function_calls = 1
@@ -108,8 +215,9 @@ class GPMin(Optimizer, GaussianProcess):
         else:
             self.update_prior = False
 
-        Kernel = SquaredExponential()
-        GaussianProcess.__init__(self, prior, Kernel)
+        if kernel is None:
+            kernel = SquaredExponential()
+        GaussianProcess.__init__(self, prior, kernel)
 
         self.set_hyperparams(np.array([weight, scale, noise]))
 
@@ -160,12 +268,13 @@ class GPMin(Optimizer, GaussianProcess):
                 "The minimization of the acquisition function has not converged")
 
     def fit_to_batch(self):
-        '''Fit hyperparameters and collect exception'''
-        try:
-            self.fit_hyperparameters(np.asarray(
-                self.x_list), np.asarray(self.y_list))
-        except Exception:
-            pass
+        '''Fit hyperparameters keeping the ratio noise/weight fixed'''
+        ratio = self.noise/self.kernel.weight
+
+        self.fit_hyperparameters(np.asarray(
+                self.x_list), np.asarray(self.y_list), eps = self.eps)
+
+        self.noise = ratio*self.kernel.weight
 
     def step(self, f=None):
 
@@ -211,7 +320,7 @@ class GPMin(Optimizer, GaussianProcess):
 
     def dump(self):
         '''Save the training set'''
-        if rank == 0 and self.restart is not None:
+        if world.rank == 0 and self.restart is not None:
             with open(self.restart, 'wb') as fd:
                 pickle.dump((self.x_list, self.y_list), fd, protocol = 2)
 

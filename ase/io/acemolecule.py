@@ -25,9 +25,10 @@ def parse_geometry(filename):
         for i in range(len(lines)):
             if lines[i] == '====================  Atoms  =====================\n':
                 start_line = i
-            if start_line != '' and len(lines[i].split('=')) == '3':
+            if start_line > 20 and len(lines[i].split('=')) > 3:
                 end_line = i
-                break
+                if not start_line == end_line:
+                    break
         atoms = []
         positions = []
         for i in range(start_line + 1, end_line):
@@ -69,9 +70,6 @@ def read_acemolecule_out(filename):
     with open(filename, 'r') as f:
         lines = f.readlines()
     
-    # Set calculator to 
-    calc = SinglePointCalculator(atoms)
-    atoms.set_calculator(calc)
     
     for i in range(len(lines) - 1, 1, -1):
         line = lines[i].split()
@@ -95,12 +93,16 @@ def read_acemolecule_out(filename):
             break
     if not len(forces)>0:
         forces = None
+    
+    # Set calculator to 
+    calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
+    atoms.set_calculator(calc)
+    
     results = {}
     results['energy'] = energy
     results['atoms'] = atoms
     results['forces'] = forces
     results['excitation-energy'] = excitation_energy
-
     return results
 
 
@@ -117,7 +119,7 @@ def read_acemolecule_input(filename):
     with open(filename, 'r') as f:
         for line in f:
             if len(line.split('GeometryFilename')) > 1:
-                geometryfile = line.split()[2]
+                geometryfile = line.split()[1]
                 break
     atoms = read(geometryfile, format='xyz')
     return atoms

@@ -71,7 +71,7 @@ all_formats = {
     'dmol-car': ('DMol3 structure file', '1S'),
     'dmol-incoor': ('DMol3 structure file', '1S'),
     'elk': ('ELK atoms definition', '1S'),
-    'eon': ('EON reactant.con file', '1F'),
+    'eon': ('EON CON file', '+F'),
     'eps': ('Encapsulated Postscript', '1S'),
     'espresso-in': ('Quantum espresso in file', '1F'),
     'espresso-out': ('Quantum espresso out file', '+F'),
@@ -111,6 +111,7 @@ all_formats = {
     'py': ('Python file', '+F'),
     'qbox': ('QBOX output file', '+F'),
     'res': ('SHELX format', '1S'),
+    'rmc6f': ('RMCProfile', '1S'),
     'sdf': ('SDF format', '1F'),
     'struct': ('WIEN2k structure file', '1S'),
     'struct_out': ('SIESTA STRUCT file', '1F'),
@@ -128,6 +129,7 @@ all_formats = {
     'x3d': ('X3D', '1S'),
     'xsd': ('Materials Studio file', '1F'),
     'xsf': ('XCrySDen Structure File', '+F'),
+    'xtd': ('Materials Studio file', '+F'),
     'xyz': ('XYZ-file', '+F')}
 
 # Special cases:
@@ -381,6 +383,9 @@ def write(filename, images, format=None, parallel=True, append=False,
 
     The use of additional keywords is format specific."""
 
+    if isinstance(filename, PurePath):
+        filename = str(filename)
+
     if isinstance(filename, basestring):
         filename = os.path.expanduser(filename)
         fd = None
@@ -475,6 +480,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
 
     if isinstance(filename, PurePath):
         filename = str(filename)
+    if filename == '-':
+        filename = sys.stdin
     if isinstance(index, basestring):
         try:
             index = string2index(index)
@@ -776,4 +783,3 @@ def index2range(index, nsteps):
     else:
         raise RuntimeError("index2range handles integers and slices only.")
     return trbl
-

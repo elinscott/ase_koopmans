@@ -4,173 +4,141 @@ from the ones used in ase).  Mapping is therefore necessary.
 See: https://lammps.sandia.gov/doc/units.html
  """
 
-from scipy.constants import gram
-from scipy.constants import N_A
-from scipy.constants import angstrom
-from scipy.constants import eV
-from scipy.constants import elementary_charge
-from scipy.constants import pico
-from scipy.constants import micro
-from scipy.constants import atto
-from scipy.constants import nano
-from scipy.constants import bar
-from scipy.constants import centi
-from scipy.constants import femto
-from scipy.constants import kilo
-from scipy.constants import calorie
-from scipy.constants import atmosphere
-from scipy.constants import erg
-from scipy.constants import dyne
-
 from ase import units
+from . import unitconvert_constants as u
 
-PASCAL = 1.0
-SECOND = 1.0
-METER = 1.0
-KELVIN = 1.0
-JOULE = 1.0
-NEWTON = 1.0
-COULOMB = units.C
-VOLT = 1.0
+# !TODO add reduced Lennard-Jones units?
 
-ATOMIC_MASS_UNIT = 1.0 / units.kg
-MOLE = N_A
-POISE = 0.1 * PASCAL * SECOND
-STATCOULOMB = 1.0 / 2997924580.0 * COULOMB
-STATVOLT = 299.792458 * VOLT
-
+# NOTE: We assume a three-dimensional simulation here!
 DIM = 3.0
 
 UNITSETS = {}
 
-# !TODO add missing units to 'ASE'
-# !TODO add reduce Lennards-Jones units
-# !TODO cross check which CODATA version lammps uses
 UNITSETS["ASE"] = dict(
-    mass=gram / MOLE,
-    distance=angstrom,
+    mass=1.0 / units.kg,
+    distance=1.0 / units.m,
     time=1.0 / units.second,
-    energy=eV,
-    velocity=angstrom / (1.0 / units.second),
-    force=eV / angstrom,
+    energy=1.0 / units.J,
+    velocity=units.second / units.m,
+    force=units.m / units.J,
     pressure=1.0 / units.Pascal,
-    charge=elementary_charge,
+    charge=1.0 / units.C,
 )
 
 UNITSETS["real"] = dict(
-    mass=gram / MOLE,
-    distance=angstrom,
-    time=femto,
-    energy=kilo * calorie / MOLE,
-    velocity=angstrom / femto,
-    force=kilo * calorie / (MOLE * angstrom),
-    torque=kilo * calorie / MOLE,
-    temperature=KELVIN,
-    pressure=atmosphere,
-    dynamic_viscosity=POISE,
-    charge=elementary_charge,
-    electric_field=1.0 / angstrom,
-    density=gram / centi ** DIM,
+    mass=u.gram_per_mole_si,
+    distance=u.angstrom_si,
+    time=u.femtosecond_si,
+    energy=u.kcal_per_mole_si,
+    velocity=u.angstrom_per_femtosecond_si,
+    force=u.kcal_per_mole_angstrom_si,
+    torque=u.kcal_per_mole_si,
+    temperature=u.kelvin_si,
+    pressure=u.atmosphere_si,
+    dynamic_viscosity=u.poise_si,
+    charge=u.e_si,
+    dipole=u.electron_angstrom_si,
+    electric_field=u.volt_per_angstrom_si,
+    density=u.gram_si / u.centimeter_si ** DIM,
 )
 
 UNITSETS["metal"] = dict(
-    mass=gram / MOLE,
-    distance=angstrom,
-    time=pico,
-    energy=eV,
-    velocity=angstrom / pico,
-    force=eV / angstrom,
-    torque=eV,
-    temperature=KELVIN,
-    pressure=bar,
-    dynamic_viscosity=POISE,
-    charge=elementary_charge,
-    dipole=elementary_charge * angstrom,
-    electric_field=1.0 / angstrom,
-    density=gram / centi ** DIM,
+    mass=u.gram_per_mole_si,
+    distance=u.angstrom_si,
+    time=u.picosecond_si,
+    energy=u.ev_si,
+    velocity=u.angstrom_per_picosecond_si,
+    force=u.ev_per_angstrom_si,
+    torque=u.ev_si,
+    temperature=u.kelvin_si,
+    pressure=u.bar_si,
+    dynamic_viscosity=u.poise_si,
+    charge=u.e_si,
+    dipole=u.electron_angstrom_si,
+    electric_field=u.volt_per_angstrom_si,
+    density=u.gram_si / u.centimeter_si ** DIM,
 )
 
 UNITSETS["si"] = dict(
-    mass=kilo * gram,
-    distance=METER,
-    time=SECOND,
-    energy=JOULE,
-    velocity=METER / SECOND,
-    force=NEWTON,
-    torque=NEWTON * METER,
-    temperature=KELVIN,
-    pressure=PASCAL,
-    dynamic_viscosity=PASCAL * SECOND,
-    charge=COULOMB,
-    dipole=COULOMB * METER,
-    electric_field=VOLT / METER,
-    density=kilo * gram / METER ** DIM,
+    mass=u.kilogram_si,
+    distance=u.meter_si,
+    time=u.second_si,
+    energy=u.joule_si,
+    velocity=u.meter_per_second_si,
+    force=u.newton_si,
+    torque=u.joule_si,
+    temperature=u.kelvin_si,
+    pressure=u.pascal_si,
+    dynamic_viscosity=u.pascal_si * u.second_si,
+    charge=u.coulomb_si,
+    dipole=u.coulomb_meter_si,
+    electric_field=u.volt_per_meter_si,
+    density=u.kilogram_si / u.meter_si ** DIM,
 )
 
 UNITSETS["cgs"] = dict(
-    mass=gram,
-    distance=centi * METER,
-    time=SECOND,
-    energy=erg,
-    velocity=centi * METER / SECOND,
-    force=dyne,
-    torque=dyne * centi * METER,
-    temperature=KELVIN,
-    pressure=dyne / (centi * METER) ** 2,  # or barye = 1.0e-6 bars,
-    dynamic_viscosity=POISE,
-    charge=STATCOULOMB,  # or esu (4.8032044e-10 is a proton)
-    dipole=STATCOULOMB * centi * METER,  # = 10^18 debye,
-    electric_field=STATVOLT / (centi * METER),  # or dyne / esu,,
-    density=gram / (centi * METER ** DIM),
+    mass=u.gram_si,
+    distance=u.centimeter_si,
+    time=u.second_si,
+    energy=u.erg_si,
+    velocity=u.centimeter_per_second_si,
+    force=u.dyne_si,
+    torque=u.dyne_centimeter_si,
+    temperature=u.kelvin_si,
+    pressure=u.dyne_per_centimetersq_si,  # or barye =u. 1.0e-6 bars
+    dynamic_viscosity=u.poise_si,
+    charge=u.statcoulomb_si,  # or esu (4.8032044e-10 is a proton)
+    dipole=u.statcoulomb_centimeter_si,  # =u. 10^18 debye,
+    electric_field=u.statvolt_per_centimeter_si,  # or dyne / esu
+    density=u.gram_si / (u.centimeter_si ** DIM),
 )
 
 UNITSETS["electron"] = dict(
-    mass=ATOMIC_MASS_UNIT,
-    distance=units.Bohr,
-    time=femto * SECOND,
-    energy=units.Hartree / units.J,
-    # velocity = Bohr / atomic time units, [1.03275e-15 SECONDs]
-    velocity=units.Bohr / (units.AUT / units.second),
-    force=units.Hartree / units.Bohr,
-    temperature=KELVIN,
-    pressure=PASCAL,
-    charge=elementary_charge,  # multiple of electron charge (1.0 is a proton)
-    dipole=units.Debye,
-    electric_field=VOLT / (centi * METER),
+    mass=u.amu_si,
+    distance=u.bohr_si,
+    time=u.femtosecond_si,
+    energy=u.hartree_si,
+    velocity=u.bohr_per_atu_si,
+    force=u.hartree_per_bohr_si,
+    temperature=u.kelvin_si,
+    pressure=u.pascal_si,
+    charge=u.e_si,  # multiple of electron charge (1.0 is a proton)
+    dipole=u.debye_si,
+    electric_field=u.volt_per_centimeter_si,
 )
 
 UNITSETS["micro"] = dict(
-    mass=pico * gram,
-    distance=micro * METER,
-    time=micro * SECOND,
-    energy=pico * gram * (micro * METER) ** 2 / (micro * SECOND) ** 2,
-    velocity=micro * METER / micro * SECOND,
-    force=pico * gram * micro * METER / (micro * SECOND) ** 2,
-    torque=pico * gram * (micro * METER) ** 2 / (micro * SECOND) ** 2,
-    temperature=KELVIN,
-    pressure=pico * gram / (micro * METER * (micro * SECOND) ** 2),
-    dynamic_viscosity=pico * gram / (micro * METER * micro * SECOND),
-    charge=pico * COULOMB,  # (1.6021765e-7 is a proton),
-    dipole=pico * COULOMB * micro * METER,
-    electric_field=VOLT / micro * METER,
-    density=pico * gram / (micro * METER) ** DIM,
+    mass=u.picogram_si,
+    distance=u.micrometer_si,
+    time=u.microsecond_si,
+    energy=u.picogram_micrometersq_per_microsecondsq_si,
+    velocity=u.micrometer_per_microsecond_si,
+    force=u.picogram_micrometer_per_microsecondsq_si,
+    torque=u.picogram_micrometersq_per_microsecondsq_si,
+    temperature=u.kelvin_si,
+    pressure=u.picogram_per_micrometer_microsecondsq_si,
+    dynamic_viscosity=u.picogram_per_micrometer_microsecond_si,
+    charge=u.picocoulomb_si,  # (1.6021765e-7 is a proton),
+    dipole=u.picocoulomb_micrometer_si,
+    electric_field=u.volt_per_micrometer_si,
+    density=u.picogram_si / (u.micrometer_si) ** DIM,
 )
 
 UNITSETS["nano"] = dict(
-    mass=atto * gram,
-    distance=nano * METER,
-    time=nano * SECOND,
-    energy=atto * gram * (nano * METER) ** 2 / (nano * SECOND) ** 2,
-    velocity=nano * METER / (nano * SECOND),
-    force=atto * gram * nano * METER / (nano * SECOND) ** 2,
-    torque=atto * gram * (nano * METER) ** 2 / (nano * SECOND) ** 2,
-    temperature=KELVIN,
-    pressure=atto * gram / (nano * METER * (nano * SECOND) ** 2),
-    dynamic_viscosity=atto * gram / (nano * METER * nano * SECOND),
-    charge=elementary_charge,  # multiple of electron charge (1.0 is a proton)
-    dipole=elementary_charge * nano * METER,
-    electric_field=VOLT / (nano * METER),
-    density=atto * gram / (nano * METER) ** DIM,
+    mass=u.attogram_si,
+    distance=u.nanometer_si,
+    time=u.nanosecond_si,
+    energy=u.attogram_nanometersq_per_nanosecondsq_si,
+    velocity=u.nanometer_per_nanosecond_si,
+    force=u.attogram_nanometer_per_nanosecondsq_si,
+    torque=u.attogram_nanometersq_per_nanosecondsq_si,
+    temperature=u.kelvin_si,
+    pressure=u.attogram_per_nanometer_nanosecondsq_si,
+    dynamic_viscosity=u.attogram_per_nanometer_nanosecond_si,
+    charge=u.e_si,  # multiple of electron charge (1.0 is a proton)
+    dipole=u.electron_nanometer_si,
+    electric_field=u.volt_si / u.nanometer_si,
+    density=u.attogram_si / u.nanometer_si ** DIM,
 )
 
 

@@ -151,6 +151,16 @@ class Images:
             else:
                 actual_filename, index = parse_filename(filename,
                                                         default_index)
+
+            # Read from stdin:
+            if filename == '-':
+                import sys
+                from io import BytesIO
+                buf = BytesIO(sys.stdin.buffer.read())
+                buf.seek(0)
+                filename = buf
+                filetype = 'traj'
+
             imgs = read(filename, index, filetype)
             if hasattr(imgs, 'iterimages'):
                 imgs = list(imgs.iterimages())
@@ -373,8 +383,9 @@ class Images:
                 s += sqrt((dR**2).sum())
         return xy
 
-    def write(self, filename, rotations='', show_unit_cell=False, bbox=None,
+    def write(self, filename, rotations='', bbox=None,
               **kwargs):
+        # XXX We should show the unit cell whenever there is one
         indices = range(len(self))
         p = filename.rfind('@')
         if p != -1:
@@ -391,7 +402,7 @@ class Images:
         images = [self.get_atoms(i) for i in indices]
         if len(filename) > 4 and filename[-4:] in ['.eps', '.png', '.pov']:
             write(filename, images,
-                  rotation=rotations, show_unit_cell=show_unit_cell,
+                  rotation=rotations,
                   bbox=bbox, **kwargs)
         else:
             write(filename, images, **kwargs)

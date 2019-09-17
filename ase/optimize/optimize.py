@@ -7,7 +7,7 @@ from math import sqrt
 from os.path import isfile
 
 from ase.calculators.calculator import PropertyNotImplementedError
-from ase.parallel import rank, barrier
+from ase.parallel import world, barrier
 from ase.io.trajectory import Trajectory
 from ase.utils import basestring
 import collections
@@ -46,7 +46,7 @@ class Dynamics:
 
         self.atoms = atoms
         if master is None:
-            master = rank == 0
+            master = world.rank == 0
         if not master:
             logfile = None
         elif isinstance(logfile, basestring):
@@ -121,6 +121,16 @@ class Dynamics:
         >>>     opt1.run()
         """
 
+        # compute inital structure and log the first step
+        self.atoms.get_forces()
+
+        # yield the first time to inspect before logging
+        yield False
+
+        if self.nsteps == 0:
+            self.log()
+            self.call_observers()
+
         # run the algorithm until converged or max_steps reached
         while not self.converged() and self.nsteps < self.max_steps:
 
@@ -156,9 +166,13 @@ class Dynamics:
         return False
 
     def log(self, *args):
-        """" a dummy function as placeholder for a real logger, e.g. in
+        """ a dummy function as placeholder for a real logger, e.g. in
         Optimizer """
         return True
+
+    def step(self):
+        """this needs to be implemented by subclasses"""
+        raise RuntimeError('step not implemented.')
 
 
 class Optimizer(Dynamics):
@@ -262,7 +276,7 @@ class Optimizer(Dynamics):
             self.logfile.flush()
 
     def dump(self, data):
-        if rank == 0 and self.restart is not None:
+        if world.rank == 0 and self.restart is not None:
             pickle.dump(data, open(self.restart, 'wb'), protocol=2)
 
     def load(self):

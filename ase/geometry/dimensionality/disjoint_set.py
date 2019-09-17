@@ -22,7 +22,7 @@ class DisjointSet:
         a = self.find(a)
         b = self.find(b)
         if a == b:
-            return
+            return False
 
         ranks = self.ranks
         parents = self.parents
@@ -34,6 +34,7 @@ class DisjointSet:
         else:
             parents[b] = a
             ranks[a] += 1
+        return True
 
     def _compress(self):
 
@@ -51,10 +52,20 @@ class DisjointSet:
             return self.parents
 
         x = np.copy(self.parents)
-        ids = dict([(e, i) for i, e in enumerate(np.unique(x))])
-        for i in range(len(x)):
-            x[i] = ids[x[i]]
-        return x
+        unique = np.unique(x)
+
+        # find first occurences of each element
+        indices = {e: len(x) for e in unique}
+        for i, e in enumerate(x):
+            indices[e] = min(indices[e], i)
+
+        # order elements by frequency, using first occurences as a tie-breaker
+        counts = np.bincount(x)
+        ordered = sorted(unique, key=lambda x: (-counts[x], indices[x]))
+        assert sorted(ordered) == list(np.unique(x))
+
+        ids = dict([(e, i) for i, e in enumerate(ordered)])
+        return np.array([ids[e] for e in x])
 
     def get_roots(self):
 
