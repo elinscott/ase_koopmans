@@ -128,8 +128,7 @@ def read_xtd(filename, index=-1):
     f = open(f,'r')
     images = list()
 
-    atomic_formula = str()
-    # first line is comment
+    # the first line is comment
     f.readline()
     pbc = 'ON' in f.readline()
     l = f.readline()
