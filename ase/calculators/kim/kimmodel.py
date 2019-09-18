@@ -722,10 +722,10 @@ class KIMModelCalculator(Calculator):
 
 
 def compare_atoms(atoms1, atoms2, tol=1e-15):
-    """Check for system changes since last calculation.  Since each
-    calculate call will compute all properties, we will just return the
-    first difference to trigger a calculation.  It uses the default
-    tolerance used in the applicable numpy functions.
+    """Check for system changes since last calculation. Note that this
+    is an override of Calculator.compare_atoms and differs in that the
+    magnetic moments and charges are not checked because the KIM API
+    does not (currently) support these.
     """
     if atoms1 is None:
         return ["positions", "numbers", "cell", "pbc"]
