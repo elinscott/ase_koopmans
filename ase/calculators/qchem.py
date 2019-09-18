@@ -84,25 +84,22 @@ class QChem(FileIOCalculator):
                     convert = ase.units.Hartree
                     self.results['energy'] = float(line.split()[8]) * convert
                 elif ' Gradient of SCF Energy' in line:
-                    iforces = []
+                    # Read gradient as 3 by N array and transpose at the end
+                    gradient = [[] for _ in range(3)]
                     # Skip first line containing atom numbering
                     next(lineiter)
-                    # Helper function:
-                    def read_gradient_line():
-                        # Get next line and cut off the component numbering and
-                        # remove trailing characters ('\n' and stuff)
-                        line = next(lineiter)[5:].rstrip()
-                        # Cut in chunks of 12 symbols and convert into strings
-                        # This is prefered over string.split() as the fields
-                        # may overlap when the gradient gets large
-                        return list(map(float, [line[i:i + 12] for i in
-                                                range(0, len(line), 12)]))
-
                     while True:
-                        Fx = read_gradient_line()
-                        Fy = read_gradient_line()
-                        Fz = read_gradient_line()
-                        iforces.extend(zip(Fx, Fy, Fz))
+                        # Loop over the three Cartesian coordinates
+                        for i in range(3):
+                            # Cut off the component numbering and remove
+                            # trailing characters ('\n' and stuff)
+                            line = next(lineiter)[5:].rstrip()
+                            # Cut in chunks of 12 symbols and convert into
+                            # strings. This is prefered over string.split() as
+                            # the fields may overlap for large gradients
+                            gradient[i].extend(list(map(
+                                float, [line[i:i + 12]
+                                        for i in range(0, len(line), 12)])))
 
                         # After three force components we expect either a
                         # separator line, which we want to skip, or the end of
@@ -112,7 +109,7 @@ class QChem(FileIOCalculator):
                         # next line. Eg. if not lineiter.next().startswith(' ')
                         if ' Max gradient component' in next(lineiter):
                             # Minus to convert from gradient to force
-                            self.results['forces'] = np.array(iforces) * (
+                            self.results['forces'] = np.array(gradient).T * (
                                 -ase.units.Hartree / ase.units.Bohr)
                             break
 
