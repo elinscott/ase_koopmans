@@ -30,6 +30,7 @@ python_3_oldlibs_tests:
 #
 # We currently use scipy 1.2.1 because of failures with 1.3.0 on py3.7.
 # TODO: Make things work with 1.3.0
+# psycopg2-binary is for testing the postgres backend for ase.db
 python_3_tests:
   image: python:3-slim
   script:
