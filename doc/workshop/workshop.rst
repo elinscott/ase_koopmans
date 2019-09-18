@@ -25,13 +25,12 @@ The workshop is open to doctoral and Master students, post-doctoral as well as s
 Registration
 ============
 
-To join the workshop please fill
-`the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__.
-**We have currently more registrations than there is space, but we are looking for a larger place.
-You can still fill the registration form to show interest, but please wait for further information from the organizers.**
-The deadline for registration and abstracts is **October 21, 2019**.
-Please note that space is limited.
-There is no registration fee but the attendees need to cover travel, accommodation, and other costs themselves.
+Due to high demand we have already reached the capacity of the workshop.
+At this time, we can therefore not accept new participants.
+You can still express your interest and join the waiting list by filling
+`the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__,
+but we cannot guarantee that there will be space.
+The workshop has no registration fee but the attendees need to cover travel, accommodation, and other costs themselves.
 If you have any questions, please contact the organizers at ase-workshop@materialsmodeling.org.
 
 
