@@ -153,7 +153,8 @@ def read_aims(filename):
 
         fix_params.append(
             FixCartesianParametricRelations(
-                list(range(-3,0)),
+                list(),
+                list(range(0,3)),
                 list(np.unique(lattice_params)),
                 lattice_expressions,
             )

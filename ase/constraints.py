@@ -1131,6 +1131,7 @@ class FixParametricRelations(FixConstraint):
     def __init__(
         self,
         indices,
+        cell_indices,
         params,
         expressions,
         eps=1e-12,
@@ -1139,14 +1140,22 @@ class FixParametricRelations(FixConstraint):
         import parser
         import math
 
+        if indices and cell_indices:
+            raise AttributeError("Please use separate constraints for the lattice and atomic degrees of freedom.")
+        elif indices:
+            self.inds = indices
+        else:
+            self.inds = cell_indices
+
         self.indices = indices
+        self.cell_indices = cell_indices
 
         self.params = params
 
         self.eps = eps
 
-        self.A = np.zeros((3*len(indices), len(self.params)))
-        self.B = np.zeros(3*len(indices))
+        self.A = np.zeros((3*len(self.inds), len(self.params)))
+        self.B = np.zeros(3*len(self.inds))
 
         ops = ["sqrt", "sin", "cos"]
         flat_expressions = np.array(expressions).flatten()
@@ -1268,10 +1277,10 @@ class FixParametricRelations(FixConstraint):
 
     def __repr__(self):
         """The str representation of the constraint"""
-        if len(self.indices) > 1:
-            indices_str = "[{:d}, ..., {:d}]".format(self.indices[0], self.indices[-1])
+        if len(self.inds) > 1:
+            indices_str = "[{:d}, ..., {:d}]".format(self.inds[0], self.inds[-1])
         else:
-            indices_str = "[{:d}]".format(self.indices[0])
+            indices_str = "[{:d}]".format(self.inds[0])
 
         if len(self.params) > 1:
             params_str = "[{:s}, ..., {:s}]".format(self.params[0], self.params[-1])
@@ -1311,6 +1320,7 @@ class FixScaledParametricRelations(FixParametricRelations):
         """Initializer"""
         super(FixScaledParametricRelations, self).__init__(
             indices,
+            None,
             params,
             expressions,
             eps=eps,
@@ -1340,9 +1350,8 @@ class FixScaledParametricRelations(FixParametricRelations):
     def adjust_B(self, cell, positions):
         """Wraps the positions back to the unit cell and adjust B to keep track of this change"""
         fractional = cell.scaled_positions(positions)
-        wrapped_fractional = fractional % 1.0
-        wrapped_fractional %= 1.0
-        self.B += np.round(wrapped_fractional - fractional, ).flatten()
+        wrapped_fractional = (fractional % 1.0) % 1.0
+        self.B += np.round(wrapped_fractional - fractional).flatten()
         return cell.cartesian_positions(wrapped_fractional)
 
     def adjust_momenta(self, atoms, momenta):
@@ -1393,6 +1402,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
     def __init__(
         self,
         indices,
+        cell_indices,
         params,
         expressions,
         eps=1e-12,
@@ -1400,12 +1410,13 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """Initializer"""
         super(FixCartesianParametricRelations, self).__init__(
             indices,
+            cell_indices,
             params,
             expressions,
             eps=eps,
         )
 
-    def adjust_covariant(self, cell, vecs, B):
+    def adjust_covariant(self, vecs, B):
         """Adjust the values of a set of vectors that are covariant with the unit transformation"""
         if self.A is None:
             vecs += B.reshape((-1,3))
@@ -1416,33 +1427,50 @@ class FixCartesianParametricRelations(FixParametricRelations):
 
     def adjust_positions(self, atoms, positions):
         """Adjust positions of the atoms to match the constraints"""
-        if np.any(np.array(self.indices) < 0):
+        if not self.indices:
             return
         positions[self.indices] = self.adjust_covariant(
-            atoms.cell.array,
             positions[self.indices],
             self.B,
         )
 
     def adjust_momenta(self, atoms, momenta):
         """Adjust momenta of the atoms to match the constraints"""
-        if np.any(np.array(self.indices) < 0):
+        if not self.indices:
             return
         momenta[self.indices] = self.adjust_covariant(
-            atoms.cell.array,
             momenta[self.indices],
             np.zeros(self.B.shape),
         )
 
     def adjust_forces(self, atoms, forces):
         """Adjust forces of the atoms to match the constraints"""
-        if np.any(np.array(self.indices) < 0):
+        if not self.indices:
             return
         if self.A is None:
-            forces[self.indices] = np.zeros(forces.shape)
+            forces[self.indices] = np.zeros(forces[self.indices].shape)
         else:
             forces[self.indices] = self.A.T @ forces[self.indices].flatten()
             forces[self.indices] = (self.A_inv.T @ forces[self.indices]).reshape(-1, 3)
+
+    def adjust_cell(self, atoms, cell):
+        """Adjust the cell of the atoms to match the constraints"""
+        if not self.cell_indices:
+            return
+        cell[self.cell_indices] = self.adjust_covariant(
+            cell[self.cell_indices],
+            np.zeros(self.B.shape),
+        )
+
+    def adjust_stress(self, atoms, stress):
+        """Adjust the stress of the atoms to match the constraints"""
+        if not self.cell_indices:
+            return
+        if self.A is None:
+            stress[self.cell_indices] = np.zeros(stress[self.cell_indices].shape)
+        else:
+            stress[self.cell_indices] = self.A.T @ stress[self.cell_indices].flatten()
+            stress[self.cell_indices] = (self.A_inv.T @ stress[self.cell_indices]).reshape(-1, 3)
 
     def todict(self):
         """Create a dictionary representation of the constraint"""
