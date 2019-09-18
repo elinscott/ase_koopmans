@@ -9,6 +9,8 @@ Git master branch
 
 :git:`master <>`.
 
+* Added interface to :mod:`Q-Chem <ase.calculators.qchem>`.
+
 * :func:`ase.build.bulk` now supports elements with tetrahedral,
   rhombohedral, and orthorhombic lattices.
 
