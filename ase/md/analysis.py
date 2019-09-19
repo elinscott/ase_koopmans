@@ -47,7 +47,7 @@ class DiffusionCoefficient:
 
         self.no_of_types_of_atoms = len(self.types_of_atoms)
 
-    def __initialise_arrays(self, ignore_n_images, number_of_segments):
+    def _initialise_arrays(self, ignore_n_images, number_of_segments):
 
         '''
         Private function to initialise data storage objects. This includes objects to store the total timesteps
@@ -90,7 +90,7 @@ class DiffusionCoefficient:
         '''
 
         # Setup all the arrays we need to store information
-        self.__initialise_arrays(ignore_n_images, number_of_segments)
+        self._initialise_arrays(ignore_n_images, number_of_segments)
 
         for segment_no in range(self.no_of_segments):
             start = segment_no*self.len_segments  
