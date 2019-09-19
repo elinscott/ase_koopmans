@@ -132,10 +132,10 @@ class DiffusionCoefficient:
 
             # We've collected all the data for this entire segment, so now to fit the data.
             for sym_index in range(self.no_of_types_of_atoms):    
-                self.slopes[sym_index][segment_no], self.intercepts[sym_index][segment_no] = self.__fit_data(self.timesteps[start:end], 
-                                                                                                             self.xyz_segment_ensemble_average[segment_no][sym_index][:])
+                self.slopes[sym_index][segment_no], self.intercepts[sym_index][segment_no] = self._fit_data(self.timesteps[start:end], 
+                                                                                                            self.xyz_segment_ensemble_average[segment_no][sym_index][:])
 
-    def __fit_data(self, x, y):
+    def _fit_data(self, x, y):
 
         '''
         Private function that returns slope/intercept for linear fit to mean square diffusion data
@@ -208,7 +208,6 @@ class DiffusionCoefficient:
         # Convert from ASE time units to fs (aesthetic)
         from ase.units import fs as fs_conversion
         
-        # Should we set show=True in this if statement?
         if ax is None:
             ax = plt.gca()
 
