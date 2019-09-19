@@ -65,7 +65,7 @@ class NPT(MolecularDynamics):
         equivalent to giving the tensor (-p, -p, -p, 0, 0, 0).
 
     ttime
-        Characteristic timescale of the thermostat, in internal units
+        Characteristic timescale of the thermostat, in ASE internal units
         Set to None to disable the thermostat.
 
     pfactor
