@@ -739,9 +739,10 @@ class FixScaled(FixConstraintSingle):
         new[self.a] = np.dot(scaled_new, self.cell)[self.a]
 
     def adjust_forces(self, atoms, forces):
-        scaled_forces = np.linalg.solve(self.cell.T, forces.T).T
+        # Forces are contravarient to the coordinate transformation, use the inverse transformations
+        scaled_forces = atoms.cell.cartesian_positions(forces)
         scaled_forces[self.a] *= -(self.mask - 1)
-        forces[self.a] = np.dot(scaled_forces, self.cell)[self.a]
+        forces[self.a] = atoms.cell.scaled_positions(scaled_forces)[self.a]
 
     def todict(self):
         return {'name': 'FixScaled',
