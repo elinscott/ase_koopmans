@@ -6,7 +6,7 @@ from ase.units import Ang, fs
 v_unit = Ang / (1000.0 * fs)
 
 
-def read_aims(filename):
+def read_aims(filename, apply_constraints=True):
     """Import FHI-aims geometry type files.
 
     Reads unitcell, atom positions and constraints from
@@ -173,7 +173,7 @@ def read_aims(filename):
     if periodic.any():
         atoms.set_cell(cell)
         atoms.set_pbc(periodic)
-    if len(fix):
+    if len(fix) and apply_constraints:
         atoms.set_constraint([FixAtoms(indices=fix)] + fix_cart + fix_params)
     else:
         atoms.set_constraint(fix_cart + fix_params)
