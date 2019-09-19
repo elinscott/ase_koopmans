@@ -2,7 +2,7 @@ import numpy as np
 
 class DiffusionCoefficient:
 
-    def __init__(self, traj, timestep, steps_between_saved_images, atom_indices=None, molecule=False):
+    def __init__(self, traj, timestep, atom_indices=None, molecule=False):
         '''
         This class calculates the Diffusion Coefficient for the given Trajectory using the Einstein Equation:
         
@@ -17,10 +17,9 @@ class DiffusionCoefficient:
         Parameters:
             traj (Trajectory): 
                 Trajectory of atoms objects (images)
-            timestep (Int): 
-                Timestep used between each images, in ASE timestep units 
-            steps_between_saved_images (Int): 
-                Interval used when writing the .traj file 
+            timestep (Float): 
+                Timestep between _each image in the trajectory_, in ASE timestep units
+                (For an MD simulation with timestep of N, and images written every M iterations, our timestep here is N * M  
             atom_indices (List of Int): 
                 The indices of atoms whose Diffusion Coefficient is to be calculated explicitly
             molecule (Boolean)
@@ -29,7 +28,6 @@ class DiffusionCoefficient:
 
         self.traj = traj
         self.timestep = timestep
-        self.steps_between_saved_images = steps_between_saved_images
 
         # Condition used if user wants to calculate diffusion coefficients for specific atoms or all atoms
         self.atom_indices = atom_indices
@@ -65,9 +63,8 @@ class DiffusionCoefficient:
         self.no_of_segments = number_of_segments
         self.len_segments = floor(total_images/self.no_of_segments)
 
-        time_between_images = self.timestep * self.steps_between_saved_images
         # These are the data objects we need when plotting information. First the x-axis, timesteps
-        self.timesteps = np.arange(0,total_images*time_between_images,time_between_images)
+        self.timesteps = np.arange(0,total_images*self.timestep,self.timestep)
         # This holds all the data points for the diffusion coefficients, averaged over atoms
         self.xyz_segment_ensemble_average = np.zeros((self.no_of_segments,self.no_of_types_of_atoms,3,self.len_segments))
         # This holds all the information on linear fits, from which we get the diffusion coefficients
