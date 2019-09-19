@@ -1156,7 +1156,6 @@ class FixParametricRelations(FixConstraint):
         self.A = np.zeros((3*len(self.inds), len(self.params)))
         self.B = np.zeros(3*len(self.inds))
 
-        ops = ["sqrt", "sin", "cos"]
         flat_expressions = np.array(expressions).flatten()
         for ee, expression in enumerate(flat_expressions):
             expression = expression.replace(" ", "")
