@@ -445,6 +445,8 @@ class CLICommand:
                             'Mostly useful when inspecting a single test')
         parser.add_argument('--strict', action='store_true',
                             help='convert warnings to errors')
+        parser.add_argument('--nogui', action='store_true',
+                            help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
                             help='Specify particular test files.  '
                             'Glob patterns are accepted.')
@@ -474,6 +476,9 @@ class CLICommand:
                                  '{}.\n'.format(calculator,
                                                 ', '.join(calc_names)))
                 sys.exit(1)
+
+        if args.nogui:
+            os.environ.pop('DISPLAY')
 
         ntrouble = test(calculators=calculators, jobs=args.jobs,
                         strict=args.strict,

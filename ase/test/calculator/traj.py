@@ -29,6 +29,7 @@ parameters = {
                 pbc=True),
     'jacapo': dict(pbc=True),
     'vasp': dict(xc='LDA'),
+    'Psi4': dict(),
     # XXX we don't have the pseudopotential for Espresso.
     # We need some kind of installation/config system for managing that.
     # Disabling espresso test until we get that. --askhl

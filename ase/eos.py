@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division
+import warnings
 
 from ase.units import kJ
 from ase.utils import basestring
@@ -200,7 +200,7 @@ class EquationOfState:
 
         eos = EquationOfState(volumes, energies, eos='murnaghan')
         v0, e0, B = eos.fit()
-        eos.plot()
+        eos.plot(show=True)
 
     """
     def __init__(self, volumes, energies, eos='sj'):
@@ -212,7 +212,7 @@ class EquationOfState:
         self.eos_string = eos
         self.v0 = None
 
-    def fit(self):
+    def fit(self, warn=True):
         """Calculate volume, energy, and bulk modulus.
 
         Returns the optimal volume, the minimum energy, and the bulk
@@ -243,10 +243,6 @@ class EquationOfState:
         b = parabola_parameters[1]
         a = parabola_parameters[0]
         parabola_vmin = -b / 2 / c
-
-        if not (minvol < parabola_vmin and parabola_vmin < maxvol):
-            print('Warning the minimum volume of a fitted parabola is not in '
-                  'your volumes. You may not have a minimum in your dataset')
 
         # evaluate the parabola at the minimum to estimate the groundstate
         # energy
@@ -285,6 +281,11 @@ class EquationOfState:
             self.e0 = self.eos_parameters[0]
             self.B = self.eos_parameters[1]
 
+        if warn and not (minvol < self.v0 < maxvol):
+            warnings.warn(
+                'The minimum volume of your fit is not in '
+                'your volumes.  You may not have a minimum in your dataset!')
+
         return self.v0, self.e0, self.B
 
     def getplotdata(self):
@@ -299,7 +300,7 @@ class EquationOfState:
 
         return self.eos_string, self.e0, self.v0, self.B, x, y, self.v, self.e
 
-    def plot(self, filename=None, show=None, ax=None):
+    def plot(self, filename=None, show=False, ax=None):
         """Plot fitted energy curve.
 
         Uses Matplotlib to plot the energy curve.  Use *show=True* to
@@ -307,9 +308,6 @@ class EquationOfState:
         *filename='abc.eps'* to save the figure to a file."""
 
         import matplotlib.pyplot as plt
-
-        if filename is None and show is None:
-            show = True
 
         plotdata = self.getplotdata()
 

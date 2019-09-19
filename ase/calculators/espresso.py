@@ -126,6 +126,14 @@ class Espresso(FileIOCalculator):
             warnings.warn(warn_template % 'IBZ k-points')
         return ibzkpts
 
+    def get_k_point_weights(self):
+        if self.calc is None:
+            raise PropertyNotPresent(error_template % 'K-point weights')
+        k_point_weights = self.calc.get_k_point_weights()
+        if k_point_weights is None:
+            warnings.warn(warn_template % 'K-point weights')
+        return k_point_weights
+
     def get_eigenvalues(self, **kwargs):
         if self.calc is None:
             raise PropertyNotPresent(error_template % 'Eigenvalues')

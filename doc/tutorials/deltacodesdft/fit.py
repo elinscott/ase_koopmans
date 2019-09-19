@@ -12,7 +12,7 @@ def fit(symbol: str) -> Tuple[float, float, float, float]:
         V.append(atoms.get_volume() / len(atoms))
         E.append(atoms.get_potential_energy() / len(atoms))
     eos = EOS(V, E, 'birchmurnaghan')
-    eos.fit()
+    eos.fit(warn=False)
     e0, B, Bp, v0 = eos.eos_parameters
     return e0, v0, B, Bp
 
