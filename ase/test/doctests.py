@@ -1,26 +1,34 @@
-import doctest
 import sys
+from unittest import SkipTest
 
-try:
-    import scipy
-except ImportError:
-    scipy = None
 
-from ase import atoms
-from ase.collections import collection
-from ase.spacegroup import spacegroup, findsym, xtal
-from ase.geometry import geometry, cell
-from ase.build import tools
-from ase.io import ulm
-import ase.eos as eos
+if sys.version_info < (3, 6):
+    raise SkipTest('Test requires Python 3.6+, this is {}'
+                   .format(sys.version_info))
 
-modules = [xtal, spacegroup, cell, findsym, ulm, atoms, eos]
 
-if scipy:
-    modules.extend([geometry, tools])
+import doctest
+import importlib
 
-if sys.version_info >= (2, 7):
-    modules.append(collection)
+module_names = """\
+ase.atoms
+ase.build.tools
+ase.cell
+ase.collections.collection
+ase.dft.kpoints
+ase.eos
+ase.formula
+ase.geometry.cell
+ase.geometry.geometry
+ase.io.ulm
+ase.lattice
+ase.spacegroup.findsym
+ase.spacegroup.spacegroup
+ase.spacegroup.xtal
+ase.symbols
+"""
 
-for mod in modules:
+
+for modname in module_names.splitlines():
+    mod = importlib.import_module(modname)
     print(mod, doctest.testmod(mod, raise_on_error=True))

@@ -67,7 +67,7 @@ class GaussianProcess():
 
         n = self.X.shape[0]
         D = self.X.shape[1]
-        regularization = np.array(n*([self.noise*self.kernel.l**2] 
+        regularization = np.array(n*([self.noise*self.kernel.l] 
                                       + D*[self.noise]))
 
         K[range(K.shape[0]), range(K.shape[0])] += regularization**2
@@ -96,21 +96,22 @@ class GaussianProcess():
         n = self.X.shape[0]
         k = self.kernel.kernel_vector(x, self.X, n)
 
-        f = self.prior.prior(x) + np.matmul(k, self.a)
+        f = self.prior.prior(x) + np.dot(k, self.a)
         
         if get_variance:
             v = k.T.copy()
             v = solve_triangular(self.L, v, lower = True, check_finite = False)
 
             variance = self.kernel.kernel(x,x)
-            covariance = np.matmul(v.T, v)
+            #covariance = np.matmul(v.T, v)
+            covariance = np.tensordot(v,v, axes = (0,0))  
             V = variance - covariance
           
             return f, V
         return f
 
 
-    def neg_log_likelihood(self, l, *args):
+    def neg_log_likelihood(self, params, *args):
         '''Negative logarithm of the marginal likelihood and its derivative.
         It has been built in the form that suits the best its optimization, 
         with the scipy minimize module, to find the optimal hyperparameters.
@@ -122,7 +123,7 @@ class GaussianProcess():
                in the training set- '''
 
         X, Y = args
-        self.kernel.set_params(np.array([self.kernel.weight, l , self.noise]))
+        self.kernel.set_params(np.array([params[0], params[1] , self.noise])) #Come back to this
         self.train(X, Y)
 
         y = Y.flatten()
@@ -134,17 +135,15 @@ class GaussianProcess():
         # Gradient of the loglikelihood
         grad = self.kernel.gradient(X)
 
-        a = self.a.reshape(1, -1)
-
         # vectorizing the derivative of the log likelyhood
-        D_P_input = np.array([np.matmul(a.T, np.matmul(a, g)) for g in grad])
+        D_P_input = np.array([np.dot(np.outer(self.a,self.a), g) for g in grad])
         D_complexity = np.array([cho_solve((self.L, self.lower),
                                              g) for g in grad])
 
         DlogP = 0.5 * np.trace(D_P_input - D_complexity, axis1=1, axis2=2)
         return -logP, -DlogP
 
-    def fit_hyperparameters(self, X, Y):
+    def fit_hyperparameters(self, X, Y, tol=1e-2, eps=None):
         '''Given a set of observations, X, Y; optimize the scale
         of the Gaussian Process maximizing the marginal log-likelihood.
         This method calls TRAIN there is no need to call the TRAIN method again.
@@ -156,21 +155,44 @@ class GaussianProcess():
         X: observations(i.e. positions). numpy array with shape: nsamples x D
         Y: targets (i.e. energy and forces). 
            numpy array with shape (nsamples, D+1)
+        tol: tolerance on the maximum component of the gradient of the log-likelihood.
+           (See scipy's L-BFGS-B documentation:
+           https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html )
+        eps: include bounds to the hyperparameters as a +- a percentage of hyperparameter
+            if eps is None, there are no bounds in the optimization
+
+        Returns:
+
+        result (dict) :
+              result = {'hyperparameters': (numpy.array) New hyperparameters,
+                        'converged': (bool) True if it converged, 
+                                            False otherwise
+                       }
+
+      
         '''
 
-        l = np.copy(self.hyperparams)[1]
+        params = np.copy(self.hyperparams)[:2]
         arguments = (X, Y)
-        result = minimize(self.neg_log_likelihood, l, args=arguments,
-                          method='L-BFGS-B', jac=True)
+        
+        if eps is not None:
+            bounds = [((1-eps)*p, (1+eps)*p) for p in params]
+        else:
+            bounds = None
+
+        result = minimize(self.neg_log_likelihood, params, args=arguments,
+                          method='L-BFGS-B', jac=True, bounds = bounds, 
+                          options = {'gtol':tol, 'ftol':0.01*tol})
 
         if not result.success:
-            print(result)
-            raise NameError("The Gaussian Process could not be fitted.")
+            converged = False
+            
         else:
+            converged = True
             self.hyperparams = np.array(
-                [self.kernel.weight, result.x.copy(), self.noise])
+                [result.x.copy()[0], result.x.copy()[1], self.noise]) 
             
         self.set_hyperparams(self.hyperparams)
-        return self.hyperparams
+        return {'hyperparameters': self.hyperparams, 'converged': converged}
 
 

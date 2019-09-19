@@ -11,11 +11,12 @@ All additions and modifications to ASE should be tested.
 Test scripts should be put in the :git:`ase/test` directory.
 Run all tests with::
 
-  python -c "from ase.test import test; test(2)"
+  ase test
 
 It is using the function:
 
-.. function:: test.test(verbosity=1, dir=None)
+.. function:: test.testsuite.test(calculators=[], jobs=0,
+         stream=sys.stdout, files=None, verbose=False, strict=False)
     
     Runs the test scripts in :git:`ase/test`.
 
@@ -30,7 +31,7 @@ It is using the function:
 How to fail successfully
 ========================
 
-The test suite provided by :func:`test.test` automatically runs all test
+The test suite provided by :func:`testsuite.test` automatically runs all test
 scripts in the :git:`ase/test` directory and summarizes the results.
 
 .. note::

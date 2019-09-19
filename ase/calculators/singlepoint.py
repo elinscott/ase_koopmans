@@ -39,6 +39,8 @@ class SinglePointCalculator(Calculator):
         return '{}({})'.format(self.__class__.__name__, ', '.join(tokens))
 
     def get_property(self, name, atoms=None, allow_calculation=True):
+        if atoms is None:
+            atoms = self.atoms
         if name not in self.results or self.check_state(atoms):
             if allow_calculation:
                 raise PropertyNotImplementedError(
@@ -113,6 +115,16 @@ class SinglePointDFTCalculator(SinglePointCalculator):
                     if kpt == counter:
                         return kpoint
                     counter += 1
+        return None
+
+    def get_k_point_weights(self):
+        """ Retunrs the weights of the k points """
+        if not self.kpts is None:
+            weights = []
+            for kpoint in self.kpts:
+                if kpoint.s == 0:
+                    weights.append(kpoint.weight)
+            return np.array(weights)
         return None
 
     def get_occupation_numbers(self, kpt=0, spin=0):

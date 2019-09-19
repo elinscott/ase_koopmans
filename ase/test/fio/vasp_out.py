@@ -1,5 +1,8 @@
 import os
-from ase.io import read
+import inspect
+import numpy as np
+from ase import Atoms
+from ase.io import read, iread
 
 outcar = """
  vasp.5.3.3 18Dez12gamma-only
@@ -3934,16 +3937,30 @@ Space group operators:
                  Voluntary context switches:            0
 """
 
-outcar_f = open('OUTCAR', 'w')
-outcar_f.write(outcar)
-outcar_f.close()
-
+with open('OUTCAR', 'w') as outcar_f:
+    outcar_f.write(outcar)
+tol = 1e-6
 try:
-	a1 = read('OUTCAR', force_consistent=True)
-	assert abs(a1.get_potential_energy() - -68.22868532) < 1e-6
+    a1 = read('OUTCAR', index=-1)
+    assert isinstance(a1, Atoms)
+    assert np.isclose(a1.get_potential_energy(force_consistent=True),
+                      -68.22868532, atol=tol)
+    assert np.isclose(a1.get_potential_energy(force_consistent=False),
+                      -68.23102426, atol=tol)
 
-	a2 = read('OUTCAR', force_consistent=False)
-	assert abs(a2.get_potential_energy() - -68.23102426) < 1e-6
+    a2 = read('OUTCAR', index=':')
+    assert isinstance(a2, list)
+    assert isinstance(a2[0], Atoms)
+    assert len(a2) == 1
+
+    gen = iread('OUTCAR', index=':')
+    assert inspect.isgenerator(gen)
+    for fc in (True, False):
+        for a3 in gen:
+            assert isinstance(a3, Atoms)
+            assert np.isclose(a3.get_potential_energy(force_consistent=fc),
+                              a1.get_potential_energy(force_consistent=fc),
+                              atol=tol)
 
 finally:
-	os.unlink('OUTCAR')
+    os.unlink('OUTCAR')

@@ -25,10 +25,12 @@ import time
 import subprocess
 import re
 import warnings
+from distutils.version import LooseVersion
 import numpy as np
 from ase.geometry import cell_to_cellpar
 from ase.calculators.calculator import (FileIOCalculator, Calculator, equal,
-                                        all_changes, kptdensity2monkhorstpack)
+                                        all_changes, kptdensity2monkhorstpack,
+                                        PropertyNotImplementedError)
 from ase.calculators.openmx.parameters import OpenMXParameters
 from ase.calculators.openmx.default_settings import default_dictionary
 from ase.calculators.openmx.reader import read_openmx, get_file_name
@@ -72,8 +74,9 @@ class OpenMX(FileIOCalculator):
         'debug': False
     }
 
-    def __init__(self, restart=None, ignore_bad_restart_file=False, label='./openmx',
-                 atoms=None, command=None, mpi=None, pbs=None, **kwargs):
+    def __init__(self, restart=None, ignore_bad_restart_file=False,
+                 label='./openmx', atoms=None, command=None, mpi=None,
+                 pbs=None, **kwargs):
 
         # Initialize and put the default parameters.
         self.initialize_pbs(pbs)
@@ -155,8 +158,8 @@ class OpenMX(FileIOCalculator):
         try:
             os.chdir(abs_dir)
             if self.command is None:
-                self.command = 'openmx %s > %s'
-            command = self.command
+                self.command = 'openmx'
+            command = self.command + ' %s > %s'
             command = command % (runfile, outfile)
             self.prind(command)
             p = subprocess.Popen(command, shell=True, universal_newlines=True)
@@ -315,12 +318,14 @@ class OpenMX(FileIOCalculator):
             self.print_input(debug=self.debug, nohup=self.nohup)
             self.run()
             #  self.read_results()
-            atoms = read_openmx(filename=self.label)
-            self.parameters.update(atoms.calc.parameters)
-            self.results = atoms.calc.results
+            self.version = self.read_version()
+            output_atoms = read_openmx(filename=self.label, debug=self.debug)
+            self.output_atoms = output_atoms
+            # XXX The parameters are supposedly inputs, so it is dangerous
+            # to update them from the outputs. --askhl
+            self.parameters.update(output_atoms.calc.parameters)
+            self.results = output_atoms.calc.results
             # self.clean()
-            if atoms is not None:
-                self.update_atoms(atoms)
         except RuntimeError as e:
             try:
                 with open(get_file_name('.log'), 'r') as f:
@@ -374,12 +379,22 @@ class OpenMX(FileIOCalculator):
         self.set_label(label)
         if label[-5:] in ['.dat', '.out', '.log']:
             label = label[:-4]
-        atoms = read_openmx(filename=label)
+        atoms = read_openmx(filename=label, debug=self.debug)
         self.update_atoms(atoms)
         self.parameters.update(atoms.calc.parameters)
         self.results = atoms.calc.results
         self.parameters['restart'] = self.label
         self.parameters['label'] = label
+
+    def read_version(self, label=None):
+        version = None
+        if label is None:
+            label = self.label
+        for line in open(get_file_name('.out', label)):
+            if line.find('Ver.') != -1:
+                version = line.split()[-1]
+                break
+        return version
 
     def update_atoms(self, atoms):
         self.atoms = atoms.copy()
@@ -435,7 +450,7 @@ class OpenMX(FileIOCalculator):
 
         atoms = kwargs.get('atoms')
         if atoms is not None and self.atoms is None:
-            self.atoms = atoms
+            self.atoms = atoms.copy()
 
     def set_results(self, results):
         # Not Implemented fully
@@ -445,6 +460,9 @@ class OpenMX(FileIOCalculator):
         # Contruct the command to send to the operating system
         abs_dir = os.getcwd()
         command = ''
+        self.prind(self.command)
+        if self.command is None:
+            self.command = 'openmx'
         # run processes specified by the system variable OPENMX_COMMAND
         if processes is None:
             command += os.environ.get('OPENMX_COMMAND')
@@ -456,7 +474,9 @@ class OpenMX(FileIOCalculator):
             if threads is None:
                 threads_string = ''
             command += 'mpirun -np ' + \
-                str(processes) + ' openmx %s' + threads_string + ' > %s'
+                str(processes) + ' ' + self.command + ' %s ' + threads_string + ' |tee %s'
+                #str(processes) + ' openmx %s' + threads_string + ' > %s'
+                
         if runfile is None:
             runfile = abs_dir + '/' + self.prefix + '.dat'
         if outfile is None:
@@ -472,6 +492,31 @@ class OpenMX(FileIOCalculator):
                 "Example : 'mpirun -np 4 openmx ./%s -nt 2 > ./%s'.\n" +
                 "Got '%s'" % command)
         return command
+
+    def get_stress(self, atoms=None):
+        if atoms is None:
+            atoms = self.atoms
+
+        def check_version():
+            if LooseVersion(self.version) < '3.8':
+                raise PropertyNotImplementedError(
+                    'Version lower than 3.8 does not support stress '
+                    'calculation.  Your version is %s' % self.version)
+
+        # We may not yet know what version we are, since that can only
+        # be seen from the output
+        if getattr(self, 'version', None) is not None:
+            check_version()
+
+        try:
+            stress = self.get_property('stress', atoms)
+        except PropertyNotImplementedError:
+            # Now we know the version number, either we raise version
+            # error or the original error (the latter should not happen)
+            check_version()
+            raise
+
+        return stress
 
     def get_band_structure(self, atoms=None, calc=None):
         """

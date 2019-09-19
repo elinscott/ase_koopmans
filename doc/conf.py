@@ -12,6 +12,7 @@ extensions = ['ext',
               'sphinx.ext.doctest',
               'sphinx.ext.mathjax',
               'sphinx.ext.viewcode',
+              'sphinx.ext.napoleon',
               'sphinx.ext.intersphinx']
 source_suffix = '.rst'
 master_doc = 'index'
@@ -40,8 +41,8 @@ html_favicon = 'static/ase.ico'
 html_static_path = ['static']
 html_last_updated_fmt = '%a, %d %b %Y %H:%M:%S'
 
-ase_dev_version = '3.16.3b1'  # This line auto-edited by newrelease script
-ase_stable_version = '3.16.2'  # This line auto-edited by newrelease script
+ase_dev_version = '3.19.0b1'  # This line auto-edited by newrelease script
+ase_stable_version = '3.18.0'  # This line auto-edited by newrelease script
 
 html_context = {
     'current_version': __version__,
@@ -58,7 +59,7 @@ latex_documents = [
     ('index', 'ASE.tex', 'ASE', 'ASE-developers', 'howto', not True)]
 
 intersphinx_mapping = {'gpaw': ('https://wiki.fysik.dtu.dk/gpaw', None),
-                       'python': ('https://docs.python.org/3.6', None)}
+                       'python': ('https://docs.python.org/3.7', None)}
 
 # Avoid GUI windows during doctest:
 doctest_global_setup = """

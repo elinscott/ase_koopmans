@@ -2,7 +2,7 @@ import os
 import numpy as np
 from ase import io, units
 from ase.optimize import QuasiNewton
-from ase.parallel import paropen, rank, world
+from ase.parallel import paropen, world
 from ase.md import VelocityVerlet
 from ase.md import MDLogger
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
@@ -43,7 +43,7 @@ class MinimaHopping:
 
         # when a MD sim. has passed a local minimum:
         self._passedminimum = PassedMinimum()
-        
+
         # Misc storage.
         self._previous_optimum = None
         self._previous_energy = None
@@ -81,7 +81,7 @@ class MinimaHopping:
 
         status = np.array(-1.)
         exists = self._read_minima()
-        if rank == 0:
+        if world.rank == 0:
             if not exists:
                 # Fresh run with new minima file.
                 status = np.array(0.)
@@ -206,12 +206,13 @@ class MinimaHopping:
         self._temperature *= self._beta3
         self._log('msg', 'Found a new minimum.')
         self._log('par')
-        if (self._atoms.get_potential_energy() <
-            self._previous_energy + self._Ediff):
-                self._log('msg', 'Accepted new minimum.')
-                self._Ediff *= self._alpha1
-                self._log('par')
-                self._record_minimum()
+        if (self._previous_energy is None or
+            (self._atoms.get_potential_energy() <
+                self._previous_energy + self._Ediff)):
+            self._log('msg', 'Accepted new minimum.')
+            self._Ediff *= self._alpha1
+            self._log('par')
+            self._record_minimum()
         else:
             self._log('msg', 'Rejected new minimum due to energy. '
                              'Restoring last minimum.')
@@ -222,7 +223,7 @@ class MinimaHopping:
     def _log(self, cat='msg', message=None):
         """Records the message as a line in the log file."""
         if cat == 'init':
-            if rank == 0:
+            if world.rank == 0:
                 if os.path.exists(self._logfile):
                     raise RuntimeError('File exists: %s' % self._logfile)
             f = paropen(self._logfile, 'w')
@@ -271,7 +272,6 @@ class MinimaHopping:
         exists = os.path.exists(self._minima_traj)
         if exists:
             empty = os.path.getsize(self._minima_traj) == 0
-        if os.path.exists(self._minima_traj):
             if not empty:
                 traj = io.Trajectory(self._minima_traj, 'r')
                 self._minima = [atoms for atoms in traj]
@@ -314,7 +314,7 @@ class MinimaHopping:
                                          force_temp=True)
         traj = io.Trajectory('md%05i.traj' % self._counter, 'a',
                              self._atoms)
-        dyn = VelocityVerlet(self._atoms, dt=self._timestep * units.fs)
+        dyn = VelocityVerlet(self._atoms, timestep=self._timestep * units.fs)
         log = MDLogger(dyn, self._atoms, 'md%05i.log' % self._counter,
                        header=True, stress=False, peratom=False)
         dyn.attach(log, interval=1)
@@ -553,7 +553,7 @@ class MHPlot:
         ediffax = fig.add_axes((lm, bm + 2. * epotheight + vg1 + vg2,
                                 figwidth, parfigheight))
         tempax = fig.add_axes((lm, (bm + 2 * epotheight + vg1 + 2 * vg2 +
-                               parfigheight), figwidth, parfigheight))
+                                    parfigheight), figwidth, parfigheight))
         for ax in [ax2, tempax, ediffax]:
             ax.set_xticklabels([])
         ax1.set_xlabel('step')
@@ -667,6 +667,7 @@ def floatornan(value):
 class CombinedAxis:
     """Helper class for MHPlot to plot on split y axis and adjust limits
     simultaneously."""
+
     def __init__(self, ax1, ax2, tempax, ediffax):
         self.ax1 = ax1
         self.ax2 = ax2

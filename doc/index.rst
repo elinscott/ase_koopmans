@@ -39,15 +39,17 @@ Supported :mod:`Calculators <ase.calculators>`:
 |elk| |exciting| |EMT|
 |fhi-aims| |fleur| |gpaw| |gromacs|
 |hotbit| |jacapo| |jdftx| |lammps| |nwchem|
-|octopus| |onetep| |openmx| |q_espresso| |siesta| |turbomole| |vasp|
+|octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
+:mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
 Gaussian_
 :mod:`Grimme DFT-D3 <ase.calculators.dftd3>`
 :mod:`~ase.calculators.gulp`
 Mopac_
-:mod:`~ase.calculators.tip3p`
+:mod:`~ase.calculators.qchem`
 :mod:`~ase.calculators.qmmm`
+:mod:`~ase.calculators.tip3p`
 
 
 `Reference publication on ASE <https://doi.org/10.1088/1361-648X/aa680e>`__
@@ -66,6 +68,10 @@ See how to identify and convert old trajectory files here: :ref:`convert`.
 
 News
 ====
+
+* :ref:`ASE version 3.18.0 <releasenotes>` released (19 July 2019).
+
+* :ref:`ASE version 3.17.0 <releasenotes>` released (12 November 2018).
 
 * :ref:`ASE version 3.16.2 <releasenotes>` released (5 June 2018).
 
@@ -160,9 +166,10 @@ Contents
     gallery/gallery
     releasenotes
     contact
+    otherprojects
     development/development
     faq
-
+    ASE Workshop 2019 <workshop/workshop>
 
 .. |abinit| image:: static/abinit.png
    :target: ase/calculators/abinit.html
@@ -232,6 +239,9 @@ Contents
    :align: middle
 .. |openmx| image:: static/openmx.png
    :target: ase/calculators/openmx.html
+   :align: middle
+.. |psi4| image:: static/psi4.png
+   :target: ase/calculators/psi4.html
    :align: middle
 .. |q_espresso| image:: static/espresso.png
    :target: ase/calculators/espresso.html

@@ -1,17 +1,20 @@
 from __future__ import division
 import numpy as np
 
-import ase.units as unit
+from ase import units
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.tip3p import rOH, angleHOH, TIP3P
 
 __all__ = ['rOH', 'angleHOH', 'TIP4P', 'sigma0', 'epsilon0']
 
 # Electrostatic constant and parameters:
-k_c = 332.1 * unit.kcal / unit.mol
-sigma0 = 3.15365
-epsilon0 = 0.6480 * unit.kJ / unit.mol
-
+k_c = units.Hartree * units.Bohr
+qH = 0.52
+A = 600e3 * units.kcal / units.mol
+B = 610 * units.kcal / units.mol
+sigma0 = (A / B)**(1 / 6.)
+epsilon0 = B**2 / (4 * A)
+# http://dx.doi.org/10.1063/1.445869
 
 class TIP4P(TIP3P):
     def __init__(self, rc=7.0, width=1.0):
@@ -38,6 +41,8 @@ class TIP4P(TIP3P):
         """
 
         TIP3P.__init__(self, rc, width)
+        self.atoms_per_mol = 3
+        self.sites_per_mol = 4
         self.energy = None
         self.forces = None
 
@@ -167,9 +172,9 @@ class TIP4P(TIP3P):
     def get_virtual_charges(self, atoms):
         charges = np.empty(len(atoms) * 4 // 3)
         charges[0::4] = 0.00  # O
-        charges[1::4] = 0.52  # H1
-        charges[2::4] = 0.52  # H2
-        charges[3::4] = -1.04  # X1
+        charges[1::4] = qH  # H1
+        charges[2::4] = qH  # H2
+        charges[3::4] = - 2* qH  # X1
         return charges
 
     def redistribute_forces(self, forces):

@@ -37,6 +37,6 @@ More details
 .. autoclass:: DOS
    :members: get_energies, get_dos
 
-.. autofunction:: ltidos
+.. autofunction:: linear_tetrahedron_integration
 
 .. autofunction:: ase.dft.get_distribution_moment

@@ -8,6 +8,7 @@ import numpy as np
 from ase.calculators.calculator import (Calculator, all_changes,
                                         PropertyNotImplementedError)
 import ase.units as units
+from ase.utils import basestring
 
 
 def actualunixsocketname(name):
@@ -91,14 +92,14 @@ class IPIProtocol:
 
         self.log(' sendposdata')
         self.sendmsg('POSDATA')
-        self.send(cell / units.Bohr, np.float64)
-        self.send(icell * units.Bohr, np.float64)
+        self.send(cell.T / units.Bohr, np.float64)
+        self.send(icell.T * units.Bohr, np.float64)
         self.send(len(positions), np.int32)
         self.send(positions / units.Bohr, np.float64)
 
     def recvposdata(self):
-        cell = self.recv((3, 3), np.float64)
-        icell = self.recv((3, 3), np.float64)
+        cell = self.recv((3, 3), np.float64).T.copy()
+        icell = self.recv((3, 3), np.float64).T.copy()
         natoms = self.recv(1, np.int32)
         natoms = int(natoms)
         positions = self.recv((natoms, 3), np.float64)
@@ -113,7 +114,7 @@ class IPIProtocol:
         natoms = self.recv(1, np.int32)
         assert natoms >= 0
         forces = self.recv((int(natoms), 3), np.float64)
-        virial = self.recv((3, 3), np.float64)
+        virial = self.recv((3, 3), np.float64).T.copy()
         nmorebytes = self.recv(1, np.int32)
         nmorebytes = int(nmorebytes)
         if nmorebytes > 0:
@@ -136,7 +137,7 @@ class IPIProtocol:
         natoms = len(forces)
         self.send(np.array([natoms]), np.int32)
         self.send(units.Bohr / units.Ha * forces, np.float64)
-        self.send(1.0 / units.Ha * virial, np.float64)
+        self.send(1.0 / units.Ha * virial.T, np.float64)
         # We prefer to always send at least one byte due to trouble with
         # empty messages.  Reading a closed socket yields 0 bytes
         # and thus can be confused with a 0-length bytestring.
@@ -505,7 +506,7 @@ class SocketClient:
         finally:
             self.close()
 
-    def run(self, atoms, use_stress=True):
+    def run(self, atoms, use_stress=False):
         for _ in self.irun(atoms, use_stress=use_stress):
             pass
 
@@ -575,7 +576,13 @@ class SocketIOCalculator(Calculator):
         self.calc = calc
         self.timeout = timeout
         self.server = None
-        self.log = log
+
+        if isinstance(log, basestring):
+            self.log = open(log, 'w')
+            self.log_was_opened = True
+        else:
+            self.log = log
+            self.log_was_opened = False
 
         # We only hold these so we can pass them on to the server.
         # They may both be None as stored here.
@@ -641,6 +648,8 @@ class SocketIOCalculator(Calculator):
             self.server.close()
             self.server = None
             self.calculator_initialized = False
+            if self.log_was_opened:
+                self.log.close()
 
     def __enter__(self):
         return self

@@ -1,5 +1,5 @@
 from __future__ import print_function
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 interface to symmol
 
@@ -92,7 +92,7 @@ class SYMMOL:
 
     def get_symmetry_operators(self):
         # regexp = re.compile(' SYMMETRY GROUP MATRICES')
-        reg2 =  re.compile('^  \d+ CSM')
+        reg2 = re.compile(r'^  \d+ CSM')
 
         lines = open('symmol.out').readlines()
 

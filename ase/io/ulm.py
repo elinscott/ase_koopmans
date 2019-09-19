@@ -1,9 +1,20 @@
-"""Simple and efficient pythonic file-format.
+"""
+ULM files
+=========
+
+*Simple and efficient pythonic file-format*
 
 Stores ndarrays as binary data and Python's built-in datatypes
 (bool, int, float, complex, str, dict, list, tuple, None) as json.
 
-File layout when there is only a single item::
+.. autofunction:: open
+.. autoexception:: InvalidULMFileError
+
+
+File layout
+-----------
+
+When there is only a single item::
 
     0: "- of Ulm" (magic prefix, ascii)
     8: "                " (tag, ascii)
@@ -15,6 +26,10 @@ File layout when there is only a single item::
     p0: n (length of json data, int64)
     p0+8: json data
     p0+8+n: EOF
+
+
+Examples
+--------
 
 Writing:
 
@@ -30,6 +45,7 @@ Reading:
 >>> r = ulm.open('x.ulm')
 >>> print(r.c)
 abc
+>>> r.close()
 
 To see what's inside 'x.ulm' do this::
 
@@ -42,7 +58,59 @@ To see what's inside 'x.ulm' do this::
         c: abc,
         d: 3.14}
 
-Versions:
+
+.. autoclass:: Writer
+    :members:
+
+.. autoclass:: Reader
+    :members:
+
+
+More examples
+-------------
+
+In the following we append to the ulm-file from above and demonstrae
+how to write a big array in chunks:
+
+>>> w = ulm.open('x.ulm', 'a')
+>>> w.add_array('bigarray', (10, 1000), float)
+>>> for i in range(10):
+...     w.fill(np.ones(1000))
+...
+>>> w.close()
+
+Now read first and second items:
+
+>>> with ulm.open('x.ulm') as r:
+...     print(r.keys())
+dict_keys(['a', 'b', 'c', 'd'])
+>>> with ulm.open('x.ulm', index=1) as r:
+...     print(r.keys())
+dict_keys(['bigarray'])
+
+To get all the data, it is possible to iterate over the items in the file.
+
+>>> for i, r in enumerate(ulm.Reader('x.ulm')):
+...     for k in r.keys():
+...         print(i, k)
+0 a
+0 b
+0 c
+0 d
+1 bigarray
+>>> r.close()
+
+The different parts (items) of the file are numbered by the index
+argument:
+
+>>> r = ulm.Reader('x.ulm')
+>>> r[1].bigarray.shape
+(10, 1000)
+>>> r.close()
+
+
+Versions
+--------
 
 1) Initial version.
 
@@ -50,36 +118,45 @@ Versions:
    _little_endian=False item.
 
 3) Changed magic string from "AFFormat" to "- of Ulm".
-
 """
 
-from __future__ import print_function
 import os
-import sys
 import numbers
+from pathlib import Path
 
 import numpy as np
 
 from ase.io.jsonio import encode, decode
-from ase.utils import plural, basestring
+from ase.utils import plural
 
-if sys.version_info[0] >= 3:
-    import builtins
-else:
-    import __builtin__ as builtins
 
 VERSION = 3
 N1 = 42  # block size - max number of items: 1, N1, N1*N1, N1*N1*N1, ...
 
 
-def open(filename, mode='r', index=None, tag=''):
-    """Open ulm-file."""
+def open(filename, mode='r', index=None, tag=None):
+    """Open ulm-file.
+
+    filename: str
+        Filename.
+    mode: str
+        Mode.  Must be 'r' for reading, 'w' for writing to a new file
+        (overwriting an existing one) or 'a' for appending to an existing file.
+    index: int
+        Index of item to read.  Defaults to 0.
+    tag: str
+        Magic ID string.
+
+    Returns a :class:`Reader` or a :class:`Writer` object.  May raise
+    :class:`InvalidULMFileError`.
+    """
     if mode == 'r':
+        assert tag is None
         return Reader(filename, index or 0)
     if mode not in 'wa':
         2 / 0
     assert index is None
-    return Writer(filename, mode, tag)
+    return Writer(filename, mode, tag or '')
 
 
 ulmopen = open
@@ -108,7 +185,9 @@ def writeint(fd, n, pos=None):
 def readints(fd, n):
     a = np.frombuffer(fd.read(int(n * 8)), dtype=np.int64, count=n)
     if not np.little_endian:
-        a.byteswap(True)
+        # Cannot use in-place byteswap because frombuffer()
+        # returns readonly view
+        a = a.byteswap()
     return a
 
 
@@ -152,16 +231,19 @@ class Writer:
                 data = {}
             else:
                 data = {'_little_endian': False}
-            fd_is_string = isinstance(fd, basestring)
-            if mode == 'w' or (fd_is_string and
-                               not (os.path.isfile(fd) and
-                                    os.path.getsize(fd) > 0)):
+
+            if isinstance(fd, str):
+                fd = Path(fd)
+
+            if mode == 'w' or (isinstance(fd, Path) and
+                               not (fd.is_file() and
+                                    fd.stat().st_size > 0)):
                 self.nitems = 0
                 self.pos0 = 48
                 self.offsets = np.array([-1], np.int64)
 
-                if fd_is_string:
-                    fd = builtins.open(fd, 'wb')
+                if isinstance(fd, Path):
+                    fd = fd.open('wb')
 
                 # File format identifier and other stuff:
                 a = np.array([VERSION, self.nitems, self.pos0], np.int64)
@@ -171,8 +253,8 @@ class Writer:
                                a.tostring() +
                                self.offsets.tostring())
             else:
-                if fd_is_string:
-                    fd = builtins.open(fd, 'r+b')
+                if isinstance(fd, Path):
+                    fd = fd.open('r+b')
 
                 version, self.nitems, self.pos0, offsets = read_header(fd)[1:]
                 assert version == VERSION
@@ -305,12 +387,16 @@ class Writer:
 
         for name, value in kwargs.items():
             if isinstance(value, (bool, int, float, complex,
-                                  dict, list, tuple, basestring,
+                                  dict, list, tuple, str,
                                   type(None))):
                 self.data[name] = value
-            elif isinstance(value, np.ndarray):
-                self.add_array(name, value.shape, value.dtype)
-                self.fill(value)
+            elif hasattr(value, '__array__'):
+                value = np.asarray(value)
+                if value.ndim == 0:
+                    self.data[name] = value.item()
+                else:
+                    self.add_array(name, value.shape, value.dtype)
+                    self.fill(value)
             else:
                 value.write(self.child(name))
 
@@ -375,11 +461,15 @@ class InvalidULMFileError(IOError):
 
 
 class Reader:
-    def __init__(self, fd, index=0, data=None, little_endian=None):
+    def __init__(self, fd, index=0, data=None, _little_endian=None):
         """Create reader."""
 
-        if isinstance(fd, basestring):
-            fd = builtins.open(fd, 'rb')
+        self._little_endian = _little_endian
+
+        if isinstance(fd, str):
+            fd = Path(fd)
+        if isinstance(fd, Path):
+            fd = fd.open('rb')
 
         self._fd = fd
         self._index = index
@@ -391,9 +481,6 @@ class Reader:
                 data = self._read_data(index)
             else:
                 data = {}
-            self._little_endian = data.pop('_little_endian', True)
-        else:
-            self._little_endian = little_endian
 
         self._parse_data(data)
 
@@ -417,7 +504,7 @@ class Reader:
                                           self._little_endian)
                 else:
                     value = Reader(self._fd, data=value,
-                                   little_endian=self._little_endian)
+                                   _little_endian=self._little_endian)
                 name = name[:-1]
 
             self._data[name] = value
@@ -427,6 +514,7 @@ class Reader:
         return self._tag
 
     def keys(self):
+        """Return list of keys."""
         return self._data.keys()
 
     def asdict(self):
@@ -480,9 +568,11 @@ class Reader:
         self._fd.seek(self._offsets[index])
         size = int(readints(self._fd, 1)[0])
         data = decode(self._fd.read(size).decode())
+        self._little_endian = data.pop('_little_endian', True)
         return data
 
     def __getitem__(self, index):
+        """Return Reader for item *index*."""
         data = self._read_data(index)
         return Reader(self._fd, index, data, self._little_endian)
 
@@ -494,13 +584,13 @@ class Reader:
             if verbose and isinstance(value, NDArrayReader):
                 value = value.read()
             if isinstance(value, NDArrayReader):
-                s = '<ndarray shape={0} dtype={1}>'.format(value.shape,
-                                                           value.dtype)
+                s = '<ndarray shape={} dtype={}>'.format(value.shape,
+                                                         value.dtype)
             elif isinstance(value, Reader):
                 s = value.tostr(verbose, indent + '    ')
             else:
                 s = str(value).replace('\n', '\n  ' + ' ' * len(key) + indent)
-            strings.append('{0}{1}: {2}'.format(indent, key, s))
+            strings.append('{}{}: {}'.format(indent, key, s))
         return '{\n' + ',\n'.join(strings) + '}'
 
     def __str__(self):
@@ -553,7 +643,8 @@ class NDArrayReader:
         if step != 1:
             a = a[::step].copy()
         if self.little_endian != np.little_endian:
-            a.byteswap(True)
+            # frombuffer() returns readonly array
+            a = a.byteswap(inplace=a.flags.writeable)
         if self.length_of_last_dimension is not None:
             a = a[..., :self.length_of_last_dimension]
         if self.scale != 1.0:
@@ -612,15 +703,25 @@ def copy(reader, writer, exclude=set(), name=''):
 
 
 class CLICommand:
-    short_description = 'Manipulate/show content of ulm-file'
+    """Manipulate/show content of ulm-file.
+
+    The ULM file format is used for ASE's trajectory files,
+    for GPAW's gpw-files and other things.
+
+    Example (show first image of a trajectory file):
+
+        ase ulm abc.traj -n 0 -v
+    """
 
     @staticmethod
     def add_arguments(parser):
         add = parser.add_argument
-        add('filename')
-        add('-n', '--index', type=int)
-        add('-d', '--delete', metavar='key')
-        add('-v', '--verbose', action='store_true')
+        add('filename', help='Name of ULM-file.')
+        add('-n', '--index', type=int,
+            help='Show only one index.  Default is to show all.')
+        add('-d', '--delete', metavar='key1,key2,...',
+            help='Remove key(s) from ULM-file.')
+        add('-v', '--verbose', action='store_true', help='More output.')
 
     @staticmethod
     def run(args):

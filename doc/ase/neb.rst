@@ -181,6 +181,39 @@ To use the climbing image NEB method, instantiate the NEB object like this::
   convergence is slow.
 
 
+Scaled and dynamic optimizations
+================================
+
+The convergence of images is often non-uniform, and a large fraction of
+computational resources can be spent calculating images that are below
+the convergence criterion. This can be avoided with a dynamic optimization
+method, where the convergence of each image is carefully monitored.
+Dynamic optimization is implemented as a keyword in the NEB class::
+
+  neb = NEB(images, dynamic_relaxation=True)
+
+.. note::
+
+  Dynamic optimization only works efficiently in series, and will not result
+  in reduced computational time when resources are parallelized over images.
+
+The saddle point is the important result of an NEB calculation, and the other
+interior images are typically not used in subsequent analyses. The
+convergence criteria can be scaled to focus on the saddle point and increase
+the tolerance in other regions of the PES. Convergence scaling is implemented
+as::
+
+  neb = NEB(images, dynamic_relaxation=True, scale_fmax=1.)
+
+where the convergence criterion of each image is scaled based on the position
+of the image relative to the highest point in the band. The rate (slope) of
+convergence scaling is controlled by the keyword ``scale_fmax``.
+
+.. note::
+
+  A low scaling factor (``scale_fmax=1-3``) is often enough to significantly
+  reduce the number of force calls needed for convergence.
+
 Parallelization over images
 ===========================
 
@@ -189,11 +222,11 @@ The script will have to be run with an MPI-enabled Python interpreter
 like GPAW_'s gpaw-python_.  All images exist on all processors, but
 only some of them have a calculator attached::
 
-  from ase.parallel import rank, size
+  from ase.parallel import world
   from ase.calculators.emt import EMT
   # Number of internal images:
   n = len(images) - 2
-  j = rank * n // size
+  j = world.rank * n // world.size
   for i, image in enumerate(images[1:-1]):
       if i == j:
           image.set_calculator(EMT())
@@ -216,3 +249,15 @@ A class exists to help in automating the analysis of NEB jobs. See the
 
 .. autoclass:: NEBTools
    :members:
+
+
+AutoNEB
+=======
+
+.. warning::
+
+    The module from where the :class:`ase.autoneb.AutoNEB` class is imported
+    may be changed some day in a future version of ASE
+    (most likely to :mod:`ase.neb` or :mod:`ase.mep`).
+
+.. autoclass:: ase.autoneb.AutoNEB

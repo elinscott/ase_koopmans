@@ -1,5 +1,5 @@
 from __future__ import print_function
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Get the space group for a ListOfAtoms
@@ -103,7 +103,7 @@ class SGROUP:
         for line in self.output:
             if regexp.search(line):
                 line = line[32:]
-                r2 = re.compile('^\d+')
+                r2 = re.compile(r'^\d+')
                 s = r2.search(line)
                 if hasattr(s,'group'):
                     return int(s.group())

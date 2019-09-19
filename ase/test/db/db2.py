@@ -10,19 +10,35 @@ from ase.build import molecule
 from ase.test import must_raise
 
 
-for name in ['testase.json', 'testase.db', 'postgresql']:
+def test(name):
     if name == 'postgresql':
         if os.environ.get('POSTGRES_DB'):  # gitlab-ci
             name = 'postgresql://ase:ase@postgres:5432/testase'
         else:
             name = os.environ.get('ASE_TEST_POSTGRES_URL')
             if name is None:
-                continue
+                return
+    elif name == 'mysql':
+        if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
+            name = 'mysql://root:ase@mysql:3306/testase_mysql'
+        else:
+            name = os.environ.get('MYSQL_DB_URL')
+
+        if name is None:
+            return
+    elif name == 'mariadb':
+        if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
+            name = 'mariadb://root:ase@mariadb:3306/testase_mysql'
+        else:
+            name = os.environ.get('MYSQL_DB_URL')
+
+        if name is None:
+            return
 
     c = connect(name)
     print(name, c)
 
-    if 'postgres' in name:
+    if 'postgres' in name or 'mysql' in name or 'mariadb' in name:
         c.delete([row.id for row in c.select()])
 
     id = c.reserve(abc=7)
@@ -44,7 +60,7 @@ for name in ['testase.json', 'testase.db', 'postgresql']:
 
     row = c.get(id)
     print(row.data['1-butyne'], row.data.chi)
-    assert (row.data.chi == chi).all()
+    assert (row.data.chi == chi).all(), (row.data.chi, chi)
     print(row)
 
     assert len(c.get_atoms(C=1).constraints) == 2
@@ -76,6 +92,9 @@ for name in ['testase.json', 'testase.db', 'postgresql']:
         c.write(Atoms(), pi='3.14')  # number as a string
 
     with must_raise(ValueError):
+        c.write(Atoms(), fmax=0.0)  # reserved word
+
+    with must_raise(ValueError):
         c.write(Atoms(), S=42)  # chemical symbol as key
 
     id = c.write(Atoms(),
@@ -97,3 +116,11 @@ for name in ['testase.json', 'testase.db', 'postgresql']:
 
     e = [row.get('energy') for row in c.select(sort='energy')]
     assert len(e) == 5 and abs(e[0] - 1.991) < 0.0005
+
+
+test('testase.json')
+test('testase.db')
+test('postgresql')
+test('mysql')
+test('mariadb')
+

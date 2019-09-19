@@ -8,8 +8,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 
 import ase.units as units
-from ase.atoms import string2symbols
-from ase.utils import formula_hill, basestring
+from ase.formula import Formula
 
 _solvated = []
 
@@ -21,9 +20,7 @@ def parse_formula(formula):
     charge = formula.count('+') - formula.count('-')
     if charge:
         formula = formula.rstrip('+-')
-    count = {}
-    for symbol in string2symbols(formula):
-        count[symbol] = count.get(symbol, 0) + 1
+    count = Formula(formula).count()
     return count, charge, aq
 
 
@@ -63,8 +60,8 @@ def solvated(symbols):
     Returns list of (name, energy) tuples.
     """
 
-    if isinstance(symbols, basestring):
-        symbols = set(string2symbols(symbols))
+    if isinstance(symbols, str):
+        symbols = Formula(symbols).count().keys()
     if len(_solvated) == 0:
         for line in _aqueous.splitlines():
             energy, formula = line.split(',')
@@ -220,7 +217,7 @@ class Pourbaix:
                     energy -= entropy
             if verbose:
                 print('{:<5}{:10}{:10.3f}'.format(len(energies),
-                                                     name, energy))
+                                                  name, energy))
             energies.append(energy)
             names.append(name)
 
@@ -228,14 +225,19 @@ class Pourbaix:
             from scipy.optimize import linprog
         except ImportError:
             from ase.utils._linprog import linprog
-        result = linprog(energies, None, None, np.transpose(eq2), eq1, bounds)
+        result = linprog(c=energies,
+                         A_eq=np.transpose(eq2),
+                         b_eq=eq1,
+                         bounds=bounds,
+                         options={'lstsq': True,
+                                  'presolve': True})
 
         if verbose:
             print_results(zip(names, result.x, energies))
 
         return result.x, result.fun
 
-    def diagram(self, U, pH, plot=True, show=True, ax=None):
+    def diagram(self, U, pH, plot=True, show=False, ax=None):
         """Calculate Pourbaix diagram.
 
         U: list of float
@@ -266,8 +268,8 @@ class Pourbaix:
             b = (a == i)
             x = np.dot(b.sum(1), U) / b.sum()
             y = np.dot(b.sum(0), pH) / b.sum()
-            name = re.sub('(\S)([+-]+)', r'\1$^{\2}$', name)
-            name = re.sub('(\d+)', r'$_{\1}$', name)
+            name = re.sub(r'(\S)([+-]+)', r'\1$^{\2}$', name)
+            name = re.sub(r'(\d+)', r'$_{\1}$', name)
             text.append((x, y, name))
 
         if plot:
@@ -333,14 +335,16 @@ class PhaseDiagram:
         self.species = OrderedDict()
         self.references = []
         for name, energy in references:
-            if isinstance(name, basestring):
+            if isinstance(name, str):
                 count = parse_formula(name)[0]
             else:
                 count = name
-                name = formula_hill(count)
 
             if filter and any(symbol not in filter for symbol in count):
                 continue
+
+            if not isinstance(name, str):
+                name = Formula.from_dict(count).format('metal')
 
             natoms = 0
             for symbol, n in count.items():
@@ -446,7 +450,7 @@ class PhaseDiagram:
 
         return energy, indices, np.array(coefs)
 
-    def plot(self, ax=None, dims=None, show=True):
+    def plot(self, ax=None, dims=None, show=False):
         """Make 2-d or 3-d plot of datapoints and convex hull.
 
         Default is 2-d for 2- and 3-component diagrams and 3-d for a
@@ -497,7 +501,7 @@ class PhaseDiagram:
 
     def plot2d2(self, ax=None):
         x, e = self.points[:, 1:].T
-        names = [re.sub('(\d+)', r'$_{\1}$', ref[2])
+        names = [re.sub(r'(\d+)', r'$_{\1}$', ref[2])
                  for ref in self.references]
         hull = self.hull
         simplices = self.simplices
@@ -522,7 +526,7 @@ class PhaseDiagram:
         x, y = self.points[:, 1:-1].T.copy()
         x += y / 2
         y *= 3**0.5 / 2
-        names = [re.sub('(\d+)', r'$_{\1}$', ref[2])
+        names = [re.sub(r'(\d+)', r'$_{\1}$', ref[2])
                  for ref in self.references]
         hull = self.hull
         simplices = self.simplices
@@ -546,7 +550,7 @@ class PhaseDiagram:
                    c='r', marker='s')
 
         for a, b, c, ref in zip(x, y, e, self.references):
-            name = re.sub('(\d+)', r'$_{\1}$', ref[2])
+            name = re.sub(r'(\d+)', r'$_{\1}$', ref[2])
             ax.text(a, b, c, name, ha='center', va='bottom')
 
         for i, j, k in self.simplices:
@@ -573,7 +577,7 @@ class PhaseDiagram:
                    c='r', marker='s')
 
         for x, y, z, ref in zip(a, b, c, self.references):
-            name = re.sub('(\d+)', r'$_{\1}$', ref[2])
+            name = re.sub(r'(\d+)', r'$_{\1}$', ref[2])
             ax.text(x, y, z, name, ha='center', va='bottom')
 
         for i, j, k, w in self.simplices:

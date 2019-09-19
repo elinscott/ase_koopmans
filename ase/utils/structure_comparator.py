@@ -7,6 +7,12 @@ from scipy.spatial import cKDTree as KDTree
 from ase import Atom, Atoms
 from ase.build.tools import niggli_reduce
 
+
+def normalize(cell):
+    for i in range(3):
+        cell[i] /= np.linalg.norm(cell[i])
+
+
 try:
     from itertools import filterfalse
 except ImportError:  # python2.7
@@ -186,8 +192,7 @@ class SymmetryEquivalenceCheck(object):
         """Get the internal angles of the unit cell."""
         cell = cell.copy()
 
-        # Normalize each vector
-        cell /= np.linalg.norm(cell, axis=1, keepdims=True)
+        normalize(cell)
 
         dot = cell.dot(cell.T)
 
@@ -256,6 +261,7 @@ class SymmetryEquivalenceCheck(object):
 
         matrices = None
         translations = None
+        transposed_matrices = None
         for struct in s2:
             self.s2 = struct.copy()
             self.expanded_s2 = None
@@ -285,13 +291,30 @@ class SymmetryEquivalenceCheck(object):
                 continue
 
             if matrices is None:
-                matrices, translations = \
-                    self._get_rotation_reflection_matrices()
+                matrices = self._get_rotation_reflection_matrices()
+                if matrices is None:
+                    continue
+
+            if translations is None:
+                translations = self._get_least_frequent_positions(self.s1)
 
             # After the candidate translation based on s1 has been computed
             # we need potentially to swap s1 and s2 for robust comparison
             self._least_frequent_element_to_origin(self.s2)
             switch = self._switch_reference_struct()
+            if switch:
+                # Remember the matrices and translations used before
+                old_matrices = matrices
+                old_translations = translations
+
+                # If a s1 and s2 has been switched we need to use the
+                # transposed version of the matrices to map atoms the
+                # other way
+                if transposed_matrices is None:
+                    transposed_matrices = np.transpose(matrices,
+                                                       axes=[0, 2, 1])
+                matrices = transposed_matrices
+                translations = self._get_least_frequent_positions(self.s1)
 
             # Calculate tolerance on positions
             self.position_tolerance = \
@@ -304,12 +327,19 @@ class SymmetryEquivalenceCheck(object):
             self.s1 = s1.copy()
             if switch:
                 self.expanded_s1 = self.expanded_s2
+                matrices = old_matrices
+                translations = old_translations
         return False
 
     def _set_least_frequent_element(self, atoms):
         """Save the atomic number of the least frequent element."""
         elem1 = self._get_element_count(atoms)
         self.least_freq_element = elem1.most_common()[-1][0]
+
+    def _get_least_frequent_positions(self, atoms):
+        """Get the positions of the least frequent element in atoms."""
+        pos = atoms.get_positions(wrap=True)
+        return pos[atoms.numbers == self.least_freq_element]
 
     def _get_only_least_frequent_of(self, struct):
         """Get the atoms object with all other elements than the least frequent
@@ -399,7 +429,7 @@ class SymmetryEquivalenceCheck(object):
         normal_vectors = np.array([np.cross(cell[1, :], cell[2, :]),
                                    np.cross(cell[0, :], cell[2, :]),
                                    np.cross(cell[0, :], cell[1, :])])
-        normal_vectors /= np.linalg.norm(normal_vectors, axis=1, keepdims=True)
+        normalize(normal_vectors)
 
         # Get the distance to the unit cell faces from each atomic position
         pos2faces = np.abs(positions.dot(normal_vectors.T))
@@ -465,9 +495,9 @@ class SymmetryEquivalenceCheck(object):
 
     def _least_frequent_element_to_origin(self, atoms):
         """Put one of the least frequent elements at the origin."""
-        least_freq = self._get_only_least_frequent_of(atoms)
+        least_freq_pos = self._get_least_frequent_positions(atoms)
         cell_diag = np.sum(atoms.get_cell(), axis=0)
-        d = least_freq.get_positions()[0] - 1e-6 * cell_diag
+        d = least_freq_pos[0] - 1e-6 * cell_diag
         atoms.positions -= d
         atoms.wrap(pbc=[1, 1, 1])
 
@@ -508,7 +538,14 @@ class SymmetryEquivalenceCheck(object):
                                               rtol=rtol, atol=0)
             # The first vector is not interesting
             correct_lengths_mask[0] = False
+
+            # If no trial vectors can be found (for any direction)
+            # then the candidates are different and we return None
+            if not np.any(correct_lengths_mask):
+                return None
+
             candidate_indices.append(np.nonzero(correct_lengths_mask)[0])
+
         # Now we calculate all relevant angles in one step. The relevant angles
         # are the ones made by the current candidates. We will have to keep
         # track of the indices in the angles matrix and the indices in the
@@ -550,9 +587,15 @@ class SymmetryEquivalenceCheck(object):
         # Get the rotation/reflection matrix [R] by:
         # [R] = [V][T]^-1, where [V] is the reference vectors and
         # [T] is the trial vectors
-        inverted_trial = np.linalg.inv([refined_candidate_list])[0]
-        canditate_trans_mat = np.matmul(ref_vec.T, inverted_trial)
-        return canditate_trans_mat, atoms1_ref.get_positions()
+        # XXX What do we know about the length/shape of refined_candidate_list?
+        if len(refined_candidate_list) == 1:
+            inverted_trial = 1.0 / refined_candidate_list
+        else:
+            inverted_trial = np.linalg.inv(refined_candidate_list)
+
+        # Equivalent to np.matmul(ref_vec.T, inverted_trial)
+        candidate_trans_mat = np.dot(ref_vec.T, inverted_trial.T).T
+        return candidate_trans_mat
 
     def _reduce_to_primitive(self, structure):
         """Reduce the two structure to their primitive type"""

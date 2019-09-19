@@ -1,18 +1,22 @@
 import collections
 import functools
+import json
 import numbers
 import operator
 import os
 import re
 import warnings
 from time import time
+from typing import List, Any
 
 import numpy as np
 
-from ase.atoms import Atoms, symbols2numbers, string2symbols
+from ase.atoms import Atoms
+from ase.symbols import symbols2numbers, string2symbols
 from ase.calculators.calculator import all_properties, all_changes
 from ase.data import atomic_numbers
 from ase.db.row import AtomsRow
+from ase.io.jsonio import create_ase_object
 from ase.parallel import world, DummyMPI, parallel_function, parallel_generator
 from ase.utils import Lock, basestring, PurePath
 
@@ -30,11 +34,10 @@ default_key_descriptions = {
     'energy': ('Energy', 'Total energy', 'eV'),
     'fmax': ('Maximum force', '', 'eV/Ang'),
     'smax': ('Maximum stress', '', '`\\text{eV/Ang}^3`'),
-    'pbc': ('PBC', 'Periodic boundary conditions', ''),
     'charge': ('Charge', '', '|e|'),
     'mass': ('Mass', '', 'au'),
     'magmom': ('Magnetic moment', '', 'au'),
-    'unique_id': ('Unique ID', '', ''),
+    'unique_id': ('Unique ID', 'Random (unique) ID', ''),
     'volume': ('Volume', 'Volume of unit-cell', '`\\text{Ang}^3`')}
 
 
@@ -74,6 +77,7 @@ reserved_keys = set(all_properties +
                     all_changes +
                     list(atomic_numbers) +
                     ['id', 'unique_id', 'ctime', 'mtime', 'user',
+                     'fmax', 'smax',
                      'momenta', 'constraints', 'natoms', 'formula', 'age',
                      'calculator', 'calculator_parameters',
                      'key_value_pairs', 'data'])
@@ -83,6 +87,11 @@ numeric_keys = set(['id', 'energy', 'magmom', 'charge', 'natoms'])
 
 def check(key_value_pairs):
     for key, value in key_value_pairs.items():
+        if key == "external_tables":
+            # Checks for external_tables are not
+            # performed
+            continue
+
         if not word.match(key) or key in reserved_keys:
             raise ValueError('Bad key: {}'.format(key))
         try:
@@ -135,6 +144,9 @@ def connect(name, type='extract_from_name', create_indices=True,
         Use append=False to start a new database.
     """
 
+    if isinstance(name, PurePath):
+        name = str(name)
+
     if type == 'extract_from_name':
         if name is None:
             type = None
@@ -143,6 +155,8 @@ def connect(name, type='extract_from_name', create_indices=True,
         elif (name.startswith('postgresql://') or
               name.startswith('postgres://')):
             type = 'postgresql'
+        elif name.startswith('mysql://') or name.startswith('mariadb://'):
+            type = 'mysql'
         else:
             type = os.path.splitext(name)[1][1:]
             if type == '':
@@ -151,13 +165,11 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type is None:
         return Database()
 
-    if not append and world.rank == 0 and os.path.isfile(name):
-        os.remove(name)
+    if not append and world.rank == 0:
+        if isinstance(name, str) and os.path.isfile(name):
+            os.remove(name)
 
-    if isinstance(name, PurePath):
-        name = str(name)
-
-    if type != 'postgresql' and isinstance(name, basestring):
+    if type not in ['postgresql', 'mysql'] and isinstance(name, basestring):
         name = os.path.abspath(name)
 
     if type == 'json':
@@ -170,6 +182,10 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type == 'postgresql':
         from ase.db.postgresql import PostgreSQLDatabase
         return PostgreSQLDatabase(name)
+
+    if type == 'mysql':
+        from ase.db.mysql import MySQLDatabase
+        return MySQLDatabase(name)
     raise ValueError('Unknown database type: ' + type)
 
 
@@ -515,20 +531,6 @@ class Database:
         check(add_key_value_pairs)
 
         row = self._get_row(id)
-
-        if atoms:
-            oldrow = row
-            row = AtomsRow(atoms)
-
-            # Copy over data, kvp, ctime, user and id
-            row._data = oldrow._data
-            kvp = oldrow.key_value_pairs
-            row.__dict__.update(kvp)
-            row._keys = list(kvp)
-            row.ctime = oldrow.ctime
-            row.user = oldrow.user
-            row.id = id
-
         kvp = row.key_value_pairs
 
         n = len(kvp)
@@ -546,8 +548,21 @@ class Database:
         if not data:
             data = None
 
-        self._write(row, kvp, data, row.id)
+        if atoms:
+            oldrow = row
+            row = AtomsRow(atoms)
+            # Copy over data, kvp, ctime, user and id
+            row._data = oldrow._data
+            row.__dict__.update(kvp)
+            row._keys = list(kvp)
+            row.ctime = oldrow.ctime
+            row.user = oldrow.user
+            row.id = id
 
+        if atoms or os.path.splitext(self.filename)[1] == '.json':
+            self._write(row, kvp, data, row.id)
+        else:
+            self._update(row.id, kvp, data)
         return m, n
 
     def delete(self, ids):
@@ -579,3 +594,83 @@ def float_to_time_string(t, long=False):
         return '{:.3f} {}s'.format(x, longwords[s])
     else:
         return '{:.0f}{}'.format(round(x), s)
+
+
+def object_to_bytes(obj: Any) -> bytes:
+    """Serialize Python object to bytes."""
+    parts = [b'12345678']
+    obj = o2b(obj, parts)
+    offset = sum(len(part) for part in parts)
+    x = np.array(offset, np.int64)
+    if not np.little_endian:
+        x.byteswap(True)
+    parts[0] = x.tobytes()
+    parts.append(json.dumps(obj, separators=(',', ':')).encode())
+    return b''.join(parts)
+
+
+def bytes_to_object(b: bytes) -> Any:
+    """Deserialize bytes to Python object."""
+    x = np.frombuffer(b[:8], np.int64)
+    if not np.little_endian:
+        x = x.byteswap()
+    offset = x.item()
+    obj = json.loads(b[offset:].decode())
+    return b2o(obj, b)
+
+
+def o2b(obj: Any, parts: List[bytes]):
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+    if isinstance(obj, dict):
+        return {key: o2b(value, parts) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [o2b(value, parts) for value in obj]
+    if isinstance(obj, np.ndarray):
+        offset = sum(len(part) for part in parts)
+        if not np.little_endian:
+            obj = obj.byteswap()
+        parts.append(obj.tobytes())
+        return {'__ndarray__': [obj.shape,
+                                obj.dtype.name,
+                                offset]}
+    if isinstance(obj, complex):
+        return {'__complex__': [obj.real, obj.imag]}
+    objtype = getattr(obj, 'ase_objtype')
+    if objtype:
+        dct = o2b(obj.todict(), parts)
+        dct['__ase_objtype__'] = objtype
+        return dct
+    raise ValueError('Objects of type {type} not allowed'
+                     .format(type=type(obj)))
+
+
+def b2o(obj: Any, b: bytes) -> Any:
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+
+    if isinstance(obj, list):
+        return [b2o(value, b) for value in obj]
+
+    assert isinstance(obj, dict)
+
+    x = obj.get('__complex__')
+    if x is not None:
+        return complex(*x)
+
+    x = obj.get('__ndarray__')
+    if x is not None:
+        shape, name, offset = x
+        dtype = np.dtype(name)
+        size = dtype.itemsize * np.prod(shape).astype(int)
+        a = np.frombuffer(b[offset:offset + size], dtype)
+        a.shape = shape
+        if not np.little_endian:
+            a = a.byteswap()
+        return a
+
+    dct = {key: b2o(value, b) for key, value in obj.items()}
+    objtype = dct.pop('__ase_objtype__', None)
+    if objtype is None:
+        return dct
+    return create_ase_object(objtype, dct)

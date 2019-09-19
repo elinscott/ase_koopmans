@@ -10,6 +10,7 @@ from ase.data import covalent_radii
 from ase.gui.defaults import read_defaults
 from ase.io import read, write, string2index
 from ase.gui.i18n import _
+from ase.geometry import find_mic
 
 import warnings
 
@@ -110,8 +111,8 @@ class Images:
             # but copying actually forgets things like the attached
             # calculator (might have forces/energies
             self._images.append(atoms)
-            self.have_varying_species |= np.array_equal(self[0].numbers,
-                                                        atoms.numbers)
+            self.have_varying_species |= not np.array_equal(self[0].numbers,
+                                                            atoms.numbers)
             if hasattr(self, 'Q'):
                 assert False  # XXX askhl fix quaternions
                 self.Q[i] = atoms.get_quaternions()
@@ -134,17 +135,6 @@ class Images:
         radii *= self.atom_scale
         return radii
 
-    def prepare_new_atoms(self):
-        "Marks that the next call to append_atoms should clear the images."
-        self.next_append_clears = True
-
-    def append_atoms(self, atoms, filename=None):
-        "Append an atoms object to the images already stored."
-        self.images.append(atoms)
-        self.filenames.append(filename)
-        self.initialize(self.images, filenames=self.filenames)
-        return
-
     def read(self, filenames, default_index=':', filetype=None):
         from ase.utils import basestring
         if isinstance(default_index, basestring):
@@ -161,6 +151,16 @@ class Images:
             else:
                 actual_filename, index = parse_filename(filename,
                                                         default_index)
+
+            # Read from stdin:
+            if filename == '-':
+                import sys
+                from io import BytesIO
+                buf = BytesIO(sys.stdin.buffer.read())
+                buf.seek(0)
+                filename = buf
+                filetype = 'traj'
+
             imgs = read(filename, index, filetype)
             if hasattr(imgs, 'iterimages'):
                 imgs = list(imgs.iterimages())
@@ -176,10 +176,10 @@ class Images:
                 step = 1
             for i, img in enumerate(imgs):
                 if isinstance(start, int):
-                    names.append('{}@{}'.format(actual_filename, start + i * step))
+                    names.append('{}@{}'.format(
+                        actual_filename, start + i * step))
                 else:
                     names.append('{}@{}'.format(actual_filename, start))
-
 
         self.initialize(images, names)
 
@@ -193,7 +193,7 @@ class Images:
             # so that is an alternative option.
             try:
                 if (not atoms.calc or
-                    atoms.calc.calculation_required(atoms, [name])):
+                        atoms.calc.calculation_required(atoms, [name])):
                     quantity = None
                 else:
                     quantity = get_quantity()
@@ -378,11 +378,14 @@ class Images:
                 xy = np.empty((nvariables, nimages))
             xy[:, i] = data
             if i + 1 < nimages and not self.have_varying_species:
-                s += sqrt(((self[i + 1].positions - R)**2).sum())
+                dR = find_mic(self[i + 1].positions - R, self[i].get_cell(),
+                              self[i].get_pbc())[0]
+                s += sqrt((dR**2).sum())
         return xy
 
-    def write(self, filename, rotations='', show_unit_cell=False, bbox=None,
+    def write(self, filename, rotations='', bbox=None,
               **kwargs):
+        # XXX We should show the unit cell whenever there is one
         indices = range(len(self))
         p = filename.rfind('@')
         if p != -1:
@@ -399,7 +402,7 @@ class Images:
         images = [self.get_atoms(i) for i in indices]
         if len(filename) > 4 and filename[-4:] in ['.eps', '.png', '.pov']:
             write(filename, images,
-                  rotation=rotations, show_unit_cell=show_unit_cell,
+                  rotation=rotations,
                   bbox=bbox, **kwargs)
         else:
             write(filename, images, **kwargs)

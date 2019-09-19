@@ -19,6 +19,7 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10):
         Number of equivalent layers of the slab.
     vacuum: float
         Amount of vacuum added on both sides of the slab.
+
     """
 
     indices = np.asarray(indices)
@@ -31,6 +32,7 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10):
 
     h, k, l = indices
     h0, k0, l0 = (indices == 0)
+ 
     if h0 and k0 or h0 and l0 or k0 and l0:  # if two indices are zero
         if not h0:
             c1, c2, c3 = [(0, 1, 0), (0, 0, 1), (1, 0, 0)]

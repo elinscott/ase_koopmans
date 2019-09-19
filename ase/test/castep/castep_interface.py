@@ -1,10 +1,12 @@
 """Simple shallow test of the CASTEP interface"""
 import os
+import re
 import shutil
 import tempfile
-import ase
-import re
+import warnings
+
 import numpy as np
+import ase
 import ase.lattice.cubic
 from ase.calculators.castep import (Castep, CastepOption,
                                     CastepParam, CastepCell,
@@ -215,5 +217,74 @@ with open(os.path.join(tmp_dir, 'test.cell'), 'r') as f:
     assert re.search(r'Cu Cu_01\.recpot', ''.join(f.readlines())) is not None
 
 
+# test keyword conflict management
+c = Castep(cut_off_energy=300.)
+assert float(c.param.cut_off_energy.value) == 300.0
+with warnings.catch_warnings(record=True) as w:
+    warnings.simplefilter("always")
+
+    c.basis_precision = 'MEDIUM'
+    assert issubclass(w[-1].category, UserWarning)
+    assert "conflicts" in str(w[-1].message)
+    assert c.param.cut_off_energy.value is None
+    assert c.param.basis_precision.value.strip() == 'MEDIUM'
+
+with warnings.catch_warnings(record=True) as w:
+    warnings.simplefilter("always")
+
+    c.cut_off_energy = 200.0
+    assert c.param.basis_precision.value is None
+    assert issubclass(w[-1].category, UserWarning)
+    assert 'option "cut_off_energy" conflicts' in str(w[-1].message)
+
+# test kpoint setup options
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    # This block of tests is going to generate a lot of conflict warnings.
+    # We already tested that those work, so just hide them from the output.
+
+    c = Castep(kpts=[(0.0, 0.0, 0.0, 1.0),])
+    assert c.cell.kpoint_list.value == '0.0 0.0 0.0 1.0'
+    c.set_kpts(((0.0, 0.0, 0.0, 0.25), (0.25, 0.25, 0.3, 0.75)))
+    assert c.cell.kpoint_list.value == '0.0 0.0 0.0 0.25\n0.25 0.25 0.3 0.75'
+    c.set_kpts(c.cell.kpoint_list.value.split('\n'))
+    assert c.cell.kpoint_list.value == '0.0 0.0 0.0 0.25\n0.25 0.25 0.3 0.75'
+    c.set_kpts([3, 3, 2])
+    assert c.cell.kpoint_mp_grid.value == '3 3 2'
+    c.set_kpts(None)
+    assert c.cell.kpoints_list.value is None
+    assert c.cell.kpoint_list.value is None
+    assert c.cell.kpoint_mp_grid.value is None
+    c.set_kpts('2 2 3')
+    assert c.cell.kpoint_mp_grid.value == '2 2 3'
+    c.set_kpts({'even': True, 'gamma': True})
+    assert c.cell.kpoint_mp_grid.value == '2 2 2'
+    assert c.cell.kpoint_mp_offset.value == '0.25 0.25 0.25'
+    c.set_kpts({'size': (2, 2, 4), 'even': False})
+    assert c.cell.kpoint_mp_grid.value == '3 3 5'
+    assert c.cell.kpoint_mp_offset.value == '0.0 0.0 0.0'
+    atoms = ase.build.bulk('Ag')
+    atoms.set_calculator(c)
+    c.set_kpts({'density': 10, 'gamma': False, 'even': None})
+    assert c.cell.kpoint_mp_grid.value == '27 27 27'
+    assert c.cell.kpoint_mp_offset.value == '0.018519 0.018519 0.018519'
+    c.set_kpts({'spacing': (1 / (np.pi *10)), 'gamma': False, 'even': True})
+    assert c.cell.kpoint_mp_grid.value == '28 28 28'
+    assert c.cell.kpoint_mp_offset.value == '0.0 0.0 0.0'
+
+# test band structure setup
+from ase.dft.kpoints import BandPath
+atoms = ase.build.bulk('Ag')
+bp = BandPath(cell=atoms.cell,
+              path='GX',
+              special_points={'G': [0, 0, 0], 'X': [0.5, 0, 0.5]})
+bp = bp.interpolate(npoints=10)
+c = Castep(bandpath=bp)
+kpt_list = c.cell.bs_kpoint_list.value.split('\n')
+assert len(kpt_list) == 10
+assert list(map(float, kpt_list[0].split())) == [0., 0., 0.]
+assert list(map(float, kpt_list[-1].split())) == [0.5, 0.0, 0.5]
+
+# cleanup
 os.chdir(cwd)
 shutil.rmtree(tmp_dir)

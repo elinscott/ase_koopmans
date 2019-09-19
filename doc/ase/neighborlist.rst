@@ -1,6 +1,3 @@
-.. module:: ase.neighborlist
-.. module:: ase
-
 Building neighbor-lists
 =======================
 
@@ -20,21 +17,20 @@ interface which accepts arrays as arguments rather than the
 more complex :class:`~ase.atoms.Atoms` objects.
 
 Both implementations can be used via the :class:`~ase.neighborlist.NeighborList`
-class. It also provides easy access to the two implementations methods and functions:
+class. It also provides easy access to the two implementations methods and functions.
+Constructing such an object can be done manually or with the :func:`~ase.neighborlist.build_neighbor_list` function.
 
-.. autoclass:: ase.neighborlist.NeighborList
+Further functions provide access to some derived results like graph-analysis etc.:
+
+ * :meth:`~ase.neighborlist.natural_cutoffs`
+ * :meth:`~ase.neighborlist.get_connectivity_matrix`
+ * :meth:`~ase.neighborlist.get_distance_matrix`
+ * :meth:`~ase.neighborlist.get_distance_indices`
+
+API
+___
+
+.. automodule:: ase.neighborlist
    :members:
-
-.. autoclass:: ase.neighborlist.PrimitiveNeighborList
-   :members:
-
-.. autoclass:: ase.neighborlist.NewPrimitiveNeighborList
-   :members:
-
-.. autofunction:: ase.neighborlist.neighbor_list
-
-.. autofunction:: ase.neighborlist.primitive_neighbor_list
-
-.. automethod:: ase.neighborlist.get_connectivity_matrix
 
 .. _GPAW: http://wiki.fysik.dtu.dk/gpaw

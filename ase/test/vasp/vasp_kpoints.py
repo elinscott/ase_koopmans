@@ -9,6 +9,9 @@ import filecmp
 
 from ase.calculators.vasp import Vasp
 from ase.build import bulk
+from ase.test.vasp import installed
+
+assert installed()
 
 Al = bulk('Al', 'fcc', a=4.5, cubic=True)
 

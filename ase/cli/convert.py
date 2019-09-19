@@ -5,21 +5,23 @@ from ase.io import read, write
 
 
 class CLICommand:
-    short_description = 'Convert between file formats'
-    description = ('Convert between file formats.  Use "-" for stdin/stdout.  '
-                   'See ase info --formats for known formats.')
+    """Convert between file formats.
+
+    Use "-" for stdin/stdout.
+    See "ase info --formats" for known formats.
+    """
 
     @staticmethod
     def add_arguments(parser):
         add = parser.add_argument
         add('-v', '--verbose', action='store_true',
-            help='print names of converted files')
+            help='Print names of converted files')
         add('input', nargs='+', metavar='input-file')
         add('-i', '--input-format', metavar='FORMAT',
-            help='specify input FORMAT')
+            help='Specify input FORMAT')
         add('output', metavar='output-file')
         add('-o', '--output-format', metavar='FORMAT',
-            help='specify output FORMAT')
+            help='Specify output FORMAT')
         add('-f', '--force', action='store_true',
             help='Overwrite an existing file')
         add('-n', '--image-number',
@@ -47,6 +49,14 @@ class CLICommand:
             help='Write output frames to individual files. '
             'Output file name should be a format string with '
             'a single integer field, e.g. out-{:0>5}.xyz')
+        add('--read-args', nargs='+', action='store', 
+            default={}, metavar="KEY=VALUE",
+            help='Additional keyword arguments to pass to '
+            '`ase.io.read()`.')
+        add('--write-args', nargs='+', action='store', 
+            default={}, metavar="KEY=VALUE",
+            help='Additional keyword arguments to pass to '
+            '`ase.io.write()`.')
 
     @staticmethod
     def run(args, parser):
@@ -60,10 +70,15 @@ class CLICommand:
             args.info = [k.strip() for k in args.info.split(',')]
             if args.verbose:
                 print('Filtering to include info: ', ', '.join(args.info))
+        if args.read_args:
+            args.read_args = eval("dict({0})".format(', '.join(args.read_args)))
+        if args.write_args:
+            args.write_args = eval("dict({0})".format(', '.join(args.write_args)))
 
         configs = []
         for filename in args.input:
-            atoms = read(filename, args.image_number, format=args.input_format)
+            atoms = read(filename, args.image_number, 
+                         format=args.input_format, **args.read_args)
             if isinstance(atoms, list):
                 configs.extend(atoms)
             else:
@@ -89,6 +104,7 @@ class CLICommand:
 
         if args.split_output:
             for i, atoms in enumerate(configs):
-                write(args.output.format(i), atoms, format=args.output_format)
+                write(args.output.format(i), atoms, 
+                      format=args.output_format, **args.write_args)
         else:
-            write(args.output, configs, format=args.output_format)
+            write(args.output, configs, format=args.output_format, **args.write_args)
