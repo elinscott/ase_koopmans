@@ -1357,7 +1357,7 @@ class FixScaledParametricRelations(FixParametricRelations):
     def adjust_momenta(self, atoms, momenta):
         """Adjust momenta of the atoms to match the constraints"""
         momenta[self.indices] = self.adjust_covariant(
-            atoms.cell.array,
+            atoms.cell,
             momenta[self.indices],
             np.zeros(self.B.shape),
         )
