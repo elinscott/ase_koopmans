@@ -31,11 +31,7 @@ chemical_symbols = [
     'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk',
     'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr',
     'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc',
-    'Lv', 'Ts', 'Og',
-    # Faux species (for toy models)
-    'user01', 'user02', 'user03', 'user04', 'user05', 'user06', 'user07',
-    'user08', 'user09', 'user10', 'user11', 'user12', 'user13', 'user14',
-    'user15', 'user16', 'user17', 'user18', 'user19', 'user20']
+    'Lv', 'Ts', 'Og']
 
 atomic_numbers = {}
 for Z, symbol in enumerate(chemical_symbols):
@@ -67,11 +63,7 @@ atomic_names = [
     'Lawrencium', 'Rutherfordium', 'Dubnium', 'Seaborgium',
     'Bohrium', 'Hassium', 'Meitnerium', 'Darmastadtium',
     'Roentgenium', 'Copernicium', 'Nihonium', 'Flerovium',
-    'Moscovium', 'Livermorium', 'Tennessine', 'Oganesson',
-    'user01', 'user02', 'user03', 'user04', 'user05', 'user06',
-    'user07', 'user08', 'user09', 'user10', 'user11', 'user12',
-    'user13', 'user14', 'user15', 'user16', 'user17', 'user18',
-    'user19', 'user20']
+    'Moscovium', 'Livermorium', 'Tennessine', 'Oganesson']
 
 # Atomic masses are based on:
 #
@@ -209,26 +201,6 @@ atomic_masses_iupac2016 = np.array([
     293.204,  # 293Lv
     293.208,  # 293Ts
     294.214,  # 294Og
-    1.0,  # user01
-    1.0,  # user02
-    1.0,  # user03
-    1.0,  # user04
-    1.0,  # user05
-    1.0,  # user06
-    1.0,  # user07
-    1.0,  # user08
-    1.0,  # user09
-    1.0,  # user10
-    1.0,  # user11
-    1.0,  # user12
-    1.0,  # user13
-    1.0,  # user14
-    1.0,  # user15
-    1.0,  # user16
-    1.0,  # user17
-    1.0,  # user18
-    1.0,  # user19
-    1.0,  # user20
 ])
 
 # set atomic_masses to most recent version
@@ -591,26 +563,6 @@ covalent_radii = np.array([
     missing,  # Lv
     missing,  # Ts
     missing,  # Og
-    1.0,  # user01
-    1.0,  # user02
-    1.0,  # user03
-    1.0,  # user04
-    1.0,  # user05
-    1.0,  # user06
-    1.0,  # user07
-    1.0,  # user08
-    1.0,  # user09
-    1.0,  # user10
-    1.0,  # user11
-    1.0,  # user12
-    1.0,  # user13
-    1.0,  # user14
-    1.0,  # user15
-    1.0,  # user16
-    1.0,  # user17
-    1.0,  # user18
-    1.0,  # user19
-    1.0,  # user20
 ])
 
 # This data is from Ashcroft and Mermin.
@@ -734,26 +686,6 @@ reference_states = [
     None,  # Lv
     None,  # Ts
     None,  # Og
-    None,  # user01
-    None,  # user02
-    None,  # user03
-    None,  # user04
-    None,  # user05
-    None,  # user06
-    None,  # user07
-    None,  # user08
-    None,  # user09
-    None,  # user10
-    None,  # user11
-    None,  # user12
-    None,  # user13
-    None,  # user14
-    None,  # user15
-    None,  # user16
-    None,  # user17
-    None,  # user18
-    None,  # user19
-    None,  # user20
 ]
 
 # http://www.webelements.com
@@ -861,25 +793,4 @@ ground_state_magnetic_moments = np.array([
     2.0,  # Fm
     1.0,  # Md
     0.0,  # No
-    np.nan,  # Lr
-    1.0,  # user01
-    1.0,  # user02
-    1.0,  # user03
-    1.0,  # user04
-    1.0,  # user05
-    1.0,  # user06
-    1.0,  # user07
-    1.0,  # user08
-    1.0,  # user09
-    1.0,  # user10
-    1.0,  # user11
-    1.0,  # user12
-    1.0,  # user13
-    1.0,  # user14
-    1.0,  # user15
-    1.0,  # user16
-    1.0,  # user17
-    1.0,  # user18
-    1.0,  # user19
-    1.0,  # user20
-])
+    np.nan])  # Lr

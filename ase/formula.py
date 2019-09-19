@@ -347,15 +347,9 @@ def parse2(f: str) -> Tree:
             n, f = strip_number(f[i + 1:])
             unit = (parse2(f2), n)
         else:
-            m = re.match('([A-Z][a-z]?(?!ser))([0-9]*)', f)
+            m = re.match('([A-Z][a-z]?)([0-9]*)', f)
             if m is None:
-                # Not a regular formula. Check if it contains
-                # the faux user species (user01, ..., user20)
-                # used by toy models at the beginning.
-                m = re.match('(user[0-9][0-9])([0-9]*)', f)
-                if m is None:
-                    # Still can't match for user species...
-                    raise ValueError
+                raise ValueError
             symb = m.group(1)
             number = m.group(2)
             if number:
