@@ -3,54 +3,6 @@ from ase import units
 from ase.calculators.calculator import Calculator, all_changes
 
 
-class MixedCalculator(Calculator):
-    """
-    Mixing of two calculators with different weights
-
-    H = weight1 * H1 + weight2 * H2
-
-    Parameters
-    ----------
-    calc1 : ASE-calculator
-    calc2 : ASE-calculator
-    weight1 : float
-        weight for calculator 1
-    weight2 : float
-        weight for calculator 2
-    """
-
-    implemented_properties = ['forces', 'energy']
-
-    def __init__(self, calc1, calc2, weight1, weight2):
-        Calculator.__init__(self)
-        self.calc1 = calc1
-        self.calc2 = calc2
-        self.weight1 = weight1
-        self.weight2 = weight2
-
-    def calculate(self, atoms=None, properties=['energy'],
-                  system_changes=all_changes):
-        Calculator.calculate(self, atoms, properties, system_changes)
-
-        atoms_tmp = atoms.copy()
-        atoms_tmp.set_calculator(self.calc1)
-        forces1 = atoms_tmp.get_forces()
-        energy1 = atoms_tmp.get_potential_energy()
-
-        atoms_tmp = atoms.copy()
-        atoms_tmp.set_calculator(self.calc2)
-        forces2 = atoms_tmp.get_forces()
-        energy2 = atoms_tmp.get_potential_energy()
-
-        self.results['forces'] = self.weight1*forces1 + self.weight2*forces2
-        self.results['energy'] = self.weight1*energy1 + self.weight2*energy2
-        self.results['energy_contributions'] = (energy1, energy2)
-
-    def get_energy_contributions(self):
-        """ Return the potential energy from calc1 and calc2 respectively """
-        return self.results['energy_contributions']
-
-
 class EinsteinCalculator(Calculator):
     """
     Einstein crystal calculator
@@ -80,6 +32,10 @@ class EinsteinCalculator(Calculator):
         forces = - self.k * disps
         energy = sum(self.k / 2.0 * np.linalg.norm(disps, axis=1)**2)
         return energy, forces
+
+    @staticmethod
+    def get_free_energy(self, k, m, T, method='classical'):
+        return get_einstein_free_energy(k, m, T, method)
 
 
 def get_einstein_free_energy(k, m, T, method='classical'):
@@ -113,8 +69,9 @@ def get_einstein_free_energy(k, m, T, method='classical'):
     omega = np.sqrt(k / m)        # angular frequency 1/s
 
     if method == 'classical':
-        F_einstein = 3 * units.kB * T * np.log(hbar*omega/(units.kB*T))
+        F_einstein = 3 * units.kB * T * np.log(hbar * omega / (units.kB * T))
     elif method == 'QM':
-        F_einstein = 3 * units.kB * T * np.log(1.0 - np.exp(-hbar*omega/(units.kB*T))) + 1.5 * hbar*omega
+        log_factor = np.log(1.0 - np.exp(-hbar * omega / (units.kB * T)))
+        F_einstein = 3 * units.kB * T * log_factor + 1.5 * hbar * omega
 
     return F_einstein

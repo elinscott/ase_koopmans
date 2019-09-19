@@ -1,6 +1,6 @@
 import numpy as np
 from ase.md.langevin import Langevin
-from calculators import MixedCalculator
+from ase.calculators.mixed import MixedCalculator
 
 
 class SwitchLangevin(Langevin):
@@ -44,8 +44,8 @@ class SwitchLangevin(Langevin):
         self.n_eq = n_eq
         self.n_switch = n_switch
         self.lam = 0.0
-        self.calc = MixedCalculator(calc1, calc2, weight1=1.0, weight2=0.0)
-        self.atoms.set_calculator(self.calc)
+        calc = MixedCalculator(calc1, calc2, weight1=1.0, weight2=0.0)
+        self.atoms.set_calculator(calc)
 
         self.path_data = []
 
@@ -60,12 +60,12 @@ class SwitchLangevin(Langevin):
             self.call_observers()
 
         # run switch from calc1 to calc2
-        self.path_data.append([0, self.lam, *self.calc.get_energy_contributions()])
+        self.path_data.append([0, self.lam, *self.atoms.calc.get_energy_contributions()])
         for step in range(1, self.n_switch):
             # update calculator
             self.lam = get_lambda(step, self.n_switch)
-            self.calc.weight1 = 1 - self.lam
-            self.calc.weight2 = self.lam
+            self.atoms.calc.weight1 = 1 - self.lam
+            self.atoms.calc.weight2 = self.lam
 
             # carry out md step
             forces = self.step(forces)
@@ -73,7 +73,7 @@ class SwitchLangevin(Langevin):
 
             # collect data
             self.call_observers()
-            self.path_data.append([step, self.lam, *self.calc.get_energy_contributions()])
+            self.path_data.append([step, self.lam, *self.atoms.calc.get_energy_contributions()])
 
         self.path_data = np.array(self.path_data)
 
@@ -99,12 +99,5 @@ class SwitchLangevin(Langevin):
 def get_lambda(step, n_switch):
     """ Return lambda value along the switching path """
     assert step >= 0 and step <= n_switch
-    t = step/(n_switch-1)
-    return t**5 * (70*t**4 - 315*t**3 + 540*t**2 - 420*t + 126)
-
-
-def get_lambda_derivative(step, n_switch):
-    """ Return derivative of lambda along the switching path """
-    assert step >= 0 and step <= n_switch
-    t = step/(n_switch-1)
-    return t**4 * (630*t**4 - 2520*t**3 + 3780*t**2 - 2520*t + 630)
+    t = step / (n_switch - 1)
+    return t**5 * (70 * t**4 - 315 * t**3 + 540 * t**2 - 420 * t + 126)
