@@ -1137,8 +1137,7 @@ class FixParametricRelations(FixConstraint):
         eps=1e-12,
     ):
         """Initializer"""
-        import parser
-        import math
+        import sympy
 
         if indices and cell_indices:
             raise AttributeError("Please use separate constraints for the lattice and atomic degrees of freedom.")
@@ -1173,34 +1172,35 @@ class FixParametricRelations(FixConstraint):
                 if n_params_in_sec > 1:
                     raise IOError("The FixParametricRelations expressions must be linear.")
 
-            evaluate_parameter = np.zeros(len(params))
+            param_dct = dict()
             for pp, param in enumerate(params):
-                expression = expression.replace(param, "evaluate_parameter[{:d}]".format(pp))
+                param_str = "param_{:d}".format(pp)
+                expression = expression.replace(param, param_str)
+                param_dct[param_str] = 0.0
 
             expression = expression.lower()
 
-            for op in ops:
-                expression = expression.replace(op, "math." + op)
-            code = parser.expr(expression).compile()
-
-            self.B[ee] = eval(code)
+            self.B[ee] = float(sympy.sympify(expression).subs(param_dct).evalf())
 
             for pp in range(len(params)):
-                if "evaluate_parameter[{:d}]".format(pp) not in expression:
+                param_str = "param_{:d}".format(pp)
+                if param_str not in expression:
                     self.A[ee, pp] = 0.0
                     continue
-                evaluate_parameter[pp] = 1.0
-                test_1 = eval(code) - self.B[ee]
+                param_dct[param_str] = 1.0
+                test_1 = float(sympy.sympify(expression).subs(param_dct).evalf())
+                test_1 -= self.B[ee]
                 self.A[ee, pp] = test_1
 
                 # Using math.pi to pass the flakes.py test. math is needed to evaluate the expressions,
                 # flake8 does not recognize it is used in that way
-                evaluate_parameter[pp] = math.pi
-                test_pi = eval(code) - self.B[ee]
-                if abs(test_pi / test_1 - math.pi) > eps:
+                param_dct[param_str] = 2.0
+                test_2 = float(sympy.sympify(expression).subs(param_dct).evalf())
+                test_2 -= self.B[ee]
+                if abs(test_2 / test_1 - 2.0) > eps:
                     raise IOError("The FixParametricRelations expressions must be linear.")
 
-                evaluate_parameter[pp] = 0.0
+                param_dct[param_str] = 0.0
 
         if self.A.shape[-1] > 0:
             self.A_inv = np.linalg.inv(self.A.T @ self.A) @ self.A.T
