@@ -1,10 +1,12 @@
+import sys
 import numpy as np
 from ase import Atoms
 from ase.formula import Formula
 
 assert Atoms('MoS2').get_chemical_formula() == 'MoS2'
 assert Atoms('SnO2').get_chemical_formula(mode='metal') == 'SnO2'
-assert Formula('A3B2C2D').format('abc') == 'DB2C2A3'
+if sys.version_info > (3, 5):
+    assert Formula('A3B2C2D').format('abc') == 'DB2C2A3'
 
 for sym in ['', 'Pu', 'Pu2', 'U2Pu2', 'U2((Pu2)2H)']:
     for mode in ['all', 'reduce', 'hill', 'metal']:
