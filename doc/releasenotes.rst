@@ -12,6 +12,14 @@ Git master branch
 * No changes yet
 
 
+Version 3.18.1
+==============
+
+20 September 2019: :git:`3.18.1 <../3.18.1>`
+
+* No changes yet
+
+
 Version 3.18.0
 ==============
 
