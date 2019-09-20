@@ -100,6 +100,23 @@ def print_info():
 
 def print_formats():
     print('Supported formats:')
+    names = sorted(ioformats)
     for fmtname in sorted(ioformats):
         fmt = ioformats[fmtname]
-        print('  {}: {}'.format(fmt.name, fmt.description))
+
+        infos = [fmt.modes, 'single' if fmt.single else 'multi']
+        if fmt.isbinary:
+            infos.append('binary')
+        if fmt.encoding is not None:
+            infos.append(fmt.encoding)
+        infostring = '/'.join(infos)
+
+        moreinfo = [infostring]
+        if fmt.extensions:
+            moreinfo.append('ext={}'.format('|'.join(fmt.extensions)))
+        if fmt.globs:
+            moreinfo.append('glob={}'.format('|'.join(fmt.globs)))
+
+        print('  {} [{}]: {}'.format(fmt.name,
+                                     ', '.join(moreinfo),
+                                     fmt.description))

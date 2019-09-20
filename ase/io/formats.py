@@ -81,6 +81,34 @@ class IOFormat:
         return getattr(self.module, 'write_' + self._formatname, None)
 
     @property
+    def modes(self):
+        modes = ''
+        if self.read:
+            modes += 'r'
+        if self.write:
+            modes += 'w'
+        return modes
+
+    @property
+    def encoding(self):
+        return None
+
+    def full_description(self):
+        lines = ['Name:        {name}',
+                 'Description: {description}',
+                 'Modes:       {modes}',
+                 'Encoding:    {encoding}',
+                 'Module:      {module_name}',
+                 'Code:        {code}',
+                 'Extensions:  {extensions}',
+                 'Globs:       {globs}',
+                 'Magic:       {magic}']
+        desc = '\n'.join(lines)
+
+        myvars = {name: getattr(self, name) for name in dir(self)}
+        return desc.format(**myvars)
+
+    @property
     def acceptsfd(self):
         return self.code[1] != 'S'
 
@@ -256,7 +284,7 @@ F('turbomole', 'TURBOMOLE coord file', '1F', glob='coord',
 F('turbomole-gradient', 'TURBOMOLE gradient file', '+F',
   module='turbomole', glob='gradient', magic=b'$grad'),
 F('v-sim', 'V_Sim ascii file', '1F', ext='ascii'),
-F('vasp', 'VASP POSCAR/CONTCAR file', '1F',
+F('vasp', 'VASP POSCAR/CONTCAR', '1F',
   ext='poscar', glob=['*POSCAR*', '*CONTCAR*']),
 F('vasp-out', 'VASP OUTCAR file', '+F',
   module='vasp', glob='*OUTCAR*'),
