@@ -369,7 +369,7 @@ def _get_kim_pm_supported_species(extended_kim_id):
     with KIMModelCalculator(extended_kim_id) as kim_calc:
         supported_species, _ = kim_calc.get_model_supported_species_and_codes()
 
-    return supported_species
+    return tuple(supported_species)
 
 
 def get_model_supported_species(extended_kim_id):
