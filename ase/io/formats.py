@@ -39,7 +39,7 @@ class UnknownFileTypeError(Exception):
 
 
 class IOFormat:
-    def __init__(self, name, desc, code, module_name):
+    def __init__(self, name, desc, code, module_name, encoding=None):
         self.name = name
         self.description = desc
         assert len(code) == 2
@@ -47,11 +47,32 @@ class IOFormat:
         assert code[1] in list('BFS')
         self.code = code
         self.module_name = module_name
+        self.encoding = encoding
 
         # (To be set by define_io_format())
         self.extensions = []
         self.globs = []
         self.magic = []
+
+    def open(self, fname, mode='r'):
+        # We might want append mode, too
+        # We can allow more flags as needed (buffering etc.)
+        if not mode == 'r' or mode == 'w':
+            raise ValueError('Only modes allowed are r and w')
+        if mode == 'r' and self.read is None:
+            raise NotImplementedError('No reader implemented for {} format'
+                                      .format(self.name))
+        if mode == 'w' and self.write is None:
+            raise NotImplementedError('No writer implemented for {} format'
+                                      .format(self.name))
+
+        if self.binary:
+            mode += 'b'
+
+        if isinstance(fname, PurePath):
+            fname = str(fname)
+
+        return open(fname, mode, encoding=self.encoding)
 
     def __repr__(self):
         tokens = ['{}={}'.format(name, repr(value))
@@ -88,10 +109,6 @@ class IOFormat:
         if self.write:
             modes += 'w'
         return modes
-
-    @property
-    def encoding(self):
-        return None
 
     def full_description(self):
         lines = ['Name:        {name}',
@@ -148,7 +165,7 @@ all_formats = ioformats  # XXX We should keep one of these.
 extension2format = {}
 
 def define_io_format(name, desc, code, *, module=None, ext=None,
-                     glob=None, magic=None):
+                     glob=None, magic=None, encoding=None):
     if module is None:
         module = name.replace('-', '_')
 
@@ -161,7 +178,8 @@ def define_io_format(name, desc, code, *, module=None, ext=None,
             strings = list(strings)
         return strings
 
-    fmt = IOFormat(name, desc, code, module_name='ase.io.' + module)
+    fmt = IOFormat(name, desc, code, module_name='ase.io.' + module,
+                   encoding=encoding)
     fmt.extensions = normalize_patterns(ext)
     fmt.globs = normalize_patterns(glob)
     fmt.magic = normalize_patterns(magic)
