@@ -68,3 +68,5 @@ from ase import Atoms
 visualize.view = lambda atoms: None
 Atoms.edit = lambda self: None
 """
+
+autodoc_mock_imports = ["kimpy"]
