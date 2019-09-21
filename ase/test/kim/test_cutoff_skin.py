@@ -9,11 +9,11 @@ from ase import Atoms
 
 
 # create calculator
-modelname = 'ex_model_Ar_P_Morse_07C'
+modelname = "ex_model_Ar_P_Morse_07C"
 calc = KIM(modelname)
 
 # create an FCC crystal
-argon = Atoms('Ar2', positions=[[0, 0, 0], [0, 0, 8.2]])
+argon = Atoms("Ar2", positions=[[0, 0, 0], [0, 0, 8.2]])
 
 # attach calculator to the atoms
 argon.set_calculator(calc)
