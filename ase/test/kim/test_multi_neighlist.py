@@ -1,8 +1,3 @@
-import unittest
-
-raise unittest.SkipTest("KIM calculator requires KIM API and kimpy to "
-        "be installed -- SKIPPING")
-
 import numpy as np
 import ase.build
 from ase.calculators.kim import KIM

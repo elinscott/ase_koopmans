@@ -1,11 +1,6 @@
 """
 To test that the calculator can produce correct energy and forces.
 """
-import unittest
-
-raise unittest.SkipTest("KIM calculator requires KIM API and kimpy to "
-        "be installed -- SKIPPING")
-
 import numpy as np
 from ase.calculators.kim import KIM
 from ase.lattice.cubic import FaceCenteredCubic

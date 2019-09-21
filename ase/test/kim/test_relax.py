@@ -1,9 +1,4 @@
 """Test that KIM works with a relaxation"""
-import unittest
-
-raise unittest.SkipTest("KIM calculator requires KIM API and kimpy to "
-        "be installed -- SKIPPING")
-
 import numpy as np
 from ase.cluster import Icosahedron
 from ase.calculators.kim import KIM

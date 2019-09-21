@@ -3,11 +3,6 @@ To test that the calculator handles skin and cutoffs correctly.
 Skin should be added to both the influence distance and cutoff.
 The cutoff for the model ex_model_Ar_P_Morse_07C is 8.15
 """
-import unittest
-
-raise unittest.SkipTest("KIM calculator requires KIM API and kimpy to "
-        "be installed -- SKIPPING")
-
 import numpy as np
 from ase.calculators.kim import KIM
 from ase import Atoms
