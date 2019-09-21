@@ -15,36 +15,31 @@ stress_ref = [-2.21148294e+00, -1.55423383e+00, -1.55423383e+00,
               2.17827079e-05, -8.39978013e-03, -8.39978013e-03]
 
 
-def test_main():
-    # create calculator
-    modelname = 'ex_model_Ar_P_Morse_07C'
-    calc = KIM(modelname)
+# create calculator
+modelname = 'ex_model_Ar_P_Morse_07C'
+calc = KIM(modelname)
 
-    # create an FCC crystal
-    argon = FaceCenteredCubic(directions=[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
-                              size=(1, 1, 1), symbol='Ar', pbc=(1, 0, 0),
-                              latticeconstant=3.0)
+# create an FCC crystal
+argon = FaceCenteredCubic(directions=[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                          size=(1, 1, 1), symbol='Ar', pbc=(1, 0, 0),
+                          latticeconstant=3.0)
 
-    # perturb the x coord of the first atom
-    argon.positions[0, 0] += 0.01
+# perturb the x coord of the first atom
+argon.positions[0, 0] += 0.01
 
-    # attach calculator to the atoms
-    argon.set_calculator(calc)
+# attach calculator to the atoms
+argon.set_calculator(calc)
 
-    # get energy and forces
-    energy = argon.get_potential_energy()
-    forces = argon.get_forces()
-    stress = argon.get_stress()
+# get energy and forces
+energy = argon.get_potential_energy()
+forces = argon.get_forces()
+stress = argon.get_stress()
 
-    tol = 1e-6
-    assert np.isclose(energy, energy_ref, tol)
-    assert np.allclose(forces, forces_ref, tol)
-    assert np.allclose(stress, stress_ref, tol)
+tol = 1e-6
+assert np.isclose(energy, energy_ref, tol)
+assert np.allclose(forces, forces_ref, tol)
+assert np.allclose(stress, stress_ref, tol)
 
-    # This has been known to segfault
-    argon.set_pbc(True)
-    argon.get_potential_energy()
-
-
-if __name__ == '__main__':
-    test_main()
+# This has been known to segfault
+argon.set_pbc(True)
+argon.get_potential_energy()
