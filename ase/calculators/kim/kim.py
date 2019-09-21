@@ -42,38 +42,53 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     archived in the Open Knowledgebase of Interatomic Models (OpenKIM)
     at https://openkim.org.  There are two kinds of models in KIM:
     Portable Models (PMs), which contain an '__MO_' in their name and
-    can be used with any KIM-compliant simulator, and Simulator Models
-    (SMs), which have an '__SM_' in their name and are essentially just
-    wrappers around native commands in a specific simulator.  In
-    general, 'simulator' can be omitted, in which case this function
-    will automatically determine a calculator compatible with the
-    specified model and return it.
+    can be used with any KIM API-compliant simulator, and Simulator
+    Models (SMs), which have an '__SM_' in their name and are
+    essentially just wrappers around native commands in a specific
+    simulator.
 
     Parameters
     ----------
     extended_kim_id : str
-        Extended KIM ID of the interatomic model (for details, see
-        https://openkim.org/doc/schema/kim-ids)
+        The unique identifier assigned to the interatomic model (for
+        details, see https://openkim.org/doc/schema/kim-ids)
 
     simulator : str, optional
-        Name of the ASE calculator that will be used.  Supported
-        simulators currently include 'kimmodel', 'lammpslib',
-        'lammpsrun' and 'asap'.  However, not all of these values are
-        compatible with all KIM models; for example, a KIM SM created
-        for LAMMPS must either use either 'lammpslib' or 'lammpsrun'.
-        If None, a compatible simulator is determined automatically
-        based on `extended_kim_id`.
+        Used to identify the ASE calculator that will be used.
+        Currently supported values include 'kimmodel', 'lammpslib',
+        'lammpsrun' and 'asap', and correspond to different calculators
+        as follows:
+
+        - kimmodel (default for PMs)
+          : :py:mod:`ase.calculators.kim.kimmodel.KIMModelCalculator`
+
+        - lammpsrun (PMs or LAMMPS SMs)
+          : :py:mod:`ase.calculators.lammpsrun.LAMMPS`
+
+        - lammpslib (default for LAMMPS SMs)
+          : :py:mod:`ase.calculators.lammpslib.LAMMPSlib`
+
+        - asap (PMs)
+          : :py:mod:`asap3.Internal.OpenKIMcalculator.OpenKIMcalculator`
+
+        - asap (ASAP SMs)
+          : :py:mod:`asap3.Internal.BuiltinPotentials.EMT`
+
+        In general, this argument should be omitted, in which case a
+        calculator compatible with the specified model will
+        automatically be determined.
 
     options : dict, optional
         Additional options passed to the initializer of the selected
-        simulator.  If `simulator`=='kimmodel', possible options are:
+        calculator.  If ``simulator`` == 'kimmodel', possible options are:
 
-        options = {'neigh_skin_ratio': 0.2, 'release_GIL': False}
+        - neigh_skin_ratio (float)
+          : The skin distance used for neighbor list construction,
+          expressed as a fraction of the model cutoff
 
-        where 'neigh_skin_ratio' provides the skin (as a factor of the
-        model cutoff) used to determine the neighbor list, and
-        'release_GIL' determines whether to release the python GIL,
-        which allows a KIM model to be run with multiple threads.
+        - release_GIL (bool)
+          : Determines whether or not to release the python GIL, which
+          allows a KIM model to be run with multiple threads.
 
         See the ASE LAMMPS calculators doc page
         (https://wiki.fysik.dtu.dk/ase/ase/calculators/lammps.html) for
@@ -82,11 +97,11 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     debug: bool, optional
         If True, detailed information is printed to stdout.  If the
         lammpsrun calculator is being used, this also serves as the
-        value of the `keep_tmp_files` option.
+        value of the ``keep_tmp_files`` option. (Default: False)
 
     Returns
     -------
-    calc : Calculator
+    calc : ase.calculators.calculator.Calculator
         An ASE calculator.  Currently, this will be an instance of
         KIMModelCalculator, LAMMPS (the lammpsrun calculator), or
         LAMMPSlib, which are all defined in the ASE codebase, or an
@@ -99,14 +114,6 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         Blanket exception type used to handle errors that arise related
         to using incompatible combinations of values for the arguments
         or from errors produced by kimpy
-
-    See Also
-    --------
-        asap3.Internal.OpenKIMcalculator.OpenKIMcalculator
-        asap3.Internal.BuiltinPotentials.EMT
-        ase.calculators.kim.kimmodel.KIMModelCalculator
-        ase.calculators.lammpslib.LAMMPSlib
-        ase.calculators.lammpsrun.LAMMPS
     """
 
     # calculator to return

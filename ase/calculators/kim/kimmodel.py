@@ -3,6 +3,7 @@ ASE Calculator for interatomic models compatible with the Knowledgebase of
 Interatomic Models (KIM) application programming interface (API). Written by:
 
 Mingjian Wen
+Daniel S. Karls
 University of Minnesota
 """
 from __future__ import absolute_import, division, print_function
@@ -67,7 +68,7 @@ class KIMModelData(object):
         )
 
         if not units_accepted:
-            report_error("requested units not accepted in kimpy.model.create")
+            report_error("Requested units not accepted in kimpy.model.create")
 
         if self.debug:
             l_unit, e_unit, c_unit, te_unit, ti_unit = self.kim_model.get_units()
@@ -192,25 +193,42 @@ class KIMModelData(object):
 
 
 class KIMModelCalculator(Calculator):
-    """Calculator that works with KIM Portable Models (PMs)
+    """Calculator that works with KIM Portable Models (PMs).
+
+    Calculator that carries out direct communication between ASE and a
+    KIM Portable Model (PM) through the kimpy library (which provides a
+    set of python bindings to the KIM API).
 
     Parameters
     ----------
     modelname : str
-      KIM model name
+      The unique identifier assigned to the interatomic model (for
+      details, see https://openkim.org/doc/schema/kim-ids)
 
-    ase_neigh : bool
-      True: use ase neighbor list (usually slower than the kimpy neighlist library)
-      False: use kimpy neighbor list library
+    ase_neigh : bool, optional
+      False (default): Use kimpy neighbor list library
 
-    neigh_skin_ratio : double
-      The neighbor list is build using r_neigh = (1+neigh_skin_ratio)*rcut.
+      True: Use ase neighbor list (usually slower than the kimpy
+      neighlist library)
 
-    release_GIL : bool
-      Whether to release python GIL s.t. a KIM model can run with multiple threads
+    neigh_skin_ratio : float, optional
+      Used to determine the neighbor list cutoff distance, r_neigh,
+      through the relation r_neigh = (1 + neigh_skin_ratio) * rcut,
+      where rcut is the model's influence distance. (Default: 0.2)
 
-    debug : bool
-      Whether to enable debug mode to print extra information.
+    release_GIL : bool, optional
+      Whether to release python GIL, which allows a KIM model to run
+      with multiple concurrent threads. (Default: False)
+
+    debug : bool, optional
+      If True, detailed information is printed to stdout. (Default:
+      False)
+
+    Raises
+    ------
+    KIMCalculatorError
+        Blanket exception type used to handle errors that arise related
+        to incompatibilities of the model with what ASE requires
     """
     implemented_properties = ["energy", "forces", "stress"]
 
@@ -676,7 +694,7 @@ class KIMModelCalculator(Calculator):
 
         codes : list of int
             Integer codes used by the model for each species (order
-            corresponds to the order of `species`)
+            corresponds to the order of ``species``)
         """
         species = []
         codes = []
