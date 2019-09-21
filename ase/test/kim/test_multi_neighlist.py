@@ -27,8 +27,7 @@ stress_ref = np.array([-2.23665496e+00, -1.44393236e+00, -1.97804121e+00,
 
 
 def test_main():
-
-    modelname = 'Three_Body_Stillinger_Weber_MoS__MO_201919462778_001'
+    modelname = 'SW_MX2_WenShirodkarPlechac_2017_MoS__MO_201919462778_001'
     calc = KIM(modelname)
 
     mos2 = ase.build.mx2(formula='MoS2', kind='2H', a=3.18, thickness=3.18,
