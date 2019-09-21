@@ -1,7 +1,11 @@
+import unittest
+
+raise unittest.SkipTest("KIM calculator requires KIM API and kimpy to "
+        "be installed -- SKIPPING")
+
 import numpy as np
 import ase.build
 from ase.calculators.kim import KIM
-
 
 energy_ref = -49.105522702876016
 forces_ref = np.array([[5.27355937e-15, -1.97733646e-01, -4.60574165e-21],
