@@ -29,6 +29,7 @@ class KIMModelData(object):
     API ComputeArguments object, and the neighbor list object used by
     instances of KIMModelCalculator
     """
+
     def __init__(self, modelname, ase_neigh, debug=False):
         self.modelname = modelname
         self.ase_neigh = ase_neigh
@@ -230,6 +231,7 @@ class KIMModelCalculator(Calculator):
         Blanket exception type used to handle errors that arise related
         to incompatibilities of the model with what ASE requires
     """
+
     implemented_properties = ["energy", "forces", "stress"]
 
     def __init__(

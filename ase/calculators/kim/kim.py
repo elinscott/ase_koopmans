@@ -151,13 +151,10 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             return calc
 
         elif simulator == "asap":
-            try:
-                from asap3 import OpenKIMcalculator
-            except ImportError as e:
-                raise ImportError(str(e) + " You need to install asap3 first.")
-
             _check_conflict_options(options, asap_kimpm_not_allowed_options, simulator)
-            calc = OpenKIMcalculator(name=extended_kim_id, verbose=debug, **options)
+            calc = _asap_calculator(
+                extended_kim_id, model_type="pm", verbose=debug, options=options
+            )
             return calc
 
         elif simulator == "lammpsrun":
@@ -217,7 +214,14 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         # check options
         _check_conflict_options(options, asap_kimsm_not_allowed_options, simulator)
 
-        return _asap_kimsm_calculator(extended_kim_id, model_defn, supported_units)
+        calc = _asap_calculator(
+            extended_kim_id,
+            model_type="sm",
+            model_defn=model_defn,
+            supported_units=supported_units,
+        )
+
+        return calc
 
     elif simulator_name == "LAMMPS":
 
@@ -389,69 +393,73 @@ def get_model_supported_species(extended_kim_id):
     return supported_species
 
 
-def _asap_kimsm_calculator(extended_kim_id, model_defn, supported_units):
-    """
-    Given the 'model-defn' entry from the metadata file (smspec.edn) of
-    an ASAP KIM SM, construct an applicable asap3 calculator.  The
-    supported units read from the metadata file are simply checked to
-    ensure they correspond to ASE's native units.
-    """
-    # Check model_defn to make sure there's only one element in it that is a non-empty
-    # string
-    if len(model_defn) == 0:
-        raise KIMCalculatorError(
-            "model-defn is an empty list in metadata file of Simulator Model {}"
-            "".format(extended_kim_id)
-        )
-    elif len(model_defn) > 1:
-        raise KIMCalculatorError(
-            "model-defn should contain only one entry for an ASAP model (found {} "
-            "lines)".format(len(model_defn))
-        )
-
-    if "" in model_defn:
-        raise KIMCalculatorError(
-            "model-defn contains an empty string in metadata file of Simulator Model {}"
-            "".format(extended_kim_id)
-        )
-
-    model_defn = model_defn[0].strip().lower()
-
+def _asap_calculator(extended_kim_id, model_type, **kwargs):
     try:
-        from asap3 import EMT, EMTMetalGlassParameters, EMTRasmussenParameters
+        import asap3
     except ImportError as e:
         raise ImportError(str(e) + " You need to install asap3 first.")
 
-    # Verify units (ASAP models are expected to work with "ase" units)
-    if supported_units != "ase":
-        raise KIMCalculatorError(
-            'KIM Simulator Model units are "{}", but expected to '
-            'be "ase" for ASAP.'.format(supported_units)
+    if model_type == "pm":
+
+        return asap3.OpenKIMcalculator(
+            name=extended_kim_id, verbose=kwargs["verbose"], **kwargs["options"]
         )
 
-    # Return calculator
-    if model_defn.startswith("emt"):
-        # pull out potential parameters
-        mobj = re.search(r"\(([a-z0-9_\(\)]+)\)", model_defn)
-        if mobj is None:
-            asap_calc = EMT()
-        else:
-            pp = mobj.group(1)
+    elif model_type == "sm":
+        model_defn = kwargs["model_defn"]
+        supported_units = kwargs["supported_units"]
 
-            if pp.startswith("emtrasmussenparameters"):
-                asap_calc = EMT(parameters=EMTRasmussenParameters())
-            elif pp.startswith("emtmetalglassparameters"):
-                asap_calc = EMT(parameters=EMTMetalGlassParameters())
+        # Verify units (ASAP models are expected to work with "ase" units)
+        if supported_units != "ase":
+            raise KIMCalculatorError(
+                'KIM Simulator Model units are "{}", but expected to '
+                'be "ase" for ASAP.'.format(supported_units)
+            )
+
+        # Check model_defn to make sure there's only one element in it that is a
+        # non-empty string
+        if len(model_defn) == 0:
+            raise KIMCalculatorError(
+                "model-defn is an empty list in metadata file of Simulator Model {}"
+                "".format(extended_kim_id)
+            )
+        elif len(model_defn) > 1:
+            raise KIMCalculatorError(
+                "model-defn should contain only one entry for an ASAP model (found {} "
+                "lines)".format(len(model_defn))
+            )
+
+        if "" in model_defn:
+            raise KIMCalculatorError(
+                "model-defn contains an empty string in metadata file of Simulator "
+                "Model {}".format(extended_kim_id)
+            )
+
+        model_defn = model_defn[0].strip()
+
+        # Return calculator
+        if model_defn.startswith("EMT"):
+            # pull out potential parameters
+            mobj = re.search(r"\(([A-Za-z0-9_\(\)]+)\)", model_defn)
+            if mobj is None:
+                asap_calc = asap3.EMT()
             else:
-                raise KIMCalculatorError(
-                    'Unknown model "{}" for simulator ASAP.'.format(model_defn)
-                )
+                pp = mobj.group(1)
 
-    # Use undocumented feature for the EMT asap_calculators to take the energy of an
-    # isolated atoms as zero. (Otherwise it is taken to be that of perfect FCC.)
-    asap_calc.set_subtractE0(False)
+                if pp.startswith("EMTRasmussenParameters"):
+                    asap_calc = asap3.EMT(parameters=asap3.EMTRasmussenParameters())
+                elif pp.startswith("EMTMetalGlassParameters"):
+                    asap_calc = asap3.EMT(parameters=asap3.EMTMetalGlassParameters())
+                else:
+                    raise KIMCalculatorError(
+                        'Unknown model "{}" for simulator ASAP.'.format(model_defn)
+                    )
 
-    return asap_calc
+        # Use undocumented feature for the EMT asap_calculators to take the energy of an
+        # isolated atoms as zero. (Otherwise it is taken to be that of perfect FCC.)
+        asap_calc.set_subtractE0(False)
+
+        return asap_calc
 
 
 def _get_params_for_LAMMPS_calculator(
