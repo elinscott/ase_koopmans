@@ -24,13 +24,14 @@ of interatomic models in KIM: [#kimmodels]_ [#typesofkimcontent]_
 
 * **Portable Models (PMs)**
   These models can be used with any KIM API-compliant simulator, either directly or
-  through their corresponding ASE calculator, and are identified by the string '__MO_' in
-  their name.
+  through their corresponding ASE calculator.  Portable models published on openkim.org
+  are identified by the string '__MO_' in their name.
 
 * **Simulator Models (SMs)**
   These models are essentially just wrappers around a set of commands (and often one or
-  more parameter files) in a specific simulator that are used to define the model, and
-  are identified by the string '__SM_' in their name.
+  more parameter files) in a specific simulator that are used to define the model.
+  Simulator models published on openkim.org are identified by the string '__SM_' in their
+  name.
 
 These two types of KIM models require different calculators to work: PMs work through a
 designated calculator that uses the `kimpy <https://github.com/openkim/kimpy>`_ library
@@ -53,13 +54,68 @@ constructs and returns an appropriate ASE calculator. [#getmodelsupportedspecies
 example, if the name of an installed PM is passed, the ``KIM`` function will (by default)
 initialize an instance of :class:`ase.calculators.kim.kimmodel.KIMModelCalculator` for it
 and return it as its output.  If the name of a LAMMPS_-based SM is passed, the calculator
-will (by default) return an instance of the :class:`ase.calculators.lammps.LAMMPSlib`
+will (by default) return an instance of the :class:`ase.calculators.lammpslib.LAMMPSlib`
 calculator.  The specific calculator type returned can be controlled using the
 ``simulator`` argument.
 
 .. autofunction:: ase.calculators.kim.kim.KIM
 
-.. autoclass:: ase.calculators.kim.kimmodel.KIMModelCalculator
+========
+Examples
+========
+By default, the KIM API will install several example models on your system, including a
+portable model (PM) for argon named "ex_model_Ar_P_Morse_07C".  Suppose we wanted to know
+the potential energy predicted by this model for an FCC argon lattice at a lattice
+spacing of `a = 5.25`.  This can be accomplished like so:
+
+::
+
+    from ase.lattice.cubic import FaceCenteredCubic
+    from ase.calculators.kim.kim import KIM
+
+    atoms = FaceCenteredCubic(symbol='Ar', latticeconstant=5.25, size=(1,1,1))
+    calc = KIM("ex_model_Ar_P_Morse_07C")
+    atoms.set_calculator(calc)
+
+    energy = atoms.get_potential_energy()
+    print("Potential energy: {} eV".format(energy))
+
+Because the ``simulator`` keyword argument is not specified, the object ``calc`` returned
+here is actually an instance of :class:`ase.calculators.kim.kimmodel.KIMModelCalculator`
+(because our model is a portable model) and uses the neighbor list library implemented in
+kimpy.  If we wanted to use ASE's internal neighbor list mechanism, we could specify it
+by modifying the corresponding line to:
+
+::
+
+    calc = KIM("ex_model_Ar_P_Morse_07C", options={"ase_neigh": True})
+
+If, for some reason, we want to make sure that the ASE LAMMPS calculator
+(:class:`ase.calculators.lammpsrun.LAMMPS`) is the specific one used to run our portable
+model, we can specify it using the ``simulator`` argument:
+
+::
+
+    calc = KIM("ex_model_Ar_P_Morse_07C", simulator="lammpsrun")
+
+Using a KIM simulator model requires no additional effort.  Using the example
+LAMMPS-based simulator model bundled with the KIM API,
+"Sim_LAMMPS_LJcut_AkersonElliott_Alchemy_PbAu":
+
+::
+
+    from ase.lattice.cubic import FaceCenteredCubic
+    from ase.calculators.kim.kim import KIM
+
+    atoms = FaceCenteredCubic(symbol='Au', latticeconstant=4.07, size=(1,1,1))
+    calc = KIM("Sim_LAMMPS_LJcut_AkersonElliott_Alchemy_PbAu")
+    atoms.set_calculator(calc)
+
+    energy = atoms.get_potential_energy()
+    print("Potential energy: {} eV".format(energy))
+
+In this case, because ``simulator`` was not specified, the default behavior is that the
+object ``calc`` returned is an instance of :class:`ase.calculators.lammpslib.LAMMPSlib`.
 
 .. _LAMMPS: http://lammps.sandia.gov
 
