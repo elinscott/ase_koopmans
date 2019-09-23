@@ -82,13 +82,20 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         Additional options passed to the initializer of the selected
         calculator.  If ``simulator`` == 'kimmodel', possible options are:
 
+        - ase_neigh (bool)
+          : Whether to use the kimpy neighbor list library (False) or
+          use ASE's internal neighbor list mechanism (True). Usually
+          kimpy's neighbor list library will be faster.  (Default:
+          False)
+
         - neigh_skin_ratio (float)
           : The skin distance used for neighbor list construction,
-          expressed as a fraction of the model cutoff
+          expressed as a fraction of the model cutoff (Default: 0.2)
 
         - release_GIL (bool)
           : Determines whether or not to release the python GIL, which
-          allows a KIM model to be run with multiple threads.
+          allows a KIM model to be run with multiple threads. (Default:
+          False)
 
         See the ASE LAMMPS calculators doc page
         (https://wiki.fysik.dtu.dk/ase/ase/calculators/lammps.html) for

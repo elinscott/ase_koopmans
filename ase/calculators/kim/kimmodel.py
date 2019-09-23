@@ -207,10 +207,10 @@ class KIMModelCalculator(Calculator):
       details, see https://openkim.org/doc/schema/kim-ids)
 
     ase_neigh : bool, optional
-      False (default): Use kimpy neighbor list library
+      False (default): Use kimpy's neighbor list library
 
-      True: Use ase neighbor list (usually slower than the kimpy
-      neighlist library)
+      True: Use ASE's internal neighbor list mechanism (usually slower
+      than the kimpy neighlist library)
 
     neigh_skin_ratio : float, optional
       Used to determine the neighbor list cutoff distance, r_neigh,
