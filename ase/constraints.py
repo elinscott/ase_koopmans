@@ -1146,6 +1146,12 @@ class FixParametricRelations(FixConstraint):
         else:
             self.inds = cell_indices
 
+        if cell_indices is None:
+            cell_indices = list()
+
+        if indices is None:
+            indices = list()
+
         self.indices = indices
         self.cell_indices = cell_indices
 
@@ -1268,6 +1274,7 @@ class FixParametricRelations(FixConstraint):
             "name": "FixParametricRelations",
             "kwargs": {
                 "indices": self.indices,
+                "cell_indices": self.cell_indices,
                 "params": self.params,
                 "expressions": self.expressions,
                 "eps": self.eps,

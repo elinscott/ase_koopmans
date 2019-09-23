@@ -92,16 +92,16 @@ def read_aims(filename, apply_constraints=True):
             floatvect = [v_unit * float(l) for l in inp[1:4]]
             velocities.append(floatvect)
 
-        elif "symmetry_n_params" in inp[0]:
+        elif "symmetry_n_params" == inp[0]:
             symmetry_block.append(" ".join(inp))
 
-        elif "symmetry_params" in inp[0]:
+        elif "symmetry_params" == inp[0]:
             symmetry_block.append(" ".join(inp))
 
-        elif "symmetry_lv" in inp[0]:
+        elif "symmetry_lv" == inp[0]:
             symmetry_block.append(" ".join(inp))
 
-        elif "symmetry_frac" in inp[0]:
+        elif "symmetry_frac" == inp[0]:
             symmetry_block.append(" ".join(inp))
     if xyz.all():
         fix.append(i)
