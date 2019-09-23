@@ -1146,9 +1146,6 @@ class FixParametricRelations(FixConstraint):
         else:
             self.inds = cell_indices
 
-        if cell_indices is None:
-            cell_indices = list()
-
         if indices is None:
             indices = list()
 
@@ -1274,7 +1271,6 @@ class FixParametricRelations(FixConstraint):
             "name": "FixParametricRelations",
             "kwargs": {
                 "indices": self.indices,
-                "cell_indices": self.cell_indices,
                 "params": self.params,
                 "expressions": self.expressions,
                 "eps": self.eps,
@@ -1482,6 +1478,8 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """Create a dictionary representation of the constraint"""
         dct = super(FixCartesianParametricRelations, self).todict()
         dct["name"] = "FixCartesianParametricRelations"
+        dct["kwargs"]["cell_indices"] = self.cell_indices
+
         return dct
 
     def __repr__(self):
