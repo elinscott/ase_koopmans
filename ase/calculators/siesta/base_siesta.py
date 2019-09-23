@@ -50,7 +50,7 @@ def read_bands_file(fd):
     nbands, nspins, nkpts = np.array(header.split()).astype(int)
 
     # three fields for kpt coords, then all the energies
-    ntokens = nbands + 3
+    ntokens = nbands*nspins + 3
 
     # Read energies for each kpoint:
     data = []
@@ -71,7 +71,8 @@ def read_bands_file(fd):
     assert len(data) == nkpts
     kpts = data[:, :3]
     energies = data[:, 3:]
-    assert energies.shape == (nkpts, nbands)
+    energies = energies.reshape(nkpts, nspins, nbands)
+    assert energies.shape == (nkpts, nspins, nbands)
     return kpts, energies, efermi
 
 
@@ -88,7 +89,9 @@ def resolve_band_structure(path, kpts, energies, efermi):
     # Also we should perhaps verify the cell.  If we had the cell, we
     # could construct the bandpath from scratch (i.e., pure outputs).
     from ase.dft.band_structure import BandStructure
-    bs = BandStructure(path, energies[None], reference=efermi)
+    ksn2e = energies
+    skn2e = np.swapaxes(ksn2e, 0, 1)
+    bs = BandStructure(path, skn2e, reference=efermi)
     return bs
 
 
@@ -540,7 +543,6 @@ class BaseSiesta(FileIOCalculator):
                     f.write(format_fdf(key, fdf_arguments[key]))
             else:
                 warnings.warn('Ignoring unknown keyword "{}"'.format(key))
-
 
     def getpath(self, fname=None, ext=None):
         """ Returns the directory/fname string """
