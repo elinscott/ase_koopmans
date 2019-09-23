@@ -35,7 +35,7 @@ class KIMCalculatorError(Exception):
     pass
 
 
-def KIM(extended_kim_id, simulator=None, options=None, debug=False):
+def KIM(model_name, simulator=None, options=None, debug=False):
     """Calculator wrapper for OpenKIM models
 
     Returns a suitable calculator that can be used with any model
@@ -50,9 +50,10 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
     Parameters
     ----------
-    extended_kim_id : str
-        The unique identifier assigned to the interatomic model (for
-        details, see https://openkim.org/doc/schema/kim-ids)
+    model_name : str
+        The name of the KIM model installed on your system.  KIM models
+        published on openkim.org follow a specific naming scheme (see
+        https://openkim.org/doc/schema/kim-ids).
 
     simulator : str, optional
         Used to identify the ASE calculator that will be used.
@@ -149,19 +150,19 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
     # If this is a KIM Portable Model (supports KIM API), return support through
     # a KIM-compliant simulator
-    if _is_portable_model(extended_kim_id):
+    if _is_portable_model(model_name):
         if simulator is None:  # Default
             simulator = "kimmodel"
 
         if simulator == "kimmodel":
             _check_conflict_options(options, kimmodel_not_allowed_options, simulator)
-            calc = KIMModelCalculator(extended_kim_id, debug=debug, **options)
+            calc = KIMModelCalculator(model_name, debug=debug, **options)
             return calc
 
         elif simulator == "asap":
             _check_conflict_options(options, asap_kimpm_not_allowed_options, simulator)
             calc = _asap_calculator(
-                extended_kim_id, model_type="pm", verbose=debug, options=options
+                model_name, model_type="pm", verbose=debug, options=options
             )
             return calc
 
@@ -169,11 +170,11 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
             _check_conflict_options(options, lammpsrun_not_allowed_options, simulator)
 
-            supported_species = _get_kim_pm_supported_species(extended_kim_id)
+            supported_species = _get_kim_pm_supported_species(model_name)
 
             # Set up kim_init and kim_interactions lines
             parameters = _get_params_for_LAMMPS_calculator(
-                extended_kim_id,
+                model_name,
                 supported_units="metal",
                 supported_species=supported_species,
                 atom_style=None,
@@ -209,7 +210,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         supported_units,
         model_defn,
         atom_style,
-    ) = _get_simulator_model_info(extended_kim_id)
+    ) = _get_simulator_model_info(model_name)
 
     # Handle default behavior for 'simulator'
     if simulator is None:
@@ -223,7 +224,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         _check_conflict_options(options, asap_kimsm_not_allowed_options, simulator)
 
         calc = _asap_calculator(
-            extended_kim_id,
+            model_name,
             model_type="sm",
             model_defn=model_defn,
             supported_units=supported_units,
@@ -239,7 +240,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
 
             # Set up kim_init and kim_interactions lines
             parameters = _get_params_for_LAMMPS_calculator(
-                extended_kim_id, supported_units, supported_species, atom_style
+                model_name, supported_units, supported_species, atom_style
             )
 
             # Return LAMMPS calculator
@@ -260,7 +261,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
             model_init = ["units " + supported_units + os.linesep]
 
             model_init.append(
-                "kim_init {} {}{}".format(extended_kim_id, supported_units, os.linesep)
+                "kim_init {} {}{}".format(model_name, supported_units, os.linesep)
             )
             model_init.append("atom_modify map array sort 0 0" + os.linesep)
 
@@ -294,7 +295,7 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
         raise KIMCalculatorError('Unsupported simulator: "{}".'.format(simulator_name))
 
 
-def _is_portable_model(extended_kim_id):
+def _is_portable_model(model_name):
     """
     Returns True if the model specified is a KIM Portable Model (if it
     is not, then it must be a KIM Simulator Model -- there are no other
@@ -302,20 +303,20 @@ def _is_portable_model(extended_kim_id):
     """
     col = check_call(kimpy.collections.create)
 
-    model_type = check_call(col.get_item_type, extended_kim_id)
+    model_type = check_call(col.get_item_type, model_name)
 
     kimpy.collections.destroy(col)
 
     return model_type == kimpy.collection_item_type.portableModel
 
 
-def _get_simulator_model_info(extended_kim_id):
+def _get_simulator_model_info(model_name):
     """
     Retrieve Simulator Model metadata including its native simulator,
     supported species, and units
     """
     # Create a KIM API simulator Model object for this model
-    kim_simulator_model = check_call(kimpy.simulator_model.create, extended_kim_id)
+    kim_simulator_model = check_call(kimpy.simulator_model.create, model_name)
 
     # Retrieve simulator name (disregard simulator version)
     simulator_name, _ = kim_simulator_model.get_simulator_name_and_version()
@@ -325,7 +326,7 @@ def _get_simulator_model_info(extended_kim_id):
     if num_supported_species == 0:
         raise KIMCalculatorError(
             "ERROR: Unable to determine supported species of "
-            "simulator model {}.".format(extended_kim_id)
+            "simulator model {}.".format(model_name)
         )
 
     supported_species = []
@@ -356,7 +357,7 @@ def _get_simulator_model_info(extended_kim_id):
     except (KeyError, IndexError):
         raise KIMCalculatorError(
             "ERROR: Unable to determine supported units of "
-            "simulator model {}.".format(extended_kim_id)
+            "simulator model {}.".format(model_name)
         )
 
     # See if a 'model-init' field that contains an "atom_style" command is listed in
@@ -383,25 +384,25 @@ def _get_simulator_model_info(extended_kim_id):
     )
 
 
-def _get_kim_pm_supported_species(extended_kim_id):
+def _get_kim_pm_supported_species(model_name):
     """Gets species supported by a KIM Portable Model"""
-    with KIMModelCalculator(extended_kim_id) as kim_calc:
+    with KIMModelCalculator(model_name) as kim_calc:
         supported_species, _ = kim_calc.get_model_supported_species_and_codes()
 
     return tuple(supported_species)
 
 
-def get_model_supported_species(extended_kim_id):
+def get_model_supported_species(model_name):
     """Convenience function for simulator codes"""
-    if _is_portable_model(extended_kim_id):
-        supported_species = _get_kim_pm_supported_species(extended_kim_id)
+    if _is_portable_model(model_name):
+        supported_species = _get_kim_pm_supported_species(model_name)
     else:
-        _, supported_species, _, _, _ = _get_simulator_model_info(extended_kim_id)
+        _, supported_species, _, _, _ = _get_simulator_model_info(model_name)
 
     return supported_species
 
 
-def _asap_calculator(extended_kim_id, model_type, **kwargs):
+def _asap_calculator(model_name, model_type, **kwargs):
     try:
         import asap3
     except ImportError as e:
@@ -410,7 +411,7 @@ def _asap_calculator(extended_kim_id, model_type, **kwargs):
     if model_type == "pm":
 
         return asap3.OpenKIMcalculator(
-            name=extended_kim_id, verbose=kwargs["verbose"], **kwargs["options"]
+            name=model_name, verbose=kwargs["verbose"], **kwargs["options"]
         )
 
     elif model_type == "sm":
@@ -429,7 +430,7 @@ def _asap_calculator(extended_kim_id, model_type, **kwargs):
         if len(model_defn) == 0:
             raise KIMCalculatorError(
                 "model-defn is an empty list in metadata file of Simulator Model {}"
-                "".format(extended_kim_id)
+                "".format(model_name)
             )
         elif len(model_defn) > 1:
             raise KIMCalculatorError(
@@ -440,7 +441,7 @@ def _asap_calculator(extended_kim_id, model_type, **kwargs):
         if "" in model_defn:
             raise KIMCalculatorError(
                 "model-defn contains an empty string in metadata file of Simulator "
-                "Model {}".format(extended_kim_id)
+                "Model {}".format(model_name)
             )
 
         model_defn = model_defn[0].strip()
@@ -471,7 +472,7 @@ def _asap_calculator(extended_kim_id, model_type, **kwargs):
 
 
 def _get_params_for_LAMMPS_calculator(
-    extended_kim_id, supported_units, supported_species, atom_style
+    model_name, supported_units, supported_species, atom_style
 ):
     """
     Extract parameters for LAMMPS calculator from model definition lines.
@@ -490,7 +491,7 @@ def _get_params_for_LAMMPS_calculator(
     parameters["units"] = supported_units
 
     parameters["model_init"] = [
-        "kim_init {} {}{}".format(extended_kim_id, supported_units, os.linesep)
+        "kim_init {} {}{}".format(model_name, supported_units, os.linesep)
     ]
 
     parameters["kim_interactions"] = "kim_interactions {}{}".format(

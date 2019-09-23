@@ -30,8 +30,8 @@ class KIMModelData(object):
     instances of KIMModelCalculator
     """
 
-    def __init__(self, modelname, ase_neigh, debug=False):
-        self.modelname = modelname
+    def __init__(self, model_name, ase_neigh, debug=False):
+        self.model_name = model_name
         self.ase_neigh = ase_neigh
         self.debug = debug
 
@@ -65,7 +65,7 @@ class KIMModelData(object):
             kimpy.charge_unit.e,
             kimpy.temperature_unit.K,
             kimpy.time_unit.ps,
-            self.modelname,
+            self.model_name,
         )
 
         if not units_accepted:
@@ -202,7 +202,7 @@ class KIMModelCalculator(Calculator):
 
     Parameters
     ----------
-    modelname : str
+    model_name : str
       The unique identifier assigned to the interatomic model (for
       details, see https://openkim.org/doc/schema/kim-ids)
 
@@ -236,7 +236,7 @@ class KIMModelCalculator(Calculator):
 
     def __init__(
         self,
-        modelname,
+        model_name,
         ase_neigh=False,
         neigh_skin_ratio=0.2,
         release_GIL=False,
@@ -246,7 +246,7 @@ class KIMModelCalculator(Calculator):
     ):
         super(KIMModelCalculator, self).__init__(*args, **kwargs)
 
-        self.modelname = modelname
+        self.model_name = model_name
         self.ase_neigh = ase_neigh
         self.release_GIL = release_GIL
         self.debug = debug
@@ -282,7 +282,7 @@ class KIMModelCalculator(Calculator):
         # create KIMModelData object. This will take care of creating and storing the
         # KIM API Model object, KIM API ComputeArguments object, and the neighbor list
         # object that our calculator needs
-        self.kimmodeldata = KIMModelData(self.modelname, self.ase_neigh, self.debug)
+        self.kimmodeldata = KIMModelData(self.model_name, self.ase_neigh, self.debug)
 
         # set cutoff
         model_influence_dist = self.kim_model.get_influence_distance()
@@ -738,7 +738,7 @@ class KIMModelCalculator(Calculator):
         return compare_atoms(self.atoms, atoms)
 
     def __repr__(self):
-        return "KIMModelCalculator(modelname={})".format(self.modelname)
+        return "KIMModelCalculator(model_name={})".format(self.model_name)
 
 
 def compare_atoms(atoms1, atoms2, tol=1e-15):
