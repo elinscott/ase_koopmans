@@ -41,11 +41,12 @@ def KIM(extended_kim_id, simulator=None, options=None, debug=False):
     Returns a suitable calculator that can be used with any model
     archived in the Open Knowledgebase of Interatomic Models (OpenKIM)
     at https://openkim.org.  There are two kinds of models in KIM:
-    Portable Models (PMs), which contain an '__MO_' in their name and
-    can be used with any KIM API-compliant simulator, and Simulator
-    Models (SMs), which have an '__SM_' in their name and are
-    essentially just wrappers around native commands in a specific
-    simulator.
+    Portable Models (PMs), which can be used with any KIM API-compliant
+    simulator, and Simulator Models (SMs), which are essentially just
+    wrappers around native commands in a specific simulator (often
+    combined with values for the model parameters).  PMs published on
+    openkim.org contain the string '__MO_' in their name, while SMs
+    published on openkim.org contain the string '__SM_' in their name.
 
     Parameters
     ----------
