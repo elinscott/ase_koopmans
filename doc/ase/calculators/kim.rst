@@ -18,9 +18,9 @@ KIM
 The `Open Knowledgebase of Interatomic Models (OpenKIM) <https://openkim.org>`_ is an
 NSF-funded project aimed at providing easy access to standardized implementations of
 classical interatomic potentials that can be used with a variety of molecular simulation
-codes.  This ASE package allows one to easily use any potential archived in OpenKIM through
-ASE.  In order to explain its structure, we must first describe the two different types
-of interatomic models in KIM: [#kimmodels]_ [#typesofkimcontent]_
+codes.  This package allows one to easily use any potential archived in OpenKIM through
+ASE.  In order to explain its structure, we must first describe the two different types of
+interatomic models in KIM: [#kimmodels]_ [#typesofkimcontent]_
 
 * **Portable Models (PMs)**
   These models can be used with any KIM API-compliant simulator, either directly or
@@ -45,18 +45,18 @@ usually one or more parameter files. [#smobject]_  Accordingly, they require sup
 these commands to the calculator(s) corresponding to the specific simulator associated
 with the SM.
 
-Because of this separation, the :mod:`ase.calculators.kim` package contains two modules:
+Because of this separation, the :mod:`ase.calculators.kim` package consists of two modules:
 :git:`ase.calculators.kim.kim <ase/calculators/kim/kim.py>` and
 :git:`ase.calculators.kim.kimmodel <ase/calculators/kim/kimmodel.py>`. The first of these
 contains a *wrapper function* named :func:`ase.calculators.kim.kim.KIM` that takes as
-input the name of a KIM model, automatically determines whether it is a PM or an SM, then
-constructs and returns an appropriate ASE calculator. [#getmodelsupportedspecies]_ For
-example, if the name of an installed PM is passed, the ``KIM`` function will (by default)
-initialize an instance of :class:`ase.calculators.kim.kimmodel.KIMModelCalculator` for it
-and return it as its output.  If the name of a LAMMPS_-based SM is passed, the calculator
-will (by default) return an instance of the :class:`ase.calculators.lammpslib.LAMMPSlib`
-calculator.  The specific calculator type returned can be controlled using the
-``simulator`` argument.
+input the name of a KIM model installed on your machine, automatically determines
+whether it is a PM or an SM, then constructs and returns an appropriate ASE calculator.
+[#getmodelsupportedspecies]_ For example, if the name of an installed PM is passed, the
+``KIM`` function will (by default) initialize an instance of
+:class:`ase.calculators.kim.kimmodel.KIMModelCalculator` for it and return it as its
+output.  If the name of a LAMMPS_-based SM is passed, the calculator will (by default)
+return an instance of the :class:`ase.calculators.lammpslib.LAMMPSlib` calculator.  The
+specific calculator type returned can be controlled using the ``simulator`` argument.
 
 .. autofunction:: ase.calculators.kim.kim.KIM
 
@@ -64,9 +64,9 @@ calculator.  The specific calculator type returned can be controlled using the
 Examples
 ========
 By default, the KIM API will install several example models on your system, including a
-portable model (PM) for argon named "ex_model_Ar_P_Morse_07C".  Suppose we wanted to know
+portable model (PM) for argon named "ex_model_Ar_P_Morse_07C".  Suppose we want to know
 the potential energy predicted by this model for an FCC argon lattice at a lattice
-spacing of `a = 5.25`.  This can be accomplished like so:
+spacing of 5.25 Angstroms.  This can be accomplished like so:
 
 ::
 
