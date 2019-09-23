@@ -15,23 +15,54 @@ KIM
    <https://github.com/openkim/kimpy>`__ and also made available through `PyPI
    <https://pypi.org/project/kimpy/>`_.
 
+.. _Overview:
+
+--------
+Overview
+--------
+
 The `Open Knowledgebase of Interatomic Models (OpenKIM) <https://openkim.org>`_ is an
 NSF-funded project aimed at providing easy access to standardized implementations of
 classical interatomic potentials that can be used with a variety of molecular simulation
 codes.  This package allows one to easily use any potential archived in OpenKIM through
-ASE.  In order to explain its structure, we must first describe the two different types of
-interatomic models in KIM: [#kimmodels]_ [#typesofkimcontent]_
+ASE.
 
-* **Portable Models (PMs)**
-  These models can be used with any KIM API-compliant simulator, either directly or
-  through their corresponding ASE calculator.  Portable models published on openkim.org
-  are identified by the string '__MO_' in their name.
+By default, the KIM API will install several example models on your system, including one
+for argon named "ex_model_Ar_P_Morse_07C".  Suppose we want to know the potential energy
+predicted by this model for an FCC argon lattice at a lattice spacing of 5.25 Angstroms.
+This can be accomplished in a manner similar to how most other ASE calculators are used,
+where the name of the KIM model is passed as an argument:
 
-* **Simulator Models (SMs)**
-  These models are essentially just wrappers around a set of commands (and often one or
-  more parameter files) in a specific simulator that are used to define the model.
-  Simulator models published on openkim.org are identified by the string '__SM_' in their
-  name.
+::
+
+    from ase.lattice.cubic import FaceCenteredCubic
+    from ase.calculators.kim.kim import KIM
+
+    atoms = FaceCenteredCubic(symbol='Ar', latticeconstant=5.25, size=(1,1,1))
+    calc = KIM("ex_model_Ar_P_Morse_07C")
+    atoms.set_calculator(calc)
+
+    energy = atoms.get_potential_energy()
+    print("Potential energy: {} eV".format(energy))
+
+See below for a more detailed explanation of this package and additional options.
+
+.. _Implementation:
+
+--------------
+Implementation
+--------------
+
+In order to explain the structure of this package, we must first describe the two
+different types of interatomic potentials in KIM: [#kimmodels]_ [#typesofkimcontent]_
+
+  * **Portable Models (PMs)**
+    A KIM Portable Model (PM) is an interatomic potential designed to work
+    with any simulator that supports the KIM API portable model interface.
+
+  * **Simulator Models (SMs)**
+    A KIM Simulator Model (SM) is an interatomic potential designed to work
+    with a single simulator.
 
 These two types of KIM models require different calculators to work: PMs work through a
 designated calculator that uses the `kimpy <https://github.com/openkim/kimpy>`_ library
@@ -40,7 +71,7 @@ in order to set up communication between ASE and the model.  This allows, for ex
 the positions of the atoms and the neighbor list in ASE to be communicated to the model,
 and for the energy and forces predicted by the model for that configuration to be
 communicated back to ASE in a standard format.  On the other hand, SMs are
-programmatically nothing more than a recording of some set of simulator commands and
+essentially nothing more than a recording of some set of simulator commands and
 usually one or more parameter files. [#smobject]_  Accordingly, they require supplying
 these commands to the calculator(s) corresponding to the specific simulator associated
 with the SM.
@@ -60,31 +91,17 @@ specific calculator type returned can be controlled using the ``simulator`` argu
 
 .. autofunction:: ase.calculators.kim.kim.KIM
 
-========
-Examples
-========
-By default, the KIM API will install several example models on your system, including a
-portable model (PM) for argon named "ex_model_Ar_P_Morse_07C".  Suppose we want to know
-the potential energy predicted by this model for an FCC argon lattice at a lattice
-spacing of 5.25 Angstroms.  This can be accomplished like so:
+--------------
+Advanced Usage
+--------------
 
-::
-
-    from ase.lattice.cubic import FaceCenteredCubic
-    from ase.calculators.kim.kim import KIM
-
-    atoms = FaceCenteredCubic(symbol='Ar', latticeconstant=5.25, size=(1,1,1))
-    calc = KIM("ex_model_Ar_P_Morse_07C")
-    atoms.set_calculator(calc)
-
-    energy = atoms.get_potential_energy()
-    print("Potential energy: {} eV".format(energy))
-
-Because the ``simulator`` keyword argument is not specified, the object ``calc`` returned
-here is actually an instance of :class:`ase.calculators.kim.kimmodel.KIMModelCalculator`
-(because our model is a portable model) and uses the neighbor list library implemented in
-kimpy.  If we wanted to use ASE's internal neighbor list mechanism, we could specify it
-by modifying the corresponding line to:
+Recalling the example given in the Overview_ section at the top of this page, no
+arguments are passed to the ``KIM`` function other than the name of a portable model,
+ex_model_Ar_P_Morse_07C.  From the Implementation_ section, this means that the ``calc``
+object returned is actually an instance of
+:class:`ase.calculators.kim.kimmodel.KIMModelCalculator` and uses the neighbor list
+library implemented in kimpy.  If we wanted to use ASE's internal neighbor list
+mechanism, we could specify it by modifying the corresponding line to:
 
 ::
 
