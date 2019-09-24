@@ -1299,10 +1299,9 @@ class FixParametricRelations(FixConstraint):
             print(type(node))
             raise TypeError(node)
 
-    def limit(self, max_=self.max_value):
+    def limit(self, max_=None):
         """Return decorator that limits allowed returned values."""
         import functools
-
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
