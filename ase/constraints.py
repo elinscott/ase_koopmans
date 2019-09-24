@@ -1137,8 +1137,6 @@ class FixParametricRelations(FixConstraint):
         eps=1e-12,
     ):
         """Initializer"""
-        import sympy
-
         if indices and cell_indices:
             raise AttributeError("Please use separate constraints for the lattice and atomic degrees of freedom.")
         elif indices:
@@ -1182,7 +1180,7 @@ class FixParametricRelations(FixConstraint):
 
             expression = expression.lower()
 
-            self.B[ee] = float(sympy.sympify(expression).subs(param_dct).evalf())
+            self.B[ee] = float(eval_expression(expression, param_dct))
 
             for pp in range(len(params)):
                 param_str = "param_{:d}".format(pp)
@@ -1190,14 +1188,14 @@ class FixParametricRelations(FixConstraint):
                     self.A[ee, pp] = 0.0
                     continue
                 param_dct[param_str] = 1.0
-                test_1 = float(sympy.sympify(expression).subs(param_dct).evalf())
+                test_1 = float(eval_expression(expression, param_dct))
                 test_1 -= self.B[ee]
                 self.A[ee, pp] = test_1
 
                 # Using math.pi to pass the flakes.py test. math is needed to evaluate the expressions,
                 # flake8 does not recognize it is used in that way
                 param_dct[param_str] = 2.0
-                test_2 = float(sympy.sympify(expression).subs(param_dct).evalf())
+                test_2 = float(eval_expression(expression, param_dct))
                 test_2 -= self.B[ee]
                 if abs(test_2 / test_1 - 2.0) > eps:
                     raise IOError("The FixParametricRelations expressions must be linear.")
@@ -1209,6 +1207,94 @@ class FixParametricRelations(FixConstraint):
         else:
             self.A = None
             self.A_inv = None
+
+    def eval_expression(expression, param_dct):
+        import ast
+        if not isinstance(expression, str):
+            raise TypeError("The expression must be a string")
+        if len(expression) > 1000:
+            raise ValueError("The expression is too long.")
+
+        expression_rep = expression.strip()
+
+        if "not" in expression_rep or "," in expression_rep:
+            raise ValueError("Invalid operation in expression")
+
+        expression_rep = expression_rep.replace("sqrt", "not")
+        expression_rep = expression_rep.replace("^", "**")
+
+        for key, val in param_dct.items():
+            expression_rep = expression_rep.replace(key, val)
+
+        return _eval(ast.parse(expression_rep, mode='eval').body)
+
+    def _eval(node):
+        import ast
+        import operator as op
+        import math
+
+        def add(a, b):
+            """Redefine add function to prevent too large numbers"""
+            if any(abs(n) > 1e10 for n in [a, b]):
+                raise ValueError((a,b))
+            return op.add(a, b)
+
+        def sub(a, b):
+            """Redefine sub function to prevent too large numbers"""
+            if any(abs(n) > 1e10 for n in [a, b]):
+                raise ValueError((a,b))
+            return op.sub(a, b)
+
+        def mul(a, b):
+            """Redefine mul function to prevent too large numbers"""
+            if math.log10(a) + math.log10(b) > 10:
+                raise ValueError((a,b))
+            return op.mul(a, b)
+
+        def div(a, b):
+            """Redefine div function to prevent too large numbers"""
+            if math.log10(a) - math.log10(b) > 10:
+                raise ValueError((a,b))
+            return op.truediv(a, b)
+
+        operators = {
+            ast.Add: add,
+            ast.Sub: sub,
+            ast.Mult: mul,
+            ast.Div: div,
+            ast.Not: math.sqrt,
+        }
+
+        if isinstance(node, ast.Num): # <number>
+            return node.n
+        elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+            return operators[type(node.op)](eval_(node.left), eval_(node.right))
+        elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+            return operators[type(node.op)](eval_(node.operand))
+        else:
+            raise TypeError(node)
+
+    def limit(max_=None):
+        """Return decorator that limits allowed returned values."""
+        import functools
+
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                ret = func(*args, **kwargs)
+                try:
+                    mag = abs(ret)
+                except TypeError:
+                    pass # not applicable
+                else:
+                    if mag > max_:
+                        raise ValueError(ret)
+                return ret
+            return wrapper
+        return decorator
+
+    _eval = limit(max_=1e10)(_eval)
+
 
     @property
     def expressions(self):
