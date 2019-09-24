@@ -1173,7 +1173,7 @@ class FixParametricRelations(FixConstraint):
             elif "(+" == expression[:2]:
                 expression = "(" + expression[2:]
 
-            int_fmt_str = fmt_str = "{:0" + str(math.ceil(math.log10(len(self.params)))) + "d}"
+            int_fmt_str = "{:0" + str(math.ceil(math.log10(len(self.params)))) + "d}"
 
             param_dct = dict()
             param_map = dict()
