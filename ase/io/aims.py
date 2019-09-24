@@ -138,24 +138,23 @@ def read_aims(filename, apply_constraints=True):
         atomic_expressions = []
         atomic_params = []
 
+        n_lat_param = int(symmetry_block[0].split(" ")[2])
+
+        lattice_params = params[:n_lat_param]
+        atomic_params = params[n_lat_param:]
+
         for ll, line in enumerate(symmetry_block[2:]):
-            constr_param = []
             expression = " ".join(line.split(" ")[1:])
-            for param in params:
-                if param in expression:
-                    constr_param.append(param)
             if ll < 3:
                 lattice_expressions.append(expression.split(","))
-                lattice_params += constr_param
             else:
                 atomic_expressions.append(expression.split(","))
-                atomic_params += constr_param
 
         fix_params.append(
             FixCartesianParametricRelations(
                 list(),
-                [0, 1, 2],
-                list(np.unique(lattice_params)),
+                list(range(3)),
+                lattice_params,
                 lattice_expressions,
             )
         )
@@ -163,7 +162,7 @@ def read_aims(filename, apply_constraints=True):
         fix_params.append(
             FixScaledParametricRelations(
                 list(range(len(symmetry_block)-5)),
-                list(np.unique(atomic_params)),
+                atomic_params,
                 atomic_expressions,
             )
         )

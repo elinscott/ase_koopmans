@@ -1137,6 +1137,7 @@ class FixParametricRelations(FixConstraint):
         eps=1e-12,
     ):
         """Initializer"""
+        import math
         # set _eval to be a limited version of itself.
         self.max_value = 1e10
         self._eval = self.limit(max_=self.max_value)(self._eval)
@@ -1164,31 +1165,41 @@ class FixParametricRelations(FixConstraint):
 
         flat_expressions = np.array(expressions).flatten()
         for ee, expression in enumerate(flat_expressions):
-            expression = expression.replace(" ", "")
+            expression = expression.strip()
             expression = expression.replace("-", "+(-1.0)*")
 
-            if expression[0] == "+":
+            if "+" == expression[0]:
                 expression = expression[1:]
+            elif "(+" == expression[:2]:
+                expression = "(" + expression[2:]
 
-            ex_split = expression.split("+")
-            for express_sec in ex_split:
-                in_sec = [param in express_sec for param in params]
+            int_fmt_str = fmt_str = "{:0" + str(math.ceil(math.log10(len(self.params)))) + "d}"
+
+            param_dct = dict()
+            param_map = dict()
+
+            # Construct a standardized param template for A/B filling
+            for pp, param in enumerate(self.params):
+                param_str = "param_" + int_fmt_str.format(pp)
+                param_map[param] = param_str
+                param_dct[param_str] = 0.0
+
+            # Replace the parameters according to the map
+            for param in sorted(params, key=lambda s: -1.0*len(s)):
+                expression = expression.replace(param, param_map[param])
+
+            # Partial linearity check
+            for express_sec in expression.split("+"):
+                in_sec = [param in express_sec for param in param_dct.keys()]
                 n_params_in_sec = len(np.where(np.array(in_sec))[0])
                 if n_params_in_sec > 1:
                     raise IOError("The FixParametricRelations expressions must be linear.")
 
-            param_dct = dict()
-            for pp, param in enumerate(params):
-                param_str = "param_{:d}".format(pp)
-                expression = expression.replace(param, param_str)
-                param_dct[param_str] = 0.0
-
             expression = expression.lower()
-
             self.B[ee] = float(self.eval_expression(expression, param_dct))
 
-            for pp in range(len(params)):
-                param_str = "param_{:d}".format(pp)
+            for pp in range(len(self.params)):
+                param_str = "param_" + int_fmt_str.format(pp)
                 if param_str not in expression:
                     self.A[ee, pp] = 0.0
                     continue
@@ -1228,7 +1239,6 @@ class FixParametricRelations(FixConstraint):
 
         for key, val in param_dct.items():
             expression_rep = expression_rep.replace(key, str(val))
-
         return self._eval(ast.parse(expression_rep, mode='eval').body)
 
     def _eval(self, node):
@@ -1296,7 +1306,6 @@ class FixParametricRelations(FixConstraint):
             func = get_function(node)
             return allowed_math_fxn[func](self._eval(*node.args))
         else:
-            print(type(node))
             raise TypeError(node)
 
     def limit(self, max_=None):
