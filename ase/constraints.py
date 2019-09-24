@@ -1137,6 +1137,10 @@ class FixParametricRelations(FixConstraint):
         eps=1e-12,
     ):
         """Initializer"""
+        # set _eval to be a limited version of itself.
+        self.max_value = 1e10
+        self._eval = self.limit(max_=self.max_value)(self._eval)
+
         if indices and cell_indices:
             raise AttributeError("Please use separate constraints for the lattice and atomic degrees of freedom.")
         elif indices:
@@ -1153,6 +1157,7 @@ class FixParametricRelations(FixConstraint):
         self.params = params
 
         self.eps = eps
+        # To prevent burn attacks.
 
         self.A = np.zeros((3*len(self.inds), len(self.params)))
         self.B = np.zeros(3*len(self.inds))
@@ -1180,7 +1185,7 @@ class FixParametricRelations(FixConstraint):
 
             expression = expression.lower()
 
-            self.B[ee] = float(eval_expression(expression, param_dct))
+            self.B[ee] = float(self.eval_expression(expression, param_dct))
 
             for pp in range(len(params)):
                 param_str = "param_{:d}".format(pp)
@@ -1188,14 +1193,14 @@ class FixParametricRelations(FixConstraint):
                     self.A[ee, pp] = 0.0
                     continue
                 param_dct[param_str] = 1.0
-                test_1 = float(eval_expression(expression, param_dct))
+                test_1 = float(self.eval_expression(expression, param_dct))
                 test_1 -= self.B[ee]
                 self.A[ee, pp] = test_1
 
                 # Using math.pi to pass the flakes.py test. math is needed to evaluate the expressions,
                 # flake8 does not recognize it is used in that way
                 param_dct[param_str] = 2.0
-                test_2 = float(eval_expression(expression, param_dct))
+                test_2 = float(self.eval_expression(expression, param_dct))
                 test_2 -= self.B[ee]
                 if abs(test_2 / test_1 - 2.0) > eps:
                     raise IOError("The FixParametricRelations expressions must be linear.")
@@ -1208,7 +1213,7 @@ class FixParametricRelations(FixConstraint):
             self.A = None
             self.A_inv = None
 
-    def eval_expression(expression, param_dct):
+    def eval_expression(self, expression, param_dct):
         import ast
         if not isinstance(expression, str):
             raise TypeError("The expression must be a string")
@@ -1217,43 +1222,46 @@ class FixParametricRelations(FixConstraint):
 
         expression_rep = expression.strip()
 
-        if "not" in expression_rep or "," in expression_rep:
+        if "," in expression_rep or "()" in expression_rep:
             raise ValueError("Invalid operation in expression")
 
-        expression_rep = expression_rep.replace("sqrt", "not")
-        expression_rep = expression_rep.replace("^", "**")
-
         for key, val in param_dct.items():
-            expression_rep = expression_rep.replace(key, val)
+            expression_rep = expression_rep.replace(key, str(val))
 
-        return _eval(ast.parse(expression_rep, mode='eval').body)
+        return self._eval(ast.parse(expression_rep, mode='eval').body)
 
-    def _eval(node):
+    def _eval(self, node):
         import ast
         import operator as op
         import math
 
         def add(a, b):
             """Redefine add function to prevent too large numbers"""
-            if any(abs(n) > 1e10 for n in [a, b]):
+            if any(abs(n) > self.max_value for n in [a, b]):
                 raise ValueError((a,b))
             return op.add(a, b)
 
         def sub(a, b):
             """Redefine sub function to prevent too large numbers"""
-            if any(abs(n) > 1e10 for n in [a, b]):
+            if any(abs(n) > self.max_value for n in [a, b]):
                 raise ValueError((a,b))
             return op.sub(a, b)
 
         def mul(a, b):
             """Redefine mul function to prevent too large numbers"""
-            if math.log10(a) + math.log10(b) > 10:
+            if a==0.0 or b == 0.0:
+                pass
+            elif math.log10(abs(a)) + math.log10(abs(b)) > math.log10(self.max_value):
                 raise ValueError((a,b))
             return op.mul(a, b)
 
         def div(a, b):
             """Redefine div function to prevent too large numbers"""
-            if math.log10(a) - math.log10(b) > 10:
+            if b == 0.0:
+                raise ValueError((a,b))
+            elif a == 0.0:
+                pass
+            elif math.log10(abs(a)) - math.log10(abs(b)) > math.log10(self.max_value):
                 raise ValueError((a,b))
             return op.truediv(a, b)
 
@@ -1262,19 +1270,34 @@ class FixParametricRelations(FixConstraint):
             ast.Sub: sub,
             ast.Mult: mul,
             ast.Div: div,
-            ast.Not: math.sqrt,
+            ast.USub: op.neg,
         }
 
+        allowed_math_fxn = {
+            "sqrt": math.sqrt,
+        }
         if isinstance(node, ast.Num): # <number>
             return node.n
         elif isinstance(node, ast.BinOp): # <left> <operator> <right>
-            return operators[type(node.op)](eval_(node.left), eval_(node.right))
+            return operators[type(node.op)](self._eval(node.left), self._eval(node.right))
         elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
-            return operators[type(node.op)](eval_(node.operand))
+            return operators[type(node.op)](self._eval(node.operand))
+        elif isinstance(node, ast.Call): # using math.sqrt, sin, cos
+            def get_function(node):
+                """Get the function from the node"""
+                if isinstance(node.func, ast.Name):
+                    return node.func.id
+                elif isinstance(node.func, ast.Attribute):
+                    return node.func.attr
+                else:
+                    raise TypeError("node.func is of the wrong type")
+            func = get_function(node)
+            return allowed_math_fxn[func](self._eval(*node.args))
         else:
+            print(type(node))
             raise TypeError(node)
 
-    def limit(max_=None):
+    def limit(self, max_=self.max_value):
         """Return decorator that limits allowed returned values."""
         import functools
 
@@ -1292,9 +1315,6 @@ class FixParametricRelations(FixConstraint):
                 return ret
             return wrapper
         return decorator
-
-    _eval = limit(max_=1e10)(_eval)
-
 
     @property
     def expressions(self):
