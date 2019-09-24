@@ -1214,6 +1214,7 @@ class FixParametricRelations(FixConstraint):
             self.A_inv = None
 
     def eval_expression(self, expression, param_dct):
+        """Parse a mathematical expression, after replacing parameters with the values in param_dict"""
         import ast
         if not isinstance(expression, str):
             raise TypeError("The expression must be a string")
@@ -1231,6 +1232,7 @@ class FixParametricRelations(FixConstraint):
         return self._eval(ast.parse(expression_rep, mode='eval').body)
 
     def _eval(self, node):
+        """Evaluate a mathematical expression string parsed by ast"""
         import ast
         import operator as op
         import math
