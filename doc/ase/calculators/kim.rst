@@ -28,7 +28,7 @@ standardized implementations of classical interatomic potentials that can be use
 variety of molecular simulation codes.
 
 If you haven't done so already, you'll need to install the `KIM Application Programming
-Interface (API) <https://github.com/openkim/kim-api>`_ and the `kimpy
+Interface (API) <https://openkim.org/kim-api>`_ and the `kimpy
 <https://pypi.org/project/kimpy/>`_ python package in order to use this calculator.  The
 simplest way to install the former is to use your operating system's native package
 manager to install the 'openkim-models' package, which will install both the KIM API and
