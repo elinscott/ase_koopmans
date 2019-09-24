@@ -95,9 +95,8 @@ def KIM(model_name, simulator=None, options=None, debug=False):
           expressed as a fraction of the model cutoff (Default: 0.2)
 
         - release_GIL (bool)
-          : Determines whether or not to release the python GIL, which
-          allows a KIM model to be run with multiple threads. (Default:
-          False)
+          : Whether to release python GIL.  Releasing the GIL allows a KIM
+          model to run with multiple concurrent threads. (Default: False)
 
         See the ASE LAMMPS calculators doc page
         (https://wiki.fysik.dtu.dk/ase/ase/calculators/lammps.html) for

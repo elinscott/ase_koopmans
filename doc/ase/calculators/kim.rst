@@ -21,17 +21,26 @@ KIM
 Overview
 --------
 
-The `Open Knowledgebase of Interatomic Models (OpenKIM) <https://openkim.org>`_ is an
-NSF-funded project aimed at providing easy access to standardized implementations of
-classical interatomic potentials that can be used with a variety of molecular simulation
-codes.  This package allows one to easily use any potential archived in OpenKIM through
-ASE.
+This package contains a calculator interface that allows one to easily use any potential
+archived in `Open Knowledgebase of Interatomic Models (OpenKIM) <https://openkim.org>`_
+through ASE.  OpenKIM is an NSF-funded project aimed at providing easy access to
+standardized implementations of classical interatomic potentials that can be used with a
+variety of molecular simulation codes.
 
-By default, the KIM API will install several example models on your system, including one
-for argon named "ex_model_Ar_P_Morse_07C".  Suppose we want to know the potential energy
-predicted by this model for an FCC argon lattice at a lattice spacing of 5.25 Angstroms.
-This can be accomplished in a manner similar to how most other ASE calculators are used,
-where the name of the KIM model is passed as an argument:
+If you haven't done so already, you'll need to install the `KIM Application Programming
+Interface (API) <https://github.com/openkim/kim-api>`_ and the `kimpy
+<https://pypi.org/project/kimpy/>`_ python package in order to use this calculator.  The
+simplest way to install the former is to use your operating system's native package
+manager to install the 'openkim-models' package, which will install both the KIM API and
+a snapshot of binaries of all of the current models housed in the OpenKIM repository.
+Otherwise, the 'kim-api' package can be installed by itself, which will not include any
+models beyond the examples bundled with the KIM API.  The kimpy package can be installed
+from PyPI using pip: ``pip install --user kimpy``.
+
+Suppose we want to know the potential energy predicted by the example model
+"ex_model_Ar_P_Morse_07C" for an FCC argon lattice at a lattice spacing of 5.25
+Angstroms.  This can be accomplished in a manner similar to how most other ASE
+calculators are used, where the name of the KIM model is passed as an argument:
 
 ::
 
@@ -45,6 +54,31 @@ where the name of the KIM model is passed as an argument:
     energy = atoms.get_potential_energy()
     print("Potential energy: {} eV".format(energy))
 
+If you wish to use a different model, you can view a list of your installed models from
+the command line using the ``kim-api-collections-management`` utility bundled with the
+KIM API:
+
+::
+
+   kim-api-collections-management list
+
+You can browse the models available in OpenKIM for a specific element by visiting
+`<https://openkim.org>`_ and clicking on it in the periodic table.  Each model is
+identified by its `extended KIM ID <https://openkim.org/doc/schema/kim-ids/>`_, which
+consists of a human-readable string followed by a numerical code assigned to it.
+Clicking on an individual model will display a page containing additional information
+about it, including its predictions for various material properties.  Once you've
+identified a model you'd like to install, e.g.
+SW_StillingerWeber_1985_Si__MO_405512056662_005, it can be installed using the
+aforementioned utility via
+
+::
+
+   kim-api-collections-management install user SW_StillingerWeber_1985_Si__MO_405512056662_005
+
+More information on obtaining KIM Models can be found `here
+<https://openkim.org/doc/usage/obtaining-models/>`__.
+
 See below for a more detailed explanation of this package and additional options.
 
 .. _Implementation:
@@ -54,7 +88,7 @@ Implementation
 --------------
 
 In order to explain the structure of this package, we must first describe the two
-different types of interatomic potentials in KIM: [#kimmodels]_ [#typesofkimcontent]_
+different types of interatomic potentials in KIM: [#typesofkimcontent]_
 
   * **Portable Models (PMs)**
     A KIM Portable Model (PM) is an interatomic potential designed to work
@@ -65,16 +99,15 @@ different types of interatomic potentials in KIM: [#kimmodels]_ [#typesofkimcont
     with a single simulator.
 
 These two types of KIM models require different calculators to work: PMs work through a
-designated calculator that uses the `kimpy <https://github.com/openkim/kimpy>`_ library
+designated calculator that uses the `kimpy <https://github.com/openkim/kimpy>`__ library
 (which provides a set of python bindings to the `KIM API <https://openkim.org/kim-api>`_)
 in order to set up communication between ASE and the model.  This allows, for example,
 the positions of the atoms and the neighbor list in ASE to be communicated to the model,
 and for the energy and forces predicted by the model for that configuration to be
-communicated back to ASE in a standard format.  On the other hand, SMs are
-essentially nothing more than a recording of some set of simulator commands and
-usually one or more parameter files. [#smobject]_  Accordingly, they require supplying
-these commands to the calculator(s) corresponding to the specific simulator associated
-with the SM.
+communicated back to ASE in a standard format.  On the other hand, SMs are a set of
+simulator commands, usually accompanied by one or more parameter files, [#smobject]_ that
+are passed to a calculator corresponding to the specific simulator associated with the
+SM.
 
 Because of this separation, the :mod:`ase.calculators.kim` package consists of two modules:
 :git:`ase.calculators.kim.kim <ase/calculators/kim/kim.py>` and
@@ -137,8 +170,6 @@ object ``calc`` returned is an instance of :class:`ase.calculators.lammpslib.LAM
 .. _LAMMPS: http://lammps.sandia.gov
 
 .. rubric:: Footnotes
-
-.. [#kimmodels] A listing of all models currently available in KIM can be found `here <https://openkim.org/browse/models/alphabetical>`__.
 
 .. [#typesofkimcontent] See `here <https://openkim.org/doc/repository/kim-content/>`_ for more details about different types of content in KIM.
 

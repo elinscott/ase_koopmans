@@ -218,8 +218,8 @@ class KIMModelCalculator(Calculator):
       where rcut is the model's influence distance. (Default: 0.2)
 
     release_GIL : bool, optional
-      Whether to release python GIL, which allows a KIM model to run
-      with multiple concurrent threads. (Default: False)
+      Whether to release python GIL.  Releasing the GIL allows a KIM
+      model to run with multiple concurrent threads. (Default: False)
 
     debug : bool, optional
       If True, detailed information is printed to stdout. (Default:
