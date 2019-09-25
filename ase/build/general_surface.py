@@ -5,7 +5,7 @@ from ase.utils import gcd, basestring
 from ase.build import bulk
 
 
-def surface(lattice, indices, layers, vacuum=None, tol=1e-10):
+def surface(lattice, indices, layers, vacuum=None, tol=1e-10, pbc=False):
     """Create surface from a given lattice and Miller indices.
 
     lattice: Atoms object or str
@@ -61,13 +61,13 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10):
         c2 = np.array((0, l, -k)) // abs(gcd(l, k))
         c3 = (b, a * p, a * q)
 
-    surf = build(lattice, np.array([c1, c2, c3]), layers, tol)
+    surf = build(lattice, np.array([c1, c2, c3]), layers, tol, pbc)
     if vacuum is not None:
         surf.center(vacuum=vacuum, axis=2)
     return surf
 
 
-def build(lattice, basis, layers, tol):
+def build(lattice, basis, layers, tol, pbc):
     surf = lattice.copy()
     scaled = solve(basis.T, surf.get_scaled_positions().T).T
     scaled -= np.floor(scaled + tol)
@@ -89,14 +89,18 @@ def build(lattice, basis, layers, tol):
                    (0, 0, norm(a3))],
                   scale_atoms=True)
 
-    surf.pbc = (True, True, False)
+    if pbc:
+        surf.pbc = (True, True, True)
+    else:
+        surf.pbc = (True, True, False)
 
     # Move atoms into the unit cell:
     scaled = surf.get_scaled_positions()
     scaled[:, :2] %= 1
     surf.set_scaled_positions(scaled)
 
-    surf.cell[2] = 0.0
+    if not pbc:
+        surf.cell[2] = 0.0
 
     return surf
 
