@@ -32,13 +32,14 @@ Interface (API) <https://openkim.org/kim-api>`_ and the `kimpy
 <https://pypi.org/project/kimpy/>`_ python package in order to use this calculator.  The
 simplest way to install the former is to use your operating system's native package
 manager to install the 'openkim-models' package, which will install both the KIM API and
-a snapshot of binaries of all of the current models housed in the OpenKIM repository.
-Otherwise, the 'kim-api' package can be installed by itself, which will not include any
-models beyond the examples bundled with the KIM API.  The kimpy package can be installed
-from PyPI using pip: ``pip install --user kimpy``.
+a snapshot of binaries of all of the current models housed in the OpenKIM repository (see
+`<https://openkim.org/doc/usage/obtaining-models>`_ for instructions).  Otherwise, the
+'kim-api' package can be installed by itself, which will not include any models beyond
+the examples bundled with the KIM API.  The kimpy package can be installed from PyPI
+using pip: ``pip install --user kimpy``.
 
-Suppose we want to know the potential energy predicted by the example model
-"ex_model_Ar_P_Morse_07C" for an FCC argon lattice at a lattice spacing of 5.25
+As an example, suppose we want to know the potential energy predicted by the example
+model "ex_model_Ar_P_Morse_07C" for an FCC argon lattice at a lattice spacing of 5.25
 Angstroms.  This can be accomplished in a manner similar to how most other ASE
 calculators are used, where the name of the KIM model is passed as an argument:
 
@@ -54,30 +55,14 @@ calculators are used, where the name of the KIM model is passed as an argument:
     energy = atoms.get_potential_energy()
     print("Potential energy: {} eV".format(energy))
 
-If you wish to use a different model, you can view a list of your installed models from
-the command line using the ``kim-api-collections-management`` utility bundled with the
-KIM API:
-
-::
-
-   kim-api-collections-management list
-
-You can browse the models available in OpenKIM for a specific element by visiting
-`<https://openkim.org>`_ and clicking on it in the periodic table.  Each model is
-identified by its `extended KIM ID <https://openkim.org/doc/schema/kim-ids/>`_, which
-consists of a human-readable string followed by a numerical code assigned to it.
-Clicking on an individual model will display a page containing additional information
-about it, including its predictions for various material properties.  Once you've
-identified a model you'd like to install, e.g.
-SW_StillingerWeber_1985_Si__MO_405512056662_005, it can be installed using the
-aforementioned utility via
-
-::
-
-   kim-api-collections-management install user SW_StillingerWeber_1985_Si__MO_405512056662_005
-
-More information on obtaining KIM Models can be found `here
-<https://openkim.org/doc/usage/obtaining-models/>`__.
+To use any other KIM model you have installed, simply substitute its name as the argument
+to ``KIM``.  You can browse the models available in OpenKIM for a specific element by
+visiting `<https://openkim.org>`_ and clicking on it in the periodic table.  Each model
+is identified by its `extended KIM ID <https://openkim.org/doc/schema/kim-ids/>`_, which
+consists of a human-readable string followed by a numeric code assigned to it.  Clicking
+on an individual model will display a page containing additional information about it,
+including its predictions for various material properties.  Information on how to install
+KIM Models can be found at `<https://openkim.org/doc/usage/obtaining-models/>`__.
 
 See below for a more detailed explanation of this package and additional options.
 
@@ -140,9 +125,9 @@ mechanism, we could specify it by modifying the corresponding line to:
 
     calc = KIM("ex_model_Ar_P_Morse_07C", options={"ase_neigh": True})
 
-If, for some reason, we want to make sure that the ASE LAMMPS calculator
-(:class:`ase.calculators.lammpsrun.LAMMPS`) is the specific one used to run our portable
-model, we can specify it using the ``simulator`` argument:
+If, for some reason, we want to run our portable model with the ASE LAMMPS calculator
+(:class:`ase.calculators.lammpsrun.LAMMPS`), we can specify it using the ``simulator``
+argument:
 
 ::
 
