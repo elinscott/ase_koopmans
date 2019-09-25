@@ -302,7 +302,16 @@ def _is_portable_model(model_name):
     """
     col = check_call(kimpy.collections.create)
 
-    model_type = check_call(col.get_item_type, model_name)
+    try:
+        model_type = check_call(col.get_item_type, model_name)
+    except KIMCalculatorError:
+        msg = (
+            "ERROR: Could not find model {} installed in any of the KIM API model "
+            "collections on this system.  See "
+            "https://openkim.org/doc/usage/obtaining-models/ for instructions on "
+            "installing models.".format(model_name)
+        )
+        raise KIMCalculatorError(msg)
 
     kimpy.collections.destroy(col)
 
