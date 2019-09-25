@@ -1173,7 +1173,7 @@ class FixParametricRelations(FixConstraint):
             elif "(+" == expression[:2]:
                 expression = "(" + expression[2:]
 
-            int_fmt_str = "{:0" + str(math.ceil(math.log10(len(self.params)))) + "d}"
+            int_fmt_str = "{:0" + str(math.ceil(math.log10(len(self.params)+1))) + "d}"
 
             param_dct = dict()
             param_map = dict()
@@ -1444,8 +1444,8 @@ class FixScaledParametricRelations(FixParametricRelations):
             eps=eps,
         )
 
-    def adjust_covariant(self, cell, vecs, B):
-        """Adjust the values of a set of vectors that are covariant with the unit transformation"""
+    def adjust_contrvariant(self, cell, vecs, B):
+        """Adjust the values of a set of vectors that are contravariant with the unit transformation"""
         if self.A is None:
             scaled = B.reshape((-1,3))
         else:
@@ -1457,7 +1457,7 @@ class FixScaledParametricRelations(FixParametricRelations):
 
     def adjust_positions(self, atoms, positions):
         """Adjust positions of the atoms to match the constraints"""
-        positions[self.indices] = self.adjust_covariant(
+        positions[self.indices] = self.adjust_contrvariant(
             atoms.cell,
             positions[self.indices],
             self.B,
@@ -1474,7 +1474,7 @@ class FixScaledParametricRelations(FixParametricRelations):
 
     def adjust_momenta(self, atoms, momenta):
         """Adjust momenta of the atoms to match the constraints"""
-        momenta[self.indices] = self.adjust_covariant(
+        momenta[self.indices] = self.adjust_contrvariant(
             atoms.cell,
             momenta[self.indices],
             np.zeros(self.B.shape),
@@ -1485,7 +1485,7 @@ class FixScaledParametricRelations(FixParametricRelations):
         if self.A is None:
             forces[self.indices] = np.zeros(forces[self.indices].shape)
         else:
-            # Forces are contravarient to the coordinate transformation, use the inverse transformations
+            # Forces are coavarient to the coordinate transformation, use the inverse transformations
             scaled_forces = atoms.cell.cartesian_positions(forces[self.indices])
             scaled_forces = self.A.T @ scaled_forces.flatten()
             scaled_forces = (self.A_inv.T @ scaled_forces).reshape(-1, 3)
@@ -1534,8 +1534,8 @@ class FixCartesianParametricRelations(FixParametricRelations):
             eps=eps,
         )
 
-    def adjust_covariant(self, vecs, B):
-        """Adjust the values of a set of vectors that are covariant with the unit transformation"""
+    def adjust_contrvariant(self, vecs, B):
+        """Adjust the values of a set of vectors that are contravariant with the unit transformation"""
         if self.A is None:
             vecs += B.reshape((-1,3))
         else:
@@ -1547,7 +1547,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """Adjust positions of the atoms to match the constraints"""
         if not self.indices:
             return
-        positions[self.indices] = self.adjust_covariant(
+        positions[self.indices] = self.adjust_contrvariant(
             positions[self.indices],
             self.B,
         )
@@ -1556,7 +1556,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """Adjust momenta of the atoms to match the constraints"""
         if not self.indices:
             return
-        momenta[self.indices] = self.adjust_covariant(
+        momenta[self.indices] = self.adjust_contrvariant(
             momenta[self.indices],
             np.zeros(self.B.shape),
         )
@@ -1575,7 +1575,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """Adjust the cell of the atoms to match the constraints"""
         if not self.cell_indices:
             return
-        cell[self.cell_indices] = self.adjust_covariant(
+        cell[self.cell_indices] = self.adjust_contrvariant(
             cell[self.cell_indices],
             np.zeros(self.B.shape),
         )

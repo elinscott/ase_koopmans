@@ -344,8 +344,13 @@ def write_aims(
             fd.write("#=======================================================\n")
             fd.write("symmetry_n_params {:d} {:d} {:d}\n".format(n_total_params, n_lv_params, n_atomic_params))
             fd.write("symmetry_params %s\n" % " ".join(lv_sym_params + atomic_sym_params))
-            for constr in lv_param_constr:
-                fd.write("symmetry_lv %s\n" % constr)
+            if lv_param_constr:
+                for constr in lv_param_constr:
+                    fd.write("symmetry_lv %s\n" % constr)
+            else:
+                for lv in atoms.cell:
+                    fd.write("symmetry_lv {:.16f}, {:.16f}, {:.16f}\n".format(*lv))
+
             for constr in atomic_param_constr:
                 fd.write("symmetry_frac %s\n" % constr)
 
