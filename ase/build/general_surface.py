@@ -5,7 +5,7 @@ from ase.utils import gcd, basestring
 from ase.build import bulk
 
 
-def surface(lattice, indices, layers, vacuum=None, tol=1e-10, pbc=False):
+def surface(lattice, indices, layers, vacuum=None, tol=1e-10, periodic=False):
     """Create surface from a given lattice and Miller indices.
 
     lattice: Atoms object or str
@@ -19,7 +19,8 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10, pbc=False):
         Number of equivalent layers of the slab.
     vacuum: float
         Amount of vacuum added on both sides of the slab.
-
+    periodic: bool
+        Whether the surface is periodic in the normal to the surface
     """
 
     indices = np.asarray(indices)
@@ -32,7 +33,7 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10, pbc=False):
 
     h, k, l = indices
     h0, k0, l0 = (indices == 0)
- 
+
     if h0 and k0 or h0 and l0 or k0 and l0:  # if two indices are zero
         if not h0:
             c1, c2, c3 = [(0, 1, 0), (0, 0, 1), (1, 0, 0)]
@@ -61,13 +62,13 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10, pbc=False):
         c2 = np.array((0, l, -k)) // abs(gcd(l, k))
         c3 = (b, a * p, a * q)
 
-    surf = build(lattice, np.array([c1, c2, c3]), layers, tol, pbc)
+    surf = build(lattice, np.array([c1, c2, c3]), layers, tol, periodic)
     if vacuum is not None:
         surf.center(vacuum=vacuum, axis=2)
     return surf
 
 
-def build(lattice, basis, layers, tol, pbc):
+def build(lattice, basis, layers, tol, periodic):
     surf = lattice.copy()
     scaled = solve(basis.T, surf.get_scaled_positions().T).T
     scaled -= np.floor(scaled + tol)
@@ -89,17 +90,14 @@ def build(lattice, basis, layers, tol, pbc):
                    (0, 0, norm(a3))],
                   scale_atoms=True)
 
-    if pbc:
-        surf.pbc = (True, True, True)
-    else:
-        surf.pbc = (True, True, False)
+    surf.pbc = (True, True, periodic)
 
     # Move atoms into the unit cell:
     scaled = surf.get_scaled_positions()
     scaled[:, :2] %= 1
     surf.set_scaled_positions(scaled)
 
-    if not pbc:
+    if not periodic:
         surf.cell[2] = 0.0
 
     return surf
