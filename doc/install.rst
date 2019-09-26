@@ -44,13 +44,21 @@ dependencies and make ASE available for all users.
 Max OSX (Homebrew)
 ------------------
 
-Mac users may be familiar with Homebrew_.  Before installing ASE with pip_ as
-described in the next section. Homebrew's ``python`` package provides an up-
-to-date version of Python 2.7.x and sets up ``pip`` for you::
+The old version of Python included in Mac OSX is incompatible with ASE
+and does not include the pip_ package manager.
+
+Before installing ASE with ``pip`` as described in the next section, Mac
+users need to install an appropriate Python version.  One option is
+to use the Homebrew_ package manager, which provides an up-to-date version
+of Python 3 including ``pip`` and the tkinter graphical interface bindings::
 
   $ brew install python
 
+For more information about the quirks of brewed Python see this guide_.
+
 .. _Homebrew: http://brew.sh
+
+.. _guide: https://docs.brew.sh/Homebrew-and-Python
 
 
 .. index:: pip
