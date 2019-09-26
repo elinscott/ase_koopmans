@@ -1060,6 +1060,19 @@ class SQR(BravaisLattice):
                          [0, 0, 0.]])
 
 
+@bravaisclass('primitive line', 'xgonal', None, 'l', ('a'),
+              [['LINE', 'GX', 'GX', {'G': [0, 0, 0], 'X': [0, 0, 0.5]}]],
+              ndim=1)
+class LINE(BravaisLattice):
+    def __init__(self, a, **kwargs):
+        BravaisLattice.__init__(self, a=a, **kwargs)
+
+    def _cell(self, a):
+        return np.array([[0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, a]])
+
+
 def celldiff(cell1, cell2):
     """Return a unitless measure of the difference between two cells."""
     cell1 = Cell.ascell(cell1).complete()
@@ -1096,14 +1109,21 @@ def identify_lattice(cell, eps=2e-4, *, pbc=None):
         pbc = cell.any(1)
 
     npbc = sum(pbc)
+
+    if npbc == 1:
+        a = cell[2, 2]
+        return LINE(a), np.eye(3)
+
     if npbc == 2:
         lat, op = get_2d_bravais_lattice(cell, eps, pbc=pbc)
         return lat, op
 
     if npbc != 3:
-        raise ValueError('System must be periodic either along two first '
-                         'axes or along all three.  Got pbc={}'
-                         .format(pbc))
+        raise ValueError('System must be periodic either '
+                         'along all three axes, '
+                         'along two first axes or, '
+                         'along the thrid axis.  '
+                         'Got pbc={}'.format(pbc))
 
 
     from ase.geometry.bravais_type_engine import niggli_op_table
