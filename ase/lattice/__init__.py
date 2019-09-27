@@ -1114,7 +1114,8 @@ def identify_lattice(cell, eps=2e-4, *, pbc=None):
         i = np.argmax(pbc)  # index of periodic axis
         a = cell[i, i]
         if a < 0 or cell[i, [i - 1, i - 2]].any():
-            raise ValueError('Not a 1-d cell ASE can handle: {cell}.')
+            raise ValueError('Not a 1-d cell ASE can handle: {cell}.'
+                             .format(cell=cell))
         if i == 0:
             op = np.eye(3)
         elif i == 1:
@@ -1512,3 +1513,5 @@ def all_variants():
     yield CRECT(a, alpha=alpha)
     yield HEX2D(a)
     yield SQR(a)
+
+    yield LINE(a)
