@@ -19,7 +19,7 @@ class DiffusionCoefficient:
             traj (Trajectory): 
                 Trajectory of atoms objects (images)
             timestep (Float): 
-                Timestep between _each image in the trajectory_, in ASE timestep units
+                Timestep between *each image in the trajectory*, in ASE timestep units
                 (For an MD simulation with timestep of N, and images written every M iterations, our timestep here is N * M  
             atom_indices (List of Int): 
                 The indices of atoms whose Diffusion Coefficient is to be calculated explicitly
