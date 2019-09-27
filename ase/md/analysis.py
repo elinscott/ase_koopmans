@@ -6,11 +6,11 @@ class DiffusionCoefficient:
         '''
         This class calculates the Diffusion Coefficient for the given Trajectory using the Einstein Equation:
         
-        ⟨|r(t)−r(0)|**2⟩ = 2nDt 
+        :math: `\left \langle  \left | r(t) - r(0)\right | ^{2} \right \rangle  = 2nDt` 
         
         where r(t) is the position of atom at time t, n is the degrees of freedom and D is the Diffusion Coefficient
         
-        Solved herein by fitting with y = mx + c, i.e. 1/(2*n) ⟨|r(t)−r(0)|**2⟩ = Dt, with m = D and c = 0
+        Solved herein by fitting with :math: `y = mx + c`, i.e. :math: `\frac{1}{2n} \left \langle  \left | r(t) - r(0)\right | ^{2} \right \rangle  = Dt`, with m = D and c = 0
 
         wiki : https://en.wikibooks.org/wiki/Molecular_Simulation/Diffusion_Coefficients
 
@@ -49,7 +49,7 @@ class DiffusionCoefficient:
 
         '''
         Private function to initialise data storage objects. This includes objects to store the total timesteps
-        sampled, the average diffusivity for species in any given segment, and objects to store gradient/intercept from fitting.
+        sampled, the average diffusivity for species in any given segment, and objects to store gradient and intercept from fitting.
 
         Parameters:
             ignore_n_images (Int): 
@@ -135,7 +135,7 @@ class DiffusionCoefficient:
     def _fit_data(self, x, y):
 
         '''
-        Private function that returns slope/intercept for linear fit to mean square diffusion data
+        Private function that returns slope and intercept for linear fit to mean square diffusion data
 
 
         Parameters:
