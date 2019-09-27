@@ -31,6 +31,8 @@ Git master branch
 
 * Added :class:`~ase.calculators.psi4.Psi4` calculator.
 
+* Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can calculate atom/molecule mobility from trajectory as a function of time 
+
 Version 3.18.0
 ==============
 
