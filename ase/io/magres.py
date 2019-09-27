@@ -13,14 +13,21 @@ import ase.units
 from ase.atoms import Atoms
 from ase.spacegroup import Spacegroup
 
+_mprops = {
+    'ms': ('sigma', 1),
+    'sus': ('S', 0),
+    'efg': ('V', 1),
+    'isc': ('K', 2)}
+# (matrix name, number of atoms in interaction) for various magres quantities
+
 
 def read_magres(fd, include_unrecognised=False):
     """
         Reader function for magres files.
     """
 
-    blocks_re = re.compile(r'[\[<](?P<block_name>.*?)[>\]](.*?)[<\[]/'
-                           + r'(?P=block_name)[\]>]', re.M | re.S)
+    blocks_re = re.compile(r'[\[<](?P<block_name>.*?)[>\]](.*?)[<\[]/' +
+                           r'(?P=block_name)[\]>]', re.M | re.S)
 
     """
     Here are defined the various functions required to parse
@@ -326,14 +333,8 @@ def read_magres(fd, include_unrecognised=False):
 
     # Now for the magres specific stuff
     li_list = list(zip(labels, indices))
-    mprops = {
-        'ms': ('sigma', 1),
-        'sus': ('S', 0),
-        'efg': ('V', 1),
-        'isc': ('K', 2)}
-    # (matrix name, number of atoms in interaction) for various magres quantities
 
-    def create_magres_array(order, block):
+    def create_magres_array(name, order, block):
 
         if order == 1:
             u_arr = [None] * len(li_list)
@@ -372,20 +373,21 @@ def read_magres(fd, include_unrecognised=False):
                 # This bit to keep track of tags
                 u0 = u.split('_')[0]
 
-                if u0 not in mprops:
+                if u0 not in _mprops:
                     raise RuntimeError('Invalid data in magres block')
 
-                mn, order = mprops[u0]
+                mn, order = _mprops[u0]
 
                 if order > 0:
-                    u_arr = create_magres_array(order, data_dict['magres'][u])
+                    u_arr = create_magres_array(mn, order,
+                                                data_dict['magres'][u])
                     atoms.new_array(u, u_arr)
                 else:
                     atoms.info['magres_data'] = atoms.info.get('magres_data',
                                                                {})
                     # We only take element 0 because for this sort of data
                     # there should be only that
-                    atoms.info['magres_data'][u] = data_dict['magres'][u][0]
+                    atoms.info['magres_data'][u] = data_dict['magres'][u][0][mn]
 
     if 'calculation' in data_dict:
         atoms.info['magresblock_calculation'] = data_dict['calculation']
@@ -462,29 +464,37 @@ def write_magres(fd, image):
         for u in image.info['magres_units']:
             # Get the type
             p = u.split('_')[0]
-            if p in mprops:
+            if p in _mprops:
                 image_data['magres']['units'].append(
                     [u, image.info['magres_units'][u]])
                 image_data['magres'][u] = []
-                prop = mprops[p]
-                arr = image.get_array(u)
-                li_tab = zip(labels, indices)
-                for i, (lab, ind) in enumerate(li_tab):
-                    if prop[1]:
-                        for j, (lab2, ind2) in enumerate(li_tab[:i + 1]):
-                            if arr[i][j] is not None:
-                                tens = {prop[0]: arr[i][j],
-                                        'atom1': {'label': lab,
-                                                  'index': ind},
-                                        'atom2': {'label': lab2,
-                                                  'index': ind2}}
-                                image_data['magres'][u].append(tens)
-                    else:
-                        if arr[i] is not None:
-                            tens = {prop[0]: arr[i],
-                                    'atom': {'label': lab,
-                                             'index': ind}}
-                            image_data['magres'][u].append(tens)
+                mn, order = _mprops[p]
+
+                if order == 0:
+                    # The case of susceptibility
+                    tens = {
+                        mn: image.info['magres_data'][u]
+                    }
+                    image_data['magres'][u] = tens
+                else:
+                    arr = image.get_array(u)
+                    li_tab = zip(labels, indices)
+                    for i, (lab, ind) in enumerate(li_tab):
+                        if order == 2:
+                            for j, (lab2, ind2) in enumerate(li_tab[:i + 1]):
+                                if arr[i][j] is not None:
+                                    tens = {mn: arr[i][j],
+                                            'atom1': {'label': lab,
+                                                      'index': ind},
+                                            'atom2': {'label': lab2,
+                                                      'index': ind2}}
+                                    image_data['magres'][u].append(tens)
+                        elif order == 1:
+                            if arr[i] is not None:
+                                tens = {mn: arr[i],
+                                        'atom': {'label': lab,
+                                                 'index': ind}}
+                                image_data['magres'][u].append(tens)                
 
     # Calculation block, if present
     if 'magresblock_calculation' in image.info:
@@ -502,6 +512,11 @@ def write_magres(fd, image):
 
         out = []
 
+        def nout(tag, tensor_name):
+            if tag in data:
+                out.append(('  %s %s') % (tag, 
+                                          tensor_string(data[tag][tensor_name])))
+
         def siout(tag, tensor_name):
             if tag in data:
                 for atom_si in data[tag]:
@@ -513,6 +528,7 @@ def write_magres(fd, image):
 
         write_units(data, out)
 
+        nout('sus', 'S')
         siout('ms', 'sigma')
 
         siout('efg_local', 'V')
