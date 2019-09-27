@@ -47,8 +47,9 @@ Gaussian_
 :mod:`Grimme DFT-D3 <ase.calculators.dftd3>`
 :mod:`~ase.calculators.gulp`
 Mopac_
-:mod:`~ase.calculators.tip3p`
+:mod:`~ase.calculators.qchem`
 :mod:`~ase.calculators.qmmm`
+:mod:`~ase.calculators.tip3p`
 
 
 `Reference publication on ASE <https://doi.org/10.1088/1361-648X/aa680e>`__
@@ -67,6 +68,8 @@ See how to identify and convert old trajectory files here: :ref:`convert`.
 
 News
 ====
+
+* :ref:`ASE version 3.18.1 <releasenotes>` released (20 September 2019).
 
 * :ref:`ASE version 3.18.0 <releasenotes>` released (19 July 2019).
 

@@ -249,7 +249,7 @@ class XrDebye(object):
 
         f.close()
 
-    def plot_pattern(self, filename=None, show=None, ax=None):
+    def plot_pattern(self, filename=None, show=False, ax=None):
         """ Plot XRD or SAXS depending on filled data
 
         Uses Matplotlib to plot pattern. Use *show=True* to
@@ -260,9 +260,6 @@ class XrDebye(object):
             ``matplotlib.axes.Axes`` object."""
 
         import matplotlib.pyplot as plt
-
-        if filename is None and show is None:
-            show = True
 
         if ax is None:
             plt.clf()  # clear figure

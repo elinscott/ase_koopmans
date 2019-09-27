@@ -63,6 +63,7 @@ def object_hook(dct):
     return dct
 
 
+
 def create_ndarray(shape, dtype, data):
     """Create ndarray from shape, dtype and flattened data."""
     array = np.empty(shape, dtype=dtype)
@@ -89,6 +90,9 @@ def create_ase_object(objtype, dct):
     elif objtype == 'bandpath':
         from ase.dft.kpoints import BandPath
         obj = BandPath(path=dct.pop('labelseq'), **dct)
+    elif objtype == 'atoms':
+        from ase import Atoms
+        obj = Atoms(constraint=dct.pop('constraints', None), **dct)
     else:
         raise ValueError('Do not know how to decode object type {} '
                          'into an actual object'.format(objtype))

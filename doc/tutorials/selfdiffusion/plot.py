@@ -32,4 +32,4 @@ write('Al110slab.pov', atoms,
       colors=colors,
       radii=radii,
       canvas_width=500,
-      transparent=False, display=False, run_povray=True)
+      transparent=False, run_povray=True)

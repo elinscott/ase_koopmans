@@ -9,6 +9,8 @@ Git master branch
 
 :git:`master <>`.
 
+* Added interface to :mod:`Q-Chem <ase.calculators.qchem>`.
+
 * :func:`ase.build.bulk` now supports elements with tetrahedral,
   rhombohedral, and orthorhombic lattices.
 
@@ -25,13 +27,35 @@ Git master branch
   been deprecated.  Use ``world.rank`` and ``world.size`` instead
   (and ``from ase.parallel import world``).
 
+* Write support for Materials Studio xtd files.
+
 * ``atoms.set_masses('most_common')`` now sets the masses of each
   element according to most common isotope as stored in
   ``ase.data.atomic_masses_common``.
 
+* Plotting functions (such as band structure, EOS, ...)
+  no longer show the figure by default.
+
 * Added :class:`~ase.calculators.psi4.Psi4` calculator.
 
 * Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can calculate atom/molecule mobility from trajectory as a function of time 
+
+* The :mod:`~ase.io.pov` module can now render high-order bonds.
+
+* :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
+  from :mod:`ase.io.jsonio`.
+
+Version 3.18.1
+==============
+
+20 September 2019: :git:`3.18.1 <../3.18.1>`
+
+* Multiple bugfixes.  Most importantly, deprecate ``atoms.cell.pbc``
+  in order to avoid complexities from dealing with two
+  ways of manipulating this piece of information.
+  Use ``atoms.pbc`` instead; this works the same as always.
+  Also, the :class:`~ase.cell.Cell` object now exposes almost the entire
+  ``ndarray`` interface.  For a list of smaller bugfixes, see the git log.
 
 Version 3.18.0
 ==============

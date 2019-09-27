@@ -96,7 +96,7 @@ def set_high_bondorder_pairs(bondpairs, high_bondorder_pairs = {}):
 class POVRAY(PlottingVariables):
     default_settings = {
         # x, y is the image plane, z is *out* of the screen
-        'display': True,  # display while rendering
+        'display': False,  # display while rendering
         'pause': True,  # pause when done rendering (only if display)
         'transparent': True,  # transparent background
         'canvas_width': None,  # width of canvas in pixels

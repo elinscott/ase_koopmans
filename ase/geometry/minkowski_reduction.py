@@ -2,9 +2,8 @@ import itertools
 import numpy as np
 
 
-def gauss(B, hu, hv):
-    """Calculate a Gauss-reduced lattice basis."""
-
+def reduction_gauss(B, hu, hv):
+    """Calculate a Gauss-reduced lattice basis (2D reduction)."""
     u = np.dot(B.T, hu)
     v = np.dot(B.T, hv)
 
@@ -23,7 +22,6 @@ def gauss(B, hu, hv):
 
 
 def relevant_vectors_2D(u, v):
-
     cs = np.array([e for e in itertools.product([-1, 0, 1], repeat=2)])
     vs = np.dot(cs, [u, v])
     indices = np.argsort(np.linalg.norm(vs, axis=1))[:7]
@@ -31,7 +29,6 @@ def relevant_vectors_2D(u, v):
 
 
 def closest_vector(t0, u, v):
-
     t = t0
     rs, cs = relevant_vectors_2D(u, v)
     a = np.array([0, 0])
@@ -54,32 +51,8 @@ def closest_vector(t0, u, v):
     raise RuntimeError("Closest vector not found after %d iterations" % max_it)
 
 
-def minkowski_reduce(B):
-
-    """Calculate a Minkowski-reduced lattice basis.  The reduced basis
-    has the shortest possible vector lengths and has
-    norm(a) <= norm(b) <= norm(c).
-
-    Implements the method described in:
-
-    Low-dimensional Lattice Basis Reduction Revisited
-    Nguyen, Phong Q. and Stehlé, Damien,
-    ACM Trans. Algorithms 5(4) 46:1--46:48, 2009
-    https://doi.org/10.1145/1597036.1597050
-
-    Parameters:
-
-    B: array
-        The lattice basis to reduce (in row-vector format).
-
-    Returns:
-
-    R: array
-        The reduced lattice basis.
-    H: array
-        The unimodular matrix transformation (R = H @ B).
-    """
-
+def reduction_full(B):
+    """Calculate a Minkowski-reduced lattice basis (3D reduction)."""
     H = np.eye(3).astype(np.int)
     norms = np.linalg.norm(B, axis=1)
 
@@ -92,7 +65,7 @@ def minkowski_reduce(B):
 
         # Gauss-reduce smallest two vectors
         hw = H[2]
-        hu, hv = gauss(B, H[0], H[1])
+        hu, hv = reduction_gauss(B, H[0], H[1])
         H[0] = hu
         H[1] = hv
 
@@ -117,4 +90,52 @@ def minkowski_reduce(B):
         if norms[2] >= norms[1] or (nb == 0).all():
             return R, H
 
-    raise RuntimeError("Minkowski basis not found after %d iterations" % max_it)
+    raise RuntimeError("Reduced basis not found after %d iterations" % max_it)
+
+
+def minkowski_reduce(cell, pbc=None):
+    """Calculate a Minkowski-reduced lattice basis.  The reduced basis
+    has the shortest possible vector lengths and has
+    norm(a) <= norm(b) <= norm(c).
+
+    Implements the method described in:
+
+    Low-dimensional Lattice Basis Reduction Revisited
+    Nguyen, Phong Q. and Stehlé, Damien,
+    ACM Trans. Algorithms 5(4) 46:1--46:48, 2009
+    https://doi.org/10.1145/1597036.1597050
+
+    Parameters:
+
+    B: array
+        The lattice basis to reduce (in row-vector format).
+    pbc: array, optional
+        The periodic boundary conditions of the cell (Default `None`).
+        If `pbc` is provided, only periodic cell vectors are reduced.
+
+    Returns:
+
+    R: array
+        The reduced lattice basis.
+    H: array
+        The unimodular matrix transformation (R = H @ B).
+    """
+    if pbc is None:
+        dim = 3
+    else:
+        dim = np.sum(pbc)
+
+    mr_path = np.eye(3).astype(np.int)
+    if dim <= 1:
+        mr_cell = np.copy(cell)
+    elif dim == 2:
+        indices = np.argsort(pbc, kind='merge')[::-1]    # stable sort
+        _cell = cell[indices]
+        hu, hv = reduction_gauss(_cell, mr_path[0], mr_path[1])
+        mr_path[indices[0]] = hu
+        mr_path[indices[1]] = hv
+        mr_cell = np.dot(mr_path, cell)
+    elif dim == 3:
+        _, mr_path = reduction_full(cell)
+        mr_cell = np.dot(mr_path, cell)
+    return mr_cell, mr_path

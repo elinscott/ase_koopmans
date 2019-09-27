@@ -156,6 +156,10 @@ class MPI4PY:
 
     def broadcast(self, a, root):
         b = self.comm.bcast(a, root=root)
+        if self.rank == root:
+            if np.isscalar(a):
+                return a
+            return
         return self._returnval(a, b)
 
 
@@ -177,7 +181,10 @@ elif '_asap' in sys.builtin_module_names:
 elif '_gpaw' in sys.modules:
     # Same thing as above but for the module version
     import _gpaw
-    world = getattr(_gpaw, 'Communicator', None)
+    try:
+        world = _gpaw.Communicator()
+    except AttributeError:
+        pass
 elif 'mpi4py' in sys.modules:
     world = MPI4PY()
 

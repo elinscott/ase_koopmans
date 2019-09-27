@@ -200,7 +200,7 @@ class EquationOfState:
 
         eos = EquationOfState(volumes, energies, eos='murnaghan')
         v0, e0, B = eos.fit()
-        eos.plot()
+        eos.plot(show=True)
 
     """
     def __init__(self, volumes, energies, eos='sj'):
@@ -300,7 +300,7 @@ class EquationOfState:
 
         return self.eos_string, self.e0, self.v0, self.B, x, y, self.v, self.e
 
-    def plot(self, filename=None, show=None, ax=None):
+    def plot(self, filename=None, show=False, ax=None):
         """Plot fitted energy curve.
 
         Uses Matplotlib to plot the energy curve.  Use *show=True* to
@@ -308,9 +308,6 @@ class EquationOfState:
         *filename='abc.eps'* to save the figure to a file."""
 
         import matplotlib.pyplot as plt
-
-        if filename is None and show is None:
-            show = True
 
         plotdata = self.getplotdata()
 
