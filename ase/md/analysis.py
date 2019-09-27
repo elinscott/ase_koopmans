@@ -7,7 +7,7 @@ class DiffusionCoefficient:
 
         This class calculates the Diffusion Coefficient for the given Trajectory using the Einstein Equation:
         
-        :math: `\left \langle  \left | r(t) - r(0)\right | ^{2} \right \rangle  = 2nDt` 
+        :math: `\left \langle  \left | r(t) - r(0)\right | ^{2} \right \rangle  = 2nDt`
         
         where r(t) is the position of atom at time t, n is the degrees of freedom and D is the Diffusion Coefficient
         
