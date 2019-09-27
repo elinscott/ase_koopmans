@@ -19,8 +19,8 @@ def read_magres(fd, include_unrecognised=False):
         Reader function for magres files.
     """
 
-    blocks_re = re.compile(r'[\[<](?P<block_name>.*?)[>\]](.*?)[<\[]/' +
-                           r'(?P=block_name)[\]>]', re.M | re.S)
+    blocks_re = re.compile(r'[\[<](?P<block_name>.*?)[>\]](.*?)[<\[]/'
+                           + r'(?P=block_name)[\]>]', re.M | re.S)
 
     """
     Here are defined the various functions required to parse
@@ -123,6 +123,10 @@ def read_magres(fd, include_unrecognised=False):
 
         name, records = block
 
+        # 3x3 tensor
+        def ntensor33(name):
+            return lambda d: {name: tensor33([float(x) for x in data])}
+
         # Atom label, atom index and 3x3 tensor
         def sitensor33(name):
             return lambda d: {'atom': {'label': data[0],
@@ -138,6 +142,7 @@ def read_magres(fd, include_unrecognised=False):
                               name: tensor33([float(x) for x in data[4:]])}
 
         tags = {'ms': sitensor33('sigma'),
+                'sus': ntensor33('S'),
                 'efg': sitensor33('V'),
                 'efg_local': sitensor33('V'),
                 'efg_nonlocal': sitensor33('V'),
@@ -322,29 +327,25 @@ def read_magres(fd, include_unrecognised=False):
     # Now for the magres specific stuff
     li_list = list(zip(labels, indices))
     mprops = {
-        'ms': ('sigma', False),
-        'efg': ('V', False),
-        'isc': ('K', True)}
-    # (matrix name, is pair interaction) for various magres quantities
+        'ms': ('sigma', 1),
+        'sus': ('S', 0),
+        'efg': ('V', 1),
+        'isc': ('K', 2)}
+    # (matrix name, number of atoms in interaction) for various magres quantities
 
-    def create_magres_array(u, block):
+    def create_magres_array(order, block):
 
-        # This bit to keep track of tags
-        u0 = u.split('_')[0]
-        if u0 not in mprops:
-            raise RuntimeError('Invalid data in magres block')
-
-        mn = mprops[u0][0]
-        is_pair = mprops[u0][1]
-
-        if not is_pair:
+        if order == 1:
             u_arr = [None] * len(li_list)
-        else:
+        elif order == 2:
             u_arr = [[None] * (i + 1) for i in range(len(li_list))]
+        else:
+            raise ValueError(
+                'Invalid order value passed to create_magres_array')
 
         for s in block:
             # Find the atom index/indices
-            if not is_pair:
+            if order == 1:
                 # First find out which atom this is
                 at = (s['atom']['label'], s['atom']['index'])
                 try:
@@ -368,8 +369,23 @@ def read_magres(fd, include_unrecognised=False):
         if 'units' in data_dict['magres']:
             atoms.info['magres_units'] = dict(data_dict['magres']['units'])
             for u in atoms.info['magres_units']:
-                u_arr = create_magres_array(u, data_dict['magres'][u])
-                atoms.new_array(u, u_arr)
+                # This bit to keep track of tags
+                u0 = u.split('_')[0]
+
+                if u0 not in mprops:
+                    raise RuntimeError('Invalid data in magres block')
+
+                mn, order = mprops[u0]
+
+                if order > 0:
+                    u_arr = create_magres_array(order, data_dict['magres'][u])
+                    atoms.new_array(u, u_arr)
+                else:
+                    atoms.info['magres_data'] = atoms.info.get('magres_data',
+                                                               {})
+                    # We only take element 0 because for this sort of data
+                    # there should be only that
+                    atoms.info['magres_data'][u] = data_dict['magres'][u][0]
 
     if 'calculation' in data_dict:
         atoms.info['magresblock_calculation'] = data_dict['calculation']
