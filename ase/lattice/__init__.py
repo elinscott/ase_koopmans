@@ -1060,17 +1060,17 @@ class SQR(BravaisLattice):
                          [0, 0, 0.]])
 
 
-@bravaisclass('primitive line', 'xgonal', None, 'l', ('a'),
-              [['LINE', 'GX', 'GX', {'G': [0, 0, 0], 'X': [0, 0, 0.5]}]],
+@bravaisclass('primitive line', '1d', None, '?', ('a',),
+              [['LINE', 'GX', 'GX', {'G': [0, 0, 0], 'X': [0.5, 0, 0]}]],
               ndim=1)
 class LINE(BravaisLattice):
     def __init__(self, a, **kwargs):
         BravaisLattice.__init__(self, a=a, **kwargs)
 
     def _cell(self, a):
-        return np.array([[0.0, 0.0, 0.0],
+        return np.array([[a, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
-                         [0.0, 0.0, a]])
+                         [0.0, 0.0, 0.0]])
 
 
 def celldiff(cell1, cell2):
@@ -1102,7 +1102,7 @@ def identify_lattice(cell, eps=2e-4, *, pbc=None):
     """Find Bravais lattice representing this cell.
 
     Returns Bravais lattice object representing the cell along with
-    and operation that, applied to the cell, yields the same lengths
+    an operation that, applied to the cell, yields the same lengths
     and angles as the Bravais lattice object."""
 
     if pbc is None:
@@ -1111,8 +1111,17 @@ def identify_lattice(cell, eps=2e-4, *, pbc=None):
     npbc = sum(pbc)
 
     if npbc == 1:
-        a = cell[2, 2]
-        return LINE(a), np.eye(3)
+        i = np.argmax(pbc)  # index of periodic axis
+        a = cell[i, i]
+        if a < 0 or cell[i, [i - 1, i - 2]].any():
+            raise ValueError('Not a 1-d cell ASE can handle: {cell}.')
+        if i == 0:
+            op = np.eye(3)
+        elif i == 1:
+            op = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+        else:
+            op = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+        return LINE(a), op
 
     if npbc == 2:
         lat, op = get_2d_bravais_lattice(cell, eps, pbc=pbc)
@@ -1124,7 +1133,6 @@ def identify_lattice(cell, eps=2e-4, *, pbc=None):
                          'along two first axes or, '
                          'along the thrid axis.  '
                          'Got pbc={}'.format(pbc))
-
 
     from ase.geometry.bravais_type_engine import niggli_op_table
 
