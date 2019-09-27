@@ -456,10 +456,6 @@ def write_magres(fd, image):
     if 'magres_units' in image.info:
 
         image_data['magres'] = {'units': []}
-        mprops = {
-            'ms': ('sigma', False),
-            'efg': ('V', False),
-            'isc': ('K', True)}
 
         for u in image.info['magres_units']:
             # Get the type
