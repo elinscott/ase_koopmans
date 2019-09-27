@@ -3,7 +3,8 @@ import numpy as np
 class DiffusionCoefficient:
 
     def __init__(self, traj, timestep, atom_indices=None, molecule=False):
-        '''
+        """
+
         This class calculates the Diffusion Coefficient for the given Trajectory using the Einstein Equation:
         
         :math: `\left \langle  \left | r(t) - r(0)\right | ^{2} \right \rangle  = 2nDt` 
@@ -24,7 +25,8 @@ class DiffusionCoefficient:
                 The indices of atoms whose Diffusion Coefficient is to be calculated explicitly
             molecule (Boolean)
                 Indicate if we are studying a molecule instead of atoms, therefore use centre of mass in calculations
-        '''
+ 
+        """
 
         self.traj = traj
         self.timestep = timestep
@@ -46,8 +48,8 @@ class DiffusionCoefficient:
         self.no_of_types_of_atoms = len(self.types_of_atoms)
 
     def _initialise_arrays(self, ignore_n_images, number_of_segments):
+        """
 
-        '''
         Private function to initialise data storage objects. This includes objects to store the total timesteps
         sampled, the average diffusivity for species in any given segment, and objects to store gradient and intercept from fitting.
 
@@ -56,7 +58,8 @@ class DiffusionCoefficient:
                 Number of images you want to ignore from the start of the trajectory, e.g. during equilibration
             number_of_segments (Int): 
                 Divides the given trajectory in to segments to allow statistical analysis
-        '''
+        
+        """
 
         from math import floor
         total_images = len(self.traj) - ignore_n_images
@@ -74,7 +77,8 @@ class DiffusionCoefficient:
         self.cont_xyz_segment_ensemble_average = 0
 
     def calculate(self, ignore_n_images=0, number_of_segments=1):
-        '''
+        """
+        
         Calculate the diffusion coefficients, using the previously supplied data. The user can break the data into segments and 
         take the average over these trajectories, therefore allowing statistical analysis and derivation of standard deviations.
         Option is also provided to ignore initial images if data is perhaps unequilibrated initially.
@@ -84,7 +88,8 @@ class DiffusionCoefficient:
                 Number of images you want to ignore from the start of the trajectory, e.g. during equilibration
             number_of_segments (Int): 
                 Divides the given trajectory in to segments to allow statistical analysis
-        '''
+
+        """
 
         # Setup all the arrays we need to store information
         self._initialise_arrays(ignore_n_images, number_of_segments)
@@ -133,8 +138,7 @@ class DiffusionCoefficient:
                                                                                                             self.xyz_segment_ensemble_average[segment_no][sym_index][:])
 
     def _fit_data(self, x, y):
-
-        '''
+        """
         Private function that returns slope and intercept for linear fit to mean square diffusion data
 
 
@@ -143,7 +147,8 @@ class DiffusionCoefficient:
                 Linear list of timesteps in the calculation
             y (Array of floats): 
                 Mean square displacement as a function of time.
-        '''
+        
+        """
 
         # Simpler implementation but disabled as fails Conda tests.
         # from scipy.stats import linregress
@@ -162,8 +167,8 @@ class DiffusionCoefficient:
         return slopes, intercepts
 
     def get_diffusion_coefficients(self, stddev=False):
-
-        '''
+        """
+        
         Returns diffusion coefficients for atoms (in alphabetical order) along with standard deviation.
         
         All data is currently passed out in units of Å^2/<ASE time units>
@@ -173,7 +178,8 @@ class DiffusionCoefficient:
         Parameters:
             stddev (Boolean)
                 Whether to return the standard deviation data.
-        '''
+        
+        """
 
         # Safety check, so we don't return garbage.
         if len(self.slopes) == 0:
@@ -188,8 +194,8 @@ class DiffusionCoefficient:
         return slopes
 
     def plot(self, ax=None, show=False):
-
-        '''
+        """
+        
         Auto-plot of Diffusion Coefficient data. Provides basic framework for visualising analysis.
  
          Parameters:
@@ -197,7 +203,8 @@ class DiffusionCoefficient:
                 Axes object on to which plot can be created
             show (Boolean)
                 Whether or not to show the created plot. Default: False
-        '''
+        
+        """
 
         # Necessary if user hasn't supplied an axis. 
         import matplotlib.pyplot as plt
@@ -260,10 +267,11 @@ class DiffusionCoefficient:
             plt.show()
 
     def print_data(self):
-
-        '''
+        """
+        
         Output of statistical analysis for Diffusion Coefficient data. Provides basic framework for understanding calculation.
-        '''
+        
+        """
 
         from ase.units import fs as fs_conversion
 
