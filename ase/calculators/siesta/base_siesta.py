@@ -12,7 +12,8 @@ http://www.uam.es/departamentos/ciencias/fismateriac/siesta
 """
 
 from __future__ import print_function
-import os, warnings
+import os
+import warnings
 from os.path import join, isfile, islink
 import numpy as np
 import shutil
@@ -882,12 +883,14 @@ class BaseSiesta(FileIOCalculator):
         bandpath = self['bandpath']
         if bandpath is None:
             return
+        
+        if len(bandpath.kpts)<1:
+            return
 
-        path = self['bandpath']
         fname = self.getpath(ext='bands')
         with open(fname) as fd:
             kpts, energies, efermi = read_bands_file(fd)
-        bs = resolve_band_structure(path, kpts, energies, efermi)
+        bs = resolve_band_structure(bandpath, kpts, energies, efermi)
         self.results['bandstructure'] = bs
 
     def band_structure(self):
