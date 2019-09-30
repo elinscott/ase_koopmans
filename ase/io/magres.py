@@ -12,6 +12,7 @@ from collections import OrderedDict
 import ase.units
 from ase.atoms import Atoms
 from ase.spacegroup import Spacegroup
+from ase.calculators.singlepoint import SinglePointDFTCalculator
 
 _mprops = {
     'ms': ('sigma', 1),
@@ -383,11 +384,15 @@ def read_magres(fd, include_unrecognised=False):
                                                 data_dict['magres'][u])
                     atoms.new_array(u, u_arr)
                 else:
-                    atoms.info['magres_data'] = atoms.info.get('magres_data',
-                                                               {})
-                    # We only take element 0 because for this sort of data
-                    # there should be only that
-                    atoms.info['magres_data'][u] = data_dict['magres'][u][0][mn]
+                    # atoms.info['magres_data'] = atoms.info.get('magres_data',
+                    #                                            {})
+                    # # We only take element 0 because for this sort of data
+                    # # there should be only that
+                    # atoms.info['magres_data'][u] = data_dict['magres'][u][0][mn]
+                    if atoms.calc is None:
+                        calc = SinglePointDFTCalculator(atoms)
+                        atoms.set_calculator(calc)
+                        atoms.calc.results[u] = data_dict['magres'][u][0][mn]
 
     if 'calculation' in data_dict:
         atoms.info['magresblock_calculation'] = data_dict['calculation']
@@ -469,7 +474,7 @@ def write_magres(fd, image):
                 if order == 0:
                     # The case of susceptibility
                     tens = {
-                        mn: image.info['magres_data'][u]
+                        mn: image.calc.results[u]
                     }
                     image_data['magres'][u] = tens
                 else:
