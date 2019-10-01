@@ -628,13 +628,13 @@ def output_column_format(atoms, columns, arrays,
     """
     Helper function to build extended XYZ comment line
     """
-    fmt_map = {'d': ('R', '%16.8f '),
-               'f': ('R', '%16.8f '),
-               'i': ('I', '%8d '),
-               'O': ('S', '%s '),
-               'S': ('S', '%s '),
-               'U': ('S', '%s '),
-               'b': ('L', ' %.1s ')}
+    fmt_map = {'d': ('R', '%16.8f'),
+               'f': ('R', '%16.8f'),
+               'i': ('I', '%8d'),
+               'O': ('S', '%s'),
+               'S': ('S', '%s'),
+               'U': ('S', '%s'),
+               'b': ('L', ' %.1s')}
 
     # NB: Lattice is stored as tranpose of ASE cell,
     # with Fortran array ordering
@@ -689,7 +689,7 @@ def output_column_format(atoms, columns, arrays,
     comment_str += ' ' + key_val_dict_to_str(info, tolerant=tolerant)
 
     dtype = np.dtype(dtypes)
-    fmt = ''.join(formats) + '\n'
+    fmt = ' '.join(formats) + '\n'
 
     return comment_str, property_ncols, dtype, fmt
 
