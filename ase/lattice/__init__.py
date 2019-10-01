@@ -1046,7 +1046,7 @@ class CRECT(BravaisLattice):
         return points
 
 
-@bravaisclass('primitive square', 'tetragonal', None, 'tp', ('a'),
+@bravaisclass('primitive square', 'tetragonal', None, 'tp', ('a',),
               [['SQR', 'GMX', 'MGXM',
                 get_subset_points('GMX', sc_special_points['tetragonal'])]],
               ndim=2)
@@ -1060,7 +1060,7 @@ class SQR(BravaisLattice):
                          [0, 0, 0.]])
 
 
-@bravaisclass('primitive line', '1d', None, '?', ('a',),
+@bravaisclass('primitive line', 'line', None, '?', ('a',),
               [['LINE', 'GX', 'GX', {'G': [0, 0, 0], 'X': [0.5, 0, 0]}]],
               ndim=1)
 class LINE(BravaisLattice):
