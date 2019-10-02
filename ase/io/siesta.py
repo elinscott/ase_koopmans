@@ -1,7 +1,7 @@
 """Helper functions for read_fdf."""
 from os import fstat
 from re import compile
-from ase.utils import basestring, reader
+from ase.utils import reader
 
 
 _label_strip_re = compile(r'[\s._-]')
