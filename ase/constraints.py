@@ -1133,8 +1133,8 @@ class FixParametricRelations(FixConstraint):
         The constraints linearly maps the full 3N degrees of freedom, where N is number of active
         lattice vectors/atoms onto a reduced subset of M free parameters, where M <= 3*N. The
         Jacobian and constant shift vectors are generated from a list of mathematical expressions
-        passed to the constraint. The expressions must be a list of length 3*N and elements must
-        be ordered as:
+        passed to the constraint. The expressions must be a list like object of size 3*N and
+        elements must be ordered as:
         [n_0,i; n_0,j; n_0,k; n_1,i; n_1,j; .... ; n_N-1,i; n_N-1,j; n_N-1,k],
         where i, j, and k are the first, second and third component of the atomic position/lattice
         vector. Currently only linear operations are allowed to be included in the expressions so
@@ -1555,8 +1555,8 @@ class FixCartesianParametricRelations(FixParametricRelations):
         if self.Jacobian is None:
             forces[self.indices] = np.zeros(forces[self.indices].shape)
         else:
-            forces[self.indices] = self.Jacobian.T @ forces[self.indices].flatten()
-            forces[self.indices] = (self.Jacobian_inv.T @ forces[self.indices]).reshape(-1, 3)
+            forces_reduced = self.Jacobian.T @ forces[self.indices].flatten()
+            forces[self.indices] = (self.Jacobian_inv.T @ forces_reduced).reshape(-1, 3)
 
     def adjust_cell(self, atoms, cell):
         """Adjust the cell of the atoms to match the constraints"""
@@ -1574,9 +1574,28 @@ class FixCartesianParametricRelations(FixParametricRelations):
         if self.Jacobian is None:
             stress[self.cell_indices] = np.zeros(stress[self.cell_indices].shape)
         else:
-            stress[self.cell_indices] = self.Jacobian.T @ stress[self.cell_indices].flatten()
-            stress[self.cell_indices] = (self.Jacobian_inv.T @ stress[self.cell_indices]).reshape(-1, 3)
+            if stress.shape[0] == 6:
+                is_vogit = True
+                xx, yy, zz, yz, xz, xy = stress
+                stress_3x3 = np.array(
+                    [
+                        (xx, xy, xz),
+                        (xy, yy, yz),
+                        (xz, yz, zz)
+                    ]
+                )
+            else:
+                is_vogit = False
+                stress_3x3 = stress.copy()
 
+            stress_reduced = self.Jacobian.T @ stress_3x3[self.cell_indices].flatten()
+            stress_3x3[self.cell_indices] = (self.Jacobian_inv.T @ stress_reduced).reshape(-1, 3)
+
+            if is_vogit:
+                stress[:] = np.array([stress_3x3[0, 0], stress_3x3[1, 1], stress_3x3[2, 2],
+                                      stress_3x3[1, 2], stress_3x3[0, 2], stress_3x3[0, 1]])
+            else:
+                stress[:, :] = stress_3x3[:,:]
 
 class Hookean(FixConstraint):
     """Applies a Hookean restorative force between a pair of atoms, an atom

@@ -164,12 +164,12 @@ def read_aims(filename, apply_constraints=True):
     if periodic.any():
         atoms.set_cell(cell)
         atoms.set_pbc(periodic)
-    if len(fix) and apply_constraints:
+    if len(fix):
         atoms.set_constraint([FixAtoms(indices=fix)] + fix_cart + fix_params)
     else:
         atoms.set_constraint(fix_cart + fix_params)
 
-    if fix_params:
+    if fix_params and apply_constraints:
         atoms.set_positions(atoms.get_positions())
     return atoms
 
