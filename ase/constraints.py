@@ -1117,21 +1117,6 @@ class FixInternals(FixConstraint):
 
 
 class FixParametricRelations(FixConstraint):
-    """Constrains the motion of atoms along a set of user defined parameters and expressions
-
-    These constraints are based off the work in: https://arxiv.org/abs/1908.01610
-
-    Attributes:
-        indices (list of int): indices of the constrained atoms (if not None or empty then cell_indicies must be None or Empty)
-        cell_indicies (list of int): The indices of the constrained lattice vectors (if not None then indicies must be None or Empty)
-        inds (list of ints): The indices's object that should be used
-        params (list of str): parameters used in the parametric representation
-        expressions (list of str): expressions used to convert from the parametric to the real space representation
-        eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
-        Jacobian (np.ndarray(dtype=float, shape = (3*len(self.inds), len(self.params))): Jacobian of coordinate transformation
-        Jacobian_inv (np.ndarray(dtype=float, shape = (len(self.params), 3*len(self.inds))): Left generalized inverse of A
-        const_shift (np.ndarray(dtype=float, shape = (len(self.params))): Constant value additions to coordinate transformation
-    """
 
     def __init__(
         self,
@@ -1141,7 +1126,44 @@ class FixParametricRelations(FixConstraint):
         expressions,
         eps=1e-12,
     ):
-        """Initializer"""
+        """Constrains the motion of atoms along a set of user defined parameters and expressions
+
+        These constraints are based off the work in: https://arxiv.org/abs/1908.01610
+
+        The constraints linearly maps the full 3N degrees of freedom, where N is number of active
+        lattice vectors/atoms onto a reduced subset of M free parameters, where M <= 3*N. The
+        Jacobian and constant shift vectors are generated from a list of mathematical expressions
+        passed to the constraint. The expressions must be a list of length 3*N and elements must
+        be ordered as:
+        [n_0,i; n_0,j; n_0,k; n_1,i; n_1,j; .... ; n_N-1,i; n_N-1,j; n_N-1,k],
+        where i, j, and k are the first, second and third component of the atomic position/lattice
+        vector. Currently only linear operations are allowed to be included in the expressions so
+        only terms like:
+            - const * param_0
+            - sqrt[const] * param_1
+            - const * param_0 +/- const * param_1 +/- ... +/- const * param_M
+        where const is any real number and param_0, param_1, ..., param_M are the parameters passed in
+        params, are allowed.
+
+        It would be possible to extend these constraints to allow for other types of expressions
+        if functionality to update the Jacobian at each position update was included. This would
+        require expressions to be stored as mathematical functions and evaluated at each step, and
+        creating the Jacobian at each adjust_positions call. This is currently NOT supported, and
+        there are no plans to implement it in the future.
+
+
+        Args:
+            indices (list of int): indices of the constrained atoms
+                (if not None or empty then cell_indicies must be None or Empty)
+            cell_indicies (list of int): The indices of the constrained lattice vectors
+                (if not None then indicies must be None or Empty)
+            inds (list of ints): The indices's object that should be used
+            params (list of str): parameters used in the parametric representation
+            expressions (list of str): expressions used to convert from the parametric to the real space
+                representation
+            eps (float): a small number to compare the similarity of numbers and set the precision used
+                to generate the constraint expressions
+        """
         import math
         # set _eval to be a limited version of itself.
         self.max_value = 1e10
@@ -1407,24 +1429,6 @@ class FixParametricRelations(FixConstraint):
 
 
 class FixScaledParametricRelations(FixParametricRelations):
-    """Constrains the motion of atoms along a set of user defined parameters and expressions
-
-    This performs the transformations for scaled coordinates
-
-    These constraints are based off the work in: https://arxiv.org/abs/1908.01610
-
-    Because this is in fractional coordinates cell_indicies must be None or Empty
-
-    Attributes:
-        indices (list of int): indices of the constrained atoms (if not None or empty then cell_indicies must be None or Empty)
-        inds (list of ints): The indices's object that should be used
-        params (list of str): parameters used in the parametric representation
-        expressions (list of str): expressions used to convert from the parametric to the real space representation
-        eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
-        A (np.ndarray(dtype=float, shape = (3*len(self.inds), len(self.params))): Jacobian of coordinate transformation
-        A_inv (np.ndarray(dtype=float, shape = (len(self.params), 3*len(self.inds))): Left generalized inverse of A
-        B (np.ndarray(dtype=float, shape = (len(self.params))): Constant value additions to coordinate transformation
-    """
 
     def __init__(
         self,
@@ -1433,7 +1437,11 @@ class FixScaledParametricRelations(FixParametricRelations):
         expressions,
         eps=1e-12,
     ):
-        """Initializer"""
+        """The fractional coordinate version of FixParametricRelations
+
+        All arguments are the same, but since this is for fractional coordinates,
+        cell_indicies must be None.
+        """
         super(FixScaledParametricRelations, self).__init__(
             indices,
             None,
@@ -1502,23 +1510,6 @@ class FixScaledParametricRelations(FixParametricRelations):
 
 
 class FixCartesianParametricRelations(FixParametricRelations):
-    """Constrains the motion of atoms along a set of user defined parameters and expressions
-
-    This performs the transformations for Cartesian coordinates
-
-    These constraints are based off the work in: https://arxiv.org/abs/1908.01610
-
-    Attributes:
-        indices (list of int): indices of the constrained atoms (if not None or empty then cell_indicies must be None or Empty)
-        cell_indicies (list of int): The indices of the constrained lattice vectors (if not None then indicies must be None or Empty)
-        inds (list of ints): The indices's object that should be used
-        params (list of str): parameters used in the parametric representation
-        expressions (list of str): expressions used to convert from the parametric to the real space representation
-        eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
-        A (np.ndarray(dtype=float, shape = (3*len(self.inds), len(self.params))): Jacobian of coordinate transformation
-        A_inv (np.ndarray(dtype=float, shape = (len(self.params), 3*len(self.inds))): Left generalized inverse of A
-        B (np.ndarray(dtype=float, shape = (len(self.params))): Constant value additions to coordinate transformation
-    """
 
     def __init__(
         self,
@@ -1528,7 +1519,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
         expressions,
         eps=1e-12,
     ):
-        """Initializer"""
+        """The Cartesian coordinate version of FixParametricRelations"""
         super(FixCartesianParametricRelations, self).__init__(
             indices,
             cell_indices,
