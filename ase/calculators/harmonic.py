@@ -33,45 +33,56 @@ class EinsteinCalculator(Calculator):
         energy = sum(self.k / 2.0 * np.linalg.norm(disps, axis=1)**2)
         return energy, forces
 
+    def get_free_energy(self, T, method='classical'):
+        """Get analytic vibrational free energy for Einstein crystal
+
+        Parameters
+        ----------
+        T : float
+            temperature (K)
+        method : str
+            method for free energy computation; 'classical' or 'QM'.
+        """
+        F = 0.0
+        for m, c in np.unique(self.atoms.get_masses(), return_counts=True):
+            F += c * EinsteinCalculator.compute_free_energy(self.k, m, T, method)
+        return F
+
     @staticmethod
-    def get_free_energy(self, k, m, T, method='classical'):
-        return get_einstein_free_energy(k, m, T, method)
+    def compute_free_energy(k, m, T, method='classical'):
+        """ Get free energy (per atom) for an Einstein crystal.
 
+        Free energy of a Einstein solid given by classical (1) or QM (2)
+        1.    F_E = 3NkbT log( hw/kbT )
+        2.    F_E = 3NkbT log( 1-exp(hw/kbT) ) + zeropoint
 
-def get_einstein_free_energy(k, m, T, method='classical'):
-    """ Get free energy (per atom) for an Einstein crystal.
+        Parameters
+        -----------
+        k : float
+            spring constant (eV/A^2)
+        m : float
+            mass (grams/mole or AMU)
+        T : float
+            temperature (K)
+        method : str
+            method for free energy computation, classical or QM.
 
-    Free energy of a Einstein solid given by classical (1) or QM (2)
-    1.    F_E = 3NkbT log( hw/kbT )
-    2.    F_E = 3NkbT log( 1-exp(hw/kbT) ) + zeropoint
+        Returns
+        --------
+        float
+            free energy of the Einstein crystal (eV/atom)
+        """
+        assert method in ['classical', 'QM']
 
-    Parameters
-    -----------
-    k : float
-        spring constant (eV/A^2)
-    m : float
-        mass (grams/mole or AMU)
-    T : float
-        temperature (K)
-    method : str
-        method for free energy computation, classical or QM.
+        hbar = units._hbar * units.J  # eV/s
+        m = m / units.kg              # mass kg
+        k = k * units.m**2 / units.J  # spring constant J/m2
+        omega = np.sqrt(k / m)        # angular frequency 1/s
 
-    Returns
-    --------
-    float
-        free energy of the Einstein crystal (eV/atom)
-    """
-    assert method in ['classical', 'QM']
+        if method == 'classical':
+            F_einstein = 3 * units.kB * T * np.log(hbar * omega / (units.kB * T))
+        elif method == 'QM':
+            log_factor = np.log(1.0 - np.exp(-hbar * omega / (units.kB * T)))
+            F_einstein = 3 * units.kB * T * log_factor + 1.5 * hbar * omega
 
-    hbar = units._hbar * units.J  # eV/s
-    m = m / units.kg              # mass kg
-    k = k * units.m**2 / units.J  # spring constant J/m2
-    omega = np.sqrt(k / m)        # angular frequency 1/s
-
-    if method == 'classical':
-        F_einstein = 3 * units.kB * T * np.log(hbar * omega / (units.kB * T))
-    elif method == 'QM':
-        log_factor = np.log(1.0 - np.exp(-hbar * omega / (units.kB * T)))
-        F_einstein = 3 * units.kB * T * log_factor + 1.5 * hbar * omega
-
-    return F_einstein
+        return F_einstein
