@@ -1145,6 +1145,10 @@ class FixParametricRelations(FixConstraint):
         where const is any real number and param_0, param_1, ..., param_M are the parameters passed in
         params, are allowed.
 
+        Currently the constraint is set up to handle either atomic positions or lattice vectors
+        at one time, but not both. To do both simply add a two constraints for each set. This is
+        done to keep the mathematics behind the operations separate.
+
         It would be possible to extend these constraints to allow for other types of expressions
         if functionality to update the Jacobian at each position update was included. This would
         require expressions to be stored as mathematical functions and evaluated at each step, and
@@ -1497,17 +1501,6 @@ class FixScaledParametricRelations(FixParametricRelations):
             scaled_forces = (self.Jacobian_inv.T @ scaled_forces).reshape(-1, 3)
             forces[self.indices] = atoms.cell.scaled_positions(scaled_forces)
 
-    # def todict(self):
-    #     """Create a dictionary representation of the constraint"""
-    #     dct = super(FixScaledParametricRelations, self).todict()
-    #     dct["name"] = "FixScaledParametricRelations"
-    #     return dct
-
-    # def __repr__(self):
-    #     """The str representation of the constraint"""
-    #     rep = super(FixScaledParametricRelations, self).__repr__()
-    #     return "FixScaledParametricRelations" + rep[22:]
-
 
 class FixCartesianParametricRelations(FixParametricRelations):
 
@@ -1583,19 +1576,6 @@ class FixCartesianParametricRelations(FixParametricRelations):
         else:
             stress[self.cell_indices] = self.Jacobian.T @ stress[self.cell_indices].flatten()
             stress[self.cell_indices] = (self.Jacobian_inv.T @ stress[self.cell_indices]).reshape(-1, 3)
-
-    # def todict(self):
-    #     """Create a dictionary representation of the constraint"""
-    #     dct = super(FixCartesianParametricRelations, self).todict()
-    #     dct["name"] = "FixCartesianParametricRelations"
-    #     dct["kwargs"]["cell_indices"] = self.cell_indices
-
-    #     return dct
-
-    # def __repr__(self):
-    #     """The str representation of the constraint"""
-    #     rep = super(FixCartesianParametricRelations, self).__repr__()
-    #     return "FixCartesianParametricRelations" + rep[22:]
 
 
 class Hookean(FixConstraint):
