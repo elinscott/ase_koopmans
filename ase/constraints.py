@@ -1224,7 +1224,7 @@ class FixParametricRelations(FixConstraint):
                 in_sec = [param in express_sec for param in param_dct]
                 n_params_in_sec = len(np.where(np.array(in_sec))[0])
                 if n_params_in_sec > 1:
-                    raise IOError("The FixParametricRelations expressions must be linear.")
+                    raise ValueError("The FixParametricRelations expressions must be linear.")
 
             expression = expression.lower()
             self.const_shift[expr_ind] = float(self.eval_expression(expression, param_dct))
