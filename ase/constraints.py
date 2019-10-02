@@ -1122,10 +1122,15 @@ class FixParametricRelations(FixConstraint):
     These constraints are based off the work in: https://arxiv.org/abs/1908.01610
 
     Attributes:
-        indices (list of int): indices of the constrained atoms
+        indices (list of int): indices of the constrained atoms (if not None or empty then cell_indicies must be None or Empty)
+        cell_indicies (list of int): The indices of the constrained lattice vectors (if not None then indicies must be None or Empty)
+        inds (list of ints): The indices's object that should be used
         params (list of str): parameters used in the parametric representation
         expressions (list of str): expressions used to convert from the parametric to the real space representation
         eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
+        Jacobian (np.ndarray(dtype=float, shape = (3*len(self.inds), len(self.params))): Jacobian of coordinate transformation
+        Jacobian_inv (np.ndarray(dtype=float, shape = (len(self.params), 3*len(self.inds))): Left generalized inverse of A
+        const_shift (np.ndarray(dtype=float, shape = (len(self.params))): Constant value additions to coordinate transformation
     """
 
     def __init__(
@@ -1143,7 +1148,7 @@ class FixParametricRelations(FixConstraint):
         self._eval = self.limit(max_=self.max_value)(self._eval)
 
         if indices and cell_indices:
-            raise AttributeError("Please use separate constraints for the lattice and atomic degrees of freedom.")
+            raise RuntimeError("Please use separate constraints for the lattice and atomic degrees of freedom.")
         elif indices:
             self.inds = indices
         else:
@@ -1160,11 +1165,11 @@ class FixParametricRelations(FixConstraint):
         self.eps = eps
         # To prevent burn attacks.
 
-        self.A = np.zeros((3*len(self.inds), len(self.params)))
-        self.B = np.zeros(3*len(self.inds))
+        self.Jacobian = np.zeros((3*len(self.inds), len(self.params)))
+        self.const_shift = np.zeros(3*len(self.inds))
 
         flat_expressions = np.array(expressions).flatten()
-        for ee, expression in enumerate(flat_expressions):
+        for expr_ind, expression in enumerate(flat_expressions):
             expression = expression.strip()
             expression = expression.replace("-", "+(-1.0)*")
 
@@ -1179,8 +1184,8 @@ class FixParametricRelations(FixConstraint):
             param_map = dict()
 
             # Construct a standardized param template for A/B filling
-            for pp, param in enumerate(self.params):
-                param_str = "param_" + int_fmt_str.format(pp)
+            for param_ind, param in enumerate(self.params):
+                param_str = "param_" + int_fmt_str.format(param_ind)
                 param_map[param] = param_str
                 param_dct[param_str] = 0.0
 
@@ -1190,39 +1195,39 @@ class FixParametricRelations(FixConstraint):
 
             # Partial linearity check
             for express_sec in expression.split("+"):
-                in_sec = [param in express_sec for param in param_dct.keys()]
+                in_sec = [param in express_sec for param in param_dct]
                 n_params_in_sec = len(np.where(np.array(in_sec))[0])
                 if n_params_in_sec > 1:
                     raise IOError("The FixParametricRelations expressions must be linear.")
 
             expression = expression.lower()
-            self.B[ee] = float(self.eval_expression(expression, param_dct))
+            self.const_shift[expr_ind] = float(self.eval_expression(expression, param_dct))
 
-            for pp in range(len(self.params)):
-                param_str = "param_" + int_fmt_str.format(pp)
+            for param_ind in range(len(self.params)):
+                param_str = "param_" + int_fmt_str.format(param_ind)
                 if param_str not in expression:
-                    self.A[ee, pp] = 0.0
+                    self.Jacobian[expr_ind, param_ind] = 0.0
                     continue
                 param_dct[param_str] = 1.0
                 test_1 = float(self.eval_expression(expression, param_dct))
-                test_1 -= self.B[ee]
-                self.A[ee, pp] = test_1
+                test_1 -= self.const_shift[expr_ind]
+                self.Jacobian[expr_ind, param_ind] = test_1
 
                 # Using math.pi to pass the flakes.py test. math is needed to evaluate the expressions,
                 # flake8 does not recognize it is used in that way
                 param_dct[param_str] = 2.0
                 test_2 = float(self.eval_expression(expression, param_dct))
-                test_2 -= self.B[ee]
+                test_2 -= self.const_shift[expr_ind]
                 if abs(test_2 / test_1 - 2.0) > eps:
                     raise IOError("The FixParametricRelations expressions must be linear.")
 
                 param_dct[param_str] = 0.0
 
-        if self.A.shape[-1] > 0:
-            self.A_inv = np.linalg.inv(self.A.T @ self.A) @ self.A.T
+        if self.Jacobian.shape[-1] > 0:
+            self.Jacobian_inv = np.linalg.inv(self.Jacobian.T @ self.Jacobian) @ self.Jacobian.T
         else:
-            self.A = None
-            self.A_inv = None
+            self.Jacobian = None
+            self.Jacobian_inv = None
 
     def eval_expression(self, expression, param_dct):
         """Parse a mathematical expression, after replacing parameters with the values in param_dict"""
@@ -1328,55 +1333,40 @@ class FixParametricRelations(FixConstraint):
 
     @property
     def expressions(self):
-        """Generate the expressions represented by the current self.A and self.B objects"""
+        """Generate the expressions represented by the current self.Jacobian and self.const_shift objects"""
         import math
         expressions = []
         per = int(round(-1 * math.log10(self.eps)))
-        fmt_str = "{:." + str(per + 1) + "f}"
-        for index, b in enumerate(self.B):
+        fmt_str = "{:." + str(per + 1) + "g}"
+        for index, shift_val in enumerate(self.const_shift):
             exp = ""
-            if self.A is not None:
-                a_vec = self.A[index]
+            if self.Jacobian is not None:
+                jacob_row = self.Jacobian[index]
             else:
-                a_vec = np.zeros(0)
-            if np.all(np.abs(a_vec) < self.eps) or np.abs(b) > self.eps:
-                exp += fmt_str.format(b)
+                jacob_row = np.zeros(0)
+            if np.all(np.abs(jacob_row) < self.eps) or np.abs(shift_val) > self.eps:
+                exp += fmt_str.format(shift_val)
             param_exp = ""
-            for param_index, a_val in enumerate(a_vec):
-                abs_a_val = np.abs(a_val)
-                if abs_a_val < self.eps:
+            for param_index, jacob_val in enumerate(jacob_row):
+                abs_jacob_val = np.round(np.abs(jacob_val), per + 1)
+                if abs_jacob_val < self.eps:
                     continue
 
                 param = self.params[param_index]
                 if param_exp or exp:
-                    if a_val > -1.0*self.eps:
+                    if jacob_val > -1.0*self.eps:
                         param_exp += " + "
                     else:
                         param_exp += " - "
-                elif (not exp) and (not param_exp) and (a_val < -1.0*self.eps):
+                elif (not exp) and (not param_exp) and (jacob_val < -1.0*self.eps):
                     param_exp += "-"
 
-                if np.abs(abs_a_val-1.0) <= self.eps:
+                if np.abs(abs_jacob_val-1.0) <= self.eps:
                     param_exp += "{:s}".format(param)
-                elif np.abs(abs_a_val-round(abs_a_val)) <= self.eps and abs_a_val > self.eps:
-                    param_exp += "{:d}.0*{:s}".format(int(round(abs_a_val)), param)
                 else:
-                    param_exp += (fmt_str + "*{:s}").format(abs_a_val, param)
+                    param_exp += (fmt_str + "*{:s}").format(abs_jacob_val, param)
 
             exp += param_exp
-
-            # Increase readability of expressions by removing trailing zeros
-            while "00 +" in exp:
-                exp = exp.replace("00 +", "0 +")
-
-            while "00 -" in exp:
-                exp = exp.replace("00 -", "0 -")
-
-            while "00*" in exp:
-                exp = exp.replace("00*", "0*")
-
-            while exp[-2:] == "00":
-                exp = exp[:-1]
 
             expressions.append(exp)
         return np.array(expressions).reshape((-1,3))
@@ -1390,6 +1380,7 @@ class FixParametricRelations(FixConstraint):
                 "params": self.params,
                 "expressions": self.expressions,
                 "eps": self.eps,
+                "name": type(self).__name__,
             }
         }
 
@@ -1407,7 +1398,8 @@ class FixParametricRelations(FixConstraint):
         else:
             params_str = "[]"
 
-        return 'FixParametricRelations({:s}, {:s}, ..., {:e})'.format(
+        return '{:s}({:s}, {:s}, ..., {:e})'.format(
+            type(self).__name__,
             indices_str,
             params_str,
             self.eps
@@ -1421,11 +1413,17 @@ class FixScaledParametricRelations(FixParametricRelations):
 
     These constraints are based off the work in: https://arxiv.org/abs/1908.01610
 
+    Because this is in fractional coordinates cell_indicies must be None or Empty
+
     Attributes:
-        indices (list of int): indices of the constrained atoms
+        indices (list of int): indices of the constrained atoms (if not None or empty then cell_indicies must be None or Empty)
+        inds (list of ints): The indices's object that should be used
         params (list of str): parameters used in the parametric representation
         expressions (list of str): expressions used to convert from the parametric to the real space representation
         eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
+        A (np.ndarray(dtype=float, shape = (3*len(self.inds), len(self.params))): Jacobian of coordinate transformation
+        A_inv (np.ndarray(dtype=float, shape = (len(self.params), 3*len(self.inds))): Left generalized inverse of A
+        B (np.ndarray(dtype=float, shape = (len(self.params))): Constant value additions to coordinate transformation
     """
 
     def __init__(
@@ -1444,23 +1442,23 @@ class FixScaledParametricRelations(FixParametricRelations):
             eps=eps,
         )
 
-    def adjust_contrvariant(self, cell, vecs, B):
+    def adjust_contravariant(self, cell, vecs, B):
         """Adjust the values of a set of vectors that are contravariant with the unit transformation"""
-        if self.A is None:
+        if self.Jacobian is None:
             scaled = B.reshape((-1,3))
         else:
             scaled = cell.scaled_positions(vecs).flatten()
-            scaled = self.A_inv @ (scaled - B)
-            scaled = ((self.A @ scaled) + B).reshape((-1,3))
+            scaled = self.Jacobian_inv @ (scaled - B)
+            scaled = ((self.Jacobian @ scaled) + B).reshape((-1,3))
 
         return cell.cartesian_positions(scaled)
 
     def adjust_positions(self, atoms, positions):
         """Adjust positions of the atoms to match the constraints"""
-        positions[self.indices] = self.adjust_contrvariant(
+        positions[self.indices] = self.adjust_contravariant(
             atoms.cell,
             positions[self.indices],
-            self.B,
+            self.const_shift,
         )
         positions[self.indices] = self.adjust_B(atoms.cell, positions[self.indices])
 
@@ -1469,38 +1467,38 @@ class FixScaledParametricRelations(FixParametricRelations):
         """Wraps the positions back to the unit cell and adjust B to keep track of this change"""
         fractional = cell.scaled_positions(positions)
         wrapped_fractional = (fractional % 1.0) % 1.0
-        self.B += np.round(wrapped_fractional - fractional).flatten()
+        self.const_shift += np.round(wrapped_fractional - fractional).flatten()
         return cell.cartesian_positions(wrapped_fractional)
 
     def adjust_momenta(self, atoms, momenta):
         """Adjust momenta of the atoms to match the constraints"""
-        momenta[self.indices] = self.adjust_contrvariant(
+        momenta[self.indices] = self.adjust_contravariant(
             atoms.cell,
             momenta[self.indices],
-            np.zeros(self.B.shape),
+            np.zeros(self.const_shift.shape),
         )
 
     def adjust_forces(self, atoms, forces):
         """Adjust forces of the atoms to match the constraints"""
-        if self.A is None:
+        if self.Jacobian is None:
             forces[self.indices] = np.zeros(forces[self.indices].shape)
         else:
             # Forces are coavarient to the coordinate transformation, use the inverse transformations
             scaled_forces = atoms.cell.cartesian_positions(forces[self.indices])
-            scaled_forces = self.A.T @ scaled_forces.flatten()
-            scaled_forces = (self.A_inv.T @ scaled_forces).reshape(-1, 3)
+            scaled_forces = self.Jacobian.T @ scaled_forces.flatten()
+            scaled_forces = (self.Jacobian_inv.T @ scaled_forces).reshape(-1, 3)
             forces[self.indices] = atoms.cell.scaled_positions(scaled_forces)
 
-    def todict(self):
-        """Create a dictionary representation of the constraint"""
-        dct = super(FixScaledParametricRelations, self).todict()
-        dct["name"] = "FixScaledParametricRelations"
-        return dct
+    # def todict(self):
+    #     """Create a dictionary representation of the constraint"""
+    #     dct = super(FixScaledParametricRelations, self).todict()
+    #     dct["name"] = "FixScaledParametricRelations"
+    #     return dct
 
-    def __repr__(self):
-        """The str representation of the constraint"""
-        rep = super(FixScaledParametricRelations, self).__repr__()
-        return "FixScaledParametricRelations" + rep[22:]
+    # def __repr__(self):
+    #     """The str representation of the constraint"""
+    #     rep = super(FixScaledParametricRelations, self).__repr__()
+    #     return "FixScaledParametricRelations" + rep[22:]
 
 
 class FixCartesianParametricRelations(FixParametricRelations):
@@ -1511,10 +1509,15 @@ class FixCartesianParametricRelations(FixParametricRelations):
     These constraints are based off the work in: https://arxiv.org/abs/1908.01610
 
     Attributes:
-        indices (list of int): indices of the constrained atoms
+        indices (list of int): indices of the constrained atoms (if not None or empty then cell_indicies must be None or Empty)
+        cell_indicies (list of int): The indices of the constrained lattice vectors (if not None then indicies must be None or Empty)
+        inds (list of ints): The indices's object that should be used
         params (list of str): parameters used in the parametric representation
         expressions (list of str): expressions used to convert from the parametric to the real space representation
         eps (float): a small number to compare the similarity of numbers and set the precision used to generate the constraint expressions
+        A (np.ndarray(dtype=float, shape = (3*len(self.inds), len(self.params))): Jacobian of coordinate transformation
+        A_inv (np.ndarray(dtype=float, shape = (len(self.params), 3*len(self.inds))): Left generalized inverse of A
+        B (np.ndarray(dtype=float, shape = (len(self.params))): Constant value additions to coordinate transformation
     """
 
     def __init__(
@@ -1534,74 +1537,74 @@ class FixCartesianParametricRelations(FixParametricRelations):
             eps=eps,
         )
 
-    def adjust_contrvariant(self, vecs, B):
+    def adjust_contravariant(self, vecs, B):
         """Adjust the values of a set of vectors that are contravariant with the unit transformation"""
-        if self.A is None:
+        if self.Jacobian is None:
             vecs += B.reshape((-1,3))
         else:
-            vecs = self.A_inv @ (vecs.flatten() - B)
-            vecs = ((self.A @ vecs) + B).reshape((-1, 3))
+            vecs = self.Jacobian_inv @ (vecs.flatten() - B)
+            vecs = ((self.Jacobian @ vecs) + B).reshape((-1, 3))
         return vecs
 
     def adjust_positions(self, atoms, positions):
         """Adjust positions of the atoms to match the constraints"""
         if not self.indices:
             return
-        positions[self.indices] = self.adjust_contrvariant(
+        positions[self.indices] = self.adjust_contravariant(
             positions[self.indices],
-            self.B,
+            self.const_shift,
         )
 
     def adjust_momenta(self, atoms, momenta):
         """Adjust momenta of the atoms to match the constraints"""
         if not self.indices:
             return
-        momenta[self.indices] = self.adjust_contrvariant(
+        momenta[self.indices] = self.adjust_contravariant(
             momenta[self.indices],
-            np.zeros(self.B.shape),
+            np.zeros(self.const_shift.shape),
         )
 
     def adjust_forces(self, atoms, forces):
         """Adjust forces of the atoms to match the constraints"""
         if not self.indices:
             return
-        if self.A is None:
+        if self.Jacobian is None:
             forces[self.indices] = np.zeros(forces[self.indices].shape)
         else:
-            forces[self.indices] = self.A.T @ forces[self.indices].flatten()
-            forces[self.indices] = (self.A_inv.T @ forces[self.indices]).reshape(-1, 3)
+            forces[self.indices] = self.Jacobian.T @ forces[self.indices].flatten()
+            forces[self.indices] = (self.Jacobian_inv.T @ forces[self.indices]).reshape(-1, 3)
 
     def adjust_cell(self, atoms, cell):
         """Adjust the cell of the atoms to match the constraints"""
         if not self.cell_indices:
             return
-        cell[self.cell_indices] = self.adjust_contrvariant(
+        cell[self.cell_indices] = self.adjust_contravariant(
             cell[self.cell_indices],
-            np.zeros(self.B.shape),
+            np.zeros(self.const_shift.shape),
         )
 
     def adjust_stress(self, atoms, stress):
         """Adjust the stress of the atoms to match the constraints"""
         if not self.cell_indices:
             return
-        if self.A is None:
+        if self.Jacobian is None:
             stress[self.cell_indices] = np.zeros(stress[self.cell_indices].shape)
         else:
-            stress[self.cell_indices] = self.A.T @ stress[self.cell_indices].flatten()
-            stress[self.cell_indices] = (self.A_inv.T @ stress[self.cell_indices]).reshape(-1, 3)
+            stress[self.cell_indices] = self.Jacobian.T @ stress[self.cell_indices].flatten()
+            stress[self.cell_indices] = (self.Jacobian_inv.T @ stress[self.cell_indices]).reshape(-1, 3)
 
-    def todict(self):
-        """Create a dictionary representation of the constraint"""
-        dct = super(FixCartesianParametricRelations, self).todict()
-        dct["name"] = "FixCartesianParametricRelations"
-        dct["kwargs"]["cell_indices"] = self.cell_indices
+    # def todict(self):
+    #     """Create a dictionary representation of the constraint"""
+    #     dct = super(FixCartesianParametricRelations, self).todict()
+    #     dct["name"] = "FixCartesianParametricRelations"
+    #     dct["kwargs"]["cell_indices"] = self.cell_indices
 
-        return dct
+    #     return dct
 
-    def __repr__(self):
-        """The str representation of the constraint"""
-        rep = super(FixCartesianParametricRelations, self).__repr__()
-        return "FixCartesianParametricRelations" + rep[22:]
+    # def __repr__(self):
+    #     """The str representation of the constraint"""
+    #     rep = super(FixCartesianParametricRelations, self).__repr__()
+    #     return "FixCartesianParametricRelations" + rep[22:]
 
 
 class Hookean(FixConstraint):

@@ -387,7 +387,7 @@ class Aims(FileIOCalculator):
         if scaled is None:
             scaled = np.all(atoms.get_pbc())
         if velocities is None:
-            velocities = np.any(np.abs(atoms.get_momenta().flatten()) > 0.0)
+            velocities = np.has('momenta')
 
         have_lattice_vectors = atoms.pbc.any()
         have_k_grid = ('k_grid' in self.parameters or

@@ -92,17 +92,9 @@ def read_aims(filename, apply_constraints=True):
             floatvect = [v_unit * float(l) for l in inp[1:4]]
             velocities.append(floatvect)
 
-        elif "symmetry_n_params" == inp[0]:
+        elif inp[0] in ["symmetry_n_params", "symmetry_params", "symmetry_lv", "symmetry_frac"]:
             symmetry_block.append(" ".join(inp))
 
-        elif "symmetry_params" == inp[0]:
-            symmetry_block.append(" ".join(inp))
-
-        elif "symmetry_lv" == inp[0]:
-            symmetry_block.append(" ".join(inp))
-
-        elif "symmetry_frac" == inp[0]:
-            symmetry_block.append(" ".join(inp))
     if xyz.all():
         fix.append(i)
     elif xyz.any():
@@ -161,7 +153,7 @@ def read_aims(filename, apply_constraints=True):
 
         fix_params.append(
             FixScaledParametricRelations(
-                list(range(len(symmetry_block)-5)),
+                list(range(len(atoms))),
                 atomic_params,
                 atomic_expressions,
             )
