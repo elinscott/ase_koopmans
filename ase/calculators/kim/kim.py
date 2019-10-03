@@ -102,12 +102,12 @@ def KIM(model_name, simulator=None, options=None, debug=False):
 
     Returns
     -------
-    calc : ase.calculators.calculator.Calculator
-        An ASE calculator.  Currently, this will be an instance of
-        KIMModelCalculator, LAMMPS (the lammpsrun calculator), or
-        LAMMPSlib, which are all defined in the ASE codebase, or an
-        instance of one of either OpenKIMcalculator or EMT, which are
-        defined in the asap3 codebase.
+    An ASE calculator, i.e. an instance of a subclass of
+    ase.calculators.calculator.Calculator.  Currently, this will be an
+    instance of KIMModelCalculator, LAMMPS (the lammpsrun calculator),
+    or LAMMPSlib, which are all defined in the ASE codebase, or an
+    instance of one of either OpenKIMcalculator or EMT, which are
+    defined in the asap3 codebase.
 
     Raises
     ------
@@ -116,9 +116,6 @@ def KIM(model_name, simulator=None, options=None, debug=False):
         to using incompatible combinations of values for the arguments
         or from errors produced by kimpy
     """
-
-    # calculator to return
-    calc = None
 
     # options set internally in this calculator
     kimmodel_not_allowed_options = ["modelname", "debug"]
@@ -148,15 +145,13 @@ def KIM(model_name, simulator=None, options=None, debug=False):
 
         if simulator == "kimmodel":
             _check_conflict_options(options, kimmodel_not_allowed_options, simulator)
-            calc = KIMModelCalculator(model_name, debug=debug, **options)
-            return calc
+            return KIMModelCalculator(model_name, debug=debug, **options)
 
         elif simulator == "asap":
             _check_conflict_options(options, asap_kimpm_not_allowed_options, simulator)
-            calc = _asap_calculator(
+            return _asap_calculator(
                 model_name, model_type="pm", verbose=debug, options=options
             )
-            return calc
 
         elif simulator == "lammpsrun":
 
@@ -173,13 +168,12 @@ def KIM(model_name, simulator=None, options=None, debug=False):
             )
 
             # Return LAMMPS calculator
-            calc = LAMMPS(
+            return LAMMPS(
                 **parameters,
                 specorder=supported_species,
                 keep_tmp_files=debug,
                 **options
             )
-            return calc
 
         elif simulator == "lammpslib":
             raise KIMCalculatorError(
@@ -215,14 +209,12 @@ def KIM(model_name, simulator=None, options=None, debug=False):
         # check options
         _check_conflict_options(options, asap_kimsm_not_allowed_options, simulator)
 
-        calc = _asap_calculator(
+        return _asap_calculator(
             model_name,
             model_type="sm",
             model_defn=model_defn,
             supported_units=supported_units,
         )
-
-        return calc
 
     elif simulator_name == "LAMMPS":
 
@@ -236,10 +228,9 @@ def KIM(model_name, simulator=None, options=None, debug=False):
             )
 
             # Return LAMMPS calculator
-            calc = LAMMPS(
+            return LAMMPS(
                 **parameters, specorder=supported_species, keep_tmp_files=debug
             )
-            return calc
 
         elif simulator == "lammpslib":
             # check options
@@ -267,7 +258,7 @@ def KIM(model_name, simulator=None, options=None, debug=False):
             ]
 
             # Return LAMMPSlib calculator
-            calc = LAMMPSlib(
+            return LAMMPSlib(
                 lammps_header=model_init,
                 lammps_name=None,
                 lmpcmds=kim_interactions,
@@ -276,7 +267,6 @@ def KIM(model_name, simulator=None, options=None, debug=False):
                 keep_alive=True,
                 **options
             )
-            return calc
 
         else:
             raise KIMCalculatorError(
