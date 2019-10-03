@@ -18,13 +18,9 @@ from ase.data import atomic_masses, atomic_numbers
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.calculators.lammpsrun import LAMMPS
 from ase.calculators.lammps import convert
+import kimpy
 
 from .kimmodel import KIMModelCalculator
-
-try:
-    import kimpy
-except ImportError:
-    raise RuntimeError("kimpy not found; KIM calculator will not work")
 
 
 class KIMCalculatorError(Exception):
