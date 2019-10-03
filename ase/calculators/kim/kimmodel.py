@@ -6,7 +6,6 @@ Mingjian Wen
 Daniel S. Karls
 University of Minnesota
 """
-from __future__ import absolute_import, division, print_function
 from collections import defaultdict
 import numpy as np
 
