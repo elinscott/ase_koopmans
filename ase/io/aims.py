@@ -176,7 +176,7 @@ def write_aims(
 
     # else aims crashes anyways
     # better be more explicit
-    write_magmoms = np.any([a.magmom for a in atoms])
+    # write_magmoms = np.any([a.magmom for a in atoms])
 
     if atoms.constraints:
         for constr in atoms.constraints:
