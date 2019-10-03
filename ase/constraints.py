@@ -17,6 +17,7 @@ __all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
 
 def dict2constraint(dct):
     if dct['name'] not in __all__:
+        print(dct['name'])
         raise ValueError
     return globals()[dct['name']](**dct['kwargs'])
 
@@ -1492,6 +1493,11 @@ class FixScaledParametricRelations(FixParametricRelations):
             scaled_forces = (self.Jacobian_inv.T @ scaled_forces).reshape(-1, 3)
             forces[self.indices] = atoms.cell.scaled_positions(scaled_forces)
 
+    def todict(self):
+        """Create a dictionary representation of the constraint"""
+        dct = super(FixScaledParametricRelations, self).todict()
+        dct["kwargs"].pop("is_cell", False)
+        return dct
 
 class FixCartesianParametricRelations(FixParametricRelations):
 

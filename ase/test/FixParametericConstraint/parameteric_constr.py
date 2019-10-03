@@ -2,8 +2,9 @@ import numpy as np
 
 from ase.build import bulk
 from ase.constraints import (
-    FixCartesianParametricRelations,
+    dict2constraint,
     FixScaledParametricRelations,
+    FixCartesianParametricRelations,
 )
 from ase.calculators.emt import EMT
 
@@ -34,6 +35,11 @@ for const_expr, passed_expr in zip(constr_lat.expressions.flatten(), expr_lat):
 
 # Check adjust_cell
 constr_lat.adjust_cell(a, cell)
+
+# Check serialization and construction from dict
+constr_lat_dict = constr_lat.todict()
+dict2constraint(constr_lat_dict)
+
 cell_diff = (cell - a.cell).flatten()
 expected_cell_diff = np.array([0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01])
 assert np.max(np.abs(cell_diff - expected_cell_diff)) < 1e-12
@@ -65,6 +71,10 @@ constr_atom = FixScaledParametricRelations(
     params=param_atom,
     expressions=expr_atom,
 )
+
+# Check serialization and construction from dict
+constr_atom_dict = constr_atom.todict()
+dict2constraint(constr_atom_dict)
 
 # Check adjust_positions
 constr_atom.adjust_positions(a, pos)
