@@ -22,10 +22,10 @@ expr_lat = [
     "0", "0", "a",
 ]
 constr_lat = FixCartesianParametricRelations(
-    indices=None,
-    cell_indices=[0, 1, 2],
+    indices=[0, 1, 2],
     params=param_lat,
     expressions=expr_lat,
+    is_cell=True,
 )
 
 # Check expression generator
@@ -122,7 +122,6 @@ expr_atom = [
 ]
 constr_atom = FixCartesianParametricRelations(
     indices=[0, 1, 2, 3],
-    cell_indices=None,
     params=param_atom,
     expressions=expr_atom,
 )
