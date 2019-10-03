@@ -15,6 +15,7 @@ import re
 import os
 
 from ase.data import atomic_masses, atomic_numbers
+from ase.calculators.calculator import CalculatorError
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.calculators.lammpsrun import LAMMPS
 from ase.calculators.lammps import convert
@@ -23,7 +24,7 @@ import kimpy
 from .kimmodel import KIMModelCalculator
 
 
-class KIMCalculatorError(Exception):
+class KIMCalculatorError(CalculatorError):
     pass
 
 
