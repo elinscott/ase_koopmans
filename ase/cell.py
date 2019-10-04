@@ -206,6 +206,8 @@ class Cell:
         """Return new cell, zeroing cell vectors where not periodic."""
         pbc = np.asarray(pbc, bool)
         cell = self.copy()
+        # Not obvious, but due to the numpy bool indexing + broadcast
+        # rules, this works also when pbc was given as single int or bool:
         cell[~pbc] = 0
         return cell
 
