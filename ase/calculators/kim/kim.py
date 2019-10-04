@@ -13,7 +13,6 @@ interface (API) or not. For more information on KIM, visit https://openkim.org.
 
 import re
 import os
-from functools import wraps
 
 from ase.data import atomic_masses, atomic_numbers
 from ase.calculators.calculator import CalculatorError
@@ -308,24 +307,10 @@ def check_call(f, *args):
             return ret[:-1]
 
 
-def check_call_wrapper(func):
-    @wraps(func)
-    def myfunc(*args, **kwargs):
-        return check_call(func, *args)
-
-    return myfunc
-
-
-# Wrapped kimpy functions
-collections_create = check_call_wrapper(kimpy.collections.create)
-simulator_model_create = check_call_wrapper(kimpy.simulator_model.create)
-simulator_model_destroy = check_call_wrapper(kimpy.simulator_model.destroy)
-
-
 class ModelCollections(object):
     def __init__(self):
         self.initialized = False
-        self.collection = collections_create()
+        self.collection = check_call(kimpy.collections.create)
         self.initialized = True
 
     def __del__(self):
@@ -378,7 +363,7 @@ class SimulatorModel(object):
 
         # Create a KIM API simulator Model object for this model
         self.model_name = model_name
-        self.simulator_model = simulator_model_create(self.model_name)
+        self.simulator_model = check_call(kimpy.simulator_model.create, self.model_name)
 
         # Need to close template map to access simulator model metadata
         self.simulator_model.close_template_map()
