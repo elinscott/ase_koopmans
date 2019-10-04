@@ -13,14 +13,10 @@ from ase.calculators.calculator import Calculator
 from ase.calculators.calculator import equal
 from ase import Atom
 from ase.neighborlist import neighbor_list
+import kimpy
+from kimpy import neighlist as nl
 
 from . import kim
-
-try:
-    import kimpy
-    from kimpy import neighlist as nl
-except ImportError:
-    raise RuntimeError("kimpy not found; KIM calculator will not work")
 
 
 class KIMModelData(object):
