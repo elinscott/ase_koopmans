@@ -51,6 +51,33 @@ Git master branch
   kwarg, where the keys are the variable names in the expression and
   the values are the numerical value they should be replaced with.
 
+* Added :class:`ase.constraints.FixParametricRelations`,
+  :class:`ase.constraints.FixScaledParametricRelations`, and
+  :class:`ase.constraints.FixCartesianParametricRelations` to
+  :mod:`ase.utils.constraints`. These constraints are based off the work
+  in: https://arxiv.org/abs/1908.01610
+
+  The constraints linearly maps the full 3N degrees of freedom, where N
+  is number of active lattice vectors/atoms onto a reduced subset of M
+  free parameters, where M <= 3N. The Jacobian and constant shift vectors
+  are generated from a list of mathematical expressions passed to the
+  constraint. The expressions must be a list like object of size 3N and
+  elements must be ordered as:
+  [n_0,i; n_0,j; n_0,k; n_1,i; n_1,j; .... ; n_N-1,i; n_N-1,j; n_N-1,k],
+  where i, j, and k are the first, second and third component of the
+  atomic position/lattice vector. Currently only linear  like:
+      - const * param_0
+      - sqrt[const] * param_1
+      - const * param_0 +/- const * param_1 +/- ... +/- const * param_M
+  where const is any real number and param_0, param_1, ..., param_M are
+  the parameters passed in params, are allowed to be included in the
+  expressions.
+  Currently the constraint is set up to handle either atomic positions
+  or lattice vectors at one time, but not both. To do both simply add
+  a two constraints for each set. This is done to keep the matrices
+  behind the operations separate.
+
+
 Version 3.18.1
 ==============
 
