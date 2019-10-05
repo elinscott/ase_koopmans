@@ -43,6 +43,9 @@ expressions = [
     "floor(param_5)",
     "round(param_5)",
     "exp(param_1)",
+    "2.0*e",
+    "pi+1",
+    "tau / pi",
 ]
 
 solutions = [
@@ -77,6 +80,9 @@ solutions = [
     math.floor(param_dct["param_5"]),
     round(param_dct["param_5"]),
     math.exp(param_dct["param_1"]),
+    2.0*math.e,
+    math.pi+1,
+    math.tau / math.pi,
 ]
 
 for expr, soln in zip(expressions, solutions):
