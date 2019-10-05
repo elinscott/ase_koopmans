@@ -6,11 +6,6 @@ import inspect
 
 max_value = 1e17
 
-# Take all functions from math module as allowed functions
-allowed_math_fxn = {}
-for object in inspect.getmembers(math):
-    if inspect.isbuiltin(object[1]):
-        allowed_math_fxn[object[0]] = object[1]
 
 
 # Redefine mathematical operations to prevent DNS attacks
@@ -52,9 +47,16 @@ def power(a, b):
     """Redefine pow function to prevent too large numbers"""
     if a == 0.0:
         return 0.0
-    elif b / math.log(max_value, a) >= 1:
+    elif b / math.log(max_value, abs(a)) >= 1:
         raise ValueError((a,b))
     return op.pow(a, b)
+
+
+def exp(a):
+    """Redefine exp function to prevent too large numbers"""
+    if a > math.log(max_value):
+        raise ValueError(a)
+    return math.exp(a)
 
 
 # The list of allowed operators with defined functions they should operate on
@@ -65,6 +67,31 @@ operators = {
     ast.Div: div,
     ast.Pow: power,
     ast.USub: op.neg,
+}
+
+# Take all functions from math module as allowed functions
+allowed_math_fxn = {
+    "sin": math.sin,
+    "cos": math.cos,
+    "tan": math.tan,
+    "asin": math.asin,
+    "acos": math.acos,
+    "atan": math.atan,
+    "atan2": math.atan2,
+    "hypot": math.hypot,
+    "sinh": math.sinh,
+    "cosh": math.cosh,
+    "tanh": math.tanh,
+    "asinh": math.asinh,
+    "acosh": math.acosh,
+    "atanh": math.atanh,
+    "radians": math.radians,
+    "degrees": math.degrees,
+    "sqrt": math.sqrt,
+    "log": math.log,
+    "log10": math.log10,
+    "log2": math.log2,
+    "exp": exp,
 }
 
 
