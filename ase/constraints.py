@@ -3,6 +3,7 @@ from math import sqrt
 from warnings import warn
 from ase.geometry import find_mic, wrap_positions
 from ase.calculators.calculator import PropertyNotImplementedError
+from ase.utils.parsemath import eval_expression
 
 import numpy as np
 from scipy.linalg import expm
@@ -1172,7 +1173,6 @@ class FixParametricRelations(FixConstraint):
         import math
         # set _eval to be a limited version of itself.
         self.max_value = 1e10
-        self._eval = self.limit(max_=self.max_value)(self._eval)
 
         if indices is None:
             raise ValueError("indices must be provided")
@@ -1222,7 +1222,7 @@ class FixParametricRelations(FixConstraint):
                     raise ValueError("The FixParametricRelations expressions must be linear.")
 
             expression = expression.lower()
-            self.const_shift[expr_ind] = float(self.eval_expression(expression, param_dct))
+            self.const_shift[expr_ind] = float(eval_expression(expression, param_dct))
 
             for param_ind in range(len(self.params)):
                 param_str = "param_" + int_fmt_str.format(param_ind)
@@ -1230,14 +1230,14 @@ class FixParametricRelations(FixConstraint):
                     self.Jacobian[expr_ind, param_ind] = 0.0
                     continue
                 param_dct[param_str] = 1.0
-                test_1 = float(self.eval_expression(expression, param_dct))
+                test_1 = float(eval_expression(expression, param_dct))
                 test_1 -= self.const_shift[expr_ind]
                 self.Jacobian[expr_ind, param_ind] = test_1
 
                 # Using math.pi to pass the flakes.py test. math is needed to evaluate the expressions,
                 # flake8 does not recognize it is used in that way
                 param_dct[param_str] = 2.0
-                test_2 = float(self.eval_expression(expression, param_dct))
+                test_2 = float(eval_expression(expression, param_dct))
                 test_2 -= self.const_shift[expr_ind]
                 if abs(test_2 / test_1 - 2.0) > eps:
                     raise IOError("The FixParametricRelations expressions must be linear.")
@@ -1250,107 +1250,6 @@ class FixParametricRelations(FixConstraint):
             self.Jacobian = None
             self.Jacobian_inv = None
 
-    def eval_expression(self, expression, param_dct):
-        """Parse a mathematical expression, after replacing parameters with the values in param_dict"""
-        import ast
-        if not isinstance(expression, str):
-            raise TypeError("The expression must be a string")
-        if len(expression) > 1000:
-            raise ValueError("The expression is too long.")
-
-        expression_rep = expression.strip()
-
-        if "," in expression_rep or "()" in expression_rep:
-            raise ValueError("Invalid operation in expression")
-
-        for key, val in param_dct.items():
-            expression_rep = expression_rep.replace(key, str(val))
-        return self._eval(ast.parse(expression_rep, mode='eval').body)
-
-    def _eval(self, node):
-        """Evaluate a mathematical expression string parsed by ast"""
-        import ast
-        import operator as op
-        import math
-
-        def add(a, b):
-            """Redefine add function to prevent too large numbers"""
-            if any(abs(n) > self.max_value for n in [a, b]):
-                raise ValueError((a,b))
-            return op.add(a, b)
-
-        def sub(a, b):
-            """Redefine sub function to prevent too large numbers"""
-            if any(abs(n) > self.max_value for n in [a, b]):
-                raise ValueError((a,b))
-            return op.sub(a, b)
-
-        def mul(a, b):
-            """Redefine mul function to prevent too large numbers"""
-            if a==0.0 or b == 0.0:
-                pass
-            elif math.log10(abs(a)) + math.log10(abs(b)) > math.log10(self.max_value):
-                raise ValueError((a,b))
-            return op.mul(a, b)
-
-        def div(a, b):
-            """Redefine div function to prevent too large numbers"""
-            if b == 0.0:
-                raise ValueError((a,b))
-            elif a == 0.0:
-                pass
-            elif math.log10(abs(a)) - math.log10(abs(b)) > math.log10(self.max_value):
-                raise ValueError((a,b))
-            return op.truediv(a, b)
-
-        operators = {
-            ast.Add: add,
-            ast.Sub: sub,
-            ast.Mult: mul,
-            ast.Div: div,
-            ast.USub: op.neg,
-        }
-
-        allowed_math_fxn = {
-            "sqrt": math.sqrt,
-        }
-        if isinstance(node, ast.Num): # <number>
-            return node.n
-        elif isinstance(node, ast.BinOp): # <left> <operator> <right>
-            return operators[type(node.op)](self._eval(node.left), self._eval(node.right))
-        elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
-            return operators[type(node.op)](self._eval(node.operand))
-        elif isinstance(node, ast.Call): # using math.sqrt, sin, cos
-            def get_function(node):
-                """Get the function from the node"""
-                if isinstance(node.func, ast.Name):
-                    return node.func.id
-                elif isinstance(node.func, ast.Attribute):
-                    return node.func.attr
-                else:
-                    raise TypeError("node.func is of the wrong type")
-            func = get_function(node)
-            return allowed_math_fxn[func](self._eval(*node.args))
-        else:
-            raise TypeError(node)
-
-    def limit(self, max_=None):
-        """Return decorator that limits allowed returned values."""
-        import functools
-        def decorator(func):
-            @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                ret = func(*args, **kwargs)
-                try:
-                    mag = abs(ret)
-                except TypeError:
-                    pass # not applicable
-                else:
-                    if mag > max_:
-                        raise ValueError(ret)
-                return ret
-            return wrapper
-        return decorator
 
     @property
     def expressions(self):
