@@ -66,9 +66,9 @@ Git master branch
   [n_0,i; n_0,j; n_0,k; n_1,i; n_1,j; .... ; n_N-1,i; n_N-1,j; n_N-1,k],
   where i, j, and k are the first, second and third component of the
   atomic position/lattice vector. Currently only linear  like:
-      - const * param_0
-      - sqrt[const] * param_1
-      - const * param_0 +/- const * param_1 +/- ... +/- const * param_M
+  - const * param_0
+  - sqrt[const] * param_1
+  - const * param_0 +/- const * param_1 +/- ... +/- const * param_M
   where const is any real number and param_0, param_1, ..., param_M are
   the parameters passed in params, are allowed to be included in the
   expressions.
