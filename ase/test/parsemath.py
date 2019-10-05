@@ -84,7 +84,7 @@ solutions = [
     math.exp(param_dct["param_1"]),
     2.0*math.e,
     math.pi+1,
-    math.tau / math.pi,
+    2.0,
     param_dct["param_5"] % param_dct["param_6"],
 ]
 
