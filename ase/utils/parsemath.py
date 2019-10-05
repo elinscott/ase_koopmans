@@ -4,8 +4,8 @@ import operator as op
 import math
 import inspect
 
+# Sets the limit of how high the number can get to prevent DNS attacks
 max_value = 1e17
-
 
 
 # Redefine mathematical operations to prevent DNS attacks
@@ -91,6 +91,11 @@ allowed_math_fxn = {
     "log": math.log,
     "log10": math.log10,
     "log2": math.log2,
+    "fmod": math.fmod,
+    "abs": math.fabs,
+    "ceil": math.ceil,
+    "floor": math.floor,
+    "round": round,
     "exp": exp,
 }
 
