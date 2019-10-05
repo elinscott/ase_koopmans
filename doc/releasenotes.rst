@@ -43,7 +43,13 @@ Git master branch
 * :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
   from :mod:`ase.io.jsonio`.
 
-* :mod:`parsemath` added to utils. This module parses simple mathematical expressions and returns their numerical value. All native mathematical operations and many functions in the math module are supported. It also understands pi, e, and tau from the math module. Variable substitution is also supported via the param_dct kwarg, where the keys are the variable names in the expression and the values are the numerical value they should be replaced with.
+* :mod:`ase.utils.parsemath` added to utils. This module parses simple
+  mathematical expressions and returns their numerical value. All
+  native mathematical operations and many functions in the math module
+  are supported. It also understands pi, e, and tau from the math
+  module. Variable substitution is also supported via the param_dct
+  kwarg, where the keys are the variable names in the expression and
+  the values are the numerical value they should be replaced with.
 
 Version 3.18.1
 ==============
