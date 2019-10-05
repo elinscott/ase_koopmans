@@ -1,4 +1,4 @@
-# creates formatoptions.rst
+# creates: formatoptions.rst
 from ase.io.formats import all_formats, format2modulename
 from ase.utils import import_module
 with open('formatoptions.rst', 'w') as fd:
