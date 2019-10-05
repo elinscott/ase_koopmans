@@ -144,10 +144,10 @@ def read_aims(filename, apply_constraints=True):
 
         fix_params.append(
             FixCartesianParametricRelations(
-                list(),
                 list(range(3)),
                 lattice_params,
                 lattice_expressions,
+                is_cell=True,
             )
         )
 
