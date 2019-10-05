@@ -1,14 +1,11 @@
+import doctest
+import importlib
 import sys
 from unittest import SkipTest
-
 
 if sys.version_info < (3, 6):
     raise SkipTest('Test requires Python 3.6+, this is {}'
                    .format(sys.version_info))
-
-
-import doctest
-import importlib
 
 module_names = """\
 ase.atoms
@@ -27,7 +24,6 @@ ase.spacegroup.spacegroup
 ase.spacegroup.xtal
 ase.symbols
 """
-
 
 for modname in module_names.splitlines():
     mod = importlib.import_module(modname)

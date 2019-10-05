@@ -168,7 +168,7 @@ def read_scfout_file(filename=None):
     tv[4][4]: unit cell vectors in Bohr
     rtv[4][4]: reciprocal unit cell vectors in Bohr^{-1}
          note:
-         tv_i \dot rtv_j = 2PI * Kronecker's delta_{ij}
+         tv_i dot rtv_j = 2PI * Kronecker's delta_{ij}
          Gxyz[atomnum+1][60]: atomic coordinates in Bohr
          Hks: Kohn-Sham matrix elements of basis orbitals
     size: Hks[SpinP_switch+1]

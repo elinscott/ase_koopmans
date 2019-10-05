@@ -30,6 +30,7 @@ python_3_oldlibs_tests:
 #
 # We currently use scipy 1.2.1 because of failures with 1.3.0 on py3.7.
 # TODO: Make things work with 1.3.0
+# psycopg2-binary is for testing the postgres backend for ase.db
 python_3_tests:
   image: python:3-slim
   script:
@@ -40,6 +41,7 @@ python_3_tests:
     - python --version
     - ase test --strict
     - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
 
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
@@ -50,7 +52,6 @@ conda_tests:
    image: continuumio/anaconda3
    script:
      - apt-get update
-     - apt-get install -yq libgl1-mesa-glx
      - echo $PATH
      - export PATH=/opt/conda/bin:$PATH
      - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask

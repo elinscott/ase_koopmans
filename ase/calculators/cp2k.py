@@ -72,7 +72,7 @@ class CP2K(Calculator):
         The command used to launch the CP2K-shell.
         If ``command`` is not passed as an argument to the
         constructor, the class-variable ``CP2K.command``,
-        and then the environment variabel
+        and then the environment variable
         ``$ASE_CP2K_COMMAND`` are checked.
         Eventually, ``cp2k_shell`` is used as default.
     cutoff: float

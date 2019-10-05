@@ -733,17 +733,18 @@ class FixScaled(FixConstraintSingle):
         self.removed_dof = self.mask.sum()
 
     def adjust_positions(self, atoms, new):
-        scaled_old = np.linalg.solve(self.cell.T, atoms.positions.T).T
-        scaled_new = np.linalg.solve(self.cell.T, new.T).T
+        scaled_old = atoms.cell.scaled_positions(atoms.positions)
+        scaled_new = atoms.cell.scaled_positions(new)
         for n in range(3):
             if self.mask[n]:
                 scaled_new[self.a, n] = scaled_old[self.a, n]
-        new[self.a] = np.dot(scaled_new, self.cell)[self.a]
+        new[self.a] = atoms.cell.cartesian_positions(scaled_new)[self.a]
 
     def adjust_forces(self, atoms, forces):
-        scaled_forces = np.linalg.solve(self.cell.T, forces.T).T
+        # Forces are covarient to the coordinate transformation, use the inverse transformations
+        scaled_forces = atoms.cell.cartesian_positions(forces)
         scaled_forces[self.a] *= -(self.mask - 1)
-        forces[self.a] = np.dot(scaled_forces, self.cell)[self.a]
+        forces[self.a] = atoms.cell.scaled_positions(scaled_forces)[self.a]
 
     def todict(self):
         return {'name': 'FixScaled',
@@ -2553,15 +2554,15 @@ class ExpCellFilter(UnitCellFilter):
         >>> # this should be equivalent to the StrainFilter
         >>> atoms = Atoms(...)
         >>> atoms.set_constraint(FixAtoms(mask=[True for atom in atoms]))
-        >>> ucf = UnitCellFilter(atoms)
+        >>> ecf = ExpCellFilter(atoms)
 
-        You should not attach this UnitCellFilter object to a
+        You should not attach this ExpCellFilter object to a
         trajectory. Instead, create a trajectory for the atoms, and
         attach it to an optimizer like this:
 
         >>> atoms = Atoms(...)
-        >>> ucf = UnitCellFilter(atoms)
-        >>> qn = QuasiNewton(ucf)
+        >>> ecf = ExpCellFilter(atoms)
+        >>> qn = QuasiNewton(ecf)
         >>> traj = Trajectory('TiO2.traj', 'w', atoms)
         >>> qn.attach(traj)
         >>> qn.run(fmax=0.05)

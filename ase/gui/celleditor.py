@@ -111,12 +111,14 @@ class CellEditor:
         atoms = self.gui.atoms.copy()
         x, y, z = self.cell_grid
 
-        old_cell = atoms.cell
-
-        old_mags = atoms.get_cell_lengths_and_angles()[0:3]
+        old_mags = atoms.cell.lengths()
         new_mags = np.array([x[3].value, y[3].value, z[3].value])
 
-        atoms.set_cell(old_cell / old_mags * new_mags,
+        newcell = atoms.cell.copy()
+        for i in range(3):
+            newcell[i] *= new_mags[i] / old_mags[i]
+
+        atoms.set_cell(newcell,
                        scale_atoms=self.scale_atoms.var.get())
 
         self.gui.new_atoms(atoms)

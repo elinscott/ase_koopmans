@@ -417,20 +417,20 @@ class Aims(FileIOCalculator):
             raise ValueError('No atoms object attached')
         self.write_input(self.atoms)
 
-    def write_control(self, atoms, filename):
+    def write_control(self, atoms, filename, debug=False):
         lim = '#' + '='*79
         output = open(filename, 'w')
         output.write(lim + '\n')
         for line in ['FHI-aims file: ' + filename,
                      'Created using the Atomic Simulation Environment (ASE)',
                      time.asctime(),
-                     '',
-                     'List of parameters used to initialize the calculator:',
                      ]:
             output.write('# ' + line + '\n')
-        for p, v in self.parameters.items():
-            s = '#     {} : {}\n'.format(p, v)
-            output.write(s)
+        if debug:
+            output.write('# \n# List of parameters used to initialize the calculator:',)
+            for p, v in self.parameters.items():
+                s = '#     {} : {}\n'.format(p, v)
+                output.write(s)
         output.write(lim + '\n')
 
 

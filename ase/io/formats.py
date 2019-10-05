@@ -111,6 +111,7 @@ all_formats = {
     'py': ('Python file', '+F'),
     'qbox': ('QBOX output file', '+F'),
     'res': ('SHELX format', '1S'),
+    'rmc6f': ('RMCProfile', '1S'),
     'sdf': ('SDF format', '1F'),
     'struct': ('WIEN2k structure file', '1S'),
     'struct_out': ('SIESTA STRUCT file', '1F'),
@@ -184,6 +185,7 @@ extension2format = {
     '34': 'crystal',
     'g96': 'gromos',
     'geom': 'castep-geom',
+    'gjf': 'gaussian',
     'gro': 'gromacs',
     'log': 'gaussian-out',
     'md': 'castep-md',
@@ -479,6 +481,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
 
     if isinstance(filename, PurePath):
         filename = str(filename)
+    if filename == '-':
+        filename = sys.stdin
     if isinstance(index, basestring):
         try:
             index = string2index(index)

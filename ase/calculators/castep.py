@@ -822,13 +822,7 @@ End CASTEP Interface Documentation
                 if 'warn' in line.lower():
                     self._warnings.append(line)
 
-                # HOTFIX: This string appears twice from CASTEP 7 on and thus
-                # prevents reading forces. So, better go for another keyword
-                # to indicate the regular end of a run.
-                # 'Initialization time' seems to do the job.
-                # if 'Writing analysis data to' in line:
-                # if 'Writing model to' in line:
-                if 'Peak Memory Use' in line:
+                if 'Finalisation time   =' in line:
                     end_found = True
                     record_end = castep_file.tell()
                     break
@@ -984,7 +978,7 @@ End CASTEP Interface Documentation
                 elif 'convergence tolerance window' in line:
                     elec_convergence_win = int(line.split()[-2])
                     self.param.elec_convergence_win = elec_convergence_win
-                elif re.match('\sfinite basis set correction\s*:', line):
+                elif re.match(r'\sfinite basis set correction\s*:', line):
                     finite_basis_corr = line.split()[-1]
                     fbc_possibilities = {'none': 0,
                                          'manual': 1, 'automatic': 2}
@@ -1039,7 +1033,7 @@ End CASTEP Interface Documentation
                         self.param.task = ctype
                 elif 'using functional' in line:
                     used_functional = line.split(":")[-1]
-                    used_functional = re.sub('\s+', ' ', used_functional)
+                    used_functional = re.sub(r'\s+', ' ', used_functional)
                     used_functional = used_functional.strip()
                     if used_functional != 'Local Density Approximation':
                         used_functional_possibilities = {
@@ -1313,11 +1307,11 @@ End CASTEP Interface Documentation
 
                 # fetch some last info
                 elif 'Total time' in line:
-                    pattern = '.*=\s*([\d\.]+) s'
+                    pattern = r'.*=\s*([\d\.]+) s'
                     self._total_time = float(re.search(pattern, line).group(1))
 
                 elif 'Peak Memory Use' in line:
-                    pattern = '.*=\s*([\d]+) kB'
+                    pattern = r'.*=\s*([\d]+) kB'
                     self._peak_memory = int(re.search(pattern, line).group(1))
 
             except Exception as exception:
@@ -1625,7 +1619,7 @@ End CASTEP Interface Documentation
 
     def find_pspots(self, pspot='.+', elems=None,
                     notelems=None, clear=True, suffix='(usp|UPF|recpot)'):
-        """Quickly find and set all pseudo-potentials by searching in
+        r"""Quickly find and set all pseudo-potentials by searching in
         castep_pp_path:
 
         This one is more flexible than set_pspots, and also checks if the files

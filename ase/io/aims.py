@@ -26,15 +26,16 @@ def read_aims(filename, apply_constraints=True):
     import numpy as np
 
     atoms = Atoms()
-    fd = open(filename, "r")
-    lines = fd.readlines()
-    fd.close()
+    with open(filename, "r") as fd:
+        lines = fd.readlines()
+
     positions = []
     cell = []
     symbols = []
     velocities = []
     magmoms = []
     symmetry_block = []
+    charges = []
     fix = []
     fix_cart = []
     xyz = np.array([0, 0, 0])
@@ -42,7 +43,7 @@ def read_aims(filename, apply_constraints=True):
     n_periodic = -1
     periodic = np.array([False, False, False])
     cart_positions, scaled_positions = False, False
-    for n, line in enumerate(lines):
+    for line in lines:
         inp = line.split()
         if inp == []:
             continue
@@ -54,6 +55,8 @@ def read_aims(filename, apply_constraints=True):
                 fix_cart.append(FixCartesian(i, xyz))
             floatvect = float(inp[1]), float(inp[2]), float(inp[3])
             positions.append(floatvect)
+            magmoms.append(0.)
+            charges.append(0.)
             symbols.append(inp[-1])
             i += 1
             xyz = np.array([0, 0, 0])
@@ -76,7 +79,10 @@ def read_aims(filename, apply_constraints=True):
             periodic[n_periodic] = True
 
         elif inp[0] == "initial_moment":
-            magmoms.append(float(inp[1]))
+            magmoms[-1] = float(inp[1])
+
+        elif inp[0] == "initial_charge":
+            charges[-1] = float(inp[1])
 
         elif inp[0] == "constrain_relaxation":
             if inp[1] == ".true.":
@@ -159,8 +165,11 @@ def read_aims(filename, apply_constraints=True):
             )
         )
 
-    if len(magmoms) > 0:
+    if any(magmoms):
         atoms.set_initial_magnetic_moments(magmoms)
+    if any(charges):
+        atoms.set_initial_charges(charges)
+
     if periodic.any():
         atoms.set_cell(cell)
         atoms.set_pbc(periodic)
@@ -254,7 +263,7 @@ def write_aims(
 
     # else aims crashes anyways
     # better be more explicit
-    write_magmoms = np.any([a.magmom for a in atoms])
+    # write_magmoms = np.any([a.magmom for a in atoms])
 
     if atoms.constraints:
         for constr in atoms.constraints:
@@ -297,22 +306,22 @@ def write_aims(
         fd.write("\n")
         # (1) all coords are constrained:
         if fix_cart[i].all():
-            fd.write("constrain_relaxation .true.\n")
+            fd.write("    constrain_relaxation .true.\n")
         # (2) some coords are constrained:
         elif fix_cart[i].any():
             xyz = fix_cart[i]
             for n in range(3):
                 if xyz[n]:
-                    fd.write("constrain_relaxation %s\n" % "xyz"[n])
+                    fd.write("    constrain_relaxation %s\n" % "xyz"[n])
         if atom.charge:
-            fd.write("initial_charge %16.6f\n" % atom.charge)
-        if write_magmoms:
-            fd.write("initial_moment %16.6f\n" % atom.magmom)
+            fd.write("    initial_charge %16.6f\n" % atom.charge)
+        if atom.magmom:
+            fd.write("    initial_moment %16.6f\n" % atom.magmom)
 
         # Write velocities if this is wanted
         if velocities and atoms.get_velocities() is not None:
             fd.write(
-                "  velocity {:.16f} {:.16f} {:.16f}\n".format(
+                "    velocity {:.16f} {:.16f} {:.16f}\n".format(
                     *atoms.get_velocities()[i] / v_unit
                 )
             )

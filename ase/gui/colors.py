@@ -117,10 +117,10 @@ class ColorWindow:
             rng = mx - mn  # XXX what are optimal allowed range and steps ?
             self.mnmx = [_('min:'),
                          ui.SpinBox(mn, mn - 10 * rng, mx + rng, rng / 10.,
-                                    self.change_mnmx),
+                                    self.change_mnmx, width=20),
                          _('max:'),
                          ui.SpinBox(mx, mn - 10 * rng, mx + rng, rng / 10.,
-                                    self.change_mnmx),
+                                    self.change_mnmx, width=20),
                          _(unit)]
             self.win.close()
             self.reset(self.gui)

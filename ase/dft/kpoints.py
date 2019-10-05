@@ -206,6 +206,7 @@ class BandPath:
 
         self.cell = cell = Cell.new(cell)
         assert cell.shape == (3, 3)
+        kpts = np.asarray(kpts)
         assert kpts.ndim == 2 and kpts.shape[1] == 3
         self.icell = self.cell.reciprocal()
         self.kpts = kpts
@@ -337,7 +338,7 @@ class BandPath:
         from ase import Atoms
         from ase.calculators.test import FreeElectrons
         from ase.dft.band_structure import calculate_band_structure
-        atoms = Atoms(cell=self.cell, pbc=self.cell.pbc)
+        atoms = Atoms(cell=self.cell, pbc=True)
         atoms.calc = FreeElectrons(**kwargs)
         bs = calculate_band_structure(atoms, path=self)
         return bs

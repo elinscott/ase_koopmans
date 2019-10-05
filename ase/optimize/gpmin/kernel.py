@@ -172,7 +172,7 @@ class SquaredExponential(SE_kernel):
     def dK_dl_k(self, x1, x2):
         '''Returns the derivative of the kernel function respect to  l 
         '''
-        return np.dot((x1-x2), (x1-x2))/self.l**3
+        return self.squared_distance(x1,x2)/self.l
 
     def dK_dl_j(self, x1, x2):
         '''Returns the derivative of the gradient of the kernel 

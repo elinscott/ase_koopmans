@@ -12,7 +12,8 @@ http://www.uam.es/departamentos/ciencias/fismateriac/siesta
 """
 
 from __future__ import print_function
-import os, warnings
+import os
+import warnings
 from os.path import join, isfile, islink
 import numpy as np
 import shutil
@@ -25,7 +26,7 @@ from ase.calculators.calculator import FileIOCalculator, ReadError
 from ase.calculators.calculator import Parameters, all_changes
 from ase.calculators.siesta.parameters import PAOBasisBlock, Species
 from ase.calculators.siesta.parameters import format_fdf
-from collections import OrderedDict
+
 
 meV = 0.001 * eV
 
@@ -50,7 +51,7 @@ def read_bands_file(fd):
     nbands, nspins, nkpts = np.array(header.split()).astype(int)
 
     # three fields for kpt coords, then all the energies
-    ntokens = nbands + 3
+    ntokens = nbands*nspins + 3
 
     # Read energies for each kpoint:
     data = []
@@ -71,7 +72,8 @@ def read_bands_file(fd):
     assert len(data) == nkpts
     kpts = data[:, :3]
     energies = data[:, 3:]
-    assert energies.shape == (nkpts, nbands)
+    energies = energies.reshape(nkpts, nspins, nbands)
+    assert energies.shape == (nkpts, nspins, nbands)
     return kpts, energies, efermi
 
 
@@ -88,7 +90,9 @@ def resolve_band_structure(path, kpts, energies, efermi):
     # Also we should perhaps verify the cell.  If we had the cell, we
     # could construct the bandpath from scratch (i.e., pure outputs).
     from ase.dft.band_structure import BandStructure
-    bs = BandStructure(path, energies[None], reference=efermi)
+    ksn2e = energies
+    skn2e = np.swapaxes(ksn2e, 0, 1)
+    bs = BandStructure(path, skn2e, reference=efermi)
     return bs
 
 
@@ -541,7 +545,6 @@ class BaseSiesta(FileIOCalculator):
             else:
                 warnings.warn('Ignoring unknown keyword "{}"'.format(key))
 
-
     def getpath(self, fname=None, ext=None):
         """ Returns the directory/fname string """
         if fname is None:
@@ -866,7 +869,7 @@ class BaseSiesta(FileIOCalculator):
         self.read_dim()
         if self.results['hsx'] is not None:
             self.read_pld(self.results['hsx'].norbitals,
-                          self.atoms.get_number_of_atoms())
+                          len(self.atoms))
             self.atoms.cell = self.results['pld'].cell * Bohr
         else:
             self.results['pld'] = None
@@ -880,12 +883,14 @@ class BaseSiesta(FileIOCalculator):
         bandpath = self['bandpath']
         if bandpath is None:
             return
+        
+        if len(bandpath.kpts)<1:
+            return
 
-        path = self['bandpath']
         fname = self.getpath(ext='bands')
         with open(fname) as fd:
             kpts, energies, efermi = read_bands_file(fd)
-        bs = resolve_band_structure(path, kpts, energies, efermi)
+        bs = resolve_band_structure(bandpath, kpts, energies, efermi)
         self.results['bandstructure'] = bs
 
     def band_structure(self):
@@ -1080,12 +1085,16 @@ class BaseSiesta(FileIOCalculator):
 
         ksn2e = np.delete(_ee, 0, 1).reshape([nkp, nspin, n])
 
-        eig = OrderedDict()
+        eigarray = np.empty((nspin, nkp, n))
+        eigarray[:] = np.inf
+
         for k, sn2e in enumerate(ksn2e):
             for s, n2e in enumerate(sn2e):
-                eig[(k,s)] = n2e
+                eigarray[s, k, :] = n2e
 
-        self.results['eigenvalues'] = eig
+        assert np.isfinite(eigarray).all()
+
+        self.results['eigenvalues'] = eigarray
         return 0
 
     def read_kpoints(self):
@@ -1093,20 +1102,24 @@ class BaseSiesta(FileIOCalculator):
 
         fname = self.getpath(ext='KP')
         try:
-            with open(fname, "r") as f:
-                nkp = int(f.readline())
-                _ee = np.split( np.array(f.read().split()).astype(np.float), nkp)
+            with open(fname, "r") as fd:
+                nkp = int(next(fd))
+                kpoints = np.empty((nkp, 3))
+                kweights = np.empty(nkp)
+
+                for i in range(nkp):
+                    line = next(fd)
+                    tokens = line.split()
+                    numbers = np.array(tokens[1:]).astype(float)
+                    kpoints[i] = numbers[:3]
+                    kweights[i] = numbers[3]
+
         except (IOError):
             return 1
 
-        i2xyzw = np.delete(_ee, 0, 1)
-
-        kpoints, kweights = OrderedDict(), OrderedDict()
-        for i, xyzw in enumerate(i2xyzw):
-            kpoints[i], kweights[i] = xyzw[0:3], xyzw[3]
-
         self.results['kpoints'] = kpoints
         self.results['kweights'] = kweights
+
         return 0
 
     def read_dipole(self):
@@ -1610,3 +1623,12 @@ class BaseSiesta(FileIOCalculator):
             raise ValueError('units can be only au or nm**2')
 
         return data.freq, self.results['polarizability']
+
+    def get_fermi_level(self):
+        return self.results['fermi_energy']
+
+    def get_k_point_weights(self):
+        return self.results['kweights']
+
+    def get_ibz_k_points(self):
+        return self.results['kpoints']

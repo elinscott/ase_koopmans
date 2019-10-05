@@ -40,6 +40,7 @@ A simple calculation can be set up::
     rocksalt = bulk('NaCl', crystalstructure='rocksalt', a=6.0)
     calc = Espresso(pseudopotentials=pseudopotentials,
                     tstress=True, tprnfor=True, kpts=(3, 3, 3))
+    rocksalt.calc = calc
 
     ucf = UnitCellFilter(rocksalt)
     opt = LBFGS(ucf)

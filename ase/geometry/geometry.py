@@ -201,18 +201,26 @@ def find_mic(D, cell, pbc=True):
                 tvecs.append(latt_ab + k * cell[2])
     tvecs = np.array(tvecs)
 
-    # Translate the direct displacement vectors by each translation
-    # vector, and calculate the corresponding lengths.
-    D_trans = tvecs[np.newaxis] + D[:, np.newaxis]
-    D_trans_len = np.sqrt((D_trans**2).sum(2))
+    # Check periodic neighbors iff the displacement vector in
+    # scaled coordinates is greater than 0.5.
+    good = np.sqrt((np.linalg.solve(cell.T, D.T)**2).sum(0)) <= 0.5
 
-    # Find mic distances and corresponding vector(s) for each given pair
-    # of atoms. For symmetrical systems, there may be more than one
-    # translation vector corresponding to the MIC distance; this finds the
-    # first one in D_trans_len.
-    D_min_len = np.min(D_trans_len, axis=1)
-    D_min_ind = D_trans_len.argmin(axis=1)
-    D_min = D_trans[list(range(len(D_min_ind))), D_min_ind]
+    D_min = D.copy()
+    D_min_len = D_len.copy()
+
+    for i, (Di, gdi) in enumerate(zip(D, good)):
+        if gdi:
+            # No need to check periodic neighbors.
+            continue
+        # Translate the direct displacement vector by each translation
+        # vector, and calculate the corresponding length.
+        Di_trans = Di[np.newaxis] + tvecs
+        Di_trans_len = np.sqrt((Di_trans**2).sum(1))
+
+        # Find mic distance and corresponding vector.
+        Di_min_ind = Di_trans_len.argmin()
+        D_min[i] = Di_trans[Di_min_ind]
+        D_min_len[i] = Di_trans_len[Di_min_ind]
 
     return D_min, D_min_len
 
@@ -258,19 +266,14 @@ def get_distances(p1, p2=None, cell=None, pbc=None):
 
     Use set cell and pbc to use the minimum image convention.
     """
+    p1 = np.atleast_2d(p1)
     if p2 is None:
-        p2 = p1
-
-    p1, p2 = np.array(p1), np.array(p2)
-
-    # Allocate matrix for vectors as [p1, p2, 3]
-    D = np.zeros((len(p1), len(p2), 3))
-
-    for offset, pos1 in enumerate(p1):
-        D[offset, :, :] = p2 - pos1
-
-    # Collapse to linear indexing
-    D.shape = (-1, 3)
+        np1 = len(p1)
+        ind1, ind2 = np.triu_indices(np1, k=1)
+        D = p1[ind2] - p1[ind1]
+    else:
+        p2 = np.atleast_2d(p2)
+        D = (p2[np.newaxis, :, :] - p1[:, np.newaxis, :]).reshape((-1, 3))
 
     # Check if using mic
     if cell is not None or pbc is not None:
@@ -280,6 +283,16 @@ def get_distances(p1, p2=None, cell=None, pbc=None):
         D, D_len = find_mic(D, cell, pbc)
     else:
         D_len = np.sqrt((D**2).sum(1))
+
+    if p2 is None:
+        Dout = np.zeros((np1, np1, 3))
+        Dout[(ind1, ind2)] = D
+        Dout -= np.transpose(Dout, axes=(1, 0, 2))
+
+        Dout_len = np.zeros((np1, np1))
+        Dout_len[(ind1, ind2)] = D_len
+        Dout_len += Dout_len.T
+        return Dout, Dout_len
 
     # Expand back to matrix indexing
     D.shape = (-1, len(p2), 3)
