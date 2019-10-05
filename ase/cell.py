@@ -204,9 +204,10 @@ class Cell:
 
     def uncomplete(self, pbc):
         """Return new cell, zeroing cell vectors where not periodic."""
-        pbc = np.asarray(pbc, bool)
+        _pbc = np.empty(3, bool)
+        _pbc[:] = pbc
         cell = self.copy()
-        cell[~pbc] = 0
+        cell[~_pbc] = 0
         return cell
 
     def complete(self):
