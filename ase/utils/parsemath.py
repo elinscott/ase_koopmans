@@ -66,6 +66,7 @@ operators = {
     ast.Div: div,
     ast.Pow: power,
     ast.USub: op.neg,
+    ast.Mod: op.mod,
 }
 
 # Take all functions from math module as allowed functions

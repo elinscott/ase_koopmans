@@ -46,6 +46,7 @@ expressions = [
     "2.0*e",
     "pi+1",
     "tau / pi",
+    "param_5 % param_6"
 ]
 
 solutions = [
@@ -83,6 +84,7 @@ solutions = [
     2.0*math.e,
     math.pi+1,
     math.tau / math.pi,
+    param_dct["param_5"] % param_dct["param_6"],
 ]
 
 for expr, soln in zip(expressions, solutions):
