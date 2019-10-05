@@ -17,6 +17,7 @@ import kimpy
 from kimpy import neighlist as nl
 
 from . import kim
+from . import kimpy_wrappers
 
 
 class KIMModelData(object):
@@ -38,7 +39,7 @@ class KIMModelData(object):
         self.compute_args = None
         self.neigh = None
 
-        # initialize KIM API Model object and ComputeArguments object
+        # initialize KIM API Portable Model object and ComputeArguments object
         self.init_kim()
 
         # initialize neighbor list object
@@ -51,86 +52,11 @@ class KIMModelData(object):
         if self.kim_initialized:
             return
 
-        # create KIM API Model object
-        units_accepted, self.kim_model = kim.check_call(
-            kimpy.model.create,
-            kimpy.numbering.zeroBased,
-            kimpy.length_unit.A,
-            kimpy.energy_unit.eV,
-            kimpy.charge_unit.e,
-            kimpy.temperature_unit.K,
-            kimpy.time_unit.ps,
-            self.model_name,
-        )
+        self.kim_model = kimpy_wrappers.PortableModel(self.model_name, self.debug)
 
-        if not units_accepted:
-            report_error("Requested units not accepted in kimpy.model.create")
-
-        if self.debug:
-            l_unit, e_unit, c_unit, te_unit, ti_unit = self.kim_model.get_units()
-            print("Length unit is:", str(l_unit))
-            print("Energy unit is:", str(e_unit))
-            print("Charge unit is:", str(c_unit))
-            print("Temperature unit is:", str(te_unit))
-            print("Time unit is:", str(ti_unit))
-            print()
-
-        # create KIM API ComputeArguments object
-        self.compute_args = kim.check_call(self.kim_model.compute_arguments_create)
-
-        # check compute arguments
-        kimpy_arg_name = kimpy.compute_argument_name
-        num_arguments = kimpy_arg_name.get_number_of_compute_argument_names()
-        if self.debug:
-            print("Number of compute_args:", num_arguments)
-
-        for i in range(num_arguments):
-            name = kim.check_call(kimpy_arg_name.get_compute_argument_name, i)
-            dtype = kim.check_call(kimpy_arg_name.get_compute_argument_data_type, name)
-
-            arg_support = kim.check_call(
-                self.compute_args.get_argument_support_status, name
-            )
-
-            if self.debug:
-                print(
-                    "Compute Argument name {:21} is of type {:7} and has support "
-                    "status {}".format(*[str(x) for x in [name, dtype, arg_support]])
-                )
-
-            # the simulator can handle energy and force from a kim model
-            # virial is computed within the calculator
-            if arg_support == kimpy.support_status.required:
-                if (
-                    name != kimpy.compute_argument_name.partialEnergy
-                    and name != kimpy.compute_argument_name.partialForces
-                ):
-                    report_error("Unsupported required ComputeArgument {}".format(name))
-
-        # check compute callbacks
-        callback_name = kimpy.compute_callback_name
-        num_callbacks = callback_name.get_number_of_compute_callback_names()
-        if self.debug:
-            print()
-            print("Number of callbacks:", num_callbacks)
-
-        for i in range(num_callbacks):
-            name = kim.check_call(callback_name.get_compute_callback_name, i)
-
-            callback_support = self.compute_args.get_callback_support_status
-            support_status = kim.check_call(callback_support, name)
-
-            if self.debug:
-                n_space = 18 - len(str(name))
-                print(
-                    'Compute callback "{}"'.format(name)
-                    + " " * n_space
-                    + 'has support status "{}".'.format(support_status)
-                )
-
-            # cannot handle any "required" callbacks
-            if support_status == kimpy.support_status.required:
-                report_error("Unsupported required ComputeCallback: {}".format(name))
+        # KIM API model object is what actually creates/destroys the ComputeArguments
+        # object, so we must pass it as a parameter
+        self.compute_args = self.kim_model.compute_arguments_create()
 
         self.kim_initialized = True
 
@@ -141,20 +67,15 @@ class KIMModelData(object):
         if self.ase_neigh:
             neigh = {}
             self.neigh = neigh
-            kim.check_call(
-                self.compute_args.set_callback,
-                kimpy.compute_callback_name.GetNeighborList,
-                get_neigh,
-                neigh,
+            self.compute_args.set_callback(
+                kimpy.compute_callback_name.GetNeighborList, get_neigh, neigh
             )
+
         else:
             neigh = nl.initialize()
             self.neigh = neigh
-            kim.check_call(
-                self.compute_args.set_callback_pointer,
-                kimpy.compute_callback_name.GetNeighborList,
-                nl.get_neigh_kim(),
-                neigh,
+            self.compute_args.set_callback_pointer(
+                kimpy.compute_callback_name.GetNeighborList, nl.get_neigh_kim(), neigh
             )
 
         self.neigh_initialized = True
@@ -173,8 +94,8 @@ class KIMModelData(object):
         and KIM API ComputeArguments object
         """
         if self.kim_initialized:
-            kim.check_call(self.kim_model.compute_arguments_destroy, self.compute_args)
-            kimpy.model.destroy(self.kim_model)
+            self.kim_model.compute_arguments_destroy(self.compute_args)
+            self.kim_model.destroy()
             self.kim_initialized = False
 
     def clean(self):
@@ -507,7 +428,7 @@ class KIMModelCalculator(Calculator):
 
         if pbc.any():  # need padding atoms
             # create padding atoms
-            padding_coords, padding_species_code, self.padding_image_of = kim.check_call(
+            padding_coords, padding_species_code, self.padding_image_of = kimpy_wrappers.check_call(
                 nl.create_paddings,
                 self.influence_dist,
                 cell,
@@ -539,7 +460,7 @@ class KIMModelCalculator(Calculator):
             need_neigh = self.particle_contributing
 
         # create neighborlist
-        kim.check_call(
+        kimpy_wrappers.check_call(
             nl.build,
             self.neigh,
             self.coords,
@@ -558,42 +479,16 @@ class KIMModelCalculator(Calculator):
         self.forces = np.zeros([self.num_particles[0], 3], dtype=np.double)
 
         compute_arg_name = kimpy.compute_argument_name
+        set_argument_pointer = self.compute_args.set_argument_pointer
 
-        kim.check_call(
-            self.compute_args.set_argument_pointer,
-            compute_arg_name.numberOfParticles,
-            self.num_particles,
+        set_argument_pointer(compute_arg_name.numberOfParticles, self.num_particles)
+        set_argument_pointer(compute_arg_name.particleSpeciesCodes, self.species_code)
+        set_argument_pointer(
+            compute_arg_name.particleContributing, self.particle_contributing
         )
-
-        kim.check_call(
-            self.compute_args.set_argument_pointer,
-            compute_arg_name.particleSpeciesCodes,
-            self.species_code,
-        )
-
-        kim.check_call(
-            self.compute_args.set_argument_pointer,
-            compute_arg_name.particleContributing,
-            self.particle_contributing,
-        )
-
-        kim.check_call(
-            self.compute_args.set_argument_pointer,
-            compute_arg_name.coordinates,
-            self.coords,
-        )
-
-        kim.check_call(
-            self.compute_args.set_argument_pointer,
-            compute_arg_name.partialEnergy,
-            self.energy,
-        )
-
-        kim.check_call(
-            self.compute_args.set_argument_pointer,
-            compute_arg_name.partialForces,
-            self.forces,
-        )
+        set_argument_pointer(compute_arg_name.coordinates, self.coords)
+        set_argument_pointer(compute_arg_name.partialEnergy, self.energy)
+        set_argument_pointer(compute_arg_name.partialForces, self.forces)
 
         if self.debug:
             print("Debug: called update_kim")
@@ -662,7 +557,7 @@ class KIMModelCalculator(Calculator):
             else:
                 self.update_kim_coords(atoms)
 
-            kim.check_call(self.kim_model.compute, self.compute_args, self.release_GIL)
+            self.kim_model.compute(self.compute_args, self.release_GIL)
 
         energy = self.energy[0]
         forces = assemble_padding_forces(
@@ -698,10 +593,11 @@ class KIMModelCalculator(Calculator):
         num_kim_species = kimpy.species_name.get_number_of_species_names()
 
         for i in range(num_kim_species):
-            species_name = kim.check_call(kimpy.species_name.get_species_name, i)
-            species_support, code = kim.check_call(
-                self.kim_model.get_species_support_and_code, species_name
+            species_name = kimpy_wrappers.get_species_name(i)
+            species_support, code = self.kim_model.get_species_support_and_code(
+                species_name
             )
+
             if species_support:
                 species.append(str(species_name))
                 codes.append(code)
