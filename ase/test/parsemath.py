@@ -46,7 +46,8 @@ expressions = [
     "2.0*e",
     "pi+1",
     "tau / pi",
-    "param_5 % param_6"
+    "param_5 % param_6",
+    "param_3 // param_6",
 ]
 
 solutions = [

@@ -3,6 +3,8 @@ import ast
 import operator as op
 import math
 
+from numpy import int64
+
 # Sets the limit of how high the number can get to prevent DNS attacks
 max_value = 1e17
 
@@ -67,6 +69,7 @@ operators = {
     ast.Pow: power,
     ast.USub: op.neg,
     ast.Mod: op.mod,
+    ast.FloorDiv: op.ifloordiv
 }
 
 # Take all functions from math module as allowed functions
@@ -112,6 +115,30 @@ def get_function(node):
         raise TypeError("node.func is of the wrong type")
 
 
+def limit(max_=None):
+    """Return decorator that limits allowed returned values."""
+    import functools
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            ret = func(*args, **kwargs)
+            try:
+                mag = abs(ret)
+            except TypeError:
+                pass  # not applicable
+            else:
+                if mag > max_:
+                    raise ValueError(ret)
+                if isinstance(ret, int):
+                    ret = int64(ret)
+            return ret
+
+        return wrapper
+
+    return decorator
+
+@limit(max_=max_value)
 def _eval(node):
     """Evaluate a mathematical expression string parsed by ast"""
     # Allow evaluate certain types of operators
@@ -137,31 +164,6 @@ def _eval(node):
             raise TypeError("Found a str in the expression, either param_dct/the expression has a mistake in the parameter names or attempting to parse non-mathematical code")
     else:
         raise TypeError(node)
-
-
-def limit(max_=None):
-    """Return decorator that limits allowed returned values."""
-    import functools
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            ret = func(*args, **kwargs)
-            try:
-                mag = abs(ret)
-            except TypeError:
-                pass  # not applicable
-            else:
-                if mag > max_:
-                    raise ValueError(ret)
-            return ret
-
-        return wrapper
-
-    return decorator
-
-
-_eval = limit(max_=max_value)(_eval)
 
 
 def eval_expression(expression, param_dct=dict()):
