@@ -8,8 +8,8 @@ University of Minnesota
 import functools
 
 import kimpy
+from kimpy import neighlist
 from . import kim
-
 
 # TODO: Centralize or delete this function
 def report_error(msg):
@@ -248,7 +248,9 @@ class ComputeArguments(object):
 
     @check_call_wrapper
     def destroy(self):
-        return self.kim_model_wrapped.kim_model.compute_arguments_destroy(self.compute_args)
+        return self.kim_model_wrapped.kim_model.compute_arguments_destroy(
+            self.compute_args
+        )
 
 
 class SimulatorModel(object):
@@ -361,3 +363,28 @@ class SimulatorModel(object):
         if self.initialized:
             kimpy.simulator_model.destroy(self.simulator_model)
             self.initialized = False
+
+
+class NeighborList(object):
+    def __init__(self, compute_args):
+        self.neigh = neighlist.initialize()
+        compute_args.set_callback_pointer(
+            kimpy.compute_callback_name.GetNeighborList,
+            neighlist.get_neigh_kim(),
+            self.neigh,
+        )
+
+    @check_call_wrapper
+    def build(self, coords, influence_dist, cutoffs, need_neigh):
+        return neighlist.build(self.neigh, coords, influence_dist, cutoffs, need_neigh)
+
+    @check_call_wrapper
+    def create_paddings(
+        self, influence_dist, cell, pbc, contributing_coords, contributing_species_code
+    ):
+        return neighlist.create_paddings(
+            influence_dist, cell, pbc, contributing_coords, contributing_species_code
+        )
+
+    def clean(self):
+        neighlist.clean(self.neigh)

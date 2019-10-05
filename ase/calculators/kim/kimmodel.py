@@ -14,7 +14,6 @@ from ase.calculators.calculator import equal
 from ase import Atom
 from ase.neighborlist import neighbor_list
 import kimpy
-from kimpy import neighlist as nl
 
 from . import kim
 from . import kimpy_wrappers
@@ -72,11 +71,7 @@ class KIMModelData(object):
             )
 
         else:
-            neigh = nl.initialize()
-            self.neigh = neigh
-            self.compute_args.set_callback_pointer(
-                kimpy.compute_callback_name.GetNeighborList, nl.get_neigh_kim(), neigh
-            )
+            self.neigh = kimpy_wrappers.NeighborList(self.compute_args)
 
         self.neigh_initialized = True
 
@@ -86,7 +81,7 @@ class KIMModelData(object):
         """
         if self.neigh_initialized:
             if not self.ase_neigh:
-                nl.clean(self.neigh)
+                self.neigh.clean()
             self.neigh_initialized = False
 
     def clean_kim(self):
@@ -428,8 +423,8 @@ class KIMModelCalculator(Calculator):
 
         if pbc.any():  # need padding atoms
             # create padding atoms
-            padding_coords, padding_species_code, self.padding_image_of = kimpy_wrappers.check_call(
-                nl.create_paddings,
+
+            padding_coords, padding_species_code, self.padding_image_of = self.neigh.create_paddings(
                 self.influence_dist,
                 cell,
                 pbc,
@@ -460,14 +455,7 @@ class KIMModelCalculator(Calculator):
             need_neigh = self.particle_contributing
 
         # create neighborlist
-        kimpy_wrappers.check_call(
-            nl.build,
-            self.neigh,
-            self.coords,
-            self.influence_dist,
-            self.cutoffs,
-            need_neigh,
-        )
+        self.neigh.build(self.coords, self.influence_dist, self.cutoffs, need_neigh)
 
         if self.debug:
             print("Debug: called update_kimpy_neigh")
