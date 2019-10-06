@@ -93,7 +93,7 @@ def reduction_full(B):
     raise RuntimeError("Reduced basis not found after %d iterations" % max_it)
 
 
-def minkowski_reduce(cell, pbc=None):
+def minkowski_reduce(cell, pbc=True):
     """Calculate a Minkowski-reduced lattice basis.  The reduced basis
     has the shortest possible vector lengths and has
     norm(a) <= norm(b) <= norm(c).
@@ -107,35 +107,52 @@ def minkowski_reduce(cell, pbc=None):
 
     Parameters:
 
-    B: array
+    cell: array
         The lattice basis to reduce (in row-vector format).
     pbc: array, optional
-        The periodic boundary conditions of the cell (Default `None`).
+        The periodic boundary conditions of the cell (Default `True`).
         If `pbc` is provided, only periodic cell vectors are reduced.
 
     Returns:
 
-    R: array
+    rcell: array
         The reduced lattice basis.
-    H: array
-        The unimodular matrix transformation (R = H @ B).
+    op: array
+        The unimodular matrix transformation (rcell = op @ cell).
     """
-    if pbc is None:
+    if hasattr(pbc, "__len__"):
+        dim = np.sum(pbc)
+    elif pbc:
         dim = 3
     else:
-        dim = np.sum(pbc)
+        dim = 0
 
-    mr_path = np.eye(3).astype(np.int)
-    if dim <= 1:
-        mr_cell = np.copy(cell)
-    elif dim == 2:
-        indices = np.argsort(pbc, kind='merge')[::-1]    # stable sort
-        _cell = cell[indices]
-        hu, hv = reduction_gauss(_cell, mr_path[0], mr_path[1])
-        mr_path[indices[0]] = hu
-        mr_path[indices[1]] = hv
-        mr_cell = np.dot(mr_path, cell)
+    op = np.eye(3).astype(np.int)
+    if dim == 2:
+        perm = np.argsort(pbc, kind='merge')[::-1]    # stable sort
+        hu, hv = reduction_gauss(cell[perm][:, perm], op[0], op[1])
+
+        op[0] = hu
+        op[1] = hv
+        invperm = np.argsort(perm)
+        op = op[invperm][:, invperm]
+
     elif dim == 3:
-        _, mr_path = reduction_full(cell)
-        mr_cell = np.dot(mr_path, cell)
-    return mr_cell, mr_path
+        _, op = reduction_full(cell)
+
+    # maintain cell handedness
+    if dim == 3:
+        if np.sign(np.linalg.det(cell)) != np.sign(np.linalg.det(op @ cell)):
+            op = -op
+    elif dim == 2:
+        index = np.argmin(pbc)
+        _cell = cell.copy()
+        _cell[index] = (1, 1, 1)
+        _rcell = op @ cell
+        _rcell[index] = (1, 1, 1)
+
+        if np.sign(np.linalg.det(_cell)) != np.sign(np.linalg.det(_rcell)):
+            index = np.argmax(pbc)
+            op[:, index] *= -1
+
+    return op @ cell, op
