@@ -193,7 +193,12 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
                             (0, 0, a * covera)],
                       pbc=True)
     elif crystalstructure == 'tetragonal':
-        atoms = Atoms(name, cell=[a, a, c], pbc=True)
+        if basis is None:
+            basis = ref.get('basis')
+        if basis is not None:
+            natoms = len(basis)
+        atoms = Atoms([name] * natoms, cell=[a, a, c], pbc=True,
+                      scaled_positions=basis)
     elif crystalstructure == 'rhombohedral':
         atoms = _build_rhl(name, a, alpha, basis)
     elif crystalstructure == 'orthorhombic':

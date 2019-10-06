@@ -569,6 +569,7 @@ covalent_radii = np.array([
 # This data is from Ashcroft and Mermin.
 # Most constants are listed in periodic table, inside front cover.
 # For basis of RHL systems (represented here as basis_x) see page 127.
+# For TET systems see page 127, too.
 reference_states = [
     None,  # X
     {'symmetry': 'diatom', 'd': 0.74},  # H
@@ -623,7 +624,7 @@ reference_states = [
     {'symmetry': 'tetragonal', 'c/a': 1.076, 'a': 4.59,  # In
      'basis': 0.5 * np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]])},
     {'symmetry': 'tetragonal', 'c/a': 0.546, 'a': 5.82,  # Sn
-     'basis': np.array([[0] * 3, [0, .5, .25], [.5, 0, .75], [.5] * 3])},
+     'basis': np.array([[0, 0, 0], [0, .5, .25], [.5, 0, .75], [.5, .5, .5]])},
     {'symmetry': 'rhombohedral', 'a': 4.51, 'alpha': 57.60,  # Sb
      'basis_x': np.array(0.233) * (-1, 1)},
     {'symmetry': 'hcp', 'c/a': 1.330, 'a': 4.45},  # Te
