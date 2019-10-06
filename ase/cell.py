@@ -306,7 +306,7 @@ class Cell:
 
         See also :func:`ase.geometry.minkowski_reduction.minkowski_reduce`."""
         from ase.geometry.minkowski_reduction import minkowski_reduce
-        rcell, op = minkowski_reduce(self)
+        rcell, op = minkowski_reduce(self, self.any(1) & self._pbc)
         return Cell(rcell), op
 
     # XXX We want a reduction function that brings the cell into
