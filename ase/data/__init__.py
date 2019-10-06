@@ -3,6 +3,7 @@ import numpy as np
 
 from ase.data.vdw import vdw_radii
 
+
 __all__ = ['vdw_radii', 'chemical_symbols', 'ground_state_magnetic_moments',
            'reference_states', 'atomic_names', 'atomic_masses',
            'atomic_numbers', 'covalent_radii']
@@ -566,6 +567,8 @@ covalent_radii = np.array([
 ])
 
 # This data is from Ashcroft and Mermin.
+# Most constants are listed in periodic table, inside front cover.
+# For basis of RHL systems (represented here as basis_x) see page 127.
 reference_states = [
     None,  # X
     {'symmetry': 'diatom', 'd': 0.74},  # H
@@ -600,7 +603,8 @@ reference_states = [
     {'symmetry': 'hcp', 'c/a': 1.856, 'a': 2.66},  # Zn
     {'symmetry': 'orthorhombic', 'c/a': 1.695, 'a': 4.51, 'b/a': 1.001},  # Ga
     {'symmetry': 'diamond', 'a': 5.66},  # Ge
-    {'symmetry': 'rhombohedral', 'a': 4.13, 'alpha': 54.10},  # As
+    {'symmetry': 'rhombohedral', 'a': 4.13, 'alpha': 54.10,  # As
+     'basis_x': np.array(0.226) * (-1, 1)},
     {'symmetry': 'hcp', 'c/a': 1.136, 'a': 4.36},  # Se
     {'symmetry': 'orthorhombic', 'c/a': 1.307, 'a': 6.67, 'b/a': 0.672},  # Br
     {'symmetry': 'fcc', 'a': 5.72},  # Kr
@@ -616,9 +620,12 @@ reference_states = [
     {'symmetry': 'fcc', 'a': 3.89},  # Pd
     {'symmetry': 'fcc', 'a': 4.09},  # Ag
     {'symmetry': 'hcp', 'c/a': 1.886, 'a': 2.98},  # Cd
-    {'symmetry': 'tetragonal', 'c/a': 1.076, 'a': 4.59},  # In
-    {'symmetry': 'tetragonal', 'c/a': 0.546, 'a': 5.82},  # Sn
-    {'symmetry': 'rhombohedral', 'a': 4.51, 'alpha': 57.60},  # Sb
+    {'symmetry': 'tetragonal', 'c/a': 1.076, 'a': 4.59,  # In
+     'basis': 0.5 * np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]])},
+    {'symmetry': 'tetragonal', 'c/a': 0.546, 'a': 5.82,  # Sn
+     'basis': np.array([[0] * 3, [0, .5, .25], [.5, 0, .75], [.5] * 3])},
+    {'symmetry': 'rhombohedral', 'a': 4.51, 'alpha': 57.60,  # Sb
+     'basis_x': np.array(0.233) * (-1, 1)},
     {'symmetry': 'hcp', 'c/a': 1.330, 'a': 4.45},  # Te
     {'symmetry': 'orthorhombic', 'c/a': 1.347, 'a': 7.27, 'b/a': 0.659},  # I
     {'symmetry': 'fcc', 'a': 6.20},  # Xe
@@ -629,7 +636,8 @@ reference_states = [
     {'symmetry': 'hcp', 'c/a': 1.614, 'a': 3.67},  # Pr
     {'symmetry': 'hcp', 'c/a': 1.614, 'a': 3.66},  # Nd
     None,  # Pm
-    {'symmetry': 'rhombohedral', 'a': 9.00, 'alpha': 23.13},  # Sm
+    {'symmetry': 'rhombohedral', 'a': 9.00, 'alpha': 23.13,
+     'basis_x': np.array(0.222) * (0, -1, 1)},  # Sm
     {'symmetry': 'bcc', 'a': 4.61},  # Eu
     {'symmetry': 'hcp', 'c/a': 1.588, 'a': 3.64},  # Gd
     {'symmetry': 'hcp', 'c/a': 1.581, 'a': 3.60},  # Th
@@ -647,10 +655,12 @@ reference_states = [
     {'symmetry': 'fcc', 'a': 3.84},  # Ir
     {'symmetry': 'fcc', 'a': 3.92},  # Pt
     {'symmetry': 'fcc', 'a': 4.08},  # Au
-    {'symmetry': 'rhombohedral', 'a': 2.99, 'alpha': 70.45},  # Hg
+    {'symmetry': 'rhombohedral', 'a': 2.99, 'alpha': 70.45,  # Hg
+     'basis_x': np.zeros(1)},
     {'symmetry': 'hcp', 'c/a': 1.599, 'a': 3.46},  # Tl
     {'symmetry': 'fcc', 'a': 4.95},  # Pb
-    {'symmetry': 'rhombohedral', 'a': 4.75, 'alpha': 57.14},  # Bi
+    {'symmetry': 'rhombohedral', 'a': 4.75, 'alpha': 57.14,
+     'basis_x': np.array(0.237) * (-1, 1)},  # Bi
     {'symmetry': 'sc', 'a': 3.35},  # Po
     None,  # At
     None,  # Rn
