@@ -5,6 +5,7 @@ from scipy import sparse as sp
 
 from ase.data import atomic_numbers, covalent_radii
 from ase.geometry import complete_cell
+from ase.geometry import find_mic
 
 
 def natural_cutoffs(atoms, mult=1, **kwargs):
@@ -131,15 +132,8 @@ def mic(dr, cell, pbc=None):
         Array of distance vectors, wrapped according to the minimum image
         convention.
     """
-    # Check where distance larger than 1/2 cell. Particles have crossed
-    # periodic boundaries then and need to be unwrapped.
-    icell = np.linalg.pinv(cell)
-    if pbc is not None:
-        icell *= np.array(pbc, dtype=int).reshape(3, 1)
-    cell_shift_vectors = np.round(np.dot(dr, icell))
-
-    # Unwrap
-    return dr - np.dot(cell_shift_vectors, cell)
+    dr, _ = find_mic(dr, cell, pbc)
+    return dr
 
 
 def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
