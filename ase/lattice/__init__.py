@@ -1046,7 +1046,7 @@ class CRECT(BravaisLattice):
         return points
 
 
-@bravaisclass('primitive square', 'tetragonal', None, 'tp', ('a'),
+@bravaisclass('primitive square', 'tetragonal', None, 'tp', ('a',),
               [['SQR', 'GMX', 'MGXM',
                 get_subset_points('GMX', sc_special_points['tetragonal'])]],
               ndim=2)
@@ -1058,6 +1058,19 @@ class SQR(BravaisLattice):
         return np.array([[a, 0, 0],
                          [0, a, 0],
                          [0, 0, 0.]])
+
+
+@bravaisclass('primitive line', 'line', None, '?', ('a',),
+              [['LINE', 'GX', 'GX', {'G': [0, 0, 0], 'X': [0.5, 0, 0]}]],
+              ndim=1)
+class LINE(BravaisLattice):
+    def __init__(self, a, **kwargs):
+        BravaisLattice.__init__(self, a=a, **kwargs)
+
+    def _cell(self, a):
+        return np.array([[a, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0]])
 
 
 def celldiff(cell1, cell2):
@@ -1089,22 +1102,38 @@ def identify_lattice(cell, eps=2e-4, *, pbc=None):
     """Find Bravais lattice representing this cell.
 
     Returns Bravais lattice object representing the cell along with
-    and operation that, applied to the cell, yields the same lengths
+    an operation that, applied to the cell, yields the same lengths
     and angles as the Bravais lattice object."""
 
     if pbc is None:
         pbc = cell.any(1)
 
     npbc = sum(pbc)
+
+    if npbc == 1:
+        i = np.argmax(pbc)  # index of periodic axis
+        a = cell[i, i]
+        if a < 0 or cell[i, [i - 1, i - 2]].any():
+            raise ValueError('Not a 1-d cell ASE can handle: {cell}.'
+                             .format(cell=cell))
+        if i == 0:
+            op = np.eye(3)
+        elif i == 1:
+            op = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+        else:
+            op = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+        return LINE(a), op
+
     if npbc == 2:
         lat, op = get_2d_bravais_lattice(cell, eps, pbc=pbc)
         return lat, op
 
     if npbc != 3:
-        raise ValueError('System must be periodic either along two first '
-                         'axes or along all three.  Got pbc={}'
-                         .format(pbc))
-
+        raise ValueError('System must be periodic either '
+                         'along all three axes, '
+                         'along two first axes or, '
+                         'along the thrid axis.  '
+                         'Got pbc={}'.format(pbc))
 
     from ase.geometry.bravais_type_engine import niggli_op_table
 
@@ -1484,3 +1513,5 @@ def all_variants():
     yield CRECT(a, alpha=alpha)
     yield HEX2D(a)
     yield SQR(a)
+
+    yield LINE(a)

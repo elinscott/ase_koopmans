@@ -185,6 +185,7 @@ extension2format = {
     '34': 'crystal',
     'g96': 'gromos',
     'geom': 'castep-geom',
+    'gjf': 'gaussian',
     'gro': 'gromacs',
     'log': 'gaussian-out',
     'md': 'castep-md',
