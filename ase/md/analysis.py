@@ -61,13 +61,12 @@ class DiffusionCoefficient:
         
         """
 
-        from math import floor
         total_images = len(self.traj) - ignore_n_images
         self.no_of_segments = number_of_segments
-        self.len_segments = floor(total_images/self.no_of_segments)
+        self.len_segments = total_images // self.no_of_segments
 
         # These are the data objects we need when plotting information. First the x-axis, timesteps
-        self.timesteps = np.arange(0,total_images*self.timestep,self.timestep)
+        self.timesteps = np.linspace(0,total_images*self.timestep,total_images+1)
         # This holds all the data points for the diffusion coefficients, averaged over atoms
         self.xyz_segment_ensemble_average = np.zeros((self.no_of_segments,self.no_of_types_of_atoms,3,self.len_segments))
         # This holds all the information on linear fits, from which we get the diffusion coefficients
@@ -103,7 +102,7 @@ class DiffusionCoefficient:
             if self.molecule:
                 com_orig = np.zeros(3)
                 for atom_no in self.atom_indices:
-                    com_orig[:] += seg[0].positions[atom_no][:] / len(self.atom_indices)
+                    com_orig += seg[0].positions[atom_no] / len(self.atom_indices)
 
             # For each image, calculate displacement.
             # I spent some time deciding if this should run from 0 or 1, as the displacement will be zero for 
@@ -117,13 +116,13 @@ class DiffusionCoefficient:
                     # For each atom, work out displacement from start coordinate and collect information with like atoms
                     for atom_no in self.atom_indices:
                         sym_index = self.types_of_atoms.index(seg[image_no].symbols[atom_no])
-                        xyz_disp[sym_index][:] += np.square(seg[image_no].positions[atom_no][:] - seg[0].positions[atom_no][:])
+                        xyz_disp[sym_index] += np.square(seg[image_no].positions[atom_no] - seg[0].positions[atom_no])
         
                 else: # Calculating for group of atoms (molecule) and work out squared displacement
                     com_disp = np.zeros(3)
                     for atom_no in self.atom_indices:
-                        com_disp[:] += seg[image_no].positions[atom_no][:] / len(self.atom_indices)
-                    xyz_disp[0][:] += np.square(com_disp[:] - com_orig[:])
+                        com_disp += seg[image_no].positions[atom_no] / len(self.atom_indices)
+                    xyz_disp[0] += np.square(com_disp - com_orig)
 
                 # For each atom species or molecule, use xyz_disp to calculate the average data                      
                 for sym_index in range(self.no_of_types_of_atoms):
@@ -135,7 +134,7 @@ class DiffusionCoefficient:
             # We've collected all the data for this entire segment, so now to fit the data.
             for sym_index in range(self.no_of_types_of_atoms):    
                 self.slopes[sym_index][segment_no], self.intercepts[sym_index][segment_no] = self._fit_data(self.timesteps[start:end], 
-                                                                                                            self.xyz_segment_ensemble_average[segment_no][sym_index][:])
+                                                                                                            self.xyz_segment_ensemble_average[segment_no][sym_index])
 
     def _fit_data(self, x, y):
         """
