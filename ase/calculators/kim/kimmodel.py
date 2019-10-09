@@ -155,8 +155,7 @@ class KIMModelData(object):
         kimpy neighlist module, deallocate its memory
         """
         if self.neigh_initialized:
-            if not self.ase_neigh:
-                self.neigh.clean()
+            self.neigh.clean()
             self.neigh_initialized = False
 
     def clean_kim(self):
@@ -317,11 +316,9 @@ class KIMModelCalculator(Calculator):
 
         Calculator.calculate(self, atoms, properties, system_changes)
 
-        need_update_neigh = self.need_update_neigh(atoms, system_changes)
-
         # update KIM API input data and neighbor list if necessary
         if system_changes:
-            if need_update_neigh:
+            if self.need_neigh_update(atoms, system_changes):
                 self.update_neigh(atoms, self.species_map)
                 self.energy = np.array([0.0], dtype=np.double)
                 self.forces = np.zeros([self.num_particles[0], 3], dtype=np.double)
@@ -478,8 +475,8 @@ class KIMModelCalculator(Calculator):
         return self.neigh.num_contributing_particles
 
     @property
-    def need_update_neigh(self):
-        return self.neigh.need_update_neigh
+    def need_neigh_update(self):
+        return self.neigh.need_neigh_update
 
     @property
     def update_neigh(self):

@@ -385,20 +385,17 @@ class SimulatorModel(object):
     @property
     def atom_style(self):
         """
-        See if a 'model-init' field that contains an "atom_style"
-        command is listed in the simulator model metadata.  This is
-        specific to LAMMPS SMs and is only required for using the
-        LAMMPSrun calculator because it uses lammps.inputwriter to
-        create a data file.  All other content in 'model-init', if it
-        exists, is ignored.
+        See if a 'model-init' field exists in the SM metadata and, if
+        so, whether it contains any entries including an "atom_style"
+        command.  This is specific to LAMMPS SMs and is only required
+        for using the LAMMPSrun calculator because it uses
+        lammps.inputwriter to create a data file.  All other content in
+        'model-init', if it exists, is ignored.
         """
         atom_style = None
-        try:
-            for ln in self.metadata["model-init"]:
-                if ln.find("atom_style") != -1:
-                    atom_style = ln.split()[1]
-        except KeyError:
-            pass
+        for ln in self.metadata.get("model-init", []):
+            if ln.find("atom_style") != -1:
+                atom_style = ln.split()[1]
 
         return atom_style
 
