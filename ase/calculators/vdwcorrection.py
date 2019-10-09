@@ -215,6 +215,11 @@ class vdWTkatchenko09prl(Calculator):
 
         for name in properties:
             self.results[name] = self.calculator.get_property(name, atoms)
+        self.parameters = {'uncorrected_energy': self.results['energy'],
+                           'calculator': self.calculator.name}
+        for key in ['xc', 'mode', 'h']:
+            if key in self.calculator.parameters:
+                self.parameters[key] = self.calculator.parameters[key]
         self.atoms = atoms.copy()
 
         if self.vdwradii is not None:
@@ -338,8 +343,6 @@ class vdWTkatchenko09prl(Calculator):
                     forces[j] -= force_ij
         self.results['energy'] += EvdW
         self.results['forces'] += forces
-
-
 
         if self.txt:
             print(('\n' + self.__class__.__name__), file=self.txt)
