@@ -1139,7 +1139,7 @@ def identify_lattice(cell, eps=2e-4, *, pbc=None):
 
     if cell.rank < 3:
         raise ValueError('Expected 3 linearly independent cell vectors')
-    rcell, reduction_op = cell.niggli_reduce()
+    rcell, reduction_op = cell.niggli_reduce(eps=eps)
 
     # We tabulate the cell's Niggli-mapped versions so we don't need to
     # redo any work when the same Niggli-operation appears multiple times
