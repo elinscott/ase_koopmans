@@ -824,6 +824,7 @@ class Atoms(object):
     @classmethod
     def fromdict(cls, dct):
         """Rebuild atoms object from dictionary representation (todict)."""
+        dct = dct.copy()
         kw = {}
         for name in ['numbers', 'positions', 'cell', 'pbc']:
             kw[name] = dct.pop(name)
