@@ -1,4 +1,3 @@
-import fnmatch
 from ase.io.formats import ioformats
 
 
