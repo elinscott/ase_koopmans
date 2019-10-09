@@ -8,9 +8,16 @@ from ase import Atom
 
 from .kimpy_wrappers import check_call_wrapper
 
+
 class NeighborList(object):
-    def __init__(self, neigh_skin_ratio, model_influence_dist, model_cutoffs,
-            padding_not_require_neigh, debug):
+    def __init__(
+        self,
+        neigh_skin_ratio,
+        model_influence_dist,
+        model_cutoffs,
+        padding_not_require_neigh,
+        debug,
+    ):
 
         self.skin = neigh_skin_ratio * model_influence_dist
         self.influence_dist = model_influence_dist + self.skin
@@ -59,11 +66,24 @@ class NeighborList(object):
 
         return need_update_neigh
 
+
 class ASENeighborList(NeighborList):
-    def __init__(self, compute_args, neigh_skin_ratio, model_influence_dist, model_cutoffs,
-            padding_not_require_neigh, debug):
-        super().__init__(neigh_skin_ratio, model_influence_dist, model_cutoffs,
-            padding_not_require_neigh, debug)
+    def __init__(
+        self,
+        compute_args,
+        neigh_skin_ratio,
+        model_influence_dist,
+        model_cutoffs,
+        padding_not_require_neigh,
+        debug,
+    ):
+        super().__init__(
+            neigh_skin_ratio,
+            model_influence_dist,
+            model_cutoffs,
+            padding_not_require_neigh,
+            debug,
+        )
 
         self.neigh = {}
         compute_args.set_callback(
@@ -176,9 +196,7 @@ class ASENeighborList(NeighborList):
 
         return ac
 
-    def update(
-        self, atoms, species_map
-    ):
+    def update(self, atoms, species_map):
         """Create the neighbor list along with the other required
         parameters (which are stored as instance attributes). The
         required parameters are:
@@ -225,10 +243,22 @@ class ASENeighborList(NeighborList):
 
 
 class KimpyNeighborList(NeighborList):
-    def __init__(self, compute_args, neigh_skin_ratio, model_influence_dist, model_cutoffs,
-            padding_not_require_neigh, debug):
-        super().__init__(neigh_skin_ratio, model_influence_dist, model_cutoffs,
-            padding_not_require_neigh, debug)
+    def __init__(
+        self,
+        compute_args,
+        neigh_skin_ratio,
+        model_influence_dist,
+        model_cutoffs,
+        padding_not_require_neigh,
+        debug,
+    ):
+        super().__init__(
+            neigh_skin_ratio,
+            model_influence_dist,
+            model_cutoffs,
+            padding_not_require_neigh,
+            debug,
+        )
 
         self.neigh = neighlist.initialize()
         compute_args.set_callback_pointer(
@@ -239,15 +269,20 @@ class KimpyNeighborList(NeighborList):
 
     @check_call_wrapper
     def build(self, need_neigh):
-        return neighlist.build(self.neigh, self.coords, self.influence_dist,
-                self.cutoffs, need_neigh)
+        return neighlist.build(
+            self.neigh, self.coords, self.influence_dist, self.cutoffs, need_neigh
+        )
 
     @check_call_wrapper
     def create_paddings(
         self, cell, pbc, contributing_coords, contributing_species_code
     ):
         return neighlist.create_paddings(
-            self.influence_dist, cell, pbc, contributing_coords, contributing_species_code
+            self.influence_dist,
+            cell,
+            pbc,
+            contributing_coords,
+            contributing_species_code,
         )
 
     def update(self, atoms, species_map):
@@ -284,10 +319,7 @@ class KimpyNeighborList(NeighborList):
             # create padding atoms
 
             padding_coords, padding_species_code, self.padding_image_of = self.create_paddings(
-                cell,
-                pbc,
-                contributing_coords,
-                contributing_species_code,
+                cell, pbc, contributing_coords, contributing_species_code
             )
             num_padding = padding_species_code.size
 

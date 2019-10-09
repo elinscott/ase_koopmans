@@ -153,9 +153,7 @@ class PortableModel(object):
 
         for i in range(num_kim_species):
             species_name = get_species_name(i)
-            species_support, code = self.get_species_support_and_code(
-                species_name
-            )
+            species_support, code = self.get_species_support_and_code(species_name)
 
             if species_support:
                 species.append(str(species_name))

@@ -15,8 +15,10 @@ from . import kim
 from . import kimpy_wrappers
 from . import neighborlist
 
+
 def report_error(msg):
     raise kim.KIMCalculatorError(msg)
+
 
 class KIMModelData(object):
     """Initializes and subsequently stores the KIM API Model object, KIM
@@ -43,13 +45,18 @@ class KIMModelData(object):
         # set cutoff
         model_influence_dist = self.kim_model.get_influence_distance()
         model_cutoffs, padding_not_require_neigh = (
-                self.kim_model.get_neighbor_list_cutoffs_and_hints()
+            self.kim_model.get_neighbor_list_cutoffs_and_hints()
         )
 
         self.species_map = self.create_species_map()
 
         # initialize neighbor list object
-        self.init_neigh(neigh_skin_ratio, model_influence_dist, model_cutoffs, padding_not_require_neigh)
+        self.init_neigh(
+            neigh_skin_ratio,
+            model_influence_dist,
+            model_cutoffs,
+            padding_not_require_neigh,
+        )
 
     def init_kim(self):
         """Create the KIM API Model object and KIM API ComputeArguments
@@ -66,28 +73,40 @@ class KIMModelData(object):
 
         self.kim_initialized = True
 
-    def init_neigh(self, neigh_skin_ratio, model_influence_dist, model_cutoffs,
-            padding_not_require_neigh):
+    def init_neigh(
+        self,
+        neigh_skin_ratio,
+        model_influence_dist,
+        model_cutoffs,
+        padding_not_require_neigh,
+    ):
 
         """Initialize neighbor list (either an ASE-native neighborlist
         or one created using the neighlist module in kimpy
         """
         if self.ase_neigh:
-            self.neigh = neighborlist.ASENeighborList(self.compute_args,
-                    neigh_skin_ratio, model_influence_dist, model_cutoffs,
-                    padding_not_require_neigh, self.debug)
+            self.neigh = neighborlist.ASENeighborList(
+                self.compute_args,
+                neigh_skin_ratio,
+                model_influence_dist,
+                model_cutoffs,
+                padding_not_require_neigh,
+                self.debug,
+            )
         else:
-            self.neigh = neighborlist.KimpyNeighborList(self.compute_args,
-                    neigh_skin_ratio, model_influence_dist, model_cutoffs,
-                    padding_not_require_neigh, self.debug)
+            self.neigh = neighborlist.KimpyNeighborList(
+                self.compute_args,
+                neigh_skin_ratio,
+                model_influence_dist,
+                model_cutoffs,
+                padding_not_require_neigh,
+                self.debug,
+            )
 
         self.neigh_initialized = True
 
     def update_neigh(self, atoms):
-        self.neigh.update(
-            atoms,
-            self.species_map,
-        )
+        self.neigh.update(atoms, self.species_map)
 
     def update_kim_coords(self, atoms):
         """Update the atom positions in self.coords, which is registered in KIM."""
@@ -197,6 +216,7 @@ class KIMModelData(object):
     @property
     def need_update_neigh(self):
         return self.neigh.need_update_neigh
+
 
 class KIMModelCalculator(Calculator):
     """Calculator that works with KIM Portable Models (PMs).
@@ -475,4 +495,3 @@ class KIMModelCalculator(Calculator):
     @property
     def num_contributing_particles(self):
         return self.kimmodeldata.num_contributing_particles
-
