@@ -1,6 +1,7 @@
 import numpy as np
 import itertools
 from scipy import sparse as sp
+from scipy.spatial import cKDTree
 
 from ase.data import atomic_numbers, covalent_radii
 from ase.geometry import complete_cell, find_mic, wrap_positions
@@ -838,7 +839,6 @@ class NewPrimitiveNeighborList:
                 self.offset_vec[self.first_neigh[a]:self.first_neigh[a+1]])
 
 
-
 class PrimitiveNeighborList:
     """Neighbor list that works without Atoms objects.
 
@@ -900,12 +900,13 @@ class PrimitiveNeighborList:
         positions = wrap_positions(positions0, rcell, pbc=pbc, eps=0)
 
         natoms = len(positions)
-        indices = np.arange(natoms)
         self.nneighbors = 0
         self.npbcneighbors = 0
         self.neighbors = [np.empty(0, int) for a in range(natoms)]
         self.displacements = [np.empty((0, 3), int) for a in range(natoms)]
-        icell = np.linalg.pinv(cell)
+        self.nupdates += 1
+        if natoms == 0:
+            return
 
         N = []
         ircell = np.linalg.pinv(rcell)
@@ -918,6 +919,10 @@ class PrimitiveNeighborList:
                 n = 0
             N.append(n)
 
+        tree = cKDTree(positions, copy_data=True)
+        offsets = cell.scaled_positions(positions - positions0)
+        offsets = offsets.round().astype(np.int)
+
         for n1, n2, n3 in itertools.product(range(0, N[0] + 1),
                                             range(-N[1], N[1] + 1),
                                             range(-N[2], N[2] + 1)):
@@ -926,9 +931,16 @@ class PrimitiveNeighborList:
 
             displacement = (n1, n2, n3) @ rcell
             for a in range(natoms):
-                delta = (positions + displacement) - positions[a]
-                i = indices[(delta**2).sum(1) <
-                            (self.cutoffs + self.cutoffs[a])**2]
+
+                indices = tree.query_ball_point(positions[a] - displacement,
+                                                r=self.cutoffs[a] + rcmax)
+                if not len(indices):
+                    continue
+
+                indices = np.array(indices)
+                delta = positions[indices] + displacement - positions[a]
+                cutoffs = self.cutoffs[indices] + self.cutoffs[a]
+                i = indices[np.linalg.norm(delta, axis=1) < cutoffs]
                 if n1 == 0 and n2 == 0 and n3 == 0:
                     if self.self_interaction:
                         i = i[i >= a]
@@ -937,9 +949,8 @@ class PrimitiveNeighborList:
 
                 self.nneighbors += len(i)
                 self.neighbors[a] = np.concatenate((self.neighbors[a], i))
-                v = (delta[i] - positions0[i] + positions0[a]) @ icell
-                disp = v.round().astype(np.int)
 
+                disp = (n1, n2, n3) @ op + offsets[i] - offsets[a]
                 self.npbcneighbors += disp.any(1).sum()
                 self.displacements[a] = np.concatenate((self.displacements[a],
                                                         disp))
@@ -970,8 +981,6 @@ class PrimitiveNeighborList:
                     mask = np.logical_not(mask)
                     self.neighbors[a] = self.neighbors[a][mask]
                     self.displacements[a] = self.displacements[a][mask]
-
-        self.nupdates += 1
 
     def get_neighbors(self, a):
         """Return neighbors of atom number a.
