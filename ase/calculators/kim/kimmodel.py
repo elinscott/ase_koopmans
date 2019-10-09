@@ -442,10 +442,6 @@ class KIMModelCalculator(Calculator):
         return self.kimmodeldata.get_model_supported_species_and_codes
 
     @property
-    def skin(self):
-        return self.kimmodeldata.skin
-
-    @property
     def kim_model(self):
         return self.kimmodeldata.kim_model
 
