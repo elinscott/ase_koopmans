@@ -105,9 +105,6 @@ class KIMModelData(object):
 
         self.neigh_initialized = True
 
-    def update_neigh(self, atoms):
-        self.neigh.update(atoms, self.species_map)
-
     def update_kim_coords(self, atoms):
         """Update the atom positions in self.coords, which is registered in KIM."""
         if self.padding_image_of.size != 0:
@@ -182,14 +179,6 @@ class KIMModelData(object):
         self.clean()
 
     @property
-    def influence_dist(self):
-        return self.neigh.influence_dist
-
-    @property
-    def num_contributing_particles(self):
-        return self.neigh.num_contributing_particles
-
-    @property
     def padding_image_of(self):
         return self.neigh.padding_image_of
 
@@ -212,10 +201,6 @@ class KIMModelData(object):
     @property
     def get_model_supported_species_and_codes(self):
         return self.kim_model.get_model_supported_species_and_codes
-
-    @property
-    def need_update_neigh(self):
-        return self.neigh.need_update_neigh
 
 
 class KIMModelCalculator(Calculator):
@@ -337,7 +322,7 @@ class KIMModelCalculator(Calculator):
         # update KIM API input data and neighbor list if necessary
         if system_changes:
             if need_update_neigh:
-                self.update_neigh(atoms)
+                self.update_neigh(atoms, self.species_map)
                 self.energy = np.array([0.0], dtype=np.double)
                 self.forces = np.zeros([self.num_particles[0], 3], dtype=np.double)
                 self.update_compute_args_pointers(self.energy, self.forces)
@@ -449,10 +434,6 @@ class KIMModelCalculator(Calculator):
         return stress
 
     @property
-    def need_update_neigh(self):
-        return self.kimmodeldata.need_update_neigh
-
-    @property
     def update_compute_args_pointers(self):
         return self.kimmodeldata.update_compute_args_pointers
 
@@ -463,10 +444,6 @@ class KIMModelCalculator(Calculator):
     @property
     def skin(self):
         return self.kimmodeldata.skin
-
-    @property
-    def update_neigh(self):
-        return self.kimmodeldata.update_neigh
 
     @property
     def kim_model(self):
@@ -493,5 +470,21 @@ class KIMModelCalculator(Calculator):
         return self.kimmodeldata.update_kim_coords
 
     @property
+    def species_map(self):
+        return self.kimmodeldata.species_map
+
+    @property
+    def neigh(self):
+        return self.kimmodeldata.neigh
+
+    @property
     def num_contributing_particles(self):
-        return self.kimmodeldata.num_contributing_particles
+        return self.neigh.num_contributing_particles
+
+    @property
+    def need_update_neigh(self):
+        return self.neigh.need_update_neigh
+
+    @property
+    def update_neigh(self):
+        return self.neigh.update
