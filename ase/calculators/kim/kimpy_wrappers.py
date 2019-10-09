@@ -8,7 +8,6 @@ University of Minnesota
 import functools
 
 import kimpy
-from kimpy import neighlist
 from . import kim
 
 # TODO: Centralize or delete this function
@@ -134,6 +133,36 @@ class PortableModel(object):
             print("Time unit is: {}".format(ti_unit))
             print()
 
+    def get_model_supported_species_and_codes(self):
+        """Get all the supported species and corresponding integer codes
+        for the KIM Portable Model.
+
+        Returns
+        -------
+        species : list of str
+            Abbreviated chemical symbols of all species the mmodel
+            supports (e.g. ["Mo", "S"])
+
+        codes : list of int
+            Integer codes used by the model for each species (order
+            corresponds to the order of ``species``)
+        """
+        species = []
+        codes = []
+        num_kim_species = kimpy.species_name.get_number_of_species_names()
+
+        for i in range(num_kim_species):
+            species_name = get_species_name(i)
+            species_support, code = self.get_species_support_and_code(
+                species_name
+            )
+
+            if species_support:
+                species.append(str(species_name))
+                codes.append(code)
+
+        return species, codes
+
     @check_call_wrapper
     def compute(self, compute_args_wrapped, release_GIL):
         return self.kim_model.compute(compute_args_wrapped.compute_args, release_GIL)
@@ -245,6 +274,26 @@ class ComputeArguments(object):
         return self.compute_args.set_callback_pointer(
             compute_callback_name, callback, data_object
         )
+
+    def update(
+        self, num_particles, species_code, particle_contributing, coords, energy, forces
+    ):
+        """ Register model input and output in the kim_model object."""
+        compute_arg_name = kimpy.compute_argument_name
+        set_argument_pointer = self.set_argument_pointer
+
+        set_argument_pointer(compute_arg_name.numberOfParticles, num_particles)
+        set_argument_pointer(compute_arg_name.particleSpeciesCodes, species_code)
+        set_argument_pointer(
+            compute_arg_name.particleContributing, particle_contributing
+        )
+        set_argument_pointer(compute_arg_name.coordinates, coords)
+        set_argument_pointer(compute_arg_name.partialEnergy, energy)
+        set_argument_pointer(compute_arg_name.partialForces, forces)
+
+        if self.debug:
+            print("Debug: called update_kim")
+            print()
 
     @check_call_wrapper
     def destroy(self):
@@ -363,28 +412,3 @@ class SimulatorModel(object):
         if self.initialized:
             kimpy.simulator_model.destroy(self.simulator_model)
             self.initialized = False
-
-
-class NeighborList(object):
-    def __init__(self, compute_args):
-        self.neigh = neighlist.initialize()
-        compute_args.set_callback_pointer(
-            kimpy.compute_callback_name.GetNeighborList,
-            neighlist.get_neigh_kim(),
-            self.neigh,
-        )
-
-    @check_call_wrapper
-    def build(self, coords, influence_dist, cutoffs, need_neigh):
-        return neighlist.build(self.neigh, coords, influence_dist, cutoffs, need_neigh)
-
-    @check_call_wrapper
-    def create_paddings(
-        self, influence_dist, cell, pbc, contributing_coords, contributing_species_code
-    ):
-        return neighlist.create_paddings(
-            influence_dist, cell, pbc, contributing_coords, contributing_species_code
-        )
-
-    def clean(self):
-        neighlist.clean(self.neigh)
