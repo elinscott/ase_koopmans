@@ -53,6 +53,9 @@ if 1:
         equal(s_out.get_potential_energy(), E, accuracy)
         for fi, fo in zip(F_ac, s_out.get_forces()):
             equal(fi, fo, accuracy)
+        if fname.endswith('.traj'):
+            assert(s_out.get_calculator().parameters['calculator'] == 'gpaw')
+
 
 # spin polarized
 
