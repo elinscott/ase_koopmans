@@ -32,13 +32,16 @@ class NeighborList(object):
 
         if self.debug:
             print()
-            print("Calculator skin:", self.skin)
-            print("Model influence distance:", model_influence_dist)
-            print("Calculator influence distance (include skin):", self.influence_dist)
-            print("Number of cutoffs:", model_cutoffs.size)
-            print("Model cutoffs:", model_cutoffs)
-            print("Calculator cutoffs (include skin):", self.cutoffs)
-            print("Model needs neighbors of padding atoms:", self.padding_need_neigh)
+            print("Calculator skin: {}".format(self.skin))
+            print("Model influence distance:".format(model_influence_dist))
+            print("Calculator influence distance (including skin distance): {}"
+                    "".format(self.influence_dist))
+            print("Number of cutoffs: {}".format(model_cutoffs.size))
+            print("Model cutoffs: {}".format(model_cutoffs))
+            print("Calculator cutoffs (including skin distance): {}"
+                    "".format(self.cutoffs))
+            print("Model needs neighbors of padding atoms: {}"
+                    "".format(self.padding_need_neigh))
             print()
 
         self.neigh = None
@@ -233,7 +236,7 @@ class ASENeighborList(NeighborList):
                 [species_map[s] for s in all_species], dtype=np.intc
             )
         except KeyError as e:
-            print("Species not supported by KIM model; {}".format(e))
+            print("Species not supported by KIM model; {}".format(str(e)))
 
         self.last_update_positions = atoms.get_positions()
 
