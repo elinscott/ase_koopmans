@@ -8,7 +8,8 @@ University of Minnesota
 import functools
 
 import kimpy
-from .kim import KIMCalculatorError
+
+from .exceptions import KIMCalculatorError
 
 def check_call(f, *args):
     """

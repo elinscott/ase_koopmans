@@ -15,18 +15,13 @@ import re
 import os
 
 from ase.data import atomic_masses, atomic_numbers
-from ase.calculators.calculator import CalculatorError
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.calculators.lammpsrun import LAMMPS
 from ase.calculators.lammps import convert
 
 from .kimmodel import KIMModelCalculator
 from . import kimpy_wrappers
-
-
-class KIMCalculatorError(CalculatorError):
-    pass
-
+from .exceptions import KIMCalculatorError
 
 def KIM(model_name, simulator=None, options=None, debug=False):
     """Calculator wrapper for OpenKIM models

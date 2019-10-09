@@ -228,12 +228,6 @@ class KIMModelCalculator(Calculator):
     debug : bool, optional
       If True, detailed information is printed to stdout. (Default:
       False)
-
-    Raises
-    ------
-    KIMCalculatorError
-        Blanket exception type used to handle errors that arise related
-        to incompatibilities of the model with what ASE requires
     """
 
     implemented_properties = ["energy", "forces", "stress"]

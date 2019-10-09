@@ -6,8 +6,8 @@ from kimpy import neighlist
 from ase.neighborlist import neighbor_list
 from ase import Atom
 
-from .kim import KIMCalculatorError
 from .kimpy_wrappers import check_call_wrapper
+from .exceptions import KIMCalculatorError
 
 
 class NeighborList(object):
