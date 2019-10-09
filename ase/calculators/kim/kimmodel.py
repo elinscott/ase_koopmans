@@ -11,13 +11,8 @@ import numpy as np
 from ase.calculators.calculator import Calculator
 from ase.calculators.calculator import equal
 
-from . import kim
 from . import kimpy_wrappers
 from . import neighborlist
-
-
-def report_error(msg):
-    raise kim.KIMCalculatorError(msg)
 
 
 class KIMModelData(object):
