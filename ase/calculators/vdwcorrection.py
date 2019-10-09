@@ -177,12 +177,19 @@ class vdWTkatchenko09prl(Calculator):
                 xc_name = self.calculator.get_xc_functional()
                 self.sR = sR_opt[xc_name]
             except KeyError:
-                raise ValueError('Tkatchenko-Scheffler dispersion correction not implemented for %s functional' % xc_name)
+                raise ValueError(
+                    'Tkatchenko-Scheffler dispersion correction not ' +
+                    'implemented for %s functional' % xc_name)
         else:
             self.sR = sR
         self.d = 20
 
         Calculator.__init__(self)
+
+        self.parameters['calculator'] = self.calculator.name
+        for key in ['xc', 'mode', 'h']:
+            if key in self.calculator.parameters:
+                self.parameters[key] = self.calculator.parameters[key]
 
     @property
     def implemented_properties(self):
@@ -215,11 +222,7 @@ class vdWTkatchenko09prl(Calculator):
 
         for name in properties:
             self.results[name] = self.calculator.get_property(name, atoms)
-        self.parameters = {'uncorrected_energy': self.results['energy'],
-                           'calculator': self.calculator.name}
-        for key in ['xc', 'mode', 'h']:
-            if key in self.calculator.parameters:
-                self.parameters[key] = self.calculator.parameters[key]
+        self.parameters['uncorrected_energy'] = self.results['energy']
         self.atoms = atoms.copy()
 
         if self.vdwradii is not None:
