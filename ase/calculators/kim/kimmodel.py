@@ -84,17 +84,10 @@ class KIMModelData(object):
         self.neigh_initialized = True
 
     def update_neigh(self, atoms):
-        if self.ase_neigh:
-            self.neigh.update(
-                atoms,
-                self.species_map,
-            )
-        else:
-            self.neigh.update(
-                atoms,
-                self.species_map,
-            )
-
+        self.neigh.update(
+            atoms,
+            self.species_map,
+        )
 
     def update_kim_coords(self, atoms):
         """Update the atom positions in self.coords, which is registered in KIM."""
