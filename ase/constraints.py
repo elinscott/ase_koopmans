@@ -1318,7 +1318,6 @@ class FixParametricRelations(FixConstraint):
     @property
     def expressions(self):
         """Generate the expressions represented by the current self.Jacobian and self.const_shift objects"""
-        import math
         expressions = []
         per = int(round(-1 * np.log10(self.eps)))
         fmt_str = "{:." + str(per + 1) + "g}"

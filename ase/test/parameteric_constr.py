@@ -92,7 +92,7 @@ constr_atom = FixScaledParametricRelations.from_expressions(
 )
 
 # Restart position adjustment
-pos += 0.01 * a.cell[0,0]
+pos += 0.01 * a.cell[0, 0]
 
 # Check adjust_positions
 constr_atom.adjust_positions(a, pos)
@@ -109,11 +109,12 @@ forces = a.get_forces()
 constr_atom.adjust_forces(a, forces)
 forces_rat = forces / a.get_forces()
 
-assert np.max(np.abs(forces_rat.flatten()/100.0 - expected_pos_diff)) < 1e-12
+assert np.max(np.abs(forces_rat.flatten() / 100.0 - expected_pos_diff)) < 1e-12
 
 # Check auto-remapping/expression generation, the -0.5 should now be 0.5
 expr_atom[4] = "0.5"
-for const_expr, passed_expr in zip(constr_atom.expressions.flatten(), expr_atom):
+current_expresions = constr_atom.expressions.flatten()
+for const_expr, passed_expr in zip(current_expresions, expr_atom):
     assert const_expr == passed_expr
 
 # Check with Cartesian parametric constraints now
@@ -146,7 +147,4 @@ forces = a.get_forces()
 constr_atom.adjust_forces(a, forces)
 forces_rat = forces / a.get_forces()
 
-assert np.max(np.abs(forces_rat.flatten()/100.0 - expected_pos_diff)) < 1e-12
-
-
-
+assert np.max(np.abs(forces_rat.flatten() / 100.0 - expected_pos_diff)) < 1e-12
