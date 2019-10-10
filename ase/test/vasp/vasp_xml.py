@@ -5,9 +5,7 @@ environment variables
 
 """
 
-import unittest
 import numpy as np
-import sys
 
 from ase.test.vasp import installed
 from ase import Atoms

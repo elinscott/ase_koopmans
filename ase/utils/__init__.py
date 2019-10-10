@@ -24,12 +24,9 @@ __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
 
 
 # Python 2+3 compatibility stuff (let's try to remove these things):
-import builtins
-exec_ = getattr(builtins, 'exec')
 basestring = str
 from io import StringIO
 pickleload = functools.partial(pickle.load, encoding='bytes')
-FileNotFoundError = getattr(builtins, 'FileNotFoundError')
 StringIO  # appease pyflakes
 
 

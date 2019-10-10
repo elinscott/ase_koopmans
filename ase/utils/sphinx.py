@@ -9,8 +9,6 @@ import re
 from docutils import nodes
 from docutils.parsers.rst.roles import set_classes
 
-from ase.utils import exec_
-
 import matplotlib
 matplotlib.use('Agg', warn=False)
 
@@ -122,7 +120,7 @@ def create_png_files():
             import matplotlib.pyplot as plt
             plt.figure()
             try:
-                exec_(compile(open(pyname).read(), pyname, 'exec'), {})
+                exec(compile(open(pyname).read(), pyname, 'exec'), {})
             except KeyboardInterrupt:
                 return
             except:

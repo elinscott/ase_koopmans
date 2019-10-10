@@ -1,7 +1,5 @@
 """Read and write json from/to file descriptor."""
-import sys
-from io import StringIO, BytesIO
-
+from io import StringIO
 from ase.io import read, write
 
 s = u"""

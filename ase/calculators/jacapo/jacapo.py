@@ -16,7 +16,6 @@ documentation
 
 __docformat__ = 'restructuredtext'
 
-import sys
 import exceptions, glob, os, pickle, string
 from Scientific.IO.NetCDF import NetCDFFile as netCDF
 import numpy as np

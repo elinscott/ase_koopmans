@@ -5,13 +5,11 @@ environment variables
 
 """
 
-import unittest
 from ase.test.vasp import installed2 as installed
 from ase import Atoms
 from ase.calculators.vasp import Vasp2 as Vasp
 from ase.io import read
 import numpy as np
-import sys
 
 assert installed()
 

@@ -1,5 +1,4 @@
 from distutils.core import setup
-import sys
 
 long_description = """\
 Jacapo is a python package providing an interface to Dacapo that
