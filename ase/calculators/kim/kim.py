@@ -318,10 +318,7 @@ def get_model_supported_species(model_name):
 
 
 def _asap_calculator(model_name, model_type, **kwargs):
-    try:
-        import asap3
-    except ImportError as e:
-        raise ImportError(str(e) + " You need to install asap3 first.")
+    import asap3
 
     if model_type == "pm":
 
