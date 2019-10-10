@@ -111,8 +111,7 @@ class KIMModelData(object):
         if self.padding_image_of.size != 0:
             disp_contrib = atoms.positions - self.coords[: len(atoms)]
             disp_pad = disp_contrib[self.padding_image_of]
-            disp = np.concatenate((disp_contrib, disp_pad))
-            self.coords += disp
+            self.coords += np.concatenate((disp_contrib, disp_pad))
         else:
             np.copyto(self.coords, atoms.positions)
 
@@ -386,9 +385,7 @@ class KIMModelCalculator(Calculator):
         """
         total_forces = np.array(forces[:num_contrib])
 
-        has_padding = True if padding_image_of.size != 0 else False
-
-        if has_padding:
+        if padding_image_of.size != 0:
             pad_forces = forces[num_contrib:]
             for f, org_index in zip(pad_forces, padding_image_of):
                 total_forces[org_index] += f
