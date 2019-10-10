@@ -9,8 +9,13 @@ import functools
 
 import kimpy
 
-from .exceptions import (KIMCalculatorError, KIMModelNotFound,
-        KIMInitializationError, KimpyError)
+from .exceptions import (
+    KIMCalculatorError,
+    KIMModelNotFound,
+    KIMInitializationError,
+    KimpyError,
+)
+
 
 def check_call(f, *args):
     """
@@ -119,7 +124,9 @@ class PortableModel(object):
         )
 
         if not units_accepted:
-            raise KIMInitializationError("Requested units not accepted in kimpy.model.create")
+            raise KIMInitializationError(
+                "Requested units not accepted in kimpy.model.create"
+            )
 
         if self.debug:
             l_unit, e_unit, c_unit, te_unit, ti_unit = self.kim_model.get_units()
@@ -221,7 +228,9 @@ class ComputeArguments(object):
                     name != kimpy.compute_argument_name.partialEnergy
                     and name != kimpy.compute_argument_name.partialForces
                 ):
-                    raise KIMInitializationError("Unsupported required ComputeArgument {}".format(name))
+                    raise KIMInitializationError(
+                        "Unsupported required ComputeArgument {}".format(name)
+                    )
 
         # check compute callbacks
         callback_name = kimpy.compute_callback_name
@@ -244,7 +253,9 @@ class ComputeArguments(object):
 
             # cannot handle any "required" callbacks
             if support_status == kimpy.support_status.required:
-                raise KIMInitializationError("Unsupported required ComputeCallback: {}".format(name))
+                raise KIMInitializationError(
+                    "Unsupported required ComputeCallback: {}".format(name)
+                )
 
     @check_call_wrapper
     def set_argument_pointer(self, compute_arg_name, data_object):

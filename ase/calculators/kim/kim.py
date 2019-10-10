@@ -23,6 +23,7 @@ from .kimmodel import KIMModelCalculator
 from . import kimpy_wrappers
 from .exceptions import KIMCalculatorError
 
+
 def KIM(model_name, simulator=None, options=None, debug=False):
     """Calculator wrapper for OpenKIM models
 

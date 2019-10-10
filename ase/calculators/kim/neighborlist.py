@@ -31,14 +31,20 @@ class NeighborList(object):
             print()
             print("Calculator skin: {}".format(self.skin))
             print("Model influence distance:".format(model_influence_dist))
-            print("Calculator influence distance (including skin distance): {}"
-                    "".format(self.influence_dist))
+            print(
+                "Calculator influence distance (including skin distance): {}"
+                "".format(self.influence_dist)
+            )
             print("Number of cutoffs: {}".format(model_cutoffs.size))
             print("Model cutoffs: {}".format(model_cutoffs))
-            print("Calculator cutoffs (including skin distance): {}"
-                    "".format(self.cutoffs))
-            print("Model needs neighbors of padding atoms: {}"
-                    "".format(self.padding_need_neigh))
+            print(
+                "Calculator cutoffs (including skin distance): {}"
+                "".format(self.cutoffs)
+            )
+            print(
+                "Model needs neighbors of padding atoms: {}"
+                "".format(self.padding_need_neigh)
+            )
             print()
 
         # Attributes to be set by subclasses
