@@ -13,7 +13,7 @@ a = bulk("Ni", cubic=True)
 a.set_calculator(EMT())
 
 # Get adjusted cell
-cell = a.cell.array.copy() + 0.01
+cell = a.cell + 0.01
 
 # Generate lattice constraint
 param_lat = ["a"]
@@ -22,11 +22,11 @@ expr_lat = [
     "0", "a", "0",
     "0", "0", "a",
 ]
-constr_lat = FixCartesianParametricRelations(
+constr_lat = FixCartesianParametricRelations.from_expressions(
     indices=[0, 1, 2],
     params=param_lat,
     expressions=expr_lat,
-    is_cell=True,
+    use_cell=True,
 )
 
 # Check expression generator
@@ -59,17 +59,10 @@ a.cell -= 0.01
 pos = a.get_positions().copy() + 0.01
 
 # Generate proper atomic constraints
-param_atom = []
-expr_atom = [
-    "0", "0", "0",
-    "0", "-0.5", "0.5",
-    "0.5", "0", "0.5",
-    "0.5", "0.5", "0",
-]
 constr_atom = FixScaledParametricRelations(
-    indices=[0, 1, 2, 3],
-    params=param_atom,
-    expressions=expr_atom,
+    [0, 1, 2, 3],
+    np.ndarray((12, 0)),
+    a.get_scaled_positions().flatten(),
 )
 
 # Check serialization and construction from dict
@@ -83,21 +76,16 @@ assert np.max(np.abs(a.get_positions() - pos)) < 1e-12
 # Check adjust_forces
 assert np.max(np.abs(a.get_forces())) < 1e-12
 
-# Check auto-remapping/expression generation, the -0.5 should now be 0.5
-expr_atom[4] = "0.5"
-for const_expr, passed_expr in zip(constr_atom.expressions.flatten(), expr_atom):
-    assert const_expr == passed_expr
-
 # Check non-empty constraint
 param_atom = ["dis"]
 expr_atom = [
     "dis", "dis", "dis",
-    "dis", "0.5", "0.5",
+    "dis", "-0.5", "0.5",
     "0.5", "dis", "0.5",
     "0.5", "0.5", "dis",
 ]
 
-constr_atom = FixScaledParametricRelations(
+constr_atom = FixScaledParametricRelations.from_expressions(
     indices=[0, 1, 2, 3],
     params=param_atom,
     expressions=expr_atom,
@@ -123,6 +111,11 @@ forces_rat = forces / a.get_forces()
 
 assert np.max(np.abs(forces_rat.flatten()/100.0 - expected_pos_diff)) < 1e-12
 
+# Check auto-remapping/expression generation, the -0.5 should now be 0.5
+expr_atom[4] = "0.5"
+for const_expr, passed_expr in zip(constr_atom.expressions.flatten(), expr_atom):
+    assert const_expr == passed_expr
+
 # Check with Cartesian parametric constraints now
 expr_atom = [
     "dis", "dis", "dis",
@@ -130,7 +123,7 @@ expr_atom = [
     "1.76", "dis", "1.76",
     "1.76", "1.76", "dis",
 ]
-constr_atom = FixCartesianParametricRelations(
+constr_atom = FixCartesianParametricRelations.from_expressions(
     indices=[0, 1, 2, 3],
     params=param_atom,
     expressions=expr_atom,
@@ -154,5 +147,6 @@ constr_atom.adjust_forces(a, forces)
 forces_rat = forces / a.get_forces()
 
 assert np.max(np.abs(forces_rat.flatten()/100.0 - expected_pos_diff)) < 1e-12
+
 
 

@@ -128,7 +128,7 @@ def read_aims(filename, apply_constraints=True):
     fix_params = []
 
     if len(symmetry_block) > 5:
-        params = symmetry_block[1].split(" ")[1:]
+        params = symmetry_block[1].split()[1:]
 
         lattice_expressions = []
         lattice_params = []
@@ -144,21 +144,21 @@ def read_aims(filename, apply_constraints=True):
         for ll, line in enumerate(symmetry_block[2:]):
             expression = " ".join(line.split(" ")[1:])
             if ll < 3:
-                lattice_expressions.append(expression.split(","))
+                lattice_expressions += expression.split(",")
             else:
-                atomic_expressions.append(expression.split(","))
+                atomic_expressions += expression.split(",")
 
         fix_params.append(
-            FixCartesianParametricRelations(
+            FixCartesianParametricRelations.from_expressions(
                 list(range(3)),
                 lattice_params,
                 lattice_expressions,
-                is_cell=True,
+                use_cell=True,
             )
         )
 
         fix_params.append(
-            FixScaledParametricRelations(
+            FixScaledParametricRelations.from_expressions(
                 list(range(len(atoms))),
                 atomic_params,
                 atomic_expressions,
