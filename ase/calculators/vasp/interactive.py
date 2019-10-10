@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 from subprocess import Popen, PIPE
 

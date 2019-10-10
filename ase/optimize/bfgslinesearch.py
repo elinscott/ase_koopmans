@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant

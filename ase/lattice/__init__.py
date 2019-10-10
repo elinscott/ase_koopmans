@@ -1,4 +1,3 @@
-from __future__ import division
 from abc import abstractmethod, ABC
 import functools
 import warnings

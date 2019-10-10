@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 # lammps.py (2011/03/29)
 # An ASE calculator for the LAMMPS classical MD code available from

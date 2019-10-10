@@ -1,5 +1,4 @@
 """TIP3P potential."""
-from __future__ import division
 
 import numpy as np
 

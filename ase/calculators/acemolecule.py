@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 from copy import deepcopy
 from ase.io.acemolecule import read_acemolecule_out

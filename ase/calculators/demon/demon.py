@@ -1,4 +1,3 @@
-from __future__ import print_function
 """This module defines an ASE interface to deMon.
 
 http://www.demon-software.com

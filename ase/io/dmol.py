@@ -46,7 +46,6 @@ multiple images of car format separated with $end
 
 """
 
-from __future__ import print_function
 from datetime import datetime
 import numpy as np
 

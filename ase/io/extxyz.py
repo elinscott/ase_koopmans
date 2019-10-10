@@ -11,7 +11,6 @@ description of the Extended XYZ file format.
 Contributed by James Kermode <james.kermode@gmail.com>
 """
 
-from __future__ import print_function
 
 from itertools import islice
 import re
