@@ -3,16 +3,25 @@ from ase import units
 from ase.calculators.calculator import Calculator, all_changes
 
 
-class EinsteinCalculator(Calculator):
+class SpringCalculator(Calculator):
     """
-    Einstein crystal calculator
+    Spring calculator corresponding to independent oscillators with a fixed
+    spring constant.
+
+
+    Energy for an atom is given as
+
+    E = k / 2 * (r - r_0)**2
+
+    where k is the spring constant and, r_0 the ideal positions.
+
 
     Parameters
     ----------
     ideal_positions : array
         array of the ideal crystal positions
     k : float
-        spring constant
+        spring constant in eV/Angstrom
     """
     implemented_properties = ['forces', 'energy']
 
@@ -34,7 +43,7 @@ class EinsteinCalculator(Calculator):
         return energy, forces
 
     def get_free_energy(self, T, method='classical'):
-        """Get analytic vibrational free energy for Einstein crystal
+        """Get analytic vibrational free energy for the spring system.
 
         Parameters
         ----------
@@ -45,7 +54,7 @@ class EinsteinCalculator(Calculator):
         """
         F = 0.0
         for m, c in np.unique(self.atoms.get_masses(), return_counts=True):
-            F += c * EinsteinCalculator.compute_free_energy(self.k, m, T, method)
+            F += c * SpringCalculator.compute_free_energy(self.k, m, T, method)
         return F
 
     @staticmethod
