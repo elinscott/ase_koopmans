@@ -17,9 +17,6 @@ assert installed()
 
 
 def main():
-    if sys.version_info < (2, 7):
-        raise unittest.SkipTest('read_xml requires Python version 2.7 or greater')
-
     assert installed()
 
     # simple test calculation of CO molecule
