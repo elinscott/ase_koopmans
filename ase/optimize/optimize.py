@@ -7,7 +7,7 @@ from math import sqrt
 from os.path import isfile
 
 from ase.calculators.calculator import PropertyNotImplementedError
-from ase.parallel import rank, barrier
+from ase.parallel import world, barrier
 from ase.io.trajectory import Trajectory
 from ase.utils import basestring
 import collections
@@ -46,7 +46,7 @@ class Dynamics:
 
         self.atoms = atoms
         if master is None:
-            master = rank == 0
+            master = world.rank == 0
         if not master:
             logfile = None
         elif isinstance(logfile, basestring):
@@ -276,7 +276,7 @@ class Optimizer(Dynamics):
             self.logfile.flush()
 
     def dump(self, data):
-        if rank == 0 and self.restart is not None:
+        if world.rank == 0 and self.restart is not None:
             pickle.dump(data, open(self.restart, 'wb'), protocol=2)
 
     def load(self):

@@ -25,24 +25,32 @@ The workshop is open to doctoral and Master students, post-doctoral as well as s
 Registration
 ============
 
-To join the workshop please fill
-`the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__.
-The deadline for registration and abstracts is on **October 21, 2019**.
-There is no registration fee but space is limited.
+Due to high demand we have already reached the capacity of the workshop.
+At this time, we can therefore not accept new participants.
+You can still express your interest and join the waiting list by filling
+`the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__,
+but we cannot guarantee that there will be space.
+The workshop has no registration fee but the attendees need to cover travel, accommodation, and other costs themselves.
 If you have any questions, please contact the organizers at ase-workshop@materialsmodeling.org.
 
 
 Venue
 =====
 
-The workshop will take place at
-`Chalmers University of Technology <https://www.chalmers.se/en>`__
+The workshop will take place at `Chalmers University of Technology <https://www.chalmers.se/en>`__
+(Physics building, `Kemigården 1 <https://www.google.com/maps/place/Kemigården+1,+412+58+Göteborg>`__)
 in Gothenburg, Sweden.
-On Tuesday and Wednesday we meet in the PJ lecture room in
-the Physics building, entrance at
-`Kemigården 1 <https://www.google.com/maps/place/Kemigården+1,+412+58+Göteborg>`__.
 
-Information about travel and accommodation options will be provided soon.
+Gothenburg is `reachable by train, bus, plane, or ferry <https://www.goteborg.com/en/good-to-know/getting-to-gothenburg>`__,
+and the city has `an extensive public transportation network <https://www.goteborg.com/en/good-to-know/getting-around-town>`__,
+which can be explored with `a travel planner <https://www.vasttrafik.se/en/travel-planning/travel-planner>`__.
+
+Possible accommodation options within walking distance from the venue include
+`SGS Veckobostäder <https://www.sgsveckobostader.se/en/rum>`__ (more affordable rooms)
+and hotels (the closest ones are
+`Quality Hotel Panorama <https://www.nordicchoicehotels.com/hotels/sweden/gothenburg/quality-hotel-panorama>`__ and
+`Elite Park Avenue Hotel <https://www.elite.se/en/hotels/gothenburg/park-avenue-hotel>`__).
+Further options are also available for `a stay in Gothenburg <https://www.goteborg.com/en/bo>`__.
 
 
 Program
@@ -119,43 +127,49 @@ Tentative schedule
  +---------------+-----------------------+--------------------------+-------------------+-------------------+-------------------+-------------------+
 
 
-Invited speakers
-----------------
+Speakers
+--------
 
 .. list-table::
  :widths: 3 7
 
- * - Maxime van den Bosche
-   - Brown University, USA
- * - Erik Fransson
-   - Chalmers University of Technology, Sweden
- * - Morten Gjerding
-   - Technical University of Denmark
- * - Eric Hermes
-   - Sandia National Laboratories, USA
- * - Adam Jackson
-   - STFC Rutherford Appleton Laboratory, UK
- * - Florian Knoop
-   - Fritz-Haber-Institut, Berlin, Germany
- * - Mikael Kuisma
-   - University of Jyväskylä, Finland
- * - Ask Hjorth Larsen
-   - Universidad del País Vasco UPV/EHU, Spain
- * - Marko Melander
-   - University of Jyväskylä, Finland
- * - Michael Walter
-   - Albert-Ludwigs-Universität Freiburg, Germany
- * - Kirsten T. Winther
-   - Stanford University, USA
+ * - Maxime Van den Bossche, Institut des Nanosciences de Paris, France
+   - Global crystal structure optimization with ASE (and with a little help from DFTB)
+ * - Jin Hyun Chang, Technical University of Denmark, Denmark
+   -
+ * - Erik Fransson, Chalmers University of Technology, Sweden
+   - Development of softwares for atomic-scale modeling: Cluster expansions and force constants
+ * - Morten Gjerding, Technical University of Denmark, Denmark
+   -
+ * - Eric Hermes, Sandia National Laboratories, USA
+   - Seeking Saddle Points with Sella
+ * - Adam J. Jackson, STFC Rutherford Appleton Laboratory, UK
+   - Use all the codes! Enabling portable researchers
+ * - Florian Knoop, Fritz-Haber-Institut, Berlin, Germany
+   -
+ * - Mikael Kuisma, University of Jyväskylä, Finland
+   -
+ * - Ask Hjorth Larsen, Universidad del País Vasco UPV/EHU, Spain
+   -
+ * - Bjørn Lindi, Norwegian University of Science and Technology, Norway
+   - Fail forward: Development of Reproducible and Reusable software is a learning experience
+ * - Marko Melander, University of Jyväskylä, Finland
+   - Theory and modeling electrochemical thermodynamics and kinetics: The Grand Canonical Approach
+ * - Jens Jørgen Mortensen, Technical University of Denmark, Denmark
+   -
+ * - Michael Walter, Albert-Ludwigs-Universität Freiburg, Germany
+   -
+ * - Kirsten T. Winther, Stanford University, USA
+   - Applications of the ASE database: Efficient calculational workflows and data sharing
 
 
 Organizers
 ==========
 
-* Paul Erhart, Chalmers University of Technology
-* Tuomas Rossi, Chalmers University of Technology
-* Ask Hjorth Larsen, University of the Basque Country
-* Jens Jørgen Mortensen, Technical University of Denmark
-* Kristian Sommer Thygesen, Technical University of Denmark
+* Paul Erhart, Chalmers University of Technology, Sweden
+* Tuomas Rossi, Chalmers University of Technology, Sweden
+* Ask Hjorth Larsen, University of the Basque Country, Spain
+* Jens Jørgen Mortensen, Technical University of Denmark, Denmark
+* Kristian Sommer Thygesen, Technical University of Denmark, Denmark
 
 For questions, please contact the organizers at ase-workshop@materialsmodeling.org.

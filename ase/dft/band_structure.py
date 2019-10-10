@@ -19,22 +19,19 @@ def calculate_band_structure(atoms, path=None, scf_kwargs=None,
     The difference from get_band_structure() is that the latter
     expects the calculation to already have been done."""
     if path is None:
-        path = atoms.cell.bandpath()  # Default bandpath
+        path = atoms.cell.bandpath()
 
-    cellpar1 = path.cell.cellpar()
-    cellpar2 = atoms.cell.cellpar()
-    cellpar_err = np.abs(cellpar2 - cellpar1).max()
-    if cellpar_err > cell_tol:
-        # For many cells this will be okay, but we are not smart enough
-        # to guarantee this.
-        #
-        # User must therefore create a new bandpath for each cell.
-        #
-        # (In principle we should have different tolerance for lengths/angles)
+    from ase.lattice import celldiff  # Should this be a method on cell?
+    if any(path.cell.any(1) != atoms.pbc):
+        raise ValueError('The band path\'s cell, {}, does not match the '
+                         'periodicity {} of the atoms'
+                         .format(path.cell, atoms.pbc))
+    cell_err = celldiff(path.cell, atoms.cell.uncomplete(atoms.pbc))
+    if cell_err > cell_tol:
         raise ValueError('Atoms and band path have different unit cells.  '
                          'Please reduce atoms to standard form.  '
                          'Cell lengths and angles are {} vs {}'
-                         .format(cellpar1, cellpar2))
+                         .format(atoms.cell.cellpar(), path.cell.cellpar()))
 
     calc = atoms.calc
     if calc is None:
@@ -158,7 +155,7 @@ class BandStructurePlot:
         self.show_legend = False
 
     def plot(self, ax=None, spin=None, emin=-10, emax=5, filename=None,
-             show=None, ylabel=None, colors=None, label=None,
+             show=False, ylabel=None, colors=None, label=None,
              spin_labels=['spin up', 'spin down'], loc=None, **plotkwargs):
         """Plot band-structure.
 
@@ -213,7 +210,7 @@ class BandStructurePlot:
         return ax
 
     def plot_with_colors(self, ax=None, emin=-10, emax=5, filename=None,
-                         show=None, energies=None, colors=None,
+                         show=False, energies=None, colors=None,
                          ylabel=None, clabel='$s_z$', cmin=-1.0, cmax=1.0,
                          sortcolors=False, loc=None, s=2):
         """Plot band-structure with colors."""
@@ -289,9 +286,6 @@ class BandStructurePlot:
 
         if filename:
             plt.savefig(filename)
-
-        if show is None:
-            show = not filename
 
         if show:
             plt.show()

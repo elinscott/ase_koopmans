@@ -175,7 +175,7 @@ class XrDebye(object):
             print('<xrdebye::get_atomic> Element', symbol, 'not available')
         return 0
 
-    def calc_pattern(self, x=None, mode='XRD'):
+    def calc_pattern(self, x=None, mode='XRD', verbose=False):
         r"""
         Calculate X-ray diffraction pattern or
         small angle X-ray scattering pattern.
@@ -206,22 +206,26 @@ class XrDebye(object):
             else:
                 self.twotheta_list = x
             self.q_list = []
-            print('#2theta\tIntensity')
+            if verbose:
+                print('#2theta\tIntensity')
             for twotheta in self.twotheta_list:
                 s = 2 * sin(twotheta * pi / 180 / 2.0) / self.wavelength
                 result.append(self.get(s))
-                print('%.3f\t%f' % (twotheta, result[-1]))
+                if verbose:
+                    print('%.3f\t%f' % (twotheta, result[-1]))
         elif mode == 'SAXS':
             if x is None:
                 self.twotheta_list = np.logspace(-3, -0.3, 100)
             else:
                 self.q_list = x
             self.twotheta_list = []
-            print('#q\tIntensity')
+            if verbose:
+                print('#q\tIntensity')
             for q in self.q_list:
                 s = q / (2 * pi)
                 result.append(self.get(s))
-                print('%.4f\t%f' % (q, result[-1]))
+                if verbose:
+                    print('%.4f\t%f' % (q, result[-1]))
         self.intensity_list = np.array(result)
         return self.intensity_list
 
@@ -245,7 +249,7 @@ class XrDebye(object):
 
         f.close()
 
-    def plot_pattern(self, filename=None, show=None, ax=None):
+    def plot_pattern(self, filename=None, show=False, ax=None):
         """ Plot XRD or SAXS depending on filled data
 
         Uses Matplotlib to plot pattern. Use *show=True* to
@@ -256,9 +260,6 @@ class XrDebye(object):
             ``matplotlib.axes.Axes`` object."""
 
         import matplotlib.pyplot as plt
-
-        if filename is None and show is None:
-            show = True
 
         if ax is None:
             plt.clf()  # clear figure

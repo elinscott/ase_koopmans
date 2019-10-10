@@ -7,6 +7,7 @@ builtins = {'eam', 'emt', 'lj', 'morse', 'tip3p'}
 
 default_executables = {'abinit': ['abinit'],
                        'cp2k': ['cp2k_shell'],
+                       'dftb': ['dftb+'],
                        'elk': ['elk', 'elk-lapw'],
                        'espresso': ['pw.x'],
                        'gromacs': ['gmx', 'gmx_d', 'gmx_mpi', 'gmx_mpi_d'],

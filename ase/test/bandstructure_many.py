@@ -14,7 +14,7 @@ def test():
         xid = '{:02d}.{}'.format(i, lat.variant)
         path = lat.bandpath(density=10)
         path.write('path.{}.json'.format(xid))
-        atoms = Atoms(cell=lat.tocell())
+        atoms = Atoms(cell=lat.tocell(), pbc=True)
         atoms.calc = FreeElectrons(nvalence=0, kpts=path.kpts)
         bs = calculate_band_structure(atoms, path)
         bs.write('bs.{}.json'.format(xid))

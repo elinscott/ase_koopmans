@@ -27,7 +27,7 @@ Simplices: 3
 
 The convex hull looks like this:
 
->>> pd.plot()
+>>> pd.plot(show=True)
 
 .. image:: cuau.png
 

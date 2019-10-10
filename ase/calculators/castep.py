@@ -822,13 +822,7 @@ End CASTEP Interface Documentation
                 if 'warn' in line.lower():
                     self._warnings.append(line)
 
-                # HOTFIX: This string appears twice from CASTEP 7 on and thus
-                # prevents reading forces. So, better go for another keyword
-                # to indicate the regular end of a run.
-                # 'Initialization time' seems to do the job.
-                # if 'Writing analysis data to' in line:
-                # if 'Writing model to' in line:
-                if 'Peak Memory Use' in line:
+                if 'Finalisation time   =' in line:
                     end_found = True
                     record_end = castep_file.tell()
                     break

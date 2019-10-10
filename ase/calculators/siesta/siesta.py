@@ -11,6 +11,35 @@ http://www.uam.es/departamentos/ciencias/fismateriac/siesta
 """
 from ase.calculators.siesta.base_siesta import BaseSiesta
 
+
+def get_siesta_version(command):
+    """Return Siesta version number.
+
+    Run the given command, parsing its output for Siesta version number.
+    Returns a string such as "siesta-4.1--736"."""
+    import tempfile
+    import shutil
+    import re
+
+    temp_dirname = tempfile.mkdtemp(prefix='siesta-version-check-')
+    try:
+        from subprocess import Popen, PIPE
+        proc = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                     cwd=temp_dirname)
+        output, _ = proc.communicate()
+        # We are not providing any input, so Siesta will give us a failure
+        # saying that it has no Chemical_species_label and exit status 1
+        # (as of siesta-4.1--736)
+    finally:
+        shutil.rmtree(temp_dirname)
+
+    match = re.search(rb'Siesta Version: (siesta-\S+)', output)
+    if match is None:
+        raise RuntimeError('Could not get Siesta version info from output '
+                           '{!r}'.format(output))
+    return match.group(1).decode('ascii')
+
+
 # Version 3.2 of Siesta
 class Siesta3_2(BaseSiesta):
     allowed_xc = {

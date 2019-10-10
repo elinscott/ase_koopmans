@@ -508,3 +508,16 @@ def lazymethod(meth):
 def lazyproperty(meth):
     """Decorator like lazymethod, but making item available as a property."""
     return property(lazymethod(meth))
+
+
+def deprecated(msg):
+    """Return a decorator deprecating a function.
+
+    Use like @deprecated('warning message and explanation')."""
+    def deprecated_decorator(func):
+        @functools.wraps(func)
+        def deprecated_function(*args, **kwargs):
+            warnings.warn(msg, FutureWarning)
+            return func(*args, **kwargs)
+        return deprecated_function
+    return deprecated_decorator

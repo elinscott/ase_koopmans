@@ -18,7 +18,6 @@ vchg = VaspChargeDensity('CHGCAR')
 atoms = vchg.atoms[0]
 
 kwargs = { # For povray files only
-'display'      : False, # Display while rendering
 'pause'        : False, # Pause when done rendering (only if display)
 'transparent'  : False, # Transparent background
 'canvas_width' : None,  # Width of canvas in pixels

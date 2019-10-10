@@ -1,7 +1,7 @@
 """Helper functions for read_fdf."""
 from os import fstat
 from re import compile
-from ase.utils import basestring
+from ase.utils import reader
 
 
 _label_strip_re = compile(r'[\s._-]')
@@ -28,11 +28,9 @@ def _get_stripped_lines(fd):
     return [_f for _f in [L.split('#')[0].strip() for L in fd] if _f]
 
 
+@reader
 def _read_fdf_lines(file, inodes=[]):
     # Read lines and resolve includes
-
-    if isinstance(file, basestring):
-        file = open(file, 'r')
     fst = fstat(file.fileno())
     inode = (fst.st_dev, fst.st_ino)
     if inode in inodes:
