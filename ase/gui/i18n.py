@@ -20,7 +20,6 @@ along with ngettext if they want to translate messages with plurals
 (e.g. "Save 1 file", "Save %d files")."""
 
 import os
-import sys
 import gettext
 
 
