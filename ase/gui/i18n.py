@@ -29,9 +29,5 @@ localedir = '%s/po/' % os.path.dirname(__file__)
 translation = gettext.translation(domain, localedir, fallback=True)
 
 
-if sys.version_info[0] == 2:
-    _ = translation.ugettext
-    ngettext = translation.ungettext
-else:
-    _ = translation.gettext
-    ngettext = translation.ngettext
+_ = translation.gettext
+ngettext = translation.ngettext
