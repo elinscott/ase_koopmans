@@ -107,11 +107,9 @@ def KIM(model_name, simulator=None, options=None, debug=False):
     Raises
     ------
     KIMCalculatorError
-        Blanket exception type used to handle errors that arise related
-        to using incompatible combinations of values for the arguments
-        or from errors produced by kimpy
+        Indicates an error occurred in initializing the calculator,
+        e.g. due to incompatible combinations of argument values
     """
-
     # options set internally in this calculator
     kimmodel_not_allowed_options = ["modelname", "debug"]
     lammpsrun_not_allowed_options = [

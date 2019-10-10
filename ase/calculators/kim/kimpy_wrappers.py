@@ -9,7 +9,8 @@ import functools
 
 import kimpy
 
-from .exceptions import KIMCalculatorError
+from .exceptions import (KIMCalculatorError, KIMModelNotFound,
+        KIMInitializationError, KimpyError)
 
 def check_call(f, *args):
     """
@@ -21,7 +22,7 @@ def check_call(f, *args):
 
     def _check_error(error, msg):
         if error != 0 and error is not None:
-            raise KIMCalculatorError('Calling "{}" failed.'.format(msg))
+            raise KimpyError('Calling "{}" failed.'.format(msg))
 
     ret = f(*args)
 
@@ -87,7 +88,7 @@ class ModelCollections(object):
                 "https://openkim.org/doc/usage/obtaining-models/ for instructions on "
                 "installing models.".format(model_name)
             )
-            raise e(msg)
+            raise KIMModelNotFound(msg)
 
         return model_type
 
@@ -118,7 +119,7 @@ class PortableModel(object):
         )
 
         if not units_accepted:
-            raise KIMCalculatorError("Requested units not accepted in kimpy.model.create")
+            raise KIMInitializationError("Requested units not accepted in kimpy.model.create")
 
         if self.debug:
             l_unit, e_unit, c_unit, te_unit, ti_unit = self.kim_model.get_units()
@@ -220,7 +221,7 @@ class ComputeArguments(object):
                     name != kimpy.compute_argument_name.partialEnergy
                     and name != kimpy.compute_argument_name.partialForces
                 ):
-                    raise KIMCalculatorError("Unsupported required ComputeArgument {}".format(name))
+                    raise KIMInitializationError("Unsupported required ComputeArgument {}".format(name))
 
         # check compute callbacks
         callback_name = kimpy.compute_callback_name
@@ -243,7 +244,7 @@ class ComputeArguments(object):
 
             # cannot handle any "required" callbacks
             if support_status == kimpy.support_status.required:
-                raise KIMCalculatorError("Unsupported required ComputeCallback: {}".format(name))
+                raise KIMInitializationError("Unsupported required ComputeCallback: {}".format(name))
 
     @check_call_wrapper
     def set_argument_pointer(self, compute_arg_name, data_object):
@@ -330,7 +331,7 @@ class SimulatorModel(object):
     def num_supported_species(self):
         num_supported_species = self.simulator_model.get_number_of_supported_species()
         if num_supported_species == 0:
-            raise KIMCalculatorError(
+            raise KIMInitializationError(
                 "ERROR: Unable to determine supported species of "
                 "simulator model {}.".format(self.model_name)
             )
@@ -371,7 +372,7 @@ class SimulatorModel(object):
         try:
             supported_units = self.metadata["units"][0]
         except (KeyError, IndexError):
-            raise KIMCalculatorError(
+            raise KIMInitializationError(
                 "ERROR: Unable to determine supported units of "
                 "simulator model {}.".format(self.model_name)
             )

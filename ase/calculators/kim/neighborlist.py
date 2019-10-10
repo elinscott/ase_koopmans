@@ -7,7 +7,6 @@ from ase.neighborlist import neighbor_list
 from ase import Atom
 
 from .kimpy_wrappers import check_call_wrapper
-from .exceptions import KIMCalculatorError
 
 
 class NeighborList(object):
@@ -238,7 +237,7 @@ class ASENeighborList(NeighborList):
                 [species_map[s] for s in all_species], dtype=np.intc
             )
         except KeyError as e:
-            raise KIMCalculatorError("Species not supported by KIM model; {}".format(str(e)))
+            raise RuntimeError("Species not supported by KIM model; {}".format(str(e)))
 
         self.last_update_positions = atoms.get_positions()
 
@@ -316,7 +315,7 @@ class KimpyNeighborList(NeighborList):
                 [species_map[s] for s in atoms.get_chemical_symbols()], dtype=np.intc
             )
         except KeyError as e:
-            raise KIMCalculatorError("Species not supported by KIM model; {}".format(str(e)))
+            raise RuntimeError("Species not supported by KIM model; {}".format(str(e)))
 
         if pbc.any():  # need padding atoms
             # create padding atoms
