@@ -5,10 +5,7 @@ import sys
 
 def main():
     import matplotlib.pyplot as plt
-    stdin = sys.stdin
-    if sys.version_info[0] == 3:
-        stdin = stdin.buffer
-    task, data = pickle.load(stdin)
+    task, data = pickle.load(sys.stdin.buffer)
     if task == 'eos':
         from ase.eos import plot
         plot(*data)
