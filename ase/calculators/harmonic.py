@@ -53,7 +53,8 @@ class SpringCalculator(Calculator):
             method for free energy computation; 'classical' or 'QM'.
         """
         F = 0.0
-        for m, c in np.unique(self.atoms.get_masses(), return_counts=True):
+        masses, counts = np.unique(self.atoms.get_masses(), return_counts=True)
+        for m, c in zip(masses, counts):
             F += c * SpringCalculator.compute_Einstein_solid_free_energy(self.k, m, T, method)
         return F
 
