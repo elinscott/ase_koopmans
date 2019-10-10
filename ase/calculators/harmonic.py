@@ -54,11 +54,11 @@ class SpringCalculator(Calculator):
         """
         F = 0.0
         for m, c in np.unique(self.atoms.get_masses(), return_counts=True):
-            F += c * SpringCalculator.compute_free_energy(self.k, m, T, method)
+            F += c * SpringCalculator.compute_Einstein_solid_free_energy(self.k, m, T, method)
         return F
 
     @staticmethod
-    def compute_free_energy(k, m, T, method='classical'):
+    def compute_Einstein_solid_free_energy(k, m, T, method='classical'):
         """ Get free energy (per atom) for an Einstein crystal.
 
         Free energy of a Einstein solid given by classical (1) or QM (2)
