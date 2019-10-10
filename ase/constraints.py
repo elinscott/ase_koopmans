@@ -1180,12 +1180,7 @@ class FixParametricRelations(FixConstraint):
 
         self.params = params
 
-        if Jacobian.shape[-1] > 0:
-            self.Jacobian_inv = np.linalg.inv(Jacobian.T @ Jacobian) @ Jacobian.T
-        else:
-            self.Jacobian_inv = np.ndarray((0, Jacobian.shape[0]))
-
-
+        self.Jacobian_inv = np.linalg.inv(Jacobian.T @ Jacobian) @ Jacobian.T
 
     @classmethod
     def from_expressions(cls, indices, params, expressions, eps=1e-12, use_cell=False):
@@ -1420,12 +1415,9 @@ class FixScaledParametricRelations(FixParametricRelations):
 
     def adjust_contravariant(self, cell, vecs, B):
         """Adjust the values of a set of vectors that are contravariant with the unit transformation"""
-        if self.Jacobian is None:
-            scaled = B.reshape((-1,3))
-        else:
-            scaled = cell.scaled_positions(vecs).flatten()
-            scaled = self.Jacobian_inv @ (scaled - B)
-            scaled = ((self.Jacobian @ scaled) + B).reshape((-1,3))
+        scaled = cell.scaled_positions(vecs).flatten()
+        scaled = self.Jacobian_inv @ (scaled - B)
+        scaled = ((self.Jacobian @ scaled) + B).reshape((-1,3))
 
         return cell.cartesian_positions(scaled)
 
@@ -1456,14 +1448,11 @@ class FixScaledParametricRelations(FixParametricRelations):
 
     def adjust_forces(self, atoms, forces):
         """Adjust forces of the atoms to match the constraints"""
-        if self.Jacobian is None:
-            forces[self.indices] = np.zeros(forces[self.indices].shape)
-        else:
-            # Forces are coavarient to the coordinate transformation, use the inverse transformations
-            scaled_forces = atoms.cell.cartesian_positions(forces[self.indices])
-            scaled_forces = self.Jacobian.T @ scaled_forces.flatten()
-            scaled_forces = (self.Jacobian_inv.T @ scaled_forces).reshape(-1, 3)
-            forces[self.indices] = atoms.cell.scaled_positions(scaled_forces)
+        # Forces are coavarient to the coordinate transformation, use the inverse transformations
+        scaled_forces = atoms.cell.cartesian_positions(forces[self.indices])
+        scaled_forces = self.Jacobian.T @ scaled_forces.flatten()
+        scaled_forces = (self.Jacobian_inv.T @ scaled_forces).reshape(-1, 3)
+        forces[self.indices] = atoms.cell.scaled_positions(scaled_forces)
 
     def todict(self):
         """Create a dictionary representation of the constraint"""
@@ -1494,11 +1483,8 @@ class FixCartesianParametricRelations(FixParametricRelations):
 
     def adjust_contravariant(self, vecs, B):
         """Adjust the values of a set of vectors that are contravariant with the unit transformation"""
-        if self.Jacobian is None:
-            vecs += B.reshape((-1,3))
-        else:
-            vecs = self.Jacobian_inv @ (vecs.flatten() - B)
-            vecs = ((self.Jacobian @ vecs) + B).reshape((-1, 3))
+        vecs = self.Jacobian_inv @ (vecs.flatten() - B)
+        vecs = ((self.Jacobian @ vecs) + B).reshape((-1, 3))
         return vecs
 
     def adjust_positions(self, atoms, positions):
@@ -1523,11 +1509,9 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """Adjust forces of the atoms to match the constraints"""
         if self.use_cell:
             return
-        if self.Jacobian is None:
-            forces[self.indices] = np.zeros(forces[self.indices].shape)
-        else:
-            forces_reduced = self.Jacobian.T @ forces[self.indices].flatten()
-            forces[self.indices] = (self.Jacobian_inv.T @ forces_reduced).reshape(-1, 3)
+
+        forces_reduced = self.Jacobian.T @ forces[self.indices].flatten()
+        forces[self.indices] = (self.Jacobian_inv.T @ forces_reduced).reshape(-1, 3)
 
     def adjust_cell(self, atoms, cell):
         """Adjust the cell of the atoms to match the constraints"""
@@ -1542,31 +1526,28 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """Adjust the stress of the atoms to match the constraints"""
         if not self.use_cell:
             return
-        if self.Jacobian is None:
-            stress[self.indices] = np.zeros(stress[self.indices].shape)
+        if stress.shape[0] == 6:
+            vogit = True
+            xx, yy, zz, yz, xz, xy = stress
+            stress_3x3 = np.array(
+                [
+                    (xx, xy, xz),
+                    (xy, yy, yz),
+                    (xz, yz, zz)
+                ]
+            )
         else:
-            if stress.shape[0] == 6:
-                vogit = True
-                xx, yy, zz, yz, xz, xy = stress
-                stress_3x3 = np.array(
-                    [
-                        (xx, xy, xz),
-                        (xy, yy, yz),
-                        (xz, yz, zz)
-                    ]
-                )
-            else:
-                vogit = False
-                stress_3x3 = stress.copy()
+            vogit = False
+            stress_3x3 = stress.copy()
 
-            stress_reduced = self.Jacobian.T @ stress_3x3[self.indices].flatten()
-            stress_3x3[self.indices] = (self.Jacobian_inv.T @ stress_reduced).reshape(-1, 3)
+        stress_reduced = self.Jacobian.T @ stress_3x3[self.indices].flatten()
+        stress_3x3[self.indices] = (self.Jacobian_inv.T @ stress_reduced).reshape(-1, 3)
 
-            if vogit:
-                stress[:] = np.array([stress_3x3[0, 0], stress_3x3[1, 1], stress_3x3[2, 2],
-                                      stress_3x3[1, 2], stress_3x3[0, 2], stress_3x3[0, 1]])
-            else:
-                stress[:, :] = stress_3x3[:,:]
+        if vogit:
+            stress[:] = np.array([stress_3x3[0, 0], stress_3x3[1, 1], stress_3x3[2, 2],
+                                  stress_3x3[1, 2], stress_3x3[0, 2], stress_3x3[0, 1]])
+        else:
+            stress[:, :] = stress_3x3[:,:]
 
 
 class Hookean(FixConstraint):
