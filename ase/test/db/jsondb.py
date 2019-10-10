@@ -15,10 +15,7 @@ fd = StringIO(s)
 a = read(fd, format='json')
 assert a.get_chemical_formula() == 'H2'
 
-if sys.version_info[0] == 2:
-    fd = BytesIO()
-else:
-    fd = StringIO()
+fd = StringIO()
 write(fd, a, format='json')
 
 fd.seek(0)
