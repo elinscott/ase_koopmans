@@ -1160,27 +1160,28 @@ class FixParametricRelations(FixConstraint):
                 to generate the constraint expressions
             use_cell (bool): if True then act on the cell object
         """
-        assert const_shift.shape[0] == 3*len(indices)
-        assert Jacobian.shape[0] == 3*len(indices)
+        self.indices = np.array(indices)
+        self.Jacobian = np.array(Jacobian)
+        self.const_shift = np.array(const_shift)
 
-        self.indices = indices
-        self.Jacobian = Jacobian
-        self.const_shift = const_shift
+        assert self.const_shift.shape[0] == 3*len(self.indices)
+        assert self.Jacobian.shape[0] == 3*len(self.indices)
+
         self.eps = eps
         self.use_cell = use_cell
 
         if params is None:
             params = []
-            if Jacobian.shape[1] > 0:
-                int_fmt_str = "{:0" + str(int(np.ceil(np.log10(Jacobian.shape[1])))) + "d}"
-                for param_ind in range(Jacobian.shape[1]):
+            if self.Jacobian.shape[1] > 0:
+                int_fmt_str = "{:0" + str(int(np.ceil(np.log10(self.Jacobian.shape[1])))) + "d}"
+                for param_ind in range(self.Jacobian.shape[1]):
                     params.append("param_" + int_fmt_str.format(param_ind))
         else:
-            assert len(params) == Jacobian.shape[-1]
+            assert len(params) == self.Jacobian.shape[-1]
 
         self.params = params
 
-        self.Jacobian_inv = np.linalg.inv(Jacobian.T @ Jacobian) @ Jacobian.T
+        self.Jacobian_inv = np.linalg.inv(self.Jacobian.T @ self.Jacobian) @ self.Jacobian.T
 
     @classmethod
     def from_expressions(cls, indices, params, expressions, eps=1e-12, use_cell=False):
