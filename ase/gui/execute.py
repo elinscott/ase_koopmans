@@ -215,8 +215,7 @@ class Execute(ui.Window):
                 self.add_text(
                     _('*** WARNING: file does not exist - %s') % name)
         else:
-            code = compile(cmd + '\n', 'execute.py', 'single',
-                           __future__.CO_FUTURE_DIVISION)
+            code = compile(cmd + '\n', 'execute.py', 'single')
             if index_based and len(indices) == 0 and self.selected.get_active(
             ):
                 self.add_text(_("*** WARNING: No atoms selected to work with"))
