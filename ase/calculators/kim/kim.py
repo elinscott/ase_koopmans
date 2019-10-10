@@ -6,9 +6,10 @@ Mingjian Wen
 Daniel S. Karls
 University of Minnesota
 
-This calculator functions as a wrapper that selects an appropriate calculator for a
-given KIM model depending on whether it supports the KIM application programming
-interface (API) or not. For more information on KIM, visit https://openkim.org.
+This calculator functions as a wrapper that selects an appropriate
+calculator for a given KIM model depending on whether it supports the
+KIM application programming interface (API) or not. For more information
+on KIM, visit https://openkim.org.
 """
 
 import re

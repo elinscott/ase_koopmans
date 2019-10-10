@@ -1,6 +1,7 @@
 """
-ASE Calculator for interatomic models compatible with the Knowledgebase of
-Interatomic Models (KIM) application programming interface (API). Written by:
+ASE Calculator for interatomic models compatible with the Knowledgebase
+of Interatomic Models (KIM) application programming interface (API).
+Written by:
 
 Mingjian Wen
 Daniel S. Karls
@@ -18,7 +19,9 @@ from . import neighborlist
 class KIMModelData(object):
     """Initializes and subsequently stores the KIM API Model object, KIM
     API ComputeArguments object, and the neighbor list object used by
-    instances of KIMModelCalculator
+    instances of KIMModelCalculator.  Also stores the arrays which are
+    registered in the KIM API and which are used to communicate with the
+    model.
     """
 
     def __init__(self, model_name, ase_neigh, neigh_skin_ratio, debug=False):
@@ -55,7 +58,8 @@ class KIMModelData(object):
 
     def init_kim(self):
         """Create the KIM API Model object and KIM API ComputeArguments
-        object"""
+        object
+        """
 
         if self.kim_initialized:
             return
@@ -76,7 +80,7 @@ class KIMModelData(object):
         padding_not_require_neigh,
     ):
 
-        """Initialize neighbor list (either an ASE-native neighborlist
+        """Initialize neighbor list, either an ASE-native neighborlist
         or one created using the neighlist module in kimpy
         """
         if self.ase_neigh:
@@ -101,7 +105,9 @@ class KIMModelData(object):
         self.neigh_initialized = True
 
     def update_kim_coords(self, atoms):
-        """Update the atom positions in self.coords, which is registered in KIM."""
+        """Update atomic positions in self.coords, which where the KIM
+        API will look to find them in order to pass them to the model.
+        """
         if self.padding_image_of.size != 0:
             disp_contrib = atoms.positions - self.coords[: len(atoms)]
             disp_pad = disp_contrib[self.padding_image_of]
@@ -337,10 +343,10 @@ class KIMModelCalculator(Calculator):
 
     @staticmethod
     def compare_atoms(atoms1, atoms2, tol=1e-15):
-        """Check for system changes since last calculation. Note that this
-        is an override of Calculator.compare_atoms and differs in that the
-        magnetic moments and charges are not checked because the KIM API
-        does not (currently) support these.
+        """Check for system changes since last calculation. Note that
+        this is an override of Calculator.compare_atoms and differs in
+        that the magnetic moments and charges are not checked because
+        the KIM API does not (currently) support these.
         """
         if atoms1 is None:
             return ["positions", "numbers", "cell", "pbc"]
