@@ -62,6 +62,7 @@ class LAMMPSRunCalculator(object):
             **parameters, specorder=supported_species, keep_tmp_files=debug, **options
         )
 
+    @staticmethod
     def get_params(model_name, supported_units, supported_species, atom_style):
         """
         Extract parameters for LAMMPS calculator from model definition lines.
