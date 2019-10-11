@@ -1,6 +1,5 @@
 # test that a change in unit cell boundary conditions is
 # handled correctly by lammpslib
-from __future__ import print_function
 import os
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.lattice.cubic import FaceCenteredCubic

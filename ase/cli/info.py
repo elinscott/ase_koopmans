@@ -1,9 +1,8 @@
-from __future__ import print_function
 import platform
 import os
 import sys
 
-from ase.utils import import_module, FileNotFoundError
+from ase.utils import import_module
 from ase.utils import search_current_git_hash
 from ase.io.formats import filetype, all_formats, UnknownFileTypeError
 from ase.io.ulm import print_ulm_info

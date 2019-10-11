@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 from ase.db.core import float_to_time_string, now
 from ase.geometry import cell_to_cellpar

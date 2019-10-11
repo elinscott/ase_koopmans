@@ -1,4 +1,3 @@
-from __future__ import print_function
 '''
 python module for ASE2-free and Numeric-free dacapo
 
@@ -16,7 +15,6 @@ documentation
 
 __docformat__ = 'restructuredtext'
 
-import sys
 import exceptions, glob, os, pickle, string
 from Scientific.IO.NetCDF import NetCDFFile as netCDF
 import numpy as np
@@ -44,12 +42,8 @@ log = logging.getLogger('Jacapo')
 import ase.dft.kpoints
 
 handler = logging.StreamHandler()
-if sys.version_info < (2,5): # no funcName in python 2.4
-    formatstring = ('%(levelname)-10s '
-                    'lineno: %(lineno)-4d %(message)s')
-else:
-    formatstring = ('%(levelname)-10s function: %(funcName)s '
-                    'lineno: %(lineno)-4d %(message)s')
+formatstring = ('%(levelname)-10s function: %(funcName)s '
+                'lineno: %(lineno)-4d %(message)s')
 formatter = logging.Formatter(formatstring)
 handler.setFormatter(formatter)
 log.addHandler(handler)

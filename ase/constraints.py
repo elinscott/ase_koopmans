@@ -1,4 +1,3 @@
-from __future__ import division
 from math import sqrt
 from warnings import warn
 from ase.geometry import find_mic, wrap_positions

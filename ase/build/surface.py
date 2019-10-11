@@ -5,7 +5,6 @@ add vacuum layers and add adsorbates.
 
 """
 
-from __future__ import division
 from math import sqrt
 from operator import itemgetter
 

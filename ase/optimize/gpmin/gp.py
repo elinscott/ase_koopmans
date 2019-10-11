@@ -1,4 +1,3 @@
-from __future__ import print_function
 from ase.optimize.gpmin.kernel import SquaredExponential
 
 import numpy as np
