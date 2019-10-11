@@ -323,9 +323,8 @@ class KIMModelCalculator(Calculator):
             self.kim_model.compute(self.compute_args, self.release_GIL)
 
         energy = self.energy[0]
-        forces = self.assemble_padding_forces(
-            self.forces, self.num_contributing_particles, self.padding_image_of
-        )
+        forces = self.assemble_padding_forces()
+
         try:
             volume = atoms.get_volume()
             stress = self.compute_virial_stress(self.forces, self.coords, volume)
@@ -362,8 +361,7 @@ class KIMModelCalculator(Calculator):
 
         return system_changes
 
-    @staticmethod
-    def assemble_padding_forces(forces, num_contrib, padding_image_of):
+    def assemble_padding_forces(self):
         """
         Assemble forces on padding atoms back to contributing atoms.
 
@@ -383,11 +381,12 @@ class KIMModelCalculator(Calculator):
         -------
             Total forces on contributing atoms.
         """
-        total_forces = np.array(forces[:num_contrib])
 
-        if padding_image_of.size != 0:
-            pad_forces = forces[num_contrib:]
-            for f, org_index in zip(pad_forces, padding_image_of):
+        total_forces = np.array(self.forces[:self.num_contributing_particles])
+
+        if self.padding_image_of.size != 0:
+            pad_forces = self.forces[self.num_contributing_particles:]
+            for f, org_index in zip(pad_forces, self.padding_image_of):
                 total_forces[org_index] += f
 
         return total_forces
