@@ -21,9 +21,7 @@ class NeighborList(object):
 
         self.skin = neigh_skin_ratio * model_influence_dist
         self.influence_dist = model_influence_dist + self.skin
-        self.cutoffs = np.array(
-            [cut + self.skin for cut in model_cutoffs], dtype=np.double
-        )
+        self.cutoffs = np.array(model_cutoffs, dtype=np.double) + self.skin
         self.padding_need_neigh = not padding_not_require_neigh.all()
         self.debug = debug
 
@@ -237,10 +235,9 @@ class ASENeighborList(NeighborList):
         self.particle_contributing = np.array(indices_mask, dtype=np.intc)
 
         # species support and code
-        all_species = ac.get_chemical_symbols()
         try:
             self.species_code = np.array(
-                [species_map[s] for s in all_species], dtype=np.intc
+                [species_map[s] for s in ac.get_chemical_symbols()], dtype=np.intc
             )
         except KeyError as e:
             raise RuntimeError("Species not supported by KIM model; {}".format(str(e)))
