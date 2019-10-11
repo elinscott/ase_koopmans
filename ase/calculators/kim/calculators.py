@@ -42,12 +42,15 @@ class LAMMPSRunCalculator(object):
         model_name,
         model_type,
         supported_species,
-        atom_style,
         options,
         debug,
         **kwargs
     ):
         _check_conflict_options(options, self.options_not_allowed, self.simulator)
+
+        # If no atom_style kwarg is passed, lammpsrun will default to atom_style atomic,
+        # which is what we want for KIM Portable Models
+        atom_style = kwargs.get("atom_style", None)
 
         # Simulator Models will supply their own units from their metadata. For Portable
         # Models, we use "metal" units.

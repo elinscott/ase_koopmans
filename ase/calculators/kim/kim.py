@@ -135,7 +135,7 @@ def KIM(model_name, simulator=None, options=None, debug=False):
 
             # Return LAMMPS calculator
             return LAMMPSRunCalculator(
-                model_name, model_type, supported_species, None, options, debug
+                model_name, model_type, supported_species, options, debug
             ).calc
 
         elif simulator == "lammpslib":
@@ -187,9 +187,9 @@ def KIM(model_name, simulator=None, options=None, debug=False):
                 model_name,
                 model_type,
                 supported_species,
-                atom_style,
                 options,
                 debug,
+                atom_style=atom_style,
                 supported_units=supported_units,
             ).calc
 
