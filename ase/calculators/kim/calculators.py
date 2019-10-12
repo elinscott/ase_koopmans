@@ -38,13 +38,7 @@ class LAMMPSRunCalculator(object):
     simulator = "lammpsrun"
 
     def __init__(
-        self,
-        model_name,
-        model_type,
-        supported_species,
-        options,
-        debug,
-        **kwargs
+        self, model_name, model_type, supported_species, options, debug, **kwargs
     ):
         _check_conflict_options(options, self.options_not_allowed, self.simulator)
 

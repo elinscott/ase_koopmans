@@ -10,6 +10,22 @@ from .kimpy_wrappers import check_call_wrapper
 
 
 class NeighborList(object):
+
+    kimpy_arrays = {
+        "num_particles": np.intc,
+        "coords": np.double,
+        "particle_contributing": np.intc,
+        "species_code": np.intc,
+        "cutoffs": np.double,
+        "padding_image_of": np.intc,
+        "need_neigh": np.intc,
+    }
+
+    def __setattr__(self, name, value):
+        if name in self.kimpy_arrays and value is not None:
+            value = np.array(value, dtype=self.kimpy_arrays[name])
+        self.__dict__[name] = value
+
     def __init__(
         self,
         neigh_skin_ratio,
@@ -21,7 +37,7 @@ class NeighborList(object):
 
         self.skin = neigh_skin_ratio * model_influence_dist
         self.influence_dist = model_influence_dist + self.skin
-        self.cutoffs = np.array(model_cutoffs, dtype=np.double) + self.skin
+        self.cutoffs = model_cutoffs + self.skin
         self.padding_need_neigh = not padding_not_require_neigh.all()
         self.debug = debug
 
@@ -53,6 +69,7 @@ class NeighborList(object):
         self.coords = None
         self.particle_contributing = None
         self.species_code = None
+        self.need_neigh = None
         self.last_update_positions = None
 
     def need_neigh_update(self, atoms, system_changes):
@@ -197,7 +214,7 @@ class ASENeighborList(NeighborList):
             ]
             neigh_lists.append(neigh_list)
 
-        self.padding_image_of = np.array(padding_image_of, dtype=np.intc)
+        self.padding_image_of = padding_image_of
 
         self.neigh["neighbors"] = neigh_lists
         self.neigh["num_particles"] = neighbor_list_size
@@ -226,19 +243,17 @@ class ASENeighborList(NeighborList):
         # Save the number of atoms and all their neighbors and positions
         N = len(ac)
         num_padding = N - self.num_contributing_particles
-        self.num_particles = np.array([N], dtype=np.intc)
+        self.num_particles = [N]
         self.coords = ac.get_positions()
 
         # Save which coordinates are from original atoms and which are from
         # neighbors using a mask
         indices_mask = [1] * self.num_contributing_particles + [0] * num_padding
-        self.particle_contributing = np.array(indices_mask, dtype=np.intc)
+        self.particle_contributing = indices_mask
 
         # species support and code
         try:
-            self.species_code = np.array(
-                [species_map[s] for s in ac.get_chemical_symbols()], dtype=np.intc
-            )
+            self.species_code = [species_map[s] for s in ac.get_chemical_symbols()]
         except KeyError as e:
             raise RuntimeError("Species not supported by KIM model; {}".format(str(e)))
 
@@ -275,15 +290,20 @@ class KimpyNeighborList(NeighborList):
         )
 
     @check_call_wrapper
-    def build(self, need_neigh):
+    def build(self):
         return neighlist.build(
-            self.neigh, self.coords, self.influence_dist, self.cutoffs, need_neigh
+            self.neigh, self.coords, self.influence_dist, self.cutoffs, self.need_neigh
         )
 
     @check_call_wrapper
     def create_paddings(
         self, cell, pbc, contributing_coords, contributing_species_code
     ):
+        # Cast things passed through kimpy to numpy arrays
+        cell = np.asarray(cell, dtype=np.double)
+        pbc = np.asarray(pbc, dtype=np.intc)
+        contributing_coords = np.asarray(contributing_coords, dtype=np.double)
+
         return neighlist.create_paddings(
             self.influence_dist,
             cell,
@@ -310,7 +330,8 @@ class KimpyNeighborList(NeighborList):
         cell = np.asarray(atoms.get_cell(), dtype=np.double)
         pbc = np.asarray(atoms.get_pbc(), dtype=np.intc)
         contributing_coords = np.asarray(atoms.get_positions(), dtype=np.double)
-        num_contributing = atoms.get_global_number_of_atoms()
+        self.num_contributing_particles = atoms.get_global_number_of_atoms()
+        num_contributing = self.num_contributing_particles
 
         # species support and code
         try:
@@ -328,31 +349,26 @@ class KimpyNeighborList(NeighborList):
             )
             num_padding = padding_species_code.size
 
-            num_particles = np.array([num_contributing + num_padding], dtype=np.intc)
-            tmp = np.concatenate((contributing_coords, padding_coords))
-            self.coords = np.asarray(tmp, dtype=np.double)
-            tmp = np.concatenate((contributing_species_code, padding_species_code))
-            self.species_code = np.asarray(tmp, dtype=np.intc)
-            particle_contributing = np.ones(num_particles[0], dtype=np.intc)
-            particle_contributing[num_contributing:] = 0
-            need_neigh = np.ones(num_particles[0], dtype=np.intc)
+            self.num_particles = [num_contributing + num_padding]
+            self.coords = np.concatenate((contributing_coords, padding_coords))
+            self.species_code = np.concatenate(
+                (contributing_species_code, padding_species_code)
+            )
+            self.particle_contributing = [1] * num_contributing + [0] * num_padding
+            self.need_neigh = [1] * self.num_particles[0]
             if not self.padding_need_neigh:
-                need_neigh[num_contributing:] = 0
+                self.need_neigh[num_contributing:] = 0
 
         else:  # do not need padding atoms
-            self.padding_image_of = np.array([])
-            num_particles = np.array([num_contributing], dtype=np.intc)
-            self.coords = np.array(contributing_coords, dtype=np.double)
-            self.species_code = np.array(contributing_species_code, dtype=np.intc)
-            particle_contributing = np.ones(num_contributing, dtype=np.intc)
-            need_neigh = particle_contributing
-
-        self.num_particles = num_particles
-        self.num_contributing_particles = num_contributing
-        self.particle_contributing = particle_contributing
+            self.padding_image_of = []
+            self.num_particles = [num_contributing]
+            self.coords = contributing_coords
+            self.species_code = contributing_species_code
+            self.particle_contributing = [1] * num_contributing
+            self.need_neigh = self.particle_contributing
 
         # create neighborlist
-        self.build(need_neigh)
+        self.build()
 
         self.last_update_positions = atoms.get_positions()
 
