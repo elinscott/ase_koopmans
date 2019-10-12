@@ -10,7 +10,6 @@ import functools
 import kimpy
 
 from .exceptions import (
-    KIMCalculatorError,
     KIMModelNotFound,
     KIMInitializationError,
     KimpyError,
