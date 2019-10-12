@@ -86,9 +86,9 @@ class ModelCollections(object):
     def get_item_type(self, model_name):
         try:
             model_type = check_call(self.collection.get_item_type, model_name)
-        except KIMCalculatorError:
+        except KimpyError:
             msg = (
-                "ERROR: Could not find model {} installed in any of the KIM API model "
+                "Could not find model {} installed in any of the KIM API model "
                 "collections on this system.  See "
                 "https://openkim.org/doc/usage/obtaining-models/ for instructions on "
                 "installing models.".format(model_name)
