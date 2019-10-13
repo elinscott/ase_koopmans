@@ -138,20 +138,7 @@ class ASENeighborList(NeighborList):
         """
         syms = orig_atoms.get_chemical_symbols()
         orig_num_atoms = len(orig_atoms)
-
-        # Ask ASE to build the neighbor list using the influence distance. This is not a
-        # neighbor list for each atom, but rather a listing of all neighbor pairs that
-        # exist.  Atoms with no neighbors will not show up.
-        neigh_indices_i, neigh_indices_j, relative_pos, neigh_cell_offsets, dists = neighbor_list(
-            "ijDSd", orig_atoms, self.influence_dist
-        )
-
-        # Get positions of all atoms that have neighbors. Note that the `neighbor_list`
-        # function above maps atoms outside of periodic boundaries back into the unit
-        # cell before it determines the neighbors of each atom; this means that if the
-        # system is periodic, there will generally be multiple entries in this list
-        # which have the same position.
-        wrapped_positions = orig_atoms.get_positions()[neigh_indices_i] + relative_pos
+        orig_pos = orig_atoms.get_positions()
 
         # New atoms object that will contain the contributing atoms plus the padding
         # atoms
@@ -162,32 +149,44 @@ class ASENeighborList(NeighborList):
 
         # Information for padding atoms
         padding_image_of = []
-        neigh_shifts = []
+        padding_shifts = []
+
+        # Ask ASE to build the neighbor list using the influence distance. This is not a
+        # neighbor list for each atom, but rather a listing of all neighbor pairs that
+        # exist.  Atoms with no neighbors will not show up.
+        neigh_indices_i, neigh_indices_j, relative_pos, neigh_cell_offsets, dists = neighbor_list(
+            "ijDSd", orig_atoms, self.influence_dist
+        )
 
         # Loop over all neighbor pairs. Because this loop will generally include image
         # atoms (for periodic systems), we keep track of which atoms/images we've
         # accounted for in the `used` dictionary.
         used = dict()
-        for k in range(len(neigh_indices_i)):
-            shift = tuple(neigh_cell_offsets[k])
-            uniq_index = (neigh_indices_j[k],) + shift
+        for neigh_i, neigh_j, rel_pos, offset, dist in zip(
+            neigh_indices_i, neigh_indices_j, relative_pos, neigh_cell_offsets, dists
+        ):
+            # Get neighbor position of neighbor (mapped back into unit cell, so this may
+            # overlap with other atoms)
+            wrapped_pos = orig_pos[neigh_i] + rel_pos
+
+            shift = tuple(offset)
+            uniq_index = (neigh_j,) + shift
             if shift == (0, 0, 0):
                 # This atom is in the unit cell, i.e. it is contributing
-                neigh_list[neigh_indices_i[k]].append(neigh_indices_j[k])
-                neigh_dists[neigh_indices_i[k]].append(dists[k])
+                neigh_list[neigh_i].append(neigh_j)
+                neigh_dists[neigh_i].append(dist)
                 if uniq_index not in used:
-                    used[uniq_index] = neigh_indices_j[k]
+                    used[uniq_index] = neigh_j
             else:
                 # This atom is not in the unit cell, i.e. it is padding
                 if uniq_index not in used:
                     # Add the neighbor as a padding atom
                     used[uniq_index] = len(new_atoms)
-                    new_atoms.append(Atom(syms[neigh_indices_j[k]],
-                        position=wrapped_positions[k]))
-                    padding_image_of.append(neigh_indices_j[k])
-                    neigh_shifts.append(neigh_cell_offsets[k])
-                neigh_list[neigh_indices_i[k]].append(used[uniq_index])
-                neigh_dists[neigh_indices_i[k]].append(dists[k])
+                    new_atoms.append(Atom(syms[neigh_j], position=wrapped_pos))
+                    padding_image_of.append(neigh_j)
+                    padding_shifts.append(offset)
+                neigh_list[neigh_i].append(used[uniq_index])
+                neigh_dists[neigh_i].append(dist)
         neighbor_list_size = orig_num_atoms
 
         # Add neighbors of padding atoms if the potential requires them
@@ -198,7 +197,7 @@ class ASENeighborList(NeighborList):
             # (neigh)
             for k, neigh in enumerate(padding_image_of):
                 # Shift from original atom in cell to neighbor
-                shift = neigh_shifts[k]
+                shift = padding_shifts[k]
                 for orig_neigh, orig_dist in zip(neigh_list[neigh], neigh_dists[neigh]):
                     # Get the shift of the neighbor of the original atom
                     orig_shift = inv_used[orig_neigh][1:]
@@ -269,7 +268,9 @@ class ASENeighborList(NeighborList):
 
         # species support and code
         try:
-            self.species_code = [species_map[s] for s in new_atoms.get_chemical_symbols()]
+            self.species_code = [
+                species_map[s] for s in new_atoms.get_chemical_symbols()
+            ]
         except KeyError as e:
             raise RuntimeError("Species not supported by KIM model; {}".format(str(e)))
 

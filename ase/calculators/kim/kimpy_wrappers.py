@@ -9,11 +9,7 @@ import functools
 
 import kimpy
 
-from .exceptions import (
-    KIMModelNotFound,
-    KIMInitializationError,
-    KimpyError,
-)
+from .exceptions import KIMModelNotFound, KIMInitializationError, KimpyError
 
 
 def check_call(f, *args):
