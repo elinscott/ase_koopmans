@@ -420,4 +420,4 @@ class SimulatorModel(object):
 
     @property
     def initialized(self):
-        return hasattr(self, "collection")
+        return hasattr(self, "simulator_model")
