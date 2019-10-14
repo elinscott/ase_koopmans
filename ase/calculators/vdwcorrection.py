@@ -186,9 +186,7 @@ class vdWTkatchenko09prl(Calculator):
         Calculator.__init__(self)
 
         self.parameters['calculator'] = self.calculator.name
-        for key in ['xc', 'mode', 'h']:
-            if key in self.calculator.parameters:
-                self.parameters[key] = self.calculator.parameters[key]
+        self.parameters['xc'] = self.calculator.get_xc_functional()
 
     @property
     def implemented_properties(self):
