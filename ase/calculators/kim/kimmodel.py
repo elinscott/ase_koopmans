@@ -29,14 +29,6 @@ class KIMModelData(object):
         self.ase_neigh = ase_neigh
         self.debug = debug
 
-        self.kim_initialized = False
-        self.neigh_initialized = False
-
-        # model object, compute arguments object, neighbor list object
-        self.kim_model = None
-        self.compute_args = None
-        self.neigh = None
-
         # initialize KIM API Portable Model object and ComputeArguments object
         self.init_kim()
 
@@ -60,7 +52,6 @@ class KIMModelData(object):
         """Create the KIM API Model object and KIM API ComputeArguments
         object
         """
-
         if self.kim_initialized:
             return
 
@@ -69,8 +60,6 @@ class KIMModelData(object):
         # KIM API model object is what actually creates/destroys the ComputeArguments
         # object, so we must pass it as a parameter
         self.compute_args = self.kim_model.compute_arguments_create()
-
-        self.kim_initialized = True
 
     def init_neigh(
         self,
@@ -96,8 +85,6 @@ class KIMModelData(object):
             padding_not_require_neigh,
             self.debug,
         )
-
-        self.neigh_initialized = True
 
     def update_kim_coords(self, atoms):
         """Update atomic positions in self.coords, which where the KIM
@@ -153,7 +140,7 @@ class KIMModelData(object):
         """
         if self.neigh_initialized:
             self.neigh.clean()
-            self.neigh_initialized = False
+            del self.neigh
 
     def clean_kim(self):
         """Deallocate the memory allocated to the KIM API Model object
@@ -162,7 +149,7 @@ class KIMModelData(object):
         if self.kim_initialized:
             self.kim_model.compute_arguments_destroy(self.compute_args)
             self.kim_model.destroy()
-            self.kim_initialized = False
+            del self.kim_model
 
     def clean(self):
         """Deallocate the KIM API Model object, KIM API ComputeArguments
@@ -197,6 +184,14 @@ class KIMModelData(object):
     @property
     def get_model_supported_species_and_codes(self):
         return self.kim_model.get_model_supported_species_and_codes
+
+    @property
+    def kim_initialized(self):
+        return hasattr(self, "kim_model")
+
+    @property
+    def neigh_initialized(self):
+        return hasattr(self, "neigh")
 
 
 class KIMModelCalculator(Calculator):

@@ -62,9 +62,7 @@ collection_item_type_portableModel = kimpy.collection_item_type.portableModel
 
 class ModelCollections(object):
     def __init__(self):
-        self.initialized = False
         self.collection = collections_create()
-        self.initialized = True
 
     def __del__(self):
         self.destroy()
@@ -95,7 +93,11 @@ class ModelCollections(object):
     def destroy(self):
         if self.initialized:
             kimpy.collections.destroy(self.collection)
-            self.initialized = False
+            del self.collection
+
+    @property
+    def initialized(self):
+        return hasattr(self, "collection")
 
 
 class PortableModel(object):
@@ -104,7 +106,6 @@ class PortableModel(object):
     """
 
     def __init__(self, model_name, debug):
-        self.initialized = False
         self.model_name = model_name
         self.debug = debug
 
@@ -132,8 +133,6 @@ class PortableModel(object):
             print("Temperature unit is: {}".format(te_unit))
             print("Time unit is: {}".format(ti_unit))
             print()
-
-        self.initialized = True
 
     def __del__(self):
         self.destroy()
@@ -198,7 +197,11 @@ class PortableModel(object):
     def destroy(self):
         if self.initialized:
             kimpy.model.destroy(self.kim_model)
-            self.initialized = False
+            del self.kim_model
+
+    @property
+    def initialized(self):
+        return hasattr(self, "kim_model")
 
 
 class ComputeArguments(object):
@@ -322,16 +325,12 @@ class ComputeArguments(object):
 
 class SimulatorModel(object):
     def __init__(self, model_name):
-        self.initialized = False
-
         # Create a KIM API simulator Model object for this model
         self.model_name = model_name
         self.simulator_model = simulator_model_create(self.model_name)
 
         # Need to close template map to access simulator model metadata
         self.simulator_model.close_template_map()
-
-        self.initialized = True
 
     def __del__(self):
         self.destroy()
@@ -419,11 +418,15 @@ class SimulatorModel(object):
 
         return atom_style
 
+    def destroy(self):
+        if self.initialized:
+            kimpy.simulator_model.destroy(self.simulator_model)
+            del self.simulator_model
+
     @property
     def model_defn(self):
         return self.metadata["model-defn"]
 
-    def destroy(self):
-        if self.initialized:
-            kimpy.simulator_model.destroy(self.simulator_model)
-            self.initialized = False
+    @property
+    def initialized(self):
+        return hasattr(self, "collection")
