@@ -83,24 +83,19 @@ class KIMModelData(object):
         """Initialize neighbor list, either an ASE-native neighborlist
         or one created using the neighlist module in kimpy
         """
-        if self.ase_neigh:
-            self.neigh = neighborlist.ASENeighborList(
-                self.compute_args,
-                neigh_skin_ratio,
-                model_influence_dist,
-                model_cutoffs,
-                padding_not_require_neigh,
-                self.debug,
-            )
-        else:
-            self.neigh = neighborlist.KimpyNeighborList(
-                self.compute_args,
-                neigh_skin_ratio,
-                model_influence_dist,
-                model_cutoffs,
-                padding_not_require_neigh,
-                self.debug,
-            )
+        neigh_list_object_type = (
+            neighborlist.ASENeighborList
+            if self.ase_neigh
+            else neighborlist.KimpyNeighborList
+        )
+        self.neigh = neigh_list_object_type(
+            self.compute_args,
+            neigh_skin_ratio,
+            model_influence_dist,
+            model_cutoffs,
+            padding_not_require_neigh,
+            self.debug,
+        )
 
         self.neigh_initialized = True
 
