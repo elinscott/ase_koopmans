@@ -4,7 +4,6 @@ This was written to run with the 30 Apr 2019 version of LAMMPS,
 for which uncharged systems require the use of 'kspace_modify gewald'.
 """
 
-from __future__ import print_function
 
 import os
 import numpy as np

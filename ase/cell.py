@@ -204,9 +204,10 @@ class Cell:
 
     def uncomplete(self, pbc):
         """Return new cell, zeroing cell vectors where not periodic."""
-        pbc = np.asarray(pbc, bool)
+        _pbc = np.empty(3, bool)
+        _pbc[:] = pbc
         cell = self.copy()
-        cell[~pbc] = 0
+        cell[~_pbc] = 0
         return cell
 
     def complete(self):
@@ -297,7 +298,7 @@ class Cell:
 
         See also :func:`ase.build.tools.niggli_reduce_cell`."""
         from ase.build.tools import niggli_reduce_cell
-        cell, op = niggli_reduce_cell(self, epsfactor=1e-5)
+        cell, op = niggli_reduce_cell(self, epsfactor=eps)
         return Cell(cell), op
 
     def minkowski_reduce(self):
@@ -305,7 +306,7 @@ class Cell:
 
         See also :func:`ase.geometry.minkowski_reduction.minkowski_reduce`."""
         from ase.geometry.minkowski_reduction import minkowski_reduce
-        rcell, op = minkowski_reduce(self)
+        rcell, op = minkowski_reduce(self, self.any(1) & self._pbc)
         return Cell(rcell), op
 
     # XXX We want a reduction function that brings the cell into

@@ -43,7 +43,27 @@ Git master branch
 * :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
   from :mod:`ase.io.jsonio`.
 
+* :mod:`ase.utils.parsemath` added to utils. This module parses simple
+  mathematical expressions and returns their numerical value. All
+  native mathematical operations and many functions in the math module
+  are supported. It also understands pi, e, and tau from the math
+  module. Variable substitution is also supported via the param_dct
+  kwarg, where the keys are the variable names in the expression and
+  the values are the numerical value they should be replaced with.
+
 * Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
+
+Version 3.18.1
+==============
+
+20 September 2019: :git:`3.18.1 <../3.18.1>`
+
+* Multiple bugfixes.  Most importantly, deprecate ``atoms.cell.pbc``
+  in order to avoid complexities from dealing with two
+  ways of manipulating this piece of information.
+  Use ``atoms.pbc`` instead; this works the same as always.
+  Also, the :class:`~ase.cell.Cell` object now exposes almost the entire
+  ``ndarray`` interface.  For a list of smaller bugfixes, see the git log.
 
 Version 3.18.0
 ==============

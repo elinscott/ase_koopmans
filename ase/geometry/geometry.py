@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Copyright (C) 2010, Jesper Friis
 # (see accompanying license files for details).
 
@@ -8,11 +7,10 @@ different orientations.
    - detection of duplicate atoms / atoms within cutoff radius
 """
 
-from math import pi
-
+import itertools
 import numpy as np
-
 from ase.geometry import complete_cell
+from ase.geometry.minkowski_reduction import minkowski_reduce
 
 
 def translate_pretty(fractional, pbc):
@@ -150,80 +148,46 @@ def get_layers(atoms, miller, tolerance=0.001):
     return tags, levels
 
 
-def find_mic(D, cell, pbc=True):
-    """Finds the minimum-image representation of vector(s) D"""
+def find_mic(v, cell, pbc=True):
+    """Finds the minimum-image representation of vector(s) v"""
 
-    cell = complete_cell(cell)
-    # Calculate the 4 unique unit cell diagonal lengths
-    diags = np.sqrt((np.dot([[1, 1, 1],
-                             [-1, 1, 1],
-                             [1, -1, 1],
-                             [-1, -1, 1],
-                             ], cell)**2).sum(1))
+    if not hasattr(pbc, "__len__"):
+        if pbc is None or pbc:
+            pbc = [1, 1, 1]
+        else:
+            pbc = [0, 0, 0]
+    pbc = cell.any(1) & pbc
 
-    # calculate 'mic' vectors (D) and lengths (D_len) using simple method
-    Dr = np.dot(D, np.linalg.inv(cell))
-    D = np.dot(Dr - np.round(Dr) * pbc, cell)
-    D_len = np.sqrt((D**2).sum(1))
-    # return mic vectors and lengths for only orthorhombic cells,
-    # as the results may be wrong for non-orthorhombic cells
-    if (max(diags) - min(diags)) / max(diags) < 1e-9:
-        return D, D_len
+    v = np.array(v)
+    single = len(v.shape) == 1
+    v = np.atleast_2d(v)
 
-    # The cutoff radius is the longest direct distance between atoms
-    # or half the longest lattice diagonal, whichever is smaller
-    cutoff = min(max(D_len), max(diags) / 2.)
+    if np.sum(pbc) > 0:
+        cell = complete_cell(cell)
+        rcell, _ = minkowski_reduce(cell, pbc=pbc)
 
-    # The number of neighboring images to search in each direction is
-    # equal to the ceiling of the cutoff distance (defined above) divided
-    # by the length of the projection of the lattice vector onto its
-    # corresponding surface normal. a's surface normal vector is e.g.
-    # b x c / (|b| |c|), so this projection is (a . (b x c)) / (|b| |c|).
-    # The numerator is just the lattice volume, so this can be simplified
-    # to V / (|b| |c|). This is rewritten as V |a| / (|a| |b| |c|)
-    # for vectorization purposes.
-    latt_len = np.sqrt((cell**2).sum(1))
-    V = abs(np.linalg.det(cell))
-    n = pbc * np.array(np.ceil(cutoff * np.prod(latt_len) /
-                               (V * latt_len)), dtype=int)
+        # in a Minkowski-reduced cell we only need to test nearest neighbors
+        cs = [np.arange(-1 * p, p + 1) for p in pbc]
+        neighbor_cells = list(itertools.product(*cs))
 
-    # Construct a list of translation vectors. For example, if we are
-    # searching only the nearest images (27 total), tvecs will be a
-    # 27x3 array of translation vectors. This is the only nested loop
-    # in the routine, and it takes a very small fraction of the total
-    # execution time, so it is not worth optimizing further.
-    tvecs = []
-    for i in range(-n[0], n[0] + 1):
-        latt_a = i * cell[0]
-        for j in range(-n[1], n[1] + 1):
-            latt_ab = latt_a + j * cell[1]
-            for k in range(-n[2], n[2] + 1):
-                tvecs.append(latt_ab + k * cell[2])
-    tvecs = np.array(tvecs)
+        positions = wrap_positions(v, rcell, pbc=pbc, eps=0)
+        vmin = positions.copy()
+        vlen = np.linalg.norm(positions, axis=1)
+        for nbr in neighbor_cells:
+            trial = positions + np.dot(rcell.T, nbr)
+            trial_len = np.linalg.norm(trial, axis=1)
 
+            indices = np.where(trial_len < vlen)
+            vmin[indices] = trial[indices]
+            vlen[indices] = trial_len[indices]
+    else:
+        vmin = v.copy()
+        vlen = np.linalg.norm(vmin, axis=1)
 
-    # Check periodic neighbors iff the displacement vector in
-    # scaled coordinates is greater than 0.5.
-    good = np.sqrt((np.linalg.solve(cell.T, D.T)**2).sum(0)) <= 0.5
-
-    D_min = D.copy()
-    D_min_len = D_len.copy()
-
-    for i, (Di, gdi) in enumerate(zip(D, good)):
-        if gdi:
-            # No need to check periodic neighbors.
-            continue
-        # Translate the direct displacement vector by each translation
-        # vector, and calculate the corresponding length.
-        Di_trans = Di[np.newaxis] + tvecs
-        Di_trans_len = np.sqrt((Di_trans**2).sum(1))
-
-        # Find mic distance and corresponding vector.
-        Di_min_ind = Di_trans_len.argmin()
-        D_min[i] = Di_trans[Di_min_ind]
-        D_min_len[i] = Di_trans_len[Di_min_ind]
-
-    return D_min, D_min_len
+    if single:
+        return vmin[0], vlen[0]
+    else:
+        return vmin, vlen
 
 
 def get_angles(v1, v2, cell=None, pbc=None):
@@ -235,7 +199,7 @@ def get_angles(v1, v2, cell=None, pbc=None):
     convention, otherwise angles are taken as-is.
     """
 
-    f = 180 / pi
+    f = 180 / np.pi
 
     # Check if using mic
     if cell is not None or pbc is not None:
@@ -267,19 +231,14 @@ def get_distances(p1, p2=None, cell=None, pbc=None):
 
     Use set cell and pbc to use the minimum image convention.
     """
+    p1 = np.atleast_2d(p1)
     if p2 is None:
-        p2 = p1
-
-    p1, p2 = np.array(p1), np.array(p2)
-
-    # Allocate matrix for vectors as [p1, p2, 3]
-    D = np.zeros((len(p1), len(p2), 3))
-
-    for offset, pos1 in enumerate(p1):
-        D[offset, :, :] = p2 - pos1
-
-    # Collapse to linear indexing
-    D.shape = (-1, 3)
+        np1 = len(p1)
+        ind1, ind2 = np.triu_indices(np1, k=1)
+        D = p1[ind2] - p1[ind1]
+    else:
+        p2 = np.atleast_2d(p2)
+        D = (p2[np.newaxis, :, :] - p1[:, np.newaxis, :]).reshape((-1, 3))
 
     # Check if using mic
     if cell is not None or pbc is not None:
@@ -289,6 +248,16 @@ def get_distances(p1, p2=None, cell=None, pbc=None):
         D, D_len = find_mic(D, cell, pbc)
     else:
         D_len = np.sqrt((D**2).sum(1))
+
+    if p2 is None:
+        Dout = np.zeros((np1, np1, 3))
+        Dout[(ind1, ind2)] = D
+        Dout -= np.transpose(Dout, axes=(1, 0, 2))
+
+        Dout_len = np.zeros((np1, np1))
+        Dout_len[(ind1, ind2)] = D_len
+        Dout_len += Dout_len.T
+        return Dout, Dout_len
 
     # Expand back to matrix indexing
     D.shape = (-1, len(p2), 3)

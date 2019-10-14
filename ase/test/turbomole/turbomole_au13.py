@@ -1,4 +1,3 @@
-from __future__ import print_function
 from ase.cluster.cubic import FaceCenteredCubic
 from ase.calculators.turbomole import Turbomole
 

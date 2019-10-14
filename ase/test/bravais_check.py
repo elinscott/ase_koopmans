@@ -8,12 +8,13 @@ bravais = {}
 for name in bravais_lattices:
     bravais[name.lower()] = bravais_lattices[name]
 
+
 def check_single(name, cell, pbc=None):
     c = Cell(cell)
 
     try:
         print('TEST', c, pbc)
-        if pbc[:2].all():
+        if pbc[:2].all() or sum(pbc) == 1:
             lattice = c.get_bravais_lattice(pbc=pbc)
         else:
             with must_raise(UnsupportedLattice):
@@ -39,7 +40,7 @@ def check(name, cell, pbc=None):
     check_single(name + '@012', cell[[0, 1, 2]], pbc=pbc[[0, 1, 2]])
     # 2D lattice determination only supports pbc=(1,1,0) and hence we
     # check the permutations only for 3D lattices:
-    if cell.rank == 3:
+    if cell.rank == 3 and pbc.sum() != 1:
         check_single(name + '@201', cell[[2, 0, 1]], pbc=pbc[[2, 0, 1]])
         check_single(name + '@120', cell[[1, 2, 0]], pbc=pbc[[1, 2, 0]])
 
@@ -102,3 +103,9 @@ oblcell = np.array([[a, 0, 0],
                     [b * x, b * y, 0],
                     [0, 0, 10]])
 check('obl', Cell(oblcell), pbc=np.array([True, True, False]))
+
+# 1-d:
+check('line', Cell(np.diag([a, 0, 0.0])))
+check('line', Cell(np.diag([a, 1, 1.0])), pbc=np.array([1, 0, 0]))
+check('line', Cell(np.diag([0.0, 0, a])))
+check('line', Cell(np.diag([1.0, 1, a])), pbc=np.array([0, 0, 1]))

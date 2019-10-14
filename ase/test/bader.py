@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 from ase.build import molecule
 from ase.io.bader import attach_charges
@@ -26,3 +25,6 @@ os.remove(fname)
 
 for atom in atoms:
     print('Atom', atom.symbol, 'Bader charge', atom.charge)
+
+# O is negatively charged
+assert(atoms[0].charge < -1 and atoms[0].charge > -2)

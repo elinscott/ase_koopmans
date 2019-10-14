@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import socket
 from subprocess import Popen
@@ -423,7 +422,7 @@ class SocketClient:
         # We should also broadcast the bead index, once we support doing
         # multiple beads.
         self.comm.broadcast(atoms.positions, 0)
-        self.comm.broadcast(atoms.cell, 0)
+        self.comm.broadcast(np.ascontiguousarray(atoms.cell), 0)
 
         energy = atoms.get_potential_energy()
         forces = atoms.get_forces()

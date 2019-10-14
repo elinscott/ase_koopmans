@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import sys
 import subprocess
@@ -19,10 +18,6 @@ from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
 test_calculator_names = ['emt']
-
-if sys.version_info[0] == 2:
-    class ResourceWarning(UserWarning):
-        pass  # Placeholder - this warning does not exist in Py2 at all.
 
 
 def require(calcname):

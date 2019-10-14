@@ -423,9 +423,9 @@ class SQLite3Database(Database, object):
                         [(key, id) for key in key_value_pairs])
 
         for tabname, values in ext_tab.items():
-            values['id'] = id
             try:
                 dtype = self._guess_type(values)
+                values['id'] = id
                 self._create_table_if_not_exists(tabname, dtype, db_con=con)
                 self._insert_in_external_table(
                     cur, name=tabname, entries=values)
