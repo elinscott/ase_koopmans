@@ -153,58 +153,54 @@ def KIM(model_name, simulator=None, options=None, debug=False):
     #######################################################
     # If we get to here, the model is a KIM Simulator Model
     #######################################################
-    (
-        simulator_name,
-        supported_species,
-        supported_units,
-        model_defn,
-        atom_style,
-    ) = _get_simulator_model_info(model_name)
+    with kimpy_wrappers.SimulatorModel(model_name) as sm:
 
-    # Handle default behavior for 'simulator'
-    if simulator is None:
-        if simulator_name == "ASAP":
-            simulator = "asap"
-        elif simulator_name == "LAMMPS":
-            simulator = "lammpslib"
+        # Handle default behavior for 'simulator'
+        if simulator is None:
+            if sm.simulator_name == "ASAP":
+                simulator = "asap"
+            elif sm.simulator_name == "LAMMPS":
+                simulator = "lammpslib"
 
-    if simulator_name == "ASAP":
+        if sm.simulator_name == "ASAP":
 
-        return ASAPCalculator(
-            model_name,
-            model_type,
-            options=options,
-            model_defn=model_defn,
-            verbose=debug,
-            supported_units=supported_units,
-        )
-
-    elif simulator_name == "LAMMPS":
-
-        if simulator == "lammpsrun":
-
-            return LAMMPSRunCalculator(
+            return ASAPCalculator(
                 model_name,
                 model_type,
-                supported_species,
-                options,
-                debug,
-                atom_style=atom_style,
-                supported_units=supported_units,
+                options=options,
+                model_defn=sm.model_defn,
+                verbose=debug,
+                supported_units=sm.supported_units,
             )
 
-        elif simulator == "lammpslib":
-            return LAMMPSLibCalculator(
-                model_name, supported_species, supported_units, options
-            )
+        elif sm.simulator_name == "LAMMPS":
+
+            if simulator == "lammpsrun":
+
+                return LAMMPSRunCalculator(
+                    model_name,
+                    model_type,
+                    sm.supported_species,
+                    options,
+                    debug,
+                    atom_style=sm.atom_style,
+                    supported_units=sm.supported_units,
+                )
+
+            elif simulator == "lammpslib":
+                return LAMMPSLibCalculator(
+                    model_name, sm.supported_species, sm.supported_units, options
+                )
+
+            else:
+                raise KIMCalculatorError(
+                    'Unknown LAMMPS calculator: "{}".'.format(simulator)
+                )
 
         else:
             raise KIMCalculatorError(
-                'Unknown LAMMPS calculator: "{}".'.format(simulator)
+                'Unsupported simulator: "{}".'.format(sm.simulator_name)
             )
-
-    else:
-        raise KIMCalculatorError('Unsupported simulator: "{}".'.format(simulator_name))
 
 
 def _is_portable_model(model_name):
@@ -219,26 +215,12 @@ def _is_portable_model(model_name):
     return model_type == kimpy_wrappers.collection_item_type_portableModel
 
 
-def _get_simulator_model_info(model_name):
-    """
-    Retrieve Simulator Model metadata including its native simulator,
-    supported species, and units
-    """
-    with kimpy_wrappers.SimulatorModel(model_name) as sm:
-        simulator_name = sm.simulator_name
-        supported_species = sm.supported_species
-        supported_units = sm.supported_units
-        atom_style = sm.atom_style
-        model_defn = sm.model_defn
-
-    return (simulator_name, supported_species, supported_units, model_defn, atom_style)
-
-
 def get_model_supported_species(model_name):
     if _is_portable_model(model_name):
         with kimpy_wrappers.PortableModel(model_name, debug=False) as pm:
             supported_species, _ = pm.get_model_supported_species_and_codes()
     else:
-        _, supported_species, _, _, _ = _get_simulator_model_info(model_name)
+        with kimpy_wrappers.SimulatorModel(model_name) as sm:
+            supported_species = sm.supported_species
 
     return supported_species
