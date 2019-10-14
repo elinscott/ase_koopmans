@@ -143,10 +143,12 @@ class KIMModelData(object):
         """
         supported_species, codes = self.get_model_supported_species_and_codes()
         species_map = dict()
-        for i, s in enumerate(supported_species):
-            species_map[s] = codes[i]
+        for i, spec in enumerate(supported_species):
+            species_map[spec] = codes[i]
             if self.debug:
-                print("Species {} is supported and its code is: {}".format(s, codes[i]))
+                print(
+                    "Species {} is supported and its code is: {}".format(spec, codes[i])
+                )
 
         return species_map
 

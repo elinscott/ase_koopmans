@@ -256,9 +256,9 @@ class ASENeighborList(NeighborList):
         new_atoms = self.build(orig_atoms)
 
         # Save the number of atoms and all their neighbors and positions
-        N = len(new_atoms)
-        num_padding = N - self.num_contributing_particles
-        self.num_particles = [N]
+        num_atoms = len(new_atoms)
+        num_padding = num_atoms - self.num_contributing_particles
+        self.num_particles = [num_atoms]
         self.coords = new_atoms.get_positions()
 
         # Save which coordinates are from original atoms and which are from

@@ -200,6 +200,7 @@ class PortableModel(object):
             kimpy.model.destroy(self.kim_model)
             self.initialized = False
 
+
 class ComputeArguments(object):
     """
     KIM API ComputeArguments object configured for ASE
