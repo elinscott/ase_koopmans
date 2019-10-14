@@ -71,10 +71,7 @@ class ModelCollections(object):
         return self
 
     def __exit__(self, exc_type, value, traceback):
-        if exc_type is None:
-            self.destroy()
-        else:
-            return False  # reraise exception
+        self.destroy()
 
     def get_item_type(self, model_name):
         try:
@@ -141,10 +138,7 @@ class PortableModel(object):
         return self
 
     def __exit__(self, exc_type, value, traceback):
-        if exc_type is None:
-            self.destroy()
-        else:
-            return False  # reraise exception
+        self.destroy()
 
     def get_model_supported_species_and_codes(self):
         """Get all the supported species and corresponding integer codes
@@ -339,10 +333,7 @@ class SimulatorModel(object):
         return self
 
     def __exit__(self, exc_type, value, traceback):
-        if exc_type is None:
-            self.destroy()
-        else:
-            return False  # reraise exception
+        self.destroy()
 
     @property
     def simulator_name(self):

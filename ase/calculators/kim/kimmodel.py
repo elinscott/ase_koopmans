@@ -264,13 +264,9 @@ class KIMModelCalculator(Calculator):
         return self
 
     def __exit__(self, exc_type, value, traceback):
-        if exc_type is None:
-            if self.kimmodeldata is not None:
-                # Explicitly deallocate all three objects held by the KIMModelData
-                # instance referenced by our calculator
-                self.kimmodeldata.clean()
-        else:
-            return False  # reraise exception
+        # Explicitly deallocate all three objects held by the KIMModelData
+        # instance referenced by our calculator
+        self.kimmodeldata.clean()
 
     def __repr__(self):
         return "KIMModelCalculator(model_name={})".format(self.model_name)
