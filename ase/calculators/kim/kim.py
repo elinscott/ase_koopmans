@@ -123,12 +123,12 @@ def KIM(model_name, simulator=None, options=None, debug=False):
             simulator = "kimmodel"
 
         if simulator == "kimmodel":
-            return KIMCalculator(model_name, options, debug).calc
+            return KIMCalculator(model_name, options, debug)
 
         elif simulator == "asap":
             return ASAPCalculator(
                 model_name, model_type, options=options, verbose=debug
-            ).calc
+            )
 
         elif simulator == "lammpsrun":
             supported_species = get_model_supported_species(model_name)
@@ -136,7 +136,7 @@ def KIM(model_name, simulator=None, options=None, debug=False):
             # Return LAMMPS calculator
             return LAMMPSRunCalculator(
                 model_name, model_type, supported_species, options, debug
-            ).calc
+            )
 
         elif simulator == "lammpslib":
             raise KIMCalculatorError(
@@ -177,7 +177,7 @@ def KIM(model_name, simulator=None, options=None, debug=False):
             model_defn=model_defn,
             verbose=debug,
             supported_units=supported_units,
-        ).calc
+        )
 
     elif simulator_name == "LAMMPS":
 
@@ -191,12 +191,12 @@ def KIM(model_name, simulator=None, options=None, debug=False):
                 debug,
                 atom_style=atom_style,
                 supported_units=supported_units,
-            ).calc
+            )
 
         elif simulator == "lammpslib":
             return LAMMPSLibCalculator(
                 model_name, supported_species, supported_units, options
-            ).calc
+            )
 
         else:
             raise KIMCalculatorError(
@@ -236,9 +236,8 @@ def _get_simulator_model_info(model_name):
 
 def get_model_supported_species(model_name):
     if _is_portable_model(model_name):
-        supported_species = KIMCalculator(
-            model_name, options={}, debug=False
-        ).get_model_supported_species_and_codes()
+        with kimpy_wrappers.PortableModel(model_name, debug=False) as pm:
+            supported_species, _ = pm.get_model_supported_species_and_codes()
     else:
         _, supported_species, _, _, _ = _get_simulator_model_info(model_name)
 

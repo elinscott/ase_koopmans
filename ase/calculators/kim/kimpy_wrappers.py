@@ -104,6 +104,7 @@ class PortableModel(object):
     """
 
     def __init__(self, model_name, debug):
+        self.initialized = False
         self.model_name = model_name
         self.debug = debug
 
@@ -131,6 +132,20 @@ class PortableModel(object):
             print("Temperature unit is: {}".format(te_unit))
             print("Time unit is: {}".format(ti_unit))
             print()
+
+        self.initialized = True
+
+    def __del__(self):
+        self.destroy()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, value, traceback):
+        if exc_type is None:
+            self.destroy()
+        else:
+            return False  # reraise exception
 
     def get_model_supported_species_and_codes(self):
         """Get all the supported species and corresponding integer codes
@@ -181,8 +196,9 @@ class PortableModel(object):
         compute_args_wrapped.destroy()
 
     def destroy(self):
-        kimpy.model.destroy(self.kim_model)
-
+        if self.initialized:
+            kimpy.model.destroy(self.kim_model)
+            self.initialized = False
 
 class ComputeArguments(object):
     """

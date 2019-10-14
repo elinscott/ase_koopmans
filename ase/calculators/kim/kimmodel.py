@@ -425,7 +425,6 @@ class KIMModelCalculator(Calculator):
     def update_compute_args_pointers(self):
         return self.kimmodeldata.update_compute_args_pointers
 
-    @property
     def get_model_supported_species_and_codes(self):
         return self.kimmodeldata.get_model_supported_species_and_codes
 
