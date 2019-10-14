@@ -1,5 +1,4 @@
 """van der Waals correction schemes for DFT"""
-from __future__ import print_function
 import numpy as np
 from ase.units import Bohr, Hartree
 from ase.calculators.calculator import Calculator

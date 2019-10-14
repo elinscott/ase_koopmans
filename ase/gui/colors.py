@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """colors.py - select how to color the atoms in the GUI."""
-from __future__ import unicode_literals
 from ase.gui.i18n import _
 
 import numpy as np

@@ -298,7 +298,7 @@ class Cell:
 
         See also :func:`ase.build.tools.niggli_reduce_cell`."""
         from ase.build.tools import niggli_reduce_cell
-        cell, op = niggli_reduce_cell(self, epsfactor=1e-5)
+        cell, op = niggli_reduce_cell(self, epsfactor=eps)
         return Cell(cell), op
 
     def minkowski_reduce(self):

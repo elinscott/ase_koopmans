@@ -1,4 +1,3 @@
-from __future__ import print_function
 """plotting fields defined on atoms during a simulation."""
 
 from ase.visualize.primiplotter import PrimiPlotter as _PrimiPlotter

@@ -11,7 +11,6 @@ http://www.uam.es/departamentos/ciencias/fismateriac/siesta
 
 """
 
-from __future__ import print_function
 import os
 import warnings
 from os.path import join, isfile, islink

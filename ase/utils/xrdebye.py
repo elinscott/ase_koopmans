@@ -7,7 +7,6 @@ Also contains routine for calculation of atomic form factors and
 X-ray wavelength dict.
 """
 
-from __future__ import print_function
 from math import exp, pi, sin, sqrt, cos, acos
 import numpy as np
 

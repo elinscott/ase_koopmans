@@ -1,4 +1,3 @@
-from __future__ import print_function, division
 from ase.lattice.cubic import FaceCenteredCubic
 from ase.lattice.hexagonal import HexagonalClosedPacked
 from ase.test import must_raise

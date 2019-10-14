@@ -1,4 +1,3 @@
-from __future__ import division
 from ase.utils import basestring
 import re
 import warnings

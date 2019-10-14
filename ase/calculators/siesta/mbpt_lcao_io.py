@@ -3,7 +3,6 @@
 """
 
 
-from __future__ import division
 import ase.io as aio
 import numpy as np
 

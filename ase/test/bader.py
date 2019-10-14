@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 from ase.build import molecule
 from ase.io.bader import attach_charges
