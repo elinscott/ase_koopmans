@@ -43,6 +43,8 @@ Git master branch
 * :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
   from :mod:`ase.io.jsonio`.
 
+* Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
+
 Version 3.18.0
 ==============
 
