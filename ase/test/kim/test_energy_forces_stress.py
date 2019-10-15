@@ -5,30 +5,8 @@ import numpy as np
 from ase.calculators.kim import KIM
 from ase.lattice.cubic import FaceCenteredCubic
 
-
-energy_ref = 19.7196709065
-forces_ref = [
-    [-0.33209865, -13.98929271, -13.98929271],
-    [0.18090261, 13.9896848, -13.98691618],
-    [0.18090261, -13.98691618, 13.9896848],
-    [-0.02970657, 13.98652409, 13.98652409],
-]
-stress_ref = [
-    -2.21148294e00,
-    -1.55423383e00,
-    -1.55423383e00,
-    2.17827079e-05,
-    -8.39978013e-03,
-    -8.39978013e-03,
-]
-
-
-# create calculator
-modelname = "ex_model_Ar_P_Morse_07C"
-calc = KIM(modelname)
-
-# create an FCC crystal
-argon = FaceCenteredCubic(
+# Create an FCC atoms crystal
+atoms = FaceCenteredCubic(
     directions=[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
     size=(1, 1, 1),
     symbol="Ar",
@@ -36,22 +14,29 @@ argon = FaceCenteredCubic(
     latticeconstant=3.0,
 )
 
-# perturb the x coord of the first atom
-argon.positions[0, 0] += 0.01
+# Perturb the x coordinate of the first atom by less than the cutoff distance
+atoms.positions[0, 0] += 0.01
 
-# attach calculator to the atoms
-argon.set_calculator(calc)
+calc = KIM("ex_model_Ar_P_Morse_07C")
+atoms.set_calculator(calc)
 
-# get energy and forces
-energy = argon.get_potential_energy()
-forces = argon.get_forces()
-stress = argon.get_stress()
+# Get energy and analytical forces/stress from KIM model
+energy = atoms.get_potential_energy()
+forces = atoms.get_forces()
+stress = atoms.get_stress()
+
+# Previously computed energy for this configuration for this model
+energy_ref = 19.7196709065
+
+# Compute forces and virial stress numerically
+forces_numer = calc.calculate_numerical_forces(atoms, d=0.0001)
+stress_numer = calc.calculate_numerical_stress(atoms, d=0.0001, voigt=True)
 
 tol = 1e-6
 assert np.isclose(energy, energy_ref, tol)
-assert np.allclose(forces, forces_ref, tol)
-assert np.allclose(stress, stress_ref, tol)
+assert np.allclose(forces, forces_numer, tol)
+assert np.allclose(stress, stress_numer, tol)
 
 # This has been known to segfault
-argon.set_pbc(True)
-argon.get_potential_energy()
+atoms.set_pbc(True)
+atoms.get_potential_energy()
