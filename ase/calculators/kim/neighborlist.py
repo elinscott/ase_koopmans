@@ -72,6 +72,21 @@ class NeighborList(object):
         self.need_neigh = None
         self.last_update_positions = None
 
+    def update_kim_coords(self, atoms):
+        """Update atomic positions in self.coords, which where the KIM
+        API will look to find them in order to pass them to the model.
+        """
+        if self.padding_image_of.size != 0:
+            disp_contrib = atoms.positions - self.coords[: len(atoms)]
+            disp_pad = disp_contrib[self.padding_image_of]
+            self.coords += np.concatenate((disp_contrib, disp_pad))
+        else:
+            np.copyto(self.coords, atoms.positions)
+
+        if self.debug:
+            print("Debug: called update_kim_coords")
+            print()
+
     def need_neigh_update(self, atoms, system_changes):
         need_neigh_update = True
         if len(system_changes) == 1 and "positions" in system_changes:
