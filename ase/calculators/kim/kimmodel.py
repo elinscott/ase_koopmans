@@ -321,6 +321,7 @@ class KIMModelCalculator(Calculator):
 
         # return values
         self.results["energy"] = energy
+        self.results["free_energy"] = energy
         self.results["forces"] = forces
         self.results["stress"] = stress
 
