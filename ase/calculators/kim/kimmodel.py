@@ -423,10 +423,6 @@ class KIMModelCalculator(Calculator):
         return self.kimmodeldata.padding_image_of
 
     @property
-    def update_kim_coords(self):
-        return self.kimmodeldata.update_kim_coords
-
-    @property
     def species_map(self):
         return self.kimmodeldata.species_map
 
