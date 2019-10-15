@@ -1,19 +1,19 @@
-"""Test that KIM works with a relaxation"""
+"""
+Test that a static relaxation that requires multiple neighbor list
+rebuilds can be carried out successfully.  This is verified by relaxing
+an icosahedral cluster of atoms and checking that the relaxed energy
+matches a known precomputed value for an example model.
+"""
 import numpy as np
 from ase.cluster import Icosahedron
 from ase.calculators.kim import KIM
 from ase.optimize import BFGS
 
-energy_ref = -0.5420939378624228
+energy_ref = -0.5420939378624228  # eV
 
-# Create structure
+# Create structure and calculator
 atoms = Icosahedron("Ar", latticeconstant=3.0, noshells=2)
-
-# create calculator
-modelname = "ex_model_Ar_P_Morse_07C"
-calc = KIM(modelname)
-
-# attach calculator to the atoms
+calc = KIM("ex_model_Ar_P_Morse_07C")
 atoms.set_calculator(calc)
 
 opt = BFGS(atoms, logfile=None)

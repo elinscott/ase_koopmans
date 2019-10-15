@@ -1,7 +1,11 @@
 """
-Construct a 10 Angstrom x 10 Angstrom x 10 Angstrom non-periodic cell
-filled with randomly positioned atoms and compute the energy, forces,
-and virial stress for a model that makes use of multiple cutoffs
+To test that the correct energy/forces/stress can be computed using a
+model that implements multiple cutoffs.  This is done by construct a 10
+Angstrom x 10 Angstrom x 10 Angstrom non-periodic cell filled with 15
+randomly positioned atoms and requesting tha tthe model compute the
+energy, forces, and virial stress.  The energy returned by the model is
+compared to a known precomputed value, while the forces and stress
+returned are compared to numerical estimates via finite difference.
 """
 import numpy as np
 from ase import Atoms
@@ -22,7 +26,7 @@ forces = atoms.get_forces()
 stress = atoms.get_stress()
 
 # Previously computed energy for this configuration for this model
-energy_ref = 34.69963483186903
+energy_ref = 34.69963483186903  # eV
 
 # Compute forces and virial stress numerically
 forces_numer = calc.calculate_numerical_forces(atoms, d=0.0001)

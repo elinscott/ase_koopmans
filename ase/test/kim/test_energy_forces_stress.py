@@ -1,5 +1,8 @@
 """
-To test that the calculator can produce correct energy and forces.
+To test that the calculator can produce correct energy and forces.  This
+is done by comparing the energy for an FCC argon lattice with an example
+model to the known value; the forces/stress returned by the model are
+compared to numerical estimates via finite difference.
 """
 import numpy as np
 from ase.calculators.kim import KIM
@@ -26,7 +29,7 @@ forces = atoms.get_forces()
 stress = atoms.get_stress()
 
 # Previously computed energy for this configuration for this model
-energy_ref = 19.7196709065
+energy_ref = 19.7196709065  # eV
 
 # Compute forces and virial stress numerically
 forces_numer = calc.calculate_numerical_forces(atoms, d=0.0001)
