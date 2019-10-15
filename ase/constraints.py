@@ -1283,7 +1283,6 @@ class FixParametricRelations(FixConstraint):
                 if n_params_in_sec > 1:
                     raise ValueError("The FixParametricRelations expressions must be linear.")
 
-            expression = expression.lower()
             const_shift[expr_ind] = float(eval_expression(expression, param_dct))
 
             for param_ind in range(len(params)):
