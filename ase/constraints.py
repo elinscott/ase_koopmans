@@ -1,4 +1,3 @@
-from __future__ import division
 from math import sqrt
 from warnings import warn
 from ase.geometry import find_mic, wrap_positions
@@ -273,7 +272,7 @@ class FixBondLengths(FixConstraint):
                 b = ab[1]
                 cd = self.bondlengths[j]
                 r0 = old[a] - old[b]
-                d0 = find_mic([r0], atoms.cell, atoms.pbc)[0][0]
+                d0, _ = find_mic(r0, atoms.cell, atoms.pbc)
                 d1 = new[a] - new[b] - r0 + d0
                 m = 1 / (1 / masses[a] + 1 / masses[b])
                 x = 0.5 * (cd**2 - np.dot(d1, d1)) / np.dot(d0, d1)
@@ -300,7 +299,7 @@ class FixBondLengths(FixConstraint):
                 b = ab[1]
                 cd = self.bondlengths[j]
                 d = old[a] - old[b]
-                d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
+                d, _ = find_mic(d, atoms.cell, atoms.pbc)
                 dv = p[a] / masses[a] - p[b] / masses[b]
                 m = 1 / (1 / masses[a] + 1 / masses[b])
                 x = -np.dot(dv, d) / cd**2
@@ -432,7 +431,7 @@ class FixLinearTriatomic(FixConstraint):
             self.initialize(atoms)
 
         r0 = old[self.n_ind] - old[self.m_ind]
-        d0 = find_mic([r0], atoms.cell, atoms.pbc)[0][0]
+        d0, _ = find_mic(r0, atoms.cell, atoms.pbc)
         d1 = new_n - new_m - r0 + d0
         a = np.einsum('ij,ij->i', d0, d0)
         b = np.einsum('ij,ij->i', d1, d0)
@@ -445,8 +444,8 @@ class FixLinearTriatomic(FixConstraint):
             new_o = (self.C1[:, 0, None] * new_n
                      + self.C1[:, 1, None] * new_m)
         else:
-            v1 = find_mic([new_n], atoms.cell, atoms.pbc)[0][0]
-            v2 = find_mic([new_m], atoms.cell, atoms.pbc)[0][0]
+            v1, _ = find_mic(new_n, atoms.cell, atoms.pbc)
+            v2, _ = find_mic(new_m, atoms.cell, atoms.pbc)
             rb = self.C1[:, 0, None] * v1 + self.C1[:, 1, None] * v2
             new_o = wrap_positions(rb, atoms.cell, atoms.pbc)
 
@@ -464,7 +463,7 @@ class FixLinearTriatomic(FixConstraint):
         mass_oo = self.mass_o[:, None]
 
         d = old[self.n_ind] - old[self.m_ind]
-        d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
+        d, _ = find_mic(d, atoms.cell, atoms.pbc)
         dv = p_n / mass_nn - p_m / mass_mm
         k = np.einsum('ij,ij->i', dv, d) / self.bondlengths_nm ** 2
         k = self.C3 / (self.C3.sum(axis=1)[:, None]) * k[:, None]
@@ -492,7 +491,7 @@ class FixLinearTriatomic(FixConstraint):
         fr_n, fr_m, fr_o = self.redistribute_forces_optimization(forces)
 
         d = old[self.n_ind] - old[self.m_ind]
-        d = find_mic([d], atoms.cell, atoms.pbc)[0][0]
+        d, _ = find_mic(d, atoms.cell, atoms.pbc)
         df = fr_n - fr_m
         k = -np.einsum('ij,ij->i', df, d) / self.bondlengths_nm ** 2
         forces[self.n_ind] = fr_n + k[:, None] * d * A[:, 0, None]
@@ -1640,7 +1639,7 @@ class Hookean(FixConstraint):
         elif self._type == 'point':
             p1 = positions[self.index]
             p2 = self.origin
-        displace = find_mic([p2 - p1], atoms.cell, atoms.pbc)[0][0]
+        displace, _ = find_mic(p2 - p1, atoms.cell, atoms.pbc)
         bondlength = np.linalg.norm(displace)
         if bondlength > self.threshold:
             magnitude = self.spring * (bondlength - self.threshold)
@@ -1670,7 +1669,7 @@ class Hookean(FixConstraint):
         elif self._type == 'point':
             p1 = positions[self.index]
             p2 = self.origin
-        displace = find_mic([p2 - p1], atoms.cell, atoms.pbc)[0][0]
+        displace, _ = find_mic(p2 - p1, atoms.cell, atoms.pbc)
         bondlength = np.linalg.norm(displace)
         if bondlength > self.threshold:
             return 0.5 * self.spring * (bondlength - self.threshold)**2

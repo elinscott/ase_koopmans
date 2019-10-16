@@ -2,7 +2,6 @@
 """Window for setting up Carbon nanotubes and similar tubes.
 """
 
-from __future__ import unicode_literals
 
 import ase.gui.ui as ui
 from ase.build import nanotube

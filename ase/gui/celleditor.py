@@ -1,7 +1,6 @@
 # encoding: utf-8
 '''celleditor.py - Window for editing the cell of an atoms object
 '''
-from __future__ import division, unicode_literals
 from ase.gui.i18n import _
 
 import ase.gui.ui as ui

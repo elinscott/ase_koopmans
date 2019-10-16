@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 from ase import Atoms
 from ase.calculators.emt import EMT

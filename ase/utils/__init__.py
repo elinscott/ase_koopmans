@@ -23,24 +23,10 @@ __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'formula_hill', 'formula_metal', 'PurePath']
 
 
-# Python 2+3 compatibility stuff:
-if sys.version_info[0] > 2:
-    import builtins
-    exec_ = getattr(builtins, 'exec')
-    basestring = str
-    from io import StringIO
-    pickleload = functools.partial(pickle.load, encoding='bytes')
-    FileNotFoundError = getattr(builtins, 'FileNotFoundError')
-else:
-    class FileNotFoundError(OSError):
-        pass
-
-    # Legacy Python:
-    def exec_(code, dct):
-        exec('exec code in dct')
-    basestring = basestring
-    from StringIO import StringIO
-    pickleload = pickle.load
+# Python 2+3 compatibility stuff (let's try to remove these things):
+basestring = str
+from io import StringIO
+pickleload = functools.partial(pickle.load, encoding='bytes')
 StringIO  # appease pyflakes
 
 

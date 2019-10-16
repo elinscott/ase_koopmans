@@ -1,4 +1,3 @@
-from __future__ import division, print_function
 import numpy as np
 from ase.build import bulk
 from ase.calculators.lj import LennardJones

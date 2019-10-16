@@ -1,4 +1,3 @@
-from __future__ import print_function
 from ase.data import s22
 from ase.optimize import FIRE
 from ase.constraints import FixBondLengths
