@@ -41,8 +41,7 @@ class AddAtoms:
         labels = list(sorted(g2.names))
         values = labels
 
-        self.copypaste = ui.CheckButton(_('Copy-paste current selection'),
-                                        bool(self.gui.images.selected.any()))
+        self.copypaste = ui.CheckButton(_('Copy-paste current selection'), False)
         win.add([self.copypaste])
 
         box = ui.ComboBox(labels, values, callback=set_molecule)
@@ -56,7 +55,7 @@ class AddAtoms:
         self.spinners = spinners
         win.add(_('Coordinates are relative to the center of the selection, '
                   'if any, else absolute.'))
-        self.picky = ui.CheckButton(_('Check positions'), not self.copypaste.value)
+        self.picky = ui.CheckButton(_('Check positions'), True)
         win.add([ui.Button(_('Add'), self.add),
                  self.picky])
         self.focus()
