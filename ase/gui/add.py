@@ -84,7 +84,8 @@ class AddAtoms:
         if not val and self.copypaste.value:
             selection = self.gui.images.selected.copy()
             if selection.any():
-                return self.gui.atoms.copy()[selection]
+                atoms = self.gui.atoms.copy()
+                return atoms[selection[:len(self.gui.atoms)]]
 
         if val in atomic_numbers:  # Note: This means val is a symbol!
             return Atoms(val)
