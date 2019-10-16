@@ -9,15 +9,16 @@ import functools
 
 import kimpy
 
-from .exceptions import KIMModelNotFound, KIMInitializationError, KimpyError
+from .exceptions import KIMModelNotFound, KIMModelInitializationError, KimpyError
 
 
 def check_call(f, *args):
     """
-    Wrapper for functions that checks error codes, since many of the
-    functions calls are actually python bindings to functions written in
-    other languages.  Functions are assumed to return either an integer
-    error code or a tuple whose last element is an integer error code.
+    Given a function that returns either an integer error code or a
+    tuple whose last element is an integer error code, call it with the
+    requested arguments.  If a non-zero error code was returned, raise
+    an exception.  Otherwise, pass along the rest of the objects
+    returned by the function call.
     """
 
     def _check_error(error, msg):
@@ -61,6 +62,15 @@ collection_item_type_portableModel = kimpy.collection_item_type.portableModel
 
 
 class ModelCollections(object):
+    """
+    KIM Portable Models and Simulator Models are installed/managed into
+    different "collections".  In order to search through the different
+    KIM API model collections on the system, a corresponding object must
+    be instantiated.  For more on model collections, see the KIM API's
+    install file:
+    https://github.com/openkim/kim-api/blob/master/INSTALL
+    """
+
     def __init__(self):
         self.collection = collections_create()
 
@@ -98,15 +108,14 @@ class ModelCollections(object):
 
 
 class PortableModel(object):
-    """ Provides a minimal interface (only what we require here) to the
-    KIM API Model object that we instantiate
+    """ Creates a KIM API Portable Model object and provides a minimal interface to it
     """
 
     def __init__(self, model_name, debug):
         self.model_name = model_name
         self.debug = debug
 
-        # create KIM API Model object
+        # Create KIM API Model object
         units_accepted, self.kim_model = model_create(
             kimpy.numbering.zeroBased,
             kimpy.length_unit.A,
@@ -118,7 +127,7 @@ class PortableModel(object):
         )
 
         if not units_accepted:
-            raise KIMInitializationError(
+            raise KIMModelInitializationError(
                 "Requested units not accepted in kimpy.model.create"
             )
 
@@ -141,8 +150,8 @@ class PortableModel(object):
         self.destroy()
 
     def get_model_supported_species_and_codes(self):
-        """Get all the supported species and corresponding integer codes
-        for the KIM Portable Model.
+        """Get all of the supported species for this model and their
+        corresponding integer codes that are defined in the KIM API
 
         Returns
         -------
@@ -200,19 +209,23 @@ class PortableModel(object):
 
 class ComputeArguments(object):
     """
-    KIM API ComputeArguments object configured for ASE
+    Creates a KIM API ComputeArguments object from a KIM Portable Model object and
+    configures it for ASE.  A ComputeArguments object is associated with a KIM Portable
+    Model and is used to inform the KIM API of what the model can compute.  It is also
+    used to register the data arrays that allow the KIM API to pass the atomic
+    coordinates to the model and retrieve the corresponding energy and forces, etc.
     """
 
     def __init__(self, kim_model_wrapped, debug):
         self.kim_model_wrapped = kim_model_wrapped
         self.debug = debug
 
-        # create KIM API ComputeArguments object
+        # Create KIM API ComputeArguments object
         self.compute_args = check_call(
             self.kim_model_wrapped.kim_model.compute_arguments_create
         )
 
-        # check compute arguments
+        # Check compute arguments
         kimpy_arg_name = kimpy.compute_argument_name
         num_arguments = kimpy_arg_name.get_number_of_compute_argument_names()
         if self.debug:
@@ -230,18 +243,18 @@ class ComputeArguments(object):
                     "status {}".format(*[str(x) for x in [name, dtype, arg_support]])
                 )
 
-            # the simulator can handle energy and force from a kim model
-            # virial is computed within the calculator
+            # See if the model demands that we ask it for anything other than energy and
+            # forces.  If so, raise an exception.
             if arg_support == kimpy.support_status.required:
                 if (
                     name != kimpy.compute_argument_name.partialEnergy
                     and name != kimpy.compute_argument_name.partialForces
                 ):
-                    raise KIMInitializationError(
+                    raise KIMModelInitializationError(
                         "Unsupported required ComputeArgument {}".format(name)
                     )
 
-        # check compute callbacks
+        # Check compute callbacks
         callback_name = kimpy.compute_callback_name
         num_callbacks = callback_name.get_number_of_compute_callback_names()
         if self.debug:
@@ -260,9 +273,9 @@ class ComputeArguments(object):
                     )
                 )
 
-            # cannot handle any "required" callbacks
+            # Cannot handle any "required" callbacks
             if support_status == kimpy.support_status.required:
-                raise KIMInitializationError(
+                raise KIMModelInitializationError(
                     "Unsupported required ComputeCallback: {}".format(name)
                 )
 
@@ -318,12 +331,18 @@ class ComputeArguments(object):
 
 
 class SimulatorModel(object):
+    """ Creates a KIM API Simulator Model object and provides a minimal
+    interface to it.  This is only necessary in this package in order to
+    extract any information about a given simulator model because it is
+    generally embedded in a shared object.
+    """
+
     def __init__(self, model_name):
-        # Create a KIM API simulator Model object for this model
+        # Create a KIM API Simulator Model object for this model
         self.model_name = model_name
         self.simulator_model = simulator_model_create(self.model_name)
 
-        # Need to close template map to access simulator model metadata
+        # Need to close template map in order to access simulator model metadata
         self.simulator_model.close_template_map()
 
     def __del__(self):
@@ -344,9 +363,10 @@ class SimulatorModel(object):
     def num_supported_species(self):
         num_supported_species = self.simulator_model.get_number_of_supported_species()
         if num_supported_species == 0:
-            raise KIMInitializationError(
-                "ERROR: Unable to determine supported species of "
-                "simulator model {}.".format(self.model_name)
+            raise KIMModelInitializationError(
+                "Unable to determine supported species of simulator model {}.".format(
+                    self.model_name
+                )
             )
         else:
             return num_supported_species
@@ -385,9 +405,10 @@ class SimulatorModel(object):
         try:
             supported_units = self.metadata["units"][0]
         except (KeyError, IndexError):
-            raise KIMInitializationError(
-                "ERROR: Unable to determine supported units of "
-                "simulator model {}.".format(self.model_name)
+            raise KIMModelInitializationError(
+                "Unable to determine supported units of simulator model {}.".format(
+                    self.model_name
+                )
             )
 
         return supported_units

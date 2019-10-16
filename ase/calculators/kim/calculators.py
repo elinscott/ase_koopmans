@@ -59,7 +59,10 @@ def LAMMPSRunCalculator(
         parameters["masses"] = []
         for i, species in enumerate(supported_species):
             if species not in atomic_numbers:
-                raise KIMCalculatorError("Unknown element species {}.".format(species))
+                raise KIMCalculatorError(
+                    "Could not determine mass of unknown species "
+                    "{} listed as supported by model".format(species)
+                )
             massstr = str(
                 convert(
                     atomic_masses[atomic_numbers[species]],
@@ -190,7 +193,7 @@ def ASAPCalculator(model_name, model_type, options, **kwargs):
         # (3) EMT(EMTMetalGlassParameters)
         model_defn_is_valid = False
         if model_defn.startswith("EMT"):
-            # pull out potential parameters
+            # Pull out potential parameters
             mobj = re.search(r"\(([A-Za-z0-9_\(\)]+)\)", model_defn)
             if mobj is None:
                 asap_calc = asap3.EMT()

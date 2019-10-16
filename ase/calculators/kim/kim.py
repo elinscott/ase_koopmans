@@ -109,7 +109,6 @@ def KIM(model_name, simulator=None, options=None, debug=False):
         Indicates an error occurred in initializing the calculator,
         e.g. due to incompatible combinations of argument values
     """
-    # options set internally in this calculator
 
     if options is None:
         options = dict()

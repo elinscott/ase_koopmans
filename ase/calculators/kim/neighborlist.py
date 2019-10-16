@@ -90,13 +90,13 @@ class NeighborList(object):
     def need_neigh_update(self, atoms, system_changes):
         need_neigh_update = True
         if len(system_changes) == 1 and "positions" in system_changes:
-            # only position changes
+            # Only position changes
             if self.last_update_positions is not None:
                 a = self.last_update_positions
                 b = atoms.positions
                 if a.shape == b.shape:
                     delta = np.linalg.norm(a - b, axis=1)
-                    # indices of the two largest elements
+                    # Indices of the two largest elements
                     ind = np.argpartition(delta, -2)[-2:]
                     if sum(delta[ind]) <= self.skin:
                         need_neigh_update = False
@@ -281,7 +281,7 @@ class ASENeighborList(NeighborList):
         indices_mask = [1] * self.num_contributing_particles + [0] * num_padding
         self.particle_contributing = indices_mask
 
-        # species support and code
+        # Species support and code
         try:
             self.species_code = [
                 species_map[s] for s in new_atoms.get_chemical_symbols()
@@ -358,14 +358,14 @@ class KimpyNeighborList(NeighborList):
         corresponding to each atom.
         """
 
-        # get info from Atoms object
+        # Get info from Atoms object
         cell = np.asarray(atoms.get_cell(), dtype=np.double)
         pbc = np.asarray(atoms.get_pbc(), dtype=np.intc)
         contributing_coords = np.asarray(atoms.get_positions(), dtype=np.double)
         self.num_contributing_particles = atoms.get_global_number_of_atoms()
         num_contributing = self.num_contributing_particles
 
-        # species support and code
+        # Species support and code
         try:
             contributing_species_code = np.array(
                 [species_map[s] for s in atoms.get_chemical_symbols()], dtype=np.intc
@@ -373,8 +373,8 @@ class KimpyNeighborList(NeighborList):
         except KeyError as e:
             raise RuntimeError("Species not supported by KIM model; {}".format(str(e)))
 
-        if pbc.any():  # need padding atoms
-            # create padding atoms
+        if pbc.any():  # Need padding atoms
+            # Create padding atoms
 
             padding_coords, padding_species_code, self.padding_image_of = self.create_paddings(
                 cell, pbc, contributing_coords, contributing_species_code
@@ -391,7 +391,7 @@ class KimpyNeighborList(NeighborList):
             if not self.padding_need_neigh:
                 self.need_neigh[num_contributing:] = 0
 
-        else:  # do not need padding atoms
+        else:  # Do not need padding atoms
             self.padding_image_of = []
             self.num_particles = [num_contributing]
             self.coords = contributing_coords
@@ -399,7 +399,7 @@ class KimpyNeighborList(NeighborList):
             self.particle_contributing = [1] * num_contributing
             self.need_neigh = self.particle_contributing
 
-        # create neighborlist
+        # Create neighborlist
         self.build()
 
         self.last_update_positions = atoms.get_positions()

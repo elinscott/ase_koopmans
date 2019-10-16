@@ -8,8 +8,10 @@ from ase.calculators.calculator import CalculatorError
 
 class KIMCalculatorError(CalculatorError):
     """
-    Indicates an error occurred in initializing the calculator, e.g. due
-    to incompatible combinations of argument values
+    Indicates an error occurred in initializing an applicable
+    calculator.  This either results from incompatible combinations of
+    argument values passed to kim.KIM(), or from models that are
+    incompatible in some way with this calculator
     """
 
     pass
@@ -18,16 +20,16 @@ class KIMCalculatorError(CalculatorError):
 class KIMModelNotFound(CalculatorError):
     """
     Requested model cannot be found in any of the KIM API model
-    collections
+    collections on the system
     """
 
     pass
 
 
-class KIMInitializationError(CalculatorError):
+class KIMModelInitializationError(CalculatorError):
     """
-    KIM API Model or ComputeArguments objects could not be successfully
-    created
+    KIM API Model object or ComputeArguments object could not be
+    successfully created
     """
 
     pass

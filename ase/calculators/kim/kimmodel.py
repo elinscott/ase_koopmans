@@ -17,11 +17,11 @@ from . import neighborlist
 
 
 class KIMModelData(object):
-    """Initializes and subsequently stores the KIM API Model object, KIM
-    API ComputeArguments object, and the neighbor list object used by
-    instances of KIMModelCalculator.  Also stores the arrays which are
-    registered in the KIM API and which are used to communicate with the
-    model.
+    """Initializes and subsequently stores the KIM API Portable Model
+    object, KIM API ComputeArguments object, and the neighbor list
+    object used by instances of KIMModelCalculator.  Also stores the
+    arrays which are registered in the KIM API and which are used to
+    communicate with the model.
     """
 
     def __init__(self, model_name, ase_neigh, neigh_skin_ratio, debug=False):
@@ -29,10 +29,10 @@ class KIMModelData(object):
         self.ase_neigh = ase_neigh
         self.debug = debug
 
-        # initialize KIM API Portable Model object and ComputeArguments object
+        # Initialize KIM API Portable Model object and ComputeArguments object
         self.init_kim()
 
-        # set cutoff
+        # Set cutoff
         model_influence_dist = self.kim_model.get_influence_distance()
         model_cutoffs, padding_not_require_neigh = (
             self.kim_model.get_neighbor_list_cutoffs_and_hints()
@@ -40,7 +40,7 @@ class KIMModelData(object):
 
         self.species_map = self.create_species_map()
 
-        # initialize neighbor list object
+        # Initialize neighbor list object
         self.init_neigh(
             neigh_skin_ratio,
             model_influence_dist,
@@ -49,7 +49,7 @@ class KIMModelData(object):
         )
 
     def init_kim(self):
-        """Create the KIM API Model object and KIM API ComputeArguments
+        """Create the KIM API Portable Model object and KIM API ComputeArguments
         object
         """
         if self.kim_initialized:
@@ -68,7 +68,6 @@ class KIMModelData(object):
         model_cutoffs,
         padding_not_require_neigh,
     ):
-
         """Initialize neighbor list, either an ASE-native neighborlist
         or one created using the neighlist module in kimpy
         """
@@ -128,7 +127,7 @@ class KIMModelData(object):
             del self.neigh
 
     def clean_kim(self):
-        """Deallocate the memory allocated to the KIM API Model object
+        """Deallocate the memory allocated to the KIM API Portable Model object
         and KIM API ComputeArguments object
         """
         if self.kim_initialized:
@@ -137,7 +136,7 @@ class KIMModelData(object):
             del self.kim_model
 
     def clean(self):
-        """Deallocate the KIM API Model object, KIM API ComputeArguments
+        """Deallocate the KIM API Portable Model object, KIM API ComputeArguments
         object, and, if applicable, the neighbor list object
         """
         self.clean_neigh()
@@ -230,17 +229,16 @@ class KIMModelCalculator(Calculator):
         self.release_GIL = release_GIL
         self.debug = debug
 
-        # neigh attributes
         if neigh_skin_ratio < 0:
             raise ValueError('Argument "neigh_skin_ratio" must be non-negative')
 
-        # model output
+        # Model output
         self.energy = None
         self.forces = None
 
-        # create KIMModelData object. This will take care of creating and storing the
-        # KIM API Model object, KIM API ComputeArguments object, and the neighbor list
-        # object that our calculator needs
+        # Create KIMModelData object. This will take care of creating and storing the KIM
+        # API Portable Model object, KIM API ComputeArguments object, and the neighbor
+        # list object that our calculator needs
         self.kimmodeldata = KIMModelData(
             self.model_name, ase_neigh, neigh_skin_ratio, self.debug
         )
@@ -283,7 +281,7 @@ class KIMModelCalculator(Calculator):
 
         Calculator.calculate(self, atoms, properties, system_changes)
 
-        # update KIM API input data and neighbor list if necessary
+        # Update KIM API input data and neighbor list, if necessary
         if system_changes:
             if self.need_neigh_update(atoms, system_changes):
                 self.update_neigh(atoms, self.species_map)
@@ -301,10 +299,10 @@ class KIMModelCalculator(Calculator):
         try:
             volume = atoms.get_volume()
             stress = self.compute_virial_stress(self.forces, self.coords, volume)
-        except ValueError:  # volume cannot be computed
+        except ValueError:  # Volume cannot be computed
             stress = None
 
-        # return values
+        # Quantities passed back to ASE
         self.results["energy"] = energy
         self.results["free_energy"] = energy
         self.results["forces"] = forces
