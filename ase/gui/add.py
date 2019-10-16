@@ -41,6 +41,10 @@ class AddAtoms:
         labels = list(sorted(g2.names))
         values = labels
 
+        self.copypaste = ui.CheckButton(_('Copy-paste current selection'),
+                                        bool(self.gui.images.selected.any()))
+        win.add([self.copypaste])
+
         box = ui.ComboBox(labels, values, callback=set_molecule)
         win.add([_('Get molecule:'), box])
         box.value = 'H2'
@@ -52,7 +56,7 @@ class AddAtoms:
         self.spinners = spinners
         win.add(_('Coordinates are relative to the center of the selection, '
                   'if any, else absolute.'))
-        self.picky = ui.CheckButton(_('Check positions'), True)
+        self.picky = ui.CheckButton(_('Check positions'), not self.copypaste.value)
         win.add([ui.Button(_('Add'), self.add),
                  self.picky])
         self.focus()
@@ -77,6 +81,11 @@ class AddAtoms:
 
     def get_atoms(self):
         val = self.entry.value
+
+        if self.copypaste.value:
+            selection = self.gui.images.selected.copy()
+            if selection.any():
+                return self.gui.atoms.copy()[selection]
 
         if val in atomic_numbers:  # Note: This means val is a symbol!
             return Atoms(val)
