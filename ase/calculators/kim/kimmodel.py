@@ -48,6 +48,9 @@ class KIMModelData(object):
             padding_not_require_neigh,
         )
 
+    def __del__(self):
+        self.clean()
+
     def init_kim(self):
         """Create the KIM API Portable Model object and KIM API ComputeArguments
         object
@@ -142,9 +145,6 @@ class KIMModelData(object):
         self.clean_neigh()
         self.clean_kim()
 
-    def __del__(self):
-        self.clean()
-
     @property
     def padding_image_of(self):
         return self.neigh.padding_image_of
@@ -166,16 +166,16 @@ class KIMModelData(object):
         return self.neigh.species_code
 
     @property
-    def get_model_supported_species_and_codes(self):
-        return self.kim_model.get_model_supported_species_and_codes
-
-    @property
     def kim_initialized(self):
         return hasattr(self, "kim_model")
 
     @property
     def neigh_initialized(self):
         return hasattr(self, "neigh")
+
+    @property
+    def get_model_supported_species_and_codes(self):
+        return self.kim_model.get_model_supported_species_and_codes
 
 
 class KIMModelCalculator(Calculator):
@@ -311,28 +311,6 @@ class KIMModelCalculator(Calculator):
     def check_state(self, atoms, tol=1e-15):
         return self.compare_atoms(self.atoms, atoms)
 
-    @staticmethod
-    def compare_atoms(atoms1, atoms2, tol=1e-15):
-        """Check for system changes since last calculation. Note that
-        this is an override of Calculator.compare_atoms and differs in
-        that the magnetic moments and charges are not checked because
-        the KIM API does not (currently) support these.
-        """
-        if atoms1 is None:
-            return ["positions", "numbers", "cell", "pbc"]
-        else:
-            system_changes = []
-            if not equal(atoms1.positions, atoms2.positions, tol):
-                system_changes.append("positions")
-            if not equal(atoms1.numbers, atoms2.numbers):
-                system_changes.append("numbers")
-            if not equal(atoms1.cell, atoms2.cell, tol):
-                system_changes.append("cell")
-            if not equal(atoms1.pbc, atoms2.pbc):
-                system_changes.append("pbc")
-
-        return system_changes
-
     def assemble_padding_forces(self):
         """
         Assemble forces on padding atoms back to contributing atoms.
@@ -364,6 +342,28 @@ class KIMModelCalculator(Calculator):
         return total_forces
 
     @staticmethod
+    def compare_atoms(atoms1, atoms2, tol=1e-15):
+        """Check for system changes since last calculation. Note that
+        this is an override of Calculator.compare_atoms and differs in
+        that the magnetic moments and charges are not checked because
+        the KIM API does not (currently) support these.
+        """
+        if atoms1 is None:
+            return ["positions", "numbers", "cell", "pbc"]
+        else:
+            system_changes = []
+            if not equal(atoms1.positions, atoms2.positions, tol):
+                system_changes.append("positions")
+            if not equal(atoms1.numbers, atoms2.numbers):
+                system_changes.append("numbers")
+            if not equal(atoms1.cell, atoms2.cell, tol):
+                system_changes.append("cell")
+            if not equal(atoms1.pbc, atoms2.pbc):
+                system_changes.append("pbc")
+
+        return system_changes
+
+    @staticmethod
     def compute_virial_stress(forces, coords, volume):
         """Compute the virial stress in Voigt notation.
 
@@ -393,12 +393,12 @@ class KIMModelCalculator(Calculator):
 
         return stress
 
+    def get_model_supported_species_and_codes(self):
+        return self.kimmodeldata.get_model_supported_species_and_codes
+
     @property
     def update_compute_args_pointers(self):
         return self.kimmodeldata.update_compute_args_pointers
-
-    def get_model_supported_species_and_codes(self):
-        return self.kimmodeldata.get_model_supported_species_and_codes
 
     @property
     def kim_model(self):

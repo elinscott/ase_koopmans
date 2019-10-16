@@ -354,6 +354,11 @@ class SimulatorModel(object):
     def __exit__(self, exc_type, value, traceback):
         self.destroy()
 
+    def destroy(self):
+        if self.initialized:
+            kimpy.simulator_model.destroy(self.simulator_model)
+            del self.simulator_model
+
     @property
     def simulator_name(self):
         simulator_name, _ = self.simulator_model.get_simulator_name_and_version()
@@ -429,11 +434,6 @@ class SimulatorModel(object):
                 atom_style = ln.split()[1]
 
         return atom_style
-
-    def destroy(self):
-        if self.initialized:
-            kimpy.simulator_model.destroy(self.simulator_model)
-            del self.simulator_model
 
     @property
     def model_defn(self):
