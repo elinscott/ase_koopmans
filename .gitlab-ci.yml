@@ -28,14 +28,14 @@ python_3_oldlibs_tests:
 
 # Check newest Python with all the standard dependencies at newest versions.
 #
+# Scipy does not compile on 3.8 image.  So using 3.7-slim (askhl, 2019-10-16)
 # We currently use scipy 1.2.1 because of failures with 1.3.0 on py3.7.
 # TODO: Make things work with 1.3.0
 # psycopg2-binary is for testing the postgres backend for ase.db
 python_3_tests:
-  image: python:3-slim
+  image: python:3.7-slim
   script:
     - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
-    - pip install flake8 psycopg2-binary netCDF4
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
     - python --version
@@ -48,19 +48,24 @@ python_3_tests:
 # issue with the gitlab runners.
 #
 # Same scipy versioning issue as for the ordinary tests.
-conda_tests:
-   image: continuumio/anaconda3
-   script:
-     - apt-get update
-     - echo $PATH
-     - export PATH=/opt/conda/bin:$PATH
-     - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask
-     - pip install .
-     - python --version
-     - ase test --strict
+#
+# Grrr.  Failing after image updates, or something.  Disabling.
+# --askhl 2019-10-16
+#conda_tests:
+#   image: continuumio/anaconda3
+#   script:
+#     - apt-get update
+#     - echo $PATH
+#     - export PATH=/opt/conda/bin:$PATH
+#     - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask
+#     - pip install .
+#     - python --version
+#     - ase test --strict
 
+# Should be same image as python_3_tests except
+# not slim because then we don't have tk
 docs_test:
-  image: python:3
+  image: python:3.7
   script:
     - pip install .[docs]
     - ase info
