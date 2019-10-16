@@ -82,7 +82,7 @@ class AddAtoms:
     def get_atoms(self):
         val = self.entry.value
 
-        if self.copypaste.value:
+        if not val and self.copypaste.value:
             selection = self.gui.images.selected.copy()
             if selection.any():
                 return self.gui.atoms.copy()[selection]
