@@ -30,7 +30,11 @@ class AddAtoms:
             # Load the file immediately, so we can warn now in case of error
             self.readfile(filename, format=chooser.format)
 
-        self.entry = ui.Entry('', callback=self.add)
+        if self.gui.images.selected.any():
+            default = '(current selection)'
+        else:
+            default = ''
+        self.entry = ui.Entry(default, callback=self.add)
         win.add([_('Add:'), self.entry,
                  ui.Button(_('File ...'), callback=choose_file)])
 
@@ -40,9 +44,6 @@ class AddAtoms:
         from ase.collections import g2
         labels = list(sorted(g2.names))
         values = labels
-
-        self.copypaste = ui.CheckButton(_('Copy-paste current selection'), False)
-        win.add([self.copypaste])
 
         box = ui.ComboBox(labels, values, callback=set_molecule)
         win.add([_('Get molecule:'), box])
@@ -81,7 +82,7 @@ class AddAtoms:
     def get_atoms(self):
         val = self.entry.value
 
-        if not val and self.copypaste.value:
+        if val == '(current selection)':
             selection = self.gui.images.selected.copy()
             if selection.any():
                 atoms = self.gui.atoms.copy()
