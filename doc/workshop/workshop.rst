@@ -146,7 +146,7 @@ Speakers
    - FHI-vibes: A Toolkit for Finding and Analyzing Thermal Insulators
  * - Mikael Kuisma, University of Jyväskylä, Finland
    -
- * - Ask Hjorth Larsen, Universidad del País Vasco UPV/EHU, Spain
+ * - Ask Hjorth Larsen, Simune Atomistics S.L., Spain
    - ASE: Plans and developments
  * - Peter Mahler Larsen, Technical University of Denmark, Denmark
    - Insightful classification of crystal structures using distance functions
@@ -167,7 +167,7 @@ Organizers
 
 * Paul Erhart, Chalmers University of Technology, Sweden
 * Tuomas Rossi, Chalmers University of Technology, Sweden
-* Ask Hjorth Larsen, University of the Basque Country, Spain
+* Ask Hjorth Larsen, Simune Atomistics S.L., Spain
 * Jens Jørgen Mortensen, Technical University of Denmark, Denmark
 * Kristian Sommer Thygesen, Technical University of Denmark, Denmark
 

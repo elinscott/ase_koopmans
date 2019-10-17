@@ -18,7 +18,7 @@ from ase.formula import formula_hill, formula_metal
 
 __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'devnull', 'gcd', 'convert_string_to_fd', 'Lock',
-           'opencew', 'OpenLock', 'rotate', 'irotate', 'givens',
+           'opencew', 'OpenLock', 'rotate', 'irotate', 'pbc2pbc', 'givens',
            'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
            'formula_hill', 'formula_metal', 'PurePath']
 
@@ -299,6 +299,12 @@ def irotate(rotation, initial=np.identity(3)):
     y = degrees(atan2(-sy, cy))
     z = degrees(atan2(sz, cz))
     return x, y, z
+
+
+def pbc2pbc(pbc):
+    newpbc = np.empty(3, bool)
+    newpbc[:] = pbc
+    return newpbc
 
 
 def hsv2rgb(h, s, v):
