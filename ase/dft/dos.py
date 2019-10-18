@@ -31,7 +31,11 @@ class DOS:
         self.e_skn = np.array([[calc.get_eigenvalues(kpt=k, spin=s)
                                 for k in range(len(self.w_k))]
                                for s in range(self.nspins)])
-        self.e_skn -= calc.get_fermi_level()
+        try:  # two Fermi levels
+            for i, eF in enumerate(calc.get_fermi_level()):
+                self.e_skn[i] -= eF
+        except TypeError:  # a single Fermi level
+            self.e_skn -= calc.get_fermi_level()
 
         if window is None:
             emin = None
