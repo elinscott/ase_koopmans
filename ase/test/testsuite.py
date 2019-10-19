@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from glob import glob
 from distutils.version import LooseVersion
+import runpy
 import time
 import traceback
 import warnings
@@ -70,8 +71,7 @@ def runtest_almost_no_magic(test):
         if any(s in test for s in skip):
             raise unittest.SkipTest('not on windows')
     try:
-        with open(path) as fd:
-            exec(compile(fd.read(), path, 'exec'), {})
+        runpy.run_path(path, run_name='__main__')
     except ImportError as ex:
         module = ex.args[0].split()[-1].replace("'", '').split('.')[0]
         if module in ['scipy', 'matplotlib', 'Scientific', 'lxml', 'Tkinter',
