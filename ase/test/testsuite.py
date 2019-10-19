@@ -79,6 +79,14 @@ def runtest_almost_no_magic(test):
             raise unittest.SkipTest('no {} module'.format(module))
         else:
             raise
+    # unittest.main calls sys.exit, which raises SystemExit.
+    # Uncatched SystemExit, a subclass of BaseException, marks a test as ERROR
+    # even if its exit code is zero (test passes).
+    # Here, AssertionError is raised to mark a test as FAILURE if exit code is
+    # non-zero.
+    except SystemExit as ex:
+        if ex.code != 0:
+            raise AssertionError
 
 
 def run_single_test(filename, verbose, strict):
