@@ -833,8 +833,11 @@ class FileIOCalculator(Calculator):
 
         if errorcode:
             path = os.path.abspath(self.directory)
-            raise CalculationFailed('{} in {} returned an error: {}'
-                                    .format(self.name, path, errorcode))
+            msg = ('Calculator "{}" failed with command "{}" failed in '
+                   '{} with error code {}'.format(self.name, command,
+                                                  path, errorcode))
+            raise CalculationFailed(msg)
+
         self.read_results()
 
     def write_input(self, atoms, properties=None, system_changes=None):
