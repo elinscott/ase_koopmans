@@ -1,5 +1,6 @@
 import itertools
 import numpy as np
+from ase.utils import pbc2pbc
 
 
 def reduction_gauss(B, hu, hv):
@@ -120,12 +121,8 @@ def minkowski_reduce(cell, pbc=True):
     op: array
         The unimodular matrix transformation (rcell = op @ cell).
     """
-    if hasattr(pbc, "__len__"):
-        dim = np.sum(pbc)
-    elif pbc:
-        dim = 3
-    else:
-        dim = 0
+    pbc = pbc2pbc(pbc)
+    dim = pbc.sum()
 
     op = np.eye(3).astype(np.int)
     if dim == 2:

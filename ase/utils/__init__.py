@@ -18,7 +18,7 @@ from ase.formula import formula_hill, formula_metal
 
 __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'devnull', 'gcd', 'convert_string_to_fd', 'Lock',
-           'opencew', 'OpenLock', 'rotate', 'irotate', 'givens',
+           'opencew', 'OpenLock', 'rotate', 'irotate', 'pbc2pbc', 'givens',
            'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
            'formula_hill', 'formula_metal', 'PurePath']
 
@@ -301,6 +301,12 @@ def irotate(rotation, initial=np.identity(3)):
     return x, y, z
 
 
+def pbc2pbc(pbc):
+    newpbc = np.empty(3, bool)
+    newpbc[:] = pbc
+    return newpbc
+
+
 def hsv2rgb(h, s, v):
     """http://en.wikipedia.org/wiki/HSL_and_HSV
 
@@ -365,7 +371,7 @@ def workdir(path, mkdir=False):
         path.mkdir(parents=True, exist_ok=True)
 
     olddir = os.getcwd()
-    os.chdir(path.name)
+    os.chdir(str(path))  # py3.6 allows chdir(path) but we still need 3.5
     try:
         yield  # Yield the Path or dirname maybe?
     finally:

@@ -27,9 +27,6 @@ Registration
 
 Due to high demand we have already reached the capacity of the workshop.
 At this time, we can therefore not accept new participants.
-You can still express your interest and join the waiting list by filling
-`the registration form <https://forms.gle/BLYyUC9AictYJVbD9>`__,
-but we cannot guarantee that there will be space.
 The workshop has no registration fee but the attendees need to cover travel, accommodation, and other costs themselves.
 If you have any questions, please contact the organizers at ase-workshop@materialsmodeling.org.
 
@@ -140,23 +137,25 @@ Speakers
  * - Erik Fransson, Chalmers University of Technology, Sweden
    - Development of softwares for atomic-scale modeling: Cluster expansions and force constants
  * - Morten Gjerding, Technical University of Denmark, Denmark
-   -
+   - Atomic Simulation Recipes
  * - Eric Hermes, Sandia National Laboratories, USA
    - Seeking Saddle Points with Sella
  * - Adam J. Jackson, STFC Rutherford Appleton Laboratory, UK
    - Use all the codes! Enabling portable researchers
  * - Florian Knoop, Fritz-Haber-Institut, Berlin, Germany
-   -
+   - FHI-vibes: A Toolkit for Finding and Analyzing Thermal Insulators
  * - Mikael Kuisma, University of Jyväskylä, Finland
    -
- * - Ask Hjorth Larsen, Universidad del País Vasco UPV/EHU, Spain
-   -
+ * - Ask Hjorth Larsen, Simune Atomistics S.L., Spain
+   - ASE: Plans and developments
+ * - Peter Mahler Larsen, Technical University of Denmark, Denmark
+   - Insightful classification of crystal structures using distance functions
  * - Bjørn Lindi, Norwegian University of Science and Technology, Norway
    - Fail forward: Development of Reproducible and Reusable software is a learning experience
  * - Marko Melander, University of Jyväskylä, Finland
    - Theory and modeling electrochemical thermodynamics and kinetics: The Grand Canonical Approach
  * - Jens Jørgen Mortensen, Technical University of Denmark, Denmark
-   -
+   - Story of ASE
  * - Michael Walter, Albert-Ludwigs-Universität Freiburg, Germany
    -
  * - Kirsten T. Winther, Stanford University, USA
@@ -168,7 +167,7 @@ Organizers
 
 * Paul Erhart, Chalmers University of Technology, Sweden
 * Tuomas Rossi, Chalmers University of Technology, Sweden
-* Ask Hjorth Larsen, University of the Basque Country, Spain
+* Ask Hjorth Larsen, Simune Atomistics S.L., Spain
 * Jens Jørgen Mortensen, Technical University of Denmark, Denmark
 * Kristian Sommer Thygesen, Technical University of Denmark, Denmark
 
