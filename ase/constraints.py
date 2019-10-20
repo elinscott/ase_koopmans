@@ -1259,6 +1259,7 @@ class FixParametricRelations(FixConstraint):
             elif "(+" == expression[:2]:
                 expression = "(" + expression[2:]
 
+            # Explicitly add leading zeros so when replacing param_1 with 0.0 param_11 does not become 0.01
             int_fmt_str = "{:0" + str(int(np.ceil(np.log10(len(params)+1)))) + "d}"
 
             param_dct = dict()
@@ -1271,7 +1272,7 @@ class FixParametricRelations(FixConstraint):
                 param_dct[param_str] = 0.0
 
             # Replace the parameters according to the map
-            # Sort by string length (long to short) to prevent param name space issues
+            # Sort by string length (long to short) to prevent cases like x11 becoming f"{param_map["x1"]}1"
             for param in sorted(params, key=lambda s: -1.0*len(s)):
                 expression = expression.replace(param, param_map[param])
 
