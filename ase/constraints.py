@@ -1447,10 +1447,15 @@ class FixScaledParametricRelations(FixParametricRelations):
     def adjust_forces(self, atoms, forces):
         """Adjust forces of the atoms to match the constraints"""
         # Forces are coavarient to the coordinate transformation, use the inverse transformations
-        scaled_forces = atoms.cell.cartesian_positions(forces[self.indices])
-        scaled_forces = self.Jacobian.T @ scaled_forces.flatten()
-        scaled_forces = (self.Jacobian_inv.T @ scaled_forces).reshape(-1, 3)
-        forces[self.indices] = atoms.cell.scaled_positions(scaled_forces)
+        cart2frac_jacob = np.zeros(2*(3*len(atoms),))
+        for i_atom in range(len(atoms)):
+            cart2frac_jacob[3*i_atom:3*(i_atom+1), 3*i_atom:3*(i_atom+1)] = atoms.cell.T
+
+        jacobian = cart2frac_jacob @ self.Jacobian
+        jacobian_inv = np.linalg.inv(jacobian.T @ jacobian) @ jacobian.T
+
+        reduced_forces = jacobian.T @ forces.flatten()
+        forces[self.indices] = (jacobian_inv.T @ reduced_forces).reshape(-1, 3)
 
     def todict(self):
         """Create a dictionary representation of the constraint"""
