@@ -3,7 +3,7 @@ import shutil
 import importlib
 from ase.calculators.calculator import names
 
-builtins = {'eam', 'emt', 'lj', 'morse', 'tip3p'}
+builtins = {'eam', 'emt', 'ff', 'lj', 'morse', 'tip3p', 'tip4p'}
 
 required_envvars = {'abinit': ['ABINIT_PP_PATH'],
                     'elk': ['ELK_SPECIES_PATH'],
