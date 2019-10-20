@@ -5,18 +5,22 @@ from ase.calculators.espresso import Espresso
 
 # Default pseudos can go in ~/espresso/pseudo
 # Get these from SSSP http://materialscloud.org/sssp/
-PSEUDO = {'Au': 'Au.pbe-n-kjpaw_psl.1.0.0.UPF'}
+# Also: Debian/Ubuntu packages provide the below pseudopotential.
+# In /usr/share/espresso
+PSEUDO = {'Cu': 'Cu.pbe-kjpaw.UPF'}
 
 # Don't forget to
 # export ASE_ESPRESSO_COMMAND="mpirun -n 4 $HOME/Compile/q-e/bin/pw.x -in PREFIX.pwi > PREFIX.pwo"
 # export ESPRESSO_PSEUDO="/path/to/pseudos"
 
 def main():
-    gold = bulk('Au')
+    gold = bulk('Cu')
     input_data = {'system':{'occupations': 'smearing',
                             'smearing': 'fermi-dirac',
                             'degauss': 0.02}}
-    calc = Espresso(pseudopotentials=PSEUDO, input_data=input_data)
+    calc = Espresso(pseudopotentials=PSEUDO,
+                    ecutwfc=50.0,
+                    input_data=input_data)
     gold.set_calculator(calc)
     gold.get_potential_energy()
 
