@@ -108,7 +108,7 @@ names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k',
          'crystal', 'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk',
          'emt', 'espresso', 'exciting', 'ff', 'fleur', 'gaussian',
          'gpaw', 'gromacs', 'gulp', 'hotbit', 'jacapo', 'lammpslib',
-         'lammprun', 'lj', 'mopac', 'morse', 'nwchem', 'octopus',
+         'lammpsrun', 'lj', 'mopac', 'morse', 'nwchem', 'octopus',
          'onetep', 'openmx', 'psi4', 'qchem', 'siesta', 'tip3p',
          'tip4p', 'turbomole', 'vasp']
 
