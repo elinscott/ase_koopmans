@@ -1,5 +1,4 @@
 
-import os
 import numpy as np
 
 from ase.units import Ry, eV
@@ -8,15 +7,6 @@ from ase.calculators.siesta.parameters import Species, PAOBasisBlock
 from ase.calculators.calculator import FileIOCalculator
 from ase import Atoms
 from ase.utils import basestring
-
-pseudo_path = 'pseudos'
-if not os.path.exists(pseudo_path):
-    os.makedirs(pseudo_path)
-
-# Make dummy pseudopotentials.
-for symbol in 'HCO':
-    with open('{0}/{1}.lda.psf'.format(pseudo_path, symbol), 'w') as fd:
-        fd.close()
 
 # Setup test structures.
 h = Atoms('H', [(0.0, 0.0, 0.0)])
@@ -27,9 +17,6 @@ ch4 = Atoms('CH4', np.array([
     [-0.682793, -0.682793, 0.682790],
     [-0.682793, 0.682793, -0.682793],
     [0.682793, -0.682793, -0.682793]]))
-
-# Setup required environment variables.
-os.environ['SIESTA_PP_PATH'] = pseudo_path
 
 # Test the initialization.
 siesta = Siesta()
@@ -124,4 +111,3 @@ with open('test_label.fdf', 'r') as f:
 lines = [line.split() for line in lines]
 assert ['%block', 'PAO.Basis'] in lines
 assert ['%endblock', 'PAO.Basis'] in lines
-
