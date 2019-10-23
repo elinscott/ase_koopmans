@@ -634,6 +634,9 @@ class Calculator(object):
         else:
             return energy
 
+    def get_potential_energies(self, atoms=None):
+        return self.get_property('energies', atoms)
+
     def get_forces(self, atoms=None):
         return self.get_property('forces', atoms)
 
