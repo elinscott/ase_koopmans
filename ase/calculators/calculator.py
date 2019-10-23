@@ -71,26 +71,34 @@ class PropertyNotPresent(CalculatorError):
     with the rest of the results, without being a fatal ReadError."""
 
 
-def compare_atoms(atoms1, atoms2, tol=1e-15):
-    """Check for system changes since last calculation."""
+def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
+    """Check for system changes since last calculation.  Propertes in
+    ``excluded_properties`` are not checked."""
     if atoms1 is None:
         system_changes = all_changes[:]
     else:
         system_changes = []
-        if not equal(atoms1.positions, atoms2.positions, tol):
-            system_changes.append('positions')
-        if not equal(atoms1.numbers, atoms2.numbers):
-            system_changes.append('numbers')
-        if not equal(atoms1.cell, atoms2.cell, tol):
-            system_changes.append('cell')
-        if not equal(atoms1.pbc, atoms2.pbc):
-            system_changes.append('pbc')
-        if not equal(atoms1.get_initial_magnetic_moments(),
-                     atoms2.get_initial_magnetic_moments(), tol):
-            system_changes.append('initial_magmoms')
-        if not equal(atoms1.get_initial_charges(),
-                     atoms2.get_initial_charges(), tol):
-            system_changes.append('initial_charges')
+
+        if excluded_properties:
+            properties_to_check = set(all_changes) - set(excluded_properties)
+        else:
+            properties_to_check = all_changes
+
+        for prop in properties_to_check:
+            if prop in ['cell', 'pbc']:
+                if not equal(getattr(atoms1, prop), getattr(atoms2, prop), tol):
+                    system_changes.append(prop)
+            elif prop == "initial_charges":
+                if not equal(atoms1.get_initial_charges(),
+                             atoms2.get_initial_charges(), tol):
+                    system_changes.append('initial_charges')
+            elif prop == "initial_magmoms":
+                if not equal(atoms1.get_initial_magnetic_moments(),
+                             atoms2.get_initial_magnetic_moments(), tol):
+                    system_changes.append('initial_magmoms')
+            else:
+                if not equal(atoms1.arrays[prop], atoms2.arrays[prop], tol):
+                    system_changes.append(prop)
 
     return system_changes
 
@@ -617,7 +625,7 @@ class Calculator(object):
         return changed_parameters
 
     def check_state(self, atoms, tol=1e-15):
-        """Check for system changes since last calculation."""
+        """Check for any system changes since last calculation."""
         return compare_atoms(self.atoms, atoms, tol)
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
