@@ -75,7 +75,7 @@ def runtest_almost_no_magic(test):
     except ImportError as ex:
         module = ex.args[0].split()[-1].replace("'", '').split('.')[0]
         if module in ['scipy', 'matplotlib', 'Scientific', 'lxml', 'Tkinter',
-                      'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2']:
+                      'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2', 'kimpy']:
             raise unittest.SkipTest('no {} module'.format(module))
         else:
             raise

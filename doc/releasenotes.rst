@@ -58,6 +58,7 @@ Git master branch
   in: https://arxiv.org/abs/1908.01610, and allows for the positions and cell of a
   structure to be optimized in a reduced parameter space.
 
+* Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
 
 Version 3.18.1
 ==============
@@ -70,7 +71,6 @@ Version 3.18.1
   Use ``atoms.pbc`` instead; this works the same as always.
   Also, the :class:`~ase.cell.Cell` object now exposes almost the entire
   ``ndarray`` interface.  For a list of smaller bugfixes, see the git log.
-
 
 Version 3.18.0
 ==============
