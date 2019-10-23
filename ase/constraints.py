@@ -1531,7 +1531,7 @@ class FixCartesianParametricRelations(FixParametricRelations):
         if not self.use_cell:
             return
         if stress.shape[0] == 6:
-            vogit = True
+            voigt = True
             xx, yy, zz, yz, xz, xy = stress
             stress_3x3 = np.array(
                 [
@@ -1541,13 +1541,13 @@ class FixCartesianParametricRelations(FixParametricRelations):
                 ]
             )
         else:
-            vogit = False
+            voigt = False
             stress_3x3 = stress.copy()
 
         stress_reduced = self.Jacobian.T @ stress_3x3[self.indices].flatten()
         stress_3x3[self.indices] = (self.Jacobian_inv.T @ stress_reduced).reshape(-1, 3)
 
-        if vogit:
+        if voigt:
             stress[:] = np.array([stress_3x3[0, 0], stress_3x3[1, 1], stress_3x3[2, 2],
                                   stress_3x3[1, 2], stress_3x3[0, 2], stress_3x3[0, 1]])
         else:
