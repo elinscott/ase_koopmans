@@ -51,6 +51,8 @@ Git master branch
   kwarg, where the keys are the variable names in the expression and
   the values are the numerical value they should be replaced with.
 
+* Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
+
 Version 3.18.1
 ==============
 
@@ -62,7 +64,6 @@ Version 3.18.1
   Use ``atoms.pbc`` instead; this works the same as always.
   Also, the :class:`~ase.cell.Cell` object now exposes almost the entire
   ``ndarray`` interface.  For a list of smaller bugfixes, see the git log.
-
 
 Version 3.18.0
 ==============
