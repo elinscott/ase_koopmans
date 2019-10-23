@@ -38,6 +38,8 @@ Git master branch
 
 * Added :class:`~ase.calculators.psi4.Psi4` calculator.
 
+* Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can calculate atom/molecule mobility from trajectory as a function of time 
+
 * The :mod:`~ase.io.pov` module can now render high-order bonds.
 
 * :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
