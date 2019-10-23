@@ -624,6 +624,9 @@ bool_keys = [
     'qifcg',      # Use CG instead of quickmin (instanton)
     'qdo_ins',    # Find instanton
     'qdo_pre',    # Calculate prefactor (instanton)
+    # The next keyword pertains to the periodic NBO code of JR Schmidt's group
+    # at UW-Madison (https://github.com/jrschmidt2/periodic-NBO)
+    'lnbo',    # Enable NBO analysis
 ]
 
 list_int_keys = [
