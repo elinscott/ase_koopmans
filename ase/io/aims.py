@@ -211,8 +211,6 @@ def write_aims(
     from ase.constraints import(
         FixAtoms,
         FixCartesian,
-        FixScaledParametricRelations,
-        FixCartesianParametricRelations,
     )
 
     import numpy as np
@@ -230,10 +228,7 @@ def write_aims(
         if not scaled:
             warnings.warn("Setting scaled to True because a symmetry_block is detected.")
             scaled = True
-        lv_sym_params = []
-        atomic_sym_params = []
-        lv_param_constr = []
-        atomic_param_constr = []
+
 
     fd = open(filename, "w")
     fd.write("#=======================================================\n")
@@ -271,14 +266,6 @@ def write_aims(
                 fix_cart[constr.index] = [1, 1, 1]
             elif isinstance(constr, FixCartesian):
                 fix_cart[constr.a] = -constr.mask + 1
-            elif geo_constrain and isinstance(constr, FixScaledParametricRelations):
-                atomic_sym_params += constr.params
-                for expression in constr.expressions:
-                    atomic_param_constr.append(", ".join(expression))
-            elif geo_constrain and isinstance(constr, FixCartesianParametricRelations):
-                lv_sym_params += constr.params
-                for expression in constr.expressions:
-                    lv_param_constr.append(", ".join(expression))
 
 
     if ghosts is None:
@@ -327,34 +314,80 @@ def write_aims(
             )
 
     if geo_constrain:
-        if len(atomic_sym_params) != len(np.unique(atomic_sym_params)):
-            warnings.warn("Some parameters were used across constraints, they will be combined in the aims calculations")
-            atomic_sym_params = np.unique(atomic_sym_params)
+        for line in get_sym_block(atoms):
+            fd.write(line)
 
-        if len(lv_sym_params) != len(np.unique(lv_sym_params)):
-            warnings.warn("Some parameters were used across constraints, they will be combined in the aims calculations")
-            lv_sym_params = np.unique(lv_sym_params)
+def get_sym_block(atoms):
+    """Get the symmetry block for the Parametric constraints in atoms.constraints"""
+    import numpy as np
 
-        n_atomic_params = len(atomic_sym_params)
-        n_lv_params = len(lv_sym_params)
-        n_total_params = n_atomic_params + n_lv_params
+    from ase.constraints import(
+        FixScaledParametricRelations,
+        FixCartesianParametricRelations,
+    )
 
-        if n_total_params > 0:
-            fd.write("#=======================================================\n")
-            fd.write("# Parametric constraints\n")
-            fd.write("#=======================================================\n")
-            fd.write("symmetry_n_params {:d} {:d} {:d}\n".format(n_total_params, n_lv_params, n_atomic_params))
-            fd.write("symmetry_params %s\n" % " ".join(lv_sym_params + atomic_sym_params))
-            if lv_param_constr:
-                for constr in lv_param_constr:
-                    fd.write("symmetry_lv %s\n" % constr)
-            else:
-                for lv in atoms.cell:
-                    fd.write("symmetry_lv {:.16f}, {:.16f}, {:.16f}\n".format(*lv))
+    # Initialize param/expressions lists
+    atomic_sym_params = []
+    lv_sym_params = []
+    atomic_param_constr = np.zeros((len(atoms),), dtype="<U100")
+    lv_param_constr = np.zeros((3,), dtype="<U100")
 
-            for constr in atomic_param_constr:
-                fd.write("symmetry_frac %s\n" % constr)
+    # Populate param/expressions list
+    for constr in atoms.constraints:
+        if isinstance(constr, FixScaledParametricRelations):
+            atomic_sym_params += constr.params
 
+            if np.any(atomic_param_constr[constr.indices] != ""):
+                warnings.warn("multiple parametric constraints defined for the same atom, using the last one defined")
+
+            atomic_param_constr[constr.indices] = [
+                ", ".join(expression) for expression in constr.expressions
+            ]
+        elif isinstance(constr, FixCartesianParametricRelations):
+            lv_sym_params += constr.params
+
+            if np.any(lv_param_constr[constr.indices] != ""):
+                warnings.warn("multiple parametric constraints defined for the same lattice vector, using the last one defined")
+
+            lv_param_constr[constr.indices] = [
+                ", ".join(expression) for expression in constr.expressions
+            ]
+
+    # Check Constraint Parameters
+    if len(atomic_sym_params) != len(np.unique(atomic_sym_params)):
+        warnings.warn("Some parameters were used across constraints, they will be combined in the aims calculations")
+        atomic_sym_params = np.unique(atomic_sym_params)
+
+    if len(lv_sym_params) != len(np.unique(lv_sym_params)):
+        warnings.warn("Some parameters were used across constraints, they will be combined in the aims calculations")
+        lv_sym_params = np.unique(lv_sym_params)
+
+    if np.any(atomic_param_constr == ""):
+        raise IOError("FHI-aims input files require all atoms have defined parametric constraints")
+
+    cell_inds = np.where(lv_param_constr == "")[0]
+    for ind in cell_inds:
+        lv_param_constr[ind] = "{:.16f}, {:.16f}, {:.16f}".format(*atoms.cell[ind])
+
+
+    n_atomic_params = len(atomic_sym_params)
+    n_lv_params = len(lv_sym_params)
+    n_total_params = n_atomic_params + n_lv_params
+
+    sym_block = []
+    if n_total_params > 0:
+        sym_block.append("#=======================================================\n")
+        sym_block.append("# Parametric constraints\n")
+        sym_block.append("#=======================================================\n")
+        sym_block.append("symmetry_n_params {:d} {:d} {:d}\n".format(n_total_params, n_lv_params, n_atomic_params))
+        sym_block.append("symmetry_params %s\n" % " ".join(lv_sym_params + atomic_sym_params))
+
+        for constr in lv_param_constr:
+             sym_block.append("symmetry_lv {:s}\n".format(constr))
+
+        for constr in atomic_param_constr:
+             sym_block.append("symmetry_frac {:s}\n".format(constr))
+    return sym_block
 
 # except KeyError:
 #     continue
