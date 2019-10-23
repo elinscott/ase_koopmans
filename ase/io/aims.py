@@ -383,10 +383,10 @@ def get_sym_block(atoms):
         sym_block.append("symmetry_params %s\n" % " ".join(lv_sym_params + atomic_sym_params))
 
         for constr in lv_param_constr:
-             sym_block.append("symmetry_lv {:s}\n".format(constr))
+            sym_block.append("symmetry_lv {:s}\n".format(constr))
 
         for constr in atomic_param_constr:
-             sym_block.append("symmetry_frac {:s}\n".format(constr))
+            sym_block.append("symmetry_frac {:s}\n".format(constr))
     return sym_block
 
 # except KeyError:
