@@ -47,11 +47,37 @@ class DiffusionCoefficient:
             self.types_of_atoms = sorted(set(traj[0].symbols[self.atom_indices]))
             self.no_of_atoms = [traj[0].get_chemical_symbols().count(symbol) for symbol in self.types_of_atoms]
 
-        #self.no_of_types_of_atoms = len(self.types_of_atoms)
+        # Dummy initialisation for important results data object
+        self._slopes = []
 
     @property
     def no_of_types_of_atoms(self):
+        """
+
+        Dynamically returns the number of different atoms in the system
+        
+        """
         return len(self.types_of_atoms)
+
+    @property
+    def slopes(self):
+        """
+
+        Method to return slopes fitted to datapoints. If undefined, calculate slopes
+
+        """
+        if len(self._slopes) == 0:
+            self.calculate()
+        return self._slopes
+
+    @slopes.setter
+    def slopes(self, values):
+        """
+ 
+        Method to set slopes as fitted to datapoints
+
+        """
+        self._slopes = values
 
     def _initialise_arrays(self, ignore_n_images, number_of_segments):
         """
@@ -181,10 +207,6 @@ class DiffusionCoefficient:
         To convert from Å^2/fs to cm^2/s => multiply by (10^-8)^2 / 10^-15 = 10^-1
         
         """
-
-        # Safety check, so we don't return garbage.
-        if len(self.slopes) == 0:
-            self.calculate()
        
         slopes = [np.mean(self.slopes[sym_index]) for sym_index in range(self.no_of_types_of_atoms)]
         std = [np.std(self.slopes[sym_index]) for sym_index in range(self.no_of_types_of_atoms)]
@@ -217,10 +239,6 @@ class DiffusionCoefficient:
         color_list = plt.cm.Set3(np.linspace(0, 1, self.no_of_types_of_atoms))
         xyz_labels=['X','Y','Z']
         xyz_markers = ['o','s','^']
-
-        # Safety check, so we don't return garbage.
-        if len(self.slopes) == 0:
-            self.calculate()
 
         # Create an x-axis that is in a more intuitive format for the view
         graph_timesteps = self.timesteps / fs_conversion
@@ -274,7 +292,6 @@ class DiffusionCoefficient:
         from ase.units import fs as fs_conversion
 
         # Collect statistical data for diffusion coefficient over all segments
-        # Sanity check is embedded into this function (calculate coefficients)
         slopes, std = self.get_diffusion_coefficients()
 
         # Useful notes for any consideration of conversion. 
