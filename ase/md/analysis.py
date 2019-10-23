@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import numpy as np
 
 class DiffusionCoefficient:
@@ -37,15 +39,19 @@ class DiffusionCoefficient:
             self.atom_indices = [i for i in range(len(traj[0]))] 
 
         # Condition if we are working with the mobility of a molecule, need to manage arrays slightly differently
-        self.molecule = molecule
-        if molecule:
+        self.is_molecule = molecule
+        if self.is_molecule:
             self.types_of_atoms = ["molecule"]
             self.no_of_atoms = [1]
         else:
-            self.types_of_atoms = sorted(list(set(np.take(traj[0].get_chemical_symbols(), self.atom_indices))))
+            self.types_of_atoms = sorted(set(traj[0].symbols[self.atom_indices]))
             self.no_of_atoms = [traj[0].get_chemical_symbols().count(symbol) for symbol in self.types_of_atoms]
 
-        self.no_of_types_of_atoms = len(self.types_of_atoms)
+        #self.no_of_types_of_atoms = len(self.types_of_atoms)
+
+    @property
+    def no_of_types_of_atoms(self):
+        return len(self.types_of_atoms)
 
     def _initialise_arrays(self, ignore_n_images, number_of_segments):
         """
@@ -99,7 +105,7 @@ class DiffusionCoefficient:
             seg = self.traj[ignore_n_images+start:ignore_n_images+end]
 
             # If we are considering a molecular system, work out the COM for the starting structure
-            if self.molecule:
+            if self.is_molecule:
                 com_orig = np.zeros(3)
                 for atom_no in self.atom_indices:
                     com_orig += seg[0].positions[atom_no] / len(self.atom_indices)
@@ -112,7 +118,7 @@ class DiffusionCoefficient:
                 xyz_disp = np.zeros((self.no_of_types_of_atoms,3))
                 
                 # Calculating for each atom individually, grouping by species type (e.g. solid state)
-                if not self.molecule:
+                if not self.is_molecule:
                     # For each atom, work out displacement from start coordinate and collect information with like atoms
                     for atom_no in self.atom_indices:
                         sym_index = self.types_of_atoms.index(seg[image_no].symbols[atom_no])
@@ -165,7 +171,7 @@ class DiffusionCoefficient:
 
         return slopes, intercepts
 
-    def get_diffusion_coefficients(self, stddev=False):
+    def get_diffusion_coefficients(self):
         """
         
         Returns diffusion coefficients for atoms (in alphabetical order) along with standard deviation.
@@ -173,10 +179,6 @@ class DiffusionCoefficient:
         All data is currently passed out in units of Å^2/<ASE time units>
         To convert into Å^2/fs => multiply by ase.units.fs
         To convert from Å^2/fs to cm^2/s => multiply by (10^-8)^2 / 10^-15 = 10^-1
-
-        Parameters:
-            stddev (Boolean)
-                Whether to return the standard deviation data.
         
         """
 
@@ -187,10 +189,7 @@ class DiffusionCoefficient:
         slopes = [np.mean(self.slopes[sym_index]) for sym_index in range(self.no_of_types_of_atoms)]
         std = [np.std(self.slopes[sym_index]) for sym_index in range(self.no_of_types_of_atoms)]
  
-        if stddev:
-            return slopes, std
-       
-        return slopes
+        return slopes, std
 
     def plot(self, ax=None, show=False):
         """
@@ -276,7 +275,7 @@ class DiffusionCoefficient:
 
         # Collect statistical data for diffusion coefficient over all segments
         # Sanity check is embedded into this function (calculate coefficients)
-        slopes, std = self.get_diffusion_coefficients(stddev=True)
+        slopes, std = self.get_diffusion_coefficients()
 
         # Useful notes for any consideration of conversion. 
         # Converting gradient from Å^2/fs to more common units of cm^2/s => multiplying by (10^-8)^2 / 10^-15 = 10^-1
