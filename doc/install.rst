@@ -9,7 +9,7 @@ Requirements
 
 * Python_ 3.5 or newer
 * NumPy_ 1.10 or newer (base N-dimensional array package)
-* SciPy_ 0.16 or newer (library for scientific computing)
+* SciPy_ 0.17 or newer (library for scientific computing)
 
 Optional:
 

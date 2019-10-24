@@ -16,12 +16,12 @@ variables:
 # deprecation warnings may be rampant, yet these are only important
 # for the future, not the past.
 #
-# Py3.5 wheels exist from scipy-0.16.x, July 2015.  We choose scipy-0.16.1.
+# Py3.5 wheels exist from scipy-0.16.x, July 2015.  We choose scipy-0.17.1.
 # Consistent with numpy-1.10.x (October 2015).  We choose 1.10.4.
 python_3_oldlibs_tests:
   image: python:3.5-slim
   script:
-    - pip install numpy==1.10.4 scipy==0.16.1 matplotlib==2.0.0
+    - pip install numpy==1.10.4 scipy==0.17.1 matplotlib==2.0.0
     - pip install --no-deps .
     - python --version
     - ase test
