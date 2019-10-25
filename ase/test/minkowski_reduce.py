@@ -5,6 +5,7 @@ from ase.cell import Cell
 
 tol = 1E-14
 rng = np.random.RandomState(0)
+np.seterr(all='raise')
 
 for i in range(40):
     B = rng.uniform(-1, 1, (3, 3))
@@ -39,12 +40,12 @@ for pbc in [1, True, (1, 1, 1)]:
 
 # test 0D
 rcell, op = minkowski_reduce(lcell, pbc=[0, 0, 0])
-assert (rcell == lcell).all()
+assert (rcell == lcell).all()    # 0D reduction does nothing
 
 # test 1D
 for i in range(3):
     rcell, op = minkowski_reduce(lcell, pbc=np.roll([1, 0, 0], i))
-    assert (rcell == lcell).all()
+    assert (rcell == lcell).all()    # 1D reduction does nothing
 
 zcell = np.zeros((3, 3))
 zcell[0] = lcell[0]
