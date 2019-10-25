@@ -37,5 +37,3 @@ assert not np.isclose(2 * forces, atoms1.get_forces()).all()
 atoms1.set_constraint(FixAtoms(indices=[atom.index for atom in atoms]))
 assert np.isclose(0, atoms1.get_forces()).all()
 
-# Representation
-print(calc1)

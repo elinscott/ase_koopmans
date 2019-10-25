@@ -1,6 +1,6 @@
 import numpy as np
 
-from ase.calculators.calculator import Calculator, all_properties, all_changes
+from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.calculator import PropertyNotImplementedError
 
 
@@ -10,7 +10,7 @@ class SumCalculator(Calculator):
     This calculator can be used when there are different calculators for the different chemical environment or
     for example during delta leaning. It works with a list of arbitrary calculators and evaluates them in sequence
     when it is required.
-    The supported properties are the intersection ot the implemented properties in each calculator.
+    The supported properties are the intersection of the implemented properties in each calculator.
     """
 
     def __init__(self, *calculators, **kwargs):
@@ -40,7 +40,7 @@ class SumCalculator(Calculator):
         self.implemented_properties = list(common_properties)
 
         if not self.implemented_properties:
-            raise NotImplementedError('There are no common property implemented for the potentials!')
+            raise PropertyNotImplementedError('There are no common property implemented for the potentials!')
 
         self.calculators = calculators
 
@@ -51,7 +51,7 @@ class SumCalculator(Calculator):
         super(SumCalculator, self).calculate(atoms, properties, system_changes)
 
         if not set(properties).issubset(self.implemented_properties):
-            raise NotImplementedError(
+            raise PropertyNotImplementedError(
                 'Some ot the requested property is not in the list of supported properties ({})'.format(
                     self.implemented_properties))
 
