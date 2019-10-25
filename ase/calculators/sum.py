@@ -7,8 +7,9 @@ from ase.calculators.calculator import PropertyNotImplementedError
 class SumCalculator(Calculator):
     """Special calculator for combining multiple calculators.
 
-    Used to create a mixing calculator when there is different calculator for different chemical environment or during
-    delta leaning.  It works with a list of arbitrary calculators and evaluate them in sequence when it required.
+    This calculator can be used when there are different calculators for the different chemical environment or
+    for example during delta leaning. It works with a list of arbitrary calculators and evaluates them in sequence
+    when it is required.
     The supported properties are the intersection ot the implemented properties in each calculator.
     """
 
