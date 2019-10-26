@@ -1,14 +1,13 @@
 from __future__ import print_function
 """This module defines an ASE interface to deMon-nano.
 
-http://website_deMon_nano
+http://demon-nano.ups-tlse.fr/
 
 """
 import os
 import os.path as op
 import subprocess
 import pickle
-#import shutil
 
 import numpy as np
 
@@ -59,7 +58,7 @@ class Demon_Nano(FileIOCalculator):
     def __init__(self, **kwargs):
         """ASE interface to the deMon-nano code.
         
-        The deMon-nano code can be obtained from http://website_demonnano
+        The deMon-nano code can be obtained from http://demon-nano.ups-tlse.fr/
 
         The DEMON_NANO_COMMAND environment variable must be set to run the executable, in bash it would be set along the lines of
         export DEMON_NANO_COMMAND="pathway-to-deMon-binary/deMon.username.x"
@@ -174,12 +173,6 @@ class Demon_Nano(FileIOCalculator):
         if basis_path is None:
             basis_path = os.environ.get('DEMON_BASIS_PATH')
 
-        # uncomment this line for master vers
-        #if basis_path is None:
-        #    raise RuntimeError('Please set basis_path keyword,' +
-        #                       ' or the DEMON_BASIS_PATH' +
-        #                       ' environment variable')
-
         # go to directory and run calculation
         os.chdir(self.directory)
         errorcode = subprocess.call(command, shell=True)
@@ -193,7 +186,8 @@ class Demon_Nano(FileIOCalculator):
         try:
             self.read_results()
         except:
-            with open(self.directory + '/deMon.out', 'r') as f:
+            #with open(self.directory + '/deMon.out', 'r') as f:
+            with open('rundir' + '/deMon.out', 'r') as f:
                 lines = f.readlines()
             debug_lines = 30
             print('##### %d last lines of the deMon.out' % debug_lines)
@@ -205,6 +199,7 @@ class Demon_Nano(FileIOCalculator):
     def set_label(self, label):
         """Set label directory
         """
+
         self.label = label
 
     # in our case self.directory = self.label
@@ -232,8 +227,9 @@ class Demon_Nano(FileIOCalculator):
         if system_changes is None and properties is None:
             return
     
-        filename = self.label + '/deMon.inp'
-
+        #print('2',self.label)
+        #filename = self.label + '/deMon.inp'
+        filename = 'rundir' + '/deMon.inp'
         add_print = ''
 
         # Start writing the file.
@@ -249,7 +245,7 @@ class Demon_Nano(FileIOCalculator):
             if 'forces' in properties or value:
                 self._write_argument('MDYNAMICS', 'ZERO', f)
                 self._write_argument('MDSTEP', 'MAX=1', f)
-                #default timestep is 0.25 fs id not enough - uncomment the line below
+                #default timestep is 0.25 fs if not enough - uncomment the line below
                 #self._write_argument('TIMESTEP', '0.1', f)
                 
                 #add_print = add_print + ' ' + 'MD OPT'
@@ -270,12 +266,9 @@ class Demon_Nano(FileIOCalculator):
             # write geometry
             self._write_atomic_coordinates(f, atoms)
 
-            # write pickle of Parameters
-            #pickle.dump(self.parameters,
-            #            open(self.label + '/deMon_parameters.pckl', 'wb'))
-
             # write xyz file for good measure.
-            ase.io.write(self.label + '/deMon_atoms.xyz', self.atoms)
+            ase.io.write('rundir' + '/deMon_atoms.xyz', self.atoms)
+            #ase.io.write(self.label + '/deMon_atoms.xyz', self.atoms)
             
     def read(self, restart_path):
        """Read parameters from directory restart_path."""
@@ -388,12 +381,12 @@ class Demon_Nano(FileIOCalculator):
        self.read_forces(self.atoms)
        #self.read_eigenvalues()
        #self.read_dipole()
-       #self.read_xray()
     
     def read_energy(self):
        """Read energy from deMon.ase output file."""
 
-       filename = self.label + '/deMon.ase'
+       #filename = self.label + '/deMon.ase'
+       filename = 'rundir' + '/deMon.ase'
 
        if op.isfile(filename):
            with open(filename, 'r') as f:
@@ -411,7 +404,9 @@ class Demon_Nano(FileIOCalculator):
         """Read forces from the deMon.ase file."""
 
         natoms = len(atoms)
-        filename = self.label + '/deMon.ase'
+        
+        filename = 'rundir' + '/deMon.ase'
+        #filename = self.label + '/deMon.ase'
 
         if op.isfile(filename):
             with open(filename, 'r') as f:
@@ -430,7 +425,6 @@ class Demon_Nano(FileIOCalculator):
                     for i in range(natoms):
                         line = [s for s in lines[i + start].strip().split(' ')
                                 if len(s) > 0]
-                        # forces with or without -1 ?! in deMon2k -1 is used
                         f = -1.*np.array([float(x) for x in line[1:4]])
                         # output forces in a.u.
                         #self.results['forces'][i, :] = f
@@ -448,7 +442,7 @@ class Demon_Nano(FileIOCalculator):
            if lines[i].rfind('GEOMETRY') > -1:
                if lines[i].rfind('ANGSTROM'):
                    coord_units = 'Ang'
-               elif lines.rfind('Bohr'):
+               elif lines.rfind('BOHR'):
                    coord_units = 'Bohr'
                ii = i
                break
