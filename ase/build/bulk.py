@@ -12,7 +12,8 @@ def incompatible_cell(*, want, have):
 
 
 def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
-         covera=None, u=None, orthorhombic=False, cubic=False):
+         covera=None, u=None, orthorhombic=False, cubic=False,
+         basis=None):
     """Creating bulk systems.
 
     Crystal structure and lattice constant(s) will be guessed if not
@@ -44,6 +45,7 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
     """
 
     if c is None and b is not None:
+        # If user passes (a, b) positionally, we want it as (a, c) instead:
         c, b = b, c
 
     if covera is not None and c is not None:
@@ -58,6 +60,15 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
         if ref is not None:
             xref = ref['symmetry']
 
+            # If user did not specify crystal structure, and no basis
+            # is given, and the reference state says we need one, but
+            # does not have one, then we can't proceed.
+            if (crystalstructure is None and basis is None
+                and 'basis' in ref and ref['basis'] is None):
+                # XXX This is getting much too complicated, we need to split
+                # this function up.  A lot.
+                raise RuntimeError('This structure requires an atomic basis')
+
         if ref is None:
             ref = {}  # easier to 'get' things from empty dictionary than None
 
@@ -68,9 +79,10 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
             # have been wrong somehow.  --askhl
             raise RuntimeError('Only simple cubic ("sc") supported')
 
-    # Mapping of name to number of atoms in primitive cell
+    # Mapping of name to number of atoms in primitive cell.
     structures = {'sc': 1, 'fcc': 1, 'bcc': 1,
                   'tetragonal': 1,
+                  'bct': 1,
                   'hcp': 1,
                   'rhombohedral': 1,
                   'orthorhombic': 1,
@@ -189,12 +201,17 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
                             (-a / 2, a * sqrt(3) / 2, 0),
                             (0, 0, a * covera)],
                       pbc=True)
-    elif crystalstructure == 'tetragonal':
-        atoms = Atoms(name, cell=[a, a, c], pbc=True)
+    elif crystalstructure == 'bct':
+        from ase.lattice import BCT
+        if basis is None:
+            basis = ref.get('basis')
+        if basis is not None:
+            natoms = len(basis)
+        lat = BCT(a=a, c=c)
+        atoms = Atoms([name] * natoms, cell=lat.tocell(), pbc=True,
+                      scaled_positions=basis)
     elif crystalstructure == 'rhombohedral':
-        from ase.lattice import RHL
-        lat = RHL(a, alpha)
-        atoms = Atoms(name, cell=lat.tocell(), pbc=True)
+        atoms = _build_rhl(name, a, alpha, basis)
     elif crystalstructure == 'orthorhombic':
         atoms = Atoms(name, cell=[a, b, c], pbc=True)
     else:
@@ -205,6 +222,18 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
     if cubic:
         assert abs(atoms.cell.angles() - 90).all() < 1e-10
     return atoms
+
+
+def _build_rhl(name, a, alpha, basis):
+    from ase.lattice import RHL
+    lat = RHL(a, alpha)
+    cell = lat.tocell()
+    if basis is None:
+        # RHL: Given by A&M as scaled coordinates "x" of cell.sum(0):
+        basis_x = reference_states[atomic_numbers[name]]['basis_x']
+        basis = basis_x[:, None].repeat(3, axis=1)
+    natoms = len(basis)
+    return Atoms([name] * natoms, cell=cell, scaled_positions=basis, pbc=True)
 
 
 def _orthorhombic_bulk(name, crystalstructure, a, covera=None, u=None):
