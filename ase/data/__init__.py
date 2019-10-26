@@ -627,7 +627,8 @@ reference_states = [
     {'symmetry': 'fcc', 'a': 3.89},  # Pd
     {'symmetry': 'fcc', 'a': 4.09},  # Ag
     {'symmetry': 'hcp', 'c/a': 1.886, 'a': 2.98},  # Cd
-    {'symmetry': 'bct', 'c/a': 1.076, 'a': 4.59},  # In
+    # For In, A&M give a face-centered cell; we need some sqrt2 conversions.
+    {'symmetry': 'bct', 'c/a': 1.076 * 2**.5, 'a': 4.59 / 2**.5},  # In
     {'symmetry': 'bct', 'c/a': 0.546, 'a': 5.82,  # Sn
      'basis': [[0.0, 0.0, 0.0], [0.25, 0.75, 0.5]]},
     {'symmetry': 'rhombohedral', 'a': 4.51, 'alpha': 57.60,  # Sb
