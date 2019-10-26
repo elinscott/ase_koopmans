@@ -58,6 +58,9 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
     if name in chemical_symbols:
         Z = atomic_numbers[name]
         ref = reference_states[Z]
+        if basis is None:
+            if 'basis' in ref and ref['basis'] is None:
+                raise KeyError('This structure requires an atomic basis')
         if ref is not None:
             xref = ref['symmetry']
 
