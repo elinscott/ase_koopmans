@@ -79,24 +79,31 @@ def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
     else:
         system_changes = []
 
+        properties_to_check = set(all_changes)
         if excluded_properties:
-            properties_to_check = set(all_changes) - set(excluded_properties)
-        else:
-            properties_to_check = all_changes
+             properties_to_check -= set(excluded_properties)
 
-        for prop in properties_to_check:
-            if prop in ['cell', 'pbc']:
+        # Check properties that aren't in Atoms.arrays but are attributes of
+        # Atoms objects
+        for prop in ['cell', 'pbc']:
+            if prop in properties_to_check:
+                properties_to_check.remove(prop)
                 if not equal(getattr(atoms1, prop), getattr(atoms2, prop), tol):
                     system_changes.append(prop)
-            elif prop == "initial_charges":
-                if not equal(atoms1.get_initial_charges(),
-                             atoms2.get_initial_charges(), tol):
-                    system_changes.append('initial_charges')
-            elif prop == "initial_magmoms":
-                if not equal(atoms1.get_initial_magnetic_moments(),
-                             atoms2.get_initial_magnetic_moments(), tol):
-                    system_changes.append('initial_magmoms')
-            else:
+
+        arrays1 = set(atoms1.arrays)
+        arrays2 = set(atoms2.arrays)
+
+        # Add any properties that are only in atoms1.arrays or only in
+        # atoms2.arrays (and aren't excluded).  Note that if, e.g. arrays1 has
+        # `initial_charges` which is merely zeros and arrays2 does not have
+        # this array, we'll still assume that the system has changed.  However,
+        # this should only occur rarely.
+        system_changes += properties_to_check & (arrays1 ^ arrays2)
+
+        # Finally, check all of the non-excluded properties shared by the atoms
+        # arrays
+        for prop in properties_to_check & arrays1 & arrays2:
                 if not equal(atoms1.arrays[prop], atoms2.arrays[prop], tol):
                     system_changes.append(prop)
 
