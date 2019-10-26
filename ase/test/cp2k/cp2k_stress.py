@@ -6,7 +6,6 @@ http://www.cp2k.org
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
-from __future__ import division, print_function
 import numpy as np
 from ase.build import bulk
 from ase.constraints import UnitCellFilter

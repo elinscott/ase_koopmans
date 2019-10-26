@@ -38,10 +38,22 @@ Git master branch
 
 * Added :class:`~ase.calculators.psi4.Psi4` calculator.
 
+* Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can calculate atom/molecule mobility from trajectory as a function of time 
+
 * The :mod:`~ase.io.pov` module can now render high-order bonds.
 
 * :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
   from :mod:`ase.io.jsonio`.
+
+* :mod:`ase.utils.parsemath` added to utils. This module parses simple
+  mathematical expressions and returns their numerical value. All
+  native mathematical operations and many functions in the math module
+  are supported. It also understands pi, e, and tau from the math
+  module. Variable substitution is also supported via the param_dct
+  kwarg, where the keys are the variable names in the expression and
+  the values are the numerical value they should be replaced with.
+
+* Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
 
 Version 3.18.1
 ==============
@@ -54,7 +66,6 @@ Version 3.18.1
   Use ``atoms.pbc`` instead; this works the same as always.
   Also, the :class:`~ase.cell.Cell` object now exposes almost the entire
   ``ndarray`` interface.  For a list of smaller bugfixes, see the git log.
-
 
 Version 3.18.0
 ==============

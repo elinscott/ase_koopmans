@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 from ase.calculators.octopus import Octopus
 from ase.calculators.interfacechecker import check_interface

@@ -104,12 +104,13 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 
 # Recognized names of calculators sorted alphabetically:
-names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
-         'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
-         'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp', 'hotbit',
-         'jacapo', 'lammpsrun', 'lammpslib', 'lj', 'mopac', 'morse', 'nwchem',
-         'octopus', 'onetep', 'openmx', 'qchem', 'siesta', 'tip3p',
-         'turbomole', 'vasp']
+names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k',
+         'crystal', 'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk',
+         'emt', 'espresso', 'exciting', 'ff', 'fleur', 'gaussian',
+         'gpaw', 'gromacs', 'gulp', 'hotbit', 'jacapo', 'kim',
+         'lammpslib', 'lammpsrun', 'lj', 'mopac', 'morse', 'nwchem',
+         'octopus', 'onetep', 'openmx', 'psi4', 'qchem', 'siesta',
+         'tip3p', 'tip4p', 'turbomole', 'vasp']
 
 
 special = {'cp2k': 'CP2K',
@@ -119,6 +120,7 @@ special = {'cp2k': 'CP2K',
            'elk': 'ELK',
            'emt': 'EMT',
            'crystal': 'CRYSTAL',
+           'ff': 'ForceField',
            'fleur': 'FLEUR',
            'gulp': 'GULP',
            'lammpsrun': 'LAMMPS',
@@ -129,7 +131,8 @@ special = {'cp2k': 'CP2K',
            'nwchem': 'NWChem',
            'openmx': 'OpenMX',
            'qchem': 'QChem',
-           'tip3p': 'TIP3P'}
+           'tip3p': 'TIP3P',
+           'tip4p': 'TIP4P'}
 
 
 external_calculators = {}
@@ -631,6 +634,9 @@ class Calculator(object):
         else:
             return energy
 
+    def get_potential_energies(self, atoms=None):
+        return self.get_property('energies', atoms)
+
     def get_forces(self, atoms=None):
         return self.get_property('forces', atoms)
 
@@ -833,8 +839,11 @@ class FileIOCalculator(Calculator):
 
         if errorcode:
             path = os.path.abspath(self.directory)
-            raise CalculationFailed('{} in {} returned an error: {}'
-                                    .format(self.name, path, errorcode))
+            msg = ('Calculator "{}" failed with command "{}" failed in '
+                   '{} with error code {}'.format(self.name, command,
+                                                  path, errorcode))
+            raise CalculationFailed(msg)
+
         self.read_results()
 
     def write_input(self, atoms, properties=None, system_changes=None):

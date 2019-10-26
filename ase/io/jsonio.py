@@ -92,7 +92,7 @@ def create_ase_object(objtype, dct):
         obj = BandPath(path=dct.pop('labelseq'), **dct)
     elif objtype == 'atoms':
         from ase import Atoms
-        obj = Atoms(constraint=dct.pop('constraints', None), **dct)
+        obj = Atoms.fromdict(dct)
     else:
         raise ValueError('Do not know how to decode object type {} '
                          'into an actual object'.format(objtype))

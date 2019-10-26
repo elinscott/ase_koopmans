@@ -1,4 +1,3 @@
-from __future__ import print_function
 '''Constant pressure/stress and temperature dynamics.
 
 Combined Nose-Hoover and Parrinello-Rahman dynamics, creating an NPT
@@ -50,7 +49,7 @@ class NPT(MolecularDynamics):
     atoms
         The list of atoms.
 
-    dt
+    timestep
         The timestep in units matching eV, A, u.
 
     temperature
@@ -65,14 +64,15 @@ class NPT(MolecularDynamics):
         equivalent to giving the tensor (-p, -p, -p, 0, 0, 0).
 
     ttime
-        Characteristic timescale of the thermostat.
+        Characteristic timescale of the thermostat, in ASE internal units
         Set to None to disable the thermostat.
 
     pfactor
         A constant in the barostat differential equation.  If
         a characteristic barostat timescale of ptime is
-        desired, set pfactor to ptime^2 * B (where B is the
-        Bulk Modulus).  Set to None to disable the barostat.
+        desired, set pfactor to ptime^2 * B (where ptime is in units matching 
+        eV, A, u; and B is the Bulk Modulus, given in eV/A^3).  
+        Set to None to disable the barostat.
         Typical metallic bulk moduli are of the order of
         100 GPa or 0.6 eV/A^3.
 

@@ -1,6 +1,5 @@
 """ASE LAMMPS Calculator Library Version"""
 
-from __future__ import print_function
 
 import ctypes
 import operator

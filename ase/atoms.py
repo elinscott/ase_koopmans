@@ -821,6 +821,26 @@ class Atoms(object):
         # Calculator...  trouble.
         return d
 
+    @classmethod
+    def fromdict(cls, dct):
+        """Rebuild atoms object from dictionary representation (todict)."""
+        dct = dct.copy()
+        kw = {}
+        for name in ['numbers', 'positions', 'cell', 'pbc']:
+            kw[name] = dct.pop(name)
+        atoms = cls(constraint=dct.pop('constraints', None),
+                    celldisp=dct.pop('celldisp', None),
+                    info=dct.pop('info', None), **kw)
+        natoms = len(atoms)
+
+        # Some arrays are named differently from the atoms __init__ keywords.
+        # Also, there may be custom arrays.  Hence we set them directly:
+        for name, arr in dct.items():
+            assert len(arr) == natoms
+            assert isinstance(arr, np.ndarray)
+            atoms.arrays[name] = arr
+        return atoms
+
     def __len__(self):
         return len(self.arrays['positions'])
 

@@ -1,6 +1,5 @@
 # test that lammpslib handle nonperiodic cases where the cell size
 # in some directions is small (for example for a dimer).
-from __future__ import print_function
 import os
 import numpy as np
 from ase.calculators.lammpslib import LAMMPSlib

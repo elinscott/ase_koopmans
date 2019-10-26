@@ -1,6 +1,5 @@
 """Dialog for saving one or more configurations."""
 
-from __future__ import unicode_literals
 from ase.gui.i18n import _
 
 import numpy as np

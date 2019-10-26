@@ -466,10 +466,7 @@ class CLICommand:
                 # Special case - used by ASE's GUI:
                 import pickle
                 import sys
-                if sys.version_info[0] == 2:
-                    v, e = pickle.load(sys.stdin)
-                else:
-                    v, e = pickle.load(sys.stdin.buffer)
+                v, e = pickle.load(sys.stdin.buffer)
             else:
                 if '@' in name:
                     index = None

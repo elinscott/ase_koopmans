@@ -185,6 +185,7 @@ extension2format = {
     '34': 'crystal',
     'g96': 'gromos',
     'geom': 'castep-geom',
+    'gjf': 'gaussian',
     'gro': 'gromacs',
     'log': 'gaussian-out',
     'md': 'castep-md',
@@ -305,20 +306,13 @@ def open_with_compression(filename, mode='r'):
         File-like object open with the specified mode.
     """
 
-    if sys.version_info[0] > 2:
-        # Compressed formats sometimes default to binary, so force
-        # text mode in Python 3.
-        if mode == 'r':
-            mode = 'rt'
-        elif mode == 'w':
-            mode = 'wt'
-        elif mode == 'a':
-            mode = 'at'
-    else:
-        # The version of gzip in Anaconda Python 2 on Windows forcibly
-        # adds a 'b', so strip any 't' and let the string conversions
-        # be carried out implicitly by Python.
-        mode = mode.strip('t')
+    # Compressed formats sometimes default to binary, so force text mode.
+    if mode == 'r':
+        mode = 'rt'
+    elif mode == 'w':
+        mode = 'wt'
+    elif mode == 'a':
+        mode = 'at'
 
     root, compression = get_compression(filename)
 
