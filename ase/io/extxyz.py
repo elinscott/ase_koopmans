@@ -331,11 +331,11 @@ def parse_properties(prop_str):
 
 def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0):
     # comment line
-    line = next(lines)
+    line = next(lines).strip()
     if nvec > 0:
-        info = {'comment': line.strip()}
+        info = {'comment': line}
     else:
-        info = properties_parser(line)
+        info = properties_parser(line) if line else {}
 
     pbc = None
     if 'pbc' in info:
@@ -632,7 +632,7 @@ def output_column_format(atoms, columns, arrays,
                'i': ('I', '%8d'),
                'O': ('S', '%s'),
                'S': ('S', '%s'),
-               'U': ('S', '%s'),
+               'U': ('S', '%-2s'),
                'b': ('L', ' %.1s')}
 
     # NB: Lattice is stored as tranpose of ASE cell,
