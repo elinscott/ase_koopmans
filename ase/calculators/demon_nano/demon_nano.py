@@ -8,7 +8,7 @@ import os
 import os.path as op
 import subprocess
 import pickle
-import shutil
+#import shutil
 
 import numpy as np
 
@@ -19,10 +19,7 @@ from ase.calculators.calculator import Parameters, all_changes
 from ase.calculators.calculator import equal
 import ase.io
 
-#from .demon_nano_io import parse_xray
-
 m_e_to_amu = 1822.88839
-
 
 class Parameters_deMon_nano(Parameters):
     """Parameters class for the calculator.
@@ -394,9 +391,9 @@ class Demon_Nano(FileIOCalculator):
        #self.read_xray()
     
     def read_energy(self):
-       """Read energy from deMon_ase.txt output file."""
+       """Read energy from deMon.ase output file."""
 
-       filename = self.label + '/deMon_ase.txt'
+       filename = self.label + '/deMon.ase'
 
        if op.isfile(filename):
            with open(filename, 'r') as f:
@@ -405,17 +402,16 @@ class Demon_Nano(FileIOCalculator):
        for i in range(len(lines)):
             if lines[i].startswith(' DFTB total energy [Hartree]'):
                 self.results['energy'] = float(lines[i+1])
-                #print('I FOUND ENERGY LUL')
                 break
        else:
            raise RuntimeError
 
 
     def read_forces(self, atoms):
-        """Read forces from the deMon_ase.txt file."""
+        """Read forces from the deMon.ase file."""
 
         natoms = len(atoms)
-        filename = self.label + '/deMon_ase.txt'
+        filename = self.label + '/deMon.ase'
 
         if op.isfile(filename):
             with open(filename, 'r') as f:
