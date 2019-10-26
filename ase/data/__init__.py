@@ -566,8 +566,11 @@ covalent_radii = np.array([
     missing,  # Og
 ])
 
+
 # This data is from Ashcroft and Mermin.
 # Most constants are listed in periodic table, inside front cover.
+# Reference states that have a non-trivial basis have a 'basis' key.
+# If the basis is None, it means it has a basis but we have not tabulated it.
 # For basis of RHL systems (represented here as basis_x) see page 127.
 # For TET systems see page 127, too.
 reference_states = [
@@ -589,7 +592,8 @@ reference_states = [
     {'symmetry': 'diamond', 'a': 5.43},  # Si
     {'symmetry': 'cubic', 'a': 7.17,  # P
      'basis': None},
-    {'symmetry': 'orthorhombic', 'c/a': 2.339, 'a': 10.47, 'b/a': 1.229},  # S
+    {'symmetry': 'orthorhombic', 'c/a': 2.339, 'a': 10.47, 'b/a': 1.229,  # S
+     'basis': None},
     {'symmetry': 'orthorhombic', 'c/a': 1.324, 'a': 6.24, 'b/a': 0.718,  # Cl
      'basis': None},
     {'symmetry': 'fcc', 'a': 5.26},  # Ar
@@ -599,7 +603,8 @@ reference_states = [
     {'symmetry': 'hcp', 'c/a': 1.588, 'a': 2.95},  # Ti
     {'symmetry': 'bcc', 'a': 3.02},  # V
     {'symmetry': 'bcc', 'a': 2.88},  # Cr
-    {'symmetry': 'cubic', 'a': 8.89},  # Mn
+    {'symmetry': 'cubic', 'a': 8.89,  # Mn
+     'basis': None},
     {'symmetry': 'bcc', 'a': 2.87},  # Fe
     {'symmetry': 'hcp', 'c/a': 1.622, 'a': 2.51},  # Co
     {'symmetry': 'fcc', 'a': 3.52},  # Ni

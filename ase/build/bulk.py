@@ -61,12 +61,17 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
         if ref is not None:
             xref = ref['symmetry']
 
+            # If user did not specify crystal structure, and no basis
+            # is given, and the reference state says we need one, but
+            # does not have one, then we can't proceed.
+            if (crystalstructure is None and basis is None
+                and 'basis' in ref and ref['basis'] is None):
+                # XXX This is getting much too complicated, we need to split
+                # this function up.  A lot.
+                raise RuntimeError('This structure requires an atomic basis')
+
         if ref is None:
             ref = {}  # easier to 'get' things from empty dictionary than None
-
-        if basis is None:
-            if 'basis' in ref and ref['basis'] is None:
-                raise RuntimeError('This structure requires an atomic basis')
 
         if xref == 'cubic':
             # P and Mn are listed as 'cubic' but the lattice constants
