@@ -627,17 +627,13 @@ reference_states = [
     {'symmetry': 'fcc', 'a': 3.89},  # Pd
     {'symmetry': 'fcc', 'a': 4.09},  # Ag
     {'symmetry': 'hcp', 'c/a': 1.886, 'a': 2.98},  # Cd
-    {'symmetry': 'tetragonal', 'c/a': 1.076, 'a': 4.59,  # In
-     'basis': 0.5 * np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]])},
-    # XXX In basis can be 1 atom
-    {'symmetry': 'tetragonal', 'c/a': 0.546, 'a': 5.82,  # Sn
-     'basis': np.array([[0, 0, 0], [0, .5, .25], [.5, 0, .75], [.5, .5, .5]])},
-    # XXX Sn basis can be 2 atoms
+    {'symmetry': 'bct', 'c/a': 1.076, 'a': 4.59},  # In
+    {'symmetry': 'bct', 'c/a': 0.546, 'a': 5.82,  # Sn
+     'basis': [[0.0, 0.0, 0.0], [0.25, 0.75, 0.5]]},
     {'symmetry': 'rhombohedral', 'a': 4.51, 'alpha': 57.60,  # Sb
      'basis_x': np.array(0.233) * (-1, 1)},
     {'symmetry': 'hcp', 'c/a': 1.330, 'a': 4.45,  # Te
-     # Te needs a 3-atom basis.
-     'basis': None},
+     'basis': None},  # Te needs a 3-atom basis.
     {'symmetry': 'orthorhombic', 'c/a': 1.347, 'a': 7.27, 'b/a': 0.659,  # I
      'basis': None},
     {'symmetry': 'fcc', 'a': 6.20},  # Xe

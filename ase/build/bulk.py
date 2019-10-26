@@ -58,14 +58,15 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
     if name in chemical_symbols:
         Z = atomic_numbers[name]
         ref = reference_states[Z]
-        if basis is None:
-            if 'basis' in ref and ref['basis'] is None:
-                raise KeyError('This structure requires an atomic basis')
         if ref is not None:
             xref = ref['symmetry']
 
         if ref is None:
             ref = {}  # easier to 'get' things from empty dictionary than None
+
+        if basis is None:
+            if 'basis' in ref and ref['basis'] is None:
+                raise RuntimeError('This structure requires an atomic basis')
 
         if xref == 'cubic':
             # P and Mn are listed as 'cubic' but the lattice constants
@@ -77,6 +78,7 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
     # Mapping of name to number of atoms in primitive cell.
     structures = {'sc': 1, 'fcc': 1, 'bcc': 1,
                   'tetragonal': 1,
+                  'bct': 1,
                   'hcp': 1,
                   'rhombohedral': 1,
                   'orthorhombic': 1,
@@ -195,12 +197,14 @@ def bulk(name, crystalstructure=None, a=None, b=None, c=None, *, alpha=None,
                             (-a / 2, a * sqrt(3) / 2, 0),
                             (0, 0, a * covera)],
                       pbc=True)
-    elif crystalstructure == 'tetragonal':
+    elif crystalstructure == 'bct':
+        from ase.lattice import BCT
         if basis is None:
             basis = ref.get('basis')
         if basis is not None:
             natoms = len(basis)
-        atoms = Atoms([name] * natoms, cell=[a, a, c], pbc=True,
+        lat = BCT(a=a, c=c)
+        atoms = Atoms([name] * natoms, cell=lat.tocell(), pbc=True,
                       scaled_positions=basis)
     elif crystalstructure == 'rhombohedral':
         atoms = _build_rhl(name, a, alpha, basis)
