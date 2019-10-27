@@ -10,7 +10,7 @@ University of Minnesota
 import numpy as np
 
 from ase.calculators.calculator import Calculator
-from ase.calculators.calculator import equal
+from ase.calculators.calculator import compare_atoms
 
 from . import kimpy_wrappers
 from . import neighborlist
@@ -309,7 +309,8 @@ class KIMModelCalculator(Calculator):
         self.results["stress"] = stress
 
     def check_state(self, atoms, tol=1e-15):
-        return self.compare_atoms(self.atoms, atoms)
+        return compare_atoms(self.atoms, atoms, excluded_properties={'initial_charges',
+            'initial_magmoms'})
 
     def assemble_padding_forces(self):
         """
@@ -340,28 +341,6 @@ class KIMModelCalculator(Calculator):
                 total_forces[org_index] += f
 
         return total_forces
-
-    @staticmethod
-    def compare_atoms(atoms1, atoms2, tol=1e-15):
-        """Check for system changes since last calculation. Note that
-        this is an override of Calculator.compare_atoms and differs in
-        that the magnetic moments and charges are not checked because
-        the KIM API does not (currently) support these.
-        """
-        if atoms1 is None:
-            return ["positions", "numbers", "cell", "pbc"]
-        else:
-            system_changes = []
-            if not equal(atoms1.positions, atoms2.positions, tol):
-                system_changes.append("positions")
-            if not equal(atoms1.numbers, atoms2.numbers):
-                system_changes.append("numbers")
-            if not equal(atoms1.cell, atoms2.cell, tol):
-                system_changes.append("cell")
-            if not equal(atoms1.pbc, atoms2.pbc):
-                system_changes.append("pbc")
-
-        return system_changes
 
     @staticmethod
     def compute_virial_stress(forces, coords, volume):
