@@ -72,7 +72,7 @@ class PropertyNotPresent(CalculatorError):
 
 
 def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
-    """Check for system changes since last calculation.  Propertes in
+    """Check for system changes since last calculation.  Properties in
     ``excluded_properties`` are not checked."""
     if atoms1 is None:
         system_changes = all_changes[:]
