@@ -387,7 +387,8 @@ def replace_subscript(s, subscript=True):
             inside = not inside
         elif not inside:
             replaced += [char]
-        elif char.isdigit():
+        # note: do not use char.isdigit - this also matches (sub/super)scripts
+        elif char in rdict:
             replaced += [rdict[char]]
         else:
             replaced += [char]
