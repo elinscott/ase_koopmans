@@ -98,5 +98,5 @@ Angles
         self.assertEqual(lines, expected_output)
 
 
-if __name__ == '__main__':
-    unittest.main(argv=['arg0'])
+if __name__ == in ['__main__', 'test']:
+    unittest.main()
