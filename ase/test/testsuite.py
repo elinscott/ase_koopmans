@@ -71,7 +71,7 @@ def runtest_almost_no_magic(test):
         if any(s in test for s in skip):
             raise unittest.SkipTest('not on windows')
     try:
-        runpy.run_path(path, run_name='__main__')
+        runpy.run_path(path, run_name='test')
     except ImportError as ex:
         module = ex.args[0].split()[-1].replace("'", '').split('.')[0]
         if module in ['scipy', 'matplotlib', 'Scientific', 'lxml', 'Tkinter',

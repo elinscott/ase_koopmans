@@ -337,7 +337,7 @@ def test_pw_input_write():
 
 
 
-if __name__ in ('__main__', '__builtin__'):
+if __name__ in ('__main__', 'test'):
     test_pw_input()
     test_pw_output()
     test_pw_results_required()
