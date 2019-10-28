@@ -828,7 +828,13 @@ class Atoms(object):
         kw = {}
         for name in ['numbers', 'positions', 'cell', 'pbc']:
             kw[name] = dct.pop(name)
-        atoms = cls(constraint=dct.pop('constraints', None),
+
+        constraints = dct.pop('constraints', None)
+        if constraints:
+            from ase.constraints import dict2constraint
+            constraints = [dict2constraint(d) for d in constraints]
+
+        atoms = cls(constraint=constraints,
                     celldisp=dct.pop('celldisp', None),
                     info=dct.pop('info', None), **kw)
         natoms = len(atoms)
@@ -836,7 +842,7 @@ class Atoms(object):
         # Some arrays are named differently from the atoms __init__ keywords.
         # Also, there may be custom arrays.  Hence we set them directly:
         for name, arr in dct.items():
-            assert len(arr) == natoms
+            assert len(arr) == natoms, name
             assert isinstance(arr, np.ndarray)
             atoms.arrays[name] = arr
         return atoms
