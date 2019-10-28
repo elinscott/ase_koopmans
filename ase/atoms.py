@@ -765,7 +765,7 @@ class Atoms(object):
             # if Voigt form is not wanted, return rightaway if apply_constraint is False
             # If the user wants to apply constraints to the stress transform the Voigt form and
             # apply the constraint
-            if not voigt and not apply_constraint:
+            if not voigt and (not apply_constraint or not self.constraints):
                 return stress
             warnings.warn('Converting 3x3 stress tensor from %s ' %
                           self._calc.__class__.__name__ +
