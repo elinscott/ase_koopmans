@@ -353,6 +353,9 @@ def get_sym_block(atoms):
                 ", ".join(expression) for expression in constr.expressions
             ]
 
+    if np.all(atomic_param_constr == "") and np.all(lv_param_constr == ""):
+        return []
+
     # Check Constraint Parameters
     if len(atomic_sym_params) != len(np.unique(atomic_sym_params)):
         warnings.warn("Some parameters were used across constraints, they will be combined in the aims calculations")
