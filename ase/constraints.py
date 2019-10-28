@@ -1464,6 +1464,7 @@ class FixScaledParametricRelations(FixParametricRelations):
         del(dct["kwargs"]["use_cell"])
         return dct
 
+
 class FixCartesianParametricRelations(FixParametricRelations):
 
     def __init__(
@@ -1530,28 +1531,12 @@ class FixCartesianParametricRelations(FixParametricRelations):
         """Adjust the stress of the atoms to match the constraints"""
         if not self.use_cell:
             return
-        if stress.shape[0] == 6:
-            voigt = True
-            xx, yy, zz, yz, xz, xy = stress
-            stress_3x3 = np.array(
-                [
-                    (xx, xy, xz),
-                    (xy, yy, yz),
-                    (xz, yz, zz)
-                ]
-            )
-        else:
-            voigt = False
-            stress_3x3 = stress.copy()
 
+        stress_3x3 = voigt_6_to_full_3x3_stress(stress)
         stress_reduced = self.Jacobian.T @ stress_3x3[self.indices].flatten()
         stress_3x3[self.indices] = (self.Jacobian_inv.T @ stress_reduced).reshape(-1, 3)
 
-        if voigt:
-            stress[:] = np.array([stress_3x3[0, 0], stress_3x3[1, 1], stress_3x3[2, 2],
-                                  stress_3x3[1, 2], stress_3x3[0, 2], stress_3x3[0, 1]])
-        else:
-            stress[:, :] = stress_3x3[:,:]
+        stress[:] = full_3x3_to_voigt_6_stress(stress_3x3)
 
 
 class Hookean(FixConstraint):
