@@ -7,6 +7,7 @@ import os
 import os.path as op
 import subprocess
 import pickle
+import pathlib as pl
 
 import numpy as np
 
@@ -38,7 +39,7 @@ class Parameters_deMonNano(Parameters):
             ignore_bad_restart_file=False,
             deMon_restart_path='.',
             print_out='ASE',
-            title='deMon input file',
+            title='deMonNano input file',
             forces=False,
             basis=None,
             input_arguments=None):
@@ -106,6 +107,17 @@ class DemonNano(FileIOCalculator):
             raise ValueError(mess)
         else:
             parameters['command'] = command
+        
+        # basis path
+        basis_path = parameters['basis_path']
+        if basis_path is None:
+            basis_path = os.environ.get('DEMONNANO_BASIS_PATH')
+        
+        if basis_path is None:
+            mess = 'The "DEMONNANO_BASIS_PATH" environment is not defined.'
+            raise ValueError(mess)
+        else:
+            parameters['basis_path'] = basis_path
             
         # Call the base class.
         FileIOCalculator.__init__(
@@ -137,49 +149,33 @@ class DemonNano(FileIOCalculator):
         self.write_input(self.atoms, properties, system_changes)
         if self.command is None:
             raise RuntimeError('Please set $%s environment variable ' %
-                               ('DEMON_NANO_COMMAND') +
+                               ('ASE_DEMONNANO_COMMAND') +
                                'or supply the command keyword')
-        command = self.command  
+
         olddir = os.getcwd()
-
-        # basis path
-        basis_path = self.parameters['basis_path']
-        if basis_path is None:
-            basis_path = os.environ.get('DEMON_BASIS_PATH')
-
         # go to directory and run calculation
-        os.chdir(self.directory)
-        errorcode = subprocess.call(command, shell=True)
-            
+        os.chdir(self.label)
+        
+        errorcode = subprocess.call(self.command, shell=True)
+           
         os.chdir(olddir)
 
         if errorcode:
             raise RuntimeError('%s returned an error: %d' %
-                               (self.name, errorcode))
+                              (self.name, errorcode))
 
         try:
             self.read_results()
         except:
-            #with open(self.directory + '/deMon.out', 'r') as f:
-            with open('rundir' + '/deMon.out', 'r') as f:
-                lines = f.readlines()
+            with open(self.label + '/deMon.out', 'r') as fd:
+            #with open('rundir' + '/deMon.out', 'r') as fd:
+                lines = fd.readlines()
             debug_lines = 30
             print('##### %d last lines of the deMon.out' % debug_lines)
             for line in lines[-1*debug_lines:]:
                 print(line.strip())
             print('##### end of deMon.out')
             raise RuntimeError
-
-    def set_label(self, label):
-        """Set label directory
-        """
-
-        self.label = label
-
-    # in our case self.directory = self.label
-        self.directory = self.label
-        if self.directory == '':
-            self.directory = os.curdir
 
     def write_input(self, atoms, properties=None, system_changes=None):
         """Write input (in)-file.
@@ -201,28 +197,25 @@ class DemonNano(FileIOCalculator):
         if system_changes is None and properties is None:
             return
     
-        #print('2',self.label)
-        #filename = self.label + '/deMon.inp'
-        filename = 'rundir' + '/deMon.inp'
+        filename = self.label + '/deMon.inp'
+        #filename = 'rundir' + '/deMon.inp'
         add_print = ''
 
         # Start writing the file.
-        with open(filename, 'w') as f:
+        with open(filename, 'w') as fd:
             # write keyword argument keywords
             value = self.parameters['title']
-            self._write_argument('TITLE', value, f)
-            f.write('\n')
+            self._write_argument('TITLE', value, fd)
+            fd.write('\n')
 
             # obtain forces through a single BOMD step
             # only if forces is in properties, or if keyword forces is True
             value = self.parameters['forces']
             if 'forces' in properties or value:
-                self._write_argument('MDYNAMICS', 'ZERO', f)
-                self._write_argument('MDSTEP', 'MAX=1', f)
+                self._write_argument('MDYNAMICS', 'ZERO', fd)
+                self._write_argument('MDSTEP', 'MAX=1', fd)
                 #default timestep is 0.25 fs if not enough - uncomment the line below
-                #self._write_argument('TIMESTEP', '0.1', f)
-                
-                #add_print = add_print + ' ' + 'MD OPT'
+                #self._write_argument('TIMESTEP', '0.1', fd)
 
             # print argument, here other options could change this
             value = self.parameters['print_out']
@@ -230,39 +223,40 @@ class DemonNano(FileIOCalculator):
             value = value + add_print
 
             if not len(value) == 0:
-                self._write_argument('PRINT', value, f)
-                f.write('\n')
+                self._write_argument('PRINT', value, fd)
+                fd.write('\n')
 
             # write general input arguments
-            self._write_input_arguments(f)
-            f.write('\n')
+            self._write_input_arguments(fd)
+            fd.write('\n')
 
             # write geometry
-            self._write_atomic_coordinates(f, atoms)
+            self._write_atomic_coordinates(fd, atoms)
 
             # write xyz file for good measure.
-            ase.io.write('rundir' + '/deMon_atoms.xyz', self.atoms)
+            ase.io.write(self.label + '/deMon_atoms.xyz', self.atoms)
             #ase.io.write(self.label + '/deMon_atoms.xyz', self.atoms)
             
     def read(self, restart_path):
        """Read parameters from directory restart_path."""
     
        self.set_label(restart_path)
+       rpath = pl.Path(restart_path)
 
-       if not op.exists(restart_path + '/deMon.inp'):
+       if not (rpath / 'deMon.inp').exists():
            raise ReadError('The restart_path file {0} does not exist'
-                           .format(restart_path))
-    
-       if op.exists(restart_path + '/deMon_parameters.pckl'):
-           parameters = pickle.load(open(restart_path +
-                                     '/deMon_parameters.pckl', 'r'))
+                           .format(rpath))
+       
+       pcklpath = rpath / 'deMon_parameters.pckl'
+       if pcklpath.exists():
+           parameters = pickle.load(open(pcklpath, 'r'))
            self.parameters = parameters
      
-       self.atoms = self.deMon_inp_to_atoms(restart_path + '/deMon.inp')
+       self.atoms = self.deMon_inp_to_atoms(rpath / 'deMon.inp')
        
        self.read_results()
      
-    def _write_input_arguments(self, f):
+    def _write_input_arguments(self, fd):
        """Write directly given input-arguments."""
        input_arguments = self.parameters['input_arguments']
     
@@ -271,27 +265,27 @@ class DemonNano(FileIOCalculator):
            return
 
        for key, value in input_arguments.items():
-           self._write_argument(key, value, f)
+           self._write_argument(key, value, fd)
     
-    def _write_argument(self, key, value, f):
+    def _write_argument(self, key, value, fd):
        """Write an argument to file.
        key :  a string coresponding to the input keyword
        value : the arguemnts, can be a string, a number or a list
-       f :  and open file
+       fd  :  and open file
        """
        if key == 'BASISPATH':    
        # Write a basis path to file.
        # Has to be in lowercase for deMon-nano to work
            line = value.lower()
-           f.write(line)
-           f.write('\n')
+           fd.write(line)
+           fd.write('\n')
      
        elif not isinstance(value, (tuple, list)):
        # for only one argument, write on same line
            line = key.upper()
            line += ' ' + str(value).upper()
-           f.write(line)
-           f.write('\n')
+           fd.write(line)
+           fd.write('\n')
 
        # for a list, write first argument on the first line,
        # then the rest on new lines
@@ -300,53 +294,31 @@ class DemonNano(FileIOCalculator):
            if not isinstance(value[0], (tuple, list)):
                for i in range(len(value)):
                    line += ' ' + str(value[i].upper())
-               f.write(line)
-               f.write('\n')
+               fd.write(line)
+               fd.write('\n')
            else:
                for i in range(len(value)):
                    for j in range(len(value[i])):
                        line += ' ' + str(value[i][j]).upper()
-                   f.write(line)
-                   f.write('\n')
+                   fd.write(line)
+                   fd.write('\n')
                    line = ''
                     
-    def _write_atomic_coordinates(self, f, atoms):
+    def _write_atomic_coordinates(self, fd, atoms):
         """Write atomic coordinates.
         Parameters:
-        - f:     An open file object.
+        - fd:     An open file object.
         - atoms: An atoms object.
         """
-        #f.write('#\n')
-        #f.write('# Atomic coordinates\n')
-        #f.write('#\n')
-        f.write('GEOMETRY CARTESIAN ANGSTROM\n')
+        #fd.write('#\n')
+        #fd.write('# Atomic coordinates\n')
+        #fd.write('#\n')
+        fd.write('GEOMETRY CARTESIAN ANGSTROM\n')
 
-        for i in range(len(atoms)):
-            xyz = atoms.get_positions()[i]
-            chem_symbol = atoms.get_chemical_symbols()[i]
-            # the string below add numbers for atoms of the same type (H1,H2)
-            #chem_symbol += str(i + 1)
-             
-            # the code below adds nuclear charge and atom masses to GEOMETRY 
-            # if tag is set to 1 then we have a ghost atom,
-            # set nuclear charge to 0
-            #if(atoms.get_tags()[i] == 1):
-            #    nuc_charge = str(0)
-            #else:
-            #    nuc_charge = str(atoms.get_atomic_numbers()[i])
-            #mass = atoms.get_masses()[i]
-               
-            line = '{0:9s}'.format(chem_symbol).rjust(10) + ' '
-            line += '{0:.5f}'.format(xyz[0]).rjust(10) + ' '
-            line += '{0:.5f}'.format(xyz[1]).rjust(10) + ' '
-            line += '{0:.5f}'.format(xyz[2]).rjust(10) + ' '
-            #line += '{0:5s}'.format(nuc_charge).rjust(10) + ' '
-            #line += '{0:.5f}'.format(mass).rjust(10) + ' '
-           
-            f.write(line)
-            f.write('\n')
+        for sym, pos in zip(atoms.symbols, atoms.positions):
+            fd.write('{:9s} {:10.5f} {:10.5f} {:10.5f}\n'.format(sym, *pos))
 
-        f.write('\n')
+        fd.write('\n')
 
 # Analysis routines
     def read_results(self):
@@ -359,114 +331,91 @@ class DemonNano(FileIOCalculator):
     def read_energy(self):
        """Read energy from deMon.ase output file."""
 
-       #filename = self.label + '/deMon.ase'
-       filename = 'rundir' + '/deMon.ase'
+       epath = pl.Path(self.label)
+       if not (epath / 'deMon.ase').exists():
+           raise ReadError('The deMonNano output file for ASE {0} does not exist'
+                           .format(epath))
+
+       filename = self.label + '/deMon.ase'
+       #filename = 'rundir' + '/deMon.ase'
 
        if op.isfile(filename):
-           with open(filename, 'r') as f:
-               lines = f.readlines()
+           with open(filename, 'r') as fd:
+               lines = fd.readlines()
           
        for i in range(len(lines)):
             if lines[i].startswith(' DFTB total energy [Hartree]'):
                 self.results['energy'] = float(lines[i+1])
                 break
-       else:
-           raise RuntimeError
-
 
     def read_forces(self, atoms):
-        """Read forces from the deMon.ase file."""
+       """Read forces from the deMon.ase file."""
 
-        natoms = len(atoms)
-        
-        filename = 'rundir' + '/deMon.ase'
-        #filename = self.label + '/deMon.ase'
+       natoms = len(atoms)
+       
+       epath = pl.Path(self.label)
+       if not (epath / 'deMon.ase').exists():
+            raise ReadError('The deMonNano output file for ASE {0} does not exist'
+                          .format(epath))
 
-        if op.isfile(filename):
-            with open(filename, 'r') as f:
-                lines = f.readlines()
+       filename = self.label + '/deMon.ase'
+       #filename = 'rundir' + '/deMon.ase'
 
-                # find line where the forces start
-                flag_found = False
-                for i in range(len(lines)):
-                    if lines[i].rfind('DFTB gradients at 0 time step in a.u.') > -1:
-                        start = i + 1
-                        flag_found = True
-                        break
+       with open(filename, 'r') as fd:
+           lines = fd.readlines()
 
-                if flag_found:
-                    self.results['forces'] = np.zeros((natoms, 3), float)
-                    for i in range(natoms):
-                        line = [s for s in lines[i + start].strip().split(' ')
-                                if len(s) > 0]
-                        f = -1.*np.array([float(x) for x in line[1:4]])
-                        # output forces in a.u.
-                        #self.results['forces'][i, :] = f
-                        # output forces with real dimension
-                        self.results['forces'][i, :] = f * (Hartree / Bohr)
+           # find line where the forces start
+           flag_found = False
+           for i in range(len(lines)):
+               if 'DFTB gradients at 0 time step in a.u.' in lines[i]:
+                   start = i + 1
+                   flag_found = True
+                   break
+
+           if flag_found:
+               self.results['forces'] = np.zeros((natoms, 3), float)
+               for i in range(natoms):
+                   line = [s for s in lines[i + start].strip().split(' ')
+                           if len(s) > 0]
+                   f = -np.array([float(x) for x in line[1:4]])
+                   # output forces in a.u.
+                   #self.results['forces'][i, :] = f
+                   # output forces with real dimension
+                   self.results['forces'][i, :] = f * (Hartree / Bohr)
+
 
     def deMon_inp_to_atoms(self, filename):
        """Routine to read deMon.inp and convert it to an atoms object."""
-
-       with open(filename, 'r') as f:
-           lines = f.readlines()
-
-       # find line where geometry starts
-       for i in range(len(lines)):
-           if lines[i].rfind('GEOMETRY') > -1:
-               if lines[i].rfind('ANGSTROM'):
-                   coord_units = 'Ang'
-               elif lines.rfind('BOHR'):
-                   coord_units = 'Bohr'
-               ii = i
-               break
-
-       chemical_symbols = []
+       
+       read_flag=False
+       
+       chem_symbols = []
        xyz = []
-       atomic_numbers = []
-       masses = []
 
-       for i in range(ii + 1, len(lines)):
-           try:
-               line = lines[i].split()
+       with open(filename, 'r') as fd:
 
-               if(len(line) > 0):
-                   for symbol in ase.data.chemical_symbols:
-                       found = None
-                       if line[0].upper().rfind(symbol.upper()) > -1:
-                           found = symbol
-                           break
-                   
-                       if found is not None:
-                           chemical_symbols.append(found)
-                       else:
-                           break
+           for line in fd:
+               if 'GEOMETRY' in line:
+                    read_flag = True
+                    if 'ANGSTROM' in line:
+                        coord_units = 'Ang'
+                    elif 'BOHR' in line:
+                        coord_units = 'Bohr'
 
-                       xyz.append([float(line[1]), float(line[2]), float(line[3])])
-           
-               if len(line) > 4:
-                   atomic_numbers.append(int(line[4]))
-           
-               if len(line) > 5:
-                   masses.append(float(line[5]))
+               if read_flag:
+                    tokens = line.split()
+                    symbol = tokens[0]
+                    xyz_loc = np.array(tokens[1:4]).astype(float)
 
-           except:
-               raise RuntimeError
+               if read_flag and tokens :
+                    chem_symbols.append(symbol)
+                    xyz.append(xyz_loc)
 
+       
        if coord_units == 'Bohr':
            xyz = xyz * Bohr
 
-       natoms = len(chemical_symbols)
-
        # set atoms object
-       atoms = ase.Atoms(symbols=chemical_symbols, positions=xyz)
+       atoms = ase.Atoms(symbols=chem_symbols, positions=xyz)
 
-       # if atomic numbers were read in, set them
-       if(len(atomic_numbers) == natoms):
-           atoms.set_atomic_numbers(atomic_numbers)
-           
-       # if masses were read in, set them
-       if(len(masses) == natoms):
-           atoms.set_masses(masses)
-       
        return atoms
