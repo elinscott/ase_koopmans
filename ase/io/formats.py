@@ -192,6 +192,10 @@ def define_io_format(name, desc, code, *, module=None, ext=None,
     ioformats[name] = fmt
     return fmt
 
+def get_ioformat(name):
+    # This function is left only for backwards compatibility.
+    return ioformats[name]
+
 F = define_io_format
 F('abinit', 'ABINIT input file', '1F'),
 F('aims', 'FHI-aims geometry file', '1S'),
