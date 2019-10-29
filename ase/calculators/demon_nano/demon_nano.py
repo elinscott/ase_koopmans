@@ -1,4 +1,3 @@
-from __future__ import print_function
 """This module defines an ASE interface to deMon-nano.
 
 http://demon-nano.ups-tlse.fr/
@@ -20,7 +19,7 @@ import ase.io
 
 m_e_to_amu = 1822.88839
 
-class Parameters_deMon_nano(Parameters):
+class Parameters_deMonNano(Parameters):
     """Parameters class for the calculator.
     Documented in Base_deMon.__init__
 
@@ -41,14 +40,14 @@ class Parameters_deMon_nano(Parameters):
             print_out='ASE',
             title='deMon input file',
             forces=False,
-            basis={},
+            basis=None,
             input_arguments=None):
         kwargs = locals()
         kwargs.pop('self')
         Parameters.__init__(self, **kwargs)
 
 
-class Demon_Nano(FileIOCalculator):
+class DemonNano(FileIOCalculator):
     """Calculator interface to the deMon-nano code. """
 
     implemented_properties = (
@@ -95,15 +94,15 @@ class Demon_Nano(FileIOCalculator):
             or a list of lists of str (first list is written on the first line, the others on following lines.)
         """
         
-        parameters = Parameters_deMon_nano(**kwargs)
+        parameters = Parameters_deMonNano(**kwargs)
         
         # Setup the run command
         command = parameters['command']
         if command is None:
-            command = os.environ.get('DEMON_NANO_COMMAND')
+            command = os.environ.get('ASE_DEMONNANO_COMMAND')
 
         if command is None:
-            mess = 'The "DEMON_NANO_COMMAND" environment is not defined.'
+            mess = 'The "ASE_DEMONNANO_COMMAND" environment is not defined.'
             raise ValueError(mess)
         else:
             parameters['command'] = command
@@ -121,31 +120,6 @@ class Demon_Nano(FileIOCalculator):
                 key       : str, the name of the parameters to get.
         """
         return self.parameters[key]
-
-    def set(self, **kwargs):
-        """Set all parameters.
-
-        Parameters:
-            kwargs  : Dictionary containing the keywords for deMon
-        """
-        # Put in the default arguments.
-        kwargs = self.default_parameters.__class__(**kwargs)
-
-        if 'parameters' in kwargs:
-            filename = kwargs.pop('parameters')
-            parameters = Parameters.read(filename)
-            parameters.update(kwargs)
-            kwargs = parameters
-
-        changed_parameters = {}
-
-        for key, value in kwargs.items():
-            oldvalue = self.parameters.get(key)
-            if key not in self.parameters or not equal(value, oldvalue):
-                changed_parameters[key] = value
-                self.parameters[key] = value
-
-        return changed_parameters
 
     def calculate(self,
                   atoms=None,
