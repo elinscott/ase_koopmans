@@ -1,3 +1,3 @@
 from ase.calculators.demonnano.demonnano import DemonNano
 
-__all__ = ['DemonNano']
+__all__ = ['Demonnano']
