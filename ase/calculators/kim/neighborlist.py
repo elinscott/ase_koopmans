@@ -79,7 +79,12 @@ class NeighborList(object):
         if self.padding_image_of.size != 0:
             disp_contrib = atoms.positions - self.coords[: len(atoms)]
             disp_pad = disp_contrib[self.padding_image_of]
-            self.coords += np.concatenate((disp_contrib, disp_pad))
+            np.add(
+                self.coords,
+                np.concatenate((disp_contrib, disp_pad)),
+                out=self.coords,
+                dtype=np.double,
+            )
         else:
             np.copyto(self.coords, atoms.positions)
 
