@@ -152,7 +152,7 @@ def read_gaussian(filename):
                     symbol = info[0]
                     tag = 0
                 position = [float(info[1]), float(info[2]), float(info[3])]
-                atoms += Atom(symbol, position=position)
+                atoms += Atom(symbol, position=position, tag=tag)
                 i += 1
     return atoms
 
