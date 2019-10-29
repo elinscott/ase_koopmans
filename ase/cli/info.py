@@ -99,7 +99,6 @@ def print_info():
 
 def print_formats():
     print('Supported formats:')
-    names = sorted(ioformats)
     for fmtname in sorted(ioformats):
         fmt = ioformats[fmtname]
 

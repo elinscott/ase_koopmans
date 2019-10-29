@@ -30,7 +30,7 @@ import os
 import sys
 
 from ase.atoms import Atoms
-from ase.utils import import_module, basestring, PurePath, lazyproperty
+from ase.utils import import_module, basestring, PurePath
 from ase.parallel import parallel_function, parallel_generator
 
 
