@@ -57,22 +57,35 @@ class IOFormat:
     def open(self, fname, mode='r'):
         # We might want append mode, too
         # We can allow more flags as needed (buffering etc.)
-        if not (mode == 'r' or mode == 'w'):
-            raise ValueError('Only modes allowed are r and w')
-        if mode == 'r' and self.read is None:
+        if mode not in list('rwa'):
+            raise ValueError("Only modes allowed are 'r', 'w', and 'a'")
+        if mode == 'r' and self.can_read:
             raise NotImplementedError('No reader implemented for {} format'
                                       .format(self.name))
-        if mode == 'w' and self.write is None:
+        if mode == 'w' and self.can_write:
             raise NotImplementedError('No writer implemented for {} format'
+                                      .format(self.name))
+        if mode == 'a' and not self.can_append:
+            raise NotImplementedError('Appending not supported by {} format'
                                       .format(self.name))
 
         if self.isbinary:
             mode += 'b'
 
-        if isinstance(fname, PurePath):
-            fname = str(fname)
+        path = Path(fname)
+        return path.open(mode, encoding=self.encoding)
 
-        return open(fname, mode, encoding=self.encoding)
+    @property
+    def can_read(self):
+        return self.read is not None
+
+    @property
+    def can_write(self):
+        return self.write is not None
+
+    @property
+    def can_append(self):
+        return self.writable and 'append' in self.write.__code__.co_varnames
 
     def __repr__(self):
         tokens = ['{}={}'.format(name, repr(value))
