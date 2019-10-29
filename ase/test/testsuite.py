@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import sys
 import subprocess
@@ -8,6 +7,7 @@ import tempfile
 import unittest
 from glob import glob
 from distutils.version import LooseVersion
+import runpy
 import time
 import traceback
 import warnings
@@ -19,10 +19,6 @@ from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
 test_calculator_names = ['emt']
-
-if sys.version_info[0] == 2:
-    class ResourceWarning(UserWarning):
-        pass  # Placeholder - this warning does not exist in Py2 at all.
 
 
 def require(calcname):
@@ -75,15 +71,22 @@ def runtest_almost_no_magic(test):
         if any(s in test for s in skip):
             raise unittest.SkipTest('not on windows')
     try:
-        with open(path) as fd:
-            exec(compile(fd.read(), path, 'exec'), {})
+        runpy.run_path(path, run_name='__main__')
     except ImportError as ex:
         module = ex.args[0].split()[-1].replace("'", '').split('.')[0]
         if module in ['scipy', 'matplotlib', 'Scientific', 'lxml', 'Tkinter',
-                      'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2']:
+                      'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2', 'kimpy']:
             raise unittest.SkipTest('no {} module'.format(module))
         else:
             raise
+    # unittest.main calls sys.exit, which raises SystemExit.
+    # Uncatched SystemExit, a subclass of BaseException, marks a test as ERROR
+    # even if its exit code is zero (test passes).
+    # Here, AssertionError is raised to mark a test as FAILURE if exit code is
+    # non-zero.
+    except SystemExit as ex:
+        if ex.code != 0:
+            raise AssertionError
 
 
 def run_single_test(filename, verbose, strict):

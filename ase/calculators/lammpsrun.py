@@ -1,9 +1,8 @@
-from __future__ import print_function
 
 # lammps.py (2011/03/29)
 # An ASE calculator for the LAMMPS classical MD code available from
 #       http://lammps.sandia.gov/
-# The environment variable ASE_LAMMPS_COMMAND must be defined to point to the
+# The environment variable ASE_LAMMPSRUN_COMMAND must be defined to point to the
 # LAMMPS binary.
 #
 # Copyright (C) 2009 - 2011 Joerg Meyer, joerg.meyer@ch.tum.de
@@ -107,7 +106,7 @@ potentials)
     NiH.set_calculator(lammps)
     print("Energy ", NiH.get_potential_energy())
 
-(Remember you also need to set the environment variable ``$ASE_LAMMPS_COMMAND``)
+(Remember you also need to set the environment variable ``$ASE_LAMMPSRUN_COMMAND``)
 
     """
 

@@ -3,7 +3,6 @@
 """nanotube.py - Window for setting up Graphene sheets and ribbons.
 """
 
-from __future__ import unicode_literals
 from ase.gui.i18n import _
 
 import ase.gui.ui as ui

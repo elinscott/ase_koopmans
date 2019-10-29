@@ -1,4 +1,3 @@
-from __future__ import print_function
 from ase import Atoms
 from ase.calculators.siesta import Siesta
 from ase.units import Ry

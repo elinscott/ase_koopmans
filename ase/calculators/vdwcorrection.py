@@ -1,5 +1,4 @@
 """van der Waals correction schemes for DFT"""
-from __future__ import print_function
 import numpy as np
 from ase.units import Bohr, Hartree
 from ase.calculators.calculator import Calculator
@@ -177,12 +176,17 @@ class vdWTkatchenko09prl(Calculator):
                 xc_name = self.calculator.get_xc_functional()
                 self.sR = sR_opt[xc_name]
             except KeyError:
-                raise ValueError('Tkatchenko-Scheffler dispersion correction not implemented for %s functional' % xc_name)
+                raise ValueError(
+                    'Tkatchenko-Scheffler dispersion correction not ' +
+                    'implemented for %s functional' % xc_name)
         else:
             self.sR = sR
         self.d = 20
 
         Calculator.__init__(self)
+
+        self.parameters['calculator'] = self.calculator.name
+        self.parameters['xc'] = self.calculator.get_xc_functional()
 
     @property
     def implemented_properties(self):
@@ -215,6 +219,7 @@ class vdWTkatchenko09prl(Calculator):
 
         for name in properties:
             self.results[name] = self.calculator.get_property(name, atoms)
+        self.parameters['uncorrected_energy'] = self.results['energy']
         self.atoms = atoms.copy()
 
         if self.vdwradii is not None:
@@ -338,8 +343,6 @@ class vdWTkatchenko09prl(Calculator):
                     forces[j] -= force_ij
         self.results['energy'] += EvdW
         self.results['forces'] += forces
-
-
 
         if self.txt:
             print(('\n' + self.__class__.__name__), file=self.txt)

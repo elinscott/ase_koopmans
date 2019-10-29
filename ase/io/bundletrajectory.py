@@ -502,8 +502,9 @@ class BundleTrajectory:
             self.pythonmajor = metadata['python_ver'][0]
         except KeyError:
             self.pythonmajor = 2  # Assume written with Python 2.
-        # We need to know if a bundle was written with Python 2.X
-        self.backend.readpy2 = self.pythonmajor == 2
+        # We need to know if we are running Python 3.X and try to read
+        # a bundle written with Python 2.X
+        self.backend.readpy2 = (self.pythonmajor == 2)
         self.state = 'read'
 
     def _open_append(self, atoms):

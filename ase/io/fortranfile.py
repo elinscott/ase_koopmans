@@ -65,7 +65,6 @@ try:
     bytes
 except NameError:
     # For python2.x compatibility, I think it would have been nicer to
-    # "from __future__ import unicode_literals" and used b'' instead of bytes()
     bytes = str
     
 

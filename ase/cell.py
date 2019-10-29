@@ -1,6 +1,7 @@
 import numpy as np
 from ase.utils import deprecated
 from ase.utils.arraywrapper import arraylike
+from ase.utils import pbc2pbc
 
 
 __all__ = ['Cell']
@@ -117,7 +118,7 @@ class Cell:
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
         return cls(cell, pbc=pbc)
 
-    def get_bravais_lattice(self, eps=2e-4, *, pbc=None):
+    def get_bravais_lattice(self, eps=2e-4, *, pbc=True):
         """Return :class:`~ase.lattice.BravaisLattice` for this cell:
 
         >>> cell = Cell.fromcellpar([4, 4, 4, 60, 60, 60])
@@ -136,13 +137,12 @@ class Cell:
 
         """
         from ase.lattice import identify_lattice
-        if pbc is None:
-            pbc = self.any(1)
+        pbc = self.any(1) & pbc2pbc(pbc)
         lat, op = identify_lattice(self, eps=eps, pbc=pbc)
         return lat
 
     def bandpath(self, path=None, npoints=None, density=None,
-                 special_points=None, eps=2e-4, *, pbc=None):
+                 special_points=None, eps=2e-4, *, pbc=True):
         """Build a :class:`~ase.dft.kpoints.BandPath` for this cell.
 
         If special points are None, determine the Bravais lattice of
@@ -180,7 +180,7 @@ class Cell:
         """
         # TODO: Combine with the rotation transformation from bandpath()
 
-        cell = self if pbc is None else self.uncomplete(pbc)
+        cell = self.uncomplete(pbc)
 
         if special_points is None:
             from ase.lattice import identify_lattice
@@ -298,16 +298,20 @@ class Cell:
 
         See also :func:`ase.build.tools.niggli_reduce_cell`."""
         from ase.build.tools import niggli_reduce_cell
-        cell, op = niggli_reduce_cell(self, epsfactor=1e-5)
-        return Cell(cell), op
+        cell, op = niggli_reduce_cell(self, epsfactor=eps)
+        result = Cell(cell)
+        result._pbc = self._pbc.copy()
+        return result, op
 
     def minkowski_reduce(self):
         """Minkowski-reduce this cell, returning new cell and mapping.
 
         See also :func:`ase.geometry.minkowski_reduction.minkowski_reduce`."""
         from ase.geometry.minkowski_reduction import minkowski_reduce
-        rcell, op = minkowski_reduce(self, self.any(1) & self._pbc)
-        return Cell(rcell), op
+        cell, op = minkowski_reduce(self, self.any(1) & pbc2pbc(self._pbc))
+        result = Cell(cell)
+        result._pbc = self._pbc.copy()
+        return result, op
 
     # XXX We want a reduction function that brings the cell into
     # standard form as defined by Setyawan and Curtarolo.

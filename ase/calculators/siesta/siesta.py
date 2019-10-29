@@ -1,4 +1,3 @@
-from __future__ import print_function
 from collections import OrderedDict
 import numpy as np
 """This module defines an ASE interface to SIESTA.

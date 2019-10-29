@@ -1,6 +1,5 @@
 # Copyright 2008, 2009
 # CAMd (see accompanying license files for details).
-from __future__ import print_function, unicode_literals
 import warnings
 
 

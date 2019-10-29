@@ -86,6 +86,7 @@ gaussian                                  Gaussian based electronic structure co
 :mod:`~ase.calculators.gromacs`           Classical molecular dynamics code
 :mod:`~ase.calculators.gulp`              Interatomic potential code
 :mod:`~ase.calculators.jacapo`            Plane-wave ultra-soft pseudopotential code
+:mod:`~ase.calculators.kim`               Classical MD with standardized models
 :mod:`~ase.calculators.lammps`            Classical molecular dynamics code
 :mod:`~ase.calculators.mopac`             Semiempirical molecular orbital code
 :mod:`~ase.calculators.nwchem`            Gaussian based electronic structure code
@@ -219,6 +220,7 @@ the :meth:`set` method:
    gulp
    socketio/socketio
    jacapo
+   kim
    lammps
    lammpsrun
    mopac

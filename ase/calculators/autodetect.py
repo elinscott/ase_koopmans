@@ -3,7 +3,11 @@ import shutil
 import importlib
 from ase.calculators.calculator import names
 
-builtins = {'eam', 'emt', 'lj', 'morse', 'tip3p'}
+builtins = {'eam', 'emt', 'ff', 'lj', 'morse', 'tip3p', 'tip4p'}
+
+required_envvars = {'abinit': ['ABINIT_PP_PATH'],
+                    'elk': ['ELK_SPECIES_PATH'],
+                    'openmx': ['OPENMX_DFT_DATA_PATH']}
 
 default_executables = {'abinit': ['abinit'],
                        'cp2k': ['cp2k_shell'],
@@ -16,6 +20,7 @@ default_executables = {'abinit': ['abinit'],
                        'nwchem': ['nwchem'],
                        'octopus': ['octopus'],
                        'openmx': ['openmx'],
+                       'psi4': ['psi4'],
                        'siesta': ['siesta'],
                        }
 

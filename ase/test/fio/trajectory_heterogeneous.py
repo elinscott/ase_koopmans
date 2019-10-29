@@ -1,4 +1,3 @@
-from __future__ import print_function
 from ase.constraints import FixAtoms, FixBondLength
 from ase.build import molecule, bulk
 from ase.io.trajectory import Trajectory, get_header_data

@@ -394,8 +394,7 @@ def open_with_compression(filename, mode='r'):
         File-like object open with the specified mode.
     """
 
-    # Compressed formats sometimes default to binary, so force
-    # text mode:
+    # Compressed formats sometimes default to binary, so force text mode.
     if mode == 'r':
         mode = 'rt'
     elif mode == 'w':

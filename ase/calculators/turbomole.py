@@ -7,7 +7,6 @@ Please read the license file (../../LICENSE)
 
 Contact: Ivan Kondov <ivan.kondov@kit.edu>
 """
-from __future__ import print_function
 import os
 import re
 import warnings

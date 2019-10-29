@@ -1,4 +1,3 @@
-from __future__ import print_function
 """QM/MM interface with QM=FHI-aims, MM=gromacs
 
 QM could be something else, but you need to read in qm-atom charges

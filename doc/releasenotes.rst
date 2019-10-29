@@ -38,6 +38,8 @@ Git master branch
 
 * Added :class:`~ase.calculators.psi4.Psi4` calculator.
 
+* Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can calculate atom/molecule mobility from trajectory as a function of time 
+
 * The :mod:`~ase.io.pov` module can now render high-order bonds.
 
 * :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
@@ -51,6 +53,8 @@ Git master branch
   kwarg, where the keys are the variable names in the expression and
   the values are the numerical value they should be replaced with.
 
+* Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
+
 Version 3.18.1
 ==============
 
@@ -62,7 +66,6 @@ Version 3.18.1
   Use ``atoms.pbc`` instead; this works the same as always.
   Also, the :class:`~ase.cell.Cell` object now exposes almost the entire
   ``ndarray`` interface.  For a list of smaller bugfixes, see the git log.
-
 
 Version 3.18.0
 ==============

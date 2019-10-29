@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Copyright (C) 2010, Jesper Friis
 # (see accompanying license files for details).
 
@@ -12,6 +11,7 @@ import itertools
 import numpy as np
 from ase.geometry import complete_cell
 from ase.geometry.minkowski_reduction import minkowski_reduce
+from ase.utils import pbc2pbc
 
 
 def translate_pretty(fractional, pbc):
@@ -65,12 +65,10 @@ def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
     array([[ 0.9 ,  0.01, -0.5 ]])
     """
 
-    if not hasattr(pbc, '__len__'):
-        pbc = (pbc,) * 3
-
     if not hasattr(center, '__len__'):
         center = (center,) * 3
 
+    pbc = pbc2pbc(pbc)
     shift = np.asarray(center) - 0.5 - eps
 
     # Don't change coordinates when pbc is False
@@ -152,13 +150,7 @@ def get_layers(atoms, miller, tolerance=0.001):
 def find_mic(v, cell, pbc=True):
     """Finds the minimum-image representation of vector(s) v"""
 
-    if not hasattr(pbc, "__len__"):
-        if pbc is None or pbc:
-            pbc = [1, 1, 1]
-        else:
-            pbc = [0, 0, 0]
-    pbc = cell.any(1) & pbc
-
+    pbc = cell.any(1) & pbc2pbc(pbc)
     v = np.array(v)
     single = len(v.shape) == 1
     v = np.atleast_2d(v)
@@ -200,8 +192,6 @@ def get_angles(v1, v2, cell=None, pbc=None):
     convention, otherwise angles are taken as-is.
     """
 
-    f = 180 / np.pi
-
     # Check if using mic
     if cell is not None or pbc is not None:
         if cell is None or pbc is None:
@@ -220,8 +210,7 @@ def get_angles(v1, v2, cell=None, pbc=None):
     # We just normalized the vectors, but in some cases we can get
     # bad things like 1+2e-16.  These we clip away:
     angles = np.arccos(np.einsum('ij,ij->i', v1, v2).clip(-1.0, 1.0))
-
-    return angles * f
+    return np.degrees(angles)
 
 
 def get_distances(p1, p2=None, cell=None, pbc=None):

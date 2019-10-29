@@ -1,4 +1,3 @@
-from __future__ import print_function
 from ase.atoms import Atoms
 from ase.constraints import FixScaled
 

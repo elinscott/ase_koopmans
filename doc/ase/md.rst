@@ -434,3 +434,13 @@ to the correct temperature.
 .. autofunction:: PhononHarmonics
 
 .. autofunction:: phonon_harmonics
+
+Post-simulation Analysis
+========================
+
+Functionality is provided to perform analysis of atomic/molecular behaviour as calculation in a molecular dynamics simulation. Currently, this is presented as a class to address the Einstein equation for diffusivity.
+
+.. module:: ase.md.analysis
+
+.. autoclass:: DiffusionCoefficient
+
