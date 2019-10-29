@@ -22,8 +22,19 @@ class NeighborList(object):
     }
 
     def __setattr__(self, name, value):
+        """
+        Override assignment to any of the attributes listed in
+        kimpy_arrays to automatically cast the object to a numpy array.
+        This is done to avoid a ton of explicit numpy.array() calls (and
+        the possibility that we forget to do the cast).  It is important
+        to use np.asarray() here instead of np.array() because using the
+        latter will mean that incrementation (+=) will create a new
+        object that the reference is bound to, which becomes a problem
+        if update_compute_args isn't called to reregister the
+        corresponding address with the KIM API.
+        """
         if name in self.kimpy_arrays and value is not None:
-            value = np.array(value, dtype=self.kimpy_arrays[name])
+            value = np.asarray(value, dtype=self.kimpy_arrays[name])
         self.__dict__[name] = value
 
     def __init__(
@@ -73,18 +84,13 @@ class NeighborList(object):
         self.last_update_positions = None
 
     def update_kim_coords(self, atoms):
-        """Update atomic positions in self.coords, which where the KIM
+        """Update atomic positions in self.coords, which is where the KIM
         API will look to find them in order to pass them to the model.
         """
         if self.padding_image_of.size != 0:
             disp_contrib = atoms.positions - self.coords[: len(atoms)]
             disp_pad = disp_contrib[self.padding_image_of]
-            np.add(
-                self.coords,
-                np.concatenate((disp_contrib, disp_pad)),
-                out=self.coords,
-                dtype=np.double,
-            )
+            self.coords += np.concatenate((disp_contrib, disp_pad))
         else:
             np.copyto(self.coords, atoms.positions)
 
