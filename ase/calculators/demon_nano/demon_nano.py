@@ -6,7 +6,6 @@ http://demon-nano.ups-tlse.fr/
 import os
 import os.path as op
 import subprocess
-import pickle
 import pathlib as pl
 
 import numpy as np
@@ -246,11 +245,6 @@ class DemonNano(FileIOCalculator):
        if not (rpath / 'deMon.inp').exists():
            raise ReadError('The restart_path file {0} does not exist'
                            .format(rpath))
-       
-       pcklpath = rpath / 'deMon_parameters.pckl'
-       if pcklpath.exists():
-           parameters = pickle.load(open(pcklpath, 'r'))
-           self.parameters = parameters
      
        self.atoms = self.deMon_inp_to_atoms(rpath / 'deMon.inp')
        
