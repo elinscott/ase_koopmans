@@ -1,11 +1,11 @@
-"""This test checks the basic functionality of the SumCalculator.
+"""This test checks the basic functionality of the MixingCalculators.
 The example system is based on the SinglePointCalculator test case.
 """
 import numpy as np
 
 from ase.build import fcc111
 from ase.calculators.emt import EMT
-from ase.calculators.sum import SumCalculator
+from ase.calculators.mixing import SumCalculator, LinearCombinationCalculator
 from ase.constraints import FixAtoms
 
 # Calculate reference values:
@@ -17,7 +17,7 @@ calc = EMT()
 atoms.set_calculator(calc)
 forces = atoms.get_forces()
 
-# Alternative ways to associate a calaculator with an atoms object.
+# SumCalculator: Alternative ways to associate a calculator with an atoms object.
 atoms1 = atoms.copy()
 calc1 = SumCalculator(EMT(), EMT())
 atoms1.set_calculator(calc1)
@@ -37,3 +37,19 @@ assert not np.isclose(2 * forces, atoms1.get_forces()).all()
 atoms1.set_constraint(FixAtoms(indices=[atom.index for atom in atoms]))
 assert np.isclose(0, atoms1.get_forces()).all()
 
+# LinearCombinationCalculator:
+
+atoms1 = atoms.copy()
+calc1 = LinearCombinationCalculator(EMT(), EMT())
+atoms1.set_calculator(calc1)
+
+atoms2 = atoms.copy()
+calc2 = LinearCombinationCalculator(EMT(), EMT(), weights=[.5, .5], atoms=atoms2)
+
+# Check the results (it should be the same because it is tha average of the same vvalues).
+assert np.isclose(forces, atoms1.get_forces()).all()
+assert np.isclose(forces, atoms2.get_forces()).all()
+
+# testing  step
+atoms1[0].x += 0.2
+assert not np.isclose(2 * forces, atoms1.get_forces()).all()
