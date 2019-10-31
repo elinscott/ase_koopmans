@@ -313,5 +313,12 @@ class Cell:
         result._pbc = self._pbc.copy()
         return result, op
 
+    def permute_axes(self, permutation):
+        """Permute axes of cell."""
+        assert (np.sort(permutation) == np.arange(3)).all()
+        permuted = Cell(self[permutation][:, permutation])
+        permuted._pbc = self._pbc[permutation]
+        return permuted
+
     # XXX We want a reduction function that brings the cell into
     # standard form as defined by Setyawan and Curtarolo.
