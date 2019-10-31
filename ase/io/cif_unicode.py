@@ -12,7 +12,6 @@ import html
 
 subs_dict = {
     '\r': '',            # Windows line ending
-    '\n': ' ',           # newline
     '\t': ' ',           # tabs
 
     r'\a': u'\u03b1',    # alpha
@@ -423,8 +422,11 @@ def format_unicode(s):
 
     s = html.unescape(s)
     s = multiple_replace(s, subs_dict)
-    s = replace_subscript(s, subscript=True)
-    s = replace_subscript(s, subscript=False)
-
     tagclean = re.compile('<.*?>')
     return re.sub(tagclean, '', s)
+
+
+def handle_subscripts(s):
+    s = replace_subscript(s, subscript=True)
+    s = replace_subscript(s, subscript=False)
+    return s
