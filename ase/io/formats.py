@@ -176,12 +176,14 @@ ioformats = {}  # will be filled at run-time
 all_formats = ioformats  # XXX We should keep one of these.
 
 #glob_patterns = {}
+format2modulename = {}  # Left for compatibility only.  Please do not use.
 extension2format = {}
 
 def define_io_format(name, desc, code, *, module=None, ext=None,
                      glob=None, magic=None, encoding=None):
     if module is None:
         module = name.replace('-', '_')
+        format2modulename[name] = module
 
     def normalize_patterns(strings):
         if strings is None:
