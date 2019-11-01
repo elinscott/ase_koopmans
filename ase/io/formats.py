@@ -164,8 +164,8 @@ class IOFormat:
                    for pattern in self.globs)
 
     def match_magic(self, data):
-        from fnmatch import fnmatch
-        return any(fnmatch(data, magic + b'*')
+        from fnmatch import fnmatchcase
+        return any(fnmatchcase(data, magic + b'*')
                    for magic in self.magic)
 
 
