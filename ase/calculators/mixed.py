@@ -30,20 +30,17 @@ class MixedCalculator(Calculator):
                   system_changes=all_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
 
-        atoms_tmp = atoms.copy()
-        atoms_tmp.set_calculator(self.calc1)
-        forces1 = atoms_tmp.get_forces()
-        energy1 = atoms_tmp.get_potential_energy()
+        for prop in properties:
+            atoms_tmp = self.atoms.copy()
+            prop1 = self.calc1.get_property(prop, atoms_tmp)
+            atoms_tmp = self.atoms.copy()
+            prop2 = self.calc2.get_property(prop, atoms_tmp)
+            self.results[prop] = self.weight1 * prop1 + self.weight2 * prop2
 
-        atoms_tmp = atoms.copy()
-        atoms_tmp.set_calculator(self.calc2)
-        forces2 = atoms_tmp.get_forces()
-        energy2 = atoms_tmp.get_potential_energy()
-
-        self.results['forces'] = self.weight1*forces1 + self.weight2*forces2
-        self.results['energy'] = self.weight1*energy1 + self.weight2*energy2
-        self.results['energy_contributions'] = (energy1, energy2)
+            if prop == 'energy':
+                self.results['energy_contributions'] = (prop1, prop2)
 
     def get_energy_contributions(self):
         """ Return the potential energy from calc1 and calc2 respectively """
+        self.calculate(properties=['energy'])
         return self.results['energy_contributions']

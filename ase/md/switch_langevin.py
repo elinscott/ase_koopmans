@@ -79,7 +79,7 @@ class SwitchLangevin(Langevin):
 
     def get_free_energy_difference(self):
         """ Return the free energy difference between calc2 and calc1, by
-        integrating dH/dlam along the swithcing path
+        integrating dH/dlam along the switching path
 
         Returns
         -------
@@ -87,7 +87,7 @@ class SwitchLangevin(Langevin):
             Free energy difference, F2 - F1
         """
         if len(self.path_data) == 0:
-            return None
+            raise ValueError('No free energy data found.')
 
         lambdas = self.path_data[:, 1]
         U1 = self.path_data[:, 2]
