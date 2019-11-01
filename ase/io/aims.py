@@ -194,6 +194,7 @@ def write_aims(
     velocities=False,
     ghosts=None,
     info_str=None,
+    wrap=True,
 ):
     """Method to write FHI-aims geometry files.
 
@@ -208,13 +209,16 @@ def write_aims(
         scaled: bool
             If True use fractional coordinates instead of Cartesian coordinates
         symmetry_block: list of str
-            List of geometric constraints as defined in: https://arxiv.org/abs/1908.01610
+            List of geometric constraints as defined in:
+            https://arxiv.org/abs/1908.01610
         velocities: bool
             If True add the atomic velocity vectors to the file
         ghosts: list of Atoms
             A list of ghost atoms for the system
         info_str: str
             A string to be added to the header of the file
+        wrap: bool
+            Wrap atom positions to cell before writing
     """
 
     from ase.constraints import FixAtoms, FixCartesian
@@ -279,7 +283,9 @@ def write_aims(
     else:
         assert len(ghosts) == len(atoms)
 
-    scaled_positions = atoms.get_scaled_positions(wrap=not geo_constrain)
+    if geo_constrain:
+        wrap = False
+    scaled_positions = atoms.get_scaled_positions(wrap=wrap)
 
     for i, atom in enumerate(atoms):
         if ghosts[i] == 1:
