@@ -9,8 +9,8 @@ from pathlib import Path
 
 cmds = """\
 python3 -m venv venv
-source venv/bin/activate
-pip install sphinx-rtd-theme
+. venv/bin/activate
+pip install sphinx-rtd-theme pillow
 git clone http://gitlab.com/ase/ase.git
 cd ase
 git checkout {branch}
@@ -28,6 +28,7 @@ def build(branch='master'):
     root.mkdir()
     os.chdir(root)
     cmds2 = ' && '.join(cmds.format(branch=branch).splitlines())
+    print(cmds2)
     p = subprocess.run(cmds2, shell=True)
     if p.returncode == 0:
         status = 'ok'
