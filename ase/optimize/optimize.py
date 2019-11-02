@@ -189,6 +189,7 @@ class Optimizer(Dynamics):
         logfile,
         trajectory,
         master=None,
+        append_trajectory=False,
         force_consistent=False,
     ):
         """Structure optimizer object.
@@ -214,17 +215,30 @@ class Optimizer(Dynamics):
             Defaults to None, which causes only rank 0 to save files.  If
             set to true,  this rank will save files.
 
+        append_trajectory: boolean
+            Appended to the trajectory file instead of overwriting it.
+
         force_consistent: boolean or None
             Use force-consistent energy calls (as opposed to the energy
             extrapolated to 0 K).  If force_consistent=None, uses
             force-consistent energies if available in the calculator, but
             falls back to force_consistent=False if not.
         """
-        Dynamics.__init__(self, atoms, logfile, trajectory, master)
+        Dynamics.__init__(
+            self,
+            atoms,
+            logfile,
+            trajectory,
+            append_trajectory=append_trajectory,
+            master=master,
+        )
+
         self.force_consistent = force_consistent
         if self.force_consistent is None:
             self.set_force_consistent()
+
         self.restart = restart
+
         # initialize attribute
         self.fmax = None
 
