@@ -25,10 +25,10 @@ for calc in [TIP3P(),
     dimer.calc = calc
 
     e = dimer.get_potential_energy()
-    md = VelocityVerlet(dimer, 2.0 * units.fs,
+    md = VelocityVerlet(dimer, 8.0 * units.fs,
                         trajectory=calc.name + '.traj',
                         logfile=calc.name + '.log',
-                        loginterval=20)
-    md.run(100)
+                        loginterval=5)
+    md.run(25)
     de = dimer.get_potential_energy() - e
     assert abs(de - -0.028) < 0.001
