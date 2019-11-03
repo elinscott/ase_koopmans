@@ -289,7 +289,7 @@ F('jsv', 'JSV file format', '1F'),
 F('lammps-dump', 'LAMMPS dump file', '+F',
   module='lammpsrun', magic=b'*\nITEM: TIMESTEP\n'),
 F('lammps-data', 'LAMMPS data file', '1F', module='lammpsdata',
-  #encoding='ascii'  # XXX which encoding?
+  encoding='ascii'
 ),
 F('magres', 'MAGRES ab initio NMR data file', '1F'),
 F('mol', 'MDL Molfile', '1F'),

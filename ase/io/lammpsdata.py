@@ -396,12 +396,17 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                       atom_style='atomic'):
     """Write atomic structure data to a LAMMPS data_ file."""
     if isinstance(fileobj, basestring):
-        f = paropen(fileobj, "wb")
+        f = paropen(fileobj, "w", encoding="ascii")
         close_file = True
     else:
         # Presume fileobj acts like a fileobj
         f = fileobj
         close_file = False
+
+    # FIXME: We should add a check here that the encoding of the file object
+    #        is actually ascii once the 'encoding' attribute of IOFormat objects
+    #        starts functioning in implementation (currently it doesn't do
+    #         anything).
 
     if isinstance(atoms, list):
         if len(atoms) > 1:
