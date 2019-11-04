@@ -593,7 +593,7 @@ class BaseSiesta(FileIOCalculator):
         # no spin. SIESTA default is FM initialization, if the
         # block is not written, but  we must conform to the
         # atoms object.
-        if self['spin'] != 'UNPOLARIZED' and sum(abs(magmoms))>0:
+        if self['spin'] != 'UNPOLARIZED':
             f.write('%block DM.InitSpin\n')
             for n, M in enumerate(magmoms):
                 if M != 0:
