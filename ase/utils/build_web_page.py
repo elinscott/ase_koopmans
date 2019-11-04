@@ -28,7 +28,6 @@ def build(branch='master'):
     root.mkdir()
     os.chdir(root)
     cmds2 = ' && '.join(cmds.format(branch=branch).splitlines())
-    print(cmds2)
     p = subprocess.run(cmds2, shell=True)
     if p.returncode == 0:
         status = 'ok'
