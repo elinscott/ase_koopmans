@@ -194,7 +194,7 @@ def write_aims(
     velocities=False,
     ghosts=None,
     info_str=None,
-    wrap=True,
+    wrap=False,
 ):
     """Method to write FHI-aims geometry files.
 
