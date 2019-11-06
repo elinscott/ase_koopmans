@@ -38,8 +38,10 @@ allowed_dft_functionals = ['lsda',  # = 'svwn'
 
 
 def read_gaussian_out(filename, index=-1, quantity='atoms'):
-    """"Interface to GaussianReader and returns various quantities.
-        No support for multiple images in one file!
+    """
+    Interface to GaussianReader and returns various quantities.
+    No support for multiple images in one file!
+
     - quantity = 'structures' -> all structures from the file
     - quantity = 'atoms' -> structure from the archive section
     - quantity = 'energy' -> from the archive section
@@ -47,7 +49,9 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
     - quantity = 'dipole' -> from the archive section
     - quantity = 'version' -> from the archive section
     - quantity = 'multiplicity' -> from the archive section
-    - quantity = 'charge' -> from the archive section"""
+    - quantity = 'charge' -> from the archive section
+
+    """
     energy = 0.0
 
     tmpGR = GR(filename, read_structures=bool(quantity == 'structures'))
