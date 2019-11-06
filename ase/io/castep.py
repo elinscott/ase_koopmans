@@ -858,8 +858,8 @@ def read_castep_geom(fd, index=None, units=units_CODATA2002):
 
     Contribution by Wei-Bing Zhang. Thanks!
 
-    Routine now accepts a filedescriptor in order to out-source the *.gz and
-    *.bz2 handling to formats.py. Note that there is a fallback routine
+    Routine now accepts a filedescriptor in order to out-source the \*.gz and
+    \*.bz2 handling to formats.py. Note that there is a fallback routine
     read_geom() that behaves like previous versions did.
     """
     from ase.calculators.singlepoint import SinglePointCalculator
