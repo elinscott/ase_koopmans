@@ -189,13 +189,17 @@ def read_lammps_dump_string(fileobj, index=-1, **kwargs):
     """Process cleartext lammps dumpfiles
 
     :param fileobj: filestream providing the trajectory data
-    :param index: selection for multiple images (default: the last)
+    :param index: integer or slice object (default: get the last timestep)
     :returns: list of Atoms objects
     :rtype: list
     """
-
-    # load everything into memory
+    # Load all dumped timesteps into memory simultaneously
     lines = deque(fileobj.readlines())
+
+    if isinstance(index, int):
+        index_end = index
+    elif isinstance(index, slice):
+        index_end = index.stop if (index.stop is not None) else float('inf')
 
     n_atoms = 0
     images = []
@@ -260,7 +264,7 @@ def read_lammps_dump_string(fileobj, index=-1, **kwargs):
             )
             images.append(out_atoms)
 
-        if len(images) > index >= 0:
+        if len(images) > index_end >= 0:
             break
 
     return images[index]
@@ -271,7 +275,7 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
     """Read binary dump-files (after binary2txt.cpp from lammps/tools)
 
     :param fileobj: file-stream containing the binary lammps data
-    :param index: if the file contains multiple images, which to return
+    :param index: integer or slice object (default: get the last timestep)
     :param colnames: data is columns and identified by a header
     :param intformat: lammps support different integer size.  Parameter set at
     compile-time and can unfortunately not derived from data file
@@ -284,6 +288,11 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
     tagformat, bigformat = dict(
         SMALLSMALL=("i", "i"), SMALLBIG=("i", "q"), BIGBIG=("q", "q")
     )[intformat]
+
+    if isinstance(index, int):
+        index_end = index
+    elif isinstance(index, slice):
+        index_end = index.stop if (index.stop is not None) else float('inf')
 
     # Standard columns layout from lammpsrun
     if not colnames:
@@ -356,7 +365,7 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
             images.append(out_atoms)
 
             # stop if requested index has been found
-            if len(images) > index >= 0:
+            if len(images) > index_end >= 0:
                 break
 
         except EOFError:
