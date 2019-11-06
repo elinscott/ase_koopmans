@@ -5,12 +5,9 @@ with open('formatoptions.rst', 'w') as fd:
     print('============================================', file=fd)
     print('Format Specific Options', file=fd)
     print('============================================', file=fd)
-    #modules = [ format2modulename.get(form, form.replace('-','_')) for form in all_formats ]
-    #modules = list(set(modules))
     format_names = list(sorted(all_formats.keys()))
     for name in format_names:
         fmt = all_formats[name]
-        #module = import_module('ase.io.'+module_name)
         print(".. _{:}:\n".format(name), file=fd)
         print(name, file=fd)
         print('----------------------------------------', file=fd)
