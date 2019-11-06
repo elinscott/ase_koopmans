@@ -79,7 +79,7 @@ class PickleTrajectory:
             msg = 'Please stop using old trajectory files!'
             if mode == 'r':
                 msg += ('\nConvert to the new future-proof format like this:\n'
-                        '\n    $ python -m ase.io.trajectory ' +
+                        '\n    $ python3 -m ase.io.trajectory ' +
                         filename + '\n')
             raise DeprecationWarning(msg)
 
