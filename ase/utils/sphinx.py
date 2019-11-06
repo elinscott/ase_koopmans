@@ -129,7 +129,10 @@ def create_png_files(raise_exceptions=False):
                     traceback.print_exc()
             finally:
                 os.chdir(olddir)
-            plt.close()
+
+            for n in plt.get_fignums():
+                plt.close(n)
+
             for outname in outnames:
                 print(dir, outname)
 
@@ -176,7 +179,6 @@ if __name__ == '__main__':
             for outname in outnames:
                 print(os.path.join(dir, outname))
     elif args.command == 'run':
-        matplotlib.rcParams.update({'figure.max_open_warning': 100})
         create_png_files(raise_exceptions=True)
     else:
         visual_inspection()
