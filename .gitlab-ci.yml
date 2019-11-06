@@ -73,6 +73,7 @@ docs_test:
     - ase info
     - which sphinx-build
     - cd $CI_PROJECT_DIR/doc
+    - python -m ase.utils.sphinx run  # test scripts
     - sphinx-build -W . build
 
 distribution_package:
