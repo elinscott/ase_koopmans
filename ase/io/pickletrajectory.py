@@ -290,7 +290,8 @@ class PickleTrajectory:
             self.fd.seek(self.offsets[i])
             try:
                 d = pickle.load(self.fd, encoding='bytes')
-                d = {k.decode(): v for k, v in d.items()}
+                d = {k.decode() if isinstance(k, bytes) else k: v
+                     for k, v in d.items()}
             except EOFError:
                 raise IndexError
             if i == N - 1:
