@@ -394,7 +394,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
 def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                       prismobj=None, velocities=False, units="metal",
                       atom_style='atomic'):
-    """Write atomic structure data to a LAMMPS data_ file."""
+    """Write atomic structure data to a LAMMPS data file."""
     if isinstance(fileobj, basestring):
         f = paropen(fileobj, "w", encoding="ascii")
         close_file = True
