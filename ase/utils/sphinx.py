@@ -79,7 +79,7 @@ def creates():
                     yield dirpath, filename, outnames
 
 
-def create_png_files():
+def create_png_files(raise_exceptions=False):
     errcode = os.system('povray -h 2> /dev/null')
     if errcode:
         warnings.warn('No POVRAY!')
@@ -122,11 +122,17 @@ def create_png_files():
                 exec(compile(open(pyname).read(), pyname, 'exec'), {})
             except KeyboardInterrupt:
                 return
-            except:
-                traceback.print_exc()
+            except Exception:
+                if raise_exceptions:
+                    raise
+                else:
+                    traceback.print_exc()
             finally:
                 os.chdir(olddir)
-            plt.close()
+
+            for n in plt.get_fignums():
+                plt.close(n)
+
             for outname in outnames:
                 print(dir, outname)
 
@@ -164,7 +170,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Process generated files.')
     parser.add_argument('command', nargs='?', default='list',
-                        choices=['list', 'inspect', 'clean'])
+                        choices=['list', 'inspect', 'clean', 'run'])
     args = parser.parse_args()
     if args.command == 'clean':
         clean()
@@ -172,5 +178,7 @@ if __name__ == '__main__':
         for dir, pyname, outnames in creates():
             for outname in outnames:
                 print(os.path.join(dir, outname))
+    elif args.command == 'run':
+        create_png_files(raise_exceptions=True)
     else:
         visual_inspection()
