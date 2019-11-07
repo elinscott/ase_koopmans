@@ -28,3 +28,4 @@ for i in range(20):
 
     assert_allclose(atoms.cell.volume, permuted.cell.volume, atol=TOL)
     assert_allclose(atoms.cell.volume, original.cell.volume, atol=TOL)
+    assert (permuted.pbc == atoms.pbc[permutation]).all()
