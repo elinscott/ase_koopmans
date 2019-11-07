@@ -298,4 +298,5 @@ def permute_axes(atoms, permutation):
     permuted.set_cell(permuted.cell.permute_axes(permutation),
                       scale_atoms=False)
     permuted.set_scaled_positions(scaled[:, permutation])
+    permuted.set_pbc(permuted.pbc[permutation])
     return permuted
