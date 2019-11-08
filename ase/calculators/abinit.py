@@ -9,7 +9,6 @@ from os.path import join
 
 import numpy as np
 
-from ase.data import atomic_numbers
 from ase.units import Bohr, Hartree, fs
 from ase.data import chemical_symbols
 from ase.io.abinit import read_abinit
