@@ -62,6 +62,8 @@ Git master branch
 
 * Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
 
+* Added :func:`ase.build.graphene` for building graphene monolayers.
+
 Version 3.18.1
 ==============
 
