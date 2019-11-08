@@ -439,7 +439,7 @@ class Abinit(FileIOCalculator):
                     break
 
             if not found:
-                ppp_list.append("Provide {}.{}.{}?".format(symbol, xcname.lower(), pps))
+                ppp_list.append("Provide {}.{}.{}?".format(symbol, '*', pps))
                 if raise_exception:
                     raise RuntimeError('Could not find {} pseudopotential {} for {}'.format(xcname.lower(), pps, symbol))
 
