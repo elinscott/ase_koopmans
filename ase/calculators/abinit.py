@@ -439,9 +439,9 @@ class Abinit(FileIOCalculator):
                     break
 
             if not found:
-                ppp_list.append(f"Couldnt provide for example {symbol}.psp8?")
+                ppp_list.append("Provide {}.{}.{}?".format(symbol, xcname.lower(), pps))
                 if raise_exception:
-                    raise RuntimeError(f'Could not find pseudopotential for {symbol}')
+                    raise RuntimeError('Could not find {} pseudopotential {} for {}'.format(xcname.lower(), pps, symbol))
 
         return ppp_list
 
