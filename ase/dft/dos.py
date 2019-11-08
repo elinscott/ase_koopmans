@@ -78,10 +78,12 @@ class DOS:
         """
 
         if spin is None:
-            # Return the total DOS
-            return self.get_dos(spin=0) + self.get_dos(spin=1)
-
-        if self.nspins == 1 and spin == 1:
+            if self.nspins == 2:
+                # Return the total DOS
+                return self.get_dos(spin=0) + self.get_dos(spin=1)
+            else:
+                return 2 * self.get_dos(spin=0)
+        elif spin == 1 and self.nspins == 1:
             # For an unpolarized calculation, spin up and down are equivalent
             spin = 0
 
