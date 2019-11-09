@@ -286,8 +286,10 @@ F('html', 'X3DOM HTML', '1F', module='x3d'),
 F('iwm', '?', '1F', glob='atoms.dat'),
 F('json', 'ASE JSON database file', '+F', module='db'),
 F('jsv', 'JSV file format', '1F'),
-F('lammps-dump', 'LAMMPS dump file', '+F',
+F('lammps-dump-text', 'LAMMPS text dump file', '+F',
   module='lammpsrun', magic=b'*\nITEM: TIMESTEP\n'),
+F('lammps-dump-binary', 'LAMMPS binary dump file', '+B',
+  module='lammpsrun')
 F('lammps-data', 'LAMMPS data file', '1F', module='lammpsdata',
   encoding='ascii'
 ),

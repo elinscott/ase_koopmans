@@ -44,7 +44,7 @@ def read_lammps_dump(infileobj, **kwargs):
     if suffix == ".bin":
         return read_lammps_dump_binary(fileobj, **kwargs)
 
-    return read_lammps_dump_string(fileobj, **kwargs)
+    return read_lammps_dump_text(fileobj, **kwargs)
 
 
 def lammps_data_to_ase_atoms(data, colnames, cell, celldisp,
@@ -185,7 +185,7 @@ def construct_cell(diagdisp, offdiag):
     return cell, celldisp
 
 
-def read_lammps_dump_string(fileobj, index=-1, **kwargs):
+def read_lammps_dump_text(fileobj, index=-1, **kwargs):
     """Process cleartext lammps dumpfiles
 
     :param fileobj: filestream providing the trajectory data
