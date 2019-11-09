@@ -9,6 +9,8 @@ import ase.gui.ui as ui
 from ase.data import atomic_numbers, chemical_symbols
 
 
+current_selection_string = _('(selection)')
+
 class AddAtoms:
     def __init__(self, gui):
         self.gui = gui
@@ -31,7 +33,7 @@ class AddAtoms:
             self.readfile(filename, format=chooser.format)
 
         if self.gui.images.selected.any():
-            default = '(current selection)'
+            default = current_selection_string
         else:
             default = ''
         self.entry = ui.Entry(default, callback=self.add)
@@ -82,7 +84,7 @@ class AddAtoms:
     def get_atoms(self):
         val = self.entry.value
 
-        if val == '(current selection)':
+        if val == current_selection_string:
             selection = self.gui.images.selected.copy()
             if selection.any():
                 atoms = self.gui.atoms.copy()
