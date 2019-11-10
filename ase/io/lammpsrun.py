@@ -47,10 +47,18 @@ def read_lammps_dump(infileobj, **kwargs):
     return read_lammps_dump_text(fileobj, **kwargs)
 
 
-def lammps_data_to_ase_atoms(data, colnames, cell, celldisp,
-                             pbc=False, atomsobj=Atoms, order=True,
-                             specorder=None, prismobj=None,
-                             units="metal"):
+def lammps_data_to_ase_atoms(
+    data,
+    colnames,
+    cell,
+    celldisp,
+    pbc=False,
+    atomsobj=Atoms,
+    order=True,
+    specorder=None,
+    prismobj=None,
+    units="metal",
+):
     """Extract positions and other per-atom parameters and create Atoms
 
     :param data: per atom data
@@ -125,11 +133,7 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp,
             positions = prismobj.vector_to_ase(positions, wrap=True)
 
         out_atoms = atomsobj(
-            symbols=types,
-            positions=positions,
-            pbc=pbc,
-            celldisp=celldisp,
-            cell=cell,
+            symbols=types, positions=positions, pbc=pbc, celldisp=celldisp, cell=cell
         )
     elif scaled_positions is not None:
         out_atoms = atomsobj(
@@ -152,9 +156,7 @@ def lammps_data_to_ase_atoms(data, colnames, cell, celldisp,
         # !TODO: use another calculator if available (or move forces
         #        to atoms.property) (other problem: synchronizing
         #        parallel runs)
-        calculator = SinglePointCalculator(
-            out_atoms, energy=0.0, forces=forces
-        )
+        calculator = SinglePointCalculator(out_atoms, energy=0.0, forces=forces)
         out_atoms.set_calculator(calculator)
 
     return out_atoms
@@ -189,7 +191,7 @@ def get_max_index(index):
     if np.isscalar(index):
         return index
     elif isinstance(index, slice):
-        return index.stop if (index.stop is not None) else float('inf')
+        return index.stop if (index.stop is not None) else float("inf")
 
 
 def read_lammps_dump_text(fileobj, index=-1, **kwargs):
@@ -238,9 +240,7 @@ def read_lammps_dump_text(fileobj, index=-1, **kwargs):
                 # ... otherwise assume default order in 3rd column
                 # (if the latter was present)
                 if len(tilt_items) >= 3:
-                    sort_index = [
-                        tilt_items.index(i) for i in ["xy", "xz", "yz"]
-                    ]
+                    sort_index = [tilt_items.index(i) for i in ["xy", "xz", "yz"]]
                     offdiag = offdiag[sort_index]
             else:
                 offdiag = (0.0,) * 3
@@ -274,8 +274,9 @@ def read_lammps_dump_text(fileobj, index=-1, **kwargs):
     return images[index]
 
 
-def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
-                            intformat="SMALLBIG", **kwargs):
+def read_lammps_dump_binary(
+    fileobj, index=-1, colnames=None, intformat="SMALLBIG", **kwargs
+):
     """Read binary dump-files (after binary2txt.cpp from lammps/tools)
 
     :param fileobj: file-stream containing the binary lammps data
@@ -297,19 +298,7 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
 
     # Standard columns layout from lammpsrun
     if not colnames:
-        colnames = [
-            "id",
-            "type",
-            "x",
-            "y",
-            "z",
-            "vx",
-            "vy",
-            "vz",
-            "fx",
-            "fy",
-            "fz",
-        ]
+        colnames = ["id", "type", "x", "y", "z", "vx", "vy", "vz", "fx", "fy", "fz"]
 
     images = []
 
