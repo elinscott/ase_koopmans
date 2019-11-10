@@ -37,7 +37,7 @@ python_3_oldlibs_tests:
 python_3_tests:
   image: python:3.7-slim
   script:
-    - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
+    - pip install pyflakes psycopg2-binary netCDF4 pymysql cryptography
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
     - python --version
