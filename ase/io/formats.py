@@ -286,8 +286,10 @@ F('html', 'X3DOM HTML', '1F', module='x3d'),
 F('iwm', '?', '1F', glob='atoms.dat'),
 F('json', 'ASE JSON database file', '+F', module='db'),
 F('jsv', 'JSV file format', '1F'),
-F('lammps-dump', 'LAMMPS dump file', '+F',
+F('lammps-dump-text', 'LAMMPS text dump file', '+F',
   module='lammpsrun', magic=b'*\nITEM: TIMESTEP\n'),
+F('lammps-dump-binary', 'LAMMPS binary dump file', '+B',
+  module='lammpsrun')
 F('lammps-data', 'LAMMPS data file', '1F', module='lammpsdata',
   encoding='ascii'
 ),
@@ -564,9 +566,9 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
             * ``index=0``: first configuration
             * ``index=-2``: second to last
             * ``index=':'`` or ``index=slice(None)``: all
-            * ``index='-3:`` or ``index=slice(-3, None)``: three last
-            * ``index='::2`` or ``index=slice(0, None, 2)``: even
-            * ``index='1::2`` or ``index=slice(1, None, 2)``: odd
+            * ``index='-3:'`` or ``index=slice(-3, None)``: three last
+            * ``index='::2'`` or ``index=slice(0, None, 2)``: even
+            * ``index='1::2'`` or ``index=slice(1, None, 2)``: odd
     format: str
         Used to specify the file-format.  If not given, the
         file-format will be guessed by the *filetype* function.
@@ -691,6 +693,7 @@ def parse_filename(filename, index=None):
 
 
 def string2index(string):
+    """Convert index string to either int or slice"""
     if ':' not in string:
         return int(string)
     i = []
