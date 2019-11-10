@@ -185,6 +185,13 @@ def construct_cell(diagdisp, offdiag):
     return cell, celldisp
 
 
+def get_max_index(index):
+    if np.isscalar(index):
+        return index
+    elif isinstance(index, slice):
+        return index.stop if (index.stop is not None) else float('inf')
+
+
 def read_lammps_dump_text(fileobj, index=-1, **kwargs):
     """Process cleartext lammps dumpfiles
 
@@ -196,10 +203,7 @@ def read_lammps_dump_text(fileobj, index=-1, **kwargs):
     # Load all dumped timesteps into memory simultaneously
     lines = deque(fileobj.readlines())
 
-    if isinstance(index, int):
-        index_end = index
-    elif isinstance(index, slice):
-        index_end = index.stop if (index.stop is not None) else float('inf')
+    index_end = get_max_index(index)
 
     n_atoms = 0
     images = []
@@ -289,10 +293,7 @@ def read_lammps_dump_binary(fileobj, index=-1, colnames=None,
         SMALLSMALL=("i", "i"), SMALLBIG=("i", "q"), BIGBIG=("q", "q")
     )[intformat]
 
-    if isinstance(index, int):
-        index_end = index
-    elif isinstance(index, slice):
-        index_end = index.stop if (index.stop is not None) else float('inf')
+    index_end = get_max_index(index)
 
     # Standard columns layout from lammpsrun
     if not colnames:
