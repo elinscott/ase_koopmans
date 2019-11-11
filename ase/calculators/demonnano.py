@@ -142,9 +142,7 @@ class Demonnano(FileIOCalculator):
         if system_changes is None and properties is None:
             return
     
-        #filename = self.label + '/deMon.inp'
-        filename = 'deMon.inp'
-        add_print = ''
+        filename = self.label + '/deMon.inp'
 
         # Start writing the file.
         with open(filename, 'w') as fd:
@@ -165,7 +163,6 @@ class Demonnano(FileIOCalculator):
             # print argument, here other options could change this
             value = self.parameters['print_out']
             assert(isinstance(value, str))
-            value = value + add_print
 
             if not len(value) == 0:
                 self._write_argument('PRINT', value, fd)
@@ -183,8 +180,7 @@ class Demonnano(FileIOCalculator):
             self._write_atomic_coordinates(fd, atoms)
 
             # write xyz file for good measure.
-            #ase.io.write(self.label + '/deMon_atoms.xyz', self.atoms)
-            ase.io.write('deMon_atoms.xyz', self.atoms)
+            ase.io.write(self.label + '/deMon_atoms.xyz', self.atoms)
             
     def read(self, restart_path):
        """Read parameters from directory restart_path."""
@@ -269,19 +265,17 @@ class Demonnano(FileIOCalculator):
        self.read_energy()
        self.read_forces(self.atoms)
        #self.read_eigenvalues()
-       #self.read_dipole()
     
     def read_energy(self):
        """Read energy from deMon.ase output file."""
 
-       #epath = pl.Path(self.label)
-       epath = pl.Path('.')
+       epath = pl.Path(self.label)
+
        if not (epath / 'deMon.ase').exists():
            raise ReadError('The deMonNano output file for ASE {0} does not exist'
                            .format(epath))
 
-       #filename = self.label + '/deMon.ase'
-       filename = 'deMon.ase'
+       filename = self.label + '/deMon.ase'
 
        if op.isfile(filename):
            with open(filename, 'r') as fd:
@@ -297,14 +291,13 @@ class Demonnano(FileIOCalculator):
 
        natoms = len(atoms)
        
-       #epath = pl.Path(self.label)
-       epath = pl.Path('.')
+       epath = pl.Path(self.label)
+
        if not (epath / 'deMon.ase').exists():
             raise ReadError('The deMonNano output file for ASE {0} does not exist'
                           .format(epath))
 
-       #filename = self.label + '/deMon.ase'
-       filename = 'deMon.ase'
+       filename = self.label + '/deMon.ase'
 
        with open(filename, 'r') as fd:
            lines = fd.readlines()

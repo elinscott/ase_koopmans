@@ -1,8 +1,8 @@
 from ase.calculators.demonnano import Demonnano
 from ase import Atoms
 from ase.optimize import BFGS
-import numpy as np
 from ase.units import Bohr, Hartree
+import numpy as np
 
 d = 0.9775
 t = np.pi / 180 * 110.51
@@ -21,10 +21,11 @@ atoms.set_calculator(calc)
 
 # energy
 energy = atoms.get_potential_energy()
-
 ref = -4.082093
+
 print('energy')
 print(energy)
+
 error = np.sqrt(np.sum((energy - ref)**2))
 print('diff from reference:')
 print(error)
@@ -34,10 +35,9 @@ assert(error < tol)
 
 # analytical forces
 forces_an = atoms.get_forces()
-
-ref = np.array([[ 0.1123E-01,     -0.1670E-01,      0.0000E+00],
-                [-0.1958E-01,      0.4671E-02,      0.0000E+00],
-                [ 0.8349E-02,      0.1203E-01,      0.0000E+00]])
+ref = np.array([[ 0.1123E-01, -0.1670E-01, 0.0000E+00],
+                [-0.1958E-01,  0.4671E-02, 0.0000E+00],
+                [ 0.8349E-02,  0.1203E-01, 0.0000E+00]])
 ref*=-Hartree/Bohr
 
 error = np.sqrt(np.sum((forces_an - ref)**2))
@@ -69,5 +69,3 @@ tol = 1.0e-3
 assert(error < tol)
 
 print('tests passed')
-
-
