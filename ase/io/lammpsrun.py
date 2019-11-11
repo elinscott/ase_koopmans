@@ -282,8 +282,8 @@ def read_lammps_dump_binary(
     :param fileobj: file-stream containing the binary lammps data
     :param index: integer or slice object (default: get the last timestep)
     :param colnames: data is columns and identified by a header
-    :param intformat: lammps support different integer size.  Parameter set at
-    compile-time and can unfortunately not derived from data file
+    :param intformat: lammps support different integer size.  Parameter set \
+    at compile-time and can unfortunately not derived from data file
     :returns: list of Atoms-objects
     :rtype: list
     """
