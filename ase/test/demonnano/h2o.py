@@ -21,7 +21,7 @@ atoms.set_calculator(calc)
 
 # energy
 energy = atoms.get_potential_energy()
-ref = -4.082093
+ref = -4.08209
 
 print('energy')
 print(energy)
