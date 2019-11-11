@@ -1,6 +1,13 @@
 """This module defines an ASE interface to deMon-nano.
 
+Link to the open-source DFTB code deMon-nano:
 http://demon-nano.ups-tlse.fr/
+
+export ASE_DEMONNANO_COMMAND="/path/to/bin/deMon.username.x"
+export DEMONNANO_BASIS_PATH="/path/to/basis/"
+
+The file 'deMon.inp' contains the input geometry and parameters
+The file 'deMon.out' contains the results
 
 """
 import os
@@ -18,9 +25,8 @@ import ase.io
 
 m_e_to_amu = 1822.88839
 
-class Parameters_deMonNano(Parameters):
+class DemonNanoParameters(Parameters):
     """Parameters class for the calculator.
-    Documented in Base_deMon.__init__
 
     The options here are the most important ones that the user needs to be
     aware of. Further options accepted by deMon can be set in the dictionary
@@ -29,7 +35,7 @@ class Parameters_deMonNano(Parameters):
     """
     def __init__(
             self,
-            label='rundir',
+            label='.',
             atoms=None,
             command=None,
             restart=None,
@@ -39,7 +45,6 @@ class Parameters_deMonNano(Parameters):
             print_out='ASE',
             title='deMonNano input file',
             forces=False,
-            basis=None,
             input_arguments=None):
         kwargs = locals()
         kwargs.pop('self')
@@ -49,30 +54,29 @@ class Parameters_deMonNano(Parameters):
 class Demonnano(FileIOCalculator):
     """Calculator interface to the deMon-nano code. """
 
-    implemented_properties = (
-        'energy',
-        'forces')
+    implemented_properties = ['energy', 'forces']
 
     def __init__(self, **kwargs):
         """ASE interface to the deMon-nano code.
         
         The deMon-nano code can be obtained from http://demon-nano.ups-tlse.fr/
 
-        The DEMON_NANO_COMMAND environment variable must be set to run the executable, in bash it would be set along the lines of
-        export DEMON_NANO_COMMAND="pathway-to-deMon-binary/deMon.username.x"
+        The ASE_DEMONNANO_COMMAND environment variable must be set to run the executable, in bash it would be set along the lines of
+        export ASE_DEMONNANO_COMMAND="pathway-to-deMon-binary/deMon.username.x"
 
         Parameters:
 
         label : str 
             relative path to the run directory
-        atoms : Atoms object
+        atoms  : Atoms object
             the atoms object
         command  : str
-            Command to run deMon. If not present the environment varable DEMON_NANO_COMMAND will be used
+            Command to run deMon. If not present the environment varable ASE_DEMONNANO_COMMAND will be used
         restart  : str
             Relative path to ASE restart directory for parameters and atoms object and results
         basis_path  : str 
-            Relative path to the directory containing BASIS, AUXIS, ECPS, MCPS and AUGMENT
+            Relative path to the directory containing DFTB-SCC or DFTB-0 parameters
+            If not present in input parameters the environment variable DEMONNANO_BASIS_PATH will be used
         ignore_bad_restart_file : bool 
             Ignore broken or missing ASE restart files
             By default, it is an error if the restart
@@ -85,26 +89,15 @@ class Demonnano(FileIOCalculator):
             If True a force calcilation is enforced
         print_out : str | list 
             Options for the printing in deMon
-        basis : dict 
-            Definition of basis sets.
         input_arguments : dict 
             Explicitly given input arguments. The key is the input keyword
             and the value is either a str, a list of str (will be written on the same line as the keyword),
             or a list of lists of str (first list is written on the first line, the others on following lines.)
         """
         
-        parameters = Parameters_deMonNano(**kwargs)
-        
-        # Setup the run command
-        command = parameters['command']
-        if command is None:
-            command = os.environ.get('ASE_DEMONNANO_COMMAND')
-
-        if command is None:
-            mess = 'The "ASE_DEMONNANO_COMMAND" environment is not defined.'
-            raise ValueError(mess)
-        else:
-            parameters['command'] = command
+        parameters = DemonNanoParameters(**kwargs)
+    
+        command = '$ASE_DEMONNANO_COMMAND'
         
         # basis path
         basis_path = parameters['basis_path']
@@ -131,50 +124,6 @@ class Demonnano(FileIOCalculator):
         """
         return self.parameters[key]
 
-    def calculate(self,
-                  atoms=None,
-                  properties=['energy'],
-                  system_changes=all_changes):
-        """Capture the RuntimeError from FileIOCalculator.calculate
-        and add a little debug information from the deMon output.
-
-        See base FileIocalculator for documentation.
-        """
-
-        if atoms is not None:
-            self.atoms = atoms.copy()
-
-        self.write_input(self.atoms, properties, system_changes)
-        if self.command is None:
-            raise RuntimeError('Please set $%s environment variable ' %
-                               ('ASE_DEMONNANO_COMMAND') +
-                               'or supply the command keyword')
-
-        olddir = os.getcwd()
-        # go to directory and run calculation
-        os.chdir(self.label)
-        
-        errorcode = subprocess.call(self.command, shell=True)
-           
-        os.chdir(olddir)
-
-        if errorcode:
-            raise RuntimeError('%s returned an error: %d' %
-                              (self.name, errorcode))
-
-        try:
-            self.read_results()
-        except:
-            with open(self.label + '/deMon.out', 'r') as fd:
-            #with open('rundir' + '/deMon.out', 'r') as fd:
-                lines = fd.readlines()
-            debug_lines = 30
-            print('##### %d last lines of the deMon.out' % debug_lines)
-            for line in lines[-1*debug_lines:]:
-                print(line.strip())
-            print('##### end of deMon.out')
-            raise RuntimeError
-
     def write_input(self, atoms, properties=None, system_changes=None):
         """Write input (in)-file.
         See calculator.py for further details.
@@ -195,8 +144,8 @@ class Demonnano(FileIOCalculator):
         if system_changes is None and properties is None:
             return
     
-        filename = self.label + '/deMon.inp'
-        #filename = 'rundir' + '/deMon.inp'
+        #filename = self.label + '/deMon.inp'
+        filename = 'deMon.inp'
         add_print = ''
 
         # Start writing the file.
@@ -217,7 +166,7 @@ class Demonnano(FileIOCalculator):
 
             # print argument, here other options could change this
             value = self.parameters['print_out']
-            assert(type(value) is str)
+            assert(isinstance(value, str))
             value = value + add_print
 
             if not len(value) == 0:
@@ -226,14 +175,18 @@ class Demonnano(FileIOCalculator):
 
             # write general input arguments
             self._write_input_arguments(fd)
-            fd.write('\n')
+           
+            if 'BASISPATH' not in self.parameters['input_arguments']:
+                value = self.parameters['basis_path']
+                fd.write(value)
+                fd.write('\n')
 
             # write geometry
             self._write_atomic_coordinates(fd, atoms)
 
             # write xyz file for good measure.
-            ase.io.write(self.label + '/deMon_atoms.xyz', self.atoms)
             #ase.io.write(self.label + '/deMon_atoms.xyz', self.atoms)
+            ase.io.write('deMon_atoms.xyz', self.atoms)
             
     def read(self, restart_path):
        """Read parameters from directory restart_path."""
@@ -272,7 +225,6 @@ class Demonnano(FileIOCalculator):
            line = value.lower()
            fd.write(line)
            fd.write('\n')
-     
        elif not isinstance(value, (tuple, list)):
        # for only one argument, write on same line
            line = key.upper()
@@ -324,13 +276,14 @@ class Demonnano(FileIOCalculator):
     def read_energy(self):
        """Read energy from deMon.ase output file."""
 
-       epath = pl.Path(self.label)
+       #epath = pl.Path(self.label)
+       epath = pl.Path('.')
        if not (epath / 'deMon.ase').exists():
            raise ReadError('The deMonNano output file for ASE {0} does not exist'
                            .format(epath))
 
-       filename = self.label + '/deMon.ase'
-       #filename = 'rundir' + '/deMon.ase'
+       #filename = self.label + '/deMon.ase'
+       filename = 'deMon.ase'
 
        if op.isfile(filename):
            with open(filename, 'r') as fd:
@@ -346,13 +299,14 @@ class Demonnano(FileIOCalculator):
 
        natoms = len(atoms)
        
-       epath = pl.Path(self.label)
+       #epath = pl.Path(self.label)
+       epath = pl.Path('.')
        if not (epath / 'deMon.ase').exists():
             raise ReadError('The deMonNano output file for ASE {0} does not exist'
                           .format(epath))
 
-       filename = self.label + '/deMon.ase'
-       #filename = 'rundir' + '/deMon.ase'
+       #filename = self.label + '/deMon.ase'
+       filename = 'deMon.ase'
 
        with open(filename, 'r') as fd:
            lines = fd.readlines()
