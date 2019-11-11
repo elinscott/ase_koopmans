@@ -12,7 +12,7 @@ The file 'deMon.out' contains the results
 """
 import os
 import os.path as op
-import subprocess
+#import subprocess
 import pathlib as pl
 
 import numpy as np
@@ -20,7 +20,7 @@ import numpy as np
 from ase.units import Bohr, Hartree
 import ase.data
 from ase.calculators.calculator import FileIOCalculator, ReadError
-from ase.calculators.calculator import Parameters, all_changes
+from ase.calculators.calculator import Parameters
 import ase.io
 
 m_e_to_amu = 1822.88839
@@ -96,8 +96,6 @@ class Demonnano(FileIOCalculator):
         """
         
         parameters = DemonNanoParameters(**kwargs)
-    
-        command = '$ASE_DEMONNANO_COMMAND'
         
         # basis path
         basis_path = parameters['basis_path']
