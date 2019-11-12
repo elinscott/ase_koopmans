@@ -52,9 +52,9 @@ def run_server(launchclient=True):
 
     perr = np.abs(refatoms.positions - atoms.positions).max()
     print('errs e={} f={} pos={}'.format(eerr, ferr, perr))
-    assert eerr < 1e-12, eerr
-    assert ferr < 1e-12, ferr
-    assert perr < 1e-12, perr
+    assert eerr < 1e-11, eerr
+    assert ferr < 1e-11, ferr
+    assert perr < 1e-11, perr
 
 def run_normal():
     atoms = getatoms()
@@ -87,8 +87,14 @@ def launch_client_thread():
     return thread
 
 
-#try:
-run_server()
-#finally:
-#    if os.path.exists(unixsocket):
-#        os.unlink(unixsocket)
+try:
+    run_server()
+except OSError as err:
+    # The AppVeyor CI tests sometimes fail when we try to open sockets on
+    # computers where this is forbidden.  For now we will simply skip
+    # this test when that happens:
+    if 'forbidden by its access permissions' in err.strerror:
+        from unittest import SkipTest
+        raise SkipTest(err.strerror)
+    else:
+        raise

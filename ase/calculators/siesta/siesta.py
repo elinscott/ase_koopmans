@@ -10,8 +10,6 @@ Home of the SIESTA package:
 http://www.uam.es/departamentos/ciencias/fismateriac/siesta
 """
 from ase.calculators.siesta.base_siesta import BaseSiesta
-import ase.units as un
-
 
 # Version 3.2 of Siesta
 class Siesta3_2(BaseSiesta):
@@ -43,6 +41,7 @@ class Siesta3_2(BaseSiesta):
         'Optical.EnergyMaximum': 'eV',
         'Optical.Broaden': 'eV',
         'Optical.Scissor': 'eV',
+        'PAO.EnergyShift': 'eV',
         'MD.MaxForceTol': 'eV/Ang',
         'MD.MaxStressTol': 'eV/Ang**3',
         'MD.MaxCGDispl': 'Ang',
@@ -70,7 +69,7 @@ class Siesta3_2(BaseSiesta):
         ('ChemicalSpeciesLabel', None),
         ('PAO.BasisSize', "DZP"),
         ('PAO.BasisSizes', None),
-        ("PAO.EnergyShift", 0.02 / un.Ry),  # 0.02Ry
+        ('PAO.EnergyShift', 0.2721139613),  # 0.02Ry
         ('PAO.BasisType', "split"),
         ('PAO.SplitNorm', 0.15),
         ('PAO.SplitNormH', 0.15),
@@ -80,6 +79,7 @@ class Siesta3_2(BaseSiesta):
         ('PAO.SoftDefault', False),
         ('PAO.SoftInnerRadius', 0.9),
         ('PAO.SoftPotential', 40.0),  # Ry
+        ('WriteIonPlotFiles', False),
         ('PS.lmax', None),
         ('PS.KBprojectors', None),
         ('FilterCutoff', None),
@@ -339,6 +339,7 @@ class SiestaTrunk462(BaseSiesta):
         'Optical.EnergyMaximum': 'eV',
         'Optical.Broaden': 'eV',
         'Opticalcissor': 'eV',
+        'PAO.EnergyShift': 'eV',
         'MD.MaxForceTol': 'eV/Ang',
         'MD.MaxStressTol': 'eV/Ang**3',
         'MD.MaxCGDispl': 'Ang',
@@ -367,6 +368,7 @@ class SiestaTrunk462(BaseSiesta):
         ('PAO.BasisSize', "DZP"),
         ('PAO.BasisSizes', None),
         ('PAO.BasisType', "split"),
+        ('PAO.EnergyShift', 0.2721139613),  # 0.02Ry
         ('PAO.SplitNorm', 0.15),
         ('PAO.SplitNormH', 0.15),
         ('PAO.NewSplitCode', False),
@@ -414,7 +416,7 @@ class SiestaTrunk462(BaseSiesta):
         ('XC.functional', "LDA"),
         ('XC.authors', "PZ"),
         ('XC.hydrid', None),
-        ('SpinPolarised', False),
+        ('SpinPolarized', False),
         ('NonCollinearSpin', False),
         ('FixSpin', False),
         ('TotalSpin', 0.0),

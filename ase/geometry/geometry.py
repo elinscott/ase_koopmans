@@ -15,8 +15,24 @@ import numpy as np
 from ase.geometry import complete_cell
 
 
+def translate_pretty(fractional, pbc):
+    """Translates atoms such that fractional positions are minimized."""
+
+    for i in range(3):
+        if not pbc[i]:
+            continue
+
+        indices = np.argsort(fractional[:, i])
+        sp = fractional[indices, i]
+
+        widths = (np.roll(sp, 1) - sp) % 1.0
+        fractional[:, i] -= sp[np.argmin(widths)]
+        fractional[:, i] %= 1.0
+    return fractional
+
+
 def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
-                   eps=1e-7):
+                   pretty_translation=False, eps=1e-7):
     """Wrap positions to unit cell.
 
     Returns positions changed by a multiple of the unit cell vectors to
@@ -35,6 +51,8 @@ def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
     center: three float
         The positons in fractional coordinates that the new positions
         will be nearest possible to.
+    pretty_translation: bool
+        Translates atoms such that fractional coordinates are minimized.
     eps: float
         Small number to prevent slightly negative coordinates from being
         wrapped.
@@ -65,10 +83,16 @@ def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
     fractional = np.linalg.solve(cell.T,
                                  np.asarray(positions).T).T - shift
 
-    for i, periodic in enumerate(pbc):
-        if periodic:
-            fractional[:, i] %= 1.0
-            fractional[:, i] += shift[i]
+    if pretty_translation:
+        fractional = translate_pretty(fractional, pbc)
+        shift = np.asarray(center) - 0.5
+        shift[np.logical_not(pbc)] = 0.0
+        fractional += shift
+    else:
+        for i, periodic in enumerate(pbc):
+            if periodic:
+                fractional[:, i] %= 1.0
+                fractional[:, i] += shift[i]
 
     return np.dot(fractional, cell)
 
@@ -177,18 +201,27 @@ def find_mic(D, cell, pbc=True):
                 tvecs.append(latt_ab + k * cell[2])
     tvecs = np.array(tvecs)
 
-    # Translate the direct displacement vectors by each translation
-    # vector, and calculate the corresponding lengths.
-    D_trans = tvecs[np.newaxis] + D[:, np.newaxis]
-    D_trans_len = np.sqrt((D_trans**2).sum(2))
 
-    # Find mic distances and corresponding vector(s) for each given pair
-    # of atoms. For symmetrical systems, there may be more than one
-    # translation vector corresponding to the MIC distance; this finds the
-    # first one in D_trans_len.
-    D_min_len = np.min(D_trans_len, axis=1)
-    D_min_ind = D_trans_len.argmin(axis=1)
-    D_min = D_trans[list(range(len(D_min_ind))), D_min_ind]
+    # Check periodic neighbors iff the displacement vector in
+    # scaled coordinates is greater than 0.5.
+    good = np.sqrt((np.linalg.solve(cell.T, D.T)**2).sum(0)) <= 0.5
+
+    D_min = D.copy()
+    D_min_len = D_len.copy()
+
+    for i, (Di, gdi) in enumerate(zip(D, good)):
+        if gdi:
+            # No need to check periodic neighbors.
+            continue
+        # Translate the direct displacement vector by each translation
+        # vector, and calculate the corresponding length.
+        Di_trans = Di[np.newaxis] + tvecs
+        Di_trans_len = np.sqrt((Di_trans**2).sum(1))
+
+        # Find mic distance and corresponding vector.
+        Di_min_ind = Di_trans_len.argmin()
+        D_min[i] = Di_trans[Di_min_ind]
+        D_min_len[i] = Di_trans_len[Di_min_ind]
 
     return D_min, D_min_len
 
@@ -210,13 +243,18 @@ def get_angles(v1, v2, cell=None, pbc=None):
             raise ValueError("cell or pbc must be both set or both be None")
 
         v1 = find_mic(v1, cell, pbc)[0]
-        v2= find_mic(v2, cell, pbc)[0]
+        v2 = find_mic(v2, cell, pbc)[0]
 
+    nv1 = np.linalg.norm(v1, axis=1)[:, np.newaxis]
+    nv2 = np.linalg.norm(v2, axis=1)[:, np.newaxis]
+    if (nv1 <= 0).any() or (nv2 <= 0).any():
+        raise ZeroDivisionError('Undefined angle')
+    v1 /= nv1
+    v2 /= nv2
 
-    v1 /= np.linalg.norm(v1, axis=1)[:, np.newaxis]
-    v2 /= np.linalg.norm(v2, axis=1)[:, np.newaxis]
-
-    angles = np.arccos(np.einsum('ij,ij->i', v1, v2))
+    # We just normalized the vectors, but in some cases we can get
+    # bad things like 1+2e-16.  These we clip away:
+    angles = np.arccos(np.einsum('ij,ij->i', v1, v2).clip(-1.0, 1.0))
 
     return angles * f
 
@@ -238,7 +276,7 @@ def get_distances(p1, p2=None, cell=None, pbc=None):
     D = np.zeros((len(p1), len(p2), 3))
 
     for offset, pos1 in enumerate(p1):
-        D[offset, :, :] = p2 - pos1 
+        D[offset, :, :] = p2 - pos1
 
     # Collapse to linear indexing
     D.shape = (-1, 3)

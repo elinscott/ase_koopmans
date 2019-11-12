@@ -102,7 +102,7 @@ quantities to decide where to move the atoms on each step:
 * the forces on each atom, as returned by the associated
   :class:`~ase.calculators.calculator.Calculator` object
 * the Hessian matrix, i.e. the matrix of second derivatives
-  :math:`\frac{\partial^2 E}{\partial x_i \partial x_j}` of the
+  `\frac{\partial^2 E}{\partial x_i \partial x_j}` of the
   total energy with respect to nuclear coordinates.
 
 If the atoms are close to the minimum, such that the potential energy
@@ -189,9 +189,17 @@ to speed up BFGS local minimzations.
 Read more about this algorithm here:
 
   | Estefanía Garijo del Río, Jens Jørgen Mortensen, Karsten W. Jacobsen
-  | `A local Bayesian optimizer for atomic structures`__
+  | `Local Bayesian optimizer for atomic structures`__
+  | Physical Review B, Vol. **100**, 104103 (2019)
 
-__ https://arxiv.org/abs/1808.08588
+__ https://link.aps.org/doi/10.1103/PhysRevB.100.104103
+
+.. warning:: The memory of the optimizer scales as O(n²N²) where
+             N is the number of atoms and n the number of steps.
+             If the number of atoms is sufficiently high, this
+             may cause a memory issue.
+             This class prints a warning if the user tries to 
+             run GPMin with more than 100 atoms in the unit cell.
 
 
 FIRE
@@ -480,7 +488,7 @@ The minima hopping algorithm was developed and described by Goedecker:
 
 __ http://dx.doi.org/10.1063/1.1724816
 
-This algorithm utilizes a series of alternating steps of NVE molecular dynamics and local optimizations, and has two parameters that the code dynamically adjusts in response to the progress of the search. The first parameter is the initial temperature of the NVE simulation. Whenever a step finds a new minimum this temperature is decreased; if the step finds a previously found minimum the temperature is increased. The second dynamically adjusted parameter is :math:`E_\mathrm{diff}`, which is an energy threshold for accepting a newly found minimum. If the new minimum is no more than :math:`E_\mathrm{diff}` eV higher than the previous minimum, it is acccepted and :math:`E_\mathrm{diff}` is decreased; if it is more than :math:`E_\mathrm{diff}` eV higher it is rejected and :math:`E_\mathrm{diff}` is increased. The method is used as::
+This algorithm utilizes a series of alternating steps of NVE molecular dynamics and local optimizations, and has two parameters that the code dynamically adjusts in response to the progress of the search. The first parameter is the initial temperature of the NVE simulation. Whenever a step finds a new minimum this temperature is decreased; if the step finds a previously found minimum the temperature is increased. The second dynamically adjusted parameter is `E_\mathrm{diff}`, which is an energy threshold for accepting a newly found minimum. If the new minimum is no more than `E_\mathrm{diff}` eV higher than the previous minimum, it is acccepted and `E_\mathrm{diff}` is decreased; if it is more than `E_\mathrm{diff}` eV higher it is rejected and `E_\mathrm{diff}` is increased. The method is used as::
 
    from ase.optimize.minimahopping import MinimaHopping
    opt = MinimaHopping(atoms=system)
@@ -509,6 +517,6 @@ The trajectory file ``minima_traj`` will be populated with the accepted minima a
 
 The code is written such that a stopped simulation (e.g., killed by the batching system when the maximum wall time was exceeded) can usually be restarted without too much effort by the user. In most cases, the script can be resubmitted without any modification -- if the ``logfile`` and ``minima_traj`` are found, the script will attempt to use these to resume. (Note that you may need to clean up files left in the directory by the calculator, however, such as the .nc file produced by Jacapo.)
 
-Note that these searches can be quite slow, so it can pay to have multiple searches running at a time. Multiple searches can run in parallel and share one list of minima. (Run each script from a separate directory but specify the location to the same absolute location for ``minima_traj``). Each search will use the global information of the list of minima, but will keep its own local information of the initial temperature and :math:`E_\mathrm{diff}`.
+Note that these searches can be quite slow, so it can pay to have multiple searches running at a time. Multiple searches can run in parallel and share one list of minima. (Run each script from a separate directory but specify the location to the same absolute location for ``minima_traj``). Each search will use the global information of the list of minima, but will keep its own local information of the initial temperature and `E_\mathrm{diff}`.
 
 For an example of use, see the :ref:`mhtutorial` tutorial.

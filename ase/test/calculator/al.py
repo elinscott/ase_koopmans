@@ -1,6 +1,6 @@
-from ase.test import NotAvailable
+import unittest
 from ase.build import bulk
-from ase.calculators.calculator import get_calculator
+from ase.calculators.calculator import get_calculator_class
 
 
 omx_par = {'definition_of_atomic_species': [['Al', 'Al8.0-p1', 'Al_CA13'],
@@ -16,7 +16,7 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001, chksymbreak=0),
 
 
 def run(name):
-    Calculator = get_calculator(name)
+    Calculator = get_calculator_class(name)
     par = required.get(name, {})
     calc = Calculator(label=name, xc='LDA', kpts=1.0, **par)
     al = bulk('AlO', crystalstructure='rocksalt', a=4.5)
@@ -40,5 +40,5 @@ names = ['abinit', 'aims', 'elk', 'cp2k', 'openmx']
 for name in names:
     try:
         run(name)
-    except NotAvailable:
+    except unittest.SkipTest:
         pass

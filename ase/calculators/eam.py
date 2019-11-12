@@ -9,7 +9,7 @@
 
 import os
 import numpy as np
-from ase.test import NotAvailable
+
 from ase.neighborlist import NeighborList
 from ase.calculators.calculator import Calculator, all_changes
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
@@ -122,8 +122,9 @@ Arguments
 =========================  ====================================================
 Keyword                    Description
 =========================  ====================================================
-``potential``              file of potential in ``.alloy``, ``.adp`` or ``.fs``
-                           format (This is generally all you need to supply)
+``potential``              file of potential in ``.eam``, ``.alloy``, ``.adp`` or ``.fs``
+                           format or file object (This is generally all you need to supply).
+                           In case of file object the ``form`` argument is required
 
 ``elements[N]``            array of N element abbreviations
 
@@ -148,9 +149,9 @@ Keyword                    Description
                            call to the ``update()`` method then the neighbor
                            list can be reused. Defaults to 1.0.
 
-``form``                   the form of the potential ``alloy``, ``adp`` or
+``form``                   the form of the potential ``eam``, ``alloy``, ``adp`` or
                            ``fs``. This will be determined from the file suffix
-                           or must be set if using equations
+                           or must be set if using equations or file object
 
 =========================  ====================================================
 
@@ -237,7 +238,9 @@ End EAM Interface Documentation
                 b'blank\n'])
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label=os.curdir, atoms=None, **kwargs):
+                 label=os.curdir, atoms=None, form=None, **kwargs):
+
+        self.form = form
 
         if 'potential' in kwargs:
             self.read_potential(kwargs['potential'])
@@ -251,7 +254,7 @@ End EAM Interface Documentation
                       # derivatives
                       'd_embedded_energy', 'd_electron_density', 'd_phi',
                       'd', 'q', 'd_d', 'd_q',  # adp terms
-                      'skin', 'form', 'Z', 'nr', 'nrho', 'mass')
+                      'skin', 'Z', 'nr', 'nrho', 'mass')
 
         # set any additional keyword arguments
         for arg, val in self.parameters.items():
@@ -283,7 +286,8 @@ End EAM Interface Documentation
 
         if isinstance(fileobj, basestring):
             f = open(fileobj)
-            self.set_form(fileobj)
+            if self.form is None:
+                self.set_form(fileobj)
         else:
             f = fileobj
 
@@ -883,11 +887,7 @@ End EAM Interface Documentation
     def plot(self, name=''):
         """Plot the individual curves"""
 
-        try:
-            import matplotlib.pyplot as plt
-
-        except ImportError:
-            raise NotAvailable('This needs matplotlib module.')
+        import matplotlib.pyplot as plt
 
         if self.form == 'eam' or self.form == 'alloy' or self.form == 'fs':
             nrow = 2

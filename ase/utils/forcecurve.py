@@ -60,7 +60,9 @@ def fit_raw(energies, forces, positions, cell=None, pbc=None):
     Efit[-1] = E[-1]
     return ForceFit(s, E, Sfit, Efit, lines)
 
+
 from collections import namedtuple
+
 
 class ForceFit(namedtuple('ForceFit', ['s', 'E', 'Sfit', 'Efit', 'lines'])):
     def plot(self, ax=None):
@@ -77,11 +79,12 @@ class ForceFit(namedtuple('ForceFit', ['s', 'E', 'Sfit', 'Efit', 'lines'])):
         Ef = max(self.E) - self.E[0]
         Er = max(self.E) - self.E[-1]
         dE = self.E[-1] - self.E[0]
-        ax.set_title('$E_\mathrm{f} \\approx$ %.3f eV; '
-                     '$E_\mathrm{r} \\approx$ %.3f eV; '
+        ax.set_title('$E_\\mathrm{f} \\approx$ %.3f eV; '
+                     '$E_\\mathrm{r} \\approx$ %.3f eV; '
                      '$\\Delta E$ = %.3f eV'
                      % (Ef, Er, dE))
         return ax
+
 
 def fit_images(images):
     R = [atoms.positions for atoms in images]

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Vibrational modes."""
-from __future__ import division
 
 import os
 import os.path as op
@@ -12,7 +11,7 @@ import numpy as np
 
 import ase.units as units
 from ase.io.trajectory import Trajectory
-from ase.parallel import rank, paropen
+from ase.parallel import world, paropen
 
 from ase.utils import opencew, pickleload, basestring
 from ase.calculators.singlepoint import SinglePointCalculator
@@ -175,7 +174,7 @@ class Vibrations:
             dipole = self.calc.get_dipole_moment(atoms)
         if self.ram:
             freq, noninPol, pol = self.get_polarizability()
-        if rank == 0:
+        if world.rank == 0:
             if self.ir and self.ram:
                 pickle.dump([forces, dipole, freq, noninPol, pol], fd, protocol=2)
                 sys.stdout.write(
@@ -200,7 +199,7 @@ class Vibrations:
 
         """
 
-        if rank != 0:
+        if world.rank != 0:
             return 0
 
         n = 0
@@ -225,7 +224,7 @@ class Vibrations:
         of data structure at a time.
 
         """
-        if rank != 0:
+        if world.rank != 0:
             return 0
         filenames = [self.name + '.eq.pckl']
         for dispName, a, i, disp in self.displacements():
@@ -238,7 +237,7 @@ class Vibrations:
                                    name + ' is missing or empty.')
             with open(name, 'rb') as fl:
                 f = pickleload(fl)
-            combined_data.update({name: f})
+            combined_data.update({op.basename(name): f})
         filename = self.name + '.all.pckl'
         fd = opencew(filename)
         if fd is None:
@@ -257,7 +256,7 @@ class Vibrations:
         sort of data structure at a time.
 
         """
-        if rank != 0:
+        if world.rank != 0:
             return 0
         combined_name = self.name + '.all.pckl'
         if not op.isfile(combined_name):
@@ -274,7 +273,10 @@ class Vibrations:
                     'Cannot split. File ' + filename + 'already exists.')
         for name in filenames:
             fd = opencew(name)
-            pickle.dump(combined_data[name], fd, protocol=2)
+            try:
+                pickle.dump(combined_data[op.basename(name)], fd, protocol=2)
+            except KeyError:
+                pickle.dump(combined_data[name], fd, protocol=2)  # Old version
             fd.close()
         os.remove(combined_name)
         return 1  # One file removed
@@ -290,7 +292,10 @@ class Vibrations:
                 with open(fname, 'rb') as fl:
                     f = pickleload(fl)
             else:
-                f = combined_data[fname]
+                try:
+                    f = combined_data[op.basename(fname)]
+                except KeyError:
+                    f = combined_data[fname]  # Old version
             if not hasattr(f, 'shape') and not hasattr(f, 'keys'):
                 # output from InfraRed
                 return f[0]

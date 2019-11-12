@@ -7,7 +7,7 @@ A database for atoms
 ASE has its own database that can be used for storing and retrieving atoms and
 associated data in a compact and convenient way.
 
-There are currently three back-ends:
+There are currently five back-ends:
 
 JSON_:
     Simple human-readable text file with a ``.json`` extension.
@@ -16,9 +16,13 @@ SQLite3_:
     with a ``.db`` extension.
 PostgreSQL_:
     Server based database.
+MySQL_:
+    Server based database.
+MariaDB_:
+    Server based database.
 
-The JSON and SQLite3 back-ends work "out of the box", whereas PostgreSQL
-requires a :ref:`server`.
+The JSON and SQLite3 back-ends work "out of the box", whereas PostgreSQL, MySQL 
+and MariaDB requires a server (See :ref:`server` or :ref:`MySQL_server`).
 
 There is a command-line tool called :ref:`ase-db` that can be
 used to query and manipulate databases and also a `Python interface`_.
@@ -26,7 +30,8 @@ used to query and manipulate databases and also a `Python interface`_.
 .. _JSON: http://www.json.org/
 .. _SQLite3: http://www.sqlite.org/
 .. _PostgreSQL: http://www.postgresql.org/
-
+.. _MySQL: https://www.mysql.com/
+.. _MariaDB: https://mariadb.org/
 
 .. contents::
 
@@ -480,6 +485,27 @@ You can also write/read to/from JSON using::
     $ ase db proj1.db --set-metadata metadata.json
     $ ase db proj1.db --show-metadata > metadata.json
 
+External Tables
+----------------
+
+If the number of *key_value_pairs* becomes large, for example when
+saving a large number of features for your machine learning model, ASE
+DB offers an alternative way of storing them. Internally ASE can
+create a dedicated table to store groups of *key_value_pairs*. You can
+store a group of *key_value_pairs* in a separate table named
+*features* by:
+
+>>> atoms = Atoms()
+>>> no_features = 5000
+>>> feature_dict = dict(('feature' + str(i), i) for i in range(no_features))
+>>> id = db.write(atoms, external_tables={'features': feature_dict})
+
+Values stored in external tables can be accessed using:
+
+>>> row = db.get(id=id)
+>>> f1 = row['features']['feature1']
+>>> f4999 = row['features']['feature4999']
+
 
 .. _server:
 
@@ -538,3 +564,47 @@ and then start the server with::
 .. _Flask: http://flask.pocoo.org/
 .. _WSGI: https://www.python.org/dev/peps/pep-3333/
 .. _Twisted: https://twistedmatrix.com/
+
+.. _MySQL_server:
+
+Running a MySQL server
+========================
+
+ASE DB can also be run with a MySQL server. First, we need to get the MySQL server
+up and running. There are many online resources describing how to to that, but on 
+a Ubuntu system the following should work::
+
+  $ sudo apt-get install mysql-server
+  $ sudo mysql_secure_installation
+
+Then we need to check if the server is running::
+
+  $ systemctl status mysql.service
+
+if it is not running you can start the service by::
+
+  $ systemctl start mysql.service
+
+Note that on some Linux distributions *mysql.service* should be replaced by *mysqld.service*.
+
+Once the service is running, we can enter the MySQL shell::
+
+    $ mysql -u root -p
+
+where we assume that there is a user named **root**, that will be prompted for a password.
+Now, we can create a user:: 
+
+  mysql> CREATE USER 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
+
+and then a database for our project::
+
+  mysql> CREATE DATABASE my_awesome_project;
+
+We need to give the ase user privileges to edit this database::
+
+  mysql> GRANT ALL PRIVILEGES ON my_awesome_project.* TO 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
+
+From a Python script we can now connect to the database via
+
+  >>> mysql_url = 'mysql://ase:strongPassword@localhost:3306/my_awesome_project'
+  >>> connect(mysql_url)  # doctest: +SKIP

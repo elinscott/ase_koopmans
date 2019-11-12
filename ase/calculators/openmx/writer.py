@@ -168,8 +168,10 @@ def get_xc(xc):
         return 'LDA'
     elif xc in ['CA', 'PW']:
         return 'LSDA-' + xc
-    elif xc in ['LSDA']:
+    elif xc in ['LSDA','LSDA-CA']:
         return 'LSDA-CA'
+    elif xc in ['LSDA-PW']:
+        return 'LSDA-PW'
     else:
         return 'LDA'
 
@@ -272,7 +274,7 @@ def get_pseudo_potential_suffix(element=None, xc=None):
     pseudo_potential_suffix = element
     xc_label = {'PBE': 'PBE', 'GGA': 'PBE', 'GGA-PBE': 'PBE'}
     suffix = default_dictionary[element]['pseudo-potential suffix']
-    pseudo_potential_suffix += '_' + xc_label.get(xc, 'CA') + suffix + '13'
+    pseudo_potential_suffix += '_' + xc_label.get(xc, 'CA')  + '13' + suffix
     return pseudo_potential_suffix
 
 
@@ -385,7 +387,7 @@ def get_atoms_unitvectors(atoms, parameters):
     if np.all(atoms.get_cell() == zero_vec) is True:
         default_cell = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         return parameters.get('atoms_unitvectors', default_cell)
-    atoms_unitvectors = atoms.get_cell().T
+    atoms_unitvectors = atoms.get_cell()
     return atoms_unitvectors
 
 

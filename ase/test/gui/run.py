@@ -1,26 +1,30 @@
 from __future__ import unicode_literals
 import argparse
 import os
+from functools import partial
+import unittest
+
+
+if not os.environ.get('DISPLAY'):
+    raise unittest.SkipTest('No display')
+
+try:
+    import tkinter  # noqa
+except ImportError:
+    raise unittest.SkipTest('tkinter not available')
+
 
 import numpy as np
 
 from ase import Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.build import molecule
+import ase.gui.ui as ui
 from ase.gui.i18n import _
-from ase.test import NotAvailable
-
-try:
-    import ase.gui.ui as ui
-except ImportError:
-    raise NotAvailable
-
 from ase.gui.gui import GUI
 from ase.gui.save import save_dialog
 
 
-if not os.environ.get('DISPLAY'):
-    raise NotAvailable
 
 
 class Error:
@@ -83,13 +87,18 @@ def color(gui):
     a = Atoms('C10', magmoms=np.linspace(1, -1, 10))
     a.positions[:] = np.linspace(0, 9, 10)[:, None]
     a.calc = SinglePointCalculator(a, forces=a.positions)
+    che = np.linspace(100, 110, 10)
+    mask = [0] * 10
+    mask[5] = 1
+    a.set_array('corehole_energies', np.ma.array(che, mask=mask))
     gui.new_atoms(a)
     c = gui.colors_window()
     c.toggle('force')
-    text = c.toggle('magmom')
+    c.toggle('magmom')
     activebuttons = [button.active for button in c.radio.buttons]
-    assert activebuttons == [1, 0, 1, 0, 0, 1, 1], activebuttons
-    assert text.rsplit('[', 1)[1].startswith('-1.000000,1.000000]')
+    assert activebuttons == [1, 0, 1, 0, 0, 1, 1, 1], activebuttons
+    c.toggle('corehole_energies')
+    c.change_mnmx(101, 120)
 
 
 @test
@@ -115,13 +124,13 @@ def open_and_save(gui):
     gui.open(filename='h2o.json')
     save_dialog(gui, 'h2o.cif@-1')
 
+
 @test
 def test_fracocc(gui):
     from ase.test.fio.cif import content
     with open('./fracocc.cif', 'w') as f:
         f.write(content)
     gui.open(filename='fracocc.cif')
-
 
 
 p = argparse.ArgumentParser()
@@ -153,20 +162,6 @@ for name in args.tests or alltests:
 
 
 
-
-import os
-from functools import partial
-
-from ase.test import NotAvailable
-
-try:
-    import ase.gui.ui as ui
-except ImportError:
-    raise NotAvailable
-
-
-if not os.environ.get('DISPLAY'):
-    raise NotAvailable
 
 
 def window():

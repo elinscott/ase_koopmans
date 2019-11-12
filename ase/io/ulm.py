@@ -120,20 +120,15 @@ Versions
 3) Changed magic string from "AFFormat" to "- of Ulm".
 """
 
-from __future__ import print_function
 import os
-import sys
 import numbers
+from pathlib import Path
 
 import numpy as np
 
 from ase.io.jsonio import encode, decode
-from ase.utils import plural, basestring
+from ase.utils import plural
 
-if sys.version_info[0] >= 3:
-    import builtins
-else:
-    import __builtin__ as builtins
 
 VERSION = 3
 N1 = 42  # block size - max number of items: 1, N1, N1*N1, N1*N1*N1, ...
@@ -236,16 +231,19 @@ class Writer:
                 data = {}
             else:
                 data = {'_little_endian': False}
-            fd_is_string = isinstance(fd, basestring)
-            if mode == 'w' or (fd_is_string and
-                               not (os.path.isfile(fd) and
-                                    os.path.getsize(fd) > 0)):
+
+            if isinstance(fd, str):
+                fd = Path(fd)
+
+            if mode == 'w' or (isinstance(fd, Path) and
+                               not (fd.is_file() and
+                                    fd.stat().st_size > 0)):
                 self.nitems = 0
                 self.pos0 = 48
                 self.offsets = np.array([-1], np.int64)
 
-                if fd_is_string:
-                    fd = builtins.open(fd, 'wb')
+                if isinstance(fd, Path):
+                    fd = fd.open('wb')
 
                 # File format identifier and other stuff:
                 a = np.array([VERSION, self.nitems, self.pos0], np.int64)
@@ -255,8 +253,8 @@ class Writer:
                                a.tostring() +
                                self.offsets.tostring())
             else:
-                if fd_is_string:
-                    fd = builtins.open(fd, 'r+b')
+                if isinstance(fd, Path):
+                    fd = fd.open('r+b')
 
                 version, self.nitems, self.pos0, offsets = read_header(fd)[1:]
                 assert version == VERSION
@@ -389,10 +387,11 @@ class Writer:
 
         for name, value in kwargs.items():
             if isinstance(value, (bool, int, float, complex,
-                                  dict, list, tuple, basestring,
+                                  dict, list, tuple, str,
                                   type(None))):
                 self.data[name] = value
-            elif isinstance(value, np.ndarray):
+            elif hasattr(value, '__array__'):
+                value = np.asarray(value)
                 if value.ndim == 0:
                     self.data[name] = value.item()
                 else:
@@ -462,11 +461,15 @@ class InvalidULMFileError(IOError):
 
 
 class Reader:
-    def __init__(self, fd, index=0, data=None, little_endian=None):
+    def __init__(self, fd, index=0, data=None, _little_endian=None):
         """Create reader."""
 
-        if isinstance(fd, basestring):
-            fd = builtins.open(fd, 'rb')
+        self._little_endian = _little_endian
+
+        if isinstance(fd, str):
+            fd = Path(fd)
+        if isinstance(fd, Path):
+            fd = fd.open('rb')
 
         self._fd = fd
         self._index = index
@@ -478,9 +481,6 @@ class Reader:
                 data = self._read_data(index)
             else:
                 data = {}
-            self._little_endian = data.pop('_little_endian', True)
-        else:
-            self._little_endian = little_endian
 
         self._parse_data(data)
 
@@ -504,7 +504,7 @@ class Reader:
                                           self._little_endian)
                 else:
                     value = Reader(self._fd, data=value,
-                                   little_endian=self._little_endian)
+                                   _little_endian=self._little_endian)
                 name = name[:-1]
 
             self._data[name] = value
@@ -568,6 +568,7 @@ class Reader:
         self._fd.seek(self._offsets[index])
         size = int(readints(self._fd, 1)[0])
         data = decode(self._fd.read(size).decode())
+        self._little_endian = data.pop('_little_endian', True)
         return data
 
     def __getitem__(self, index):

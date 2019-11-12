@@ -8,9 +8,6 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 
 from __future__ import division, print_function
 import numpy as np
-import os
-
-from ase.test import NotAvailable
 from ase.build import bulk
 from ase.constraints import UnitCellFilter
 from ase.optimize import MDMin
@@ -19,9 +16,6 @@ from ase.calculators.cp2k import CP2K
 
 def main():
     """Adopted from ase/test/stress.py"""
-
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise NotAvailable('$ASE_CP2K_COMMAND not defined')
 
     # setup a Fist Lennard-Jones Potential
     inp = """&FORCE_EVAL

@@ -1,13 +1,12 @@
-from ase.io.utils import generate_writer_variables, make_patch_list
+from ase.io.utils import PlottingVariables, make_patch_list
 
 
-class Matplotlib:
+class Matplotlib(PlottingVariables):
     def __init__(self, atoms, ax,
-                 rotation='', show_unit_cell=False, radii=None,
+                 rotation='', radii=None,
                  colors=None, scale=1, offset=(0, 0), **parameters):
-        generate_writer_variables(
+        PlottingVariables.__init__(
             self, atoms, rotation=rotation,
-            show_unit_cell=show_unit_cell,
             radii=radii, colors=colors, scale=scale,
             extra_offset=offset, **parameters)
 
@@ -26,7 +25,7 @@ class Matplotlib:
             self.ax.add_patch(patch)
 
 
-def animate(images, fig=None, ax=None,
+def animate(images, ax=None,
             interval=200,  # in ms; same default value as in FuncAnimation
             save_count=100,
             **parameters):
@@ -37,14 +36,15 @@ def animate(images, fig=None, ax=None,
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
-    if fig is None:
-        fig = plt.gcf()
     if ax is None:
         ax = plt.gca()
+
+    fig = ax.get_figure()
 
     nframes = [0]
     def drawimage(atoms):
         ax.clear()
+        ax.axis('off')
         plot_atoms(atoms, ax=ax, **parameters)
         nframes[0] += 1
         # Animation will stop without warning if we don't have len().
@@ -71,8 +71,11 @@ def plot_atoms(atoms, ax=None, **parameters):
     ax : Matplotlib subplot object
     rotation : str, optional
         In degrees. In the form '10x,20y,30z'
-    show_unit_cell : bool, optional, default False
-        Draw the bounds of the atoms object as dashed lines.
+    show_unit_cell : int, optional, default 2
+        Draw the unit cell as dashed lines depending on value:
+        0: Don't
+        1: Do
+        2: Do, making sure cell is visible
     radii : float, optional
         The radii of the atoms
     colors : list of strings, optional

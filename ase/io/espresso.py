@@ -43,8 +43,11 @@ _PW_FORCE = 'Forces acting on atoms'
 _PW_TOTEN = '!    total energy'
 _PW_STRESS = 'total   stress'
 _PW_FERMI = 'the Fermi energy is'
+_PW_HIGHEST_OCCUPIED = 'highest occupied level'
+_PW_HIGHEST_OCCUPIED_LOWEST_FREE = 'highest occupied, lowest unoccupied level'
 _PW_KPTS = 'number of k points='
 _PW_BANDS = _PW_END
+_PW_BANDSTRUCTURE = 'End of band structure calculation'
 
 
 class Namelist(OrderedDict):
@@ -113,8 +116,11 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         _PW_TOTEN: [],
         _PW_STRESS: [],
         _PW_FERMI: [],
+        _PW_HIGHEST_OCCUPIED: [],
+        _PW_HIGHEST_OCCUPIED_LOWEST_FREE: [],
         _PW_KPTS: [],
         _PW_BANDS: [],
+        _PW_BANDSTRUCTURE: [],
     }
 
     for idx, line in enumerate(pwo_lines):
@@ -138,7 +144,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
     if results_required:
         results_indexes = sorted(indexes[_PW_TOTEN] + indexes[_PW_FORCE] +
                                  indexes[_PW_STRESS] + indexes[_PW_MAGMOM] +
-                                 indexes[_PW_BANDS])
+                                 indexes[_PW_BANDS] +
+                                 indexes[_PW_BANDSTRUCTURE])
 
         # Prune to only configurations with results data before the next
         # configuration
@@ -263,11 +270,21 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                     in pwo_lines[magmoms_index + 1:
                                  magmoms_index + 1 + len(structure)]]
 
-        # Fermi level
+        # Fermi level / highest occupied level
         efermi = None
         for fermi_index in indexes[_PW_FERMI]:
             if image_index < fermi_index < next_index:
                 efermi = float(pwo_lines[fermi_index].split()[-2])
+
+        if efermi is None:
+            for ho_index in indexes[_PW_HIGHEST_OCCUPIED]:
+                if image_index < ho_index < next_index:
+                    efermi = float(pwo_lines[ho_index].split()[-1])
+
+        if efermi is None:
+            for holf_index in indexes[_PW_HIGHEST_OCCUPIED_LOWEST_FREE]:
+                if image_index < holf_index < next_index:
+                    efermi = float(pwo_lines[holf_index].split()[-2])
 
         # K-points
         ibzkpts = None
@@ -305,7 +322,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         kpoints_warning = "Number of k-points >= 100: " + \
                           "set verbosity='high' to print the bands."
 
-        for bands_index in indexes[_PW_BANDS]:
+        for bands_index in indexes[_PW_BANDS] + indexes[_PW_BANDSTRUCTURE]:
             if image_index < bands_index < next_index:
                 bands_index += 2
 
@@ -322,7 +339,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                             eigenvalues[spin].append(bands)
                             bands = []
                     elif l == ['occupation', 'numbers']:
-                        bands_index += 3
+                        # Skip the lines with the occupation numbers
+                        bands_index += len(eigenvalues[spin][0]) // 8 + 1
                     elif l[0] == 'k' and l[1].startswith('='):
                         pass
                     elif 'SPIN' in l:
@@ -337,7 +355,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
                 if spin == 1:
                     assert len(eigenvalues[0]) == len(eigenvalues[1])
-                assert len(eigenvalues[0] + eigenvalues[1]) == len(ibzkpts)
+                assert len(eigenvalues[0]) == len(ibzkpts), (np.shape(eigenvalues), len(ibzkpts))
 
                 kpts = []
                 for s in range(spin + 1):
@@ -1631,9 +1649,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     if isinstance(koffset, int):
         koffset = (koffset, ) * 3
 
-    if isinstance(kgrid, dict):
+    # BandPath object or bandpath-as-dictionary:
+    if isinstance(kgrid, dict) or hasattr(kgrid, 'kpts'):
         pwi.append('K_POINTS crystal_b\n')
-        assert 'path' in kgrid
+        assert hasattr(kgrid, 'path') or 'path' in kgrid
         kgrid = kpts2ndarray(kgrid, atoms=atoms)
         pwi.append('%s\n' % len(kgrid))
         for k in kgrid:

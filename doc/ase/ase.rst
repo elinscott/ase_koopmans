@@ -11,32 +11,35 @@ Quick links:
   * - :mod:`ase (Atom) <ase.atom>`
     - :mod:`ase (Atoms) <ase.atoms>`
     - :mod:`~ase.build`
-    - :mod:`~ase.calculators`
-  * - :mod:`~ase.collections`
+    - :mod:`~ase.cell`
+  * - :mod:`~ase.calculators`
+    - :mod:`~ase.collections`
     - :mod:`~ase.constraints`
     - :mod:`~ase.db`
-    - :mod:`~ase.dft`
-  * - :mod:`~ase.data`
+  * - :mod:`~ase.dft`
+    - :mod:`~ase.data`
+    - :mod:`~ase.formula`
     - :mod:`~ase.ga`
-    - :mod:`~ase.geometry`
+  * - :mod:`~ase.geometry`
     - :mod:`~ase.gui`
-  * - :mod:`~ase.io`
+    - :mod:`~ase.io`
     - :mod:`~ase.lattice`
-    - :mod:`~ase.md`
+  * - :mod:`~ase.md`
     - :mod:`~ase.neb`
-  * - :mod:`~ase.neighborlist`
+    - :mod:`~ase.neighborlist`
     - :mod:`~ase.optimize`
-    - :mod:`~ase.parallel`
+  * - :mod:`~ase.parallel`
     - :mod:`~ase.phasediagram`
-  * - :mod:`~ase.phonons`
+    - :mod:`~ase.phonons`
     - :mod:`~ase.spacegroup`
+  * - :mod:`~ase.symbols`
     - :mod:`~ase.transport`
     - :mod:`~ase.thermochemistry`
-  * - :mod:`~ase.units`
-    - :mod:`~ase.utils`
+    - :mod:`~ase.units`
+  * - :mod:`~ase.utils`
     - :mod:`~ase.vibrations`
     - :mod:`~ase.visualize`
-
+    -
 
 .. seealso::
 
@@ -52,10 +55,13 @@ List of all modules:
    :maxdepth: 2
 
    atoms
+   cell
    units
    io/io
    build/build
    eos
+   formula
+   symbols
    collections
    data
    optimize

@@ -13,8 +13,8 @@ from glob import glob
 from os.path import join
 
 
-if sys.version_info < (3, 4, 0, 'final', 0):
-    raise SystemExit('Python 3.4 or later is required!')
+if sys.version_info < (3, 5, 0, 'final', 0):
+    raise SystemExit('Python 3.5 or later is required!')
 
 
 with open('README.rst') as fd:
@@ -70,7 +70,7 @@ setup(name='ase',
       license='LGPLv2.1+',
       platforms=['unix'],
       packages=find_packages(),
-      install_requires=['numpy', 'scipy', 'matplotlib', 'flask'],
+      install_requires=['numpy', 'scipy', 'matplotlib'],
       extras_require={'docs': ['sphinx', 'sphinx_rtd_theme', 'pillow']},
       package_data=package_data,
       entry_points={'console_scripts': ['ase=ase.cli.main:main',
@@ -87,7 +87,6 @@ setup(name='ase',
           'GNU Lesser General Public License v2 or later (LGPLv2+)',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',

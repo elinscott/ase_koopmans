@@ -24,15 +24,14 @@ using a 7x7x7 supercell within effective medium theory:
 
 .. literalinclude:: phonons_Al_fcc.py
    :start-after: creates:
-   :end-before: End of literalinclude
+   :end-before: literalinclude division line
 
 .. image:: Al_phonon.png
 
 Mode inspection:
 
 .. literalinclude:: phonons_Al_fcc.py
-   :start-after: Literalinclude start modes
-   :end-before: Literalinclude end modes
+   :start-after: literalinclude division line
 
 .. image:: Al_mode.*
 

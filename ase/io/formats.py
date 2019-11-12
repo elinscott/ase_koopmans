@@ -56,8 +56,9 @@ all_formats = {
     'castep-md': ('CASTEP molecular dynamics file', '+F'),
     'castep-phonon': ('CASTEP phonon file', '1F'),
     'cfg': ('AtomEye configuration', '1F'),
-    'cif': ('CIF-file', '+F'),
+    'cif': ('CIF-file', '+B'),
     'cmdft': ('CMDFT-file', '1F'),
+    'cp2k-dcd': ('CP2K DCD file', '+B'),
     'crystal': ('Crystal fort.34 format', '1S'),
     'cube': ('CUBE file', '1F'),
     'dacapo': ('Dacapo netCDF output file', '1F'),
@@ -65,11 +66,12 @@ all_formats = {
     'db': ('ASE SQLite database file', '+S'),
     'dftb': ('DftbPlus input file', '1S'),
     'dlp4': ('DL_POLY_4 CONFIG file', '1F'),
+    'dlp-history': ('DL_POLY HISTORY file', '+F'),
     'dmol-arc': ('DMol3 arc file', '+S'),
     'dmol-car': ('DMol3 structure file', '1S'),
     'dmol-incoor': ('DMol3 structure file', '1S'),
     'elk': ('ELK atoms definition', '1S'),
-    'eon': ('EON reactant.con file', '1F'),
+    'eon': ('EON CON file', '+F'),
     'eps': ('Encapsulated Postscript', '1S'),
     'espresso-in': ('Quantum espresso in file', '1F'),
     'espresso-out': ('Quantum espresso out file', '+F'),
@@ -79,6 +81,8 @@ all_formats = {
     'findsym': ('FINDSYM-format', '+F'),
     'gaussian': ('Gaussian com (input) file', '1S'),
     'gaussian-out': ('Gaussian output file', '1F'),
+    'acemolecule-out': ('ACE output file', '1S'),
+    'acemolecule-input':('ACE input file', '1S'),
     'gen': ('DFTBPlus GEN format', '1F'),
     'gif': ('Graphics interchange format', '+S'),
     'gpaw-out': ('GPAW text output', '+F'),
@@ -95,6 +99,7 @@ all_formats = {
     'mol': ('MDL Molfile', '1F'),
     'mp4': ('MP4 animation', '+S'),
     'mustem': ('muSTEM xtl file', '1F'),
+    'mysql': ('ASE MySQL database file', '+S'),
     'netcdftrajectory': ('AMBER NetCDF trajectory file', '+S'),
     'nomad-json': ('JSON from Nomad archive', '+F'),
     'nwchem': ('NWChem input file', '1F'),
@@ -106,6 +111,7 @@ all_formats = {
     'py': ('Python file', '+F'),
     'qbox': ('QBOX output file', '+F'),
     'res': ('SHELX format', '1S'),
+    'rmc6f': ('RMCProfile', '1S'),
     'sdf': ('SDF format', '1F'),
     'struct': ('WIEN2k structure file', '1S'),
     'struct_out': ('SIESTA STRUCT file', '1F'),
@@ -116,13 +122,14 @@ all_formats = {
     'v-sim': ('V_Sim ascii file', '1F'),
     'vasp': ('VASP POSCAR/CONTCAR file', '1F'),
     'vasp-out': ('VASP OUTCAR file', '+F'),
-    'vasp-xdatcar': ('VASP XDATCAR file', '+S'),
+    'vasp-xdatcar': ('VASP XDATCAR file', '+F'),
     'vasp-xml': ('VASP vasprun.xml file', '+F'),
     'vti': ('VTK XML Image Data', '1F'),
     'vtu': ('VTK XML Unstructured Grid', '1F'),
     'x3d': ('X3D', '1S'),
     'xsd': ('Materials Studio file', '1F'),
     'xsf': ('XCrySDen Structure File', '+F'),
+    'xtd': ('Materials Studio file', '+F'),
     'xyz': ('XYZ-file', '+F')}
 
 # Special cases:
@@ -136,17 +143,22 @@ format2modulename = {
     'castep-geom': 'castep',
     'castep-md': 'castep',
     'castep-phonon': 'castep',
+    'cp2k-dcd': 'cp2k',
     'dacapo-text': 'dacapo',
     'dlp4': 'dlp4',
+    'dlp-history': 'dlp4',
     'espresso-in': 'espresso',
     'espresso-out': 'espresso',
     'gaussian-out': 'gaussian',
+    'acemolecule-out': 'acemolecule',
+    'acemolecule-input': 'acemolecule',
     'gif': 'animation',
     'html': 'x3d',
     'json': 'db',
     'lammps-dump': 'lammpsrun',
     'lammps-data': 'lammpsdata',
     'mp4': 'animation',
+    'mysql': 'db',
     'postgresql': 'db',
     'struct': 'wien2k',
     'struct_out': 'siesta',
@@ -167,6 +179,7 @@ extension2format = {
     'com': 'gaussian',
     'con': 'eon',
     'config': 'dlp4',
+    'dcd': 'cp2k-dcd',
     'exi': 'exciting',
     'f34': 'crystal',
     '34': 'crystal',
@@ -203,8 +216,8 @@ def initialize(format):
     try:
         module = import_module('ase.io.' + module_name)
     except ImportError as err:
-        raise ValueError('File format not recognized: %s.  Error: %s'
-                         % (format, err))
+        raise UnknownFileTypeError('File format not recognized: %s.  Error: %s'
+                                   % (format, err))
 
     read = getattr(module, 'read_' + _format, None)
     write = getattr(module, 'write_' + _format, None)
@@ -212,7 +225,7 @@ def initialize(format):
     if read and not inspect.isgeneratorfunction(read):
         read = functools.partial(wrap_read_function, read)
     if not read and not write:
-        raise ValueError('File format not recognized: ' + format)
+        raise UnknownFileTypeError('File format not recognized: ' + format)
     code = all_formats[format][1]
     single = code[0] == '1'
     assert code[1] in 'BFS'
@@ -370,6 +383,9 @@ def write(filename, images, format=None, parallel=True, append=False,
 
     The use of additional keywords is format specific."""
 
+    if isinstance(filename, PurePath):
+        filename = str(filename)
+
     if isinstance(filename, basestring):
         filename = os.path.expanduser(filename)
         fd = None
@@ -464,6 +480,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
 
     if isinstance(filename, PurePath):
         filename = str(filename)
+    if filename == '-':
+        filename = sys.stdin
     if isinstance(index, basestring):
         try:
             index = string2index(index)
@@ -607,6 +625,9 @@ def filetype(filename, read=True, guess=True):
         if filename.startswith('postgres'):
             return 'postgresql'
 
+        if filename.startswith('mysql') or filename.startswith('mariadb'):
+            return 'mysql'
+
         # strip any compression extensions that can be read
         root, compression = get_compression(filename)
         basename = os.path.basename(root)
@@ -644,6 +665,8 @@ def filetype(filename, read=True, guess=True):
             return 'iwm'
         if 'CONFIG' in basename:
             return 'dlp4'
+        if basename == 'HISTORY':
+            return 'dlp-history'
 
         if not read:
             if ext is None:
@@ -725,3 +748,38 @@ def filetype(filename, read=True, guess=True):
         raise UnknownFileTypeError('Could not guess file type')
 
     return format
+
+
+def index2range(index, nsteps):
+    """Method to convert a user given *index* option to a list of indices.
+
+    Returns a range.
+    """
+    if isinstance(index, int):
+        if index < 0:
+            tmpsnp = nsteps + index
+            trbl = range(tmpsnp, tmpsnp + 1, 1)
+        else:
+            trbl = range(index, index + 1, 1)
+    elif isinstance(index, slice):
+        start = index.start
+        stop = index.stop
+        step = index.step
+
+        if start is None:
+            start = 0
+        elif start < 0:
+            start = nsteps + start
+
+        if step is None:
+            step = 1
+
+        if stop is None:
+            stop = nsteps
+        elif stop < 0:
+            stop = nsteps + stop
+
+        trbl = range(start, stop, step)
+    else:
+        raise RuntimeError("index2range handles integers and slices only.")
+    return trbl

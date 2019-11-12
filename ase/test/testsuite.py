@@ -2,6 +2,7 @@ from __future__ import print_function
 import os
 import sys
 import subprocess
+from contextlib import contextmanager
 from multiprocessing import Process, cpu_count, Queue
 import tempfile
 import unittest
@@ -13,13 +14,11 @@ import warnings
 
 import numpy as np
 
-from ase.calculators.calculator import names as calc_names, get_calculator
-from ase.utils import devnull
+from ase.calculators.calculator import names as calc_names, get_calculator_class
+from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
-NotAvailable = unittest.SkipTest
-
-test_calculator_names = []
+test_calculator_names = ['emt']
 
 if sys.version_info[0] == 2:
     class ResourceWarning(UserWarning):
@@ -28,7 +27,7 @@ if sys.version_info[0] == 2:
 
 def require(calcname):
     if calcname not in test_calculator_names:
-        raise NotAvailable('use --calculators={0} to enable'.format(calcname))
+        raise unittest.SkipTest('use --calculators={0} to enable'.format(calcname))
 
 
 def get_tests(files=None):
@@ -38,7 +37,10 @@ def get_tests(files=None):
 
         files = set()
         for fname in fnames:
-            files.update(glob(fname))
+            newfiles = glob(fname)
+            if not newfiles:
+                raise OSError('No such test: {}'.format(fname))
+            files.update(newfiles)
         files = list(files)
     else:
         files = glob(os.path.join(dirname, '*'))
@@ -71,7 +73,7 @@ def runtest_almost_no_magic(test):
         skip += ['db_web', 'h2.py', 'bandgap.py', 'al.py',
                  'runpy.py', 'oi.py']
         if any(s in test for s in skip):
-            raise NotAvailable('not on windows')
+            raise unittest.SkipTest('not on windows')
     try:
         with open(path) as fd:
             exec(compile(fd.read(), path, 'exec'), {})
@@ -92,6 +94,7 @@ def run_single_test(filename, verbose, strict):
     # Hence, create new subdir for each test:
     cwd = os.getcwd()
     testsubdir = filename.replace(os.sep, '_').replace('.', '_')
+    result.workdir = os.path.abspath(testsubdir)
     os.mkdir(testsubdir)
     os.chdir(testsubdir)
     t1 = time.time()
@@ -115,6 +118,10 @@ def run_single_test(filename, verbose, strict):
             warnings.filterwarnings('ignore',
                                     'Using or importing the ABCs from',
                                     category=DeprecationWarning)
+
+            # It is okay that we are testing our own experimental features:
+            warnings.filterwarnings('ignore',
+                                    category=ExperimentalFeatureWarning)
             runtest_almost_no_magic(filename)
     except KeyboardInterrupt:
         raise
@@ -144,7 +151,7 @@ def run_single_test(filename, verbose, strict):
 class Result:
     """Represents the result of a test; for communicating between processes."""
     attributes = ['name', 'pid', 'exception', 'traceback', 'time', 'status',
-                  'whyskipped']
+                  'whyskipped', 'workdir']
 
     def __init__(self, **kwargs):
         d = {key: None for key in self.attributes}
@@ -172,7 +179,9 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * gui/run may deadlock for unknown reasons in subprocess
 
             t = test.replace('\\', '/')
-            if t in ['bandstructure.py', 'doctests.py', 'gui/run.py',
+            if t in ['bandstructure.py',
+                     'bandstructure_many.py',
+                     'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
                      'forcecurve.py',
                      'fio/animate.py', 'db/db_web.py', 'x3d.py']:
@@ -212,6 +221,7 @@ def print_test_result(result):
     if result.traceback:
         print('=' * 78)
         print('Error in {} on pid {}:'.format(result.name, result.pid))
+        print('Workdir: {}'.format(result.workdir))
         print(result.traceback.rstrip())
         print('=' * 78)
 
@@ -355,13 +365,13 @@ def disable_calculators(names):
         if name in ['emt', 'lj', 'eam', 'morse', 'tip3p']:
             continue
         try:
-            cls = get_calculator(name)
+            cls = get_calculator_class(name)
         except ImportError:
             pass
         else:
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
-                    raise NotAvailable('use --calculators={0} to enable'
+                    raise unittest.SkipTest('use --calculators={0} to enable'
                                        .format(name))
                 return mock_init
 
@@ -375,14 +385,16 @@ def cli(command, calculator_name=None):
     if (calculator_name is not None and
         calculator_name not in test_calculator_names):
         return
-    proc = subprocess.Popen(' '.join(command.split('\n')),
+    actual_command = ' '.join(command.split('\n')).strip()
+    proc = subprocess.Popen(actual_command,
                             shell=True,
                             stdout=subprocess.PIPE)
     print(proc.stdout.read().decode())
     proc.wait()
+
     if proc.returncode != 0:
-        raise RuntimeError('Failed running a shell command.  '
-                           'Please set you $PATH environment variable!')
+        raise RuntimeError('Command "{}" exited with error code {}'
+                           .format(actual_command, proc.returncode))
 
 
 class must_raise:
@@ -397,6 +409,13 @@ class must_raise:
         if exc_type is None:
             raise RuntimeError('Failed to fail: ' + str(self.exception))
         return issubclass(exc_type, self.exception)
+
+
+@contextmanager
+def no_warn():
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        yield
 
 
 class CLICommand:
@@ -426,6 +445,8 @@ class CLICommand:
                             'Mostly useful when inspecting a single test')
         parser.add_argument('--strict', action='store_true',
                             help='convert warnings to errors')
+        parser.add_argument('--nogui', action='store_true',
+                            help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
                             help='Specify particular test files.  '
                             'Glob patterns are accepted.')
@@ -455,6 +476,9 @@ class CLICommand:
                                  '{}.\n'.format(calculator,
                                                 ', '.join(calc_names)))
                 sys.exit(1)
+
+        if args.nogui:
+            os.environ.pop('DISPLAY')
 
         ntrouble = test(calculators=calculators, jobs=args.jobs,
                         strict=args.strict,

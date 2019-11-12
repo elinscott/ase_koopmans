@@ -23,7 +23,7 @@ adsorbates = {'ontop': 'H', 'hollow': 'O', 'fcc': 'N', 'hcp': 'C',
 
 def save(name, slab):
     print('save %s' % name)
-    write(name + '.png', slab, show_unit_cell=2, radii=radii[name[:3]],
+    write(name + '.png', slab, radii=radii[name[:3]],
           scale=10)
 
 

@@ -4,12 +4,12 @@ import numpy as np
 
 from ase import Atoms
 from ase.constraints import dict2constraint
-from ase.calculators.calculator import get_calculator, all_properties
+from ase.calculators.calculator import get_calculator_class, all_properties
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import chemical_symbols, atomic_masses
 from ase.io.jsonio import decode
-from ase.utils import formula_metal, basestring
+from ase.formula import Formula
 
 
 class FancyDict(dict):
@@ -68,7 +68,7 @@ class AtomsRow:
             if 'calculator_parameters' in dct:
                 # Earlier version of ASE would encode the calculator
                 # parameter dict again and again and again ...
-                while isinstance(dct['calculator_parameters'], basestring):
+                while isinstance(dct['calculator_parameters'], str):
                     dct['calculator_parameters'] = decode(
                         dct['calculator_parameters'])
         else:
@@ -140,8 +140,11 @@ class AtomsRow:
     @property
     def data(self):
         """Data dict."""
-        if not isinstance(self._data, dict):
+        if isinstance(self._data, str):
             self._data = decode(self._data)  # lazy decoding
+        elif isinstance(self._data, bytes):
+            from ase.db.core import bytes_to_object
+            self._data = bytes_to_object(self._data)  # lazy decoding
         return FancyDict(self._data)
 
     @property
@@ -152,7 +155,7 @@ class AtomsRow:
     @property
     def formula(self):
         """Chemical formula string."""
-        return formula_metal(self.numbers)
+        return Formula('', [(self.symbols, 1)]).format('metal')
 
     @property
     def symbols(self):
@@ -227,7 +230,7 @@ class AtomsRow:
 
         if attach_calculator:
             params = self.get('calculator_parameters', {})
-            atoms.calc = get_calculator(self.calculator)(**params)
+            atoms.calc = get_calculator_class(self.calculator)(**params)
         else:
             results = {}
             for prop in all_properties:

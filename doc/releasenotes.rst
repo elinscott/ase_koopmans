@@ -9,16 +9,197 @@ Git master branch
 
 :git:`master <>`.
 
+* :func:`ase.build.bulk` now supports elements with tetrahedral,
+  rhombohedral, and orthorhombic lattices.
+
+* Read and write support for RMCProfile (rmc6f) file format.
+
+* Gulp calculator now provides stress tensor.
+
+* More efficient storage of the "data" part of rows in the :mod:`ase.db`
+  database.  NumPy arrays are now stored in binary format instead of as text
+  thereby using approximately a factor of two less space when storing numbers
+  of `np.float64`.
+
+* The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
+  been deprecated.  Use ``world.rank`` and ``world.size`` instead
+  (and ``from ase.parallel import world``).
+
+* ``atoms.set_masses('most_common')`` now sets the masses of each
+  element according to most common isotope as stored in
+  ``ase.data.atomic_masses_common``.
+
+* Plotting functions (such as band structure, EOS, ...)
+  no longer show the figure by default.
+
+* Added :class:`~ase.calculators.psi4.Psi4` calculator.
+
+* The :mod:`~ase.io.pov` module can now render high-order bonds.
+
+* :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
+  from :mod:`ase.io.jsonio`.
+
+Version 3.18.0
+==============
+
+19 July 2019: :git:`3.18.0 <../3.18.0>`
+
+General changes:
+
+* ASE no longer supports Python2.
+
+* ``atoms.cell`` is now a :class:`~ase.cell.Cell` object.
+  This object resembles a 3x3 array and also provides shortcuts to many common
+  operations.
+
+* Preliminary :class:`~ase.formula.Formula` type added.  Collects all
+  formula manipulation functionality in one place.
+
+* :class:`~ase.symbols.Symbols` objects, like ``atoms.symbols``, now have a
+  :attr:`~ase.symbols.Symbols.formula` attribute.
+
+* Added classes to represent primitive Bravais lattices and data
+  relating to Brillouin zones to :mod:`ase.lattice`.  Includes 2D
+  lattices.
+
+* New :class:`~ase.dft.kpoints.BandPath` class to represent a band path
+  specification like ``'GXL'`` along with actual k-point coordinates.
+  :class:`~ase.dft.band_structure.BandStructure` objects now have a band
+  path.
+
+* :func:`ase.dft.kpoints.bandpath` now returns a
+  :class:`~ase.dft.kpoints.BandPath` object.  Generation
+  of band paths now works for (almost) any cell.
+
+* Use ``atoms.cell.bandpath()`` as a shortcut to generate band paths.
+
+* New holonomic :class:`constraint <ase.constraints.FixLinearTriatomic>`
+  for trilinear molecules.
+
+* Added ``ase info --calculators`` option which shows a list of
+  calculators and whether they appear to be installed.
+
+* Added :func:`ase.build.surfaces_with_termination.surfaces_with_termination`,
+  a tool to build surfaces with a particular termination.
+
+* Use the shortcut ``with ase.utils.workdir('mydir', mkdir=True):
+  <code>`` to temporarily change directories.
+
+* The ``ase test`` command now properly autocompletes test names and
+  calculator names.
+
+* Added keyword, ``atoms.wrap(pretty_translation=True)``, to minimize
+  the scaled positions of the atoms.
+
+Calculators:
+
+* Added interface to :mod:`ACE-Molecule <ase.calculators.acemolecule>`.
+
+* NWChem calculator now supports TDDFT runs.
+
 * Multiple improvements to the ONETEP Calculator. Input files can now be
   written that specify LDOS, bsunfolding and many other functionalities.
 
-* NWChem calculator now supports TDDFT runs.
-  
-* The genetic algorithm module :mod:`ase.ga` now has operators for crystal structure prediction. See :ref:`ga_bulk_tutorial`.
+* Calculation of stress tensor implemented for
+  :class:`~ase.calculators.emt.EMT` potential.
 
-* New :func:`ase.geometry.analyze_dimensionality` function.  See:
-  :ref:`dimtutorial`.
+* The :class:`~ase.calculators.octopus.Octopus` calculator now
+  provides the stress tensor.
 
+* Reworked :class:`~ase.calculators.lammpsrun.LAMMPS` calculator.  The
+  calculator should now behave more consistently with other ASE
+  calculators.
+
+* Gromacs calculator updated to work with newer Gromacs.
+
+* Fleur calculator updated to work with newer Fleur.
+
+* Added :class:`~ase.calculators.ACN`, a QM/MM forcefield for acetonitrile.
+
+* Improved eigenvalue parsing with Siesta calculator.
+
+Algorithms:
+
+* Determine Bravais lattice for any 2D or 3D cell using
+  ``atoms.cell.get_bravais_lattice()``.
+
+* Added function to Minkowski reduce a cell.
+
+* Improved stability of Niggli reduction algorithm.
+
+* Supercell generation using ``ase.build.make_supercell()`` now uses
+  a constructive algorithm instead of cutting which was prone to tolerance
+  errors.
+
+* Setting an MD velocity distribution now preserves the temperature
+  by default.
+
+* :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting
+  bond lengths and angles from atoms.
+
+* Dynamics and structure optimizers can now run as an iterator using the
+  new ``irun()`` mechanism::
+
+    for conv in opt.irun(fmax=0.05):
+        print('hello')
+
+  This makes it easier to execute custom code during runs.  The ``conv``
+  variable indicates whether the current iteration meets the convergence
+  criterion, although this behaviour may change in future versions.
+
+* The genetic algorithm module :mod:`ase.ga` now has operators for crystal
+  structure prediction. See :ref:`ga_bulk_tutorial`.
+
+* The genetic algorithm module :mod:`ase.ga` now has operators for crystal
+  structure prediction. See :ref:`ga_bulk_tutorial`.
+
+* New :func:`ase.geometry.dimensionality.analyze_dimensionality` function.
+  See: :ref:`dimtutorial`.
+
+* New :func:`ase.utils.deltacodesdft.delta` function:  Calculates the
+  difference between two DFT equation-of-states.  See the new :ref:`dcdft tut`
+  tutorial.
+
+* Holonomic :class:`~ase.constraints.FixLinearTriatomic` for QM/MM
+  calculations.
+
+I/O:
+
+* Database supports user defined tables
+
+* Preliminary :class:`~ase.formula.Formula` type added.  Collects all
+  formula manipulation functionality in one place.
+
+* Support for reading and writing DL_POLY format.
+
+* Support for reading CP2K DCD format.
+
+* Support for EON .con files with multiple images.
+
+* Support for writing Materials Studio xtd format.
+
+* Improved JSON support.  :ref:`cli` tools like :program:`ase
+  band-structure` and :program:`ase reciprocal` now work with
+  JSON representations of band structures and paths.
+
+* Support reading CIF files through the
+  `Pycodcif <http://wiki.crystallography.net/cod-tools/CIF-parser/>`_
+  library.  This can be useful for CIF features that are not supported
+  by the internal CIF parser.
+
+* :ref:`MySQL and MariaDB <MySQL_server>` are supported as database backend
+
+* Support for writing isosurface information to POV format
+  with :func:`ase.io.pov.add_isosurface_to_pov`
+
+GUI:
+
+ * Quickinfo dialog automatically updates when switching image.
+
+ * Display information about custom arrays on Atoms objects; allow colouring
+   by custom arrays.
+
+ * Improved color scales.
 
 Version 3.17.0
 ==============
@@ -242,8 +423,8 @@ Version 3.15.0
 
 * The :class:`ase.dft.dos.DOS` object will now use linear tetrahedron
   interpolation of the band-structure if you set ``width=0.0``.  It's slow,
-  but sometimes worth waiting for.  It uses the :func:`ase.dft.dos.ltidos`
-  helper function.
+  but sometimes worth waiting for.  It uses the
+  :func:`ase.dft.dos.linear_tetrahedron_integration` helper function.
 
 * :func:`ase.io.read` can now read QBox output files.
 
@@ -500,7 +681,7 @@ Version 3.11.0
 
 10 May 2016: :git:`3.11.0 <../3.11.0>`.
 
-* Special `\mathbf{k}`-points from the [Setyawana-Curtarolo]_ paper was added:
+* Special `\mathbf{k}`-points from the [Setyawan-Curtarolo]_ paper was added:
   :data:`ase.dft.kpoints.special_points`.
 
 * New :mod:`ase.collections` module added.  Currently contains the G2 database

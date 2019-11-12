@@ -12,7 +12,7 @@ class NVTBerendsen(MolecularDynamics):
 
     atoms
         The list of atoms.
-        
+
     timestep
         The time step.
 
@@ -30,10 +30,11 @@ class NVTBerendsen(MolecularDynamics):
 
     def __init__(self, atoms, timestep, temperature, taut, fixcm=True,
                  trajectory=None, logfile=None, loginterval=1,
-                 communicator=world):
+                 communicator=world, append_trajectory=False):
 
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
-                                   logfile, loginterval)
+                                   logfile, loginterval,
+                                   append_trajectory=append_trajectory)
         self.taut = taut
         self.temperature = temperature
         self.fixcm = fixcm  # will the center of mass be held fixed?
@@ -70,18 +71,22 @@ class NVTBerendsen(MolecularDynamics):
             scl_temperature = 1.1
         if scl_temperature < 0.9:
             scl_temperature = 0.9
-        
+
         p = self.atoms.get_momenta()
         p = scl_temperature * p
         self.atoms.set_momenta(p)
         return
 
-    def step(self, f):
+    def step(self, f=None):
         """Move one timestep forward using Berenden NVT molecular dynamics."""
         self.scale_velocities()
 
         # one step velocity verlet
         atoms = self.atoms
+
+        if f is None:
+            f = atoms.get_forces()
+
         p = self.atoms.get_momenta()
         p += 0.5 * self.dt * f
 

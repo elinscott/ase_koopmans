@@ -16,9 +16,10 @@ class CLIError(Exception):
 
 
 # Important: Following any change to command-line parameters, use
-# python -m ase.cli.completion to update autocompletion.
+# python3 -m ase.cli.completion to update autocompletion.
 commands = [
     ('info', 'ase.cli.info'),
+    # ('show', 'ase.cli.show'),
     ('test', 'ase.test'),
     ('gui', 'ase.gui.ag'),
     ('db', 'ase.db.cli'),

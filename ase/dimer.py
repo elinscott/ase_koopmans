@@ -12,7 +12,7 @@ import numpy as np
 
 from ase.optimize.optimize import Optimizer
 from math import cos, sin, atan, tan, degrees, pi, sqrt
-from ase.parallel import rank, size, world
+from ase.parallel import world
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.utils import basestring
 
@@ -328,7 +328,7 @@ class MinModeControl:
     def initialize_logfiles(self, logfile=None, eigenmode_logfile=None):
         """Set up the log files."""
         # Set up the regular logfile
-        if rank != 0:
+        if world.rank != 0:
             logfile = None
         elif isinstance(logfile, basestring):
             if logfile == '-':
@@ -339,7 +339,7 @@ class MinModeControl:
 
         # Set up the eigenmode logfile
         if eigenmode_logfile:
-            if rank != 0:
+            if world.rank != 0:
                 eigenmode_logfile = None
             elif isinstance(eigenmode_logfile, basestring):
                 if eigenmode_logfile == '-':
@@ -561,8 +561,8 @@ class MinModeAtoms:
         # Seed the randomness
         if random_seed is None:
             t = time.time()
-            if size > 1:
-                t = world.sum(t) / float(size)
+            if world.size > 1:
+                t = world.sum(t) / world.size
             # Harvest the latter part of the current time
             random_seed = int(('%30.9f' % t)[-9:])
         self.random_state = np.random.RandomState(random_seed)
@@ -1026,30 +1026,11 @@ class MinModeTranslate(Optimizer):
         self.r0 = None
         self.f0 = None
 
-    def run(self, fmax=0.05, steps=100000000):
-        """Run structure optimization algorithm.
-
-        This method will return when the forces on all individual
-        atoms are less than *fmax* or when the number of steps exceeds
-        *steps*.
-
-        """
-
-        self.fmax = fmax
-        step = 0
-        while step < steps:
-            f = self.atoms.get_forces()
-            self.call_observers()
-            if self.converged(f):
-                self.log(f, None)
-                return
-            self.step(f)
-            self.nsteps += 1
-            step += 1
-
-    def step(self, f):
+    def step(self, f=None):
         """Perform the optimization step."""
         atoms = self.atoms
+        if f is None:
+            f = atoms.get_forces()
         r = atoms.get_positions()
         curv = atoms.get_curvature()
         f0p = f.copy()
@@ -1094,8 +1075,10 @@ class MinModeTranslate(Optimizer):
         self.direction_old = direction.copy()
         return self.cg_direction.copy()
 
-    def log(self, f, stepsize):
+    def log(self, f=None, stepsize=None):
         """Log each step of the optimization."""
+        if f is None:
+            f = self.atoms.get_forces()
         if self.logfile is not None:
             T = time.localtime()
             e = self.atoms.get_potential_energy()

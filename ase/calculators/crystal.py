@@ -82,7 +82,7 @@ class CRYSTAL(FileIOCalculator):
         """
 
         # write BLOCK 1 (only SP with gradients)
-        outfile = open(filename, 'w')
+        outfile = open(filename, 'wt', encoding='latin-1')
         outfile.write('Single point + Gradient crystal calculation \n')
         outfile.write('EXTERNAL \n')
         outfile.write('NEIGHPRT \n')
@@ -233,7 +233,9 @@ class CRYSTAL(FileIOCalculator):
             It will be destroyed after it is read to avoid
             reading it once again after some runtime error """
 
-        with open(os.path.join(self.directory, 'OUTPUT'), 'r') as myfile:
+        with open(os.path.join(self.directory, 'OUTPUT'),
+                  'rt',
+                  encoding='latin-1') as myfile:
             self.lines = myfile.readlines()
 
         self.atoms = self.atoms_input

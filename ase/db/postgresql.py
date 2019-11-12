@@ -6,7 +6,8 @@ from psycopg2.extras import execute_values
 
 from ase.db.sqlite import (init_statements, index_statements, VERSION,
                            SQLite3Database)
-import ase.io.jsonio
+from ase.io.jsonio import (encode as ase_encode,
+                           create_ase_object, create_ndarray)
 
 jsonb_indices = [
     'CREATE INDEX idxkeys ON systems USING GIN (key_value_pairs);',
@@ -76,15 +77,30 @@ class Cursor:
                        argslist=args[0], template=q, page_size=len(args[0]))
 
 
+def insert_ase_and_ndarray_objects(obj):
+    if isinstance(obj, dict):
+        objtype = obj.pop('__ase_objtype__', None)
+        if objtype is not None:
+            return create_ase_object(objtype, obj)
+        data = obj.get('__ndarray__')
+        if data is not None:
+            return create_ndarray(*data)
+        return {key: insert_ase_and_ndarray_objects(value)
+                for key, value in obj.items()}
+    if isinstance(obj, list):
+        return [insert_ase_and_ndarray_objects(value) for value in obj]
+    return obj
+
+
 class PostgreSQLDatabase(SQLite3Database):
     type = 'postgresql'
     default = 'DEFAULT'
 
-    def encode(self, obj):
-        return ase.io.jsonio.encode(remove_nan_and_inf(obj))
+    def encode(self, obj, binary=False):
+        return ase_encode(remove_nan_and_inf(obj))
 
-    def decode(self, obj):
-        return insert_nan_and_inf(ase.io.jsonio.numpyfy(obj))
+    def decode(self, obj, lazy=False):
+        return insert_ase_and_ndarray_objects(insert_nan_and_inf(obj))
 
     def blob(self, array):
         """Convert array to blob/buffer object."""
@@ -166,7 +182,7 @@ def schema_update(sql):
 
     arrays_2D = ['positions', 'cell', 'forces']
 
-    txt2jsonb = ['calculator_parameters', 'key_value_pairs', 'data']
+    txt2jsonb = ['calculator_parameters', 'key_value_pairs']
 
     for column in arrays_1D:
         if column in ['numbers', 'tags']:
@@ -181,5 +197,7 @@ def schema_update(sql):
     for column in txt2jsonb:
         sql = sql.replace('{} TEXT,'.format(column),
                           '{} JSONB,'.format(column))
+
+    sql = sql.replace('data BLOB,', 'data JSONB,')
 
     return sql

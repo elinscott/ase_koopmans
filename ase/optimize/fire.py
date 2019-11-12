@@ -71,8 +71,12 @@ class FIRE(Optimizer):
     def read(self):
         self.v, self.dt = self.load()
 
-    def step(self, f):
+    def step(self, f=None):
         atoms = self.atoms
+
+        if f is None:
+            f = atoms.get_forces()
+
         if self.v is None:
             self.v = np.zeros((len(atoms), 3))
             if self.downhill_check:
@@ -120,4 +124,3 @@ class FIRE(Optimizer):
         r = atoms.get_positions()
         atoms.set_positions(r + dr)
         self.dump((self.v, self.dt))
-
