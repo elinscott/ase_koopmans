@@ -38,8 +38,10 @@ allowed_dft_functionals = ['lsda',  # = 'svwn'
 
 
 def read_gaussian_out(filename, index=-1, quantity='atoms'):
-    """"Interface to GaussianReader and returns various quantities.
-        No support for multiple images in one file!
+    """
+    Interface to GaussianReader and returns various quantities.
+    No support for multiple images in one file!
+
     - quantity = 'structures' -> all structures from the file
     - quantity = 'atoms' -> structure from the archive section
     - quantity = 'energy' -> from the archive section
@@ -47,7 +49,9 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
     - quantity = 'dipole' -> from the archive section
     - quantity = 'version' -> from the archive section
     - quantity = 'multiplicity' -> from the archive section
-    - quantity = 'charge' -> from the archive section"""
+    - quantity = 'charge' -> from the archive section
+
+    """
     energy = 0.0
 
     tmpGR = GR(filename, read_structures=bool(quantity == 'structures'))
@@ -141,9 +145,18 @@ def read_gaussian(filename):
             i = 0
             while (lines[n + i + 5] != '\n'):
                 info = lines[n + i + 5].split()
-                symbol = info[0]
+                if "Fragment" in info[0]:
+                    info[0] = info[0].replace("(", " ")
+                    info[0] = info[0].replace("=", " ")
+                    info[0] = info[0].replace(")", " ")
+                    fragment_line = info[0].split()
+                    symbol = fragment_line[0]
+                    tag = int(fragment_line[2]) - 1
+                else:
+                    symbol = info[0]
+                    tag = 0
                 position = [float(info[1]), float(info[2]), float(info[3])]
-                atoms += Atom(symbol, position=position)
+                atoms += Atom(symbol, position=position, tag=tag)
                 i += 1
     return atoms
 

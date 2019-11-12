@@ -71,7 +71,7 @@ def runtest_almost_no_magic(test):
         if any(s in test for s in skip):
             raise unittest.SkipTest('not on windows')
     try:
-        runpy.run_path(path, run_name='__main__')
+        runpy.run_path(path, run_name='test')
     except ImportError as ex:
         module = ex.args[0].split()[-1].replace("'", '').split('.')[0]
         if module in ['scipy', 'matplotlib', 'Scientific', 'lxml', 'Tkinter',
@@ -79,6 +79,14 @@ def runtest_almost_no_magic(test):
             raise unittest.SkipTest('no {} module'.format(module))
         else:
             raise
+    # unittest.main calls sys.exit, which raises SystemExit.
+    # Uncatched SystemExit, a subclass of BaseException, marks a test as ERROR
+    # even if its exit code is zero (test passes).
+    # Here, AssertionError is raised to mark a test as FAILURE if exit code is
+    # non-zero.
+    except SystemExit as ex:
+        if ex.code != 0:
+            raise AssertionError
 
 
 def run_single_test(filename, verbose, strict):
@@ -172,14 +180,18 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * doctest exceptions appear to be unpicklable.
             #    Probably they contain a reference to a module or something.
             #  * gui/run may deadlock for unknown reasons in subprocess
+            #  * Anything that uses matplotlib (we don't know why)
+            #  * pubchem (https://gitlab.com/ase/ase/merge_requests/1477)
 
             t = test.replace('\\', '/')
+
             if t in ['bandstructure.py',
                      'bandstructure_many.py',
                      'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
                      'forcecurve.py',
-                     'fio/animate.py', 'db/db_web.py', 'x3d.py']:
+                     'fio/animate.py', 'db/db_web.py', 'x3d.py',
+                     'pubchem.py']:
                 result = Result(name=test, status='please run on master')
                 result_queue.put(result)
                 continue

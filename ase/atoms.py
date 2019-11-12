@@ -301,7 +301,7 @@ class Atoms(object):
     constraints = property(_get_constraints, set_constraint, _del_constraints,
                            'Constraints of the atoms.')
 
-    def set_cell(self, cell, scale_atoms=False):
+    def set_cell(self, cell, scale_atoms=False, apply_constraint=True):
         """Set unit cell vectors.
 
         Parameters:
@@ -343,6 +343,12 @@ class Atoms(object):
 
         # Override pbcs if and only if given a Cell object:
         cell = Cell.new(cell)
+
+        # XXX not working well during initialize due to missing _constraints
+        if apply_constraint and hasattr(self, '_constraints'):
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_cell'):
+                    constraint.adjust_cell(self, cell)
 
         if scale_atoms:
             M = np.linalg.solve(self.cell.complete(), cell.complete())
@@ -740,7 +746,7 @@ class Atoms(object):
                     constraint.adjust_forces(self, forces)
         return forces
 
-    def get_stress(self, voigt=True):
+    def get_stress(self, voigt=True, apply_constraint=True):
         """Calculate stress tensor.
 
         Returns an array of the six independent components of the
@@ -756,8 +762,10 @@ class Atoms(object):
         shape = stress.shape
 
         if shape == (3, 3):
-            # if Voigt form is not wanted, return rightaway
-            if not voigt:
+            # if Voigt form is not wanted, return rightaway if apply_constraint is False
+            # If the user wants to apply constraints to the stress transform the Voigt form and
+            # apply the constraint
+            if not voigt and (not apply_constraint or not self.constraints):
                 return stress
             warnings.warn('Converting 3x3 stress tensor from %s ' %
                           self._calc.__class__.__name__ +
@@ -766,6 +774,11 @@ class Atoms(object):
                                stress[1, 2], stress[0, 2], stress[0, 1]])
         else:
             assert shape == (6,)
+
+        if apply_constraint:
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_stress'):
+                    constraint.adjust_stress(self, stress)
 
         if voigt:
             return stress
@@ -828,7 +841,13 @@ class Atoms(object):
         kw = {}
         for name in ['numbers', 'positions', 'cell', 'pbc']:
             kw[name] = dct.pop(name)
-        atoms = cls(constraint=dct.pop('constraints', None),
+
+        constraints = dct.pop('constraints', None)
+        if constraints:
+            from ase.constraints import dict2constraint
+            constraints = [dict2constraint(d) for d in constraints]
+
+        atoms = cls(constraint=constraints,
                     celldisp=dct.pop('celldisp', None),
                     info=dct.pop('info', None), **kw)
         natoms = len(atoms)
@@ -836,7 +855,7 @@ class Atoms(object):
         # Some arrays are named differently from the atoms __init__ keywords.
         # Also, there may be custom arrays.  Hence we set them directly:
         for name, arr in dct.items():
-            assert len(arr) == natoms
+            assert len(arr) == natoms, name
             assert isinstance(arr, np.ndarray)
             atoms.arrays[name] = arr
         return atoms

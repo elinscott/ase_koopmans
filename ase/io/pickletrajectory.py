@@ -79,7 +79,7 @@ class PickleTrajectory:
             msg = 'Please stop using old trajectory files!'
             if mode == 'r':
                 msg += ('\nConvert to the new future-proof format like this:\n'
-                        '\n    $ python -m ase.io.trajectory ' +
+                        '\n    $ python3 -m ase.io.trajectory ' +
                         filename + '\n')
             raise DeprecationWarning(msg)
 
@@ -289,7 +289,9 @@ class PickleTrajectory:
         if 0 <= i < N:
             self.fd.seek(self.offsets[i])
             try:
-                d = pickle.load(self.fd)
+                d = pickle.load(self.fd, encoding='bytes')
+                d = {k.decode() if isinstance(k, bytes) else k: v
+                     for k, v in d.items()}
             except EOFError:
                 raise IndexError
             if i == N - 1:
@@ -553,7 +555,7 @@ def dict2constraints(d):
                     # Special handling of old pickles:
                     c.index = np.arange(len(c.index))[c.index]
             return constraints
-        except (AttributeError, KeyError, EOFError, ImportError):
+        except (AttributeError, KeyError, EOFError, ImportError, TypeError):
             warnings.warn('Could not unpickle constraints!')
             return []
     else:

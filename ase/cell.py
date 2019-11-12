@@ -313,5 +313,51 @@ class Cell:
         result._pbc = self._pbc.copy()
         return result, op
 
+    def permute_axes(self, permutation):
+        """Permute axes of cell."""
+        assert (np.sort(permutation) == np.arange(3)).all()
+        permuted = Cell(self[permutation][:, permutation])
+        permuted._pbc = self._pbc[permutation]
+        return permuted
+
+    def standard_form(self):
+        """Rotate axes such that unit cell is lower triangular. The cell
+        handedness is preserved.
+
+        A lower-triangular cell with positive diagonal entries is a canonical
+        (i.e. unique) description. For a left-handed cell the diagonal entries
+        are negative.
+
+        Returns:
+
+        rcell: the standardized cell object
+
+        Q: ndarray
+            The orthogonal transformation.  Here, rcell @ Q = cell, where cell
+            is the input cell and rcell is the lower triangular (output) cell.
+        """
+
+        # get cell handedness (right or left)
+        sign = np.sign(np.linalg.det(self))
+        if sign == 0:
+            sign = 1
+
+        # LQ decomposition provides an axis-aligned description of the cell.
+        # Q is an orthogonal matrix and L is a lower triangular matrix. The
+        # decomposition is a unique description if the diagonal elements are
+        # all positive (negative for a left-handed cell).
+        Q, L = np.linalg.qr(self.T)
+        Q = Q.T
+        L = L.T
+
+        # correct the signs of the diagonal elements
+        signs = np.sign(np.diag(L))
+        indices = np.where(signs == 0)[0]
+        signs[indices] = 1
+        indices = np.where(signs != sign)[0]
+        L[:, indices] *= -1
+        Q[indices] *= -1
+        return Cell(L), Q
+
     # XXX We want a reduction function that brings the cell into
     # standard form as defined by Setyawan and Curtarolo.

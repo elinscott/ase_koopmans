@@ -21,8 +21,9 @@ with warnings.catch_warnings(record=True) as w:
     # Cause all warnings to always be triggered.
     warnings.simplefilter("always")
     write("tmp2.xyz", at2)
-    assert len(w) == 1
+    assert len(w) == 2
     assert ('overwriting array' in str(w[0].message))
+    assert ('overwriting array' in str(w[1].message))
 
 at3 = read("tmp2.xyz")
 f3 = at3.get_forces()

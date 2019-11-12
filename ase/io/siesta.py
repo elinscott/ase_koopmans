@@ -103,7 +103,7 @@ def _read_fdf(fname, inodes=[]):
                         raise IOError('Unexpected EOF reached in %s, '
                                       'un-ended block %s' % (fname, label))
                     w = lines.pop(0).split()
-                    if lbz(w[0]) == '%endblock' and lbz(w[1]) == label:
+                    if lbz(w[0]) == '%endblock':
                         break
                     content.append(w)
 

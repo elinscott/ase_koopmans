@@ -468,6 +468,40 @@ def experimental(func):
         return func(*args, **kwargs)
     return expfunc
 
+
+def lazymethod(meth):
+    """Decorator for lazy evaluation and caching of data.
+
+    Example::
+
+      class MyClass:
+
+         @lazymethod
+         def thing(self):
+             return expensive_calculation()
+
+    The method body is only executed first time thing() is called, and
+    its return value is stored.  Subsequent calls return the cached
+    value."""
+    name = meth.__name__
+    @functools.wraps(meth)
+    def getter(self):
+        try:
+            cache = self._lazy_cache
+        except AttributeError:
+            cache = self._lazy_cache = {}
+
+        if name not in cache:
+            cache[name] = meth(self)
+        return cache[name]
+    return getter
+
+
+def lazyproperty(meth):
+    """Decorator like lazymethod, but making item available as a property."""
+    return property(lazymethod(meth))
+
+
 def deprecated(msg):
     """Return a decorator deprecating a function.
 

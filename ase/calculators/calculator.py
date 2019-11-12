@@ -71,32 +71,47 @@ class PropertyNotPresent(CalculatorError):
     with the rest of the results, without being a fatal ReadError."""
 
 
-def compare_atoms(atoms1, atoms2, tol=1e-15):
-    """Check for system changes since last calculation."""
+def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
+    """Check for system changes since last calculation.  Properties in
+    ``excluded_properties`` are not checked."""
     if atoms1 is None:
         system_changes = all_changes[:]
     else:
         system_changes = []
-        if not equal(atoms1.positions, atoms2.positions, tol):
-            system_changes.append('positions')
-        if not equal(atoms1.numbers, atoms2.numbers):
-            system_changes.append('numbers')
-        if not equal(atoms1.cell, atoms2.cell, tol):
-            system_changes.append('cell')
-        if not equal(atoms1.pbc, atoms2.pbc):
-            system_changes.append('pbc')
-        if not equal(atoms1.get_initial_magnetic_moments(),
-                     atoms2.get_initial_magnetic_moments(), tol):
-            system_changes.append('initial_magmoms')
-        if not equal(atoms1.get_initial_charges(),
-                     atoms2.get_initial_charges(), tol):
-            system_changes.append('initial_charges')
+
+        properties_to_check = set(all_changes)
+        if excluded_properties:
+             properties_to_check -= set(excluded_properties)
+
+        # Check properties that aren't in Atoms.arrays but are attributes of
+        # Atoms objects
+        for prop in ['cell', 'pbc']:
+            if prop in properties_to_check:
+                properties_to_check.remove(prop)
+                if not equal(getattr(atoms1, prop), getattr(atoms2, prop), tol):
+                    system_changes.append(prop)
+
+        arrays1 = set(atoms1.arrays)
+        arrays2 = set(atoms2.arrays)
+
+        # Add any properties that are only in atoms1.arrays or only in
+        # atoms2.arrays (and aren't excluded).  Note that if, e.g. arrays1 has
+        # `initial_charges` which is merely zeros and arrays2 does not have
+        # this array, we'll still assume that the system has changed.  However,
+        # this should only occur rarely.
+        system_changes += properties_to_check & (arrays1 ^ arrays2)
+
+        # Finally, check all of the non-excluded properties shared by the atoms
+        # arrays
+        for prop in properties_to_check & arrays1 & arrays2:
+                if not equal(atoms1.arrays[prop], atoms2.arrays[prop], tol):
+                    system_changes.append(prop)
 
     return system_changes
 
 
 all_properties = ['energy', 'forces', 'stress', 'stresses', 'dipole',
-                  'charges', 'magmom', 'magmoms', 'free_energy']
+                  'charges', 'magmom', 'magmoms', 'free_energy', 'energies']
 
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc',
@@ -123,6 +138,7 @@ special = {'cp2k': 'CP2K',
            'ff': 'ForceField',
            'fleur': 'FLEUR',
            'gulp': 'GULP',
+           'kim': 'KIM',
            'lammpsrun': 'LAMMPS',
            'lammpslib': 'LAMMPSlib',
            'lj': 'LennardJones',
@@ -617,7 +633,7 @@ class Calculator(object):
         return changed_parameters
 
     def check_state(self, atoms, tol=1e-15):
-        """Check for system changes since last calculation."""
+        """Check for any system changes since last calculation."""
         return compare_atoms(self.atoms, atoms, tol)
 
     def get_potential_energy(self, atoms=None, force_consistent=False):

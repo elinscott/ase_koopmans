@@ -27,3 +27,14 @@ assert BeH.has('initial_magmoms')
 new_BeH = decode(encode(BeH))
 assert_equal(BeH, new_BeH)
 assert new_BeH.has('initial_magmoms')
+
+from ase.constraints import FixAtoms
+atoms = bulk('Ti')
+atoms.constraints = FixAtoms(indices=[0])
+newatoms = decode(encode(atoms))
+c1 = atoms.constraints
+c2 = newatoms.constraints
+assert len(c1) == len(c2) == 1
+# Can we check constraint equality somehow?
+# Would make sense for FixAtoms
+assert np.array_equal(c1[0].index, c2[0].index)
