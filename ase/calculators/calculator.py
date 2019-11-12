@@ -129,6 +129,7 @@ names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k',
 
 
 special = {'cp2k': 'CP2K',
+           'demonnano': 'DemonNano',
            'dftd3': 'DFTD3',
            'dmol': 'DMol3',
            'eam': 'EAM',

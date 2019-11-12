@@ -26,7 +26,7 @@ for the Slater-Koster files and what is the name of the executable):
 deMon-Nano Calculator (a FileIOCalculator)
 ==========================================
 
-.. autoclass:: Demonnano
+.. autoclass:: DemonNano
 
 Example: Geometry Optimization with ASE
 =======================================
