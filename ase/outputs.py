@@ -35,6 +35,12 @@ class CalculatorOutputs:
     def __getitem__(self, key):
         return self.results[key]
 
+    def __contains__(self, key):
+        return key in self.results
+
+    def __iter__(self):
+        return iter(self.results)
+
     @calcprop()
     def energy(self):
         return self['energy']
@@ -43,8 +49,17 @@ class CalculatorOutputs:
     def free_energy(self):
         return self['free_energy']
 
+    @calcprop(shape=('natoms',))
+    def energies(self):
+        return self['energies']
+
+    # energies?
+    # (free_energies?  But that's unheard of.)
+
     @calcprop(shape=('natoms', 3))
     def forces(self):
+        # We don't necessarily want to store the whole Atoms object
+        # (after all our purpose is to represent the outputs!)
         return self['forces']
 
     @calcprop(shape=(6,))
@@ -55,6 +70,11 @@ class CalculatorOutputs:
 
     @calcprop(int)
     def nbands(self):
+        # We can be more intelligent here -- if we have self['eigenvalues'],
+        # we necessarily have nbands.
+        #
+        # But we can also rely on a normalization step to guarantee
+        # the presence of these things.
         return self['nbands']
 
     @calcprop(int)
@@ -84,3 +104,30 @@ class CalculatorOutputs:
     @calcprop(shape=('nkpts',))
     def kpoint_weights(self):
         return self['kpoint_weights']
+
+    #def to_singlepoint(self, atoms):
+    #    from ase.calculators.singlepoint import SinglePointDFTCalculator
+    #    return SinglePointDFTCalculator(atoms,
+    #                                    efermi=self.fermi_level,
+
+    # We can also retrieve (P)DOS and band structure.  However:
+    #
+    # * Band structure may require bandpath, which is an input, and
+    #   may not necessarily be easy or possible to reconstruct from
+    #   the outputs.
+    #
+    # * Some calculators may produce the whole BandStructure object in
+    #   one go (e.g. while parsing)
+    #
+    # * What about HOMO/LUMO?  Can be obtained from
+    #   eigenvalues/occupations, but some codes provide real data.  We
+    #   probably need to distinguish between HOMO/LUMO inferred by us
+    #   versus values provided within the output.
+    #
+    # * HOMO is sometimes used as alternative reference energy for
+    #   band structure.
+    #
+    # * What about spin-dependent (double) Fermi level?
+    #
+    # * What about 3D arrays?  We will almost certainly want to be
+    #   connected to an object that can load dynamically from a file.

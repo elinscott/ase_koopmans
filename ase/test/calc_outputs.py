@@ -11,6 +11,7 @@ results = dict(
     natoms=natoms,
     energy=rng.rand(),
     free_energy=rng.rand(),
+    energies=rng.rand(natoms),
     forces=rng.rand(natoms, 3),
     stress=rng.rand(6),
     nspins=nspins,
@@ -24,7 +25,9 @@ results = dict(
 )
 
 out = CalculatorOutputs(results)
+#assert set(out) == all_properties, all_properties ^ set(out)
 
 for name in all_properties:
+    assert name in out, name
     obj = getattr(out, name)
     print(name, obj)
