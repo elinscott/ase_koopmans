@@ -1,4 +1,4 @@
-from ase.calculators.demonnano import DemonNano
+from ase.calculators.demonnano import Demonnano
 from ase import Atoms
 from ase.io import write
 from ase.optimize import BFGS
@@ -15,7 +15,7 @@ input_arguments = {'DFTB': 'SCC',
                    'CHARGE': '0.0',
                    'PARAM': 'PTYPE=BIO'}
     
-calc = DemonNano(input_arguments=input_arguments)
+calc = Demonnano(input_arguments=input_arguments)
 
 mol.set_calculator(calc)
 
