@@ -14,7 +14,6 @@ import os
 import os.path as op
 #import subprocess
 import pathlib as pl
-
 import numpy as np
 
 from ase.units import Bohr, Hartree
@@ -22,8 +21,6 @@ import ase.data
 from ase.calculators.calculator import FileIOCalculator, ReadError
 from ase.calculators.calculator import Parameters
 import ase.io
-
-m_e_to_amu = 1822.88839
 
 class DemonNanoParameters(Parameters):
     """Parameters class for the calculator.
@@ -38,10 +35,8 @@ class DemonNanoParameters(Parameters):
             label='.',
             atoms=None,
             command=None,
-            restart=None,
             basis_path=None,
-            ignore_bad_restart_file=False,
-            deMon_restart_path='.',
+            restart_path='.',
             print_out='ASE',
             title='deMonNano input file',
             forces=False,
@@ -51,7 +46,7 @@ class DemonNanoParameters(Parameters):
         Parameters.__init__(self, **kwargs)
 
 
-class Demonnano(FileIOCalculator):
+class DemonNano(FileIOCalculator):
     """Calculator interface to the deMon-nano code. """
 
     implemented_properties = ['energy', 'forces']
@@ -71,22 +66,16 @@ class Demonnano(FileIOCalculator):
         atoms  : Atoms object
             the atoms object
         command  : str
-            Command to run deMon. If not present the environment varable ASE_DEMONNANO_COMMAND will be used
-        restart  : str
-            Relative path to ASE restart directory for parameters and atoms object and results
+            Command to run deMon. If not present, the environment variable ASE_DEMONNANO_COMMAND is used
         basis_path  : str 
             Relative path to the directory containing DFTB-SCC or DFTB-0 parameters
-            If not present in input parameters the environment variable DEMONNANO_BASIS_PATH will be used
-        ignore_bad_restart_file : bool 
-            Ignore broken or missing ASE restart files
-            By default, it is an error if the restart
-            file is missing or broken.
-        deMon_restart_path  : str 
+            If not present, the environment variable DEMONNANO_BASIS_PATH is used
+        restart_path  : str 
             Relative path to the deMon restart dir
         title : str 
             Title in the deMon input file.
         forces : bool
-            If True a force calcilation is enforced
+            If True a force calculation is enforced
         print_out : str | list 
             Options for the printing in deMon
         input_arguments : dict 
@@ -290,7 +279,6 @@ class Demonnano(FileIOCalculator):
        """Read forces from the deMon.ase file."""
 
        natoms = len(atoms)
-       
        epath = pl.Path(self.label)
 
        if not (epath / 'deMon.ase').exists():
@@ -321,17 +309,14 @@ class Demonnano(FileIOCalculator):
                    # output forces with real dimension
                    self.results['forces'][i, :] = f * (Hartree / Bohr)
 
-
     def deMon_inp_to_atoms(self, filename):
        """Routine to read deMon.inp and convert it to an atoms object."""
        
        read_flag=False
-       
        chem_symbols = []
        xyz = []
 
        with open(filename, 'r') as fd:
-
            for line in fd:
                if 'GEOMETRY' in line:
                     read_flag = True
@@ -344,12 +329,10 @@ class Demonnano(FileIOCalculator):
                     tokens = line.split()
                     symbol = tokens[0]
                     xyz_loc = np.array(tokens[1:4]).astype(float)
-
                if read_flag and tokens :
                     chem_symbols.append(symbol)
                     xyz.append(xyz_loc)
-
-       
+ 
        if coord_units == 'Bohr':
            xyz = xyz * Bohr
 
