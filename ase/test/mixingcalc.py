@@ -5,7 +5,7 @@ import numpy as np
 
 from ase.build import fcc111
 from ase.calculators.emt import EMT
-from ase.calculators.mixing import SumCalculator, LinearCombinationCalculator
+from ase.calculators.mixing import SumCalculator, LinearCombinationCalculator, AverageCalculator
 from ase.constraints import FixAtoms
 
 # Calculate reference values:
@@ -19,11 +19,11 @@ forces = atoms.get_forces()
 
 # SumCalculator: Alternative ways to associate a calculator with an atoms object.
 atoms1 = atoms.copy()
-calc1 = SumCalculator(EMT(), EMT())
+calc1 = SumCalculator([EMT(), EMT()])
 atoms1.set_calculator(calc1)
 
 atoms2 = atoms.copy()
-calc2 = SumCalculator(EMT(), EMT(), atoms=atoms2)
+calc2 = SumCalculator(calcs=[EMT(), EMT()], atoms=atoms2)
 
 # Check the results.
 assert np.isclose(2 * forces, atoms1.get_forces()).all()
@@ -37,16 +37,18 @@ assert not np.isclose(2 * forces, atoms1.get_forces()).all()
 atoms1.set_constraint(FixAtoms(indices=[atom.index for atom in atoms]))
 assert np.isclose(0, atoms1.get_forces()).all()
 
-# LinearCombinationCalculator:
+# AverageCalculator:
 
 atoms1 = atoms.copy()
-calc1 = LinearCombinationCalculator(EMT(), EMT())
+calc1 = AverageCalculator([EMT(), EMT()])
 atoms1.set_calculator(calc1)
 
-atoms2 = atoms.copy()
-calc2 = LinearCombinationCalculator(EMT(), EMT(), weights=[.5, .5], atoms=atoms2)
+# LinearCombinationCalculator:
 
-# Check the results (it should be the same because it is tha average of the same vvalues).
+atoms2 = atoms.copy()
+calc2 = LinearCombinationCalculator([EMT(), EMT()], weights=[.5, .5], atoms=atoms2)
+
+# Check the results (it should be the same because it is tha average of the same values).
 assert np.isclose(forces, atoms1.get_forces()).all()
 assert np.isclose(forces, atoms2.get_forces()).all()
 
