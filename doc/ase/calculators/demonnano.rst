@@ -27,7 +27,7 @@ for the Slater-Koster files and what is the name of the executable):
   $ ASE_DEMONNANO_COMMAND="/path/to/bin/deMon.username.x (an example)
 
 deMon-Nano Calculator (a FileIOCalculator)
-========================================
+==========================================
 
 The file 'deMon.inp' contains the input geometry and parameters.
 The file 'deMon.out' contains the results.
@@ -58,6 +58,6 @@ Parameters
             or a list of lists of str (first list is written on the first line, the others on following lines.)
 
 Example: Geometry Optimization with ASE
-=====================================
+=======================================
 
 .. literalinclude:: demonnano_ex1_relax.py
