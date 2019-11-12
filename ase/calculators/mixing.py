@@ -3,16 +3,18 @@ from ase.calculators.calculator import PropertyNotImplementedError
 
 
 class LinearCombinationCalculator(Calculator):
-    """LinearCombinationCalculator for weighted summation of multiple calculators (for thermodynamic purposes)..
+    """LinearCombinationCalculator for weighted summation of multiple calculators ...
     """
 
     def __init__(self, calcs=None, weights=None, atoms=None):
         """Implementation of sum of calculators.
 
         calcs: list
-            List of any arbitrary Calculators
+            List of an arbitrary number of `Calculator` objects.
         weights: list of float
-            List of any arbitrary Calculators
+            Weights for each `Calculator` in the list.
+        atoms: Atoms object
+            Optional Atoms object to which the calculator will be attached.
         """
 
         super().__init__(atoms=atoms)
@@ -78,7 +80,9 @@ class SumCalculator(LinearCombinationCalculator):
         """Implementation of sum of calculators.
 
         calcs: list
-            List of any arbitrary Calculators
+            List of an arbitrary number of `Calculator` objects.
+        atoms: Atoms object
+            Optional Atoms object to which the calculator will be attached.
         """
 
         weights = [1.] * len(calcs)
@@ -86,14 +90,16 @@ class SumCalculator(LinearCombinationCalculator):
 
 
 class AverageCalculator(LinearCombinationCalculator):
-    """AverageCalculator for weighted summation of multiple calculators (for thermodynamic purposes)..
+    """AverageCalculator for equal summation of multiple calculators (for thermodynamic purposes)..
     """
 
     def __init__(self, calcs=None, atoms=None):
         """Implementation of average of calculators.
 
         calcs: list
-            List of any arbitrary Calculators
+            List of an arbitrary number of `Calculator` objects.
+        atoms: Atoms object
+            Optional Atoms object to which the calculator will be attached.
         """
 
         n = len(calcs)
