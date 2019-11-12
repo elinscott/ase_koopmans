@@ -62,7 +62,5 @@ Parameters
 Example: Geometry Optimization with ASE
 =======================================
 
-.. literalinclude:: demonnano_ex1_relax.py
-
-.. autoclass:: ase.calculators.calculator.Calculator
+#.. literalinclude:: demonnano_ex1_relax.py
 
