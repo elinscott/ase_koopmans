@@ -35,9 +35,10 @@ assert(error < tol)
 
 # analytical forces
 forces_an = atoms.get_forces()
-ref = np.array([[ 0.1123E-01, -0.1670E-01, 0.0000E+00],
-                [-0.1958E-01,  0.4671E-02, 0.0000E+00],
-                [ 0.8349E-02,  0.1203E-01, 0.0000E+00]])
+ref = np.array([[ 0.11381E-01,    -0.16761E-01,     0.00000E+00 ],
+                [-0.19688E-01,     0.47899E-02,     0.00000E+00 ],
+                [ 0.83062E-02,     0.11971E-01,     0.00000E+00 ]])
+
 ref*=-Hartree/Bohr
 
 error = np.sqrt(np.sum((forces_an - ref)**2))
