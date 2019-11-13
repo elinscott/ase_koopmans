@@ -1,29 +1,28 @@
 Calculators
 -----------
 
-Many :mod:`ase.calculators` can be used with ASE, including
-:mod:`~ase.calculators.emt`, Asap_, Dacapo_, GPAW_, Abinit_, Vasp_.
-See the ASE home page for the full list.
+Many external calculators can be used with ASE, including GPAW_, Abinit_, Vasp_, Siesta_, `Quantum ESPRESSO`_, Asap_, LAMMPS_ and many more, see :ref:`supported calculators` for the full list.
 
 .. _Asap: http://wiki.fysik.dtu.dk/asap
-.. _Dacapo: http://wiki.fysik.dtu.dk/dacapo
 .. _GPAW: http://wiki.fysik.dtu.dk/gpaw
 .. _Siesta: http://www.icmab.es/siesta
 .. _Abinit: http://www.abinit.org
-.. _Vasp: http://cms.mpi.univie.ac.at/vasp
+.. _Vasp: http://vasp.at
+.. _Quantum ESPRESSO: http://www.quantum-espresso.org/
+.. _LAMMPS: http://lammps.sandia.gov/
 
 
 Setting up an external calculator with ASE
 ==========================================
 
 This tutorial will cover how to set up a basic calculation in ASE, using an external calculator.
-We will be using the :mod:`~ase.calculators.vasp.vasp2` module in this example, but please refer to :ref:`calculators` for a full list of supported calculators, and their respective documentation.
+We will be using the :mod:`~ase.calculators.vasp.vasp2` module in this example, other calculators can be used in a similar manner. For details please refer to the documentation of the specific calculators :ref:`supported calculators`.
 
 Important: ASE does not provide code or a license for VASP, and these must be aquired elsewhere.
 ASE only creates an interface with VASP, so that you can use the ASE provided tools together with VASP.
 
 Setting up
-----------
+==========
 
 The first step, is to tell ASE how to execute VASP, and where to find the pseudopotentials. You will need to have two environment variables defined:
 
@@ -34,7 +33,7 @@ The first step, is to tell ASE how to execute VASP, and where to find the pseudo
    $ export ASE_VASP_COMMAND="mpiexec $HOME/vasp/bin/vasp_std"
    $ export VASP_PP_PATH=$HOME/vasp/mypps
 
-The first environment variable :envvar:`ASE_VASP_COMMAND` is the default way to execute VASP, and should be defined in the same way, that you could normally execute a VASP run. Note, that if you want to execute VASP in parallel, this call should also include the MPI executable, which in this case is ``mpiexec``.
+The first environment variable :envvar:`ASE_VASP_COMMAND` is the default way to execute VASP, and should be defined in the same way, that you could normally execute a VASP run. Here we assume that the VASP executable, ``vasp_std``, is located in ``$HOME/vasp/bin``. Note, that if you want to execute VASP in parallel, this call should also include the MPI executable, which in this case is ``mpiexec``.
 
 The second variable, :envvar:`VASP_PP_PATH`, is the path to the VASP pseudopotentials.
 
@@ -50,7 +49,7 @@ Note, that this should target the folder, and not the file itself.
 
 
 Your first run
---------------
+==============
 
 Now that ASE knows how to execute VASP, we can try setting up a simple calculation. First we set up an atoms object
 
