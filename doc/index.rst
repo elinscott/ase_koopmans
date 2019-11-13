@@ -54,7 +54,7 @@ Mopac_
 :mod:`~ase.calculators.tip3p`
 
 
-`Reference publication on ASE <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e>`__
+`Reference publication on ASE <https://doi.org/10.1088/1361-648X/aa680e>`__
 
 
 .. _news:
@@ -81,7 +81,7 @@ News
 * :ref:`Reference paper <cite>` in
   J. Phys. Condens. Matter:
   `The Atomic Simulation Environment | A Python library for working with
-  atoms <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e>`__
+  atoms <https://doi.org/10.1088/1361-648X/aa680e>`__
   (7 June 2017).
 
 * :ref:`ASE version 3.13.0 <releasenotes>` released (7 February 2017).

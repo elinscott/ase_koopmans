@@ -8,11 +8,11 @@ QM/MM Simulations couple two (or, in principle, more) descriptions to get total 
 and forces for the entire system in an efficiant manner. 
 ASE has a native Explicit Interaction calculator, :class:`~ase.calculators.qmmm.EIQMMM`, that uses an electrostatic embedding
 model to couple the subsystems explicitly. See
-`the method paper for more info. <https://pubs.acs.org/doi/10.1021/acs.jctc.7b00621>`__,
+`the method paper for more info. <https://doi.org/10.1021/acs.jctc.7b00621>`__,
 
 Examples of what this code has been used for can be seen
-`here <https://pubs.acs.org/doi/abs/10.1021/jz500850s>`__,
-and `here <https://pubs.acs.org/doi/abs/10.1021/acs.inorgchem.6b01840>`__.
+`here <https://doi.org/10.1021/jz500850s>`__,
+and `here <https://doi.org/10.1021/acs.inorgchem.6b01840>`__.
 
 This section will show you how to setup up various QM/MM simulations.
 We will be using GPAW_ for the QM part. Other QM calculators should

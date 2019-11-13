@@ -69,7 +69,7 @@ If you find ASE useful in your research please cite:
    | `The Atomic Simulation Environment—A Python library for working with atoms`__
    | J. Phys.: Condens. Matter Vol. **29** 273002, 2017
 
-   __ https://iopscience.iop.org/article/10.1088/1361-648X/aa680e
+   __ http://dx.doi.org/10.1021/jp063532w
 
 An older paper corresponding to an early version of ASE is:
 
@@ -77,7 +77,7 @@ An older paper corresponding to an early version of ASE is:
    | `An object-oriented scripting interface to a legacy electronic structure code`__
    | Comput. Sci. Eng., Vol. **4**, 56-66, 2002
 
-   __ https://ieeexplore.ieee.org/document/998641/
+   __ http://dx.doi.org/10.1109/5992.998641
 
 BibTex (:git:`doc/ASE.bib`):
 

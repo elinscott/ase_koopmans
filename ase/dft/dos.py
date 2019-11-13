@@ -124,7 +124,7 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
         spectral properties of solids,
         A. H. MacDonald, S. H. Vosko and P. T. Coleridge,
         1979 J. Phys. C: Solid State Phys. 12 2991,
-        https://iopscience.iop.org/article/10.1088/0022-3719/12/15/008
+        https://doi.org/10.1088/0022-3719/12/15/008
     """
 
     from scipy.spatial import Delaunay

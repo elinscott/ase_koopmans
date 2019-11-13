@@ -53,14 +53,14 @@ Structures and data from:
     "Error estimates for solid-state density-functional theory predictions:
     an overview by means of the ground-state elemental crystals",
     Crit. Rev. Solid State (2014).
-    https://www.tandfonline.com/doi/full/10.1080/10408436.2013.772503
+    http://dx.doi.org/10.1080/10408436.2013.772503
 
 .. [Lejaeghere2016]
 
     Kurt Lejaeghere *et al.*:
     "Reproducibility in density functional theory calculations of solids",
     Science 351 (6280), aad3000 (2016).
-    https://science.sciencemag.org/content/351/6280/aad3000
+    http://dx.doi.org/10.1126/science.aad3000
 
 This collection has WIEN2k and experimental data for:
 
@@ -99,4 +99,4 @@ Molecules from [Curtiss1997]_.
     "Assessment of Gaussian-2 and density functional theories for the
     computation of enthalpies of formation",
     J. Chem. Phys. 106, 1063 (1997).
-    https://aip.scitation.org/doi/10.1063/1.473182
+    https://doi.org/10.1063/1.473182

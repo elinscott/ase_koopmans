@@ -378,7 +378,7 @@ class FixLinearTriatomic(FixConstraint):
            References:
 
            Ciccotti et al. Molecular Physics 47 (1982)
-           https://www.tandfonline.com/doi/abs/10.1080/00268978200100942
+           http://dx.doi.org/10.1080/00268978200100942
         """
         self.triples = np.asarray(triples)
         if self.triples.shape[1] != 3:
