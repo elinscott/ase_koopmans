@@ -63,6 +63,7 @@ intersphinx_mapping = {'gpaw': ('https://wiki.fysik.dtu.dk/gpaw', None),
 
 # Avoid GUI windows during doctest:
 doctest_global_setup = """
+import numpy as np
 import ase.visualize as visualize
 from ase import Atoms
 visualize.view = lambda atoms: None
