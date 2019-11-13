@@ -189,9 +189,10 @@ to speed up BFGS local minimzations.
 Read more about this algorithm here:
 
   | Estefanía Garijo del Río, Jens Jørgen Mortensen, Karsten W. Jacobsen
-  | `A local Bayesian optimizer for atomic structures`__
+  | `Local Bayesian optimizer for atomic structures`__
+  | Physical Review B, Vol. **100**, 104103 (2019)
 
-__ https://arxiv.org/abs/1808.08588
+__ https://link.aps.org/doi/10.1103/PhysRevB.100.104103
 
 .. warning:: The memory of the optimizer scales as O(n²N²) where
              N is the number of atoms and n the number of steps.

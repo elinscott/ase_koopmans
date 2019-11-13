@@ -6,7 +6,6 @@ http://www.cp2k.org
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
-from __future__ import print_function
 
 import os
 import os.path

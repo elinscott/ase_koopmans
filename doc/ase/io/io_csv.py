@@ -12,5 +12,5 @@ with open('io.csv', 'w') as fd:
             c += 'W'
         if not io.single:
             c += '+'
-        print('{0}, {1}, {2}'.format(format, all_formats[format][0], c),
+        print(':ref:`{0}`, {1}, {2}'.format(format, all_formats[format][0], c),
               file=fd)

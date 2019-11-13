@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import sys
 import errno
@@ -25,7 +24,7 @@ from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointCalculator, all_properties
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.constraints import FixAtoms
-from ase.parallel import rank, barrier
+from ase.parallel import world, barrier
 from ase.utils import devnull, basestring
 
 
@@ -80,10 +79,10 @@ class PickleTrajectory:
             msg = 'Please stop using old trajectory files!'
             if mode == 'r':
                 msg += ('\nConvert to the new future-proof format like this:\n'
-                        '\n    $ python -m ase.io.trajectory ' +
+                        '\n    $ python3 -m ase.io.trajectory ' +
                         filename + '\n')
             raise DeprecationWarning(msg)
-        
+
         self.numbers = None
         self.pbc = None
         self.sanitycheck = True
@@ -95,7 +94,7 @@ class PickleTrajectory:
 
         self.offsets = []
         if master is None:
-            master = (rank == 0)
+            master = (world.rank == 0)
         self.master = master
         self.backup = backup
         self.set_atoms(atoms)
@@ -290,7 +289,9 @@ class PickleTrajectory:
         if 0 <= i < N:
             self.fd.seek(self.offsets[i])
             try:
-                d = pickle.load(self.fd)
+                d = pickle.load(self.fd, encoding='bytes')
+                d = {k.decode() if isinstance(k, bytes) else k: v
+                     for k, v in d.items()}
             except EOFError:
                 raise IndexError
             if i == N - 1:
@@ -355,7 +356,7 @@ class PickleTrajectory:
             return self[len(self.offsets) - 1]
         except IndexError:
             raise StopIteration
-    
+
     __next__ = next
 
     def guess_offsets(self):
@@ -534,7 +535,7 @@ def write_trajectory(filename, images):
 
     traj.close()
 
-        
+
 read_trj = read_trajectory
 write_trj = write_trajectory
 
@@ -554,7 +555,7 @@ def dict2constraints(d):
                     # Special handling of old pickles:
                     c.index = np.arange(len(c.index))[c.index]
             return constraints
-        except (AttributeError, KeyError, EOFError, ImportError):
+        except (AttributeError, KeyError, EOFError, ImportError, TypeError):
             warnings.warn('Could not unpickle constraints!')
             return []
     else:

@@ -1,4 +1,3 @@
-from __future__ import division
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.utils.structure_comparator import SpgLibNotFoundError
 from ase.build import bulk

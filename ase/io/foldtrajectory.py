@@ -16,7 +16,6 @@ SIDE EFFECT: All energies, forces and stresses are removed (yes, this
 can be considered as a bug!)
 """
 
-from __future__ import print_function
 import sys
 from ase.io.trajectory import Trajectory
 

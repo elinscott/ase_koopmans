@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import fractions
 import functools
 import re
@@ -237,7 +236,7 @@ class Pourbaix:
 
         return result.x, result.fun
 
-    def diagram(self, U, pH, plot=True, show=True, ax=None):
+    def diagram(self, U, pH, plot=True, show=False, ax=None):
         """Calculate Pourbaix diagram.
 
         U: list of float
@@ -450,7 +449,7 @@ class PhaseDiagram:
 
         return energy, indices, np.array(coefs)
 
-    def plot(self, ax=None, dims=None, show=True):
+    def plot(self, ax=None, dims=None, show=False):
         """Make 2-d or 3-d plot of datapoints and convex hull.
 
         Default is 2-d for 2- and 3-component diagrams and 3-d for a

@@ -1,7 +1,6 @@
 # -*- encoding: utf-8
 "Module for displaying information about the system."
 
-from __future__ import unicode_literals
 
 import numpy as np
 from ase.gui.i18n import _
@@ -66,6 +65,14 @@ def info(gui):
                 add(_('Unit cell is fixed.'))
             else:
                 add(_('Unit cell varies.'))
+
+        if atoms.pbc[:2].all():
+            try:
+                lat = atoms.cell.get_bravais_lattice()
+            except RuntimeError:
+                add(_('Could not recognize the lattice type'))
+            else:
+                add(_('Reduced Bravais lattice:\n{}').format(lat))
 
 
         # Print electronic structure information if we have a calculator

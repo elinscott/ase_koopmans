@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 import argparse
 import sys
@@ -19,7 +18,7 @@ class CLIError(Exception):
 # python3 -m ase.cli.completion to update autocompletion.
 commands = [
     ('info', 'ase.cli.info'),
-    #('show', 'ase.cli.show'),
+    # ('show', 'ase.cli.show'),
     ('test', 'ase.test'),
     ('gui', 'ase.gui.ag'),
     ('db', 'ase.db.cli'),
