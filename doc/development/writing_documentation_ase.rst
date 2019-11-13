@@ -9,7 +9,7 @@ stored on GitLab as text files in the :git:`doc` directory using the
 reStructuredText_ markup language.
 
 .. _reStructuredText: http://docutils.sourceforge.net/rst.html
-.. _Sphinx: http://sphinx.pocoo.org
+.. _Sphinx: http://www.sphinx-doc.org/en/master/
 
 
 Installing Docutils and Sphinx

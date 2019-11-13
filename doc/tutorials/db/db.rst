@@ -50,7 +50,7 @@ The :file:`bulk.db` is an SQLite3_ database in a single file::
     $ file bulk.db
     bulk.db: SQLite 3.x database
 
-.. _SQLite3: http://www.sqlite.org/
+.. _SQLite3: https://www.sqlite.org/index.html
 
 If you want to see what's inside you can convert the database file to a json
 file and open that in your text editor::

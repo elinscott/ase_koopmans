@@ -13,7 +13,7 @@ interface makes it possible to use DftbPlus_ as a calculator in ASE.
 You need Slater-Koster files for the combination of
 atom types of your system. These can be obtained at dftb.org_.
 
-.. _DftbPlus: http://www.dftb-plus.info/
+.. _DftbPlus: http://www.dftbplus.info/
 .. _dftb.org: http://www.dftb.org/
 
 

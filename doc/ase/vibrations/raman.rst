@@ -104,7 +104,7 @@ Example::
 
   al = Albrecht()
 
-.. _GPAW: http://wiki.fysik.dtu.dk/gpaw
+.. _GPAW: https://wiki.fysik.dtu.dk/gpaw/
   
 .. [1] "Ab-initio wave-length dependent Raman spectra: Placzek approximation and beyond" Michael Walter, Michael Moseler `arXiv:1806.03840 <https://arxiv.org/abs/1806.03840>`_ [physics.chem-ph]
 
