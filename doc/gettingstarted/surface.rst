@@ -5,7 +5,7 @@ Introduction: Nitrogen on copper
 
 This section gives a quick (and incomplete) overview of what ASE can do.
 
-We will calculate the adsorption energy of a nitrogen
+We will calculate the adsorption energy of a nitrogen2
 molecule on a copper surface.
 This is done by calculating the total
 energy for the isolated slab and for the isolated molecule. The
