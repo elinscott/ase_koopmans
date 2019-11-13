@@ -1,6 +1,5 @@
-import numpy as np
 from ase import Atoms
-from ase.io import write, Trajectory
+from ase.io import Trajectory
 from gpaw import GPAW
 
 atoms = Atoms('N2', positions=[[0, 0, -1], [0, 0, 1]])
