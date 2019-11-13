@@ -9,7 +9,6 @@ from os.path import isfile
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.parallel import world, barrier
 from ase.io.trajectory import Trajectory
-from ase.utils import basestring
 import collections
 
 
@@ -51,7 +50,7 @@ class Dynamics:
             master = world.rank == 0
         if not master:
             logfile = None
-        elif isinstance(logfile, basestring):
+        elif isinstance(logfile, str):
             if logfile == "-":
                 logfile = sys.stdout
             else:
@@ -64,7 +63,7 @@ class Dynamics:
         self.max_steps = 100000000
 
         if trajectory is not None:
-            if isinstance(trajectory, basestring):
+            if isinstance(trajectory, str):
                 mode = "a" if append_trajectory else "w"
                 trajectory = Trajectory(
                     trajectory, mode=mode, atoms=atoms, master=master
