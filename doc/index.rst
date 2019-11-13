@@ -54,7 +54,7 @@ Mopac_
 :mod:`~ase.calculators.tip3p`
 
 
-`Reference publication on ASE <https://doi.org/10.1088/1361-648X/aa680e>`__
+`Reference publication on ASE <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e/meta>`__
 
 
 .. _news:
