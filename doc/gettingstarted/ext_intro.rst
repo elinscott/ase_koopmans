@@ -6,8 +6,8 @@ Many external calculators can be used with ASE, including GPAW_, Abinit_, Vasp_,
 .. _Asap: http://wiki.fysik.dtu.dk/asap
 .. _GPAW: http://wiki.fysik.dtu.dk/gpaw
 .. _Siesta: http://www.icmab.es/siesta
-.. _Abinit: http://www.abinit.org
-.. _Vasp: http://vasp.at
+.. _Abinit: https://www.abinit.org
+.. _Vasp: https://www.vasp.at
 .. _Quantum ESPRESSO: http://www.quantum-espresso.org/
 .. _LAMMPS: http://lammps.sandia.gov/
 
