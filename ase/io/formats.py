@@ -214,9 +214,9 @@ def get_ioformat(name):
 
 F = define_io_format
 F('abinit', 'ABINIT input file', '1F'),
-F('aims', 'FHI-aims geometry file', '1S'),
+F('aims', 'FHI-aims geometry file', '1S',ext='in'),
 F('aims-output', 'FHI-aims output', '+S',
-  module='aims', ext='in', magic=b'*Invoking FHI-aims ...'),
+  module='aims', magic=b'*Invoking FHI-aims ...'),
 F('bundletrajectory', 'ASE bundle trajectory', '+S'),
 F('castep-castep', 'CASTEP output file', '+F',
   module='castep', ext='castep'),
