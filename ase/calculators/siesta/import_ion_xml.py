@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy as np
 from xml.dom import minidom
 from ase.calculators.siesta.mbpt_lcao_utils import str2int, str2float

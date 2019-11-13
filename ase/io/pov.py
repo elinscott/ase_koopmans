@@ -10,7 +10,7 @@ import numpy as np
 from ase.io.utils import PlottingVariables
 from ase.constraints import FixAtoms
 from ase.utils import basestring
-
+from ase import Atoms
 
 def pa(array):
     """Povray array syntax"""
@@ -61,11 +61,42 @@ def get_bondpairs(atoms, radius=1.1):
                           for a2, offset in zip(indices, offsets)])
     return bondpairs
 
+def set_high_bondorder_pairs(bondpairs, high_bondorder_pairs = {}):
+    """Set high bondorder pairs
+
+    Modify bondpairs list (from get_bondpairs((atoms)) to include high 
+    bondorder pairs.
+
+    Parameters:
+    -----------
+    bondpairs: List of pairs, generated from get_bondpairs(atoms)
+    high_bondorder_pairs: Dictionary of pairs with high bond orders
+                          using the following format:
+                          { ( a1, b1 ): ( offset1, bond_order1, bond_offset1), 
+                            ( a2, b2 ): ( offset2, bond_order2, bond_offset2), 
+                            ...
+                          }
+                          offset, bond_order, bond_offset are optional. 
+                          However, if they are provided, the 1st value is offset, 2nd value is bond_order, 3rd value is bond_offset """
+
+    bondpairs_ = []
+    for pair in bondpairs:
+        (a, b) = (pair[0], pair[1] )
+        if (a, b) in high_bondorder_pairs.keys():
+            bondpair = [a, b ] + [item for item in high_bondorder_pairs[(a, b)]]
+            bondpairs_.append(bondpair)
+        elif (b, a) in high_bondorder_pairs.keys():
+            bondpair = [a, b ] + [item for item in high_bondorder_pairs[(b, a)]]
+            bondpairs_.append(bondpair)
+        else:
+            bondpairs_.append(pair)
+    return bondpairs_
+
 
 class POVRAY(PlottingVariables):
     default_settings = {
         # x, y is the image plane, z is *out* of the screen
-        'display': True,  # display while rendering
+        'display': False,  # display while rendering
         'pause': True,  # pause when done rendering (only if display)
         'transparent': True,  # transparent background
         'canvas_width': None,  # width of canvas in pixels
@@ -86,6 +117,9 @@ class POVRAY(PlottingVariables):
         'celllinewidth': 0.05,  # radius of the cylinders representing the cell
         'bondlinewidth': 0.10,  # radius of the cylinders representing bonds
         'bondatoms': [],  # [[atom1, atom2], ... ] pairs of bonding atoms
+                          # For bond order > 1: [[atom1, atom2, offset, bond_order, bond_offset], ... ]
+                          # bond_order: 1, 2, 3 for single, double, and tripple bond
+                          # bond_offset: vector for shifting bonds from original position. Coordinates are in Angstrom unit.
         'exportconstraints': False}  # honour FixAtoms and mark relevant atoms?
 
     def __init__(self, atoms, scale=1.0, **parameters):
@@ -252,11 +286,49 @@ class POVRAY(PlottingVariables):
 
         # Draw atom bonds
         for pair in self.bondatoms:
+            # Make sure that each pair has 4 componets: a, b, offset, bond_order, bond_offset
+            # a, b: atom index to draw bond
+            # offset: original meaning to make offset for mid-point.
+            # bond_oder: if not supplied, set it to 1 (single bond). It can be  1, 2, 3, corresponding to single, double, tripple bond
+            # bond_offset: displacement from original bond poistion. Default is (bondlinewidth, bondlinewidth, 0) for bond_order > 1.
             if len(pair) == 2:
                 a, b = pair
                 offset = (0, 0, 0)
-            else:
+                bond_order = 1
+                bond_offset = (0, 0, 0)
+            elif len(pair) == 3:
                 a, b, offset = pair
+                bond_order = 1
+                bond_offset = (0, 0, 0)
+            elif len(pair) == 4:
+                a, b, offset, bond_order = pair
+                bond_offset = (self.bondlinewidth, self.bondlinewidth, 0)
+            elif len(pair) > 4:
+                a, b, offset, bond_order, bond_offset = pair
+            else:
+                raise RuntimeError('Each list in bondatom must have at least 2 entries. Error at %s' %(pair))
+
+            if len(offset) != 3:
+                raise ValueError('offset must have 3 elements. Error at %s' %(pair))
+            if len(bond_offset) != 3:
+                raise ValueError('bond_offset must have 3 elements. Error at %s' %(pair))
+            if bond_order not in [0, 1, 2, 3]:
+                raise ValueError('bond_order must be either 0, 1, 2, or 3. Error at %s' %(pair))
+
+            # Up to here, we should have all a, b, offset, bond_order, bond_offset for all bonds.
+
+            # Rotate bond_offset so that its direction is 90 degree off the bond
+            # Utilize Atoms object to rotate
+            if bond_order > 1 and np.linalg.norm( bond_offset ) > 1.e-9:
+                tmp_atoms = Atoms('H3')
+                tmp_atoms.set_cell(self.cell)
+                tmp_atoms.set_positions([self.positions[a],
+                                         self.positions[b],
+                                         self.positions[b] + np.array(bond_offset)])
+                tmp_atoms.center()
+                tmp_atoms.set_angle(0, 1, 2, 90)
+                bond_offset = tmp_atoms[2].position - tmp_atoms[1].position
+
             R = np.dot(offset, self.cell)
             mida = 0.5 * (self.positions[a] + self.positions[b] + R)
             midb = 0.5 * (self.positions[a] + self.positions[b] - R)
@@ -274,12 +346,54 @@ class POVRAY(PlottingVariables):
 
             fmt = ('cylinder {%s, %s, Rbond texture{pigment '
                    '{color %s transmit %s} finish{%s}}}\n')
-            w(fmt %
-              (pa(self.positions[a]), pa(mida),
-                  pc(self.colors[a]), transa, texa))
-            w(fmt %
-              (pa(self.positions[b]), pa(midb),
-                  pc(self.colors[b]), transb, texb))
+
+            # draw bond, according to its bond_order.
+            # bond_order == 0: No bond is plotted
+            # bond_order == 1: use original code
+            # bond_order == 2: draw two bonds, one is shifted by bond_offset/2, and another is shifted by -bond_offset/2.
+            # bond_order == 3: draw two bonds, one is shifted by bond_offset, and one is shifted by -bond_offset, and the other has no shift.
+            # To shift the bond, add the shift to the first two coordinate in write statement.
+
+            if bond_order == 1:
+                w(fmt %
+                  (pa(self.positions[a]), pa(mida),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]), pa(midb),
+                      pc(self.colors[b]), transb, texb))
+            elif bond_order == 2:
+                bondOffSetDB = [x/2 for x in bond_offset]
+                w(fmt %
+                  (pa(self.positions[a]-bondOffSetDB), pa(mida-bondOffSetDB),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]-bondOffSetDB), pa(midb-bondOffSetDB),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a]+bondOffSetDB), pa(mida+bondOffSetDB),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]+bondOffSetDB), pa(midb+bondOffSetDB),
+                      pc(self.colors[b]), transb, texb))
+            elif bond_order == 3:
+                w(fmt %
+                  (pa(self.positions[a]), pa(mida),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]), pa(midb),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a]+bond_offset), pa(mida+bond_offset),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]+bond_offset), pa(midb+bond_offset),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a]-bond_offset), pa(mida-bond_offset),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]-bond_offset), pa(midb-bond_offset),
+                      pc(self.colors[b]), transb, texb))
 
         # Draw constraints if requested
         if self.exportconstraints:

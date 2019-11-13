@@ -109,6 +109,7 @@ class Formula:
 
         * ``'hill'``: alphabetically ordered with C and H first
         * ``'metal'``: alphabetically ordered with metals first
+        * ``'abc'``: count ordered first then alphabetically ordered
         * ``'latex'``: LaTeX representation
         * ``'html'``: HTML representation
         * ``'rest'``: reStructuredText representation
@@ -123,7 +124,7 @@ class Formula:
     def __format__(self, fmt: str) -> str:
         """Format Formula as str.
 
-        Possible formats: ``'hill'``, ``'metal'``, ``'latex'``,
+        Possible formats: ``'hill'``, ``'metal'``, ``'abc'``, ``'latex'``,
         ``'html'``, ``'rest'``.
 
         Example
@@ -149,6 +150,10 @@ class Formula:
             result = [(s, count[s]) for s in sorted(count)]
             result += sorted(result2)
             return dict2str(ordereddict(result))
+
+        if fmt == 'abc':
+            _, f, N = self.stoichiometry()
+            return dict2str({symb: n * N for symb, n in f._count.items()})
 
         if fmt == 'latex':
             return self._tostr('$_{', '}$')

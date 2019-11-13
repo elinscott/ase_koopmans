@@ -17,7 +17,6 @@ functional theories.
     You should have received a copy of the GNU Lesser General Public License
     along with ASE.  If not, see <http://www.gnu.org/licenses/>.
 """
-from __future__ import print_function
 from ase.calculators.calculator import Parameters
 from ase.calculators.openmx.default_settings import default_dictionary
 from ase.units import Ha, Ry

@@ -31,7 +31,11 @@ class DOS:
         self.e_skn = np.array([[calc.get_eigenvalues(kpt=k, spin=s)
                                 for k in range(len(self.w_k))]
                                for s in range(self.nspins)])
-        self.e_skn -= calc.get_fermi_level()
+        try:  # two Fermi levels
+            for i, eF in enumerate(calc.get_fermi_level()):
+                self.e_skn[i] -= eF
+        except TypeError:  # a single Fermi level
+            self.e_skn -= calc.get_fermi_level()
 
         if window is None:
             emin = None
@@ -75,11 +79,13 @@ class DOS:
 
         if spin is None:
             if self.nspins == 2:
-                # Spin-polarized calculation, but no spin specified -
-                # return the total DOS:
+                # Return the total DOS
                 return self.get_dos(spin=0) + self.get_dos(spin=1)
             else:
-                spin = 0
+                return 2 * self.get_dos(spin=0)
+        elif spin == 1 and self.nspins == 1:
+            # For an unpolarized calculation, spin up and down are equivalent
+            spin = 0
 
         if self.width == 0.0:
             dos = linear_tetrahedron_integration(self.cell, self.e_skn[spin],

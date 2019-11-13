@@ -206,7 +206,7 @@ by using the ``restart`` keyword, in a second script
 	calc_load = Vasp2(restart=True, directory=mydir)
 
 	bs = calc_load.band_structure() # ASE Band structure object
-	bs.plot(emin=-13)               # Plot the band structure
+	bs.plot(emin=-13, show=True)    # Plot the band structure
 
 Which results in the following image
 

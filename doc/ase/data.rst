@@ -124,6 +124,32 @@ Example:
 where the last line converts the experimental atomization energy of H2O
 from units of kcal/mol to eV.
 
+Structures for compounds not found in the G1, G2, and G3-databases can 
+be obtained using the PubChem API integration in the 
+:func:`pubchem.pubchem_atoms_search` and 
+:func:`pubchem.pubchem_atoms_conformer_search` functions. You may 
+search based on common name, chemical identification number(cid), 
+smiles string, or conformer identification number.
+
+.. autofunction:: ase.data.pubchem.pubchem_atoms_search
+.. autofunction:: ase.data.pubchem.pubchem_atoms_conformer_search
+
+examples:
+
+>>> from ase.data.pubchem import pubchem_atoms_search, pubchem_atoms_conformer_search
+>>> cumene = pubchem_atoms_search(name='cumene')
+>>> benzene = pubchem_atoms_search(cid=241)
+>>> ethanol = pubchem_atoms_search(smiles='CCOH')
+>>> octane_conformers = pubchem_atoms_conformer_search(name='octane')
+
+To get all the data available on Pubchem use :func:`pubchem.pubchem_search` and 
+:func:`pubchem.pubchem_conformer_search`.
+
+.. autofunction:: ase.data.pubchem.pubchem_search
+.. autofunction:: ase.data.pubchem.pubchem_conformer_search
+ 
+
+
 
 S22, s26, and s22x5 data
 ========================

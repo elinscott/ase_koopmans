@@ -87,7 +87,7 @@ def test_modes(ext='gz'):
     os.unlink(filename)
 
 
-if __name__ in ('__main__', '__builtin__'):
+if __name__ in ('__main__', 'test'):
     test_get_compression()
     # gzip
     test_compression_write_single()

@@ -18,7 +18,7 @@ import ase.units as units
 from ase.atom import Atom
 from ase.cell import Cell
 from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
-from ase.data import atomic_masses
+from ase.data import atomic_masses, atomic_masses_common
 from ase.utils import basestring
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
 from ase.symbols import Symbols, symbols2numbers
@@ -126,6 +126,8 @@ class Atoms(object):
     ...           cell=(d, 0, 0),
     ...           pbc=(1, 0, 0))
     """
+
+    ase_objtype = 'atoms'  # For JSONability
 
     def __init__(self, symbols=None,
                  positions=None, numbers=None,
@@ -299,7 +301,7 @@ class Atoms(object):
     constraints = property(_get_constraints, set_constraint, _del_constraints,
                            'Constraints of the atoms.')
 
-    def set_cell(self, cell, scale_atoms=False):
+    def set_cell(self, cell, scale_atoms=False, apply_constraint=True):
         """Set unit cell vectors.
 
         Parameters:
@@ -341,6 +343,12 @@ class Atoms(object):
 
         # Override pbcs if and only if given a Cell object:
         cell = Cell.new(cell)
+
+        # XXX not working well during initialize due to missing _constraints
+        if apply_constraint and hasattr(self, '_constraints'):
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_cell'):
+                    constraint.adjust_cell(self, cell)
 
         if scale_atoms:
             M = np.linalg.solve(self.cell.complete(), cell.complete())
@@ -554,8 +562,11 @@ class Atoms(object):
         the masses argument is not given or for those elements of the
         masses list that are None, standard values are set."""
 
-        if isinstance(masses, basestring) and masses == 'defaults':
-            masses = atomic_masses[self.arrays['numbers']]
+        if isinstance(masses, basestring):
+            if masses == 'defaults':
+                masses = atomic_masses[self.arrays['numbers']]
+            elif masses == 'most_common':
+                masses = atomic_masses_common[self.arrays['numbers']]
         elif isinstance(masses, (list, tuple)):
             newmasses = []
             for m, Z in zip(masses, self.arrays['numbers']):
@@ -735,7 +746,7 @@ class Atoms(object):
                     constraint.adjust_forces(self, forces)
         return forces
 
-    def get_stress(self, voigt=True):
+    def get_stress(self, voigt=True, apply_constraint=True):
         """Calculate stress tensor.
 
         Returns an array of the six independent components of the
@@ -751,8 +762,10 @@ class Atoms(object):
         shape = stress.shape
 
         if shape == (3, 3):
-            # if Voigt form is not wanted, return rightaway
-            if not voigt:
+            # if Voigt form is not wanted, return rightaway if apply_constraint is False
+            # If the user wants to apply constraints to the stress transform the Voigt form and
+            # apply the constraint
+            if not voigt and (not apply_constraint or not self.constraints):
                 return stress
             warnings.warn('Converting 3x3 stress tensor from %s ' %
                           self._calc.__class__.__name__ +
@@ -761,6 +774,11 @@ class Atoms(object):
                                stress[1, 2], stress[0, 2], stress[0, 1]])
         else:
             assert shape == (6,)
+
+        if apply_constraint:
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_stress'):
+                    constraint.adjust_stress(self, stress)
 
         if voigt:
             return stress
@@ -800,6 +818,46 @@ class Atoms(object):
         for name, a in self.arrays.items():
             atoms.arrays[name] = a.copy()
         atoms.constraints = copy.deepcopy(self.constraints)
+        return atoms
+
+    def todict(self):
+        """For basic JSON (non-database) support."""
+        d = dict(self.arrays)
+        d['cell'] = np.asarray(self.cell)
+        d['pbc'] = self.pbc
+        if self._celldisp.any():
+            d['celldisp'] = self._celldisp
+        if self.constraints:
+            d['constraints'] = self.constraints
+        if self.info:
+            d['info'] = self.info
+        # Calculator...  trouble.
+        return d
+
+    @classmethod
+    def fromdict(cls, dct):
+        """Rebuild atoms object from dictionary representation (todict)."""
+        dct = dct.copy()
+        kw = {}
+        for name in ['numbers', 'positions', 'cell', 'pbc']:
+            kw[name] = dct.pop(name)
+
+        constraints = dct.pop('constraints', None)
+        if constraints:
+            from ase.constraints import dict2constraint
+            constraints = [dict2constraint(d) for d in constraints]
+
+        atoms = cls(constraint=constraints,
+                    celldisp=dct.pop('celldisp', None),
+                    info=dct.pop('info', None), **kw)
+        natoms = len(atoms)
+
+        # Some arrays are named differently from the atoms __init__ keywords.
+        # Also, there may be custom arrays.  Hence we set them directly:
+        for name, arr in dct.items():
+            assert len(arr) == natoms, name
+            assert isinstance(arr, np.ndarray)
+            atoms.arrays[name] = arr
         return atoms
 
     def __len__(self):

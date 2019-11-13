@@ -42,7 +42,7 @@ html_static_path = ['static']
 html_last_updated_fmt = '%a, %d %b %Y %H:%M:%S'
 
 ase_dev_version = '3.19.0b1'  # This line auto-edited by newrelease script
-ase_stable_version = '3.18.0'  # This line auto-edited by newrelease script
+ase_stable_version = '3.18.1'  # This line auto-edited by newrelease script
 
 html_context = {
     'current_version': __version__,
@@ -68,3 +68,5 @@ from ase import Atoms
 visualize.view = lambda atoms: None
 Atoms.edit = lambda self: None
 """
+
+autodoc_mock_imports = ["kimpy"]

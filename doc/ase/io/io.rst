@@ -12,6 +12,7 @@ File input and output
 .. toctree::
     :hidden:
 
+    formatoptions
     trajectory
     ulm
     opls
@@ -104,6 +105,12 @@ Here is an example using ``bbox``
 ...       bbox=(d, 0, 3 * d, d * 3**0.5))
 
 .. image:: io3.png
+
+This is an axample of display bond order for molecule
+
+.. literalinclude:: save_C2H4.py
+
+.. image:: C2H4.png
 
 Note that in general the XYZ-format does not contain information about the unit cell, however, ASE uses the extended XYZ-format which stores the unitcell:
 

@@ -188,8 +188,13 @@ Pseudopotentials generated from the ABINIT code and converted to
 the SIESTA format are available in the `SIESTA`_ website.
 A database of user contributed pseudopotentials is also available there.
 
+Optimized GGA–PBE pseudos and DZP basis sets for some common elements
+are also available from the `SIMUNE`_ website.
+
 You can also find an on-line pseudopotential generator_ from the
 OCTOPUS code.
+
+.. _SIMUNE: https://www.simuneatomistics.com/siesta-pro/siesta-pseudos-and-basis-database/
 
 .. _generator: http://www.tddft.org/programs/octopus/wiki/index.php/Pseudopotentials
 

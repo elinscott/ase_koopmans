@@ -9,7 +9,6 @@ Written by Martin Uhren and Georg Schusteritsch.
 Adapted for ASE by James Kermode.
 """
 
-from __future__ import division
 
 import glob
 import re

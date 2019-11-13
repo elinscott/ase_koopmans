@@ -41,7 +41,7 @@ Program name     Supported by ASE calculator
 Quantum Espresso Yes
 FHI-aims         Yes
 Siesta           Yes
-DFTB+            Yes, presumably (untested)
+DFTB+            Yes
 Yaff             No; there is no ASE calculator for Yaff
 cp2k             No; ASE uses cp2k shell instead
 Lammps           No; ASE uses lammpsrun/lammpslib instead
@@ -78,6 +78,17 @@ Example using FHI-aims
 Example using Siesta
 
 .. literalinclude:: example_siesta.py
+
+
+Example using DFTB+
+
+.. literalinclude:: example_dftb.py
+
+
+.. note:: The DFTB+ script did not work with INET sockets.
+          This may have been a problem on the test machine.
+          The relevant keyword is ``Driver_Socket_Port=<portnumber>``
+          in case someone wants to test.
 
 For codes other than these, see the next section.
 

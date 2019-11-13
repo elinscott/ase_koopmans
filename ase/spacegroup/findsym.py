@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Copyright (C) 2012, Jesper Friis
 # (see accompanying license files for ASE).
 """
