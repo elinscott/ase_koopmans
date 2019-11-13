@@ -1,5 +1,6 @@
 Atoms and calculators
 =====================
+
 ASE allows atomistic calculations to be scripted with different
 computational codes. In this introductory exercise, we go through the
 basic concepts and workflow of ASE and will eventually
@@ -9,12 +10,13 @@ These tutorials often use the electronic structure code GPAW.
 They can be completed just as well
 using other supported codes, subject to minor adjustments.
 
+
 Python
 ------
 
 In ASE, calculations are performed by writing and running Python
-scripts.  A very short primer on Python can be found in the ASE documentation,
-https://wiki.fysik.dtu.dk/ase/python.html.
+scripts.  A very short primer on Python can be found in the
+:ref:`ASE documentation <what is python>`.
 If you are new to Python it would be wise to look through
 this to understand the basic syntax, datatypes, and
 things like imports.  Or you can just wing it --- we won't judge.
@@ -61,6 +63,7 @@ feel free to get an overview::
 
    Write a script which sets up and saves an :mol:`N_2` molecule,
    then visualize it.
+
 
 Calculators
 -----------
