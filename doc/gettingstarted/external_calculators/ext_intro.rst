@@ -1,5 +1,5 @@
 External calculators
------------
+--------------------
 
 Many external calculators can be used with ASE, including GPAW_, Abinit_, Vasp_, Siesta_, `Quantum ESPRESSO`_, Asap_, LAMMPS_ and many more, see :ref:`supported calculators` for the full list.
 
