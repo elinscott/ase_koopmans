@@ -1,7 +1,4 @@
 """Test to ensure that md logging interval is respected (issue #304)."""
-from pathlib import Path
-
-import numpy as np
 
 from ase.optimize import FIRE, BFGS
 from ase.data import s22
@@ -11,6 +8,7 @@ from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
 from ase.io import Trajectory
 import ase.units as u
+import numpy as np
 import os
 
 md_cls_and_kwargs = [
