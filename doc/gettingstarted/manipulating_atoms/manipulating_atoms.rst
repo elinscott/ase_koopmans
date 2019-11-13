@@ -1,21 +1,23 @@
 .. testsetup::
 
     # WL.py
+    import os
     import runpy
-    # runpy.run_path('WL.py')  # path ???
+    os.chdir('gettingstarted/manipulating_atoms')
+    runpy.run_path('WL.py')
 
 
 .. _atommanip:
 
-====================
- Manipulating atoms
-====================
+==================
+Manipulating atoms
+==================
+
 
 Ag adatom on Ni slab
 ====================
 
-We will set up a one layer slab of Ni atoms with one Ag adatom.
-
+We will set up a one layer slab of four Ni atoms with one Ag adatom.
 Define the slab atoms:
 
 >>> from math import sqrt
@@ -42,21 +44,21 @@ array([[ 0.        ,  0.        ,  5.        ],
 >>> atoms[0]
 Atom('Ni', [0.0, 0.0, 5.0], index=0)
 
-Write the structure to a file and plot the whole system by bringing up the :mod:`ase.gui`:
+Write the structure to a file and plot the whole system by bringing up the
+:mod:`ase.gui`:
 
 >>> from ase.visualize import view
 >>> atoms.write('slab.xyz')
 >>> view(atoms)
 
 .. image:: a1.png
-   :scale: 35
 
 Within the viewer (called :mod:`ase gui <ase.gui>`) it is possible to repeat
-the unit cell in all three directions (using the :menuselection:`Repeat -->
-View` window).  From the command line, use ``ase gui -r2 slab.xyz``.
+the unit cell in all three directions
+(using the :menuselection:`Repeat --> View` window).
+From the command line, use ``ase gui -r 3,3,2 slab.xyz``.
 
 .. image:: a2.png
-   :scale: 35
 
 We now add an adatom in a three-fold site at a height of ``h=1.9`` Å:
 
@@ -71,16 +73,15 @@ The structure now looks like this:
 >>> view(atoms)
 
 .. image:: a3.png
-   :scale: 35
 
 
 Interface building
 ==================
 
-Now try something else. We will make an interface with Ni(111) and water.
+Now, we will make an interface with Ni(111) and water.
 First we need a layer of water. One layer of water is constructed in this
-script :download:`WL.py`, and saved in the file 'WL.traj'. Now run the WL.py
-and then import the atoms object from the traj file using read.
+script :download:`WL.py`, and saved in the file ``WL.traj``. Now run the
+``WL.py`` script and then read the atoms object from the traj file:
 
 >>> from ase.io import read
 >>> W = read('WL.traj')
@@ -88,75 +89,63 @@ and then import the atoms object from the traj file using read.
 Lets take a look at the structure using view.
 
 .. image:: WL.png
-    :scale: 35
 
 and let's look at the unit cell.
 
->>> cellW = W.get_cell()
->>> cellW
+>>> W.cell
 Cell([8.490373, 4.901919, 26.93236])
 
-We will need at Ni(111) slab which matches the water as closely as possible.
+We will need a Ni(111) slab which matches the water as closely as possible.
 A 2x4 orthogonal fcc111 supercell should be good enough.
 
 >>> from ase.build import fcc111
 >>> slab = fcc111('Ni', size=[2, 4, 3], a=3.55, orthogonal=True)
->>> cell = slab.get_cell()
 
 .. image:: Ni111slab2x2.png
-    :scale: 35
 
->>> cell
+>>> slab.cell
 Cell([5.020458146424487, 8.695688586880282, 0.0])
 
 Looking at the two unit cells, we can see that they match with around 2
 percent difference, if we rotate one of the cells 90 degrees in the plane.
-Lets rotate the cell
+Let's rotate the cell:
 
-????The argument *scale_atoms=True* indicates that the atomic positions should be
-scaled with the unit cell. The default is *scale_atoms=False* indicating that
-the cartesian coordinates remain the same when the cell is changed.
-
->>> W.set_cell([[cellW[1, 1], 0, 0],
-...             [0, cellW[0, 0], 0],
-...             cellW[2]],
-...            scale_atoms=False)
+>>> W.cell = [W.cell[1, 1], W.cell[0, 0], 0.0]
 
 .. image:: WL_rot_c.png
-    :scale: 35
 
-Let's also rotate the molecules:
+Let's also :meth:`~ase.Atoms.rotate` the molecules:
 
 >>> W.rotate(90, 'z', center=(0, 0, 0))
 
 .. image:: WL_rot_a.png
-    :scale: 35
 
 Now we can wrap the atoms into the cell
 
 >>> W.wrap()
 
 .. image:: WL_wrap.png
-    :scale: 35
 
 The :meth:`~ase.Atoms.wrap` method only works if periodic boundary
 conditions are enabled. We have a 2 percent lattice mismatch between Ni(111)
 and the water, so we scale the water in the plane to match the cell of the
-slab:
+slab.
+The argument *scale_atoms=True* indicates that the atomic positions should be
+scaled with the unit cell. The default is *scale_atoms=False* indicating that
+the cartesian coordinates remain the same when the cell is changed.
 
->>> cell1 = np.array([cell[0], cell[1], cellW[2]])
->>> W.set_cell(cell1, scale_atoms=True)
->>> p = slab.get_positions()
->>> W.center(vacuum=p[:, 2].max() + 1.5, axis=2)
+>>> W.set_cell(slab.cell, scale_atoms=True)
+>>> zmin = W.positions[:, 2].min()
+>>> zmax = slab.positions[:, 2].max()
+>>> W.positions += (0, 0, zmax - zmin + 1.5)
 
 Finally we use extend to copy the water onto the slab:
 
->>> interface = slab.copy()
->>> interface.extend(W)
+>>> interface = slab + W
 >>> interface.center(vacuum=6, axis=2)
+>>> interface.write('NiH2O.traj')
 
 .. image:: interface-h2o-wrap.png
-    :scale: 35
 
-The positions of the water in the slab unitcell will be the same as they had
-in their own unit cell.
+Adding two atoms objects will take the positions from both and the cell and
+boundry conditions from the first.
