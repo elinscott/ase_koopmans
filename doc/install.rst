@@ -17,11 +17,11 @@ Optional:
 * :mod:`tkinter` (for :mod:`ase.gui`)
 * Flask_ (for :mod:`ase.db` web-interface)
 
-.. _Python: http://www.python.org/
-.. _NumPy: http://docs.scipy.org/doc/numpy/reference/
-.. _SciPy: http://docs.scipy.org/doc/scipy/reference/
-.. _Matplotlib: http://matplotlib.org/
-.. _Flask: http://flask.pocoo.org/
+.. _Python: https://www.python.org/
+.. _NumPy: https://docs.scipy.org/doc/numpy/reference/
+.. _SciPy: https://docs.scipy.org/doc/scipy/reference/
+.. _Matplotlib: https://matplotlib.org/
+.. _Flask: https://palletsprojects.com/p/flask/
 .. _PyPI: https://pypi.org/project/ase
 .. _PIP: https://pip.pypa.io/en/stable/
 

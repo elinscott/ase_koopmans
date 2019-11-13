@@ -24,7 +24,7 @@ Internet Relay Chat
 We have the IRC channel ``#ase`` on FreeNode.  Please join us if you
 have any questions. For easy access, you can use this webclient_.
 
-.. _webclient: http://webchat.freenode.net/?randomnick=0&channels=ase
+.. _webclient: https://webchat.freenode.net/#ase?nick=Guest_?
 
 
 GitLab

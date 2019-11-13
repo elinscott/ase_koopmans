@@ -128,8 +128,8 @@ The calculators included in ASE are used like this:
 where ``abc`` is the module name and ``ABC`` is the class name.
 
 
-.. _Asap: http://wiki.fysik.dtu.dk/asap
-.. _GPAW: http://wiki.fysik.dtu.dk/gpaw
+.. _Asap: https://wiki.fysik.dtu.dk/asap
+.. _GPAW: https://wiki.fysik.dtu.dk/gpaw
 .. _Hotbit: https://github.com/pekkosk/hotbit
 
 Calculator keywords
