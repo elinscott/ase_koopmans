@@ -1,26 +1,8 @@
 .. testsetup::
 
     # WL.py
-    import numpy as np
-    from ase import Atoms
-    p = np.array(
-        [[0.27802511, -0.07732213, 13.46649107],
-         [0.91833251, -1.02565868, 13.41456626],
-         [0.91865997, 0.87076761, 13.41228287],
-         [1.85572027, 2.37336781, 13.56440907],
-         [3.13987926, 2.3633134, 13.4327577],
-         [1.77566079, 2.37150862, 14.66528237],
-         [4.52240322, 2.35264513, 13.37435864],
-         [5.16892729, 1.40357034, 13.42661052],
-         [5.15567324, 3.30068395, 13.4305779],
-         [6.10183518, -0.0738656, 13.27945071],
-         [7.3856151, -0.07438536, 13.40814585],
-         [6.01881192, -0.08627583, 12.1789428]])
-    c = np.array([[8.490373, 0., 0.],
-                  [0., 4.901919, 0.],
-                  [0., 0., 26.93236]])
-    W = Atoms('4(OH2)', positions=p, cell=c, pbc=[1, 1, 0])
-    W.write('WL.traj')
+    import runpy
+    # runpy.run_path('WL.py')  # path ???
 
 
 .. _atommanip:
@@ -29,81 +11,41 @@
  Manipulating atoms
 ====================
 
+Ag adatom on Ni slab
+====================
+
 We will set up a one layer slab of Ni atoms with one Ag adatom.
 
 Define the slab atoms:
 
+>>> from math import sqrt
 >>> from ase import Atoms
->>> atoms = Atoms('Ni4', [(0, 0, 0),
-...                       (0.45, 0, 0),
-...                       (0, 0.5, 0),
-...                       (0.5, 0.5, 0)],
-...               cell=[1, 1, 1])
-
-Have a look at the individual atoms:
-
->>> atoms[0]
-Atom('Ni', [0.0, 0.0, 0.0], index=0)
->>> atoms[1]
-Atom('Ni', [0.45, 0.0, 0.0], index=1)
->>> atoms[2]
-Atom('Ni', [0.0, 0.5, 0.0], index=2)
->>> atoms[3]
-Atom('Ni', [0.5, 0.5, 0.0], index=3)
-
-Let us assume we forgot how many atoms we set up:
-
->>> atoms[4]
-Traceback (most recent call last):
-  File "<stdin>", line 1, in ?
-IndexError: list index out of range
-
-Wrong because we only have four atoms
-
->>> len(atoms)
-4
-
-Change the position of the 2nd atom in the list
-
->>> atoms[1].x = 0.5
->>> atoms.get_positions()
-array([[ 0. ,  0. ,  0. ],
-       [ 0.5,  0. ,  0. ],
-       [ 0. ,  0.5,  0. ],
-       [ 0.5,  0.5,  0. ]])
-
-What is the unit cell so far?
-
->>> atoms.get_cell()
-array([[ 1.,  0.,  0.],
-       [ 0.,  1.,  0.],
-       [ 0.,  0.,  1.]])
-
-Now, setup a p(2x2) cell in a hexagonal surface.
-Here, *a* is the fcc lattice constant, the cell is 10 layers high:
-
->>> from numpy import sqrt
 >>> a = 3.55
->>> cell = [(2/sqrt(2.)*a, 0, 0),
-...         (1/sqrt(2.)*a, sqrt(3./2.)*a, 0),
-...         (0, 0, 10*sqrt(3.)/3.*a)]
->>> cell
-[(5.0204581464244864, 0, 0), (2.5102290732122432, 4.3478442934401409, 0), (0, 0, 20.495934556231713)]
->>> atoms.set_cell(cell, scale_atoms=True)
+>>> atoms = Atoms('Ni4',
+...               cell=[sqrt(2) * a, sqrt(2) * a, 1.0, 90, 90, 120],
+...               pbc=(1, 1, 0),
+...               scaled_positions=[(0, 0, 0),
+...                                 (0.5, 0, 0),
+...                                 (0, 0.5, 0),
+...                                 (0.5, 0.5, 0)])
+>>> atoms.center(vacuum=5.0, axis=2)
 
-The argument *scale_atoms=True* indicates that the atomic positions should be
-scaled with the unit cell. The default is *scale_atoms=False* indicating that
-the cartesian coordinates remain the same when the cell is changed.
+Have a look at the cell and positions of the atoms:
 
->>> atoms.get_positions()
-array([[ 0.        ,  0.        ,  0.        ],
-       [ 2.51022907,  0.        ,  0.        ],
-       [ 1.25511454,  2.17392215,  0.        ],
-       [ 3.76534361,  2.17392215,  0.        ]])
+>>> atoms.cell
+Cell([[5.020458146424487, 0.0, 0.0], [-2.5102290732122423, 4.347844293440141, 0.0], [0.0, 0.0, 10.0]])
+>>> atoms.positions
+array([[ 0.        ,  0.        ,  5.        ],
+       [ 2.51022907,  0.        ,  5.        ],
+       [-1.25511454,  2.17392215,  5.        ],
+       [ 1.25511454,  2.17392215,  5.        ]])
+>>> atoms[0]
+Atom('Ni', [0.0, 0.0, 5.0], index=0)
 
-Plot the whole system by bringing up the :mod:`ase.gui`:
+Write the structure to a file and plot the whole system by bringing up the :mod:`ase.gui`:
 
 >>> from ase.visualize import view
+>>> atoms.write('slab.xyz')
 >>> view(atoms)
 
 .. image:: a1.png
@@ -111,22 +53,18 @@ Plot the whole system by bringing up the :mod:`ase.gui`:
 
 Within the viewer (called :mod:`ase gui <ase.gui>`) it is possible to repeat
 the unit cell in all three directions (using the :menuselection:`Repeat -->
-View` window).
+View` window).  From the command line, use ``ase gui -r2 slab.xyz``.
 
 .. image:: a2.png
    :scale: 35
 
-We now add an adatom.  Since the supercell is now declared as the unit
-cell for our atoms we can either add the atom using its cartesian
-coordinates in Angstrom or rescale the unit cell and use scaled
-coordinates. We try the latter:
+We now add an adatom in a three-fold site at a height of ``h=1.9`` Å:
 
->>> from numpy import identity
->>> from ase import Atom
->>> xyzcell = identity(3) # The 3x3 unit matrix
->>> atoms.set_cell(xyzcell, scale_atoms=True)  # Set the unit cell and rescale
->>> atoms.append(Atom('Ni', (1/6., 1/6., .1)))
->>> atoms.set_cell(cell, scale_atoms=True)  # Set the unit cell and scale back
+>>> h = 1.9
+>>> relative = (1 / 6, 1 / 6, 0.5)
+>>> absolute = np.dot(relative, atoms.cell) + (0, 0, h)
+>>> atoms.append('Ag')
+>>> atoms.positions[-1] = absolute
 
 The structure now looks like this:
 
@@ -134,6 +72,7 @@ The structure now looks like this:
 
 .. image:: a3.png
    :scale: 35
+
 
 Interface building
 ==================
@@ -155,9 +94,7 @@ and let's look at the unit cell.
 
 >>> cellW = W.get_cell()
 >>> cellW
-array([[  8.490373,   0.      ,   0.      ],
-       [  0.      ,   4.901919,   0.      ],
-       [  0.      ,   0.      ,  26.93236 ]])
+Cell([8.490373, 4.901919, 26.93236])
 
 We will need at Ni(111) slab which matches the water as closely as possible.
 A 2x4 orthogonal fcc111 supercell should be good enough.
@@ -170,13 +107,15 @@ A 2x4 orthogonal fcc111 supercell should be good enough.
     :scale: 35
 
 >>> cell
-array([[ 5.02045815,  0.        ,  0.        ],
-       [ 0.        ,  8.69568859,  0.        ],
-       [ 0.        ,  0.        ,  6.14878037]])
+Cell([5.020458146424487, 8.695688586880282, 0.0])
 
 Looking at the two unit cells, we can see that they match with around 2
 percent difference, if we rotate one of the cells 90 degrees in the plane.
 Lets rotate the cell
+
+????The argument *scale_atoms=True* indicates that the atomic positions should be
+scaled with the unit cell. The default is *scale_atoms=False* indicating that
+the cartesian coordinates remain the same when the cell is changed.
 
 >>> W.set_cell([[cellW[1, 1], 0, 0],
 ...             [0, cellW[0, 0], 0],
