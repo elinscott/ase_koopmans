@@ -80,14 +80,14 @@ The first steps as a developer
   to the right of the button with the star and to the left of the 'SSH' button.
   Forking the project give you your own personal copy of the project.
 
-You will now have a fork situated at https://gitlab.com/users/sign_in
+You will now have a fork situated at https://gitlab.com/your-user-name/ase/
 
 * From here on:
 
   - ``upstream`` refers to git@gitlab.com:ase/ase and refers to the official
     repository  of the ase project.
   - ``origin`` refers to your copy of the ase project located at
-    git@gitlab.com:your-user-name/ase or https://gitlab.com/users/sign_in
+    git@gitlab.com:your-user-name/ase or https://gitlab.com/your-user-name/ase/
 
   For example, ``upstream/master`` refers to the master (i.e., trunk or
   development) branch of the official ase project.
@@ -221,7 +221,7 @@ machine is:
 
         $ git push --set-upstream origin add-contribute-rst
 
-  * Go to gitlab.com/your-user-name/ase <https://gitlab.com/users/sign_in>
+  * Go to gitlab.com/your-user-name/ase <https://gitlab.com/your-user-name/ase>
     and click on '## branches' button (where ## is the number of branches on your
     repo)
 
@@ -286,7 +286,7 @@ Making small changes
 Say you want to fix a typo somewhere. GitLab has an editing feature that
 can come in handy. Here are the steps to do that there:
 
-* go to https://gitlab.com/users/sign_in
+* go to https://gitlab.com/ase/ase/
 * click "Files" and find the file you want to change
 * click "Edit" and fix the typo
 * click "Merge Requests" and add your change from the master branch

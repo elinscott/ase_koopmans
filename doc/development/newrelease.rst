@@ -61,7 +61,7 @@ of these steps are in fact automatic now.
 
   If the commands above fail, you need to `integrate EasyBuild with github`_.
 
-* Export issues, MR's, ... from GitLab (https://gitlab.com/users/sign_in)
+* Export issues, MR's, ... from GitLab (https://gitlab.com/ase/ase/)
   and store the tar-file in a safe place.
 
 * Merge *master* into the *web-page* branch (which is used for creating the
