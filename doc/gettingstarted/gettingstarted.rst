@@ -10,8 +10,8 @@ any of the :ref:`Specialized tutorials <tutorials>`.
 
    surface
    tut01_molecule/molecule
-   ext_intro
-   manipulating_atoms
+   external_calculators/ext_intro
+   manipulating_atoms/manipulating_atoms
    tut02_h2o_structure/h2o
    tut04_bulk/bulk
-   tut05_cluster/cluster
+   cluster/cluster
