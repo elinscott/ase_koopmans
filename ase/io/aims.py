@@ -68,6 +68,7 @@ def read_aims(filename, apply_constraints=True):
                 fix_cart.append(FixCartesian(i, xyz))
             floatvect = float(inp[1]), float(inp[2]), float(inp[3])
             positions.append(floatvect)
+            magmoms.append(0.)
             symbols.append(inp[-1])
             i += 1
             xyz = np.array([0, 0, 0])
