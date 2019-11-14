@@ -1,4 +1,3 @@
-from ase.io import read
 from gpaw import GPAW
 
 calc = GPAW('groundstate.rutile.gpw')
