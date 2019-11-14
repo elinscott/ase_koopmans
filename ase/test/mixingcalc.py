@@ -55,3 +55,13 @@ assert np.isclose(forces, atoms2.get_forces()).all()
 # testing  step
 atoms1[0].x += 0.2
 assert not np.isclose(2 * forces, atoms1.get_forces()).all()
+
+try:
+    calc1 = LinearCombinationCalculator([], [])
+except ValueError:
+    assert True
+
+try:
+    calc1 = AverageCalculator([])
+except ValueError:
+    assert True

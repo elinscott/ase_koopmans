@@ -6,7 +6,7 @@ class LinearCombinationCalculator(Calculator):
     """LinearCombinationCalculator for weighted summation of multiple calculators ...
     """
 
-    def __init__(self, calcs=None, weights=None, atoms=None):
+    def __init__(self, calcs, weights, atoms=None):
         """Implementation of sum of calculators.
 
         calcs: list
@@ -18,6 +18,9 @@ class LinearCombinationCalculator(Calculator):
         """
 
         super().__init__(atoms=atoms)
+
+        if len(calcs) == 0:
+            raise ValueError('The value of the calcs must be a list of Calculators')
 
         for calc in calcs:
             if not isinstance(calc, Calculator):
@@ -76,7 +79,7 @@ class SumCalculator(LinearCombinationCalculator):
     The supported properties are the intersection of the implemented properties in each calculator.
     """
 
-    def __init__(self, calcs=None, atoms=None):
+    def __init__(self, calcs, atoms=None):
         """Implementation of sum of calculators.
 
         calcs: list
@@ -86,14 +89,14 @@ class SumCalculator(LinearCombinationCalculator):
         """
 
         weights = [1.] * len(calcs)
-        super().__init__(calcs=calcs, weights=weights, atoms=atoms)
+        super().__init__(calcs, weights, atoms)
 
 
 class AverageCalculator(LinearCombinationCalculator):
     """AverageCalculator for equal summation of multiple calculators (for thermodynamic purposes)..
     """
 
-    def __init__(self, calcs=None, atoms=None):
+    def __init__(self, calcs, atoms=None):
         """Implementation of average of calculators.
 
         calcs: list
@@ -103,5 +106,9 @@ class AverageCalculator(LinearCombinationCalculator):
         """
 
         n = len(calcs)
+
+        if n == 0:
+            raise ValueError('The value of the calcs must be a list of Calculators')
+
         weights = [1 / n] * n
-        super().__init__(calcs=calcs, weights=weights, atoms=atoms)
+        super().__init__(calcs, weights, atoms)
