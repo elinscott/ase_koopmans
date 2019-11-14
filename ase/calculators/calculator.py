@@ -120,7 +120,7 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 # Recognized names of calculators sorted alphabetically:
 names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k',
-         'crystal', 'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk',
+         'crystal', 'demon', 'demonnano', 'dftb', 'dftd3', 'dmol', 'eam', 'elk',
          'emt', 'espresso', 'exciting', 'ff', 'fleur', 'gaussian',
          'gpaw', 'gromacs', 'gulp', 'hotbit', 'jacapo', 'kim',
          'lammpslib', 'lammpsrun', 'lj', 'mopac', 'morse', 'nwchem',
@@ -129,6 +129,7 @@ names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k',
 
 
 special = {'cp2k': 'CP2K',
+           'demonnano': 'DemonNano',
            'dftd3': 'DFTD3',
            'dmol': 'DMol3',
            'eam': 'EAM',

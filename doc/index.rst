@@ -52,6 +52,7 @@ Mopac_
 :mod:`~ase.calculators.qchem`
 :mod:`~ase.calculators.qmmm`
 :mod:`~ase.calculators.tip3p`
+:mod:`~deMon-Nano <ase.calculators.demonnano>`
 
 
 `Reference publication on ASE <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e/meta>`__
