@@ -121,6 +121,15 @@ Keyword                                  Description
 
                       ["mass 1 58.6934"]
 
+``wrap``              Whether to wrap the atoms in the ASE object during a call to
+                      calculate() before running LAMMPS.  Note that even if this is set
+                      to False, LAMMPS will still perform its own wrapping along
+                      periodic directions. (Default: True)
+
+                      WARNING: If wrapping is disabled and atoms are more than
+                      a box length outside of the cell along a periodic
+                      dimension, they may be lost by LAMMPS.
+
 ``keep_alive``        Boolean
                       whether to keep the lammps routine alive for more commands
 
@@ -247,6 +256,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         atom_type_masses=None,
         log_file=None,
         lammps_name='',
+        wrap=True,
         keep_alive=False,
         lammps_header=['units metal',
                        'atom_style atomic',
@@ -310,8 +320,8 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
         self.lmp.command(cell_cmd)
 
-    def set_lammps_pos(self, atoms, wrap=True):
-        if wrap:
+    def set_lammps_pos(self, atoms):
+        if self.parameters.wrap:
             atoms.wrap()
 
         pos = convert(atoms.get_positions(), "distance", "ASE", self.units)
