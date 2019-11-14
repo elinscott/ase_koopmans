@@ -412,7 +412,7 @@ def minimize_tilt_ij(atoms, modified=1, fixed=0, fold_atoms=True):
     atoms.set_cell(cell_cc)
 
     if fold_atoms:
-        atoms.set_scaled_positions(atoms.get_scaled_positions())
+        atoms.wrap()
 
 
 def minimize_tilt(atoms, order=range(3), fold_atoms=True):
