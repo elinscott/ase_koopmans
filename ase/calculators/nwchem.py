@@ -5,464 +5,396 @@ http://www.nwchem-sw.org/
 import os
 import re
 import numpy as np
+import time
+import collections
 
 from warnings import warn
 from ase.atoms import Atoms
 from ase.units import Hartree, Bohr
 from ase.io.nwchem import write_nwchem
 from ase.calculators.calculator import (FileIOCalculator, Parameters,
-                                        ReadError, EigenvalOccupationMixin)
+                                        all_changes)
 
+# Depending on what type of calculation is being performed, the results can
+# have one of several different tag prefixes.
+_calc_prefix = ['dft', 'scf', 'mp2', 'ccsd', 'tce', 'pspw', 'band', 'paw']
 
-class KPoint:
-    def __init__(self, s):
-        self.s = s
-        self.eps_n = []
-        self.f_n = []
+_etags = [':'.join([prefix, 'energy']) for prefix in _calc_prefix]
+_gtags = [':'.join([prefix, 'gradient']) for prefix in _calc_prefix]
+_dtags = [':'.join([prefix, 'dipole']) for prefix in _calc_prefix]
+_stags = [':'.join([prefix, 'stress']) for prefix in _calc_prefix]
 
+err_mult = 'Multiple {} found in NWchem output file!'
 
-class NWChem(FileIOCalculator, EigenvalOccupationMixin):
-    implemented_properties = ['energy', 'forces', 'dipole', 'magmom',
-                              'orbitals']
+base_keywords = ['geometry']
+
+# Calculator defined keywords that have special treatment
+_special_kws = ['center', 'autosym', 'autoz', 'theory', 'basis', 'xc', 'task',
+                'pseudopotentials', 'set', 'symmetry']
+
+xc = dict(
+        lda='slater pw91lda',
+        pbe='xpbe96 cpbe96',
+        revpbe='revpbe cpbe96',
+        rpbe='rpbe cpbe96',
+        pw91='xperdew91 perdew91',
+        )
+
+class NWChem(FileIOCalculator):
+    implemented_properties = ['energy', 'forces', 'stress', 'dipole']
     command = 'nwchem PREFIX.nw > PREFIX.out'
 
     default_parameters = dict(
         xc='LDA',
-        smearing=None,
-        charge=None,
-        task='gradient',
-        # Warning: nwchem centers atoms by default
-        # see ase-developers/2012-March/001356.html
-        geometry='nocenter noautosym',
-        convergence={'energy': None,
-                     'density': None,
-                     'gradient': None,
-                     'lshift': None,
-                     # set lshift to 0.0 for nolevelshifting
-                     'damp': None,
-                     },
         basis='3-21G',
-        basispar=None,
-        ecp=None,
-        so=None,
-        spinorbit=False,
-        tddft=False,
-        odft=False,
-        raw='')  # additional outside of dft block control string
-
+        center=False,
+        autosym=False,
+        autoz=False,
+        )
     def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label='nwchem', atoms=None, **kwargs):
+                 label='nwchem', atoms=None, command=None, perm=None,
+                 scratch=None, task=None, **kwargs):
         """Construct NWchem-calculator object."""
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
-                                  label, atoms, **kwargs)
+                                  label, atoms, command, **kwargs)
+
+        if perm is None:
+            self.perm = label
+        else:
+            self.perm = perm
+        self.perm = os.path.abspath(self.perm)
+
+        if scratch is None:
+            self.scratch = label
+        else:
+            self.scratch = scratch
+        self.scratch = os.path.abspath(self.scratch)
+
+        self.task = task
+
+        p = self.parameters
+        if 'theory' in p:
+            self.theory = p.theory
+        else:
+            dft = p.get('dft')
+            nwpw = p.get('nwpw')
+            if 'xc' in p:
+                self.xc = p.get('xc')
+                if self.xc in ['ccsd', 'mp2']:
+                    self.theory = xc.get(self.xc, self.xc)
+                elif self.xc == 'hf':
+                    self.theory = 'scf'
+                else:
+                    if nwpw is not None:
+                        self.theory = 'band'
+                    else:
+                        self.theory = 'dft'
+            elif 'tce' in p:
+                self.theory = 'tce'
+            elif 'ccsd' in p:
+                self.theory = 'ccsd'
+            elif 'mp2' in p:
+                self.theory = 'mp2'
+            elif 'scf' in p:
+                self.theory = 'hf'
+            elif nwpw is not None and 'xc' in nwpw:
+                self.theory = 'band'
+            else:
+                # Do LDA calculation by default in absence of other info
+                self.xc = 'lda'
+                self.theory = 'dft'
+
+        if self.theory not in ['pspw', 'band', 'paw'] and 'basis' not in p:
+            p.basis = '3-21G'
 
     def set(self, **kwargs):
         changed_parameters = FileIOCalculator.set(self, **kwargs)
-        if changed_parameters:
-            self.reset()
 
-    def check_state(self, atoms):
-        system_changes = FileIOCalculator.check_state(self, atoms)
-        # Ignore unit cell and boundary conditions:
-        if 'cell' in system_changes:
-            system_changes.remove('cell')
-        if 'pbc' in system_changes:
-            system_changes.remove('pbc')
-        return system_changes
+    def _get_geom(self, atoms=None):
+        if atoms is None:
+            atoms = self.atoms
+        outpos = atoms.get_positions()
 
-    def write_input(self, atoms, properties=None, system_changes=None):
+        geomarg = self.parameters.get('geometry')
+        geomline = 'geometry units angstrom'
+        if not self.parameters.center:
+            geomline += ' nocenter'
+        if not self.parameters.autosym:
+            geomline += ' noautosym'
+        if not self.parameters.autoz:
+            geomline += ' noautoz'
+        #geomline = 'geometry nocenter noautosym noautoz noprint units angstrom'
+        if geomarg is not None:
+            geomline += ' ' + geomarg
+        geom = [geomline]
+
+        pbc = atoms.pbc
+
+        if np.any(pbc):
+            scpos = atoms.get_scaled_positions()
+            for i in range(3):
+                if pbc[i]:
+                    outpos[:, i] = scpos[:, i]
+
+            npbc = pbc.sum()
+            cellpars = atoms.get_cell_lengths_and_angles()
+            if npbc == 1:
+                system = 'polymer'
+            elif npbc == 2:
+                system = 'surface'
+            else:
+                system = 'crystal'
+            geom.append('  system {} units angstrom'.format(system))
+            if npbc == 3:
+                geom.append('    lattice_vectors')
+                for row in atoms.cell:
+                    geom.append('      {:20.16e} {:20.16e} {:20.16e}'.format(*row))
+            else:
+                if pbc[0]:
+                    geom.append('    lat_a {:20.16e}'.format(cellpars[0]))
+                if pbc[1]:
+                    geom.append('    lat_b {:20.16e}'.format(cellpars[1]))
+                if pbc[2]:
+                    geom.append('    lat_c {:20.16e}'.format(cellpars[2]))
+                if pbc[1] and pbc[2]:
+                    geom.append('    alpha {:20.16e}'.format(cellpars[3]))
+                if pbc[0] and pbc[2]:
+                    geom.append('    beta {:20.16e}'.format(cellpars[4]))
+                if pbc[1] and pbc[0]:
+                    geom.append('    gamma {:20.16e}'.format(cellpars[5]))
+            geom.append('  end')
+
+        for i, atom in enumerate(atoms):
+            geom.append('{:>4} {:20.16e} {:20.16e} {:20.16e}'.format(atom.symbol, *outpos[i]))
+        symm = self.parameters.get('symmetry')
+        if symm is not None:
+            geom.append('symmetry {}'.format(symm))
+        geom.append('end')
+
+        return geom
+
+    def _get_basis(self):
+        if self.theory in ['pspw', 'band', 'paw']:
+            return ''
+        basis = self.parameters.get('basis')
+        if isinstance(basis, str):
+            basis = {'*': basis}
+        res = ['basis noprint']
+        for symbol, ibasis in basis.items():
+            res.append('{:>4} library {}'.format(symbol, ibasis))
+        res.append('end')
+
+        return res
+
+    def _get_set(self):
+        setargs = self.parameters.get('set', dict())
+        res = []
+        for key, val in setargs.items():
+            res.append('set {} {}'.format(key, val))
+        return res
+
+    def _format(self, section, params, nindent=0):
+        prefix = '  ' * nindent
+        if isinstance(params, dict):
+            res = [prefix + section]
+            for key, val in params.items():
+                res += self._format(key, val, nindent+1)
+            res.append(prefix + 'end')
+            return res
+        else:
+            return [prefix + '{} {}'.format(section, params)]
+
+    def _get_other(self, params=None, atoms=None):
+        if params is None:
+            params = self.parameters
+        if atoms is None:
+            atoms = self.atoms
+        res = []
+
+        for kw, block in params.items():
+            if kw in _special_kws:
+                continue
+            #if kw in ['theory', 'geometry', 'basis', 'xc', 'task', 'pseudopotentials', 'set', 'symmetry']:
+            #    continue
+            res += self._format(kw, block)
+        res += self._get_set()
+        return res
+
+    def write_input(self, atoms=None, properties=['energy'],
+                    system_changes=all_changes):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
+        os.makedirs(self.perm, exist_ok=True)
+        os.makedirs(self.scratch, exist_ok=True)
+
+        if self.task is None:
+            if 'forces' in properties or 'stress' in properties:
+                task = 'gradient'
+            else:
+                task = 'energy'
+        else:
+            task = self.task
+
         p = self.parameters
-        p.initial_magmoms = atoms.get_initial_magnetic_moments().tolist()
-        p.write(self.label + '.ase')
-        del p['initial_magmoms']
-        f = open(self.label + '.nw', 'w')
-        if p.charge is not None:
-            f.write('charge %s\n' % p.charge)
-        write_nwchem(f, atoms, p.geometry)
+        out = ['title "{}"'.format(self.label),
+               'permanent_dir {}'.format(self.perm),
+               'scratch_dir {}'.format(self.scratch),
+               'start {}'.format(self.label),
+               '\n'.join(self._get_geom(atoms)),
+               '\n'.join(self._get_basis()),
+               '\n'.join(self._get_other(atoms=atoms)),
+               'task {} {}'.format(self.theory, task),
+               'task rtdbprint']
 
-        f.write('start\n')
+        with open('{}.nw'.format(self.label), 'w') as f:
+            f.write('\n\n'.join(out))
 
-        if p.basispar is not None:
-            basispar = 'basis ' + p.basispar
-        else:
-            basispar = 'basis'
-
-        def format_basis_set(string, tag=basispar):
-            formatted = tag + '\n'
-            lines = string.split('\n')
-            if len(lines) > 1:
-                formatted += string
-            else:
-                formatted += '  * library ' + string
-            return formatted + '\nend\n'
-
-        basis = format_basis_set(p.basis)
-        if p.ecp is not None:
-            basis += format_basis_set(p.ecp, 'ecp')
-        if p.so is not None:
-            basis += format_basis_set(p.so, 'so')
-        f.write(basis)
-
-        if p.xc == 'RHF':
-            task = 'scf'
-        elif p.xc == 'MP2':
-            task = 'mp2'
-        else:
-            if p.spinorbit:
-                task = 'sodft'
-            elif p.tddft:
-                task = 'tddft'
-            else:
-                task = 'dft'
-            xc = {'LDA': 'slater pw91lda',
-                  'PBE': 'xpbe96 cpbe96',
-                  'revPBE': 'revpbe cpbe96',
-                  'RPBE': 'rpbe cpbe96',
-                  'CAM-B3LYP': 'xcamb88 1.00 lyp 0.81 vwn_5 0.19 hfexch 1.00'}.get(p.xc, p.xc)
-            if p.tddft:
-               f.write('\n' + 'dft' + '\n')
-            else: 
-               f.write('\n' + task + '\n')
-            f.write('  xc ' + xc + '\n')
-            if p.xc == 'CAM-B3LYP':
-               f.write('  cam 0.33 cam_alpha 0.19 cam_beta 0.46\n')
-               f.write('  direct\n')
-            for key in p.convergence:
-                if p.convergence[key] is not None:
-                    if key == 'lshift':
-                        if p.convergence[key] <= 0.0:
-                            f.write('  convergence nolevelshifting\n')
-                        else:
-                            f.write('  convergence %s %s\n' %
-                                    (key, p.convergence[key] / Hartree))
-                    else:
-                        f.write('  convergence %s %s\n' %
-                                (key, p.convergence[key]))
-            if p.smearing is not None:
-                assert p.smearing[0].lower() == 'gaussian', p.smearing
-                f.write('  smear %s\n' % (p.smearing[1] / Hartree))
-            if 'mult' not in p:
-                # Obtain multiplicity from magnetic momenta:
-                tot_magmom = atoms.get_initial_magnetic_moments().sum()
-                if tot_magmom < 0:
-                    mult = tot_magmom - 1  # fill minority bands
-                else:
-                    mult = tot_magmom + 1
-            else:
-                mult = p.mult
-            if mult != int(mult):
-                raise RuntimeError('Noninteger multiplicity not possible. ' +
-                                   'Check initial magnetic moments.')
-            f.write('  mult %d\n' % mult)
-            if p.odft:
-                f.write('  odft\n')  # open shell aka spin polarized dft
-            for key in sorted(p.keys()):
-                if key in ['charge', 'geometry', 'basis', 'basispar', 'ecp',
-                           'so', 'xc', 'spinorbit', 'convergence', 'smearing',
-                           'raw', 'mult', 'task', 'odft', 'tddft']:
-                    continue
-                f.write(u"  {0} {1}\n".format(key, p[key]))
-            f.write('end\n')
-
-        if p.raw:
-            f.write(p.raw + '\n')
-        f.write('\ntask ' + task + ' ' + p.task + '\n')
-        f.close()
-
-    def read(self, label):
-        FileIOCalculator.read(self, label)
-        if not os.path.isfile(self.label + '.out'):
-            raise ReadError
-
-        f = open(self.label + '.nw')
-        for line in f:
-            if line.startswith('geometry'):
-                break
-        symbols = []
-        positions = []
-        for line in f:
-            if line.startswith('end'):
-                break
-            words = line.split()
-            symbols.append(words[0])
-            positions.append([float(word) for word in words[1:]])
-
-        self.parameters = Parameters.read(self.label + '.ase')
-        self.atoms = Atoms(symbols, positions,
-                           magmoms=self.parameters.pop('initial_magmoms'))
-        self.read_results()
 
     def read_results(self):
-        self.read_energy()
-        if self.parameters.task.find('gradient') > -1:
-            self.read_forces()
-        if self.parameters.task.find('optimize') > -1:
-            self.read_coordinates()
-            self.read_forces()
-        if self.parameters.task.find('qmd') > -1:
-            self.read_coordinates()
-            self.read_forces()
-        self.niter = self.read_number_of_iterations()
-        self.nelect = self.read_number_of_electrons()
-        self.nvector = self.read_number_of_bands()
-        self.results['magmom'] = self.read_magnetic_moment()
-        dipole = self.read_dipole_moment()
-        if dipole is not None:
-            self.results['dipole'] = dipole
-        self.read_mos()
+        ang_to_Bohr = None
+        pos = None
+        natoms = None
+        energy = None
+        forces = None
+        stress = None
+        dipole = None
+        cell = None
 
-    def get_ibz_k_points(self):
-        return np.array([0., 0., 0.])
+        with open(self.label + '.out', 'r') as f:
+            lines = f.readlines()
 
-    def get_number_of_bands(self):
-        return self.nvector
-
-    def read_number_of_bands(self):
-        nvector = 0
-        for line in open(self.label + '.out'):
-            if line.find('Vector ') != -1:  # count all printed vectors
-                nvector += 1
-        if not nvector:
-            nvector = None
-        return nvector
-
-    def get_number_of_electrons(self):
-        return self.nelect
-
-    def read_number_of_electrons(self):
-        nelect = None
-        for line in open(self.label + '.out'):  # find last one
-            if line.find('of electrons') != -1:
-                nelect = float(line.split(':')[1].strip())
-        return nelect
-
-    def get_number_of_iterations(self):
-        return self.niter
-
-    def read_number_of_iterations(self):
-        niter = 0
-        for line in open(self.label + '.out'):
-            if line.find('d= ') != -1:  # count all iterations
-                niter += 1
-        if not niter:
-            niter = None
-        return niter
-
-    def read_magnetic_moment(self):
-        magmom = None
-        for line in open(self.label + '.out'):
-            if line.find('Spin multiplicity') != -1:  # last one
-                magmom = float(line.split(':')[-1].strip())
-                if magmom < 0:
-                    magmom += 1
-                else:
-                    magmom -= 1
-        return magmom
-
-    def read_dipole_moment(self):
-        dipolemoment = []
-        for line in open(self.label + '.out'):
-            for component in ['1   1 0 0',
-                              '1   0 1 0',
-                              '1   0 0 1']:
-                if line.find(component) != -1:
-                    value = float(line.split(component)[1].split()[0])
-                    value = value * Bohr
-                    dipolemoment.append(value)
-        if len(dipolemoment) == 0:
-            if len(self.atoms) == 1:
-                dipolemoment = [0.0, 0.0, 0.0]
-            else:
-                return None
-        return np.array(dipolemoment)
-
-    def read_energy(self):
-        """Read Energy from nwchem output file."""
-        text = open(self.label + '.out', 'r').read()
-        lines = iter(text.split('\n'))
-
-        # Energy:
-        estring = 'Total '
-        if self.parameters.xc == 'RHF':
-            estring += 'SCF'
-        elif self.parameters.xc == 'MP2':
-            estring += 'MP2'
-        else:
-            estring += 'DFT'
-        estring += ' energy'
-        for line in lines:
-            if line.find(estring) >= 0:
-                energy = float(line.split()[-1])
-
-        # Excited state energy replaces ground state, if present
-        if (self.parameters.tddft):
-            lines = text.split('\n')
-            estring = 'Excited state energy'
-            for line in lines:
-                if line.find(estring) >= 0:
-                    energy = float(line.split()[-1])
-
-        self.results['energy'] = energy * Hartree
-
-        # All lines have been 'eaten' while iterating; loop from scratch.
-        # (We could insert a break, but I (askhl) don't know if multiple
-        # energies might be listed; then we would not get the last one.
-        lines = text.split('\n')
-
-        # Eigenstates
-        spin = -1
-        kpts = []
-        for line in lines:
-            if line.find('Molecular Orbital Analysis') >= 0:
-                last_eps = -99999.0
-                spin += 1
-                kpts.append(KPoint(spin))
-            if spin >= 0:
-                if line.find('Vector') >= 0:
-                    line = line.lower().replace('d', 'e')
-                    line = line.replace('=', ' ')
-                    word = line.split()
-                    this_occ = float(word[3])
-                    this_eps = float(word[5])
-                    kpts[spin].f_n.append(this_occ)
-                    kpts[spin].eps_n.append(this_eps)
-                    if this_occ < 0.1 and this_eps < last_eps:
-                        warn('HOMO above LUMO - if this is not an exicted ' +
-                             'state - this might be introduced by levelshift.',
-                             RuntimeWarning)
-                    last_eps = this_eps
-        self.kpts = kpts
-
-    def read_forces(self):
-        """Read Forces from nwchem output file."""
-        file = open(self.label + '.out', 'r')
-        lines = file.readlines()
-        file.close()
-
-        for i, line in enumerate(lines):
-            if line.find('ENERGY GRADIENTS') >= 0:
-                gradients = []
-                for j in range(i + 4, i + 4 + len(self.atoms)):
-                    word = lines[j].split()
-                    gradients.append([float(word[k]) for k in range(5, 8)])
-
-        self.results['forces'] = -np.array(gradients) * Hartree / Bohr
-
-    def read_coordinates(self):
-        """Read updated coordinates from nwchem output file."""
-        file = open(self.label + '.out', 'r')
-        lines = file.readlines()
-        file.close()
-
-        for i, line in enumerate(lines):
-            if line.find('ENERGY GRADIENTS') >= 0:
-                positions = []
-                for j in range(i + 4, i + 4 + len(self.atoms)):
-                    word = lines[j].split()
-                    positions.append([float(word[k]) for k in range(2, 5)])
-
-        self.atoms.set_positions(np.array(positions) * Bohr)
-
-    def read_mos(self):
-        """
-        Read the molecular orbitals and molecular orbital energies
-        The output can be requested by specification of the print keyword
-            {'print': '\"final vectors analysis\" \"final vectors\"'}
-        when constructing the calculator object.
-        """
-        orbitals = []
-        orbital_coefficients = []
-        orbital_coefficients_line = []
-        filename = self.label + '.out'
-        orb_number = None
-        mo_read = False
-        mo_init = False
-        ev_number = 0
-        for line in open(filename, 'r'):
-            if 'Final MO vectors' in line:
-                mo_read = True
-                mo_init = False
-                orb_number = None
-                orbital_coefficients = []
-                orbital_coefficients_line = []
+        nlines = len(lines)
+        idx = 0
+        rtdb_block = False
+        while idx < nlines:
+            line = lines[idx].strip()
+            # Search for the RTDB block at the end of the file
+            if not rtdb_block:
+                if line.startswith('Contents of RTDB'):
+                    rtdb_block = True
+                idx += 1
                 continue
-            if mo_read:
-                regex = (
-                    r'^\s*(\d+)(\s+[+-]?\d+\.\d+)(\s+[+-]?\d+\.\d+)?'
-                    r'(\s+[+-]?\d+\.\d+)?(\s+[+-]?\d+\.\d+)?'
-                    r'(\s+[+-]?\d+\.\d+)?(\s+[+-]?\d+\.\d+)?'
-                )
-                match = re.search(regex, line)
-                if match:
-                    orb_number = int(match.group(1))
-                    for i in range(2, 8):
-                        if match.group(i):
-                            coeff = float(match.group(i))
-                            orbital_coefficients_line.append(coeff)
-                    if mo_init:
-                        orbital_coefficients[orb_number-1].extend(
-                            orbital_coefficients_line
-                        )
-                    else:
-                        orbital_coefficients.append(orbital_coefficients_line)
-                    orbital_coefficients_line = []
-                elif orb_number:
-                    if orb_number == len(orbital_coefficients):
-                        mo_init = True
-                    if orb_number == len(orbital_coefficients[0]):
-                        mo_read = False
-                        continue
-            if 'Vector' in line:
-                regex = (
-                    r'Vector\s+(\d+)\s+Occ=\s*([\w\.+-]+)\s+E=\s*([+-\.\w]+)'
-                )
-                match = re.search(regex, line)
-                if match:
-                    ev_number += 1
-                    # for the case of geometry optimization output
-                    if int(match.group(1)) < ev_number:
-                        orbitals = []
-                        ev_number = int(match.group(1))
-                    orbitals.append({
-                        'number': int(match.group(1)),
-                        'occupation': float(re.sub('[dD]', 'E', match.group(2))),
-                        'energy': float(re.sub('[dD]', 'E', match.group(3)))
-                        })
-        if len(orbital_coefficients) > 0:
-            # this is to transpose the nested list
-            mos = [[x[i] for x in orbital_coefficients]
-                   for i in range(len(orbital_coefficients[0]))]
-            for orbital in orbitals:
-                orbital['coefficients'] = mos.pop(0)
-            self.results['orbitals'] = orbitals
 
-    def get_eigenvalues(self, kpt=0, spin=0):
-        """Return eigenvalue array."""
-        return np.array(self.kpts[spin].eps_n) * Hartree
+            # NWChem's builtin Angstrom -> Bohr conversion factor
+            if line.startswith('geometry:geometry:angstrom_to_au'):
+                ang_to_Bohr = float(lines[idx + 1].split()[0])
+                idx += 1
 
-    def get_occupation_numbers(self, kpt=0, spin=0):
-        """Return occupation number array."""
-        return self.kpts[spin].f_n
+            # System geometry. NWChem lets you keep track of multiple different
+            # molecular geometries with different "label"s, the default label
+            # being "geometry" (which is why the tag starts geoemtry:geometry:).
+            # Currently, we only support this default label.
+            elif line.startswith('geometry:geometry:coords'):
+                #if pos is not None:
+                #    raise RuntimeError(err_mult.format('geometries'))
+                ndof = int(line.split()[1][6:].strip('[]'))
+                assert ndof % 3 == 0
+                if natoms is not None:
+                    assert natoms == ndof // 3
+                else:
+                    natoms = ndof // 3
+                pos = []
+                nread = 0
+                while nread < ndof:
+                    idx += 1
+                    line = lines[idx].strip().split()
+                    nread += len(line)
+                    pos += [float(xyz) for xyz in line]
+                pos = np.array(pos).reshape((natoms, 3))
+                idx += 1
 
-    def get_number_of_spins(self):
-        """Return the number of spins in the calculation.
+            # "tags" contains the element symbols
+            elif line.startswith('geometry:geometry:tags'):
+                #if symbols is not None:
+                #    raise RuntimeError(err_mult.format('geometry tags'))
+                taglen = int(line.split()[1][4:].strip('[]'))
+                if natoms is not None:
+                    assert natoms == taglen // 2
+                else:
+                    natoms = taglen // 2
+                symbols = []
+                idx += 1
+                for i in range(natoms):
+                    symbols.append(lines[idx + i].strip())
+                idx += natoms
 
-        Spin-paired calculations: 1, spin-polarized calculation: 2."""
-        return len(self.kpts)
+            # The unit cell
+            elif line.startswith('cell_default:unita_frozen'):
+                #if cell is not None:
+                #    raise RuntimeError(err_mult.format('unit cells'))
+                cell = []
+                nread = 0
+                while nread < 9:
+                    idx += 1
+                    line = lines[idx].strip().split()
+                    nread += len(line)
+                    cell += [float(xyz) for xyz in line]
+                cell = np.array(cell).reshape((3, 3))
+                idx += 1
 
-    def get_spin_polarized(self):
-        """Is it a spin-polarized calculation?"""
-        return len(self.kpts) == 2
+            # The energy
+            elif any([line.startswith(etag) for etag in _etags]):
+                #if energy is not None:
+                #    raise RuntimeError(err_mult.format('energies'))
+                energy = float(lines[idx + 1].split()[0])
+                idx += 2
 
-    def get_mos(self, atoms):
-        """ return eigenvectors and eigenvalues as matrices (numpy arrays) """
-        orbital_coefficients = []
-        eigen_energies = []
-        for orbital in self.get_property('orbitals'):
-            orbital_coefficients.append(orbital['coefficients'])
-            eigen_energies.append(orbital['energy'])
-        return [
-            np.array(orbital_coefficients),
-            np.diag(np.array(eigen_energies)*Hartree)
-        ]
+            # The gradient
+            elif any([line.startswith(gtag) for gtag in _gtags]):
+                #if forces is not None:
+                #    raise RuntimeError(err_mult.format('gradient vectors'))
+                ndof = int(line.split()[1][6:].strip('[]'))
+                assert ndof % 3 == 0
+                if natoms is not None:
+                    assert natoms == ndof // 3
+                else:
+                    natoms = ndof // 3
+                grad = []
+                nread = 0
+                while nread < ndof:
+                    idx += 1
+                    line = lines[idx].strip().split()
+                    nread += len(line)
+                    grad += [float(xyz) for xyz in line]
+                forces = -np.array(grad).reshape((natoms, 3))
+                idx += 1
+
+            # The stress tensor
+            elif any([line.startswith(stag) for stag in _stags]):
+                #if stress is not None:
+                #    raise RuntimeError(err_mult.format('stress tensors'))
+                stress = []
+                nread = 0
+                while nread < 9:
+                    idx += 1
+                    line = lines[idx].strip().split()
+                    nread += len(line)
+                    stress += [float(xyz) for xyz in line]
+                stress = np.array(stress).reshape((3, 3))
+                idx += 1
+
+            # The dipole
+            elif any([line.startswith(dtag) for dtag in _dtags]):
+                #if dipole is not None:
+                #    raise RuntimeError(err_mult.format('dipole moments'))
+                dipole = np.array([float(xyz) for xyz in lines[idx + 1].strip().split()])
+                idx += 2
+
+            else:
+                idx += 1
+
+        # Perform all unit conversions here
+        if ang_to_Bohr is None:
+            ang_to_Bohr = 1. / Bohr
+
+
+        if pos is not None:
+            self.atoms.positions = pos / ang_to_Bohr
+        if cell is not None:
+            self.atoms.cell = cell / ang_to_Bohr
+
+        if energy is not None:
+            self.results['energy'] = energy * Hartree
+        if forces is not None:
+            self.results['forces'] = forces * Hartree * ang_to_Bohr
+        if stress is not None:
+            self.results['stress'] = stress * Hartree * ang_to_Bohr
