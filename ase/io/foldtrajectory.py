@@ -27,7 +27,7 @@ infile = Trajectory(sys.argv[1])
 outfile = None
 
 for atoms in infile:
-    atoms.set_scaled_positions(atoms.get_scaled_positions())
+    atoms.wrap()
     atoms.set_calculator(None)  # or the singlepointcalculator fails!
     if outfile is None:
         outfile = Trajectory(sys.argv[2], 'w')

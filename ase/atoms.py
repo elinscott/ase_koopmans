@@ -1796,7 +1796,7 @@ class Atoms(object):
             else:
                 R[i] -= (x * (1.0 - fix)) * D[0]
 
-    def get_scaled_positions(self, wrap=True):
+    def get_scaled_positions(self, wrap=False):
         """Get positions relative to unit cell.
 
         If wrap is True, atoms outside the unit cell will be wrapped into
