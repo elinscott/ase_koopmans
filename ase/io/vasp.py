@@ -169,8 +169,8 @@ def read_vasp(filename='CONTCAR'):
         from ase.formula import Formula
         import re
         atomtypes = []
-        for atomtype in line1.split():
-            word_without_delims = re.sub(r"-|_|,|\.|=|[0-9]|^", "", atomtype)
+        for work in line1.split():
+            word_without_delims = re.sub(r"-|_|,|\.|=|[0-9]|^", "", word)
             if len(word_without_delims) < 1:
                 continue
             try:
