@@ -164,21 +164,23 @@ def read_vasp(filename='CONTCAR'):
         numofatoms = numofatoms[:np.arange(len(numofatoms))[commentcheck][0]]
 
     if not vasp5:
+        # Split the comment line (first in the file) into words and 
+        # try to compose a list of chemical symbols
         from ase.formula import Formula
         import re
-        comment_line = line1.split()
         atomtypes = []
-        for atomtype in comment_line:
-            sss = re.sub(r"-|_|,|\.|=|[0-9]|^", "", atomtype)
-            if len(sss) < 1:
+        for atomtype in line1.split():
+            word_without_delims = re.sub(r"-|_|,|\.|=|[0-9]|^", "", atomtype)
+            if len(word_without_delims) < 1:
                 continue
             try:
-                fff = Formula(sss)
-                atomtypes.extend(list(fff)) #; print(list(fff), f'[{ss}] recognized!')
-            except:
-                # print(ss, 'is comment')
+                atomtypes.extend(list(Formula(word_without_delims)))
+            except ValueError as e:
+                #print(atomtype, e, 'is comment')
                 pass
-
+        # Now the list of chemical symbols atomtypes must be formed.
+        # For example: atomtypes = ['Pd', 'C', 'O']
+        
         numsyms = len(numofatoms)
         if len(atomtypes) < numsyms:
             # First line in POSCAR/CONTCAR didn't contain enough symbols.
