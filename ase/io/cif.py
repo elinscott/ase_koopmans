@@ -327,6 +327,8 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
     setting = 1
     spacegroup = 1
     if sitesym is not None:
+        if isinstance(sitesym, str):
+            sitesym = [sitesym]
         subtrans = [(0.0, 0.0, 0.0)] if subtrans_included else None
         spacegroup = spacegroup_from_data(
             no=no, symbol=symbolHM, sitesym=sitesym, subtrans=subtrans,
