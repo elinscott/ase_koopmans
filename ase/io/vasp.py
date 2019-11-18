@@ -175,7 +175,7 @@ def read_vasp(filename='CONTCAR'):
                 continue
             try:
                 atomtypes.extend(list(Formula(word_without_delims)))
-            except ValueError as e:
+            except ValueError:
                 #print(atomtype, e, 'is comment')
                 pass
         # Now the list of chemical symbols atomtypes must be formed.
