@@ -164,7 +164,20 @@ def read_vasp(filename='CONTCAR'):
         numofatoms = numofatoms[:np.arange(len(numofatoms))[commentcheck][0]]
 
     if not vasp5:
-        atomtypes = line1.split()
+        from ase.formula import Formula
+        import re
+        comment_line = line1.split()
+        atomtypes = []
+        for atomtype in comment_line:
+            sss = re.sub("-|_|,|\.|=|[0-9]|^", "", atomtype)
+            if len(sss) < 1:
+                continue
+            try:
+                fff = Formula(sss)
+                atomtypes.extend(list(fff)) #; print(list(fff), f'[{ss}] recognized!')
+            except:
+                # print(ss, 'is comment')
+                pass
 
         numsyms = len(numofatoms)
         if len(atomtypes) < numsyms:
