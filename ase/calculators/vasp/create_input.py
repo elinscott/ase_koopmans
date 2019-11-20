@@ -771,6 +771,7 @@ class GenerateVaspInput(object):
         'scan-rvv10': {'metagga': 'SCAN', 'luse_vdw': True, 'bparam': 15.7},
         # vdW-DFs
         'vdw-df': {'gga': 'RE', 'luse_vdw': True, 'aggac': 0.},
+        'vdw-df-cx': {'gga': 'CX', 'luse_vdw': True, 'aggac': 0.},
         'optpbe-vdw': {'gga': 'OR', 'luse_vdw': True, 'aggac': 0.0},
         'optb88-vdw': {'gga': 'BO', 'luse_vdw': True, 'aggac': 0.0,
                        'param1': 1.1 / 6.0, 'param2': 0.22},
