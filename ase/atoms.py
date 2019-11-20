@@ -749,7 +749,7 @@ class Atoms(object):
     # Informs calculators (e.g. Asap) that ideal gas contribution is added here.
     _ase_handles_dynamic_stress = True
 
-    def get_stress(self, voigt=True, apply_constraint=True, include_ideal_gas=True):
+    def get_stress(self, voigt=True, apply_constraint=True, include_ideal_gas=False):
         """Calculate stress tensor.
 
         Returns an array of the six independent components of the
@@ -803,7 +803,7 @@ class Atoms(object):
                              (xy, yy, yz),
                              (xz, yz, zz)])
 
-    def get_stresses(self, include_ideal_gas=True):
+    def get_stresses(self, include_ideal_gas=False):
         """Calculate the stress-tensor of all the atoms.
 
         Only available with calculators supporting per-atom energies and
