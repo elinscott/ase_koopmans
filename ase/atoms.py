@@ -771,9 +771,6 @@ class Atoms(object):
             # Convert to the Voigt form before possibly applying
             # constraints and adding the dynamic part of the stress
             # (the "ideal gas contribution").
-            warnings.warn('Converting 3x3 stress tensor from %s ' %
-                          self._calc.__class__.__name__ +
-                          'calculator to the required Voigt form.')
             stress = np.array([stress[0, 0], stress[1, 1], stress[2, 2],
                                stress[1, 2], stress[0, 2], stress[0, 1]])
         else:
