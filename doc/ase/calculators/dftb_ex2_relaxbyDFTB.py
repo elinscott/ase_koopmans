@@ -1,16 +1,18 @@
 from ase.calculators.dftb import Dftb
 from ase.io import write, read
-
 from ase.build import molecule
-system = molecule('H2O')
-calc = Dftb(label='h2o', atoms=system,
+
+atoms = molecule('H2O')
+calc = Dftb(atoms=atoms,
+            label='h2o',
             Driver_='ConjugateGradient',
-            Driver_MaxForceComponent='1E-4',
+            Driver_MaxForceComponent=1e-4,
             Driver_MaxSteps=1000,
             Hamiltonian_MaxAngularMomentum_='',
-            Hamiltonian_MaxAngularMomentum_O='"p"',
-            Hamiltonian_MaxAngularMomentum_H='"s"')
-system.set_calculator(calc)
-calc.calculate(system)
+            Hamiltonian_MaxAngularMomentum_O='p',
+            Hamiltonian_MaxAngularMomentum_H='s')
+atoms.set_calculator(calc)
+
+calc.calculate(atoms)
 final = read('geo_end.gen')
-write('test.final.xyz', final)
+write('final.xyz', final)
