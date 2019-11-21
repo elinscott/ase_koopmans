@@ -1,6 +1,5 @@
 from ase.calculators.lammpsrun import LAMMPS
 import numpy as np
-from numpy.linalg import norm
 from numpy.testing import assert_allclose
 from ase.test.eam_pot import Pt_u3
 from ase.build import fcc111
