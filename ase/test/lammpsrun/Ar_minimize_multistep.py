@@ -2,7 +2,6 @@ from ase.calculators.lammpsrun import LAMMPS
 from ase.cluster.icosahedron import Icosahedron
 from ase.data import atomic_numbers,  atomic_masses
 import numpy as np
-from numpy.linalg import norm
 from numpy.testing import assert_allclose
 
 ar_nc = Icosahedron('Ar', noshells=2)
