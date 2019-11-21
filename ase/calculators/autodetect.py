@@ -17,7 +17,7 @@ default_executables = {'abinit': ['abinit'],
                        'elk': ['elk', 'elk-lapw'],
                        'espresso': ['pw.x'],
                        'gromacs': ['gmx', 'gmx_d', 'gmx_mpi', 'gmx_mpi_d'],
-                       'lammpsrun': ['lammps'],
+                       'lammpsrun': ['lmp', 'lmp_mpi', 'lmp_serial'],
                        'mopac': ['mopac', 'run_mopac7'], # run_mopac7: debian
                        'nwchem': ['nwchem'],
                        'octopus': ['octopus'],
