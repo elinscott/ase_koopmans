@@ -7,6 +7,7 @@ for which uncharged systems require the use of 'kspace_modify gewald'.
 
 import os
 import numpy as np
+from numpy.testing import assert_allclose
 from ase import Atom
 from ase.build import bulk
 from ase.calculators.lammpslib import LAMMPSlib
@@ -56,9 +57,9 @@ E2 = nickel.get_potential_energy()
 F2 = nickel.get_forces()
 S2 = nickel.get_stress()
 
-assert np.allclose(E, E2)
-assert np.allclose(F, F2)
-assert np.allclose(S, S2)
+assert_allclose(E, E2)
+assert_allclose(F, F2, atol=1e-14)
+assert_allclose(S, S2, atol=1e-14)
 
 nickel.rattle(stdev=0.2)
 E3 = nickel.get_potential_energy()
@@ -196,12 +197,7 @@ lammps = LAMMPSlib(lammps_header=header, lmpcmds=cmds, atom_types=atom_types, cr
 at.set_calculator(lammps)
 dyn = VelocityVerlet(at, 1 * units.fs)
 
-energy = at.get_potential_energy()
-energy_ref = 2041.411982950972
-diff = abs((energy - energy_ref) / energy_ref)
-assert diff < 1e-8, diff
+assert_allclose(at.get_potential_energy(), 2041.411982950972)
+
 dyn.run(10)
-energy = at.get_potential_energy()
-energy_ref = 312.4315854721744
-diff = abs((energy - energy_ref) / energy_ref)
-assert diff < 1e-8, diff
+assert_allclose(at.get_potential_energy(), 312.4315854721744)

@@ -1,6 +1,7 @@
 # test that a change in unit cell boundary conditions is
 # handled correctly by lammpslib
 import os
+from numpy.testing import assert_allclose
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.lattice.cubic import FaceCenteredCubic
 
@@ -17,12 +18,10 @@ atoms.set_calculator(lammps)
 energy_ppp_ref = -142.400000403
 energy_ppp = atoms.get_potential_energy()
 print("Computed energy with boundary ppp = {}".format(energy_ppp))
-diff_ppp = abs((energy_ppp - energy_ppp_ref) / energy_ppp_ref)
-assert diff_ppp < 1e-10, "Expected "+str(energy_ppp_ref)
+assert_allclose(energy_ppp, energy_ppp_ref)
 
 atoms.set_pbc((False,False,True))
 energy_ssp_ref = -114.524625705
 energy_ssp = atoms.get_potential_energy()
 print("Computed energy with boundary ssp = {}".format(energy_ssp))
-diff_ssp = abs((energy_ssp - energy_ssp_ref) / energy_ssp_ref)
-assert diff_ssp < 1e-10, "Expected "+str(energy_ssp_ref)
+assert_allclose(energy_ssp, energy_ssp_ref)

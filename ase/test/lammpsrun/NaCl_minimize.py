@@ -3,6 +3,8 @@ from ase.spacegroup import crystal
 from ase.data import atomic_numbers,  atomic_masses
 from ase.optimize import QuasiNewton
 from ase.constraints import UnitCellFilter
+import numpy as np
+from numpy.testing import assert_allclose
 
 
 a = 6.15
@@ -37,6 +39,12 @@ for a in nacl:
         a.charge = -1.
 
 nacl.set_calculator(calc)
+stress1_ref = np.array([-4.41412550e-03, -4.41412550e-03, -4.41412550e-03,
+                        -2.14623761e-18, -1.49517432e-17, -3.70086806e-20])
+
+assert_allclose(nacl.get_potential_energy(), -1896.216737561538)
+assert_allclose(np.asarray(nacl.cell), 24.6 * np.eye(3), atol=1e-14)
+assert_allclose(nacl.get_stress(), stress1_ref, atol=1e-14)
 
 E = nacl.get_potential_energy()
 
@@ -44,6 +52,14 @@ ucf = UnitCellFilter(nacl)
 dyn = QuasiNewton(ucf, force_consistent=False)
 dyn.run(fmax=1.0E-2)
 
-E = nacl.get_potential_energy()
-assert abs(E - -1897.208862) < 1E-2
+cell2_ref = np.array([
+    [2.48422392e+01, 2.01092771e-18, 8.12710402e-16],
+    [2.01092771e-18, 2.48422392e+01, 1.22764266e-16],
+    [8.12710402e-16, 1.22764266e-16, 2.48422392e+01]])
 
+stress2_ref = np.array([-1.76806144e-04, -1.76806144e-04, -1.76806144e-04,
+                        1.27209825e-17, 1.17268975e-17, 4.45395778e-18])
+
+assert_allclose(nacl.get_potential_energy(), -1897.208861729178)
+assert_allclose(np.asarray(nacl.cell), cell2_ref, atol=1e-14)
+assert_allclose(nacl.get_stress(), stress2_ref, atol=1e-14)
