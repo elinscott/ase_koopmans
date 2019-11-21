@@ -13,6 +13,7 @@ from ase.data import (atomic_numbers as ase_atomic_numbers,
                       atomic_masses as ase_atomic_masses)
 from ase.utils import basestring
 from ase.calculators.lammps import convert
+from ase.geometry import wrap_positions
 
 # TODO
 # 1. should we make a new lammps object each time ?
@@ -120,15 +121,6 @@ Keyword                                  Description
                       post initialization. (Use: Initialization amendments) e.g.
 
                       ["mass 1 58.6934"]
-
-``wrap``              Whether to wrap the atoms in the ASE object during a call to
-                      calculate() before running LAMMPS.  Note that even if this is set
-                      to False, LAMMPS will still perform its own wrapping along
-                      periodic directions. (Default: True)
-
-                      WARNING: If wrapping is disabled and atoms are more than
-                      a box length outside of the cell along a periodic
-                      dimension, they may be lost by LAMMPS.
 
 ``keep_alive``        Boolean
                       whether to keep the lammps routine alive for more commands
@@ -256,7 +248,6 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         atom_type_masses=None,
         log_file=None,
         lammps_name='',
-        wrap=True,
         keep_alive=False,
         lammps_header=['units metal',
                        'atom_style atomic',
@@ -321,10 +312,11 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         self.lmp.command(cell_cmd)
 
     def set_lammps_pos(self, atoms):
-        if self.parameters.wrap:
-            atoms.wrap()
-
-        pos = convert(atoms.get_positions(), "distance", "ASE", self.units)
+        # Create local copy of positions that are wrapped along any periodic
+        # directions
+        pos = wrap_positions(atoms.get_positions(), atoms.get_cell(),
+                atoms.get_pbc())
+        pos = convert(pos, "distance", "ASE", self.units)
 
         # If necessary, transform the positions to new coordinate system
         if self.coord_transform is not None:
