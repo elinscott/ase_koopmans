@@ -1,7 +1,6 @@
 # test that lammpslib handle nonperiodic cases where the cell size
 # in some directions is small (for example for a dimer).
 import numpy as np
-from numpy.testing import assert_allclose
 from ase.calculators.lammpslib import LAMMPSlib
 from ase import Atoms
 
