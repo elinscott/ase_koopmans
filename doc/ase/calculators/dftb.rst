@@ -37,7 +37,7 @@ for the Slater-Koster files and what is the name of the executable):
 
 DftbPlus Calculator (a FileIOCalculator)
 ========================================
-The file 'geom.out.gen' contains the input and output geometry
+The file 'geo_end.gen' contains the input and output geometry
 and it will be updated during the dftb calculations.
 
 If restart == None
