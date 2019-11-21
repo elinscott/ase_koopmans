@@ -255,12 +255,12 @@ class TrajectoryReader:
         b = self.backend[i]
         if 'numbers' in b:
             # numbers and other header info was written alongside the image:
-            atoms = read_atoms(self, b)
+            atoms = _read_atoms(self, b)
         else:
             # header info was not written because they are the same:
-            atoms = read_atoms(self, b,
-                               header=[self.pbc, self.numbers, self.masses,
-                                       self.constraints])
+            atoms = _read_atoms(self, b,
+                                header=[self.pbc, self.numbers, self.masses,
+                                        self.constraints])
         if 'calculator' in b:
             results = {}
             implemented_properties = []
@@ -324,17 +324,17 @@ def headers_equal(headers1, headers2):
 
 
 class VersionTooOldError(Exception):
-    """..."""
+    pass
 
 
-def read_atoms(traj: TrajectoryReader,
-               backend,
-               header: Tuple = None,
-               _try_except: bool = True) -> Atoms:
+def _read_atoms(traj: TrajectoryReader,
+                backend,
+                header: Tuple = None,
+                _try_except: bool = True) -> Atoms:
 
     if _try_except:
         try:
-            return read_atoms(traj, backend, header, False)
+            return _read_atoms(traj, backend, header, False)
         except Exception as ex:
             from distutils.version import LooseVersion
             if LooseVersion(__version__) < traj.ase_version:
