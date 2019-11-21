@@ -1,18 +1,42 @@
-"""Make sure we can't read old traj file, but we can convert them."""
-import ase.io as aio
+"""Test that we can read old trajectory files."""
+from base64 import b64encode, b64decode
+from pathlib import Path
 from ase import Atoms
-from ase.io.pickletrajectory import PickleTrajectory
-from ase.io.trajectory import convert
-from ase.test import must_raise
+from ase.constraints import FixAtoms
+from ase.io import read
+from ase.io.trajectory import Trajectory
 
 
-t = PickleTrajectory('hmm.traj', 'w', _warn=False)
-a = Atoms('H')
-t.write(a)
-t.close()
+def write():
+    """Run this with an old version of ASE."""
+    a1 = Atoms('H')
+    a1.constraints = FixAtoms(indices=[0])
 
-with must_raise(DeprecationWarning):
-    aio.read('hmm.traj')
-    
-convert('hmm.traj')
-aio.read('hmm.traj')
+    a2 = Atoms('HLi', cell=[1, 2, 3, 90, 80, 70], pbc=True)
+
+    t = Trajectory('old.traj', 'w')
+    t.write(a1)
+    t.write(a2)
+
+    b = Path('old.traj').read_bytes()
+    data = b64encode(b)
+    print(data)
+
+
+# base64 encoded old traj file with 2 images:
+data =     b'LSBvZiBVbG1BU0UtVHJhamVjdG9yeSAgAwAAAAAAAAACAAAAAAAAAOACAAAAAAAAWAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADABAAAAAAAAeyJ2ZXJzaW9uIjogMSwgImFzZV92ZXJzaW9uIjogIjMuMTguMCIsICJwYmMiOiBbZmFsc2UsIGZhbHNlLCBmYWxzZV0sICJudW1iZXJzLiI6IHsibmRhcnJheSI6IFtbMV0sICJpbnQ2NCIsIDU2XX0sICJjb25zdHJhaW50cyI6ICJbe1wibmFtZVwiOiBcIkZpeEF0b21zXCIsIFwia3dhcmdzXCI6IHtcImluZGljZXNcIjogWzBdfX1dIiwgInBvc2l0aW9ucy4iOiB7Im5kYXJyYXkiOiBbWzEsIDNdLCAiZmxvYXQ2NCIsIDY0XX0sICJjZWxsIjogW1swLjAsIDAuMCwgMC4wXSwgWzAuMCwgMC4wLCAwLjBdLCBbMC4wLCAwLjAsIDAuMF1dfQEAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAQAAAAAAAHsicGJjIjogW3RydWUsIHRydWUsIHRydWVdLCAibnVtYmVycy4iOiB7Im5kYXJyYXkiOiBbWzJdLCAiaW50NjQiLCA0MDBdfSwgInBvc2l0aW9ucy4iOiB7Im5kYXJyYXkiOiBbWzIsIDNdLCAiZmxvYXQ2NCIsIDQxNl19LCAiY2VsbCI6IFtbMS4wLCAwLjAsIDAuMF0sIFswLjY4NDA0MDI4NjY1MTMzNzYsIDEuODc5Mzg1MjQxNTcxODE2NiwgMC4wXSwgWzAuNTIwOTQ0NTMzMDAwNzkxMiwgLTAuMTg5NjA4MzAzNzE1OTk1NDYsIDIuOTQ4MzMyNjYxODEwNDldXX0jI1gAAAAAAAAA0AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=='  # noqa
+
+
+def test():
+    Path('old.traj').write_bytes(b64decode(data))
+    a1, a2 = read('old.traj@:')
+    assert len(a1.constraints) == 1
+    assert len(a2.constraints) == 0
+    assert not a1.pbc.any()
+    assert a2.pbc.all()
+
+
+if __name__ == '__main__':
+    # write()
+    test()
+
