@@ -4,7 +4,6 @@ from ase.io import write, read
 from ase.build import molecule
 system = molecule('H2O')
 calc = Dftb(label='h2o', atoms=system,
-            run_manyDftb_steps=True,
             Driver_='ConjugateGradient',
             Driver_MaxForceComponent='1E-4',
             Driver_MaxSteps=1000,

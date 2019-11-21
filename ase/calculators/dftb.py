@@ -52,13 +52,8 @@ class Dftb(FileIOCalculator):
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='dftb', atoms=None, kpts=None,
-                 run_manyDftb_steps=False,
                  **kwargs):
         """Construct a DFTB+ calculator.
-
-        run_manyDftb_steps:  Logical
-            True: many steps are run by DFTB+,
-            False:a single force&energy calculation at given positions
 
         kpts: (int, int, int), dict, or 2D-array
             If kpts is a tuple (or list) of 3 integers, it is interpreted
@@ -86,21 +81,7 @@ class Dftb(FileIOCalculator):
         else:
             self.slako_dir = './'
 
-        if run_manyDftb_steps:
-            # minimisation of molecular dynamics is run by native DFTB+
-            self.default_parameters = dict(
-                Hamiltonian_='DFTB',
-                Hamiltonian_SlaterKosterFiles_='Type2FileNames',
-                Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,
-                Hamiltonian_SlaterKosterFiles_Separator='"-"',
-                Hamiltonian_SlaterKosterFiles_Suffix='".skf"',
-                Hamiltonian_MaxAngularMomentum_='',
-                Options_='',
-                Options_WriteResultsTag='Yes')
-        else:
-            # using ase to get forces and energy only
-            # (single point calculation)
-            self.default_parameters = dict(
+        self.default_parameters = dict(
                 Hamiltonian_='DFTB',
                 Hamiltonian_SlaterKosterFiles_='Type2FileNames',
                 Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,

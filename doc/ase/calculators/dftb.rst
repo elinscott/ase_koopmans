@@ -75,9 +75,6 @@ Parameters
             * ``[(k11,k12,k13),(k21,k22,k23),...]``: Explicit list in units of the reciprocal lattice vectors
             * ``kpts=3.5``: `\vec k`-point density as in 3.5 `\vec k`-points per
               Å\ `^{-1}`.
-        run_manyDftb_steps: bool (default False)
-            If True, the DftbPlus calculator is running many steps by its own.
-            If False, all the relaxations/ molecular dynamics is done by ASE
 
 Example: Geometry Optimization by ASE
 =====================================
