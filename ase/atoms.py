@@ -658,7 +658,7 @@ class Atoms(object):
 
         wrap: bool
             wrap atoms back to the cell before returning positions
-        **wrap_kw: dict
+        wrap_kw: (keyword=value) pairs
             optional keywords `pbc`, `center`, `pretty_translation`, `eps`,
             see :func:`ase.geometry.wrap_positions`
         """
@@ -1832,9 +1832,9 @@ class Atoms(object):
 
         Parameters:
 
-        **wrap_kw: dict
+        wrap_kw: (keyword=value) pairs
             optional keywords `pbc`, `center`, `pretty_translation`, `eps`,
-            see :func:`ase.geometry.wrap_positions` 
+            see :func:`ase.geometry.wrap_positions`
         """
 
         if 'pbc' not in wrap_kw:
