@@ -3,18 +3,18 @@ from ase.calculators.calculator import PropertyNotImplementedError
 
 
 class LinearCombinationCalculator(Calculator):
-    """LinearCombinationCalculator for weighted summation of multiple calculators ...
+    """LinearCombinationCalculator for weighted summation of multiple calculators.
     """
 
     def __init__(self, calcs, weights, atoms=None):
         """Implementation of sum of calculators.
 
         calcs: list
-            List of an arbitrary number of `Calculator` objects.
+            List of an arbitrary number of :mod:`ase.calculators` objects.
         weights: list of float
-            Weights for each `Calculator` in the list.
+            Weights for each calculator in the list.
         atoms: Atoms object
-            Optional Atoms object to which the calculator will be attached.
+            Optional :class:`~ase.Atoms` object to which the calculator will be attached.
         """
 
         super().__init__(atoms=atoms)
@@ -65,7 +65,6 @@ class LinearCombinationCalculator(Calculator):
             calc.reset()
 
     def __str__(self):
-        # calculators = ', '.join(str(calc) for calc in self.calculators)
         calculators = ', '.join(calc.__class__.__name__ for calc in self.calcs)
         return '{}({})'.format(self.__class__.__name__, calculators)
 
@@ -83,9 +82,9 @@ class SumCalculator(LinearCombinationCalculator):
         """Implementation of sum of calculators.
 
         calcs: list
-            List of an arbitrary number of `Calculator` objects.
+            List of an arbitrary number of :mod:`ase.calculators` objects.
         atoms: Atoms object
-            Optional Atoms object to which the calculator will be attached.
+            Optional :class:`~ase.Atoms` object to which the calculator will be attached.
         """
 
         weights = [1.] * len(calcs)
@@ -100,9 +99,9 @@ class AverageCalculator(LinearCombinationCalculator):
         """Implementation of average of calculators.
 
         calcs: list
-            List of an arbitrary number of `Calculator` objects.
+            List of an arbitrary number of :mod:`ase.calculators` objects.
         atoms: Atoms object
-            Optional Atoms object to which the calculator will be attached.
+            Optional :class:`~ase.Atoms` object to which the calculator will be attached.
         """
 
         n = len(calcs)

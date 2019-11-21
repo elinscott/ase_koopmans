@@ -55,6 +55,9 @@ Git master branch
 
 * Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
 
+* Added :mod:`~ase.calculators.mixing` module for the linear combination of arbitrary :mod:`~ase.calculators`.
+
+
 Version 3.18.1
 ==============
 
