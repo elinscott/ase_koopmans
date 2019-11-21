@@ -3,7 +3,6 @@ from typing import Tuple
 
 import numpy as np
 
-import ase.io.ulm as ulm
 from ase import __version__
 from ase.calculators.singlepoint import SinglePointCalculator, all_properties
 from ase.constraints import dict2constraint
@@ -102,6 +101,7 @@ class TrajectoryWriter:
         self.description.update(description)
 
     def _open(self, filename, mode):
+        import ase.io.ulm as ulm
         if mode not in 'aw':
             raise ValueError('mode must be "w" or "a".')
         if self.master:
@@ -227,6 +227,7 @@ class TrajectoryReader:
         self.close()
 
     def _open(self, filename):
+        import ase.io.ulm as ulm
         self.backend = ulm.open(filename, 'r')
         self._read_header()
 
@@ -327,7 +328,7 @@ class VersionTooOldError(Exception):
 
 
 def read_atoms(traj: TrajectoryReader,
-               backend: ulm.Reader,
+               backend,
                header: Tuple = None,
                _try_except: bool = True) -> Atoms:
 
