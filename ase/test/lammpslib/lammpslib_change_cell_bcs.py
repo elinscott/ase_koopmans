@@ -1,13 +1,10 @@
 # test that a change in unit cell boundary conditions is
 # handled correctly by lammpslib
-import os
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.lattice.cubic import FaceCenteredCubic
 
-potential_path = os.environ.get('LAMMPS_POTENTIALS_PATH', '.')
 cmds = ["pair_style eam/alloy",
-        "pair_coeff * * {path}/NiAlH_jea.eam.alloy Ni H"
-        "".format(path=potential_path)]
+        "pair_coeff * * NiAlH_jea.eam.alloy Ni H"]
 lammps = LAMMPSlib(lmpcmds=cmds,
                    atom_types={'Ni': 1, 'H': 2},
                    log_file='test.log', keep_alive=True)
