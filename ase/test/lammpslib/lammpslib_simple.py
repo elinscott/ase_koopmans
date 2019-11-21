@@ -199,9 +199,9 @@ dyn = VelocityVerlet(at, 1 * units.fs)
 energy = at.get_potential_energy()
 energy_ref = 2041.411982950972
 diff = abs((energy - energy_ref) / energy_ref)
-assert diff < 1e-10
+assert diff < 1e-8, diff
 dyn.run(10)
 energy = at.get_potential_energy()
 energy_ref = 312.4315854721744
 diff = abs((energy - energy_ref) / energy_ref)
-assert diff < 1e-10, "%d" % energy
+assert diff < 1e-8, diff
