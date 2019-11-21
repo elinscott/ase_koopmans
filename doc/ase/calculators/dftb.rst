@@ -68,13 +68,16 @@ Parameters
         kpts: (default None)
             Brillouin zone sampling:
 
-            * ``(1,1,1)``: Gamma-point
+            * ``(1,1,1)`` or ``None``: Gamma-point only
             * ``(n1,n2,n3)``: Monkhorst-Pack grid
-            * ``(n1,n2,n3,'gamma')``: Shifted Monkhorst-Pack grid that includes
-              `\Gamma`
-            * ``[(k11,k12,k13),(k21,k22,k23),...]``: Explicit list in units of the reciprocal lattice vectors
-            * ``kpts=3.5``: `\vec k`-point density as in 3.5 `\vec k`-points per
-              Å\ `^{-1}`.
+            * ``dict``: Interpreted as a path in the Brillouin zone if it
+              contains the 'path_' keyword. Otherwise it is converted into a
+              Monkhorst-Pack grid using ase.calculators.calculator.kpts2sizeandoffsets
+            * ``[(k11,k12,k13),(k21,k22,k23),...]``: Explicit (Nkpts x 3) array of k-points
+              in units of the reciprocal lattice vectors (each with equal weight)
+
+.. _path: https://wiki.fysik.dtu.dk/ase/ase/dft/kpoints.html#ase.dft.kpoints.bandpath
+
 
 Example: Geometry Optimization by ASE
 =====================================
