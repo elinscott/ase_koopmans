@@ -165,6 +165,17 @@ class PostgreSQLDatabase(SQLite3Database):
 
         self.initialized = True
 
+    def get_offset_string(self, offset, limit=None):
+        sql = ''
+        # if not limit:
+        #     # In sqlite you cannot have offset without limit, so we
+        #     # set it to -1
+
+        #     # postgresql does not allow for setting limit to -1
+        #     sql += '\nLIMIT -1'
+        sql += '\nOFFSET {0}'.format(offset)
+        return sql
+
     def get_last_id(self, cur):
         cur.execute('SELECT last_value FROM systems_id_seq')
         id = cur.fetchone()[0]
