@@ -38,17 +38,9 @@ for the Slater-Koster files and what is the name of the executable):
 DftbPlus Calculator (a FileIOCalculator)
 ========================================
 The file 'geo_end.gen' contains the input and output geometry
-and it will be updated during the dftb calculations.
+and it will be updated during the DFTB+ calculations.
 
-If restart == None
-                   it is assumed that a new input file 'dftb_hsd.in'
-                   will be written by ase using default keywords
-                   and the ones given by the user.
-
-If restart != None
-                   it is assumed that keywords are in file restart
-
-All Keywords to the dftb calculator can be set by ase.
+All keywords to the DFTB+ calculator can be set by ase.
 
 
 Parameters
