@@ -10,7 +10,9 @@ required_envvars = {'abinit': ['ABINIT_PP_PATH'],
                     'openmx': ['OPENMX_DFT_DATA_PATH']}
 
 default_executables = {'abinit': ['abinit'],
-                       'cp2k': ['cp2k_shell'],
+                       'cp2k': ['cp2k_shell', 'cp2k_shell.psmp',
+                                'cp2k_shell.popt', 'cp2k_shell.ssmp',
+                                'cp2k_shell.sopt'],
                        'dftb': ['dftb+'],
                        'elk': ['elk', 'elk-lapw'],
                        'espresso': ['pw.x'],
