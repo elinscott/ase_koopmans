@@ -14,8 +14,8 @@ lammps = LAMMPSlib(lmpcmds=cmds,
                    atom_types={'Ni': 1, 'H': 2},
                    log_file='test.log', keep_alive=True)
 a = 2.0
-dimer = Atoms("NiNi", positions=[(0,0,0),(a,0,0)],
-              cell=(1000*a, 1000*a, 1000*a),pbc=(0,0,0))
+dimer = Atoms("NiNi", positions=[(0, 0, 0), (a, 0, 0)],
+              cell=(1000*a, 1000*a, 1000*a), pbc=(0, 0, 0))
 dimer.set_calculator(lammps)
 
 energy_ref = -1.10756669119
@@ -24,7 +24,8 @@ print("Computed energy: {}".format(energy))
 assert_allclose(energy, energy_ref)
 
 np.set_printoptions(precision=16)
-forces_ref = np.array([[-0.9420162329811532, 0., 0.],[ 0.9420162329811532, 0., 0. ]])
+forces_ref = np.array([[-0.9420162329811532, 0., 0.],
+                       [+0.9420162329811532, 0., 0.]])
 forces = dimer.get_forces()
 print(np.array2string(forces))
 assert_allclose(forces, forces_ref, atol=1e-14)

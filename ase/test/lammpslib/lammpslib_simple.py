@@ -82,14 +82,15 @@ F4 = nickel.get_forces()
 S4 = nickel.get_stress()
 
 assert not np.allclose(E4, E3)
-assert not np.allclose(F4[:-1,:], F3)
+assert not np.allclose(F4[:-1, :], F3)
 assert not np.allclose(S4, S3)
 
 
 # the example from the docstring
 
 cmds = ["pair_style eam/alloy",
-        "pair_coeff * * {path}/NiAlH_jea.eam.alloy Al H".format(path=potential_path)]
+        "pair_coeff * * {path}/NiAlH_jea.eam.alloy Al H"
+        "".format(path=potential_path)]
 
 Ni = bulk('Ni', cubic=True)
 H = Atom('H', position=Ni.cell.diagonal()/2)
@@ -176,10 +177,8 @@ with open('lammps.data', 'w') as fd:
 
 # then we run the actual test
 
-Z_of_type = {1:26}
-atom_types = {'Fe':1,}
-
-at = ase.io.read('lammps.data', format='lammps-data', Z_of_type=Z_of_type, units='real')
+at = ase.io.read('lammps.data', format='lammps-data', Z_of_type={1: 26},
+                 units='real')
 
 header = ["units           real",
           "atom_style      full",
@@ -193,7 +192,9 @@ header = ["units           real",
           "read_data       lammps.data"]
 cmds = []
 
-lammps = LAMMPSlib(lammps_header=header, lmpcmds=cmds, atom_types=atom_types, create_atoms=False, create_box=False, boundary=False, keep_alive=True, log_file='test.log')
+lammps = LAMMPSlib(lammps_header=header, lmpcmds=cmds, atom_types={'Fe': 1},
+                   create_atoms=False, create_box=False, boundary=False,
+                   keep_alive=True, log_file='test.log')
 at.set_calculator(lammps)
 dyn = VelocityVerlet(at, 1 * units.fs)
 

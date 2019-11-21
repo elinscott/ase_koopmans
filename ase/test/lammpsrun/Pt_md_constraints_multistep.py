@@ -12,7 +12,6 @@ f = open(pot_fn, 'w')
 f.write(Pt_u3)
 f.close()
 
-#slab = fcc111('Pt', size=(10, 10, 5), vacuum=30.0)
 slab = fcc111('Pt', size=(2, 2, 5), vacuum=30.0)
 # We use fully periodic boundary conditions because the Lammpsrun
 # calculator does not know if it can convert the cell correctly with
