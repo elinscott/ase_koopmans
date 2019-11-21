@@ -117,10 +117,14 @@ def test(name):
     e = [row.get('energy') for row in c.select(sort='energy')]
     assert len(e) == 5 and abs(e[0] - 1.991) < 0.0005
 
+    # Test the offset keyword
+    ids = [row.get('id') for row in c.select()]
+    offset = 2
+    assert next(c.select(offset=offset)).id == ids[offset]
+
 
 test('testase.json')
 test('testase.db')
 test('postgresql')
 test('mysql')
 test('mariadb')
-

@@ -699,6 +699,8 @@ class SQLite3Database(Database, object):
             sql += '\nLIMIT {0}'.format(limit)
 
         if offset:
+            if not limit:
+                sql += '\nLIMIT -1'
             sql += '\nOFFSET {0}'.format(offset)
 
         if verbosity == 2:
