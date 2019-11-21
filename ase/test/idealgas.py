@@ -1,4 +1,3 @@
-from ase import Atoms
 from ase.md import VelocityVerlet
 from ase.build import bulk
 from ase.units import kB
