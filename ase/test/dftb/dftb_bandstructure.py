@@ -1,6 +1,5 @@
 from ase.calculators.dftb import Dftb
 from ase.build import bulk
-from ase.dft.dos import DOS
 
 calc = Dftb(label='dftb',
             kpts=(3,3,3),
@@ -17,6 +16,7 @@ assert abs(efermi - -2.90086680996455) < 1.
 
 # DOS does not currently work because of 
 # missing "get_k_point_weights" function
+#from ase.dft.dos import DOS
 #dos = DOS(calc, width=0.2)
 #d = dos.get_dos()
 #e = dos.get_energies()
