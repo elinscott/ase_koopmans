@@ -1,7 +1,9 @@
 import warnings
+from typing import Tuple
 
 import numpy as np
 
+import ase.io.ulm as ulm
 from ase import __version__
 from ase.calculators.singlepoint import SinglePointCalculator, all_properties
 from ase.constraints import dict2constraint
@@ -100,7 +102,6 @@ class TrajectoryWriter:
         self.description.update(description)
 
     def _open(self, filename, mode):
-        import ase.io.ulm as ulm
         if mode not in 'aw':
             raise ValueError('mode must be "w" or "a".')
         if self.master:
@@ -226,7 +227,6 @@ class TrajectoryReader:
         self.close()
 
     def _open(self, filename):
-        import ase.io.ulm as ulm
         self.backend = ulm.open(filename, 'r')
         self._read_header()
 
@@ -254,11 +254,12 @@ class TrajectoryReader:
         b = self.backend[i]
         if 'numbers' in b:
             # numbers and other header info was written alongside the image:
-            atoms = read_atoms(b)
+            atoms = read_atoms(self, b)
         else:
             # header info was not written because they are the same:
-            atoms = read_atoms(b, header=[self.pbc, self.numbers, self.masses,
-                                          self.constraints])
+            atoms = read_atoms(self, b,
+                               header=[self.pbc, self.numbers, self.masses,
+                                       self.constraints])
         if 'calculator' in b:
             results = {}
             implemented_properties = []
@@ -321,7 +322,30 @@ def headers_equal(headers1, headers2):
     return eq
 
 
-def read_atoms(backend, header=None):
+class VersionTooOldError(Exception):
+    """..."""
+
+
+def read_atoms(traj: TrajectoryReader,
+               backend: ulm.Reader,
+               header: Tuple = None,
+               _try_except: bool = True) -> Atoms:
+
+    if _try_except:
+        try:
+            return read_atoms(traj, backend, header, False)
+        except Exception as ex:
+            from distutils.version import LooseVersion
+            if LooseVersion(__version__) < traj.ase_version:
+                msg = ('You are trying to read a trajectory file written ' +
+                       'with ASE-{v1} from ASE-{v2}. ' +
+                       'It might help to update your ASE').format(
+                    v1=traj.ase_version,
+                    v2=__version__)
+                raise VersionTooOldError(msg) from ex
+            else:
+                raise
+
     b = backend
     if header:
         pbc, numbers, masses, constraints = header
