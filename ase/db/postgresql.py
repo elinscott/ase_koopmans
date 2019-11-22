@@ -167,12 +167,10 @@ class PostgreSQLDatabase(SQLite3Database):
 
     def get_offset_string(self, offset, limit=None):
         sql = ''
-        # if not limit:
-        #     # In sqlite you cannot have offset without limit, so we
-        #     # set it to -1
-
-        #     # postgresql does not allow for setting limit to -1
-        #     sql += '\nLIMIT -1'
+        if not limit:
+            # postgresql does not allow for setting limit to -1 so
+            # instead we set a large number
+            sql += '\nLIMIT 18446744073709551615'
         sql += '\nOFFSET {0}'.format(offset)
         return sql
 
