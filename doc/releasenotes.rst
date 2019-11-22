@@ -53,10 +53,18 @@ Git master branch
   kwarg, where the keys are the variable names in the expression and
   the values are the numerical value they should be replaced with.
 
+* Added general linear parametric constraints :class:`ase.constraints.FixParametricRelations`,
+  :class:`ase.constraints.FixScaledParametricRelations`, and
+  :class:`ase.constraints.FixCartesianParametricRelations` to
+  :mod:`ase.utils.constraints`. These constraints are based off the work
+  in: https://arxiv.org/abs/1908.01610, and allows for the positions and cell of a
+  structure to be optimized in a reduced parameter space.
+
 * Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
 
-* Added :mod:`~ase.calculators.mixing` module for the linear combination of arbitrary :mod:`~ase.calculators`.
+* Added :func:`ase.build.graphene` for building graphene monolayers.
 
+* Added :mod:`~ase.calculators.mixing` module for the linear combination of arbitrary :mod:`~ase.calculators`.
 
 Version 3.18.1
 ==============
@@ -971,7 +979,7 @@ Version 3.5.0
 * Implementation of the Dimer method.
 
 
-.. _ASAP: http://wiki.fysik.dtu.dk/asap
+.. _ASAP: https://wiki.fysik.dtu.dk/asap
 .. _GPAW: https://wiki.fysik.dtu.dk/gpaw/documentation/xc/vdwcorrection.html
 
 

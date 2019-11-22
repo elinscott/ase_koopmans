@@ -211,7 +211,7 @@ class SymmetryEquivalenceCheck(object):
         """Check that the Niggli unit vectors has the same internal angles."""
         ang1 = np.sort(self._get_angles(self.s1.get_cell()))
         ang2 = np.sort(self._get_angles(self.s2.get_cell()))
-
+        
         return np.allclose(ang1, ang2, rtol=0, atol=self.angle_tol)
 
     def _has_same_volume(self):
@@ -588,7 +588,9 @@ class SymmetryEquivalenceCheck(object):
         # [R] = [V][T]^-1, where [V] is the reference vectors and
         # [T] is the trial vectors
         # XXX What do we know about the length/shape of refined_candidate_list?
-        if len(refined_candidate_list) == 1:
+        if len(refined_candidate_list) == 0:
+            return None
+        elif len(refined_candidate_list) == 1:
             inverted_trial = 1.0 / refined_candidate_list
         else:
             inverted_trial = np.linalg.inv(refined_candidate_list)

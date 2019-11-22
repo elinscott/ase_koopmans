@@ -1,19 +1,28 @@
 import time
+import warnings
 
 from ase.units import Ang, fs
 
 v_unit = Ang / (1000.0 * fs)
 
 
-def read_aims(filename):
+def read_aims(filename, apply_constraints=True):
     """Import FHI-aims geometry type files.
 
     Reads unitcell, atom positions and constraints from
     a geometry.in file.
+
+    If geometric constraint (symmetry parameters) are in the file
+    include that information in atoms.info["symmetry_block"]
     """
 
     from ase import Atoms
-    from ase.constraints import FixAtoms, FixCartesian
+    from ase.constraints import(
+        FixAtoms,
+        FixCartesian,
+        FixScaledParametricRelations,
+        FixCartesianParametricRelations,
+    )
     import numpy as np
 
     atoms = Atoms()
@@ -25,6 +34,7 @@ def read_aims(filename):
     symbols = []
     velocities = []
     magmoms = []
+    symmetry_block = []
     charges = []
     fix = []
     fix_cart = []
@@ -58,6 +68,7 @@ def read_aims(filename):
                 fix_cart.append(FixCartesian(i, xyz))
             floatvect = float(inp[1]), float(inp[2]), float(inp[3])
             positions.append(floatvect)
+            magmoms.append(0.)
             symbols.append(inp[-1])
             i += 1
             xyz = np.array([0, 0, 0])
@@ -88,6 +99,9 @@ def read_aims(filename):
             floatvect = [v_unit * float(l) for l in inp[1:4]]
             velocities.append(floatvect)
 
+        elif inp[0] in ["symmetry_n_params", "symmetry_params", "symmetry_lv", "symmetry_frac"]:
+            symmetry_block.append(" ".join(inp))
+
     if xyz.all():
         fix.append(i)
     elif xyz.any():
@@ -112,6 +126,46 @@ def read_aims(filename):
             )
         atoms.set_velocities(velocities)
 
+    fix_params = []
+
+    if len(symmetry_block) > 5:
+        params = symmetry_block[1].split()[1:]
+
+        lattice_expressions = []
+        lattice_params = []
+
+        atomic_expressions = []
+        atomic_params = []
+
+        n_lat_param = int(symmetry_block[0].split(" ")[2])
+
+        lattice_params = params[:n_lat_param]
+        atomic_params = params[n_lat_param:]
+
+        for ll, line in enumerate(symmetry_block[2:]):
+            expression = " ".join(line.split(" ")[1:])
+            if ll < 3:
+                lattice_expressions += expression.split(",")
+            else:
+                atomic_expressions += expression.split(",")
+
+        fix_params.append(
+            FixCartesianParametricRelations.from_expressions(
+                list(range(3)),
+                lattice_params,
+                lattice_expressions,
+                use_cell=True,
+            )
+        )
+
+        fix_params.append(
+            FixScaledParametricRelations.from_expressions(
+                list(range(len(atoms))),
+                atomic_params,
+                atomic_expressions,
+            )
+        )
+
     if any(magmoms):
         atoms.set_initial_magnetic_moments(magmoms)
     if any(charges):
@@ -121,22 +175,45 @@ def read_aims(filename):
         atoms.set_cell(cell)
         atoms.set_pbc(periodic)
     if len(fix):
-        atoms.set_constraint([FixAtoms(indices=fix)] + fix_cart)
+        atoms.set_constraint([FixAtoms(indices=fix)] + fix_cart + fix_params)
     else:
-        atoms.set_constraint(fix_cart)
+        atoms.set_constraint(fix_cart + fix_params)
+
+    if fix_params and apply_constraints:
+        atoms.set_positions(atoms.get_positions())
     return atoms
 
 
 def write_aims(
-    filename, atoms, scaled=False, velocities=False, ghosts=None, info_str=None
+    filename, atoms, scaled=False, geo_constrain=False, velocities=False, ghosts=None, info_str=None
 ):
     """Method to write FHI-aims geometry files.
 
     Writes the atoms positions and constraints (only FixAtoms is
     supported at the moment).
+
+    Args:
+        filename: str
+            Name of file to output structure to
+        atoms: ase.atoms.Atoms
+            structure to output to the file
+        scaled: bool
+            If True use fractional coordinates instead of Cartesian coordinates
+        symmetry_block: list of str
+            List of geometric constraints as defined in: https://arxiv.org/abs/1908.01610
+        velocities: bool
+            If True add the atomic velocity vectors to the file
+        ghosts: list of Atoms
+            A list of ghost atoms for the system
+        info_str: str
+            A string to be added to the header of the file
     """
 
-    from ase.constraints import FixAtoms, FixCartesian
+    from ase.constraints import(
+        FixAtoms,
+        FixCartesian,
+    )
+
     import numpy as np
 
     if isinstance(atoms, (list, tuple)):
@@ -147,6 +224,12 @@ def write_aims(
             )
         else:
             atoms = atoms[0]
+
+    if geo_constrain:
+        if not scaled:
+            warnings.warn("Setting scaled to True because a symmetry_block is detected.")
+            scaled = True
+
 
     fd = open(filename, "w")
     fd.write("#=======================================================\n")
@@ -185,12 +268,13 @@ def write_aims(
             elif isinstance(constr, FixCartesian):
                 fix_cart[constr.a] = -constr.mask + 1
 
+
     if ghosts is None:
         ghosts = np.zeros(len(atoms))
     else:
         assert len(ghosts) == len(atoms)
 
-    scaled_positions = atoms.get_scaled_positions()
+    scaled_positions = atoms.get_scaled_positions(wrap=not geo_constrain)
 
     for i, atom in enumerate(atoms):
         if ghosts[i] == 1:
@@ -230,6 +314,84 @@ def write_aims(
                 )
             )
 
+    if geo_constrain:
+        for line in get_sym_block(atoms):
+            fd.write(line)
+
+def get_sym_block(atoms):
+    """Get the symmetry block for the Parametric constraints in atoms.constraints"""
+    import numpy as np
+
+    from ase.constraints import(
+        FixScaledParametricRelations,
+        FixCartesianParametricRelations,
+    )
+
+    # Initialize param/expressions lists
+    atomic_sym_params = []
+    lv_sym_params = []
+    atomic_param_constr = np.zeros((len(atoms),), dtype="<U100")
+    lv_param_constr = np.zeros((3,), dtype="<U100")
+
+    # Populate param/expressions list
+    for constr in atoms.constraints:
+        if isinstance(constr, FixScaledParametricRelations):
+            atomic_sym_params += constr.params
+
+            if np.any(atomic_param_constr[constr.indices] != ""):
+                warnings.warn("multiple parametric constraints defined for the same atom, using the last one defined")
+
+            atomic_param_constr[constr.indices] = [
+                ", ".join(expression) for expression in constr.expressions
+            ]
+        elif isinstance(constr, FixCartesianParametricRelations):
+            lv_sym_params += constr.params
+
+            if np.any(lv_param_constr[constr.indices] != ""):
+                warnings.warn("multiple parametric constraints defined for the same lattice vector, using the last one defined")
+
+            lv_param_constr[constr.indices] = [
+                ", ".join(expression) for expression in constr.expressions
+            ]
+
+    if np.all(atomic_param_constr == "") and np.all(lv_param_constr == ""):
+        return []
+
+    # Check Constraint Parameters
+    if len(atomic_sym_params) != len(np.unique(atomic_sym_params)):
+        warnings.warn("Some parameters were used across constraints, they will be combined in the aims calculations")
+        atomic_sym_params = np.unique(atomic_sym_params)
+
+    if len(lv_sym_params) != len(np.unique(lv_sym_params)):
+        warnings.warn("Some parameters were used across constraints, they will be combined in the aims calculations")
+        lv_sym_params = np.unique(lv_sym_params)
+
+    if np.any(atomic_param_constr == ""):
+        raise IOError("FHI-aims input files require all atoms have defined parametric constraints")
+
+    cell_inds = np.where(lv_param_constr == "")[0]
+    for ind in cell_inds:
+        lv_param_constr[ind] = "{:.16f}, {:.16f}, {:.16f}".format(*atoms.cell[ind])
+
+
+    n_atomic_params = len(atomic_sym_params)
+    n_lv_params = len(lv_sym_params)
+    n_total_params = n_atomic_params + n_lv_params
+
+    sym_block = []
+    if n_total_params > 0:
+        sym_block.append("#=======================================================\n")
+        sym_block.append("# Parametric constraints\n")
+        sym_block.append("#=======================================================\n")
+        sym_block.append("symmetry_n_params {:d} {:d} {:d}\n".format(n_total_params, n_lv_params, n_atomic_params))
+        sym_block.append("symmetry_params %s\n" % " ".join(lv_sym_params + atomic_sym_params))
+
+        for constr in lv_param_constr:
+            sym_block.append("symmetry_lv {:s}\n".format(constr))
+
+        for constr in atomic_param_constr:
+            sym_block.append("symmetry_frac {:s}\n".format(constr))
+    return sym_block
 
 # except KeyError:
 #     continue

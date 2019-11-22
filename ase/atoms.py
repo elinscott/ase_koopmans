@@ -301,7 +301,7 @@ class Atoms(object):
     constraints = property(_get_constraints, set_constraint, _del_constraints,
                            'Constraints of the atoms.')
 
-    def set_cell(self, cell, scale_atoms=False):
+    def set_cell(self, cell, scale_atoms=False, apply_constraint=True):
         """Set unit cell vectors.
 
         Parameters:
@@ -343,6 +343,12 @@ class Atoms(object):
 
         # Override pbcs if and only if given a Cell object:
         cell = Cell.new(cell)
+
+        # XXX not working well during initialize due to missing _constraints
+        if apply_constraint and hasattr(self, '_constraints'):
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_cell'):
+                    constraint.adjust_cell(self, cell)
 
         if scale_atoms:
             M = np.linalg.solve(self.cell.complete(), cell.complete())
@@ -645,13 +651,21 @@ class Atoms(object):
 
         self.set_array('positions', newpositions, shape=(3,))
 
-    def get_positions(self, wrap=False):
-        """Get array of positions. If wrap==True, wraps atoms back
-        into unit cell.
+    def get_positions(self, wrap=False, **wrap_kw):
+        """Get array of positions.
+
+        Parameters:
+
+        wrap: bool
+            wrap atoms back to the cell before returning positions
+        wrap_kw: (keyword=value) pairs
+            optional keywords `pbc`, `center`, `pretty_translation`, `eps`,
+            see :func:`ase.geometry.wrap_positions`
         """
         if wrap:
-            scaled = self.get_scaled_positions()
-            return np.dot(scaled, self.cell)
+            if 'pbc' not in wrap_kw:
+                wrap_kw['pbc'] = self.pbc
+            return wrap_positions(self.positions, self.cell, **wrap_kw)
         else:
             return self.arrays['positions'].copy()
 
@@ -740,7 +754,7 @@ class Atoms(object):
                     constraint.adjust_forces(self, forces)
         return forces
 
-    def get_stress(self, voigt=True):
+    def get_stress(self, voigt=True, apply_constraint=True):
         """Calculate stress tensor.
 
         Returns an array of the six independent components of the
@@ -756,8 +770,10 @@ class Atoms(object):
         shape = stress.shape
 
         if shape == (3, 3):
-            # if Voigt form is not wanted, return rightaway
-            if not voigt:
+            # if Voigt form is not wanted, return rightaway if apply_constraint is False
+            # If the user wants to apply constraints to the stress transform the Voigt form and
+            # apply the constraint
+            if not voigt and (not apply_constraint or not self.constraints):
                 return stress
             warnings.warn('Converting 3x3 stress tensor from %s ' %
                           self._calc.__class__.__name__ +
@@ -766,6 +782,11 @@ class Atoms(object):
                                stress[1, 2], stress[0, 2], stress[0, 1]])
         else:
             assert shape == (6,)
+
+        if apply_constraint:
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_stress'):
+                    constraint.adjust_stress(self, stress)
 
         if voigt:
             return stress
@@ -828,7 +849,13 @@ class Atoms(object):
         kw = {}
         for name in ['numbers', 'positions', 'cell', 'pbc']:
             kw[name] = dct.pop(name)
-        atoms = cls(constraint=dct.pop('constraints', None),
+
+        constraints = dct.pop('constraints', None)
+        if constraints:
+            from ase.constraints import dict2constraint
+            constraints = [dict2constraint(d) for d in constraints]
+
+        atoms = cls(constraint=constraints,
                     celldisp=dct.pop('celldisp', None),
                     info=dct.pop('info', None), **kw)
         natoms = len(atoms)
@@ -836,7 +863,7 @@ class Atoms(object):
         # Some arrays are named differently from the atoms __init__ keywords.
         # Also, there may be custom arrays.  Hence we set them directly:
         for name, arr in dct.items():
-            assert len(arr) == natoms
+            assert len(arr) == natoms, name
             assert isinstance(arr, np.ndarray)
             atoms.arrays[name] = arr
         return atoms
@@ -1777,7 +1804,7 @@ class Atoms(object):
             else:
                 R[i] -= (x * (1.0 - fix)) * D[0]
 
-    def get_scaled_positions(self, wrap=True):
+    def get_scaled_positions(self, wrap=False):
         """Get positions relative to unit cell.
 
         If wrap is True, atoms outside the unit cell will be wrapped into
@@ -1800,43 +1827,20 @@ class Atoms(object):
         """Set positions relative to unit cell."""
         self.positions[:] = self.cell.cartesian_positions(scaled)
 
-    def wrap(self, center=(0.5, 0.5, 0.5), pbc=None, pretty_translation=False,
-             eps=1e-7):
+    def wrap(self, **wrap_kw):
         """Wrap positions to unit cell.
 
         Parameters:
 
-        center: three float
-            The positons in fractional coordinates that the new positions
-            will be nearest possible to.
-        pbc: one or 3 bool
-            For each axis in the unit cell decides whether the positions
-            will be moved along this axis.  By default, the boundary
-            conditions of the Atoms object will be used.
-        pretty_translation: bool
-            Translates atoms such that fractional coordinates are minimized.
-        eps: float
-            Small number to prevent slightly negative coordinates from being
-            wrapped.
-
-        See also the :func:`ase.geometry.wrap_positions` function.
-        Example:
-
-        >>> a = Atoms('H',
-        ...           [[-0.1, 1.01, -0.5]],
-        ...           cell=[[1, 0, 0], [0, 1, 0], [0, 0, 4]],
-        ...           pbc=[1, 1, 0])
-        >>> a.wrap()
-        >>> a.positions
-        array([[ 0.9 ,  0.01, -0.5 ]])
+        wrap_kw: (keyword=value) pairs
+            optional keywords `pbc`, `center`, `pretty_translation`, `eps`,
+            see :func:`ase.geometry.wrap_positions`
         """
 
-        if pbc is None:
-            pbc = self.pbc
+        if 'pbc' not in wrap_kw:
+            wrap_kw['pbc'] = self.pbc
 
-        self.positions[:] = wrap_positions(self.positions, self.cell,
-                                           pbc, center, pretty_translation,
-                                           eps)
+        self.positions[:] = self.get_positions(wrap=True, **wrap_kw)
 
     def get_temperature(self):
         """Get the temperature in Kelvin."""

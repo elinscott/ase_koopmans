@@ -1,14 +1,11 @@
 # test that lammpslib handle nonperiodic cases where the cell size
 # in some directions is small (for example for a dimer).
-import os
 import numpy as np
 from ase.calculators.lammpslib import LAMMPSlib
 from ase import Atoms
 
-potential_path = os.environ.get('LAMMPS_POTENTIALS_PATH', '.')
 cmds = ["pair_style eam/alloy",
-        "pair_coeff * * {path}/NiAlH_jea.eam.alloy Ni H"
-        "".format(path=potential_path)]
+        "pair_coeff * * NiAlH_jea.eam.alloy Ni H"]
 lammps = LAMMPSlib(lmpcmds=cmds,
                    atom_types={'Ni': 1, 'H': 2},
                    log_file='test.log', keep_alive=True)
@@ -19,12 +16,9 @@ dimer.set_calculator(lammps)
 
 energy_ref = -1.10756669119
 energy = dimer.get_potential_energy()
-print("Computed energy: {}".format(energy))
-diff = abs((energy - energy_ref) / energy_ref)
-np.testing.assert_allclose(energy, energy_ref, atol=1e-10)
+np.testing.assert_allclose(energy, energy_ref, rtol=1e-7)
 
 np.set_printoptions(precision=16)
 forces_ref = np.array([[-0.9420162329811532, 0., 0.],[ 0.9420162329811532, 0., 0. ]])
 forces = dimer.get_forces()
-print(np.array2string(forces))
-np.testing.assert_allclose(forces, forces_ref, atol=1e-10)
+np.testing.assert_allclose(forces, forces_ref, rtol=1e-7)

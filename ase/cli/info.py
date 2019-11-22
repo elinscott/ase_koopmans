@@ -4,10 +4,9 @@ import sys
 
 from ase.utils import import_module
 from ase.utils import search_current_git_hash
-from ase.io.formats import filetype, all_formats, UnknownFileTypeError
+from ase.io.formats import filetype, ioformats, UnknownFileTypeError
 from ase.io.ulm import print_ulm_info
 from ase.io.bundletrajectory import print_bundletrajectory_info
-from ase.io.formats import all_formats as fmts
 
 
 class CLICommand:
@@ -61,7 +60,10 @@ class CLICommand:
                 format = '?'
                 description = '?'
             else:
-                description, code = all_formats.get(format, ('?', '?'))
+                if format in ioformats:
+                    description = ioformats[format].description
+                else:
+                    description = '?'
 
             print('{:{}}{} ({})'.format(filename + ':', n,
                                         description, format))
@@ -97,5 +99,22 @@ def print_info():
 
 def print_formats():
     print('Supported formats:')
-    for f in list(sorted(fmts)):
-        print('  {}: {}'.format(f, fmts[f][0]))
+    for fmtname in sorted(ioformats):
+        fmt = ioformats[fmtname]
+
+        infos = [fmt.modes, 'single' if fmt.single else 'multi']
+        if fmt.isbinary:
+            infos.append('binary')
+        if fmt.encoding is not None:
+            infos.append(fmt.encoding)
+        infostring = '/'.join(infos)
+
+        moreinfo = [infostring]
+        if fmt.extensions:
+            moreinfo.append('ext={}'.format('|'.join(fmt.extensions)))
+        if fmt.globs:
+            moreinfo.append('glob={}'.format('|'.join(fmt.globs)))
+
+        print('  {} [{}]: {}'.format(fmt.name,
+                                     ', '.join(moreinfo),
+                                     fmt.description))

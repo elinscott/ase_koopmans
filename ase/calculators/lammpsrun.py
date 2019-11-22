@@ -404,6 +404,8 @@ potentials)
                 prefix="data_" + label,
                 dir=self.parameters.tmp_dir,
                 delete=(not self.parameters.keep_tmp_files),
+                mode='w',
+                encoding='ascii'
             )
             write_lammps_data(
                 lammps_data_fd,

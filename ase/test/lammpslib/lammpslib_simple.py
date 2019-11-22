@@ -5,7 +5,6 @@ for which uncharged systems require the use of 'kspace_modify gewald'.
 """
 
 
-import os
 import numpy as np
 from ase import Atom
 from ase.build import bulk
@@ -15,11 +14,9 @@ from ase import units
 from ase.md.verlet import VelocityVerlet
 
 # potential_path must be set as an environment variable
-potential_path = os.environ.get('LAMMPS_POTENTIALS_PATH', '.')
 
 cmds = ["pair_style eam/alloy",
-        "pair_coeff * * {path}/NiAlH_jea.eam.alloy Ni H"
-        "".format(path=potential_path)]
+        "pair_coeff * * NiAlH_jea.eam.alloy Ni H"]
 
 nickel = bulk('Ni', cubic=True)
 nickel += Atom('H', position=nickel.cell.diagonal()/2)
@@ -88,7 +85,7 @@ assert not np.allclose(S4, S3)
 # the example from the docstring
 
 cmds = ["pair_style eam/alloy",
-        "pair_coeff * * {path}/NiAlH_jea.eam.alloy Al H".format(path=potential_path)]
+        "pair_coeff * * NiAlH_jea.eam.alloy Al H"]
 
 Ni = bulk('Ni', cubic=True)
 H = Atom('H', position=Ni.cell.diagonal()/2)
@@ -198,10 +195,8 @@ dyn = VelocityVerlet(at, 1 * units.fs)
 
 energy = at.get_potential_energy()
 energy_ref = 2041.411982950972
-diff = abs((energy - energy_ref) / energy_ref)
-assert diff < 1e-10
+np.testing.assert_allclose(energy, energy_ref, rtol=1e-7)
 dyn.run(10)
 energy = at.get_potential_energy()
 energy_ref = 312.4315854721744
-diff = abs((energy - energy_ref) / energy_ref)
-assert diff < 1e-10, "%d" % energy
+np.testing.assert_allclose(energy, energy_ref, rtol=1e-7)

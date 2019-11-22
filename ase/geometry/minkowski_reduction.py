@@ -5,8 +5,8 @@ from ase.utils import pbc2pbc
 
 def reduction_gauss(B, hu, hv):
     """Calculate a Gauss-reduced lattice basis (2D reduction)."""
-    u = np.dot(B.T, hu)
-    v = np.dot(B.T, hv)
+    u = hu @ B
+    v = hv @ B
 
     max_it = 100000    # in practice this is not exceeded
     for it in range(max_it):
@@ -14,8 +14,8 @@ def reduction_gauss(B, hu, hv):
         x = int(round(np.dot(u, v) / np.dot(u, u)))
         hu, hv = hv - x * hu, hu
 
-        u = np.dot(B.T, hu)
-        v = np.dot(B.T, hv)
+        u = hu @ B
+        v = hv @ B
         if np.dot(u, u) >= np.dot(v, v):
             return hv, hu
 
@@ -67,8 +67,6 @@ def reduction_full(B):
         # Gauss-reduce smallest two vectors
         hw = H[2]
         hu, hv = reduction_gauss(B, H[0], H[1])
-        H[0] = hu
-        H[1] = hv
 
         H = np.array([hu, hv, hw])
         R = H @ B
@@ -127,7 +125,14 @@ def minkowski_reduce(cell, pbc=True):
     op = np.eye(3).astype(np.int)
     if dim == 2:
         perm = np.argsort(pbc, kind='merge')[::-1]    # stable sort
-        hu, hv = reduction_gauss(cell[perm][:, perm], op[0], op[1])
+        pcell = cell[perm][:, perm]
+
+        norms = np.linalg.norm(pcell, axis=1)
+        norms[2] = float("inf")
+        indices = np.argsort(norms)
+        op = op[indices]
+
+        hu, hv = reduction_gauss(pcell, op[0], op[1])
 
         op[0] = hu
         op[1] = hv
@@ -150,6 +155,10 @@ def minkowski_reduce(cell, pbc=True):
 
         if np.sign(np.linalg.det(_cell)) != np.sign(np.linalg.det(_rcell)):
             index = np.argmax(pbc)
-            op[:, index] *= -1
+            op[index] *= -1
 
+    norms1 = np.sort(np.linalg.norm(cell, axis=1))
+    norms2 = np.sort(np.linalg.norm(op @ cell, axis=1))
+    if not (norms2 <= norms1).all():
+        raise RuntimeError("Minkowski reduction failed")
     return op @ cell, op

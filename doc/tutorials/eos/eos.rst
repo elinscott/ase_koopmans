@@ -1,8 +1,8 @@
 .. _eos:
 
-=================
-Equation of state
-=================
+=======================
+Equation of state (EOS)
+=======================
 
 First, do a bulk calculation for different lattice constants:
 

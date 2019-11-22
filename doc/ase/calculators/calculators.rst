@@ -1,6 +1,8 @@
 .. module:: ase.calculators
    :synopsis: Energy, force and stress calculators.
 
+.. _calculators:
+	      
 ===========
 Calculators
 ===========
@@ -74,6 +76,7 @@ Hotbit_                                   DFT based tight binding
 :mod:`~ase.calculators.castep`            Plane-wave pseudopotential code
 :mod:`~ase.calculators.cp2k`              DFT and classical potentials
 :mod:`~ase.calculators.demon`             Gaussian based DFT code
+:mod:`~ase.calculators.demonnano`         DFT based tight binding code
 :mod:`~ase.calculators.dftb`              DFT based tight binding
 :mod:`~ase.calculators.dmol`              Atomic orbital DFT code
 :mod:`~ase.calculators.eam`               Embedded Atom Method
@@ -127,8 +130,8 @@ The calculators included in ASE are used like this:
 where ``abc`` is the module name and ``ABC`` is the class name.
 
 
-.. _Asap: http://wiki.fysik.dtu.dk/asap
-.. _GPAW: http://wiki.fysik.dtu.dk/gpaw
+.. _Asap: https://wiki.fysik.dtu.dk/asap
+.. _GPAW: https://wiki.fysik.dtu.dk/gpaw
 .. _Hotbit: https://github.com/pekkosk/hotbit
 
 Calculator keywords
@@ -211,6 +214,7 @@ the :meth:`set` method:
    cp2k
    crystal
    demon
+   demonnano
    dftb
    dmol
    espresso
