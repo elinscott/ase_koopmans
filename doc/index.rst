@@ -191,7 +191,7 @@ Contents
    :target: ase/calculators/demon.html
    :align: middle
 .. |dftd4| image:: static/dftd4.png
-   :target: https://github.com/dftd4/dftd4
+   :target: https://github.com/dftd4/dftd4/tree/master/python
    :align: middle
 .. |elk| image:: static/elk.png
    :target: http://elk.sourceforge.net/
@@ -261,7 +261,7 @@ Contents
    :target: ase/calculators/vasp.html
    :align: middle
 .. |xtb| image:: static/xtb.png
-   :target: https://xtb-docs.readthedocs.io/en/latest/contents.html
+   :target: https://github.com/grimme-lab/xtb/tree/master/python
    :align: middle
 
 
