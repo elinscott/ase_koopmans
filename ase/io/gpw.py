@@ -12,7 +12,7 @@ def read_gpw(filename):
     except ulm.InvalidULMFileError:
         return read_old_gpw(filename)
 
-    atoms = read_atoms(reader.atoms)
+    atoms = read_atoms(reader.atoms, _try_except=False)
 
     wfs = reader.wave_functions
     kpts = wfs.get('kpts')
