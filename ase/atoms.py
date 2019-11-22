@@ -758,7 +758,7 @@ class Atoms(object):
         order.
 
         The ideal gas contribution to the stresses is added if the 
-        atoms have momenta, unless it is explicitly disabled.
+        atoms have momenta and ``include_ideal_gas`` is set to True.
         """
 
         if self._calc is None:
@@ -806,6 +806,9 @@ class Atoms(object):
         Only available with calculators supporting per-atom energies and
         stresses (e.g. classical potentials).  Even for such calculators
         there is a certain arbitrariness in defining per-atom stresses.
+
+        The ideal gas contribution to the stresses is added if the 
+        atoms have momenta and ``include_ideal_gas`` is set to True.
         """
         if self._calc is None:
             raise RuntimeError('Atoms object has no calculator.')
