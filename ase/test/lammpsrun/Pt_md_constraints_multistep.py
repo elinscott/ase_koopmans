@@ -25,8 +25,6 @@ slab.set_calculator(calc)
 
 assert_allclose(slab.get_potential_energy(), -110.3455014595596,
                 atol=1e-4, rtol=1e-4)
-assert_allclose(slab.get_forces(), calc.calculate_numerical_forces(slab),
-                atol=1e-4, rtol=1e-4)
 
 params['group'] = ['lower_atoms id '
                    + ' '.join([str(i+1) for i,
@@ -47,8 +45,6 @@ assert_allclose(Ek, 0.1014556059885532, atol=1e-4, rtol=1e-4)
 assert_allclose(Ek, calc.thermo_content[-1]['ke'],
                 atol=1e-4, rtol=1e-4)
 assert_allclose(slab.get_potential_energy(), -110.4469605087525,
-                atol=1e-4, rtol=1e-4)
-assert_allclose(slab.get_forces(), calc.calculate_numerical_forces(slab),
                 atol=1e-4, rtol=1e-4)
 
 os.remove(pot_fn)

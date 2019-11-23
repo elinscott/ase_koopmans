@@ -41,8 +41,6 @@ nacl.set_calculator(calc)
 
 assert_allclose(nacl.get_potential_energy(), -1896.216737561538,
                 atol=1e-4, rtol=1e-4)
-assert_allclose(nacl.get_stress(), calc.calculate_numerical_stress(nacl),
-                atol=1e-4, rtol=1e-4)
 
 E = nacl.get_potential_energy()
 
@@ -51,6 +49,4 @@ dyn = QuasiNewton(ucf, force_consistent=False)
 dyn.run(fmax=1.0E-2)
 
 assert_allclose(nacl.get_potential_energy(), -1897.208861729178,
-                atol=1e-4, rtol=1e-4)
-assert_allclose(nacl.get_stress(), calc.calculate_numerical_stress(nacl),
                 atol=1e-4, rtol=1e-4)

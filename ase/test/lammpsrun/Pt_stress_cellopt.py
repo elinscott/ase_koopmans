@@ -24,7 +24,7 @@ atoms.cell += 2 * rng.rand(3, 3)
 atoms.calc = calc
 
 assert_allclose(atoms.get_stress(), calc.calculate_numerical_stress(atoms),
-                atol=1e-4, dtol=1e-4)
+                atol=1e-4, rtol=1e-4)
 
 opt = BFGS(ExpCellFilter(atoms), trajectory='opt.traj')
 for i, _ in enumerate(opt.irun(fmax=0.05)):
