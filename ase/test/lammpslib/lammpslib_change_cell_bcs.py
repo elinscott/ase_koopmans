@@ -16,10 +16,10 @@ atoms.set_calculator(lammps)
 energy_ppp_ref = -142.400000403
 energy_ppp = atoms.get_potential_energy()
 print("Computed energy with boundary ppp = {}".format(energy_ppp))
-np.testing.assert_allclose(energy_ppp, energy_ppp_ref, rtol=1e-7)
+np.testing.assert_allclose(energy_ppp, energy_ppp_ref, atol=1e-4, rtol=1e-4)
 
 atoms.set_pbc((False, False, True))
 energy_ssp_ref = -114.524625705
 energy_ssp = atoms.get_potential_energy()
 print("Computed energy with boundary ssp = {}".format(energy_ssp))
-np.testing.assert_allclose(energy_ssp, energy_ssp_ref, rtol=1e-7)
+np.testing.assert_allclose(energy_ssp, energy_ssp_ref, atol=1e-4, rtol=1e-4)

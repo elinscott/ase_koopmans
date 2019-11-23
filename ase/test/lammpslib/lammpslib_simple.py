@@ -54,9 +54,9 @@ E2 = nickel.get_potential_energy()
 F2 = nickel.get_forces()
 S2 = nickel.get_stress()
 
-assert_allclose(E, E2)
-assert_allclose(F, F2, atol=1e-14)
-assert_allclose(S, S2, atol=1e-14)
+assert_allclose(E, E2, atol=1e-4, rtol=1e-4)
+assert_allclose(F, F2, atol=1e-4, rtol=1e-4)
+assert_allclose(S, S2, atol=1e-4, rtol=1e-4)
 
 nickel.rattle(stdev=0.2)
 E3 = nickel.get_potential_energy()
@@ -194,7 +194,9 @@ lammps = LAMMPSlib(lammps_header=header, lmpcmds=cmds, atom_types={'Fe': 1},
 at.set_calculator(lammps)
 dyn = VelocityVerlet(at, 1 * units.fs)
 
-assert_allclose(at.get_potential_energy(), 2041.411982950972)
+assert_allclose(at.get_potential_energy(), 2041.411982950972,
+                atol=1e-4, rtol=1e-4)
 
 dyn.run(10)
-assert_allclose(at.get_potential_energy(), 312.4315854721744)
+assert_allclose(at.get_potential_energy(), 312.4315854721744,
+                atol=1e-4, rtol=1e-4)

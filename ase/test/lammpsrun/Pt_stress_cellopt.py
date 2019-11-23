@@ -23,9 +23,8 @@ atoms.rattle(stdev=0.1)
 atoms.cell += 2 * rng.rand(3, 3)
 atoms.calc = calc
 
-stress1 = atoms.get_stress()
-stress = calc.calculate_numerical_stress(atoms, d=1e-3)
-assert_allclose(stress1, stress, atol=1e-4)
+assert_allclose(atoms.get_stress(), calc.calculate_numerical_stress(atoms),
+                atol=1e-4, dtol=1e-4)
 
 opt = BFGS(ExpCellFilter(atoms), trajectory='opt.traj')
 for i, _ in enumerate(opt.irun(fmax=0.05)):
@@ -36,10 +35,9 @@ cell1_ref = np.array([
     [4.21007577, 0.63362427, 5.04668170],
     [4.42895706, 3.29171414, 0.44623618]])
 
-stress1_ref = np.array([-3.78807088e-05, -2.91140145e-04, -2.72807454e-04,
-                        -6.83136671e-05, -8.60692737e-05, -5.91986279e-05])
 
-assert_allclose(np.asarray(atoms.cell), cell1_ref, atol=1e-14)
-assert_allclose(atoms.get_stress(), stress1_ref, atol=1e-14)
+assert_allclose(np.asarray(atoms.cell), cell1_ref, atol=1e-4, rtol=1e-4)
+assert_allclose(atoms.get_stress(), calc.calculate_numerical_stress(atoms),
+                atol=1e-4, rtol=1e-4)
 
 assert i < 80, 'Expected 59 iterations, got many more: {}'.format(i)
