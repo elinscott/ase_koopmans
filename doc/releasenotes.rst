@@ -64,6 +64,8 @@ Git master branch
 
 * Added :func:`ase.build.graphene` for building graphene monolayers.
 
+* Added :mod:`~ase.calculators.mixing` module for the linear combination of arbitrary :mod:`~ase.calculators`.
+
 Version 3.18.1
 ==============
 
