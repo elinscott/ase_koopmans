@@ -254,17 +254,28 @@ def _get_basis(**params):
     return basis_out
 
 
-def _format_block(section, params, nindent=0):
+_special_keypairs = [('nwpw', 'simulation_cell'),
+                     ('nwpw', 'carr-parinello'),
+                     ('nwpw', 'brillouin_zone'),
+                     ]
+
+def _format_block(key, val, nindent=0):
     prefix = '  ' * nindent
-    if params is None:
-        return [prefix + section]
+    if val is None:
+        return [prefix + key]
 
-    if not isinstance(params, dict):
-        return [prefix + '{} {}'.format(section, params)]
+    if not isinstance(val, dict):
+        return [prefix + '{} {}'.format(key, str(val))]
 
-    out = [prefix + section]
-    for key, val in params.items():
-        out += _format_block(key, val, nindent + 1)
+    out = [prefix + key]
+    for subkey, subval in val.items():
+        if (key, subkey) in _special_keypairs:
+            out += _format_block(subkey, subval, nindent + 1)
+        else:
+            if isinstance(subval, dict):
+                subval = ' '.join([' '.join([a, str(b)]) 
+                                             for a, b in subval.items()])
+            out.append(prefix + ' '.join([subkey, str(subval)]))
     out.append(prefix + 'end')
     return out
 

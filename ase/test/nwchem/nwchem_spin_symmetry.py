@@ -11,9 +11,9 @@ def main():
         imm = 6 * (-1) ** orientation
         cr_atom.set_initial_magnetic_moments([imm])
         calculator = NWChem(task='energy',
-                dft=dict(convergence='energy 1e-3 '
-                                     'density 1e-2 '
-                                     'gradient 5e-2'),
+                dft=dict(convergence=dict(energy=1e-3,
+                                          density=1e-2,
+                                          gradient=5e-2)),
                 basis='m6-31g*',
                 basispar='"ao basis" spherical',
                 charge=0)

@@ -19,9 +19,9 @@ def main():
         imm = 6 * (-1)**orientation
         cr_atom.set_initial_magnetic_moments([imm])
         calc = NWChem(task='energy', xc='pbe', theory='dft',
-                      dft=dict(convergence='energy 1e-3 '
-                                           'density 1e-2 '
-                                           'gradient 5e-2',
+                      dft=dict(convergence=dict(energy=1e-3,
+                                                density=1e-2,
+                                                gradient=5e-2),
                                vectors='input atomic output {}'
                                        .format(names[orientation])),
                       charge=0,
@@ -31,9 +31,9 @@ def main():
     cr_dimer = Atoms('Cr2', positions=[(0, 0, 0), (0, 0, 1.93)], pbc=False)
     cr_dimer.set_initial_magnetic_moments([0, 0])
     calc = NWChem(task='energy', xc='pbe', theory='dft',
-                  dft=dict(convergence='energy 1e-3 '
-                                       'density 1e-2 '
-                                       'gradient 5e-2',
+                  dft=dict(convergence=dict(energy=1e-3,
+                                            density=1e-2,
+                                            gradient=5e-2),
                            odft=None,
                            vectors='input fragment {} output Cr2_AF.mos'
                                    .format(' '.join(names))),
