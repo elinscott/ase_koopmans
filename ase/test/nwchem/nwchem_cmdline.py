@@ -2,7 +2,6 @@ from ase.test import cli, require
 from ase.db import connect
 from ase.io.jsonio import read_json
 from ase.io import read
-from ase.calculators.nwchem import NWChem
 
 require('nwchem')
 
