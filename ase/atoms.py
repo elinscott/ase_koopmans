@@ -815,19 +815,10 @@ class Atoms(object):
         stresses = self._calc.get_stresses(self)
         if include_ideal_gas and self.has('momenta'):
             stresscomp = np.array([[0, 5, 4], [5, 1, 3], [4, 3, 2]])
-            try:
-                # Some calculators may define an atomic volume that is
-                # more sensible than just dividing the total volume
-                # with the number of atoms.  It could come from
-                # Lennard-Jones radii, EMT neutral-sphere radii or the
-                # like.
-                volumes = self._calc.get_atomic_volumes()
-            except AttributeError:
-                volumes = None
-            if volumes is None:
-                invvol = self.get_global_number_of_atoms() / self.get_volume()
+            if hasattr(self._calc, 'get_atomic_volumes'):
+                invvol = 1.0 / self._calc.get_atomic_volumes()
             else:
-                invvol = 1.0 / volumes
+                invvol = self.get_global_number_of_atoms() / self.get_volume()
             p = self.get_momenta()
             invmass = 1.0 / self.get_masses()
             for alpha in range(3):
