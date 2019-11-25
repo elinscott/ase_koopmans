@@ -39,7 +39,7 @@ neb = NEB(images, climb=True)
 
 def calculator():
     return NWChem(task='gradient',
-                  geometry='nocenter noautosym noautoz',
+                  theory='scf',
                   charge=-1)
 
 # Set constraints and calculator:
