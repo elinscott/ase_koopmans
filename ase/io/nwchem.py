@@ -257,10 +257,12 @@ def _get_basis(**params):
 _special_keypairs = [('nwpw', 'simulation_cell'),
                      ('nwpw', 'carr-parinello'),
                      ('nwpw', 'brillouin_zone'),
+                     ('tddft', 'grad'),
                      ]
 
 def _format_block(key, val, nindent=0):
     prefix = '  ' * nindent
+    prefix2 = '  ' * (nindent + 1)
     if val is None:
         return [prefix + key]
 
@@ -275,7 +277,7 @@ def _format_block(key, val, nindent=0):
             if isinstance(subval, dict):
                 subval = ' '.join([' '.join([a, str(b)]) 
                                              for a, b in subval.items()])
-            out.append(prefix + ' '.join([subkey, str(subval)]))
+            out.append(prefix2 + ' '.join([subkey, str(subval)]))
     out.append(prefix + 'end')
     return out
 
@@ -308,12 +310,15 @@ def _get_theory(**params):
             return 'mp2'
         elif 'scf' in params:
             return 'scf'
+        elif 'tddft' in params:
+            return 'tddft'
         elif nwpw is not None:
             if 'monkhorst-pack' in nwpw or 'brillouin_zone' in nwpw:
                 return 'band'
             return 'pspw'
         return 'scf'
-    if xc in ['scf', 'dft', 'mp2', 'ccsd', 'tce', 'pspw', 'band', 'paw']:
+    if xc in ['scf', 'dft', 'mp2', 'ccsd', 'tce', 'pspw', 'band', 'paw',
+              'tddft']:
         return xc
     return 'dft'
 
@@ -345,7 +350,7 @@ def _update_mult(magmom_tot, **params):
     if 'dft' in params:
         if 'mult' not in params['dft']:
             params['dft']['mult'] = magmom_mult
-    elif theory == 'dft':
+    elif theory in ['dft', 'tddft']:
         params['dft'] = dict(mult=magmom_mult)
 
     if 'nwpw' in params:
