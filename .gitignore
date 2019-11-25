@@ -10,6 +10,7 @@ MANIFEST
 /ase/db/static/jsmol
 doc/ase/dft/bztable.rst
 doc/tutorials/deltacodesdft/fit.json
+doc/ase/io/formatoptions.rst
 
 # Editor backup files
 *.py~

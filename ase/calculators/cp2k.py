@@ -2,11 +2,10 @@
 
 """This module defines an ASE interface to CP2K.
 
-http://www.cp2k.org
+https://www.cp2k.org/
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
-from __future__ import print_function
 
 import os
 import os.path
@@ -30,7 +29,7 @@ class CP2K(Calculator):
     CP2K is freely available under the GPL license.
     It is written in Fortran 2003 and can be run efficiently in parallel.
 
-    Check http://www.cp2k.org about how to obtain and install CP2K.
+    Check https://www.cp2k.org about how to obtain and install CP2K.
     Make sure that you also have the CP2K-shell available, since it is required
     by the CP2K-calulator.
 

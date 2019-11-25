@@ -1,5 +1,4 @@
 # encoding: utf-8
-from __future__ import unicode_literals
 
 import os
 import numpy as np
@@ -9,6 +8,8 @@ from ase import Atoms
 import ase.gui.ui as ui
 from ase.data import atomic_numbers, chemical_symbols
 
+
+current_selection_string = _('(selection)')
 
 class AddAtoms:
     def __init__(self, gui):
@@ -31,7 +32,11 @@ class AddAtoms:
             # Load the file immediately, so we can warn now in case of error
             self.readfile(filename, format=chooser.format)
 
-        self.entry = ui.Entry('', callback=self.add)
+        if self.gui.images.selected.any():
+            default = current_selection_string
+        else:
+            default = ''
+        self.entry = ui.Entry(default, callback=self.add)
         win.add([_('Add:'), self.entry,
                  ui.Button(_('File ...'), callback=choose_file)])
 
@@ -78,6 +83,12 @@ class AddAtoms:
 
     def get_atoms(self):
         val = self.entry.value
+
+        if val == current_selection_string:
+            selection = self.gui.images.selected.copy()
+            if selection.any():
+                atoms = self.gui.atoms.copy()
+                return atoms[selection[:len(self.gui.atoms)]]
 
         if val in atomic_numbers:  # Note: This means val is a symbol!
             return Atoms(val)

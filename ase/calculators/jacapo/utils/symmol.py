@@ -1,4 +1,3 @@
-from __future__ import print_function
 #!/usr/bin/env python3
 '''
 interface to symmol

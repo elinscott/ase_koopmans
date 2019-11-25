@@ -6,7 +6,6 @@ http://www.cp2k.org
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
-from __future__ import division, print_function
 from ase import units
 from ase.atoms import Atoms
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution

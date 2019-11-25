@@ -73,7 +73,6 @@ grd    outfile for orbitals from DMol3 - cellpar in Angstrom
 
 """
 
-from __future__ import print_function
 import os
 import re
 import numpy as np

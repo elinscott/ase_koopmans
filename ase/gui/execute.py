@@ -1,4 +1,3 @@
-import __future__
 import ase.gui.ui as ui
 import os.path
 import numpy as np
@@ -215,10 +214,8 @@ class Execute(ui.Window):
                 self.add_text(
                     _('*** WARNING: file does not exist - %s') % name)
         else:
-            code = compile(cmd + '\n', 'execute.py', 'single',
-                           __future__.CO_FUTURE_DIVISION)
-            if index_based and len(indices) == 0 and self.selected.get_active(
-            ):
+            code = compile(cmd + '\n', 'execute.py', 'single')
+            if index_based and len(indices) == 0 and self.selected.get_active():
                 self.add_text(_("*** WARNING: No atoms selected to work with"))
             for i in loop_images:
                 if self.stop:

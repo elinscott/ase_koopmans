@@ -1,5 +1,3 @@
-from __future__ import unicode_literals, division
-
 import os
 import pickle
 import subprocess
@@ -122,6 +120,14 @@ class GUI(View, Status):
         self.set_frame(i)
         if self.movie_window is not None:
             self.movie_window.frame_number.value = i + 1
+
+    def copy_image(self, key=None):
+        self.images._images.append(self.atoms.copy())
+        self.images.filenames.append(None)
+
+        if self.movie_window is not None:
+            self.movie_window.frame_number.scale.configure(to=len(self.images))
+        self.step('End')
 
     def _do_zoom(self, x):
         """Utility method for zooming"""
@@ -444,7 +450,8 @@ class GUI(View, Status):
               M(_('_First image'), self.step, 'Home'),
               M(_('_Previous image'), self.step, 'Page-Up'),
               M(_('_Next image'), self.step, 'Page-Down'),
-              M(_('_Last image'), self.step, 'End')]),
+              M(_('_Last image'), self.step, 'End'),
+              M(_('Append image copy'), self.copy_image)]),
 
             (_('_View'),
              [M(_('Show _unit cell'), self.toggle_show_unit_cell, 'Ctrl+U',

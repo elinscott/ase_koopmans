@@ -1,5 +1,4 @@
 """Copy of SciPy-0.15's scipy.optimize._linprog module."""
-from __future__ import division, print_function, absolute_import
 import collections
 
 import numpy as np

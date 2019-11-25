@@ -1,7 +1,6 @@
 """ 
 read and write gromacs geometry files
 """
-from __future__ import print_function
 
 from ase.atoms import Atoms
 from ase.parallel import paropen

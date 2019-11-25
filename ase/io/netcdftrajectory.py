@@ -16,7 +16,6 @@ VMD (http://www.ks.uiuc.edu/Research/vmd/)
 or Ovito (http://www.ovito.org/, starting with version 2.3).
 """
 
-from __future__ import division
 
 import os
 import warnings

@@ -1,4 +1,3 @@
-from __future__ import division
 from abc import abstractmethod, ABC
 import functools
 import warnings
@@ -7,6 +6,7 @@ import numpy as np
 from ase.cell import Cell
 from ase.build.bulk import bulk as newbulk
 from ase.dft.kpoints import parse_path_string, sc_special_points, BandPath
+from ase.utils import pbc2pbc
 
 
 @functools.wraps(newbulk)
@@ -1098,16 +1098,14 @@ def get_lattice_from_canonical_cell(cell, eps=2e-4):
     return LatticeChecker(cell, eps).match()
 
 
-def identify_lattice(cell, eps=2e-4, *, pbc=None):
+def identify_lattice(cell, eps=2e-4, *, pbc=True):
     """Find Bravais lattice representing this cell.
 
     Returns Bravais lattice object representing the cell along with
     an operation that, applied to the cell, yields the same lengths
     and angles as the Bravais lattice object."""
 
-    if pbc is None:
-        pbc = cell.any(1)
-
+    pbc = cell.any(1) & pbc2pbc(pbc)
     npbc = sum(pbc)
 
     if npbc == 1:
@@ -1139,7 +1137,7 @@ def identify_lattice(cell, eps=2e-4, *, pbc=None):
 
     if cell.rank < 3:
         raise ValueError('Expected 3 linearly independent cell vectors')
-    rcell, reduction_op = cell.niggli_reduce()
+    rcell, reduction_op = cell.niggli_reduce(eps=eps)
 
     # We tabulate the cell's Niggli-mapped versions so we don't need to
     # redo any work when the same Niggli-operation appears multiple times
@@ -1352,11 +1350,9 @@ class UnsupportedLattice(ValueError):
     pass
 
 
-def get_2d_bravais_lattice(origcell, eps=2e-4, *, pbc=None):
-    if pbc is None:
-        pbc = origcell.any(1)
-    pbc = np.asarray(pbc, bool)
+def get_2d_bravais_lattice(origcell, eps=2e-4, *, pbc=True):
 
+    pbc = origcell.any(1) & pbc2pbc(pbc)
     if list(pbc) != [1, 1, 0]:
         raise UnsupportedLattice('Can only get 2D Bravais lattice of cell with '
                                  'pbc==[1, 1, 0]; but we have {}'.format(pbc))

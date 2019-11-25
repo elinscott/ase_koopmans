@@ -23,7 +23,7 @@ with seterr(all='raise'):
     traj = Trajectory('4N.traj', 'w', a)
     md.attach(traj, 100)
     e0 = a.get_total_energy()
-    md.run(steps=10000)
+    md.run(steps=2000)
     del traj
     assert abs(read('4N.traj').get_total_energy() - e0) < 0.0001
 
@@ -32,7 +32,7 @@ with seterr(all='raise'):
                   rng=rng)
     traj = Trajectory('4NA.traj', 'w', a)
     md.attach(traj, 100)
-    md.run(steps=10000)
+    md.run(steps=2000)
 
     # We cannot test the temperature without a lot of statistics.
     # Asap does that.  But if temperature is quite unreasonable,

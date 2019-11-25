@@ -1,7 +1,5 @@
 # creates: volume.csv, B.csv, Bp.csv,  Pt.png
-import sys
-sys.path[:0] = ['.']
-import calculate  # noqa
-import fit  # noqa
-import tables  # noqa
-sys.path[:1] = []
+from runpy import run_path
+run_path('calculate.py')
+run_path('fit.py')
+run_path('tables.py')

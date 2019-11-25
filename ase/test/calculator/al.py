@@ -36,9 +36,15 @@ def run(name):
     print(Calculator.read_atoms(label).get_potential_energy())
 
 
-names = ['abinit', 'aims', 'elk', 'cp2k', 'openmx']
-for name in names:
+def tryrun(name):
     try:
         run(name)
     except unittest.SkipTest:
         pass
+
+
+tryrun('abinit')
+tryrun('aims')
+tryrun('elk')
+tryrun('cp2k')
+tryrun('openmx')

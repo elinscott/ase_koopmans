@@ -6,7 +6,6 @@ http://www.cp2k.org
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
-from __future__ import division, print_function
 from ase.build import molecule
 from ase import units
 from ase.calculators.cp2k import CP2K

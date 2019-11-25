@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 from ase.calculators.calculator import Calculator
 from ase.calculators.qmmm import combine_lj_lorenz_berthelot
