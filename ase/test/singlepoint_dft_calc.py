@@ -6,9 +6,9 @@ from ase.build import bulk
 
 rng = np.random.RandomState(17)
 nspins, nkpts, nbands = shape = 2, 4, 5
-eps = 2 * rng.random(shape)
-occ = rng.random(shape)
-weights = rng.random(nkpts)
+eps = 2 * rng.rand(*shape)
+occ = rng.rand(*shape)
+weights = rng.rand(nkpts)
 
 kpts = arrays_to_kpoints(eps, occ, weights)
 
