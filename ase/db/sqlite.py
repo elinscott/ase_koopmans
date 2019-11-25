@@ -732,9 +732,7 @@ class SQLite3Database(Database, object):
         sql = ''
         if not limit:
             # In sqlite you cannot have offset without limit, so we
-            # set it to -1
-
-            # postgresql does not allow for setting limit to -1
+            # set it to -1 meaning no limit
             sql += '\nLIMIT -1'
         sql += '\nOFFSET {0}'.format(offset)
         return sql
