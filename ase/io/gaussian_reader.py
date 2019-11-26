@@ -142,7 +142,7 @@ class GaussianReader:
                     s = i[position].split(",")
                     atoms.append(atomic_numbers[s[0].capitalize()])
                     #if fragments are specified, there are 4 numbers
-                    #first one fragment id and then xyz coords
+                    #first one integer and then xyz coords
                     #therefore use xyz from the end
                     positions.append([float(s[-3]), float(s[-2]), float(s[-1])])
                     position = position + 1
