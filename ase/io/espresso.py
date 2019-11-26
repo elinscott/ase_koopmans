@@ -1640,6 +1640,9 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
             for i, x in enumerate(shift):
                 assert x == 0 or abs(x * kgrid[i] - 0.5) < 1e-14
                 koffset.append(0 if x == 0 else 1)
+        elif isinstance(kpts, str) and (kpts.lower() == 'gamma'):
+            # only do gammapoint if required
+            kgrid = "gamma"
         else:
             kgrid = kpts
     else:
@@ -1658,8 +1661,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         for k in kgrid:
             pwi.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} 0\n'.format(k=k))
         pwi.append('\n')
-    elif all([x == 1 for x in kgrid]) and not any(koffset):
-        # QE defaults to gamma point, make it explicit
+    elif isinstance(kgrid, str) and (kgrid == "gamma"):
         pwi.append('K_POINTS gamma\n')
         pwi.append('\n')
     else:
