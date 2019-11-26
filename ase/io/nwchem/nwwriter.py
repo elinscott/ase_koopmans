@@ -81,6 +81,7 @@ _special_keypairs = [('nwpw', 'simulation_cell'),
                      ('tddft', 'grad'),
                      ]
 
+
 def _format_line(key, val):
     if val is None:
         return key
@@ -88,7 +89,7 @@ def _format_line(key, val):
         return '{} .{}.'.format(key, str(val).lower())
     else:
         return ' '.join([key, str(val)])
-    
+
 
 def _format_block(key, val, nindent=0):
     prefix = '  ' * nindent

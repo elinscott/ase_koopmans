@@ -85,11 +85,6 @@ _paw_grad = _define_pattern(
         r'((?:^(?:[ \t]+[\S]+){7}\n)+)'
         r'^[ \t]+Ion Forces:[ \t]*\n'
         r'((?:^(?:[ \t]+[\S]+){7}\n)+)',
-        #r'^[\s]+[=]+[\s]+Ion Gradients[\s]+[=]+[\s]*\n'
-        #r'^[\s]Ion Positions:[\s]*\n'
-        #r'((?:^(?:[\s]+[\S]+){7}\n)+)'
-        #r'^[\s]Ion Forces:[\s]*\n'
-        #r'((?:^(?:[\s]+[\S]+){7}\n)+)',
         """\
           =============  Ion Gradients =================
  Ion Positions:
@@ -146,8 +141,8 @@ _cell_block = _define_pattern(r'^[ \t]+Lattice Parameters[ \t]*\n'
 """, re.M)
 
 _eval_block = _define_pattern(
-        r'^[ \t]+[\S]+ Final (?:Alpha |Beta )?Molecular Orbital Analysis[ \t]*\n'
-        r'^[ \t-]+\n\n'
+        r'^[ \t]+[\S]+ Final (?:Alpha |Beta )?Molecular Orbital Analysis[ \t]*'
+        r'\n^[ \t-]+\n\n'
         r'(?:^[ \t]+Vector [ \t\S]+\n(?:^[ \t\S]+\n){3}'
         r'(?:^(?:(?:[ \t]+[\S]+){5}){1,2}[ \t]*\n)+\n)+',
         """\
@@ -169,23 +164,70 @@ _eval_block = _define_pattern(
 """, re.M)
 
 _nwpw_eval_block = _define_pattern(
+        r'^(?:[ \t]+Brillouin zone point:[ \t]+[\S]+[ \t]*\n'
+        r'(?:[ \t\S]*\n){3,4}'
         r'^[ \t]+(?:virtual )?orbital energies:\n'
-        r'(?:^(?:(?:[ \t]+[\S]+){3,4}){1,2}[ \t]*\n)+',
+        r'(?:^(?:(?:[ \t]+[\S]+){3,4}){1,2}[ \t]*\n)+\n{,3})+',
         """\
+ Brillouin zone point:      1
+    weight=  0.074074
+    k     =<   0.333   0.333   0.333> . <b1,b2,b3> 
+          =<   0.307   0.307   0.307>
+
  orbital energies:
-     0.1631366E+00 (   4.439eV)  occ=0.000
-     0.1317629E+00 (   3.585eV)  occ=0.000     0.1359902E+00 (   3.701eV)  occ=0.000
-     0.1317623E+00 (   3.585eV)  occ=0.000     0.1359899E+00 (   3.701eV)  occ=0.000
-    -0.1855813E-01 (  -0.505eV)  occ=0.000    -0.1269164E-01 (  -0.345eV)  occ=0.000
-    -0.1804188E+00 (  -4.909eV)  occ=1.000    -0.9891840E-01 (  -2.692eV)  occ=0.000
-    -0.3220937E+00 (  -8.765eV)  occ=1.000    -0.3061376E+00 (  -8.330eV)  occ=1.000
-    -0.3221004E+00 (  -8.765eV)  occ=1.000    -0.3061414E+00 (  -8.331eV)  occ=1.000
-    -0.5795222E+00 ( -15.770eV)  occ=1.000    -0.5516992E+00 ( -15.013eV)  occ=1.000
+     0.3919370E+00 (  10.665eV) occ=1.000
+     0.3908827E+00 (  10.637eV) occ=1.000     0.4155535E+00 (  11.308eV) occ=1.000
+     0.3607689E+00 (   9.817eV) occ=1.000     0.3827820E+00 (  10.416eV) occ=1.000
+     0.3544000E+00 (   9.644eV) occ=1.000     0.3782641E+00 (  10.293eV) occ=1.000
+     0.3531137E+00 (   9.609eV) occ=1.000     0.3778819E+00 (  10.283eV) occ=1.000
+     0.2596367E+00 (   7.065eV) occ=1.000     0.2820723E+00 (   7.676eV) occ=1.000
+
+ Brillouin zone point:      2
+    weight=  0.074074
+    k     =<  -0.000   0.333   0.333> . <b1,b2,b3> 
+          =<   0.614   0.000   0.000>
+
+ orbital energies:
+     0.3967132E+00 (  10.795eV) occ=1.000
+     0.3920006E+00 (  10.667eV) occ=1.000     0.4197952E+00 (  11.423eV) occ=1.000
+     0.3912442E+00 (  10.646eV) occ=1.000     0.4125086E+00 (  11.225eV) occ=1.000
+     0.3910472E+00 (  10.641eV) occ=1.000     0.4124238E+00 (  11.223eV) occ=1.000
+     0.3153977E+00 (   8.582eV) occ=1.000     0.3379797E+00 (   9.197eV) occ=1.000
+     0.2801606E+00 (   7.624eV) occ=1.000     0.3052478E+00 (   8.306eV) occ=1.000
+""", re.M)
+
+_kpt_weight = _define_pattern(
+        r'^[ \t]+Brillouin zone point:[ \t]+([\S]+)[ \t]*\n'
+        r'^[ \t]+weight=[ \t]+([\S]+)[ \t]*\n',
+        """\
+ Brillouin zone point:      1
+    weight=  0.074074  
+""", re.M)
+
+_kpt = _define_pattern(
+        r'^[ \t]+Brillouin zone point:[ \t]+([\S]+)[ \t]*\n'
+        r'(?:^[ \t\S]*\n){3,4}'
+        r'^[ \t]+(?:virtual )?orbital energies:\n'
+        r'((?:^(?:(?:[ \t]+[\S]+){3,4}){1,2}[ \t]*\n)+)',
+        """\
+ Brillouin zone point:      1
+    weight=  0.074074
+    k     =<   0.333   0.333   0.333> . <b1,b2,b3> 
+          =<   0.307   0.307   0.307>
+
+ orbital energies:
+     0.3919370E+00 (  10.665eV) occ=1.000
+     0.3908827E+00 (  10.637eV) occ=1.000     0.4155535E+00 (  11.308eV) occ=1.000
+     0.3607689E+00 (   9.817eV) occ=1.000     0.3827820E+00 (  10.416eV) occ=1.000
+     0.3544000E+00 (   9.644eV) occ=1.000     0.3782641E+00 (  10.293eV) occ=1.000
+     0.3531137E+00 (   9.609eV) occ=1.000     0.3778819E+00 (  10.283eV) occ=1.000
+     0.2596367E+00 (   7.065eV) occ=1.000     0.2820723E+00 (   7.676eV) occ=1.000
 """, re.M)
 
 _extract_vector = _define_pattern(
         r'^[ \t]+Vector[ \t]+([\S])+[ \t]+Occ=([\S]+)[ \t]+E=([\S]+)[ \t]*\n',
         " Vector    1  Occ=2.000000D+00  E=-2.043101D+01", re.M)
+
 
 def _get_gto_evals(chunk):
     spin = 1 if re.match(r'[ \t\S]+Beta', chunk) else 0
@@ -209,6 +251,76 @@ def _get_gto_kpts(chunk):
         kpts.append(_get_gto_evals(eval_blocks[-2]))
     kpts.append(kpt)
     return kpts
+
+
+class NWChemKpts:
+    def __init__(self):
+        self.data = dict()
+        self.weights = dict()
+
+    def add_eval(self, index, spin, energy, occ):
+        if index not in self.data:
+            self.data[index] = dict()
+        if spin not in self.data[index]:
+            self.data[index][spin] = []
+        self.data[index][spin].append((energy, occ))
+
+    def set_weight(self, index, weight):
+        self.weights[index] = weight
+
+    def to_singlepointkpts(self):
+        kpts = []
+        for i, (index, spins) in enumerate(self.data.items()):
+            weight = self.weights[index]
+            for spin, (_, data) in enumerate(spins.items()):
+                energies, occs = np.array(sorted(data, key=lambda x: x[0])).T
+                kpts.append(SinglePointKPoint(weight, spin, i, energies, occs))
+        return kpts
+
+
+def _extract_kpts(chunk, kpts, default_occ):
+    for match in _kpt.finditer(chunk.strip()):
+        index, orbitals = match.groups()
+        for line in orbitals.split('\n'):
+            line = line.strip().split()
+            if not line:
+                continue
+            nline = len(line)
+            a_e = float(line[0]) * Hartree
+            if nline % 3 == 0:
+                a_o = default_occ
+            else:
+                a_o = float(line[3].split('=')[1])
+            kpts.add_eval(index, 0, a_e, a_o)
+
+            if nline <= 4:
+                continue
+            if nline == 6:
+                b_e = float(line[3]) * Hartree
+                b_o = default_occ
+            elif nline == 8:
+                b_e = float(line[4]) * Hartree
+                b_o = float(line[7].split('=')[1])
+            kpts.add_eval(index, 1, b_e, b_o)
+
+
+def _get_pw_kpts(chunk):
+    eval_blocks = _nwpw_eval_block.findall(chunk)
+    if not eval_blocks:
+        return []
+    if 'virtual' in eval_blocks[-1]:
+        occ_block = eval_blocks[-2]
+        virt_block = eval_blocks[-1]
+    else:
+        occ_block = eval_blocks[-1]
+        virt_block = ''
+    kpts = NWChemKpts()
+    _extract_kpts(occ_block, kpts, 1.)
+    _extract_kpts(virt_block, kpts, 0.)
+    for match in _kpt_weight.finditer(occ_block):
+        index, weight = match.groups()
+        kpts.set_weight(index, float(weight))
+    return kpts.to_singlepointkpts()
 
 
 # We support the following properties:
@@ -321,7 +433,6 @@ def parse_pw_chunk(chunk):
     return atoms
 
 
-
 def read_nwchem_out(fobj, index=-1):
     """Splits an NWChem output file into chunks corresponding to
     individual single point calculations."""
@@ -337,13 +448,13 @@ def read_nwchem_out(fobj, index=-1):
             raise ValueError('This does not appear to be a valid NWChem '
                              'output file.')
 
-
     # First, find each SCF block
     group = []
     atomslist = []
     header = True
     lastgroup = []
     lastparser = None
+    parser = None
     for line in lines:
         group.append(line)
         if _gauss_block.match(line):
