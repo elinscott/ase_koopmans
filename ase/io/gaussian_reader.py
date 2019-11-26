@@ -141,7 +141,10 @@ class GaussianReader:
                 while position < len(i) and i[position] != "":
                     s = i[position].split(",")
                     atoms.append(atomic_numbers[s[0].capitalize()])
-                    positions.append([float(s[1]), float(s[2]), float(s[3])])
+                    #if fragments are specified, there are 4 numbers
+                    #first one integer and then xyz coords
+                    #therefore use xyz from the end
+                    positions.append([float(s[-3]), float(s[-2]), float(s[-1])])
                     position = position + 1
 
                 new_dict["Atomic_numbers"] = atoms
