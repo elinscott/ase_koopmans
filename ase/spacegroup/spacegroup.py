@@ -752,6 +752,9 @@ def spacegroup_from_data(no=None, symbol=None, setting=None,
     else:
         raise SpacegroupValueError('either *no* and *setting* '
                                    'or *symbol* must be given')
+    if not isinstance(sitesym, list):
+        raise TypeError('sitesym must be a list')
+
     have_sym = False
     if centrosymmetric is not None:
         spg._centrosymmetric = bool(centrosymmetric)

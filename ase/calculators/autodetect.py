@@ -25,7 +25,8 @@ default_executables = {'abinit': ['abinit'],
                        }
 
 python_modules = {'gpaw': 'gpaw',
-                  'asap': 'asap3'}
+                  'asap': 'asap3',
+                  'lammpslib': 'lammps'}
 
 def get_executable_env_var(name):
     return 'ASE_{}_COMMAND'.format(name.upper())

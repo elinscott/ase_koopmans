@@ -7,12 +7,13 @@ from ase.utils.parsemath import eval_expression
 import numpy as np
 from scipy.linalg import expm
 
-__all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
-           'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled', 'StrainFilter',
-           'FixCom', 'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
-           'FixBondLengths', 'FixLinearTriatomic', 'FixInternals', 'Hookean',
-           'ExternalForce', 'MirrorForce', 'MirrorTorque', "FixScaledParametricRelations",
-           "FixCartesianParametricRelations"]
+__all__ = [
+    'FixCartesian', 'FixBondLength', 'FixedMode',
+    'FixConstraintSingle', 'FixAtoms', 'UnitCellFilter', 'ExpCellFilter',
+    'FixScaled', 'StrainFilter', 'FixCom', 'FixedPlane', 'Filter',
+    'FixConstraint', 'FixedLine', 'FixBondLengths', 'FixLinearTriatomic',
+    'FixInternals', 'Hookean', 'ExternalForce', 'MirrorForce', 'MirrorTorque',
+    "FixScaledParametricRelations", "FixCartesianParametricRelations"]
 
 
 def dict2constraint(dct):
@@ -173,7 +174,7 @@ class FixAtoms(FixConstraint):
 
     def todict(self):
         return {'name': 'FixAtoms',
-                'kwargs': {'indices': self.index}}
+                'kwargs': {'indices': self.index.tolist()}}
 
     def repeat(self, m, n):
         i0 = 0
@@ -330,7 +331,7 @@ class FixBondLengths(FixConstraint):
 
     def todict(self):
         return {'name': 'FixBondLengths',
-                'kwargs': {'pairs': self.pairs,
+                'kwargs': {'pairs': self.pairs.tolist(),
                            'tolerance': self.tolerance}}
 
     def index_shuffle(self, atoms, ind):
@@ -588,7 +589,7 @@ class FixLinearTriatomic(FixConstraint):
 
     def todict(self):
         return {'name': 'FixLinearTriatomic',
-                'kwargs': {'triples': self.triples}}
+                'kwargs': {'triples': self.triples.tolist()}}
 
     def index_shuffle(self, atoms, ind):
         """Shuffle the indices of the three atoms in this constraint"""
@@ -638,7 +639,7 @@ class FixedMode(FixConstraint):
 
     def todict(self):
         return {'name': 'FixedMode',
-                'kwargs': {'mode': self.mode}}
+                'kwargs': {'mode': self.mode.tolist()}}
 
     def __repr__(self):
         return 'FixedMode(%s)' % self.mode.tolist()
@@ -664,7 +665,7 @@ class FixedPlane(FixConstraintSingle):
 
     def todict(self):
         return {'name': 'FixedPlane',
-                'kwargs': {'a': self.a, 'direction': self.dir}}
+                'kwargs': {'a': self.a, 'direction': self.dir.tolist()}}
 
     def __repr__(self):
         return 'FixedPlane(%d, %s)' % (self.a, self.dir.tolist())
@@ -694,7 +695,7 @@ class FixedLine(FixConstraintSingle):
 
     def todict(self):
         return {'name': 'FixedLine',
-                'kwargs': {'a': self.a, 'direction': self.dir}}
+                'kwargs': {'a': self.a, 'direction': self.dir.tolist()}}
 
 
 class FixCartesian(FixConstraintSingle):
@@ -719,7 +720,7 @@ class FixCartesian(FixConstraintSingle):
 
     def todict(self):
         return {'name': 'FixCartesian',
-                'kwargs': {'a': self.a, 'mask': ~self.mask}}
+                'kwargs': {'a': self.a, 'mask': ~self.mask.tolist()}}
 
 
 class FixScaled(FixConstraintSingle):
@@ -748,8 +749,8 @@ class FixScaled(FixConstraintSingle):
     def todict(self):
         return {'name': 'FixScaled',
                 'kwargs': {'a': self.a,
-                           'cell': self.cell,
-                           'mask': self.mask}}
+                           'cell': self.cell.tolist(),
+                           'mask': self.mask.tolist()}}
 
     def __repr__(self):
         return 'FixScaled(%s, %d, %s)' % (repr(self.cell),

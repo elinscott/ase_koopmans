@@ -89,19 +89,18 @@ def KIM(model_name, simulator=None, options=None, debug=False):
         (https://wiki.fysik.dtu.dk/ase/ase/calculators/lammps.html) for
         available options for the lammpslib and lammpsrun calculators.
 
-    debug: bool, optional
+    debug : bool, optional
         If True, detailed information is printed to stdout.  If the
         lammpsrun calculator is being used, this also serves as the
         value of the ``keep_tmp_files`` option. (Default: False)
 
     Returns
     -------
-    An ASE calculator, i.e. an instance of a subclass of
-    ase.calculators.calculator.Calculator.  Currently, this will be an
-    instance of KIMModelCalculator, LAMMPS (the lammpsrun calculator),
-    or LAMMPSlib, which are all defined in the ASE codebase, or an
-    instance of one of either OpenKIMcalculator or EMT, which are
-    defined in the asap3 codebase.
+    ase.calculators.calculator.Calculator
+        An ASE-compatible calculator.  Currently, this will be an instance of
+        KIMModelCalculator, LAMMPS (the lammpsrun calculator), or LAMMPSlib,
+        which are all defined in the ASE codebase, or an instance of either
+        OpenKIMcalculator or EMT defined in the asap3 codebase.
 
     Raises
     ------

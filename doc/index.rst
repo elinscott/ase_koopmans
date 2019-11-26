@@ -38,10 +38,11 @@ Supported :mod:`Calculators <ase.calculators>`
 ==============================================
 
 |abinit| |Asap| |Atomistica| |CASTEP| |CP2K| |CRYSTAL| |deMon| |dftb|
-|elk| |exciting| |EMT|
+|dftd4| |elk| |exciting| |EMT|
 |fhi-aims| |fleur| |gpaw| |gromacs|
 |hotbit| |jacapo| |jdftx| |kim| |lammps| |nwchem|
 |octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
+|xtb|
 :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
@@ -189,6 +190,9 @@ Contents
 .. |deMon| image:: static/demon.png
    :target: ase/calculators/demon.html
    :align: middle
+.. |dftd4| image:: static/dftd4.png
+   :target: https://github.com/dftd4/dftd4/tree/master/python
+   :align: middle
 .. |elk| image:: static/elk.png
    :target: http://elk.sourceforge.net/
    :align: middle
@@ -255,6 +259,9 @@ Contents
    :align: middle
 .. |vasp| image:: static/vasp.png
    :target: ase/calculators/vasp.html
+   :align: middle
+.. |xtb| image:: static/xtb.png
+   :target: https://github.com/grimme-lab/xtb/tree/master/python
    :align: middle
 
 
