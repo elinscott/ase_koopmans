@@ -36,6 +36,7 @@ _geom = _define_pattern(
         r'^[-\s]+\n'
         r'((?:^(?:[\s]+[\S]+){6}[\s]*\n)+)',
         """\
+
                              Geometry "geometry" -> ""
                              -------------------------
 
@@ -63,6 +64,7 @@ _gto_grad = _define_pattern(
    2 H       1.125380   1.355351   1.125380    0.000086   0.000089   0.000086
    3 H      -1.355351  -1.125380   1.125380   -0.000089  -0.000086   0.000086
    4 H       1.125380  -1.125380  -1.355351    0.000086  -0.000086  -0.000089
+
 """, re.M)
 
 _nwpw_grad = _define_pattern(
@@ -102,25 +104,26 @@ _paw_grad = _define_pattern(
 
 _e_gto = dict(mf=_define_pattern(
                     r'^[\s]+Total (?:DFT|SCF) energy =[\s]+([\S]+)[\s]*\n',
-                    "         Total SCF energy =    -75.585555997789", re.M),
+                    "         Total SCF energy =    -75.585555997789\n",
+                    re.M),
               mp2=_define_pattern(
                     r'^[\s]+Total MP2 energy[\s]+([\S]+)[\s]*\n',
-                    "          Total MP2 energy           -75.708800087578",
+                    "          Total MP2 energy           -75.708800087578\n",
                     re.M),
               ccsd=_define_pattern(
                     r'^[\s]+Total CCSD energy:[\s]+([\S]+)[\s]*\n',
-                    " Total CCSD energy:            -75.716168566598569",
+                    " Total CCSD energy:            -75.716168566598569\n",
                     re.M),
               tce=_define_pattern(
                     r'^[\s]+[\S]+[\s]+total energy \/ hartree[\s]+'
                     r'=[\s]+([\S]+)[\s]*\n',
                     " CCD total energy / hartree       "
-                    "=       -75.715332545665888", re.M),
+                    "=       -75.715332545665888\n", re.M),
               )
 
 _nwpw_energy = _define_pattern(r'^[\s]+Total (?:PSPW|BAND|PAW) energy'
                                r'[\s]+:[\s]+([\S]+)[\s]*\n',
-                               " Total PSPW energy     :  -0.1709317826E+02",
+                               " Total PSPW energy     :  -0.1709317826E+02\n",
                                re.M)
 
 _cell_block = _define_pattern(r'^[ \t]+Lattice Parameters[ \t]*\n'
@@ -226,7 +229,7 @@ _kpt = _define_pattern(
 
 _extract_vector = _define_pattern(
         r'^[ \t]+Vector[ \t]+([\S])+[ \t]+Occ=([\S]+)[ \t]+E=([\S]+)[ \t]*\n',
-        " Vector    1  Occ=2.000000D+00  E=-2.043101D+01", re.M)
+        " Vector    1  Occ=2.000000D+00  E=-2.043101D+01\n", re.M)
 
 
 def _get_gto_evals(chunk):
