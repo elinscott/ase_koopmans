@@ -31,9 +31,9 @@ _pw_block = _define_pattern(
         "          *               NWPW PSPW Calculation              *\n")
 
 _geom = _define_pattern(
-        r'\n[\s]+Geometry \".+\" -> ".*"[\s]*\n'
-        r'^[\s]+[-]+\n'
-        r'^[\S\s]+'
+        r'\n[\s]+Geometry \"[\s\S]+\" -> \"[\s\S]*\"[\s]*\n'
+        r'^[\s]+[-]+\n\n'
+        r'^[\S\s]+\n\n'
         r'^[\s]+No\.[\s]+Tag[\s]+Charge[\s]+X[\s]+Y[\s]+Z\n'
         r'^[-\s]+\n'
         r'((?:^(?:[\s]+[\S]+){6}[\s]*\n)+)',
@@ -67,32 +67,80 @@ _gto_grad = _define_pattern(
    4 H       1.125380  -1.125380  -1.355351    0.000086  -0.000086  -0.000089
 """, re.M)
 
-_nwpw_grad = re.compile(r'^[\s]+[=]+[\s]+Ion Gradients[\s]+[=]+[\s]*\n'
-                        r'^[\s]+Ion Positions:[\s]*\n'
-                        r'^((?:[\s]+{int}\[s]+{symb}\[s]+\(\[s]+'
-                        r'(?:{float}){{3}}[\s]+\)[\s]*\n)+)'
-                        r'^[\s]+Ion Forces:[\s]*\n'
-                        r'^((?:[\s]+{int}\[s]+{symb}\[s]+\(\[s]+'
-                        r'(?:{float}){{3}}[\s]+\)[\s]*\n)+)'
-                        .format(float=_re_float, int=_re_int,
-                                symb=_re_symb), re.M)
+_nwpw_grad = _define_pattern(
+        r'^[\s]+[=]+[\s]+Ion Gradients[\s]+[=]+[\s]*\n'
+        r'^[\s]Ion Forces:[\s]*\n'
+        r'((?:^(?:[\s]+[\S]+){7}\n)+)\n',
+        """\
+          =============  Ion Gradients =================
+ Ion Forces:
+        1 O    (   -0.000012    0.000027   -0.005199 )
+        2 H    (    0.000047   -0.013082    0.020790 )
+        3 H    (    0.000047    0.012863    0.020786 )
+        C.O.M. (   -0.000000   -0.000000   -0.000000 )
+          ===============================================
+""", re.M)
+
+_paw_grad = _define_pattern(
+        r'^[\s]+[=]+[\s]+Ion Gradients[\s]+[=]+[\s]*\n'
+        r'^[\s]Ion Positions:[\s]*\n'
+        r'((?:^(?:[\s]+[\S]+){7}\n)+)\n'
+        r'^[\s]Ion Forces:[\s]*\n'
+        r'((?:^(?:[\s]+[\S]+){7}\n)+)\n',
+        """\
+          =============  Ion Gradients =================
+ Ion Positions:
+        1 O    (   -3.77945   -5.22176   -3.77945 )
+        2 H    (   -3.77945   -3.77945    3.77945 )
+        3 H    (   -3.77945    3.77945    3.77945 )
+ Ion Forces:
+        1 O    (   -0.00001   -0.00000    0.00081 )
+        2 H    (    0.00005   -0.00026   -0.00322 )
+        3 H    (    0.00005    0.00030   -0.00322 )
+        C.O.M. (   -0.00000   -0.00000   -0.00000 )
+          ===============================================
+""", re.M)
 
 
-_e_gto = dict(mf=re.compile(r'^[\s]+Total (?:DFT|SCF) energy ='
-                            r'[\s]+({float})[\s]*\n'.format(float=_re_float),
-                            re.M),
-              mp2=re.compile(r'^[\s]+Total MP2 energy[\s]+({float})[\s]*\n'
-                             r''.format(float=_re_float), re.M),
-              ccsd=re.compile(r'^[\s]+Total CCSD energy:[\s]+({float})'
-                              r'[\s]*\n'.format(float=_re_float), re.M),
-              tce=re.compile(r'^[\s]+[\S]+[\s]+total energy \/ hartree[\s]+'
-                             r'=[\s]+({float})[\s]*\n'
-                             r''.format(float=_re_float), re.M),
+_e_gto = dict(mf=_define_pattern(
+                    r'^[\s]+Total (?:DFT|SCF) energy =[\s]+([\S]+)[\s]*\n',
+                    "         Total SCF energy =    -75.585555997789", re.M),
+              mp2=_define_pattern(
+                    r'^[\s]+Total MP2 energy[\s]+([\S]+)[\s]*\n',
+                    "          Total MP2 energy           -75.708800087578",
+                    re.M),
+              ccsd=_define_pattern(
+                    r'^[\s]+Total CCSD energy:[\s]+([\S]+)[\s]*\n',
+                    " Total CCSD energy:            -75.716168566598569",
+                    re.M),
+              tce=_define_pattern(
+                    r'^[\s]+[\S]+[\s]+total energy \/ hartree[\s]+'
+                    r'=[\s]+([\S]+)[\s]*\n',
+                    " CCD total energy / hartree       "
+                    "=       -75.715332545665888", re.M),
               )
 
-_nwpw_energy = re.compile(r'^[\s]+total[\s]+energy[\s]+:[\s]+({float})'
-                          r'[\s]+\([\s]+{float}\/ion\)[\s]*\n'
-                          r''.format(float=_re_float), re.M)
+_nwpw_energy = _define_pattern(r'^[\s]+Total (?:PSPW|BAND|PAW) energy'
+                               r'[\s]+:[\s]+([\S]+)[\s]*\n',
+                               " Total PSPW energy     :  -0.1709317826E+02",
+                               re.M)
+
+_cell_block = _define_pattern(r'^[ \t]+Lattice Parameters[ \t]*\n'
+                              r'^[ \t]+[-]+[ \t]*\n\n[ \t\S]+\n\n'
+                              r'((?:^(?:[ \t]+[\S]+){5}\n){3})',
+                              """\
+      Lattice Parameters
+      ------------------
+
+      lattice vectors in angstroms (scale by  1.889725989 to convert to a.u.)
+
+      a1=<   4.000   0.000   0.000 >
+      a2=<   0.000   5.526   0.000 >
+      a3=<   0.000   0.000   4.596 >
+      a=       4.000 b=      5.526 c=       4.596
+      alpha=  90.000 beta=  90.000 gamma=  90.000
+      omega=   101.6
+""", re.M)
 
 
 # We support the following properties:
@@ -104,6 +152,29 @@ _nwpw_energy = re.compile(r'^[\s]+total[\s]+energy[\s]+:[\s]+({float})'
 # - Eigenvalues
 # - Occupations
 
+def _parse_geomblock(chunk):
+    geomblocks = _geom.findall(chunk)
+    if not geomblocks:
+        return None
+    geomblock = geomblocks[-1].strip().split('\n')
+    natoms = len(geomblock)
+    symbols = []
+    pos = np.zeros((natoms, 3))
+    for i, line in enumerate(geomblock):
+        line = line.strip().split()
+        symbols.append(line[1])
+        pos[i] = [float(x) for x in line[3:6]]
+
+    cellblocks = _cell_block.findall(chunk)
+    if cellblocks:
+        cellblock = cellblocks[-1].strip().split('\n')
+        cell = np.zeros((3, 3))
+        for i, line in enumerate(cellblock):
+            line = line.strip().split()
+            cell[i] = [float(x) for x in line[1:4]]
+    else:
+        cell = None
+    return Atoms(symbols, positions=pos, cell=cell)
 
 def parse_gto_chunk(chunk):
     atoms = None
@@ -131,17 +202,9 @@ def parse_gto_chunk(chunk):
         forces *= Hartree / Bohr
         atoms = Atoms(symbols, positions=pos)
 
-    geomblocks = _geom.findall(chunk)
-    if geomblocks:
-        geomblock = geomblocks[-1].strip().split('\n')
-        natoms = len(geomblock)
-        symbols = []
-        pos = np.zeros((natoms, 3))
-        for i, line in enumerate(geomblock):
-            line = line.strip().split()
-            symbols.append(line[1])
-            pos[i] = [float(x) for x in line[3:6]]
-        atoms = Atoms(symbols, positions=pos)
+    atoms_new = _parse_geomblock(chunk)
+    if atoms_new is not None:
+        atoms = atoms_new
 
     if atoms is None:
         return
@@ -152,18 +215,56 @@ def parse_gto_chunk(chunk):
 
 
 def parse_pw_chunk(chunk):
-    pass
+    atoms = _parse_geomblock(chunk)
+    if atoms is None:
+        return
+
+    forces = None
+    energy = None
+    matches = _nwpw_energy.findall(chunk)
+
+    if matches:
+        energy = float(matches[-1].replace('D', 'E')) * Hartree
+
+    gradblocks = _nwpw_grad.findall(chunk)
+    if gradblocks:
+        gradblock = gradblocks[-1].strip().split('\n')
+        natoms = len(gradblock)
+        symbols = []
+        forces = np.zeros((natoms, 3))
+        for i, line in enumerate(gradblocks):
+            line = line.strip().split()
+            symbols.append(line[1])
+            forces[i] = [float(x) for x in line[3:6]]
+        forces *= Hartree / Bohr
+
+    calc = SinglePointCalculator(energy=energy, forces=forces, atoms=atoms)
+    atoms.set_calculator(calc)
+    return atoms
+
 
 
 def read_nwchem_out(fobj, index=-1):
     """Splits an NWChem output file into chunks corresponding to
     individual single point calculations."""
+    lines = fobj.readlines()
+
+    if index == slice(-1, None, None):
+        for line in lines:
+            if _gauss_block.match(line):
+                return [parse_gto_chunk(''.join(lines))]
+            if _pw_block.match(line):
+                return [parse_pw_chunk(''.join(lines))]
+        else:
+            raise ValueError('This does not appear to be a valid NWChem '
+                             'output file.')
+
 
     # First, find each SCF block
     group = []
     chunks = []
     header = True
-    for line in fobj:
+    for line in lines:
         if _gauss_block.match(line) or _pw_block.match(line):
             if header:
                 header = False
@@ -239,7 +340,7 @@ def _get_geom(atoms, **params):
 
 
 def _get_basis(**params):
-    basis_in = params.get('basis')
+    basis_in = params.get('basis', dict())
     if 'basispar' in params:
         header = 'basis {} noprint'.format(params['basispar'])
     else:
@@ -364,12 +465,12 @@ def _update_mult(magmom_tot, **params):
 
 def write_nwchem_in(fd, atoms, properties=None, **params):
     params = params.copy()
-    perm = os.path.abspath(params.get('perm', params['label']))
-    scratch = os.path.abspath(params.get('scratch', params['label']))
+    label = params.get('label', 'nwchem')
+    perm = os.path.abspath(params.get('perm', label))
+    scratch = os.path.abspath(params.get('scratch', label))
     os.makedirs(perm, exist_ok=True)
     os.makedirs(scratch, exist_ok=True)
 
-    assert properties is not None
     if properties is None:
         properties = ['energy']
 
@@ -397,10 +498,10 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
     magmom_tot = int(atoms.get_initial_magnetic_moments().sum())
     params = _update_mult(magmom_tot, **params)
 
-    out = ['title "{}"'.format(params['label']),
+    out = ['title "{}"'.format(label),
            'permanent_dir {}'.format(perm),
            'scratch_dir {}'.format(scratch),
-           'start {}'.format(params['label']),
+           'start {}'.format(label),
            '\n'.join(_get_geom(atoms, **params)),
            '\n'.join(_get_basis(**params)),
            '\n'.join(_get_other(**params)),
