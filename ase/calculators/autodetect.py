@@ -10,12 +10,14 @@ required_envvars = {'abinit': ['ABINIT_PP_PATH'],
                     'openmx': ['OPENMX_DFT_DATA_PATH']}
 
 default_executables = {'abinit': ['abinit'],
-                       'cp2k': ['cp2k_shell'],
+                       'cp2k': ['cp2k_shell', 'cp2k_shell.psmp',
+                                'cp2k_shell.popt', 'cp2k_shell.ssmp',
+                                'cp2k_shell.sopt'],
                        'dftb': ['dftb+'],
                        'elk': ['elk', 'elk-lapw'],
                        'espresso': ['pw.x'],
                        'gromacs': ['gmx', 'gmx_d', 'gmx_mpi', 'gmx_mpi_d'],
-                       'lammpsrun': ['lammps'],
+                       'lammpsrun': ['lammps', 'lmp', 'lmp_mpi', 'lmp_serial'],
                        'mopac': ['mopac', 'run_mopac7'], # run_mopac7: debian
                        'nwchem': ['nwchem'],
                        'octopus': ['octopus'],
