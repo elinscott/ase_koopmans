@@ -10,15 +10,8 @@ class NWChem(FileIOCalculator):
     implemented_properties = ['energy', 'forces', 'stress', 'dipole']
     command = 'nwchem PREFIX.nwi > PREFIX.nwo'
 
-    default_parameters = dict(
-        xc='lda',
-        basis='3-21G',
-        )
-
     def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label='nwchem', atoms=None, command=None, perm=None,
-                 scratch=None, task=None, **kwargs):
-        """Construct NWchem-calculator object."""
+                 label='nwchem', atoms=None, command=None, **kwargs):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, command, **kwargs)
         self.calc = None
