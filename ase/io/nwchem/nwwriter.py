@@ -204,9 +204,14 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
     if properties is None:
         properties = ['energy']
 
+    if 'stress' in properties:
+        if 'set' not in params:
+            params['set'] = dict()
+        params['set']['includestress'] = True
+
     task = params.get('task')
     if task is None:
-        if 'forces' in properties:
+        if 'stress' in properties or 'forces' in properties:
             task = 'gradient'
         else:
             task = 'energy'

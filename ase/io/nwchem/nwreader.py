@@ -231,6 +231,17 @@ _extract_vector = _define_pattern(
         r'^[ \t]+Vector[ \t]+([\S])+[ \t]+Occ=([\S]+)[ \t]+E=([\S]+)[ \t]*\n',
         " Vector    1  Occ=2.000000D+00  E=-2.043101D+01\n", re.M)
 
+_stress = _define_pattern(
+        r'[ \t]+[=]+[ \t]+(?:total gradient|E all FD)[ \t]+[=]+[ \t]*\n'
+        r'^[ \t]+S =((?:(?:[ \t]+[\S]+){5}\n){3})[ \t=]+\n',
+        """\
+          ============= total gradient ==============
+      S =  (   -0.22668    0.27174    0.19134 )
+           (    0.23150   -0.26760    0.23226 )
+           (    0.19090    0.27206   -0.22700 )
+          ===================================================
+""", re.M)
+
 
 def _get_gto_evals(chunk):
     spin = 1 if re.match(r'[ \t\S]+Beta', chunk) else 0
@@ -326,6 +337,20 @@ def _get_pw_kpts(chunk):
     return kpts.to_singlepointkpts()
 
 
+def _get_stress(chunk, cell):
+    stress_blocks = _stress.findall(chunk)
+    if not stress_blocks:
+        return None
+    stress_block = stress_blocks[-1]
+    stress = np.zeros((3, 3))
+    for i, row in enumerate(stress_block.strip().split('\n')):
+        stress[i] = [float(x) for x in row.split()[1:4]]
+    stress = (stress @ cell) * Hartree / Bohr / cell.volume
+    stress = 0.5 * (stress + stress.T)
+    # convert from 3x3 array to Voigt form
+    return stress.ravel()[[0, 4, 8, 5, 2, 1]]
+
+
 # We support the following properties:
 # - Energy (extrapolated, if applicable)
 # - Free energy
@@ -406,11 +431,9 @@ def parse_pw_chunk(chunk):
     if atoms is None:
         return
 
-    with open('test.txt', 'w') as f:
-        f.write(chunk)
-
-    forces = None
     energy = None
+    forces = None
+    stress = None
     matches = _nwpw_energy.findall(chunk)
 
     if matches:
@@ -428,9 +451,16 @@ def parse_pw_chunk(chunk):
             forces[i] = [float(x) for x in line[3:6]]
         forces *= Hartree / Bohr
 
+    if atoms.cell:
+        stress = _get_stress(chunk, atoms.cell)
+
     kpts = _get_pw_kpts(chunk)
 
-    calc = SinglePointDFTCalculator(energy=energy, forces=forces, atoms=atoms)
+    calc = SinglePointDFTCalculator(atoms=atoms,
+                                    energy=energy,
+                                    free_energy=energy,  # FIXME: temporary hack
+                                    forces=forces,
+                                    stress=stress)
     calc.kpts = kpts
     atoms.set_calculator(calc)
     return atoms
