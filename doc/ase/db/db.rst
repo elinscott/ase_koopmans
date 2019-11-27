@@ -28,8 +28,8 @@ There is a command-line tool called :ref:`ase-db` that can be
 used to query and manipulate databases and also a `Python interface`_.
 
 .. _JSON: http://www.json.org/
-.. _SQLite3: http://www.sqlite.org/
-.. _PostgreSQL: http://www.postgresql.org/
+.. _SQLite3: https://www.sqlite.org/index.html
+.. _PostgreSQL: https://www.postgresql.org/
 .. _MySQL: https://www.mysql.com/
 .. _MariaDB: https://mariadb.org/
 
@@ -561,9 +561,9 @@ and then start the server with::
     Please review the code carefully before exposing the ``ase.db.app`` to
     the internet or `bad things <https://xkcd.com/327/>`__ could happen.
 
-.. _Flask: http://flask.pocoo.org/
+.. _Flask: https://palletsprojects.com/p/flask/
 .. _WSGI: https://www.python.org/dev/peps/pep-3333/
-.. _Twisted: https://twistedmatrix.com/
+.. _Twisted: https://twistedmatrix.com/trac/
 
 .. _MySQL_server:
 

@@ -7,12 +7,13 @@ modules for setting up, manipulating, running, visualizing and analyzing
 atomistic simulations.  The code is freely available under the :ref:`GNU LGPL
 license <license info>`.
 
-.. _Python: http://www.python.org
+.. _Python: https://www.python.org/
 
 ASE provides interfaces to different codes through :mod:`Calculators
 <ase.calculators>` which are used together with the central
 :mod:`Atoms <ase.atoms>` object and the many available algorithms in
 ASE.
+
 
 >>> # Example: structure optimization of hydrogen molecule
 >>> from ase import Atoms
@@ -33,13 +34,15 @@ BFGS:   3  19:10:51    -31.492848     0.0023
 >>> h2.get_potential_energy()
 -31.492847800329216
 
-Supported :mod:`Calculators <ase.calculators>`:
+Supported :mod:`Calculators <ase.calculators>`
+==============================================
 
 |abinit| |Asap| |Atomistica| |CASTEP| |CP2K| |CRYSTAL| |deMon| |dftb|
-|elk| |exciting| |EMT|
+|dftd4| |elk| |exciting| |EMT|
 |fhi-aims| |fleur| |gpaw| |gromacs|
-|hotbit| |jacapo| |jdftx| |lammps| |nwchem|
+|hotbit| |jacapo| |jdftx| |kim| |lammps| |nwchem|
 |octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
+|xtb|
 :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
@@ -50,24 +53,18 @@ Mopac_
 :mod:`~ase.calculators.qchem`
 :mod:`~ase.calculators.qmmm`
 :mod:`~ase.calculators.tip3p`
+:mod:`~deMon-Nano <ase.calculators.demonnano>`
 
 
-`Reference publication on ASE <https://doi.org/10.1088/1361-648X/aa680e>`__
-
-
-Please go through this check-list to figure out if you need to convert your
-old ASE trajectory files to the modern file-format:
-
-.. image:: static/oldtraj.png
-    :align: center
-
-See how to identify and convert old trajectory files here: :ref:`convert`.
+`Reference publication on ASE <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e/meta>`__
 
 
 .. _news:
 
 News
 ====
+
+* :ref:`ASE version 3.18.1 <releasenotes>` released (20 September 2019).
 
 * :ref:`ASE version 3.18.0 <releasenotes>` released (19 July 2019).
 
@@ -103,7 +100,7 @@ News
 * :ref:`ASE version 3.10.0 <releasenotes>` released (17 March 2016).
 
 * Web-page now uses the `Read the Docs Sphinx Theme
-  <https://github.com/snide/sphinx_rtd_theme>`_ (20 February 2016).
+  <https://github.com/readthedocs/sphinx_rtd_theme>`_ (20 February 2016).
 
 * The source code is now on https://gitlab.com/ase/ase (18 September 2015).
 
@@ -159,6 +156,7 @@ Contents
 
     about
     install
+    gettingstarted/gettingstarted
     tutorials/tutorials
     ase/ase
     cmdline
@@ -175,7 +173,7 @@ Contents
    :target: ase/calculators/abinit.html
    :align: middle
 .. |Asap| image:: static/asap.png
-   :target: http://wiki.fysik.dtu.dk/asap
+   :target: https://wiki.fysik.dtu.dk/asap
    :align: middle
 .. |Atomistica| image:: static/atomistica.png
    :target: https://github.com/Atomistica/atomistica
@@ -191,6 +189,9 @@ Contents
    :align: middle
 .. |deMon| image:: static/demon.png
    :target: ase/calculators/demon.html
+   :align: middle
+.. |dftd4| image:: static/dftd4.png
+   :target: https://github.com/dftd4/dftd4/tree/master/python
    :align: middle
 .. |elk| image:: static/elk.png
    :target: http://elk.sourceforge.net/
@@ -211,7 +212,7 @@ Contents
    :target: ase/calculators/fleur.html
    :align: middle
 .. |gpaw| image:: static/gpaw.png
-   :target: http://wiki.fysik.dtu.dk/gpaw
+   :target: https://wiki.fysik.dtu.dk/gpaw/
    :align: middle
 .. |gromacs| image:: static/gromacs.png
    :target: ase/calculators/gromacs.html
@@ -224,6 +225,9 @@ Contents
    :align: middle
 .. |jdftx| image:: static/jdftx.png
    :target: http://jdftx.org/ASE.html
+   :align: middle
+.. |kim| image:: static/kim.png
+   :target: ase/calculators/kim.html
    :align: middle
 .. |lammps| image:: static/lammps.png
    :target: ase/calculators/lammps.html
@@ -256,10 +260,13 @@ Contents
 .. |vasp| image:: static/vasp.png
    :target: ase/calculators/vasp.html
    :align: middle
+.. |xtb| image:: static/xtb.png
+   :target: https://github.com/grimme-lab/xtb/tree/master/python
+   :align: middle
 
 
-.. _Gaussian: http://www.gaussian.com/
+.. _Gaussian: http://gaussian.com/
 .. _Mopac: ase/calculators/mopac.html
 .. _Sphinx: http://sphinx.pocoo.org
-.. _Asap: http://wiki.fysik.dtu.dk/asap
-.. _CAMd: http://www.camd.dtu.dk
+.. _Asap: https://wiki.fysik.dtu.dk/asap
+.. _CAMd: https://www.fysik.dtu.dk/english/research/camd/

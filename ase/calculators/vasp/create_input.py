@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Copyright (C) 2008 CSC - Scientific Computing Ltd.
 """This module defines an ASE interface to VASP.
 
@@ -625,6 +624,9 @@ bool_keys = [
     'qifcg',      # Use CG instead of quickmin (instanton)
     'qdo_ins',    # Find instanton
     'qdo_pre',    # Calculate prefactor (instanton)
+    # The next keyword pertains to the periodic NBO code of JR Schmidt's group
+    # at UW-Madison (https://github.com/jrschmidt2/periodic-NBO)
+    'lnbo',    # Enable NBO analysis
 ]
 
 list_int_keys = [
@@ -769,6 +771,7 @@ class GenerateVaspInput(object):
         'scan-rvv10': {'metagga': 'SCAN', 'luse_vdw': True, 'bparam': 15.7},
         # vdW-DFs
         'vdw-df': {'gga': 'RE', 'luse_vdw': True, 'aggac': 0.},
+        'vdw-df-cx': {'gga': 'CX', 'luse_vdw': True, 'aggac': 0.},
         'optpbe-vdw': {'gga': 'OR', 'luse_vdw': True, 'aggac': 0.0},
         'optb88-vdw': {'gga': 'BO', 'luse_vdw': True, 'aggac': 0.0,
                        'param1': 1.1 / 6.0, 'param2': 0.22},

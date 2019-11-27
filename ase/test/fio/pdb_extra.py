@@ -71,7 +71,7 @@ def test_pdb_read_with_arrays():
         os.unlink('pdb_test_2.pdb')
 
 
-if __name__ in ('__main__', '__builtin__'):
+if __name__ in ('__main__', 'test'):
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', 'Length of occupancy', UserWarning)
         test_pdb_read()

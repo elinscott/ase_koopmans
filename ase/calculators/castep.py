@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 """This module defines an interface to CASTEP for
     use by the ASE (Webpage: http://wiki.fysik.dtu.dk/ase)
 
@@ -393,15 +392,15 @@ Notes/Issues:
 
 .. _CASTEP: http://www.castep.org/
 
-.. _W: http://en.wikipedia.org/wiki/CASTEP
+.. _W: https://en.wikipedia.org/wiki/CASTEP
 
-.. _CODATA: http://physics.nist.gov/cuu/Constants/index.html
+.. _CODATA: https://physics.nist.gov/cuu/Constants/index.html
 
 .. [1] S. J. Clark, M. D. Segall, C. J. Pickard, P. J. Hasnip, M. J. Probert,
        K. Refson, M. C. Payne Zeitschrift für Kristallographie 220(5-6)
        pp.567- 570 (2005) PDF_.
 
-.. _PDF: http://goo.gl/wW50m
+.. _PDF: http://www.tcm.phy.cam.ac.uk/castep/papers/ZKristallogr_2005.pdf
 
 
 End CASTEP Interface Documentation
@@ -541,6 +540,7 @@ End CASTEP Interface Documentation
         self._energy_free = None
         self._energy_0K = None
         self._energy_total_corr = None
+        self._eigenvalues = None
         self._efermi = None
         self._ibz_kpts = None
         self._ibz_weights = None
@@ -822,13 +822,7 @@ End CASTEP Interface Documentation
                 if 'warn' in line.lower():
                     self._warnings.append(line)
 
-                # HOTFIX: This string appears twice from CASTEP 7 on and thus
-                # prevents reading forces. So, better go for another keyword
-                # to indicate the regular end of a run.
-                # 'Initialization time' seems to do the job.
-                # if 'Writing analysis data to' in line:
-                # if 'Writing model to' in line:
-                if 'Peak Memory Use' in line:
+                if 'Finalisation time   =' in line:
                     end_found = True
                     record_end = castep_file.tell()
                     break
@@ -1457,8 +1451,15 @@ End CASTEP Interface Documentation
             and self.param.task.value.lower() == 'bandstructure'):
             self._band_structure = self.band_structure(bandfile=bands_file)
         else:
-            (self._ibz_kpts, self._ibz_weights,
-             self._eigenvalues, self._efermi) = read_bands(filename=bands_file)
+            try:
+                (self._ibz_kpts, 
+                 self._ibz_weights,
+                 self._eigenvalues, 
+                 self._efermi) = read_bands(filename=bands_file)
+            except FileNotFoundError:
+                warnings.warn('Could not load .bands file, eigenvalues and '
+                              'Fermi energy are unknown')
+
 
     def read_symops(self, castep_castep=None):
         # TODO: check that this is really backwards compatible

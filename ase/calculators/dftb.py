@@ -390,7 +390,7 @@ class Dftb(FileIOCalculator):
 
         qm_charges = []
         for n, line in enumerate(lines):
-            if ('Atom' and 'Net charge' in line):
+            if ('Atom' and 'Charge' in line):
                 chargestart = n + 1
                 break
         else:

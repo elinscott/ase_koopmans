@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
@@ -83,7 +82,7 @@ class BFGSLineSearch(Optimizer):
         self.replay = False
 
         Optimizer.__init__(self, atoms, restart, logfile, trajectory,
-                           master, force_consistent)
+                           master, force_consistent=force_consistent)
 
     def read(self):
         self.r0, self.g0, self.e0, self.task, self.H = self.load()

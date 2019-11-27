@@ -37,7 +37,7 @@ potential file or as a set of functions that describe the potential.
 The files containing the potentials for this calculator are not
 included but many suitable potentials can be downloaded from The
 Interatomic Potentials Repository Project at
-http://www.ctcms.nist.gov/potentials/
+https://www.ctcms.nist.gov/potentials/
 
 Theory
 ======

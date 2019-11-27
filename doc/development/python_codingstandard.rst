@@ -79,8 +79,8 @@ Conventions`_ PEPs, summarized, clarified, and extended as follows:
 
 
 .. _Style Guide for Python Code:
-.. _PEP8: http://www.python.org/peps/pep-0008.html
-.. _Docstring Conventions: http://www.python.org/peps/pep-0257.html
+.. _PEP8: https://www.python.org/dev/peps/pep-0008/
+.. _Docstring Conventions: https://www.python.org/dev/peps/pep-0257/
 .. _Docutils project: http://docutils.sourceforge.net/docs/dev/policies.html
                       #python-coding-conventions
 .. _trailing whitespaces: http://www.gnu.org/software/emacs/manual/html_node/
@@ -116,7 +116,7 @@ Run pep8 and pyflakes on your code
 ==================================
 
 It's a good ide to run both the `pep8
-<http://pep8.readthedocs.org/en/latest/index.html>`__ and pyflakes_ tools on
+<https://pep8.readthedocs.io/en/latest/index.html>`__ and pyflakes_ tools on
 your code (or use a text editor that does it automatically)::
 
     $ pep8 --ignore W293,E129 filename.py
@@ -129,7 +129,7 @@ or equivalently::
 
 Install ``pep8`` and ``pyflakes`` like this: ``pip install pep8 pyflakes``.
 
-.. _pyflakes: https://github.com/pyflakes/pyflakes
+.. _pyflakes: https://github.com/PyCQA/pyflakes
 
 
 .. _autopep8py:

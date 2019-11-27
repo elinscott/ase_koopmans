@@ -1,5 +1,5 @@
 from ase.calculators.lammpsrun import LAMMPS
-from numpy.linalg import norm
+from numpy.testing import assert_allclose
 from ase.test.eam_pot import Pt_u3
 from ase.build import fcc111
 import os
@@ -10,7 +10,7 @@ f = open(pot_fn, 'w')
 f.write(Pt_u3)
 f.close()
 
-slab = fcc111('Pt', size=(10, 10, 5), vacuum=30.0)
+slab = fcc111('Pt', size=(2, 2, 5), vacuum=30.0)
 # We use fully periodic boundary conditions because the Lammpsrun
 # calculator does not know if it can convert the cell correctly with
 # mixed ones and will give a warning.
@@ -22,14 +22,9 @@ params['pair_coeff'] = ['1 1 {}'.format(pot_fn)]
 
 calc = LAMMPS(specorder=['Pt'], files=[pot_fn], **params)
 slab.set_calculator(calc)
-E = slab.get_potential_energy()
-F = slab.get_forces()
 
-
-assert abs(E - -2758.63) < 1E-2
-assert abs(norm(F) - 11.3167) < 1E-4
-# !TODO: tests nothing as atom postions are not set without set_atoms=True
-assert abs(norm(slab.positions) - 955.259) < 1E-3
+assert_allclose(slab.get_potential_energy(), -110.3455014595596,
+                atol=1e-4, rtol=1e-4)
 
 params['group'] = ['lower_atoms id '
                    + ' '.join([str(i+1) for i,
@@ -45,17 +40,11 @@ calc.run(set_atoms=True)
 
 new_slab = calc.atoms.copy()
 
-Ek = new_slab.get_kinetic_energy()
-Ek2 = calc.thermo_content[-1]['ke']
-# do not use  slab.get_potential_energy()
-# because it will run NVE simulation again
-E = calc.thermo_content[-1]['pe']
-T = calc.thermo_content[-1]['temp']
-
-assert abs(Ek - Ek2) < 1E-4
-assert abs(Ek - 2.53) < 1E-2
-assert abs(E - -2761.17) < 1E-2
-# !TODO set "right" positions
-# assert abs(norm(new_slab.positions) - 871.993) < 1E-3
+Ek = calc.atoms.copy().get_kinetic_energy()
+assert_allclose(Ek, 0.1014556059885532, atol=1e-4, rtol=1e-4)
+assert_allclose(Ek, calc.thermo_content[-1]['ke'],
+                atol=1e-4, rtol=1e-4)
+assert_allclose(slab.get_potential_energy(), -110.4469605087525,
+                atol=1e-4, rtol=1e-4)
 
 os.remove(pot_fn)

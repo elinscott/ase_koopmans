@@ -5,10 +5,10 @@ from ase.build import bulk
 lat_map = dict(fcc='FCC',
                bcc='BCC',
                hcp='HEX',
-               tetragonal='TET',
+               bct='BCT',
                diamond='FCC',
-               sc='CUB',
-               orthorhombic='ORC',
+               #sc='CUB',
+               #orthorhombic='ORC',
                rhombohedral='RHL')
 lat_counts = {}
 
@@ -22,6 +22,8 @@ for Z, ref in enumerate(reference_states):
         continue
 
     sym = chemical_symbols[Z]
+    if sym in {'B', 'Se', 'Te'}:
+        continue
     lat_counts.setdefault(structure, []).append(sym)
 
     atoms = bulk(sym)
@@ -32,7 +34,7 @@ for Z, ref in enumerate(reference_states):
     assert abs(par2 - par1).max() < 1e-10
     assert lat_map[structure] == lat.name
 
-    if lat.name in ['RHL']:
+    if lat.name in ['RHL', 'BCT']:
         continue
 
     orth_atoms = bulk(sym, orthorhombic=True)

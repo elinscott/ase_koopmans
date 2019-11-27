@@ -378,8 +378,16 @@ class Aims(FileIOCalculator):
         return changed_parameters
 
     def write_input(self, atoms, properties=None, system_changes=None,
-                    ghosts=None, scaled=False):
+                    ghosts=None, geo_constrain=None, scaled=None, velocities=None):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
+
+        if geo_constrain is None:
+            geo_constrain = "relax_geometry" in self.parameters
+
+        if scaled is None:
+            scaled = np.all(atoms.get_pbc())
+        if velocities is None:
+            velocities = atoms.has('momenta')
 
         have_lattice_vectors = atoms.pbc.any()
         have_k_grid = ('k_grid' in self.parameters or
@@ -388,7 +396,14 @@ class Aims(FileIOCalculator):
             raise RuntimeError('Found lattice vectors but no k-grid!')
         if not have_lattice_vectors and have_k_grid:
             raise RuntimeError('Found k-grid but no lattice vectors!')
-        write_aims(os.path.join(self.directory, 'geometry.in'), atoms, scaled, ghosts)
+        write_aims(
+            os.path.join(self.directory, 'geometry.in'),
+            atoms,
+            scaled,
+            geo_constrain,
+            velocities=velocities,
+            ghosts=ghosts
+        )
         self.write_control(atoms, os.path.join(self.directory, 'control.in'))
         self.write_species(atoms, os.path.join(self.directory, 'control.in'))
         self.parameters.write(os.path.join(self.directory, 'parameters.ase'))
@@ -473,9 +488,11 @@ class Aims(FileIOCalculator):
             if not os.path.isfile(filename):
                 raise ReadError
 
-        self.atoms = read_aims(geometry)
+        self.atoms, symmetry_block = read_aims(geometry, True)
         self.parameters = Parameters.read(os.path.join(self.directory,
                                                        'parameters.ase'))
+        if symmetry_block:
+            self.parameters["symmetry_block"] = symmetry_block
         self.read_results()
 
     def read_results(self):

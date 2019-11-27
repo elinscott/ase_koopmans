@@ -357,8 +357,8 @@ def plot(eos_string, e0, v0, B, x, y, v, e, ax=None):
         import matplotlib.pyplot as plt
         ax = plt.gca()
 
-    ax.plot(x, y, '-r')
-    ax.plot(v, e, 'ob')
+    ax.plot(x, y, ls='-', color='C3')  # By default red line
+    ax.plot(v, e, ls='', marker='o', mec='C0', mfc='C0')  # By default blue marker
 
     try:
         ax.set_xlabel(u'volume [Å$^3$]')
@@ -466,10 +466,7 @@ class CLICommand:
                 # Special case - used by ASE's GUI:
                 import pickle
                 import sys
-                if sys.version_info[0] == 2:
-                    v, e = pickle.load(sys.stdin)
-                else:
-                    v, e = pickle.load(sys.stdin.buffer)
+                v, e = pickle.load(sys.stdin.buffer)
             else:
                 if '@' in name:
                     index = None
