@@ -2,8 +2,7 @@ import os
 import numpy as np
 
 _special_kws = ['center', 'autosym', 'autoz', 'theory', 'basis', 'xc', 'task',
-                'pseudopotentials', 'set', 'symmetry', 'label', 'geompar',
-                'basispar']
+                'set', 'symmetry', 'label', 'geompar', 'basispar']
 
 _system_type = {1: 'polymer', 2: 'surface', 3: 'crystal'}
 
@@ -59,8 +58,11 @@ def _get_geom(atoms, **params):
     return geom
 
 
-def _get_basis(**params):
-    basis_in = params.get('basis', dict())
+def _get_basis(theory, **params):
+    if 'basis' not in params:
+        if theory in ['pspw', 'band', 'paw']:
+            return []
+    basis_in = params.get('basis', '3-21G')
     if 'basispar' in params:
         header = 'basis {} noprint'.format(params['basispar'])
     else:
@@ -204,6 +206,7 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
     if properties is None:
         properties = ['energy']
 
+    print(properties)
     if 'stress' in properties:
         if 'set' not in params:
             params['set'] = dict()
@@ -220,7 +223,7 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
     params['theory'] = theory
     xc = params.get('xc')
     if 'xc' in params:
-        xc = _xc_conv.get(params['xc'], params['xc'])
+        xc = _xc_conv.get(params['xc'].lower(), params['xc'])
         if theory == 'dft':
             if 'dft' not in params:
                 params['dft'] = dict()
