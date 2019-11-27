@@ -59,12 +59,6 @@ def flake8():
 
 
 max_errors = {
-    # continuation line unaligned for hanging indent
-    'E131': 1,
-    # do not assign a lambda expression, use a def
-    'E731': 1,
-    # multiple statements on one line (def)
-    'E704': 1,
     # do not compare types, use 'isinstance()'
     'E721': 1,
     # multiple imports on one line
@@ -168,8 +162,7 @@ max_errors = {
     # missing whitespace around arithmetic operator
     'E226': 562,
     # line too long (93 > 80 characters)
-    'E501': 645,
-}
+    'E501': 645}
 
 
 flake8()
