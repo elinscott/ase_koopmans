@@ -1,3 +1,4 @@
+# flake8: noqa
 def writefiles():
     with open('04_md_ntc.reference.xml', 'w') as fd:
         fd.write("""<?xml version="1.0" encoding="UTF-8"?>

@@ -51,7 +51,7 @@ def flakes(path):
     print('flake8:', path)
     proc = Popen([sys.executable, '-m', 'flake8', str(path),
                   # '--ignore', ignore,
-                  '--exclude', ','.join(str(path / x) for x in exclude),
+                  # '--exclude', ','.join(str(path / x) for x in exclude),
                   '-j', '1'],
                  stdout=PIPE)
     stdout, stderr = proc.communicate()
@@ -71,18 +71,7 @@ def flakes(path):
         X[e] = complaint
         # if e == 'E501':
         F[filename] += 1
-        """
-        # Find offending line and check if it has the noqa comment:
-        with open(filename) as fd:
-            for i in range(lineno):
-                line = next(fd)
 
-            if re.search(r'#\s*noqa', line.lower()):
-                print(filename, 'ignore', line.strip())
-            else:
-                print(filename, 'trouble', line.strip())
-                trouble_lines.append(stdout_line)
-        """
     for e, n in sorted(E.items(), key=lambda i: i[1]):
         print(e, n, X[e])
     for f, n in sorted(F.items(), key=lambda i: i[1]):

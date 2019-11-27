@@ -1,3 +1,4 @@
+# flake8: noqa
 """Check that reading multi image .con files is consistent."""
 
 import tempfile

@@ -1,3 +1,4 @@
+# flake8: noqa
 import numpy as np
 
 from ase.old import OldASEListOfAtomsWrapper

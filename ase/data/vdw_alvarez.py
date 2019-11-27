@@ -1,3 +1,4 @@
+# flake8: noqa
 # encoding: utf-8
 """ Van der Waals radii in [A] taken from:
 A cartography of the van der Waals territories

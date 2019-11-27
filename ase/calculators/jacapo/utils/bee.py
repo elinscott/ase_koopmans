@@ -1,3 +1,4 @@
+# flake8: noqa
 '''
 adapted from ASE/Utilities/BEE.py
 '''

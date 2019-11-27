@@ -1,3 +1,4 @@
+# flake8: noqa
 """ class Wannier provides the function get_wannier_localization_matrix and initial_wannier.
 """
 
