@@ -1,9 +1,10 @@
-# Run pyflakes on main source dir and documentation.
+# Run flake8 on main source dir and documentation.
 import sys
-from pathlib import Path
-import re
-from subprocess import Popen, PIPE
 import unittest
+from collections import defaultdict
+from pathlib import Path
+from subprocess import Popen, PIPE
+
 import ase
 
 try:
@@ -13,72 +14,162 @@ except ImportError:
 
 
 asepath = Path(ase.__path__[0])
-asedocpath = asepath.parent / 'doc'
-
-ignore = ('E722,E303,E221,E731,E203,E262,E202,E402,E502,E127,E201,E305,'
-          'E241,W291,E302,E225,E128,E261,E251,E265,E226,E231,E129,'
-          'E741,W293,W503,W504,E122,W391,E126,E501')
-
-ignore = 'W504,W291,W503,E741'
-
-exclude = [
-    'calculators/jacapo/*',
-    'data/*',
-    'transport/tools.py',
-    'calculators/gulp.py',
-    'dimer.py',
-    'io/pov.py',
-    'test/combine_mm.py',
-    'optimize/fmin_bfgs.py',
-    'utils/linesearch.py',
-    'transport/calculators.py',
-    'utils/ff.py',
-    'calculators/ase_qmmm_manyqm.py',
-    'utils/memory.py',
-    'optimize/oldqn.py',
-    'calculators/demonnano.py',
-    'test/qbox/qboxdata.py',
-    'test/eam_pot.py',
-    'test/fio/vasp_out.py']
 
 
-def flakes(path):
-    # We use pyflakes because it's fast.  flake8 takes more than a minute.
-    #
-    # However pyflakes is not very configurable.  We want to ignore some
-    # statements, namely those commented '# noqa'.
-    # Hence we do some parsing.
-    print('flake8:', path)
-    proc = Popen([sys.executable, '-m', 'flake8', str(path),
-                  # '--ignore', ignore,
-                  # '--exclude', ','.join(str(path / x) for x in exclude),
-                  '-j', '1'],
+def flake8():
+    proc = Popen([sys.executable,
+                  '-m',
+                  'flake8',
+                  str(asepath),
+                  str((asepath / '../doc').resolve()),
+                  '-j',
+                  '1'],
                  stdout=PIPE)
     stdout, stderr = proc.communicate()
     stdout = stdout.decode('utf8')
 
-    trouble_lines = []
-    from collections import defaultdict
-    E = defaultdict(int)
-    F = defaultdict(int)
-    X = {}
+    errors = defaultdict(int)
+    files = defaultdict(int)
+    descriptions = {}
     for stdout_line in stdout.splitlines():
         tokens = stdout_line.split(':', 3)
         filename, lineno, colno, complaint = tokens
         lineno = int(lineno)
         e = complaint.strip().split()[0]
-        E[e] += 1
-        X[e] = complaint
-        # if e == 'E501':
-        F[filename] += 1
+        errors[e] += 1
+        descriptions[e] = complaint
+        files[filename] += 1
 
-    for e, n in sorted(E.items(), key=lambda i: i[1]):
-        print(e, n, X[e])
-    for f, n in sorted(F.items(), key=lambda i: i[1]):
+    print('Bad files:')
+    for f, n in sorted(files.items(), key=lambda i: i[1]):
         print(f, n)
-    msg = 'Flakes:\n{}'.format('\n'.join(trouble_lines))
-    #assert not trouble_lines, msg
+
+    print('\nmax_errors = {')
+    for e, n in sorted(errors.items(), key=lambda i: i[1]):
+        print('    # {}\n    {!r}: {},'
+              .format(descriptions[e][6:], e, n))
+    print('}')
+
+    for e, n in errors.items():
+        if n > max_errors.get(e, 0):
+            raise ValueError(
+                'Maximum number of flake8 errors exceeded: {} * {}.  '
+                'Please run flake8 on your code and clean up.'
+                .format(n, e))
 
 
-flakes(asepath)
-# flakes(asedocpath)
+max_errors = {
+    # continuation line unaligned for hanging indent
+    'E131': 1,
+    # do not assign a lambda expression, use a def
+    'E731': 1,
+    # multiple statements on one line (def)
+    'E704': 1,
+    # do not compare types, use 'isinstance()'
+    'E721': 1,
+    # multiple imports on one line
+    'E401': 1,
+    # multiple spaces before keyword
+    'E272': 1,
+    # continuation line under-indented for hanging indent
+    'E121': 2,
+    # whitespace before '('
+    'E211': 2,
+    # continuation line with same indent as next logical line
+    'E125': 3,
+    # comparison to True should be 'if cond is True:' or 'if cond:'
+    'E712': 3,
+    # no newline at end of file
+    'W292': 3,
+    # missing whitespace after keyword
+    'E275': 3,
+    # multiple spaces after operator
+    'E222': 4,
+    # missing whitespace around modulo operator
+    'E228': 4,
+    # expected 1 blank line before a nested definition, found 0
+    'E306': 4,
+    # test for membership should be 'not in'
+    'E713': 4,
+    # multiple statements on one line (colon)
+    'E701': 5,
+    # indentation is not a multiple of four (comment)
+    'E114': 5,
+    # unexpected indentation (comment)
+    'E116': 5,
+    # comparison to None should be 'if cond is None:'
+    'E711': 5,
+    # expected 1 blank line, found 0
+    'E301': 8,
+    # multiple spaces after keyword
+    'E271': 8,
+    # test for object identity should be 'is not'
+    'E714': 8,
+    # closing bracket does not match visual indentation
+    'E124': 9,
+    # too many leading '#' for block comment
+    'E266': 10,
+    # over-indented
+    'E117': 11,
+    # indentation contains mixed spaces and tabs
+    'E101': 12,
+    # indentation contains tabs
+    'W191': 13,
+    # closing bracket does not match indentation of opening bracket's line
+    'E123': 15,
+    # multiple spaces before operator
+    'E221': 16,
+    # inline comment should start with '# '
+    'E262': 22,
+    # whitespace after '{'
+    'E201': 26,
+    # whitespace before '}'
+    'E202': 26,
+    # continuation line over-indented for hanging indent
+    'E126': 28,
+    # the backslash is redundant between brackets
+    'E502': 30,
+    # continuation line missing indentation or outdented
+    'E122': 31,
+    # do not use bare 'except'
+    'E722': 38,
+    # indentation is not a multiple of four
+    'E111': 40,
+    # whitespace before ':'
+    'E203': 42,
+    # blank line at end of file
+    'W391': 45,
+    # multiple spaces after ','
+    'E241': 50,
+    # continuation line over-indented for visual indent
+    'E127': 60,
+    # continuation line under-indented for visual indent
+    'E128': 60,
+    # missing whitespace around operator
+    'E225': 63,
+    # too many blank lines (2)
+    'E303': 80,
+    # expected 2 blank lines after class or function definition, found 1
+    'E305': 85,
+    # module level import not at top of file
+    'E402': 96,
+    # at least two spaces before inline comment
+    'E261': 101,
+    # expected 2 blank lines, found 1
+    'E302': 109,
+    # unexpected spaces around keyword / parameter equals
+    'E251': 123,
+    # trailing whitespace
+    'W291': 203,
+    # block comment should start with '# '
+    'E265': 257,
+    # missing whitespace after ','
+    'E231': 463,
+    # missing whitespace around arithmetic operator
+    'E226': 562,
+    # line too long (93 > 80 characters)
+    'E501': 645,
+}
+
+
+flake8()
