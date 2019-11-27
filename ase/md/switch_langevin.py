@@ -1,6 +1,6 @@
 import numpy as np
 from ase.md.langevin import Langevin
-from ase.calculators.mixed import MixedCalculator
+from ase.calculators.mixing import MixedCalculator
 
 
 class SwitchLangevin(Langevin):
@@ -60,12 +60,11 @@ class SwitchLangevin(Langevin):
             self.call_observers()
 
         # run switch from calc1 to calc2
-        self.path_data.append([0, self.lam, *self.atoms.calc.get_energy_contributions()])
+        self.path_data.append([0, self.lam, *self.atoms.calc.get_energy_contributions(self.atoms)])
         for step in range(1, self.n_switch):
             # update calculator
             self.lam = get_lambda(step, self.n_switch)
-            self.atoms.calc.weight1 = 1 - self.lam
-            self.atoms.calc.weight2 = self.lam
+            self.atoms.calc.set_weights(1 - self.lam, self.lam)
 
             # carry out md step
             forces = self.step(forces)
@@ -73,7 +72,7 @@ class SwitchLangevin(Langevin):
 
             # collect data
             self.call_observers()
-            self.path_data.append([step, self.lam, *self.atoms.calc.get_energy_contributions()])
+            self.path_data.append([step, self.lam, *self.atoms.calc.get_energy_contributions(self.atoms)])
 
         self.path_data = np.array(self.path_data)
 
