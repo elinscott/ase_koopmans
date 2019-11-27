@@ -852,7 +852,18 @@ class FileIOCalculator(Calculator):
         command = self.command
         if 'PREFIX' in command:
             command = command.replace('PREFIX', self.prefix)
-        errorcode = subprocess.call(command, shell=True, cwd=self.directory)
+
+        try:
+            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+        except OSError as err:
+            # Actually this may never happen with shell=True, since
+            # probably the shell launches successfully.  But we soon want
+            # to allow calling the subprocess directly, and then this
+            # distinction (failed to launch vs failed to run) is useful.
+            msg = 'Failed to execute "{}"'.format(command)
+            raise EnvironmentError(msg) from err
+
+        errorcode = proc.wait()
 
         if errorcode:
             path = os.path.abspath(self.directory)
