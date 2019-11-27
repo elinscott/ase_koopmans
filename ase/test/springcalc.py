@@ -1,7 +1,7 @@
 import numpy as np
 from ase.build import bulk
 from ase.calculators.harmonic import SpringCalculator
-from ase.calculators.test import numeric_force, gradient_test
+from ase.calculators.test import gradient_test
 
 
 # setup
