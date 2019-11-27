@@ -206,7 +206,6 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
     if properties is None:
         properties = ['energy']
 
-    print(properties)
     if 'stress' in properties:
         if 'set' not in params:
             params['set'] = dict()

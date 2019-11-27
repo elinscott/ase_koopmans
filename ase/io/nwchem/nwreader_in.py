@@ -95,7 +95,7 @@ def _get_cell(text):
     pbc = [False, False, False]
     lengths = [None, None, None]
     angles = [None, None, None]
-    for row in text.strip().split():
+    for row in text.strip().split('\n'):
         row = row.strip().lower()
         for dim, vecname in enumerate(['a', 'b', 'c']):
             if row.startswith('lat_{}'.format(vecname)):
