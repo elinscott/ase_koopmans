@@ -73,7 +73,8 @@ def search_pubchem_raw(search, field, silent=False, mock_test=False):
 
     # check if there are confomers and warn them if there are
     if field != 'conformers' and not silent:
-        conformer_ids = available_conformer_search(search, field)
+        conformer_ids = available_conformer_search(search, field,
+                                                   mock_test=mock_test)
         if len(conformer_ids) > 1:
             warnings.warn('The structure "{}" has more than one '
                           'conformer in PubChem. By default, the '
