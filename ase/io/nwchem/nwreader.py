@@ -91,12 +91,12 @@ def read_nwchem_out(fobj, index=-1):
 
 # Matches a geometry block and returns the geometry specification lines
 _geom = _define_pattern(
-        r'\n[\s]+Geometry \"[\s\S]+\" -> \"[\s\S]*\"[\s]*\n'
-        r'^[\s]+[-]+\n\n'
-        r'^[\S\s]+\n\n'
-        r'^[\s]+No\.[\s]+Tag[\s]+Charge[\s]+X[\s]+Y[\s]+Z\n'
-        r'^[-\s]+\n'
-        r'((?:^(?:[\s]+[\S]+){6}[\s]*\n)+)',
+        r'\n[ \t]+Geometry \"[ \t\S]+\" -> \"[ \t\S]*\"[ \t]*\n'
+        r'^[ \t-]+\n'
+        r'(?:^[ \t\S]*\n){3}'
+        r'^[ \t]+No\.[ \t]+Tag[ \t]+Charge[ \t]+X[ \t]+Y[ \t]+Z\n'
+        r'^[ \t-]+\n'
+        r'((?:^(?:[ \t]+[\S]+){6}[ \t]*\n)+)',
         """\
 
                              Geometry "geometry" -> ""
@@ -114,7 +114,7 @@ _geom = _define_pattern(
 
 # Unit cell parser
 _cell_block = _define_pattern(r'^[ \t]+Lattice Parameters[ \t]*\n'
-                              r'^[ \t]+[-]+[ \t]*\n\n[ \t\S]+\n\n'
+                              r'^(?:[ \t\S]*\n){4}'
                               r'((?:^(?:[ \t]+[\S]+){5}\n){3})',
                               """\
       Lattice Parameters
@@ -123,7 +123,7 @@ _cell_block = _define_pattern(r'^[ \t]+Lattice Parameters[ \t]*\n'
       lattice vectors in angstroms (scale by  1.889725989 to convert to a.u.)
 
       a1=<   4.000   0.000   0.000 >
-      /a2=<   0.000   5.526   0.000 >
+      a2=<   0.000   5.526   0.000 >
       a3=<   0.000   0.000   4.596 >
       a=       4.000 b=      5.526 c=       4.596
       alpha=  90.000 beta=  90.000 gamma=  90.000
@@ -246,7 +246,7 @@ def parse_gto_chunk(chunk):
                                     # quadrupole=quadrupole,
                                     )
     calc.kpts = kpts
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     return atoms
 
 
@@ -445,7 +445,7 @@ def parse_pw_chunk(chunk):
                                     forces=forces,
                                     stress=stress)
     calc.kpts = kpts
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     return atoms
 
 
@@ -595,23 +595,23 @@ def _extract_pw_kpts(chunk, kpts, default_occ):
     for match in _kpt.finditer(chunk):
         index, orbitals = match.groups()
         for line in orbitals.split('\n'):
-            line = line.strip().split()
-            if not line:
+            tokens = line.strip().split()
+            if not tokens:
                 continue
-            nline = len(line)
-            a_e = float(line[0]) * Hartree
-            if nline % 3 == 0:
+            ntokens = len(tokens)
+            a_e = float(tokens[0]) * Hartree
+            if ntokens % 3 == 0:
                 a_o = default_occ
             else:
-                a_o = float(line[3].split('=')[1])
+                a_o = float(tokens[3].split('=')[1])
             kpts.add_eval(index, 0, a_e, a_o)
 
-            if nline <= 4:
+            if ntokens <= 4:
                 continue
-            if nline == 6:
-                b_e = float(line[3]) * Hartree
+            if ntokens == 6:
+                b_e = float(tokens[3]) * Hartree
                 b_o = default_occ
-            elif nline == 8:
-                b_e = float(line[4]) * Hartree
-                b_o = float(line[7].split('=')[1])
+            elif ntokens == 8:
+                b_e = float(tokens[4]) * Hartree
+                b_o = float(tokens[7].split('=')[1])
             kpts.add_eval(index, 1, b_e, b_o)

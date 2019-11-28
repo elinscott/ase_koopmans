@@ -127,32 +127,38 @@ def _get_other(**params):
 def _get_set(**params):
     return ['set ' + _format_line(key, val) for key, val in params.items()]
 
+_gto_theories = ['tce', 'ccsd', 'mp2', 'tddft', 'scf', 'dft']
+_pw_theories = ['band', 'pspw', 'paw']
+_all_theories = _gto_theories + _pw_theories
 
 def _get_theory(**params):
+    # Default: user-provided theory
     theory = params.get('theory')
     if theory is not None:
         return theory
-    nwpw = params.get('nwpw')
+
+    # Check if the user passed a theory to xc
     xc = params.get('xc')
-    if xc is None:
-        if 'tce' in params:
-            return 'tce'
-        elif 'ccsd' in params:
-            return 'ccsd'
-        elif 'mp2' in params:
-            return 'mp2'
-        elif 'scf' in params:
-            return 'scf'
-        elif 'tddft' in params:
-            return 'tddft'
-        elif nwpw is not None:
-            if 'monkhorst-pack' in nwpw or 'brillouin_zone' in nwpw:
-                return 'band'
-            return 'pspw'
-        return 'scf'
-    if xc in ['scf', 'dft', 'mp2', 'ccsd', 'tce', 'pspw', 'band', 'paw',
-              'tddft']:
+    if xc in _all_theories:
         return xc
+
+    # Check for input blocks that correspond to a particular level of
+    # theory. Correlated theories (e.g. CCSD) are checked first.
+    for kw in _gto_theories:
+        if kw in params:
+            return kw
+
+    # If the user passed an 'nwpw' block, then they want a plane-wave
+    # calculation, but what kind? If they request k-points, then
+    # they want 'band', otherwise assume 'pspw' (if the user wants
+    # to use 'paw', they will have to ask for it specifically).
+    nwpw = params.get('nwpw')
+    if nwpw is not None:
+        if 'monkhorst-pack' in nwpw or 'brillouin_zone' in nwpw:
+            return 'band'
+        return 'pspw'
+
+    # When all else fails, default to dft.
     return 'dft'
 
 

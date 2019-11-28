@@ -1,8 +1,15 @@
 import os
-import shutil
 from ase.build import molecule
 from ase.calculators.nwchem import NWChem
 from numpy.testing import assert_allclose
+
+
+def _try_delete(theory, prefix, suffix, sep='.'):
+    fname = os.path.join(theory, sep.join([prefix, suffix]))
+    try:
+        os.remove(fname)
+    except FileNotFoundError:
+        pass
 
 
 def _run_calc(atoms_in, theory, eref, forces=True, **kwargs):
@@ -14,9 +21,17 @@ def _run_calc(atoms_in, theory, eref, forces=True, **kwargs):
         assert_allclose(atoms.get_forces(),
                         calc.calculate_numerical_forces(atoms),
                         atol=1e-4, rtol=1e-4)
-    shutil.rmtree(theory)
-    os.remove(theory + '.nwi')
-    os.remove(theory + '.nwo')
+
+    # Delete all perm/scratch files to ensure tests are idempotent
+    for suffix in ['db', 'movecs', 'cfock', 'mp2nos', 't2']:
+        _try_delete(theory, theory, suffix)
+
+    for element in ['H', 'O']:
+        for suffix in ['psp', 'vpp', 'cpp', 'jpp']:
+            _try_delete(theory, element, suffix)
+        _try_delete(theory, element, 'basis', sep='_')
+
+    _try_delete(theory, 'junk', 'inp')
 
 
 def main():
@@ -29,15 +44,12 @@ def main():
     _run_calc(atoms, 'tce', -2060.319141863451, forces=False, basis='3-21G',
               tce=dict(ccd=''))
 
-    atoms.center(vacuum=3)
-    atoms.pbc = True
     # Plane wave calculations
-    _run_calc(atoms, 'pspw', -465.48899701912626, forces=False,
-              nwpw=dict(tolerances='1e-11 1e-11'))
-    _run_calc(atoms, 'band', -465.4889948422154, forces=False,
-              nwpw=dict(tolerances='1e-11 1e-11'), memory='1024 mb')
-    _run_calc(atoms, 'paw', -2065.975544222318, forces=False,
-              nwpw=dict(tolerances='1e-11 1e-11'))
+    atoms.center(vacuum=2)
+    atoms.pbc = True
+    _run_calc(atoms, 'pspw', -465.1290581383751, forces=False)
+    _run_calc(atoms, 'band', -465.1290611316276, forces=False,)
+    _run_calc(atoms, 'paw', -2065.6600649367365, forces=False)
 
 
 main()

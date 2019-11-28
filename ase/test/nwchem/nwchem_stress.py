@@ -1,5 +1,4 @@
 import os
-import shutil
 from ase.build import bulk
 from ase.calculators.nwchem import NWChem
 from numpy.testing import assert_allclose
@@ -20,9 +19,12 @@ def main():
     assert_allclose(atoms.get_stress(), calc.calculate_numerical_stress(atoms),
                     atol=1e-3, rtol=1e-3)
 
-    shutil.rmtree(testname)
-    os.remove(testname + '.nwi')
-    os.remove(testname + '.nwo')
+    # remove scratch files created by NWChem
+    os.remove(os.path.join(testname, 'junk.inp'))
+    os.remove(os.path.join(testname, testname + '.movecs'))
+    os.remove(os.path.join(testname, testname + '.db'))
+    for suffix in ['psp', 'vpp', 'vpp2']:
+        os.remove(os.path.join(testname, 'C.' + suffix))
 
 
 main()
