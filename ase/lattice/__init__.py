@@ -1396,7 +1396,7 @@ def get_2d_bravais_lattice(origcell, eps=2e-4, *, pbc=None):
     return finallat, finalop.T
 
 
-def all_variants():
+def all_variants(include_blunt_angles=True):
     """For testing and examples; yield all variants of all lattices."""
     a, b, c = 3., 4., 5.
     alpha = 55.0
@@ -1479,11 +1479,12 @@ def all_variants():
     assert tri2b.variant == 'TRI2b'
     yield tri2b
 
-    beta = 110
-    yield OBL(a, b, alpha=alpha)
-    yield OBL(a, b, alpha=beta)
-    yield RECT(a, b)
-    yield CRECT(a, alpha=alpha)
-    yield CRECT(a, alpha=beta)
-    yield HEX2D(a)
-    yield SQR(a)
+    if include_blunt_angles:
+        beta = 110
+        yield OBL(a, b, alpha=alpha)
+        yield OBL(a, b, alpha=beta)
+        yield RECT(a, b)
+        yield CRECT(a, alpha=alpha)
+        yield CRECT(a, alpha=beta)
+        yield HEX2D(a)
+        yield SQR(a)
