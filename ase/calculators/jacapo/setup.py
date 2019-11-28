@@ -1,3 +1,4 @@
+# flake8: noqa
 from distutils.core import setup
 
 long_description = """\

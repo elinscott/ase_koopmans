@@ -1,3 +1,4 @@
+# flake8: noqa
 import numpy as np
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
@@ -82,11 +83,11 @@ def SetChild(parent,childname,props):
 
 def SetBasicChilds():
     """
-    Basic property setup for Material Studio File                         
+    Basic property setup for Material Studio File
     """
     XSD = ET.Element('XSD')
     XSD.set('Version', '6.0')
-    
+
     ATR = SetChild(XSD,'AtomisticTreeRoot',{'ID':'1','NumProperties':'40','NumChildren':'1'})
     SetChild(ATR,'Property',{'DefinedOn':'ClassicalEnergyHolder','Name':'AngleEnergy','Type':'Double'})
     SetChild(ATR,'Property',{'DefinedOn':'ClassicalEnergyHolder','Name':'BendBendEnergy','Type':'Double'})
@@ -129,7 +130,7 @@ def SetBasicChilds():
     SetChild(ATR,'Property',{'DefinedOn':'ClassicalEnergyHolder','Name':'VanDerWaalsEnergy','Type':'Double'})
     SetChild(ATR,'Property',{'DefinedOn':'SymmetrySystem','Name':'_Stress','Type':'Matrix'})
     return ATR, XSD
-    
+
 def _write_xsd_html(images,connectivity=None):
     ATR, XSD = SetBasicChilds()
     natoms = len(images[0])
@@ -172,7 +173,7 @@ def _write_xsd_html(images,connectivity=None):
         Props['OverspecificationTolerance']= '0.05'
         Props['PeriodicDisplayType']= 'Original'
         SymmSys = SetChild(ATR,'SymmetrySystem',Props)
-        
+
         Props = {}
         Props['ID']= str(natoms + len(bonds) + 5)
         Props['SymmetryDefinition']= str(natoms + 4)
@@ -181,12 +182,12 @@ def _write_xsd_html(images,connectivity=None):
         Props['OwnsTotalConstraintMapping']= '1'
         Props['TotalConstraintMapping']= '3'
         MappngSet = SetChild(SymmSys, 'MappingSet',Props)
-         
+
         Props = {}
         Props['ID']= str(natoms + len(bonds) + 6)
         Props['NumImageMappings']= '0'
         MappngFamily = SetChild(MappngSet, 'MappingFamily',Props)
-        
+
         Props = {}
         Props['ID']= str(natoms + len(bonds) + 7)
         Props['Element']= '1,0,0,0,0,1,0,0,0,0,1,0'
@@ -196,9 +197,9 @@ def _write_xsd_html(images,connectivity=None):
         Props['NumImages']= str(natoms + len(bonds))
         Props['NumDefects']= '2'
         IdentMappng = SetChild(MappngFamily, 'IdentityMapping',Props)
-        
+
         SetChild(MappngFamily,'MappingRepairs',{'NumRepairs':'0'})
-        
+
         # writing atoms
         for x in range(natoms):
             Props = {}
@@ -214,11 +215,11 @@ def _write_xsd_html(images,connectivity=None):
             if bondstr:
                 Props['Connections']=','.join(bondstr)
             SetChild(IdentMappng, 'Atom3d',Props)
-        
+
         for x in range(len(bonds)):
             SetChild(IdentMappng,'Bond',{'ID':str(x + 4 + natoms + 1),'Mapping':str(natoms + len(bonds) + 7),
                 'Parent':'2','Connects':'%i,%i'%(bonds[x][0] + 4,bonds[x][1] + 4)})
-        
+
         Props={}
         Props['ID']= str(natoms + 4)
         Props['Parent']= '2'
@@ -249,12 +250,12 @@ def _write_xsd_html(images,connectivity=None):
 
         SetChild(IdentMappng, 'ReciprocalLattice3D',{'ID':str(natoms + len(bonds) + 8),
             'Parent':str(natoms + 4)})
-        
+
         SetChild(MappngSet, 'InfiniteMapping',{'ID':'3','Element':'1,0,0,0,0,1,0,0,0,0,1,0',
             'MappedObjects':'2'})
 
     return XSD,ATR
-    
+
 def write_xsd(filename, images, connectivity=None):
     """Takes Atoms object, and write materials studio file
     atoms: Atoms object
@@ -267,15 +268,15 @@ def write_xsd(filename, images, connectivity=None):
     """
     if hasattr(images, 'get_positions'):
         images = [images]
-        
+
     XSD,ATR = _write_xsd_html(images,connectivity)
-    
+
     # check if file is an object or not.
     if isinstance(filename, basestring):
         f = open(filename, 'w')
     else:  # Assume it's a 'file-like object'
         f = filename
-        
+
     # Return a pretty-printed XML string for the Element.
     rough_string = ET.tostring(XSD, 'utf-8')
     reparsed = minidom.parseString(rough_string)

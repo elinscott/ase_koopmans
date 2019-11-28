@@ -1,3 +1,4 @@
+# flake8: noqa
 # Generated: 2011-12-19
 # doi:10.1063/1.2162161, experimental geometries if available, dimers only
 from numpy import array, nan

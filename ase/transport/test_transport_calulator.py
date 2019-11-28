@@ -1,3 +1,4 @@
+# flake8: noqa
 from ase.transport.calculators import TransportCalculator
 import numpy as np
 

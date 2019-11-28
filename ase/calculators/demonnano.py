@@ -1,3 +1,4 @@
+# flake8: noqa
 """This module defines an ASE interface to deMon-nano.
 
 Link to the open-source DFTB code deMon-nano:

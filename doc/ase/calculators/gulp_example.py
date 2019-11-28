@@ -1,3 +1,4 @@
+# flake8: noqa
 import numpy as np
 from ase import Atoms
 from ase.calculators.gulp import GULP, Conditions

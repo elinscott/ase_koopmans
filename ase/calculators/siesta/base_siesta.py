@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 This module defines the ASE interface to SIESTA.
 
