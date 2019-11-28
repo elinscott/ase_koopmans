@@ -2098,11 +2098,11 @@ class Filter:
     def get_forces(self, *args, **kwargs):
         return self.atoms.get_forces(*args, **kwargs)[self.index]
 
-    def get_stress(self):
-        return self.atoms.get_stress()
+    def get_stress(self, *args, **kwargs):
+        return self.atoms.get_stress(*args, **kwargs)
 
-    def get_stresses(self):
-        return self.atoms.get_stresses()[self.index]
+    def get_stresses(self, *args, **kwargs):
+        return self.atoms.get_stresses(*args, **kwargs)[self.index]
 
     def get_masses(self):
         return self.atoms.get_masses()[self.index]
@@ -2162,7 +2162,7 @@ class StrainFilter(Filter):
 
     """
 
-    def __init__(self, atoms, mask=None):
+    def __init__(self, atoms, mask=None, include_ideal_gas=False):
         """Create a filter applying a homogeneous strain to a list of atoms.
 
         The first argument, atoms, is the atoms object.
@@ -2175,7 +2175,8 @@ class StrainFilter(Filter):
         """
 
         self.strain = np.zeros(6)
-
+        self.include_ideal_gas = include_ideal_gas
+        
         if mask is None:
             mask = np.ones(6)
         else:
@@ -2198,7 +2199,7 @@ class StrainFilter(Filter):
         self.strain[:] = new
 
     def get_forces(self):
-        stress = self.atoms.get_stress()
+        stress = self.atoms.get_stress(include_ideal_gas=self.include_ideal_gas)
         return -self.atoms.get_volume() * (stress * self.mask).reshape((2, 3))
 
     def has(self, x):
