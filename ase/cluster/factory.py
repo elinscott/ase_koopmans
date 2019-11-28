@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 
 from ase.data import atomic_numbers as ref_atomic_numbers

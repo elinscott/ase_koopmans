@@ -68,8 +68,8 @@ A video tutorial can be produced in the following way:
      ffmpeg -i video_final.avi -pass 2 -s 800x600 -b:a 256k -ar 44100 -ac 1 \
             -vcodec flv -b:v 1200k -g 160 -mbd 2 -y oi_en_800x600.swf
 
-.. _recordmydesktop: http://recordmydesktop.sourceforge.net/
-.. _audacity: http://audacity.sourceforge.net/
+.. _recordmydesktop: http://recordmydesktop.sourceforge.net/about.php
+.. _audacity: https://sourceforge.net/projects/audacity/
 .. _avidemux: http://www.avidemux.org/
 
 using avconf to collect png files

@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 import os
 import numpy as np
 

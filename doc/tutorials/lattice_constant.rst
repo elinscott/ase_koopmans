@@ -1,8 +1,8 @@
 .. _lattice_constant:
 
-=========================
-Finding lattice constants
-=========================
+=========================================================
+Finding lattice constants using EOS and the stress tensor
+=========================================================
 
 .. seealso::
 

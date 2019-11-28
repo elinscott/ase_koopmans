@@ -1,10 +1,11 @@
+# flake8: noqa
 import numpy as np
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 from ase.utils import basestring
 from ase.io.xsd import SetChild, _write_xsd_html
-
+from ase import Atoms
 
 _image_header = ' '*74 + '0.0000\n!DATE     Jan 01 00:00:00 2000\n'
 _image_footer = 'end\nend\n'
@@ -72,9 +73,9 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
             s += _image_header
             s += 'PBC'
             vec = image.cell.lengths()
-            s+='{:>10.4f}{:>10.4f}{:>10.4f}'.format(vec[1],vec[0],vec[2])
+            s+='{:>10.4f}{:>10.4f}{:>10.4f}'.format(vec[0],vec[1],vec[2])
             angles = image.cell.angles() 
-            s+='{:>10.4f}{:>10.4f}{:>10.4f}'.format(angles[1],angles[0],angles[2])
+            s+='{:>10.4f}{:>10.4f}{:>10.4f}'.format(angles[0],angles[1],angles[2])
             s+='\n'
             an = image.get_chemical_symbols()
 
@@ -114,6 +115,53 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
     f.write(Document)
     f.close()
     
+def read_xtd(filename, index=-1):
+    """Import xtd file (Materials Studio)
+    
+    Xtd files always come with arc file, and arc file
+    contains all the relevant information to make atoms
+    so only Arc file needs to be read
+    """
+    if isinstance(filename,str):
+        f = filename[:-3] + 'arc'
+    else:
+        f = filename.name[:-3] + 'arc'
+    f = open(f,'r')
+    images = list()
+
+    # the first line is comment
+    f.readline()
+    pbc = 'ON' in f.readline()
+    l = f.readline()
+    while l != '':
+        if '!' not in l: # flag for the start of an image
+            l = f.readline()
+            continue
+        if pbc:
+            l = f.readline()
+            cell = [float(d) for d in l.split()[1:]]
+        else:
+            f.readline()
+        symbols = []
+        coords = []
+        while True:
+            l = f.readline().split()
+            if 'end' in l:
+                break
+            symbols.append(l[0])
+            coords.append([float(x) for x in l[1:4]])
+        if pbc:
+            image = Atoms(symbols, positions=coords, cell=cell, pbc=pbc)
+        else:
+            image = Atoms(symbols, positions=coords, pbc=pbc)
+        images.append(image)
+        l = f.readline()
+        
+                
+    if not index:
+        return images
+    else:
+        return images[index]
 
     
 

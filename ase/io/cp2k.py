@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Reader for CP2Ks DCD_ALIGNED_CELL format.
 

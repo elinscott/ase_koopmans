@@ -5,7 +5,6 @@ add vacuum layers and add adsorbates.
 
 """
 
-from __future__ import division
 from math import sqrt
 from operator import itemgetter
 
@@ -503,7 +502,18 @@ def mx2(formula='MoS2', kind='2H', a=3.18, thickness=3.19,
     if vacuum is not None:
         atoms.center(vacuum, axis=2)
     atoms = atoms.repeat(size)
+    return atoms
 
+
+def graphene(formula='C2', a=2.460, size=(1, 1, 1), vacuum=None):
+    """Create a graphene monolayer structure."""
+    cell = [[a, 0, 0], [-a / 2, a * 3**0.5 / 2, 0], [0, 0, 0]]
+    basis = [[0, 0, 0], [2./3, 1./3, 0]]
+    atoms = Atoms(formula, cell=cell, pbc=(1, 1, 0))
+    atoms.set_scaled_positions(basis)
+    if vacuum is not None:
+        atoms.center(vacuum, axis=2)
+    atoms = atoms.repeat(size)
     return atoms
 
 
@@ -511,6 +521,6 @@ def _all_surface_functions():
     # Convenient for debugging.
     d = {}
     for func in [fcc100, fcc110, bcc100, bcc110, bcc111, fcc111, hcp0001,
-                 hcp10m10, diamond100, diamond111, fcc111, mx2]:
+                 hcp10m10, diamond100, diamond111, fcc111, mx2, graphene]:
         d[func.__name__] = func
     return d

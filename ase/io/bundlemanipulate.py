@@ -14,7 +14,6 @@ Usage from command line:
 python -m ase.io.bundlemanipulate inbundle outbundle [start [end [step]]]
 """
 
-from __future__ import print_function
 from ase.io.bundletrajectory import PickleBundleBackend, UlmBundleBackend
 import os
 import pickle

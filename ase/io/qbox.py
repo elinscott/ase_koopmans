@@ -18,6 +18,7 @@ def read_qbox(f, index=-1):
     Inputs:
         f - str or fileobj, path to file or file object to read from
         index - int or slice, which frames to return
+
     Returns:
         list of Atoms or atoms, requested frame(s)
     """

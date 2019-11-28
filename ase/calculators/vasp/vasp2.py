@@ -19,7 +19,6 @@ $VASP_SCRIPT pointing to a python script looking something like::
 
 www.vasp.at
 """
-from __future__ import print_function, division
 
 import os
 import sys

@@ -22,7 +22,7 @@ MM subsystem is fed into the QM calculator. This is built into GPAW_. More info
 `In this paper <https://doi.org/10.1021/acs.jctc.7b00621>`__, which should be
 cited if the method is used.
 
-.. _GPAW: http://wiki.fysik.dtu.dk/gpaw
+.. _GPAW: https://wiki.fysik.dtu.dk/gpaw
 
 .. seealso::
 

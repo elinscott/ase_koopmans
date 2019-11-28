@@ -189,9 +189,10 @@ to speed up BFGS local minimzations.
 Read more about this algorithm here:
 
   | Estefanía Garijo del Río, Jens Jørgen Mortensen, Karsten W. Jacobsen
-  | `A local Bayesian optimizer for atomic structures`__
+  | `Local Bayesian optimizer for atomic structures`__
+  | Physical Review B, Vol. **100**, 104103 (2019)
 
-__ https://arxiv.org/abs/1808.08588
+__ https://link.aps.org/doi/10.1103/PhysRevB.100.104103
 
 .. warning:: The memory of the optimizer scales as O(n²N²) where
              N is the number of atoms and n the number of steps.
@@ -466,7 +467,7 @@ Read more about this algorithm here:
   | `Global Optimization by Basin-Hopping and the Lowest Energy Structures of Lennard-Jones Clusters Containing up to 110 Atoms`__
   | J. Phys. Chem. A, Vol. **101**, 5111-5116 (1997)
 
-__ http://pubs.acs.org/doi/abs/10.1021/jp970984n
+__ https://doi.org/10.1021/jp970984n
 
 and here:
 
@@ -474,7 +475,7 @@ and here:
   | `Global Optimization of Clusters, Crystals, and Biomolecules`__
   | Science, Vol. **285**, 1368 (1999)
 
-__ http://www.sciencemag.org/cgi/content/abstract/sci;285/5432/1368
+__ https://science.sciencemag.org/content/285/5432/1368.abstract
 
 Minima hopping
 --------------

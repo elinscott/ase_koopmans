@@ -1,7 +1,7 @@
 from ase.calculators.lammpsrun import LAMMPS
 from ase.cluster.icosahedron import Icosahedron
 from ase.data import atomic_numbers,  atomic_masses
-import numpy as np
+from numpy.testing import assert_allclose
 from ase.optimize import LBFGS
 
 
@@ -18,17 +18,15 @@ calc = LAMMPS(specorder=['Ar'], **params)
 
 ar_nc.set_calculator(calc)
 
-E = ar_nc.get_potential_energy()
-F = ar_nc.get_forces()
-
-assert abs(E - -0.47) < 1E-2
-assert abs(np.linalg.norm(F) - 0.0574) < 1E-4
+assert_allclose(ar_nc.get_potential_energy(), -0.468147667942117,
+                atol=1e-4, rtol=1e-4)
+assert_allclose(ar_nc.get_forces(), calc.calculate_numerical_forces(ar_nc),
+                atol=1e-4, rtol=1e-4)
 
 dyn = LBFGS(ar_nc, force_consistent=False)
 dyn.run(fmax=1E-6)
 
-E = round(ar_nc.get_potential_energy(), 2)
-F = ar_nc.get_forces()
-
-assert abs(E - -0.48) < 1E-2
-assert abs(np.linalg.norm(F) - 0.0) < 1E-5
+assert_allclose(ar_nc.get_potential_energy(), -0.4791815886953914,
+                atol=1e-4, rtol=1e-4)
+assert_allclose(ar_nc.get_forces(), calc.calculate_numerical_forces(ar_nc),
+                atol=1e-4, rtol=1e-4)

@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 from ase.transport.calculators import TransportCalculator
 import numpy as np
 

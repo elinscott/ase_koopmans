@@ -11,7 +11,7 @@ SIESTA_ is a density-functional theory code for very large systems
 based on atomic orbital (LCAO) basis sets.
 
 
-.. _SIESTA: http://www.uam.es/siesta/
+.. _SIESTA: https://departments.icmab.es/leem/siesta/
 
 
 
@@ -101,7 +101,7 @@ keywords, even if it breaks calculator functionality.
 The complete list of the FDF entries can be found in the official `SIESTA
 manual`_.
 
-.. _SIESTA manual: http://departments.icmab.es/leem/siesta/Documentation/Manuals/manuals.html
+.. _SIESTA manual: https://departments.icmab.es/leem/siesta/Documentation/Manuals/manuals.html
 
 Example
 =======
@@ -188,8 +188,13 @@ Pseudopotentials generated from the ABINIT code and converted to
 the SIESTA format are available in the `SIESTA`_ website.
 A database of user contributed pseudopotentials is also available there.
 
+Optimized GGA–PBE pseudos and DZP basis sets for some common elements
+are also available from the `SIMUNE`_ website.
+
 You can also find an on-line pseudopotential generator_ from the
 OCTOPUS code.
+
+.. _SIMUNE: https://www.simuneatomistics.com/siesta-pro/siesta-pseudos-and-basis-database/
 
 .. _generator: http://www.tddft.org/programs/octopus/wiki/index.php/Pseudopotentials
 

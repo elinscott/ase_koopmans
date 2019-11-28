@@ -18,17 +18,21 @@ class MyEncoder(json.JSONEncoder):
                 d['__ase_objtype__'] = obj.ase_objtype
 
             return d
-        if isinstance(obj, np.ndarray) or hasattr(obj, '__array__'):
-            if obj.dtype == complex:
-                return {'__complex_ndarray__': (obj.real.tolist(),
-                                                obj.imag.tolist())}
-            return obj.tolist()
+        if isinstance(obj, np.ndarray):
+            flatobj = obj.ravel()
+            if np.iscomplexobj(obj):
+                flatobj.dtype = obj.real.dtype
+            return {'__ndarray__': (obj.shape,
+                                    obj.dtype.name,
+                                    flatobj.tolist())}
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.bool_):
             return bool(obj)
         if isinstance(obj, datetime.datetime):
             return {'__datetime__': obj.isoformat()}
+        if isinstance(obj, complex):
+            return {'__complex__': (obj.real, obj.imag)}
         return json.JSONEncoder.default(self, obj)
 
 
@@ -39,6 +43,14 @@ def object_hook(dct):
     if '__datetime__' in dct:
         return datetime.datetime.strptime(dct['__datetime__'],
                                           '%Y-%m-%dT%H:%M:%S.%f')
+
+    if '__complex__' in dct:
+        return complex(*dct['__complex__'])
+
+    if '__ndarray__' in dct:
+        return create_ndarray(*dct['__ndarray__'])
+
+    # No longer used (only here for backwards compatibility):
     if '__complex_ndarray__' in dct:
         r, i = (np.array(x) for x in dct['__complex_ndarray__'])
         return r + i * 1j
@@ -49,6 +61,17 @@ def object_hook(dct):
         return create_ase_object(objtype, dct)
 
     return dct
+
+
+
+def create_ndarray(shape, dtype, data):
+    """Create ndarray from shape, dtype and flattened data."""
+    array = np.empty(shape, dtype=dtype)
+    flatbuf = array.ravel()
+    if np.iscomplexobj(array):
+        flatbuf.dtype = array.real.dtype
+    flatbuf[:] = data
+    return array
 
 
 def create_ase_object(objtype, dct):
@@ -67,6 +90,9 @@ def create_ase_object(objtype, dct):
     elif objtype == 'bandpath':
         from ase.dft.kpoints import BandPath
         obj = BandPath(path=dct.pop('labelseq'), **dct)
+    elif objtype == 'atoms':
+        from ase import Atoms
+        obj = Atoms.fromdict(dct)
     else:
         raise ValueError('Do not know how to decode object type {} '
                          'into an actual object'.format(objtype))
@@ -103,13 +129,16 @@ def numpyfy(obj):
     return obj
 
 
-def decode(txt):
-    return numpyfy(mydecode(txt))
+def decode(txt, always_array=True):
+    obj = mydecode(txt)
+    if always_array:
+        obj = numpyfy(obj)
+    return obj
 
 
 @reader
-def read_json(fd):
-    dct = decode(fd.read())
+def read_json(fd, always_array=True):
+    dct = decode(fd.read(), always_array=always_array)
     return dct
 
 

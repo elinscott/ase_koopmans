@@ -8,7 +8,7 @@ from ase.calculators.calculator import compare_atoms
 # consistent with stacking.
 
 d = _all_surface_functions()
-exclude = {'mx2'}  # mx2 is not like the others
+exclude = {'mx2', 'graphene'}  # mx2 and graphene are not like the others
 
 for name in sorted(d):
     if name in exclude:

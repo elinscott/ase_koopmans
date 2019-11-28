@@ -5,6 +5,7 @@ import sys
 import ase.units as units
 # ase.parallel imported in __init__
 
+
 class MDLogger:
     """Class for logging molecular dynamics simulations.
 
@@ -24,7 +25,7 @@ class MDLogger:
     def __init__(self, dyn, atoms, logfile, header=True, stress=False,
                  peratom=False, mode="a"):
         import ase.parallel
-        if ase.parallel.rank > 0:
+        if ase.parallel.world.rank > 0:
             logfile="/dev/null"  # Only log on master
         if hasattr(dyn, "get_time"):
             self.dyn = weakref.proxy(dyn)
@@ -72,7 +73,7 @@ class MDLogger:
         self.fmt += "\n"
         if header:
             self.logfile.write(self.hdr+"\n")
-            
+
     def __del__(self):
         self.close()
 
@@ -95,7 +96,7 @@ class MDLogger:
             dat = ()
         dat += (epot+ekin, epot, ekin, temp)
         if self.stress:
-            dat += tuple(self.atoms.get_stress() / units.GPa)
+            dat += tuple(self.atoms.get_stress(include_ideal_gas=True) / units.GPa)
         self.logfile.write(self.fmt % dat)
         self.logfile.flush()
-        
+

@@ -1,9 +1,9 @@
-from __future__ import print_function, division
 import atexit
 import functools
 import pickle
 import sys
 import time
+import warnings
 
 import numpy as np
 
@@ -25,7 +25,7 @@ def get_txt(txt, rank):
         return devnull
 
 
-def paropen(name, mode='r', buffering=-1):
+def paropen(name, mode='r', buffering=-1, encoding=None):
     """MPI-safe version of open function.
 
     In read mode, the file is opened on all nodes.  In write and
@@ -34,7 +34,7 @@ def paropen(name, mode='r', buffering=-1):
     """
     if world.rank > 0 and mode[0] != 'r':
         name = '/dev/null'
-    return open(name, mode, buffering)
+    return open(name, mode, buffering, encoding)
 
 
 def parprint(*args, **kwargs):
@@ -69,6 +69,36 @@ class DummyMPI:
 
     def barrier(self):
         pass
+
+
+class MPI:
+    """Wrapper for MPI world object.
+
+    Decides at runtime (after all imports) which one to use:
+
+    * MPI4Py
+    * GPAW
+    * a dummy implementation for serial runs
+
+    """
+    def __init__(self):
+        self.comm = None
+
+    def __getattr__(self, name):
+        if self.comm is None:
+            self.comm = _get_comm()
+        return getattr(self.comm, name)
+
+
+def _get_comm():
+    """Get the correct MPI world object."""
+    if 'mpi4py' in sys.modules:
+        return MPI4PY()
+    if '_gpaw' in sys.modules:
+        import _gpaw
+        if hasattr(_gpaw, 'Communicator'):
+            return _gpaw.Communicator()
+    return DummyMPI()
 
 
 class MPI4PY:
@@ -126,6 +156,10 @@ class MPI4PY:
 
     def broadcast(self, a, root):
         b = self.comm.bcast(a, root=root)
+        if self.rank == root:
+            if np.isscalar(a):
+                return a
+            return
         return self._returnval(a, b)
 
 
@@ -136,33 +170,30 @@ if '_gpaw' in sys.builtin_module_names:
     # http://wiki.fysik.dtu.dk/gpaw
     import _gpaw
     world = _gpaw.Communicator()
-elif '_gpaw' in sys.modules:
-    # Same thing as above but for the module version
-    import _gpaw
-    if hasattr(_gpaw, 'Communicator'):
-        world = _gpaw.Communicator()
 elif '_asap' in sys.builtin_module_names:
     # Modern version of Asap
     # http://wiki.fysik.dtu.dk/asap
     # We cannot import asap3.mpi here, as that creates an import deadlock
     import _asap
     world = _asap.Communicator()
-elif 'asapparallel3' in sys.modules:
-    # Older version of Asap
-    import asapparallel3
-    world = asapparallel3.Communicator()
-elif 'Scientific_mpi' in sys.modules:
-    from Scientific.MPI import world
+
+# Check if MPI implementation has been imported already:
+elif '_gpaw' in sys.modules:
+    # Same thing as above but for the module version
+    import _gpaw
+    try:
+        world = _gpaw.Communicator()
+    except AttributeError:
+        pass
 elif 'mpi4py' in sys.modules:
     world = MPI4PY()
 
 if world is None:
-    # This is a standard Python interpreter:
-    world = DummyMPI()
+    world = MPI()
 
-rank = world.rank
-size = world.size
-barrier = world.barrier
+
+def barrier():
+    world.barrier()
 
 
 def broadcast(obj, root=0, comm=world):
@@ -193,12 +224,10 @@ def parallel_function(func):
     a self.serial = True.
     """
 
-    if world.size == 1:
-        return func
-
     @functools.wraps(func)
     def new_func(*args, **kwargs):
-        if (args and getattr(args[0], 'serial', False) or
+        if (world.size == 1 or
+            args and getattr(args[0], 'serial', False) or
             not kwargs.pop('parallel', True)):
             # Disable:
             return func(*args, **kwargs)
@@ -226,12 +255,10 @@ def parallel_generator(generator):
     a self.serial = True.
     """
 
-    if world.size == 1:
-        return generator
-
     @functools.wraps(generator)
     def new_generator(*args, **kwargs):
-        if (args and getattr(args[0], 'serial', False) or
+        if (world.size == 1 or
+            args and getattr(args[0], 'serial', False) or
             not kwargs.pop('parallel', True)):
             # Disable:
             for result in generator(*args, **kwargs):
@@ -265,7 +292,7 @@ def register_parallel_cleanup_function():
 
     This will terminate the processes on the other nodes."""
 
-    if size == 1:
+    if world.size == 1:
         return
 
     def cleanup(sys=sys, time=time, world=world):
@@ -304,3 +331,18 @@ def distribute_cpus(size, comm):
     mycomm = comm.new_communicator(ranks)
 
     return mycomm, comm.size // size, tasks_rank
+
+
+class ParallelModuleWrapper:
+    def __getattr__(self, name):
+        if name == 'rank' or name == 'size':
+            warnings.warn('ase.parallel.{name} has been deprecated.  '
+                          'Please use ase.parallel.world.{name} instead.'
+                          .format(name=name),
+                          FutureWarning)
+            return getattr(world, name)
+        return getattr(_parallel, name)
+
+
+_parallel = sys.modules['ase.parallel']
+sys.modules['ase.parallel'] = ParallelModuleWrapper()

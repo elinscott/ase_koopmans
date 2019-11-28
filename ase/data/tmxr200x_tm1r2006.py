@@ -1,3 +1,4 @@
+# flake8: noqa
 # Computer generated code! Hands off!
 # Generated: 2011-08-30
 from numpy import array

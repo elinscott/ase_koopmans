@@ -164,8 +164,23 @@ def read_vasp(filename='CONTCAR'):
         numofatoms = numofatoms[:np.arange(len(numofatoms))[commentcheck][0]]
 
     if not vasp5:
-        atomtypes = line1.split()
-
+        # Split the comment line (first in the file) into words and 
+        # try to compose a list of chemical symbols
+        from ase.formula import Formula
+        import re
+        atomtypes = []
+        for word in line1.split():
+            word_without_delims = re.sub(r"-|_|,|\.|=|[0-9]|^", "", word)
+            if len(word_without_delims) < 1:
+                continue
+            try:
+                atomtypes.extend(list(Formula(word_without_delims)))
+            except ValueError:
+                #print(atomtype, e, 'is comment')
+                pass
+        # Now the list of chemical symbols atomtypes must be formed.
+        # For example: atomtypes = ['Pd', 'C', 'O']
+        
         numsyms = len(numofatoms)
         if len(atomtypes) < numsyms:
             # First line in POSCAR/CONTCAR didn't contain enough symbols.
@@ -323,7 +338,7 @@ def _read_outcar_frame(lines, header_data):
                 parts = list(map(float, cl(lines[n + i + nskip]).split()))
                 positions[i] = parts[0:3]
                 forces[i] = parts[3:6]
-            atoms.set_positions(positions)
+            atoms.set_positions(positions, apply_constraint=False)
         elif 'E-fermi :' in line:
             parts = line.split()
             efermi = float(parts[2])
@@ -701,10 +716,11 @@ def read_vasp_xml(filename='vasprun.xml', index=-1):
                                        constraint=constraints,
                                        pbc=True)
 
-                elif elem.tag=='dipole':
+                elif elem.tag == 'dipole':
                     dblock = elem.find('v[@name="dipole"]')
                     if dblock is not None:
-                        dipole = np.array([float(val) for val in dblock.text.split()])
+                        dipole = np.array([float(val)
+                                           for val in dblock.text.split()])
 
             elif event == 'start' and elem.tag == 'calculation':
                 calculation.append(elem)
@@ -775,12 +791,12 @@ def read_vasp_xml(filename='vasprun.xml', index=-1):
         if lastdipole is not None:
             dblock = lastdipole.find('v[@name="dipole"]')
             if dblock is not None:
-                dipole = np.zeros((1,3), dtype=float)
+                dipole = np.zeros((1, 3), dtype=float)
                 dipole = np.array([float(val) for val in dblock.text.split()])
 
         dblock = step.find('dipole/v[@name="dipole"]')
         if dblock is not None:
-            dipole = np.zeros((1,3), dtype=float)
+            dipole = np.zeros((1, 3), dtype=float)
             dipole = np.array([float(val) for val in dblock.text.split()])
 
         efermi = step.find('dos/i[@name="efermi"]')

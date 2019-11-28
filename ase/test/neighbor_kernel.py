@@ -1,4 +1,4 @@
-from __future__ import division
+# flake8: noqa
 
 import numpy as np
 

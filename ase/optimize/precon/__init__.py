@@ -23,7 +23,6 @@ Optional dependencies
       invesion of the preconditioner, again important for large systems.
 """
 
-from __future__ import print_function
 
 from ase.optimize.precon.precon import Precon, Exp, C1, Pfrommer, FF, Exp_FF
 from ase.optimize.precon.lbfgs import PreconLBFGS

@@ -1,5 +1,8 @@
 .. module:: ase.calculators.vasp.vasp2
 
+.. _vasp2-calculator:
+
+
 ===========
 VASP 2.0
 ===========
@@ -16,7 +19,7 @@ such as :class:`~ase.dft.band_structure.BandStructure`.
 For a general introduction please refer to the :mod:`~ase.calculators.vasp` calculator
 documentation, as this is just a list of things which have changed.
 
-.. _VASP: http://cms.mpi.univie.ac.at/vasp/
+.. _VASP: https://cms.mpi.univie.ac.at/vasp/
 
 .. warning::
    This calculator is currently in BETA testing. If you are not comfortable
@@ -28,7 +31,7 @@ documentation, as this is just a list of things which have changed.
    on the `ASE github`_ or on the `ASE IRC`_.
 
 .. _ASE github: https://gitlab.com/ase/ase
-.. _ASE IRC: http://webchat.freenode.net/?randomnick=0&channels=ase
+.. _ASE IRC: https://webchat.freenode.net/#ase?nick=Guest_?
 
 Environment variables
 =====================
@@ -71,7 +74,7 @@ VASP specific keywords.
 
 
 .. _VASP calculator: vasp.html#vasp-calculator
-.. _VASP manual: http://cms.mpi.univie.ac.at/vasp/vasp/vasp.html
+.. _VASP manual: https://cms.mpi.univie.ac.at/vasp/vasp/vasp.html
 
 .. autoclass:: Vasp2
 
@@ -203,7 +206,7 @@ by using the ``restart`` keyword, in a second script
 	calc_load = Vasp2(restart=True, directory=mydir)
 
 	bs = calc_load.band_structure() # ASE Band structure object
-	bs.plot(emin=-13)               # Plot the band structure
+	bs.plot(emin=-13, show=True)    # Plot the band structure
 
 Which results in the following image
 

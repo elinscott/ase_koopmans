@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 """An experimental package for making plots during a simulation.
 
 A PrimiPlotter can plot a list of atoms on one or more output devices.

@@ -1,6 +1,5 @@
 """ASE LAMMPS Calculator Library Version"""
 
-from __future__ import print_function
 
 import ctypes
 import operator
@@ -14,6 +13,7 @@ from ase.data import (atomic_numbers as ase_atomic_numbers,
                       atomic_masses as ase_atomic_masses)
 from ase.utils import basestring
 from ase.calculators.lammps import convert
+from ase.geometry import wrap_positions
 
 # TODO
 # 1. should we make a new lammps object each time ?
@@ -311,11 +311,12 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
         self.lmp.command(cell_cmd)
 
-    def set_lammps_pos(self, atoms, wrap=True):
-        if wrap:
-            atoms.wrap()
-
-        pos = convert(atoms.get_positions(), "distance", "ASE", self.units)
+    def set_lammps_pos(self, atoms):
+        # Create local copy of positions that are wrapped along any periodic
+        # directions
+        pos = wrap_positions(atoms.get_positions(), atoms.get_cell(),
+                atoms.get_pbc())
+        pos = convert(pos, "distance", "ASE", self.units)
 
         # If necessary, transform the positions to new coordinate system
         if self.coord_transform is not None:

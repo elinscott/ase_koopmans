@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 #!/usr/bin/env python3
 
 '''

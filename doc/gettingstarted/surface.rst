@@ -1,6 +1,5 @@
 .. _surface:
 
-================================
 Introduction: Nitrogen on copper
 ================================
 
@@ -30,7 +29,6 @@ run the script::
 
 Please read below what the script does.
 
------
 Atoms
 -----
 
@@ -49,22 +47,8 @@ common crystal structures. Let us make a Cu (111) surface::
 >>> from ase.build import fcc111
 >>> slab = fcc111('Cu', size=(4,4,2), vacuum=10.0)
 
-
-
------------
-Calculators
------------
-
-Many :mod:`ase.calculators` can be used with ASE, including
-:mod:`~ase.calculators.emt`, Asap_, Dacapo_, GPAW_, Abinit_, Vasp_.
-See the ASE home page for the full list.
-
-.. _Asap: http://wiki.fysik.dtu.dk/asap
-.. _Dacapo: http://wiki.fysik.dtu.dk/dacapo
-.. _GPAW: http://wiki.fysik.dtu.dk/gpaw
-.. _Siesta: http://www.icmab.es/siesta
-.. _Abinit: http://www.abinit.org
-.. _Vasp: http://cms.mpi.univie.ac.at/vasp
+Adding calculator
+-----------------
 
 In this overview we use the effective medium theory (EMT) calculator,
 as it is very fast and hence useful for getting started.
@@ -83,8 +67,6 @@ the :meth:`~ase.Atoms.get_potential_energy` method from the
 >>> e_slab = slab.get_potential_energy()
 >>> e_N2 = molecule.get_potential_energy()
 
-
---------------------
 Structure relaxation
 --------------------
 
@@ -121,7 +103,6 @@ some ``fmax``::
   and other functionality which should be considered when performing
   expensive relaxations.
 
-------------
 Input-output
 ------------
 
@@ -158,7 +139,6 @@ doing::
 >>> read('slab.traj', 0)   # first configuration
 
 
--------------
 Visualization
 -------------
 

@@ -1,4 +1,3 @@
-from __future__ import division
 from ase.utils import basestring
 import re
 import warnings
@@ -206,6 +205,7 @@ class BandPath:
 
         self.cell = cell = Cell.new(cell)
         assert cell.shape == (3, 3)
+        kpts = np.asarray(kpts)
         assert kpts.ndim == 2 and kpts.shape[1] == 3
         self.icell = self.cell.reciprocal()
         self.kpts = kpts
