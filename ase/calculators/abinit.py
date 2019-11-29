@@ -135,10 +135,14 @@ class Abinit(FileIOCalculator):
 
     def read_results(self):
         filename = self.label + '.txt'
-        from ase.io.abinit import read_abinit_out
+        from ase.io.abinit import read_abinit_out, read_abinit_log
+        self.results = {}
         with open(filename) as fd:
-            results = read_abinit_out(fd, self.label)
-            self.results = results
+            results = read_abinit_out(fd)
+            self.results.update(results)
+        with open(self.label + '.log') as fd:
+            results = read_abinit_log(fd)
+            self.results.update(results)
 
     def initialize(self, atoms, raise_exception=True):
 
@@ -240,7 +244,7 @@ class Abinit(FileIOCalculator):
         return self.nelect
 
     def get_number_of_bands(self):
-        return self.nband
+        return self.results['nbands']
 
     def get_kpts_info(self, kpt=0, spin=0, mode='eigenvalues'):
         return self.read_kpts_info(kpt, spin, mode)
