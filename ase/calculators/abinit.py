@@ -22,15 +22,6 @@ def write_files_file(fd, prefix, ppp_list):
     fd.write('%s\n' % (prefix + '.txt'))  # output
     fd.write('%s\n' % (prefix + 'i'))  # input
     fd.write('%s\n' % (prefix + 'o'))  # output
-
-    # XXX:
-    # scratch files
-    #scratch = self.scratch
-    #if scratch is None:
-    #    scratch = dir
-    #if not os.path.exists(scratch):
-    #    os.makedirs(scratch)
-    #fd.write('%s\n' % (os.path.join(scratch, prefix + '.abinit')))
     fd.write('%s\n' % (prefix + '.abinit'))
     # Provide the psp files
     for ppp in ppp_list:
@@ -58,7 +49,7 @@ class Abinit(FileIOCalculator):
         pps='fhi')
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label='abinit', atoms=None, scratch=None, **kwargs):
+                 label='abinit', atoms=None, **kwargs):
         """Construct ABINIT-calculator object.
 
         Parameters
@@ -77,10 +68,7 @@ class Abinit(FileIOCalculator):
 
         """
 
-        self.scratch = scratch
-
         self.species = []
-        self.ppp_list = []
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
@@ -102,10 +90,10 @@ class Abinit(FileIOCalculator):
                 self.initialize(atoms, raise_exception=raise_exception)
         except Exception as e:
             print(e, '... but I continue to complete the abinit.in')
-            pass
 
+        ppp = self.get_ppp_list(self.species, atoms, raise_exception)
         with open(self.label + '.files', 'w') as fd:
-            write_files_file(fd, self.prefix, self.ppp_list)
+            write_files_file(fd, self.prefix, ppp)
 
         # Abinit will write to label.txtA if label.txt already exists,
         # so we remove it if it's there:
@@ -148,8 +136,6 @@ class Abinit(FileIOCalculator):
 
         self.species = list(set(atoms.get_atomic_numbers()))
         self.spinpol = atoms.get_initial_magnetic_moments().any()
-        self.ppp_list = self.get_ppp_list(self.species, atoms, raise_exception)
-
 
     def get_ppp_list(self, species, atoms, raise_exception):
 
