@@ -10,10 +10,8 @@ import re
 import numpy as np
 
 import ase.units
-
 from ase import Atoms
 from ase.utils import reader, writer
-from ase.io.utils import ImageIterator, ImageChunk
 
 
 __all__ = ['read_vasp', 'read_vasp_out', 'iread_vasp_out',
@@ -884,6 +882,7 @@ def write_vasp_xdatcar(f, images, label=''):
         # and we already wrote the first block.
         _write_xdatcar_config(f, image, i + 2)
 
+
 def _write_xdatcar_config(f, atoms, index):
     """Write a block of positions for XDATCAR file
 
@@ -900,6 +899,7 @@ def _write_xdatcar_config(f, atoms, index):
         f.write(' ')
         f.write(' '.join([float_string.format(x) for x in row]))
         f.write('\n')
+
 
 def _symbol_count_from_symbols(symbols):
     """Reduce list of chemical symbols into compact VASP notation
@@ -923,6 +923,7 @@ def _symbol_count_from_symbols(symbols):
     sc.append((psym, count))
     return sc
 
+
 def _write_symbol_count(f, sc, vasp5=True):
     """Write the symbols and numbers block for POSCAR or XDATCAR
 
@@ -945,6 +946,7 @@ def _write_symbol_count(f, sc, vasp5=True):
     for _, count in sc:
         f.write(' {:3d}'.format(count))
     f.write('\n')
+
 
 @writer
 def write_vasp(filename, atoms, label='', direct=False, sort=None,
