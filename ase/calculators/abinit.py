@@ -135,79 +135,10 @@ class Abinit(FileIOCalculator):
 
     def read_results(self):
         filename = self.label + '.txt'
-        text = open(filename).read().lower()
-
-        for line in iter(text.split('\n')):
-            if line.rfind('error') > -1 or line.rfind('was not enough scf cycles to converge') > -1:
-                raise ReadError(line)
-            if line.rfind('natom  ') > -1:
-                natoms = int(line.split()[-1])
-
-        lines = iter(text.split('\n'))
-        # Stress:
-        # Printed in the output in the following format [Hartree/Bohr^3]:
-        # sigma(1 1)=  4.02063464E-04  sigma(3 2)=  0.00000000E+00
-        # sigma(2 2)=  4.02063464E-04  sigma(3 1)=  0.00000000E+00
-        # sigma(3 3)=  4.02063464E-04  sigma(2 1)=  0.00000000E+00
-        for line in lines:
-            if line.rfind(
-                'cartesian components of stress tensor (hartree/bohr^3)') > -1:
-                stress = np.empty(6)
-                for i in range(3):
-                    entries = next(lines).split()
-                    stress[i] = float(entries[2])
-                    stress[i + 3] = float(entries[5])
-                self.results['stress'] = stress * Hartree / Bohr**3
-                break
-        else:
-            raise RuntimeError
-
-        # Energy [Hartree]:
-        # Warning: Etotal could mean both electronic energy and free energy!
-        etotal = None
-        efree = None
-        if 'PAW method is used'.lower() in text:  # read DC energy according to M. Torrent
-            for line in iter(text.split('\n')):
-                if line.rfind('>>>>> internal e=') > -1:
-                    etotal = float(line.split('=')[-1])*Hartree  # second occurrence!
-            for line in iter(text.split('\n')):
-                if line.rfind('>>>> etotal (dc)=') > -1:
-                    efree = float(line.split('=')[-1])*Hartree
-        else:
-            for line in iter(text.split('\n')):
-                if line.rfind('>>>>> internal e=') > -1:
-                    etotal = float(line.split('=')[-1])*Hartree  # first occurrence!
-                    break
-            for line in iter(text.split('\n')):
-                if line.rfind('>>>>>>>>> etotal=') > -1:
-                    efree = float(line.split('=')[-1])*Hartree
-        if efree is None:
-            raise RuntimeError('Total energy not found')
-        if etotal is None:
-            etotal = efree
-
-        # Energy extrapolated to zero Kelvin:
-        self.results['energy'] = (etotal + efree) / 2
-        self.results['free_energy'] = efree
-
-        # Forces:
-        for line in lines:
-            if line.rfind('cartesian forces (ev/angstrom) at end:') > -1:
-                forces = []
-                for i in range(natoms):
-                    forces.append(np.array(
-                            [float(f) for f in next(lines).split()[1:]]))
-                self.results['forces'] = np.array(forces)
-                break
-        else:
-            raise RuntimeError
-        #
-        self.width = self.read_electronic_temperature()
-        self.nband = self.read_number_of_bands()
-        self.niter = self.read_number_of_iterations()
-        self.nelect = self.read_number_of_electrons()
-        self.results['magmom'] = self.read_magnetic_moment()
-
+        from ase.io.abinit import read_abinit_out
+        with open(filename) as fd:
+            results = read_abinit_out(fd, self.label)
+            self.results = results
 
     def initialize(self, atoms, raise_exception=True):
 
@@ -302,44 +233,14 @@ class Abinit(FileIOCalculator):
     def get_number_of_iterations(self):
         return self.niter
 
-    def read_number_of_iterations(self):
-        niter = None
-        for line in open(self.label + '.txt'):
-            if line.find(' At SCF step') != -1: # find the last iteration number
-                niter = int(line.split()[3].rstrip(','))
-        return niter
-
     def get_electronic_temperature(self):
         return self.width * Hartree
-
-    def read_electronic_temperature(self):
-        width = None
-        # only in log file!
-        for line in open(self.label + '.log'):  # find last one
-            if line.find('tsmear') != -1:
-                width = float(line.split()[1].strip())
-        return width
 
     def get_number_of_electrons(self):
         return self.nelect
 
-    def read_number_of_electrons(self):
-        nelect = None
-        # only in log file!
-        for line in open(self.label + '.log'):  # find last one
-            if line.find('with nelect') != -1:
-                nelect = float(line.split('=')[1].strip())
-        return nelect
-
     def get_number_of_bands(self):
         return self.nband
-
-    def read_number_of_bands(self):
-        nband = None
-        for line in open(self.label + '.txt'): # find last one
-            if line.find('     nband') != -1: # nband, or nband1, nband*
-                nband = int(line.split()[-1].strip())
-        return nband
 
     def get_kpts_info(self, kpt=0, spin=0, mode='eigenvalues'):
         return self.read_kpts_info(kpt, spin, mode)
@@ -359,16 +260,6 @@ class Abinit(FileIOCalculator):
     def get_number_of_spins(self):
         return 1 + int(self.spinpol)
 
-    def read_magnetic_moment(self):
-        magmom = None
-        if not self.get_spin_polarized():
-            magmom = 0.0
-        else: # only for spinpolarized system Magnetisation is printed
-            for line in open(self.label + '.txt'):
-                if line.find('Magnetisation') != -1: # last one
-                    magmom = float(line.split('=')[-1].strip())
-        return magmom
-
     def get_fermi_level(self):
         return self.read_fermi()
 
@@ -377,121 +268,3 @@ class Abinit(FileIOCalculator):
 
     def get_occupations(self, kpt=0, spin=0):
         return self.get_kpts_info(kpt, spin, 'occupations')
-
-    def read_fermi(self):
-        """Method that reads Fermi energy in Hartree from the output file
-        and returns it in eV"""
-        E_f=None
-        filename = self.label + '.txt'
-        text = open(filename).read().lower()
-        assert 'error' not in text
-        for line in iter(text.split('\n')):
-            if line.rfind('fermi (or homo) energy (hartree) =') > -1:
-                E_f = float(line.split('=')[1].strip().split()[0])
-        return E_f*Hartree
-
-    def read_kpts_info(self, kpt=0, spin=0, mode='eigenvalues'):
-        """ Returns list of last eigenvalues, occupations, kpts weights, or
-        kpts coordinates for given kpt and spin.
-        Due to the way of reading output the spins are exchanged in spin-polarized case.  """
-        # output may look like this (or without occupation entries); 8 entries per line:
-        #
-        #  Eigenvalues (hartree) for nkpt=  20  k points:
-        # kpt#   1, nband=  3, wtk=  0.01563, kpt=  0.0625  0.0625  0.0625 (reduced coord)
-        #  -0.09911   0.15393   0.15393
-        #      occupation numbers for kpt#   1
-        #   2.00000   0.00000   0.00000
-        # kpt#   2, nband=  3, wtk=  0.04688, kpt=  0.1875  0.0625  0.0625 (reduced coord)
-        # ...
-        #
-        assert mode in ['eigenvalues', 'occupations', 'ibz_k_points',
-                        'k_point_weights'], mode
-        if self.get_spin_polarized():
-            spin = {0: 1, 1: 0}[spin]
-        if spin == 0:
-            spinname = ''
-        else:
-            spinname = 'SPIN UP'.lower()
-        # number of lines of eigenvalues/occupations for a kpt
-        nband = self.get_number_of_bands()
-        n_entries_float = 8  # float entries per line
-        n_entry_lines = max(1, int((nband - 0.1) / n_entries_float) + 1)
-
-        filename = self.label + '.txt'
-        text = open(filename).read().lower()
-        assert 'error' not in text
-        lines = text.split('\n')
-        text_list = []
-        # find the beginning line of last eigenvalues
-        contains_eigenvalues = 0
-        for n, line in enumerate(lines):
-            if spin == 0:
-                if line.rfind('eigenvalues (hartree) for nkpt') > -1:
-                #if line.rfind('eigenvalues (   ev  ) for nkpt') > -1: #MDTMP
-                    contains_eigenvalues = n
-            else:
-                if (line.rfind('eigenvalues (hartree) for nkpt') > -1 and
-                    line.rfind(spinname) > -1): # find the last 'SPIN UP'
-                        contains_eigenvalues = n
-        # find the end line of eigenvalues starting from contains_eigenvalues
-        text_list = [lines[contains_eigenvalues]]
-        for line in lines[contains_eigenvalues + 1:]:
-            text_list.append(line)
-            # find a blank line or eigenvalues of second spin
-            if (not line.strip() or
-                line.rfind('eigenvalues (hartree) for nkpt') > -1):
-                break
-        # remove last (blank) line
-        text_list = text_list[:-1]
-
-        assert contains_eigenvalues, 'No eigenvalues found in the output'
-
-        n_kpts = int(text_list[0].split('nkpt=')[1].strip().split()[0])
-
-        # get rid of the "eigenvalues line"
-        text_list = text_list[1:]
-
-        # join text eigenvalues description with eigenvalues
-        # or occupation numbers for kpt# with occupations
-        contains_occupations = False
-        for line in text_list:
-            if line.rfind('occupation numbers') > -1:
-                contains_occupations = True
-                break
-        if mode == 'occupations':
-            assert contains_occupations, 'No occupations found in the output'
-
-        if contains_occupations:
-            range_kpts = 2*n_kpts
-        else:
-            range_kpts = n_kpts
-
-        values_list = []
-        offset = 0
-        for kpt_entry in range(range_kpts):
-            full_line = ''
-            for entry_line in range(n_entry_lines+1):
-                full_line = full_line+str(text_list[offset+entry_line])
-            first_line = text_list[offset]
-            if mode == 'occupations':
-                if first_line.rfind('occupation numbers') > -1:
-                    # extract numbers
-                    full_line = [float(v) for v in full_line.split('#')[1].strip().split()[1:]]
-                    values_list.append(full_line)
-            elif mode in ['eigenvalues', 'ibz_k_points', 'k_point_weights']:
-                if first_line.rfind('reduced coord') > -1:
-                    # extract numbers
-                    if mode == 'eigenvalues':
-                        full_line = [Hartree*float(v) for v in full_line.split(')')[1].strip().split()[:]]
-                        #full_line = [float(v) for v in full_line.split(')')[1].strip().split()[:]] #MDTMP
-                    elif mode == 'ibz_k_points':
-                        full_line = [float(v) for v in full_line.split('kpt=')[1].strip().split('(')[0].split()]
-                    else:
-                        full_line = float(full_line.split('wtk=')[1].strip().split(',')[0].split()[0])
-                    values_list.append(full_line)
-            offset = offset+n_entry_lines+1
-
-        if mode in ['occupations', 'eigenvalues']:
-            return np.array(values_list[kpt])
-        else:
-            return np.array(values_list)
