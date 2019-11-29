@@ -8,19 +8,6 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 from .parser import _define_pattern
 
 
-#_pattern_test_data = []
-#
-#
-#def _define_pattern(pattern, example, *args):
-#    """Accepts a regular expression pattern, as well as an example
-#    string that the pattern should match. Returns the compiled
-#    pattern. Additionally, stores the compiled pattern and the
-#    example string in pattern_test_data for unit testing."""
-#    regex = re.compile(pattern, *args)
-#    _pattern_test_data.append((regex, example))
-#    return regex
-
-
 # Matches the beginning of a GTO calculation
 _gauss_block = _define_pattern(
         r'^[\s]+NWChem (?:SCF|DFT) Module\n$',
@@ -29,7 +16,8 @@ _gauss_block = _define_pattern(
 
 # Matches the beginning of a plane wave calculation
 _pw_block = _define_pattern(
-        r'^[\s]+\*[\s]+NWPW (?:PSPW|BAND|PAW) Calculation[\s]+\*[\s]*\n$',
+        r'^[\s]+\*[\s]+NWPW (?:PSPW|BAND|PAW|Band Structure) Calculation'
+        r'[\s]+\*[\s]*\n$',
         "          *               NWPW PSPW Calculation              *\n")
 
 
@@ -434,7 +422,7 @@ def parse_pw_chunk(chunk):
     if atoms.cell:
         stress = _get_stress(chunk, atoms.cell)
 
-    kpts = _get_pw_kpts(chunk)
+    ibz_kpts, kpts = _get_pw_kpts(chunk)
 
     # NWChem does not calculate an energy extrapolated to the 0K limit,
     # so right now, energy and free_energy will be the same.
@@ -443,7 +431,8 @@ def parse_pw_chunk(chunk):
                                     efermi=efermi,
                                     free_energy=energy,
                                     forces=forces,
-                                    stress=stress)
+                                    stress=stress,
+                                    ibzkpts=ibz_kpts)
     calc.kpts = kpts
     atoms.calc = calc
     return atoms
@@ -523,7 +512,10 @@ _kpt_weight = _define_pattern(
 
 # Parse eigenvalues and occupancies from a plane wave calculation
 def _get_pw_kpts(chunk):
-    eval_blocks = _nwpw_eval_block.findall(chunk)
+    eval_blocks = []
+    for block in _nwpw_eval_block.findall(chunk):
+        if 'pathlength' not in block:
+            eval_blocks.append(block)
     if not eval_blocks:
         return []
     if 'virtual' in eval_blocks[-1]:
@@ -538,7 +530,7 @@ def _get_pw_kpts(chunk):
     for match in _kpt_weight.finditer(occ_block):
         index, weight = match.groups()
         kpts.set_weight(index, float(weight))
-    return kpts.to_singlepointkpts()
+    return kpts.to_ibz_kpts(), kpts.to_singlepointkpts()
 
 
 # Helper class for keeping track of kpoints and converting to
@@ -546,7 +538,12 @@ def _get_pw_kpts(chunk):
 class NWChemKpts:
     def __init__(self):
         self.data = dict()
+        self.ibz_kpts = dict()
         self.weights = dict()
+
+    def add_ibz_kpt(self, index, raw_kpt):
+        kpt = np.array([float(x.strip('>')) for x in raw_kpt.split()[1:4]])
+        self.ibz_kpts[index] = kpt
 
     def add_eval(self, index, spin, energy, occ):
         if index not in self.data:
@@ -557,6 +554,12 @@ class NWChemKpts:
 
     def set_weight(self, index, weight):
         self.weights[index] = weight
+
+    def to_ibz_kpts(self):
+        if not self.ibz_kpts:
+            return np.array([[0., 0., 0.]])
+        sorted_kpts = sorted(list(self.ibz_kpts.items()), key=lambda x: x[0])
+        return np.array(list(zip(*sorted_kpts))[1])
 
     def to_singlepointkpts(self):
         kpts = []
@@ -571,7 +574,9 @@ class NWChemKpts:
 # Extracts MO/band data from a pattern matched by _nwpw_eval_block above
 _kpt = _define_pattern(
         r'^[ \t]+Brillouin zone point:[ \t]+([\S]+)[ \t]*\n'
-        r'(?:^[ \t\S]*\n){3,4}'
+        r'^[ \t]+weight=[ \t]+([\S])+[ \t]*\n'
+        r'^[ \t]+k[ \t]+([ \t\S]+)\n'
+        r'(?:^[ \t\S]*\n){1,2}'
         r'^[ \t]+(?:virtual )?orbital energies:\n'
         r'((?:^(?:(?:[ \t]+[\S]+){3,4}){1,2}[ \t]*\n)+)',
         """\
@@ -593,7 +598,8 @@ _kpt = _define_pattern(
 # Extracts kpoints from a plane wave calculation
 def _extract_pw_kpts(chunk, kpts, default_occ):
     for match in _kpt.finditer(chunk):
-        index, orbitals = match.groups()
+        point, weight, raw_kpt, orbitals = match.groups()
+        index = int(point) - 1
         for line in orbitals.split('\n'):
             tokens = line.strip().split()
             if not tokens:
@@ -615,3 +621,5 @@ def _extract_pw_kpts(chunk, kpts, default_occ):
                 b_e = float(tokens[4]) * Hartree
                 b_o = float(tokens[7].split('=')[1])
             kpts.add_eval(index, 1, b_e, b_o)
+        kpts.set_weight(index, float(weight))
+        kpts.add_ibz_kpt(index, raw_kpt)

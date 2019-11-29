@@ -1,20 +1,19 @@
 import os
 import numpy as np
+from copy import deepcopy
+
+from ase.calculators.calculator import KPoints, kpts2kpts
 
 _special_kws = ['center', 'autosym', 'autoz', 'theory', 'basis', 'xc', 'task',
-                'set', 'symmetry', 'label', 'geompar', 'basispar']
+                'set', 'symmetry', 'label', 'geompar', 'basispar', 'kpts']
 
 _system_type = {1: 'polymer', 2: 'surface', 3: 'crystal'}
 
 
 def _get_geom(atoms, **params):
     geom_header = ['geometry units angstrom']
-    if not params.get('center', False):
-        geom_header.append('nocenter')
-    if not params.get('autosym', False):
-        geom_header.append('noautosym')
-    if not params.get('autoz', False):
-        geom_header.append('noautoz')
+    for geomkw in ['center', 'autosym', 'autoz']:
+        geom_header.append(geomkw if params.get(geomkw) else 'no' + geomkw)
     if 'geompar' in params:
         geom_header.append(params['geompar'])
     geom = [' '.join(geom_header)]
@@ -49,11 +48,11 @@ def _get_geom(atoms, **params):
         geom.append('  end')
 
     for i, atom in enumerate(atoms):
-        geom.append('{:>4} {:20.16e} {:20.16e} {:20.16e}'
+        geom.append('  {:<2} {:20.16e} {:20.16e} {:20.16e}'
                     ''.format(atom.symbol, *outpos[i]))
-        symm = params.get('symmetry')
-        if symm is not None:
-            geom.append('symmetry {}'.format(symm))
+    symm = params.get('symmetry')
+    if symm is not None:
+        geom.append('  symmetry {}'.format(symm))
     geom.append('end')
     return geom
 
@@ -84,6 +83,15 @@ _special_keypairs = [('nwpw', 'simulation_cell'),
                      ]
 
 
+def _format_brillouin_zone(array):
+    out = ['  brillouin_zone']
+    template = '    kvector' + ' {:20.16e}' * array.shape[1]
+    for row in array:
+        out.append(template.format(*row))
+    out.append('  end')
+    return out
+
+
 def _format_line(key, val):
     if val is None:
         return key
@@ -105,7 +113,10 @@ def _format_block(key, val, nindent=0):
     out = [prefix + key]
     for subkey, subval in val.items():
         if (key, subkey) in _special_keypairs:
-            out += _format_block(subkey, subval, nindent + 1)
+            if (key, subkey) == ('nwpw', 'brillouin_zone'):
+                out += _format_brillouin_zone(subval)
+            else:
+                out += _format_block(subkey, subval, nindent + 1)
         else:
             if isinstance(subval, dict):
                 subval = ' '.join([_format_line(a, b)
@@ -127,9 +138,11 @@ def _get_other(**params):
 def _get_set(**params):
     return ['set ' + _format_line(key, val) for key, val in params.items()]
 
+
 _gto_theories = ['tce', 'ccsd', 'mp2', 'tddft', 'scf', 'dft']
 _pw_theories = ['band', 'pspw', 'paw']
 _all_theories = _gto_theories + _pw_theories
+
 
 def _get_theory(**params):
     # Default: user-provided theory
@@ -201,13 +214,35 @@ def _update_mult(magmom_tot, **params):
     return params
 
 
+def _get_kpts(atoms, **params):
+    """Converts top-level 'kpts' argument to native keywords"""
+    kpts = params.get('kpts')
+    if kpts is None:
+        return params
+
+    nwpw = params.get('nwpw', dict())
+
+    if 'monkhorst-pack' in nwpw or 'brillouin_zone' in nwpw:
+        raise ValueError("Redundant k-points specified!")
+
+    if isinstance(kpts, KPoints):
+        nwpw['brillouin_zone'] = kpts.kpts
+    elif isinstance(kpts, dict):
+        if kpts.get('gamma', False) or 'size' not in kpts:
+            nwpw['brillouin_zone'] = kpts2kpts(kpts, atoms).kpts
+        else:
+            nwpw['monkhorst-pack'] = ' '.join(map(str, kpts['size']))
+    elif isinstance(kpts, np.ndarray):
+        nwpw['brillouin_zone'] = kpts
+    else:
+        nwpw['monkhorst-pack'] = ' '.join(map(str, kpts))
+
+    params['nwpw'] = nwpw
+    return params
+
+
 def write_nwchem_in(fd, atoms, properties=None, **params):
-    params = params.copy()
-    label = params.get('label', 'nwchem')
-    perm = os.path.abspath(params.get('perm', label))
-    scratch = os.path.abspath(params.get('scratch', label))
-    os.makedirs(perm, exist_ok=True)
-    os.makedirs(scratch, exist_ok=True)
+    params = deepcopy(params)
 
     if properties is None:
         properties = ['energy']
@@ -223,6 +258,8 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
             task = 'gradient'
         else:
             task = 'energy'
+
+    params = _get_kpts(atoms, **params)
 
     theory = _get_theory(**params)
     params['theory'] = theory
@@ -241,6 +278,9 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
     magmom_tot = int(atoms.get_initial_magnetic_moments().sum())
     params = _update_mult(magmom_tot, **params)
 
+    label = params.get('label', 'nwchem')
+    perm = os.path.abspath(params.get('perm', label))
+    scratch = os.path.abspath(params.get('scratch', label))
     out = ['title "{}"'.format(label),
            'permanent_dir {}'.format(perm),
            'scratch_dir {}'.format(scratch),

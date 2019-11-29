@@ -2,6 +2,8 @@
 
 http://www.nwchem-sw.org/
 """
+import os
+
 from ase import io
 from ase.calculators.calculator import FileIOCalculator
 
@@ -23,6 +25,14 @@ class NWChem(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
+
+        # Prepare perm and scratch directories
+        label = self.parameters.get('label', 'nwchem')
+        perm = os.path.abspath(self.parameters.get('perm', label))
+        scratch = os.path.abspath(self.parameters.get('scratch', label))
+        os.makedirs(perm, exist_ok=True)
+        os.makedirs(scratch, exist_ok=True)
+
         io.write(self.label + '.nwi', atoms, properties=properties,
                  label=self.label, **self.parameters)
 
