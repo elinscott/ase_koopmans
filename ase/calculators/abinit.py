@@ -17,6 +17,26 @@ from ase.calculators.calculator import FileIOCalculator, Parameters, kpts2mp, \
     ReadError
 
 
+def write_files_file(fd, prefix, ppp_list):
+    fd.write('%s\n' % (prefix + '.in'))  # input
+    fd.write('%s\n' % (prefix + '.txt'))  # output
+    fd.write('%s\n' % (prefix + 'i'))  # input
+    fd.write('%s\n' % (prefix + 'o'))  # output
+
+    # XXX:
+    # scratch files
+    #scratch = self.scratch
+    #if scratch is None:
+    #    scratch = dir
+    #if not os.path.exists(scratch):
+    #    os.makedirs(scratch)
+    #fd.write('%s\n' % (os.path.join(scratch, prefix + '.abinit')))
+    fd.write('%s\n' % (prefix + '.abinit'))
+    # Provide the psp files
+    for ppp in ppp_list:
+        fd.write('%s\n' % (ppp)) # psp file path
+
+
 keys_with_units = {
     'toldfe': 'eV',
     'tsmear': 'eV',
@@ -129,27 +149,8 @@ class Abinit(FileIOCalculator):
             print(e, '... but I continue to complete the abinit.in')
             pass
 
-        fh = open(self.label + '.files', 'w')
-
-        fh.write('%s\n' % (self.prefix + '.in'))  # input
-        fh.write('%s\n' % (self.prefix + '.txt'))  # output
-        fh.write('%s\n' % (self.prefix + 'i'))  # input
-        fh.write('%s\n' % (self.prefix + 'o'))  # output
-        
-        # XXX:
-        # scratch files
-        #scratch = self.scratch
-        #if scratch is None:
-        #    scratch = dir
-        #if not os.path.exists(scratch):
-        #    os.makedirs(scratch)
-        #fh.write('%s\n' % (os.path.join(scratch, prefix + '.abinit')))
-        fh.write('%s\n' % (self.prefix + '.abinit'))
-        # Provide the psp files
-        for ppp in self.ppp_list:
-            fh.write('%s\n' % (ppp)) # psp file path
-
-        fh.close()
+        with open(self.label + '.files', 'w') as fd:
+            write_files_file(fd, self.prefix, self.ppp_list)
 
         # Abinit will write to label.txtA if label.txt already exists,
         # so we remove it if it's there:
