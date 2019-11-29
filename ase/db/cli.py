@@ -324,7 +324,7 @@ def main(args):
     db.python = args.metadata_from_python_script
 
     if args.long:
-        db.meta = process_metadata(db, html=args.open_web_browser)
+        db.meta = process_metadata(db)
         row = db.get(query)
         summary = Summary(row, db.meta)
         summary.write()
@@ -332,10 +332,11 @@ def main(args):
 
     if args.open_web_browser:
         try:
-            import ase.db.app as app
+            import flask  # noqa
         except ImportError:
-            print('Please install Flask: pip install flask')
+            print('Please install Flask: python3 -m pip install flask')
             return
+        import ase.db.app as app
         app.databases['default'] = db
         app.initialize_databases()
         app.app.run(host='0.0.0.0', debug=True)
