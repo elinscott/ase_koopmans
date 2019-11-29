@@ -19,6 +19,7 @@ Git master branch
 
 * The image-dependent pair-potential (IDPP) interpolation scheme for connecting states---i.e., in a saddle-point search---has been moved into the method :func:`ase.neb.idpp_interpolate`. This method is a more feature-rich version that that accessible via :meth:`ase.neb.NEB.interpolate`.
 
+* Write support has been added for the Vasp 5 XDATCAR file format.
 
 Version 3.19.0
 ==============
@@ -33,6 +34,8 @@ General changes:
 * The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
   been deprecated.  Use ``world.rank`` and ``world.size`` instead
   (and ``from ase.parallel import world``).
+
+* Write support for Materials Studio xtd files.
 
 * ``atoms.set_masses('most_common')`` now sets the masses of each
   element according to most common isotope as stored in
