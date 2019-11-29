@@ -68,8 +68,6 @@ class Abinit(FileIOCalculator):
 
         """
 
-        self.species = []
-
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
 
@@ -91,7 +89,8 @@ class Abinit(FileIOCalculator):
         except Exception as e:
             print(e, '... but I continue to complete the abinit.in')
 
-        ppp = self.get_ppp_list(self.species, atoms, raise_exception)
+        species = list(set(atoms.numbers))
+        ppp = self.get_ppp_list(species, atoms, raise_exception)
         with open(self.label + '.files', 'w') as fd:
             write_files_file(fd, self.prefix, ppp)
 
@@ -106,7 +105,7 @@ class Abinit(FileIOCalculator):
 
         from ase.io.abinit import write_abinit_in
         with open(self.label + '.in', 'w') as fd:
-            write_abinit_in(fd, atoms, param, self.species)
+            write_abinit_in(fd, atoms, param, species)
 
     def read(self, label):
         """Read results from ABINIT's text-output file."""
@@ -133,8 +132,6 @@ class Abinit(FileIOCalculator):
             self.results.update(results)
 
     def initialize(self, atoms, raise_exception=True):
-
-        self.species = list(set(atoms.get_atomic_numbers()))
         self.spinpol = atoms.get_initial_magnetic_moments().any()
 
     def get_ppp_list(self, species, atoms, raise_exception):
