@@ -228,7 +228,7 @@ class Pourbaix:
             names.append(name)
 
         try:
-            from scipy.optimize import linprog_broken_maybe
+            from scipy.optimize import linprog#_broken_maybe
         except ImportError:
             from ase.utils._linprog import linprog
 
@@ -307,7 +307,7 @@ class Pourbaix:
 
     def colorfunction(self, U, pH, colors):
         coefs, energy = self.decompose(U, pH, verbose=False)
-        indices = tuple(sorted(np.where(abs(coefs) > 1e-7)[0]))
+        indices = tuple(sorted(np.where(abs(coefs) > 1e-3)[0]))
         color = colors.get(indices)
         if color is None:
             color = len(colors)
