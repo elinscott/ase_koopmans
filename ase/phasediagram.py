@@ -138,12 +138,18 @@ class Pourbaix:
             assert not kwargs
             kwargs = parse_formula(formula)[0]
 
+        if 'O' not in kwargs:
+            kwargs['O'] = 1
+        if 'H' not in kwargs:
+            kwargs['H'] = 1
+
         self.kT = units.kB * T
         self.references = []
         for name, energy in references:
             if name == 'O':
                 continue
             count, charge, aq = parse_formula(name)
+
             for symbol in count:
                 if aq:
                     if not (symbol in 'HO' or symbol in kwargs):
@@ -158,10 +164,10 @@ class Pourbaix:
 
         self.count = kwargs
 
-        if 'O' not in self.count:
-            self.count['O'] = 0
+        #if 'O' not in self.count:
+        #    self.count['O'] = 0
 
-        self.N = {'e-': 0, 'H': 1}
+        self.N = {'e-': 0}#, 'H': 1}
         for symbol in kwargs:
             if symbol not in self.N:
                 self.N[symbol] = len(self.N)
@@ -193,7 +199,8 @@ class Pourbaix:
         # First two equations are charge and number of hydrogens, and
         # the rest are the remaining species.
 
-        eq1 = [0, 0] + list(self.count.values())
+        # eq1 = [0, 0] + list(self.count.values())
+        eq1 = [0] + list(self.count.values())
         eq2 = []
         energies = []
         bounds = []
@@ -224,6 +231,7 @@ class Pourbaix:
             from scipy.optimize import linprog
         except ImportError:
             from ase.utils._linprog import linprog
+
         result = linprog(c=energies,
                          A_eq=np.transpose(eq2),
                          b_eq=eq1,
