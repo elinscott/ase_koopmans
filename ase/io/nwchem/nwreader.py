@@ -7,6 +7,12 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
                                          SinglePointKPoint)
 from .parser import _define_pattern
 
+# Note to the reader of this code: Here and below we use the function
+# _define_pattern from parser.py in this same directory to compile
+# regular expressions. These compiled expressions are stored along with
+# an example string that the expression should match in a list that
+# is used during tests (test/nwchem/nwchem_parser.py) to ensure that
+# the regular expressions are still working correctly.
 
 # Matches the beginning of a GTO calculation
 _gauss_block = _define_pattern(
