@@ -66,6 +66,8 @@ Git master branch
 
 * Added :mod:`~ase.calculators.mixing` module for the linear combination of arbitrary :mod:`~ase.calculators`.
 
+* Added :mod:`~ase.md.switch_langevin` module for thermodynamic integration via MD simulations.
+
 Version 3.18.1
 ==============
 
