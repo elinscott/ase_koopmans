@@ -155,8 +155,6 @@ keys_with_units = {
 import numpy as np
 from ase.calculators.calculator import kpts2mp
 def write_abinit_in(fd, atoms, param, species):
-    fh = fd
-    #fh = open(self.label + '.in', 'w')
     inp = {}
     inp.update(param)
     for key in ['xc', 'smearing', 'kpts', 'pps', 'raw']:
@@ -189,9 +187,9 @@ def write_abinit_in(fd, atoms, param, species):
     magmoms = atoms.get_initial_magnetic_moments()
     if magmoms.any():
         inp['nsppol'] = 2
-        fh.write('spinat\n')
+        fd.write('spinat\n')
         for n, M in enumerate(magmoms):
-            fh.write('%.14f %.14f %.14f\n' % (0, 0, M))
+            fd.write('%.14f %.14f %.14f\n' % (0, 0, M))
     else:
         inp['nsppol'] = 1
 
@@ -199,42 +197,42 @@ def write_abinit_in(fd, atoms, param, species):
         value = inp[key]
         unit = keys_with_units.get(key)
         if unit is None:
-            fh.write('%s %s\n' % (key, value))
+            fd.write('%s %s\n' % (key, value))
         else:
             if 'fs**2' in unit:
                 value /= fs**2
             elif 'fs' in unit:
                 value /= fs
-            fh.write('%s %e %s\n' % (key, value, unit))
+            fd.write('%s %e %s\n' % (key, value, unit))
 
     if param.raw is not None:
         for line in param.raw:
             if isinstance(line, tuple):
-                fh.write(' '.join(['%s' % x for x in line]) + '\n')
+                fd.write(' '.join(['%s' % x for x in line]) + '\n')
             else:
-                fh.write('%s\n' % line)
+                fd.write('%s\n' % line)
 
-    fh.write('#Definition of the unit cell\n')
-    fh.write('acell\n')
-    fh.write('%.14f %.14f %.14f Angstrom\n' % (1.0, 1.0, 1.0))
-    fh.write('rprim\n')
+    fd.write('#Definition of the unit cell\n')
+    fd.write('acell\n')
+    fd.write('%.14f %.14f %.14f Angstrom\n' % (1.0, 1.0, 1.0))
+    fd.write('rprim\n')
     if atoms.number_of_lattice_vectors != 3:
         raise RuntimeError('Abinit requires a 3D cell, but cell is {}'
                            .format(atoms.cell))
     for v in atoms.cell:
-        fh.write('%.14f %.14f %.14f\n' %  tuple(v))
+        fd.write('%.14f %.14f %.14f\n' %  tuple(v))
 
-    fh.write('chkprim 0 # Allow non-primitive cells\n')
+    fd.write('chkprim 0 # Allow non-primitive cells\n')
 
-    fh.write('#Definition of the atom types\n')
-    fh.write('ntypat %d\n' % (len(species)))
-    fh.write('znucl')
+    fd.write('#Definition of the atom types\n')
+    fd.write('ntypat %d\n' % (len(species)))
+    fd.write('znucl')
     for n, Z in enumerate(species):
-        fh.write(' %d' % (Z))
-    fh.write('\n')
-    fh.write('#Enumerate different atomic species\n')
-    fh.write('typat')
-    fh.write('\n')
+        fd.write(' %d' % (Z))
+    fd.write('\n')
+    fd.write('#Enumerate different atomic species\n')
+    fd.write('typat')
+    fd.write('\n')
     types = []
     for Z in atoms.numbers:
         for n, Zs in enumerate(species):
@@ -242,25 +240,25 @@ def write_abinit_in(fd, atoms, param, species):
                 types.append(n + 1)
     n_entries_int = 20  # integer entries per line
     for n, type in enumerate(types):
-        fh.write(' %d' % (type))
+        fd.write(' %d' % (type))
         if n > 1 and ((n % n_entries_int) == 1):
-            fh.write('\n')
-    fh.write('\n')
+            fd.write('\n')
+    fd.write('\n')
 
-    fh.write('#Definition of the atoms\n')
-    fh.write('xangst\n')
+    fd.write('#Definition of the atoms\n')
+    fd.write('xangst\n')
     for pos in atoms.positions:
-        fh.write('%.14f %.14f %.14f\n' %  tuple(pos))
+        fd.write('%.14f %.14f %.14f\n' %  tuple(pos))
 
     if 'kptopt' not in param:
         mp = kpts2mp(atoms, param.kpts)
-        fh.write('kptopt 1\n')
-        fh.write('ngkpt %d %d %d\n' % tuple(mp))
-        fh.write('nshiftk 1\n')
-        fh.write('shiftk\n')
-        fh.write('%.1f %.1f %.1f\n' % tuple((np.array(mp) + 1) % 2 * 0.5))
+        fd.write('kptopt 1\n')
+        fd.write('ngkpt %d %d %d\n' % tuple(mp))
+        fd.write('nshiftk 1\n')
+        fd.write('shiftk\n')
+        fd.write('%.1f %.1f %.1f\n' % tuple((np.array(mp) + 1) % 2 * 0.5))
 
-    fh.write('chkexit 1 # abinit.exit file in the running directory terminates after the current SCF\n')
+    fd.write('chkexit 1 # abinit.exit file in the running directory terminates after the current SCF\n')
 
 
 def write_abinit(filename, atoms, cartesian=False, long_format=True):
