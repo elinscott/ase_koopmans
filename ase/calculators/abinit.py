@@ -123,13 +123,6 @@ class Abinit(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
 
-    def check_state(self, atoms):
-        system_changes = FileIOCalculator.check_state(self, atoms)
-        # Ignore boundary conditions:
-        if 'pbc' in system_changes:
-            system_changes.remove('pbc')
-        return system_changes
-
     def set(self, **kwargs):
         changed_parameters = FileIOCalculator.set(self, **kwargs)
         if changed_parameters:
