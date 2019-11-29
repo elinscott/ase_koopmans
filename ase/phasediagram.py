@@ -228,7 +228,7 @@ class Pourbaix:
             names.append(name)
 
         try:
-            from scipy.optimize import linprog
+            from scipy.optimize import linprog_broken_maybe
         except ImportError:
             from ase.utils._linprog import linprog
 
