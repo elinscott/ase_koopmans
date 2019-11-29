@@ -10,6 +10,7 @@ import re
 import numpy as np
 
 import ase.units
+
 from ase import Atoms
 from ase.utils import reader, writer
 from ase.io.utils import ImageIterator, ImageChunk
@@ -17,7 +18,7 @@ from ase.io.utils import ImageIterator, ImageChunk
 
 __all__ = ['read_vasp', 'read_vasp_out', 'iread_vasp_out',
            'read_vasp_xdatcar', 'read_vasp_xml',
-           'write_vasp']
+           'write_vasp', 'write_vasp_xdatcar']
 
 # Denotes end of Ionic step for OUTCAR reading
 _OUTCAR_SCF_DELIM = 'FREE ENERGIE OF THE ION-ELECTRON SYSTEM'
@@ -164,7 +165,7 @@ def read_vasp(filename='CONTCAR'):
         numofatoms = numofatoms[:np.arange(len(numofatoms))[commentcheck][0]]
 
     if not vasp5:
-        # Split the comment line (first in the file) into words and 
+        # Split the comment line (first in the file) into words and
         # try to compose a list of chemical symbols
         from ase.formula import Formula
         import re
@@ -180,7 +181,7 @@ def read_vasp(filename='CONTCAR'):
                 pass
         # Now the list of chemical symbols atomtypes must be formed.
         # For example: atomtypes = ['Pd', 'C', 'O']
-        
+
         numsyms = len(numofatoms)
         if len(atomtypes) < numsyms:
             # First line in POSCAR/CONTCAR didn't contain enough symbols.
@@ -838,6 +839,114 @@ def read_vasp_xml(filename='vasprun.xml', index=-1):
 
 
 @writer
+def write_vasp_xdatcar(f, images, label=''):
+    """Write VASP MD trajectory (XDATCAR) file
+
+    Only Vasp 5 format is supported (for consistency with read_vasp_xdatcar)
+
+    Args:
+        f (str, fp): Output file
+        images (iterable of Atoms): Atoms images to write. These must have
+            consistent atom order and lattice vectors - this will not be
+            checked.
+        label (str): Text for first line of file. If empty, default to list of
+            elements.
+
+    """
+    if not hasattr(images, '__iter__'):
+        raise ValueError("images should be a sequence of atoms objects. If for"
+                         " some reason you wish to write an XDATCAR with a "
+                         "single image, put it in a list e.g. images=[atoms].")
+
+    images = iter(images)
+    image = next(images)
+
+    symbol_count = _symbol_count_from_symbols(image.get_chemical_symbols())
+
+    if label == '':
+        label = ' '.join([s for s, _ in symbol_count])
+    f.write(label + '\n')
+
+    # Not using lattice constants, set it to 1
+    f.write('           1\n')
+
+    # Lattice vectors; use first image
+    float_string = '{:11.6f}'
+    for row_i in range(3):
+        f.write('  ')
+        f.write(' '.join(float_string.format(x) for x in image.cell[row_i]))
+        f.write('\n')
+
+    _write_symbol_count(f, symbol_count)
+    _write_xdatcar_config(f, image, index=1)
+    for i, image in enumerate(images):
+        # Index is off by 2: 1-indexed file vs 0-indexed Python;
+        # and we already wrote the first block.
+        _write_xdatcar_config(f, image, i + 2)
+
+def _write_xdatcar_config(f, atoms, index):
+    """Write a block of positions for XDATCAR file
+
+    Args:
+        f (fd): writeable Python file descriptor
+        atoms (ase.Atoms): Atoms to write
+        index (int): configuration number written to block header
+
+    """
+    f.write("Direct configuration={:6d}\n".format(index))
+    float_string = '{:11.8f}'
+    scaled_positions = atoms.get_scaled_positions()
+    for row in scaled_positions:
+        f.write(' ')
+        f.write(' '.join([float_string.format(x) for x in row]))
+        f.write('\n')
+
+def _symbol_count_from_symbols(symbols):
+    """Reduce list of chemical symbols into compact VASP notation
+
+    args:
+        symbols (iterable of str)
+
+    returns:
+        list of pairs [(el1, c1), (el2, c2), ...]
+    """
+    sc = []
+    psym = symbols[0]
+    count = 0
+    for sym in symbols:
+        if sym != psym:
+            sc.append((psym, count))
+            psym = sym
+            count = 1
+        else:
+            count += 1
+    sc.append((psym, count))
+    return sc
+
+def _write_symbol_count(f, sc, vasp5=True):
+    """Write the symbols and numbers block for POSCAR or XDATCAR
+
+    Args:
+        f (fd): Descriptor for writable file
+        sc (list of 2-tuple): list of paired elements and counts
+        vasp5 (bool): if False, omit symbols and only write counts
+
+    e.g. if sc is [(Sn, 4), (S, 6)] then write::
+
+      Sn   S
+       4   6
+
+    """
+    if vasp5:
+        for sym, _ in sc:
+            f.write(' {:3s}'.format(sym))
+        f.write('\n')
+
+    for _, count in sc:
+        f.write(' {:3d}'.format(count))
+    f.write('\n')
+
+@writer
 def write_vasp(filename, atoms, label='', direct=False, sort=None,
                symbol_count=None, long_format=True, vasp5=False,
                ignore_constraints=False):
@@ -911,17 +1020,7 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
     if symbol_count:
         sc = symbol_count
     else:
-        sc = []
-        psym = symbols[0]
-        count = 0
-        for sym in symbols:
-            if sym != psym:
-                sc.append((psym, count))
-                psym = sym
-                count = 1
-            else:
-                count += 1
-        sc.append((psym, count))
+        sc = _symbol_count_from_symbols(symbols)
 
     # Create the label
     if label == '':
@@ -944,17 +1043,8 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
             f.write(latt_form % el)
         f.write('\n')
 
-    # If we're writing a VASP 5.x format POSCAR file, write out the
-    # atomic symbols
-    if vasp5:
-        for sym, c in sc:
-            f.write(' %3s' % sym)
-        f.write('\n')
-
-    # Numbers of each atom
-    for sym, count in sc:
-        f.write(' %3i' % count)
-    f.write('\n')
+    # Write out symbols (if VASP 5.x) and counts of atoms
+    _write_symbol_count(f, sc, vasp5=vasp5)
 
     if constraints:
         f.write('Selective dynamics\n')
