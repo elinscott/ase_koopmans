@@ -37,44 +37,6 @@ def write_files_file(fd, prefix, ppp_list):
         fd.write('%s\n' % (ppp)) # psp file path
 
 
-keys_with_units = {
-    'toldfe': 'eV',
-    'tsmear': 'eV',
-    'paoenergyshift': 'eV',
-    'zmunitslength': 'Bohr',
-    'zmunitsangle': 'rad',
-    'zmforcetollength': 'eV/Ang',
-    'zmforcetolangle': 'eV/rad',
-    'zmmaxdispllength': 'Ang',
-    'zmmaxdisplangle': 'rad',
-    'ecut': 'eV',
-    'pawecutdg': 'eV',
-    'dmenergytolerance': 'eV',
-    'electronictemperature': 'eV',
-    'oneta': 'eV',
-    'onetaalpha': 'eV',
-    'onetabeta': 'eV',
-    'onrclwf': 'Ang',
-    'onchemicalpotentialrc': 'Ang',
-    'onchemicalpotentialtemperature': 'eV',
-    'mdmaxcgdispl': 'Ang',
-    'mdmaxforcetol': 'eV/Ang',
-    'mdmaxstresstol': 'eV/Ang**3',
-    'mdlengthtimestep': 'fs',
-    'mdinitialtemperature': 'eV',
-    'mdtargettemperature': 'eV',
-    'mdtargetpressure': 'eV/Ang**3',
-    'mdnosemass': 'eV*fs**2',
-    'mdparrinellorahmanmass': 'eV*fs**2',
-    'mdtaurelax': 'fs',
-    'mdbulkmodulus': 'eV/Ang**3',
-    'mdfcdispl': 'Ang',
-    'warningminimumatomicdistance': 'Ang',
-    'rcspatial': 'Ang',
-    'kgridcutoff': 'Ang',
-    'latticeconstant': 'Ang'}
-
-
 class Abinit(FileIOCalculator):
     """Class for doing ABINIT calculations.
 
@@ -154,113 +116,9 @@ class Abinit(FileIOCalculator):
         param = self.parameters
         param.write(self.label + '.ase')
 
-        fh = open(self.label + '.in', 'w')
-        inp = {}
-        inp.update(param)
-        for key in ['xc', 'smearing', 'kpts', 'pps', 'raw']:
-            del inp[key]
-
-        smearing = param.get('smearing')
-        if 'tsmear' in param or 'occopt' in param:
-            assert smearing is None
-
-        if smearing is not None:
-            inp['occopt'] = {'fermi-dirac': 3,
-                             'gaussian': 7}[smearing[0].lower()]
-            inp['tsmear'] = smearing[1]
-
-        inp['natom'] = len(atoms)
-
-        if 'nbands' in param:
-            inp['nband'] = param.nbands
-            del inp['nbands']
-
-        # ixc is set from paw/xml file. Ignore 'xc' setting then.
-        if param.get('pps') not in ['pawxml']:
-            if 'ixc' not in param:
-                inp['ixc'] = {'LDA': 7,
-                              'PBE': 11,
-                              'revPBE': 14,
-                              'RPBE': 15,
-                              'WC': 23}[param.xc]
-
-        magmoms = atoms.get_initial_magnetic_moments()
-        if magmoms.any():
-            inp['nsppol'] = 2
-            fh.write('spinat\n')
-            for n, M in enumerate(magmoms):
-                fh.write('%.14f %.14f %.14f\n' % (0, 0, M))
-        else:
-            inp['nsppol'] = 1
-
-        for key in sorted(inp.keys()):
-            value = inp[key]
-            unit = keys_with_units.get(key)
-            if unit is None:
-                fh.write('%s %s\n' % (key, value))
-            else:
-                if 'fs**2' in unit:
-                    value /= fs**2
-                elif 'fs' in unit:
-                    value /= fs
-                fh.write('%s %e %s\n' % (key, value, unit))
-
-        if param.raw is not None:
-            for line in param.raw:
-                if isinstance(line, tuple):
-                    fh.write(' '.join(['%s' % x for x in line]) + '\n')
-                else:
-                    fh.write('%s\n' % line)
-
-        fh.write('#Definition of the unit cell\n')
-        fh.write('acell\n')
-        fh.write('%.14f %.14f %.14f Angstrom\n' % (1.0, 1.0, 1.0))
-        fh.write('rprim\n')
-        if atoms.number_of_lattice_vectors != 3:
-            raise RuntimeError('Abinit requires a 3D cell, but cell is {}'
-                               .format(atoms.cell))
-        for v in atoms.cell:
-            fh.write('%.14f %.14f %.14f\n' %  tuple(v))
-
-        fh.write('chkprim 0 # Allow non-primitive cells\n')
-
-        fh.write('#Definition of the atom types\n')
-        fh.write('ntypat %d\n' % (len(self.species)))
-        fh.write('znucl')
-        for n, Z in enumerate(self.species):
-            fh.write(' %d' % (Z))
-        fh.write('\n')
-        fh.write('#Enumerate different atomic species\n')
-        fh.write('typat')
-        fh.write('\n')
-        self.types = []
-        for Z in atoms.numbers:
-            for n, Zs in enumerate(self.species):
-                if Z == Zs:
-                    self.types.append(n + 1)
-        n_entries_int = 20  # integer entries per line
-        for n, type in enumerate(self.types):
-            fh.write(' %d' % (type))
-            if n > 1 and ((n % n_entries_int) == 1):
-                fh.write('\n')
-        fh.write('\n')
-
-        fh.write('#Definition of the atoms\n')
-        fh.write('xangst\n')
-        for pos in atoms.positions:
-            fh.write('%.14f %.14f %.14f\n' %  tuple(pos))
-
-        if 'kptopt' not in param:
-            mp = kpts2mp(atoms, param.kpts)
-            fh.write('kptopt 1\n')
-            fh.write('ngkpt %d %d %d\n' % tuple(mp))
-            fh.write('nshiftk 1\n')
-            fh.write('shiftk\n')
-            fh.write('%.1f %.1f %.1f\n' % tuple((np.array(mp) + 1) % 2 * 0.5))
-
-        fh.write('chkexit 1 # abinit.exit file in the running directory terminates after the current SCF\n')
-
-        fh.close()
+        from ase.io.abinit import write_abinit_in
+        with open(self.label + '.in', 'w') as fd:
+            write_abinit_in(fd, atoms, param, self.species)
 
     def read(self, label):
         """Read results from ABINIT's text-output file."""
