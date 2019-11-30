@@ -458,7 +458,7 @@ def read_magnetic_moment(lines):
     return magmom
 
 
-def read_abinito_eig(fd):
+def read_eig(fd):
     line = next(fd)
     results = {}
     m = re.match(r'\s*Fermi \(or HOMO\) energy \(hartree\)\s*=\s*(\S+)',
@@ -489,7 +489,6 @@ def read_abinito_eig(fd):
         eig_kn = []
         for ikpt in range(nkpts):
             header = next(fd)
-            print('hmmm', header.strip())
             m = re.match(headerpattern, header)
             assert m is not None, header
             nbands = int(m.group(1))

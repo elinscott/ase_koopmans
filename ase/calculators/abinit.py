@@ -122,7 +122,7 @@ class Abinit(FileIOCalculator):
     def read_results(self):
         filename = self.label + '.txt'
         from ase.io.abinit import (read_abinit_out, read_abinit_log,
-                                   read_abinito_eig)
+                                   read_eig)
         self.results = {}
         with open(filename) as fd:
             results = read_abinit_out(fd)
@@ -130,8 +130,8 @@ class Abinit(FileIOCalculator):
         with open(self.label + '.log') as fd:
             results = read_abinit_log(fd)
             self.results.update(results)
-        with open('abinito_EIG') as fd:
-            results = read_abinito_eig(fd)
+        with open('{}o_EIG'.format(self.label)) as fd:
+            results = read_eig(fd)
             self.results.update(results)
 
     def initialize(self, atoms, raise_exception=True):
