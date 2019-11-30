@@ -303,8 +303,11 @@ F('mysql', 'ASE MySQL database file', '+S',
 F('netcdftrajectory', 'AMBER NetCDF trajectory file', '+S'),
 F('nomad-json', 'JSON from Nomad archive', '+F',
   ext='nomad-json'),
-F('nwchem', 'NWChem input file', '1F',
-  ext='nw'),
+F('nwchem-in', 'NWChem input file', '1F',
+  module='nwchem', ext='nwi'),
+F('nwchem-out', 'NWChem output file', '+F',
+  module='nwchem', ext='nwo',
+  magic=b'*Northwest Computational Chemistry Package'),
 F('octopus', 'Octopus input file', '1F', glob='inp'),
 F('proteindatabank', 'Protein Data Bank', '+F',
   ext='pdb'),
@@ -345,7 +348,6 @@ F('xsf', 'XCrySDen Structure File', '+F',
          b'*\nMOLECULE', b'*\nATOMS']),
 F('xtd', 'Materials Studio file', '+F'),
 F('xyz', 'XYZ-file', '+F')
-
 
 netcdfconventions2format = {
     'http://www.etsf.eu/fileformats': 'etsf',
