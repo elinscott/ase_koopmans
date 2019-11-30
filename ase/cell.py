@@ -1,3 +1,4 @@
+from typing import Optional, Mapping
 import numpy as np
 from ase.utils import deprecated
 from ase.utils.arraywrapper import arraylike
@@ -141,8 +142,16 @@ class Cell:
         lat, op = identify_lattice(self, eps=eps, pbc=pbc)
         return lat
 
-    def bandpath(self, path=None, npoints=None, density=None,
-                 special_points=None, eps=2e-4, *, pbc=True):
+    def bandpath(
+            self,
+            path: Optional[str]=None,
+            npoints: Optional[int]=None,
+            density: Optional[float]=None,
+            special_points: Optional[Mapping[str, np.ndarray]]=None,
+            eps: Optional[float]=2e-4,
+            *,
+            pbc=True
+    ) -> "BandPath":
         """Build a :class:`~ase.dft.kpoints.BandPath` for this cell.
 
         If special points are None, determine the Bravais lattice of
