@@ -121,13 +121,17 @@ class Abinit(FileIOCalculator):
 
     def read_results(self):
         filename = self.label + '.txt'
-        from ase.io.abinit import read_abinit_out, read_abinit_log
+        from ase.io.abinit import (read_abinit_out, read_abinit_log,
+                                   read_abinito_eig)
         self.results = {}
         with open(filename) as fd:
             results = read_abinit_out(fd)
             self.results.update(results)
         with open(self.label + '.log') as fd:
             results = read_abinit_log(fd)
+            self.results.update(results)
+        with open('abinito_EIG') as fd:
+            results = read_abinito_eig(fd)
             self.results.update(results)
 
     def initialize(self, atoms, raise_exception=True):
@@ -139,43 +143,40 @@ class Abinit(FileIOCalculator):
                             pps=self.parameters.pps)
 
     def get_number_of_iterations(self):
-        return self.niter
+        return self.results['niter']
 
     def get_electronic_temperature(self):
-        return self.width * Hartree
+        return self.results['width']
 
     def get_number_of_electrons(self):
-        return self.nelect
+        return self.results['nelect']
 
     def get_number_of_bands(self):
         return self.results['nbands']
 
-    def get_kpts_info(self, kpt=0, spin=0, mode='eigenvalues'):
-        return self.read_kpts_info(kpt, spin, mode)
-
     def get_k_point_weights(self):
-        return self.get_kpts_info(kpt=0, spin=0, mode='k_point_weights')
+        return self.results['kpoint_weights']
 
     def get_bz_k_points(self):
         raise NotImplementedError
 
     def get_ibz_k_points(self):
-        return self.get_kpts_info(kpt=0, spin=0, mode='ibz_k_points')
+        return self.results['ibz_kpoints']
 
     def get_spin_polarized(self):
-        return self.spinpol
+        return self.results['eigenvalues'].shape[0] == 2
 
     def get_number_of_spins(self):
-        return 1 + int(self.spinpol)
+        return len(self.results['eigenvalues'])
 
     def get_fermi_level(self):
-        return self.read_fermi()
+        return self.results['fermilevel']
 
     def get_eigenvalues(self, kpt=0, spin=0):
-        return self.get_kpts_info(kpt, spin, 'eigenvalues')
+        return self.results['eigenvalues'][spin, kpt]
 
     def get_occupations(self, kpt=0, spin=0):
-        return self.get_kpts_info(kpt, spin, 'occupations')
+        raise NotImplementedError
 
 
 def get_ppp_list(species, atoms, raise_exception, xc, pps):

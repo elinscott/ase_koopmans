@@ -1,3 +1,4 @@
+import re
 from ase.utils import basestring
 from ase.units import Hartree, Bohr
 import numpy as np
@@ -428,11 +429,9 @@ def read_abinit_out(fd):
             break
     else:
         raise RuntimeError
-    #
-    #self.width = self.read_electronic_temperature()
+
     results['nbands'] = read_number_of_bands(lines)
     results['niter'] = read_number_of_iterations(lines)
-    #self.nelect = self.read_number_of_electrons()
     results['magmom'] = read_magnetic_moment(lines)
     return results
 
@@ -458,129 +457,78 @@ def read_magnetic_moment(lines):
             magmom = float(line.split('=')[-1].strip())
     return magmom
 
-def read_fermi(lines):
-    """Method that reads Fermi energy in Hartree from the output file
-    and returns it in eV"""
-    E_f = None
-    for line in lines:
-        if line.rfind('fermi (or homo) energy (hartree) =') > -1:
-            E_f = float(line.split('=')[1].strip().split()[0])
-    return E_f * Hartree
 
-def read_kpts_info(lines, kpt=0, spin=0, mode='eigenvalues'):
-    """ Returns list of last eigenvalues, occupations, kpts weights, or
-    kpts coordinates for given kpt and spin.
-    Due to the way of reading output the spins are exchanged in spin-polarized case.  """
-    # output may look like this (or without occupation entries); 8 entries per line:
-    #
-    #  Eigenvalues (hartree) for nkpt=  20  k points:
-    # kpt#   1, nband=  3, wtk=  0.01563, kpt=  0.0625  0.0625  0.0625 (reduced coord)
-    #  -0.09911   0.15393   0.15393
-    #      occupation numbers for kpt#   1
-    #   2.00000   0.00000   0.00000
-    # kpt#   2, nband=  3, wtk=  0.04688, kpt=  0.1875  0.0625  0.0625 (reduced coord)
-    # ...
-    #
-    assert mode in ['eigenvalues', 'occupations', 'ibz_k_points',
-                    'k_point_weights'], mode
-    if self.get_spin_polarized():
-        spin = {0: 1, 1: 0}[spin]
-    if spin == 0:
-        spinname = ''
-    else:
-        spinname = 'SPIN UP'.lower()
-    # number of lines of eigenvalues/occupations for a kpt
-    nband = self.get_number_of_bands()
-    n_entries_float = 8  # float entries per line
-    n_entry_lines = max(1, int((nband - 0.1) / n_entries_float) + 1)
+def read_abinito_eig(fd):
+    line = next(fd)
+    results = {}
+    m = re.match(r'\s*Fermi \(or HOMO\) energy \(hartree\)\s*=\s*(\S+)',
+                 line)
+    assert m is not None
+    results['fermilevel'] = float(m.group(1)) * Hartree
+    # XXX TODO spin
+    kpoint_weights = []
+    kpoint_coords = []
 
-    #filename = self.label + '.txt'
-    #text = open(filename).read().lower()
-    assert 'error' not in '\n'.join(lines)
-    #lines = text.split('\n')
-    text_list = []
-    # find the beginning line of last eigenvalues
-    contains_eigenvalues = 0
-    for n, line in enumerate(lines):
-        if spin == 0:
-            if line.rfind('eigenvalues (hartree) for nkpt') > -1:
-            #if line.rfind('eigenvalues (   ev  ) for nkpt') > -1: #MDTMP
-                contains_eigenvalues = n
-        else:
-            if (line.rfind('eigenvalues (hartree) for nkpt') > -1 and
-                line.rfind(spinname) > -1): # find the last 'SPIN UP'
-                    contains_eigenvalues = n
-    # find the end line of eigenvalues starting from contains_eigenvalues
-    text_list = [lines[contains_eigenvalues]]
-    for line in lines[contains_eigenvalues + 1:]:
-        text_list.append(line)
-        # find a blank line or eigenvalues of second spin
-        if (not line.strip() or
-            line.rfind('eigenvalues (hartree) for nkpt') > -1):
+    eig_skn = []
+    for ispin in range(2):
+        print('ispin', ispin)
+        # (We don't know if we have two spins until we see next line)
+        line = next(fd)
+        m = re.match(r'\s*Eigenvalues \(hartree\) for nkpt\s*='
+                     r'\s*(\S+)\s*k\s*points', line)
+        nspins = 2 if 'SPIN' in line else 1
+        assert m is not None
+        nkpts = int(m.group(1))
+
+        headerpattern = (r'\s*kpt#\s*\S+\s*'
+                         r'nband=\s*(\d+),\s*'
+                         r'wtk=([^,]+),\s*'
+                         r'kpt=\s*(\S)+\s*(\S+)\s*(\S+)')
+
+
+        eig_kn = []
+        for ikpt in range(nkpts):
+            header = next(fd)
+            print('hmmm', header.strip())
+            m = re.match(headerpattern, header)
+            assert m is not None, header
+            nbands = int(m.group(1))
+            weight = float(m.group(2))
+            kvector = np.array(m.group(3, 4, 5)).astype(float)
+            if ispin == 0:
+                kpoint_coords.append(kvector)
+                kpoint_weights.append(float(weight))
+
+            eig_n = []
+            while len(eig_n) < nbands:
+                line = next(fd)
+                tokens = line.split()
+                values = np.array(tokens).astype(float) * Hartree
+                eig_n.extend(values)
+            assert len(eig_n) == nbands
+            eig_kn.append(eig_n)
+            assert nbands == len(eig_kn[0])
+        eig_skn.append(eig_kn)
+
+        if nspins == 1:
             break
-    # remove last (blank) line
-    text_list = text_list[:-1]
 
-    assert contains_eigenvalues, 'No eigenvalues found in the output'
-
-    n_kpts = int(text_list[0].split('nkpt=')[1].strip().split()[0])
-
-    # get rid of the "eigenvalues line"
-    text_list = text_list[1:]
-
-    # join text eigenvalues description with eigenvalues
-    # or occupation numbers for kpt# with occupations
-    contains_occupations = False
-    for line in text_list:
-        if line.rfind('occupation numbers') > -1:
-            contains_occupations = True
-            break
-    if mode == 'occupations':
-        assert contains_occupations, 'No occupations found in the output'
-
-    if contains_occupations:
-        range_kpts = 2*n_kpts
-    else:
-        range_kpts = n_kpts
-
-    values_list = []
-    offset = 0
-    for kpt_entry in range(range_kpts):
-        full_line = ''
-        for entry_line in range(n_entry_lines+1):
-            full_line = full_line+str(text_list[offset+entry_line])
-        first_line = text_list[offset]
-        if mode == 'occupations':
-            if first_line.rfind('occupation numbers') > -1:
-                # extract numbers
-                full_line = [float(v) for v in full_line.split('#')[1].strip().split()[1:]]
-                values_list.append(full_line)
-        elif mode in ['eigenvalues', 'ibz_k_points', 'k_point_weights']:
-            if first_line.rfind('reduced coord') > -1:
-                # extract numbers
-                if mode == 'eigenvalues':
-                    full_line = [Hartree*float(v) for v in full_line.split(')')[1].strip().split()[:]]
-                    #full_line = [float(v) for v in full_line.split(')')[1].strip().split()[:]] #MDTMP
-                elif mode == 'ibz_k_points':
-                    full_line = [float(v) for v in full_line.split('kpt=')[1].strip().split('(')[0].split()]
-                else:
-                    full_line = float(full_line.split('wtk=')[1].strip().split(',')[0].split()[0])
-                values_list.append(full_line)
-        offset = offset+n_entry_lines+1
-
-    if mode in ['occupations', 'eigenvalues']:
-        return np.array(values_list[kpt])
-    else:
-        return np.array(values_list)
+    eig_skn = np.array(eig_skn)
+    assert eig_skn.shape == (nspins, nkpts, nbands), (eig_skn.shape, (nspins, nkpts, nbands))
+    results['ibz_kpoints'] = np.array(kpoint_coords)
+    results['kpoint_weights'] = np.array(kpoint_weights)
+    results['eigenvalues'] = eig_skn
+    return results
 
 
 def read_abinit_log(fd):
-    dct = {}
+    results = {}
     width = None
     nelect = None
-    for line in fd:
+    lines = fd.readlines()
+    for line in lines:
         if 'tsmear' in line:
-            dct['width'] = float(line.split()[1].strip())
+            results['width'] = float(line.split()[1].strip()) * Hartree
         if 'with nelect' in line:
-            dct['nelect'] = float(line.split('=')[1].strip())
-    return dct
+            results['nelect'] = float(line.split('=')[1].strip())
+    return results
