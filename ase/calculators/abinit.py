@@ -12,7 +12,9 @@ import numpy as np
 
 from ase.units import Bohr, Hartree, fs
 from ase.data import chemical_symbols
-from ase.io.abinit import read_abinit, write_abinit
+from ase.io.abinit import (read_abinit, write_abinit,
+                           read_abinit_out, read_abinit_log,
+                           read_eig)
 from ase.calculators.calculator import FileIOCalculator, Parameters
 from ase.utils import workdir
 
@@ -29,7 +31,7 @@ def write_files_file(fd, label, ppp_list):
         fd.write('%s\n' % (ppp)) # psp file path
 
 
-class AbinitInputWriter:
+class AbinitIO:
     def write(self, atoms, properties, parameters,
               raise_exception=True,
               label='abinit'):
@@ -107,9 +109,9 @@ class Abinit(FileIOCalculator):
         """Write input parameters to files-file."""
 
         with workdir(self.directory, mkdir=True):
-            AbinitInputWriter().write(atoms, properties,
-                                      self.parameters,
-                                      label=self.prefix)
+            AbinitIO().write(atoms, properties,
+                             self.parameters,
+                             label=self.prefix)
 
     def read(self, label):
         """Read results from ABINIT's text-output file."""
@@ -138,8 +140,6 @@ class Abinit(FileIOCalculator):
 
     def read_results(self):
         filename = self.label + '.txt'
-        from ase.io.abinit import (read_abinit_out, read_abinit_log,
-                                   read_eig)
         self.results = {}
         with open(filename) as fd:
             results = read_abinit_out(fd)
