@@ -12,21 +12,46 @@ import numpy as np
 
 from ase.units import Bohr, Hartree, fs
 from ase.data import chemical_symbols
-from ase.io.abinit import read_abinit
-from ase.calculators.calculator import FileIOCalculator, Parameters, kpts2mp, \
-    ReadError
+from ase.io.abinit import read_abinit, write_abinit
+from ase.calculators.calculator import FileIOCalculator, Parameters
+from ase.utils import workdir
 
 
-def write_files_file(fd, prefix, ppp_list):
+def write_files_file(fd, label, ppp_list):
     """Write files-file, the file which tells abinit about other files."""
-    fd.write('%s\n' % (prefix + '.in'))  # input
-    fd.write('%s\n' % (prefix + '.txt'))  # output
-    fd.write('%s\n' % (prefix + 'i'))  # input
-    fd.write('%s\n' % (prefix + 'o'))  # output
-    fd.write('%s\n' % (prefix + '.abinit'))
+    fd.write('%s\n' % (label + '.in'))  # input
+    fd.write('%s\n' % (label + '.txt'))  # output
+    fd.write('%s\n' % (label + 'i'))  # input
+    fd.write('%s\n' % (label + 'o'))  # output
+    fd.write('%s\n' % (label + '.abinit'))
     # Provide the psp files
     for ppp in ppp_list:
         fd.write('%s\n' % (ppp)) # psp file path
+
+
+class AbinitInputWriter:
+    def write(self, atoms, properties, parameters,
+              raise_exception=True,
+              label='abinit'):
+        species = list(set(atoms.numbers))
+        ppp = get_ppp_list(atoms, species,
+                           raise_exception=raise_exception,
+                           xc=parameters.xc,
+                           pps=parameters.pps)
+
+        with open(label + '.files', 'w') as fd:
+            write_files_file(fd, label, ppp)
+
+        # Abinit will write to label.txtA if label.txt already exists,
+        # so we remove it if it's there:
+        filename = label + '.txt'
+        if os.path.isfile(filename):
+            os.remove(filename)
+
+        parameters.write(label + '.ase')
+
+        with open(label + '.in', 'w') as fd:
+            write_abinit(fd, atoms, param=parameters, species=species)
 
 
 class Abinit(FileIOCalculator):
@@ -78,36 +103,33 @@ class Abinit(FileIOCalculator):
         if changed_parameters:
             self.reset()
 
-    def write_input(self, atoms, properties=tuple(), system_changes=tuple(),
-        raise_exception=True):
+    def write_input(self, atoms, properties=tuple(), system_changes=tuple()):
         """Write input parameters to files-file."""
 
-        FileIOCalculator.write_input(self, atoms, properties, system_changes)
-
-        species = list(set(atoms.numbers))
-        ppp = get_ppp_list(atoms, species,
-                           raise_exception=raise_exception,
-                           xc=self.parameters.xc,
-                           pps=self.parameters.pps)
-
-        with open(self.label + '.files', 'w') as fd:
-            write_files_file(fd, self.prefix, ppp)
-
-        # Abinit will write to label.txtA if label.txt already exists,
-        # so we remove it if it's there:
-        filename = self.label + '.txt'
-        if os.path.isfile(filename):
-            os.remove(filename)
-
-        param = self.parameters
-        param.write(self.label + '.ase')
-
-        from ase.io.abinit import write_abinit
-        with open(self.label + '.in', 'w') as fd:
-            write_abinit(fd, atoms, param=param, species=species)
+        with workdir(self.directory, mkdir=True):
+            AbinitInputWriter().write(atoms, properties,
+                                      self.parameters,
+                                      label=self.prefix)
 
     def read(self, label):
         """Read results from ABINIT's text-output file."""
+        # XXX I think we should redo the concept of 'restarting'.
+        # It makes sense to load a previous calculation as
+        #
+        #  * static, calculator-independent results
+        #  * an actual calculator capable of calculating
+        #
+        # Either of which is simpler than our current mechanism which
+        # implies both at the same time.  Moreover, we don't need
+        # something like calc.read(label).
+        #
+        # What we need for these two purposes is
+        #
+        #  * calc = MyCalculator.read(basefile)
+        #      (or maybe it should return Atoms with calc attached)
+        #  * results = read_results(basefile, format='abinit')
+        #
+        # where basefile determines the file tree.
         FileIOCalculator.read(self, label)
         filename = self.label + '.txt'
         self.atoms = read_abinit(self.label + '.in')
