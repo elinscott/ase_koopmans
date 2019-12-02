@@ -32,14 +32,19 @@ def write_files_file(fd, label, ppp_list):
 
 
 class AbinitIO:
+    def get_pp_search_paths(self):
+        return os.environ.get('ABINIT_PP_PATH', '.').split(':')
+
     def write(self, atoms, properties, parameters,
               raise_exception=True,
               label='abinit'):
         species = list(set(atoms.numbers))
+        search_paths = self.get_pp_search_paths()
         ppp = get_ppp_list(atoms, species,
                            raise_exception=raise_exception,
                            xc=parameters.xc,
-                           pps=parameters.pps)
+                           pps=parameters.pps,
+                           search_paths=search_paths)
 
         with open(label + '.files', 'w') as fd:
             write_files_file(fd, label, ppp)
@@ -153,11 +158,13 @@ class Abinit(FileIOCalculator):
         # where basefile determines the file tree.
         FileIOCalculator.read(self, label)
         io = AbinitIO()
-        self.atoms, self.parameters = io.read_inputs(label)
-        self.results = io.read_results(label)
+        with workdir(self.directory):
+            self.atoms, self.parameters = io.read_inputs(self.prefix)
+            self.results = io.read_results(self.prefix)
 
     def read_results(self):
-        self.results = AbinitIO().read_results(self.label)
+        with workdir(self.directory):
+            self.results = AbinitIO().read_results(self.prefix)
 
     def get_number_of_iterations(self):
         return self.results['niter']
@@ -196,10 +203,10 @@ class Abinit(FileIOCalculator):
         raise NotImplementedError
 
 
-def get_ppp_list(atoms, species, raise_exception, xc, pps):
+def get_ppp_list(atoms, species, raise_exception, xc, pps,
+                 search_paths):
     ppp_list = []
 
-    pppaths = os.environ.get('ABINIT_PP_PATH', '.').split(':')
     xcname = 'GGA' if xc != 'LDA' else 'LDA'
     for Z in species:
         number = abs(Z)
@@ -244,7 +251,7 @@ def get_ppp_list(atoms, species, raise_exception, xc, pps):
 
         found = False
         for name in names:        # search for file names possibilities
-            for path in pppaths:  # in all available directories
+            for path in search_paths:  # in all available directories
                 filenames = glob(join(path, name))
                 if not filenames:
                     continue
