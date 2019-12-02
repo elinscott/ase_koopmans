@@ -441,6 +441,10 @@ class Calculator(object):
     'Properties of Atoms which we ignore for the purposes of cache '
     'invalidation with check_state().'
 
+    discard_results_on_any_change = False
+    'Whether we purge the results following any change in the set() method.  '
+    'Most (file I/O) calculators will probably want this.'
+
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
                  atoms=None, directory='.', **kwargs):
         """Basic calculator implementation.
@@ -635,6 +639,8 @@ class Calculator(object):
                 changed_parameters[key] = value
                 self.parameters[key] = value
 
+        if self.discard_results_on_any_change and changed_parameters:
+            self.reset()
         return changed_parameters
 
     def check_state(self, atoms, tol=1e-15):
