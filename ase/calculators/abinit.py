@@ -92,6 +92,7 @@ class Abinit(FileIOCalculator):
     implemented_properties = ['energy', 'forces', 'stress', 'magmom']
     ignored_changes = {'pbc'}  # In abinit, pbc is always effectively True.
     command = 'abinit < PREFIX.files > PREFIX.log'
+    discard_results_on_any_change = True
 
     default_parameters = dict(
         xc='LDA',
@@ -123,11 +124,6 @@ class Abinit(FileIOCalculator):
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
-
-    def set(self, **kwargs):
-        changed_parameters = FileIOCalculator.set(self, **kwargs)
-        if changed_parameters:
-            self.reset()
 
     def write_input(self, atoms, properties, system_changes):
         """Write input parameters to files-file."""
