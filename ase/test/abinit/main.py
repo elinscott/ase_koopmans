@@ -4,10 +4,11 @@ from ase.calculators.abinit import Abinit
 
 
 def run_test(atoms, name):
-    header = 'test {}'.format(name)
-    print(header)
-    print('=' * len(header))
-    with workdir('abinit-{}'.format(name), mkdir=True):
+    dirname = 'test-abinit/{}'.format(name)
+    with workdir(dirname, mkdir=True):
+        header = 'test {} in {}'.format(name, dirname)
+        print(header)
+        print('=' * len(header))
         atoms.get_potential_energy()
         atoms.get_forces()
         eig = atoms.calc.results['eigenvalues']
@@ -31,6 +32,7 @@ def test_si():
     atoms = bulk('Si')
     atoms.calc = abinit(nbands=4 * len(atoms))
     run_test(atoms, 'bulk')
+
 
 def test_fe():
     atoms = bulk('Fe')
