@@ -155,8 +155,14 @@ keys_with_units = {
     'latticeconstant': 'Ang'}
 
 
-def write_abinit_in(fd, atoms, param, species):
+def write_abinit_in(fd, atoms, param=None, species=None):
     from ase.calculators.calculator import kpts2mp
+    if param is None:
+        param = {}
+
+    if species is None:
+        species = list(set(atoms.numbers))
+
     inp = {}
     inp.update(param)
     for key in ['xc', 'smearing', 'kpts', 'pps', 'raw']:
@@ -228,10 +234,7 @@ def write_abinit_in(fd, atoms, param, species):
 
     fd.write('#Definition of the atom types\n')
     fd.write('ntypat %d\n' % (len(species)))
-    fd.write('znucl')
-    for n, Z in enumerate(species):
-        fd.write(' %d' % (Z))
-    fd.write('\n')
+    fd.write('znucl {}\n'.format(' '.join(str(Z) for Z in species)))
     fd.write('#Enumerate different atomic species\n')
     fd.write('typat')
     fd.write('\n')

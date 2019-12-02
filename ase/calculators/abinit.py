@@ -97,9 +97,9 @@ class Abinit(FileIOCalculator):
         param = self.parameters
         param.write(self.label + '.ase')
 
-        from ase.io.abinit import write_abinit_in
+        from ase.io.abinit import write_abinit
         with open(self.label + '.in', 'w') as fd:
-            write_abinit_in(fd, atoms, param, species)
+            write_abinit(fd, atoms, param=param, species=species)
 
     def read(self, label):
         """Read results from ABINIT's text-output file."""
