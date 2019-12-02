@@ -39,6 +39,7 @@ class Abinit(FileIOCalculator):
     """
 
     implemented_properties = ['energy', 'forces', 'stress', 'magmom']
+    ignored_changes = {'pbc'}  # In abinit, pbc is always effectively True.
     command = 'abinit < PREFIX.files > PREFIX.log'
 
     default_parameters = dict(

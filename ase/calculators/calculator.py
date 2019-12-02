@@ -437,6 +437,10 @@ class Calculator(object):
     default_parameters = {}
     'Default parameters'
 
+    ignored_changes = set()
+    'Properties of Atoms which we ignore for the purposes of cache '
+    'invalidation with check_state().'
+
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
                  atoms=None, directory='.', **kwargs):
         """Basic calculator implementation.
@@ -635,7 +639,8 @@ class Calculator(object):
 
     def check_state(self, atoms, tol=1e-15):
         """Check for any system changes since last calculation."""
-        return compare_atoms(self.atoms, atoms, tol)
+        return compare_atoms(self.atoms, atoms, tol=tol,
+                             excluded_properties=set(self.ignored_changes))
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         energy = self.get_property('energy', atoms)
