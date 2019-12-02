@@ -18,6 +18,7 @@ from ase.calculators.calculator import FileIOCalculator, Parameters, kpts2mp, \
 
 
 def write_files_file(fd, prefix, ppp_list):
+    """Write files-file, the file which tells abinit about other files."""
     fd.write('%s\n' % (prefix + '.in'))  # input
     fd.write('%s\n' % (prefix + '.txt'))  # output
     fd.write('%s\n' % (prefix + 'i'))  # input
@@ -26,6 +27,7 @@ def write_files_file(fd, prefix, ppp_list):
     # Provide the psp files
     for ppp in ppp_list:
         fd.write('%s\n' % (ppp)) # psp file path
+
 
 class Abinit(FileIOCalculator):
     """Class for doing ABINIT calculations.
@@ -81,13 +83,6 @@ class Abinit(FileIOCalculator):
 
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
 
-        try:
-            if ('numbers' in system_changes or
-                'initial_magmoms' in system_changes):
-                self.initialize(atoms, raise_exception=raise_exception)
-        except Exception as e:
-            print(e, '... but I continue to complete the abinit.in')
-
         species = list(set(atoms.numbers))
         ppp = self.get_ppp_list(species, atoms, raise_exception)
         with open(self.label + '.files', 'w') as fd:
@@ -115,8 +110,6 @@ class Abinit(FileIOCalculator):
 
         self.atoms = read_abinit(self.label + '.in')
         self.parameters = Parameters.read(self.label + '.ase')
-
-        self.initialize(self.atoms)
         self.read_results()
 
     def read_results(self):
@@ -133,9 +126,6 @@ class Abinit(FileIOCalculator):
         with open('{}o_EIG'.format(self.label)) as fd:
             results = read_eig(fd)
             self.results.update(results)
-
-    def initialize(self, atoms, raise_exception=True):
-        self.spinpol = atoms.get_initial_magnetic_moments().any()
 
     def get_ppp_list(self, species, atoms, raise_exception):
         return get_ppp_list(species, atoms, raise_exception,
