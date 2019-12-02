@@ -127,14 +127,6 @@ else:
 def index(project):
     global next_con_id
 
-    # Backwards compatibility:
-    project = request.args.get('project') or project
-
-    if project is None and len(projects) > 1:
-        return render_template('projects.html',
-                               projects=projects,
-                               md=None)
-
     if project is None:
         project = list(databases)[0]
 
@@ -256,17 +248,15 @@ def index(project):
                         if column not in table.columns)
 
     return render_template('table.html',
-                           project=project,
                            t=table,
                            md=meta,
                            con=con,
                            x=con_id,
+                           addcolumns=addcolumns,
                            pages=pages(page, nrows, limit),
                            nrows=nrows,
-                           addcolumns=addcolumns,
                            row1=page * limit + 1,
-                           row2=min((page + 1) * limit, nrows),
-                           download_button=download_button)
+                           row2=min((page + 1) * limit, nrows))
 
 
 @app.route('/<project>/image/<name>')
@@ -376,14 +366,11 @@ def xyz(project, id):
     return data, '{}.xyz'.format(id)
 
 
-if download_button:
-    @app.route('/<project>/json')
-    @download
-    def jsonall(project):
-        con_id = int(request.args['x'])
-        con = connections[con_id]
-        data = tofile(project, con.query[2], 'json', con.limit)
-        return data, 'selection.json'
+
+
+def test():
+    import pyjokes as j
+    return j.get_joke('en')
 
 
 @app.route('/<project>/json/<int:id>')
@@ -393,16 +380,6 @@ def json1(project, id):
         return 'No such project: ' + project, None
     data = tofile(project, id, 'json')
     return data, '{}.json'.format(id)
-
-
-if download_button:
-    @app.route('/<project>/sqlite')
-    @download
-    def sqliteall(project):
-        con_id = int(request.args['x'])
-        con = connections[con_id]
-        data = tofile(project, con.query[2], 'db', con.limit)
-        return data, 'selection.db'
 
 
 @app.route('/<project>/sqlite/<int:id>')
@@ -427,42 +404,6 @@ def robots():
             200)
 
 
-@app.route('/cif/<stuff>')
-def oldcif(stuff):
-    return 'Bad URL'
-
-
-def pages(page, nrows, limit):
-    """Helper function for pagination stuff."""
-    npages = (nrows + limit - 1) // limit
-    p1 = min(5, npages)
-    p2 = max(page - 4, p1)
-    p3 = min(page + 5, npages)
-    p4 = max(npages - 4, p3)
-    pgs = list(range(p1))
-    if p1 < p2:
-        pgs.append(-1)
-    pgs += list(range(p2, p3))
-    if p3 < p4:
-        pgs.append(-1)
-    pgs += list(range(p4, npages))
-    pages = [(page - 1, 'previous')]
-    for p in pgs:
-        if p == -1:
-            pages.append((-1, '...'))
-        elif p == page:
-            pages.append((-1, str(p + 1)))
-        else:
-            pages.append((p, str(p + 1)))
-    nxt = min(page + 1, npages - 1)
-    if nxt == page:
-        nxt = -1
-    pages.append((nxt, 'next'))
-    return pages
-
-
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        connect_databases(sys.argv[1:])
-    open_ase_gui = False
+    connect_databases(sys.argv[1:])
     app.run(host='0.0.0.0', debug=True)

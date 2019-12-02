@@ -4,6 +4,35 @@ import os
 from ase.db.core import default_key_descriptions
 
 
+def pages(page, nrows, limit):
+    """Helper function for pagination stuff."""
+    npages = (nrows + limit - 1) // limit
+    p1 = min(5, npages)
+    p2 = max(page - 4, p1)
+    p3 = min(page + 5, npages)
+    p4 = max(npages - 4, p3)
+    pgs = list(range(p1))
+    if p1 < p2:
+        pgs.append(-1)
+    pgs += list(range(p2, p3))
+    if p3 < p4:
+        pgs.append(-1)
+    pgs += list(range(p4, npages))
+    pages = [(page - 1, 'previous')]
+    for p in pgs:
+        if p == -1:
+            pages.append((-1, '...'))
+        elif p == page:
+            pages.append((-1, str(p + 1)))
+        else:
+            pages.append((p, str(p + 1)))
+    nxt = min(page + 1, npages - 1)
+    if nxt == page:
+        nxt = -1
+    pages.append((nxt, 'next'))
+    return pages
+
+
 def process_metadata(db, html: bool = True):  # -> Dict
     """Process metadata dict from database and/or Python file."""
     meta = db.metadata
