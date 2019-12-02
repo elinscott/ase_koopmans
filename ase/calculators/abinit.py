@@ -85,7 +85,11 @@ class Abinit(FileIOCalculator):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
 
         species = list(set(atoms.numbers))
-        ppp = self.get_ppp_list(species, atoms, raise_exception)
+        ppp = get_ppp_list(atoms, species,
+                           raise_exception=raise_exception,
+                           xc=self.parameters.xc,
+                           pps=self.parameters.pps)
+
         with open(self.label + '.files', 'w') as fd:
             write_files_file(fd, self.prefix, ppp)
 
@@ -125,11 +129,6 @@ class Abinit(FileIOCalculator):
             results = read_eig(fd)
             self.results.update(results)
 
-    def get_ppp_list(self, species, atoms, raise_exception):
-        return get_ppp_list(species, atoms, raise_exception,
-                            xc=self.parameters.xc,
-                            pps=self.parameters.pps)
-
     def get_number_of_iterations(self):
         return self.results['niter']
 
@@ -167,7 +166,7 @@ class Abinit(FileIOCalculator):
         raise NotImplementedError
 
 
-def get_ppp_list(species, atoms, raise_exception, xc, pps):
+def get_ppp_list(atoms, species, raise_exception, xc, pps):
     ppp_list = []
 
     pppaths = os.environ.get('ABINIT_PP_PATH', '.').split(':')
