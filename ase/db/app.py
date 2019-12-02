@@ -30,12 +30,6 @@ import tempfile
 
 from flask import Flask, render_template, request, send_from_directory, flash
 
-try:
-    import matplotlib
-    matplotlib.use('Agg', warn=False)
-except ImportError:
-    pass
-
 import ase.db
 import ase.db.web
 from ase.db.core import convert_str_to_int_float_or_str
@@ -59,66 +53,11 @@ Connection = collections.namedtuple(
 
 app = Flask(__name__)
 
-app.secret_key = 'asdf'
-
-databases = {}  # Dict[str, Database]
-open_ase_gui = True  # click image to open ASE's GUI
-download_button = True
-
-# List of (project-name, title, nrows) tuples (will be filled in at run-time):
-projects = []  # List[Tuple[str, str, int]]
-
-# Find numbers in formulas so that we can convert H2O to H<sub>2</sub>O:
-SUBSCRIPT = re.compile(r'(\d+)')
-
 next_con_id = 1
 connections = {}
 
 
-def connect_databases(uris):
-    # (List[str]) -> None
-    """Fill in databases dict."""
-    python_configs = []
-    dbs = []
-    for uri in uris:
-        if uri.endswith('.py'):
-            python_configs.append(uri)
-            continue
-        if uri.startswith('postgresql://'):
-            project = uri.rsplit('/', 1)[1]
-        else:
-            project = uri.rsplit('/', 1)[-1].split('.')[0]
-        db = ase.db.connect(uri)
-        db.python = None
-        databases[project] = db
-        dbs.append(db)
-
-    for py, db in zip(python_configs, dbs):
-        db.python = py
-
-
-def initialize_databases():
-    """Initialize databases and fill in projects list."""
-    for proj, db in sorted(databases.items()):
-        meta = ase.db.web.process_metadata(db)
-        db.meta = meta
-        nrows = len(db)
-        projects.append((proj, db.meta.get('title', proj), nrows))
-        print('Initialized {proj}: (rows: {nrows})'
-              .format(proj=proj, nrows=nrows))
-
-
-if 'ASE_DB_APP_CONFIG' in os.environ:
-    app.config.from_envvar('ASE_DB_APP_CONFIG')
-    path = app.config['ASE_DB_TEMPLATES']
-    app.jinja_loader.searchpath.insert(0, str(path))
-    connect_databases(str(name) for name in app.config['ASE_DB_NAMES'])
-    initialize_databases()
-    tmpdir = str(app.config['ASE_DB_TMPDIR'])
-    download_button = app.config['ASE_DB_DOWNLOAD']
-    open_ase_gui = False
-else:
-    tmpdir = tempfile.mkdtemp(prefix='ase-db-app-')  # used to cache png-files
+tmpdir = tempfile.mkdtemp(prefix='ase-db-app-')  # used to cache png-files
 
 
 @app.route('/', defaults={'project': None})
