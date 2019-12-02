@@ -105,7 +105,7 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
     t2 = time.time()
 
     print('----------------------------------')
-    print('Finnished test for {}'.format(name))
+    print('Finished test for {}'.format(name))
     print('runtime = {} sec'.format(t2 - t1))
     print('----------------------------------')
 
