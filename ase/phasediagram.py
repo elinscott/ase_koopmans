@@ -227,10 +227,7 @@ class Pourbaix:
             energies.append(energy)
             names.append(name)
 
-        try:
-            from scipy.optimize import linprog#_broken_maybe
-        except ImportError:
-            from ase.utils._linprog import linprog
+        from scipy.optimize import linprog
 
         result = linprog(c=energies,
                          A_eq=np.transpose(eq2),
