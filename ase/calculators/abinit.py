@@ -55,6 +55,19 @@ class AbinitIO:
         with open(label + '.in', 'w') as fd:
             write_abinit(fd, atoms, param=parameters, species=species)
 
+    def read_results(self, label):
+        filename = label + '.txt'
+        results = {}
+        with open(filename) as fd:
+            dct = read_abinit_out(fd)
+            results.update(dct)
+        with open(label + '.log') as fd:
+            dct = read_abinit_log(fd)
+            results.update(dct)
+        with open('{}o_EIG'.format(label)) as fd:
+            dct = read_eig(fd)
+            results.update(dct)
+        return results
 
 class Abinit(FileIOCalculator):
     """Class for doing ABINIT calculations.
@@ -139,17 +152,7 @@ class Abinit(FileIOCalculator):
         self.read_results()
 
     def read_results(self):
-        filename = self.label + '.txt'
-        self.results = {}
-        with open(filename) as fd:
-            results = read_abinit_out(fd)
-            self.results.update(results)
-        with open(self.label + '.log') as fd:
-            results = read_abinit_log(fd)
-            self.results.update(results)
-        with open('{}o_EIG'.format(self.label)) as fd:
-            results = read_eig(fd)
-            self.results.update(results)
+        self.results = AbinitIO().read_results(self.label)
 
     def get_number_of_iterations(self):
         return self.results['niter']
