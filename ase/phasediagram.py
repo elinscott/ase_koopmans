@@ -164,10 +164,7 @@ class Pourbaix:
 
         self.count = kwargs
 
-        #if 'O' not in self.count:
-        #    self.count['O'] = 0
-
-        self.N = {'e-': 0}#, 'H': 1}
+        self.N = {'e-': 0}
         for symbol in kwargs:
             if symbol not in self.N:
                 self.N[symbol] = len(self.N)
@@ -199,7 +196,6 @@ class Pourbaix:
         # First two equations are charge and number of hydrogens, and
         # the rest are the remaining species.
 
-        # eq1 = [0, 0] + list(self.count.values())
         eq1 = [0] + list(self.count.values())
         eq2 = []
         energies = []
