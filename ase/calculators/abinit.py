@@ -55,6 +55,12 @@ class AbinitIO:
         with open(label + '.in', 'w') as fd:
             write_abinit(fd, atoms, param=parameters, species=species)
 
+    def read_inputs(self, label):
+        filename = label + '.txt'
+        atoms = read_abinit(label + '.in')
+        parameters = Parameters.read(label + '.ase')
+        return atoms, parameters
+
     def read_results(self, label):
         filename = label + '.txt'
         results = {}
@@ -146,10 +152,9 @@ class Abinit(FileIOCalculator):
         #
         # where basefile determines the file tree.
         FileIOCalculator.read(self, label)
-        filename = self.label + '.txt'
-        self.atoms = read_abinit(self.label + '.in')
-        self.parameters = Parameters.read(self.label + '.ase')
-        self.read_results()
+        io = AbinitIO()
+        self.atoms, self.parameters = io.read_inputs(label)
+        self.results = io.read_results(label)
 
     def read_results(self):
         self.results = AbinitIO().read_results(self.label)
