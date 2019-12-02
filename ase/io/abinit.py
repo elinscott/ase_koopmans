@@ -155,8 +155,8 @@ keys_with_units = {
     'latticeconstant': 'Ang'}
 
 
-from ase.calculators.calculator import kpts2mp
 def write_abinit_in(fd, atoms, param, species):
+    from ase.calculators.calculator import kpts2mp
     inp = {}
     inp.update(param)
     for key in ['xc', 'smearing', 'kpts', 'pps', 'raw']:
@@ -195,7 +195,7 @@ def write_abinit_in(fd, atoms, param, species):
     else:
         inp['nsppol'] = 1
 
-    for key in sorted(inp.keys()):
+    for key in sorted(inp):
         value = inp[key]
         unit = keys_with_units.get(key)
         if unit is None:
@@ -471,7 +471,6 @@ def read_eig(fd):
 
     eig_skn = []
     for ispin in range(2):
-        print('ispin', ispin)
         # (We don't know if we have two spins until we see next line)
         line = next(fd)
         m = re.match(r'\s*Eigenvalues \(hartree\) for nkpt\s*='
