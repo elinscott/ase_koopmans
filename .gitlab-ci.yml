@@ -23,9 +23,9 @@ variables:
 python_3_oldlibs_tests:
   image: python:3.5-slim
   script:
+    - python --version
     - pip install numpy==1.10.4 scipy==0.17.1 matplotlib==2.0.0
     - pip install --no-deps .
-    - python --version
     - ase test
 
 # Check newest Python with all the standard dependencies at newest versions.
@@ -37,10 +37,10 @@ python_3_oldlibs_tests:
 python_3_tests:
   image: python:3.7-slim
   script:
+    - python --version
     - pip install pyflakes psycopg2-binary netCDF4 pymysql cryptography
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
-    - python --version
     - ase test --strict
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
@@ -56,12 +56,12 @@ python_3_tests:
 .conda_tests:
   image: continuumio/anaconda3
   script:
+    - python --version
     - apt-get update
     - echo $PATH
     - export PATH=/opt/conda/bin:$PATH
     - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask
     - pip install .
-    - python --version
     - ase test --strict
 
 # Should be same image as python_3_tests except
