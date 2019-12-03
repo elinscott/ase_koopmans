@@ -204,6 +204,21 @@ def gui(project, id):
 def row(id):
     db = databases['']
     row = db.get(id=id)
+    atoms = Atoms(cell=row.cell, pbc=row.pbc)
+    size = kptdensity2monkhorstpack(atoms,
+                                    kptdensity=1.8,
+                                    even=False)
+    return render_template('summary.html',
+                           row=row,
+                           id=id,
+                           size=size)
+
+
+@app.route('/row/<uid>')
+def row2(uid):
+    db = databases['']
+    id = 1
+    row = db.get(id=id)
     s = Summary(row)
     atoms = Atoms(cell=row.cell, pbc=row.pbc)
     n1, n2, n3 = kptdensity2monkhorstpack(atoms,
@@ -215,8 +230,7 @@ def row(id):
                            n1=n1,
                            n2=n2,
                            n3=n3,
-                           back=True,
-                           md=db.meta)
+                           back=True)
 
 
 def tofile(project, query, type, limit=0):

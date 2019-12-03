@@ -56,6 +56,6 @@ def create_key_descriptions(db) -> Dict[str, Tuple[str, str, str]]:
     for row in db.select(columns=['key_value_pairs'], include_data=False):
         all_keys.update(row._keys)
     for key in all_keys:
-        kd[key] = ('', '', '')
+        kd[key] = (key, key, '')
 
     return kd
