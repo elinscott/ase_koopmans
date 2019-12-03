@@ -62,7 +62,8 @@ class AbinitIO:
 
     def read_inputs(self, label):
         filename = label + '.txt'
-        atoms = read_abinit(label + '.in')
+        with open(label + '.in') as fd:
+            atoms = read_abinit(fd)
         parameters = Parameters.read(label + '.ase')
         return atoms, parameters
 
