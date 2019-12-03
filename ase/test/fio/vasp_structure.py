@@ -56,7 +56,6 @@ class Test_xdatcar_roundtrip(unittest.TestCase):
         roundtrip_trajectory = ase.io.read(self.outfile, index=':')
         self.assert_trajectory_almost_equal(trajectory, roundtrip_trajectory)
 
-
 def suite():
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(
         Test_xdatcar_roundtrip)
@@ -73,5 +72,6 @@ class XdatcarTestResults(unittest.TestResult):
         raise err[1]
 
 
-runner = unittest.TextTestRunner(resultclass=XdatcarTestResults)
-runner.run(suite())
+if __name__ in ['__main__', 'test']:
+    runner = unittest.TextTestRunner(resultclass=XdatcarTestResults)
+    runner.run(suite())
