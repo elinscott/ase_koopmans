@@ -24,16 +24,15 @@ import functools
 import io
 import os
 import os.path as op
-import re
 import sys
 import tempfile
 
 from flask import Flask, render_template, request, send_from_directory, flash
 
 import ase.db
-import ase.db.web
-from ase.db.core import convert_str_to_int_float_or_str
+from ase.db.web import paginate, create_key_descriptions
 from ase.db.plot import atoms2png
+from ase.db.row import AtomsRow
 from ase.db.summary import Summary
 from ase.db.table import Table, all_columns
 from ase.visualize import view
@@ -55,21 +54,23 @@ app = Flask(__name__)
 
 next_con_id = 1
 connections = {}
-
+databases = {}
+key_descriptions = {}
 
 tmpdir = tempfile.mkdtemp(prefix='ase-db-app-')  # used to cache png-files
 
 
-@app.route('/', defaults={'project': None})
-@app.route('/<project>/')
-@app.route('/<project>')
-def index(project):
+def get_row(pid: str) -> AtomsRow:
+    project, _, s = pid.rpartition('-')
+    id = int(s)
+    return databases[project][id]
+
+
+def create_table(args, db, unique_key='id'):
     global next_con_id
 
-    if project is None:
-        project = list(databases)[0]
+    con_id = int(args.get('x', '0'))
 
-    con_id = int(request.args.get('x', '0'))
     if con_id in connections:
         query, nrows, page, columns, sort, limit = connections[con_id]
 
@@ -84,17 +85,11 @@ def index(project):
         sort = 'id'
         limit = 25
 
-    db = databases.get(project)
-    if db is None:
-        return 'No such project: ' + project
-
-    meta = db.meta
-
     if columns is None:
-        columns = meta.get('default_columns')[:] or list(all_columns)
+        columns = list(all_columns)
 
-    if 'sort' in request.args:
-        column = request.args['sort']
+    if 'sort' in args:
+        column = args['sort']
         if column == sort:
             sort = '-' + column
         elif '-' + column == sort:
@@ -102,55 +97,16 @@ def index(project):
         else:
             sort = column
         page = 0
-    elif 'query' in request.args:
-        dct = {}
-        query = [request.args['query']]
-        q = query[0]
-        for special in meta['special_keys']:
-            kind, key = special[:2]
-            if kind == 'SELECT':
-                value = request.args['select_' + key]
-                dct[key] = convert_str_to_int_float_or_str(value)
-                if value:
-                    q += ',{}={}'.format(key, value)
-            elif kind == 'BOOL':
-                value = request.args['bool_' + key]
-                dct[key] = convert_str_to_int_float_or_str(value)
-                if value:
-                    q += ',{}={}'.format(key, value)
-            elif kind == 'RANGE':
-                v1 = request.args['from_' + key]
-                v2 = request.args['to_' + key]
-                var = request.args['range_' + key]
-                dct[key] = (v1, v2, var)
-                if v1:
-                    q += ',{}>={}'.format(var, v1)
-                if v2:
-                    q += ',{}<={}'.format(var, v2)
-            else:  # SRANGE
-                v1 = request.args['from_' + key]
-                v2 = request.args['to_' + key]
-                dct[key] = (int(v1) if v1 else v1,
-                            int(v2) if v2 else v2)
-                if v1:
-                    q += ',{}>={}'.format(key, v1)
-                if v2:
-                    q += ',{}<={}'.format(key, v2)
-        q = q.lstrip(',')
-        query += [dct, q]
-        sort = 'id'
+    elif 'limit' in args:
+        limit = int(args['limit'])
         page = 0
-        nrows = None
-    elif 'limit' in request.args:
-        limit = int(request.args['limit'])
-        page = 0
-    elif 'page' in request.args:
-        page = int(request.args['page'])
+    elif 'page' in args:
+        page = int(args['page'])
 
-    if 'toggle' in request.args:
-        column = request.args['toggle']
+    if 'toggle' in args:
+        column = args['toggle']
         if column == 'reset':
-            columns = meta.get('default_columns')[:] or list(all_columns)
+            columns = list(all_columns)
         else:
             if column in columns:
                 columns.remove(column)
@@ -164,13 +120,14 @@ def index(project):
 
     if nrows is None:
         try:
+            print(query, db)
             nrows = db.count(query[2])
         except (ValueError, KeyError) as e:
             flash(', '.join(['Bad query'] + list(e.args)))
             okquery = ('', {}, 'id=0')  # this will return no rows
             nrows = 0
 
-    table = Table(db, meta.get('unique_key', 'id'))
+    table = Table(db, unique_key)
     table.select(okquery[2], columns, sort, limit, offset=page * limit)
 
     con = Connection(query, nrows, page, columns, sort, limit)
@@ -181,34 +138,40 @@ def index(project):
         for cid in sorted(connections)[:200]:
             del connections[cid]
 
-    table.format(SUBSCRIPT)
+    table.format()
 
     addcolumns = sorted(column for column in all_columns + table.keys
                         if column not in table.columns)
 
+    return (table, con_id, addcolumns, paginate(page, nrows, limit))
+
+
+@app.route('/')
+def index():
+    db = databases['']
+    table, con_id, addcolumns, pages = create_table(request.args, db)
+    con = connections[con_id]
+    print(table.columns)
+    print(key_descriptions)
     return render_template('table.html',
                            t=table,
-                           md=meta,
+                           kd=key_descriptions,
                            con=con,
                            x=con_id,
                            addcolumns=addcolumns,
-                           pages=pages(page, nrows, limit),
-                           nrows=nrows,
-                           row1=page * limit + 1,
-                           row2=min((page + 1) * limit, nrows))
+                           pages=pages,
+                           row1=con.page * con.limit + 1,
+                           row2=min((con.page + 1) * con.limit, con.nrows))
 
 
-@app.route('/<project>/image/<name>')
-def image(project, name):
-    id = int(name[:-4])
-    name = project + '-' + name
-    path = op.join(tmpdir, name)
-    if not op.isfile(path):
-        db = databases[project]
-        atoms = db.get_atoms(id)
+@app.route('/image/<pid>')
+def image(pid):
+    path = tmpdir / pid + '.png'
+    if not path.is_file():
+        atoms = get_row(pid).toatoms()
         atoms2png(atoms, path)
 
-    return send_from_directory(tmpdir, name)
+    return send_from_directory(tmpdir, path.name)
 
 
 @app.route('/<project>/cif/<name>')
@@ -231,40 +194,29 @@ def plot(project, uid, png):
 
 @app.route('/<project>/gui/<int:id>')
 def gui(project, id):
-    if open_ase_gui:
-        db = databases[project]
-        atoms = db.get_atoms(id)
-        view(atoms)
+    db = databases[project]
+    atoms = db.get_atoms(id)
+    view(atoms)
     return '', 204, []
 
 
-@app.route('/<project>/row/<uid>')
-def row(project, uid):
-    db = databases[project]
-    if not hasattr(db, 'meta'):
-        db.meta = ase.db.web.process_metadata(db)
-    prefix = '{}/{}-{}-'.format(tmpdir, project, uid)
-    key = db.meta.get('unique_key', 'id')
-    try:
-        uid = int(uid)
-    except ValueError:
-        pass
-    row = db.get(**{key: uid})
-    s = Summary(row, db.meta, SUBSCRIPT, prefix)
+@app.route('/row/<int:id>')
+def row(id):
+    db = databases['']
+    row = db.get(id=id)
+    s = Summary(row)
     atoms = Atoms(cell=row.cell, pbc=row.pbc)
     n1, n2, n3 = kptdensity2monkhorstpack(atoms,
                                           kptdensity=1.8,
                                           even=False)
     return render_template('summary.html',
-                           project=project,
                            s=s,
-                           uid=uid,
+                           id=id,
                            n1=n1,
                            n2=n2,
                            n3=n3,
                            back=True,
-                           md=db.meta,
-                           open_ase_gui=open_ase_gui)
+                           md=db.meta)
 
 
 def tofile(project, query, type, limit=0):
@@ -305,8 +257,6 @@ def xyz(project, id):
     return data, '{}.xyz'.format(id)
 
 
-
-
 def test():
     import pyjokes as j
     return j.get_joke('en')
@@ -344,5 +294,7 @@ def robots():
 
 
 if __name__ == '__main__':
-    connect_databases(sys.argv[1:])
+    db = ase.db.connect(sys.argv[1])
+    databases[''] = db
+    key_descriptions.update(create_key_descriptions(db))
     app.run(host='0.0.0.0', debug=True)

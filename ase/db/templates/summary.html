@@ -103,13 +103,12 @@
 {% endmacro %}
 
 {% block title %}
-{{proj}} - Summary
+Summary
 {% endblock %}
 
 {% set d = s.row %}
 
 {% block head %}
-{% if not open_ase_gui %}
 <script src="{{ url_for('static', filename='jsmol/JSmol.min.js') }}"></script>
 
 <script>
@@ -123,7 +122,6 @@ jmol_isReady = function(applet)
 </script>
 
 <script src="{{ url_for('static', filename='summary.js') }}"></script>
-{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -162,19 +160,19 @@ jmol_isReady = function(applet)
         {% elif data.type == 'table' %}
             {{ table(data) }}
         {% else %}
-	    {% if data.link %}
-	        {% if data.link == 'empty' %}
+            {% if data.link %}
+                {% if data.link == 'empty' %}
                     <br>
-	        {% else %}
-	            <center>
-		      <a target="_blank"
-			 rel="noopener noreferrer"
-			 href="/{{ project }}/plot/{{ uid }}/{{ data.link }}">
-			Interactive mode
-		      </a>
-		    </center>
-		{% endif %}
-	    {% endif %}
+                {% else %}
+                    <center>
+                      <a target="_blank"
+                         rel="noopener noreferrer"
+                         href="/{{ project }}/plot/{{ uid }}/{{ data.link }}">
+                        Interactive mode
+                      </a>
+                    </center>
+                {% endif %}
+            {% endif %}
              <img
                 src="/{{ project }}/plot/{{ uid }}/{{ data.filename }}"
                 width="100%">
