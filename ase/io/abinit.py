@@ -1,5 +1,4 @@
 import re
-from ase.utils import basestring
 from ase.units import Hartree, Bohr
 import numpy as np
 """
@@ -8,7 +7,7 @@ Atoms object in ABINIT input format.
 
 """
 
-def read_abinit(filename='abinit.in'):
+def read_abinit(fd):
     """Import ABINIT input file.
 
     Reads cell, atom positions, etc. from abinit input file
@@ -16,19 +15,11 @@ def read_abinit(filename='abinit.in'):
 
     from ase import Atoms, units
 
-    if isinstance(filename, basestring):
-        f = open(filename)
-    else: # Assume it's a file-like object
-        f = filename
-
     lines = []
-    for line in f.readlines():
+    for line in fd.readlines():
         meat = line.split('#', 1)[0]
         lines.append(meat)
     tokens = ' '.join(lines).lower().split()
-
-    if isinstance(filename, basestring):
-        f.close()
 
     # note that the file can not be scanned sequentially
 
@@ -101,7 +92,7 @@ def read_abinit(filename='abinit.in'):
                           unit*float(tokens[index+3*i+2]),
                           unit*float(tokens[index+3*i+3])])
         atoms = Atoms(cell=rprim, positions=xangs, numbers=numbers, pbc=True)
-    
+
     try:
         ii = tokens.index('nsppol')
     except ValueError:
