@@ -1461,6 +1461,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     kpts: (int, int, int) or dict
         If kpts is a tuple (or list) of 3 integers, it is interpreted
         as the dimensions of a Monkhorst-Pack grid.
+        If kpts is None, a Γ-point calculation is assumed (which uses a specialized code-path in QE).
         If kpts is a dict, it will either be interpreted as a path
         in the Brillouin zone (*) if it contains the 'path' keyword,
         otherwise it is converted to a Monkhorst-Pack grid (**).
@@ -1640,13 +1641,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
             for i, x in enumerate(shift):
                 assert x == 0 or abs(x * kgrid[i] - 0.5) < 1e-14
                 koffset.append(0 if x == 0 else 1)
-        elif isinstance(kpts, str) and (kpts.lower() == 'gamma'):
-            # only do gammapoint if required
-            kgrid = "gamma"
         else:
             kgrid = kpts
     else:
-        kgrid = (1, 1, 1)
+        kgrid = "gamma"
 
     # True and False work here and will get converted by ':d' format
     if isinstance(koffset, int):

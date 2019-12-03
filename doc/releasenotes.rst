@@ -13,6 +13,8 @@ Git master branch
 * The ``ase db db1.db <selection> --insert-into db2.db`` command now respects
   ``--limit`` and ``--offset``.
 
+* Fixed ``kpts`` option of :class:`ase.calculators.espresso.Espresso` so that specifying a Γ-point calculation with ``kpts=(1, 1, 1)`` does not enable the optimized codepath (which halves memory and cpu). Use ``kpts=None`` to enable the optimized codepath.
+
 
 Version 3.19.0
 ==============
@@ -140,6 +142,7 @@ Version 3.18.2
 
 * Fix an issue with the binary package (wheel) of 3.18.1.
   No bugfixes as such.
+
 
 Version 3.18.1
 ==============

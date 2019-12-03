@@ -77,7 +77,7 @@ in ``input_data``, but it is not necessary::
 
 Some parameters are used by ASE, or have additional meaning:
 
- * ``kpts=(3, 3, 3)`` sets the number of kpoints on a grid (defaults to gamma)
+ * ``kpts=(3, 3, 3)`` sets the number of kpoints on a grid (defaults to gamma if ``None`` (using a specialized, optimized code-path). Explicitly writing ``kpts=(1, 1, 1)`` is enabling the normal codepath).
  * ``koffset=(0, 0, 0)`` set to 0 or 1 to displace the kpoint grid by a half
    cell in that direction. Also accepts ``True`` and ``False``.
  * ``kspacing=0.1`` sets the minimum distance between kpoints in reciprocal
