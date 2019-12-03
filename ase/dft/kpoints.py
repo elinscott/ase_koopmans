@@ -551,9 +551,12 @@ class CellInfo:
         self.lattice = lattice
         self.special_points = special_points
 
-
 def get_cellinfo(cell, lattice=None, eps=2e-4):
     from ase.build.tools import niggli_reduce_cell
+    warnings.warn(
+        "This function is deprecated, use ase.lattice or get_bandpath",
+        np.VisibleDeprecationWarning
+    )
     rcell, M = niggli_reduce_cell(cell)
     latt = crystal_structure_from_cell(rcell, niggli_reduce=False)
     if lattice:
