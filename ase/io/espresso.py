@@ -22,6 +22,7 @@ import numpy as np
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import (SinglePointDFTCalculator,
                                          SinglePointKPoint)
+from ase.calculators.espresso import Espresso
 from ase.calculators.calculator import kpts2ndarray, kpts2sizeandoffsets
 from ase.dft.kpoints import kpoint_convert
 from ase.constraints import FixAtoms, FixCartesian
@@ -46,7 +47,6 @@ _PW_FERMI = 'the Fermi energy is'
 _PW_KPTS = 'number of k points='
 _PW_BANDS = _PW_END
 _PW_BANDSTRUCTURE = 'End of band structure calculation'
-
 
 class Namelist(OrderedDict):
     """Case insensitive dict that emulates Fortran Namelists."""
@@ -458,7 +458,7 @@ def read_espresso_in(fileobj):
 
     # parse namelist section and extract remaining lines
     data, card_lines = read_fortran_namelist(fileobj)
-
+    
     # get the cell if ibrav=0
     if 'system' not in data:
         raise KeyError('Required section &SYSTEM not found.')
@@ -485,10 +485,14 @@ def read_espresso_in(fileobj):
     constraint_idx = [position[2] for position in positions_card]
     constraint = get_constraint(constraint_idx)
 
+    pseudos = get_pseudopotentials(card_lines, n_types=data['system']['ntyp'])
+
     # TODO: put more info into the atoms object
     # e.g magmom, forces.
     atoms = Atoms(symbols=symbols, positions=positions, cell=cell,
-                  constraint=constraint, pbc=True)
+                  constraint=constraint, pbc=True, 
+                  calculator=Espresso(input_data=data, pseudopotentials = pseudos))
+    atoms.calc.atoms = atoms
 
     return atoms
 
@@ -788,6 +792,33 @@ def get_cell_parameters(lines, alat=None):
 
     return cell, cell_alat
 
+def get_pseudopotentials(lines, n_types):
+    """Parse atom positions from ATOMIC_SPECIES card.
+
+    Parameters
+    ----------
+    lines : list[str]
+        A list of lines containing the ATOMIC_SPECIES card.
+    n_types : int
+        Expected number of species. Only this many lines will be parsed.
+
+    Returns
+    -------
+    pseudos : {str : str, ...}
+        A dictionary of the species and corresponding pseudopotentials
+
+    Raises
+    ------
+    ValueError
+        Any problems parsing the data result in ValueError
+
+    """
+
+    i_start = [l.lower() for l in lines].index('atomic_species') + 1
+    pseudos = {l.split()[0] : l.split()[2] for l in lines[i_start:i_start + n_types]}
+
+    return pseudos
+        
 
 def str_to_value(string):
     """Attempt to convert string into int, float (including fortran double),
@@ -1095,7 +1126,9 @@ KEYS = Namelist((
         'w_2']),
     ('CELL', [
         'cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr',
-        'cell_dofree'])))
+        'cell_dofree']),
+    ('EE', []),
+    ('NKSIC', [])))
 
 
 # Number of valence electrons in the pseudopotentials recommended by
@@ -1460,6 +1493,14 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     # Convert to a namelist to make working with parameters much easier
     # Note that the name ``input_data`` is chosen to prevent clash with
     # ``parameters`` in Calculator objects
+    if 'input_data' in atoms.calc.parameters:
+        if input_data is None:
+            input_data = atoms.calc.parameters['input_data']
+        elif input_data != atoms.calc.parameters['input_data']:
+            warnings.warn("write_espresso_in(...) is ignoring "
+                  "atom.calc.parameters['input_data'] in favor of "
+                  "the input_data provided to it as an argument")
+
     input_parameters = construct_namelist(input_data, **kwargs)
 
     # Convert ase constraints to QE constraints
@@ -1610,7 +1651,6 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         pwi.append('/\n')  # terminate section
     pwi.append('\n')
 
-    # Pseudopotentials
     pwi.append('ATOMIC_SPECIES\n')
     pwi.extend(atomic_species_str)
     pwi.append('\n')
