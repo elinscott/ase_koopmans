@@ -32,9 +32,10 @@ class Test_xdatcar_roundtrip(unittest.TestCase):
         self.assertEqual(len(atoms), len(other))
         self.assertEqual(atoms.arrays['numbers'].tolist(),
                          other.arrays['numbers'].tolist())
-        numpy.testing.assert_array_almost_equal(atoms.get_scaled_positions(),
-                                                other.get_scaled_positions(),
-                                                decimal=12)
+        numpy.testing.assert_array_almost_equal(
+            atoms.get_scaled_positions(wrap=True),
+            other.get_scaled_positions(wrap=True),
+            decimal=12)
         numpy.testing.assert_array_almost_equal(atoms.cell, other.cell,
                                                 decimal=12)
         self.assertTrue((atoms.pbc == other.pbc).all())
