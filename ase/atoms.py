@@ -1000,9 +1000,9 @@ class Atoms(object):
 
             self.set_array(name, a)
 
+    def __iadd__(self, other):
+        self.extend(other)
         return self
-
-    __iadd__ = extend
 
     def append(self, atom):
         """Append atom to end."""
