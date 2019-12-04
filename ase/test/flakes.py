@@ -22,6 +22,8 @@ def run_flake8():
                   'flake8',
                   str(asepath),
                   str((asepath / '../doc').resolve()),
+                  '--exclude',
+                  str((asepath / '../doc/build/*').resolve()),
                   '-j',
                   '1'],
                  stdout=PIPE)
@@ -100,7 +102,7 @@ max_errors = {
     # test for object identity should be 'is not'
     'E714': 8,
     # closing bracket does not match visual indentation
-    'E124': 9,
+    'E124': 8,
     # too many leading '#' for block comment
     'E266': 10,
     # over-indented
@@ -110,59 +112,58 @@ max_errors = {
     # indentation contains tabs
     'W191': 13,
     # closing bracket does not match indentation of opening bracket's line
-    'E123': 15,
+    'E123': 14,
     # multiple spaces before operator
     'E221': 16,
-    # inline comment should start with '# '
-    'E262': 22,
-    # whitespace after '{'
-    'E201': 26,
     # whitespace before '}'
-    'E202': 26,
-    # continuation line over-indented for hanging indent
-    'E126': 28,
+    'E202': 19,
+    # whitespace after '{'
+    'E201': 20,
+    # inline comment should start with '# '
+    'E262': 20,
     # the backslash is redundant between brackets
     'E502': 30,
     # continuation line missing indentation or outdented
     'E122': 31,
+    # indentation is not a multiple of four
+    'E111': 36,
     # do not use bare 'except'
     'E722': 38,
-    # indentation is not a multiple of four
-    'E111': 40,
     # whitespace before ':'
-    'E203': 42,
+    'E203': 38,
     # blank line at end of file
-    'W391': 45,
+    'W391': 46,
+    # continuation line over-indented for hanging indent
+    'E126': 48,
     # multiple spaces after ','
     'E241': 50,
+    # continuation line under-indented for visual indent
+    'E128': 53,
     # continuation line over-indented for visual indent
     'E127': 60,
-    # continuation line under-indented for visual indent
-    'E128': 60,
     # missing whitespace around operator
-    'E225': 63,
+    'E225': 61,
     # too many blank lines (2)
-    'E303': 80,
+    'E303': 81,
     # expected 2 blank lines after class or function definition, found 1
-    'E305': 85,
+    'E305': 83,
     # module level import not at top of file
-    'E402': 96,
+    'E402': 91,
     # at least two spaces before inline comment
-    'E261': 101,
+    'E261': 97,
     # expected 2 blank lines, found 1
-    'E302': 109,
+    'E302': 111,
     # unexpected spaces around keyword / parameter equals
-    'E251': 123,
+    'E251': 117,
     # trailing whitespace
-    'W291': 203,
+    'W291': 222,
     # block comment should start with '# '
-    'E265': 257,
+    'E265': 246,
     # missing whitespace after ','
-    'E231': 463,
+    'E231': 465,
     # missing whitespace around arithmetic operator
-    'E226': 562,
+    'E226': 563,
     # line too long (93 > 80 characters)
-    'E501': 645}
-
+    'E501': 653}
 
 run_flake8()
