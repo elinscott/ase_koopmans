@@ -5,7 +5,8 @@ from copy import deepcopy
 from ase.calculators.calculator import KPoints, kpts2kpts
 
 _special_kws = ['center', 'autosym', 'autoz', 'theory', 'basis', 'xc', 'task',
-                'set', 'symmetry', 'label', 'geompar', 'basispar', 'kpts']
+                'set', 'symmetry', 'label', 'geompar', 'basispar', 'kpts',
+                'bandpath']
 
 _system_type = {1: 'polymer', 2: 'surface', 3: 'crystal'}
 
@@ -83,12 +84,25 @@ _special_keypairs = [('nwpw', 'simulation_cell'),
                      ]
 
 
-def _format_brillouin_zone(array):
+def _format_brillouin_zone(array, name=None):
     out = ['  brillouin_zone']
+    if name is not None:
+        out += ['    zone_name {}'.format(name)]
     template = '    kvector' + ' {:20.16e}' * array.shape[1]
     for row in array:
         out.append(template.format(*row))
     out.append('  end')
+    return out
+
+
+def _get_bandpath(bp):
+    if bp is None:
+        return []
+    out = ['nwpw']
+    out += _format_brillouin_zone(bp.kpts, name=bp.path)
+    out += ['  zone_structure_name {}'.format(bp.path),
+            'end',
+            'task band structure']
     return out
 
 
@@ -289,6 +303,7 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
            '\n'.join(_get_basis(**params)),
            '\n'.join(_get_other(**params)),
            '\n'.join(_get_set(**params.get('set', dict()))),
-           'task {} {}'.format(theory, task)]
+           'task {} {}'.format(theory, task),
+           '\n'.join(_get_bandpath(params.get('bandpath', None)))]
 
     fd.write('\n\n'.join(out))
