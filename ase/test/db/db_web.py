@@ -17,17 +17,12 @@ c.write(atoms,
         data={'x': x,
               't1': t1,
               't2': t2})
-c.metadata = {'title': 'Test title'}
-c.python = {'key_descriptions': {'foo': ('FOO', 'FOO ...', '`m_e`')},
-            'default_columns': ['foo', 'formula', 'bar']}
-app.databases['default'] = c
-app.initialize_databases()
+app.main(c)
 app.app.testing = True
 c = app.app.test_client()
 page = c.get('/').data.decode()
-assert 'Test title' in page
-assert 'FOO' in page
-c.get('/default/row/1')
+assert 'foo' in page
+p1 = c.get('/row/1').data.decode()
 c.get('/default/json/1').data
 c.get('/default/sqlite/1').data
 c.get('/default/sqlite?x=1').data
