@@ -10,7 +10,7 @@ import ase
 try:
     import flake8  # noqa
 except ImportError:
-    raise unittest.SkipTest('pyflakes module not available')
+    raise unittest.SkipTest('flake8 module not available')
 
 
 asepath = Path(ase.__path__[0])
@@ -24,6 +24,8 @@ def run_flake8():
                   str((asepath / '../doc').resolve()),
                   '--exclude',
                   str((asepath / '../doc/build/*').resolve()),
+                  '--ignore',
+                  'E129,W293,W503,W504,E741'
                   '-j',
                   '1'],
                  stdout=PIPE)
