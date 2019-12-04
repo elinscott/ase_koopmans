@@ -1,13 +1,9 @@
 from distutils.core import setup
-import sys
 
 long_description = """\
 Jacapo is a python package providing an interface to Dacapo that
 is compatible with the open source Atomic Simulation
 Environment in the python scripting language."""
-
-if sys.version_info < (2, 3, 0, 'final', 0):
-    raise SystemExit('Python 2.3 or later is required!')
 
 packages = ['Jacapo']
 

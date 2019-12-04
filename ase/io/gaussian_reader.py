@@ -1,4 +1,3 @@
-from __future__ import print_function
 from ase.utils import basestring
 
 # Copyright (C) 2010 by CAMd, DTU

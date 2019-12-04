@@ -3,6 +3,7 @@ from itertools import combinations_with_replacement
 from math import erf
 from scipy.spatial.distance import cdist
 from ase.neighborlist import NeighborList
+from ase.utils import pbc2pbc
 
 
 class OFPComparator(object):
@@ -78,18 +79,14 @@ class OFPComparator(object):
     """
 
     def __init__(self, n_top=None, dE=1.0, cos_dist_max=5e-3, rcut=20.,
-                 binwidth=0.05, sigma=0.02, nsigma=4, pbc=None,
+                 binwidth=0.05, sigma=0.02, nsigma=4, pbc=True,
                  maxdims=None, recalculate=False):
         self.n_top = n_top or 0
         self.dE = dE
         self.cos_dist_max = cos_dist_max
         self.rcut = rcut
         self.binwidth = binwidth
-
-        if pbc is None:
-            self.pbc = [True] * 3
-        else:
-            self.pbc = pbc
+        self.pbc = pbc2pbc(pbc)
 
         if maxdims is None:
             self.maxdims = [None] * 3
@@ -99,8 +96,7 @@ class OFPComparator(object):
         self.sigma = sigma
         self.nsigma = nsigma
         self.recalculate = recalculate
-
-        self.dimensions = self.pbc.count(True)
+        self.dimensions = self.pbc.sum()
 
         if self.dimensions == 1 or self.dimensions == 2:
             for direction in range(3):

@@ -1,7 +1,6 @@
 # -*- encoding: utf-8
 "Module for displaying information about the system."
 
-from __future__ import unicode_literals
 
 import numpy as np
 from ase.gui.i18n import _

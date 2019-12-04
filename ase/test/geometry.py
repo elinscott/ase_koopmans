@@ -1,6 +1,5 @@
 """Test the ase.geometry module and ase.build.cut() function."""
 
-from __future__ import division
 
 import numpy as np
 

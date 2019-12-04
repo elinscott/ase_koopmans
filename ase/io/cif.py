@@ -18,7 +18,7 @@ from ase.spacegroup import crystal
 from ase.spacegroup.spacegroup import spacegroup_from_data, Spacegroup
 from ase.utils import basestring
 from ase.data import atomic_numbers, atomic_masses
-from ase.io.cif_unicode import format_unicode
+from ase.io.cif_unicode import format_unicode, handle_subscripts
 
 
 # Old conventions:
@@ -33,7 +33,7 @@ def convert_value(value):
     """Convert CIF value string to corresponding python type."""
     value = value.strip()
     if re.match('(".*")|(\'.*\')$', value):
-        return format_unicode(value[1:-1])
+        return handle_subscripts(value[1:-1])
     elif re.match(r'[+-]?\d+$', value):
         return int(value)
     elif re.match(r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$', value):
@@ -46,7 +46,7 @@ def convert_value(value):
         warnings.warn('Badly formed number: "{0}"'.format(value))
         return float(value[:value.index('(')])  # strip off uncertainties
     else:
-        return format_unicode(value)
+        return handle_subscripts(value)
 
 
 def parse_multiline_string(lines, line):
@@ -190,6 +190,7 @@ def parse_cif_ase(fileobj):
     data = fileobj.read()
     if isinstance(data, bytes):
         data = data.decode('latin1')
+    data = format_unicode(data)
     data = [e for e in data.split('\n') if len(e) > 0]
     if len(data) > 0 and data[0].rstrip() == '#\\#CIF_2.0':
         warnings.warn('CIF v2.0 file format detected; `ase` CIF reader might '

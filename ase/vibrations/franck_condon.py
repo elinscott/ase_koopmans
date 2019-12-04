@@ -1,4 +1,3 @@
-from __future__ import division
 from functools import reduce
 from itertools import combinations, chain
 from math import factorial

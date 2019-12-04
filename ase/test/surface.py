@@ -1,7 +1,8 @@
 import numpy as np
 
 from ase import Atoms, Atom
-from ase.build import fcc111, fcc211, add_adsorbate
+from ase.build import fcc111, fcc211, add_adsorbate, bulk, surface
+import math
 
 atoms = fcc211('Au', (3, 5, 8), vacuum=10.)
 assert len(atoms) == 120
@@ -24,3 +25,19 @@ except KeyError as e:
     failed = True
     assert e.args[0] == 'CN'
 assert failed
+
+# This test ensures that the default periodic behavior remains unchanged
+cubic_fcc = bulk("Al", a=4.05, cubic=True)
+surface_fcc = surface(cubic_fcc, (1,1,1), 3)
+
+assert list(surface_fcc.pbc) == [True, True, False]
+assert surface_fcc.cell[2][2] == 0
+
+# This test checks the new periodic option
+cubic_fcc = bulk("Al", a=4.05, cubic=True)
+surface_fcc = surface(cubic_fcc, (1,1,1), 3, periodic=True)
+
+assert (list(surface_fcc.pbc) == [True, True, True])
+expected_length = 4.05*3**0.5 #for FCC with a=4.05
+assert math.isclose(surface_fcc.cell[2][2], expected_length)
+

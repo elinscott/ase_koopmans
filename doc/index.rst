@@ -38,7 +38,7 @@ Supported :mod:`Calculators <ase.calculators>`:
 |abinit| |Asap| |Atomistica| |CASTEP| |CP2K| |CRYSTAL| |deMon| |dftb|
 |elk| |exciting| |EMT|
 |fhi-aims| |fleur| |gpaw| |gromacs|
-|hotbit| |jacapo| |jdftx| |lammps| |nwchem|
+|hotbit| |jacapo| |jdftx| |kim| |lammps| |nwchem|
 |octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
 :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
@@ -47,8 +47,9 @@ Gaussian_
 :mod:`Grimme DFT-D3 <ase.calculators.dftd3>`
 :mod:`~ase.calculators.gulp`
 Mopac_
-:mod:`~ase.calculators.tip3p`
+:mod:`~ase.calculators.qchem`
 :mod:`~ase.calculators.qmmm`
+:mod:`~ase.calculators.tip3p`
 
 
 `Reference publication on ASE <https://doi.org/10.1088/1361-648X/aa680e>`__
@@ -67,6 +68,8 @@ See how to identify and convert old trajectory files here: :ref:`convert`.
 
 News
 ====
+
+* :ref:`ASE version 3.18.1 <releasenotes>` released (20 September 2019).
 
 * :ref:`ASE version 3.18.0 <releasenotes>` released (19 July 2019).
 
@@ -223,6 +226,9 @@ Contents
    :align: middle
 .. |jdftx| image:: static/jdftx.png
    :target: http://jdftx.org/ASE.html
+   :align: middle
+.. |kim| image:: static/kim.png
+   :target: ase/calculators/kim.html
    :align: middle
 .. |lammps| image:: static/lammps.png
    :target: ase/calculators/lammps.html
