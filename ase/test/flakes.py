@@ -8,7 +8,7 @@ from subprocess import Popen, PIPE
 import ase
 
 try:
-    import pyflakes  # noqa
+    import flake8  # noqa
 except ImportError:
     raise unittest.SkipTest('pyflakes module not available')
 
@@ -16,7 +16,7 @@ except ImportError:
 asepath = Path(ase.__path__[0])
 
 
-def flake8():
+def run_flake8():
     proc = Popen([sys.executable,
                   '-m',
                   'flake8',
@@ -165,4 +165,4 @@ max_errors = {
     'E501': 645}
 
 
-flake8()
+run_flake8()

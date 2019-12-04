@@ -38,7 +38,7 @@ python_3_tests:
   image: python:3.7-slim
   script:
     - python --version
-    - pip install pyflakes psycopg2-binary netCDF4 pymysql cryptography
+    - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
     - ase test --strict
