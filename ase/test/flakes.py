@@ -145,6 +145,8 @@ max_errors = {
     'E127': 60,
     # missing whitespace around operator
     'E225': 61,
+    # ambiguous variable name 'O'
+    'E741': 77,
     # too many blank lines (2)
     'E303': 81,
     # expected 2 blank lines after class or function definition, found 1
@@ -165,7 +167,7 @@ max_errors = {
     'E231': 465,
     # missing whitespace around arithmetic operator
     'E226': 563,
-    # line too long (93 > 80 characters)
-    'E501': 653}
+    # line too long (93 > 79 characters)
+    'E501': 737}
 
 run_flake8()
