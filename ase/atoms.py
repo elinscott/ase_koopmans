@@ -757,7 +757,8 @@ class Atoms(object):
     # Informs calculators (e.g. Asap) that ideal gas contribution is added here.
     _ase_handles_dynamic_stress = True
 
-    def get_stress(self, voigt=True, apply_constraint=True, include_ideal_gas=False):
+    def get_stress(self, voigt=True, apply_constraint=True,
+                   include_ideal_gas=False):
         """Calculate stress tensor.
 
         Returns an array of the six independent components of the
@@ -765,7 +766,7 @@ class Atoms(object):
         (xx, yy, zz, yz, xz, xy) or as a 3x3 matrix.  Default is Voigt
         order.
 
-        The ideal gas contribution to the stresses is added if the 
+        The ideal gas contribution to the stresses is added if the
         atoms have momenta and ``include_ideal_gas`` is set to True.
         """
 
@@ -798,7 +799,8 @@ class Atoms(object):
             invvol = 1.0 / self.get_volume()
             for alpha in range(3):
                 for beta in range(alpha, 3):
-                    stress[stresscomp[alpha,beta]] -= (p[:,alpha] * p[:,beta] * invmass).sum() * invvol
+                    stress[stresscomp[alpha, beta]] -= (
+                        p[:, alpha] * p[:, beta] * invmass).sum() * invvol
 
         if voigt:
             return stress
@@ -815,7 +817,7 @@ class Atoms(object):
         stresses (e.g. classical potentials).  Even for such calculators
         there is a certain arbitrariness in defining per-atom stresses.
 
-        The ideal gas contribution to the stresses is added if the 
+        The ideal gas contribution to the stresses is added if the
         atoms have momenta and ``include_ideal_gas`` is set to True.
         """
         if self._calc is None:
@@ -831,7 +833,8 @@ class Atoms(object):
             invmass = 1.0 / self.get_masses()
             for alpha in range(3):
                 for beta in range(alpha, 3):
-                    stresses[:,stresscomp[alpha,beta]] -= p[:,alpha] * p[:,beta] * invmass * invvol
+                    stresses[:, stresscomp[alpha, beta]] -= (
+                        p[:, alpha] * p[:, beta] * invmass * invvol)
         return stresses
 
     def get_dipole_moment(self):
@@ -1651,16 +1654,18 @@ class Atoms(object):
 
         return get_angles(v12, v32, cell=cell, pbc=pbc)
 
-    def set_angle(self, a1, a2=None, a3=None, angle=None, mask=None, indices=None, add=False):
+    def set_angle(self, a1, a2=None, a3=None, angle=None, mask=None,
+                  indices=None, add=False):
         """Set angle (in degrees) formed by three atoms.
 
         Sets the angle between vectors *a2*->*a1* and *a2*->*a3*.
 
         If *add* is `True`, the angle will be changed by the value given.
 
-        Same usage as in :meth:`ase.Atoms.set_dihedral`. If *mask* and *indices*
-        are given, *indices* overwrites *mask*. If *mask* and *indices* are not set,
-        only *a3* is moved."""
+        Same usage as in :meth:`ase.Atoms.set_dihedral`.
+        If *mask* and *indices*
+        are given, *indices* overwrites *mask*. If *mask* and *indices*
+        are not set, only *a3* is moved."""
 
         if not isinstance(a1, int):
             # old API (uses radians)
@@ -1782,7 +1787,8 @@ class Atoms(object):
         else:
             return D_len
 
-    def set_distance(self, a0, a1, distance, fix=0.5, mic=False, mask=None, indices=None, add=False, factor=False):
+    def set_distance(self, a0, a1, distance, fix=0.5, mic=False,
+                     mask=None, indices=None, add=False, factor=False):
         """Set the distance between two atoms.
 
         Set the distance between atoms *a0* and *a1* to *distance*.
@@ -1791,9 +1797,11 @@ class Atoms(object):
         atom and *fix=0.5* (default) to fix the center of the bond.
 
         If *mask* or *indices* are set (*mask* overwrites *indices*),
-        only the atoms defined there are moved (see :meth:`ase.Atoms.set_dihedral`).
+        only the atoms defined there are moved
+        (see :meth:`ase.Atoms.set_dihedral`).
 
-        When *add* is true, the distance is changed by the value given. In combination
+        When *add* is true, the distance is changed by the value given.
+        In combination
         with *factor* True, the value given is a factor scaling the distance.
 
         It is assumed that the atoms in *mask*/*indices* move together
@@ -1808,7 +1816,9 @@ class Atoms(object):
                 newDist = oldDist * distance
             else:
                 newDist = oldDist + distance
-            self.set_distance(a0, a1, newDist, fix=fix, mic=mic, mask=mask, indices=indices, add=False, factor=False)
+            self.set_distance(a0, a1, newDist, fix=fix, mic=mic,
+                              mask=mask, indices=indices, add=False,
+                              factor=False)
             return
 
         R = self.arrays['positions']
