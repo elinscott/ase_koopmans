@@ -1,15 +1,8 @@
 import re
-from typing import List, Tuple, Dict, Optional, Any
+from typing import List, Tuple, Dict, Optional
 
-from ase import Atoms
-from ase.calculators.calculator import kptdensity2monkhorstpack
 from ase.db.core import default_key_descriptions
 from ase.db.table import Table, all_columns
-
-
-from ase.db.core import float_to_time_string, now
-from ase.geometry import cell_to_cellpar
-from ase.formula import Formula
 
 
 class Session:
@@ -163,63 +156,3 @@ def create_key_descriptions(db) -> Dict[str, Tuple[str, str, str]]:
         kd[key] = (key, key, '')
 
     return kd
-
-
-def row2things(row,
-               key_descriptions: Dict[str, Tuple[str, str, str]]
-               ) -> Dict[str, Any]:
-    """"""
-
-    things = {}
-
-    atoms = Atoms(cell=row.cell, pbc=row.pbc)
-    things['size'] = kptdensity2monkhorstpack(atoms,
-                                              kptdensity=1.8,
-                                              even=False)
-
-    things['cell'] = [['{:.3f}'.format(a) for a in axis] for axis in row.cell]
-    par = ['{:.3f}'.format(x) for x in cell_to_cellpar(row.cell)]
-    things['lengths'] = par[:3]
-    things['angles'] = par[3:]
-
-    stress = row.get('stress')
-    if stress is not None:
-        things['stress'] = ', '.join('{0:.3f}'.format(s) for s in stress)
-
-    things['formula'] = Formula(row.formula).format('abc')
-
-    dipole = row.get('dipole')
-    if dipole is not None:
-        things['dipole'] = ', '.join('{0:.3f}'.format(d) for d in dipole)
-
-    data = row.get('data')
-    if data:
-        things['data'] = ', '.join(data.keys())
-
-    constraints = row.get('constraints')
-    if constraints:
-        things['constraints'] = ', '.join(c.__class__.__name__
-                                          for c in constraints)
-
-    keys = ({'id', 'energy', 'fmax', 'smax', 'mass', 'age'} |
-            set(key_descriptions) |
-            set(row.key_value_pairs))
-    things['table'] = []
-    for key in keys:
-        if key == 'age':
-            age = float_to_time_string(now() - row.ctime, True)
-            things['table'].append(('Age', age))
-            continue
-        value = row.get(key)
-        if value is not None:
-            if isinstance(value, float):
-                value = '{:.3f}'.format(value)
-            elif not isinstance(value, str):
-                value = str(value)
-            desc, unit = key_descriptions.get(key, ['', key, ''])[1:]
-            if unit:
-                value += ' ' + unit
-            things['table'].append((desc, value))
-
-    return things
-    

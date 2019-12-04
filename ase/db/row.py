@@ -1,15 +1,18 @@
 from random import randint
+from typing import Dict, Tuple, Any
 
 import numpy as np
 
 from ase import Atoms
 from ase.constraints import dict2constraint
-from ase.calculators.calculator import get_calculator_class, all_properties
-from ase.calculators.calculator import PropertyNotImplementedError
+from ase.calculators.calculator import (get_calculator_class, all_properties,
+                                        PropertyNotImplementedError,
+                                        kptdensity2monkhorstpack)
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import chemical_symbols, atomic_masses
-from ase.io.jsonio import decode
 from ase.formula import Formula
+from ase.geometry import cell_to_cellpar
+from ase.io.jsonio import decode
 
 
 class FancyDict(dict):
@@ -250,3 +253,64 @@ class AtomsRow:
                 atoms.info['data'] = data
 
         return atoms
+
+
+def row2things(row,
+               key_descriptions: Dict[str, Tuple[str, str, str]]
+               ) -> Dict[str, Any]:
+    """Convert row to dict of things for printing or a web-page."""
+
+    from ase.db.core import float_to_time_string, now
+
+    things = {}
+
+    atoms = Atoms(cell=row.cell, pbc=row.pbc)
+    things['size'] = kptdensity2monkhorstpack(atoms,
+                                              kptdensity=1.8,
+                                              even=False)
+
+    things['cell'] = [['{:.3f}'.format(a) for a in axis] for axis in row.cell]
+    par = ['{:.3f}'.format(x) for x in cell_to_cellpar(row.cell)]
+    things['lengths'] = par[:3]
+    things['angles'] = par[3:]
+
+    stress = row.get('stress')
+    if stress is not None:
+        things['stress'] = ', '.join('{0:.3f}'.format(s) for s in stress)
+
+    things['formula'] = Formula(row.formula).format('abc')
+
+    dipole = row.get('dipole')
+    if dipole is not None:
+        things['dipole'] = ', '.join('{0:.3f}'.format(d) for d in dipole)
+
+    data = row.get('data')
+    if data:
+        things['data'] = ', '.join(data.keys())
+
+    constraints = row.get('constraints')
+    if constraints:
+        things['constraints'] = ', '.join(c.__class__.__name__
+                                          for c in constraints)
+
+    keys = ({'id', 'energy', 'fmax', 'smax', 'mass', 'age'} |
+            set(key_descriptions) |
+            set(row.key_value_pairs))
+    things['table'] = []
+    for key in keys:
+        if key == 'age':
+            age = float_to_time_string(now() - row.ctime, True)
+            things['table'].append(('Age', age))
+            continue
+        value = row.get(key)
+        if value is not None:
+            if isinstance(value, float):
+                value = '{:.3f}'.format(value)
+            elif not isinstance(value, str):
+                value = str(value)
+            desc, unit = key_descriptions.get(key, ['', key, ''])[1:]
+            if unit:
+                value += ' ' + unit
+            things['table'].append((desc, value))
+
+    return things

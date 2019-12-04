@@ -25,9 +25,8 @@ import sys
 from flask import Flask, render_template, request, flash
 
 import ase.db
-from ase.db.web import (create_key_descriptions, create_table, Session,
-                        row2things)
-from ase.db.row import AtomsRow
+from ase.db.web import create_key_descriptions, create_table, Session
+from ase.db.row import AtomsRow, row2things
 from ase.db.table import all_columns
 
 
@@ -35,6 +34,7 @@ app = Flask(__name__)
 
 databases = {}
 key_descriptions = {}
+templates = {'index': 'table.html'}
 
 
 def get_row(pid: str) -> AtomsRow:
@@ -56,7 +56,8 @@ def index():
     table, error = create_table(db, session)
     if error:
         flash(error)
-    return render_template('table.html',
+    print(app.jinja_loader.searchpath)#.insert(0, str(path))
+    return render_template(templates['index'],
                            t=table,
                            kd=key_descriptions,
                            s=session)
@@ -67,7 +68,7 @@ def row(id):
     db = databases['']
     row = db.get(id=id)
     things = row2things(row, key_descriptions)
-    return render_template('summary.html', t=things, pid=str(id))
+    return render_template('summary.html', t=things, row=row, pid=str(id))
 
 
 @app.route('/atoms/<pid>/<type>')
@@ -81,7 +82,7 @@ def atoms(pid, type):
 
     fd = io.StringIO()
     if type == 'xyz':
-        a.write(fd, 'cif')
+        a.write(fd, 'xyz')
     elif type == 'json':
         con = ase.db.connect(fd, type='json')
         con.write(row,
