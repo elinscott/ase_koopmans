@@ -1,3 +1,4 @@
+# flake8: noqa
 """ Default pseudopotential paths are defined here
 """
 

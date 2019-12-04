@@ -87,10 +87,10 @@ for the following reasons:
    loading ASE, not the other way around; so there are no problems.
 
 
-.. _`GNU Lesser General Public License`: http://www.gnu.org/licenses/lgpl.html
-.. _LGPL: http://www.gnu.org/licenses/lgpl.html
-.. _GPL: http://www.gnu.org/licenses/gpl.html
-.. _`LGPL on Wikipedia`: http://en.wikipedia.org/wiki/GNU_Lesser_General_Public_License
+.. _`GNU Lesser General Public License`: http://www.gnu.org/licenses/lgpl-3.0.html
+.. _LGPL: http://www.gnu.org/licenses/lgpl-3.0.html
+.. _GPL: http://www.gnu.org/licenses/gpl-3.0.html
+.. _`LGPL on Wikipedia`: https://en.wikipedia.org/wiki/GNU_Lesser_General_Public_License
 .. _GPAW: https://wiki.fysik.dtu.dk/gpaw
 .. _Asap: https://wiki.fysik.dtu.dk/asap
 .. _`statement by Fedora`: https://fedoraproject.org/wiki/Licensing:FAQ?rd=Licensing/FAQ#Linking_and_multiple_licenses

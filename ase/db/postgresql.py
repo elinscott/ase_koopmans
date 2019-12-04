@@ -165,6 +165,11 @@ class PostgreSQLDatabase(SQLite3Database):
 
         self.initialized = True
 
+    def get_offset_string(self, offset, limit=None):
+        # postgresql allows you to set offset without setting limit;
+        # very practical
+        return '\nOFFSET {0}'.format(offset)
+
     def get_last_id(self, cur):
         cur.execute('SELECT last_value FROM systems_id_seq')
         id = cur.fetchone()[0]

@@ -1,3 +1,4 @@
+# flake8: noqa
 import os, string, tempfile, shutil, subprocess
 from ase.io import write
 from ase.units import Bohr

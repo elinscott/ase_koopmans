@@ -1,3 +1,4 @@
+# flake8: noqa
 '''
 python module for ASE2-free and Numeric-free dacapo
 

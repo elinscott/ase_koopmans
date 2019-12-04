@@ -1,7 +1,8 @@
 from ase.test import cli, require
 from ase.db import connect
 from ase.io.jsonio import read_json
-from ase.calculators.nwchem import NWChem
+from ase.io import read
+from numpy.testing import assert_allclose
 
 require('nwchem')
 
@@ -18,9 +19,9 @@ for name in ['O2', 'O']:
     id = d.id
     e1 = d.energy
     e2 = c.get_atoms(id).get_potential_energy()
-    e3 = NWChem.read_atoms(name).get_potential_energy()
+    e3 = read('{name}.nwo'.format(name=name)).get_potential_energy()
     e4 = dct[id]['energy']
     assert e1 == e2 == e3 == e4
     print(e1)
 ae = 2 * c.get('formula=O').energy - c.get('formula=O2').energy
-assert abs(ae - 6.6053) < 1e-4
+assert_allclose(ae, 6.599194233179787, atol=1e-4, rtol=1e-4)

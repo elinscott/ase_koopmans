@@ -16,7 +16,7 @@ applied to all kinds of materials, irrespective of the atomic species
 involved, and also allows for the investigation of the core
 region. The website is http://exciting-code.org/
 
-The module depends on lxml  http://lxml.de
+The module depends on lxml  https://lxml.de/
 
 
 There are two ways to construct the exciting calculator.

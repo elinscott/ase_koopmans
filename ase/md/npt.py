@@ -328,7 +328,7 @@ class NPT(MolecularDynamics):
         return self.atoms.get_forces()
 
     def stresscalculator(self):
-        return self.atoms.get_stress()
+        return self.atoms.get_stress(include_ideal_gas=True)
 
     def initialize(self):
         """Initialize the dynamics.

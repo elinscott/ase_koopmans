@@ -1,3 +1,4 @@
+# flake8: noqa
 from abc import abstractmethod, ABC
 import functools
 import warnings

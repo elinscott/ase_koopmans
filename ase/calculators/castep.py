@@ -392,15 +392,15 @@ Notes/Issues:
 
 .. _CASTEP: http://www.castep.org/
 
-.. _W: http://en.wikipedia.org/wiki/CASTEP
+.. _W: https://en.wikipedia.org/wiki/CASTEP
 
-.. _CODATA: http://physics.nist.gov/cuu/Constants/index.html
+.. _CODATA: https://physics.nist.gov/cuu/Constants/index.html
 
 .. [1] S. J. Clark, M. D. Segall, C. J. Pickard, P. J. Hasnip, M. J. Probert,
        K. Refson, M. C. Payne Zeitschrift für Kristallographie 220(5-6)
        pp.567- 570 (2005) PDF_.
 
-.. _PDF: http://goo.gl/wW50m
+.. _PDF: http://www.tcm.phy.cam.ac.uk/castep/papers/ZKristallogr_2005.pdf
 
 
 End CASTEP Interface Documentation
@@ -540,6 +540,7 @@ End CASTEP Interface Documentation
         self._energy_free = None
         self._energy_0K = None
         self._energy_total_corr = None
+        self._eigenvalues = None
         self._efermi = None
         self._ibz_kpts = None
         self._ibz_weights = None
@@ -1450,8 +1451,15 @@ End CASTEP Interface Documentation
             and self.param.task.value.lower() == 'bandstructure'):
             self._band_structure = self.band_structure(bandfile=bands_file)
         else:
-            (self._ibz_kpts, self._ibz_weights,
-             self._eigenvalues, self._efermi) = read_bands(filename=bands_file)
+            try:
+                (self._ibz_kpts, 
+                 self._ibz_weights,
+                 self._eigenvalues, 
+                 self._efermi) = read_bands(filename=bands_file)
+            except FileNotFoundError:
+                warnings.warn('Could not load .bands file, eigenvalues and '
+                              'Fermi energy are unknown')
+
 
     def read_symops(self, castep_castep=None):
         # TODO: check that this is really backwards compatible

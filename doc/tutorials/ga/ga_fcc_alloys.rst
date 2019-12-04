@@ -1,8 +1,8 @@
 .. _fcc_alloys_tutorial:
 
-===============================
-GA Search for stable FCC alloys
-===============================
+==============================================
+Genetic algorithm Search for stable FCC alloys
+==============================================
 
 In this tutorial we will emulate an older paper [Johannesson]_ and determine
 the most stable FCC alloy using the genetic algorithm. Since the purpose is

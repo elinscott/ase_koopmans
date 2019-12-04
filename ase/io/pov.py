@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Module for povray file format support.
 
