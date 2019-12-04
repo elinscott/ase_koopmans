@@ -67,7 +67,7 @@ def row(id):
     db = databases['']
     row = db.get(id=id)
     things = row2things(row, key_descriptions)
-    return render_template('summary.html', t=things)
+    return render_template('summary.html', t=things, pid=str(id))
 
 
 @app.route('/atoms/<pid>/<type>')

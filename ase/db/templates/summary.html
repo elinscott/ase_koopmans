@@ -1,7 +1,6 @@
 {% extends 'layout.html' %}
 
 {% macro atoms() %}
-{% if d.numbers|length %}
 <div class="row">
     <center>
         <div id="appdiv"></div>
@@ -33,7 +32,7 @@
                 Download <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
-                <li><a href="/{{ project }}/xyz/{{ d.id }}">xyz</a></li>
+                <li><a href="/{{ project }}/xyz/{{ ???????????d.id }}">xyz</a></li>
                 <li><a href="/{{ project }}/json/{{ d.id }}">json</a></li>
             </ul>
         </div>
@@ -41,7 +40,6 @@
       <div class="col-md-1"></div>
     </div>
 </div>
-{% endif %}
 {% endmacro %}
 
 {% macro cell() %}
@@ -56,19 +54,19 @@
 </tr>
 </thead>
 <tbody>
-            {% for axis in s.cell %}
+            {% for axis in t.cell %}
 <tr>
 <td>{{ loop.index }}</td>
                 {% for a in axis %} <td>{{ a }}</td>{% endfor %}
-<td>{{ d.pbc[loop.index0] }}</td>
+<td>{{ t.pbc[loop.index0] }}</td>
 </tr>
             {% endfor %}
 </tbody>
 </table>
 <table class="table table-striped">
 <tbody>
-<tr><td>Lengths:</td>{% for L in s.lengths %} <td>{{ L }}</td>{% endfor %}</tr>
-<tr><td>Angles:</td>{% for a in s.angles %} <td>{{ a }}</td>{% endfor %}</tr>
+<tr><td>Lengths:</td>{% for L in t.lengths %} <td>{{ L }}</td>{% endfor %}</tr>
+<tr><td>Angles:</td>{% for a in t.angles %} <td>{{ a }}</td>{% endfor %}</tr>
 </tbody>
 </table>
 {% endmacro %}
@@ -105,7 +103,7 @@
 Summary
 {% endblock %}
 
-{% set d = s.row %}
+{% set n1, n2, n3 = t.size %}
 
 {% block head %}
 <script src="{{ url_for('static', filename='jsmol/JSmol.min.js') }}"></script>
@@ -116,7 +114,7 @@ jmol_isReady = function(applet)
     Jmol._getElement(applet, "appletdiv").style.border="1px solid lightgray";
     Jmol.script(jmolApplet0, "set displaycellparameters false;")
     Jmol.script(jmolApplet0,
-    "load /{{ project }}/cif/{{ d.id }}.cif { {{ n1 }} {{ n2 }} {{ n3 }} };");
+    "load /atoms/{{ pid }}/cif { {{ n1 }} {{ n2 }} {{ n3 }} };");
     }
 </script>
 
@@ -128,62 +126,35 @@ jmol_isReady = function(applet)
 <div class="container">
 
 <h1>
-{{ s.formula|safe }}
+{{ t.formula|safe }}
 </h1>
 
 <div class="panel-group">
-
-{% for title, things in s.layout %}
 
 <div class="panel panel-default">
     <div class="panel-heading">
         <h4 class="panel-title">
         <a class="btn-block" data-toggle="collapse"
-        href="#collapse{{ loop.index0 }}">
-        {{ title }}
+        href="#collapse0">
+        {{ Structure }}
         </a>
         </h4>
     </div>
 
-    <div id="collapse{{ loop.index0 }}"
-    class="panel-collapse collapse {% if loop.index0 == 0 %}in{% endif %}">
+    <div id="collapse0"
+    class="panel-collapse collapse in">
         <div class="panel-body">
-    {% for column in things %}
         <div class="col-md-6">
-    {% for data in column %}
             <div class="row">
-        {% if data.type == 'atoms' %}
             {{ atoms() }}
-        {% elif data.type == 'cell' %}
-            {{ cell() }}
-        {% elif data.type == 'table' %}
-            {{ table(data) }}
-        {% else %}
-            {% if data.link %}
-                {% if data.link == 'empty' %}
-                    <br>
-                {% else %}
-                    <center>
-                      <a target="_blank"
-                         rel="noopener noreferrer"
-                         href="/{{ project }}/plot/{{ uid }}/{{ data.link }}">
-                        Interactive mode
-                      </a>
-                    </center>
-                {% endif %}
-            {% endif %}
-             <img
-                src="/{{ project }}/plot/{{ uid }}/{{ data.filename }}"
-                width="100%">
-        {% endif %}
             </div> <!--END ROW-->
-    {% endfor %}
+            <div class="row">
+            {{ cell() }}
+            </div> <!--END ROW-->
         </div> <!--END col-md-6-->
-    {% endfor %}
         </div> <!--END PANEL BODY-->
     </div> <!--END COLLAPSE-->
 </div> <!--END PANEL-->
-{% endfor %}
 </div> <!--END PANEL GROUP-->
 </div>
 {% endblock content %}
