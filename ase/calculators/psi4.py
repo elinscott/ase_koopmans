@@ -130,6 +130,7 @@ class Psi4(Calculator):
 
         elif self.parameters['multiplicity'] is not None:
             result += '0 {}\n'.format(self.parameters['multiplicity'])
+        result += 'no_reorient'
 
         if not os.path.isdir(self.directory):
             os.mkdir(self.directory)
