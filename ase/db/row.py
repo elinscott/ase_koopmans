@@ -256,7 +256,7 @@ class AtomsRow:
 
 
 def row2things(row,
-               key_descriptions: Dict[str, Tuple[str, str, str]]
+               key_descriptions: Dict[str, Tuple[str, str, str]] = {}
                ) -> Dict[str, Any]:
     """Convert row to dict of things for printing or a web-page."""
 

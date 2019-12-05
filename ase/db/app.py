@@ -56,7 +56,6 @@ def index():
     table, error = create_table(db, session)
     if error:
         flash(error)
-    print(app.jinja_loader.searchpath)#.insert(0, str(path))
     return render_template(templates['index'],
                            t=table,
                            kd=key_descriptions,
@@ -92,7 +91,8 @@ def atoms(pid, type):
         1 / 0
 
     headers = [('Content-Disposition',
-                f'attachment; filename="{pid}.{type}"')]
+                'attachment; filename="{pid}.{type}"'
+                .format(pid=pid, type=type))]
     txt = fd.getvalue()
     return txt, 200, headers
 
