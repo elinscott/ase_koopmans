@@ -16,17 +16,15 @@ for lat in all_variants():
     bandpath = lat.bandpath()
     a = Atoms()
     a.cell = lat.tocell().complete()
-    a.pbc = [True if i < lat.ndim else False for i in range(3)]
+    a.pbc[:lat.ndim] = True
     path = {'path': bandpath.path}
     bandpath2 = kpts2kpts(path, atoms=a)
     print('cell', a.cell)
     print('Original', bandpath)
     print('path', path)
     print('Produced by kpts2kpts', bandpath2)
-    sp = set(bandpath.special_points.keys())
-    sp2 = set(bandpath2.special_points.keys())
-    intsp = sp & sp2
+    sp = set(bandpath.special_points)
+    sp2 = set(bandpath2.special_points)
     msg = ('Input and output bandpath from kpts2kpts dont agree!\n'
            'Input: {}\n Output: {}'.format(bandpath, bandpath2))
-    assert not sp - intsp, msg
-    assert not sp2 - intsp, msg
+    assert sp == sp2, msg
