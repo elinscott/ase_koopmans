@@ -1,7 +1,9 @@
 import re
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict
 
-from ase.db.core import default_key_descriptions
+from flask import flash
+
+from ase.db.core import default_key_descriptions, Database
 from ase.db.table import Table, all_columns
 
 
@@ -32,12 +34,15 @@ class Session:
             return Session.sessions[id]
         return Session()
 
-    def update(self,
-               page: Optional[int],
-               limit: int,
-               sort: str,
-               toggle: str,
+    def update(self, args: Dict[str, str],
                default_columns: List[str]) -> None:
+        page = args.get('page', None)
+        limit = args.get('limit', 0)
+        sort = args.get('sort', '')
+        toggle = args.get('toggle', '')
+        query = args.get('query', '')
+
+        self.query = query
 
         if self.columns is None:
             self.columns = default_columns
@@ -70,11 +75,11 @@ class Session:
                     self.columns.append(column)
 
     @property
-    def row1(self):
+    def row1(self) -> int:
         return self.page * self.limit + 1
 
     @property
-    def row2(self):
+    def row2(self) -> int:
         return min((self.page + 1) * self.limit, self.nrows)
 
     def paginate(self) -> List[Tuple[int, str]]:
@@ -106,19 +111,18 @@ class Session:
         return pages
 
 
-def create_table(db,
+def create_table(db: Database,
                  session: Session,
-                 unique_key='id'):
+                 unique_key='id') -> Table:
     query = session.query
     if session.nrows is None:
         try:
             session.nrows = db.count(query)
         except (ValueError, KeyError) as e:
             error = ', '.join(['Bad query'] + list(e.args))
+            flash(error)
             query = 'id=0'  # this will return no rows
             session.nrows = 0
-        else:
-            error = ''
 
     table = Table(db, unique_key)
     table.select(query, session.columns, session.sort,
@@ -127,10 +131,10 @@ def create_table(db,
     table.addcolumns = sorted(column for column in all_columns + table.keys
                               if column not in table.columns)
 
-    return table, error
+    return table
 
 
-def create_key_descriptions(db) -> Dict[str, Tuple[str, str, str]]:
+def create_key_descriptions(db: Database) -> Dict[str, Tuple[str, str, str]]:
     kd = default_key_descriptions.copy()
 
     # Long description may be missing:

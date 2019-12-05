@@ -22,7 +22,7 @@ Start with something like::
 import io
 import sys
 
-from flask import Flask, render_template, request, flash
+from flask import Flask, render_template, request
 
 import ase.db
 from ase.db.web import create_key_descriptions, create_table, Session
@@ -32,31 +32,17 @@ from ase.db.table import all_columns
 
 app = Flask(__name__)
 
-databases = {}
 key_descriptions = {}
-templates = {'index': 'table.html'}
-
-
-def get_row(pid: str) -> AtomsRow:
-    project, _, s = pid.rpartition('-')
-    id = int(s)
-    return databases[project][id]
+databases = {}
 
 
 @app.route('/')
 def index():
     session_id = int(request.args.get('x', '0'))
     session = Session.get(session_id)
-    session.update(request.args.get('page', None),
-                   request.args.get('limit', 0),
-                   request.args.get('sort', ''),
-                   request.args.get('toggle', ''),
-                   all_columns)
-    db = databases['']
-    table, error = create_table(db, session)
-    if error:
-        flash(error)
-    return render_template(templates['index'],
+    session.update(request.args, all_columns)
+    table = create_table(databases[''], session)
+    return render_template('table.html',
                            t=table,
                            kd=key_descriptions,
                            s=session)
@@ -64,10 +50,9 @@ def index():
 
 @app.route('/row/<int:id>')
 def row(id):
-    db = databases['']
-    row = db.get(id=id)
+    row = databases[''].get(id=id)
     things = row2things(row, key_descriptions)
-    return render_template('summary.html', t=things, row=row, pid=str(id))
+    return render_template('row.html', t=things, row=row, pid=str(id))
 
 
 @app.route('/atoms/<pid>/<type>')
@@ -100,8 +85,7 @@ def atoms(pid, type):
 @app.route('/gui/<int:id>')
 def gui(id: int):
     from ase.visualize import view
-    db = databases['']
-    atoms = db.get_atoms(id)
+    atoms = databases[''].get_atoms(id)
     view(atoms)
     return '', 204, []
 
@@ -123,6 +107,12 @@ def robots():
             'User-agent: SiteCheck-sitecrawl by Siteimprove.com\n'
             'Disallow: /\n',
             200)
+
+
+def get_row(pid: str) -> AtomsRow:
+    project, _, s = pid.rpartition('-')
+    id = int(s)
+    return databases[project][id]
 
 
 def main(db):
