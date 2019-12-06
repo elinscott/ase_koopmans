@@ -10,9 +10,9 @@ import re
 import numpy as np
 
 import ase.units
-from ase import Atoms
+from ase import Atoms, Atom
 from ase.utils import reader, writer
-
+from ase.io.utils import ImageIterator, ImageChunk
 
 __all__ = ['read_vasp', 'read_vasp_out', 'iread_vasp_out',
            'read_vasp_xdatcar', 'read_vasp_xml',
@@ -851,13 +851,16 @@ def write_vasp_xdatcar(f, images, label=''):
             elements.
 
     """
-    if not hasattr(images, '__iter__'):
-        raise ValueError("images should be a sequence of atoms objects. If for"
-                         " some reason you wish to write an XDATCAR with a "
-                         "single image, put it in a list e.g. images=[atoms].")
 
     images = iter(images)
     image = next(images)
+
+    if not isinstance(image, Atoms):
+        msg = "images should be a sequence of atoms objects."
+        if isinstance(image, Atom):
+            msg += (" If for some reason you wish to write an XDATCAR with a"
+                    " single image, put it in a list e.g. images=[atoms].")
+        raise ValueError(msg)
 
     symbol_count = _symbol_count_from_symbols(image.get_chemical_symbols())
 
