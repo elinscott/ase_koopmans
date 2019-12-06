@@ -10,7 +10,8 @@ import re
 import numpy as np
 
 import ase.units
-from ase import Atoms, Atom
+
+from ase import Atoms
 from ase.utils import reader, writer
 from ase.io.utils import ImageIterator, ImageChunk
 
@@ -860,7 +861,7 @@ def write_vasp_xdatcar(f, images, label=''):
     image = next(images)
 
     if not isinstance(image, Atoms):
-        raise ValueError("images should be a sequence of Atoms objects.")
+        raise TypeError("images should be a sequence of Atoms objects.")
 
     symbol_count = _symbol_count_from_symbols(image.get_chemical_symbols())
 

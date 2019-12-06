@@ -57,6 +57,20 @@ class Test_xdatcar_roundtrip(unittest.TestCase):
         roundtrip_trajectory = ase.io.read(self.outfile, index=':')
         self.assert_trajectory_almost_equal(trajectory, roundtrip_trajectory)
 
+    def test_roundtrip_single_atoms(self):
+        atoms = ase.build.bulk('Ge')
+        ase.io.write(self.outfile, atoms, format='vasp-xdatcar')
+        roundtrip_atoms = ase.io.read(self.outfile)
+        self.assert_atoms_almost_equal(atoms, roundtrip_atoms)
+
+    def test_typeerror(self):
+        with self.assertRaises(TypeError):
+            not_atoms = 1
+            ase.io.write(self.outfile, not_atoms, format='vasp-xdatcar')
+        with self.assertRaises(TypeError):
+            not_traj = [True, False, False]
+            ase.io.write(self.outfile, not_traj, format='vasp-xdatcar')
+
 def suite():
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(
         Test_xdatcar_roundtrip)
