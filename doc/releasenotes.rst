@@ -143,7 +143,6 @@ Version 3.18.2
 * Fix an issue with the binary package (wheel) of 3.18.1.
   No bugfixes as such.
 
-
 Version 3.18.1
 ==============
 
