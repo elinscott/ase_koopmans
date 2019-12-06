@@ -117,7 +117,11 @@ def get_row(pid: str) -> AtomsRow:
 
 def main(db):
     databases[''] = db
-    key_descriptions.update(create_key_descriptions(db))
+    all_keys = set()
+    for row in db.select(columns=['key_value_pairs'], include_data=False):
+        all_keys.update(row._keys)
+    kd = {key: (key, '', '') for key in all_keys}
+    key_descriptions.update(create_key_descriptions(kd))
 
 
 if __name__ == '__main__':

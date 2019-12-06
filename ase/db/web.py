@@ -134,8 +134,12 @@ def create_table(db: Database,
     return table
 
 
-def create_key_descriptions(db: Database) -> Dict[str, Tuple[str, str, str]]:
-    kd = default_key_descriptions.copy()
+KeyDescriptions = Dict[str, Tuple[str, str, str]]
+
+
+def create_key_descriptions(kd: KeyDescriptions) -> KeyDescriptions:
+    kd = kd.copy()
+    kd.update(default_key_descriptions)
 
     # Long description may be missing:
     for key, (short, long, unit) in kd.items():
@@ -152,11 +156,5 @@ def create_key_descriptions(db: Database) -> Dict[str, Tuple[str, str, str]]:
         unit = sup.sub(r'\1<sup>\2</sup>', unit)
         unit = unit.replace(r'\text{', '').replace('}', '')
         kd[key] = (short, long, unit)
-
-    all_keys = set()
-    for row in db.select(columns=['key_value_pairs'], include_data=False):
-        all_keys.update(row._keys)
-    for key in all_keys:
-        kd[key] = (key, key, '')
 
     return kd
