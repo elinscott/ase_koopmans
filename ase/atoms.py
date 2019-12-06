@@ -131,7 +131,7 @@ class Atoms(object):
 
     def __init__(self, symbols=None,
                  positions=None, numbers=None,
-                 tags=None, momenta=None, masses=None,
+                 tags=None, momenta=None, velocities=None, masses=None,
                  magmoms=None, charges=None,
                  scaled_positions=None,
                  cell=None, pbc=None, celldisp=None,
@@ -235,6 +235,9 @@ class Atoms(object):
         self.set_pbc(pbc)
         self.set_momenta(default(momenta, (0.0, 0.0, 0.0)),
                          apply_constraint=False)
+
+        if momenta is None and velocities is not None:
+            self.set_velocities(velocities)
 
         if info is None:
             self.info = {}
