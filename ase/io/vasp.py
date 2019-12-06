@@ -844,23 +844,23 @@ def write_vasp_xdatcar(f, images, label=''):
 
     Args:
         f (str, fp): Output file
-        images (iterable of Atoms): Atoms images to write. These must have
-            consistent atom order and lattice vectors - this will not be
-            checked.
+        images (Atoms or iterable of Atoms): Atoms image(s) to write. These
+            must have consistent atom order and lattice vectors - this will not
+            be checked.
         label (str): Text for first line of file. If empty, default to list of
             elements.
 
     """
 
+    # For convenience, allow user to provide a single Atoms object as input
+    if isinstance(images, Atoms):
+        images = [images]
+
     images = iter(images)
     image = next(images)
 
     if not isinstance(image, Atoms):
-        msg = "images should be a sequence of atoms objects."
-        if isinstance(image, Atom):
-            msg += (" If for some reason you wish to write an XDATCAR with a"
-                    " single image, put it in a list e.g. images=[atoms].")
-        raise ValueError(msg)
+        raise ValueError("images should be a sequence of Atoms objects.")
 
     symbol_count = _symbol_count_from_symbols(image.get_chemical_symbols())
 
