@@ -14,8 +14,7 @@ import numpy as np
 from ase.units import Bohr, Hartree, fs
 from ase.data import chemical_symbols
 from ase.io.abinit import (read_abinit_in, write_abinit_in,
-                           read_abinit_out, read_abinit_log,
-                           read_eig)
+                           read_abinit_out, read_eig)
 from ase.calculators.calculator import FileIOCalculator, Parameters
 from ase.utils import workdir
 from subprocess import check_output
@@ -81,9 +80,6 @@ class AbinitIO:
         results = {}
         with open(filename) as fd:
             dct = read_abinit_out(fd)
-            results.update(dct)
-        with open(label + '.log') as fd:
-            dct = read_abinit_log(fd)
             results.update(dct)
         # The eigenvalues section in the main file is shortened to
         # a limited number of kpoints.  We read the complete one from

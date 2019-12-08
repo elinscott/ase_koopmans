@@ -494,16 +494,3 @@ def read_eig(fd):
     results['kpoint_weights'] = weights
     results['eigenvalues'] = eig_skn
     return results
-
-
-def read_abinit_log(fd):
-    results = {}
-    width = None
-    nelect = None
-    lines = fd.readlines()
-    for line in lines:
-        if 'tsmear' in line:
-            results['width'] = float(line.split()[1].strip()) * Hartree
-        if 'with nelect' in line:
-            results['nelect'] = float(line.split('=')[1].strip())
-    return results
