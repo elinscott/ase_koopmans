@@ -271,6 +271,26 @@ def read_stress(fd):
     return stress / unit
 
 
+def consume_multiline(fd, header, headerline, nvalues, dtype):
+    """Parse abinit-formatted "header + values" sections.
+
+    Example:
+
+        typat 1 1 1 1 1
+              1 1 1 1
+    """
+    tokens = headerline.split()
+    assert tokens[0] == header, tokens[0]
+
+    values = tokens[1:]
+    while len(values) < nvalues:
+        line = next(fd)
+        values.extend(line.split())
+    assert len(values) == nvalues
+    values = np.array(values).astype(dtype)
+    return values
+
+
 def read_abinit_out(fd):
     results = {}
 
@@ -301,25 +321,6 @@ def read_abinit_out(fd):
         for key in ['natom', 'nkpt', 'nband', 'ntypat']:
             if tokens[0] == key:
                 shape_vars[key] = int(tokens[1])
-
-        def consume_multiline(fd, header, headerline, nvalues, dtype):
-            """Parse abinit-formatted "header + values" sections.
-
-            Example:
-
-                typat 1 1 1 1 1
-                      1 1 1 1
-            """
-            tokens = headerline.split()
-            assert tokens[0] == header, tokens[0]
-
-            values = tokens[1:]
-            while len(values) < nvalues:
-                line = next(fd)
-                values.extend(line.split())
-            assert len(values) == nvalues
-            values = np.array(values).astype(dtype)
-            return values
 
         if line.lstrip().startswith('typat'):  # Avoid matching ntypat
             types = consume_multiline(fd, 'typat', line, shape_vars['natom'],
@@ -394,6 +395,7 @@ def read_abinit_out(fd):
                 print(results[key])
             print()
         print(atoms)
+
     results['atoms'] = atoms
     return results
 

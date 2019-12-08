@@ -1,7 +1,19 @@
+import numpy as np
 from ase.build import bulk, molecule
 from ase.calculators.abinit import Abinit
 from ase.units import Hartree
 from ase.utils import workdir
+
+
+required_quantities = {'eigenvalues',
+                       'fermilevel',
+                       'version',
+                       'forces',
+                       'energy',
+                       'free_energy',
+                       'stress',
+                       'ibz_kpoints',
+                       'kpoint_weights'}
 
 
 def run_test(atoms, name):
@@ -13,10 +25,16 @@ def run_test(atoms, name):
         print('input:', atoms.calc.parameters)
         atoms.get_potential_energy()
         atoms.get_forces()
-        eig = atoms.calc.results['eigenvalues']
-        fermi = atoms.calc.results['fermilevel']
-        print('fermi', fermi)
-        print('eigshape', eig.shape)
+        print(sorted(atoms.calc.results))
+        for key, value in atoms.calc.results.items():
+            if isinstance(value, np.ndarray):
+                print(key, value.shape, value.dtype)
+            else:
+                print(key, value)
+
+        for name in required_quantities:
+            assert name in atoms.calc.results
+
     print()
     return atoms.calc.results
 
