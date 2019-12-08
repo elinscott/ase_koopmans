@@ -1,6 +1,7 @@
 import re
-from ase.units import Hartree, Bohr, fs
 import numpy as np
+from ase import Atoms
+from ase.units import Hartree, Bohr, fs
 
 
 def read_abinit_in(fd):
@@ -8,8 +9,6 @@ def read_abinit_in(fd):
 
     Reads cell, atom positions, etc. from abinit input file
     """
-
-    from ase import Atoms, units
 
     lines = []
     for line in fd.readlines():
@@ -22,7 +21,7 @@ def read_abinit_in(fd):
     index = tokens.index("acell")
     unit = 1.0
     if(tokens[index + 4].lower()[:3] != 'ang'):
-        unit = units.Bohr
+        unit = Bohr
     acell = [unit * float(tokens[index + 1]),
              unit * float(tokens[index + 2]),
              unit * float(tokens[index + 3])]
@@ -78,7 +77,7 @@ def read_abinit_in(fd):
     else:
         if "xcart" in tokens:
             index = tokens.index("xcart")
-            unit = units.Bohr
+            unit = Bohr
         elif "xangst" in tokens:
             unit = 1.0
             index = tokens.index("xangst")
@@ -386,7 +385,6 @@ def read_abinit_out(fd):
     znucl_int[znucl_int != znucl] = 0  # (Fractional Z)
     numbers = znucl_int[types - 1]
 
-    from ase import Atoms
     atoms = Atoms(numbers=numbers,
                   positions=positions,
                   cell=cell,
