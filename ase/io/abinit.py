@@ -305,7 +305,7 @@ def read_abinit_out(fd):
         for line in fd:
             if string in line:
                 return line
-        raise ReadError('Not found: {}'.format(string))
+        raise RuntimeError('Not found: {}'.format(string))
 
 
     line = skipto('Version')
@@ -348,11 +348,11 @@ def read_abinit_out(fd):
     # Skip ahead to results:
     for line in fd:
         if 'was not enough scf cycles to converge' in line:
-            raise ReadError(line)
+            raise RuntimeError(line)
         if 'iterations are completed or convergence reached' in line:
             break
     else:
-        raise ReadError('Cannot find results section')
+        raise RuntimeError('Cannot find results section')
 
     def read_array(fd, nlines):
         arr = []
