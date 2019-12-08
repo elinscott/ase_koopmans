@@ -1,4 +1,3 @@
-# flake8: noqa
 """This module defines an ASE interface to ABINIT.
 
 http://www.abinit.org/
@@ -9,9 +8,6 @@ import os
 from glob import glob
 from os.path import join
 
-import numpy as np
-
-from ase.units import Bohr, Hartree, fs
 from ase.data import chemical_symbols
 from ase.io.abinit import (read_abinit_in, write_abinit_in,
                            read_abinit_out, read_eig)
@@ -36,7 +32,7 @@ def write_files_file(fd, label, ppp_list):
     fd.write('%s\n' % (label + '.abinit'))
     # Provide the psp files
     for ppp in ppp_list:
-        fd.write('%s\n' % (ppp)) # psp file path
+        fd.write('%s\n' % (ppp))  # psp file path
 
 
 class AbinitIO:
@@ -69,7 +65,6 @@ class AbinitIO:
             write_abinit_in(fd, atoms, param=parameters, species=species)
 
     def read_inputs(self, label):
-        filename = label + '.txt'
         with open(label + '.in') as fd:
             atoms = read_abinit_in(fd)
         parameters = Parameters.read(label + '.ase')
@@ -217,17 +212,17 @@ def get_ppp_list(atoms, species, raise_exception, xc, pps,
         number = abs(Z)
         symbol = chemical_symbols[number]
 
-        names  = []
+        names = []
         for s in [symbol, symbol.lower()]:
             for xcn in [xcname, xcname.lower()]:
                 if pps in ['paw']:
                     hghtemplate = '%s-%s-%s.paw'  # E.g. "H-GGA-hard-uspp.paw"
                     names.append(hghtemplate % (s, xcn, '*'))
-                    names.append('%s[.-_]*.paw'   % s)
+                    names.append('%s[.-_]*.paw' % s)
                 elif pps in ['pawxml']:
                     hghtemplate = '%s.%s%s.xml'  # E.g. "H.GGA_PBE-JTH.xml"
                     names.append(hghtemplate % (s, xcn, '*'))
-                    names.append('%s[.-_]*.xml'   % s)
+                    names.append('%s[.-_]*.xml' % s)
                 elif pps in ['hgh.k']:
                     hghtemplate = '%s-q%s.hgh.k'  # E.g. "Co-q17.hgh.k"
                     names.append(hghtemplate % (s, '*'))
@@ -248,11 +243,11 @@ def get_ppp_list(atoms, species, raise_exception, xc, pps,
                     names.append(hghtemplate % (number, s, '*'))
                     names.append('%d%s%s.hgh' % (number, s, '*'))
                     names.append('%s[.-_]*.hgh' % s)
-                else: # default extension
+                else:  # default extension
                     names.append('%02d-%s.%s.%s' % (number, s, xcn, pps))
-                    names.append('%02d[.-_]%s*.%s'   % (number, s, pps))
-                    names.append('%02d%s*.%s'   % (number, s, pps))
-                    names.append('%s[.-_]*.%s'   % (s, pps))
+                    names.append('%02d[.-_]%s*.%s' % (number, s, pps))
+                    names.append('%02d%s*.%s' % (number, s, pps))
+                    names.append('%s[.-_]*.%s' % (s, pps))
 
         found = False
         for name in names:        # search for file names possibilities
@@ -266,13 +261,17 @@ def get_ppp_list(atoms, species, raise_exception, xc, pps,
                     # information!
                     filenames[0] = max(filenames)  # Semicore or hard
                 elif pps == 'hgh':
-                    filenames[0] = min(filenames)  # Lowest valence electron count
+                    # Lowest valence electron count
+                    filenames[0] = min(filenames)
                 elif pps == 'hgh.k':
-                    filenames[0] = max(filenames)  # Semicore - highest electron count
+                    # Semicore - highest electron count
+                    filenames[0] = max(filenames)
                 elif pps == 'tm':
-                    filenames[0] = max(filenames)  # Semicore - highest electron count
+                    # Semicore - highest electron count
+                    filenames[0] = max(filenames)
                 elif pps == 'hgh.sc':
-                    filenames[0] = max(filenames)  # Semicore - highest electron count
+                    # Semicore - highest electron count
+                    filenames[0] = max(filenames)
 
                 if filenames:
                     found = True
@@ -284,6 +283,8 @@ def get_ppp_list(atoms, species, raise_exception, xc, pps,
         if not found:
             ppp_list.append("Provide {}.{}.{}?".format(symbol, '*', pps))
             if raise_exception:
-                raise RuntimeError('Could not find {} pseudopotential {} for {}'.format(xcname.lower(), pps, symbol))
+                msg = ('Could not find {} pseudopotential {} for {}'
+                       .format(xcname.lower(), pps, symbol))
+                raise RuntimeError(msg)
 
     return ppp_list
