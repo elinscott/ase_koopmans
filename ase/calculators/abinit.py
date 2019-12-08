@@ -12,7 +12,7 @@ import numpy as np
 
 from ase.units import Bohr, Hartree, fs
 from ase.data import chemical_symbols
-from ase.io.abinit import (read_abinit, write_abinit,
+from ase.io.abinit import (read_abinit_in, write_abinit_in,
                            read_abinit_out, read_abinit_log,
                            read_eig)
 from ase.calculators.calculator import FileIOCalculator, Parameters
@@ -58,7 +58,7 @@ class AbinitIO:
         parameters.write(label + '.ase')
 
         with open(label + '.in', 'w') as fd:
-            write_abinit(fd, atoms, param=parameters, species=species)
+            write_abinit_in(fd, atoms, param=parameters, species=species)
 
     def read_inputs(self, label):
         filename = label + '.txt'

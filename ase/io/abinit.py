@@ -7,7 +7,7 @@ Atoms object in ABINIT input format.
 
 """
 
-def read_abinit(fd):
+def read_abinit_in(fd):
     """Import ABINIT input file.
 
     Reads cell, atom positions, etc. from abinit input file
@@ -146,7 +146,7 @@ keys_with_units = {
     'latticeconstant': 'Ang'}
 
 
-def write_abinit(fd, atoms, param=None, species=None):
+def write_abinit_in(fd, atoms, param=None, species=None):
     from ase.calculators.calculator import kpts2mp
     if param is None:
         param = {}
