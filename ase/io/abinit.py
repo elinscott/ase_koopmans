@@ -501,70 +501,91 @@ def read_magnetic_moment(lines):
     return magmom
 
 
-def read_eig(fd):
-    line = next(fd)
-    results = {}
-    m = re.match(r'\s*Fermi \(or HOMO\) energy \(hartree\)\s*=\s*(\S+)',
-                 line)
-    assert m is not None
-    results['fermilevel'] = float(m.group(1)) * Hartree
-    # XXX TODO spin
+def read_eigenvalues_for_one_spin(fd, nkpts):
+    headerpattern = (r'\s*kpt#\s*\S+\s*'
+                     r'nband=\s*(\d+),\s*'
+                     r'wtk=([^,]+),\s*'
+                     r'kpt=\s*(\S)+\s*(\S+)\s*(\S+)')
+
     kpoint_weights = []
     kpoint_coords = []
 
-    eig_skn = []
-    for ispin in range(2):
-        # (We don't know if we have two spins until we see next line)
-        line = next(fd)
-        m = re.match(r'\s*Magnetization \(Bohr magneton\)=\s*(\S+)',
-                     line)
-        if m is not None:
-            magmom = float(m.group(1))
-            results['magmom'] = magmom
+    eig_kn = []
+    for ikpt in range(nkpts):
+        header = next(fd)
+        m = re.match(headerpattern, header)
+        assert m is not None, header
+        nbands = int(m.group(1))
+        weight = float(m.group(2))
+        kvector = np.array(m.group(3, 4, 5)).astype(float)
+        kpoint_coords.append(kvector)
+        kpoint_weights.append(float(weight))
+
+        eig_n = []
+        while len(eig_n) < nbands:
             line = next(fd)
+            tokens = line.split()
+            values = np.array(tokens).astype(float) * Hartree
+            eig_n.extend(values)
+        assert len(eig_n) == nbands
+        eig_kn.append(eig_n)
+        assert nbands == len(eig_kn[0])
 
-        m = re.match(r'\s*Eigenvalues \(hartree\) for nkpt\s*='
-                     r'\s*(\S+)\s*k\s*points', line)
-        nspins = 2 if 'SPIN' in line else 1
-        assert m is not None, line
-        nkpts = int(m.group(1))
-
-        headerpattern = (r'\s*kpt#\s*\S+\s*'
-                         r'nband=\s*(\d+),\s*'
-                         r'wtk=([^,]+),\s*'
-                         r'kpt=\s*(\S)+\s*(\S+)\s*(\S+)')
+    kpoint_weights = np.array(kpoint_weights)
+    kpoint_coords = np.array(kpoint_coords)
+    eig_kn = np.array(eig_kn)
+    return kpoint_coords, kpoint_weights, eig_kn
 
 
-        eig_kn = []
-        for ikpt in range(nkpts):
-            header = next(fd)
-            m = re.match(headerpattern, header)
-            assert m is not None, header
-            nbands = int(m.group(1))
-            weight = float(m.group(2))
-            kvector = np.array(m.group(3, 4, 5)).astype(float)
-            if ispin == 0:
-                kpoint_coords.append(kvector)
-                kpoint_weights.append(float(weight))
+def read_eig(fd):
+    line = next(fd)
+    results = {}
+    m = re.match(r'\s*Fermi \(or HOMO\) energy \(hartree\)\s*=\s*(\S+)', line)
+    assert m is not None
+    results['fermilevel'] = float(m.group(1)) * Hartree
 
-            eig_n = []
-            while len(eig_n) < nbands:
-                line = next(fd)
-                tokens = line.split()
-                values = np.array(tokens).astype(float) * Hartree
-                eig_n.extend(values)
-            assert len(eig_n) == nbands
-            eig_kn.append(eig_n)
-            assert nbands == len(eig_kn[0])
+    nspins = 1
+
+    line = next(fd)
+    m = re.match(r'\s*Magnetization \(Bohr magneton\)=\s*(\S+)', line)
+    if m is not None:
+        nspins = 2
+        magmom = float(m.group(1))
+        results['magmom'] = magmom
+        line = next(fd)
+
+    if 'Total spin up' in line:
+        assert nspins == 2
+        line = next(fd)
+
+    m = re.match(r'\s*Eigenvalues \(hartree\) for nkpt\s*='
+                 r'\s*(\S+)\s*k\s*points', line)
+    if 'SPIN' in line or 'spin' in line:
+        # If using spinpol with fixed magmoms, we don't get the magmoms
+        # listed before now.
+        nspins = 2
+    assert m is not None
+    nkpts = int(m.group(1))
+
+    eig_skn = []
+
+    kpts, weights, eig_kn = read_eigenvalues_for_one_spin(fd, nkpts)
+    nbands = eig_kn.shape[1]
+
+    eig_skn.append(eig_kn)
+    if nspins == 2:
+        line = next(fd)
+        assert 'SPIN DOWN' in line
+        _, _, eig_kn = read_eigenvalues_for_one_spin(fd, nkpts)
+        assert eig_kn.shape == (nkpts, nbands)
         eig_skn.append(eig_kn)
-
-        if nspins == 1:
-            break
-
     eig_skn = np.array(eig_skn)
-    assert eig_skn.shape == (nspins, nkpts, nbands), (eig_skn.shape, (nspins, nkpts, nbands))
-    results['ibz_kpoints'] = np.array(kpoint_coords)
-    results['kpoint_weights'] = np.array(kpoint_weights)
+
+    eigshape = (nspins, nkpts, nbands)
+    assert eig_skn.shape == eigshape, (eig_skn.shape, eigshape)
+
+    results['ibz_kpoints'] = kpts
+    results['kpoint_weights'] = weights
     results['eigenvalues'] = eig_skn
     return results
 
