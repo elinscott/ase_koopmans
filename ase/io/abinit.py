@@ -143,9 +143,16 @@ keys_with_units = {
 
 
 def write_abinit_in(fd, atoms, param=None, species=None):
+    import copy
     from ase.calculators.calculator import kpts2mp
+    from ase.calculators.abinit import Abinit
+
     if param is None:
         param = {}
+
+    _param = copy.deepcopy(Abinit.default_parameters)
+    _param.update(param)
+    param = _param
 
     if species is None:
         species = list(set(atoms.numbers))
@@ -167,7 +174,7 @@ def write_abinit_in(fd, atoms, param=None, species=None):
     inp['natom'] = len(atoms)
 
     if 'nbands' in param:
-        inp['nband'] = param.nbands
+        inp['nband'] = param['nbands']
         del inp['nbands']
 
     # ixc is set from paw/xml file. Ignore 'xc' setting then.
@@ -177,7 +184,7 @@ def write_abinit_in(fd, atoms, param=None, species=None):
                           'PBE': 11,
                           'revPBE': 14,
                           'RPBE': 15,
-                          'WC': 23}[param.xc]
+                          'WC': 23}[param['xc']]
 
     magmoms = atoms.get_initial_magnetic_moments()
     if magmoms.any():
@@ -200,8 +207,8 @@ def write_abinit_in(fd, atoms, param=None, species=None):
                 value /= fs
             fd.write('%s %e %s\n' % (key, value, unit))
 
-    if param.raw is not None:
-        for line in param.raw:
+    if param['raw'] is not None:
+        for line in param['raw']:
             if isinstance(line, tuple):
                 fd.write(' '.join(['%s' % x for x in line]) + '\n')
             else:
@@ -244,7 +251,7 @@ def write_abinit_in(fd, atoms, param=None, species=None):
 
     if 'kptopt' not in param:
         # XXX This processing should probably happen higher up
-        mp = kpts2mp(atoms, param.kpts)
+        mp = kpts2mp(atoms, param['kpts'])
         fd.write('kptopt 1\n')
         fd.write('ngkpt %d %d %d\n' % tuple(mp))
         fd.write('nshiftk 1\n')
