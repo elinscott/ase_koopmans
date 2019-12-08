@@ -407,29 +407,6 @@ def read_abinit_out(fd):
     return results
 
 
-def read_number_of_iterations(lines):
-    niter = None
-    for line in lines:
-        if ' At SCF step' in line:
-            niter = int(line.split()[3].rstrip(','))
-    return niter
-
-def read_number_of_bands(lines):
-    nband = None
-    for line in lines:
-        if '     nband' in line: # nband, or nband1, nband*
-            nband = int(line.split()[-1].strip())
-    return nband
-
-def read_magnetic_moment(lines):
-    magmom = 0.0
-    # only for spinpolarized system Magnetisation is printed
-    for line in lines:
-        if 'Magnetisation' in line:
-            magmom = float(line.split('=')[-1].strip())
-    return magmom
-
-
 def read_eigenvalues_for_one_spin(fd, nkpts):
     headerpattern = (r'\s*kpt#\s*\S+\s*'
                      r'nband=\s*(\d+),\s*'
