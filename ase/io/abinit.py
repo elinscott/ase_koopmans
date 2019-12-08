@@ -38,10 +38,14 @@ def read_abinit_in(fd):
     for i in range(natom):
         t = tokens[index+1+i]
         if '*' in t:  # e.g. typat 4*1 3*2 ...
-            typat.extend([int(t) for t in ((t.split('*')[1] + ' ') * int(t.split('*')[0])).split()])
+            parts = t.split('*')
+            things = [int(t) for t
+                      in ((parts[1] + ' ') * int(parts[0])).split()]
+            typat.extend(things)
         else:
             typat.append(int(t))
-        if len(typat) == natom: break
+        if len(typat) == natom:
+            break
 
     index = tokens.index("znucl")
     znucl = []
@@ -258,7 +262,8 @@ def write_abinit_in(fd, atoms, param=None, species=None):
         fd.write('shiftk\n')
         fd.write('%.1f %.1f %.1f\n' % tuple((np.array(mp) + 1) % 2 * 0.5))
 
-    fd.write('chkexit 1 # abinit.exit file in the running directory terminates after the current SCF\n')
+    fd.write('chkexit 1 # abinit.exit file in the running '
+             'directory terminates after the current SCF\n')
 
 
 def read_stress(fd):
