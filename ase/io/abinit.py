@@ -1,11 +1,7 @@
 import re
 from ase.units import Hartree, Bohr
 import numpy as np
-"""
-This module contains functionality for reading an ASE
-Atoms object in ABINIT input format.
 
-"""
 
 def read_abinit_in(fd):
     """Import ABINIT input file.
@@ -256,8 +252,6 @@ def write_abinit_in(fd, atoms, param=None, species=None):
         fd.write('%.1f %.1f %.1f\n' % tuple((np.array(mp) + 1) % 2 * 0.5))
 
     fd.write('chkexit 1 # abinit.exit file in the running directory terminates after the current SCF\n')
-
-
 
 
 def read_stress(fd):

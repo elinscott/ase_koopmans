@@ -93,6 +93,7 @@ class AbinitIO:
             results.update(dct)
         return results
 
+
 class Abinit(FileIOCalculator):
     """Class for doing ABINIT calculations.
 
@@ -111,7 +112,6 @@ class Abinit(FileIOCalculator):
         xc='LDA',
         smearing=None,
         kpts=None,
-        charge=0.0,
         raw=None,
         pps='fhi')
 

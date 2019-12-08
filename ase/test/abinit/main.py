@@ -1,6 +1,7 @@
-from ase.utils import workdir
 from ase.build import bulk, molecule
 from ase.calculators.abinit import Abinit
+from ase.units import Hartree
+from ase.utils import workdir
 
 
 def run_test(atoms, name):
@@ -9,6 +10,7 @@ def run_test(atoms, name):
         header = 'test {} in {}'.format(name, dirname)
         print(header)
         print('=' * len(header))
+        print('input:', atoms.calc.parameters)
         atoms.get_potential_energy()
         atoms.get_forces()
         eig = atoms.calc.results['eigenvalues']
@@ -24,7 +26,6 @@ def abinit(**kwargs):
               chksymbreak=0,
               toldfe=1e-3)
     kw.update(kwargs)
-    print(kw)
     return Abinit(**kw)
 
 
@@ -34,13 +35,13 @@ def test_si():
     run_test(atoms, 'bulk-si')
 
 
-def test_au():
+def test_au(pps, **kwargs):
     atoms = bulk('Au')
-    atoms.calc = abinit(nbands=10 * len(atoms))
-    run_test(atoms, 'bulk-au')
+    atoms.calc = abinit(nbands=10 * len(atoms), pps=pps, **kwargs)
+    run_test(atoms, 'bulk-au-{}'.format(pps))
 
 
-def _test_fe_anyocc(name, **kwargs):
+def _test_fe(name, **kwargs):
     atoms = bulk('Fe')
     atoms.set_initial_magnetic_moments([1])
     calc = abinit(nbands=8,
@@ -48,11 +49,14 @@ def _test_fe_anyocc(name, **kwargs):
     atoms.calc = calc
     run_test(atoms, name)
 
+
 def test_fe_fixed_magmom():
-    _test_fe_anyocc('bulk-spin-fixmagmom', spinmagntarget=2.3)
+    _test_fe('bulk-spin-fixmagmom', spinmagntarget=2.3)
+
 
 def test_fe_any_magmom():
-    _test_fe_anyocc('bulk-spin-anymagmom', occopt=7)
+    _test_fe('bulk-spin-anymagmom', occopt=7)
+
 
 def test_h2o():
     atoms = molecule('H2O', vacuum=2.5)
@@ -62,8 +66,7 @@ def test_h2o():
 
 def test_o2():
     atoms = molecule('O2', vacuum=2.5)
-    atoms.calc = abinit(nbands=8,
-                        spinmagntarget=2.0)
+    atoms.calc = abinit(nbands=8, occopt=7)
     run_test(atoms, 'molecule-spin')
 
 
@@ -75,16 +78,19 @@ def test_big():
                         kpts=[8, 8, 8])
     run_test(atoms, 'big')
 
+
 def test_many():
     atoms = bulk('Ne', cubic=True) * (4, 2, 2)
     atoms.rattle(stdev=0.01)
     atoms.calc = abinit(nbands=len(atoms) * 5)
     run_test(atoms, 'manyatoms')
 
+
 #test_many()
 #test_big()
 test_si()
-test_au()
+test_au(pps='fhi')
+test_au(pps='paw', pawecutdg=6.0 * Hartree)
 test_fe_fixed_magmom()
 test_fe_any_magmom()
 test_h2o()
