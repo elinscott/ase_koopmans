@@ -36,6 +36,8 @@ def write_files_file(fd, label, ppp_list):
 
 
 class AbinitIO:
+    # The methods on this class could currently be class methods just as well.
+
     def get_pp_search_paths(self):
         return os.environ.get('ABINIT_PP_PATH', '.').split(':')
 

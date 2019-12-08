@@ -55,7 +55,10 @@ def test_si():
 
 def test_au(pps, **kwargs):
     atoms = bulk('Au')
-    atoms.calc = abinit(nbands=10 * len(atoms), pps=pps, **kwargs)
+    atoms.calc = abinit(nbands=10 * len(atoms), pps=pps,
+                        tsmear=0.1,
+                        kpts=[2, 2, 2],
+                        **kwargs)
     run_test(atoms, 'bulk-au-{}'.format(pps))
 
 
@@ -88,16 +91,16 @@ def test_o2():
     run_test(atoms, 'molecule-spin')
 
 
-def test_big():
+def test_manykpts():  # Test not enabled.
     atoms = bulk('Au') * (2, 2, 2)
     atoms.rattle(stdev=0.01)
     atoms.symbols[:2] = 'Cu'
     atoms.calc = abinit(nbands=len(atoms) * 7,
                         kpts=[8, 8, 8])
-    run_test(atoms, 'big')
+    run_test(atoms, 'manykpts')
 
 
-def test_many():
+def test_manyatoms():  # Test not enabled
     atoms = bulk('Ne', cubic=True) * (4, 2, 2)
     atoms.rattle(stdev=0.01)
     atoms.calc = abinit(nbands=len(atoms) * 5)
