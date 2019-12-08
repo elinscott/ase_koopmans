@@ -57,6 +57,7 @@ def test_au(pps, **kwargs):
     atoms = bulk('Au')
     atoms.calc = abinit(nbands=10 * len(atoms), pps=pps,
                         tsmear=0.1,
+                        occopt=3,
                         kpts=[2, 2, 2],
                         **kwargs)
     run_test(atoms, 'bulk-au-{}'.format(pps))
