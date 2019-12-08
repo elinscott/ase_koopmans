@@ -1,5 +1,5 @@
 import re
-from ase.units import Hartree, Bohr
+from ase.units import Hartree, Bohr, fs
 import numpy as np
 
 
@@ -346,8 +346,6 @@ def read_abinit_out(fd):
             cell = cell.reshape(3, 3)
 
     natoms = shape_vars['natom']
-    nkpts = shape_vars['nkpt']
-    nbands = shape_vars['nband']
 
     # Skip ahead to results:
     for line in fd:
