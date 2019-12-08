@@ -31,18 +31,28 @@ def abinit(**kwargs):
 def test_si():
     atoms = bulk('Si')
     atoms.calc = abinit(nbands=4 * len(atoms))
-    run_test(atoms, 'bulk')
+    run_test(atoms, 'bulk-si')
 
 
-def test_fe():
+def test_au():
+    atoms = bulk('Au')
+    atoms.calc = abinit(nbands=10 * len(atoms))
+    run_test(atoms, 'bulk-au')
+
+
+def _test_fe_anyocc(name, **kwargs):
     atoms = bulk('Fe')
     atoms.set_initial_magnetic_moments([1])
     calc = abinit(nbands=8,
-                  spinmagntarget=2.3,  # We'd rather have abinit find this number
-                  kpts=[2, 2, 2])
+                  kpts=[2, 2, 2], **kwargs)
     atoms.calc = calc
-    run_test(atoms, 'bulk-spin')
+    run_test(atoms, name)
 
+def test_fe_fixed_magmom():
+    _test_fe_anyocc('bulk-spin-fixmagmom', spinmagntarget=2.3)
+
+def test_fe_any_magmom():
+    _test_fe_anyocc('bulk-spin-anymagmom', occopt=7)
 
 def test_h2o():
     atoms = molecule('H2O', vacuum=2.5)
@@ -57,7 +67,25 @@ def test_o2():
     run_test(atoms, 'molecule-spin')
 
 
+def test_big():
+    atoms = bulk('Au') * (2, 2, 2)
+    atoms.rattle(stdev=0.01)
+    atoms.symbols[:2] = 'Cu'
+    atoms.calc = abinit(nbands=len(atoms) * 7,
+                        kpts=[8, 8, 8])
+    run_test(atoms, 'big')
+
+def test_many():
+    atoms = bulk('Ne', cubic=True) * (4, 2, 2)
+    atoms.rattle(stdev=0.01)
+    atoms.calc = abinit(nbands=len(atoms) * 5)
+    run_test(atoms, 'manyatoms')
+
+#test_many()
+#test_big()
 test_si()
-test_fe()
+test_au()
+test_fe_fixed_magmom()
+test_fe_any_magmom()
 test_h2o()
 test_o2()
