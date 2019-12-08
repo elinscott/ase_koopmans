@@ -4,6 +4,7 @@
 http://www.abinit.org/
 """
 
+import re
 import os
 from glob import glob
 from os.path import join
@@ -17,6 +18,14 @@ from ase.io.abinit import (read_abinit_in, write_abinit_in,
                            read_eig)
 from ase.calculators.calculator import FileIOCalculator, Parameters
 from ase.utils import workdir
+from subprocess import check_output
+
+
+def get_abinit_version(command):
+    version = check_output([command, '--version']).decode('ascii').strip()
+    assert re.match(r'\d\.\d\.\d', version)
+    # This allows trailing stuff like betas, rc and so
+    return version
 
 
 def write_files_file(fd, label, ppp_list):
