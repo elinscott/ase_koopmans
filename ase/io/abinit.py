@@ -28,15 +28,15 @@ def read_abinit_in(fd):
              unit * float(tokens[index + 3])]
 
     index = tokens.index("natom")
-    natom = int(tokens[index+1])
+    natom = int(tokens[index + 1])
 
     index = tokens.index("ntypat")
-    ntypat = int(tokens[index+1])
+    ntypat = int(tokens[index + 1])
 
     index = tokens.index("typat")
     typat = []
     for i in range(natom):
-        t = tokens[index+1+i]
+        t = tokens[index + 1 + i]
         if '*' in t:  # e.g. typat 4*1 3*2 ...
             parts = t.split('*')
             things = [int(t) for t
@@ -50,14 +50,14 @@ def read_abinit_in(fd):
     index = tokens.index("znucl")
     znucl = []
     for i in range(ntypat):
-        znucl.append(int(tokens[index+1+i]))
+        znucl.append(int(tokens[index + 1 + i]))
 
     index = tokens.index("rprim")
     rprim = []
     for i in range(3):
-        rprim.append([acell[i]*float(tokens[index+3*i+1]),
-                      acell[i]*float(tokens[index+3*i+2]),
-                      acell[i]*float(tokens[index+3*i+3])])
+        rprim.append([acell[i] * float(tokens[index + 3 * i + 1]),
+                      acell[i] * float(tokens[index + 3 * i + 2]),
+                      acell[i] * float(tokens[index + 3 * i + 3])])
 
     # create a list with the atomic numbers
     numbers = []
@@ -70,9 +70,9 @@ def read_abinit_in(fd):
         index = tokens.index("xred")
         xred = []
         for i in range(natom):
-            xred.append([float(tokens[index+3*i+1]),
-                         float(tokens[index+3*i+2]),
-                         float(tokens[index+3*i+3])])
+            xred.append([float(tokens[index + 3 * i + 1]),
+                         float(tokens[index + 3 * i + 2]),
+                         float(tokens[index + 3 * i + 3])])
         atoms = Atoms(cell=rprim, scaled_positions=xred, numbers=numbers,
                       pbc=True)
     else:
@@ -88,9 +88,9 @@ def read_abinit_in(fd):
 
         xangs = []
         for i in range(natom):
-            xangs.append([unit*float(tokens[index+3*i+1]),
-                          unit*float(tokens[index+3*i+2]),
-                          unit*float(tokens[index+3*i+3])])
+            xangs.append([unit * float(tokens[index + 3 * i + 1]),
+                          unit * float(tokens[index + 3 * i + 2]),
+                          unit * float(tokens[index + 3 * i + 3])])
         atoms = Atoms(cell=rprim, positions=xangs, numbers=numbers, pbc=True)
 
     try:
@@ -226,7 +226,7 @@ def write_abinit_in(fd, atoms, param=None, species=None):
         raise RuntimeError('Abinit requires a 3D cell, but cell is {}'
                            .format(atoms.cell))
     for v in atoms.cell:
-        fd.write('%.14f %.14f %.14f\n' %  tuple(v))
+        fd.write('%.14f %.14f %.14f\n' % tuple(v))
 
     fd.write('chkprim 0 # Allow non-primitive cells\n')
 
@@ -251,7 +251,7 @@ def write_abinit_in(fd, atoms, param=None, species=None):
     fd.write('#Definition of the atoms\n')
     fd.write('xangst\n')
     for pos in atoms.positions:
-        fd.write('%.14f %.14f %.14f\n' %  tuple(pos))
+        fd.write('%.14f %.14f %.14f\n' % tuple(pos))
 
     if 'kptopt' not in param:
         # XXX This processing should probably happen higher up
@@ -311,7 +311,6 @@ def read_abinit_out(fd):
             if string in line:
                 return line
         raise RuntimeError('Not found: {}'.format(string))
-
 
     line = skipto('Version')
     m = re.match(r'\.*?Version\s+(\S+)\s+of ABINIT', line)
