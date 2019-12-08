@@ -76,6 +76,9 @@ class AbinitIO:
         with open(label + '.log') as fd:
             dct = read_abinit_log(fd)
             results.update(dct)
+        # The eigenvalues section in the main file is shortened to
+        # a limited number of kpoints.  We read the complete one from
+        # the EIG file then:
         with open('{}o_EIG'.format(label)) as fd:
             dct = read_eig(fd)
             results.update(dct)
