@@ -258,7 +258,153 @@ def write_abinit(fd, atoms, param=None, species=None):
     fd.write('chkexit 1 # abinit.exit file in the running directory terminates after the current SCF\n')
 
 
+
+
+def read_stress(fd):
+    # sigma(1 1)=  4.02063464E-04  sigma(3 2)=  0.00000000E+00
+    # sigma(2 2)=  4.02063464E-04  sigma(3 1)=  0.00000000E+00
+    # sigma(3 3)=  4.02063464E-04  sigma(2 1)=  0.00000000E+00
+    pat = re.compile(r'\s*sigma\(\d \d\)=\s*(\S+)\s*sigma\(\d \d\)=\s*(\S+)')
+    stress = np.empty(6)
+    for i in range(3):
+        line = next(fd)
+        m = pat.match(line)
+        assert m is not None
+        s1, s2 = m.group(1, 2)
+        stress[i] = float(m.group(1))
+        stress[i + 3] = float(m.group(2))
+    unit = Hartree / Bohr**3
+    return stress / unit
+
+
 def read_abinit_out(fd):
+    results = {}
+
+    def skipto(string):
+        for line in fd:
+            if string in line:
+                return line
+        raise ReadError('Not found: {}'.format(string))
+
+
+    line = skipto('Version')
+    m = re.match(r'\.*?Version\s+(\S+)\s+of ABINIT', line)
+    assert m is not None
+    results['version'] = m.group(1)
+
+    shape_vars = {}
+
+    skipto('echo values of preprocessed input variables')
+
+    for line in fd:
+        if '===============' in line:
+            break
+
+        tokens = line.split()
+        if not tokens:
+            continue
+
+        for key in ['natom', 'nkpt', 'nband', 'ntypat']:
+            if tokens[0] == key:
+                shape_vars[key] = int(tokens[1])
+
+        def consume_multiline(fd, header, headerline, nvalues, dtype):
+            """Parse abinit-formatted "header + values" sections.
+
+            Example:
+
+                typat 1 1 1 1 1
+                      1 1 1 1
+            """
+            tokens = headerline.split()
+            assert tokens[0] == header, tokens[0]
+
+            values = tokens[1:]
+            while len(values) < nvalues:
+                line = next(fd)
+                values.extend(line.split())
+            assert len(values) == nvalues
+            values = np.array(values).astype(dtype)
+            return values
+
+        if line.lstrip().startswith('typat'):  # Avoid matching ntypat
+            types = consume_multiline(fd, 'typat', line, shape_vars['natom'],
+                                      int)
+
+        if 'znucl' in line:
+            znucl = consume_multiline(fd, 'znucl', line, shape_vars['ntypat'],
+                                      float)
+
+        if 'rprim' in line:
+            cell = consume_multiline(fd, 'rprim', line, 9, float)
+            cell = cell.reshape(3, 3)
+
+    natoms = shape_vars['natom']
+    nkpts = shape_vars['nkpt']
+    nbands = shape_vars['nband']
+
+    # Skip ahead to results:
+    for line in fd:
+        if 'was not enough scf cycles to converge' in line:
+            raise ReadError(line)
+        if 'iterations are completed or convergence reached' in line:
+            break
+    else:
+        raise ReadError('Cannot find results section')
+
+    def read_array(fd, nlines):
+        arr = []
+        for i in range(nlines):
+            line = next(fd)
+            arr.append(line.split()[1:])
+        arr = np.array(arr).astype(float)
+        return arr
+
+    for line in fd:
+        if 'cartesian coordinates (angstrom) at end' in line:
+            positions = read_array(fd, natoms)
+        if 'cartesian forces (eV/Angstrom) at end' in line:
+            results['forces'] = read_array(fd, natoms)
+        if 'Cartesian components of stress tensor (hartree/bohr^3)' in line:
+            results['stress'] = read_stress(fd)
+
+        if 'Components of total free energy (in Hartree)' in line:
+            for line in fd:
+                if 'Etotal' in line:
+                    energy = float(line.rsplit('=', 2)[1]) * Hartree
+                    results['energy'] = results['free_energy'] = energy
+                    break
+                    # Which of the listed energies do we take ??
+        if 'END DATASET(S)' in line:
+            break
+
+    znucl_int = znucl.astype(int)
+    znucl_int[znucl_int != znucl] = 0  # (Fractional Z)
+    numbers = znucl_int[types - 1]
+
+    from ase import Atoms
+    atoms = Atoms(numbers=numbers,
+                  positions=positions,
+                  cell=cell,
+                  pbc=True)
+
+    if 0:
+        print('DONE PARSING')
+        print('------------')
+        for key in results:
+            print(key)
+            val = results[key]
+            if isinstance(val, np.ndarray):
+                print(val.shape, val.dtype)
+            else:
+                print(results[key])
+            print()
+        print(atoms)
+    results['atoms'] = atoms
+    return results
+
+
+def old_read_abinit_out(fd):
     text = fd.read().lower()
     results = {}
 
@@ -370,10 +516,17 @@ def read_eig(fd):
     for ispin in range(2):
         # (We don't know if we have two spins until we see next line)
         line = next(fd)
+        m = re.match(r'\s*Magnetization \(Bohr magneton\)=\s*(\S+)',
+                     line)
+        if m is not None:
+            magmom = float(m.group(1))
+            results['magmom'] = magmom
+            line = next(fd)
+
         m = re.match(r'\s*Eigenvalues \(hartree\) for nkpt\s*='
                      r'\s*(\S+)\s*k\s*points', line)
         nspins = 2 if 'SPIN' in line else 1
-        assert m is not None
+        assert m is not None, line
         nkpts = int(m.group(1))
 
         headerpattern = (r'\s*kpt#\s*\S+\s*'
