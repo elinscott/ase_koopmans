@@ -34,35 +34,34 @@ class Session:
             return Session.sessions[id]
         return Session()
 
-    def update(self, args: Dict[str, str],
+    def update(self,
+               what: str,
+               x: str,
+               query: str,
                default_columns: List[str]) -> None:
-        page = args.get('page', None)
-        limit = args.get('limit', 0)
-        sort = args.get('sort', '')
-        toggle = args.get('toggle', '')
-        query = args.get('query', '')
-
         self.query = query
 
         if self.columns is None:
             self.columns = default_columns
 
-        if sort:
-            if sort == self.sort:
-                self.sort = '-' + sort
-            elif '-' + sort == self.sort:
+        if what == 'sort':
+            if x == self.sort:
+                self.sort = '-' + x
+            elif '-' + x == self.sort:
                 self.sort = 'id'
             else:
-                self.sort = sort
+                self.sort = x
             self.page = 0
-        elif limit:
-            self.limit = int(limit)
-            self.page = 0
-        elif page is not None:
-            self.page = int(page)
 
-        if toggle:
-            column = toggle
+        elif what == 'limit':
+            self.limit = int(x)
+            self.page = 0
+
+        elif what == 'page':
+            self.page = int(x)
+
+        elif what == 'toggle':
+            column = x
             if column == 'reset':
                 self.columns = default_columns[:]
             else:

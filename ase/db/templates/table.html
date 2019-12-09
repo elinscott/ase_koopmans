@@ -29,8 +29,8 @@
                 Rows: {{ s.limit }} <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
-                <li><a href="?x={{ s.id }}&limit=10">10</a></li>
-                <li><a href="?x={{ s.id }}&limit=25">25</a></li>
+                <li><a href="javascript:update_table({{ s.id }}, 'limit', 10)">10</a></li>
+                <li><a href="javascript:update_table({{ s.id }}, 'limit', 25)">25</a></li>
                 <li><a href="?x={{ s.id }}&limit=50">50</a></li>
                 <li><a href="?x={{ s.id }}&limit=100">100</a></li>
                 <li><a href="?x={{ s.id }}&limit=200">200</a></li>
@@ -61,10 +61,10 @@
 {% if c == 'formula' %}
 <span data-toggle="tooltip" title="key: formul">Formula</span>
 {% else %}
-<a href="?x={{ s.id }}&amp;sort={{ c }}"
+<a href="javascript:update_table({{ s.id }}, 'sort', '{{ c }}')"
   data-toggle="tooltip" title="key: {{c}}{{unit}}">{{ desc }}</a>
 {% endif %}
-<a href="?x={{ s.id }}&amp;toggle={{ c }}"
+<a href="javascript:update_table({{ s.id }}, 'toggle', '{{ c }}')"
    data-toggle="tooltip" title="Remove column">&#x2715;</a>
 </th>
 {%- endfor %}

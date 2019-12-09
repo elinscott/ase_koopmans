@@ -8,10 +8,12 @@ Browse ASE Database
 {% block content %}
 
 <script type="text/javascript">
-function update_table(sid) {
+function update_table(sid, what, x) {
     request = new XMLHttpRequest();
     q = document.getElementById('formula-result').value
-    request.open('GET', '/update/' + sid + '/?q=' + q, true);
+    request.open('GET',
+                 '/update/' + sid + '/' + what + '/' + x + '/?query=' + q,
+                 true);
     request.onload = function() {
         data = request.responseText;
         table = document.getElementById('database1')
@@ -30,10 +32,10 @@ function update_table(sid) {
 
 
 <div class="well mt-2">
-  <form id="mainFormID" class="navbar-form navbar-default mt-2" role="search" action="javascript:update_table({{ s.id }})">
+  <form id="mainFormID" class="navbar-form navbar-default mt-2" role="search" action="javascript:update_table({{ s.id }}, 'query', '0')">
     <input type="hidden" name="x" value="{{ s.id }}">
     <div class="form-group" style="margin-top:5px;">
-      <input type="text" name="query" value="{{ s.query }}" id="formula-result"
+      <input type="text" name="query" id="formula-result"
              class="form-control mt-2" placeholder="Search formula e.g. MoS2" size="60">
       <button type="submit" class="btn btn-default">
         <i class="fa fa-search fa-1x" aria-hidden="true"></i>
@@ -70,6 +72,7 @@ function update_table(sid) {
     </div>
   </form>
 </div>
+
 <div id="database1"></div>
 </div> <!-- class="container" -->
 
