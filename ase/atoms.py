@@ -201,7 +201,7 @@ class Atoms(object):
             self.new_array('numbers', numbers, int)
         else:
             if numbers is not None:
-                raise ValueError(
+                raise TypeError(
                     'Use only one of "symbols" and "numbers".')
             else:
                 self.new_array('numbers', symbols2numbers(symbols), int)
@@ -222,7 +222,8 @@ class Atoms(object):
                 positions = np.dot(scaled_positions, self.cell)
         else:
             if scaled_positions is not None:
-                raise RuntimeError('Both scaled and cartesian positions set!')
+                raise TypeError(
+                    'Use only one of "symbols" and "numbers".')
         self.new_array('positions', positions, float, (3,))
 
         self.set_constraint(constraint)
@@ -236,8 +237,13 @@ class Atoms(object):
         self.set_momenta(default(momenta, (0.0, 0.0, 0.0)),
                          apply_constraint=False)
 
-        if momenta is None and velocities is not None:
-            self.set_velocities(velocities)
+        #                          V-- if instantiaed from list of Atom objs
+        if velocities is not None and None not in velocities:
+            if momenta is None:
+                self.set_velocities(velocities)
+            else:
+                raise TypeError(
+                    'Use only one of "momenta" and "velocities".')
 
         if info is None:
             self.info = {}
