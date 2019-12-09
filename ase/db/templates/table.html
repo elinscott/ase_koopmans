@@ -113,8 +113,8 @@ Browse ASE Database
 {% set desc, longdesc, unit = kd[c] %}
 {% set unit = unit and ' [' + unit + ']' %}
 
-{% if t.sort == c %}&#x2193;
-{% elif t.sort == '-' + c %}&#x2191;
+{% if s.sort == c %}&#x2193;
+{% elif s.sort == '-' + c %}&#x2191;
 {% endif -%}
 
 {% if c == 'formula' %}

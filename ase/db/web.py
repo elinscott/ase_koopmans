@@ -56,10 +56,10 @@ class Session:
                 self.sort = sort
             self.page = 0
         elif limit:
-            self.limit = limit
+            self.limit = int(limit)
             self.page = 0
         elif page is not None:
-            self.page = page
+            self.page = int(page)
 
         if toggle:
             column = toggle
