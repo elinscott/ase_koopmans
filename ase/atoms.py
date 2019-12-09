@@ -131,13 +131,14 @@ class Atoms(object):
 
     def __init__(self, symbols=None,
                  positions=None, numbers=None,
-                 tags=None, momenta=None, velocities=None, masses=None,
+                 tags=None, momenta=None, masses=None,
                  magmoms=None, charges=None,
                  scaled_positions=None,
                  cell=None, pbc=None, celldisp=None,
                  constraint=None,
                  calculator=None,
-                 info=None):
+                 info=None,
+                 velocities=None):
 
         self._cellobj = Cell.new()
 
