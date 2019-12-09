@@ -41,6 +41,18 @@ def index():
     session_id = int(request.args.get('x', '0'))
     session = Session.get(session_id)
     session.update(request.args, all_columns)
+    return render_template('index.html',
+                           kd=key_descriptions,
+                           s=session)
+
+
+@app.route('/update/<int:sid>/')
+def table(sid):
+    print(sid, request.args)
+    session_id = sid
+    session = Session.get(session_id)
+    # session.update(request.args, all_columns)
+    session.query = request.args.get('q', '')
     table = create_table(databases[''], session)
     return render_template('table.html',
                            t=table,
