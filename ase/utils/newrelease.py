@@ -12,6 +12,9 @@ import subprocess
 import re
 import argparse
 from time import strftime
+import shutil
+from pathlib import Path
+
 
 def runcmd(cmd, output=False, error_ok=False):
     print('Executing:', cmd)
@@ -86,11 +89,7 @@ def main():
 
     txt = git('status')
     branch = re.match(r'On branch (\S+)', txt).group(1)
-    print('Currently on branch {}'.format(repr(branch)))
-    if branch != 'master':
-        git('checkout master')
-
-
+    print('Creating new release from branch {}'.format(repr(branch)))
     git('checkout -b {}'.format(branchname))
 
     def update_version(version):
@@ -212,6 +211,11 @@ News
     git('commit -m "ASE version {}"'.format(version))
     git('tag -s {0} -m "ase-{0}"'.format(version))
 
+    buildpath = Path('build')
+    if buildpath.is_dir():
+        assert Path('ase/__init__.py').exists()
+        assert Path('setup.py').exists()
+        shutil.rmtree('build')
     py('setup.py sdist > setup_sdist.log')
     py('setup.py bdist_wheel > setup_bdist_wheel3.log')
     bash('gpg --armor --yes --detach-sign dist/ase-{}.tar.gz'.format(version))
