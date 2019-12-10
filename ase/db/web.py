@@ -28,7 +28,7 @@ class Session:
         self.sort = ''
         self.query = ''
         self.project = 'default'
-        self.create_table_functions = None
+        self.create_table_function = None
         self.unique_key = 'id'
 
     def __str__(self):

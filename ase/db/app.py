@@ -65,12 +65,16 @@ def row(id):
 
 @app.route('/atoms/<project>/<int:id>/<type>')
 def atoms(project, id, type):
-    row = projects['default']['database'].get(id=id)
+    row = projects[project]['database'].get(id=id)
     a = row.toatoms()
     if type == 'cif':
-        fd = io.StringIO()
-        a.write(fd, 'cif')
-        return fd.getvalue(), 200, []
+        # fd = io.BytesIO()
+        # a.write(fd, 'cif')
+        # return fd.getvalue(), 200, []
+
+        a.write('x.cif')
+        from flask import send_from_directory
+        return send_from_directory('.', 'x.cif')
 
     fd = io.StringIO()
     if type == 'xyz':

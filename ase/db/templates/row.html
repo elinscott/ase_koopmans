@@ -4,17 +4,12 @@
 <div class="row">
     <center>
         <div id="appdiv"></div>
-    {% if open_ase_gui %}
-        <img src="/{{ project }}/image/{{ d.id }}.png">
-    {% endif %}
     </center>
     <div class="row">
       <div class="col-md-1"></div>
       <div class="col-md-4">
-        {% if open_ase_gui %}
-        <a class="btn" href="/{{ project }}/gui/{{ d.id }}">
+        <a class="btn" href="/gui/{{ row.id }}">
         Open ASE's GUI</a>
-        {% endif %}
         <div class="btn-group pull-right">
             <button type="button" class="btn btn-link dropdown-toggle btn-sm"
             data-toggle="dropdown">
@@ -32,8 +27,8 @@
                 Download <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
-                <li><a href="/atoms/{{ pid }}/xyz">xyz</a></li>
-                <li><a href="/atoms/{{ pid }}/json">json</a></li>
+                <li><a href="/atoms/{{ project }}/{{ row.id }}/xyz">xyz</a></li>
+                <li><a href="/atoms/{{ project }}/{{ row.id }}/json">json</a></li>
             </ul>
         </div>
       </div>
@@ -87,7 +82,7 @@ jmol_isReady = function(applet)
     Jmol._getElement(applet, "appletdiv").style.border="1px solid lightgray";
     Jmol.script(jmolApplet0, "set displaycellparameters false;")
     Jmol.script(jmolApplet0,
-    "load /atoms/{{ pid }}/cif { {{ n1 }} {{ n2 }} {{ n3 }} };");
+    "load /atoms/{{ project }}/{{ row.id }}/cif { {{ n1 }} {{ n2 }} {{ n3 }} };");
     }
 </script>
 
