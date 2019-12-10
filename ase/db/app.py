@@ -25,46 +25,47 @@ import sys
 from flask import Flask, render_template, request
 
 import ase.db
-from ase.db.web import create_key_descriptions, create_table, Session
+from ase.db.web import create_key_descriptions, Session
 from ase.db.row import row2things
 from ase.db.table import all_columns
 
 
 app = Flask(__name__)
 
-key_descriptions = {}
-databases = {}
+projects = {}
 
 
 @app.route('/')
 def search():
     sid = Session.get(0).id  # get new session id
     return render_template('search.html',
-                           kd=key_descriptions,
+                           kd=projects['default']['key_descriptions'],
                            session_id=sid)
 
 
 @app.route('/update/<int:sid>/<what>/<x>/')
-def table(sid, what, x):
+def update(sid, what, x):
     session = Session.get(sid)
     session.update(what, x, request.args['query'], all_columns)
-    table = create_table(databases[session.project], session)
+    project = projects[session.project]
+    table = session.create_table(project['database'])
     return render_template('table.html',
                            t=table,
-                           kd=key_descriptions,
+                           kd=project['key_descriptions'],
                            s=session)
 
 
 @app.route('/row/<int:id>')
 def row(id):
-    row = databases['default'].get(id=id)
-    things = row2things(row, key_descriptions)
+    project = projects['default']
+    row = project['database'].get(id=id)
+    things = row2things(row, project['key_descriptions'])
     return render_template('row.html', t=things, row=row, project='default')
 
 
 @app.route('/atoms/<project>/<int:id>/<type>')
 def atoms(project, id, type):
-    row = databases[project].get(id=id)
+    row = projects['default']['database'].get(id=id)
     a = row.toatoms()
     if type == 'cif':
         fd = io.StringIO()
@@ -92,7 +93,7 @@ def atoms(project, id, type):
 @app.route('/gui/<int:id>')
 def gui(id: int):
     from ase.visualize import view
-    atoms = databases['default'].get_atoms(id)
+    atoms = projects['default']['database'].get_atoms(id)
     view(atoms)
     return '', 204, []
 
@@ -117,12 +118,12 @@ def test():
 
 
 def init(db):
-    databases['default'] = db
     all_keys = set()
     for row in db.select(columns=['key_value_pairs'], include_data=False):
         all_keys.update(row._keys)
     kd = {key: (key, '', '') for key in all_keys}
-    key_descriptions.update(create_key_descriptions(kd))
+    projects['default'] = {'key_descriptions': create_key_descriptions(kd),
+                           'database': db}
 
 
 if __name__ == '__main__':

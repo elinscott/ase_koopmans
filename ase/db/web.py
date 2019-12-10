@@ -28,6 +28,8 @@ class Session:
         self.sort = ''
         self.query = ''
         self.project = 'default'
+        self.create_table_functions = None
+        self.unique_key = 'id'
 
     def __str__(self):
         return str(self.__dict__)
@@ -116,32 +118,33 @@ class Session:
         pages.append((nxt, 'next'))
         return pages
 
+    def create_table(self,
+                     db: Database) -> Table:
 
-def create_table(db: Database,
-                 session: Session,
-                 unique_key='id') -> Table:
-    query = session.query
-    if session.nrows is None:
-        try:
-            session.nrows = db.count(query)
-        except (ValueError, KeyError) as e:
-            error = ', '.join(['Bad query'] + list(e.args))
-            flash(error)
-            query = 'id=0'  # this will return no rows
-            session.nrows = 0
+        if self.create_table_function is not None:
+            return self.create_table_function(self, db, self.unique_key)
 
-    table = Table(db, unique_key)
-    table.select(query, session.columns, session.sort,
-                 session.limit, offset=session.page * session.limit)
-    table.format()
-    print(table.columns)
-    table.addcolumns = sorted(column for column in all_columns + table.keys
-                              if column not in table.columns)
+        query = self.query
+        if self.nrows is None:
+            try:
+                self.nrows = db.count(query)
+            except (ValueError, KeyError) as e:
+                error = ', '.join(['Bad query'] + list(e.args))
+                flash(error)
+                query = 'id=0'  # this will return no rows
+                self.nrows = 0
 
-    return table
+        table = Table(db, self.unique_key)
+        table.select(query, self.columns, self.sort,
+                     self.limit, offset=self.page * self.limit)
+        table.format()
+        table.addcolumns = sorted(column for column in
+                                  all_columns + table.keys
+                                  if column not in table.columns)
+        return table
 
 
-KeyDescriptions = Dict[str, Tuple[str, str, str]]
+KeyDescriptions = Dict[str, Tuple[str, str, str]]  # type-hint shortcut
 
 
 def create_key_descriptions(kd: KeyDescriptions) -> KeyDescriptions:
