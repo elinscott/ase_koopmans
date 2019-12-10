@@ -38,11 +38,10 @@ databases = {}
 
 @app.route('/')
 def search():
-    session_id = int(request.args.get('x', '0'))
-    session = Session.get(session_id)
+    sid = int(request.args.get('x', '0'))
     return render_template('search.html',
                            kd=key_descriptions,
-                           s=session)
+                           session_id=sid)
 
 
 @app.route('/update/<int:sid>/<what>/<x>/')
@@ -98,12 +97,6 @@ def gui(id: int):
     return '', 204, []
 
 
-@app.route('/test')
-def test():
-    import pyjokes as j
-    return j.get_joke('en')
-
-
 @app.route('/robots.txt')
 def robots():
     return ('User-agent: *\n'
@@ -115,6 +108,12 @@ def robots():
             'User-agent: SiteCheck-sitecrawl by Siteimprove.com\n'
             'Disallow: /\n',
             200)
+
+
+@app.route('/test')
+def test():
+    from pyjokes import get_joke as j
+    return j()
 
 
 def get_row(pid: str) -> AtomsRow:
