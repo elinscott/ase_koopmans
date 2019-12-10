@@ -37,19 +37,17 @@ databases = {}
 
 
 @app.route('/')
-def index():
+def search():
     session_id = int(request.args.get('x', '0'))
     session = Session.get(session_id)
-    return render_template('index.html',
+    return render_template('search.html',
                            kd=key_descriptions,
                            s=session)
 
 
 @app.route('/update/<int:sid>/<what>/<x>/')
 def table(sid, what, x):
-    print(sid, what, x, request.args)
-    session_id = sid
-    session = Session.get(session_id)
+    session = Session.get(sid)
     session.update(what, x, request.args['query'], all_columns)
     table = create_table(databases[''], session)
     return render_template('table.html',
