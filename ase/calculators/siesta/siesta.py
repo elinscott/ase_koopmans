@@ -55,15 +55,13 @@ def get_siesta_version(command):
     finally:
         shutil.rmtree(temp_dirname)
 
-    match = re.search(rb'Siesta Version\s+:\s+\S+', output)
+    match = re.search(rb'Siesta Version\s*:\s*(\S+)', output)
 
     if match is None:
         raise RuntimeError('Could not get Siesta version info from output '
                            '{!r}'.format(output))
 
-    string = match.group(0).decode('ascii')
-    string = string.split(':')[1].strip()
-
+    string = match.group(1).decode('ascii')
     return string
 
 
