@@ -27,6 +27,10 @@ class Session:
         self.limit = 25
         self.sort = ''
         self.query = ''
+        self.project = 'default'
+
+    def __str__(self):
+        return str(self.__dict__)
 
     @staticmethod
     def get(id: int) -> 'Session':
@@ -39,12 +43,15 @@ class Session:
                x: str,
                query: str,
                default_columns: List[str]) -> None:
-        self.query = query
 
         if self.columns is None:
-            self.columns = default_columns
+            self.columns = default_columns[:]
 
-        if what == 'sort':
+        if what == 'query':
+            self.query = query
+            self.nrows = None
+
+        elif what == 'sort':
             if x == self.sort:
                 self.sort = '-' + x
             elif '-' + x == self.sort:
@@ -127,6 +134,7 @@ def create_table(db: Database,
     table.select(query, session.columns, session.sort,
                  session.limit, offset=session.page * session.limit)
     table.format()
+    print(table.columns)
     table.addcolumns = sorted(column for column in all_columns + table.keys
                               if column not in table.columns)
 

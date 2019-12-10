@@ -26,7 +26,7 @@ from flask import Flask, render_template, request
 
 import ase.db
 from ase.db.web import create_key_descriptions, create_table, Session
-from ase.db.row import AtomsRow, row2things
+from ase.db.row import row2things
 from ase.db.table import all_columns
 
 
@@ -38,7 +38,7 @@ databases = {}
 
 @app.route('/')
 def search():
-    sid = int(request.args.get('x', '0'))
+    sid = Session.get(0).id  # get new session id
     return render_template('search.html',
                            kd=key_descriptions,
                            session_id=sid)
@@ -48,7 +48,7 @@ def search():
 def table(sid, what, x):
     session = Session.get(sid)
     session.update(what, x, request.args['query'], all_columns)
-    table = create_table(databases[''], session)
+    table = create_table(databases[session.project], session)
     return render_template('table.html',
                            t=table,
                            kd=key_descriptions,
@@ -57,14 +57,14 @@ def table(sid, what, x):
 
 @app.route('/row/<int:id>')
 def row(id):
-    row = databases[''].get(id=id)
+    row = databases['default'].get(id=id)
     things = row2things(row, key_descriptions)
-    return render_template('row.html', t=things, row=row, pid=str(id))
+    return render_template('row.html', t=things, row=row, project='default')
 
 
-@app.route('/atoms/<pid>/<type>')
-def atoms(pid, type):
-    row = get_row(pid)
+@app.route('/atoms/<project>/<int:id>/<type>')
+def atoms(project, id, type):
+    row = databases[project].get(id=id)
     a = row.toatoms()
     if type == 'cif':
         fd = io.StringIO()
@@ -83,8 +83,8 @@ def atoms(pid, type):
         1 / 0
 
     headers = [('Content-Disposition',
-                'attachment; filename="{pid}.{type}"'
-                .format(pid=pid, type=type))]
+                'attachment; filename="{project}-{id}.{type}"'
+                .format(project=project, id=id, type=type))]
     txt = fd.getvalue()
     return txt, 200, headers
 
@@ -92,7 +92,7 @@ def atoms(pid, type):
 @app.route('/gui/<int:id>')
 def gui(id: int):
     from ase.visualize import view
-    atoms = databases[''].get_atoms(id)
+    atoms = databases['default'].get_atoms(id)
     view(atoms)
     return '', 204, []
 
@@ -116,14 +116,8 @@ def test():
     return j()
 
 
-def get_row(pid: str) -> AtomsRow:
-    project, _, s = pid.rpartition('-')
-    id = int(s)
-    return databases[project][id]
-
-
-def main(db):
-    databases[''] = db
+def init(db):
+    databases['default'] = db
     all_keys = set()
     for row in db.select(columns=['key_value_pairs'], include_data=False):
         all_keys.update(row._keys)
@@ -133,5 +127,5 @@ def main(db):
 
 if __name__ == '__main__':
     db = ase.db.connect(sys.argv[1])
-    main(db)
+    init(db)
     app.run(host='0.0.0.0', debug=True)
