@@ -37,7 +37,7 @@ from ase.db.table import all_columns
 
 app = Flask(__name__)
 
-projects: Dict[str, Dict[str, Any]] = {}
+projects = {}  # type: Dict[str, Dict[str, Any]]
 
 
 @app.route('/', defaults={'project_name': 'default'})
@@ -99,8 +99,8 @@ def atoms(project_name, id, type):
         1 / 0
 
     headers = [('Content-Disposition',
-                'attachment; filename="{project}-{id}.{type}"'
-                .format(project=project, id=id, type=type))]
+                'attachment; filename="{project_name}-{id}.{type}"'
+                .format(project_name=project_name, id=id, type=type))]
     txt = fd.getvalue()
     return txt, 200, headers
 
