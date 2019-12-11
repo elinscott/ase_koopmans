@@ -20,7 +20,7 @@ db.write(atoms,
 app.init(db)
 app.app.testing = True
 c = app.app.test_client()
-page = c.get('/default/').data.decode()
+page = c.get('/').data.decode()
 assert 'foo' in page
 p1 = c.get('/default/row/1').data.decode()
 print(p1)

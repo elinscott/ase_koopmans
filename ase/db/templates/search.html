@@ -6,6 +6,13 @@ Browse ASE Database
 
 {% block head %}
 <script src="{{ url_for('static', filename='search.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded',
+                          function() {
+                              update_table({{ session_id }}, 'query', '0');
+                              },
+                          false);
+</script>
 {% endblock %}
 
 {% block content %}
