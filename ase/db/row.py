@@ -155,7 +155,7 @@ class AtomsRow:
     @property
     def formula(self):
         """Chemical formula string."""
-        return Formula('', [(self.symbols, 1)]).format('metal')
+        return Formula('', _tree=[(self.symbols, 1)]).format('metal')
 
     @property
     def symbols(self):
