@@ -20,6 +20,7 @@ def run_test(atoms, name):
     dirname = 'test-abinit/{}'.format(name)
     with workdir(dirname, mkdir=True):
         header = 'test {} in {}'.format(name, dirname)
+        print()
         print(header)
         print('=' * len(header))
         print('input:', atoms.calc.parameters)
@@ -35,7 +36,6 @@ def run_test(atoms, name):
         for name in required_quantities:
             assert name in atoms.calc.results
 
-    print()
     return atoms.calc.results
 
 
@@ -70,6 +70,12 @@ def _test_fe(name, **kwargs):
                   kpts=[2, 2, 2], **kwargs)
     atoms.calc = calc
     run_test(atoms, name)
+    magmom = atoms.get_magnetic_moment()
+    print('magmom')
+    # The calculator base class thinks it is smart, returning 0 magmom
+    # automagically when not otherwise given.  This means we get bogus zeros
+    # if/when we didn't parse the magmoms.  This happens when the magmoms
+    # are fixed.  Not going to fix this right now though.
 
 
 def test_fe_fixed_magmom():
@@ -90,6 +96,8 @@ def test_o2():
     atoms = molecule('O2', vacuum=2.5)
     atoms.calc = abinit(nbands=8, occopt=7)
     run_test(atoms, 'molecule-spin')
+    magmom = atoms.get_magnetic_moment()
+    print('magmom', magmom)
 
 
 def test_manykpts():  # Test not enabled.
