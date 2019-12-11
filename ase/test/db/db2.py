@@ -102,7 +102,8 @@ def test(name):
                  i=np.int64(42),
                  n=np.nan,
                  x=np.inf,
-                 s='NaN2')
+                 s='NaN2',
+                 A=42)
     row = c[id]
     assert isinstance(row.b, bool)
     assert isinstance(row.i, int)
