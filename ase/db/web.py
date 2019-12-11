@@ -1,5 +1,5 @@
 import re
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 
 from flask import flash
 
@@ -11,14 +11,14 @@ class Session:
     next_id = 1
     sessions: Dict[int, 'Session'] = {}
 
-    def __init__(self):
+    def __init__(self, project_name):
         self.id = Session.next_id
         Session.next_id += 1
 
         Session.sessions[self.id] = self
-        if len(Session.sessions) > 1000:
+        if len(Session.sessions) > 2000:
             # Forget old sessions:
-            for id in sorted(Session.sessions)[:200]:
+            for id in sorted(Session.sessions)[:400]:
                 del Session.sessions[id]
 
         self.columns = None
@@ -27,30 +27,26 @@ class Session:
         self.limit = 25
         self.sort = ''
         self.query = ''
-        self.project = 'default'
-        self.create_table_function = None
-        self.unique_key = 'id'
+        self.project_name = 'default'
 
     def __str__(self):
         return str(self.__dict__)
 
     @staticmethod
     def get(id: int) -> 'Session':
-        if id in Session.sessions:
-            return Session.sessions[id]
-        return Session()
+        return Session.sessions[id]
 
     def update(self,
                what: str,
                x: str,
-               query: str,
-               default_columns: List[str]) -> None:
+               args: str,
+               project: Dict[str, Any]) -> None:
 
         if self.columns is None:
-            self.columns = default_columns[:]
+            self.columns = project['default_columns'][:]
 
         if what == 'query':
-            self.query = query
+            self.query = project['handle_query_function'](args)
             self.nrows = None
 
         elif what == 'sort':
@@ -72,7 +68,7 @@ class Session:
         elif what == 'toggle':
             column = x
             if column == 'reset':
-                self.columns = default_columns[:]
+                self.columns = project['default_columns'][:]
             else:
                 if column in self.columns:
                     self.columns.remove(column)
@@ -118,12 +114,7 @@ class Session:
         pages.append((nxt, 'next'))
         return pages
 
-    def create_table(self,
-                     db: Database) -> Table:
-
-        if self.create_table_function is not None:
-            return self.create_table_function(self, db, self.unique_key)
-
+    def create_table(self, db: Database, uid_key: str) -> Table:
         query = self.query
         if self.nrows is None:
             try:
@@ -134,7 +125,7 @@ class Session:
                 query = 'id=0'  # this will return no rows
                 self.nrows = 0
 
-        table = Table(db, self.unique_key)
+        table = Table(db, uid_key)
         table.select(query, self.columns, self.sort,
                      self.limit, offset=self.page * self.limit)
         table.format()

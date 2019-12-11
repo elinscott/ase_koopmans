@@ -55,7 +55,7 @@ Browse ASE Database
       </small><br/>
       <div id="collapse1" class="collapse">
         <table class="table table-striped">
-        {% for key, (short, long, unit) in kd.items() %}
+        {% for key, (short, long, unit) in p.key_descriptions.items() %}
           <tr><td>{{ key }}</td><td>{{ long }}</td><td>{{ unit|safe }}</td></tr>
         {% endfor %}
         </table>

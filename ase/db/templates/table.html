@@ -24,7 +24,7 @@
               <li><a href="javascript:update_table({{ s.id }},
                                                    'toggle',
                                                    '{{ key }}')">
-              {{ kd[key][1] }} ({{key}}) </a></li>
+              {{ p.key_descriptions[key][1] }} ({{key}}) </a></li>
             {% endfor %}
             </ul>
           </div>
@@ -58,7 +58,7 @@
     {%- for c in t.columns %}
       <th class="text-center">
 
-      {% set desc, longdesc, unit = kd[c] %}
+      {% set desc, longdesc, unit = p.key_descriptions[c] %}
       {% set unit = unit and ' [' + unit + ']' %}
 
       {% if s.sort == c %}&#x2193;
@@ -83,7 +83,7 @@
       {%- autoescape false -%}
       {%- for s in row.strings -%}
         <td class="text-center">
-        <a href="row/{{ row.uid }}">
+        <a href="/{{ p.name }}/row/{{ row.uid }}">
         {%- if s != "" -%}{{ s }}{% else %}-{% endif %}
         </a>
         </td>

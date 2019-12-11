@@ -255,52 +255,52 @@ class AtomsRow:
         return atoms
 
 
-def row2things(row,
-               key_descriptions: Dict[str, Tuple[str, str, str]] = {}
-               ) -> Dict[str, Any]:
+def row2dct(row,
+            key_descriptions: Dict[str, Tuple[str, str, str]] = {}
+            ) -> Dict[str, Any]:
     """Convert row to dict of things for printing or a web-page."""
 
     from ase.db.core import float_to_time_string, now
 
-    things = {}
+    dct = {}
 
     atoms = Atoms(cell=row.cell, pbc=row.pbc)
-    things['size'] = kptdensity2monkhorstpack(atoms,
-                                              kptdensity=1.8,
-                                              even=False)
+    dct['size'] = kptdensity2monkhorstpack(atoms,
+                                           kptdensity=1.8,
+                                           even=False)
 
-    things['cell'] = [['{:.3f}'.format(a) for a in axis] for axis in row.cell]
+    dct['cell'] = [['{:.3f}'.format(a) for a in axis] for axis in row.cell]
     par = ['{:.3f}'.format(x) for x in cell_to_cellpar(row.cell)]
-    things['lengths'] = par[:3]
-    things['angles'] = par[3:]
+    dct['lengths'] = par[:3]
+    dct['angles'] = par[3:]
 
     stress = row.get('stress')
     if stress is not None:
-        things['stress'] = ', '.join('{0:.3f}'.format(s) for s in stress)
+        dct['stress'] = ', '.join('{0:.3f}'.format(s) for s in stress)
 
-    things['formula'] = Formula(row.formula).format('abc')
+    dct['formula'] = Formula(row.formula).format('abc')
 
     dipole = row.get('dipole')
     if dipole is not None:
-        things['dipole'] = ', '.join('{0:.3f}'.format(d) for d in dipole)
+        dct['dipole'] = ', '.join('{0:.3f}'.format(d) for d in dipole)
 
     data = row.get('data')
     if data:
-        things['data'] = ', '.join(data.keys())
+        dct['data'] = ', '.join(data.keys())
 
     constraints = row.get('constraints')
     if constraints:
-        things['constraints'] = ', '.join(c.__class__.__name__
-                                          for c in constraints)
+        dct['constraints'] = ', '.join(c.__class__.__name__
+                                       for c in constraints)
 
     keys = ({'id', 'energy', 'fmax', 'smax', 'mass', 'age'} |
             set(key_descriptions) |
             set(row.key_value_pairs))
-    things['table'] = []
+    dct['table'] = []
     for key in keys:
         if key == 'age':
             age = float_to_time_string(now() - row.ctime, True)
-            things['table'].append(('Age', age))
+            dct['table'].append(('Age', age))
             continue
         value = row.get(key)
         if value is not None:
@@ -311,6 +311,6 @@ def row2things(row,
             desc, unit = key_descriptions.get(key, ['', key, ''])[1:]
             if unit:
                 value += ' ' + unit
-            things['table'].append((desc, value))
+            dct['table'].append((desc, value))
 
-    return things
+    return dct

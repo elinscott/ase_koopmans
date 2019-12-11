@@ -6,7 +6,7 @@ from random import randint
 import ase.io
 from ase.db import connect
 from ase.db.core import convert_str_to_int_float_or_str
-from ase.db.row import row2things
+from ase.db.row import row2dct
 from ase.db.table import Table, all_columns
 from ase.utils import plural, basestring
 
@@ -367,7 +367,7 @@ def main(args):
 
 
 def row2str(row) -> str:
-    t = row2things(row)
+    t = row2dct(row)
     S = [t['formula'] + ':',
          'Unit cell in Ang:',
          'axis|periodic|          x|          y|          z']
