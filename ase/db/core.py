@@ -1,4 +1,3 @@
-import collections
 import functools
 import json
 import numbers
@@ -12,10 +11,10 @@ from typing import List, Any
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.symbols import symbols2numbers, string2symbols
 from ase.calculators.calculator import all_properties, all_changes
 from ase.data import atomic_numbers
 from ase.db.row import AtomsRow
+from ase.formula import Formula
 from ase.io.jsonio import create_ase_object
 from ase.parallel import world, DummyMPI, parallel_function, parallel_generator
 from ase.utils import Lock, basestring, PurePath
@@ -95,7 +94,7 @@ def check(key_value_pairs):
         if not word.match(key) or key in reserved_keys:
             raise ValueError('Bad key: {}'.format(key))
         try:
-            string2symbols(key)
+            Formula(key, strict=True)
         except ValueError:
             pass
         else:
@@ -245,11 +244,10 @@ def parse_selection(selection, **kwargs):
                 comparisons.append((expression, '>', 0))
             else:
                 try:
-                    symbols = string2symbols(expression)
+                    count = Formula(expression).count()
                 except ValueError:
                     keys.append(expression)
                 else:
-                    count = collections.Counter(symbols)
                     comparisons.extend((symbol, '>', n - 1)
                                        for symbol, n in count.items())
             continue
@@ -268,13 +266,12 @@ def parse_selection(selection, **kwargs):
         elif key == 'formula':
             if op != '=':
                 raise ValueError('Use fomula=...')
-            numbers = symbols2numbers(value)
-            count = collections.defaultdict(int)
-            for Z in numbers:
-                count[Z] += 1
-            cmps.extend((Z, '=', count[Z]) for Z in count)
+            f = Formula(value)
+            count = f.count()
+            cmps.extend((atomic_numbers[symbol], '=', n)
+                        for symbol, n in count.items())
             key = 'natoms'
-            value = len(numbers)
+            value = len(f)
         elif key in atomic_numbers:
             key = atomic_numbers[key]
             value = int(value)

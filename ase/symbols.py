@@ -129,7 +129,7 @@ class Symbols:
             formula = ''.join([chemical_symbols[n] for n in numbers])
         else:
             symbols = [chemical_symbols[Z] for Z in numbers]
-            f = Formula('', [(symbols, 1)])
+            f = Formula('', _tree=[(symbols, 1)])
             if empirical:
                 f, _ = f.reduce()
             if mode in {'hill', 'metal'}:
