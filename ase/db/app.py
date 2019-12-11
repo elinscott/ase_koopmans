@@ -71,7 +71,7 @@ def row(project_name: str, uid: str):
                                   .format(uid_key=uid_key, uid=uid))
     dct = project['row_to_dict_function'](row, project)
     return render_template(project['row_template'],
-                           d=dct, row=row, p=project)
+                           d=dct, row=row, p=project, uid=uid)
 
 
 @app.route('/atoms/<project_name>/<int:id>/<type>')
