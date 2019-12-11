@@ -74,9 +74,9 @@ def row(project_name: str, uid: str):
                            d=dct, row=row, p=project)
 
 
-@app.route('/atoms/<project>/<int:id>/<type>')
-def atoms(project, id, type):
-    row = projects[project]['database'].get(id=id)
+@app.route('/atoms/<project_name>/<int:id>/<type>')
+def atoms(project_name, id, type):
+    row = projects[project_name]['database'].get(id=id)
     a = row.toatoms()
     if type == 'cif':
         # fd = io.BytesIO()
