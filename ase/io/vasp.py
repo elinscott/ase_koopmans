@@ -838,7 +838,7 @@ def read_vasp_xml(filename='vasprun.xml', index=-1):
 
 
 @writer
-def write_vasp_xdatcar(f, images, label=''):
+def write_vasp_xdatcar(f, images, label=None):
     """Write VASP MD trajectory (XDATCAR) file
 
     Only Vasp 5 format is supported (for consistency with read_vasp_xdatcar)
@@ -865,7 +865,7 @@ def write_vasp_xdatcar(f, images, label=''):
 
     symbol_count = _symbol_count_from_symbols(image.get_chemical_symbols())
 
-    if label == '':
+    if label is None:
         label = ' '.join([s for s, _ in symbol_count])
     f.write(label + '\n')
 
@@ -953,7 +953,7 @@ def _write_symbol_count(f, sc, vasp5=True):
 
 
 @writer
-def write_vasp(filename, atoms, label='', direct=False, sort=None,
+def write_vasp(filename, atoms, label=None, direct=False, sort=None,
                symbol_count=None, long_format=True, vasp5=False,
                ignore_constraints=False):
     """Method to write VASP position (POSCAR/CONTCAR) files.
@@ -1029,7 +1029,8 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
         sc = _symbol_count_from_symbols(symbols)
 
     # Create the label
-    if label == '':
+    if label is None:
+        label = ''
         for sym, c in sc:
             label += '%2s ' % sym
     f.write(label + '\n')
