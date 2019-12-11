@@ -48,10 +48,11 @@ class Espresso(FileIOCalculator):
         kpts: (int, int, int), dict, or BandPath
             If kpts is a tuple (or list) of 3 integers, it is interpreted
             as the dimensions of a Monkhorst-Pack grid.
-            If kpts is None, a Γ-point calculation is assumed (which uses
-            optimized routines in QE, reducing memory and CPU requirements).
-            The non-optimized routines can be called by specifying the
-            Γ-point as tuple (1, 1, 1).
+            If ``kpts`` is set to ``None``, only the Γ-point will be included
+            and QE will use routines optimized for Γ-point-only calculations.
+            Compared to Γ-point-only calculations without this optimization
+            (i.e. with ``kpts=(1, 1, 1)``), the memory and CPU requirements
+            are typically reduced by half.
             If kpts is a dict, it will either be interpreted as a path
             in the Brillouin zone (*) if it contains the 'path' keyword,
             otherwise it is converted to a Monkhorst-Pack grid (**).
