@@ -16,11 +16,11 @@ def read_abinit_in(fd):
     Reads cell, atom positions, etc. from abinit input file
     """
 
-    lines = []
-    for line in fd.readlines():
+    tokens = []
+
+    for line in fd:
         meat = line.split('#', 1)[0]
-        lines.append(meat)
-    tokens = ' '.join(lines).lower().split()
+        tokens += meat.lower().split()
 
     # note that the file can not be scanned sequentially
 
@@ -110,6 +110,7 @@ def read_abinit_in(fd):
         magmoms = [float(tokens[index + 3 * i + 3]) for i in range(natom)]
         atoms.set_initial_magnetic_moments(magmoms)
 
+    assert len(atoms) == natom
     return atoms
 
 
