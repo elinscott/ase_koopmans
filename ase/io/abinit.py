@@ -1,6 +1,12 @@
+import os
+from os.path import join
 import re
+from glob import glob
+
 import numpy as np
+
 from ase import Atoms
+from ase.data import chemical_symbols
 from ase.units import Hartree, Bohr, fs
 
 
@@ -494,3 +500,153 @@ def read_eig(fd):
     results['kpoint_weights'] = weights
     results['eigenvalues'] = eig_skn
     return results
+
+
+def write_files_file(fd, label, ppp_list):
+    """Write files-file, the file which tells abinit about other files."""
+    fd.write('%s\n' % (label + '.in'))  # input
+    fd.write('%s\n' % (label + '.txt'))  # output
+    fd.write('%s\n' % (label + 'i'))  # input
+    fd.write('%s\n' % (label + 'o'))  # output
+    fd.write('%s\n' % (label + '.abinit'))
+    # Provide the psp files
+    for ppp in ppp_list:
+        fd.write('%s\n' % (ppp))  # psp file path
+
+
+def get_abinit_pp_paths():
+    return os.environ.get('ABINIT_PP_PATH', '.').split(':')
+
+
+def write_all_inputs(atoms, properties, parameters,
+                     raise_exception=True,
+                     label='abinit'):
+    species = list(set(atoms.numbers))
+    search_paths = get_abinit_pp_paths()
+    ppp = get_ppp_list(atoms, species,
+                       raise_exception=raise_exception,
+                       xc=parameters.xc,
+                       pps=parameters.pps,
+                       search_paths=search_paths)
+
+    with open(label + '.files', 'w') as fd:
+        write_files_file(fd, label, ppp)
+
+    # Abinit will write to label.txtA if label.txt already exists,
+    # so we remove it if it's there:
+    filename = label + '.txt'
+    if os.path.isfile(filename):
+        os.remove(filename)
+
+    parameters.write(label + '.ase')
+
+    with open(label + '.in', 'w') as fd:
+        write_abinit_in(fd, atoms, param=parameters, species=species)
+
+
+def read_ase_and_abinit_inputs(label):
+    with open(label + '.in') as fd:
+        atoms = read_abinit_in(fd)
+    parameters = Parameters.read(label + '.ase')
+    return atoms, parameters
+
+
+def read_results(label):
+    filename = label + '.txt'
+    results = {}
+    with open(filename) as fd:
+        dct = read_abinit_out(fd)
+        results.update(dct)
+    # The eigenvalues section in the main file is shortened to
+    # a limited number of kpoints.  We read the complete one from
+    # the EIG file then:
+    with open('{}o_EIG'.format(label)) as fd:
+        dct = read_eig(fd)
+        results.update(dct)
+    return results
+
+def get_ppp_list(atoms, species, raise_exception, xc, pps,
+                 search_paths):
+    ppp_list = []
+
+    xcname = 'GGA' if xc != 'LDA' else 'LDA'
+    for Z in species:
+        number = abs(Z)
+        symbol = chemical_symbols[number]
+
+        names = []
+        for s in [symbol, symbol.lower()]:
+            for xcn in [xcname, xcname.lower()]:
+                if pps in ['paw']:
+                    hghtemplate = '%s-%s-%s.paw'  # E.g. "H-GGA-hard-uspp.paw"
+                    names.append(hghtemplate % (s, xcn, '*'))
+                    names.append('%s[.-_]*.paw' % s)
+                elif pps in ['pawxml']:
+                    hghtemplate = '%s.%s%s.xml'  # E.g. "H.GGA_PBE-JTH.xml"
+                    names.append(hghtemplate % (s, xcn, '*'))
+                    names.append('%s[.-_]*.xml' % s)
+                elif pps in ['hgh.k']:
+                    hghtemplate = '%s-q%s.hgh.k'  # E.g. "Co-q17.hgh.k"
+                    names.append(hghtemplate % (s, '*'))
+                    names.append('%s[.-_]*.hgh.k' % s)
+                    names.append('%s[.-_]*.hgh' % s)
+                elif pps in ['tm']:
+                    hghtemplate = '%d%s%s.pspnc'  # E.g. "44ru.pspnc"
+                    names.append(hghtemplate % (number, s, '*'))
+                    names.append('%s[.-_]*.pspnc' % s)
+                elif pps in ['hgh', 'hgh.sc']:
+                    hghtemplate = '%d%s.%s.hgh'  # E.g. "42mo.6.hgh"
+                    # There might be multiple files with different valence
+                    # electron counts, so we must choose between
+                    # the ordinary and the semicore versions for some elements.
+                    #
+                    # Therefore we first use glob to get all relevant files,
+                    # then pick the correct one afterwards.
+                    names.append(hghtemplate % (number, s, '*'))
+                    names.append('%d%s%s.hgh' % (number, s, '*'))
+                    names.append('%s[.-_]*.hgh' % s)
+                else:  # default extension
+                    names.append('%02d-%s.%s.%s' % (number, s, xcn, pps))
+                    names.append('%02d[.-_]%s*.%s' % (number, s, pps))
+                    names.append('%02d%s*.%s' % (number, s, pps))
+                    names.append('%s[.-_]*.%s' % (s, pps))
+
+        found = False
+        for name in names:        # search for file names possibilities
+            for path in search_paths:  # in all available directories
+                filenames = glob(join(path, name))
+                if not filenames:
+                    continue
+                if pps == 'paw':
+                    # warning: see download.sh in
+                    # abinit-pseudopotentials*tar.gz for additional
+                    # information!
+                    filenames[0] = max(filenames)  # Semicore or hard
+                elif pps == 'hgh':
+                    # Lowest valence electron count
+                    filenames[0] = min(filenames)
+                elif pps == 'hgh.k':
+                    # Semicore - highest electron count
+                    filenames[0] = max(filenames)
+                elif pps == 'tm':
+                    # Semicore - highest electron count
+                    filenames[0] = max(filenames)
+                elif pps == 'hgh.sc':
+                    # Semicore - highest electron count
+                    filenames[0] = max(filenames)
+
+                if filenames:
+                    found = True
+                    ppp_list.append(filenames[0])
+                    break
+            if found:
+                break
+
+        if not found:
+            ppp_list.append("Provide {}.{}.{}?".format(symbol, '*', pps))
+            if raise_exception:
+                msg = ('Could not find {} pseudopotential {} for {}'
+                       .format(xcname.lower(), pps, symbol))
+                raise RuntimeError(msg)
+
+    return ppp_list
