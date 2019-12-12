@@ -214,7 +214,7 @@ def get_ioformat(name):
 
 F = define_io_format
 F('abinit-in', 'ABINIT input file', '1F',
-  module='abinit'),
+  module='abinit', magic=b'*znucl *'),
 F('abinit-out', 'ABINIT output file', '1F',
   module='abinit', magic=b'*.Version * of ABINIT'),
 F('aims', 'FHI-aims geometry file', '1S',ext='in'),
