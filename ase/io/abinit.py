@@ -216,6 +216,9 @@ def write_abinit_in(fd, atoms, param=None, species=None):
             fd.write('%s %e %s\n' % (key, value, unit))
 
     if param['raw'] is not None:
+        if isinstance(param['raw'], str):
+            raise TypeError('The raw parameter is a single string; expected '
+                            'a sequence of lines')
         for line in param['raw']:
             if isinstance(line, tuple):
                 fd.write(' '.join(['%s' % x for x in line]) + '\n')
@@ -279,7 +282,10 @@ def read_stress(fd):
     for i in range(3):
         line = next(fd)
         m = pat.match(line)
-        assert m is not None
+        if m is None:
+            # Not a real value error.  What should we raise?
+            raise ValueError('Line {!r} does not match stress pattern {!r}'
+                             .format(line, pat))
         s1, s2 = m.group(1, 2)
         stress[i] = float(m.group(1))
         stress[i + 3] = float(m.group(2))
@@ -287,7 +293,7 @@ def read_stress(fd):
     return stress / unit
 
 
-def consume_multiline(fd, header, headerline, nvalues, dtype):
+def consume_multiline(fd, headerline, nvalues, dtype):
     """Parse abinit-formatted "header + values" sections.
 
     Example:
@@ -296,15 +302,14 @@ def consume_multiline(fd, header, headerline, nvalues, dtype):
               1 1 1 1
     """
     tokens = headerline.split()
-    assert tokens[0] == header, tokens[0]
+    assert tokens[0].isalpha()
 
     values = tokens[1:]
     while len(values) < nvalues:
         line = next(fd)
         values.extend(line.split())
     assert len(values) == nvalues
-    values = np.array(values).astype(dtype)
-    return values
+    return np.array(values).astype(dtype)
 
 
 def read_abinit_out(fd):
@@ -338,15 +343,13 @@ def read_abinit_out(fd):
                 shape_vars[key] = int(tokens[1])
 
         if line.lstrip().startswith('typat'):  # Avoid matching ntypat
-            types = consume_multiline(fd, 'typat', line, shape_vars['natom'],
-                                      int)
+            types = consume_multiline(fd, line, shape_vars['natom'], int)
 
         if 'znucl' in line:
-            znucl = consume_multiline(fd, 'znucl', line, shape_vars['ntypat'],
-                                      float)
+            znucl = consume_multiline(fd, line, shape_vars['ntypat'], float)
 
         if 'rprim' in line:
-            cell = consume_multiline(fd, 'rprim', line, 9, float)
+            cell = consume_multiline(fd, line, 9, float)
             cell = cell.reshape(3, 3)
 
     natoms = shape_vars['natom']
@@ -394,19 +397,6 @@ def read_abinit_out(fd):
                   positions=positions,
                   cell=cell,
                   pbc=True)
-
-    if 0:
-        print('DONE PARSING')
-        print('------------')
-        for key in results:
-            print(key)
-            val = results[key]
-            if isinstance(val, np.ndarray):
-                print(val.shape, val.dtype)
-            else:
-                print(results[key])
-            print()
-        print(atoms)
 
     results['atoms'] = atoms
     return results
