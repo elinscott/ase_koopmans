@@ -40,17 +40,15 @@ def read_abinit_in(fd):
 
     index = tokens.index("typat")
     typat = []
-    for i in range(natom):
-        t = tokens[index + 1 + i]
-        if '*' in t:  # e.g. typat 4*1 3*2 ...
-            parts = t.split('*')
-            things = [int(t) for t
-                      in ((parts[1] + ' ') * int(parts[0])).split()]
-            typat.extend(things)
+    while len(typat) < natom:
+        token = tokens[index + 1]
+        if '*' in token:  # e.g. typat 4*1 3*2 ...
+            nrepeat, typenum = token.split('*')
+            typat += [int(typenum)] * int(nrepeat)
         else:
-            typat.append(int(t))
-        if len(typat) == natom:
-            break
+            typat.append(int(token))
+        index += 1
+    assert natom == len(typat)
 
     index = tokens.index("znucl")
     znucl = []
