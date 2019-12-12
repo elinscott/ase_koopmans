@@ -183,9 +183,10 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
                       **kwargs)
 
     #  if all occupancies are 1, no partial occupancy present
-    if not all([occ == 1 for occ in occupancies]):
-        # use tags to identify sites, and in particular the occupancy
-        atoms.set_tags(kinds)
+    if occupancies:
+        if not all([occ == 1 for occ in occupancies]):
+            # use tags to identify sites, and in particular the occupancy
+            atoms.set_tags(kinds)
 
 
     if isinstance(basis, ase.Atoms):
