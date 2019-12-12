@@ -394,10 +394,12 @@ class Siesta(FileIOCalculator):
         xc = kwargs.get('xc', 'LDA')
         if isinstance(xc, (tuple, list)) and len(xc) == 2:
             functional, authors = xc
-            if functional not in self.allowed_xc:
+            if functional.lower() not in [k.lower() for k in self.allowed_xc]:
                 mess = "Unrecognized functional keyword: '%s'" % functional
                 raise ValueError(mess)
-            if authors not in self.allowed_xc[functional]:
+
+            lsauthorslower = [a.lower() for a in self.allowed_xc[functional]]
+            if authors.lower() not in lsauthorslower:
                 mess = "Unrecognized authors keyword for %s: '%s'"
                 raise ValueError(mess % (functional, authors))
 
