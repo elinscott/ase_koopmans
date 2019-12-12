@@ -202,36 +202,23 @@ class Amber(FileIOCalculator):
 
         fin = netcdf.netcdf_file(filename, 'r')
         all_coordinates = fin.variables['coordinates'][:]
-        if len(all_coordinates.shape)==3:
-           atoms.set_positions(all_coordinates[-1])
-        else:
-           atoms.set_positions(all_coordinates[:])
+        if all_coordinates.ndim==3:
+           all_coordinates = all_coordinates[-1]
+        atoms.set_positions(all_coordinates)
         if 'velocities' in fin.variables:
             all_velocities = fin.variables['velocities'][:] / (1000 * units.fs)
-            if len(all_velocities.shape)==3:
-               atoms.set_velocities(all_velocities[-1])
-            else:
-               atoms.set_velocities(all_velocities[:])
+            if all_velocities.ndim==3:
+               all_velocities = all_velocities[-1]
+            atoms.set_velocities(all_velocities)
         if 'cell_lengths' in fin.variables:
             all_abc = fin.variables['cell_lengths']
-            if len(all_abc.shape)==2:
-                a = all_abc[-1,0]
-                b = all_abc[-1,1]
-                c = all_abc[-1,2]
-            else:
-                a = all_abc[0]
-                b = all_abc[1]
-                c = all_abc[2]
-
+            if all_abc.ndim==2:
+                all_abc = all_abc[-1,:]
+            a,b,c = all_abc
             all_angles = fin.variables['cell_angles']
-            if len(all_angles.shape)==2:
-                alpha = all_angles[-1,0]
-                beta = all_angles[-1,1]
-                gamma = all_angles[-1,2]
-            else:
-                alpha = all_angles[0]
-                beta = all_angles[1]
-                gamma = all_angles[2]
+            if all_angles.ndim==2:
+                all_angles = all_angles[-1,:]
+            alpha,beta,gamma = all_angles
 
             if (all(angle > 89.99 for angle in [alpha, beta, gamma]) and
                     all(angle < 90.01 for angle in [alpha, beta, gamma])):
