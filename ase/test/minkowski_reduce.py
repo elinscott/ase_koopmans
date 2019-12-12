@@ -7,6 +7,12 @@ tol = 1E-14
 rng = np.random.RandomState(0)
 np.seterr(all='raise')
 
+
+cell = Cell([[8.972058879514716, 0.0009788104586639142, 0.0005932485724084841],
+             [4.485181755775297, 7.770520334862034, 0.00043663339838788054],
+             [4.484671994095723, 2.5902066679984634, 16.25695615743613]])
+cell.minkowski_reduce()
+
 for i in range(40):
     B = rng.uniform(-1, 1, (3, 3))
     R, H = minkowski_reduce(B)

@@ -86,7 +86,7 @@ max_errors = {
     # missing whitespace around modulo operator
     'E228': 4,
     # expected 1 blank line before a nested definition, found 0
-    'E306': 4,
+    'E306': 5,
     # test for membership should be 'not in'
     'E713': 4,
     # multiple statements on one line (colon)
@@ -134,7 +134,7 @@ max_errors = {
     # whitespace before ':'
     'E203': 38,
     # blank line at end of file
-    'W391': 46,
+    'W391': 49,
     # continuation line over-indented for hanging indent
     'E126': 48,
     # multiple spaces after ','
@@ -148,7 +148,7 @@ max_errors = {
     # ambiguous variable name 'O'
     'E741': 77,
     # too many blank lines (2)
-    'E303': 81,
+    'E303': 82,
     # expected 2 blank lines after class or function definition, found 1
     'E305': 83,
     # module level import not at top of file

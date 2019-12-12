@@ -9,13 +9,15 @@ from ase.calculators.psi4 import Psi4
 
 def main():
     atoms = molecule('H2O')
+    atoms.rotate(30, 'x')
+
     calc = Psi4(basis='3-21G')
     atoms.set_calculator(calc)
 
     # Calculate forces ahead of time, compare against finite difference after
     # checking the psi4-calc.dat file
     atoms.get_forces()
-    assert_allclose(atoms.get_potential_energy(), -2056.785854116349,
+    assert_allclose(atoms.get_potential_energy(), -2056.785854116688,
                     rtol=1e-4, atol=1e-4)
 
     # Test the reader

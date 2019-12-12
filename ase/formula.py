@@ -3,7 +3,7 @@ import sys
 from typing import Dict, Tuple, List, Union
 
 from ase.utils import gcd
-from ase.data import chemical_symbols
+from ase.data import chemical_symbols, atomic_numbers
 
 if sys.version_info >= (3, 6):
     ordereddict = dict
@@ -17,6 +17,8 @@ Tree = Union[str, Tuple['Tree', int], List['Tree']]
 class Formula:
     def __init__(self,
                  formula: str = '',
+                 *,
+                 strict: bool = False,
                  _tree: Tree = None,
                  _count: Dict[str, int] = None):
         """Chemical formula object.
@@ -26,6 +28,8 @@ class Formula:
         formula: str
             Text string representation of formula.  Examples: ``'6CO2'``,
             ``'30Cu+2CO'``, ``'Pt(CO)6'``.
+        strict: bool
+            Only allow real chemical symbols.
 
         Examples
         --------
@@ -52,6 +56,10 @@ class Formula:
         self._formula = formula
         self._tree = _tree or parse(formula)
         self._count = _count or count_tree(self._tree)
+        if strict:
+            for symbol in self._count:
+                if symbol not in atomic_numbers:
+                    raise ValueError('Unknown chemical symbol: ' + symbol)
 
     def count(self) -> Dict[str, int]:
         """Return dictionary mapping chemical symbol to number of atoms.
@@ -420,7 +428,7 @@ def formula_hill(numbers, empirical=False):
     If argument `empirical`, element counts will be divided by greatest common
     divisor to yield an empirical formula"""
     symbols = [chemical_symbols[Z] for Z in numbers]
-    f = Formula('', [(symbols, 1)])
+    f = Formula('', _tree=[(symbols, 1)])
     if empirical:
         f, _ = f.reduce()
     return f.format('hill')
@@ -435,7 +443,7 @@ def formula_metal(numbers, empirical=False):
     If argument `empirical`, element counts will be divided by greatest common
     divisor to yield an empirical formula"""
     symbols = [chemical_symbols[Z] for Z in numbers]
-    f = Formula('', [(symbols, 1)])
+    f = Formula('', _tree=[(symbols, 1)])
     if empirical:
         f, _ = f.reduce()
     return f.format('metal')
