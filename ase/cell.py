@@ -1,4 +1,5 @@
-from typing import Optional, Mapping
+import ase
+from typing import Optional, Mapping, Sequence, Union
 import numpy as np
 from ase.utils import deprecated
 from ase.utils.arraywrapper import arraylike
@@ -144,14 +145,14 @@ class Cell:
 
     def bandpath(
             self,
-            path: Optional[str]=None,
-            npoints: Optional[int]=None,
-            density: Optional[float]=None,
-            special_points: Optional[Mapping[str, np.ndarray]]=None,
-            eps: Optional[float]=2e-4,
+            path: str = None,
+            npoints: int = None,
             *,
-            pbc=True
-    ) -> "BandPath":
+            density: float = None,
+            special_points: Mapping[str, Sequence[float]] = None,
+            eps: float = 2e-4,
+            pbc: Union[bool, Sequence[bool]] = True
+    ) -> "ase.dft.kpoints.BandPath":
         """Build a :class:`~ase.dft.kpoints.BandPath` for this cell.
 
         If special points are None, determine the Bravais lattice of
@@ -194,13 +195,13 @@ class Cell:
         if special_points is None:
             from ase.lattice import identify_lattice
             lat, op = identify_lattice(cell, eps=eps)
-            path = lat.bandpath(path, npoints=npoints, density=density)
-            return path.transform(op)
+            bandpath = lat.bandpath(path, npoints=npoints, density=density)
+            return bandpath.transform(op)
         else:
             from ase.dft.kpoints import BandPath, resolve_custom_points
             path = resolve_custom_points(path, special_points, eps=eps)
-            path = BandPath(cell, path=path, special_points=special_points)
-            return path.interpolate(npoints=npoints, density=density)
+            bandpath = BandPath(cell, path=path, special_points=special_points)
+            return bandpath.interpolate(npoints=npoints, density=density)
 
 
     # XXX adapt the transformation stuff and include in the bandpath method.
