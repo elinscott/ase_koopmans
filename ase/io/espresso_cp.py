@@ -38,6 +38,14 @@ from ase.calculators.espresso_cp import Espresso_cp
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
 
+KEYS['CONTROL']   += ['ndr', 'ndw']
+KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
+                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw']
+KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep']
+KEYS['NKSIC']      = ['do_innerloop', 'one_innerloop_only', 'nkscalfact', 'odd_nkscalfact', 
+                      'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
+                      'index_empty_to_save']
+
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
 _CP_END = 'This run was terminated on:'
@@ -132,12 +140,12 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
             try:
                 eigenvalues.append([float(e) for e in cpo_lines[i_line + 2].split()])
             except:
-                print('READING EIGENVALUES FAILED')
+                pass
             if 'Empty States Eigenvalues' in cpo_lines[i_line + 4]:
                 try:
                     eigenvalues[-1] += [float(e) for e in cpo_lines[i_line + 6].split()]
                 except:
-                    print('READING EIGENVALUES FAILED')
+                    pass
     
     # Forces
     # forces = None

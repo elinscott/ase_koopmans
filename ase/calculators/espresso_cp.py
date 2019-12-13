@@ -2,6 +2,8 @@
 
 export ASE_ESPRESSO_COMMAND="/path/to/cp.x -in PREFIX.cpi > PREFIX.cpo"
 
+N.B. the extensions must be .cpi and .cpo
+
 Run cp.x jobs.
 """
 
@@ -23,7 +25,9 @@ class Espresso_cp(FileIOCalculator):
     """
     """
     implemented_properties = ['energy']
-    command = 'mpirun -np 8 cp.x -in PREFIX.cpi > PREFIX.cpo'
+
+    # User must specify the appropriate command using ASE_ESPRESSO_CP_COMMAND
+    command = None
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='espresso', atoms=None, **kwargs):
@@ -99,7 +103,9 @@ class Espresso_cp(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
 
-        self.command = 'mpirun -np 8 cp.x -in PREFIX.cpi > PREFIX.cpo'
+        if atoms is not None:
+            self.atoms = atoms
+            self.atoms.calc = self
 
         self.calc = None
 

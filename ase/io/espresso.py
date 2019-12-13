@@ -1645,7 +1645,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 pwi.append('   {0:16} = .true.\n'.format(key))
             elif value is False:
                 pwi.append('   {0:16} = .false.\n'.format(key))
-            else:
+            elif value is not None:
                 # repr format to get quotes around strings
                 pwi.append('   {0:16} = {1!r:}\n'.format(key, value))
         pwi.append('/\n')  # terminate section
