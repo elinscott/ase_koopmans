@@ -23,7 +23,8 @@ test_calculator_names = ['emt']
 
 def require(calcname):
     if calcname not in test_calculator_names:
-        raise unittest.SkipTest('use --calculators={0} to enable'.format(calcname))
+        raise unittest.SkipTest('use --calculators={0} to enable'
+                                .format(calcname))
 
 
 def get_tests(files=None):
@@ -379,7 +380,7 @@ def disable_calculators(names):
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
                     raise unittest.SkipTest('use --calculators={0} to enable'
-                                       .format(name))
+                                            .format(name))
                 return mock_init
 
             def mock_del(obj):

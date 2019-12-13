@@ -81,9 +81,9 @@ class NEB:
                 raise ValueError('Images have different numbers of atoms')
             if (img.pbc != images[0].pbc).any():
                 raise ValueError('Images have different boundary conditions')
-            if (img.get_atomic_numbers() != images[0].get_atomic_numbers()
-                    ).any():
-                raise ValueError('Images have atoms in different orders')
+            if (img.get_atomic_numbers() !=
+                images[0].get_atomic_numbers()).any():
+                    raise ValueError('Images have atoms in different orders')
         self.nimages = len(images)
         self.emax = np.nan
 
@@ -661,7 +661,7 @@ class NEBTools:
             # Plot all to one plot, then pull its x and y range.
             fig, ax = pyplot.subplots()
             for index in range(len(self.images) // nimages):
-                images = self.images[index*nimages:(index+1)*nimages]
+                images = self.images[index * nimages:(index + 1) * nimages]
                 NEBTools(images).plot_band(ax=ax)
                 xlim = ax.get_xlim()
                 ylim = ax.get_ylim()
@@ -669,10 +669,10 @@ class NEBTools:
         with PdfPages(label + '.pdf') as pdf:
             for index in range(len(self.images) // nimages):
                 sys.stdout.write('\rProcessing band {:10d} / {:10d}'
-                                 .format(index, len(self.images)//nimages))
+                                 .format(index, len(self.images) // nimages))
                 sys.stdout.flush()
                 fig, ax = pyplot.subplots()
-                images = self.images[index*nimages:(index+1)*nimages]
+                images = self.images[index * nimages:(index + 1) * nimages]
                 NEBTools(images).plot_band(ax=ax)
                 if constant_x:
                     ax.set_xlim(xlim)
@@ -876,4 +876,4 @@ def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
 
 def fit0(*args, **kwargs):
     raise DeprecationWarning('fit0 is deprecated. Use '
-            'NEBTools.get_fit() instead.')
+                             'NEBTools.get_fit() instead.')

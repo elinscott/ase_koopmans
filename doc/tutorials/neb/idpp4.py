@@ -3,7 +3,6 @@ from ase import Atoms
 from ase.constraints import FixAtoms
 from ase.calculators.emt import EMT
 from ase.neb import NEB
-from ase.visualize import view
 from ase.optimize.fire import FIRE as QuasiNewton
 from ase.lattice.cubic import FaceCenteredCubic
 
