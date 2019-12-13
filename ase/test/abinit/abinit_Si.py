@@ -1,4 +1,3 @@
-from ase import Atoms
 from ase.build import bulk
 from ase.units import Ry
 from ase.calculators.abinit import Abinit

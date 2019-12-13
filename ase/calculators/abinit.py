@@ -6,7 +6,7 @@ http://www.abinit.org/
 import re
 
 import ase.io.abinit as io
-from ase.calculators.calculator import FileIOCalculator, Parameters
+from ase.calculators.calculator import FileIOCalculator
 from ase.utils import workdir
 from subprocess import check_output
 
@@ -18,7 +18,7 @@ def get_abinit_version(command):
     if m is None:
         raise RuntimeError('Cannot recognize abinit version. '
                            'Start of output: {}'
-                           .format(version[:40]))
+                           .format(txt[:40]))
     return m.group(1)
 
 
