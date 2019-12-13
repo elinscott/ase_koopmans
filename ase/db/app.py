@@ -42,7 +42,6 @@ projects = {}  # type: Dict[str, Dict[str, Any]]
 
 @app.route('/', defaults={'project_name': 'default'})
 @app.route('/<project_name>/')
-@app.route('/<project_name>')
 def search(project_name: str):
     session = Session(project_name)
     project = projects[project_name]
@@ -79,13 +78,9 @@ def atoms(project_name, id, type):
     row = projects[project_name]['database'].get(id=id)
     a = row.toatoms()
     if type == 'cif':
-        # fd = io.BytesIO()
-        # a.write(fd, 'cif')
-        # return fd.getvalue(), 200, []
-
-        a.write('x.cif')
-        from flask import send_from_directory
-        return send_from_directory('.', 'x.cif')
+        fd = io.BytesIO()
+        a.write(fd, 'cif')
+        return fd.getvalue(), 200, []
 
     fd = io.StringIO()
     if type == 'xyz':
