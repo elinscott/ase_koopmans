@@ -3,17 +3,17 @@ from ase.neb import NEB
 from ase.calculators.emt import EMT
 from ase.optimize.fire import FIRE as QuasiNewton
 
-# Optimise molecule
+# Optimise molecule.
 initial = molecule('C2H6')
 initial.set_calculator(EMT())
 relax = QuasiNewton(initial)
 relax.run(fmax=0.05)
 
-# Create final state
+# Create final state.
 final = initial.copy()
 final.positions[2:5] = initial.positions[[3, 4, 2]]
 
-# Generate blank images
+# Generate blank images.
 images = [initial]
 
 for i in range(9):
@@ -24,10 +24,10 @@ for image in images:
    
 images.append(final)
 
-# Run IDPP interpolation
+# Run IDPP interpolation.
 neb = NEB(images)
 neb.interpolate('idpp')
 
-#Run NEB calculation
-qn = QuasiNewton(neb, trajectory='ethane_idpp.traj',  logfile='ethane_idpp.log')
+# Run NEB calculation.
+qn = QuasiNewton(neb, trajectory='ethane_idpp.traj', logfile='ethane_idpp.log')
 qn.run(fmax=0.05)
