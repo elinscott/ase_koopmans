@@ -142,7 +142,6 @@ def read_single_image(f, levcfg, imcon, natoms, is_trajectory, symbols=None):
             a -= 1
             break
 
-        symbol = line.split()[0]
         m = re.match(r'\s*([A-Za-z][a-z]?)(\S*)', line)
         assert m is not None, line
         symbol, label = m.group(1, 2)
@@ -151,7 +150,12 @@ def read_single_image(f, levcfg, imcon, natoms, is_trajectory, symbols=None):
         if not symbols:
             assert symbol in chemical_symbols
             sym.append(symbol)
-        labels.append(label)
+        #make sure label is not empty
+        if label:
+            labels.append(label)
+        else:
+            labels.append(line.split()[0])
+
 
         x, y, z = f.readline().split()[:3]
         positions.append([float(x), float(y), float(z)])

@@ -36,7 +36,7 @@ class Amber(FileIOCalculator):
                  amber_exe='sander -O ',
                  infile='mm.in', outfile='mm.out',
                  topologyfile='mm.top', incoordfile='mm.crd',
-                 outcoordfile='mm_dummy.crd',
+                 outcoordfile='mm_dummy.crd', mdcoordfile=None,
                  **kwargs):
         """Construct Amber-calculator object.
 
@@ -82,6 +82,7 @@ class Amber(FileIOCalculator):
         self.topologyfile = topologyfile
         self.incoordfile = incoordfile
         self.outcoordfile = outcoordfile
+        self.mdcoordfile = mdcoordfile
         if command is not None:
             self.command = command
         else:
@@ -91,6 +92,8 @@ class Amber(FileIOCalculator):
                             ' -p ' + self.topologyfile +
                             ' -c ' + self.incoordfile +
                             ' -r ' + self.outcoordfile)
+            if self.mdcoordfile is not None:
+                self.command = self.command + ' -x ' + self.mdcoordfile
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
@@ -130,6 +133,7 @@ class Amber(FileIOCalculator):
         fout.createDimension('time', 1)
         time = fout.createVariable('time', 'd', ('time',))
         time.units = 'picosecond'
+        time[0] = 0
         fout.createDimension('spatial', 3)
         spatial = fout.createVariable('spatial', 'c', ('spatial',))
         spatial[:] = np.asarray(list('xyz'))
@@ -197,19 +201,24 @@ class Amber(FileIOCalculator):
         import ase.units as units
 
         fin = netcdf.netcdf_file(filename, 'r')
-        atoms.set_positions(fin.variables['coordinates'][:])
+        all_coordinates = fin.variables['coordinates'][:]
+        if all_coordinates.ndim == 3:
+            all_coordinates = all_coordinates[-1]
+        atoms.set_positions(all_coordinates)
         if 'velocities' in fin.variables:
-            atoms.set_velocities(
-                fin.variables['velocities'][:] / (1000 * units.fs))
-
+            all_velocities = fin.variables['velocities'][:] / (1000 * units.fs)
+            if all_velocities.ndim == 3:
+                all_velocities = all_velocities[-1]
+            atoms.set_velocities(all_velocities)
         if 'cell_lengths' in fin.variables:
-            a = fin.variables['cell_lengths'][0]
-            b = fin.variables['cell_lengths'][1]
-            c = fin.variables['cell_lengths'][2]
-
-            alpha = fin.variables['cell_angles'][0]
-            beta = fin.variables['cell_angles'][1]
-            gamma = fin.variables['cell_angles'][2]
+            all_abc = fin.variables['cell_lengths']
+            if all_abc.ndim == 2:
+                all_abc = all_abc[-1]
+            a, b, c = all_abc
+            all_angles = fin.variables['cell_angles']
+            if all_angles.ndim == 2:
+                all_angles = all_angles[-1]
+            alpha, beta, gamma = all_angles
 
             if (all(angle > 89.99 for angle in [alpha, beta, gamma]) and
                     all(angle < 90.01 for angle in [alpha, beta, gamma])):
@@ -272,11 +281,11 @@ class Amber(FileIOCalculator):
             if '%FLAG CHARGE' in line:
                 chargestart = n + 2
         lines1 = topology[chargestart:(chargestart
-                                       + (len(atoms)-1)//5 + 1)]
+                                       + (len(atoms) - 1) // 5 + 1)]
         mm_charges = []
         for line in lines1:
             for el in line.split():
-                mm_charges.append(float(el)/18.2223)
+                mm_charges.append(float(el) / 18.2223)
         charges = np.array(mm_charges)
         return charges
 
@@ -305,6 +314,7 @@ def map(atoms, top):
                         p[1, j] = k
                         break
     return p
+
 
 try:
     import sander

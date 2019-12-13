@@ -66,6 +66,20 @@ Git master branch
 
 * Added :mod:`~ase.calculators.mixing` module for the linear combination of arbitrary :mod:`~ase.calculators`.
 
+* Added :mod:`~ase.md.switch_langevin` module for thermodynamic integration via MD simulations.
+
+* The :mod:`NWChem <ase.calculators.nwchem>` calculator has been completely rewritten, and now supports
+  `DFT <https://github.com/nwchemgit/nwchem/wiki/Density-Functional-Theory-for-Molecules>`_,
+  `SCF (Hartree Fock) <https://github.com/nwchemgit/nwchem/wiki/Hartree-Fock-Theory-for-Molecules>`_,
+  `MP2 <https://github.com/nwchemgit/nwchem/wiki/MP2>`_,
+  `CCSD <https://github.com/nwchemgit/nwchem/wiki/CCSD>`_,
+  and `TCE <https://github.com/nwchemgit/nwchem/wiki/TCE>`_ calculations with gaussian-type orbitals.
+  The calculator also now supports
+  `plane-wave calculations <https://github.com/nwchemgit/nwchem/wiki/Plane-Wave-Density-Functional-Theory>`_,
+  including band structure calculations through ASE's :class:`~ase.dft.band_structure.BandStructure` utilities.
+  To facilitate these changes, the format of the calculator keywords has been changed. Please read the updated
+  :mod:`NWChem <ase.calculators.nwchem>` calculator documentation for more details.
+
 Version 3.18.1
 ==============
 

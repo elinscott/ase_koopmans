@@ -18,31 +18,28 @@ def main():
     for orientation in range(2):    # create two fragments
         imm = 6 * (-1)**orientation
         cr_atom.set_initial_magnetic_moments([imm])
-        calculator = NWChem(task='energy', xc='PBE',
-                            geometry='nocenter noautosym noautoz',
-                            convergence={'energy': 1e-3,
-                                         'density': 1e-2,
-                                         'gradient': 5e-2},
-                            basis='"DZVP2 (DFT Orbital)"',
-                            vectors='input atomic output {0}'
-                            .format(names[orientation]),
-                            charge=0)
-        cr_atom.set_calculator(calculator)
+        calc = NWChem(task='energy', xc='pbe', theory='dft',
+                      dft=dict(convergence=dict(energy=1e-3,
+                                                density=1e-2,
+                                                gradient=5e-2),
+                               vectors='input atomic output {}'
+                                       .format(names[orientation])),
+                      charge=0,
+                      basis='"DZVP2 (DFT Orbital)"')
+        cr_atom.set_calculator(calc)
         fragment_energies[orientation] = cr_atom.get_potential_energy()
     cr_dimer = Atoms('Cr2', positions=[(0, 0, 0), (0, 0, 1.93)], pbc=False)
     cr_dimer.set_initial_magnetic_moments([0, 0])
-    calculator = NWChem(task='energy',
-                        xc='PBE',
-                        geometry='nocenter noautosym noautoz',
-                        convergence={'energy': 1e-3,
-                                     'density': 1e-2,
-                                     'gradient': 5e-2},
-                        odft=True,
-                        basis='"DZVP2 (DFT Orbital)"',
-                        vectors='input fragment {0} output Cr2_AF.mos'
-                        .format(' '.join(names)),
-                        charge=0)
-    cr_dimer.set_calculator(calculator)
+    calc = NWChem(task='energy', xc='pbe', theory='dft',
+                  dft=dict(convergence=dict(energy=1e-3,
+                                            density=1e-2,
+                                            gradient=5e-2),
+                           odft=None,
+                           vectors='input fragment {} output Cr2_AF.mos'
+                                   .format(' '.join(names))),
+                  basis='"DZVP2 (DFT Orbital)"',
+                  charge=0)
+    cr_dimer.set_calculator(calc)
     e_dimer = cr_dimer.get_potential_energy()
     e_tot = e_dimer - fragment_energies.sum()
     assert abs(e_tot - e_literature) < 0.01

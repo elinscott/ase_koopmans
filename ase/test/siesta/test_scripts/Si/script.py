@@ -13,13 +13,14 @@ bulk.set_cell([(0, b, b),
 
 calc = Siesta(label='Si',
               xc='PBE',
+              spin='collinear',
               mesh_cutoff=200 * Ry,
               energy_shift=0.01 * Ry,
               basis_set='DZ',
               kpts=[1, 2, 3],
               fdf_arguments={'DM.MixingWeight': 0.10,
                              'MaxSCFIterations': 10,
-                             'DM.Tolerance': 0.1,
+                             'SCF.DM.Tolerance': 0.1,
                              },
               )
 bulk.set_calculator(calc)

@@ -202,6 +202,21 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
                             int(fields[7]),
                             int(fields[8]),
                         )
+                if style == "charge" and (len(fields) == 6 or len(fields) == 9):
+                    # id type q x y z [tx ty tz]
+                    pos_in[id] = (
+                        int(fields[1]),
+                        float(fields[3]),
+                        float(fields[4]),
+                        float(fields[5]),
+                    )
+                    charge_in[id] = float(fields[2])
+                    if len(fields) == 9:
+                        travel_in[id] = (
+                            int(fields[6]),
+                            int(fields[7]),
+                            int(fields[8]),
+                        )
                 else:
                     raise RuntimeError(
                         "Style '{}' not supported or invalid "

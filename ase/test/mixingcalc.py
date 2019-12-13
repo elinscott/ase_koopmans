@@ -5,7 +5,7 @@ import numpy as np
 
 from ase.build import fcc111
 from ase.calculators.emt import EMT
-from ase.calculators.mixing import SumCalculator, LinearCombinationCalculator, AverageCalculator
+from ase.calculators.mixing import SumCalculator, LinearCombinationCalculator, AverageCalculator, MixedCalculator
 from ase.constraints import FixAtoms
 
 # Calculate reference values:
@@ -65,3 +65,15 @@ try:
     calc1 = AverageCalculator([])
 except ValueError:
     assert True
+
+
+# test  MixedCalculator and energy contributions
+w1, w2 = 0.78, 0.22
+atoms1 = atoms.copy()
+atoms1.set_calculator(EMT())
+E_tot = atoms1.get_potential_energy()
+
+calc1 = MixedCalculator(EMT(), EMT(), w1, w2)
+E1, E2 = calc1.get_energy_contributions(atoms1)
+assert np.isclose(E1, E_tot)
+assert np.isclose(E2, E_tot)

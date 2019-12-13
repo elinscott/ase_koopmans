@@ -273,7 +273,7 @@ class DemonNano(FileIOCalculator):
           
        for i in range(len(lines)):
             if lines[i].startswith(' DFTB total energy [Hartree]'):
-                self.results['energy'] = float(lines[i+1])
+                self.results['energy'] = float(lines[i+1])*Hartree
                 break
 
     def read_forces(self, atoms):
