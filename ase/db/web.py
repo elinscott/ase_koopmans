@@ -142,9 +142,11 @@ def create_key_descriptions(kd: KeyDescriptions) -> KeyDescriptions:
     kd = kd.copy()
     kd.update(default_key_descriptions)
 
-    # Long description may be missing:
+    # Fill in missing descriptions:
     for key, (short, long, unit) in kd.items():
-        if not long:
+        if not short:
+            kd[key] = (key, key, unit)
+        elif not long:
             kd[key] = (short, short, unit)
 
     sub = re.compile(r'`(.)_(.)`')
