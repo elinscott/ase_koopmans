@@ -11,7 +11,6 @@ or run::
 
 """
 
-from __future__ import print_function
 import os
 import sys
 from glob import glob

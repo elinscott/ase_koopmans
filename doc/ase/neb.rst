@@ -235,7 +235,7 @@ only some of them have a calculator attached::
 Create the NEB object with ``NEB(images, parallel=True)``.
 For a complete example using GPAW_, see here_.
 
-.. _GPAW: http://wiki.fysik.dtu.dk/gpaw
+.. _GPAW: https://wiki.fysik.dtu.dk/gpaw
 .. _gpaw-python: https://wiki.fysik.dtu.dk/gpaw/documentation/manual.html#parallel-calculations
 .. _here: https://wiki.fysik.dtu.dk/gpaw/tutorials/neb/neb.html
 

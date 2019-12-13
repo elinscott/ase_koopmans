@@ -83,7 +83,7 @@ class NPTBerendsen(NVTBerendsen):
         scale the atom position and the simulation cell."""
 
         taupscl = self.dt / self.taup
-        stress = self.atoms.get_stress(voigt=False)
+        stress = self.atoms.get_stress(voigt=False, include_ideal_gas=True)
         old_pressure = -stress.trace() / 3 * 1e-5 / units.Pascal
         scl_pressure = (1.0 - taupscl * self.compressibility / 3.0 *
                         (self.pressure - old_pressure))
@@ -189,7 +189,7 @@ class Inhomogeneous_NPTBerendsen(NPTBerendsen):
         scale the atom position and the simulation cell."""
 
         taupscl = self.dt * self.compressibility / self.taup / 3.0
-        stress = - self.atoms.get_stress() * 1e-5 / units.Pascal
+        stress = - self.atoms.get_stress(include_ideal_gas=True) * 1e-5 / units.Pascal
         if stress.shape == (6,):
             stress = stress[:3]
         elif stress.shape == (3, 3):

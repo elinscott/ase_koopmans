@@ -1,3 +1,4 @@
+# flake8: noqa
 # Generated: 2012-01-11
 # doi:10.1063/1.1788656 neutral dimers only
 from numpy import array

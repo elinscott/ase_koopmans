@@ -19,7 +19,7 @@ Jacapo is included as an optional calculator in ASE and small differences to the
 above documentation may occur, and the documentation is no longer maintained.
 
 .. _Jacapo: http://gilgamesh.cheme.cmu.edu/doc/software/jacapo/index.html
-.. _Dacapo: http://wiki.fysik.dtu.dk/dacapo
+.. _Dacapo: https://wiki.fysik.dtu.dk/dacapo
 
 Jacapo calculator
 =================

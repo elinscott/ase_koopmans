@@ -1,8 +1,8 @@
 .. _diffusion tutorial:
 
-===============================================
-Diffusion of gold atom on Al(100) surface (NEB)
-===============================================
+=============================================================================
+Surface diffusion energy barriers using the Nudged Elastic Band  (NEB) method
+=============================================================================
 
 First, set up the initial and final states:
 

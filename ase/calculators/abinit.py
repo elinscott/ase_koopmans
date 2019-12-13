@@ -1,3 +1,4 @@
+# flake8: noqa
 """This module defines an ASE interface to ABINIT.
 
 http://www.abinit.org/
@@ -9,7 +10,6 @@ from os.path import join
 
 import numpy as np
 
-from ase.data import atomic_numbers
 from ase.units import Bohr, Hartree, fs
 from ase.data import chemical_symbols
 from ase.io.abinit import read_abinit
@@ -115,14 +115,19 @@ class Abinit(FileIOCalculator):
         if changed_parameters:
             self.reset()
 
-    def write_input(self, atoms, properties=tuple(), system_changes=tuple()):
+    def write_input(self, atoms, properties=tuple(), system_changes=tuple(),
+        raise_exception=True):
         """Write input parameters to files-file."""
 
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
 
-        if ('numbers' in system_changes or
-            'initial_magmoms' in system_changes):
-            self.initialize(atoms)
+        try:
+            if ('numbers' in system_changes or
+                'initial_magmoms' in system_changes):
+                self.initialize(atoms, raise_exception=raise_exception)
+        except Exception as e:
+            print(e, '... but I continue to complete the abinit.in')
+            pass
 
         fh = open(self.label + '.files', 'w')
 
@@ -351,43 +356,29 @@ class Abinit(FileIOCalculator):
         self.nelect = self.read_number_of_electrons()
         self.results['magmom'] = self.read_magnetic_moment()
 
-    def initialize(self, atoms):
-        numbers = atoms.get_atomic_numbers().copy()
-        self.species = []
-        for a, Z in enumerate(numbers):
-            if Z not in self.species:
-                self.species.append(Z)
 
+    def initialize(self, atoms, raise_exception=True):
+
+        self.species = list(set(atoms.get_atomic_numbers()))
         self.spinpol = atoms.get_initial_magnetic_moments().any()
+        self.ppp_list = self.get_ppp_list(self.species, atoms, raise_exception)
 
-        if 'ABINIT_PP_PATH' in os.environ:
-            pppaths = os.environ['ABINIT_PP_PATH'].split(':')
-        else:
-            pppaths = []
 
-        self.ppp_list = []
-        if self.parameters.xc != 'LDA':
-            xcname = 'GGA'
-        else:
-            xcname = 'LDA'
+    def get_ppp_list(self, species, atoms, raise_exception):
 
+        ppp_list = []
+
+        pppaths = os.environ.get('ABINIT_PP_PATH','.').split(':')
+        xcname = 'GGA' if self.parameters.xc != 'LDA' else 'LDA'
         pps = self.parameters.pps
-        if pps not in ['fhi', 'hgh', 'hgh.sc', 'hgh.k', 'tm', 'paw','pawxml']:
-            raise ValueError('Unexpected PP identifier %s' % pps)
+        for Z in species:
+            number = abs(Z)
+            symbol = chemical_symbols[number]
 
-        for Z in self.species:
-            symbol = chemical_symbols[abs(Z)]
-            number = atomic_numbers[symbol]
             names  = []
-            
             for s in [ symbol, symbol.lower() ]:
                 for xcn in [ xcname, xcname.lower() ]:
-                    if pps == 'fhi':
-                        names.append('%02d-%s.%s.fhi' % (number, s, xcn))
-                        names.append('%02d[.-_]%s*.fhi'   % (number, s))
-                        names.append('%02d%s*.fhi'   % (number, s))
-                        names.append('%s[.-_]*.fhi'   % s)
-                    elif pps in ['paw']:
+                    if pps in ['paw']:
                         hghtemplate = '%s-%s-%s.paw'  # E.g. "H-GGA-hard-uspp.paw"
                         names.append(hghtemplate % (s, xcn, '*'))
                         names.append('%s[.-_]*.paw'   % s)
@@ -415,6 +406,11 @@ class Abinit(FileIOCalculator):
                         names.append(hghtemplate % (number, s, '*'))
                         names.append('%d%s%s.hgh' % (number, s, '*'))
                         names.append('%s[.-_]*.hgh' % s)
+                    else: # default extension
+                        names.append('%02d-%s.%s.%s' % (number, s, xcn, pps))
+                        names.append('%02d[.-_]%s*.%s'   % (number, s, pps))
+                        names.append('%02d%s*.%s'   % (number, s, pps))
+                        names.append('%s[.-_]*.%s'   % (s, pps))
 
             found = False
             for name in names:        # search for file names possibilities
@@ -438,13 +434,18 @@ class Abinit(FileIOCalculator):
 
                     if filenames:
                         found = True
-                        self.ppp_list.append(filenames[0])
+                        ppp_list.append(filenames[0])
                         break
                 if found:
                     break
-                    
+
             if not found:
-                raise RuntimeError('No pseudopotential for %s !' % symbol)
+                ppp_list.append("Provide {}.{}.{}?".format(symbol, '*', pps))
+                if raise_exception:
+                    raise RuntimeError('Could not find {} pseudopotential {} for {}'.format(xcname.lower(), pps, symbol))
+
+        return ppp_list
+
 
     def get_number_of_iterations(self):
         return self.niter

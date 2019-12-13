@@ -6,7 +6,8 @@ from math import pi, sqrt
 import numpy as np
 
 from ase.utils import jsonable
-from ase.dft.kpoints import bandpath, monkhorst_pack
+from ase.dft.kpoints import monkhorst_pack
+from ase.cell import Cell
 
 
 class CalculatorError(RuntimeError):
@@ -71,32 +72,47 @@ class PropertyNotPresent(CalculatorError):
     with the rest of the results, without being a fatal ReadError."""
 
 
-def compare_atoms(atoms1, atoms2, tol=1e-15):
-    """Check for system changes since last calculation."""
+def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
+    """Check for system changes since last calculation.  Properties in
+    ``excluded_properties`` are not checked."""
     if atoms1 is None:
         system_changes = all_changes[:]
     else:
         system_changes = []
-        if not equal(atoms1.positions, atoms2.positions, tol):
-            system_changes.append('positions')
-        if not equal(atoms1.numbers, atoms2.numbers):
-            system_changes.append('numbers')
-        if not equal(atoms1.cell, atoms2.cell, tol):
-            system_changes.append('cell')
-        if not equal(atoms1.pbc, atoms2.pbc):
-            system_changes.append('pbc')
-        if not equal(atoms1.get_initial_magnetic_moments(),
-                     atoms2.get_initial_magnetic_moments(), tol):
-            system_changes.append('initial_magmoms')
-        if not equal(atoms1.get_initial_charges(),
-                     atoms2.get_initial_charges(), tol):
-            system_changes.append('initial_charges')
+
+        properties_to_check = set(all_changes)
+        if excluded_properties:
+             properties_to_check -= set(excluded_properties)
+
+        # Check properties that aren't in Atoms.arrays but are attributes of
+        # Atoms objects
+        for prop in ['cell', 'pbc']:
+            if prop in properties_to_check:
+                properties_to_check.remove(prop)
+                if not equal(getattr(atoms1, prop), getattr(atoms2, prop), tol):
+                    system_changes.append(prop)
+
+        arrays1 = set(atoms1.arrays)
+        arrays2 = set(atoms2.arrays)
+
+        # Add any properties that are only in atoms1.arrays or only in
+        # atoms2.arrays (and aren't excluded).  Note that if, e.g. arrays1 has
+        # `initial_charges` which is merely zeros and arrays2 does not have
+        # this array, we'll still assume that the system has changed.  However,
+        # this should only occur rarely.
+        system_changes += properties_to_check & (arrays1 ^ arrays2)
+
+        # Finally, check all of the non-excluded properties shared by the atoms
+        # arrays
+        for prop in properties_to_check & arrays1 & arrays2:
+                if not equal(atoms1.arrays[prop], atoms2.arrays[prop], tol):
+                    system_changes.append(prop)
 
     return system_changes
 
 
 all_properties = ['energy', 'forces', 'stress', 'stresses', 'dipole',
-                  'charges', 'magmom', 'magmoms', 'free_energy']
+                  'charges', 'magmom', 'magmoms', 'free_energy', 'energies']
 
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc',
@@ -104,23 +120,27 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 
 # Recognized names of calculators sorted alphabetically:
-names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k', 'crystal',
-         'demon', 'dftb', 'dftd3', 'dmol', 'eam', 'elk', 'emt', 'espresso',
-         'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'gulp',
-         'hotbit', 'jacapo', 'lammpsrun',
-         'lammpslib', 'lj', 'mopac', 'morse', 'nwchem', 'octopus', 'onetep',
-         'openmx', 'siesta', 'tip3p', 'turbomole', 'vasp']
+names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k',
+         'crystal', 'demon', 'demonnano', 'dftb', 'dftd3', 'dmol', 'eam', 'elk',
+         'emt', 'espresso', 'exciting', 'ff', 'fleur', 'gaussian',
+         'gpaw', 'gromacs', 'gulp', 'hotbit', 'jacapo', 'kim',
+         'lammpslib', 'lammpsrun', 'lj', 'mopac', 'morse', 'nwchem',
+         'octopus', 'onetep', 'openmx', 'psi4', 'qchem', 'siesta',
+         'tip3p', 'tip4p', 'turbomole', 'vasp']
 
 
 special = {'cp2k': 'CP2K',
+           'demonnano': 'DemonNano',
            'dftd3': 'DFTD3',
            'dmol': 'DMol3',
            'eam': 'EAM',
            'elk': 'ELK',
            'emt': 'EMT',
            'crystal': 'CRYSTAL',
+           'ff': 'ForceField',
            'fleur': 'FLEUR',
            'gulp': 'GULP',
+           'kim': 'KIM',
            'lammpsrun': 'LAMMPS',
            'lammpslib': 'LAMMPSlib',
            'lj': 'LennardJones',
@@ -128,7 +148,9 @@ special = {'cp2k': 'CP2K',
            'morse': 'MorsePotential',
            'nwchem': 'NWChem',
            'openmx': 'OpenMX',
-           'tip3p': 'TIP3P'}
+           'qchem': 'QChem',
+           'tip3p': 'TIP3P',
+           'tip4p': 'TIP4P'}
 
 
 external_calculators = {}
@@ -301,8 +323,8 @@ def kpts2kpts(kpts, atoms=None):
         if 'kpts' in kpts:
             return KPoints(kpts['kpts'])
         if 'path' in kpts:
-            path = bandpath(cell=atoms.cell, **kpts)
-            return path
+            cell = Cell.ascell(atoms.cell)
+            return cell.bandpath(pbc=atoms.pbc, **kpts)
         size, offsets = kpts2sizeandoffsets(atoms=atoms, **kpts)
         return KPoints(monkhorst_pack(size) + offsets)
 
@@ -613,7 +635,7 @@ class Calculator(object):
         return changed_parameters
 
     def check_state(self, atoms, tol=1e-15):
-        """Check for system changes since last calculation."""
+        """Check for any system changes since last calculation."""
         return compare_atoms(self.atoms, atoms, tol)
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
@@ -629,6 +651,9 @@ class Calculator(object):
             return self.results['free_energy']
         else:
             return energy
+
+    def get_potential_energies(self, atoms=None):
+        return self.get_property('energies', atoms)
 
     def get_forces(self, atoms=None):
         return self.get_property('forces', atoms)
@@ -828,12 +853,26 @@ class FileIOCalculator(Calculator):
         command = self.command
         if 'PREFIX' in command:
             command = command.replace('PREFIX', self.prefix)
-        errorcode = subprocess.call(command, shell=True, cwd=self.directory)
+
+        try:
+            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+        except OSError as err:
+            # Actually this may never happen with shell=True, since
+            # probably the shell launches successfully.  But we soon want
+            # to allow calling the subprocess directly, and then this
+            # distinction (failed to launch vs failed to run) is useful.
+            msg = 'Failed to execute "{}"'.format(command)
+            raise EnvironmentError(msg) from err
+
+        errorcode = proc.wait()
 
         if errorcode:
             path = os.path.abspath(self.directory)
-            raise CalculationFailed('{} in {} returned an error: {}'
-                                    .format(self.name, path, errorcode))
+            msg = ('Calculator "{}" failed with command "{}" failed in '
+                   '{} with error code {}'.format(self.name, command,
+                                                  path, errorcode))
+            raise CalculationFailed(msg)
+
         self.read_results()
 
     def write_input(self, atoms, properties=None, system_changes=None):

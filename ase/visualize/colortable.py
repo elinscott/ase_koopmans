@@ -1,3 +1,4 @@
+# flake8: noqa
 """Defines a table with X11 colors.
 
 The key to the dictionary is a string with an X11 name for the color,

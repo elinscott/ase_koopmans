@@ -7,8 +7,8 @@ a = Atoms('N3O',
           [(0, 0, 0), (1, 0, 0), (0, 0, 1), (0.5, 0.5, 0.5)],
           pbc=True)
 
-write('geo.exi', a)
-b = read('geo.exi')
+write('input.xml', a)
+b = read('input.xml')
 
 print(a)
 print(a.get_positions())

@@ -423,9 +423,9 @@ class SQLite3Database(Database, object):
                         [(key, id) for key in key_value_pairs])
 
         for tabname, values in ext_tab.items():
-            values['id'] = id
             try:
                 dtype = self._guess_type(values)
+                values['id'] = id
                 self._create_table_if_not_exists(tabname, dtype, db_con=con)
                 self._insert_in_external_table(
                     cur, name=tabname, entries=values)
@@ -699,7 +699,7 @@ class SQLite3Database(Database, object):
             sql += '\nLIMIT {0}'.format(limit)
 
         if offset:
-            sql += '\nOFFSET {0}'.format(offset)
+            sql += self.get_offset_string(offset, limit=limit)
 
         if verbosity == 2:
             print(sql, args)
@@ -727,6 +727,15 @@ class SQLite3Database(Database, object):
                                         include_data=include_data,
                                         columns=columns):
                     yield row
+
+    def get_offset_string(self, offset, limit=None):
+        sql = ''
+        if not limit:
+            # In sqlite you cannot have offset without limit, so we
+            # set it to -1 meaning no limit
+            sql += '\nLIMIT -1'
+        sql += '\nOFFSET {0}'.format(offset)
+        return sql
 
     @parallel_function
     def count(self, selection=None, **kwargs):

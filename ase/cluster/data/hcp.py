@@ -1,5 +1,4 @@
 """Structure data - Hexagonal Closed Packed"""
-from __future__ import division
 
 import numpy as np
 

@@ -1,4 +1,3 @@
-from __future__ import print_function
 """Function-like objects creating orthorhombic lattices.
 
 The following lattice creators are defined:

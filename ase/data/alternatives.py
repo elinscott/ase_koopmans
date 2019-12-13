@@ -1,3 +1,4 @@
+# flake8: noqa
 # alternative structures
 # data from CRC Handbook 2004 85th edition
 alternative_structures = [

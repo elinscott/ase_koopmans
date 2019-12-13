@@ -40,6 +40,7 @@ A simple calculation can be set up::
     rocksalt = bulk('NaCl', crystalstructure='rocksalt', a=6.0)
     calc = Espresso(pseudopotentials=pseudopotentials,
                     tstress=True, tprnfor=True, kpts=(3, 3, 3))
+    rocksalt.calc = calc
 
     ucf = UnitCellFilter(rocksalt)
     opt = LBFGS(ucf)
@@ -53,7 +54,7 @@ Parameters
 ==========
 
 The calculator will interpret any of the documented options for ``pw.x``:
-http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html
+http://www.quantum-espresso.org
 
 All parameters must be given in QE units, usually Ry or atomic units
 in line with the documentation. ASE does not add any defaults over the

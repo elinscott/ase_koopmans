@@ -1,3 +1,4 @@
+# flake8: noqa
 '''
 mayavi interface to plot atoms, unit cells, and volumetric data
 '''

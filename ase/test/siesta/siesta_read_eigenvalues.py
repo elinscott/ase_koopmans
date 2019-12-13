@@ -1,4 +1,3 @@
-from __future__ import print_function
 import ase.build
 from ase.calculators.siesta.siesta import Siesta
 

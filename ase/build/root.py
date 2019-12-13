@@ -143,7 +143,7 @@ def root_surface(primitive_slab, root, swap_alpha=False, eps=1e-8):
         shift_vector = np.array([eps * 100, eps * 200, eps * 300])
         if shift:
             atoms.translate(shift_vector)
-        atoms.set_scaled_positions(atoms.get_scaled_positions())
+        atoms.wrap()
         valid = [0]
         for x in range(len(atoms)):
             for ypos, y in enumerate(valid):

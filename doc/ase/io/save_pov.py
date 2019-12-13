@@ -56,3 +56,4 @@ kwargs.update({
 # Write the .pov (and .ini) file. If run_povray=False, you must run command
 # `povray filename.ini` to convert .pov file to .png
 write('NaCl_C6H6.pov', atoms, **kwargs)
+

@@ -1,23 +1,11 @@
-from __future__ import print_function
 
-import os
 import numpy as np
 
-from ase.units import Ry, eV
 from ase.calculators.siesta.siesta import Siesta
 from ase.calculators.siesta.parameters import Species, PAOBasisBlock
 from ase.calculators.calculator import FileIOCalculator
 from ase import Atoms
 from ase.utils import basestring
-
-pseudo_path = 'pseudos'
-if not os.path.exists(pseudo_path):
-    os.makedirs(pseudo_path)
-
-# Make dummy pseudopotentials.
-for symbol in 'HCO':
-    with open('{0}/{1}.lda.psf'.format(pseudo_path, symbol), 'w') as fd:
-        fd.close()
 
 # Setup test structures.
 h = Atoms('H', [(0.0, 0.0, 0.0)])
@@ -28,9 +16,6 @@ ch4 = Atoms('CH4', np.array([
     [-0.682793, -0.682793, 0.682790],
     [-0.682793, 0.682793, -0.682793],
     [0.682793, -0.682793, -0.682793]]))
-
-# Setup required environment variables.
-os.environ['SIESTA_PP_PATH'] = pseudo_path
 
 # Test the initialization.
 siesta = Siesta()
@@ -57,10 +42,10 @@ assert any([line.split() == ['DM.Tolerance', '0.001'] for line in lines])
 # Test (slightly) more complex case of setting fdf-arguments.
 siesta = Siesta(
     label='test_label',
-    mesh_cutoff=3000 * eV,
+    mesh_cutoff=3000,
     fdf_arguments={
         'DM.Tolerance': 1e-3,
-        'ON.eta': 5 * Ry})
+        'ON.eta': (5, 'Ry')})
 atoms.set_calculator(siesta)
 siesta.write_input(atoms, properties=['energy'])
 atoms = h.copy()
@@ -68,20 +53,21 @@ atoms.set_calculator(siesta)
 siesta.write_input(atoms, properties=['energy'])
 with open('test_label.fdf', 'r') as f:
     lines = f.readlines()
-assert 'MeshCutoff  3000.0000 eV\n' in lines
-assert 'DM.Tolerance  0.001\n' in lines
-assert 'ON.eta  68.02846506 eV\n' in lines
+
+assert 'MeshCutoff\t3000\teV\n' in lines
+assert 'DM.Tolerance\t0.001\n' in lines
+assert 'ON.eta\t5\tRy\n' in lines
 
 # Test setting fdf-arguments after initiation.
 siesta.set_fdf_arguments(
-        {'DM.Tolerance': 1e-2,
-         'ON.eta': 2 * Ry})
+    {'DM.Tolerance': 1e-2,
+     'ON.eta': (2, 'Ry')})
 siesta.write_input(atoms, properties=['energy'])
 with open('test_label.fdf', 'r') as f:
     lines = f.readlines()
-assert 'MeshCutoff  3000.0000 eV\n' in lines
-assert 'DM.Tolerance  0.01\n' in lines
-assert 'ON.eta  27.21138602 eV\n' in lines
+assert 'MeshCutoff\t3000\teV\n' in lines
+assert 'DM.Tolerance\t0.01\n' in lines
+assert 'ON.eta\t2\tRy\n' in lines
 
 # Test initiation using Species.
 atoms = ch4.copy()
@@ -125,4 +111,3 @@ with open('test_label.fdf', 'r') as f:
 lines = [line.split() for line in lines]
 assert ['%block', 'PAO.Basis'] in lines
 assert ['%endblock', 'PAO.Basis'] in lines
-

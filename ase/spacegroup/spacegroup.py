@@ -1,4 +1,3 @@
-from __future__ import print_function, division
 # Copyright (C) 2010, Jesper Friis
 # (see accompanying license files for details).
 
@@ -716,17 +715,17 @@ def parse_sitesym(symlist, sep=','):
                 if s[0] in '+-':
                     if s[0] == '-':
                         sign = -1
-                    s = s[1:]
+                    s = s[1:].lstrip()
                 if s[0] in 'xyz':
                     k = ord(s[0]) - ord('x')
                     rot[i, j, k] = sign
-                    s = s[1:]
+                    s = s[1:].lstrip()
                 elif s[0].isdigit() or s[0] == '.':
                     n = 0
                     while n < len(s) and (s[n].isdigit() or s[n] in '/.'):
                         n += 1
                     t = s[:n]
-                    s = s[n:]
+                    s = s[n:].lstrip()
                     if '/' in t:
                         q, r = t.split('/')
                         trans[i, j] = float(q) / float(r)
@@ -753,6 +752,9 @@ def spacegroup_from_data(no=None, symbol=None, setting=None,
     else:
         raise SpacegroupValueError('either *no* and *setting* '
                                    'or *symbol* must be given')
+    if not isinstance(sitesym, list):
+        raise TypeError('sitesym must be a list')
+
     have_sym = False
     if centrosymmetric is not None:
         spg._centrosymmetric = bool(centrosymmetric)

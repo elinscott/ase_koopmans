@@ -1,4 +1,3 @@
-from __future__ import print_function
 import json
 import sys
 from collections import defaultdict
@@ -11,11 +10,6 @@ from ase.db.summary import Summary
 from ase.db.table import Table, all_columns
 from ase.db.web import process_metadata
 from ase.utils import plural, basestring
-
-try:
-    input = raw_input  # Python 2+3 compatibility
-except NameError:
-    pass
 
 
 class CLICommand:

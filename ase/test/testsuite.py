@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import sys
 import subprocess
@@ -8,6 +7,7 @@ import tempfile
 import unittest
 from glob import glob
 from distutils.version import LooseVersion
+import runpy
 import time
 import traceback
 import warnings
@@ -19,10 +19,6 @@ from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
 test_calculator_names = ['emt']
-
-if sys.version_info[0] == 2:
-    class ResourceWarning(UserWarning):
-        pass  # Placeholder - this warning does not exist in Py2 at all.
 
 
 def require(calcname):
@@ -75,15 +71,22 @@ def runtest_almost_no_magic(test):
         if any(s in test for s in skip):
             raise unittest.SkipTest('not on windows')
     try:
-        with open(path) as fd:
-            exec(compile(fd.read(), path, 'exec'), {})
+        runpy.run_path(path, run_name='test')
     except ImportError as ex:
         module = ex.args[0].split()[-1].replace("'", '').split('.')[0]
-        if module in ['scipy', 'matplotlib', 'Scientific', 'lxml', 'Tkinter',
-                      'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2']:
+        if module in ['matplotlib', 'Scientific', 'lxml', 'Tkinter',
+                      'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2', 'kimpy']:
             raise unittest.SkipTest('no {} module'.format(module))
         else:
             raise
+    # unittest.main calls sys.exit, which raises SystemExit.
+    # Uncatched SystemExit, a subclass of BaseException, marks a test as ERROR
+    # even if its exit code is zero (test passes).
+    # Here, AssertionError is raised to mark a test as FAILURE if exit code is
+    # non-zero.
+    except SystemExit as ex:
+        if ex.code != 0:
+            raise AssertionError
 
 
 def run_single_test(filename, verbose, strict):
@@ -177,14 +180,18 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * doctest exceptions appear to be unpicklable.
             #    Probably they contain a reference to a module or something.
             #  * gui/run may deadlock for unknown reasons in subprocess
+            #  * Anything that uses matplotlib (we don't know why)
+            #  * pubchem (https://gitlab.com/ase/ase/merge_requests/1477)
 
             t = test.replace('\\', '/')
+
             if t in ['bandstructure.py',
                      'bandstructure_many.py',
                      'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
                      'forcecurve.py', 'neb.py',
-                     'fio/animate.py', 'db/db_web.py', 'x3d.py']:
+                     'fio/animate.py', 'db/db_web.py', 'x3d.py',
+                     'pubchem.py']:
                 result = Result(name=test, status='please run on master')
                 result_queue.put(result)
                 continue

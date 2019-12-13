@@ -9,6 +9,8 @@ Git master branch
 
 :git:`master <>`.
 
+* Added interface to :mod:`Q-Chem <ase.calculators.qchem>`.
+
 * :func:`ase.build.bulk` now supports elements with tetrahedral,
   rhombohedral, and orthorhombic lattices.
 
@@ -25,11 +27,70 @@ Git master branch
   been deprecated.  Use ``world.rank`` and ``world.size`` instead
   (and ``from ase.parallel import world``).
 
+* Write support for Materials Studio xtd files.
+
 * ``atoms.set_masses('most_common')`` now sets the masses of each
   element according to most common isotope as stored in
   ``ase.data.atomic_masses_common``.
 
+* Plotting functions (such as band structure, EOS, ...)
+  no longer show the figure by default.
+
 * Added :class:`~ase.calculators.psi4.Psi4` calculator.
+
+* Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can calculate atom/molecule mobility from trajectory as a function of time 
+
+* The :mod:`~ase.io.pov` module can now render high-order bonds.
+
+* :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
+  from :mod:`ase.io.jsonio`.
+
+* :mod:`ase.utils.parsemath` added to utils. This module parses simple
+  mathematical expressions and returns their numerical value. All
+  native mathematical operations and many functions in the math module
+  are supported. It also understands pi, e, and tau from the math
+  module. Variable substitution is also supported via the param_dct
+  kwarg, where the keys are the variable names in the expression and
+  the values are the numerical value they should be replaced with.
+
+* Added general linear parametric constraints :class:`ase.constraints.FixParametricRelations`,
+  :class:`ase.constraints.FixScaledParametricRelations`, and
+  :class:`ase.constraints.FixCartesianParametricRelations` to
+  :mod:`ase.utils.constraints`. These constraints are based off the work
+  in: https://arxiv.org/abs/1908.01610, and allows for the positions and cell of a
+  structure to be optimized in a reduced parameter space.
+
+* Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
+
+* Added :func:`ase.build.graphene` for building graphene monolayers.
+
+* Added :mod:`~ase.calculators.mixing` module for the linear combination of arbitrary :mod:`~ase.calculators`.
+
+* Added :mod:`~ase.md.switch_langevin` module for thermodynamic integration via MD simulations.
+
+* The :mod:`NWChem <ase.calculators.nwchem>` calculator has been completely rewritten, and now supports
+  `DFT <https://github.com/nwchemgit/nwchem/wiki/Density-Functional-Theory-for-Molecules>`_,
+  `SCF (Hartree Fock) <https://github.com/nwchemgit/nwchem/wiki/Hartree-Fock-Theory-for-Molecules>`_,
+  `MP2 <https://github.com/nwchemgit/nwchem/wiki/MP2>`_,
+  `CCSD <https://github.com/nwchemgit/nwchem/wiki/CCSD>`_,
+  and `TCE <https://github.com/nwchemgit/nwchem/wiki/TCE>`_ calculations with gaussian-type orbitals.
+  The calculator also now supports
+  `plane-wave calculations <https://github.com/nwchemgit/nwchem/wiki/Plane-Wave-Density-Functional-Theory>`_,
+  including band structure calculations through ASE's :class:`~ase.dft.band_structure.BandStructure` utilities.
+  To facilitate these changes, the format of the calculator keywords has been changed. Please read the updated
+  :mod:`NWChem <ase.calculators.nwchem>` calculator documentation for more details.
+
+Version 3.18.1
+==============
+
+20 September 2019: :git:`3.18.1 <../3.18.1>`
+
+* Multiple bugfixes.  Most importantly, deprecate ``atoms.cell.pbc``
+  in order to avoid complexities from dealing with two
+  ways of manipulating this piece of information.
+  Use ``atoms.pbc`` instead; this works the same as always.
+  Also, the :class:`~ase.cell.Cell` object now exposes almost the entire
+  ``ndarray`` interface.  For a list of smaller bugfixes, see the git log.
 
 Version 3.18.0
 ==============
@@ -932,7 +993,7 @@ Version 3.5.0
 * Implementation of the Dimer method.
 
 
-.. _ASAP: http://wiki.fysik.dtu.dk/asap
+.. _ASAP: https://wiki.fysik.dtu.dk/asap
 .. _GPAW: https://wiki.fysik.dtu.dk/gpaw/documentation/xc/vdwcorrection.html
 
 
