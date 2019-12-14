@@ -1,5 +1,5 @@
 import ase
-from typing import Optional, Mapping, Sequence, Union
+from typing import Mapping, Sequence, Union
 import numpy as np
 from ase.utils import deprecated
 from ase.utils.arraywrapper import arraylike
