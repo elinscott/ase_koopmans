@@ -54,12 +54,21 @@ def run_flake8():
               .format(descriptions[e][6:], e, n))
     print('}')
 
-    for e, n in errors.items():
-        if n > max_errors.get(e, 0):
-            raise ValueError(
-                'Maximum number of flake8 errors exceeded: {} * {}.  '
-                'Please run flake8 on your code and clean up.'
-                .format(n, e))
+    errmsg = None
+    for err, nerrs in errors.items():
+        nmaxerrs = max_errors.get(err, 0)
+        if nerrs <= nmaxerrs:
+            conclusion = 'OK'
+        else:
+            conclusion = 'FAILED'
+            errmsg = ('Maximum number of flake8 errors exceeded: '
+                      '{} {} errors; max is {}.  '
+                      'Please run flake8 on your code and clean up.'
+                      .format(nerrs, err, nmaxerrs))
+        print('{:4s}: errs={} max={}: {}'.format(err, nerrs, nmaxerrs,
+                                                 conclusion))
+
+    assert errmsg is None, errmsg
 
 
 max_errors = {
