@@ -55,7 +55,6 @@ class CLICommand:
                        .format(tokenfile, err))
                 raise CLIError(msg)
 
-
         cmd = ('tar cf - {} | '
                'curl -XPUT -# -HX-Token:{} '
                '-N -F file=@- http://nomad-repository.eu:8000 | '

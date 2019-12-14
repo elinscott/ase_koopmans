@@ -7,6 +7,7 @@ from ase.dft.kpoints import (get_special_points, special_paths, BandPath,
                              parse_path_string, labels_from_kpts,
                              get_monkhorst_pack_size_and_offset)
 
+
 def atoms2bandpath(atoms, path='default',
                    k_points=False,
                    ibz_k_points=False,
