@@ -41,6 +41,7 @@ projects = {}  # type: Dict[str, Dict[str, Any]]
 
 
 @app.route('/', defaults={'project_name': 'default'})
+@app.route('/<project_name>')
 @app.route('/<project_name>/')
 def search(project_name: str):
     session = Session(project_name)
@@ -125,6 +126,11 @@ def robots():
             'User-agent: SiteCheck-sitecrawl by Siteimprove.com\n'
             'Disallow: /\n',
             200)
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return ''
 
 
 def handle_query(args):
