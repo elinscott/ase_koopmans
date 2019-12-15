@@ -1,10 +1,14 @@
 function update_table(sid, what, x)
 {
     request = new XMLHttpRequest();
-    q = document.getElementById('formula-result').value
-    request.open('GET',
-                 '/update/' + sid + '/' + what + '/' + x + '/?query=' + q,
-                 true);
+    addr ='/update/' + sid + '/' + what + '/' + x + '/'
+    var inputs = document.getElementsByTagName('input');
+    sep = '?'
+    for (var i = 0; i < inputs.length; i++) {
+        addr += sep + inputs[i].name + '=' + inputs[i].value;
+        sep = ',';
+    }
+    request.open('GET', addr, true);
     request.onload = function() {
         data = request.responseText;
         table = document.getElementById('database1')
