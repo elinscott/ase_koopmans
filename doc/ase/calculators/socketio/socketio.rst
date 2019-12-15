@@ -42,6 +42,7 @@ Quantum Espresso Yes
 FHI-aims         Yes
 Siesta           Yes
 DFTB+            Yes
+NWChem           Yes
 Yaff             No; there is no ASE calculator for Yaff
 cp2k             No; ASE uses cp2k shell instead
 Lammps           No; ASE uses lammpsrun/lammpslib instead
@@ -89,6 +90,10 @@ Example using DFTB+
           This may have been a problem on the test machine.
           The relevant keyword is ``Driver_Socket_Port=<portnumber>``
           in case someone wants to test.
+
+Example using NWChem
+
+.. literalinclude:: example_nwchem.py
 
 For codes other than these, see the next section.
 
