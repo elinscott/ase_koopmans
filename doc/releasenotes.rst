@@ -1,3 +1,4 @@
+
 .. _releasenotes:
 
 =============
@@ -9,64 +10,68 @@ Git master branch
 
 :git:`master <>`.
 
-* Added interface to :mod:`Q-Chem <ase.calculators.qchem>`.
+General changes:
 
-* :func:`ase.build.bulk` now supports elements with tetrahedral,
-  rhombohedral, and orthorhombic lattices.
-
-* Read and write support for RMCProfile (rmc6f) file format.
-
-* Gulp calculator now provides stress tensor.
-
-* More efficient storage of the "data" part of rows in the :mod:`ase.db`
-  database.  NumPy arrays are now stored in binary format instead of as text
-  thereby using approximately a factor of two less space when storing numbers
-  of `np.float64`.
+* :func:`ase.build.bulk` now supports elements with tetrahedral and
+  rhombohedral attices.
 
 * The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
   been deprecated.  Use ``world.rank`` and ``world.size`` instead
   (and ``from ase.parallel import world``).
 
-* Write support for Materials Studio xtd files.
-
 * ``atoms.set_masses('most_common')`` now sets the masses of each
   element according to most common isotope as stored in
   ``ase.data.atomic_masses_common``.
 
+* :mod:`ase.utils.parsemath` added to utils. This module parses simple
+  mathematical expressions and returns their numerical value.
+
 * Plotting functions (such as band structure, EOS, ...)
   no longer show the figure by default.
 
-* Added :class:`~ase.calculators.psi4.Psi4` calculator.
+* :class:`~ase.Atoms` constructor now accepts ``velocities`` as keyword.
 
-* Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can calculate atom/molecule mobility from trajectory as a function of time 
+* Documentation: New set of :ref:`introductory ASE tutorials <gettingstarted>`.
 
-* The :mod:`~ase.io.pov` module can now render high-order bonds.
+* More detailed output of ``ase info --formats``.
 
-* :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
-  from :mod:`ase.io.jsonio`.
+* For completeness, :mod:`ase.lattice` now also supports the 1D
+  Bravais lattice.
 
-* :mod:`ase.utils.parsemath` added to utils. This module parses simple
-  mathematical expressions and returns their numerical value. All
-  native mathematical operations and many functions in the math module
-  are supported. It also understands pi, e, and tau from the math
-  module. Variable substitution is also supported via the param_dct
-  kwarg, where the keys are the variable names in the expression and
-  the values are the numerical value they should be replaced with.
+Algorithms:
+
+* Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can
+  calculate atom/molecule mobility from trajectory as a function of
+  time.
 
 * Added general linear parametric constraints :class:`ase.constraints.FixParametricRelations`,
   :class:`ase.constraints.FixScaledParametricRelations`, and
   :class:`ase.constraints.FixCartesianParametricRelations` to
-  :mod:`ase.utils.constraints`. These constraints are based off the work
+  :mod:`ase.constraints`. These constraints are based off the work
   in: https://arxiv.org/abs/1908.01610, and allows for the positions and cell of a
   structure to be optimized in a reduced parameter space.
 
-* Added calculator for :mod:`OpenKIM <ase.calculators.kim>`.
-
 * Added :func:`ase.build.graphene` for building graphene monolayers.
 
-* Added :mod:`~ase.calculators.mixing` module for the linear combination of arbitrary :mod:`~ase.calculators`.
+* Added :mod:`ase.md.switch_langevin` module for thermodynamic
+  integration via MD simulations.
 
-* Added :mod:`~ase.md.switch_langevin` module for thermodynamic integration via MD simulations.
+* Implemented "dynamic" or "ideal gas" contribution from atomic
+  momenta to stress tensor Use :meth:`<ase.Atoms.get_stress>`, e.g.,
+  ``atoms.get_stress(include_ideal_gas=True)``.
+
+Calculators:
+
+* Added :mod:`Q-Chem <ase.calculators.qchem>` calculator.
+
+* Added :class:`~ase.calculators.psi4.Psi4` calculator.
+
+* Added :class:`~ase.calculators.demonnano.DemonNano` calculator.
+
+* Added :mod:`OpenKIM <ase.calculators.kim>` calculator,
+  a special calculator for `OpenKim <https://openkim.org/>`_ models.
+
+* Gulp calculator now provides stress tensor.
 
 * The :mod:`NWChem <ase.calculators.nwchem>` calculator has been completely rewritten, and now supports
   `DFT <https://github.com/nwchemgit/nwchem/wiki/Density-Functional-Theory-for-Molecules>`_,
@@ -79,6 +84,53 @@ Git master branch
   including band structure calculations through ASE's :class:`~ase.dft.band_structure.BandStructure` utilities.
   To facilitate these changes, the format of the calculator keywords has been changed. Please read the updated
   :mod:`NWChem <ase.calculators.nwchem>` calculator documentation for more details.
+
+* :class:`~ase.calculators.siesta.siesta.Siesta` calculator refactored.
+  The Siesta calculator now supports the band structure machinery.
+  There is only a single Siesta calculator now covering all versions of Siesta,
+  consistently with other ASE calculators.
+
+* Added :mod:`~ase.calculators.mixing` module for the linear
+  combination of arbitrary :mod:`~ase.calculators`.
+
+* New :class:`ase.calculators.idealgas.IdealGas` calculator for
+  non-interacting atoms.  The calculator does nothing.  This can be
+  useful for testing.
+
+* :class:`~ase.calculators.emt.EMT` calculator now support
+  atom-specific energies as per ``atoms.get_energies()``.
+
+I/O:
+
+* Read and write support for RMCProfile (rmc6f) file format.
+
+* Write support for Materials Studio xtd files.
+
+* More efficient storage of the "data" part of rows in the :mod:`ase.db`
+  database.  NumPy arrays are now stored in binary format instead of as text
+  thereby using approximately a factor of two less space when storing numbers
+  of ``np.float64``.
+
+* The :mod:`~ase.io.pov` module can now render high-order bonds.
+
+* :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
+  from :mod:`ase.io.jsonio`.
+
+* Added :mod:`ase.data.pubchem` module to search for structures
+  in the `PubChem <https://pubchem.ncbi.nlm.nih.gov/>`_ database.
+
+GUI:
+
+* It is now possible to copy and paste atoms: The "add atoms" function
+  (Ctrl+A) will suggest the atoms in the current selection by default.
+
+Version 3.18.2
+==============
+
+15 December 2019: :git:`3.18.2 <../3.18.2>`
+
+* Fix an issue with the binary package (wheel) of 3.18.1.
+  No bugfixes as such.
 
 Version 3.18.1
 ==============
@@ -215,6 +267,10 @@ Algorithms:
 
 * Holonomic :class:`~ase.constraints.FixLinearTriatomic` for QM/MM
   calculations.
+
+* The :class:`~ase.neighborlist.NeighborList` now uses kdtree from Scipy
+  for improved performance.  It also uses Minkowsky reduction
+  to improve performance for unusually shaped cells.
 
 I/O:
 
@@ -398,6 +454,8 @@ GUI:
   in GUI.
 
 * Added Basque translation.
+
+* Added French translation.
 
 Version 3.16.2
 ==============
