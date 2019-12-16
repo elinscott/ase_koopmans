@@ -1,4 +1,3 @@
-
 Jmol._isAsync = false;
 var jmolApplet0;
 

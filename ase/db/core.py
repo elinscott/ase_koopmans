@@ -28,6 +28,7 @@ default_key_descriptions = {
     'id': ('ID', 'Uniqe row ID', ''),
     'age': ('Age', 'Time since creation', ''),
     'formula': ('Formula', 'Chemical formula', ''),
+    'pbc': ('PBC', '', ''),
     'user': ('Username', '', ''),
     'calculator': ('Calculator', 'ASE-calculator name', ''),
     'energy': ('Energy', 'Total energy', 'eV'),
