@@ -40,7 +40,7 @@ class Session:
     def update(self,
                what: str,
                x: str,
-               args: str,
+               args: Dict[str, str],
                project: Dict[str, Any]) -> None:
 
         if self.columns is None:

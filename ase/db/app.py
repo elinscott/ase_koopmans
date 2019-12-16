@@ -98,9 +98,9 @@ def atoms(project_name: str, id: int, type: str):
     row = projects[project_name]['database'].get(id=id)
     a = row.toatoms()
     if type == 'cif':
-        fd = io.BytesIO()
-        a.write(fd, 'cif')
-        return fd.getvalue(), 200, []
+        b = io.BytesIO()
+        a.write(b, 'cif')
+        return b.getvalue(), 200, []
 
     fd = io.StringIO()
     if type == 'xyz':
