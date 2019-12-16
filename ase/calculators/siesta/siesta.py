@@ -161,7 +161,14 @@ class SiestaParameters(Parameters):
 class Siesta(FileIOCalculator):
     """Calculator interface to the SIESTA code.
     """
-    allowed_basis_names = ['SZ', 'SZP', 'DZ', 'DZP', 'TZP']
+    # Siesta manual does not document many of the basis names.
+    # basis_specs.f has a ton of aliases for each.
+    # Let's just list one of each type then.
+    #
+    # Maybe we should be less picky about these keyword names.
+    allowed_basis_names = ['SZ', 'SZP',
+                           'DZ', 'DZP', 'DZP2',
+                           'TZ', 'TZP', 'TZP2', 'TZP3']
     allowed_spins = ['non-polarized', 'collinear',
                      'non-collinear', 'spin-orbit']
     allowed_xc = {
