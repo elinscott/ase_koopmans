@@ -227,7 +227,10 @@ def main(args):
         nrows = 0
         with connect(args.insert_into,
                      use_lock_file=not args.no_lock_file) as db2:
-            for row in db.select(query, sort=args.sort):
+            for row in db.select(query,
+                                 sort=args.sort,
+                                 limit=args.limit,
+                                 offset=args.offset):
                 kvp = row.get('key_value_pairs', {})
                 nkvp -= len(kvp)
                 kvp.update(add_key_value_pairs)
