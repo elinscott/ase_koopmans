@@ -213,9 +213,12 @@ News
 
     buildpath = Path('build')
     if buildpath.is_dir():
+        print('Removing stale build directory, since it exists')
         assert Path('ase/__init__.py').exists()
         assert Path('setup.py').exists()
         shutil.rmtree('build')
+    else:
+        print('No stale build directory found; proceeding')
     py('setup.py sdist > setup_sdist.log')
     py('setup.py bdist_wheel > setup_bdist_wheel3.log')
     bash('gpg --armor --yes --detach-sign dist/ase-{}.tar.gz'.format(version))
