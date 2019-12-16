@@ -300,7 +300,7 @@ def row2dct(row,
     for key in keys:
         if key == 'age':
             age = float_to_time_string(now() - row.ctime, True)
-            dct['table'].append(('Age', age))
+            dct['table'].append(('ctime', 'Age', age))
             continue
         value = row.get(key)
         if value is not None:
@@ -308,9 +308,9 @@ def row2dct(row,
                 value = '{:.3f}'.format(value)
             elif not isinstance(value, str):
                 value = str(value)
-            desc, unit = key_descriptions.get(key, ['', key, ''])[1:]
+            desc, unit = key_descriptions.get(key, ['', '', ''])[1:]
             if unit:
                 value += ' ' + unit
-            dct['table'].append((desc, value))
+            dct['table'].append((key, desc, value))
 
     return dct
