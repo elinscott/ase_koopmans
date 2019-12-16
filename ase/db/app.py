@@ -29,9 +29,10 @@ from typing import Dict, Any
 from flask import Flask, render_template, request
 
 from ase.db import connect
+from ase.db.core import Database
 from ase.formula import Formula
 from ase.db.web import create_key_descriptions, Session
-from ase.db.row import row2dct
+from ase.db.row import row2dct, AtomsRow
 from ase.db.table import all_columns
 
 
@@ -44,6 +45,10 @@ projects = {}  # type: Dict[str, Dict[str, Any]]
 @app.route('/<project_name>')
 @app.route('/<project_name>/')
 def search(project_name: str):
+    """Search page.
+
+    Contains input form for database query and a table result rows.
+    """
     session = Session(project_name)
     project = projects[project_name]
     return render_template(project['search_template'],
@@ -52,7 +57,17 @@ def search(project_name: str):
 
 
 @app.route('/update/<int:sid>/<what>/<x>/')
-def update(sid, what, x):
+def update(sid: int, what: str, x: str):
+    """Update table of rows inside search page.
+
+    ``what`` must be one of:
+
+    * query: execute query in request.args (x not used)
+    * limit: set number of rows to show to x
+    * toggle: toggle column x
+    * sort: sort after column x
+    * page: show page x
+    """
     session = Session.get(sid)
     project = projects[session.project_name]
     session.update(what, x, request.args, project)
@@ -65,6 +80,7 @@ def update(sid, what, x):
 
 @app.route('/<project_name>/row/<uid>')
 def row(project_name: str, uid: str):
+    """Show details for one database row."""
     project = projects[project_name]
     uid_key = project['uid_key']
     row = project['database'].get('{uid_key}={uid}'
@@ -75,7 +91,8 @@ def row(project_name: str, uid: str):
 
 
 @app.route('/atoms/<project_name>/<int:id>/<type>')
-def atoms(project_name, id, type):
+def atoms(project_name: str, id: int, type: str):
+    """Return atomic structure as cif, xyz or json."""
     row = projects[project_name]['database'].get(id=id)
     a = row.toatoms()
     if type == 'cif':
@@ -103,6 +120,7 @@ def atoms(project_name, id, type):
 
 @app.route('/gui/<int:id>')
 def gui(id: int):
+    """Pop ud ase gui window."""
     from ase.visualize import view
     atoms = projects['default']['database'].get_atoms(id)
     view(atoms)
@@ -133,17 +151,20 @@ def favicon():
     return ''
 
 
-def handle_query(args):
+def handle_query(args) -> str:
+    """Converst request args to ase.db query string."""
     return args['query']
 
 
-def row_to_dict(row, project):
+def row_to_dict(row: AtomsRow, project: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert row to dict for use in html template."""
     dct = row2dct(row, project['key_descriptions'])
     dct['formula'] = Formula(Formula(row.formula).format('abc')).format('html')
     return dct
 
 
-def init(db):
+def add_project(db: Database) -> None:
+    """Add database to projects with name 'default'."""
     all_keys = set()
     for row in db.select(columns=['key_value_pairs'], include_data=False):
         all_keys.update(row._keys)
@@ -162,5 +183,5 @@ def init(db):
 
 if __name__ == '__main__':
     db = connect(sys.argv[1])
-    init(db)
+    add_project(db)
     app.run(host='0.0.0.0', debug=True)

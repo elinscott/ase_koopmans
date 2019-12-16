@@ -1,3 +1,4 @@
+"""Helper functions for Flask WSGI-app."""
 import re
 from typing import List, Tuple, Dict, Any
 
@@ -11,7 +12,7 @@ class Session:
     next_id = 1
     sessions: Dict[int, 'Session'] = {}
 
-    def __init__(self, project_name):
+    def __init__(self, project_name: str):
         self.id = Session.next_id
         Session.next_id += 1
 
@@ -29,7 +30,7 @@ class Session:
         self.query = ''
         self.project_name = project_name
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.__dict__)
 
     @staticmethod

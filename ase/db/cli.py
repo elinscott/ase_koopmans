@@ -330,7 +330,7 @@ def main(args):
             print('Please install Flask: python3 -m pip install flask')
             return
         import ase.db.app as app
-        app.init(db)
+        app.add_project(db)
         app.app.run(host='0.0.0.0', debug=True)
         return
 
