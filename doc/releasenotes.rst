@@ -10,6 +10,14 @@ Git master branch
 
 :git:`master <>`.
 
+* No changes yet
+
+
+Version 3.19.0
+==============
+
+16 December 2019: :git:`3.19.0 <../3.19.0>`
+
 General changes:
 
 * :func:`ase.build.bulk` now supports elements with tetrahedral and
