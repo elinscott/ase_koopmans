@@ -25,6 +25,7 @@ or this::
 import io
 import sys
 from typing import Dict, Any
+from pathlib import Path
 
 from flask import Flask, render_template, request
 
@@ -36,7 +37,8 @@ from ase.db.row import row2dct, AtomsRow
 from ase.db.table import all_columns
 
 
-app = Flask(__name__)
+root = Path(__file__).parent.parent.parent
+app = Flask(__name__, template_folder=str(root))
 
 projects = {}  # type: Dict[str, Dict[str, Any]]
 
@@ -72,7 +74,7 @@ def update(sid: int, what: str, x: str):
     project = projects[session.project_name]
     session.update(what, x, request.args, project)
     table = session.create_table(project['database'], project['uid_key'])
-    return render_template('table.html',
+    return render_template('ase/db/templates/table.html',
                            t=table,
                            p=project,
                            s=session)
@@ -177,8 +179,8 @@ def add_project(db: Database) -> None:
         'row_to_dict_function': row_to_dict,
         'handle_query_function': handle_query,
         'default_columns': all_columns[:],
-        'search_template': 'search.html',
-        'row_template': 'row.html'}
+        'search_template': 'ase/db/templates/search.html',
+        'row_template': 'ase/db/templates/row.html'}
 
 
 if __name__ == '__main__':
