@@ -370,16 +370,15 @@ def row2str(row) -> str:
     t = row2dct(row)
     S = [t['formula'] + ':',
          'Unit cell in Ang:',
-         'axis|periodic|          x|          y|          z']
+         'axis|periodic|          x|          y|          z|' +
+         '    length|     angle']
     c = 1
-    fmt = '   {0}|     {1}|{2[0]:>11}|{2[1]:>11}|{2[2]:>11}'
-    for p, axis in zip(row.pbc, row.cell):
-        S.append(fmt.format(c, [' no', 'yes'][p], axis))
+    fmt = ('   {0}|     {1}|{2[0]:>11}|{2[1]:>11}|{2[2]:>11}|' +
+           '{3:>10}|{4:>10}')
+    for p, axis, L, A in zip(row.pbc, t['cell'], t['lengths'], t['angles']):
+        S.append(fmt.format(c, [' no', 'yes'][p], axis, L, A))
         c += 1
-    S.append('Lengths: {:>10}{:>10}{:>10}'
-             .format(*t['lengths']))
-    S.append('Angles:  {:>10}{:>10}{:>10}\n'
-             .format(*t['angles']))
+    S.append('')
 
     if 'stress' in t:
         S += ['Stress tensor (xx, yy, zz, zy, zx, yx) in eV/Ang^3:',
@@ -394,8 +393,11 @@ def row2str(row) -> str:
     if 'data' in t:
         S.append('Data: {}\n'.format(t['data']))
 
-    width = max(len(row[0]) for row in t['table'])
-    S.append('{:{}} | Value'.format('Key', width))
-    for key, value in t['table']:
-        S.append('{:{}} | {}'.format(key, width, value))
+    width0 = max(max(len(row[0]) for row in t['table']), 3)
+    width1 = max(max(len(row[1]) for row in t['table']), 11)
+    S.append('{:{}} | {:{}} | Value'
+             .format('Key', width0, 'Description', width1))
+    for key, desc, value in t['table']:
+        S.append('{:{}} | {:{}} | {}'
+                 .format(key, width0, desc, width1, value))
     return '\n'.join(S)
