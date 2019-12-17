@@ -20,7 +20,7 @@ Version 3.19.0
 
 General changes:
 
-* :func:`ase.build.bulk` now supports elements with tetrahedral and
+* :func:`ase.build.bulk` now supports elements with tetragonal and
   rhombohedral attices.
 
 * The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
