@@ -64,9 +64,10 @@ class CLICommand:
             help='Add key-value pairs to selected rows.  Values must '
             'be numbers or strings and keys must follow the same rules as '
             'keywords.')
-        add('-L', '--limit', type=int, default=20, metavar='N',
-            help='Show only first N rows (default is 20 rows).  Use --limit=0 '
-            'to show all.')
+        add('-L', '--limit', type=int, default=-1, metavar='N',
+            help='Show only first N rows.  Use --limit=0 '
+            'to show all.  Default is 20 rows when listing rows and no '
+            'limit when --insert-into is used.')
         add('--offset', type=int, default=0, metavar='N',
             help='Skip first N rows.  By default, no rows are skipped')
         add('--delete', action='store_true',
@@ -206,23 +207,9 @@ def main(args):
         print('%s' % plural(n, 'row'))
         return
 
-    if args.explain:
-        for row in db.select(query, explain=True,
-                             verbosity=verbosity,
-                             limit=args.limit, offset=args.offset):
-            print(row['explain'])
-        return
-
-    if args.show_metadata:
-        print(json.dumps(db.metadata, sort_keys=True, indent=4))
-        return
-
-    if args.set_metadata:
-        with open(args.set_metadata) as fd:
-            db.metadata = json.load(fd)
-        return
-
     if args.insert_into:
+        if args.limit == -1:
+            args.limit == 0
         nkvp = 0
         nrows = 0
         with connect(args.insert_into,
@@ -247,6 +234,25 @@ def main(args):
             (plural(nkvp, 'key-value pair'),
              plural(len(add_key_value_pairs) * nrows - nkvp, 'pair')))
         out('Inserted %s' % plural(nrows, 'row'))
+        return
+
+    if args.limit == -1:
+        args.limit = 20
+
+    if args.explain:
+        for row in db.select(query, explain=True,
+                             verbosity=verbosity,
+                             limit=args.limit, offset=args.offset):
+            print(row['explain'])
+        return
+
+    if args.show_metadata:
+        print(json.dumps(db.metadata, sort_keys=True, indent=4))
+        return
+
+    if args.set_metadata:
+        with open(args.set_metadata) as fd:
+            db.metadata = json.load(fd)
         return
 
     if add_key_value_pairs or delete_keys:
