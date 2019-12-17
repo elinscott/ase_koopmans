@@ -10,7 +10,8 @@ Git master branch
 
 :git:`master <>`.
 
-* No changes yet
+* The ``ase db db1.db <selection> --insert-into db2.db`` command now respects
+  ``--limit`` and ``--offset``.
 
 
 Version 3.19.0
