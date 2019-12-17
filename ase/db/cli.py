@@ -209,7 +209,7 @@ def main(args):
 
     if args.insert_into:
         if args.limit == -1:
-            args.limit == 0
+            args.limit = 0
         nkvp = 0
         nrows = 0
         with connect(args.insert_into,
