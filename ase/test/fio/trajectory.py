@@ -62,8 +62,6 @@ assert len(sliced_traj) == 5
 sliced_again = sliced_traj[1:-1]
 assert len(sliced_again) == 3
 assert sliced_traj[1] == sliced_again[0]
-directly_sliced = Trajectory('1.traj@3:8')
-assert len(directly_sliced) == len(sliced_traj)
 
 # append to a nonexisting file:
 fname = '2.traj'

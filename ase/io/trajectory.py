@@ -8,7 +8,6 @@ from ase.calculators.singlepoint import SinglePointCalculator, all_properties
 from ase.constraints import dict2constraint
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.atoms import Atoms
-from ase.io.formats import parse_filename
 from ase.io.jsonio import encode, decode
 from ase.io.pickletrajectory import PickleTrajectory
 from ase.parallel import world
@@ -23,8 +22,6 @@ def Trajectory(filename, mode='r', atoms=None, properties=None, master=None):
 
     filename: str
         The name of the file.  Traditionally ends in .traj.
-        When opening in read mode, a slice of the trajectory can be specified
-        with the @ symbol; such as 'atoms.traj@-10:'.
     mode: str
         The mode.  'r' is read mode, the file should already exist, and
         no atoms argument should be specified.
@@ -48,11 +45,7 @@ def Trajectory(filename, mode='r', atoms=None, properties=None, master=None):
     The atoms, properties and master arguments are ignores in read mode.
     """
     if mode == 'r':
-        filename, index = parse_filename(filename)
-        reader = TrajectoryReader(filename)
-        if index is not None:
-            reader = reader[index]
-        return reader
+        return TrajectoryReader(filename)
     return TrajectoryWriter(filename, mode, atoms, properties, master=master)
 
 

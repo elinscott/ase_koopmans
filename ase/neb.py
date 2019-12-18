@@ -15,6 +15,7 @@ from ase.geometry import find_mic
 from ase.io.trajectory import TrajectoryReader, Trajectory, SlicedTrajectory
 from ase.gui.images import Images as GUI_Images
 from ase.utils import deprecated
+from ase.io.formats import parse_filename
 
 
 class NEB:
@@ -820,7 +821,10 @@ class Images:
             self.images = [images]
         elif isinstance(images, str):
             self.type = 'list-of-traj'
-            self.images = [Trajectory(images)]
+            filename, index = parse_filename(images)
+            self.images = [Trajectory(filename)]
+            if index is not None:
+                self.images[0] = self.images[0][index]
         elif isinstance(images, GUI_Images):
             self.type = 'list-of-images'
             self.images = images
@@ -831,7 +835,13 @@ class Images:
                 self.images = images
             elif isinstance(images[0], str):
                 self.type = 'list-of-traj'
-                self.images = [Trajectory(_) for _ in images]
+                self.images = []
+                for imagename in images:
+                    filename, index = parse_filename(imagename)
+                    if index is None:
+                        self.images.append(Trajectory(filename))
+                    else:
+                        self.images.append(Trajectory(filename)[index])
             elif isinstance(images[0], (TrajectoryReader, SlicedTrajectory)):
                 self.type = 'list-of-traj'
                 self.images = images
