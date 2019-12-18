@@ -700,10 +700,9 @@ class NEBTools:
         Ef = max(Efit) - E[0]
         Er = max(Efit) - E[-1]
         dE = E[-1] - E[0]
-        ax.set_title('$E_\\mathrm{f} \\approx$ %.3f eV; '
-                     '$E_\\mathrm{r} \\approx$ %.3f eV; '
-                     '$\\Delta E$ = %.3f eV'
-                     % (Ef, Er, dE))
+        ax.set_title(r'$E_\mathrm{{f}} \approx$ {:.3f} eV; '
+                     r'$E_\mathrm{{r}} \approx$ {:.3f} eV; '
+                     r'$\Delta E$ = {:.3f} eV'.format(Ef, Er, dE))
         return ax
 
     def get_fit(self):
