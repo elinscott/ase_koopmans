@@ -24,11 +24,11 @@ class CLICommand:
             help='one or more trajectory files to analyze')
         add('output', nargs='?',
             help='optional name of output file, default=nebplots.pdf')
-        add('-i', dest='n_images', type=int, default=None,
+        add('--nimages', dest='n_images', type=int, default=None,
             help='number of images per band, guessed if not supplied')
-        add('-x', dest='constant_x', action='store_true',
+        add('--share-x', dest='constant_x', action='store_true',
             help='use a single x axis scale for all plots')
-        add('-y', dest='constant_y', action='store_true',
+        add('--share-y', dest='constant_y', action='store_true',
             help='use a single y axis scale for all plots')
 
     @staticmethod

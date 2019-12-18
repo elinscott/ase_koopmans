@@ -51,7 +51,7 @@ commands = {
          '--analyse', '-j', '--json', '-m', '--show-metadata',
          '--set-metadata', '-M', '--metadata-from-python-script',
          '--unique', '--strip-data', '--show-keys',
-         '--show-values', '--write-summary-files'],
+         '--show-values'],
     'eos':
         ['-p', '--plot', '-t', '--type'],
     'find':
@@ -64,7 +64,7 @@ commands = {
     'info':
         ['-v', '--verbose', '--formats', '--calculators'],
     'nebplot':
-        ['-i', '-x', '-y'],
+        ['--nimages', '--share-x', '--share-y'],
     'nomad-get':
         [],
     'nomad-upload':
