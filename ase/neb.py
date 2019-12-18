@@ -656,21 +656,22 @@ class NEBTools:
         from matplotlib.backends.backend_pdf import PdfPages
         if nimages is None:
             nimages = self._guess_nimages()
+        nebsteps = len(self.images) // nimages
         if constant_x or constant_y:
             sys.stdout.write('Scaling axes.\n')
             sys.stdout.flush()
             # Plot all to one plot, then pull its x and y range.
             fig, ax = pyplot.subplots()
-            for index in range(len(self.images) // nimages):
+            for index in range(nebsteps):
                 images = self.images[index * nimages:(index + 1) * nimages]
                 NEBTools(images).plot_band(ax=ax)
                 xlim = ax.get_xlim()
                 ylim = ax.get_ylim()
             pyplot.close(fig)  # Reference counting "bug" in pyplot.
         with PdfPages(label + '.pdf') as pdf:
-            for index in range(len(self.images) // nimages):
+            for index in range(nebsteps):
                 sys.stdout.write('\rProcessing band {:10d} / {:10d}'
-                                 .format(index, len(self.images) // nimages))
+                                 .format(index, nebsteps))
                 sys.stdout.flush()
                 fig, ax = pyplot.subplots()
                 images = self.images[index * nimages:(index + 1) * nimages]
