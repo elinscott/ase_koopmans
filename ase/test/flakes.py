@@ -89,6 +89,8 @@ max_errors = {
     'E125': 3,
     # comparison to True should be 'if cond is True:' or 'if cond:'
     'E712': 3,
+    # 'name' imported but unused
+    'F401': 1,
     # no newline at end of file
     'W292': 3,
     # missing whitespace after keyword

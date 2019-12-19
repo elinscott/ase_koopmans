@@ -1,3 +1,4 @@
+import ase
 from typing import Mapping, Sequence, Union
 import numpy as np
 from ase.utils import deprecated
