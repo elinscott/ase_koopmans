@@ -280,15 +280,14 @@ class GUI(View, Status):
         ui.error(_('Plotting failed'), '\n'.join([str(err), msg]).strip())
 
     def neb(self):
-        from ase.neb import NEBTools
+        from ase.utils.forcecurve import fit_images
         try:
-            nebtools = NEBTools(self.images)
-            fit = nebtools.get_fit()
+            forcefit = fit_images(self.images)
         except Exception as err:
             self.bad_plot(err, _('Images must have energies and forces, '
                                  'and atoms must not be stationary.'))
         else:
-            self.pipe('neb', fit)
+            self.pipe('neb', forcefit)
 
     def bulk_modulus(self):
         try:

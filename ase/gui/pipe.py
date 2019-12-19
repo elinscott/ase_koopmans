@@ -9,8 +9,8 @@ def main():
         from ase.eos import plot
         plot(*data)
     elif task == 'neb':
-        from ase.neb import NEBTools
-        NEBTools.plot_band_from_fit(*data)
+        forcefit = data
+        forcefit.plot()
     elif task == 'reciprocal':
         from ase.dft.bz import bz_plot
         bz_plot(**data)

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
 import threading
-from math import sqrt
 
 import numpy as np
 
@@ -16,6 +15,7 @@ from ase.io.trajectory import TrajectoryReader, Trajectory, SlicedTrajectory
 from ase.gui.images import Images as GUI_Images
 from ase.utils import deprecated
 from ase.io.formats import parse_filename
+from ase.utils.forcecurve import fit_images
 
 
 class NEB:
@@ -616,12 +616,14 @@ class NEBTools:
         fit=False, the barrier is taken as the maximum-energy image
         without interpolation. Set raw=True to get the raw energy of the
         transition state instead of the forward barrier."""
-        s, E, Sfit, Efit, lines = self.get_fit()
-        dE = E[-1] - E[0]
+        forcefit = fit_images(self.images)
+        energies = forcefit.E
+        fit_energies = forcefit.Efit
+        dE = energies[-1] - energies[0]
         if fit:
-            barrier = max(Efit)
+            barrier = max(fit_energies)
         else:
-            barrier = max(E)
+            barrier = max(energies)
         if raw:
             barrier += self.images[0].get_potential_energy()
         return barrier, dE
@@ -635,7 +637,8 @@ class NEBTools:
     def plot_band(self, ax=None):
         """Plots the NEB band on matplotlib axes object 'ax'. If ax=None
         returns a new figure object."""
-        ax = self.plot_band_from_fit(*self.get_fit(), ax=ax)
+        forcefit = fit_images(self.images)
+        ax = forcefit.plot(ax=ax)
         return ax.figure
 
     def plot_bands(self, constant_x=False, constant_y=False,
@@ -683,83 +686,6 @@ class NEBTools:
                 pdf.savefig(fig)
                 pyplot.close(fig)  # Reference counting "bug" in pyplot.
         sys.stdout.write('\n')
-
-    @staticmethod
-    def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
-        """Creates the standard NEB plot from the fit parameters."""
-        # This is a static method for compatibility with ase.gui.pipe.
-        if ax is None:
-            from matplotlib import pyplot
-            ax = pyplot.gca()
-        ax.plot(s, E, 'o')
-        for x, y in lines:
-            ax.plot(x, y, '-g')
-        ax.plot(Sfit, Efit, 'k-')
-        ax.set_xlabel(r'path [$\AA$]')
-        ax.set_ylabel('energy [eV]')
-        Ef = max(Efit) - E[0]
-        Er = max(Efit) - E[-1]
-        dE = E[-1] - E[0]
-        ax.set_title(r'$E_\mathrm{{f}} \approx$ {:.3f} eV; '
-                     r'$E_\mathrm{{r}} \approx$ {:.3f} eV; '
-                     r'$\Delta E$ = {:.3f} eV'.format(Ef, Er, dE))
-        return ax
-
-    def get_fit(self):
-        """Returns the parameters for fitting images to band."""
-        images = self.images
-        R = [atoms.positions for atoms in images]
-        E = [atoms.get_potential_energy() for atoms in images]
-        F = [atoms.get_forces() for atoms in images]
-        cell = images[0].cell
-        pbc = images[0].pbc
-        E = np.array(E) - E[0]
-        n = len(E)
-        Efit = np.empty((n - 1) * 20 + 1)
-        Sfit = np.empty((n - 1) * 20 + 1)
-        s = [0]
-        dR = np.zeros_like(R)
-        for i in range(n):
-            if i < n - 1:
-                dR[i] = R[i + 1] - R[i]
-                if cell is not None and pbc is not None:
-                    dR[i], _ = find_mic(dR[i], cell, pbc)
-                s.append(s[i] + sqrt((dR[i]**2).sum()))
-            else:
-                dR[i] = R[i] - R[i - 1]
-                if cell is not None and pbc is not None:
-                    dR[i], _ = find_mic(dR[i], cell, pbc)
-        lines = []
-        dEds0 = None
-        for i in range(n):
-            d = dR[i]
-            if i == 0:
-                ds = 0.5 * s[1]
-            elif i == n - 1:
-                ds = 0.5 * (s[-1] - s[-2])
-            else:
-                ds = 0.25 * (s[i + 1] - s[i - 1])
-            d = d / sqrt((d**2).sum())
-            dEds = -(F[i] * d).sum()
-            x = np.linspace(s[i] - ds, s[i] + ds, 3)
-            y = E[i] + dEds * (x - s[i])
-            lines.append((x, y))
-            if i > 0:
-                s0 = s[i - 1]
-                s1 = s[i]
-                x = np.linspace(s0, s1, 20, endpoint=False)
-                c = np.linalg.solve(np.array([(1, s0, s0**2, s0**3),
-                                              (1, s1, s1**2, s1**3),
-                                              (0, 1, 2 * s0, 3 * s0**2),
-                                              (0, 1, 2 * s1, 3 * s1**2)]),
-                                    np.array([E[i - 1], E[i], dEds0, dEds]))
-                y = c[0] + x * (c[1] + x * (c[2] + x * c[3]))
-                Sfit[(i - 1) * 20:i * 20] = x
-                Efit[(i - 1) * 20:i * 20] = y
-            dEds0 = dEds
-        Sfit[-1] = s[-1]
-        Efit[-1] = E[-1]
-        return s, E, Sfit, Efit, lines
 
     def _guess_nimages(self):
         """Attempts to guess the number of images per band from
@@ -885,5 +811,5 @@ def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
 
 
 def fit0(*args, **kwargs):
-    raise DeprecationWarning('fit0 is deprecated. Use '
-                             'NEBTools.get_fit() instead.')
+    raise DeprecationWarning('fit0 is deprecated. Use `fit_raw` from '
+                             '`ase.utils.forcecurve` instead.')
