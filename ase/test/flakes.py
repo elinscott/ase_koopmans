@@ -71,7 +71,7 @@ def run_flake8():
         print('{:4s}: errs={} max={}: {}'.format(err, nerrs, nmaxerrs,
                                                  conclusion))
 
-    assert errmsg is '', errmsg
+    assert errmsg == '', errmsg
 
 
 max_errors = {
