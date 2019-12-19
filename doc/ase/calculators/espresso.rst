@@ -77,7 +77,10 @@ in ``input_data``, but it is not necessary::
 
 Some parameters are used by ASE, or have additional meaning:
 
- * ``kpts=(3, 3, 3)`` sets the number of kpoints on a grid (defaults to gamma)
+ * ``kpts``, is used to specify the k-point sampling
+   * If ``kpts`` is a tuple (or list) of 3 integers ``kpts=(int, int, int)``, it is interpreted  as the dimensions of a Monkhorst-Pack grid.
+   * If ``kpts`` is set to ``None``, only the Γ-point will be included and QE will use routines optimized for Γ-point-only calculations. Compared to Γ-point-only calculations without this optimization (i.e. with ``kpts=(1, 1, 1)``), the memory and CPU requirements are typically reduced by half.
+   * If ``kpts`` is a dict, it will either be interpreted as a path in the Brillouin zone (see ase.dft.kpoints.bandpath) if it contains the 'path' keyword, otherwise it is converted to a Monkhorst-Pack grid (see ase.calculators.calculator.kpts2sizeandoffsets)
  * ``koffset=(0, 0, 0)`` set to 0 or 1 to displace the kpoint grid by a half
    cell in that direction. Also accepts ``True`` and ``False``.
  * ``kspacing=0.1`` sets the minimum distance between kpoints in reciprocal
