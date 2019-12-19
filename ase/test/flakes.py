@@ -34,6 +34,7 @@ def run_flake8():
 
     errors = defaultdict(int)
     files = defaultdict(int)
+    offenses = defaultdict(list)
     descriptions = {}
     for stdout_line in stdout.splitlines():
         tokens = stdout_line.split(':', 3)
@@ -43,6 +44,7 @@ def run_flake8():
         errors[e] += 1
         descriptions[e] = complaint
         files[filename] += 1
+        offenses[e] += [stdout_line]
 
     print('Bad files:')
     for f, n in sorted(files.items(), key=lambda i: i[1]):
@@ -54,21 +56,22 @@ def run_flake8():
               .format(descriptions[e][6:], e, n))
     print('}')
 
-    errmsg = None
+    errmsg = ''
     for err, nerrs in errors.items():
         nmaxerrs = max_errors.get(err, 0)
         if nerrs <= nmaxerrs:
             conclusion = 'OK'
         else:
             conclusion = 'FAILED'
-            errmsg = ('Maximum number of flake8 errors exceeded: '
-                      '{} {} errors; max is {}.  '
-                      'Please run flake8 on your code and clean up.'
-                      .format(nerrs, err, nmaxerrs))
+            errmsg += ('Maximum number of flake8 errors exceeded: '
+                       '{} {} errors; max is {}.  '
+                       'Please run flake8 on your code and clean up.\n'
+                       .format(nerrs, err, nmaxerrs))
+            errmsg += 'Offenses:\n' + '\n'.join(offenses[err]) + '\n'
         print('{:4s}: errs={} max={}: {}'.format(err, nerrs, nmaxerrs,
                                                  conclusion))
 
-    assert errmsg is None, errmsg
+    assert errmsg is '', errmsg
 
 
 max_errors = {
