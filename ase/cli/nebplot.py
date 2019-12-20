@@ -1,4 +1,5 @@
 from ase.neb import NEBTools
+from ase.gui.images import Images
 
 
 class CLICommand:
@@ -40,7 +41,9 @@ class CLICommand:
         else:
             args.output = 'nebplots.pdf'
 
-        nebtools = NEBTools(images=args.filenames)
+        images = Images()
+        images.read(args.filenames)
+        nebtools = NEBTools(images=images)
         nebtools.plot_bands(constant_x=args.constant_x,
                             constant_y=args.constant_y,
                             nimages=args.n_images,

@@ -11,10 +11,8 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io import read
 from ase.optimize import MDMin
 from ase.geometry import find_mic
-from ase.io.trajectory import TrajectoryReader, Trajectory, SlicedTrajectory
-from ase.gui.images import Images as GUI_Images
+from ase.io.trajectory import Trajectory
 from ase.utils import deprecated
-from ase.io.formats import parse_filename
 from ase.utils.forcecurve import fit_images
 
 
@@ -556,7 +554,6 @@ class SingleCalculatorNEB(NEB):
         return self.nimages
 
     def write(self, filename):
-        from ase.io.trajectory import Trajectory
         traj = Trajectory(filename, 'w', self)
         traj.write()
         traj.close()
@@ -607,7 +604,7 @@ class NEBTools:
     list of images which make up one or more band of the NEB relaxation."""
 
     def __init__(self, images):
-        self.images = Images(images)
+        self.images = images
 
     def get_barrier(self, fit=True, raw=False):
         """Returns the barrier estimate from the NEB, along with the
@@ -719,84 +716,6 @@ class NEBTools:
         sys.stdout.write('Number of images per band guessed to be {:d}.\n'
                          .format(nimages))
         return nimages
-
-
-class Images:
-    """Container to give a unified internal interface to any list of atoms
-    objects. The input images can look like any of the following:
-
-         image1
-         [image1, image2, ...]
-         traj1
-         [traj1, traj2]
-         'traj1.traj'
-         ['traj1.traj', 'traj2.traj', ...]
-         ['traj1.traj@:10', 'traj2.traj@-30:', ...]
-
-    where `imageX` is an ase.Atoms instance, `trajX` is an ase.io.Trajectory
-    instance, and 'trajX.traj' is the filename of an ASE trajectory.
-    """
-
-    def __init__(self, images):
-        # Find the type.
-        if hasattr(images, 'calc'):
-            self.type = 'list-of-images'
-            self.images = [images]
-        elif isinstance(images, (TrajectoryReader, SlicedTrajectory)):
-            self.type = 'list-of-traj'
-            self.images = [images]
-        elif isinstance(images, str):
-            self.type = 'list-of-traj'
-            filename, index = parse_filename(images)
-            self.images = [Trajectory(filename)]
-            if index is not None:
-                self.images[0] = self.images[0][index]
-        elif isinstance(images, GUI_Images):
-            self.type = 'list-of-images'
-            self.images = images
-        elif isinstance(images, list):
-            # XXX: Below is mostly redundant. Should this circle back?
-            if hasattr(images[0], 'calc'):
-                self.type = 'list-of-images'
-                self.images = images
-            elif isinstance(images[0], str):
-                self.type = 'list-of-traj'
-                self.images = []
-                for imagename in images:
-                    filename, index = parse_filename(imagename)
-                    if index is None:
-                        self.images.append(Trajectory(filename))
-                    else:
-                        self.images.append(Trajectory(filename)[index])
-            elif isinstance(images[0], (TrajectoryReader, SlicedTrajectory)):
-                self.type = 'list-of-traj'
-                self.images = images
-
-        if not hasattr(self, 'type'):
-            raise RuntimeError('Image format not recognized.')
-
-        if self.type == 'list-of-traj':
-            self.map = []
-            for traj_no, traj in enumerate(self.images):
-                for image_no in range(len(traj)):
-                    self.map.append((traj_no, image_no))
-
-    def __len__(self):
-        if self.type == 'list-of-images':
-            return len(self.images)
-        if self.type == 'list-of-traj':
-            return len(self.map)
-
-    def __getitem__(self, i):
-        if isinstance(i, slice):
-            return SlicedTrajectory(self, i)
-        if self.type == 'list-of-images':
-            return self.images[i]
-        if self.type == 'list-of-traj':
-            traj_no, image_no = self.map[i]
-            return self.images[traj_no][image_no]
-        else:
-            raise NotImplementedError()
 
 
 class NEBtools(NEBTools):
