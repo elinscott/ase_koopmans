@@ -47,18 +47,21 @@ neb.interpolate()
 dyn = BFGS(neb, trajectory='mep.traj')
 dyn.run(fmax=fmax)
 
-# Plot many bands:
-NEBTools('mep.traj').plot_bands()
-
 # Check climbing image.
 neb.climb = True
 dyn.run(fmax=fmax)
 
 # Check NEB tools.
-nt_images = ase.io.read('mep.traj@-{:d}:'.format(nimages))
+nt_images = ase.io.read('mep.traj', index='-{:d}:'.format(nimages))
 nebtools = NEBTools(nt_images)
 nt_fmax = nebtools.get_fmax(climb=True)
 Ef, dE = nebtools.get_barrier()
 print(Ef, dE, fmax, nt_fmax)
 assert nt_fmax < fmax
 assert abs(Ef - 1.389) < 0.001
+# Plot one band.
+nebtools.plot_band()
+# Plot many (ok, 2) bands.
+nt_images = ase.io.read('mep.traj', index='-{:d}:'.format(2 * nimages))
+nebtools = NEBTools(nt_images)
+nebtools.plot_bands()
