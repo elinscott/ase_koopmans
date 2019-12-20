@@ -208,9 +208,16 @@ def define_io_format(name, desc, code, *, module=None, ext=None,
     ioformats[name] = fmt
     return fmt
 
-def get_ioformat(name):
-    # This function is left only for backwards compatibility.
+
+def get_ioformat(name: str) -> IOFormat:
+    """Return ioformat object or raise appropriate error."""
+    if name not in ioformats:
+        raise UnknownFileTypeError(name)
+    fmt = ioformats[name]
+    # Make sure module is importable, since this could also raise an error.
+    fmt.module
     return ioformats[name]
+
 
 F = define_io_format
 F('abinit-in', 'ABINIT input file', '1F',
@@ -504,7 +511,7 @@ def write(filename, images, format=None, parallel=True, append=False,
 
     format = format or 'json'  # default is json
 
-    io = ioformats[format]
+    io = get_ioformat(format)
 
     _write(filename, fd, format, io, images, parallel=parallel, append=append,
            **kwargs)
@@ -599,7 +606,7 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
         index = -1
     format = format or filetype(filename)
 
-    io = ioformats[format]
+    io = get_ioformat(format)
     if isinstance(index, (slice, basestring)):
         return list(_iread(filename, index, format, io, parallel=parallel,
                            **kwargs))
@@ -626,7 +633,7 @@ def iread(filename, index=None, format=None, parallel=True, **kwargs):
         index = slice(index, (index + 1) or None)
 
     format = format or filetype(filename)
-    io = ioformats[format]
+    io = get_ioformat(format)
 
     for atoms in _iread(filename, index, format, io, parallel=parallel,
                         **kwargs):
