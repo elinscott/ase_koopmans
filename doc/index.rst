@@ -64,6 +64,14 @@ Mopac_
 News
 ====
 
+* :ref:`ASE version 3.19.0 <releasenotes>` released (16 December 2019).
+
+* :ref:`ASE version 3.18.2 <releasenotes>` released (15 December 2019).
+
+* First `ASE Workshop <https://ase-workshop.materialsmodeling.org/>`_
+  held at Chalmers University of Technology, Gothenburg, Sweden,
+  November 19-22, 2019 (15 December 2019).
+
 * :ref:`ASE version 3.18.1 <releasenotes>` released (20 September 2019).
 
 * :ref:`ASE version 3.18.0 <releasenotes>` released (19 July 2019).

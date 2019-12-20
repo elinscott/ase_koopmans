@@ -17,7 +17,7 @@ db.write(atoms,
          data={'x': x,
                't1': t1,
                't2': t2})
-app.init(db)
+app.add_project(db)
 app.app.testing = True
 c = app.app.test_client()
 page = c.get('/').data.decode()
