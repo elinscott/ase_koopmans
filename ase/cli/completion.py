@@ -34,7 +34,7 @@ def update(filename, commands):
     """
 
     import textwrap
-    from ase.utils import import_module
+    from importlib import import_module
 
     dct = {}  # Dict[str, List[str]]
 
