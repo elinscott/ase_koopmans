@@ -18,6 +18,7 @@ import inspect
 import os
 import sys
 from pathlib import Path, PurePath
+from typing import IO, List, Any, Iterable, Tuple, Union, Sequence
 
 from ase.atoms import Atoms
 from importlib import import_module
@@ -29,7 +30,8 @@ class UnknownFileTypeError(Exception):
 
 
 class IOFormat:
-    def __init__(self, name, desc, code, module_name, encoding=None):
+    def __init__(self, name: str, desc: str, code: str, module_name: str,
+                 encoding: str = None) -> None:
         self.name = name
         self.description = desc
         assert len(code) == 2
@@ -44,7 +46,7 @@ class IOFormat:
         self.globs = []
         self.magic = []
 
-    def open(self, fname, mode='r'):
+    def open(self, fname, mode: str = 'r') -> IO:
         # We might want append mode, too
         # We can allow more flags as needed (buffering etc.)
         if mode not in list('rwa'):
@@ -66,18 +68,18 @@ class IOFormat:
         return path.open(mode, encoding=self.encoding)
 
     @property
-    def can_read(self):
+    def can_read(self) -> bool:
         return self.read is not None
 
     @property
-    def can_write(self):
+    def can_write(self) -> bool:
         return self.write is not None
 
     @property
-    def can_append(self):
+    def can_append(self) -> bool:
         return self.can_write and 'append' in self.write.__code__.co_varnames
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         tokens = ['{}={}'.format(name, repr(value))
                   for name, value in vars(self).items()]
         return 'IOFormat({})'.format(', '.join(tokens))
@@ -95,7 +97,7 @@ class IOFormat:
         return self.code[0] == '1'
 
     @property
-    def _formatname(self):
+    def _formatname(self) -> str:
         return self.name.replace('-', '_')
 
     @property
@@ -110,7 +112,7 @@ class IOFormat:
         return getattr(self.module, 'write_' + self._formatname, None)
 
     @property
-    def modes(self):
+    def modes(self) -> str:
         modes = ''
         if self.read:
             modes += 'r'
@@ -118,7 +120,7 @@ class IOFormat:
             modes += 'w'
         return modes
 
-    def full_description(self):
+    def full_description(self) -> str:
         lines = ['Name:        {name}',
                  'Description: {description}',
                  'Modes:       {modes}',
@@ -134,11 +136,11 @@ class IOFormat:
         return desc.format(**myvars)
 
     @property
-    def acceptsfd(self):
+    def acceptsfd(self) -> bool:
         return self.code[1] != 'S'
 
     @property
-    def isbinary(self):
+    def isbinary(self) -> bool:
         return self.code[1] == 'B'
 
     @property
@@ -152,12 +154,13 @@ class IOFormat:
             raise UnknownFileTypeError('File format not recognized: %s.  '
                                        'Error: %s' % (format, err))
 
-    def match_name(self, basename):
+    def match_name(self, basename: str) -> bool:
         from fnmatch import fnmatch
         return any(fnmatch(basename, pattern)
                    for pattern in self.globs)
 
-    def match_magic(self, data):
+    def match_magic(self, data: bytes) -> bool:
+        # XXX We should use a regex for this!
         from fnmatch import fnmatchcase
         return any(fnmatchcase(data, magic + b'*')
                    for magic in self.magic)
@@ -169,6 +172,7 @@ extension2format = {}
 
 all_formats = ioformats  # Aliased for compatibility only.  Please do not use.
 format2modulename = {}  # Left for compatibility only.
+
 
 def define_io_format(name, desc, code, *, module=None, ext=None,
                      glob=None, magic=None, encoding=None):
@@ -224,7 +228,7 @@ F('abinit-in', 'ABINIT input file', '1F',
   module='abinit', magic=b'*znucl *'),
 F('abinit-out', 'ABINIT output file', '1F',
   module='abinit', magic=b'*.Version * of ABINIT'),
-F('aims', 'FHI-aims geometry file', '1S',ext='in'),
+F('aims', 'FHI-aims geometry file', '1S', ext='in'),
 F('aims-output', 'FHI-aims output', '+S',
   module='aims', magic=b'*Invoking FHI-aims ...'),
 F('bundletrajectory', 'ASE bundle trajectory', '+S'),
@@ -270,7 +274,7 @@ F('espresso-in', 'Quantum espresso in file', '1F',
 F('espresso-out', 'Quantum espresso out file', '+F',
   module='espresso', ext=['out', 'pwo'], magic=b'*Program PWSCF'),
 F('etsf', 'ETSF format', '1S'),
-F('exciting', 'exciting input', '1S',glob='input.xml'),
+F('exciting', 'exciting input', '1S', glob='input.xml'),
 F('extxyz', 'Extended XYZ file', '+F'),
 F('findsym', 'FINDSYM-format', '+F'),
 F('gamess-us-out', 'GAMESS-US output file', '1F',
@@ -306,8 +310,7 @@ F('lammps-dump-text', 'LAMMPS text dump file', '+F',
 F('lammps-dump-binary', 'LAMMPS binary dump file', '+B',
   module='lammpsrun')
 F('lammps-data', 'LAMMPS data file', '1F', module='lammpsdata',
-  encoding='ascii'
-),
+  encoding='ascii'),
 F('magres', 'MAGRES ab initio NMR data file', '1F'),
 F('mol', 'MDL Molfile', '1F'),
 F('mp4', 'MP4 animation', '+S',
@@ -371,7 +374,7 @@ netcdfconventions2format = {
 }
 
 
-def get_compression(filename):
+def get_compression(filename: str) -> Tuple[str, str]:
     """
     Parse any expected file compression from the extension of a filename.
     Return the filename without the extension, and the extension. Recognises
@@ -407,7 +410,7 @@ def get_compression(filename):
         return filename, None
 
 
-def open_with_compression(filename, mode='r'):
+def open_with_compression(filename: str, mode: str = 'r') -> IO:
     """
     Wrapper around builtin `open` that will guess compression of a file
     from the filename and open it for reading or writing as if it were
@@ -469,8 +472,17 @@ def wrap_read_function(read, filename, index=None, **kwargs):
             yield atoms
 
 
-def write(filename, images, format=None, parallel=True, append=False,
-          **kwargs):
+NameOrFile = Union[str, PurePath, IO]
+
+
+def write(
+        filename: NameOrFile,
+        images: Union[Atoms, Sequence[Atoms]],
+        format: str = None,
+        parallel: bool = True,
+        append: bool = False,
+        **kwargs: dict
+) -> None:
     """Write Atoms object(s) to file.
 
     filename: str or file
@@ -550,8 +562,6 @@ def _write(filename, fd, format, io, images, parallel=None, append=False,
             if append:
                 mode = mode.replace('w', 'a')
             fd = open_with_compression(filename, mode)
-            # XXX remember to re-enable compressed open
-            #fd = io.open(filename, mode)
         io.write(fd, images, **kwargs)
         if open_new:
             fd.close()
@@ -569,8 +579,14 @@ def _write(filename, fd, format, io, images, parallel=None, append=False,
             io.write(filename, images, **kwargs)
 
 
-def read(filename, index=None, format=None, parallel=True,
-         do_not_split_by_at_sign=False, **kwargs):
+def read(
+        filename: NameOrFile,
+        index: Any = None,
+        format: str = None,
+        parallel: bool = True,
+        do_not_split_by_at_sign: bool =False,
+        **kwargs
+) -> Union[Atoms, List[Atoms]]:
     """Read Atoms object(s) from file.
 
     filename: str or file
@@ -621,8 +637,14 @@ def read(filename, index=None, format=None, parallel=True,
                            parallel=parallel, **kwargs))
 
 
-def iread(filename, index=None, format=None, parallel=True,
-          do_not_split_by_at_sign=False, **kwargs):
+def iread(
+        filename: NameOrFile,
+        index: Any = None,
+        format: str = None,
+        parallel: bool = True,
+        do_not_split_by_at_sign: bool = False,
+        **kwargs,
+) -> Iterable[Atoms]:
     """Iterator for reading Atoms objects from file.
 
     Works as the `read` function, but yields one Atoms object at a time
@@ -710,7 +732,7 @@ def parse_filename(filename, index=None, do_not_split_by_at_sign=False):
     return newfilename, newindex
 
 
-def string2index(string):
+def string2index(string: str) -> Union[int, slice, str]:
     """Convert index string to either int or slice"""
     if ':' not in string:
         # may contain database accessor
@@ -728,7 +750,11 @@ def string2index(string):
     return slice(*i)
 
 
-def filetype(filename, read=True, guess=True):
+def filetype(
+        filename: NameOrFile,
+        read: bool = True,
+        guess: bool =True
+) -> str:
     """Try to guess the type of the file.
 
     First, special signatures in the filename will be checked for.  If that
@@ -766,7 +792,6 @@ def filetype(filename, read=True, guess=True):
         for fmt in ioformats.values():
             if fmt.match_name(basename):
                 return fmt.name
-
 
         if not read:
             if ext is None:
