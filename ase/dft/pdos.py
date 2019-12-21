@@ -252,7 +252,7 @@ class DOS:
         dos_lst = []
         for value in unique:
             # Use **{key: value} instead of key=value,
-            # as key=value will litterally look up "key" in info.
+            # as key=value will literally look up "key" in info.
             dos_lst.append(self.pick(**{key: value}))
         return dos_lst
 

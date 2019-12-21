@@ -198,7 +198,7 @@ class Images:
                     quantity = get_quantity()
             except Exception as err:
                 quantity = None
-                errmsg = ('An error occured while retrieving {} '
+                errmsg = ('An error occurred while retrieving {} '
                           'from the calculator: {}'.format(name, err))
                 warnings.warn(errmsg)
             return quantity

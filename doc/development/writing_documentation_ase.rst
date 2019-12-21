@@ -36,7 +36,7 @@ First, you should take a look at the documentation for Sphinx_ and
 reStructuredText_.
 
 If you don't already have your own copy of the ASE package, then read
-:ref:`here <contribute>` how to get everthing set up.
+:ref:`here <contribute>` how to get everything set up.
 
 Then :command:`cd` to the :file:`doc` directory and build the html-pages::
 

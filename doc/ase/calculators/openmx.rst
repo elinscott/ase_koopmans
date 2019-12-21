@@ -76,7 +76,7 @@ integer keywords. You can specify OpenMX float keywords by specifying,
   from ase.units import Ha
   calc = OpenMX(scf_criterion = 1e-6, energy_cutoff = 150 * Ry, ...)
 
-scf_criterion is correspond to ``scf.criterion``. The other arguement
+scf_criterion is correspond to ``scf.criterion``. The other argument
 ``energy_cutoff`` is a standard parameter format referencing GPAW. It acts same
 as scf_energycutoff. However, units are different. ASE uses standard energy
 unit as eV, and OpenMX scf.energycutoff uses the Rydburg unit. Thus, one have
@@ -89,7 +89,7 @@ keyword. For example, command above will be same as specifying,
   calc = OpenMX(scf_criterion = 1e-6, scf_energycutoff = 150, ...)
 
 energy_cutoff is correspond to ``scf_energycutoff``. But it is written in
-standard format. More standard paramters are specified in
+standard format. More standard parameters are specified in
 calculators/openmx/parameter.py. Bool keywords have boolean format, True or
 False. This will be translated On or Off when writing input file. For example,
 
@@ -128,7 +128,7 @@ argument using python list object. For example,
   calc = OpenMX(definition_of_atomic_species=[['H','H5.0-s2p2d1','H_CA13'],
                                               ['C','C5.0-s2p2d2','C_CA13']])
 
-although user can specify it explicity, most of the case, this matrix Arguments
+although user can specify it explicitly, most of the case, this matrix Arguments
 are generated automatically by the information using Atoms object. information
 such like cutoff radius or...
 
@@ -163,7 +163,7 @@ Calculator parameters
 =====================
 
 By default, calculator uses `openmx` arguments to run the code. However, single
-node caluclating is not a good way to run heavy DFT calculation. Parallel
+node calculating is not a good way to run heavy DFT calculation. Parallel
 computation is inevitable. In OpenMX calculator, user may choose the way to
 run. There are two ways to excute the code. First is to use MPI and the second
 is to use Plane Batch System. MPI method can be applied in general. To use it,
@@ -186,7 +186,7 @@ Similarly, You can use PBS method by specifying kwargs,
   supports PBS. If your schedular support `qsub` command and `qlist` command,
   you may check pbs command is possible to use.
 
-Below follows a list with a selection of calculator paramters
+Below follows a list with a selection of calculator parameters
 
 ================= ======= ======= =============================================
 keyword           type    default description

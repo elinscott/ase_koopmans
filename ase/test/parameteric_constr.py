@@ -113,8 +113,8 @@ assert np.max(np.abs(forces_rat.flatten() / 100.0 - expected_pos_diff)) < 1e-12
 
 # Check auto-remapping/expression generation, the -0.5 should now be 0.5
 expr_atom[4] = "0.5"
-current_expresions = constr_atom.expressions.flatten()
-for const_expr, passed_expr in zip(current_expresions, expr_atom):
+current_expression = constr_atom.expressions.flatten()
+for const_expr, passed_expr in zip(current_expression, expr_atom):
     assert const_expr == passed_expr
 
 # Check with Cartesian parametric constraints now

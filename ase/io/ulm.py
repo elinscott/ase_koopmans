@@ -314,7 +314,7 @@ class Writer:
             self.header = b''
 
     def fill(self, a):
-        """Fill in ndarray chunks for array currently beeing written."""
+        """Fill in ndarray chunks for array currently being written."""
         assert a.dtype == self.dtype
         assert a.shape[1:] == self.shape[len(self.shape) - a.ndim + 1:]
         self.nmissing -= a.size

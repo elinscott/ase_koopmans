@@ -1115,7 +1115,7 @@ KEYS = Namelist((
 
 # Number of valence electrons in the pseudopotentials recommended by
 # http://materialscloud.org/sssp/. These are just used as a fallback for
-# calculating inital magetization values which are given as a fraction
+# calculating initial magetization values which are given as a fraction
 # of valence electrons.
 SSSP_VALENCE = [
     0, 1.0, 2.0, 3.0, 4.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 3.0, 4.0,

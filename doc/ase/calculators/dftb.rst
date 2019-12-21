@@ -62,7 +62,7 @@ Parameters
             If restart != None
             it is assumed that keywords are in file 'restart'
         ignore_bad_restart_file: bool (default False)
-            Ignore broken or missing restart file.  By defauls, it is an
+            Ignore broken or missing restart file.  By defaults, it is an
             error if the restart file is missing or broken.
         label: str (default 'dftb')
             Name used for all files.  May contain a directory.

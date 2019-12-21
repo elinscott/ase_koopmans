@@ -321,7 +321,7 @@ class Conditions:
         # atom_symbol
         #
         # Example: [['O','O1','O2'],['H', 'H_C', 'H_O']]
-        # this beacuse Atoms oject accept only atoms symbols
+        # this because Atoms oject accept only atoms symbols
         self.atom_types.append([sym1, ifcloselabel1, elselabel1])
         self.atom_types.append([sym2, ifcloselabel2])
 

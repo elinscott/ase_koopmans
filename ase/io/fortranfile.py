@@ -116,7 +116,7 @@ class FortranFile(file):
         endian : character, optional
             Specify the endian-ness of the file.  Possible values are
             '>', '<', '@' and '='.  See the documentation of Python's
-            struct module for their meanings.  The deafult is '>' (native
+            struct module for their meanings.  The default is '>' (native
             byte order)
         header_prec : character, optional
             Specify the precision used for the record headers.  Possible

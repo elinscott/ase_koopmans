@@ -322,7 +322,7 @@ class TransportCalculator:
        T_e {(N,) ndarray}, units: unitless, optional
          Contains the transmission function.
        spinpol: {bool}, optional
-         Specifies wheter the current should be 
+         Specifies whether the current should be 
          calculated assuming degenerate spins
        
        **Returns:** 

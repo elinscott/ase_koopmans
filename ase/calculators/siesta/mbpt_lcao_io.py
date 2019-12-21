@@ -24,7 +24,7 @@ class read_mbpt_lcao_output:
 
     Parameters
     ----------
-        No input paramters, but the args, and prop variable have
+        No input parameters, but the args, and prop variable have
         to be modify as function of your wishes
 
     References
