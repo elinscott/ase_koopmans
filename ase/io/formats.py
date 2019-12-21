@@ -1,27 +1,16 @@
 """File formats.
 
 This module implements the read(), iread() and write() functions in ase.io.
-For each file format there is a namedtuple (IOFormat) that has the following
-elements:
+For each file format there is an IOFormat object.
 
-* a read(filename, index, **kwargs) generator that will yield Atoms objects
-* a write(filename, images) function
-* a 'single' boolean (False if multiple configurations is supported)
-* a 'acceptsfd' boolean (True if file-descriptors are accepted)
-
-There is a dict 'ioformats' that is filled with IOFormat objects as they are
-needed.  The 'initialize()' function will create the IOFormat object by
-looking at the all_formats dict and by importing the correct read/write
-functions from the correct module.  The 'single' and 'acceptsfd' bools are
-parsed from two-charcter string in the all_formats dict below.
-
+There is a dict, ioformats, which stores the objects.
 
 Example
 =======
 
 The xyz format is implemented in the ase/io/xyz.py file which has a
-read_xyz() generator and a write_xyz() function.
-
+read_xyz() generator and a write_xyz() function.  This and other
+information can be obtained from ioformats['xyz'].
 """
 
 import functools
@@ -94,10 +83,15 @@ class IOFormat:
         return 'IOFormat({})'.format(', '.join(tokens))
 
     def __getitem__(self, i):
+        # For compatibility.
+        #
+        # Historically, the ioformats were listed as tuples
+        # with (description, code).  We look like such a tuple.
         return (self.description, self.code)[i]
 
     @property
-    def single(self):
+    def single(self) -> bool:
+        """Whether this format is for a single Atoms object."""
         return self.code[0] == '1'
 
     @property
