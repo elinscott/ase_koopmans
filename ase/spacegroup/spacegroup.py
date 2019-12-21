@@ -11,7 +11,6 @@ import warnings
 from functools import total_ordering
 
 import numpy as np
-from ase.utils import basestring
 
 __all__ = ['Spacegroup']
 

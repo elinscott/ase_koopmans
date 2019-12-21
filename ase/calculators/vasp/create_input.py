@@ -27,7 +27,6 @@ from os.path import join, isfile, islink
 import numpy as np
 
 from ase.calculators.calculator import kpts2ndarray
-from ase.utils import basestring
 
 from ase.calculators.vasp.setups import setups_defaults
 

@@ -1,7 +1,6 @@
 import numpy as np
 import sys
 from ase.parallel import paropen
-from ase.utils import basestring
 
 
 def extrapolate(x, y, n=-1.5, plot=0, reg=0, txt=None):

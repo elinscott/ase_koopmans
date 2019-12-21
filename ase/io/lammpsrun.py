@@ -8,7 +8,6 @@ from ase.atoms import Atoms
 from ase.quaternions import Quaternions
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.parallel import paropen
-from ase.utils import basestring
 from ase.calculators.lammps import convert
 
 

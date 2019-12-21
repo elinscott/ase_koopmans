@@ -12,7 +12,6 @@ from tkinter.messagebox import showerror, showwarning, showinfo
 from tkinter.filedialog import LoadFileDialog, SaveFileDialog
 
 from ase.gui.i18n import _
-from ase.utils import basestring
 
 
 __all__ = [

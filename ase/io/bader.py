@@ -1,7 +1,6 @@
 import numpy as np
 
 from ase.units import Bohr
-from ase.utils import basestring
 from ase.data import atomic_numbers
 
 

@@ -3,7 +3,6 @@ import numpy as np
 import ase
 from ase.data import chemical_symbols
 from ase.parallel import paropen
-from ase.utils import basestring
 
 cfg_default_fields = np.array(['positions', 'momenta', 'numbers', 'magmoms'])
 

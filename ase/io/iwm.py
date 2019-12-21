@@ -2,7 +2,6 @@ import numpy as np
 
 from ase.data import chemical_symbols
 from ase.atoms import Atoms
-from ase.utils import basestring
 
 
 iwm_symbols = {'1': 'C',

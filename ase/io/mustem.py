@@ -9,7 +9,6 @@ See https://github.com/HamishGBrown/MuSTEM for the source code of muSTEM.
 import numpy as np
 
 from ase.atoms import symbols2numbers
-from ase.utils import basestring
 
 
 def read_mustem(filename):

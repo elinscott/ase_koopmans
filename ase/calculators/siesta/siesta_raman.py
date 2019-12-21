@@ -10,7 +10,6 @@ import numpy as np
 import ase.units as units
 from ase.parallel import parprint, paropen
 from ase.vibrations import Vibrations
-from ase.utils import basestring
 import warnings
 
 # XXX This class contains much repeated code.  FIXME

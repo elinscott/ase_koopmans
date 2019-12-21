@@ -2,7 +2,6 @@
 
 from ase import Atom, Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
-from ase.utils import basestring
 
 import re
 import xml.etree.ElementTree as ET

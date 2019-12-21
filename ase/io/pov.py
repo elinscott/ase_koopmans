@@ -10,7 +10,6 @@ import numpy as np
 
 from ase.io.utils import PlottingVariables
 from ase.constraints import FixAtoms
-from ase.utils import basestring
 from ase import Atoms
 
 def pa(array):

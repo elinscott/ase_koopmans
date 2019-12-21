@@ -7,7 +7,6 @@ from ase.db.core import Database, ops, lock, now
 from ase.db.row import AtomsRow
 from ase.io.jsonio import encode, decode
 from ase.parallel import world, parallel_function
-from ase.utils import basestring
 
 
 class JSONDatabase(Database, object):

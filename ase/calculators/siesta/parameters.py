@@ -1,5 +1,4 @@
 from ase.calculators.calculator import Parameters
-from ase.utils import basestring
 
 """
 2017.04 - Pedro Brandimarte: changes for python 2-3 compatible

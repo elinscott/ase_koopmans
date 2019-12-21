@@ -10,7 +10,6 @@ The following lattice creators are defined:
 from ase.lattice.bravais import Bravais, reduceindex
 import numpy as np
 from ase.data import reference_states as _refstate
-from ase.utils import basestring
 
 
 class SimpleCubicFactory(Bravais):

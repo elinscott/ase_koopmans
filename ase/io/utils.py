@@ -6,7 +6,6 @@ from ase.io.formats import string2index
 from ase.utils import rotate
 from ase.data import covalent_radii, atomic_numbers
 from ase.data.colors import jmol_colors
-from ase.utils import basestring
 
 class PlottingVariables:
     # removed writer - self

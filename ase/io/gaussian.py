@@ -17,7 +17,6 @@ from ase.atom import Atom
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io.gaussian_reader import GaussianReader as GR
 from ase.calculators.gaussian import Gaussian
-from ase.utils import basestring
 
 
 # http://www.gaussian.com/g_tech/g_ur/k_dft.htm

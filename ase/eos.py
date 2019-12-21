@@ -2,7 +2,6 @@
 import warnings
 
 from ase.units import kJ
-from ase.utils import basestring
 
 import numpy as np
 

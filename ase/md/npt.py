@@ -26,7 +26,6 @@ import weakref
 import numpy as np
 
 from ase.md.md import MolecularDynamics
-from ase.utils import basestring
 
 linalg = np.linalg
 

@@ -11,7 +11,6 @@ from ase.calculators.calculator import Calculator
 from ase.data import (atomic_numbers as ase_atomic_numbers,
                       chemical_symbols as ase_chemical_symbols,
                       atomic_masses as ase_atomic_masses)
-from ase.utils import basestring
 from ase.calculators.lammps import convert
 from ase.geometry import wrap_positions
 

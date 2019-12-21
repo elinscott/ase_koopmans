@@ -1,5 +1,4 @@
 import numpy as np
-from ase.utils import basestring
 
 
 delta = 1e-10

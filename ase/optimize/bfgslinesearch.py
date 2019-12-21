@@ -11,7 +11,6 @@ import numpy as np
 from numpy import eye, absolute, sqrt, isinf
 from ase.utils.linesearch import LineSearch
 from ase.optimize.optimize import Optimizer
-from ase.utils import basestring
 
 
 # These have been copied from Numeric's MLab.py

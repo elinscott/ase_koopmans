@@ -1,6 +1,5 @@
 import numpy as np
 import os
-from ase.utils import basestring
 
 
 class MBPT_LCAO:

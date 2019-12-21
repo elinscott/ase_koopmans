@@ -7,7 +7,6 @@ Note: GEN format only supports single snapshot.
 
 from ase.atoms import Atoms
 from ase.parallel import paropen
-from ase.utils import basestring
 
 
 def read_gen(fileobj):

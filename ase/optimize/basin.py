@@ -5,7 +5,6 @@ from ase.optimize.fire import FIRE
 from ase.units import kB
 from ase.parallel import world
 from ase.io.trajectory import Trajectory
-from ase.utils import basestring
 
 
 class BasinHopping(Dynamics):

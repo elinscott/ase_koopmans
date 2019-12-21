@@ -3,7 +3,6 @@ import numpy as np
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.atom import Atom
 from ase.atoms import Atoms
-from ase.utils import basestring
 
 
 def read_dacapo_text(fileobj):

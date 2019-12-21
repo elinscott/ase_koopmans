@@ -1,4 +1,3 @@
-from ase.utils import basestring
 from ase.atoms import Atoms
 
 

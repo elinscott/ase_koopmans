@@ -5,7 +5,6 @@ its procedure src/gmxlib/confio.c (write_g96_conf)
 """
 
 from ase.parallel import paropen
-from ase.utils import basestring
 
 
 def read_gromos(fileobj, index=-1):

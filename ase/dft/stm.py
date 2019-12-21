@@ -1,7 +1,6 @@
 import pickle
 
 import numpy as np
-from ase.utils import basestring
 
 class STM:
     def __init__(self, atoms, symmetries=None, use_density=False):

@@ -4,7 +4,6 @@ read and write gromacs geometry files
 
 from ase.atoms import Atoms
 from ase.parallel import paropen
-from ase.utils import basestring
 import numpy as np
 
 from ase.data import atomic_numbers

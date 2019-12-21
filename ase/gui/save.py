@@ -7,7 +7,6 @@ import numpy as np
 import ase.gui.ui as ui
 from ase.io.formats import (write, parse_filename, get_ioformat, string2index,
                             filetype)
-from ase.utils import basestring
 
 
 text = _("""\

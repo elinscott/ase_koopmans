@@ -16,7 +16,6 @@ import numpy as np
 from ase.atoms import Atoms
 from ase.parallel import paropen
 from ase.geometry import cellpar_to_cell
-from ase.utils import basestring
 from ase.io.espresso import label_to_symbol
 
 

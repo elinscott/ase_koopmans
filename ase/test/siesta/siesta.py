@@ -5,7 +5,6 @@ from ase.calculators.siesta.siesta import Siesta
 from ase.calculators.siesta.parameters import Species, PAOBasisBlock
 from ase.calculators.calculator import FileIOCalculator
 from ase import Atoms
-from ase.utils import basestring
 
 # Setup test structures.
 h = Atoms('H', [(0.0, 0.0, 0.0)])

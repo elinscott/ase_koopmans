@@ -13,7 +13,6 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io import read
 from ase.optimize import MDMin
 from ase.geometry import find_mic
-from ase.utils import basestring
 
 
 class NEB:

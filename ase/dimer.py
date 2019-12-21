@@ -15,7 +15,6 @@ from ase.optimize.optimize import Optimizer
 from math import cos, sin, atan, tan, degrees, pi, sqrt
 from ase.parallel import world
 from ase.calculators.singlepoint import SinglePointCalculator
-from ase.utils import basestring
 
 # Handy vector methods
 norm = np.linalg.norm

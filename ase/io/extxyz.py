@@ -23,7 +23,6 @@ from ase.calculators.calculator import all_properties, Calculator
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
-from ase.utils import basestring
 from ase.constraints import FixAtoms, FixCartesian
 from ase.io.formats import index2range
 

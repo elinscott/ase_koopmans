@@ -2,7 +2,6 @@
 import numpy as np
 
 from ase.optimize.optimize import Optimizer
-from ase.utils import basestring
 from ase.utils.linesearch import LineSearch
 
 

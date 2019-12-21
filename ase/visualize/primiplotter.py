@@ -15,7 +15,6 @@ import numpy as np
 
 from ase.visualize.colortable import color_table
 import ase.data
-from ase.utils import basestring
 
 
 class PrimiPlotterBase:

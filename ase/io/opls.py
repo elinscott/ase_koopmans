@@ -7,7 +7,6 @@ from ase.calculators.lammpsrun import Prism
 from ase.neighborlist import NeighborList
 from ase.data import atomic_masses, chemical_symbols
 from ase.io import read
-from ase.utils import basestring
 
 
 def twochar(name):

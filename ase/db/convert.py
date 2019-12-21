@@ -5,7 +5,6 @@ import numpy as np
 
 from ase.db import connect
 from ase.db.sqlite import index_statements
-from ase.utils import basestring
 
 
 def convert(name, opts):

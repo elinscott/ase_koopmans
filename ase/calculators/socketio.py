@@ -7,7 +7,6 @@ import numpy as np
 from ase.calculators.calculator import (Calculator, all_changes,
                                         PropertyNotImplementedError)
 import ase.units as units
-from ase.utils import basestring
 
 
 def actualunixsocketname(name):

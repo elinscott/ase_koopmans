@@ -5,7 +5,6 @@ from ase.units import Hartree
 from ase.parallel import paropen
 from ase.data import atomic_numbers
 from ase.calculators.singlepoint import SinglePointCalculator
-from ase.utils import basestring
 
 
 def write_xsf(fileobj, images, data=None):

@@ -4,7 +4,6 @@ import warnings
 from math import sqrt
 import numpy as np
 
-from ase.utils import basestring
 from ase.optimize.optimize import Optimizer
 from ase.constraints import UnitCellFilter
 

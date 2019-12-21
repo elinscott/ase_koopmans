@@ -16,7 +16,6 @@ from ase import Atoms
 from ase.parallel import paropen
 from ase.spacegroup import crystal
 from ase.spacegroup.spacegroup import spacegroup_from_data, Spacegroup
-from ase.utils import basestring
 from ase.data import atomic_numbers, atomic_masses
 from ase.io.cif_unicode import format_unicode, handle_subscripts
 

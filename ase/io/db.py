@@ -1,5 +1,4 @@
 import ase.db
-from ase.utils import basestring
 from ase.io.formats import string2index
 
 

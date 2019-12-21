@@ -7,7 +7,6 @@ modern web browsers.
 
 from ase.data import covalent_radii
 from ase.data.colors import jmol_colors
-from ase.utils import basestring
 
 
 def write_x3d(filename, atoms, format=None):

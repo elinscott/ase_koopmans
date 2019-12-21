@@ -14,7 +14,6 @@ from ase.atoms import Atoms
 from ase.constraints import FixAtoms
 from ase.geometry import cellpar_to_cell, cell_to_cellpar
 from ase.parallel import paropen
-from ase.utils import basestring
 
 
 def read_eon(fileobj, index = -1):

@@ -1,4 +1,3 @@
-from ase.utils import basestring
 import re
 import warnings
 from math import sin, cos

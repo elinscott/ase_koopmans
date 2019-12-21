@@ -3,7 +3,6 @@
 See https://en.wikipedia.org/wiki/Chemical_table_file#SDF
 """
 from ase.atoms import Atoms
-from ase.utils import basestring
 
 
 def read_sdf(fileobj):

@@ -2,7 +2,6 @@ import numpy as np
 
 from ase import Atoms
 from ase.data import atomic_numbers, reference_states
-from ase.utils import basestring
 
 
 def Icosahedron(symbol, noshells, latticeconstant=None):
