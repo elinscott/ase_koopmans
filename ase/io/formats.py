@@ -86,7 +86,7 @@ class IOFormat:
 
     @property
     def can_append(self):
-        return self.writable and 'append' in self.write.__code__.co_varnames
+        return self.can_write and 'append' in self.write.__code__.co_varnames
 
     def __repr__(self):
         tokens = ['{}={}'.format(name, repr(value))
@@ -169,15 +169,12 @@ class IOFormat:
                    for magic in self.magic)
 
 
-ioformats = {}  # will be filled at run-time
-
-# 1=single, +=multiple, F=accepts a file-descriptor, S=needs a file-name str,
-# B=like F, but opens in binary mode
-all_formats = ioformats  # XXX We should keep one of these.
-
-#glob_patterns = {}
-format2modulename = {}  # Left for compatibility only.  Please do not use.
+ioformats = {}  # These will be filled at run-time.
 extension2format = {}
+
+
+all_formats = ioformats  # Aliased for compatibility only.  Please do not use.
+format2modulename = {}  # Left for compatibility only.
 
 def define_io_format(name, desc, code, *, module=None, ext=None,
                      glob=None, magic=None, encoding=None):
@@ -218,6 +215,15 @@ def get_ioformat(name: str) -> IOFormat:
     fmt.module
     return ioformats[name]
 
+
+# We define all the IO formats below.  Each IO format has a code,
+# such as '1F', which defines some of the format's properties:
+#
+# 1=single atoms object
+# +=multiple atoms objects
+# F=accepts a file-descriptor
+# S=needs a file-name str
+# B=like F, but opens in binary mode
 
 F = define_io_format
 F('abinit-in', 'ABINIT input file', '1F',
@@ -556,7 +562,7 @@ def _write(filename, fd, format, io, images, parallel=None, append=False,
         if fd is not None:
             raise ValueError("Can't write {}-format to file-descriptor"
                              .format(format))
-        if 'append' in io.write.__code__.co_varnames:
+        if io.can_append:
             io.write(filename, images, append=append, **kwargs)
         elif append:
             raise ValueError("Cannot append to {}-format, write-function "
