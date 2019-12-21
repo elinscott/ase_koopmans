@@ -20,7 +20,7 @@ import sys
 from pathlib import Path, PurePath
 
 from ase.atoms import Atoms
-from ase.utils import import_module
+from importlib import import_module
 from ase.parallel import parallel_function, parallel_generator
 
 
