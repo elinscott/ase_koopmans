@@ -1,7 +1,6 @@
 # flake8: noqa
 import os
 import numpy as np
-from ase.utils import basestring
 
 
 '''
@@ -38,7 +37,7 @@ def valid_boolean(x):
     return isinstance(x, bool)
 
 def valid_str(x):
-    return isinstance(x, basestring)
+    return isinstance(x, str)
 
 def valid_atoms(x):
     import ase
@@ -72,7 +71,7 @@ def valid_calculate_stress(x):
     return valid_boolean(x)
 
 def valid_kpts(x):
-    if isinstance(x, basestring):
+    if isinstance(x, str):
         return x in ['cc6_1x1',
                      'cc12_2x3',
                      'cc18_sq3xsq3',
