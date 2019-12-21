@@ -280,15 +280,14 @@ class GUI(View, Status):
         ui.error(_('Plotting failed'), '\n'.join([str(err), msg]).strip())
 
     def neb(self):
-        from ase.neb import NEBtools
+        from ase.utils.forcecurve import fit_images
         try:
-            nebtools = NEBtools(self.images)
-            fit = nebtools.get_fit()
+            forcefit = fit_images(self.images)
         except Exception as err:
             self.bad_plot(err, _('Images must have energies and forces, '
                                  'and atoms must not be stationary.'))
         else:
-            self.pipe('neb', fit)
+            self.pipe('neb', forcefit)
 
     def bulk_modulus(self):
         try:
@@ -511,7 +510,7 @@ class GUI(View, Status):
               M(_('_Move selected atoms'), self.toggle_move_mode, 'Ctrl+M'),
               M(_('_Rotate selected atoms'), self.toggle_rotate_mode,
                 'Ctrl+R'),
-              M(_('NE_B'), self.neb),
+              M(_('NE_B plot'), self.neb),
               M(_('B_ulk Modulus'), self.bulk_modulus),
               M(_('Reciprocal space ...'), self.reciprocal)]),
 
