@@ -135,7 +135,7 @@ class Images:
         return radii
 
     def read(self, filenames, default_index=':', filetype=None):
-        if isinstance(default_index, basestring):
+        if isinstance(default_index, str):
             default_index = string2index(default_index)
 
         images = []

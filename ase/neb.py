@@ -440,7 +440,7 @@ class IDPP(Calculator):
 
 class SingleCalculatorNEB(NEB):
     def __init__(self, images, k=0.1, climb=False):
-        if isinstance(images, basestring):
+        if isinstance(images, str):
             # this is a filename
             images = read(images)
 

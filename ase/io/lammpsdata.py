@@ -14,7 +14,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
     switch it off.
     Units are set by default to the style=metal setting in LAMMPS.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         f = paropen(fileobj)
     else:
         f = fileobj
@@ -409,7 +409,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                       prismobj=None, velocities=False, units="metal",
                       atom_style='atomic'):
     """Write atomic structure data to a LAMMPS data file."""
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         f = paropen(fileobj, "w", encoding="ascii")
         close_file = True
     else:

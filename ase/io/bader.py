@@ -6,7 +6,7 @@ from ase.data import atomic_numbers
 
 def attach_charges(atoms, fileobj='ACF.dat', displacement=1e-4):
     """Attach the charges from the fileobj to the Atoms."""
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     sep = '---------------'

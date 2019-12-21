@@ -19,7 +19,7 @@ def pa(array):
 
 def pc(array):
     """Povray color syntax"""
-    if isinstance(array, basestring):
+    if isinstance(array, str):
         return 'color ' + array
     if isinstance(array, float):
         return 'rgb <%.2f>*3' % array

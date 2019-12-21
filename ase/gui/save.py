@@ -30,7 +30,7 @@ def save_dialog(gui, filename=None):
     filename, index = parse_filename(filename)
     if index is None:
         index = slice(gui.frame, gui.frame + 1)
-    elif isinstance(index, basestring):
+    elif isinstance(index, str):
         index = string2index(index)
     elif isinstance(index, slice):
         pass

@@ -271,7 +271,7 @@ def write_xsd(filename, images, connectivity=None):
     XSD,ATR = _write_xsd_html(images,connectivity)
 
     # check if file is an object or not.
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename, 'w')
     else:  # Assume it's a 'file-like object'
         f = filename

@@ -1322,7 +1322,7 @@ class GenerateVaspInput(object):
             if val is not None:
                 incar.write(' %s = ' % key.upper())
                 if key == 'lreal':
-                    if isinstance(val, basestring):
+                    if isinstance(val, str):
                         incar.write(val + '\n')
                     elif isinstance(val, bool):
                         if val:

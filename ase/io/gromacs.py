@@ -163,7 +163,7 @@ def write_gromacs(fileobj, images):
     * simulation cell (if present)
     """
 
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'w')
 
     if not isinstance(images, (list, tuple)):

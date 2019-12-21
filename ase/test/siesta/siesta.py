@@ -21,7 +21,7 @@ siesta = Siesta()
 assert isinstance(siesta, FileIOCalculator)
 assert isinstance(siesta.implemented_properties, tuple)
 assert isinstance(siesta.default_parameters, dict)
-assert isinstance(siesta.name, basestring)
+assert isinstance(siesta.name, str)
 assert isinstance(siesta.default_parameters, dict)
 
 # Test simple fdf-argument case.

@@ -576,7 +576,7 @@ class SocketIOCalculator(Calculator):
         self.timeout = timeout
         self.server = None
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             self.log = open(log, 'w')
             self.log_was_opened = True
         else:

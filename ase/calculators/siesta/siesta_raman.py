@@ -345,7 +345,7 @@ class SiestaRaman(Vibrations):
         elif intensity_unit_ram == 'A^4 amu^-1':
             iu_format_ram = '%9.4f              '
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         parprint('---------------------------------------------------------------------------------------------------------------------------', file=log)
@@ -416,7 +416,7 @@ class SiestaRaman(Vibrations):
         elif intensity_unit_ram == 'A^4 amu^-1':
             iu_format_ram = '%9.4f              '
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         if hline:

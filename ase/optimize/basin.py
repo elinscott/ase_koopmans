@@ -50,7 +50,7 @@ class BasinHopping(Dynamics):
 
         self.optimizer_logfile = optimizer_logfile
         self.lm_trajectory = local_minima_trajectory
-        if isinstance(local_minima_trajectory, basestring):
+        if isinstance(local_minima_trajectory, str):
             self.lm_trajectory = Trajectory(local_minima_trajectory,
                                             'w', atoms)
 

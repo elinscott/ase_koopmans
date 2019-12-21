@@ -104,7 +104,7 @@ class WriteToFile:
     """Creates convenience function to write to a file."""
 
     def __init__(self, filename, mode='w'):
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             self._f = open(filename, mode)
         else:
             self._f = filename

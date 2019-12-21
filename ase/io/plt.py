@@ -37,7 +37,7 @@ def write_plt(filename, atoms, data):
 
 
 def read_plt(fileobj):
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rb')
 
     # dummy numbers

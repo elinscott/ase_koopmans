@@ -71,7 +71,7 @@ def read_atom_line(line_full):
 def read_proteindatabank(fileobj, index=-1, read_arrays=True):
     """Read PDB files."""
 
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     images = []
@@ -181,7 +181,7 @@ def read_proteindatabank(fileobj, index=-1, read_arrays=True):
 
 def write_proteindatabank(fileobj, images, write_arrays=True):
     """Write images to PDB-file."""
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'w')
 
     if hasattr(images, 'get_positions'):

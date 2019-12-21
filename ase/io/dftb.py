@@ -122,7 +122,7 @@ def read_dftb_lattice(fileobj='md.out',images=None):
     """
     Read lattice vectors from MD and return them as a list. If a molecules are parsed add them there.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     if images is not None:
@@ -169,7 +169,7 @@ def write_dftb_velocities(atoms, filename='velocities.txt'):
     # ase units -> atomic units
     ASE2au = Bohr / AUT
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         myfile = open(filename, 'w')
     else:
         # Assume it's a 'file-like object'
@@ -198,7 +198,7 @@ def write_dftb(filename, atoms):
     for i in indexes:
         atomsnew = atomsnew + atoms[i]
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         myfile = open(filename, 'w')
     else:
         # Assume it's a 'file-like object'
@@ -239,5 +239,5 @@ def write_dftb(filename, atoms):
         myfile.write(' %19.16f %19.16f %19.16f \n'
                      % (box[2][0], box[2][1], box[2][2]))
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         myfile.close()

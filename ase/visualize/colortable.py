@@ -772,11 +772,11 @@ del array   # Prevent namespace pollution.
 def _MakeColorTable(outfile = None, infile = "/usr/lib/X11/rgb.txt"):
     import string, sys
 
-    if isinstance(infile, basestring):
+    if isinstance(infile, str):
         infile = open(infile)
     if outfile is None:
         outfile = sys.stdout
-    if isinstance(outfile, basestring):
+    if isinstance(outfile, str):
         outfile = open(outfile, "w")
 
     outfile.write("ColorTable = {\n");

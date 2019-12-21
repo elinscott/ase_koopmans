@@ -381,7 +381,7 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
 
     # XXX old code for bandpath() function, should be removed once we
     # weed out any trouble
-    if isinstance(path, basestring):
+    if isinstance(path, str):
         # XXX we need to update this so we use the new and more complete
         # cell classification stuff
         lattice = None

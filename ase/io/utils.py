@@ -26,7 +26,7 @@ class PlottingVariables:
 
         natoms = len(atoms)
 
-        if isinstance(rotation, basestring):
+        if isinstance(rotation, str):
             rotation = rotate(rotation)
 
         cell = atoms.get_cell()
@@ -234,13 +234,13 @@ class ImageIterator:
         self.ichunks = ichunks
 
     def __call__(self, fd, index=None, **kwargs):
-        if isinstance(index, basestring):
+        if isinstance(index, str):
             index = string2index(index)
 
         if index is None or index == ':':
             index = slice(None, None, None)
 
-        if not isinstance(index, (slice, basestring)):
+        if not isinstance(index, (slice, str)):
             index = slice(index, (index + 1) or None)
 
         for chunk in self._getslice(fd, index):

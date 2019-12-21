@@ -88,7 +88,7 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
             energy = value
 
     try:
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             fileobj = open(filename, 'r')
         else:
             fileobj = filename

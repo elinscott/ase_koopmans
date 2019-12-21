@@ -22,7 +22,7 @@ def read_qbox(f, index=-1):
         list of Atoms or atoms, requested frame(s)
     """
 
-    if isinstance(f, basestring):
+    if isinstance(f, str):
         f = open(f, 'r')
 
     # Check whether this is a QB@all output

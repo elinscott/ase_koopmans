@@ -17,7 +17,7 @@ def read_v_sim(filename='demo.ascii'):
     from ase.geometry import cellpar_to_cell
     import re
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename)
     else:  # Assume it's a file-like object
         f = filename
@@ -98,7 +98,7 @@ def write_v_sim(filename, atoms):
     """
     from ase.geometry import cellpar_to_cell, cell_to_cellpar
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename)
     else:  # Assume it's a file-like object
         f = filename

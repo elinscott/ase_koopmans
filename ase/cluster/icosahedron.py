@@ -19,7 +19,7 @@ def Icosahedron(symbol, noshells, latticeconstant=None):
     """
 
     # Interpret symbol
-    if isinstance(symbol, basestring):
+    if isinstance(symbol, str):
         atomic_number = atomic_numbers[symbol]
     else:
         atomic_number = symbol

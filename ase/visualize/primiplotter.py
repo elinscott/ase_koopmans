@@ -919,7 +919,7 @@ def _colorsfromdict(dict, cls):
     isgray, isrgb = 0, 0
     for k in dict.keys():
         v = dict[k]
-        if isinstance(v, basestring):
+        if isinstance(v, str):
             v = color_table[v]
             dict[k] = v
         try:

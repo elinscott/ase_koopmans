@@ -20,7 +20,7 @@ def read_mustem(filename):
     from ase import Atoms
     from ase.geometry import cellpar_to_cell
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename)
     else:  # Assume it's a file-like object
         f = filename
@@ -154,7 +154,7 @@ class XtlmuSTEMWriter:
         return "Orientation\n   1 0 0\n   0 1 0\n   0 0 1\n"
 
     def write_to_file(self, f):
-        if isinstance(f, basestring):
+        if isinstance(f, str):
             f = open(f, 'w')
 
         f.write(self._get_file_header())

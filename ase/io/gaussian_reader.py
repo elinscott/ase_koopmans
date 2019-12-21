@@ -41,7 +41,7 @@ class GaussianReader:
 
     def __init__(self, filename, read_structures=False):
         """filename is NOT optional"""
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             fileobj = open(filename, 'r')
         elif hasattr(filename,'seek'):
             fileobj = filename

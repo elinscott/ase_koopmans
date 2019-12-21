@@ -100,7 +100,7 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
     farc.close()
 
     # check if file is an object or not.
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename, 'w')
     else:  # Assume it's a 'file-like object'
         f = filename

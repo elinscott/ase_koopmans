@@ -17,7 +17,7 @@ def convert(name, opts):
             kvp = row.get('key_value_pairs', {})
             if opts.convert_strings_to_numbers:
                 for key, value in kvp.items():
-                    if isinstance(value, basestring):
+                    if isinstance(value, str):
                         try:
                             value = float(value)
                         except ValueError:

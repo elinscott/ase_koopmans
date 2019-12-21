@@ -23,7 +23,7 @@ class STM:
 
         self.use_density = use_density
 
-        if isinstance(atoms, basestring):
+        if isinstance(atoms, str):
             with open(atoms, 'rb') as f:
                 self.ldos, self.bias, self.cell = pickle.load(f)
             self.atoms = None

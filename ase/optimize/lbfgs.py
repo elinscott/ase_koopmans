@@ -194,7 +194,7 @@ class LBFGS(Optimizer):
 
     def replay_trajectory(self, traj):
         """Initialize history from old trajectory."""
-        if isinstance(traj, basestring):
+        if isinstance(traj, str):
             from ase.io.trajectory import Trajectory
             traj = Trajectory(traj, 'r')
         r0 = None

@@ -183,7 +183,7 @@ class BFGSLineSearch(Optimizer):
     def replay_trajectory(self, traj):
         """Initialize hessian from old trajectory."""
         self.replay = True
-        if isinstance(traj, basestring):
+        if isinstance(traj, str):
             from ase.io.trajectory import Trajectory
             traj = Trajectory(traj, 'r')
         r0 = None

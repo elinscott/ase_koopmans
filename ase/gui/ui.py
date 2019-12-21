@@ -73,7 +73,7 @@ class BaseWindow(object):
     title = property(None, title)
 
     def add(self, stuff, anchor='w'):  # 'center'):
-        if isinstance(stuff, basestring):
+        if isinstance(stuff, str):
             stuff = Label(stuff)
         elif isinstance(stuff, list):
             stuff = Row(stuff)
@@ -118,7 +118,7 @@ class Row(Widget):
     def create(self, parent):
         self.widget = tk.Frame(parent)
         for thing in self.things:
-            if isinstance(thing, basestring):
+            if isinstance(thing, str):
                 thing = Label(thing)
             thing.pack(self.widget, 'left')
         return self.widget
@@ -368,7 +368,7 @@ class Rows(Widget):
         return widget
 
     def add(self, row):
-        if isinstance(row, basestring):
+        if isinstance(row, str):
             row = Label(row)
         elif isinstance(row, list):
             row = Row(row)
