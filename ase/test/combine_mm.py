@@ -1,5 +1,5 @@
 """Test CombineMM forces by combining tip3p and tip4p with them selves, and
-   by combining tip3p with tip4p and testing againts numerical forces """
+   by combining tip3p with tip4p and testing against numerical forces """
 from math import cos, sin, pi
 import numpy as np
 from ase import Atoms

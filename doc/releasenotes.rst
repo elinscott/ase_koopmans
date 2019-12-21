@@ -996,7 +996,7 @@ Version 3.6.0
 * New ase.lattice.bulk() function.  Will replace old
   ase.build.bulk() function.  The new one will produce a more
   natural hcp lattice and it will use experimental data for crystal
-  structure and lattice constants if not provided explicitely.
+  structure and lattice constants if not provided explicitly.
 
 * New values for ase.data.covalent_radii from Cordeo *et al.*.
 

@@ -334,7 +334,7 @@ Then you need to add the pyscf directory to your PYTHONPATH
 Raman Calculations with SIESTA and PYSCF-NAO
 ============================================
 
-It is possible to calulate the Raman spectra with SIESTA, PYSCF-NAO anf the
+It is possible to calculate the Raman spectra with SIESTA, PYSCF-NAO anf the
 vibration module from ASE. Example with CO2,::
 
   from ase.units import Ry, eV, Ha

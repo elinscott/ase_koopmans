@@ -484,7 +484,7 @@ def write(filename, images, format=None, parallel=True, append=False,
     append: bool
         Default is to open files in 'w' or 'wb' mode, overwriting
         existing files.  In some cases opening the file in 'a' or 'ab'
-        mode (appending) is usefull,
+        mode (appending) is useful,
         e.g. writing trajectories or saving multiple Atoms objects in one file.
         WARNING: If the file format does not support multiple entries without
         additional keywords/headers, files created using 'append=True'

@@ -57,7 +57,7 @@ calculator_NVT = Dftb(
     Driver_KeepStationary='Yes',
     Driver_TimeStep=8.26,
     Driver_Thermostat_='Berendsen',
-    Driver_Thermostat_Temperature=0.00339845142,  # 800 deg Celcius
+    Driver_Thermostat_Temperature=0.00339845142,  # 800 deg Celsius
     # Driver_Thermostat_Temperature=0.0, # 0 deg Kelvin
     Driver_Thermostat_CouplingStrength=0.01)
 

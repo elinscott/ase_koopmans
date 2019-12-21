@@ -1386,7 +1386,7 @@ class Siesta(FileIOCalculator):
             **kw):
         r"""
         Perform TDDFT calculation using the pyscf.nao module for a molecule.
-        The external pertubation is created by a electron moving at
+        The external perturbation is created by a electron moving at
         the velocity velec and with an impact parameter b.
 
         Parameters
@@ -1544,7 +1544,7 @@ class Siesta(FileIOCalculator):
         Parameters
         ----------
         mbpt_inp : dict, optional
-            dictionnary of the input for the mbpt_lcao program
+            dictionary of the input for the mbpt_lcao program
             (http://mbpt-domiprod.wikidot.com/list-of-parameters)
             if mbpt_inp is None, the function read the output file
             from a previous mbpt_lcao run.

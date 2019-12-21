@@ -148,4 +148,4 @@ Finally we use extend to copy the water onto the slab:
 .. image:: interface-h2o-wrap.png
 
 Adding two atoms objects will take the positions from both and the cell and
-boundry conditions from the first.
+boundary conditions from the first.

@@ -498,7 +498,7 @@ potentials)
 
         self.forces = trj_atoms.get_forces()
         # !TODO: trj_atoms is only the last snapshot of the system; Is it
-        #        desireable to save also the inbetween steps?
+        #        desirable to save also the inbetween steps?
         if self.parameters.trajectory_out is not None:
             # !TODO: is it advisable to create here temporary atoms-objects
             self.trajectory_out.write(trj_atoms)
@@ -551,7 +551,7 @@ potentials)
             close_log_file = False
 
         # read_log depends on that the first (three) thermo_style custom args
-        # can be capitilized and matched against the log output. I.e.
+        # can be capitalized and matched against the log output. I.e.
         # don't use e.g. 'ke' or 'cpu' which are labeled KinEng and CPU.
         _custom_thermo_mark = " ".join(
             [x.capitalize() for x in self.parameters.thermo_args[0:3]]

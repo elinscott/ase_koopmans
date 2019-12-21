@@ -97,7 +97,7 @@ class ResonantRaman(Vibrations):
             Minimal absolute overlap to consider. Defaults to 0.02 to avoid
             numerical garbage.
         minrep: float
-            Minimal represention to consider derivative, defaults to 0.8
+            Minimal representation to consider derivative, defaults to 0.8
         """
         assert(nfree == 2)
         Vibrations.__init__(self, atoms, indices, gsname, delta, nfree)

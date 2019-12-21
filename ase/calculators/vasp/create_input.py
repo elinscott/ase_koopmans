@@ -548,7 +548,7 @@ bool_keys = [
     'lrscor',     # Include long-range correlation (HF)
     'lrhfcalc',   # Include long-range HF (HF)
     'lmodelhf',   # Model HF calculation (HF)
-    'shiftred',   # Undocumented HF paramter
+    'shiftred',   # Undocumented HF parameter
     'hfkident',   # Undocumented HF parameter
     'oddonly',    # Undocumented HF parameter
     'evenonly',   # Undocumented HF parameter

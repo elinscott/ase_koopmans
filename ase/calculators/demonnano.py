@@ -200,7 +200,7 @@ class DemonNano(FileIOCalculator):
     def _write_argument(self, key, value, fd):
        """Write an argument to file.
        key :  a string coresponding to the input keyword
-       value : the arguemnts, can be a string, a number or a list
+       value : the arguments, can be a string, a number or a list
        fd  :  and open file
        """
        if key == 'BASISPATH':    
