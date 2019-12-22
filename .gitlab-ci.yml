@@ -54,7 +54,7 @@ main:
     - python --version
     - pip install .
     - ase info --calculators
-    - ase test --strict
+    - ase test --strict --calculators abinit
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
