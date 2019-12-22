@@ -27,6 +27,7 @@ python_3_oldlibs_tests:
     - pip install numpy==1.10.4 scipy==0.17.1 matplotlib==2.0.0
     - pip install --no-deps .
     - ase test
+  when: manual
 
 # Check newest Python with all the standard dependencies at newest versions.
 #
@@ -44,6 +45,7 @@ python_3_tests:
     - ase test --strict
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
+  when: manual
 
 
 main:
@@ -51,6 +53,7 @@ main:
   script:
     - python --version
     - pip install .
+    - ase info --calculators
     - ase test --strict
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
