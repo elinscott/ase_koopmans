@@ -77,8 +77,9 @@ main:
 
 # Should be same image as python_3_tests except
 # not slim because then we don't have tk
+#  image: python:3.7
 docs_test:
-  image: python:3.7
+  image: registry.gitlab.com/ase/ase:ase-main
   script:
     - pip install .[docs]
     - ase info
