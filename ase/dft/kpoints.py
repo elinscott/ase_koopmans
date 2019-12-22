@@ -314,7 +314,6 @@ class BandPath:
         nkpts = len(self.kpts)
 
         for name, kpt in self.special_points.items():
-            indices = []
             displacements = self.kpts - kpt[np.newaxis, :]
             distances = np.linalg.norm(displacements, axis=1)
             args = np.argwhere(distances < eps)

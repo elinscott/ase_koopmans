@@ -1,7 +1,6 @@
 # See https://gitlab.com/ase/ase/issues/502
-import numpy as np
 from ase import Atoms
-from ase.dft.kpoints import bandpath, labels_from_kpts
+
 
 a = 3.16
 atoms = Atoms(cell=[a, a, 12, 90, 90, 120], pbc=True)
