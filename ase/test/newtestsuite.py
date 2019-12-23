@@ -1,3 +1,4 @@
+from typing import Dict, Any, List
 import runpy
 import unittest
 from pathlib import Path
@@ -5,10 +6,10 @@ import ase.test as asetest
 from ase.utils import workdir
 
 
-ignorefiles = {'__init__.py', 'testsuite.py', 'scripttests.py'}
+ignorefiles = {'__init__.py', 'testsuite.py', 'newtestsuite.py'}
 
 
-def get_test_modules():
+def find_all_test_modules() -> List[str]:
     testdir = Path(asetest.__file__).parent
     testfiles = sorted(testdir.glob('*.py'))
     testfiles += sorted(testdir.glob('*/*.py'))
@@ -23,18 +24,21 @@ def get_test_modules():
     return modules
 
 
-def define_script_test_function(module):
+def define_script_test_function(module: str):
     assert module.startswith('ase.test.')
     testname = module.split('.', 1)[1].replace('.', '_')
+
     def test_script(tmp_path):
         with workdir(tmp_path):
             runpy.run_module(module, run_name='test')
+
     test_script.__name__ = testname
     return test_script
 
 
-def define_all_tests(namespace):
-    for module in get_test_modules():
+def define_all_tests(namespace: Dict[str, Any]):
+    for module in find_all_test_modules():
+        assert '-' not in module, module
         testfunc = define_script_test_function(module)
         namespace[testfunc.__name__] = testfunc
 
