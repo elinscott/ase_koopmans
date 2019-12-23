@@ -36,9 +36,28 @@ def define_script_test_function(module: str):
     return test_script
 
 
+disabled_normally = {'abinit',
+                     'ace', 'aims', 'aims', 'amber',
+                     'calculator',
+                     'calculators',
+                     'castep', 'cp2k', 'crystal',
+                     'demon', 'demonnano',
+                     'dftb', 'dmol', 'elk', 'espresso',
+                     'exciting', 'fleur',
+                     'gaussian', 'gpaw', 'gromacs', 'jacapo',
+                     'kim', 'lammpslib', 'lammpsrun', 'nwchem',
+                     'octopus', 'onetep', 'openmx', 'psi4',
+                     'qbox', 'qchem', 'siesta', 'turbomole', 'vasp'}
+
+
 def define_all_tests(namespace: Dict[str, Any]):
     for module in find_all_test_modules():
         assert '-' not in module, module
+        tokens = module.split('.')
+        assert tokens[0] == 'ase'
+        assert tokens[1] == 'test'
+        if tokens[2] in disabled_normally:
+            continue
         testfunc = define_script_test_function(module)
         namespace[testfunc.__name__] = testfunc
 
