@@ -2,7 +2,7 @@ import runpy
 import unittest
 from pathlib import Path
 import ase.test as asetest
-from importlib.util import find_spec
+from ase.utils import workdir
 
 
 ignorefiles = {'__init__.py', 'testsuite.py', 'scripttests.py'}
@@ -26,8 +26,9 @@ def get_test_modules():
 def define_script_test_function(module):
     assert module.startswith('ase.test.')
     testname = module.split('.', 1)[1].replace('.', '_')
-    def test_script():
-        runpy.run_module(module, run_name='test')
+    def test_script(tmp_path):
+        with workdir(tmp_path):
+            runpy.run_module(module, run_name='test')
     test_script.__name__ = testname
     return test_script
 
