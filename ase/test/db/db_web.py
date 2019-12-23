@@ -1,6 +1,15 @@
 from ase import Atoms
 from ase.db import connect
+
+import unittest
+try:
+    import flask
+except ImportError:
+    raise unittest.SkipTest('no flask module')
+
 import ase.db.app as app
+
+
 
 db = connect('test.db', append=False)
 x = [0, 1, 2]
