@@ -2,7 +2,7 @@ import doctest
 import importlib
 import shutil
 import sys
-from unittest import SkipTest
+from unittest import SkipTest, TestCase
 
 if sys.version_info < (3, 6):
     raise SkipTest('Test requires Python 3.6+, this is {}'

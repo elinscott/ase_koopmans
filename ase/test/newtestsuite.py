@@ -1,3 +1,4 @@
+import numpy as np
 from typing import Dict, Any, List
 import runpy
 from pathlib import Path
@@ -60,5 +61,5 @@ def define_all_tests(namespace: Dict[str, Any]):
         testfunc = define_script_test_function(module)
         namespace[testfunc.__name__] = testfunc
 
-
+np.set_printoptions(legacy='1.13')
 define_all_tests(globals())
