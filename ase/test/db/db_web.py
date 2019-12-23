@@ -1,12 +1,8 @@
 from ase import Atoms
 from ase.db import connect
 
-import unittest
-try:
-    import flask
-except ImportError:
-    raise unittest.SkipTest('no flask module')
-
+import pytest
+pytest.importorskip('flask')
 import ase.db.app as app
 
 

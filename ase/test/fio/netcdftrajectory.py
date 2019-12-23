@@ -3,6 +3,9 @@ import warnings
 
 import numpy as np
 
+import pytest
+pytest.importorskip('netCDF4')
+
 from ase import Atom, Atoms
 from ase.io import read
 from ase.io import NetCDFTrajectory

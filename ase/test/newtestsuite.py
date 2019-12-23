@@ -1,6 +1,5 @@
 from typing import Dict, Any, List
 import runpy
-import unittest
 from pathlib import Path
 import ase.test as asetest
 from ase.utils import workdir

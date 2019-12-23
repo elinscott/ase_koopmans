@@ -1,4 +1,7 @@
 import sys
+import pytest
+
+pytest.importorskip('Scientific')
 
 import numpy as np
 
