@@ -45,6 +45,18 @@ python_3_tests:
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
+python_3_pytests:
+  image: python:3.7-slim
+  script:
+    - python --version
+    - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
+    - pip install pytest
+    - pip install scipy==1.2.1  # TODO: Delete me
+    - pip install .
+    - pytest -v $CI_PROJECT_DIR/ase/ase/test/newtestsuite.py
+    - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
+
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
 # issue with the gitlab runners.
