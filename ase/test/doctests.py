@@ -4,6 +4,8 @@ import shutil
 import sys
 from unittest import SkipTest, TestCase
 
+import numpy as np
+
 if sys.version_info < (3, 6):
     raise SkipTest('Test requires Python 3.6+, this is {}'
                    .format(sys.version_info))
@@ -31,4 +33,5 @@ for modname in module_names.splitlines():
         print('Skipping {} because we do not have findsym'.format(modname))
         continue
     mod = importlib.import_module(modname)
-    print(mod, doctest.testmod(mod, raise_on_error=True))
+    with np.printoptions(legacy='1.13'):
+        print(mod, doctest.testmod(mod, raise_on_error=True))
