@@ -1,3 +1,12 @@
+"""Test suite.
+
+Usage:
+
+  $ pytest newtestsuite.py
+
+This module """
+
+
 import numpy as np
 from typing import Dict, Any, List
 import runpy
@@ -52,6 +61,15 @@ disabled_normally = {'abinit',
 
 def define_all_tests(namespace: Dict[str, Any]):
     for module in find_all_test_modules():
+        if '#' in module:  # Ignore certain backup files
+            continue
+
+        if 'test_' in module or '_test' in module:
+            raise RuntimeError('The old-style tests may not have the word '
+                               '"_test" or "test_" in their name '
+                               'lest they be confused with new-style tests: '
+                               '{}'.format(module))
+
         assert '-' not in module, module
         tokens = module.split('.')
         assert tokens[0] == 'ase'
@@ -60,5 +78,6 @@ def define_all_tests(namespace: Dict[str, Any]):
             continue
         testfunc = define_script_test_function(module)
         namespace[testfunc.__name__] = testfunc
+
 
 define_all_tests(globals())
