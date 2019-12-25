@@ -19,7 +19,6 @@ pytest works with.  We can also port the old tests to that form, where
 it matters."""
 
 
-import numpy as np
 from typing import Dict, Any, List
 import runpy
 from pathlib import Path
@@ -49,7 +48,8 @@ def find_all_test_modules() -> List[str]:
     testfiles = sorted(testdir.glob('*.py'))
     testfiles += sorted(testdir.glob('*/*.py'))
     # XXX Some tests were added at */*/*.py level, but the old test suite
-    # never globbed so deep.
+    # never globbed so deep.  So these tests never ran.
+    # We can/should rehabilitate them.
 
     modules = []
     for testfile in testfiles:

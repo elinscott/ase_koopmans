@@ -11,8 +11,6 @@ import time
 import traceback
 import warnings
 
-import numpy as np
-
 from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info

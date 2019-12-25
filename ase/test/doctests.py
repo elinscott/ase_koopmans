@@ -2,7 +2,7 @@ import doctest
 import importlib
 import shutil
 import sys
-from unittest import SkipTest, TestCase
+from unittest import SkipTest
 from distutils.version import LooseVersion
 
 import numpy as np
