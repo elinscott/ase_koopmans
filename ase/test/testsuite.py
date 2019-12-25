@@ -6,7 +6,6 @@ from multiprocessing import Process, cpu_count, Queue
 import tempfile
 import unittest
 from glob import glob
-from distutils.version import LooseVersion
 import runpy
 import time
 import traceback
@@ -312,10 +311,6 @@ def summary(results):
 def test(calculators=[], jobs=0,
          stream=sys.stdout, files=None, verbose=False, strict=False):
     """Main test-runner for ASE."""
-
-    if LooseVersion(np.__version__) >= '1.14':
-        # Our doctests need this (spacegroup.py)
-        np.set_printoptions(legacy='1.13')
 
     test_calculator_names.extend(calculators)
     disable_calculators([name for name in calc_names
