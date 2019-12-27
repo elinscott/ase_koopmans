@@ -1,6 +1,10 @@
+import os
 from ase import Atoms
 from ase.calculators.dftb import Dftb
 from ase.optimize import BFGS
+
+p = os.path.dirname(__file__)
+os.environ['DFTB_PREFIX'] = p if p else './'
 
 calc = Dftb(label='dftb',
             Hamiltonian_SCC='No',
