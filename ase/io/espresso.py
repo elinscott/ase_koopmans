@@ -1115,7 +1115,7 @@ KEYS = Namelist((
 
 # Number of valence electrons in the pseudopotentials recommended by
 # http://materialscloud.org/sssp/. These are just used as a fallback for
-# calculating inital magetization values which are given as a fraction
+# calculating initial magetization values which are given as a fraction
 # of valence electrons.
 SSSP_VALENCE = [
     0, 1.0, 2.0, 3.0, 4.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 3.0, 4.0,
@@ -1461,6 +1461,11 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     kpts: (int, int, int) or dict
         If kpts is a tuple (or list) of 3 integers, it is interpreted
         as the dimensions of a Monkhorst-Pack grid.
+        If ``kpts`` is set to ``None``, only the Γ-point will be included
+        and QE will use routines optimized for Γ-point-only calculations.
+        Compared to Γ-point-only calculations without this optimization
+        (i.e. with ``kpts=(1, 1, 1)``), the memory and CPU requirements
+        are typically reduced by half.
         If kpts is a dict, it will either be interpreted as a path
         in the Brillouin zone (*) if it contains the 'path' keyword,
         otherwise it is converted to a Monkhorst-Pack grid (**).
@@ -1643,7 +1648,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         else:
             kgrid = kpts
     else:
-        kgrid = (1, 1, 1)
+        kgrid = "gamma"
 
     # True and False work here and will get converted by ':d' format
     if isinstance(koffset, int):
@@ -1658,8 +1663,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         for k in kgrid:
             pwi.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} 0\n'.format(k=k))
         pwi.append('\n')
-    elif all([x == 1 for x in kgrid]) and not any(koffset):
-        # QE defaults to gamma point, make it explicit
+    elif isinstance(kgrid, str) and (kgrid == "gamma"):
         pwi.append('K_POINTS gamma\n')
         pwi.append('\n')
     else:

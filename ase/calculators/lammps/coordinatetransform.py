@@ -41,7 +41,7 @@ class Prism:
     calculations.
     """
 
-    # !TODO: derive tolerence from cell-dimensions
+    # !TODO: derive tolerance from cell-dimensions
     def __init__(self, cell, pbc=(True, True, True), tolerance=1.0e-8):
         # Use QR decomposition to get the lammps cell
         #    rot_mat * lammps_tilt^T = ase_cell^T
@@ -102,7 +102,7 @@ class Prism:
     def update_cell(self, lammps_cell):
         """Rotate new lammps cell into ase coordinate system
 
-        :param lammps_cell: new lammps cell recieved after executing lammps
+        :param lammps_cell: new lammps cell received after executing lammps
         :returns: ase cell
         :rtype: np.array
 
@@ -118,7 +118,7 @@ class Prism:
                 self.lammps_tilt[i][j] -= change
 
         # try to detect potential flips in lammps
-        # (lammps minimizes the cell-vector lenghts)
+        # (lammps minimizes the cell-vector lengths)
         new_ase_cell = np.dot(self.lammps_tilt, self.rot_mat.T)
         # assuming the cell changes are mostly isotropic
         new_vol = np.linalg.det(new_ase_cell)

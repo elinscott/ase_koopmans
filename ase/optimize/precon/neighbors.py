@@ -62,7 +62,7 @@ def estimate_nearest_neighbour_distance(atoms):
     #start_time = time.time()
     # compute number of neighbours of each atom. If any atom doesn't
     # have a neighbour we increase the cutoff and try again, until our
-    # cutoff exceeds the size of the sytem
+    # cutoff exceeds the size of the system
     r_cut = 1.0
     phi = (1.0 + np.sqrt(5.0)) / 2.0  # Golden ratio
 
@@ -87,7 +87,7 @@ def estimate_nearest_neighbour_distance(atoms):
                            'happen if your system is too small; try '
                            'setting r_cut manually')
 
-    # maximum of nearest neigbour distances
+    # maximum of nearest neighbour distances
     nn_distances = [np.min(rij[i == I]) for I in range(len(atoms))]
     r_NN = np.max(nn_distances)
 

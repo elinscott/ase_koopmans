@@ -96,7 +96,7 @@ class MDLogger:
             dat = ()
         dat += (epot+ekin, epot, ekin, temp)
         if self.stress:
-            dat += tuple(self.atoms.get_stress() / units.GPa)
+            dat += tuple(self.atoms.get_stress(include_ideal_gas=True) / units.GPa)
         self.logfile.write(self.fmt % dat)
         self.logfile.flush()
 

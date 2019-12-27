@@ -7,12 +7,13 @@ from ase.utils.parsemath import eval_expression
 import numpy as np
 from scipy.linalg import expm
 
-__all__ = ['FixCartesian', 'FixBondLength', 'FixedMode', 'FixConstraintSingle',
-           'FixAtoms', 'UnitCellFilter', 'ExpCellFilter', 'FixScaled', 'StrainFilter',
-           'FixCom', 'FixedPlane', 'Filter', 'FixConstraint', 'FixedLine',
-           'FixBondLengths', 'FixLinearTriatomic', 'FixInternals', 'Hookean',
-           'ExternalForce', 'MirrorForce', 'MirrorTorque', "FixScaledParametricRelations",
-           "FixCartesianParametricRelations"]
+__all__ = [
+    'FixCartesian', 'FixBondLength', 'FixedMode',
+    'FixConstraintSingle', 'FixAtoms', 'UnitCellFilter', 'ExpCellFilter',
+    'FixScaled', 'StrainFilter', 'FixCom', 'FixedPlane', 'Filter',
+    'FixConstraint', 'FixedLine', 'FixBondLengths', 'FixLinearTriatomic',
+    'FixInternals', 'Hookean', 'ExternalForce', 'MirrorForce', 'MirrorTorque',
+    "FixScaledParametricRelations", "FixCartesianParametricRelations"]
 
 
 def dict2constraint(dct):
@@ -173,7 +174,7 @@ class FixAtoms(FixConstraint):
 
     def todict(self):
         return {'name': 'FixAtoms',
-                'kwargs': {'indices': self.index}}
+                'kwargs': {'indices': self.index.tolist()}}
 
     def repeat(self, m, n):
         i0 = 0
@@ -330,7 +331,7 @@ class FixBondLengths(FixConstraint):
 
     def todict(self):
         return {'name': 'FixBondLengths',
-                'kwargs': {'pairs': self.pairs,
+                'kwargs': {'pairs': self.pairs.tolist(),
                            'tolerance': self.tolerance}}
 
     def index_shuffle(self, atoms, ind):
@@ -588,7 +589,7 @@ class FixLinearTriatomic(FixConstraint):
 
     def todict(self):
         return {'name': 'FixLinearTriatomic',
-                'kwargs': {'triples': self.triples}}
+                'kwargs': {'triples': self.triples.tolist()}}
 
     def index_shuffle(self, atoms, ind):
         """Shuffle the indices of the three atoms in this constraint"""
@@ -638,7 +639,7 @@ class FixedMode(FixConstraint):
 
     def todict(self):
         return {'name': 'FixedMode',
-                'kwargs': {'mode': self.mode}}
+                'kwargs': {'mode': self.mode.tolist()}}
 
     def __repr__(self):
         return 'FixedMode(%s)' % self.mode.tolist()
@@ -664,7 +665,7 @@ class FixedPlane(FixConstraintSingle):
 
     def todict(self):
         return {'name': 'FixedPlane',
-                'kwargs': {'a': self.a, 'direction': self.dir}}
+                'kwargs': {'a': self.a, 'direction': self.dir.tolist()}}
 
     def __repr__(self):
         return 'FixedPlane(%d, %s)' % (self.a, self.dir.tolist())
@@ -694,7 +695,7 @@ class FixedLine(FixConstraintSingle):
 
     def todict(self):
         return {'name': 'FixedLine',
-                'kwargs': {'a': self.a, 'direction': self.dir}}
+                'kwargs': {'a': self.a, 'direction': self.dir.tolist()}}
 
 
 class FixCartesian(FixConstraintSingle):
@@ -719,7 +720,7 @@ class FixCartesian(FixConstraintSingle):
 
     def todict(self):
         return {'name': 'FixCartesian',
-                'kwargs': {'a': self.a, 'mask': ~self.mask}}
+                'kwargs': {'a': self.a, 'mask': ~self.mask.tolist()}}
 
 
 class FixScaled(FixConstraintSingle):
@@ -748,8 +749,8 @@ class FixScaled(FixConstraintSingle):
     def todict(self):
         return {'name': 'FixScaled',
                 'kwargs': {'a': self.a,
-                           'cell': self.cell,
-                           'mask': self.mask}}
+                           'cell': self.cell.tolist(),
+                           'mask': self.mask.tolist()}}
 
     def __repr__(self):
         return 'FixScaled(%s, %d, %s)' % (repr(self.cell),
@@ -1764,7 +1765,7 @@ class MirrorForce(FixConstraint):
     bond breaking reaction. First the given bond length will be fixed until
     all other degrees of freedom are optimized, then the forces of the two
     atoms will be mirrored to find the transition state. The mirror plane is
-    perpenticular to the connecting line of the atoms. Transition states in
+    perpendicular to the connecting line of the atoms. Transition states in
     dependence of the force can be obtained by stretching the molecule and
     fixing its total length with *FixBondLength* or by using *ExternalForce*
     during the optimization with *MirrorForce*.
@@ -2097,11 +2098,11 @@ class Filter:
     def get_forces(self, *args, **kwargs):
         return self.atoms.get_forces(*args, **kwargs)[self.index]
 
-    def get_stress(self):
-        return self.atoms.get_stress()
+    def get_stress(self, *args, **kwargs):
+        return self.atoms.get_stress(*args, **kwargs)
 
-    def get_stresses(self):
-        return self.atoms.get_stresses()[self.index]
+    def get_stresses(self, *args, **kwargs):
+        return self.atoms.get_stresses(*args, **kwargs)[self.index]
 
     def get_masses(self):
         return self.atoms.get_masses()[self.index]
@@ -2161,7 +2162,7 @@ class StrainFilter(Filter):
 
     """
 
-    def __init__(self, atoms, mask=None):
+    def __init__(self, atoms, mask=None, include_ideal_gas=False):
         """Create a filter applying a homogeneous strain to a list of atoms.
 
         The first argument, atoms, is the atoms object.
@@ -2174,7 +2175,8 @@ class StrainFilter(Filter):
         """
 
         self.strain = np.zeros(6)
-
+        self.include_ideal_gas = include_ideal_gas
+        
         if mask is None:
             mask = np.ones(6)
         else:
@@ -2197,7 +2199,7 @@ class StrainFilter(Filter):
         self.strain[:] = new
 
     def get_forces(self):
-        stress = self.atoms.get_stress()
+        stress = self.atoms.get_stress(include_ideal_gas=self.include_ideal_gas)
         return -self.atoms.get_volume() * (stress * self.mask).reshape((2, 3))
 
     def has(self, x):

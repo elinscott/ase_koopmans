@@ -1,3 +1,4 @@
+# flake8: noqa
 "Test that atoms.center() works when adding vacuum ()"
 
 import numpy as np

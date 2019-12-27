@@ -845,7 +845,7 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
 
     Writes label, scalefactor, unitcell, # of various kinds of atoms,
     positions in cartesian or scaled coordinates (Direct), and constraints
-    to file. Cartesian coordiantes is default and default label is the
+    to file. Cartesian coordinates is default and default label is the
     atomic species, e.g. 'C N H Cu'.
     """
 

@@ -1,3 +1,4 @@
+# flake8: noqa
 '''
 python module for ASE2-free and Numeric-free dacapo
 
@@ -3741,7 +3742,7 @@ s.recv(14)
 
         * "rmm-diis : Residual minimization
            method (RMM), using DIIS (direct inversion in the iterate
-           subspace) The implementaion follows closely the algorithm
+           subspace) The implementation follows closely the algorithm
            outlined in Kresse and Furthmuller, Comp. Mat. Sci, III.G/III.H
 
         :Parameters:

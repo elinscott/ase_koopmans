@@ -77,7 +77,7 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
         False, 0, 1, (1, 1, 0), (True, False, False).  Default
         is True.
     primitive_cell : bool
-        Wheter to return the primitive instead of the conventional
+        Whether to return the primitive instead of the conventional
         unit cell.
 
     Keyword arguments:
@@ -178,11 +178,16 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
     atoms = ase.Atoms(symbols,
                       scaled_positions=sites,
                       cell=cell,
-                      # use tags to identify sites, and in particular the occupancy
-                      tags=kinds,
                       pbc=pbc,
                       masses=masses,
                       **kwargs)
+
+    #  if all occupancies are 1, no partial occupancy present
+    if occupancies:
+        if not all([occ == 1 for occ in occupancies]):
+            # use tags to identify sites, and in particular the occupancy
+            atoms.set_tags(kinds)
+
 
     if isinstance(basis, ase.Atoms):
         for name in basis.arrays:

@@ -203,7 +203,7 @@ class CP2K(Calculator):
     def write(self, label):
         'Write atoms, parameters and calculated results into restart files.'
         if self._debug:
-            print("Writting restart to: ", label)
+            print("Writing restart to: ", label)
         self.atoms.write(label + '_restart.traj')
         self.parameters.write(label + '_params.ase')
         from ase.io.jsonio import write_json

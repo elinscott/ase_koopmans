@@ -132,8 +132,8 @@ def translate_lattice(lattice, indices, tol=10**-3):
         The above method gives you the boundries of between terminations that
         will allow you to build a complete set of terminations. However, it
         does not return all the boundries. Thus you must check both above and
-        below the boundry, and not stray too far from the boundry. If you move
-        too far away, you risk hitting another boundry you did not find.
+        below the boundary, and not stray too far from the boundary. If you move
+        too far away, you risk hitting another boundary you did not find.
         """
         lattice1 = lattice.copy()
         displacement = (h * cell[0] + k * cell[1] + l * cell[2]) \

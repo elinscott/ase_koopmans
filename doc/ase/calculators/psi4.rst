@@ -73,7 +73,7 @@ keyword           type     default value            description
 ``method``        ``str``  ``'hf'``                 Quantum Method or Functional
 ``charge``                 ``None``                 Charge
 ``basis``         ``str``  ``'aug-cc-pvtz'``        Basis set.
-``memory``        ``str``  ``500MB``                The ammount of memory allocated
+``memory``        ``str``  ``500MB``                The amount of memory allocated
                                                     to psi4
 ``num_thread``             ``1``                    The number of threads to run
                                                     psi4 on

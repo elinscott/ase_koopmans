@@ -6,7 +6,8 @@ from math import pi, sqrt
 import numpy as np
 
 from ase.utils import jsonable
-from ase.dft.kpoints import bandpath, monkhorst_pack
+from ase.dft.kpoints import monkhorst_pack
+from ase.cell import Cell
 
 
 class CalculatorError(RuntimeError):
@@ -322,8 +323,8 @@ def kpts2kpts(kpts, atoms=None):
         if 'kpts' in kpts:
             return KPoints(kpts['kpts'])
         if 'path' in kpts:
-            path = bandpath(cell=atoms.cell, **kpts)
-            return path
+            cell = Cell.ascell(atoms.cell)
+            return cell.bandpath(pbc=atoms.pbc, **kpts)
         size, offsets = kpts2sizeandoffsets(atoms=atoms, **kpts)
         return KPoints(monkhorst_pack(size) + offsets)
 
@@ -436,6 +437,14 @@ class Calculator(object):
 
     default_parameters = {}
     'Default parameters'
+
+    ignored_changes = set()
+    'Properties of Atoms which we ignore for the purposes of cache '
+    'invalidation with check_state().'
+
+    discard_results_on_any_change = False
+    'Whether we purge the results following any change in the set() method.  '
+    'Most (file I/O) calculators will probably want this.'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
                  atoms=None, directory='.', **kwargs):
@@ -631,11 +640,14 @@ class Calculator(object):
                 changed_parameters[key] = value
                 self.parameters[key] = value
 
+        if self.discard_results_on_any_change and changed_parameters:
+            self.reset()
         return changed_parameters
 
     def check_state(self, atoms, tol=1e-15):
         """Check for any system changes since last calculation."""
-        return compare_atoms(self.atoms, atoms, tol)
+        return compare_atoms(self.atoms, atoms, tol=tol,
+                             excluded_properties=set(self.ignored_changes))
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         energy = self.get_property('energy', atoms)
@@ -852,7 +864,18 @@ class FileIOCalculator(Calculator):
         command = self.command
         if 'PREFIX' in command:
             command = command.replace('PREFIX', self.prefix)
-        errorcode = subprocess.call(command, shell=True, cwd=self.directory)
+
+        try:
+            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+        except OSError as err:
+            # Actually this may never happen with shell=True, since
+            # probably the shell launches successfully.  But we soon want
+            # to allow calling the subprocess directly, and then this
+            # distinction (failed to launch vs failed to run) is useful.
+            msg = 'Failed to execute "{}"'.format(command)
+            raise EnvironmentError(msg) from err
+
+        errorcode = proc.wait()
 
         if errorcode:
             path = os.path.abspath(self.directory)

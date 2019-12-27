@@ -1,3 +1,4 @@
+# flake8: noqa
 # -*- coding: utf-8 -*-
 
 """Infrared and Raman intensities using siesta and MBPT_LCAO"""
@@ -52,7 +53,7 @@ class SiestaRaman(Vibrations):
         The atoms to work on.
     siesta: Siesta calculator
     mbpt_inp: dict
-        dictionnary containing the input for the mbpt_lcao program
+        dictionary containing the input for the mbpt_lcao program
     indices: list of int
         List of indices of atoms to vibrate.  Default behavior is
         to vibrate all atoms.

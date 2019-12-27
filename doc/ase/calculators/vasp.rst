@@ -142,7 +142,7 @@ is set to ``pw91`` or ``lda``.
 ==========================  =====================================
 ``xc`` value                Parameters set
 ==========================  =====================================
-lda, pbe, pw91              ``pp`` (``gga`` set implicity in POTCAR)
+lda, pbe, pw91              ``pp`` (``gga`` set implicitly in POTCAR)
 pbesol, revpbe, rpbe, am05  ``gga``
 tpss, revtpss, m06l         ``metagga``
 vdw-df, optpbe-vdw          ``gga``, ``luse_vdw``, ``aggac``

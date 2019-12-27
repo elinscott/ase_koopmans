@@ -73,7 +73,8 @@ def search_pubchem_raw(search, field, silent=False, mock_test=False):
 
     # check if there are confomers and warn them if there are
     if field != 'conformers' and not silent:
-        conformer_ids = available_conformer_search(search, field)
+        conformer_ids = available_conformer_search(search, field,
+                                                   mock_test=mock_test)
         if len(conformer_ids) > 1:
             warnings.warn('The structure "{}" has more than one '
                           'conformer in PubChem. By default, the '
@@ -91,7 +92,7 @@ def parse_pubchem_raw(data):
     """
     a helper function for parsing the returned pubchem entries
 
-    Paramters:
+    Parameters:
         data (str):
             the raw output from pubchem in string form
 
@@ -229,7 +230,7 @@ def pubchem_search(name=None, cid=None, smiles=None, conformer=None,
                    silent=False, mock_test=False):
     """
     Search PubChem for the field and search input on the argument passed in
-    returning a PubchemData object. Note that only one arugment may be passed
+    returning a PubchemData object. Note that only one argument may be passed
     in at a time.
 
     Parameters:
@@ -259,7 +260,7 @@ def pubchem_conformer_search(name=None, cid=None, smiles=None, conformer=None,
                              silent=False, mock_test=False):
     """
     Search PubChem for all the conformers of a given compound.
-    Note that only one arugment may be passed in at a time.
+    Note that only one argument may be passed in at a time.
 
     Parameters:
         see `ase.data.pubchem.pubchem_search`
@@ -286,7 +287,7 @@ def pubchem_atoms_search(name=None, cid=None, smiles=None, conformer=None,
                          silent=False, mock_test=False):
     """
     Search PubChem for the field and search input on the argument passed in
-    returning an atoms object.Note that only one arugment may be passed
+    returning an atoms object.Note that only one argument may be passed
     in at a time.
 
     Parameters:
@@ -307,7 +308,7 @@ def pubchem_atoms_conformer_search(name=None, cid=None, smiles=None,
                                    mock_test=False):
     """
     Search PubChem for all the conformers of a given compound.
-    Note that only one arugment may be passed in at a time.
+    Note that only one argument may be passed in at a time.
 
     Parameters:
         see `ase.data.pubchem.pubchem_search`

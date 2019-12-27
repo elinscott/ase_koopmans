@@ -364,7 +364,7 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
         the number of k-points in the output list will be:
         npoints = density * path total length (in Angstroms).
         If density is None (default), use 5 k-points per A⁻¹.
-        If the calculated npoints value is less than 50, a mimimum value of 50
+        If the calculated npoints value is less than 50, a minimum value of 50
         will be used.
     special_points: dict or None
         Dictionary mapping names to special points.  If None, the special
@@ -463,7 +463,7 @@ get_bandpath = bandpath  # old name
 
 
 def find_bandpath_kinks(cell, kpts, eps=1e-5):
-    """Find indices of those kpoints that are not interiour to a line segment."""
+    """Find indices of those kpoints that are not interior to a line segment."""
     diffs = kpts[1:] - kpts[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
     N = len(kpts)
@@ -551,9 +551,12 @@ class CellInfo:
         self.lattice = lattice
         self.special_points = special_points
 
-
 def get_cellinfo(cell, lattice=None, eps=2e-4):
     from ase.build.tools import niggli_reduce_cell
+    warnings.warn(
+        "This function is deprecated, use ase.lattice or get_bandpath",
+        np.VisibleDeprecationWarning
+    )
     rcell, M = niggli_reduce_cell(cell)
     latt = crystal_structure_from_cell(rcell, niggli_reduce=False)
     if lattice:

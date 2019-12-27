@@ -540,6 +540,7 @@ End CASTEP Interface Documentation
         self._energy_free = None
         self._energy_0K = None
         self._energy_total_corr = None
+        self._eigenvalues = None
         self._efermi = None
         self._ibz_kpts = None
         self._ibz_weights = None
@@ -1450,8 +1451,15 @@ End CASTEP Interface Documentation
             and self.param.task.value.lower() == 'bandstructure'):
             self._band_structure = self.band_structure(bandfile=bands_file)
         else:
-            (self._ibz_kpts, self._ibz_weights,
-             self._eigenvalues, self._efermi) = read_bands(filename=bands_file)
+            try:
+                (self._ibz_kpts, 
+                 self._ibz_weights,
+                 self._eigenvalues, 
+                 self._efermi) = read_bands(filename=bands_file)
+            except FileNotFoundError:
+                warnings.warn('Could not load .bands file, eigenvalues and '
+                              'Fermi energy are unknown')
+
 
     def read_symops(self, castep_castep=None):
         # TODO: check that this is really backwards compatible

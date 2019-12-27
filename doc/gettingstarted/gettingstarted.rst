@@ -1,3 +1,5 @@
+.. _gettingstarted:
+
 Getting started
 ===============
 Welcome to the introductory ASE tutorials. This is where to start. The

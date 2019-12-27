@@ -124,7 +124,7 @@ class Dynamics:
         >>>     opt1.run()
         """
 
-        # compute inital structure and log the first step
+        # compute initial structure and log the first step
         self.atoms.get_forces()
 
         # yield the first time to inspect before logging

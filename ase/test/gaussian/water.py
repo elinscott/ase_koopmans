@@ -1,6 +1,7 @@
 from ase.calculators.gaussian import Gaussian
 from ase.atoms import Atoms
 from ase.optimize.lbfgs import LBFGS
+from ase.io import read
 
 
 # First test to make sure Gaussian works
@@ -20,12 +21,11 @@ energy = water.get_potential_energy()
 positions = water.get_positions()
 
 # Then test the IO routines
-from ase.io import read
 water2 = read('water.log')
 forces2 = water2.get_forces()
 energy2 = water2.get_potential_energy()
 positions2 = water2.get_positions()
-#compare distances since positions are different in standard orientation
+# Compare distances since positions are different in standard orientation.
 dist = water.get_all_distances()
 dist2 = read('water.log', quantity='structures')[-1].get_all_distances()
 

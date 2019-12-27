@@ -11,13 +11,12 @@ def main():
         imm = 6 * (-1) ** orientation
         cr_atom.set_initial_magnetic_moments([imm])
         calculator = NWChem(task='energy',
-            geometry='nocenter noautosym noautoz',
-            convergence={'energy': 1e-3,
-                'density': 1e-2,
-                'gradient': 5e-2},
-            basis='m6-31g*',
-            basispar='"ao basis" spherical',
-            charge=0)
+                dft=dict(convergence=dict(energy=1e-3,
+                                          density=1e-2,
+                                          gradient=5e-2)),
+                basis='m6-31g*',
+                basispar='"ao basis" spherical',
+                charge=0)
         cr_atom.set_calculator(calculator)
         energies.append(cr_atom.get_potential_energy())
     assert abs(energies[0] - energies[1]) < 1e-9

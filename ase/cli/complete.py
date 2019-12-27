@@ -39,7 +39,7 @@ commands = {
          '--output-format', '-f', '--force', '-n',
          '--image-number', '-e', '--exec-code', '-E',
          '--exec-file', '-a', '--arrays', '-I', '--info', '-s',
-         '--split-output'],
+         '--split-output', '--read-args', '--write-args'],
     'db':
         ['-v', '--verbose', '-q', '--quiet', '-n', '--count', '-l',
          '--long', '-i', '--insert-into', '-a',
@@ -51,7 +51,7 @@ commands = {
          '--analyse', '-j', '--json', '-m', '--show-metadata',
          '--set-metadata', '-M', '--metadata-from-python-script',
          '--unique', '--strip-data', '--show-keys',
-         '--show-values', '--write-summary-files'],
+         '--show-values'],
     'eos':
         ['-p', '--plot', '-t', '--type'],
     'find':
@@ -63,6 +63,8 @@ commands = {
          '--interpolate', '-b', '--bonds', '-s', '--scale'],
     'info':
         ['-v', '--verbose', '--formats', '--calculators'],
+    'nebplot':
+        ['--nimages', '--share-x', '--share-y'],
     'nomad-get':
         [],
     'nomad-upload':
@@ -78,7 +80,7 @@ commands = {
          '--eos-type', '-o', '--output', '--modify', '--after'],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
-         '--jobs', '-v', '--verbose', '--strict'],
+         '--jobs', '-v', '--verbose', '--strict', '--nogui'],
     'ulm':
         ['-n', '--index', '-d', '--delete', '-v', '--verbose']}
 # End of computer generated data

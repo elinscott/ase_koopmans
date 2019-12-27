@@ -1,3 +1,4 @@
+# flake8: noqa
 from abc import abstractmethod, ABC
 import functools
 import warnings
@@ -1130,7 +1131,7 @@ def identify_lattice(cell, eps=2e-4, *, pbc=True):
         raise ValueError('System must be periodic either '
                          'along all three axes, '
                          'along two first axes or, '
-                         'along the thrid axis.  '
+                         'along the third axis.  '
                          'Got pbc={}'.format(pbc))
 
     from ase.geometry.bravais_type_engine import niggli_op_table
@@ -1421,7 +1422,7 @@ def get_2d_bravais_lattice(origcell, eps=2e-4, *, pbc=True):
     return finallat, finalop.T
 
 
-def all_variants():
+def all_variants(include_blunt_angles=True):
     """For testing and examples; yield all variants of all lattices."""
     a, b, c = 3., 4., 5.
     alpha = 55.0
@@ -1509,5 +1510,9 @@ def all_variants():
     yield CRECT(a, alpha=alpha)
     yield HEX2D(a)
     yield SQR(a)
-
     yield LINE(a)
+
+    if include_blunt_angles:
+        beta = 110
+        yield OBL(a, b, alpha=beta)
+        yield CRECT(a, alpha=beta)

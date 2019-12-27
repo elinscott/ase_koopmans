@@ -6,15 +6,9 @@ from random import randint
 import ase.io
 from ase.db import connect
 from ase.db.core import convert_str_to_int_float_or_str
-from ase.db.summary import Summary
+from ase.db.row import row2dct
 from ase.db.table import Table, all_columns
-from ase.db.web import process_metadata
 from ase.utils import plural, basestring
-
-try:
-    input = raw_input  # Python 2+3 compatibility
-except NameError:
-    pass
 
 
 class CLICommand:
@@ -70,9 +64,10 @@ class CLICommand:
             help='Add key-value pairs to selected rows.  Values must '
             'be numbers or strings and keys must follow the same rules as '
             'keywords.')
-        add('-L', '--limit', type=int, default=20, metavar='N',
-            help='Show only first N rows (default is 20 rows).  Use --limit=0 '
-            'to show all.')
+        add('-L', '--limit', type=int, default=-1, metavar='N',
+            help='Show only first N rows.  Use --limit=0 '
+            'to show all.  Default is 20 rows when listing rows and no '
+            'limit when --insert-into is used.')
         add('--offset', type=int, default=0, metavar='N',
             help='Skip first N rows.  By default, no rows are skipped')
         add('--delete', action='store_true',
@@ -122,8 +117,6 @@ class CLICommand:
             help='Show all keys.')
         add('--show-values', metavar='key1,key2,...',
             help='Show values for key(s).')
-        add('--write-summary-files', metavar='prefix',
-            help='Write summary-files with a "<prefix>-<uid>-" prefix.')
 
     @staticmethod
     def run(args):
@@ -214,28 +207,17 @@ def main(args):
         print('%s' % plural(n, 'row'))
         return
 
-    if args.explain:
-        for row in db.select(query, explain=True,
-                             verbosity=verbosity,
-                             limit=args.limit, offset=args.offset):
-            print(row['explain'])
-        return
-
-    if args.show_metadata:
-        print(json.dumps(db.metadata, sort_keys=True, indent=4))
-        return
-
-    if args.set_metadata:
-        with open(args.set_metadata) as fd:
-            db.metadata = json.load(fd)
-        return
-
     if args.insert_into:
+        if args.limit == -1:
+            args.limit = 0
         nkvp = 0
         nrows = 0
         with connect(args.insert_into,
                      use_lock_file=not args.no_lock_file) as db2:
-            for row in db.select(query, sort=args.sort):
+            for row in db.select(query,
+                                 sort=args.sort,
+                                 limit=args.limit,
+                                 offset=args.offset):
                 kvp = row.get('key_value_pairs', {})
                 nkvp -= len(kvp)
                 kvp.update(add_key_value_pairs)
@@ -252,6 +234,25 @@ def main(args):
             (plural(nkvp, 'key-value pair'),
              plural(len(add_key_value_pairs) * nrows - nkvp, 'pair')))
         out('Inserted %s' % plural(nrows, 'row'))
+        return
+
+    if args.limit == -1:
+        args.limit = 20
+
+    if args.explain:
+        for row in db.select(query, explain=True,
+                             verbosity=verbosity,
+                             limit=args.limit, offset=args.offset):
+            print(row['explain'])
+        return
+
+    if args.show_metadata:
+        print(json.dumps(db.metadata, sort_keys=True, indent=4))
+        return
+
+    if args.set_metadata:
+        with open(args.set_metadata) as fd:
+            db.metadata = json.load(fd)
         return
 
     if add_key_value_pairs or delete_keys:
@@ -326,35 +327,20 @@ def main(args):
         db2.write(row, data=row.get('data'), **kvp)
         return
 
-    db.python = args.metadata_from_python_script
-
     if args.long:
-        db.meta = process_metadata(db, html=args.open_web_browser)
         row = db.get(query)
-        summary = Summary(row, db.meta)
-        summary.write()
+        print(row2str(row))
         return
 
     if args.open_web_browser:
         try:
-            import ase.db.app as app
+            import flask  # noqa
         except ImportError:
-            print('Please install Flask: pip install flask')
+            print('Please install Flask: python3 -m pip install flask')
             return
-        app.databases['default'] = db
-        app.initialize_databases()
+        import ase.db.app as app
+        app.add_project(db)
         app.app.run(host='0.0.0.0', debug=True)
-        return
-
-    if args.write_summary_files:
-        prefix = args.write_summary_files
-        db.meta = process_metadata(db, html=args.open_web_browser)
-        ukey = db.meta.get('unique_key', 'id')
-        for row in db.select(query):
-            uid = row.get(ukey)
-            summary = Summary(row,
-                              db.meta,
-                              prefix='{}-{}-'.format(prefix, uid))
         return
 
     columns = list(all_columns)
@@ -387,3 +373,40 @@ def main(args):
         table.write_csv()
     else:
         table.write(query)
+
+
+def row2str(row) -> str:
+    t = row2dct(row)
+    S = [t['formula'] + ':',
+         'Unit cell in Ang:',
+         'axis|periodic|          x|          y|          z|' +
+         '    length|     angle']
+    c = 1
+    fmt = ('   {0}|     {1}|{2[0]:>11}|{2[1]:>11}|{2[2]:>11}|' +
+           '{3:>10}|{4:>10}')
+    for p, axis, L, A in zip(row.pbc, t['cell'], t['lengths'], t['angles']):
+        S.append(fmt.format(c, [' no', 'yes'][p], axis, L, A))
+        c += 1
+    S.append('')
+
+    if 'stress' in t:
+        S += ['Stress tensor (xx, yy, zz, zy, zx, yx) in eV/Ang^3:',
+              '   {}\n'.format(t['stress'])]
+
+    if 'dipole' in t:
+        S.append('Dipole moment in e*Ang: ({})\n'.format(t['dipole']))
+
+    if 'constraints' in t:
+        S.append('Constraints: {}\n'.format(t['constraints']))
+
+    if 'data' in t:
+        S.append('Data: {}\n'.format(t['data']))
+
+    width0 = max(max(len(row[0]) for row in t['table']), 3)
+    width1 = max(max(len(row[1]) for row in t['table']), 11)
+    S.append('{:{}} | {:{}} | Value'
+             .format('Key', width0, 'Description', width1))
+    for key, desc, value in t['table']:
+        S.append('{:{}} | {:{}} | {}'
+                 .format(key, width0, desc, width1, value))
+    return '\n'.join(S)

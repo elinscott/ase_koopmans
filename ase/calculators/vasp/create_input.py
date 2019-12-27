@@ -548,7 +548,7 @@ bool_keys = [
     'lrscor',     # Include long-range correlation (HF)
     'lrhfcalc',   # Include long-range HF (HF)
     'lmodelhf',   # Model HF calculation (HF)
-    'shiftred',   # Undocumented HF paramter
+    'shiftred',   # Undocumented HF parameter
     'hfkident',   # Undocumented HF parameter
     'oddonly',    # Undocumented HF parameter
     'evenonly',   # Undocumented HF parameter
@@ -772,6 +772,8 @@ class GenerateVaspInput(object):
         # vdW-DFs
         'vdw-df': {'gga': 'RE', 'luse_vdw': True, 'aggac': 0.},
         'vdw-df-cx': {'gga': 'CX', 'luse_vdw': True, 'aggac': 0.},
+        'vdw-df-cx0p': {'gga': 'CX', 'luse_vdw': True, 'aggac': 0.,
+                        'lhfcalc': True, 'aexx': 0.2, 'aggax': 0.8},
         'optpbe-vdw': {'gga': 'OR', 'luse_vdw': True, 'aggac': 0.0},
         'optb88-vdw': {'gga': 'BO', 'luse_vdw': True, 'aggac': 0.0,
                        'param1': 1.1 / 6.0, 'param2': 0.22},

@@ -1,417 +1,136 @@
 """WSGI Flask-app for browsing a database.
 
+::
+
+    +---------------------+
+    | layout.html         |
+    | +-----------------+ |    +--------------+
+    | | search.html     | |    | layout.html  |
+    | |     +           | |    | +---------+  |
+    | | table.html ----------->| |row.html |  |
+    | |                 | |    | +---------+  |
+    | +-----------------+ |    +--------------+
+    +---------------------+
+
 You can launch Flask's local webserver like this::
 
     $ ase db abc.db -w
 
-For a real webserver, you need to set the $ASE_DB_APP_CONFIG environment
-variable to point to a configuration file like this::
+or this::
 
-    ASE_DB_NAMES = ['/path/to/db-file/project1.db',
-                    'postgresql://user:pw@localhost:5432/project2']
-    ASE_DB_TEMPLATES = '...'
-    ASE_DB_TMPDIR = '...'
-    ASE_DB_DOWNLOAD = False  # or True
-
-Start with something like::
-
-    twistd web --wsgi=ase.db.app.app --port=8000
+    $ python3 -m ase.db.app abc.db
 
 """
 
-import collections
-import functools
 import io
-import os
-import os.path as op
-import re
 import sys
-import tempfile
+from typing import Dict, Any
 
-from flask import Flask, render_template, request, send_from_directory, flash
+from flask import Flask, render_template, request
 
-try:
-    import matplotlib
-    matplotlib.use('Agg', warn=False)
-except ImportError:
-    pass
+from ase.db import connect
+from ase.db.core import Database
+from ase.formula import Formula
+from ase.db.web import create_key_descriptions, Session
+from ase.db.row import row2dct, AtomsRow
+from ase.db.table import all_columns
 
-import ase.db
-import ase.db.web
-from ase.db.core import convert_str_to_int_float_or_str
-from ase.db.plot import atoms2png
-from ase.db.summary import Summary
-from ase.db.table import Table, all_columns
-from ase.visualize import view
-from ase import Atoms
-from ase.calculators.calculator import kptdensity2monkhorstpack
-
-
-# Every client-connetions gets one of these tuples:
-Connection = collections.namedtuple(
-    'Connection',
-    ['query',  # query string
-     'nrows',  # number of rows matched
-     'page',  # page number
-     'columns',  # what columns to show
-     'sort',  # what column to sort after
-     'limit'])  # number of rows per page
 
 app = Flask(__name__)
 
-app.secret_key = 'asdf'
-
-databases = {}  # Dict[str, Database]
-open_ase_gui = True  # click image to open ASE's GUI
-download_button = True
-
-# List of (project-name, title, nrows) tuples (will be filled in at run-time):
-projects = []  # List[Tuple[str, str, int]]
-
-# Find numbers in formulas so that we can convert H2O to H<sub>2</sub>O:
-SUBSCRIPT = re.compile(r'(\d+)')
-
-next_con_id = 1
-connections = {}
+projects = {}  # type: Dict[str, Dict[str, Any]]
 
 
-def connect_databases(uris):
-    # (List[str]) -> None
-    """Fill in databases dict."""
-    python_configs = []
-    dbs = []
-    for uri in uris:
-        if uri.endswith('.py'):
-            python_configs.append(uri)
-            continue
-        if uri.startswith('postgresql://'):
-            project = uri.rsplit('/', 1)[1]
-        else:
-            project = uri.rsplit('/', 1)[-1].split('.')[0]
-        db = ase.db.connect(uri)
-        db.python = None
-        databases[project] = db
-        dbs.append(db)
+@app.route('/', defaults={'project_name': 'default'})
+@app.route('/<project_name>')
+@app.route('/<project_name>/')
+def search(project_name: str):
+    """Search page.
 
-    for py, db in zip(python_configs, dbs):
-        db.python = py
+    Contains input form for database query and a table result rows.
+    """
+    session = Session(project_name)
+    project = projects[project_name]
+    return render_template(project['search_template'],
+                           p=project,
+                           session_id=session.id)
 
 
-def initialize_databases():
-    """Initialize databases and fill in projects list."""
-    for proj, db in sorted(databases.items()):
-        meta = ase.db.web.process_metadata(db)
-        db.meta = meta
-        nrows = len(db)
-        projects.append((proj, db.meta.get('title', proj), nrows))
-        print('Initialized {proj}: (rows: {nrows})'
-              .format(proj=proj, nrows=nrows))
+@app.route('/update/<int:sid>/<what>/<x>/')
+def update(sid: int, what: str, x: str):
+    """Update table of rows inside search page.
 
+    ``what`` must be one of:
 
-if 'ASE_DB_APP_CONFIG' in os.environ:
-    app.config.from_envvar('ASE_DB_APP_CONFIG')
-    path = app.config['ASE_DB_TEMPLATES']
-    app.jinja_loader.searchpath.insert(0, str(path))
-    connect_databases(str(name) for name in app.config['ASE_DB_NAMES'])
-    initialize_databases()
-    tmpdir = str(app.config['ASE_DB_TMPDIR'])
-    download_button = app.config['ASE_DB_DOWNLOAD']
-    open_ase_gui = False
-else:
-    tmpdir = tempfile.mkdtemp(prefix='ase-db-app-')  # used to cache png-files
-
-
-@app.route('/', defaults={'project': None})
-@app.route('/<project>/')
-@app.route('/<project>')
-def index(project):
-    global next_con_id
-
-    # Backwards compatibility:
-    project = request.args.get('project') or project
-
-    if project is None and len(projects) > 1:
-        return render_template('projects.html',
-                               projects=projects,
-                               md=None)
-
-    if project is None:
-        project = list(databases)[0]
-
-    con_id = int(request.args.get('x', '0'))
-    if con_id in connections:
-        query, nrows, page, columns, sort, limit = connections[con_id]
-
-    if con_id not in connections:
-        # Give this connetion a new id:
-        con_id = next_con_id
-        next_con_id += 1
-        query = ['', {}, '']
-        nrows = None
-        page = 0
-        columns = None
-        sort = 'id'
-        limit = 25
-
-    db = databases.get(project)
-    if db is None:
-        return 'No such project: ' + project
-
-    meta = db.meta
-
-    if columns is None:
-        columns = meta.get('default_columns')[:] or list(all_columns)
-
-    if 'sort' in request.args:
-        column = request.args['sort']
-        if column == sort:
-            sort = '-' + column
-        elif '-' + column == sort:
-            sort = 'id'
-        else:
-            sort = column
-        page = 0
-    elif 'query' in request.args:
-        dct = {}
-        query = [request.args['query']]
-        q = query[0]
-        for special in meta['special_keys']:
-            kind, key = special[:2]
-            if kind == 'SELECT':
-                value = request.args['select_' + key]
-                dct[key] = convert_str_to_int_float_or_str(value)
-                if value:
-                    q += ',{}={}'.format(key, value)
-            elif kind == 'BOOL':
-                value = request.args['bool_' + key]
-                dct[key] = convert_str_to_int_float_or_str(value)
-                if value:
-                    q += ',{}={}'.format(key, value)
-            elif kind == 'RANGE':
-                v1 = request.args['from_' + key]
-                v2 = request.args['to_' + key]
-                var = request.args['range_' + key]
-                dct[key] = (v1, v2, var)
-                if v1:
-                    q += ',{}>={}'.format(var, v1)
-                if v2:
-                    q += ',{}<={}'.format(var, v2)
-            else:  # SRANGE
-                v1 = request.args['from_' + key]
-                v2 = request.args['to_' + key]
-                dct[key] = (int(v1) if v1 else v1,
-                            int(v2) if v2 else v2)
-                if v1:
-                    q += ',{}>={}'.format(key, v1)
-                if v2:
-                    q += ',{}<={}'.format(key, v2)
-        q = q.lstrip(',')
-        query += [dct, q]
-        sort = 'id'
-        page = 0
-        nrows = None
-    elif 'limit' in request.args:
-        limit = int(request.args['limit'])
-        page = 0
-    elif 'page' in request.args:
-        page = int(request.args['page'])
-
-    if 'toggle' in request.args:
-        column = request.args['toggle']
-        if column == 'reset':
-            columns = meta.get('default_columns')[:] or list(all_columns)
-        else:
-            if column in columns:
-                columns.remove(column)
-                if column == sort.lstrip('-'):
-                    sort = 'id'
-                    page = 0
-            else:
-                columns.append(column)
-
-    okquery = query
-
-    if nrows is None:
-        try:
-            nrows = db.count(query[2])
-        except (ValueError, KeyError) as e:
-            flash(', '.join(['Bad query'] + list(e.args)))
-            okquery = ('', {}, 'id=0')  # this will return no rows
-            nrows = 0
-
-    table = Table(db, meta.get('unique_key', 'id'))
-    table.select(okquery[2], columns, sort, limit, offset=page * limit)
-
-    con = Connection(query, nrows, page, columns, sort, limit)
-    connections[con_id] = con
-
-    if len(connections) > 1000:
-        # Forget old connections:
-        for cid in sorted(connections)[:200]:
-            del connections[cid]
-
-    table.format(SUBSCRIPT)
-
-    addcolumns = sorted(column for column in all_columns + table.keys
-                        if column not in table.columns)
-
+    * query: execute query in request.args (x not used)
+    * limit: set number of rows to show to x
+    * toggle: toggle column x
+    * sort: sort after column x
+    * page: show page x
+    """
+    session = Session.get(sid)
+    project = projects[session.project_name]
+    session.update(what, x, request.args, project)
+    table = session.create_table(project['database'], project['uid_key'])
     return render_template('table.html',
-                           project=project,
                            t=table,
-                           md=meta,
-                           con=con,
-                           x=con_id,
-                           pages=pages(page, nrows, limit),
-                           nrows=nrows,
-                           addcolumns=addcolumns,
-                           row1=page * limit + 1,
-                           row2=min((page + 1) * limit, nrows),
-                           download_button=download_button)
+                           p=project,
+                           s=session)
 
 
-@app.route('/<project>/image/<name>')
-def image(project, name):
-    id = int(name[:-4])
-    name = project + '-' + name
-    path = op.join(tmpdir, name)
-    if not op.isfile(path):
-        db = databases[project]
-        atoms = db.get_atoms(id)
-        atoms2png(atoms, path)
-
-    return send_from_directory(tmpdir, name)
-
-
-@app.route('/<project>/cif/<name>')
-def cif(project, name):
-    id = int(name[:-4])
-    name = project + '-' + name
-    path = op.join(tmpdir, name)
-    if not op.isfile(path):
-        db = databases[project]
-        atoms = db.get_atoms(id)
-        atoms.write(path)
-    return send_from_directory(tmpdir, name)
+@app.route('/<project_name>/row/<uid>')
+def row(project_name: str, uid: str):
+    """Show details for one database row."""
+    project = projects[project_name]
+    uid_key = project['uid_key']
+    row = project['database'].get('{uid_key}={uid}'
+                                  .format(uid_key=uid_key, uid=uid))
+    dct = project['row_to_dict_function'](row, project)
+    return render_template(project['row_template'],
+                           d=dct, row=row, p=project, uid=uid)
 
 
-@app.route('/<project>/plot/<uid>/<png>')
-def plot(project, uid, png):
-    png = project + '-' + uid + '-' + png
-    return send_from_directory(tmpdir, png)
+@app.route('/atoms/<project_name>/<int:id>/<type>')
+def atoms(project_name: str, id: int, type: str):
+    """Return atomic structure as cif, xyz or json."""
+    row = projects[project_name]['database'].get(id=id)
+    a = row.toatoms()
+    if type == 'cif':
+        fd = io.BytesIO()
+        a.write(fd, 'cif')
+        return fd.getvalue(), 200, []
 
-
-@app.route('/<project>/gui/<int:id>')
-def gui(project, id):
-    if open_ase_gui:
-        db = databases[project]
-        atoms = db.get_atoms(id)
-        view(atoms)
-    return '', 204, []
-
-
-@app.route('/<project>/row/<uid>')
-def row(project, uid):
-    db = databases[project]
-    if not hasattr(db, 'meta'):
-        db.meta = ase.db.web.process_metadata(db)
-    prefix = '{}/{}-{}-'.format(tmpdir, project, uid)
-    key = db.meta.get('unique_key', 'id')
-    try:
-        uid = int(uid)
-    except ValueError:
-        pass
-    row = db.get(**{key: uid})
-    s = Summary(row, db.meta, SUBSCRIPT, prefix)
-    atoms = Atoms(cell=row.cell, pbc=row.pbc)
-    n1, n2, n3 = kptdensity2monkhorstpack(atoms,
-                                          kptdensity=1.8,
-                                          even=False)
-    return render_template('summary.html',
-                           project=project,
-                           s=s,
-                           uid=uid,
-                           n1=n1,
-                           n2=n2,
-                           n3=n3,
-                           back=True,
-                           md=db.meta,
-                           open_ase_gui=open_ase_gui)
-
-
-def tofile(project, query, type, limit=0):
-    fd, name = tempfile.mkstemp(suffix='.' + type)
-    con = ase.db.connect(name, use_lock_file=False)
-    db = databases[project]
-    for row in db.select(query, limit=limit):
+    fd = io.StringIO()
+    if type == 'xyz':
+        a.write(fd, 'xyz')
+    elif type == 'json':
+        con = connect(fd, type='json')
         con.write(row,
                   data=row.get('data', {}),
                   **row.get('key_value_pairs', {}))
-    os.close(fd)
-    data = open(name, 'rb').read()
-    os.unlink(name)
-    return data
+    else:
+        1 / 0
+
+    headers = [('Content-Disposition',
+                'attachment; filename="{project_name}-{id}.{type}"'
+                .format(project_name=project_name, id=id, type=type))]
+    txt = fd.getvalue()
+    return txt, 200, headers
 
 
-def download(f):
-    @functools.wraps(f)
-    def ff(*args, **kwargs):
-        text, name = f(*args, **kwargs)
-        if name is None:
-            return text
-        headers = [('Content-Disposition',
-                    'attachment; filename="{}"'.format(name)),
-                   ]  # ('Content-type', 'application/sqlite3')]
-        return text, 200, headers
-    return ff
+@app.route('/gui/<int:id>')
+def gui(id: int):
+    """Pop ud ase gui window."""
+    from ase.visualize import view
+    atoms = projects['default']['database'].get_atoms(id)
+    view(atoms)
+    return '', 204, []
 
 
-@app.route('/<project>/xyz/<int:id>')
-@download
-def xyz(project, id):
-    fd = io.StringIO()
-    from ase.io.xyz import write_xyz
-    db = databases[project]
-    write_xyz(fd, db.get_atoms(id))
-    data = fd.getvalue()
-    return data, '{}.xyz'.format(id)
-
-
-if download_button:
-    @app.route('/<project>/json')
-    @download
-    def jsonall(project):
-        con_id = int(request.args['x'])
-        con = connections[con_id]
-        data = tofile(project, con.query[2], 'json', con.limit)
-        return data, 'selection.json'
-
-
-@app.route('/<project>/json/<int:id>')
-@download
-def json1(project, id):
-    if project not in databases:
-        return 'No such project: ' + project, None
-    data = tofile(project, id, 'json')
-    return data, '{}.json'.format(id)
-
-
-if download_button:
-    @app.route('/<project>/sqlite')
-    @download
-    def sqliteall(project):
-        con_id = int(request.args['x'])
-        con = connections[con_id]
-        data = tofile(project, con.query[2], 'db', con.limit)
-        return data, 'selection.db'
-
-
-@app.route('/<project>/sqlite/<int:id>')
-@download
-def sqlite1(project, id):
-    if project not in databases:
-        return 'No such project: ' + project, None
-    data = tofile(project, id, 'db')
-    return data, '{}.db'.format(id)
+@app.route('/test')
+def test():
+    from pyjokes import get_joke as j
+    return j()
 
 
 @app.route('/robots.txt')
@@ -427,42 +146,42 @@ def robots():
             200)
 
 
-@app.route('/cif/<stuff>')
-def oldcif(stuff):
-    return 'Bad URL'
+@app.route('/favicon.ico')
+def favicon():
+    return ''
 
 
-def pages(page, nrows, limit):
-    """Helper function for pagination stuff."""
-    npages = (nrows + limit - 1) // limit
-    p1 = min(5, npages)
-    p2 = max(page - 4, p1)
-    p3 = min(page + 5, npages)
-    p4 = max(npages - 4, p3)
-    pgs = list(range(p1))
-    if p1 < p2:
-        pgs.append(-1)
-    pgs += list(range(p2, p3))
-    if p3 < p4:
-        pgs.append(-1)
-    pgs += list(range(p4, npages))
-    pages = [(page - 1, 'previous')]
-    for p in pgs:
-        if p == -1:
-            pages.append((-1, '...'))
-        elif p == page:
-            pages.append((-1, str(p + 1)))
-        else:
-            pages.append((p, str(p + 1)))
-    nxt = min(page + 1, npages - 1)
-    if nxt == page:
-        nxt = -1
-    pages.append((nxt, 'next'))
-    return pages
+def handle_query(args) -> str:
+    """Converts request args to ase.db query string."""
+    return args['query']
+
+
+def row_to_dict(row: AtomsRow, project: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert row to dict for use in html template."""
+    dct = row2dct(row, project['key_descriptions'])
+    dct['formula'] = Formula(Formula(row.formula).format('abc')).format('html')
+    return dct
+
+
+def add_project(db: Database) -> None:
+    """Add database to projects with name 'default'."""
+    all_keys = set()
+    for row in db.select(columns=['key_value_pairs'], include_data=False):
+        all_keys.update(row._keys)
+    kd = {key: (key, '', '') for key in all_keys}
+    projects['default'] = {
+        'name': 'default',
+        'uid_key': 'id',
+        'key_descriptions': create_key_descriptions(kd),
+        'database': db,
+        'row_to_dict_function': row_to_dict,
+        'handle_query_function': handle_query,
+        'default_columns': all_columns[:],
+        'search_template': 'search.html',
+        'row_template': 'row.html'}
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        connect_databases(sys.argv[1:])
-    open_ase_gui = False
+    db = connect(sys.argv[1])
+    add_project(db)
     app.run(host='0.0.0.0', debug=True)

@@ -186,11 +186,11 @@ class PreconLBFGS(Optimizer):
         self._just_reset_hessian = True
         self.s = []
         self.y = []
-        self.rho = []  # Store also rho, to avoid calculationg the dot product
+        self.rho = []  # Store also rho, to avoid calculating the dot product
         # again and again
 
     def initialize(self):
-        """Initalize everything so no checks have to be done in step"""
+        """Initialize everything so no checks have to be done in step"""
         self.iteration = 0
         self.reset_hessian()
         self.r0 = None
