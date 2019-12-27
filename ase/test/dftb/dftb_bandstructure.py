@@ -1,8 +1,11 @@
 import os
 import subprocess
 from unittest import SkipTest
+from ase.test import require
 from ase.calculators.dftb import Dftb
 from ase.build import bulk
+
+require('dftb')
 
 p = os.path.dirname(__file__)
 os.environ['DFTB_PREFIX'] = p if p else './'

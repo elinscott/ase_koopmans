@@ -1,8 +1,11 @@
 import os
+from ase.test import require
 from ase.build import bulk
 from ase.calculators.dftb import Dftb
 from ase.optimize import QuasiNewton
 from ase.constraints import ExpCellFilter
+
+require('dftb')
 
 p = os.path.dirname(__file__)
 os.environ['DFTB_PREFIX'] = p if p else './'
