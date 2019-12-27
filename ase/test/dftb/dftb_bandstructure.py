@@ -39,4 +39,3 @@ calc.calculate(atoms)
 
 calc.results['fermi_levels'] = [efermi]
 bs = calc.band_structure()
-bs.plot(filename='bandstructure.png')
