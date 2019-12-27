@@ -1,10 +1,34 @@
 import os
+import subprocess
+from unittest import SkipTest
 from ase.calculators.dftb import Dftb
 from ase.build import bulk
 
 p = os.path.dirname(__file__)
 os.environ['DFTB_PREFIX'] = p if p else './'
 
+# We need to get the DFTB+ version to know
+# whether to skip this test or not.
+# For this, we need to run DFTB+ and grep
+# the version from the output header.
+cmd = os.environ['ASE_DFTB_COMMAND'].split()[0]
+proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+
+lines = ''
+for line in proc.stdout:
+    l = line.decode()
+    if 'DFTB+' in l and ('version' in l.lower() or 'release' in l.lower()):
+        version = l[l.index('DFTB+'):]
+        break
+    lines += l + '\n'
+else:
+    raise RuntimeError('Could not parse DFTB+ version ' + lines)
+
+if '17.1' not in version:
+    msg = 'Band structure properties not present in results.tag for ' + version
+    raise SkipTest(msg)
+
+# The actual testing starts here
 calc = Dftb(label='dftb',
             kpts=(3,3,3),
             Hamiltonian_SCC='Yes',
