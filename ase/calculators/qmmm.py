@@ -383,6 +383,8 @@ class LJInteractionsGeneral:
                 apm1 = mmatoms.calc.apm1
                 apm2 = mmatoms.calc.apm2
                 apm = (apm1, apm2)
+                sigma = sigma[0]  # Was already loopable 2-tuple
+                epsilon = epsilon[0]
 
         mask = (mask1, mask2)
         e_all = 0
