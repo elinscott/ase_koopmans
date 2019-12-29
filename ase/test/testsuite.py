@@ -29,7 +29,7 @@ def importorskip(module):
         return importlib.import_module(module)
     except ImportError:  # From py3.6 we can use ModuleNotFoundError
         raise unittest.SkipTest('Optional module not present: {}'
-                                '.format(module))')
+                                .format(module))
 
 
 test_calculator_names = ['emt']
