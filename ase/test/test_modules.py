@@ -22,8 +22,7 @@ from ase.utils import workdir
 ignorefiles = {'__init__.py', 'testsuite.py'}
 
 
-# Ignore calculator tests (for now) and the new 'tests' directory,
-# which will contain proper pytest-style tests:
+# Ignore calculator tests (for now):
 ignoredirs = {
     'abinit', 'ace', 'aims', 'aims', 'amber',
     'calculator', 'calculators',
@@ -33,7 +32,6 @@ ignoredirs = {
     'kim', 'lammpslib', 'lammpsrun', 'nwchem',
     'octopus', 'onetep', 'openmx', 'psi4',
     'qbox', 'qchem', 'siesta', 'turbomole', 'vasp',
-    'tests'
 }
 
 
