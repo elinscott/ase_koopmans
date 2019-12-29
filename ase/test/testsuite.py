@@ -27,7 +27,7 @@ def importorskip(module):
     # We provide our own implementation then!
     try:
         return importlib.import_module(module)
-    except ModuleNotFoundError:
+    except ImportError:  # From py3.6 we can use ModuleNotFoundError
         raise unittest.SkipTest('Optional module not present: {}'
                                 '.format(module))')
 
