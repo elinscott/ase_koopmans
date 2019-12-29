@@ -3,20 +3,13 @@
 This module exposes the old test suite as module-level test_xxx()
 functions recognized by pytest.
 
-Cheat sheet
------------
-
-Run tests:
-
-  $ pytest newtestsuite.py
-
-List tests:
-
-  $ pytest newtestsuite.py --collect-only
-
 We should start writing unittests as functions (or classes) that
 pytest works with.  We can also port the old tests to that form, where
-it matters."""
+it matters.
+
+Either way: The goal is that the list of tests provided by this module
+becomes shorter, and the list of tests in other modules becomes
+longer."""
 
 
 from typing import Dict, Any, List
@@ -26,10 +19,11 @@ import ase.test as asetest
 from ase.utils import workdir
 
 
-ignorefiles = {'__init__.py', 'testsuite.py', 'newtestsuite.py'}
+ignorefiles = {'__init__.py', 'testsuite.py'}
 
 
-# Ignore calculator tests (for now):
+# Ignore calculator tests (for now) and the new 'tests' directory,
+# which will contain proper pytest-style tests:
 ignoredirs = {
     'abinit', 'ace', 'aims', 'aims', 'amber',
     'calculator', 'calculators',
@@ -39,6 +33,7 @@ ignoredirs = {
     'kim', 'lammpslib', 'lammpsrun', 'nwchem',
     'octopus', 'onetep', 'openmx', 'psi4',
     'qbox', 'qchem', 'siesta', 'turbomole', 'vasp',
+    'tests'
 }
 
 
@@ -58,7 +53,14 @@ def find_all_test_modules() -> List[str]:
         if testfile.parent.name in ignoredirs:
             continue
         if '#' in testfile.name:
-            continue  # Ignore certain backup files
+            continue  # Ignore certain backup files.
+        if 'test_' in testfile.name or '_test' in testfile.name:
+            # These files are picked up by pytest automatically.
+            # This heuristic is not perfect.
+            # But we think of it as follows:
+            # a test which is *not* named like this is old-style,
+            # and a test named like this is pytest-style.
+            continue
         rel_testfile = testfile.relative_to(testdir)
         module = str(rel_testfile).rsplit('.', 1)[0].replace('/', '.')
         modules.append('ase.test.{}'.format(module))
@@ -79,12 +81,6 @@ def define_script_test_function(module: str):
 
 def add_all_tests_to_namespace(namespace: Dict[str, Any]):
     for module in find_all_test_modules():
-        if 'test_' in module or '_test' in module:
-            raise RuntimeError('The old-style tests may not have the word '
-                               '"_test" or "test_" in their name '
-                               'lest they be confused with new-style tests: '
-                               '{}'.format(module))
-
         assert '-' not in module, module  # Rename/avoid improper module names
         testfunc = define_script_test_function(module)
         namespace[testfunc.__name__] = testfunc
