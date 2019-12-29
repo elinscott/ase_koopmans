@@ -3,8 +3,8 @@ import warnings
 
 import numpy as np
 
-import pytest
-pytest.importorskip('netCDF4')
+from ase.test.testsuite import importorskip
+importorskip('netCDF4')
 
 from ase import Atom, Atoms
 from ase.io import read

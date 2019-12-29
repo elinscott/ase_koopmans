@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 from contextlib import contextmanager
+import importlib
 from multiprocessing import Process, cpu_count, Queue
 import tempfile
 import unittest
@@ -14,6 +15,22 @@ import warnings
 from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
+
+
+def importorskip(module):
+    # The pytest importorskip() function raises a wierd exception
+    # which claims to come from the builtins module, but doesn't!
+    #
+    # That exception messes with our pipeline when sending stacktraces
+    # through multiprocessing.  Argh.
+    #
+    # We provide our own implementation then!
+    try:
+        return importlib.import_module(module)
+    except ModuleNotFoundError:
+        raise unittest.SkipTest('Optional module not present: {}'
+                                '.format(module))')
+
 
 test_calculator_names = ['emt']
 

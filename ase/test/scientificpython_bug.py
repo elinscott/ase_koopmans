@@ -1,7 +1,7 @@
 import sys
-import pytest
+from ase.test.testsuite import importorskip
 
-pytest.importorskip('Scientific')
+importorskip('Scientific')
 
 import numpy as np
 
