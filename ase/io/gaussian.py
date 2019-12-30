@@ -141,7 +141,7 @@ def read_gaussian(filename):
 
     atoms = Atoms()
     for n, line in enumerate(lines):
-        if ('#' in lines[n] and not "#" in lines[n+1]):
+        if ('#' in lines[n] and "#" not in lines[n+1]):
             i = 0
             while (lines[n + i + 5] != '\n'):
                 info = lines[n + i + 5].split()
