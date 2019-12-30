@@ -1,11 +1,17 @@
 """Test CombineMM forces by combining tip3p and tip4p with them selves, and
-   by combining tip3p with tip4p and testing against numerical forces """
+   by combining tip3p with tip4p and testing against numerical forces. 
+
+   Also test LJInterationsGeneral with CombineMM """
+
 from math import cos, sin, pi
 import numpy as np
 from ase import Atoms
+from ase import units
+from ase.calculators.counterions import AtomicCounterIon as ACI
+from ase.calculators.combine_mm import CombineMM
+from ase.calculators.qmmm import LJInteractionsGeneral
 from ase.calculators.tip3p import TIP3P, rOH, angleHOH
 from ase.calculators.tip4p import TIP4P
-from ase.calculators.combine_mm import CombineMM
 from ase.calculators.tip3p import epsilon0 as eps3
 from ase.calculators.tip3p import sigma0 as sig3
 from ase.calculators.tip4p import epsilon0 as eps4
@@ -68,3 +74,78 @@ print('TIP3P/TIP4P')
 print(dF)
 assert abs(dF).max() < 1e-8
 
+
+# LJInteractionsGeneral with CombineMM. 
+# As it is used within EIQMMM, but avoiding long calculations for tests.
+# Total system is a unit test system comprised of:
+#    2 Na ions playing the role of a 'QM' subsystem
+#    2 Na ions as the 'Counterions'
+#    2 Water molecules
+
+dimer.calc = []
+faux_qm = Atoms('2Na', positions=np.array([[1.4, -4, 0], [1.4, 4, 0]]))
+ions = Atoms('2Na', positions=np.array([[1.4, 0, -4], [1.4, 0, 4]]))
+
+mmatoms = ions + dimer
+
+sigNa = 1.868 * (1.0/2.0)**(1.0/6.0) * 10
+epsNa = 0.00277 * units.kcal / units.mol
+
+
+# ACI for atoms 0 and 1 of the MM subsystem (2 and 3 for the total system)
+# 1 atom 'per molecule'. The rest is TIP4P, 3 atoms per molecule:
+calc = CombineMM([0, 1], 1, 3,
+                 ACI(1, epsNa, sigNa),  # calc 1
+                 TIP4P(),  # calc 2
+                 [sigNa], [epsNa],  # LJs for subsystem 1
+                 sig2, eps2,  # arrays for TIP4P from earlier
+                 rc=7.5)
+
+mmatoms.calc = calc
+mmatoms.calc.initialize(mmatoms)
+
+# LJ arrays for the 'QM' subsystem
+sig_qm = np.array([sigNa, sigNa])
+eps_qm = np.array([epsNa, epsNa])
+
+# For the MM subsystem, tuple of arrays (counterion, water)
+sig_mm = (np.array([sigNa]), sig2)
+eps_mm = (np.array([epsNa]), eps2)
+
+lj = LJInteractionsGeneral(sig_qm, eps_qm, sig_mm, eps_mm, 2)
+
+ecomb, fcomb1, fcomb2 = lj.calculate(faux_qm, 
+                                      mmatoms, 
+                                      np.array([0, 0, 0]))
+
+# This should give the same result as if not using CombineMM, on a sum
+# of these systems: 
+# A: All the Na atoms in the 'QM' region
+# B: LJInteractions between the 'QM' Na and the 'MM' Na
+# C: -LJinteractions between the 'MM' Na and the 'MM' Water
+
+# A:
+mmatoms = dimer
+mmatoms.calc = []
+sig_qm = np.concatenate((sig_qm, sig_qm))
+eps_qm = np.concatenate((eps_qm, eps_qm))
+sig_mm = sig_mm[1]
+eps_mm = eps_mm[1]
+lj = LJInteractionsGeneral(sig_qm, eps_qm, sig_mm, eps_mm, 4)
+ea, fa1, fa2 = lj.calculate(faux_qm + ions, mmatoms, np.array([0, 0, 0]))
+
+# B:
+lj = LJInteractionsGeneral(sig_qm[:2], eps_qm[:2], 
+                           sig_qm[:2], eps_qm[:2], 
+                           2, 2)
+
+eb, fb1, fb2, = lj.calculate(faux_qm, ions, np.array([0, 0, 0]))
+
+# C: 
+lj = LJInteractionsGeneral(sig_qm[:2], eps_qm[:2],
+                           sig_mm, eps_mm,
+                           2, 3)
+
+ec, fc1, fc2, = lj.calculate(ions, dimer, np.array([0, 0, 0])) 
+
+assert ecomb - (ea + eb) + ec == 0
