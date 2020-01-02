@@ -1,18 +1,18 @@
 .. module:: ase.calculators.dftb
 
-=========
-DftbPlus
-=========
+=====
+DFTB+
+=====
 
 Introduction
 ============
 
-DftbPlus_ is a density-functional based tight-binding code using
-atom-centered orbitals. This interface makes it possible to use DftbPlus_
+`DFTB+`_ is a density-functional based tight-binding code using
+atom-centered orbitals. This interface makes it possible to use `DFTB+`_
 as a calculator in ASE. You need Slater-Koster files for the combination
 of atom types of your system. These can be obtained at dftb.org_.
 
-.. _DftbPlus: https://www.dftbplus.org/
+.. _DFTB+: https://www.dftbplus.org/
 .. _dftb.org: http://www.dftb.org/
 
 
@@ -20,7 +20,7 @@ of atom types of your system. These can be obtained at dftb.org_.
 Environment variables
 =====================
 
-The default command that ASE will use to start DftbPlus is
+The default command that ASE will use to start DFTB+ is
 ``dftb+ > PREFIX.out``. You can change this command by setting the
 :envvar:`ASE_DFTB_COMMAND` environment variable, e.g.::
 
@@ -28,19 +28,19 @@ The default command that ASE will use to start DftbPlus is
 
 For compatibility, also the old :envvar:`DFTB_COMMAND` variable can
 be used, and the resulting command will be ``$DFTB_COMMAND > PREFIX.out``.
-Before each DftbPlus calculation, also make sure that the
+Before each DFTB+ calculation, also make sure that the
 :envvar:`DFTB_PREFIX` variable points to the directory where
 the Slater-Koster files are kept, e.g.::
 
   $ export DFTB_PREFIX=/path/to/mio-0-1/
 
 
-DftbPlus Calculator (a FileIOCalculator)
+DFTB+ Calculator (a FileIOCalculator)
 ========================================
 The file 'geo_end.gen' contains the input and output geometry
-and it will be updated during the DftbPlus calculations.
+and it will be updated during the DFTB+ calculations.
 
-All keywords to the DftbPlus calculator can be set by ASE.
+All keywords to DFTB+ can be set by ASE.
 
 
 Parameters
@@ -82,13 +82,13 @@ Example: Geometry Optimization by ASE
 
 .. literalinclude:: dftb_ex1_relax.py
 
-Example: Geometry Optimization by DftbPlus
-==========================================
+Example: Geometry Optimization by DFTB+
+=======================================
 
 .. literalinclude:: dftb_ex2_relaxbyDFTB.py
 
-Example: NVE md followed by NVT md (both by DftbPlus)
-=====================================================
+Example: NVE md followed by NVT md (both by DFTB+)
+==================================================
 
 This is unphysical because of at least two reasons:
 
