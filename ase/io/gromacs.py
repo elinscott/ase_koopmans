@@ -4,7 +4,6 @@ read and write gromacs geometry files
 
 from ase.atoms import Atoms
 from ase.parallel import paropen
-from ase.utils import basestring
 import numpy as np
 
 from ase.data import atomic_numbers
@@ -164,7 +163,7 @@ def write_gromacs(fileobj, images):
     * simulation cell (if present)
     """
 
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'w')
 
     if not isinstance(images, (list, tuple)):

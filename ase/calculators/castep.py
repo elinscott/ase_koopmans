@@ -37,7 +37,6 @@ from ase.calculators.calculator import compare_atoms
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.calculator import kpts2sizeandoffsets
 from ase.dft.kpoints import BandPath
-from ase.utils import basestring
 from ase.parallel import paropen
 from ase.io.castep import read_param
 from ase.io.castep import read_bands
@@ -789,7 +788,7 @@ End CASTEP Interface Documentation
 
         returns (record_start, record_end, end_found, last_record_complete)
         """
-        if isinstance(castep_file, basestring):
+        if isinstance(castep_file, str):
             castep_file = paropen(castep_file, 'r')
             file_opened = True
         else:
@@ -857,7 +856,7 @@ End CASTEP Interface Documentation
             if not os.path.exists(castep_file):
                 print('No CASTEP file found')
 
-        elif isinstance(castep_file, basestring):
+        elif isinstance(castep_file, str):
             out = paropen(castep_file, 'r')
 
         else:
@@ -1469,7 +1468,7 @@ End CASTEP Interface Documentation
         if castep_castep is None:
             castep_castep = self._seed + '.castep'
 
-        if isinstance(castep_castep, basestring):
+        if isinstance(castep_castep, str):
             if not os.path.isfile(castep_castep):
                 print('Warning: CASTEP file %s not found!' % castep_castep)
             f = paropen(castep_castep, 'r')
@@ -2144,7 +2143,7 @@ End CASTEP Interface Documentation
                     self.param.__setattr__(key, option.value)
             return
 
-        elif isinstance(param, basestring):
+        elif isinstance(param, str):
             param_file = open(param, 'r')
             _close = True
 
@@ -2581,7 +2580,7 @@ class CastepOption(object):
     @staticmethod
     def _parse_int_vector(value):
         # Accepts either a string or an actual list/numpy array of ints
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if ',' in value:
                 value = value.replace(',', ' ')
             value = list(map(int, value.split()))
@@ -2596,7 +2595,7 @@ class CastepOption(object):
     @staticmethod
     def _parse_float_vector(value):
         # Accepts either a string or an actual list/numpy array of floats
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if ',' in value:
                 value = value.replace(',', ' ')
             value = list(map(float, value.split()))
@@ -2611,7 +2610,7 @@ class CastepOption(object):
     @staticmethod
     def _parse_float_physical(value):
         # If this is a string containing units, saves them
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.split()
 
         try:
@@ -2638,7 +2637,7 @@ class CastepOption(object):
     @staticmethod
     def _parse_block(value):
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return value
         elif hasattr(value, '__getitem__'):
             return '\n'.join(value)  # Arrays of lines
@@ -2727,7 +2726,7 @@ class CastepInputFile(object):
 
             if self._perm > 0:
                 # Do we consider it a string or a block?
-                is_str = isinstance(value, basestring)
+                is_str = isinstance(value, str)
                 is_block = False
                 if ((hasattr(value, '__getitem__') and not is_str)
                         or (is_str and len(value.split('\n')) > 1)):
@@ -2755,7 +2754,7 @@ class CastepInputFile(object):
             attr = attr.lower()
             opt = self._options[attr]
 
-        if not opt.type.lower() == 'block' and isinstance(value, basestring):
+        if not opt.type.lower() == 'block' and isinstance(value, str):
             value = value.replace(':', ' ')
 
         # If it is, use the appropriate parser, unless a custom one is defined

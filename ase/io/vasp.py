@@ -11,7 +11,7 @@ import numpy as np
 
 import ase.units
 from ase import Atoms
-from ase.utils import basestring, reader, writer
+from ase.utils import reader, writer
 from ase.io.utils import ImageIterator, ImageChunk
 
 
@@ -525,7 +525,7 @@ def read_vasp_out(filename='OUTCAR', index=-1):
     f = filename
     g = iread_vasp_out(f, index=index)
     # Code borrowed from formats.py:read
-    if isinstance(index, (slice, basestring)):
+    if isinstance(index, (slice, str)):
         # Return list of atoms
         return list(g)
     else:

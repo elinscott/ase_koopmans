@@ -21,7 +21,6 @@ from Scientific.IO.NetCDF import NetCDFFile as netCDF
 import numpy as np
 import subprocess as sp
 from ase.calculators.calculator import PropertyNotImplementedError
-from ase.utils import basestring
 
 from . import validate
 from . import changed
@@ -923,7 +922,7 @@ than density cutoff %i' % (pw, dw))
         '''
 
         #chadi-cohen
-        if isinstance(kpts, basestring):
+        if isinstance(kpts, str):
             listofkpts = getattr(ase.dft.kpoints, kpts)
             gridtype = kpts #stored in ncfile
             #uc = self.get_atoms().get_cell()

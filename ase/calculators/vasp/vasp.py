@@ -26,7 +26,7 @@ from ase.calculators.general import Calculator
 import numpy as np
 
 import ase.io
-from ase.utils import devnull, basestring
+from ase.utils import devnull
 
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.calculators.calculator import PropertyNotImplementedError
@@ -158,7 +158,7 @@ class Vasp(GenerateVaspInput, Calculator):
             sys.stderr = devnull
         elif p['txt'] == '-':
             pass
-        elif isinstance(p['txt'], basestring):
+        elif isinstance(p['txt'], str):
             sys.stderr = open(p['txt'], 'w')
         if 'VASP_COMMAND' in os.environ:
             vasp = os.environ['VASP_COMMAND']

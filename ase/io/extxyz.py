@@ -23,7 +23,6 @@ from ase.calculators.calculator import all_properties, Calculator
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
-from ase.utils import basestring
 from ase.constraints import FixAtoms, FixCartesian
 from ase.io.formats import index2range
 
@@ -138,7 +137,7 @@ def key_val_str_to_dict(string, sep=None):
 
             # Parse boolean values: 'T' -> True, 'F' -> False,
             #                       'T T F' -> [True, True, False]
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 str_to_bool = {'T': True, 'F': False}
 
                 try:
@@ -209,7 +208,7 @@ def key_val_str_to_dict_regex(s):
 
             # Parse boolean values: 'T' -> True, 'F' -> False,
             #                       'T T F' -> [True, True, False]
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 str_to_bool = {'T': True, 'F': False}
 
                 if len(value.split()) > 1:
@@ -269,7 +268,7 @@ def key_val_dict_to_str(d, sep=' ', tolerant=False):
 
         if val is None:
             s = s + '%s%s' % (key, sep)
-        elif isinstance(val, basestring) and ' ' in val:
+        elif isinstance(val, str) and ' ' in val:
             s = s + '%s="%s"%s' % (key, val, sep)
         else:
             s = s + '%s=%s%s' % (key, str(val), sep)
@@ -566,7 +565,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
     deal with most use cases, ``extxyz.key_val_str_to_dict_regex`` is slightly
     faster but has fewer features.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     if not isinstance(index, int) and not isinstance(index, slice):
@@ -704,7 +703,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
     XYZ comment line (default is True) and the results of any
     calculator attached to this Atoms.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         mode = 'w'
         if append:
             mode = 'a'
@@ -776,7 +775,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
         else:
             symbols = atoms.get_chemical_symbols()
 
-        if natoms > 0 and not isinstance(symbols[0], basestring):
+        if natoms > 0 and not isinstance(symbols[0], str):
             raise ValueError('First column must be symbols-like')
 
         # Check second column "looks like" atomic positions

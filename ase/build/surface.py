@@ -14,7 +14,6 @@ from ase.atom import Atom
 from ase.atoms import Atoms
 from ase.data import reference_states, atomic_numbers
 from ase.lattice.cubic import FaceCenteredCubic
-from ase.utils import basestring
 
 
 def fcc100(symbol, size, a=None, vacuum=None, orthogonal=True,
@@ -205,7 +204,7 @@ def add_adsorbate(slab, adsorbate, height, position=(0, 0), offset=None,
     if offset is not None:
         spos += np.asarray(offset, float)
 
-    if isinstance(position, basestring):
+    if isinstance(position, str):
         # A site-name:
         if 'sites' not in info:
             raise TypeError('If the atoms are not made by an ' +

@@ -14,13 +14,12 @@ from ase.atoms import Atoms
 from ase.constraints import FixAtoms
 from ase.geometry import cellpar_to_cell, cell_to_cellpar
 from ase.parallel import paropen
-from ase.utils import basestring
 
 
 def read_eon(fileobj, index = -1):
     """Reads an EON reactant.con file.  If *fileobj* is the name of a
     "states" directory created by EON, all the structures will be read."""
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         if (os.path.isdir(fileobj)):
             return read_states(fileobj)
         else:
@@ -76,7 +75,7 @@ def read_eon(fileobj, index = -1):
             more_images_to_read = False
 
 
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         f.close()
 
     if not index:
@@ -97,7 +96,7 @@ def read_states(states_dir):
 def write_eon(fileobj, images):
     """Writes structure to EON reactant.con file
     Multiple snapshots are allowed."""
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         f = paropen(fileobj, 'w')
     else:
         f = fileobj
@@ -158,5 +157,5 @@ def write_eon(fileobj, images):
     f.write('\n'.join(out))
     f.write('\n')
 
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         f.close()
