@@ -20,21 +20,19 @@ of atom types of your system. These can be obtained at dftb.org_.
 Environment variables
 =====================
 
-Before each DftbPlus calculation, please ensure that the following environment
-variables are set. :envvar:`DFTB_PREFIX` should point to the directory
-where the Slater-Koster files are kept. :envvar:`DFTB_COMMAND` should
-contain the path of the DftbPlus executable. This variable need not be
-set if a :envvar:`dftb+` executable can be found in the :envvar:`PATH`.
+The default command that ASE will use to start DftbPlus is
+``dftb+ > PREFIX.out``. You can change this command by setting the
+:envvar:`ASE_DFTB_COMMAND` environment variable, e.g.::
 
-- bash::
+  $ export ASE_DFTB_COMMAND="/path/to/dftb+ > PREFIX.out"
 
-  $ DFTB_PREFIX=/my_disk/my_name/lib/Dftb+sk/mio-0-1/  (an example)
-  $ DFTB_COMMAND=~/bin/DFTB+/dftb+_s081217.i686-linux  (an example)
+For compatibility, also the old :envvar:`DFTB_COMMAND` variable can
+be used, and the resulting command will be ``$DFTB_COMMAND > PREFIX.out``.
+Before each DftbPlus calculation, also make sure that the
+:envvar:`DFTB_PREFIX` variable points to the directory where
+the Slater-Koster files are kept, e.g.::
 
-- csh/tcsh::
-
-  $ setenv DFTB_PREFIX /my_disk/my_name/lib/Dftb+sk/mio-0-1/  (an example)
-  $ setenv DFTB_COMMAND ~/bin/DFTB+/dftb+_s081217.i686-linux   (an example)
+  $ export DFTB_PREFIX=/path/to/mio-0-1/
 
 
 DftbPlus Calculator (a FileIOCalculator)
