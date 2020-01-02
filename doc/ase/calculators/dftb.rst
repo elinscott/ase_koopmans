@@ -134,3 +134,9 @@ Note that this example is unphysical for at least two reasons:
 
 
 .. literalinclude:: dftb_ex3_make_2h2o.py
+
+
+DFTB+ calculator class
+======================
+
+.. autoclass:: ase.calculators.dftb.Dftb
