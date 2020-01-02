@@ -2,13 +2,16 @@ import os
 import subprocess
 from unittest import SkipTest
 from ase.test import require
+from ase.test.dftb import Si_Si_skf
 from ase.calculators.dftb import Dftb
 from ase.build import bulk
 
 require('dftb')
 
-p = os.path.dirname(__file__)
-os.environ['DFTB_PREFIX'] = p if p else './'
+with open('./Si-Si.skf', 'w') as f:
+    f.write(Si_Si_skf)
+
+os.environ['DFTB_PREFIX'] = './'
 
 # We need to get the DFTB+ version to know
 # whether to skip this test or not.

@@ -1,5 +1,6 @@
 import os
 from ase.test import require
+from ase.test.dftb import Si_Si_skf
 from ase.build import bulk
 from ase.calculators.dftb import Dftb
 from ase.optimize import QuasiNewton
@@ -7,8 +8,10 @@ from ase.constraints import ExpCellFilter
 
 require('dftb')
 
-p = os.path.dirname(__file__)
-os.environ['DFTB_PREFIX'] = p if p else './'
+with open('./Si-Si.skf', 'w') as f:
+    f.write(Si_Si_skf)
+
+os.environ['DFTB_PREFIX'] = './'
 
 calc = Dftb(label='dftb',
             kpts=(3,3,3),

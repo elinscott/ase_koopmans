@@ -1,5 +1,6 @@
 import os
 from ase.test import require
+from ase.test.dftb import Si_Si_skf
 from ase.build import diamond100
 from ase.calculators.dftb import Dftb
 from ase.optimize import BFGS
@@ -7,8 +8,10 @@ from ase.constraints import FixAtoms
 
 require('dftb')
 
-p = os.path.dirname(__file__)
-os.environ['DFTB_PREFIX'] = p if p else './'
+with open('./Si-Si.skf', 'w') as f:
+    f.write(Si_Si_skf)
+
+os.environ['DFTB_PREFIX'] = './'
 
 calc = Dftb(label='dftb',
             kpts=(2, 2, 1),
