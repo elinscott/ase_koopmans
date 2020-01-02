@@ -11,8 +11,12 @@ calc = Dftb(atoms=atoms,
             Hamiltonian_MaxAngularMomentum_='',
             Hamiltonian_MaxAngularMomentum_O='p',
             Hamiltonian_MaxAngularMomentum_H='s')
-atoms.set_calculator(calc)
 
+atoms.set_calculator(calc)
 calc.calculate(atoms)
+
+# The 'geo_end.gen' file written by the ASE calculator
+# (containing the initial geometry), has been overwritten
+# by DFTB+ and now contains the final, optimized geometry.
 final = read('geo_end.gen')
 write('final.xyz', final)
