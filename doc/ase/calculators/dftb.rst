@@ -7,7 +7,7 @@ DftbPlus
 Introduction
 ============
 
-DftbPlus_ is a density-functional baed tight-binding code using
+DftbPlus_ is a density-functional based tight-binding code using
 atom-centered orbitals. This interface makes it possible to use DftbPlus_
 as a calculator in ASE. You need Slater-Koster files for the combination
 of atom types of your system. These can be obtained at dftb.org_.
