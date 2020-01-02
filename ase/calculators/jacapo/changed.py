@@ -5,7 +5,6 @@ import logging
 log = logging.getLogger('Jacapo')
 
 import ase.dft.kpoints
-from ase.utils import basestring
 
 
 '''
@@ -28,7 +27,7 @@ def kpts_changed(calc, x):
     grids.
     '''
     #chadi-cohen
-    if isinstance(x, basestring):
+    if isinstance(x, str):
         listofkpts = getattr(ase.dft.kpoints, x)
     #monkhorst-pack grid
     elif np.array(x).shape == (3,):

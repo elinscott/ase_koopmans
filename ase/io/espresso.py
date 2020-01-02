@@ -27,7 +27,6 @@ from ase.dft.kpoints import kpoint_convert
 from ase.constraints import FixAtoms, FixCartesian
 from ase.data import chemical_symbols, atomic_numbers
 from ase.units import create_units
-from ase.utils import basestring
 
 
 # Quantum ESPRESSO uses CODATA 2006 internally
@@ -98,7 +97,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
 
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rU')
 
     # work with a copy in memory for faster random access
@@ -468,7 +467,7 @@ def read_espresso_in(fileobj):
         Raised for missing keys that are required to process the file
     """
     # TODO: use ase opening mechanisms
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rU')
 
     # parse namelist section and extract remaining lines

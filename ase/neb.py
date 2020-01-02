@@ -13,7 +13,6 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io import read
 from ase.optimize import MDMin
 from ase.geometry import find_mic
-from ase.utils import basestring
 
 
 class NEB:
@@ -441,7 +440,7 @@ class IDPP(Calculator):
 
 class SingleCalculatorNEB(NEB):
     def __init__(self, images, k=0.1, climb=False):
-        if isinstance(images, basestring):
+        if isinstance(images, str):
             # this is a filename
             images = read(images)
 

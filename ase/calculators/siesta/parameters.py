@@ -1,5 +1,4 @@
 from ase.calculators.calculator import Parameters
-from ase.utils import basestring
 
 """
 2017.04 - Pedro Brandimarte: changes for python 2-3 compatible
@@ -28,7 +27,7 @@ class PAOBasisBlock(Parameters):
                                5.00 0.00
                      See siesta manual for details.
         """
-        assert isinstance(block, basestring)
+        assert isinstance(block, str)
         Parameters.__init__(self, block=block)
 
     def script(self, label):

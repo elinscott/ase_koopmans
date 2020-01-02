@@ -14,7 +14,6 @@ from ase.neighborlist import NeighborList
 from ase.calculators.calculator import Calculator, all_changes
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
 from ase.units import Bohr, Hartree
-from ase.utils import basestring
 
 
 class EAM(Calculator):
@@ -284,7 +283,7 @@ End EAM Interface Documentation
         and creates the interpolation functions from the data
         """
 
-        if isinstance(fileobj, basestring):
+        if isinstance(fileobj, str):
             f = open(fileobj)
             if self.form is None:
                 self.set_form(fileobj)

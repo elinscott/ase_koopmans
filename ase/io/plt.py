@@ -1,7 +1,6 @@
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.utils import basestring
 
 
 def write_plt(filename, atoms, data):
@@ -38,7 +37,7 @@ def write_plt(filename, atoms, data):
 
 
 def read_plt(fileobj):
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rb')
 
     # dummy numbers

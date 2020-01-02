@@ -5,7 +5,6 @@ import xml.etree.ElementTree as ET
 from ase.io.exciting import atoms2etree
 from ase.units import Bohr, Hartree
 from ase.calculators.calculator import PropertyNotImplementedError
-from ase.utils import basestring
 from xml.dom import  minidom
 
 
@@ -123,9 +122,9 @@ class Exciting:
 
     def dicttoxml(self, pdict, element):
         for key, value in pdict.items():
-            if (isinstance(value, basestring) and key == 'text()'):
+            if (isinstance(value, str) and key == 'text()'):
                 element.text = value
-            elif (isinstance(value, basestring)):
+            elif (isinstance(value, str)):
                 element.attrib[key] = value
             elif (isinstance(value, list)):
                 for item in value:

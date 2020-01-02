@@ -2,7 +2,6 @@ import numpy as np
 
 from ase import Atoms
 from ase.data import atomic_numbers, reference_states
-from ase.utils import basestring
 
 
 def Icosahedron(symbol, noshells, latticeconstant=None):
@@ -20,7 +19,7 @@ def Icosahedron(symbol, noshells, latticeconstant=None):
     """
 
     # Interpret symbol
-    if isinstance(symbol, basestring):
+    if isinstance(symbol, str):
         atomic_number = atomic_numbers[symbol]
     else:
         atomic_number = symbol

@@ -3,7 +3,6 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
-from ase.utils import basestring
 from ase.io.xsd import SetChild, _write_xsd_html
 from ase import Atoms
 
@@ -101,7 +100,7 @@ def write_xtd(filename, images, connectivity=None, moviespeed = 10):
     farc.close()
 
     # check if file is an object or not.
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename, 'w')
     else:  # Assume it's a 'file-like object'
         f = filename

@@ -23,7 +23,6 @@ import os
 import struct
 import numpy as np
 from ase.units import Ha, Bohr, Debye
-from ase.utils import basestring
 
 
 def read_openmx(filename=None, debug=False):
@@ -614,7 +613,7 @@ def get_standard_key(key):
     For example:
         'scf.XcType' -> 'scf_xctype'
     """
-    if isinstance(key, basestring):
+    if isinstance(key, str):
         return key.lower().replace('.', '_')
     elif isinstance(key, list):
         return [k.lower().replace('.', '_') for k in key]

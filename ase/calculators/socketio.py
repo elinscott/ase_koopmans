@@ -7,7 +7,6 @@ import numpy as np
 from ase.calculators.calculator import (Calculator, all_changes,
                                         PropertyNotImplementedError)
 import ase.units as units
-from ase.utils import basestring
 
 
 def actualunixsocketname(name):
@@ -577,7 +576,7 @@ class SocketIOCalculator(Calculator):
         self.timeout = timeout
         self.server = None
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             self.log = open(log, 'w')
             self.log_was_opened = True
         else:
