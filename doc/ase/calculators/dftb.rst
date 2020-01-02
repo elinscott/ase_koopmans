@@ -95,24 +95,36 @@ arguments can be used:
 .. _path: https://wiki.fysik.dtu.dk/ase/ase/dft/kpoints.html#ase.dft.kpoints.bandpath
 
 
-Example: Geometry Optimization by ASE
-=====================================
+Examples
+========
+
+Below are three examples of how to use the DFTB+ calculator. The required
+SKF files (i.e. :file:`H-H.skf`, :file:`H-O.skf`, :file:`O-H.skf`
+and :file:`O-O.skf`) can for example be chosen from the mio-1-1_
+parameter set.
+
+.. _mio-1-1: http://www.dftb.org/parameters/download/mio/mio-1-1-cc/
+
+
+Geometry optimization by ASE
+----------------------------
 
 .. literalinclude:: dftb_ex1_relax.py
 
-Example: Geometry Optimization by DFTB+
-=======================================
+
+Geometry optimization by DFTB+
+------------------------------
 
 .. literalinclude:: dftb_ex2_relaxbyDFTB.py
 
-Example: NVE md followed by NVT md (both by DFTB+)
-==================================================
 
-This is unphysical because of at least two reasons:
+NVE-MD followed by NVT-MD (both by DFTB+)
+-----------------------------------------
 
-- oxygen does not have spin here
-- the Berendsen coupling is too strong (0.01 here should be 0.0001)
+Note that this example is unphysical for at least two reasons:
+
+    - no spin polarization for the oxygen molecule
+    - the Berendsen coupling is too strong (0.01 here should be 0.0001)
+
 
 .. literalinclude:: dftb_ex3_make_2h2o.py
-
-
