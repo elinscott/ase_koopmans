@@ -75,8 +75,6 @@ class Dftb(FileIOCalculator):
               array of k-points in units of the reciprocal lattice vectors
               (each with equal weight)
 
-        .. _path: https://wiki.fysik.dtu.dk/ase/ase/dft/kpoints.html
-
         Additional attribute to be set by the embed() method:
 
         pcpot: PointCharge object
