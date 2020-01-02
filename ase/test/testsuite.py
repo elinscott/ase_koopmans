@@ -23,7 +23,8 @@ test_calculator_names = ['emt']
 
 def require(calcname):
     if calcname not in test_calculator_names:
-        raise unittest.SkipTest('use --calculators={0} to enable'.format(calcname))
+        raise unittest.SkipTest('use --calculators={0} to enable'
+                                .format(calcname))
 
 
 def get_tests(files=None):
@@ -189,7 +190,7 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
                      'bandstructure_many.py',
                      'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
-                     'forcecurve.py',
+                     'forcecurve.py', 'neb.py',
                      'fio/animate.py', 'db/db_web.py', 'x3d.py',
                      'pubchem.py']:
                 result = Result(name=test, status='please run on master')
@@ -379,7 +380,7 @@ def disable_calculators(names):
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
                     raise unittest.SkipTest('use --calculators={0} to enable'
-                                       .format(name))
+                                            .format(name))
                 return mock_init
 
             def mock_del(obj):

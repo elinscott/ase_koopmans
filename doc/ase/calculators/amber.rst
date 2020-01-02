@@ -6,9 +6,9 @@ Amber
 Introduction
 ------------
 
-Amber_ is a powerfull classical simulations package.  It is not free, academic
+Amber_ is a powerful classical simulations package.  It is not free, academic
 license costs $500. Ase-Amber has been tested only for amber16 (2016). It can
-bee usefull as MM part of QM/MM calculations since amber supports fast netCDF
+bee useful as MM part of QM/MM calculations since amber supports fast netCDF
 fileIO.
 
 .. _Amber: http://ambermd.org

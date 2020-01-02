@@ -363,7 +363,7 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
         the number of k-points in the output list will be:
         npoints = density * path total length (in Angstroms).
         If density is None (default), use 5 k-points per A⁻¹.
-        If the calculated npoints value is less than 50, a mimimum value of 50
+        If the calculated npoints value is less than 50, a minimum value of 50
         will be used.
     special_points: dict or None
         Dictionary mapping names to special points.  If None, the special
@@ -462,7 +462,7 @@ get_bandpath = bandpath  # old name
 
 
 def find_bandpath_kinks(cell, kpts, eps=1e-5):
-    """Find indices of those kpoints that are not interiour to a line segment."""
+    """Find indices of those kpoints that are not interior to a line segment."""
     diffs = kpts[1:] - kpts[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
     N = len(kpts)

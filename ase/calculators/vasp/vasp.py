@@ -58,7 +58,7 @@ class Vasp(GenerateVaspInput, Calculator):
         self.run_counts = 0
 
         # If no XC combination, GGA functional or POTCAR type is specified,
-        # default to PW91. This is mostly chosen for backwards compatiblity.
+        # default to PW91. This is mostly chosen for backwards compatibility.
         if kwargs.get('xc', None):
             pass
         elif not (kwargs.get('gga', None) or kwargs.get('pp', None)):
@@ -145,7 +145,7 @@ class Vasp(GenerateVaspInput, Calculator):
         self.nelect = self.read_number_of_electrons()
 
     def run(self):
-        """Method which explicitely runs VASP."""
+        """Method which explicitly runs VASP."""
 
         if self.track_output:
             self.out = self.output_template + str(self.run_counts) + '.out'

@@ -12,7 +12,7 @@ def cut(atoms, a=(1, 0, 0), b=(0, 1, 0), c=None, clength=None,
     coordinates and defines the returned cell and should normally be
     integer-valued in order to end up with a periodic
     structure. However, for systems with sub-translations, like fcc,
-    integer multiples of 1/2 or 1/3 might also make sence for some
+    integer multiples of 1/2 or 1/3 might also make sense for some
     directions (and will be treated correctly).
 
     Parameters:

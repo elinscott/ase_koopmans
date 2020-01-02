@@ -555,7 +555,7 @@ class Analysis(object):
         rmax: float
             Maximum distance of RDF.
         nbins: int
-            Number of bins to devide RDF.
+            Number of bins to divide RDF.
         imageIdx: int/slice/None
             Images to analyze, see :func:`_get_slice` for details.
         elements: str/int/list/tuple

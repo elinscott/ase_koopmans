@@ -199,7 +199,7 @@ class Checkpoint(object):
     def flush(self, *args, **kwargs):
         """
         Store data to a checkpoint without increasing the checkpoint id. This
-        is useful to continously update the checkpoint state in an iterative
+        is useful to continuously update the checkpoint state in an iterative
         loop.
         """
         # If we are flushing from a successfully restored checkpoint, then
@@ -230,7 +230,7 @@ class CheckpointCalculator(Calculator):
     This wraps any calculator object to checkpoint whenever a calculation
     is performed.
 
-    This is particularily useful for expensive calculators, e.g. DFT and
+    This is particularly useful for expensive calculators, e.g. DFT and
     allows usage of complex workflows.
 
     Example usage:

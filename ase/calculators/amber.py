@@ -52,7 +52,7 @@ class Amber(FileIOCalculator):
             Prefix to use for filenames (label.in, label.txt, ...).
         amber_exe: str
             Name of the amber executable, one can add options like -O
-            and other paramaters here
+            and other parameters here
         infile: str
             Input filename for amber, contains instuctions about the run
         outfile: str
@@ -189,7 +189,7 @@ class Amber(FileIOCalculator):
         velocities (if available),
         and unit cell (if available)
 
-        This may be usefull if you have run amber many steps and
+        This may be useful if you have run amber many steps and
         want to read new positions and velocities
         """
 

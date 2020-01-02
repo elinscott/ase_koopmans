@@ -61,7 +61,7 @@ class Vasp2(GenerateVaspInput, Calculator):
                 ``label`` is used.
 
             txt: bool, None, str or writable object
-                - If txt is None, default ouput stream will be to PREFIX.out,\
+                - If txt is None, default output stream will be to PREFIX.out,\
                     where PREFIX is determined by ``label``, i.e. the default\
                     would be vasp.out.
 
@@ -127,13 +127,13 @@ class Vasp2(GenerateVaspInput, Calculator):
         self.command = command
 
         self.set_txt(txt)       # Set the output txt stream
-        self.verison = None
+        self.version = None
 
         # XXX: This seems to break restarting, unless we return first.
         # Do we really still need to enfore this?
 
         #  # If no XC combination, GGA functional or POTCAR type is specified,
-        #  # default to PW91. This is mostly chosen for backwards compatiblity.
+        #  # default to PW91. This is mostly chosen for backwards compatibility.
         # if kwargs.get('xc', None):
         #     pass
         # elif not (kwargs.get('gga', None) or kwargs.get('pp', None)):
@@ -307,7 +307,7 @@ class Vasp2(GenerateVaspInput, Calculator):
         def compare_dict(d1, d2):
             """Helper function to compare dictionaries"""
             # Use symmetric difference to find keys which aren't shared
-            # for python 2.7 compatiblity
+            # for python 2.7 compatibility
             if set(d1.keys()) ^ set(d2.keys()):
                 return False
 
@@ -557,7 +557,7 @@ class Vasp2(GenerateVaspInput, Calculator):
         self._store_param_state()
 
     def _set_old_keywords(self):
-        """Store keywords for backwards compatiblity wd VASP calculator"""
+        """Store keywords for backwards compatibility wd VASP calculator"""
         self.spinpol = self.get_spin_polarized()
         self.energy_free = self.get_potential_energy(force_consistent=True)
         self.energy_zero = self.get_potential_energy(force_consistent=False)
@@ -736,7 +736,7 @@ class Vasp2(GenerateVaspInput, Calculator):
 
     def read_version(self):
         """Get the VASP version number"""
-        # The version number is the first occurence, so we can just
+        # The version number is the first occurrence, so we can just
         # load the OUTCAR, as we will return soon anyway
         if not os.path.isfile(self._indir('OUTCAR')):
             return None
@@ -745,7 +745,7 @@ class Vasp2(GenerateVaspInput, Calculator):
                 if ' vasp.' in line:
                     return line[len(' vasp.'):].split()[0]
             else:
-                # We didn't find the verison in VASP
+                # We didn't find the version in VASP
                 return None
 
     def get_number_of_iterations(self):
@@ -945,13 +945,13 @@ class Vasp2(GenerateVaspInput, Calculator):
         magnetic_moments = np.zeros(len(self.atoms))
         magstr = 'magnetization (x)'
 
-        # Search for the last occurence
+        # Search for the last occurrence
         nidx = -1
         for n, line in enumerate(lines):
             if magstr in line:
                 nidx = n
 
-        # Read that occurence
+        # Read that occurrence
         if nidx > -1:
             for m in range(len(self.atoms)):
                 magnetic_moments[m] = float(lines[nidx + m + 4].split()[4])
@@ -1077,7 +1077,7 @@ class Vasp2(GenerateVaspInput, Calculator):
         if isinstance(txt, PurePath):
             txt = str(txt)
         if txt is None:
-            # Default behavoir, write to vasp.out
+            # Default behavior, write to vasp.out
             txt = self.prefix + '.out'
         elif txt == '-' or txt is False:
             # We let the output be sent through stdout

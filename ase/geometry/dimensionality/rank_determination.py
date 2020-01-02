@@ -15,7 +15,7 @@ from ase.geometry.dimensionality.disjoint_set import DisjointSet
 
 
 # Numpy has a large overhead for lots of small vectors.  The cross product is
-# particulary bad.  Pure python is a lot faster.
+# particularly bad.  Pure python is a lot faster.
 
 def dot_product(A, B):
     return sum([a * b for a, b in zip(A, B)])

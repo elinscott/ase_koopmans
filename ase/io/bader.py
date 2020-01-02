@@ -27,7 +27,7 @@ def attach_charges(atoms, fileobj='ACF.dat', displacement=1e-4):
                 +' Assuming the ACF.dat file has 6 columns.')
                 j = 4
                 assume6columns = True
-        if sep in line: # Stop at last seperator line
+        if sep in line: # Stop at last separator line
             if k == 1:
                 break
             k += 1

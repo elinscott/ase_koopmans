@@ -29,7 +29,7 @@ def update(filename, commands):
 
     Run this when ever options are changed::
 
-        python3 -m ase.cli.complete
+        python3 -m ase.cli.completion
 
     """
 

@@ -51,7 +51,7 @@ extras.append((add_isosurface_to_pov,
                     cut_off=density_cut_off)))
 
 
-# spin up density, how to specify color and transparancy r,g,b,t and a
+# spin up density, how to specify color and transparency r,g,b,t and a
 # material style from the standard ASE set
 extras.append((add_isosurface_to_pov,
                dict(density_grid=vchg.chgdiff[0],

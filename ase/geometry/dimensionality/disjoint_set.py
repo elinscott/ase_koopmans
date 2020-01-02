@@ -54,12 +54,12 @@ class DisjointSet:
         x = np.copy(self.parents)
         unique = np.unique(x)
 
-        # find first occurences of each element
+        # find first occurrences of each element
         indices = {e: len(x) for e in unique}
         for i, e in enumerate(x):
             indices[e] = min(indices[e], i)
 
-        # order elements by frequency, using first occurences as a tie-breaker
+        # order elements by frequency, using first occurrences as a tie-breaker
         counts = np.bincount(x)
         ordered = sorted(unique, key=lambda x: (-counts[x], indices[x]))
         assert sorted(ordered) == list(np.unique(x))

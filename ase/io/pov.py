@@ -536,7 +536,7 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
 
             pov_fid.write(line)
 
-    ########## Start writting the mesh2
+    ########## Start writing the mesh2
     pov_fid.write('\n\nmesh2 {')
 
     ############ the vertex_vectors (floats) and the face_indices (ints)

@@ -76,7 +76,7 @@ class XtlmuSTEMWriter:
         Occupancy of each atoms. Default value is `1.0`.
 
     comment: str (optional)
-        Comments to be writen in the first line of the file. If not 
+        Comments to be written in the first line of the file. If not 
         provided, write the total number of atoms and the chemical formula.
 
     fit_cell_to_atoms: bool (optional)

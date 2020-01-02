@@ -59,7 +59,7 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
         structures = tmpGR.get_structures()
 
     data = tmpGR[index]
-    #fix: io.formats passes a slice as index, resulting in data beeing a list
+    #fix: io.formats passes a slice as index, resulting in data being a list
     if isinstance(data, list) and len(data) > 1:
         msg = 'Cannot parse multiple images from Gaussian out files at this'
         msg += ' time.  Please select a single image.'
@@ -140,7 +140,7 @@ def read_gaussian(filename):
 
     atoms = Atoms()
     for n, line in enumerate(lines):
-        if ('#' in line):
+        if ('#' in lines[n] and "#" not in lines[n+1]):
             i = 0
             while (lines[n + i + 5] != '\n'):
                 info = lines[n + i + 5].split()

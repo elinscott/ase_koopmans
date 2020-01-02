@@ -76,7 +76,7 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
         False, 0, 1, (1, 1, 0), (True, False, False).  Default
         is True.
     primitive_cell : bool
-        Wheter to return the primitive instead of the conventional
+        Whether to return the primitive instead of the conventional
         unit cell.
 
     Keyword arguments:

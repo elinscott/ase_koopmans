@@ -74,7 +74,7 @@ def parameters_to_keywords(label=None, atoms=None, parameters=None,
     keywords are contradict to each other, ignores openmx keyword.
      It includes,
 
-    For asthetical purpose, sequnece of writing input file is specified.
+    For aesthetical purpose, sequnece of writing input file is specified.
     """
     from ase.calculators.openmx.parameters import matrix_keys
     from collections import OrderedDict
@@ -112,7 +112,7 @@ def parameters_to_keywords(label=None, atoms=None, parameters=None,
     keywords['scf_restart'] = parameters.get('scf_restart')
     if parameters.get('restart') is not None:
         keywords['scf_restart'] = True
-    # Having generouse restart policy. It is dangerouse if one caluclate
+    # Having generouse restart policy. It is dangerouse if one calculate
     # totally different with previous calculator.
 
     if 'stress' in properties:
@@ -211,7 +211,7 @@ def get_definition_of_atomic_species(atoms, parameters):
         H   H5.0-s1>1p1>1      H_CA13
         C   C5.0-s1>1p1>1      C_CA13
       Definition.of.Atomic.Species>
-    Further more, you can specify the wannier infomation here.
+    Further more, you can specify the wannier information here.
     A. Define local functions for projectors
       Since the pseudo-atomic orbitals are used for projectors,
       the specification of them is the same as for the basis functions.
@@ -578,7 +578,7 @@ def write_matrix(f, key, value):
 
 def get_openmx_key(key):
     """
-    For the writting purpose, we need to know Original OpenMX keyword format.
+    For the writing purpose, we need to know Original OpenMX keyword format.
     By comparing keys in the parameters.py, restore the original key
     """
     for openmx_key in keys:

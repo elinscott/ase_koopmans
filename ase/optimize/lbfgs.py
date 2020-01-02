@@ -90,7 +90,7 @@ class LBFGS(Optimizer):
         self.iteration = 0
         self.s = []
         self.y = []
-        # Store also rho, to avoid calculationg the dot product again and
+        # Store also rho, to avoid calculating the dot product again and
         # again.
         self.rho = []
 
