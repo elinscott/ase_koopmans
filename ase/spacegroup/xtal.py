@@ -14,7 +14,6 @@ import ase
 from ase.symbols import string2symbols
 from ase.spacegroup import Spacegroup
 from ase.geometry import cellpar_to_cell
-from ase.utils import basestring
 
 __all__ = ['crystal']
 
@@ -103,7 +102,7 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
     32
     """
     sg = Spacegroup(spacegroup, setting)
-    if (not isinstance(symbols, basestring) and
+    if (not isinstance(symbols, str) and
         hasattr(symbols, '__getitem__') and
         len(symbols) > 0 and
         isinstance(symbols[0], ase.Atom)):
@@ -212,6 +211,6 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
 
 def parse_symbols(symbols):
     """Return `sumbols` as a sequence of element symbols."""
-    if isinstance(symbols, basestring):
+    if isinstance(symbols, str):
         symbols = string2symbols(symbols)
     return symbols

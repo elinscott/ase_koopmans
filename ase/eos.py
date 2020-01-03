@@ -2,7 +2,6 @@
 import warnings
 
 from ase.units import kJ
-from ase.utils import basestring
 
 import numpy as np
 
@@ -407,7 +406,7 @@ def calculate_eos(atoms, npoints=5, eps=0.04, trajectory=None, callback=None):
     p0 = atoms.get_positions()
     c0 = atoms.get_cell()
 
-    if isinstance(trajectory, basestring):
+    if isinstance(trajectory, str):
         from ase.io import Trajectory
         trajectory = Trajectory(trajectory, 'w', atoms)
 

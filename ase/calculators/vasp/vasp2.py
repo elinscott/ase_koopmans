@@ -30,7 +30,7 @@ from warnings import warn
 
 import ase
 from ase.io import read, jsonio
-from ase.utils import basestring, PurePath
+from ase.utils import PurePath
 
 from ase.calculators.calculator import (Calculator, ReadError,
                                         all_changes, CalculatorSetupError,
@@ -242,7 +242,7 @@ class Vasp2(GenerateVaspInput, Calculator):
         out = None              # Default
         txt = self.txt
         if txt:
-            if isinstance(txt, basestring):
+            if isinstance(txt, str):
                 out = open(txt, 'w')
                 opened = True
             elif hasattr(txt, 'write'):

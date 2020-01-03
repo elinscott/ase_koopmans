@@ -38,7 +38,6 @@ from ase import Atoms
 from ase.parallel import paropen
 from ase.calculators.calculator import Calculator
 from ase.calculators.calculator import all_changes
-from ase.utils import basestring as asestring
 from ase.data import chemical_symbols
 from ase.data import atomic_masses
 from ase.io.lammpsdata import write_lammps_data
@@ -542,7 +541,7 @@ potentials)
         if lammps_log is None:
             lammps_log = self.label + ".log"
 
-        if isinstance(lammps_log, asestring):
+        if isinstance(lammps_log, str):
             fileobj = paropen(lammps_log, "wb")
             close_log_file = True
         else:

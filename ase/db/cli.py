@@ -8,7 +8,7 @@ from ase.db import connect
 from ase.db.core import convert_str_to_int_float_or_str
 from ase.db.row import row2dct
 from ase.db.table import Table, all_columns
-from ase.utils import plural, basestring
+from ase.utils import plural
 
 
 class CLICommand:
@@ -91,8 +91,6 @@ class CLICommand:
         add('-p', '--plot', metavar='x,y1,y2,...',
             help='Example: "-p x,y": plot y row against x row. Use '
             '"-p a:x,y" to make a plot for each value of a.')
-        add('-P', '--plot-data', metavar='name',
-            help="Show plot from data['name'] from the selected row.")
         add('--csv', action='store_true',
             help='Write comma-separated-values file.')
         add('-w', '--open-web-browser', action='store_true',
@@ -282,11 +280,6 @@ def main(args):
         out('Deleted %s' % plural(len(ids), 'row'))
         return
 
-    if args.plot_data:
-        from ase.db.plot import dct2plot
-        dct2plot(db.get(query).data, args.plot_data)
-        return
-
     if args.plot:
         if ':' in args.plot:
             tags, keys = args.plot.split(':')
@@ -302,7 +295,7 @@ def main(args):
             name = ','.join(str(row[tag]) for tag in tags)
             x = row.get(keys[0])
             if x is not None:
-                if isinstance(x, basestring):
+                if isinstance(x, str):
                     if x not in X:
                         X[x] = len(X)
                         labels.append(x)

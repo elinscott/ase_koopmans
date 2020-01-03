@@ -27,7 +27,6 @@ from os.path import join, isfile, islink
 import numpy as np
 
 from ase.calculators.calculator import kpts2ndarray
-from ase.utils import basestring
 
 from ase.calculators.vasp.setups import setups_defaults
 
@@ -846,6 +845,9 @@ class GenerateVaspInput(object):
             # Switch to disable writing constraints to POSCAR
             'ignore_constraints': False,
             # Net charge for the whole system; determines nelect if not 0
+            'charge': None,
+            # Deprecated older parameter which works just like "charge" but
+            # with the sign flipped
             'net_charge': None,
         }
 
@@ -1216,21 +1218,32 @@ class GenerateVaspInput(object):
         incar.write('INCAR created by Atomic Simulation Environment\n')
         for key, val in self.float_params.items():
             if key == 'nelect':
+                charge = p.get('charge')
+                # Handle deprecated net_charge parameter (remove at some point)
+                net_charge = p.get('net_charge')
+                if net_charge is not None:
+                   warnings.warn('`net_charge`, which is given in units of '
+                        'the *negative* elementary charge (i.e., the opposite '
+                        'of what one normally calls charge) has been '
+                        'deprecated in favor of `charge`, which is given in '
+                        'units of the positive elementary charge as usual',
+                        category=FutureWarning)
+                   if charge is not None and charge != -net_charge:
+                      raise ValueError("can't give both net_charge and charge")
+                   charge = -net_charge
                 # We need to determine the nelect resulting from a given net
                 # charge in any case if it's != 0, but if nelect is
                 # additionally given explicitly, then we need to determine it
                 # even for net charge of 0 to check for conflicts
-                if 'net_charge' in p and p['net_charge'] is not None \
-                and (p['net_charge'] != 0 or val is not None):
-                    net_charge = p['net_charge']
+                if charge is not None and (charge != 0 or val is not None):
                     default_nelect = self.default_nelect_from_ppp()
-                    nelect_from_net_charge = default_nelect + net_charge
-                    if val is not None and val != nelect_from_net_charge:
+                    nelect_from_charge = default_nelect - charge
+                    if val is not None and val != nelect_from_charge:
                         raise ValueError('incompatible input parameters: '
-                                         'nelect=%s, but net_charge=%s '
+                                         'nelect=%s, but charge=%s '
                                          '(neutral nelect is %s)'
-                                         % (val, net_charge, default_nelect))
-                    val = nelect_from_net_charge
+                                         % (val, charge, default_nelect))
+                    val = nelect_from_charge
             if val is not None:
                 incar.write(' %s = %5.6f\n' % (key.upper(), val))
         for key, val in self.exp_params.items():
@@ -1323,7 +1336,7 @@ class GenerateVaspInput(object):
             if val is not None:
                 incar.write(' %s = ' % key.upper())
                 if key == 'lreal':
-                    if isinstance(val, basestring):
+                    if isinstance(val, str):
                         incar.write(val + '\n')
                     elif isinstance(val, bool):
                         if val:

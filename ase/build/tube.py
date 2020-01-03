@@ -1,9 +1,8 @@
-from math import sqrt
+from math import sqrt, gcd
 
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.utils import gcd
 
 
 def nanotube(n, m, length=1, bond=1.42, symbol='C', verbose=False,

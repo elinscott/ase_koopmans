@@ -12,7 +12,7 @@ import ase.units as u
 from ase.parallel import world, parprint, paropen
 from ase.vibrations import Vibrations
 from ase.utils.timing import Timer
-from ase.utils import convert_string_to_fd, basestring
+from ase.utils import convert_string_to_fd
 
 
 class ResonantRaman(Vibrations):
@@ -633,7 +633,7 @@ class ResonantRaman(Vibrations):
         else:
             ts = '10^{0}'.format(te)
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         parprint('-------------------------------------', file=log)

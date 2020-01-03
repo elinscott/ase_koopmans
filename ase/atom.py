@@ -3,7 +3,6 @@
 import numpy as np
 
 from ase.data import atomic_numbers, chemical_symbols, atomic_masses
-from ase.utils import basestring
 
 # Singular, plural, default value:
 names = {'position': ('positions', np.zeros(3)),
@@ -88,7 +87,7 @@ class Atom(object):
 
         if atoms is None:
             # This atom is not part of any Atoms object:
-            if isinstance(symbol, basestring):
+            if isinstance(symbol, str):
                 d['number'] = atomic_numbers[symbol]
             else:
                 d['number'] = symbol
