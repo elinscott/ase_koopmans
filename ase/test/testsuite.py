@@ -418,6 +418,13 @@ class must_raise:
             raise RuntimeError('Failed to fail: ' + str(self.exception))
         return issubclass(exc_type, self.exception)
 
+@contextmanager
+def must_warn(category):
+    with warnings.catch_warnings(record=True) as ws:
+        yield
+        did_warn = any(w.category == category for w in ws)
+    if not did_warn:
+        raise RuntimeError('Failed to warn: ' + str(category))
 
 @contextmanager
 def no_warn():
