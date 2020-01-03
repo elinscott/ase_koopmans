@@ -554,7 +554,7 @@ class Reader:
         """Get attr or value if no such attr."""
         try:
             return self.__getattr__(attr)
-        except KeyError:
+        except AttributeError:
             return value
 
     def proxy(self, name, *indices):
