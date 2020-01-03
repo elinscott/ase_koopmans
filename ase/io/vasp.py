@@ -120,7 +120,7 @@ def read_vasp(filename='CONTCAR'):
     from ase.constraints import FixAtoms, FixScaled
     from ase.data import chemical_symbols
 
-    f = filename
+    fd = filename
     # The first line is in principle a comment line, however in VASP
     # 4.x a common convention is to have it contain the atom symbols,
     # eg. "Ag Ge" in the same order as later in the file (and POTCAR
@@ -128,14 +128,14 @@ def read_vasp(filename='CONTCAR'):
     # is found on the fifth line. Thus we save the first line and use
     # it in case we later detect that we're reading a VASP 4.x format
     # file.
-    line1 = f.readline()
+    line1 = fd.readline()
 
-    lattice_constant = float(f.readline().split()[0])
+    lattice_constant = float(fd.readline().split()[0])
 
     # Now the lattice vectors
     a = []
     for ii in range(3):
-        s = f.readline().split()
+        s = fd.readline().split()
         floatvect = float(s[0]), float(s[1]), float(s[2])
         a.append(floatvect)
 
@@ -145,7 +145,7 @@ def read_vasp(filename='CONTCAR'):
     # in the first line
     # or in the POTCAR or OUTCAR file
     atom_symbols = []
-    numofatoms = f.readline().split()
+    numofatoms = fd.readline().split()
     # Check whether we have a VASP 4.x or 5.x format file. If the
     # format is 5.x, use the fifth line to provide information about
     # the atomic symbols.
@@ -155,7 +155,7 @@ def read_vasp(filename='CONTCAR'):
     except ValueError:
         vasp5 = True
         atomtypes = numofatoms
-        numofatoms = f.readline().split()
+        numofatoms = fd.readline().split()
 
     # check for comments in numofatoms line and get rid of them if necessary
     commentcheck = np.array(['!' in s for s in numofatoms])
@@ -190,26 +190,26 @@ def read_vasp(filename='CONTCAR'):
             if len(atomtypes) == 1 and '_' in atomtypes[0]:
                 atomtypes = get_atomtypes_from_formula(atomtypes[0])
             else:
-                atomtypes = atomtypes_outpot(f.name, numsyms)
+                atomtypes = atomtypes_outpot(fd.name, numsyms)
         else:
             try:
                 for atype in atomtypes[:numsyms]:
                     if atype not in chemical_symbols:
                         raise KeyError
             except KeyError:
-                atomtypes = atomtypes_outpot(f.name, numsyms)
+                atomtypes = atomtypes_outpot(fd.name, numsyms)
 
     for i, num in enumerate(numofatoms):
         numofatoms[i] = int(num)
         [atom_symbols.append(atomtypes[i]) for na in range(numofatoms[i])]
 
     # Check if Selective dynamics is switched on
-    sdyn = f.readline()
+    sdyn = fd.readline()
     selective_dynamics = sdyn[0].lower() == 's'
 
     # Check if atom coordinates are cartesian or direct
     if selective_dynamics:
-        ac_type = f.readline()
+        ac_type = fd.readline()
     else:
         ac_type = sdyn
     cartesian = ac_type[0].lower() == 'c' or ac_type[0].lower() == 'k'
@@ -218,7 +218,7 @@ def read_vasp(filename='CONTCAR'):
     if selective_dynamics:
         selective_flags = np.empty((tot_natoms, 3), dtype=bool)
     for atom in range(tot_natoms):
-        ac = f.readline().split()
+        ac = fd.readline().split()
         atoms_pos[atom] = (float(ac[0]), float(ac[1]), float(ac[2]))
         if selective_dynamics:
             curflag = []
@@ -522,8 +522,8 @@ def read_vasp_out(filename='OUTCAR', index=-1):
     Reads unitcell, atom positions, energies, and forces from the OUTCAR file
     and attempts to read constraints (if any) from CONTCAR/POSCAR, if present.
     """
-    f = filename
-    g = iread_vasp_out(f, index=index)
+    # "filename" is actually a file-descriptor thanks to @reader
+    g = iread_vasp_out(filename, index=index)
     # Code borrowed from formats.py:read
     if isinstance(index, (slice, str)):
         # Return list of atoms
@@ -544,36 +544,36 @@ def read_vasp_xdatcar(filename='XDATCAR', index=-1):
        Constraints ARE NOT stored in the XDATCAR, and as such, Atoms
        objects retrieved from the XDATCAR will not have constraints set.
     """
-    f = filename
+    fd = filename  # @reader decorator ensures this is a file descriptor
     images = list()
 
     cell = np.eye(3)
     atomic_formula = str()
 
     while True:
-        comment_line = f.readline()
+        comment_line = fd.readline()
         if "Direct configuration=" not in comment_line:
             try:
-                lattice_constant = float(f.readline())
+                lattice_constant = float(fd.readline())
             except Exception:
                 # XXX: When would this happen?
                 break
 
-            xx = [float(x) for x in f.readline().split()]
-            yy = [float(y) for y in f.readline().split()]
-            zz = [float(z) for z in f.readline().split()]
+            xx = [float(x) for x in fd.readline().split()]
+            yy = [float(y) for y in fd.readline().split()]
+            zz = [float(z) for z in fd.readline().split()]
             cell = np.array([xx, yy, zz]) * lattice_constant
 
-            symbols = f.readline().split()
-            numbers = [int(n) for n in f.readline().split()]
+            symbols = fd.readline().split()
+            numbers = [int(n) for n in fd.readline().split()]
             total = sum(numbers)
 
             atomic_formula = ''.join('{:s}{:d}'.format(sym, numbers[n])
                                      for n, sym in enumerate(symbols))
 
-            f.readline()
+            fd.readline()
 
-        coords = [np.array(f.readline().split(), np.float)
+        coords = [np.array(fd.readline().split(), np.float)
                   for ii in range(total)]
 
         image = Atoms(atomic_formula, cell=cell, pbc=True)
@@ -838,13 +838,13 @@ def read_vasp_xml(filename='vasprun.xml', index=-1):
 
 
 @writer
-def write_vasp_xdatcar(f, images, label=None):
+def write_vasp_xdatcar(fd, images, label=None):
     """Write VASP MD trajectory (XDATCAR) file
 
     Only Vasp 5 format is supported (for consistency with read_vasp_xdatcar)
 
     Args:
-        f (str, fp): Output file
+        fd (str, fp): Output file
         images (Atoms or iterable of Atoms): Atoms image(s) to write. These
             must have consistent atom order and lattice vectors - this will not
             be checked.
@@ -867,42 +867,42 @@ def write_vasp_xdatcar(f, images, label=None):
 
     if label is None:
         label = ' '.join([s for s, _ in symbol_count])
-    f.write(label + '\n')
+    fd.write(label + '\n')
 
     # Not using lattice constants, set it to 1
-    f.write('           1\n')
+    fd.write('           1\n')
 
     # Lattice vectors; use first image
     float_string = '{:11.6f}'
     for row_i in range(3):
-        f.write('  ')
-        f.write(' '.join(float_string.format(x) for x in image.cell[row_i]))
-        f.write('\n')
+        fd.write('  ')
+        fd.write(' '.join(float_string.format(x) for x in image.cell[row_i]))
+        fd.write('\n')
 
-    _write_symbol_count(f, symbol_count)
-    _write_xdatcar_config(f, image, index=1)
+    _write_symbol_count(fd, symbol_count)
+    _write_xdatcar_config(fd, image, index=1)
     for i, image in enumerate(images):
         # Index is off by 2: 1-indexed file vs 0-indexed Python;
         # and we already wrote the first block.
-        _write_xdatcar_config(f, image, i + 2)
+        _write_xdatcar_config(fd, image, i + 2)
 
 
-def _write_xdatcar_config(f, atoms, index):
+def _write_xdatcar_config(fd, atoms, index):
     """Write a block of positions for XDATCAR file
 
     Args:
-        f (fd): writeable Python file descriptor
+        fd (fd): writeable Python file descriptor
         atoms (ase.Atoms): Atoms to write
         index (int): configuration number written to block header
 
     """
-    f.write("Direct configuration={:6d}\n".format(index))
+    fd.write("Direct configuration={:6d}\n".format(index))
     float_string = '{:11.8f}'
     scaled_positions = atoms.get_scaled_positions()
     for row in scaled_positions:
-        f.write(' ')
-        f.write(' '.join([float_string.format(x) for x in row]))
-        f.write('\n')
+        fd.write(' ')
+        fd.write(' '.join([float_string.format(x) for x in row]))
+        fd.write('\n')
 
 
 def _symbol_count_from_symbols(symbols):
@@ -928,7 +928,7 @@ def _symbol_count_from_symbols(symbols):
     return sc
 
 
-def _write_symbol_count(f, sc, vasp5=True):
+def _write_symbol_count(fd, sc, vasp5=True):
     """Write the symbols and numbers block for POSCAR or XDATCAR
 
     Args:
@@ -944,12 +944,12 @@ def _write_symbol_count(f, sc, vasp5=True):
     """
     if vasp5:
         for sym, _ in sc:
-            f.write(' {:3s}'.format(sym))
-        f.write('\n')
+            fd.write(' {:3s}'.format(sym))
+        fd.write('\n')
 
     for _, count in sc:
-        f.write(' {:3d}'.format(count))
-    f.write('\n')
+        fd.write(' {:3d}'.format(count))
+    fd.write('\n')
 
 
 @writer
@@ -966,7 +966,7 @@ def write_vasp(filename, atoms, label=None, direct=False, sort=None,
 
     from ase.constraints import FixAtoms, FixScaled, FixedPlane, FixedLine
 
-    f = filename
+    fd = filename  # @writer decorator ensures this arg is a file descriptor
 
     if isinstance(atoms, (list, tuple)):
         if len(atoms) > 1:
@@ -1033,33 +1033,33 @@ def write_vasp(filename, atoms, label=None, direct=False, sort=None,
         label = ''
         for sym, c in sc:
             label += '%2s ' % sym
-    f.write(label + '\n')
+    fd.write(label + '\n')
 
     # Write unitcell in real coordinates and adapt to VASP convention
     # for unit cell
     # ase Atoms doesn't store the lattice constant separately, so always
     # write 1.0.
-    f.write('%19.16f\n' % 1.0)
+    fd.write('%19.16f\n' % 1.0)
     if long_format:
         latt_form = ' %21.16f'
     else:
         latt_form = ' %11.6f'
     for vec in atoms.get_cell():
-        f.write(' ')
+        fd.write(' ')
         for el in vec:
-            f.write(latt_form % el)
-        f.write('\n')
+            fd.write(latt_form % el)
+        fd.write('\n')
 
     # Write out symbols (if VASP 5.x) and counts of atoms
-    _write_symbol_count(f, sc, vasp5=vasp5)
+    _write_symbol_count(fd, sc, vasp5=vasp5)
 
     if constraints:
-        f.write('Selective dynamics\n')
+        fd.write('Selective dynamics\n')
 
     if direct:
-        f.write('Direct\n')
+        fd.write('Direct\n')
     else:
-        f.write('Cartesian\n')
+        fd.write('Cartesian\n')
 
     if long_format:
         cform = ' %19.16f'
@@ -1067,12 +1067,12 @@ def write_vasp(filename, atoms, label=None, direct=False, sort=None,
         cform = ' %9.6f'
     for iatom, atom in enumerate(coord):
         for dcoord in atom:
-            f.write(cform % dcoord)
+            fd.write(cform % dcoord)
         if constraints:
             for flag in sflags[iatom]:
                 if flag:
                     s = 'F'
                 else:
                     s = 'T'
-                f.write('%4s' % s)
-        f.write('\n')
+                fd.write('%4s' % s)
+        fd.write('\n')
