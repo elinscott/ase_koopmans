@@ -176,7 +176,7 @@ def read_vasp(filename='CONTCAR'):
             try:
                 atomtypes.extend(list(Formula(word_without_delims)))
             except ValueError:
-                #print(atomtype, e, 'is comment')
+                # print(atomtype, e, 'is comment')
                 pass
         # Now the list of chemical symbols atomtypes must be formed.
         # For example: atomtypes = ['Pd', 'C', 'O']
@@ -323,7 +323,7 @@ def _read_outcar_frame(lines, header_data):
                 if len(magmom) == 1:
                     # Collinear spin
                     magmom = float(magmom[0])
-                # XXX: !!!Uncomment these lines when non-collinear spin is supported!!!
+                # !Uncomment these lines when non-collinear spin is supported!
                 # Remember to check that format fits!
                 # else:
                 #     # Non-collinear spin

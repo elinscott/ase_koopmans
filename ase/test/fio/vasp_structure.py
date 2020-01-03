@@ -9,7 +9,7 @@ import ase.io
 from ase.calculators.calculator import compare_atoms
 
 
-class Test_xdatcar_roundtrip(unittest.TestCase):
+class TestXdatcarRoundtrip(unittest.TestCase):
     def setUp(self):
         self.outfile = 'NaCl.XDATCAR'
 
@@ -20,10 +20,7 @@ class Test_xdatcar_roundtrip(unittest.TestCase):
             os.remove(self.outfile)
 
     def assert_atoms_almost_equal(self, atoms, other, tol=1e-15):
-        """Compare two Atoms objects, raising AssertionError if different
-
-
-        """
+        """Compare two Atoms objects, raising AssertionError if different"""
         system_changes = compare_atoms(atoms, other, tol=tol)
 
         if len(system_changes) > 0:
@@ -61,19 +58,21 @@ class Test_xdatcar_roundtrip(unittest.TestCase):
             not_traj = [True, False, False]
             ase.io.write(self.outfile, not_traj, format='vasp-xdatcar')
 
+
 def suite():
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(
-        Test_xdatcar_roundtrip)
+        TestXdatcarRoundtrip)
     return suite
 
 
 # Instead of keeping/displaying unittest results, escalate errors so ASE unit
-# test system can handle them
+# test system can handle them. "noqa" tells flake8 that it's ok for these
+# functions to have camelCase names (as required by unittest).
 class XdatcarTestResults(unittest.TestResult):
-    def addFailure(self, test, err):
+    def addFailure(self, test, err):      # noqa: N802
         raise err[1]
 
-    def addError(self, test, err):
+    def addError(self, test, err):        # noqa: N802
         raise err[1]
 
 
