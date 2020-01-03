@@ -50,6 +50,9 @@ def get_siesta_version(command: str) -> str:
     then parse the output in order find the
     version number.
     """
+    # XXX We need a test of this kind of function.  But Siesta().command
+    # is not enough to tell us how to run Siesta, because it could contain
+    # all sorts of mpirun and other weird parts.
 
     temp_dirname = tempfile.mkdtemp(prefix='siesta-version-check-')
     try:
@@ -66,7 +69,7 @@ def get_siesta_version(command: str) -> str:
     finally:
         shutil.rmtree(temp_dirname)
 
-    return parse_version(output)
+    return parse_siesta_version(output)
 
 
 def bandpath2bandpoints(path):
