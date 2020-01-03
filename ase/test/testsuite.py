@@ -11,10 +11,13 @@ import runpy
 import time
 import traceback
 import warnings
+from pathlib import Path
 
 from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
+
+TEST_BASEPATH = Path(__file__).parent
 
 
 def importorskip(module):
@@ -443,6 +446,11 @@ def no_warn():
         yield
 
 
+MULTIPROCESSING_MAX_WORKERS = 32
+MULTIPROCESSING_DISABLED = 0
+MULTIPROCESSING_AUTO = -1
+
+
 class CLICommand:
     """Run ASE's test-suite.
 
@@ -459,12 +467,13 @@ class CLICommand:
                             help='print all tests and exit')
         parser.add_argument('--list-calculators', action='store_true',
                             help='print all calculator names and exit')
-        parser.add_argument('-j', '--jobs', type=int, default=-1,
-                            metavar='N',
+        parser.add_argument('-j', '--jobs', type=int, metavar='N',
+                            default=MULTIPROCESSING_AUTO,
                             help='number of worker processes.  '
                             'By default use all available processors '
-                            'up to a maximum of 32.  '
-                            '0 disables multiprocessing')
+                            'up to a maximum of {}.  '
+                            '0 disables multiprocessing'
+                            .format(MULTIPROCESSING_MAX_WORKERS))
         parser.add_argument('-v', '--verbose', action='store_true',
                             help='Write test outputs to stdout.  '
                             'Mostly useful when inspecting a single test')
@@ -483,11 +492,11 @@ class CLICommand:
         else:
             calculators = []
 
-        if args.list:
-            dirname, _ = os.path.split(__file__)
-            for testfile in get_tests(args.tests):
-                print(os.path.join(dirname, testfile))
-            sys.exit(0)
+        #if args.list:
+        #    dirname, _ = os.path.split(__file__)
+        #    for testfile in get_tests(args.tests):
+        #        print(os.path.join(dirname, testfile))
+        #    sys.exit(0)
 
         if args.list_calculators:
             for name in calc_names:
@@ -505,7 +514,39 @@ class CLICommand:
         if args.nogui:
             os.environ.pop('DISPLAY')
 
-        ntrouble = test(calculators=calculators, jobs=args.jobs,
-                        strict=args.strict,
-                        files=args.tests, verbose=args.verbose)
-        sys.exit(ntrouble)
+        #print(TEST_BASEPATH)
+        #print(__path__)
+        import pytest
+
+        pytest_args = ['-v']
+
+        def add_args(*args):
+            pytest_args.extend(args)
+
+        if args.list:
+            add_args('--collect-only')
+
+        if args.jobs == MULTIPROCESSING_DISABLED:
+            pass
+        elif args.jobs == MULTIPROCESSING_AUTO:
+            add_args('--numprocesses=auto',
+                     '--maxprocesses={}'.format(MULTIPROCESSING_MAX_WORKERS))
+        else:
+            add_args('--numprocesses={}'.format(args.jobs))
+
+        if args.tests:
+            print(TEST_BASEPATH)
+            #print(args.tests)
+            tests = [TEST_BASEPATH / test
+                     for test in args.tests]
+            print(tests)
+            #xxx
+            add_args(*[str(TEST_BASEPATH / test) for test in args.tests])
+            print(pytest_args)
+        else:
+            add_args('--pyargs', 'ase.test')
+
+        print(pytest_args)
+        exitcode = pytest.main(pytest_args)
+        #exitcode = pytest.main(['--pyargs', 'ase.test'])
+        sys.exit(exitcode)
