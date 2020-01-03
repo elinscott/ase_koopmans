@@ -32,7 +32,18 @@ from ase.calculators.siesta.parameters import format_fdf
 meV = 0.001 * eV
 
 
-def get_siesta_version(command):
+def parse_siesta_version(output: bytes) -> str:
+    match = re.search(rb'Siesta Version\s*:\s*(\S+)', output)
+
+    if match is None:
+        raise RuntimeError('Could not get Siesta version info from output '
+                           '{!r}'.format(output))
+
+    string = match.group(1).decode('ascii')
+    return string
+
+
+def get_siesta_version(command: str) -> str:
     """ Return SIESTA version number.
 
     Run the command, for instance 'siesta' and
@@ -55,14 +66,7 @@ def get_siesta_version(command):
     finally:
         shutil.rmtree(temp_dirname)
 
-    match = re.search(rb'Siesta Version\s*:\s*(\S+)', output)
-
-    if match is None:
-        raise RuntimeError('Could not get Siesta version info from output '
-                           '{!r}'.format(output))
-
-    string = match.group(1).decode('ascii')
-    return string
+    return parse_version(output)
 
 
 def bandpath2bandpoints(path):
