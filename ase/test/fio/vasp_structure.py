@@ -1,11 +1,12 @@
 import os
 import numpy as np
 import numpy.testing
+import unittest
+
 import ase
 import ase.build
 import ase.io
-
-import unittest
+from ase.calculators.calculator import compare_atoms
 
 
 class Test_xdatcar_roundtrip(unittest.TestCase):
@@ -18,27 +19,16 @@ class Test_xdatcar_roundtrip(unittest.TestCase):
         if os.path.isfile(self.outfile):
             os.remove(self.outfile)
 
-    def assert_atoms_almost_equal(self, atoms, other):
+    def assert_atoms_almost_equal(self, atoms, other, tol=1e-15):
         """Compare two Atoms objects, raising AssertionError if different
 
-        This is quite redundant with the Atoms.__eq__ method, but more
-        tolerant of minor differences in the positions by a) comparing scaled
-        (i.e. wrapped) positions and b) using a comparison that tolerates small
-        errors.
 
         """
-        self.assertIsInstance(atoms, ase.Atoms)
-        self.assertIsInstance(other, ase.Atoms)
-        self.assertEqual(len(atoms), len(other))
-        self.assertEqual(atoms.arrays['numbers'].tolist(),
-                         other.arrays['numbers'].tolist())
-        numpy.testing.assert_array_almost_equal(
-            atoms.get_scaled_positions(wrap=True),
-            other.get_scaled_positions(wrap=True),
-            decimal=12)
-        numpy.testing.assert_array_almost_equal(atoms.cell, other.cell,
-                                                decimal=12)
-        self.assertTrue((atoms.pbc == other.pbc).all())
+        system_changes = compare_atoms(atoms, other, tol=tol)
+
+        if len(system_changes) > 0:
+            raise AssertionError(
+                "Atoms objects differ by {}".format(', '.join(system_changes)))
 
     def assert_trajectory_almost_equal(self, traj1, traj2):
         self.assertEqual(len(traj1), len(traj2))
