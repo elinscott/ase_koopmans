@@ -6,8 +6,8 @@ import unittest
 import ase
 import ase.build
 import ase.io
+from ase.io.vasp import write_vasp_xdatcar
 from ase.calculators.calculator import compare_atoms
-
 
 class TestXdatcarRoundtrip(unittest.TestCase):
     def setUp(self):
@@ -51,6 +51,9 @@ class TestXdatcarRoundtrip(unittest.TestCase):
         self.assert_atoms_almost_equal(atoms, roundtrip_atoms)
 
     def test_typeerror(self):
+        with self.assertRaises(TypeError):
+            atoms = ase.build.bulk('Ge')
+            write_vasp_xdatcar(self.outfile, atoms)
         with self.assertRaises(TypeError):
             not_atoms = 1
             ase.io.write(self.outfile, not_atoms, format='vasp-xdatcar')
