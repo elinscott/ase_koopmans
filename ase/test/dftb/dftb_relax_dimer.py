@@ -1,16 +1,13 @@
 import os
 from ase import Atoms
 from ase.test import require
-from ase.test.dftb import Si_Si_skf
+from ase.test.testsuite import datafiles_directory
 from ase.calculators.dftb import Dftb
 from ase.optimize import BFGS
 
 require('dftb')
 
-with open('./Si-Si.skf', 'w') as f:
-    f.write(Si_Si_skf)
-
-os.environ['DFTB_PREFIX'] = './'
+os.environ['DFTB_PREFIX'] = datafiles_directory
 
 calc = Dftb(label='dftb',
             Hamiltonian_SCC='No',

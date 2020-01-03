@@ -28,7 +28,8 @@ with open('ase/__init__.py') as fd:
 package_data = {'ase': ['spacegroup/spacegroup.dat',
                         'collections/*.json',
                         'db/templates/*',
-                        'db/static/*']}
+                        'db/static/*'],
+                'ase.test': ['datafiles/*']}
 
 
 class build_py(_build_py):

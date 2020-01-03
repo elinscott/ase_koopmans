@@ -19,6 +19,7 @@ from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
 test_calculator_names = ['emt']
+datafiles_directory = os.path.join(os.path.dirname(__file__), 'datafiles', '')
 
 
 def require(calcname):
