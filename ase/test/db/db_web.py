@@ -1,6 +1,11 @@
 from ase import Atoms
 from ase.db import connect
+from ase.test.testsuite import importorskip
+
+importorskip('flask')
 import ase.db.app as app
+
+
 
 db = connect('test.db', append=False)
 x = [0, 1, 2]
