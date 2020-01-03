@@ -643,11 +643,11 @@ class read_text_data:
 
             Array = np.zeros((dim[0], dim[1], dim[2]), dtype=float)
 
-            l = end_box
+            l_end = end_box
             for k in range(int(dim[2])):
                 for j in range(int(dim[1])):
-                    Array[:, j, k] = np.array(str2float(LINE[l]))
-                    l = l + 1
+                    Array[:, j, k] = np.array(str2float(LINE[l_end]))
+                    l_end += 1
 
         return dr, origin, lbound, ubound, Array, box, dim
 

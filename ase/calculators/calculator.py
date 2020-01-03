@@ -82,7 +82,7 @@ def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
 
         properties_to_check = set(all_changes)
         if excluded_properties:
-             properties_to_check -= set(excluded_properties)
+            properties_to_check -= set(excluded_properties)
 
         # Check properties that aren't in Atoms.arrays but are attributes of
         # Atoms objects

@@ -638,7 +638,7 @@ def output_column_format(atoms, columns, arrays,
     # with Fortran array ordering
     lattice_str = ('Lattice="'
                    + ' '.join([str(x) for x in np.reshape(atoms.cell.T,
-                                                        9, order='F')]) +
+                                                          9, order='F')]) +
                    '"')
 
     property_names = []
@@ -723,7 +723,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
         if fr_cols is None:
             fr_cols = (['symbols', 'positions']
                        + [key for key in atoms.arrays.keys() if
-                        key not in ['symbols', 'positions', 'numbers',
+                          key not in ['symbols', 'positions', 'numbers',
                                       'species', 'pos']])
 
         if vec_cell:

@@ -125,9 +125,10 @@ def write_v_sim(filename, atoms):
     elif np.array_equiv(atoms.pbc, [True, False, True]):
         f.write('#keyword: surface\n')
     else:
-        raise Exception('Only supported boundary conditions are full PBC,'
-        ' no periodic boundary, and surface which is free in y direction'
-        ' (i.e. Atoms.pbc = [True, False, True]).')
+        raise Exception(
+            'Only supported boundary conditions are full PBC,'
+            ' no periodic boundary, and surface which is free in y direction'
+            ' (i.e. Atoms.pbc = [True, False, True]).')
 
     # Add atoms (scaled positions)
     for position, symbol in zip(atoms.get_scaled_positions(),
