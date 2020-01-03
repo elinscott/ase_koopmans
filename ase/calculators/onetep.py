@@ -149,9 +149,9 @@ class Onetep(FileIOCalculator):
         FileIOCalculator.read_results(self)
 
         if label is None:
-           onetep_file = self.label + '.out'
+            onetep_file = self.label + '.out'
         else:
-           onetep_file = label + '.out'
+            onetep_file = label + '.out'
 
         warnings = []
 
@@ -244,10 +244,10 @@ class Onetep(FileIOCalculator):
         for j in range(len(tags)):
             tags[j] = ''.join(i for i in tags[j] if not i.isalpha())
             if tags[j]=='':
-               tags[j]='0'
+                tags[j]='0'
             tags[j] = int(tags[j])
         if len(self.atoms)!=len(symbols):
-           self.atoms = Atoms(symbols=symbols,positions=positions)
+            self.atoms = Atoms(symbols=symbols,positions=positions)
         self.atoms.set_chemical_symbols(symbols)
         self.atoms.set_tags(tags)
         self.atoms.set_positions(positions)

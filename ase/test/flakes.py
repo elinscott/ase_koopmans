@@ -154,7 +154,7 @@ max_errors = {
     # multiple spaces after ','
     'E241': 50,
     # continuation line under-indented for visual indent
-    'E128': 53,
+    'E128': 54,
     # continuation line over-indented for visual indent
     'E127': 60,
     # missing whitespace around operator
