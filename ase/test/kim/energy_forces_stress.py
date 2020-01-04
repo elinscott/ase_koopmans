@@ -5,6 +5,8 @@ model to the known value; the forces/stress returned by the model are
 compared to numerical estimates via finite difference.
 """
 import numpy as np
+from ase.test.testsuite import importorskip
+importorskip('kimpy')
 from ase.calculators.kim import KIM
 from ase.lattice.cubic import FaceCenteredCubic
 

@@ -166,7 +166,7 @@ max_errors = {
     # expected 2 blank lines after class or function definition, found 1
     'E305': 83,
     # module level import not at top of file
-    'E402': 91,
+    'E402': 97,
     # at least two spaces before inline comment
     'E261': 97,
     # expected 2 blank lines, found 1

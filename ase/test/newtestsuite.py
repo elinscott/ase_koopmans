@@ -88,10 +88,10 @@ class TestModule:
         for testfile in testfiles:
             if testfile.name in cls.ignorefiles:
                 continue
-            if testfile.parent.name in calculator_names:
-                continue
-            if testfile.parent.name in ['calculators', 'calculator']:
-                continue
+            #if testfile.parent.name in calculator_names:
+            #    continue
+            #if testfile.parent.name in ['calculators', 'calculator']:
+            #    continue
             if '#' in testfile.name:
                 continue  # Ignore certain backup files.
             rel_testfile = testfile.relative_to(cls.testdir)
