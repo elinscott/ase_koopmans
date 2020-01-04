@@ -19,17 +19,19 @@ import ase.test as asetest
 from ase.utils import workdir
 
 
+from ase.calculators.calculator import names as calculator_names
+
 # Ignore calculator tests (for now):
-ignoredirs = {
-    'abinit', 'ace', 'aims', 'aims', 'amber',
-    'calculator', 'calculators',
-    'castep', 'cp2k', 'crystal', 'demon', 'demonnano',
-    'dftb', 'dmol', 'elk', 'espresso',
-    'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'jacapo',
-    'kim', 'lammpslib', 'lammpsrun', 'nwchem',
-    'octopus', 'onetep', 'openmx', 'psi4',
-    'qbox', 'qchem', 'siesta', 'turbomole', 'vasp',
-}
+#calculators = {
+#    'abinit', 'ace', 'aims', 'aims', 'amber',
+#    'calculator', 'calculators',
+#    'castep', 'cp2k', 'crystal', 'demon', 'demonnano',
+#    'dftb', 'dmol', 'elk', 'espresso',
+#    'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'jacapo',
+#    'kim', 'lammpslib', 'lammpsrun', 'nwchem',
+#    'octopus', 'onetep', 'openmx', 'psi4',
+#    'qbox', 'qchem', 'siesta', 'turbomole', 'vasp',
+#}
 
 
 class TestModule:
@@ -86,8 +88,8 @@ class TestModule:
         for testfile in testfiles:
             if testfile.name in cls.ignorefiles:
                 continue
-            #if testfile.parent.name in ignoredirs:
-            #    continue
+            if testfile.parent.name in calculator_names:
+                continue
             if '#' in testfile.name:
                 continue  # Ignore certain backup files.
             rel_testfile = testfile.relative_to(cls.testdir)
@@ -113,6 +115,3 @@ class TestModule:
 
             testfunc = testmodule.define_script_test_function()
             namespace[testfunc.__name__] = testfunc
-
-
-TestModule.add_oldstyle_tests_to_namespace(globals())
