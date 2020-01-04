@@ -59,7 +59,7 @@ class TestModule:
         # automatically.  We call these "pytest-style" modules.
         #
         # The other modules must be for our own old test suite.
-        name = self.module.rsplit('.', 1)
+        name = self.path.name
         return 'test_' in name or '_test' in name
 
     @classmethod
