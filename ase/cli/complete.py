@@ -122,8 +122,9 @@ def complete(word, previous, line, point):
             # Suggest names of tests.  We suggest all matching tests.
             # It might be better to autocomplete only up to directory
             # names.
-            from ase.test.testsuite import get_tests
-            words = get_tests()
+            from ase.test.newtestsuite import TestModule
+            words = [mod.testname
+                     for mod in TestModule.glob_all_test_modules()]
 
     return words
 

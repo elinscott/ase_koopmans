@@ -74,7 +74,18 @@ class TestModule:
         return name.replace('/', '.')
 
     def __repr__(self):
-        return 'TestModule({})'.format(self.module)
+        return 'TestModule(\'{}\')'.format(self.testname)
+
+    @property
+    def pytest_function_name(self):
+        return 'test_' + self.testname.replace('.', '_')
+
+    @property
+    def pytest_identifier(self):
+        if self.is_pytest_style:
+            return 'test_modules.py::{}'.format(self.pytest_function_name)
+        else:
+            raise RuntimeError
 
     @classmethod
     def glob_all_test_modules(cls) -> "Generator[TestModule]":
@@ -98,15 +109,20 @@ class TestModule:
             testname = cls.filename_to_testname(rel_testfile)
             yield TestModule(testname)
 
+    @classmethod
+    def all_test_modules_as_dict(cls):
+        dct = {}
+        for mod in cls.glob_all_test_modules():
+            dct[mod.testname] = mod
+        return dct
+
     def define_script_test_function(self):
         module = self.module
-        pytestname = 'test_' + self.testname.replace('.', '_')
-
         def test_script(tmp_path):
             with workdir(tmp_path):
                 runpy.run_module(module, run_name='test')
 
-        test_script.__name__ = pytestname
+        test_script.__name__ = self.pytest_function_name
         return test_script
 
     @classmethod

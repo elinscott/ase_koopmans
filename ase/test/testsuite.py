@@ -13,6 +13,8 @@ import traceback
 import warnings
 from pathlib import Path
 
+import pytest
+
 from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
@@ -489,6 +491,7 @@ class CLICommand:
     def run(args):
         if args.calculators:
             calculators = args.calculators.split(',')
+            os.environ['ASE_TEST_CALCULATORS'] = ' '.join(calculators)
         else:
             calculators = []
 
@@ -514,10 +517,6 @@ class CLICommand:
         if args.nogui:
             os.environ.pop('DISPLAY')
 
-        #print(TEST_BASEPATH)
-        #print(__path__)
-        import pytest
-
         pytest_args = ['-v']
 
         def add_args(*args):
@@ -534,19 +533,23 @@ class CLICommand:
         else:
             add_args('--numprocesses={}'.format(args.jobs))
 
-        if args.tests:
-            print(TEST_BASEPATH)
-            #print(args.tests)
-            tests = [TEST_BASEPATH / test
-                     for test in args.tests]
-            print(tests)
-            #xxx
-            add_args(*[str(TEST_BASEPATH / test) for test in args.tests])
-            print(pytest_args)
-        else:
-            add_args('--pyargs', 'ase.test')
+        add_args('--pyargs')
 
-        print(pytest_args)
+        if args.tests:
+            from ase.test.newtestsuite import TestModule
+
+            dct = TestModule.all_test_modules_as_dict()
+
+            for testname in args.tests:
+                mod = dct[testname]
+                if mod.is_pytest_style:
+                    pytest_args.append(mod.module)
+                else:
+                    # XXX Not totally logical
+                    add_args('ase.test.test_modules::{}'
+                             .format(mod.pytest_function_name))
+        else:
+            add_args('ase.test')
+
         exitcode = pytest.main(pytest_args)
-        #exitcode = pytest.main(['--pyargs', 'ase.test'])
         sys.exit(exitcode)
