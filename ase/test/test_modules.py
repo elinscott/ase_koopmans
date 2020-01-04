@@ -12,14 +12,11 @@ becomes shorter, and the list of tests in other modules becomes
 longer."""
 
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Generator
 import runpy
 from pathlib import Path
 import ase.test as asetest
 from ase.utils import workdir
-
-
-ignorefiles = {'__init__.py', 'testsuite.py'}
 
 
 # Ignore calculator tests (for now):
@@ -35,53 +32,87 @@ ignoredirs = {
 }
 
 
-def find_all_test_modules() -> List[str]:
-    """Return a list of modules ['ase.test.xxx', 'ase.test.yyy', ...]."""
+class TestModule:
+    ignorefiles = {'__init__.py', 'testsuite.py', 'conftest.py'}
     testdir = Path(asetest.__file__).parent
-    testfiles = sorted(testdir.glob('*.py'))
-    testfiles += sorted(testdir.glob('*/*.py'))
-    # XXX Some tests were added at */*/*.py level, but the old test suite
-    # never globbed so deep.  So these tests never ran.
-    # We can/should rehabilitate them.
 
-    modules = []
-    for testfile in testfiles:
-        if testfile.name in ignorefiles:
-            continue
-        if testfile.parent.name in ignoredirs:
-            continue
-        if '#' in testfile.name:
-            continue  # Ignore certain backup files.
-        if 'test_' in testfile.name or '_test' in testfile.name:
-            # These files are picked up by pytest automatically.
-            # This heuristic is not perfect.
-            # But we think of it as follows:
-            # a test which is *not* named like this is old-style,
-            # and a test named like this is pytest-style.
-            continue
-        rel_testfile = testfile.relative_to(testdir)
-        module = str(rel_testfile).rsplit('.', 1)[0].replace('/', '.')
-        modules.append('ase.test.{}'.format(module))
-    return modules
+    def __init__(self, testname: str):
+        # Testname is e.g. "fio.dftb".
+        # Referring to the file ase/test/fio/dftb.py
+        # or the module ase.test.fio.dftb
+        self.testname = testname
+
+    @property
+    def module(self) -> str:
+        return 'ase.test.{}'.format(self.testname)
+
+    @property
+    def path(self) -> Path:
+        return Path(self.module.replace('.', '/') + '.py')
+
+    @property
+    def is_pytest_style(self) -> bool:
+        # Files named test_* or *_test are are picked up by pytest
+        # automatically.  We call these "pytest-style" modules.
+        #
+        # The other modules must be for our own old test suite.
+        name = self.module.rsplit('.', 1)
+        return 'test_' in name or '_test' in name
+
+    @classmethod
+    def from_relpath(cls, relpath) -> "TestModule":
+        module = TestModule.relpath2module(relpath)
+        return TestModule(module)
+
+    @staticmethod
+    def filename_to_testname(filename):
+        name, py = str(filename).rsplit('.', 1)
+        assert py == 'py'
+        return name.replace('/', '.')
+
+    def __repr__(self):
+        return 'TestModule({})'.format(self.module)
+
+    @classmethod
+    def glob_all_test_modules(cls) -> "Generator[TestModule]":
+        """Return a list of modules ['ase.test.xxx', 'ase.test.yyy', ...]."""
+        testfiles = sorted(cls.testdir.glob('*.py'))
+        testfiles += sorted(cls.testdir.glob('*/*.py'))
+        # XXX Some tests were added at */*/*.py level, but the old test suite
+        # never globbed so deep.  So these tests never ran.
+        # We can/should rehabilitate them.
+
+        modules = []
+        for testfile in testfiles:
+            if testfile.name in cls.ignorefiles:
+                continue
+            #if testfile.parent.name in ignoredirs:
+            #    continue
+            if '#' in testfile.name:
+                continue  # Ignore certain backup files.
+            rel_testfile = testfile.relative_to(cls.testdir)
+            testname = cls.filename_to_testname(rel_testfile)
+            yield TestModule(testname)
+
+    def define_script_test_function(self):
+        module = self.module
+        testname = 'test_' + self.testname.replace('.', '_')
+
+        def test_script(tmp_path):
+            with workdir(tmp_path):
+                runpy.run_module(module, run_name='test')
+
+        test_script.__name__ = testname
+        return test_script
+
+    @classmethod
+    def add_oldstyle_tests_to_namespace(cls, namespace: Dict[str, Any]):
+        for testmodule in cls.glob_all_test_modules():
+            if testmodule.is_pytest_style:
+                continue
+
+            testfunc = testmodule.define_script_test_function()
+            namespace[testfunc.__name__] = testfunc
 
 
-def define_script_test_function(module: str):
-    assert module.startswith('ase.test.')
-    testname = module.split('.', 1)[1].replace('.', '_')
-
-    def test_script(tmp_path):
-        with workdir(tmp_path):
-            runpy.run_module(module, run_name='test')
-
-    test_script.__name__ = testname
-    return test_script
-
-
-def add_all_tests_to_namespace(namespace: Dict[str, Any]):
-    for module in find_all_test_modules():
-        assert '-' not in module, module  # Rename/avoid improper module names
-        testfunc = define_script_test_function(module)
-        namespace[testfunc.__name__] = testfunc
-
-
-add_all_tests_to_namespace(globals())
+TestModule.add_oldstyle_tests_to_namespace(globals())
