@@ -118,6 +118,7 @@ class TestModule:
 
     def define_script_test_function(self):
         module = self.module
+
         def test_script(tmp_path):
             with workdir(tmp_path):
                 runpy.run_module(module, run_name='test')
