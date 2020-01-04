@@ -12,7 +12,7 @@ becomes shorter, and the list of tests in other modules becomes
 longer."""
 
 
-from typing import Dict, Any, List, Generator
+from typing import Dict, Any, Generator
 import runpy
 from pathlib import Path
 import ase.test as asetest
@@ -35,7 +35,8 @@ from ase.calculators.calculator import names as calculator_names
 
 
 class TestModule:
-    ignorefiles = {'__init__.py', 'testsuite.py', 'conftest.py'}
+    ignorefiles = {'__init__.py', 'testsuite.py', 'newtestsuite.py',
+                   'conftest.py'}
     testdir = Path(asetest.__file__).parent
 
     def __init__(self, testname: str):
@@ -84,11 +85,12 @@ class TestModule:
         # never globbed so deep.  So these tests never ran.
         # We can/should rehabilitate them.
 
-        modules = []
         for testfile in testfiles:
             if testfile.name in cls.ignorefiles:
                 continue
             if testfile.parent.name in calculator_names:
+                continue
+            if testfile.parent.name in ['calculators', 'calculator']:
                 continue
             if '#' in testfile.name:
                 continue  # Ignore certain backup files.
@@ -98,13 +100,13 @@ class TestModule:
 
     def define_script_test_function(self):
         module = self.module
-        testname = 'test_' + self.testname.replace('.', '_')
+        pytestname = 'test_' + self.testname.replace('.', '_')
 
         def test_script(tmp_path):
             with workdir(tmp_path):
                 runpy.run_module(module, run_name='test')
 
-        test_script.__name__ = testname
+        test_script.__name__ = pytestname
         return test_script
 
     @classmethod
