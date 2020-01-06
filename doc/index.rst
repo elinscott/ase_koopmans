@@ -40,7 +40,7 @@ Supported :mod:`Calculators <ase.calculators>`
 |abinit| |Asap| |Atomistica| |CASTEP| |CP2K| |CRYSTAL| |deMon| |dftb|
 |dftd4| |elk| |exciting| |EMT|
 |fhi-aims| |fleur| |gpaw| |gromacs|
-|hotbit| |jacapo| |jdftx| |kim| |lammps| |nwchem|
+|hotbit| |jdftx| |kim| |lammps| |nwchem|
 |octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
 |xtb|
 :mod:`ACE-Molecule <ase.calculators.acemolecule>`
@@ -227,9 +227,6 @@ Contents
    :align: middle
 .. |hotbit| image:: static/hotbit.png
    :target: https://github.com/pekkosk/hotbit
-   :align: middle
-.. |jacapo| image:: static/jacapo.png
-   :target: ase/calculators/jacapo.html
    :align: middle
 .. |jdftx| image:: static/jdftx.png
    :target: http://jdftx.org/ASE.html
