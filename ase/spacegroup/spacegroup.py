@@ -666,7 +666,8 @@ def _read_datafile(spg, spacegroup, setting, f):
         if ((isinstance(spacegroup, int) and _no == spacegroup and
              _setting == setting) or
             (isinstance(spacegroup, str) and
-             compact_symbol == compact_spacegroup)):
+             compact_symbol == compact_spacegroup) and
+            _setting == setting):
             _read_datafile_entry(spg, _no, _symbol, _setting, f)
             break
         else:
