@@ -350,6 +350,33 @@ class LJInteractionsGeneral:
     def __init__(self, sigmaqm, epsilonqm, sigmamm, epsilonmm,
                  qm_molecule_size, mm_molecule_size=3,
                  rc=np.Inf, width=1.0):
+        """General Lennard-Jones type explicit interaction.
+
+        sigmaqm: array
+            Array of sigma-parameters which should have the length of the QM
+            subsystem
+        epsilonqm: array
+            As sigmaqm, but for epsilon-paramaters
+        sigmamm: Either array (A) or tuple (B)
+            A (no counterions): 
+                Array of sigma-parameters with the length of the smallest 
+                repeating atoms-group (i.e. molecule) of the MM subsystem
+            B (counterions):
+                Tuple: (arr1, arr2), where arr1 is an array of sigmas with
+                the length of counterions in the MM subsystem, and 
+                arr2 is the array from A.
+        epsilonmm: array or tuple
+            As sigmamm but for epsilon-parameters.
+        qm_molecule_size: int
+            number of atoms of the smallest repeating atoms-group (i.e. 
+            molecule) in the QM subystem (often just the number of atoms 
+            in the QM subsystem)
+        mm_molecule_size: int
+            as qm_molecule_size but for the MM subsystem. Will be overwritten
+            if counterions are present in the MM subsystem (via the CombineMM
+            calculator)
+
+        """
         self.sigmaqm = sigmaqm
         self.epsilonqm = epsilonqm
         self.sigmamm = sigmamm
