@@ -3,6 +3,7 @@ from ase.build import molecule
 from ase.calculators.calculator import get_calculator_class
 from ase.units import Ry
 from ase.utils import workdir
+from ase.test.testsuite import importorskip
 
 
 class CalculatorInputs:
@@ -18,6 +19,9 @@ class CalculatorInputs:
                                    self.name, self.parameters)
 
     def calc(self):
+        # XXX Can we handle missing imports better?
+        if self.name == 'gpaw':
+            importorskip('gpaw')
         cls = get_calculator_class(self.name)
         return cls(**self.parameters)
 
