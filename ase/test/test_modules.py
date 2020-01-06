@@ -28,7 +28,7 @@ ignoredirs = {
     'calculator', 'calculators',
     'castep', 'cp2k', 'crystal', 'demon', 'demonnano',
     'dftb', 'dmol', 'elk', 'espresso',
-    'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'jacapo',
+    'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs',
     'kim', 'lammpslib', 'lammpsrun', 'nwchem',
     'octopus', 'onetep', 'openmx', 'psi4',
     'qbox', 'qchem', 'siesta', 'turbomole', 'vasp',

@@ -272,12 +272,9 @@ class Wannier:
 
           ``verbose``: True / False level of verbosity.
           """
-        # Bloch phase sign convention
+        # Bloch phase sign convention.
+        # May require special cases depending on which code is used.
         sign = -1
-        classname = calc.__class__.__name__
-        if classname in ['Dacapo', 'Jacapo']:
-            print('Using ' + classname)
-            sign = +1
 
         self.nwannier = nwannier
         self.calc = calc

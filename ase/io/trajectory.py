@@ -179,6 +179,7 @@ class TrajectoryWriter:
                                                   allow_calculation=False)
                         except (PropertyNotImplementedError, KeyError):
                             # KeyError is needed for Jacapo.
+                            # XXX We can perhaps remove this.
                             x = None
                 if x is not None:
                     if prop in ['stress', 'dipole']:
