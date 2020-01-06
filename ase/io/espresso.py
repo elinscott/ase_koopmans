@@ -1405,7 +1405,7 @@ def kspacing_to_grid(atoms, spacing, calculated_spacing=None):
 
 def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                       kspacing=None, kpts=None, koffset=(0, 0, 0),
-                      **kwargs):
+                      crystal_coordinates=False, **kwargs):
     """
     Create an input file for pw.x.
 
@@ -1473,6 +1473,9 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     koffset: (int, int, int)
         Offset of kpoints in each direction. Must be 0 (no offset) or
         1 (half grid offset). Setting to True is equivalent to (1, 1, 1).
+    crystal_coordinates: bool
+        Whether the atomic positions should be written to the QE input file in
+        absolute (False, default) or relative (crystal) coordinates (True).
 
     """
 
@@ -1587,10 +1590,16 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
             else:
                 mask = ''
 
-            atomic_positions_str.append(
-                '{atom.symbol} '
-                '{atom.x:.10f} {atom.y:.10f} {atom.z:.10f} '
-                '{mask}\n'.format(atom=atom, mask=mask))
+            if crystal_coordinates:
+                atomic_positions_str.append(
+                    '{atom.symbol} '
+                    '{atom.a:.10f} {atom.b:.10f} {atom.c:.10f} '
+                    '{mask}\n'.format(atom=atom, mask=mask))
+            else:
+                atomic_positions_str.append(
+                    '{atom.symbol} '
+                    '{atom.x:.10f} {atom.y:.10f} {atom.z:.10f} '
+                    '{mask}\n'.format(atom=atom, mask=mask))
 
     # Add computed parameters
     # different magnetisms means different types
@@ -1681,7 +1690,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         pwi.append('\n')
 
     # Positions - already constructed, but must appear after namelist
-    pwi.append('ATOMIC_POSITIONS angstrom\n')
+    if crystal_coordinates:
+        pwi.append('ATOMIC_POSITIONS crystal\n')
+    else:
+        pwi.append('ATOMIC_POSITIONS angstrom\n')
     pwi.extend(atomic_positions_str)
     pwi.append('\n')
 
