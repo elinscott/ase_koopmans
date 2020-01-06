@@ -36,20 +36,22 @@ def _calculate(spec, name):
 
 @pytest.mark.parametrize(
     "spec",
-    [inputs('abinit', ecut=300, chksymbreak=0, toldfe=1e-4),
-     inputs('cp2k'),
-     # Siesta gets a result of -3.3 eV, not so accurate then.
-     # What should we do about this?
-     inputs('espresso',
+    [
+        inputs('abinit', ecut=300, chksymbreak=0, toldfe=1e-4),
+        inputs('cp2k'),
+        # Siesta gets a result of -3.3 eV, not so accurate then.
+        # What should we do about this?
+        inputs(
+            'espresso',
             ecutwfc=300 / Ry,
             pseudopotentials={'C': 'C.pz-kjpaw.UPF',
                               'H': 'H.pz-kjpaw.UPF'},
-     ),
-     inputs('gpaw', symmetry='off', mode='pw', txt='gpaw.txt',
-            mixer={'beta': 0.6}),
-     inputs('octopus', stdout="'stdout.log'", stderr="'stderr.log'"),
-     inputs('openmx', energy_cutoff=350),
-     pytest.param(inputs('siesta'), marks=pytest.mark.xfail),
+        ),
+        inputs('gpaw', symmetry='off', mode='pw', txt='gpaw.txt',
+               mixer={'beta': 0.6}),
+        inputs('octopus', stdout="'stdout.log'", stderr="'stderr.log'"),
+        inputs('openmx', energy_cutoff=350),
+        pytest.param(inputs('siesta'), marks=pytest.mark.xfail),
     ],
     ids=lambda spec: spec.name)
 def test_ch4(tmp_path, spec):
