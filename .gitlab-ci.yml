@@ -25,7 +25,7 @@ python_3_oldlibs_tests:
   script:
     - python --version
     - pip install numpy==1.10.4 scipy==0.17.1 matplotlib==2.0.0
-    - pip install pytest
+    - pip install pytest pytest-xdist
     - pip install --no-deps .
     - ase test
 
@@ -40,7 +40,7 @@ python_3_tests:
   script:
     - python --version
     - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
-    - pip install pytest
+    - pip install pytest pytest-xdist
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
     - ase test --strict
@@ -74,7 +74,7 @@ python_3_pytests:
     - apt-get update
     - echo $PATH
     - export PATH=/opt/conda/bin:$PATH
-    - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask pytest
+    - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask pytest pytest-xdist
     - pip install .
     - ase test --strict
 
