@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """Resonant Raman intensities"""
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """This module defines an ASE interface to CP2K.
 
