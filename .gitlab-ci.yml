@@ -12,6 +12,8 @@ variables:
   MYSQL_DATABASE: testase_mysql
   MYSQL_ROOT_PASSWORD: ase
 
+# TODO: Port to custom docker
+#
 # Check oldest supported Python with oldest supported libraries.
 # Does not install any optional libraries except matplotlib.
 # This test does not use the --strict flag because things like
@@ -27,8 +29,9 @@ python_3_oldlibs_tests:
     - pip install numpy==1.10.4 scipy==0.17.1 matplotlib==2.0.0
     - pip install --no-deps .
     - ase test
-  when: manual
 
+# TODO: Remove once we are happy with the docker setups.
+#
 # Check newest Python with all the standard dependencies at newest versions.
 #
 # Scipy does not compile on 3.8 image.  So using 3.7-slim (askhl, 2019-10-16)
@@ -47,7 +50,6 @@ python_3_tests:
     - python -We:invalid -m compileall -f -q ase/
   when: manual
 
-
 main:
   image: registry.gitlab.com/ase/ase:ase-main
   script:
@@ -58,7 +60,8 @@ main:
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
-
+# TODO: Port to custom docker
+#
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
 # issue with the gitlab runners.
