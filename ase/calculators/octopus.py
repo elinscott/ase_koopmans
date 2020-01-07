@@ -1,4 +1,3 @@
-# coding=utf-8
 """ASE-interface to Octopus.
 
 Ask Hjorth Larsen <asklarsen@gmail.com>
