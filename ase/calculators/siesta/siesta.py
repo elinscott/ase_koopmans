@@ -32,13 +32,27 @@ from ase.calculators.siesta.parameters import format_fdf
 meV = 0.001 * eV
 
 
-def get_siesta_version(command):
+def parse_siesta_version(output: bytes) -> str:
+    match = re.search(rb'Siesta Version\s*:\s*(\S+)', output)
+
+    if match is None:
+        raise RuntimeError('Could not get Siesta version info from output '
+                           '{!r}'.format(output))
+
+    string = match.group(1).decode('ascii')
+    return string
+
+
+def get_siesta_version(command: str) -> str:
     """ Return SIESTA version number.
 
     Run the command, for instance 'siesta' and
     then parse the output in order find the
     version number.
     """
+    # XXX We need a test of this kind of function.  But Siesta().command
+    # is not enough to tell us how to run Siesta, because it could contain
+    # all sorts of mpirun and other weird parts.
 
     temp_dirname = tempfile.mkdtemp(prefix='siesta-version-check-')
     try:
@@ -55,14 +69,7 @@ def get_siesta_version(command):
     finally:
         shutil.rmtree(temp_dirname)
 
-    match = re.search(rb'Siesta Version\s*:\s*(\S+)', output)
-
-    if match is None:
-        raise RuntimeError('Could not get Siesta version info from output '
-                           '{!r}'.format(output))
-
-    string = match.group(1).decode('ascii')
-    return string
+    return parse_siesta_version(output)
 
 
 def bandpath2bandpoints(path):

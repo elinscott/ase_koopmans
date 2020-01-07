@@ -2,7 +2,6 @@
 Stream input commands to lammps to perform desired simulations
 """
 from ase.parallel import paropen
-from ase.utils import basestring as asestring
 from ase.calculators.lammps.unitconvert import convert
 
 # "End mark" used to indicate that the calculation is done
@@ -100,7 +99,7 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
                 # the type number and value of mass separated by a space
                 fileobj.write("mass {0} \n".format(mass).encode("utf-8"))
 
-    if isinstance(lammps_in, asestring):
+    if isinstance(lammps_in, str):
         fileobj = paropen(lammps_in, "wb")
         close_in_file = True
     else:

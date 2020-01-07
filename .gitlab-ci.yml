@@ -27,6 +27,7 @@ python_3_oldlibs_tests:
   script:
     - python --version
     - pip install numpy==1.10.4 scipy==0.17.1 matplotlib==2.0.0
+    - pip install pytest
     - pip install --no-deps .
     - ase test
 
@@ -43,6 +44,7 @@ python_3_tests:
   script:
     - python --version
     - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
+    - pip install pytest
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
     - ase test --strict
@@ -57,6 +59,20 @@ main:
     - pip install .
     - ase info --calculators
     - ase test --strict --calculators asap,eam,ff,lj,morse,tip3p,tip4p
+    - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
+
+# TODO: Port to custom docker
+#
+python_3_pytests:
+  image: python:3.7-slim
+  script:
+    - python --version
+    - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
+    - pip install pytest pytest-xdist
+    - pip install scipy==1.2.1  # TODO: Delete me
+    - pip install .
+    - pytest $CI_PROJECT_DIR/ase/test
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
@@ -77,7 +93,7 @@ main:
     - apt-get update
     - echo $PATH
     - export PATH=/opt/conda/bin:$PATH
-    - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask
+    - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask pytest
     - pip install .
     - ase test --strict
 

@@ -531,7 +531,10 @@ class Reader:
     __dir__ = keys  # needed for tab-completion
 
     def __getattr__(self, attr):
-        value = self._data[attr]
+        try:
+            value = self._data[attr]
+        except KeyError:
+            raise AttributeError(attr)
         if isinstance(value, NDArrayReader):
             return value.read()
         return value
@@ -551,7 +554,7 @@ class Reader:
         """Get attr or value if no such attr."""
         try:
             return self.__getattr__(attr)
-        except KeyError:
+        except AttributeError:
             return value
 
     def proxy(self, name, *indices):

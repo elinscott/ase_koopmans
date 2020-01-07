@@ -10,7 +10,6 @@ import numpy as np
 import ase.units as units
 from ase.parallel import parprint, paropen
 from ase.vibrations import Vibrations
-from ase.utils import basestring
 import warnings
 
 # XXX This class contains much repeated code.  FIXME
@@ -346,7 +345,7 @@ class SiestaRaman(Vibrations):
         elif intensity_unit_ram == 'A^4 amu^-1':
             iu_format_ram = '%9.4f              '
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         parprint('---------------------------------------------------------------------------------------------------------------------------', file=log)
@@ -417,7 +416,7 @@ class SiestaRaman(Vibrations):
         elif intensity_unit_ram == 'A^4 amu^-1':
             iu_format_ram = '%9.4f              '
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         if hline:

@@ -1,4 +1,3 @@
-from ase.utils import basestring
 
 # Copyright (C) 2010 by CAMd, DTU
 # Please see the accompanying LICENSE file for further information.
@@ -42,7 +41,7 @@ class GaussianReader:
 
     def __init__(self, filename, read_structures=False):
         """filename is NOT optional"""
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             fileobj = open(filename, 'r')
         elif hasattr(filename,'seek'):
             fileobj = filename

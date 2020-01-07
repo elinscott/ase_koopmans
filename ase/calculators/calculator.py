@@ -82,7 +82,7 @@ def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
 
         properties_to_check = set(all_changes)
         if excluded_properties:
-             properties_to_check -= set(excluded_properties)
+            properties_to_check -= set(excluded_properties)
 
         # Check properties that aren't in Atoms.arrays but are attributes of
         # Atoms objects
@@ -123,7 +123,7 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k',
          'crystal', 'demon', 'demonnano', 'dftb', 'dftd3', 'dmol', 'eam', 'elk',
          'emt', 'espresso', 'exciting', 'ff', 'fleur', 'gaussian',
-         'gpaw', 'gromacs', 'gulp', 'hotbit', 'jacapo', 'kim',
+         'gpaw', 'gromacs', 'gulp', 'hotbit', 'kim',
          'lammpslib', 'lammpsrun', 'lj', 'mopac', 'morse', 'nwchem',
          'octopus', 'onetep', 'openmx', 'psi4', 'qchem', 'siesta',
          'tip3p', 'tip4p', 'turbomole', 'vasp']

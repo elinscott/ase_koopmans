@@ -34,7 +34,6 @@ run('crystal', dict(basis='sto-3g'))
 run('gpaw', dict(mode='lcao',  basis='sz(dzp)'))
 run('elk', dict(tasks=0, rgkmax=5.0, epsengy=1.0, epspot=1.0, tforce=True,
                 pbc=True))
-run('jacapo', dict(pbc=True))
 run('vasp', dict(xc='LDA'))
 run('Psi4', {})
 # XXX we don't have the pseudopotential for Espresso.

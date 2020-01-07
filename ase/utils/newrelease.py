@@ -7,13 +7,15 @@ which ASE is installed and how - but assumes that it is run from the
 ASE root directory."""
 
 import os
-os.environ['LANGUAGE'] = 'C'
 import subprocess
 import re
 import argparse
 from time import strftime
 import shutil
 from pathlib import Path
+
+
+os.environ['LANGUAGE'] = 'C'
 
 
 def runcmd(cmd, output=False, error_ok=False):

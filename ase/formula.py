@@ -1,8 +1,8 @@
+from math import gcd
 import re
 import sys
 from typing import Dict, Tuple, List, Union
 
-from ase.utils import gcd
 from ase.data import chemical_symbols, atomic_numbers
 
 if sys.version_info >= (3, 6):

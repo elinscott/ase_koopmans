@@ -1,4 +1,7 @@
 import sys
+from ase.test.testsuite import importorskip
+
+importorskip('Scientific')
 
 import numpy as np
 
