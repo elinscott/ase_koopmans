@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 import ase.gui.ui as ui
 import numpy as np

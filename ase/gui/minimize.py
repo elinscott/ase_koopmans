@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 "Module for performing energy minimization."
 

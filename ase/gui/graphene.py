@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 """nanotube.py - Window for setting up Graphene sheets and ribbons.
 """
