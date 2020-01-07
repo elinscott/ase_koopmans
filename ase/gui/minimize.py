@@ -1,4 +1,3 @@
-
 "Module for performing energy minimization."
 
 import ase.gui.ui as ui

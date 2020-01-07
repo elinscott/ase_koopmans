@@ -1,4 +1,3 @@
-
 """Test suit for the CP2K ASE calulator.
 
 http://www.cp2k.org

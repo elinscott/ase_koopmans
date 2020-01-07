@@ -1,4 +1,3 @@
-
 """Infrared intensities"""
 
 import os.path as op

@@ -1,4 +1,3 @@
-
 """nanotube.py - Window for setting up Graphene sheets and ribbons.
 """
 

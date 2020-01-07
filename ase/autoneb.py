@@ -1,4 +1,3 @@
-
 from ase.io import Trajectory
 from ase.io import read
 from ase.neb import NEB

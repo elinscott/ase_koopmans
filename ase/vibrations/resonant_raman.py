@@ -1,4 +1,3 @@
-
 """Resonant Raman intensities"""
 
 import pickle

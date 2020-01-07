@@ -1,4 +1,3 @@
-
 import ase.gui.ui as ui
 import numpy as np
 import sys
