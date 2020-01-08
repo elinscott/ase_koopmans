@@ -54,7 +54,7 @@ main:
   image: registry.gitlab.com/ase/ase:ase-main
   script:
     - python --version
-    - pip install .
+    - pip install --no-deps .
     - ase info --calculators
     - ase test --strict --calculators asap,eam,ff,lj,morse,tip3p,tip4p
     - cd $CI_PROJECT_DIR
