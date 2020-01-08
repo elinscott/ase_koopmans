@@ -96,7 +96,7 @@ python_3_pytests:
 docs_test:
   image: registry.gitlab.com/ase/ase:ase-main
   script:
-    - pip install .[docs]
+    - pip install --no-deps .[docs]
     - ase info
     - which sphinx-build
     - cd $CI_PROJECT_DIR/doc
