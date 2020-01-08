@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """This module defines an interface to ONETEP for use by the ASE.
 
 Authors:

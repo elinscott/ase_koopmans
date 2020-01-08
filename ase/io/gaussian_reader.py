@@ -1,4 +1,3 @@
-
 # Copyright (C) 2010 by CAMd, DTU
 # Please see the accompanying LICENSE file for further information.
 
