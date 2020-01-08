@@ -1,4 +1,3 @@
-# encoding: utf-8
 '''celleditor.py - Window for editing the cell of an atoms object
 '''
 from ase.gui.i18n import _

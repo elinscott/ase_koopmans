@@ -1,4 +1,3 @@
-
 from subprocess import Popen, PIPE
 
 from ase.calculators.calculator import Calculator

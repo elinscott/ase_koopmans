@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Infrared intensities"""
 
 import os.path as op

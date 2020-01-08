@@ -1,4 +1,3 @@
-# encoding: utf-8
 "Module for calculating energies and forces."
 
 from ase.gui.i18n import _

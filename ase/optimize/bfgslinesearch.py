@@ -1,4 +1,3 @@
-
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
 #

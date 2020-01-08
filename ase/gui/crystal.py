@@ -1,4 +1,3 @@
-# encoding: utf-8
 """crystal.py - Window for setting up arbitrary crystal lattices
 """
 

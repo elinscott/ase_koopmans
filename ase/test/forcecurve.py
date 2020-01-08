@@ -1,4 +1,3 @@
-
 from ase.build import bulk
 from ase.calculators.emt import EMT
 from ase.utils.forcecurve import force_curve
