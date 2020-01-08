@@ -4,7 +4,7 @@ Resonant and non-resonant Raman spectra
 Note: :ref:`Siesta Raman` are possible also.
 
 Raman spectra can be calculated in various approximations [1]_.
-While the examples below are using GPAW_ explicitely,
+While the examples below are using GPAW_ explicitly,
 the modules are intended to work with other calculators also.
 The strategy is to calculate vibrational properties first and
 obtain the spectra from these later.

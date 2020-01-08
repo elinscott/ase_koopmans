@@ -5,6 +5,7 @@ from ase.calculators.calculator import Calculator
 from ase.utils import convert_string_to_fd
 from scipy.special import erfinv, erfc
 from ase.neighborlist import neighbor_list
+from ase.parallel import world
 
 
 # dipole polarizabilities and C6 values from
@@ -162,7 +163,11 @@ class vdWTkatchenko09prl(Calculator):
 
         if txt is None:
             txt = get_logging_file_descriptor(self.calculator)
-        self.txt = convert_string_to_fd(txt)
+        if hasattr(self.calculator, 'world'):
+            myworld = self.calculator.world
+        else:
+            myworld = world  # the best we know
+        self.txt = convert_string_to_fd(txt, myworld)
 
         self.vdwradii = vdwradii
         self.vdWDB_alphaC6 = vdWDB_alphaC6

@@ -1,4 +1,4 @@
-""" Implementaiton of a population for maintaining a GA population and
+""" Implementation of a population for maintaining a GA population and
 proposing structures to pair. """
 from random import randrange, random
 from math import tanh, sqrt, exp
@@ -65,7 +65,7 @@ class Population(object):
         self.__initialize_pop__()
 
     def __initialize_pop__(self):
-        """ Private method that initalizes the population when
+        """ Private method that initializes the population when
             the population is created. """
 
         # Get all relaxed candidates from the database
@@ -355,7 +355,7 @@ class RandomPopulation(Population):
                             comparator, logfile, use_extinct)
 
     def __initialize_pop__(self):
-        """ Private method that initalizes the population when
+        """ Private method that initializes the population when
             the population is created. """
 
         # Get all relaxed candidates from the database

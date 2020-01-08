@@ -23,7 +23,7 @@ class SwitchLangevin(Langevin):
     atoms : ASE Atoms object
         Atoms object for which MD will be run
     calc1 : ASE calculator object
-        Calculator correpsonding to first Hamiltonian
+        Calculator corresponding to first Hamiltonian
     calc2 : ASE calculator object
         Calculator corresponding to second Hamiltonian
     dt : float

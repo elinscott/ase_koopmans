@@ -16,7 +16,6 @@ from ase import Atoms
 from ase.parallel import paropen
 from ase.spacegroup import crystal
 from ase.spacegroup.spacegroup import spacegroup_from_data, Spacegroup
-from ase.utils import basestring
 from ase.data import atomic_numbers, atomic_masses
 from ase.io.cif_unicode import format_unicode, handle_subscripts
 
@@ -184,7 +183,7 @@ def parse_cif(fileobj, reader='ase'):
 def parse_cif_ase(fileobj):
     """Parse a CIF file using ase CIF parser"""
     blocks = []
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rb')
 
     data = fileobj.read()
@@ -213,7 +212,7 @@ def parse_cif_ase(fileobj):
 def parse_cif_pycodcif(fileobj):
     """Parse a CIF file using pycodcif CIF parser"""
     blocks = []
-    if not isinstance(fileobj, basestring):
+    if not isinstance(fileobj, str):
         fileobj = fileobj.name
 
     try:
@@ -351,7 +350,12 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
         deuterium = False
 
     setting_name = None
-    if '_space_group_crystal_system' in tags:
+    if '_symmetry_space_group_setting' in tags:
+        setting = int(tags['_symmetry_space_group_setting'])
+        if setting < 1 or setting > 2:
+            raise ValueError('Spacegroup setting must be 1 or 2, not %d' %
+                             setting)
+    elif '_space_group_crystal_system' in tags:
         setting_name = tags['_space_group_crystal_system']
     elif '_symmetry_cell_setting' in tags:
         setting_name = tags['_symmetry_cell_setting']
@@ -494,7 +498,7 @@ def write_enc(fileobj, s):
 
 def write_cif(fileobj, images, format='default'):
     """Write *images* to CIF file."""
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'wb')
 
     if hasattr(images, 'get_positions'):

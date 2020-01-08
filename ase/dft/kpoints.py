@@ -1,4 +1,3 @@
-from ase.utils import basestring
 import re
 import warnings
 from math import sin, cos
@@ -284,8 +283,7 @@ class BandPath:
                       '(x, X, labels) = path.get_linear_kpoint_axis().')
         yield self.kpts
 
-        x, xspecial, _ = labels_from_kpts(self.kpts, self.cell,
-                                          special_points=self.special_points)
+        x, xspecial, _ = self.get_linear_kpoint_axis()
         yield x
         yield xspecial
 
@@ -297,8 +295,35 @@ class BandPath:
         """Define x axis suitable for plotting a band structure.
 
         See :func:`ase.dft.kpoints.labels_from_kpts`."""
-        return labels_from_kpts(self.kpts, self.cell, eps=eps,
-                                special_points=self.special_points)
+
+        index2name = self._find_special_point_indices(eps)
+        indices = sorted(index2name)
+        labels = [index2name[index] for index in indices]
+        xcoords, special_xcoords = indices_to_axis_coords(
+            indices, self.kpts, self.cell)
+        return xcoords, special_xcoords, labels
+
+    def _find_special_point_indices(self, eps):
+        """Find indices of kpoints which are close to special points.
+
+        The result is returned as a dictionary mapping indices to labels."""
+        # XXX must work in Cartesian coordinates for comparison to eps
+        # to fully make sense!
+        index2name = {}
+        nkpts = len(self.kpts)
+
+        for name, kpt in self.special_points.items():
+            displacements = self.kpts - kpt[np.newaxis, :]
+            distances = np.linalg.norm(displacements, axis=1)
+            args = np.argwhere(distances < eps)
+            for arg in args.flat:
+                dist = distances[arg]
+                # Check if an adjacent point exists and is even closer:
+                neighbours = distances[max(arg - 1, 0):min(arg + 1, nkpts - 1)]
+                if not any(neighbours < dist):
+                    index2name[arg] = name
+
+        return index2name
 
     def plot(self, dimension=3, **plotkwargs):
         """Visualize this bandpath.
@@ -364,7 +389,7 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
         the number of k-points in the output list will be:
         npoints = density * path total length (in Angstroms).
         If density is None (default), use 5 k-points per A⁻¹.
-        If the calculated npoints value is less than 50, a mimimum value of 50
+        If the calculated npoints value is less than 50, a minimum value of 50
         will be used.
     special_points: dict or None
         Dictionary mapping names to special points.  If None, the special
@@ -382,7 +407,7 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
 
     # XXX old code for bandpath() function, should be removed once we
     # weed out any trouble
-    if isinstance(path, basestring):
+    if isinstance(path, str):
         # XXX we need to update this so we use the new and more complete
         # cell classification stuff
         lattice = None
@@ -463,7 +488,9 @@ get_bandpath = bandpath  # old name
 
 
 def find_bandpath_kinks(cell, kpts, eps=1e-5):
-    """Find indices of those kpoints that are not interiour to a line segment."""
+    """Find indices of those kpoints that are not interior to a line segment."""
+    # XXX Should use the Cartesian kpoints.
+    # Else comparison to eps will be anisotropic and hence arbitrary.
     diffs = kpts[1:] - kpts[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
     N = len(kpts)
@@ -501,6 +528,8 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     if special_points is None:
         special_points = get_special_points(cell)
     points = np.asarray(kpts)
+    # XXX Due to this mechanism, we are blind to special points
+    # that lie on straight segments such as [K, G, -K].
     indices = find_bandpath_kinks(cell, kpts, eps=1e-5)
 
     labels = []
@@ -517,6 +546,11 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
                 label = '?'
         labels.append(label)
 
+    xcoords, ixcoords = indices_to_axis_coords(indices, points, cell)
+    return xcoords, ixcoords, labels
+
+
+def indices_to_axis_coords(indices, points, cell):
     jump = False  # marks a discontinuity in the path
     xcoords = [0]
     for i1, i2 in zip(indices[:-1], indices[1:]):
@@ -530,7 +564,7 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
         xcoords.extend(np.linspace(0, length, i2 - i1 + 1)[1:] + xcoords[-1])
 
     xcoords = np.array(xcoords)
-    return xcoords, xcoords[indices], labels
+    return xcoords, xcoords[indices]
 
 
 special_paths = {
@@ -550,6 +584,7 @@ class CellInfo:
         self.rcell = rcell
         self.lattice = lattice
         self.special_points = special_points
+
 
 def get_cellinfo(cell, lattice=None, eps=2e-4):
     from ase.build.tools import niggli_reduce_cell

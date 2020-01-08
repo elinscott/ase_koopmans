@@ -15,6 +15,13 @@ Git master branch
 
 * Fixed ``kpts`` option of :class:`ase.calculators.espresso.Espresso` so that specifying a Γ-point calculation with ``kpts=(1, 1, 1)`` does not enable the optimized codepath (which halves memory and cpu). Use ``kpts=None`` to enable the optimized codepath.
 
+* Removed interface to :ref:`Dacapo <jacapo>` due to lack of users and maintainers.
+
+* :class:`ase.neb.NEBTools` now allows the simultaneous plotting of all bands from a trajectory of a nudged elastic band calculation (or similar); this funciton is also available at the command line as ``ase nebplot neb.traj``.
+
+* The image-dependent pair-potential (IDPP) interpolation scheme for connecting states---i.e., in a saddle-point search---has been moved into the method :func:`ase.neb.idpp_interpolate`. This method is a more feature-rich version that that accessible via :meth:`ase.neb.NEB.interpolate`.
+
+* Write support has been added for the Vasp 5 XDATCAR file format.
 
 Version 3.19.0
 ==============
@@ -24,7 +31,7 @@ Version 3.19.0
 General changes:
 
 * :func:`ase.build.bulk` now supports elements with tetragonal and
-  rhombohedral attices.
+  rhombohedral lattices.
 
 * The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
   been deprecated.  Use ``world.rank`` and ``world.size`` instead
@@ -996,7 +1003,7 @@ Version 3.6.0
 * New ase.lattice.bulk() function.  Will replace old
   ase.build.bulk() function.  The new one will produce a more
   natural hcp lattice and it will use experimental data for crystal
-  structure and lattice constants if not provided explicitely.
+  structure and lattice constants if not provided explicitly.
 
 * New values for ase.data.covalent_radii from Cordeo *et al.*.
 

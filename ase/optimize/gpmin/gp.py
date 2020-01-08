@@ -7,7 +7,7 @@ from ase.optimize.gpmin.prior import ZeroPrior
 
 class GaussianProcess():
     """Gaussian Process Regression
-    It is recomended to be used with other Priors and Kernels from
+    It is recommended to be used with other Priors and Kernels from
     ase.optimize.gpmin
 
     Parameters:

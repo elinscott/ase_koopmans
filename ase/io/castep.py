@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """This module defines I/O routines with CASTEP files.
 The key idea is that all function accept or return  atoms objects.
 CASTEP specific parameters will be returned through the <atoms>.calc

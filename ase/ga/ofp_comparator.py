@@ -48,7 +48,7 @@ class OFPComparator(object):
          Note: for isolated systems (pbc = [False, False, False]),
          the pair correlation function itself is always short-ranged
          (decays to zero beyond a certain radius), so unity is not
-         substracted for calculating the fingerprint. Also the
+         subtracted for calculating the fingerprint. Also the
          volume normalization disappears.
 
     maxdims: list of three floats or None

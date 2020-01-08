@@ -1,4 +1,3 @@
-
 import os
 from ase.calculators.siesta.siesta import Siesta
 from ase.constraints import FixAtoms, FixedLine, FixedPlane

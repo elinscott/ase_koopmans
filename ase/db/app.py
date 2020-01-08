@@ -154,7 +154,7 @@ def favicon():
 
 
 def handle_query(args) -> str:
-    """Converst request args to ase.db query string."""
+    """Converts request args to ase.db query string."""
     return args['query']
 
 

@@ -11,7 +11,6 @@ from ase.calculators.calculator import Calculator
 from ase.data import (atomic_numbers as ase_atomic_numbers,
                       chemical_symbols as ase_chemical_symbols,
                       atomic_masses as ase_atomic_masses)
-from ase.utils import basestring
 from ase.calculators.lammps import convert
 from ase.geometry import wrap_positions
 
@@ -691,7 +690,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
                       molecule_ids=None, charges=None, units='metal'):
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         fh = open(filename, 'w')
     else:
         fh = filename
@@ -739,5 +738,5 @@ def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
         fh.write('{0} {1} {2} {3:16.8e} {4:16.8e} {5:16.8e} {6:16.8e}\n'
                  .format(i + 1, mol, typ, q, pos[0], pos[1], pos[2]))
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         fh.close()

@@ -2,7 +2,7 @@ from ase.test import must_raise
 import unittest
 try:
     import pymysql
-    _ = pymysql  # Supress unused import warning
+    _ = pymysql  # Suppress unused import warning
 except ImportError:
     raise unittest.SkipTest('No MySQL module')
 

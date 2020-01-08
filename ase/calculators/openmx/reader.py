@@ -23,7 +23,6 @@ import os
 import struct
 import numpy as np
 from ase.units import Ha, Bohr, Debye
-from ase.utils import basestring
 
 
 def read_openmx(filename=None, debug=False):
@@ -480,7 +479,7 @@ def read_eigenvalues(line, f, debug=False):
 
     For symmetry reason, `.out` file prints the eigenvalues at the half of the
     K points. Thus, we have to fill up the rest of the half.
-    However, if the caluclation was conducted only on the gamma point, it will
+    However, if the calculation was conducted only on the gamma point, it will
     raise the 'gamma_flag' as true and it will returns the original samples.
     """
     def prind(line):
@@ -614,7 +613,7 @@ def get_standard_key(key):
     For example:
         'scf.XcType' -> 'scf_xctype'
     """
-    if isinstance(key, basestring):
+    if isinstance(key, str):
         return key.lower().replace('.', '_')
     elif isinstance(key, list):
         return [k.lower().replace('.', '_') for k in key]
@@ -713,7 +712,7 @@ def get_results(out_data=None, log_data=None, restart_data=None,
                 scfout_data=None, dat_data=None, band_data=None):
     """
     From the gien data sets, construct the dictionary 'results' and return it'
-    OpenMX version 3.8 can yeild following properties
+    OpenMX version 3.8 can yield following properties
        free_energy,              Ha       # Same value with energy
        energy,                   Ha
        forces,                   Ha/Bohr

@@ -3,7 +3,6 @@
 import numpy as np
 
 from ase.data import atomic_numbers, chemical_symbols, atomic_masses
-from ase.utils import basestring
 
 # Singular, plural, default value:
 names = {'position': ('positions', np.zeros(3)),
@@ -88,7 +87,7 @@ class Atom(object):
 
         if atoms is None:
             # This atom is not part of any Atoms object:
-            if isinstance(symbol, basestring):
+            if isinstance(symbol, str):
                 d['number'] = atomic_numbers[symbol]
             else:
                 d['number'] = symbol
@@ -128,7 +127,7 @@ class Atom(object):
         self.atoms = None
 
     def get_raw(self, name):
-        """Get name attribute, return None if not explicitely set."""
+        """Get name attribute, return None if not explicitly set."""
         if name == 'symbol':
             return chemical_symbols[self.get_raw('number')]
 
@@ -142,7 +141,7 @@ class Atom(object):
             return None
 
     def get(self, name):
-        """Get name attribute, return default if not explicitely set."""
+        """Get name attribute, return default if not explicitly set."""
         value = self.get_raw(name)
         if value is None:
             if name == 'mass':

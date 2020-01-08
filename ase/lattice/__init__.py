@@ -1131,7 +1131,7 @@ def identify_lattice(cell, eps=2e-4, *, pbc=True):
         raise ValueError('System must be periodic either '
                          'along all three axes, '
                          'along two first axes or, '
-                         'along the thrid axis.  '
+                         'along the third axis.  '
                          'Got pbc={}'.format(pbc))
 
     from ase.geometry.bravais_type_engine import niggli_op_table

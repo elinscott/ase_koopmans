@@ -11,7 +11,6 @@ import warnings
 from functools import total_ordering
 
 import numpy as np
-from ase.utils import basestring
 
 __all__ = ['Spacegroup']
 
@@ -652,7 +651,7 @@ def _read_datafile_entry(spg, no, symbol, setting, f):
 def _read_datafile(spg, spacegroup, setting, f):
     if isinstance(spacegroup, int):
         pass
-    elif isinstance(spacegroup, basestring):
+    elif isinstance(spacegroup, str):
         spacegroup = ' '.join(spacegroup.strip().split())
         compact_spacegroup = ''.join(spacegroup.split())
     else:
@@ -666,8 +665,9 @@ def _read_datafile(spg, spacegroup, setting, f):
         _no = int(_no)
         if ((isinstance(spacegroup, int) and _no == spacegroup and
              _setting == setting) or
-            (isinstance(spacegroup, basestring) and
-             compact_symbol == compact_spacegroup)):
+            (isinstance(spacegroup, str) and
+             compact_symbol == compact_spacegroup) and
+            _setting == setting):
             _read_datafile_entry(spg, _no, _symbol, _setting, f)
             break
         else:

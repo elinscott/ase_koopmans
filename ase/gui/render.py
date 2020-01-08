@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 from ase.gui.i18n import _
 import ase.gui.ui as ui
 from ase.io.pov import write_pov

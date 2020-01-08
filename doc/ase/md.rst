@@ -102,8 +102,8 @@ cyclic reference to the dynamics.
    object directly to the logging object. Instead, create a weak reference
    using the ``proxy`` method of the ``weakref`` package. See the
    *ase.md.MDLogger* source code for an example. (If this is not done, a
-   cyclic reference may be created which can cause certain calculators,
-   such as Jacapo, to not terminate correctly.)
+   cyclic reference may be created which can cause certain calculators
+   to not terminate correctly.)
 
 
 .. autoclass:: MDLogger
