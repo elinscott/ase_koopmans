@@ -13,8 +13,6 @@ variables:
   MYSQL_ROOT_PASSWORD: ase
   OMP_NUM_THREADS: "1"
 
-# TODO: Port to custom docker
-#
 # Check oldest supported Python with oldest supported libraries.
 # Does not install any optional libraries except matplotlib.
 # This test does not use the --strict flag because things like
@@ -60,22 +58,14 @@ main:
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
-# TODO: Port to custom docker
-#
-python_3_pytests:
-  image: python:3.7-slim
+pytest:
+  image: registry.gitlab.com/ase/ase:ase-main
   script:
-    - python --version
-    - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
-    - pip install pytest pytest-xdist
-    - pip install scipy==1.2.1  # TODO: Delete me
-    - pip install .
-    - pytest $CI_PROJECT_DIR/ase/test
+    - pip install --no-deps .
+    - pytest -v $CI_PROJECT_DIR/ase/test
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
-# TODO: Port to custom docker
-#
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
 # issue with the gitlab runners.
