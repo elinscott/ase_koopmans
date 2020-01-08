@@ -84,7 +84,7 @@ python_3_pytests:
 #
 # Grrr.  Failing after image updates, or something.  Disabling.
 # --askhl 2019-10-16
-conda:
+.conda:
   image: registry.gitlab.com/ase/ase:ase-anaconda
   script:
     - pip install . --no-deps
