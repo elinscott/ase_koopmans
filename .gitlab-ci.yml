@@ -84,15 +84,10 @@ python_3_pytests:
 #
 # Grrr.  Failing after image updates, or something.  Disabling.
 # --askhl 2019-10-16
-.conda_tests:
-  image: continuumio/anaconda3
+conda:
+  image: registry.gitlab.com/ase/ase:ase-anaconda
   script:
-    - python --version
-    - apt-get update
-    - echo $PATH
-    - export PATH=/opt/conda/bin:$PATH
-    - conda install -yq pip wheel numpy scipy==1.2.1 matplotlib flask pytest
-    - pip install .
+    - pip install . --no-deps
     - ase test --strict
 
 # Should be same image as python_3_tests except
