@@ -93,7 +93,7 @@ python_3_pytests:
 # Should be same image as python_3_tests except
 # not slim because then we don't have tk
 #  image: python:3.7
-docs_test:
+doc:
   image: registry.gitlab.com/ase/ase:ase-main
   script:
     - pip install --no-deps .[docs]
