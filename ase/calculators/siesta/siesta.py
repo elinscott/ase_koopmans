@@ -43,7 +43,7 @@ def parse_siesta_version(output: bytes) -> str:
     return string
 
 
-def get_siesta_version(command: str) -> str:
+def get_siesta_version(executable: str) -> str:
     """ Return SIESTA version number.
 
     Run the command, for instance 'siesta' and
@@ -57,7 +57,7 @@ def get_siesta_version(command: str) -> str:
     temp_dirname = tempfile.mkdtemp(prefix='siesta-version-check-')
     try:
         from subprocess import Popen, PIPE
-        proc = Popen(command,
+        proc = Popen([executable],
                      stdin=PIPE,
                      stdout=PIPE,
                      stderr=PIPE,
