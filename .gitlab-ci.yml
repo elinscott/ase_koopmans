@@ -11,6 +11,7 @@ variables:
   POSTGRES_PASSWORD: "ase"
   MYSQL_DATABASE: testase_mysql
   MYSQL_ROOT_PASSWORD: ase
+  OMP_NUM_THREADS: "1"
 
 # TODO: Port to custom docker
 #
@@ -22,12 +23,9 @@ variables:
 #
 # Py3.5 wheels exist from scipy-0.16.x, July 2015.  We choose scipy-0.17.1.
 # Consistent with numpy-1.10.x (October 2015).  We choose 1.10.4.
-python_3_oldlibs_tests:
-  image: python:3.5-slim
+oldlibs:
+  image: registry.gitlab.com/ase/ase:ase-oldlibs
   script:
-    - python --version
-    - pip install numpy==1.10.4 scipy==0.17.1 matplotlib==2.0.0
-    - pip install pytest
     - pip install --no-deps .
     - ase test
 
