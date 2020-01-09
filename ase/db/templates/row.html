@@ -94,6 +94,12 @@ jmol_isReady = function(applet)
 <script src="{{ url_for('static', filename='row.js') }}"></script>
 {% endblock %}
 
+{% block navbar %}
+<li>
+  <a href="/{{ p.name }}/">Back to search page</a>
+</li>
+{% endblock %}
+
 {% block content %}
 
 <div class="container">
