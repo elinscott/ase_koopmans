@@ -201,7 +201,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
                             int(fields[7]),
                             int(fields[8]),
                         )
-                if style == "charge" and (len(fields) == 6 or len(fields) == 9):
+                elif style == "charge" and (len(fields) == 6 or len(fields) == 9):
                     # id type q x y z [tx ty tz]
                     pos_in[id] = (
                         int(fields[1]),
