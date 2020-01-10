@@ -1,13 +1,12 @@
 import numpy as np
 
 from ase.units import Bohr
-from ase.utils import basestring
 from ase.data import atomic_numbers
 
 
 def attach_charges(atoms, fileobj='ACF.dat', displacement=1e-4):
     """Attach the charges from the fileobj to the Atoms."""
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     sep = '---------------'
@@ -28,7 +27,7 @@ def attach_charges(atoms, fileobj='ACF.dat', displacement=1e-4):
                 +' Assuming the ACF.dat file has 6 columns.')
                 j = 4
                 assume6columns = True
-        if sep in line: # Stop at last seperator line
+        if sep in line: # Stop at last separator line
             if k == 1:
                 break
             k += 1

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8
 "Module for displaying information about the system."
 
 
@@ -90,7 +89,7 @@ def info(gui):
                         quantity = get_quantity()
                 except Exception as err:
                     quantity = None
-                    errmsg = ('An error occured while retrieving {} '
+                    errmsg = ('An error occurred while retrieving {} '
                               'from the calculator: {}'.format(name, err))
                     warnings.warn(errmsg)
                 return quantity

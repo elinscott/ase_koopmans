@@ -1,27 +1,16 @@
 """File formats.
 
 This module implements the read(), iread() and write() functions in ase.io.
-For each file format there is a namedtuple (IOFormat) that has the following
-elements:
+For each file format there is an IOFormat object.
 
-* a read(filename, index, **kwargs) generator that will yield Atoms objects
-* a write(filename, images) function
-* a 'single' boolean (False if multiple configurations is supported)
-* a 'acceptsfd' boolean (True if file-descriptors are accepted)
-
-There is a dict 'ioformats' that is filled with IOFormat objects as they are
-needed.  The 'initialize()' function will create the IOFormat object by
-looking at the all_formats dict and by importing the correct read/write
-functions from the correct module.  The 'single' and 'acceptsfd' bools are
-parsed from two-charcter string in the all_formats dict below.
-
+There is a dict, ioformats, which stores the objects.
 
 Example
 =======
 
 The xyz format is implemented in the ase/io/xyz.py file which has a
-read_xyz() generator and a write_xyz() function.
-
+read_xyz() generator and a write_xyz() function.  This and other
+information can be obtained from ioformats['xyz'].
 """
 
 import functools
@@ -31,7 +20,7 @@ import sys
 from pathlib import Path, PurePath
 
 from ase.atoms import Atoms
-from ase.utils import import_module, basestring
+from importlib import import_module
 from ase.parallel import parallel_function, parallel_generator
 
 
@@ -86,7 +75,7 @@ class IOFormat:
 
     @property
     def can_append(self):
-        return self.writable and 'append' in self.write.__code__.co_varnames
+        return self.can_write and 'append' in self.write.__code__.co_varnames
 
     def __repr__(self):
         tokens = ['{}={}'.format(name, repr(value))
@@ -94,10 +83,15 @@ class IOFormat:
         return 'IOFormat({})'.format(', '.join(tokens))
 
     def __getitem__(self, i):
+        # For compatibility.
+        #
+        # Historically, the ioformats were listed as tuples
+        # with (description, code).  We look like such a tuple.
         return (self.description, self.code)[i]
 
     @property
-    def single(self):
+    def single(self) -> bool:
+        """Whether this format is for a single Atoms object."""
         return self.code[0] == '1'
 
     @property
@@ -169,15 +163,12 @@ class IOFormat:
                    for magic in self.magic)
 
 
-ioformats = {}  # will be filled at run-time
-
-# 1=single, +=multiple, F=accepts a file-descriptor, S=needs a file-name str,
-# B=like F, but opens in binary mode
-all_formats = ioformats  # XXX We should keep one of these.
-
-#glob_patterns = {}
-format2modulename = {}  # Left for compatibility only.  Please do not use.
+ioformats = {}  # These will be filled at run-time.
 extension2format = {}
+
+
+all_formats = ioformats  # Aliased for compatibility only.  Please do not use.
+format2modulename = {}  # Left for compatibility only.
 
 def define_io_format(name, desc, code, *, module=None, ext=None,
                      glob=None, magic=None, encoding=None):
@@ -208,9 +199,25 @@ def define_io_format(name, desc, code, *, module=None, ext=None,
     ioformats[name] = fmt
     return fmt
 
-def get_ioformat(name):
-    # This function is left only for backwards compatibility.
+
+def get_ioformat(name: str) -> IOFormat:
+    """Return ioformat object or raise appropriate error."""
+    if name not in ioformats:
+        raise UnknownFileTypeError(name)
+    fmt = ioformats[name]
+    # Make sure module is importable, since this could also raise an error.
+    fmt.module
     return ioformats[name]
+
+
+# We define all the IO formats below.  Each IO format has a code,
+# such as '1F', which defines some of the format's properties:
+#
+# 1=single atoms object
+# +=multiple atoms objects
+# F=accepts a file-descriptor
+# S=needs a file-name str
+# B=like F, but opens in binary mode
 
 F = define_io_format
 F('abinit-in', 'ABINIT input file', '1F',
@@ -439,11 +446,8 @@ def open_with_compression(filename, mode='r'):
         import bz2
         fd = bz2.open(filename, mode=mode)
     elif compression == 'xz':
-        try:
-            from lzma import open as lzma_open
-        except ImportError:
-            from backports.lzma import open as lzma_open
-        fd = lzma_open(filename, mode)
+        import lzma
+        fd = lzma.open(filename, mode)
     else:
         fd = open(filename, mode)
 
@@ -477,7 +481,7 @@ def write(filename, images, format=None, parallel=True, append=False,
     append: bool
         Default is to open files in 'w' or 'wb' mode, overwriting
         existing files.  In some cases opening the file in 'a' or 'ab'
-        mode (appending) is usefull,
+        mode (appending) is useful,
         e.g. writing trajectories or saving multiple Atoms objects in one file.
         WARNING: If the file format does not support multiple entries without
         additional keywords/headers, files created using 'append=True'
@@ -489,7 +493,7 @@ def write(filename, images, format=None, parallel=True, append=False,
     if isinstance(filename, PurePath):
         filename = str(filename)
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         filename = os.path.expanduser(filename)
         fd = None
         if filename == '-':
@@ -504,7 +508,7 @@ def write(filename, images, format=None, parallel=True, append=False,
 
     format = format or 'json'  # default is json
 
-    io = ioformats[format]
+    io = get_ioformat(format)
 
     _write(filename, fd, format, io, images, parallel=parallel, append=append,
            **kwargs)
@@ -549,7 +553,7 @@ def _write(filename, fd, format, io, images, parallel=None, append=False,
         if fd is not None:
             raise ValueError("Can't write {}-format to file-descriptor"
                              .format(format))
-        if 'append' in io.write.__code__.co_varnames:
+        if io.can_append:
             io.write(filename, images, append=append, **kwargs)
         elif append:
             raise ValueError("Cannot append to {}-format, write-function "
@@ -588,7 +592,7 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
         filename = str(filename)
     if filename == '-':
         filename = sys.stdin
-    if isinstance(index, basestring):
+    if isinstance(index, str):
         try:
             index = string2index(index)
         except ValueError:
@@ -599,8 +603,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
         index = -1
     format = format or filetype(filename)
 
-    io = ioformats[format]
-    if isinstance(index, (slice, basestring)):
+    io = get_ioformat(format)
+    if isinstance(index, (slice, str)):
         return list(_iread(filename, index, format, io, parallel=parallel,
                            **kwargs))
     else:
@@ -614,7 +618,7 @@ def iread(filename, index=None, format=None, parallel=True, **kwargs):
     Works as the `read` function, but yields one Atoms object at a time
     instead of all at once."""
 
-    if isinstance(index, basestring):
+    if isinstance(index, str):
         index = string2index(index)
 
     filename, index = parse_filename(filename, index)
@@ -622,11 +626,11 @@ def iread(filename, index=None, format=None, parallel=True, **kwargs):
     if index is None or index == ':':
         index = slice(None, None, None)
 
-    if not isinstance(index, (slice, basestring)):
+    if not isinstance(index, (slice, str)):
         index = slice(index, (index + 1) or None)
 
     format = format or filetype(filename)
-    io = ioformats[format]
+    io = get_ioformat(format)
 
     for atoms in _iread(filename, index, format, io, parallel=parallel,
                         **kwargs):
@@ -636,7 +640,7 @@ def iread(filename, index=None, format=None, parallel=True, **kwargs):
 @parallel_generator
 def _iread(filename, index, format, io, parallel=None, full_output=False,
            **kwargs):
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         filename = os.path.expanduser(filename)
 
     if not io.read:
@@ -650,7 +654,7 @@ def _iread(filename, index, format, io, parallel=None, full_output=False,
         args = (index,)
 
     must_close_fd = False
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         if io.acceptsfd:
             mode = 'rb' if io.isbinary else 'r'
             fd = open_with_compression(filename, mode)
@@ -676,7 +680,7 @@ def _iread(filename, index, format, io, parallel=None, full_output=False,
 
 
 def parse_filename(filename, index=None):
-    if not isinstance(filename, basestring):
+    if not isinstance(filename, str):
         return filename, index
 
     extension = os.path.basename(filename)
@@ -724,7 +728,7 @@ def filetype(filename, read=True, guess=True):
     """
 
     ext = None
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         if os.path.isdir(filename):
             if os.path.basename(os.path.normpath(filename)) == 'states':
                 return 'eon'

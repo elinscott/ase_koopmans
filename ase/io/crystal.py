@@ -1,4 +1,3 @@
-from ase.utils import basestring
 from ase.atoms import Atoms
 
 
@@ -61,7 +60,7 @@ def write_crystal(filename, atoms):
                      % (atomnum[iatom] + tags[iatom],
                         coords[iatom][0], coords[iatom][1], coords[iatom][2]))
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         myfile.close()
 
 

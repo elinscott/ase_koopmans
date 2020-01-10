@@ -2,28 +2,43 @@ import os
 import sys
 import subprocess
 from contextlib import contextmanager
+import importlib
 from multiprocessing import Process, cpu_count, Queue
 import tempfile
 import unittest
 from glob import glob
-from distutils.version import LooseVersion
 import runpy
 import time
 import traceback
 import warnings
 
-import numpy as np
-
 from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
+
+
+def importorskip(module):
+    # The pytest importorskip() function raises a wierd exception
+    # which claims to come from the builtins module, but doesn't!
+    #
+    # That exception messes with our pipeline when sending stacktraces
+    # through multiprocessing.  Argh.
+    #
+    # We provide our own implementation then!
+    try:
+        return importlib.import_module(module)
+    except ImportError:  # From py3.6 we can use ModuleNotFoundError
+        raise unittest.SkipTest('Optional module not present: {}'
+                                .format(module))
+
 
 test_calculator_names = ['emt']
 
 
 def require(calcname):
     if calcname not in test_calculator_names:
-        raise unittest.SkipTest('use --calculators={0} to enable'.format(calcname))
+        raise unittest.SkipTest('use --calculators={0} to enable'
+                                .format(calcname))
 
 
 def get_tests(files=None):
@@ -189,7 +204,7 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
                      'bandstructure_many.py',
                      'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
-                     'forcecurve.py',
+                     'forcecurve.py', 'neb.py',
                      'fio/animate.py', 'db/db_web.py', 'x3d.py',
                      'pubchem.py']:
                 result = Result(name=test, status='please run on master')
@@ -312,10 +327,6 @@ def test(calculators=[], jobs=0,
          stream=sys.stdout, files=None, verbose=False, strict=False):
     """Main test-runner for ASE."""
 
-    if LooseVersion(np.__version__) >= '1.14':
-        # Our doctests need this (spacegroup.py)
-        np.set_printoptions(legacy='1.13')
-
     test_calculator_names.extend(calculators)
     disable_calculators([name for name in calc_names
                          if name not in calculators])
@@ -379,7 +390,7 @@ def disable_calculators(names):
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
                     raise unittest.SkipTest('use --calculators={0} to enable'
-                                       .format(name))
+                                            .format(name))
                 return mock_init
 
             def mock_del(obj):
@@ -417,6 +428,13 @@ class must_raise:
             raise RuntimeError('Failed to fail: ' + str(self.exception))
         return issubclass(exc_type, self.exception)
 
+@contextmanager
+def must_warn(category):
+    with warnings.catch_warnings(record=True) as ws:
+        yield
+        did_warn = any(w.category == category for w in ws)
+    if not did_warn:
+        raise RuntimeError('Failed to warn: ' + str(category))
 
 @contextmanager
 def no_warn():

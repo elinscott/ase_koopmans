@@ -8,7 +8,6 @@ from ase.atoms import Atoms
 from ase.quaternions import Quaternions
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.parallel import paropen
-from ase.utils import basestring
 from ase.calculators.lammps import convert
 
 
@@ -28,7 +27,7 @@ def read_lammps_dump(infileobj, **kwargs):
     # !TODO: add support for lammps-regex naming schemes (output per
     # processor and timestep wildcards)
 
-    if isinstance(infileobj, basestring):
+    if isinstance(infileobj, str):
         suffix = splitext(infileobj)[-1]
         if suffix == ".bin":
             fileobj = paropen(infileobj, "rb")

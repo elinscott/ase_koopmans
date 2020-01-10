@@ -434,7 +434,7 @@ class Demon(FileIOCalculator):
     def _write_argument(self, key, value, f):
         """Write an argument to file.
          key :  a string coresponding to the input keyword
-         value : the arguemnts, can be a string, a number or a list
+         value : the arguments, can be a string, a number or a list
          f :  and open file
         """
         
@@ -636,7 +636,7 @@ class Demon(FileIOCalculator):
                 break
 
         while more_eigs:
-            # search for two empty lines in a row preceeding a line with
+            # search for two empty lines in a row preceding a line with
             # numbers
             for i in range(ii + 1, len(lines)):
                 if len(lines[i].split()) == 0 and \

@@ -9,7 +9,6 @@ See https://github.com/HamishGBrown/MuSTEM for the source code of muSTEM.
 import numpy as np
 
 from ase.atoms import symbols2numbers
-from ase.utils import basestring
 
 
 def read_mustem(filename):
@@ -21,7 +20,7 @@ def read_mustem(filename):
     from ase import Atoms
     from ase.geometry import cellpar_to_cell
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename)
     else:  # Assume it's a file-like object
         f = filename
@@ -77,7 +76,7 @@ class XtlmuSTEMWriter:
         Occupancy of each atoms. Default value is `1.0`.
 
     comment: str (optional)
-        Comments to be writen in the first line of the file. If not 
+        Comments to be written in the first line of the file. If not 
         provided, write the total number of atoms and the chemical formula.
 
     fit_cell_to_atoms: bool (optional)
@@ -155,7 +154,7 @@ class XtlmuSTEMWriter:
         return "Orientation\n   1 0 0\n   0 1 0\n   0 0 1\n"
 
     def write_to_file(self, f):
-        if isinstance(f, basestring):
+        if isinstance(f, str):
             f = open(f, 'w')
 
         f.write(self._get_file_header())

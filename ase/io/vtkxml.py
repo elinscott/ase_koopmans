@@ -6,7 +6,7 @@ fast = False
 def write_vti(filename, atoms, data=None):
     from vtk import vtkStructuredPoints, vtkDoubleArray, vtkXMLImageDataWriter
 
-    #if isinstance(fileobj, basestring):
+    #if isinstance(fileobj, str):
     #    fileobj = paropen(fileobj, 'w')
 
     if isinstance(atoms, list):

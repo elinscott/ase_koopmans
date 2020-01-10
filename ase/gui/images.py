@@ -135,8 +135,7 @@ class Images:
         return radii
 
     def read(self, filenames, default_index=':', filetype=None):
-        from ase.utils import basestring
-        if isinstance(default_index, basestring):
+        if isinstance(default_index, str):
             default_index = string2index(default_index)
 
         images = []
@@ -198,7 +197,7 @@ class Images:
                     quantity = get_quantity()
             except Exception as err:
                 quantity = None
-                errmsg = ('An error occured while retrieving {} '
+                errmsg = ('An error occurred while retrieving {} '
                           'from the calculator: {}'.format(name, err))
                 warnings.warn(errmsg)
             return quantity

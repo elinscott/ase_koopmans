@@ -18,7 +18,7 @@ Setting up an external calculator with ASE
 This tutorial will cover how to set up a basic calculation in ASE, using an external calculator.
 We will be using the :mod:`~ase.calculators.vasp.vasp2` module in this example, other calculators can be used in a similar manner. For details please refer to the documentation of the specific calculators :ref:`supported calculators`.
 
-Important: ASE does not provide code or a license for VASP, and these must be aquired elsewhere.
+Important: ASE does not provide code or a license for VASP, and these must be acquired elsewhere.
 ASE only creates an interface with VASP, so that you can use the ASE provided tools together with VASP.
 
 Setting up

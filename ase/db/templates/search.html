@@ -18,9 +18,11 @@ document.addEventListener('DOMContentLoaded',
 {% block content %}
 
 <div class="container">
+  {% block contenttitle %}
   <div class="row">
     <h1>{{p.title}}</h1>
   </div>
+  {% endblock %}
 
   <div class="well mt-2">
     <form id="mainFormID" class="navbar-form navbar-default mt-2"
@@ -62,7 +64,7 @@ document.addEventListener('DOMContentLoaded',
       </small><br/>
       <div id="collapse1" class="collapse">
         <table class="table table-striped">
-        {% for key, (short, long, unit) in p.key_descriptions.items() %}
+        {% for key, (short, long, unit) in p.key_descriptions|dictsort %}
           <tr><td>{{ key }}</td><td>{{ long }}</td><td>{{ unit|safe }}</td></tr>
         {% endfor %}
         </table>

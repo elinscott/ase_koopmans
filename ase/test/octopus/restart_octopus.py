@@ -1,4 +1,3 @@
-
 from ase.calculators.octopus import Octopus
 from ase.calculators.interfacechecker import check_interface
 from ase.build import molecule

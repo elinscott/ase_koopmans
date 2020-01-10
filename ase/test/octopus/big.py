@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from ase.calculators.octopus import Octopus

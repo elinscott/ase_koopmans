@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # creates: surface.png
 from ase.io import read, write
 exec(compile(open('N2Cu.py').read(), 'N2Cu.py', 'exec'))
