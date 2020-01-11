@@ -329,61 +329,6 @@ def summary(results):
         print('Test suite passed!')
 
 
-def test(calculators=[], jobs=0,
-         stream=sys.stdout, files=None, verbose=False, strict=False):
-    """Main test-runner for ASE."""
-
-    test_calculator_names.extend(calculators)
-    disable_calculators([name for name in calc_names
-                         if name not in calculators])
-
-    tests = get_tests(files)
-    if len(set(tests)) != len(tests):
-        # Since testsubdirs are based on test name, we will get race
-        # conditions on IO if the same test runs more than once.
-        print('Error: One or more tests specified multiple times',
-              file=sys.stderr)
-        sys.exit(1)
-
-    if jobs == -1:  # -1 == auto
-        jobs = min(cpu_count(), len(tests), 32)
-
-    print_info()
-
-    origcwd = os.getcwd()
-    testdir = tempfile.mkdtemp(prefix='ase-test-')
-    os.chdir(testdir)
-
-    # Note: :25 corresponds to ase.cli indentation
-    print('{:25}{}'.format('test directory', testdir))
-    if test_calculator_names:
-        print('{:25}{}'.format('Enabled calculators:',
-                               ' '.join(test_calculator_names)))
-    print('{:25}{}'.format('number of processes',
-                           jobs or '1 (multiprocessing disabled)'))
-    print('{:25}{}'.format('time', time.strftime('%c')))
-    if strict:
-        print('Strict mode: Convert most warnings to errors')
-    print()
-
-    t1 = time.time()
-    results = []
-    try:
-        for result in runtests_parallel(jobs, tests, verbose, strict):
-            results.append(result)
-    except KeyboardInterrupt:
-        print('Interrupted by keyboard')
-        return 1
-    else:
-        summary(results)
-        ntrouble = len([r for r in results if r.status in ['FAIL', 'ERROR']])
-        return ntrouble
-    finally:
-        t2 = time.time()
-        print('Time elapsed: {:.1f} s'.format(t2 - t1))
-        os.chdir(origcwd)
-
-
 def disable_calculators(names):
     for name in names:
         if name in ['emt', 'lj', 'eam', 'morse', 'tip3p']:
@@ -560,7 +505,8 @@ class CLICommand:
             add_args(*args.pytest)
 
         print()
-        print('Enabled calculators: {}'.format(','.join(calculators)))
+        calcstring = ','.join(calculators) if calculators else 'none'
+        print('Enabled calculators: {}'.format(calcstring))
         print()
         print('About to run pytest with these parameters:')
         for line in pytest_args:
