@@ -1,6 +1,7 @@
 import os
 import pytest
 from ase.utils import workdir
+from pathlib import Path
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -14,5 +15,7 @@ def disable_calculators(request):
 
 @pytest.fixture(autouse=True)
 def use_tmp_workdir(tmp_path):
-    with workdir(tmp_path, mkdir=True):
+    # Pytest can on some systems provide a Path from pathlib2.  Normalize:
+    path = Path(str(tmp_path))
+    with workdir(path, mkdir=True):
         yield tmp_path
