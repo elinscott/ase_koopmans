@@ -59,7 +59,9 @@ def _calculate(spec, name):
     ],
     ids=lambda spec: spec.name)
 def test_ch4(tmp_path, spec):
-    with workdir(tmp_path, mkdir=True):
+    # XXX Convert to string since pytest can sometimes gives us tmp_path
+    # as a pathlib2 path.
+    with workdir(str(tmp_path), mkdir=True):
         e_ch4 = _calculate(spec, 'CH4')
         e_c2h2 = _calculate(spec, 'C2H2')
         e_h2 = _calculate(spec, 'H2')
