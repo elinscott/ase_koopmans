@@ -25,7 +25,7 @@ oldlibs:
   image: registry.gitlab.com/ase/ase:ase-oldlibs
   script:
     - pip install --no-deps .
-    - ase test -j 0
+    - ase test -j 0 --pytest --color=yes
 
 # TODO: Remove once we are happy with the docker setups.
 #
@@ -43,7 +43,7 @@ python_3_tests:
     - pip install pytest pytest-xdist
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
-    - ase test --strict
+    - ase test --pytest --color=yes
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
   when: manual
@@ -54,7 +54,7 @@ main:
     - python --version
     - pip install --no-deps .
     - ase info --calculators
-    - ase test --strict --calculators asap,eam,ff,lj,morse,tip3p,tip4p
+    - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --pytest --color=yes
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
@@ -62,7 +62,7 @@ pytest:
   image: registry.gitlab.com/ase/ase:ase-main
   script:
     - pip install --no-deps .
-    - pytest -v $CI_PROJECT_DIR/ase/test
+    - pytest -v $CI_PROJECT_DIR/ase/test --color=yes
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
