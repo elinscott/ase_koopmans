@@ -25,7 +25,7 @@ oldlibs:
   image: registry.gitlab.com/ase/ase:ase-oldlibs
   script:
     - pip install --no-deps .
-    - ase test
+    - ase test -j 0
 
 # TODO: Remove once we are happy with the docker setups.
 #
