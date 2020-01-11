@@ -12,6 +12,7 @@ import time
 import traceback
 import warnings
 from pathlib import Path
+import argparse
 
 import pytest
 
@@ -466,7 +467,7 @@ class CLICommand:
     def add_arguments(parser):
         parser.add_argument(
             '-c', '--calculators',
-            help='Comma-separated list of calculators to test')
+            help='comma-separated list of calculators to test')
         parser.add_argument('--list', action='store_true',
                             help='print all tests and exit')
         parser.add_argument('--list-calculators', action='store_true',
@@ -479,15 +480,18 @@ class CLICommand:
                             '0 disables multiprocessing'
                             .format(MULTIPROCESSING_MAX_WORKERS))
         parser.add_argument('-v', '--verbose', action='store_true',
-                            help='Write test outputs to stdout.  '
+                            help='write test outputs to stdout.  '
                             'Mostly useful when inspecting a single test')
         parser.add_argument('--strict', action='store_true',
                             help='convert warnings to errors')
         parser.add_argument('--nogui', action='store_true',
                             help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
-                            help='Specify particular test files.  '
+                            help='specify particular test files.  '
                             'Glob patterns are accepted.')
+        parser.add_argument('--pytest', nargs=argparse.REMAINDER,
+                            help='forward all remaining arguments to pytest.  '
+                            'See pytest --help')
 
     @staticmethod
     def run(args):
@@ -555,5 +559,12 @@ class CLICommand:
         else:
             add_args('ase.test')
 
+        if args.pytest:
+            add_args(*args.pytest)
+
+        print()
+        print('About to run pytest with these parameters:')
+        for line in pytest_args:
+            print('    ' + line)
         exitcode = pytest.main(pytest_args)
         sys.exit(exitcode)
