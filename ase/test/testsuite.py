@@ -560,6 +560,8 @@ class CLICommand:
             add_args(*args.pytest)
 
         print()
+        print('Enabled calculators: {}'.format(','.join(calculators)))
+        print()
         print('About to run pytest with these parameters:')
         for line in pytest_args:
             print('    ' + line)
