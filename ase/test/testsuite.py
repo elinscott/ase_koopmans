@@ -559,6 +559,9 @@ class CLICommand:
         else:
             add_args('ase.test')
 
+        if args.verbose:
+            add_args('--capture=no')
+
         if args.pytest:
             add_args(*args.pytest)
 
