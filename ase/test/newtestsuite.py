@@ -111,6 +111,8 @@ class TestModule:
                              'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2',
                              'kimpy']:
                     raise unittest.SkipTest('no {} module'.format(exmod))
+                elif 'no display name' in str(ex):
+                    raise unittest.SkipTest('requires display: {}'.format(ex))
                 else:
                     raise
 
