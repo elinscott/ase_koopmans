@@ -18,7 +18,6 @@ from typing import Dict, Any, Generator
 import unittest
 
 import ase.test as asetest
-from ase.utils import workdir
 
 
 class TestModule:

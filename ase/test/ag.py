@@ -1,5 +1,3 @@
-import sys
-
 from ase import Atoms
 from ase.io import write
 from ase.test import cli
