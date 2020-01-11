@@ -76,7 +76,7 @@ def lammps_create_atoms(fileobj, parameters, atoms, prismobj):
                 "".format(*tuple(pos)).encode("utf-8")
             )
         fileobj.write(
-            "create_atoms {0} single {1} {2} {3} units box\n".format(
+            "create_atoms {0} single {1} {2} {3} remap yes units box\n".format(
                 *((species_i[sym],) + tuple(prismobj.vector_to_lammps(pos)))
             ).encode("utf-8")
         )
