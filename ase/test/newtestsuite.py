@@ -88,7 +88,8 @@ class TestModule:
             if '#' in testfile.name:
                 continue  # Ignore certain backup files.
             rel_testfile = testfile.relative_to(cls.testdir)
-            testname = cls.filename_to_testname(rel_testfile)
+            # We want to normalize the naming, hence as_posix():
+            testname = cls.filename_to_testname(rel_testfile.as_posix())
             yield TestModule(testname)
 
     @classmethod
