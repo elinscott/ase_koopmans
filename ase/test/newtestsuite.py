@@ -19,21 +19,6 @@ import ase.test as asetest
 from ase.utils import workdir
 
 
-from ase.calculators.calculator import names as calculator_names
-
-# Ignore calculator tests (for now):
-#calculators = {
-#    'abinit', 'ace', 'aims', 'aims', 'amber',
-#    'calculator', 'calculators',
-#    'castep', 'cp2k', 'crystal', 'demon', 'demonnano',
-#    'dftb', 'dmol', 'elk', 'espresso',
-#    'exciting', 'fleur', 'gaussian', 'gpaw', 'gromacs', 'jacapo',
-#    'kim', 'lammpslib', 'lammpsrun', 'nwchem',
-#    'octopus', 'onetep', 'openmx', 'psi4',
-#    'qbox', 'qchem', 'siesta', 'turbomole', 'vasp',
-#}
-
-
 class TestModule:
     ignorefiles = {'__init__.py', 'testsuite.py', 'newtestsuite.py',
                    'conftest.py'}
@@ -99,10 +84,6 @@ class TestModule:
         for testfile in testfiles:
             if testfile.name in cls.ignorefiles:
                 continue
-            #if testfile.parent.name in calculator_names:
-            #    continue
-            #if testfile.parent.name in ['calculators', 'calculator']:
-            #    continue
             if '#' in testfile.name:
                 continue  # Ignore certain backup files.
             rel_testfile = testfile.relative_to(cls.testdir)

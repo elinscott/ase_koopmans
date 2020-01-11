@@ -1,4 +1,3 @@
-import re
 import os
 import pytest
 from ase.utils import workdir
