@@ -121,7 +121,8 @@ class TestModule:
 
     @classmethod
     def add_oldstyle_tests_to_namespace(cls, namespace: Dict[str, Any]):
-        for testmodule in cls.glob_all_test_modules():
+        for testmodule in sorted(cls.glob_all_test_modules(),
+                                 key=lambda module: module.testname):
             if testmodule.is_pytest_style:
                 continue
 
