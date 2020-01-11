@@ -155,15 +155,17 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                         name = '{}_{{{}}}'.format(name, num)
                 if dimensions == 3:
                     ax.text(x, y, z, '$' + name + '$',
-                            ha='center', va='bottom', color='r')
+                            ha='center', va='bottom', color='g')
                 elif dimensions == 2:
                     if abs(z) < 1e-6:
                         ax.text(x, y, '$' + name + '$',
-                                ha='center', va='bottom', color='r')
+                                ha='right', va='bottom', color='g',
+                                zorder=5)
                 else:
                     if abs(y) < 1e-6 and abs(z) < 1e-6:
                         ax.text(x, y, '$' + name + '$',
-                                ha='center', va='bottom', color='r')
+                                ha='center', va='bottom', color='g',
+                                zorder=5)
 
     if kpoints is not None:
         kw = {'c': 'b'}
@@ -173,9 +175,9 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
             if dimensions == 3:
                 ax.scatter(p[0], p[1], p[2], **kw)
             elif dimensions == 2:
-                ax.scatter(p[0], p[1], c='b')
+                ax.scatter(p[0], p[1], c='b', zorder=4)
             else:
-                ax.scatter(p[0], 0, c='b')
+                ax.scatter(p[0], 0, c='b', zorder=4)
 
     ax.set_axis_off()
 
