@@ -12,9 +12,11 @@ becomes shorter, and the list of tests in other modules becomes
 longer."""
 
 
-from typing import Dict, Any, Generator
-import runpy
 from pathlib import Path
+import runpy
+from typing import Dict, Any, Generator
+import unittest
+
 import ase.test as asetest
 from ase.utils import workdir
 
@@ -101,7 +103,16 @@ class TestModule:
         module = self.module
 
         def test_script():
-            runpy.run_module(module, run_name='test')
+            try:
+                runpy.run_module(module, run_name='test')
+            except ImportError as ex:
+                exmod = ex.args[0].split()[-1].replace("'", '').split('.')[0]
+                if exmod in ['matplotlib', 'Scientific', 'lxml', 'Tkinter',
+                             'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2',
+                             'kimpy']:
+                    raise unittest.SkipTest('no {} module'.format(exmod))
+                else:
+                    raise
 
         test_script.__name__ = self.pytest_function_name
         return test_script

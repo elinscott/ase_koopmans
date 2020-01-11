@@ -503,12 +503,6 @@ class CLICommand:
 
         print_info()
 
-        #if args.list:
-        #    dirname, _ = os.path.split(__file__)
-        #    for testfile in get_tests(args.tests):
-        #        print(os.path.join(dirname, testfile))
-        #    sys.exit(0)
-
         if args.list_calculators:
             for name in calc_names:
                 print(name)
