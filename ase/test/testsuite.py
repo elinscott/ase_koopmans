@@ -195,7 +195,22 @@ class CLICommand:
 
             dct = TestModule.all_test_modules_as_dict()
 
-            for testname in args.tests:
+            # Hack: Make it recognize groups of tests like fio/*.py
+            groups = {}
+            for name in dct:
+                groupname = name.split('.')[0]
+                print(groupname, name)
+                if groupname not in dct:
+                    groups.setdefault(groupname, []).append(name)
+
+            testnames = []
+            for arg in args.tests:
+                if arg in groups:
+                    testnames += groups[arg]
+                else:
+                    testnames.append(arg)
+
+            for testname in testnames:
                 mod = dct[testname]
                 if mod.is_pytest_style:
                     pytest_args.append(mod.module)
