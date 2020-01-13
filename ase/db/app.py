@@ -99,7 +99,8 @@ def atoms(project_name: str, id: int, type: str):
     a = row.toatoms()
     if type == 'cif':
         b = io.BytesIO()
-        a.write(b, 'cif')
+        a.pbc = True
+        a.write(b, 'cif', wrap=False)
         return b.getvalue(), 200, []
 
     fd = io.StringIO()
