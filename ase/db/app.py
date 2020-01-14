@@ -54,6 +54,7 @@ def search(project_name: str):
     session = Session(project_name)
     project = projects[project_name]
     return render_template(project['search_template'],
+                           q=request.args.get('query', ''),
                            p=project,
                            session_id=session.id)
 
