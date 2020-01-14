@@ -6,9 +6,12 @@
 
       <div class="row">
         <div class="col-xs-6">
-          <h5><b>
+          <b>
           Displaying rows {{ s.row1 }}-{{ s.row2 }} out of {{ s.nrows }}
-          </b></h5>
+          </b>
+          {% if s.query %}
+          <a href="/{{ p.name }}/?query={{ s.query }}"> (direct link) </a>
+          {% endif %}
         </div>
 
         <div class="col-xs-6">
