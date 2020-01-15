@@ -45,7 +45,7 @@ class ORCA(FileIOCalculator):
 
         are used to define the ORCA simple-inputline and the ORCA-block input.
         This allows for more flexible use of any ORCA method or keyword
-        available in ORCA         instead of hardcoding stuff.
+        available in ORCA instead of hardcoding stuff.
 
         Point Charge IO functionality added by A. Dohn.
         """
