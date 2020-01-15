@@ -83,3 +83,5 @@ def write_orca(filename, atoms, charge, mult):
                 str(atom.position[1]) + ' ' +
                 str(atom.position[2]) + '\n')
     f.write('*\n')
+
+    f.close()

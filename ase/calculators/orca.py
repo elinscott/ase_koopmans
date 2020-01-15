@@ -112,9 +112,9 @@ class ORCA(FileIOCalculator):
 
     def read_forces(self):
         """Read Forces from ORCA output file."""
-        file = open(self.label + '.engrad', 'r', encoding='utf-8')
+        fil = open(self.label + '.engrad', 'r', encoding='utf-8')
         lines = file.readlines()
-        file.close()
+        fil.close()
         getgrad="no"
         for i, line in enumerate(lines):
             if line.find('# The current gradient') >= 0:
@@ -166,6 +166,8 @@ class PointChargePotential:
             [x, y, z] = pos
             pc_file.write('{0:12.6f} {1:12.6f} {2:12.6f} {3:12.6f}\n'
                           .format(pc, x, y, z))
+
+        pc_file.close()
 
     def get_forces(self, calc):
         ''' reads forces on point charges from .pcgrad file '''
