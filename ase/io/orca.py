@@ -3,6 +3,7 @@ from ase.io import read
 
 # Made from NWChem interface
 
+
 def read_orca_output(filename):
     """Method to read geometry from a ORCA output."""
 
