@@ -17,7 +17,8 @@ Many input examples are available at the
 `ORCA Input Library <https://sites.google.com/site/orcainputlibrary>`_.
 
 
-.. highlight:: python
+.. highlight:: none
+
 The :class:`ORCA` ASE-interface is very simple. Two keywords are defined::
 
   orcasimpleinput: str
@@ -27,17 +28,21 @@ The :class:`ORCA` ASE-interface is very simple. Two keywords are defined::
       What you'd put in the "% ... end"-blocks.
 
 
-The ASE-calculator also works with the :class:`EIQMMM`-calculator 
-for QM/MM simulations. 
+The ASE-calculator also works with the 
+:mod:`~ase.calculators.qmmm.EIQMMM`-calculator 
+for QM/MM simulations (see :mod:`~ase.calculators.qmmm` for 
+more info). 
 
 Setup and usage
 ===============
 
 .. highlight:: bash
 
-The default command that ASE will use to start NWChem is
-``orca PREFIX.inp > PREFIX.out'``. You can change this command by setting the
-environment variable :envvar:`ASE_ORCA_COMMAND`. (For example, add a line
+The default command that ASE will use to start ORCA is
+``orca PREFIX.inp > PREFIX.out``. 
+
+You can change this command by setting the
+environment variable :envvar:`$ASE_ORCA_COMMAND`. (For example, add a line
 to your ``.bashrc`` with ``export ASE_ORCA_COMMAND="my new command"``). 
 This can be useful since the parallel MPI version of orca can require the full
 path to the executable to be specified. 
