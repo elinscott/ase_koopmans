@@ -42,7 +42,7 @@ Supported :mod:`Calculators <ase.calculators>`
 |fhi-aims| |fleur| |gpaw| |gromacs|
 |hotbit| |jdftx| |kim| |lammps| |nwchem|
 |octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
-|xtb|
+|xtb| |orca|
 :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
@@ -268,7 +268,9 @@ Contents
 .. |xtb| image:: static/xtb.png
    :target: https://github.com/grimme-lab/xtb/tree/master/python
    :align: middle
-
+.. |orca| image:: static/orca_logo_mpi.png
+   :target: ase/calculators/orca.html
+   :align: middle
 
 .. _Gaussian: http://gaussian.com/
 .. _Mopac: ase/calculators/mopac.html
