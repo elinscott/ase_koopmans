@@ -510,6 +510,7 @@ This will run the algorithm until 10 steps are taken; alternatively, if totalste
  | ``timestep`` : 1.0,  # fs, timestep for MD simulations
  | ``optimizer`` : QuasiNewton,  # local optimizer to use
  | ``minima_traj`` : 'minima.traj',  # storage file for minima list
+ | ``fmax`` : 0.05,  # eV/A, max force for optimizations
 
 Specific definitions of the ``alpha``, ``beta``, and ``mdmin`` parameters can be found in the publication by Goedecker. ``minima_threshold`` is used to determine if two atomic configurations are identical; if any atom has moved by more than this amount it is considered a new configuration. Note that the code tries to do this in an intelligent manner: atoms are considered to be indistinguishable, and translations are allowed in the directions of the periodic boundary conditions. Therefore, if a CO is adsorbed in an ontop site on a (211) surface it will be considered identical no matter which ontop site it occupies.
 
