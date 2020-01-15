@@ -72,7 +72,9 @@ def write_orca(filename, atoms, charge, mult):
         f = open(filename, 'w')
     else:  # Assume it's a 'file-like object'
         f = filename
-    f.write('*xyz');f.write(" %d" % charge);f.write(" %d \n" % mult)
+    f.write('*xyz')
+    f.write(" %d" % charge)
+    f.write(" %d \n" % mult)
     for atom in atoms:
         if atom.tag == 71:  # 71 is ascii G (Ghost)
             symbol = atom.symbol + ' : '
