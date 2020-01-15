@@ -31,11 +31,11 @@ class FancyDict(dict):
 
 def atoms2dict(atoms):
     dct = {
+        'pbc': atoms.pbc,
         'numbers': atoms.numbers,
         'positions': atoms.positions,
         'unique_id': '%x' % randint(16**31, 16**32 - 1)}
     if atoms.cell.any():
-        dct['pbc'] = atoms.pbc
         dct['cell'] = atoms.cell
     if atoms.has('initial_magmoms'):
         dct['initial_magmoms'] = atoms.get_initial_magnetic_moments()
@@ -86,6 +86,7 @@ class AtomsRow:
         self.__dict__.update(dct)
         if 'cell' not in dct:
             self.cell = np.zeros((3, 3))
+        if 'pbc' not in dct:
             self.pbc = np.zeros(3, bool)
 
     def __contains__(self, key):
