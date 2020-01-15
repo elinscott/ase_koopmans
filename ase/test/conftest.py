@@ -13,6 +13,15 @@ def disable_calculators(request):
                          if name not in enabled_names])
 
 
+# Backport of tmp_path fixture from pytest 3.9.
+# We want to be compatible with pytest 3.3.2 and pytest-xdist 1.22.1.
+# These are provided with Ubuntu 18.04.
+# Current Debian stable uses a newer libraries, so that should be OK.
+@pytest.fixture
+def tmp_path(tmpdir):
+    return Path(tmpdir)
+
+
 @pytest.fixture(autouse=True)
 def use_tmp_workdir(tmp_path):
     # Pytest can on some systems provide a Path from pathlib2.  Normalize:

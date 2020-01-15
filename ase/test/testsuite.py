@@ -6,6 +6,7 @@ import importlib
 import unittest
 import warnings
 import argparse
+from multiprocessing import cpu_count
 
 import pytest
 
@@ -182,11 +183,12 @@ class CLICommand:
 
         if args.jobs == MULTIPROCESSING_DISABLED:
             pass
-        elif args.jobs == MULTIPROCESSING_AUTO:
-            add_args('--numprocesses=auto',
-                     '--maxprocesses={}'.format(MULTIPROCESSING_MAX_WORKERS))
         else:
-            add_args('--numprocesses={}'.format(args.jobs))
+            if args.jobs == MULTIPROCESSING_AUTO:
+                nworkers = min(cpu_count(), MULTIPROCESSING_MAX_WORKERS)
+            else:
+                nworkers = args.jobs
+            add_args('--numprocesses={}'.format(nworkers))
 
         add_args('--pyargs')
 
