@@ -19,7 +19,8 @@ def disable_calculators(request):
 # Current Debian stable uses a newer libraries, so that should be OK.
 @pytest.fixture
 def tmp_path(tmpdir):
-    return Path(tmpdir)
+    # Avoid trouble since tmpdir can be a py._path.local.LocalPath
+    return Path(str(tmpdir))
 
 
 @pytest.fixture(autouse=True)
