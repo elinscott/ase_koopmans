@@ -2,7 +2,8 @@ import sys
 
 import numpy as np
 
-from ase.calculators.calculator import (get_calculator, names as calcnames,
+from ase.calculators.calculator import (get_calculator_class,
+                                        names as calcnames,
                                         PropertyNotImplementedError)
 from ase.constraints import FixAtoms, UnitCellFilter
 from ase.eos import EquationOfState
@@ -127,7 +128,7 @@ class Runner:
             return atoms
 
     def set_calculator(self, atoms, name):
-        cls = get_calculator(self.calculator_name)
+        cls = get_calculator_class(self.calculator_name)
         parameters = str2dict(self.args.parameters)
         if getattr(cls, 'nolabel', False):
             atoms.calc = cls(**parameters)

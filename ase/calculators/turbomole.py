@@ -7,7 +7,6 @@ Please read the license file (../../LICENSE)
 
 Contact: Ivan Kondov <ivan.kondov@kit.edu>
 """
-from __future__ import print_function
 import os
 import re
 import warnings
@@ -19,7 +18,6 @@ from ase.units import Ha, Bohr
 from ase.io import read, write
 from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import PropertyNotImplementedError, ReadError
-from ase.utils import basestring
 
 
 def read_output(regex):
@@ -43,7 +41,7 @@ def execute(args, input_str=None, error_test=True,
             stdout_tofile=True):
     """executes a turbomole executable and process the outputs"""
 
-    if isinstance(args, basestring):
+    if isinstance(args, str):
         args = args.split()
 
     if stdout_tofile:
@@ -763,7 +761,7 @@ class Turbomole(FileIOCalculator):
 
         # kwargs parameters are ignored if user provides define_str
         if self.define_str is not None:
-            assert isinstance(self.define_str, basestring)
+            assert isinstance(self.define_str, str)
             assert len(self.define_str) != 0
             return
 
@@ -1189,7 +1187,7 @@ class Turbomole(FileIOCalculator):
                 else:
                     if pdgs[p] is None:
                         params[p] = None
-                    elif isinstance(pdgs[p], basestring):
+                    elif isinstance(pdgs[p], str):
                         if self.parameter_type[p] is bool:
                             params[p] = (pdgs[p] == self.parameter_key[p])
                     else:

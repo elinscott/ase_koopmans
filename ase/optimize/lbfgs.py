@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 
 from ase.optimize.optimize import Optimizer
-from ase.utils import basestring
 from ase.utils.linesearch import LineSearch
 
 
@@ -91,7 +89,7 @@ class LBFGS(Optimizer):
         self.iteration = 0
         self.s = []
         self.y = []
-        # Store also rho, to avoid calculationg the dot product again and
+        # Store also rho, to avoid calculating the dot product again and
         # again.
         self.rho = []
 
@@ -195,7 +193,7 @@ class LBFGS(Optimizer):
 
     def replay_trajectory(self, traj):
         """Initialize history from old trajectory."""
-        if isinstance(traj, basestring):
+        if isinstance(traj, str):
             from ase.io.trajectory import Trajectory
             traj = Trajectory(traj, 'r')
         r0 = None

@@ -189,9 +189,17 @@ to speed up BFGS local minimzations.
 Read more about this algorithm here:
 
   | Estefanía Garijo del Río, Jens Jørgen Mortensen, Karsten W. Jacobsen
-  | `A local Bayesian optimizer for atomic structures`__
+  | `Local Bayesian optimizer for atomic structures`__
+  | Physical Review B, Vol. **100**, 104103 (2019)
 
-__ https://arxiv.org/abs/1808.08588
+__ https://link.aps.org/doi/10.1103/PhysRevB.100.104103
+
+.. warning:: The memory of the optimizer scales as O(n²N²) where
+             N is the number of atoms and n the number of steps.
+             If the number of atoms is sufficiently high, this
+             may cause a memory issue.
+             This class prints a warning if the user tries to 
+             run GPMin with more than 100 atoms in the unit cell.
 
 
 FIRE
@@ -459,7 +467,7 @@ Read more about this algorithm here:
   | `Global Optimization by Basin-Hopping and the Lowest Energy Structures of Lennard-Jones Clusters Containing up to 110 Atoms`__
   | J. Phys. Chem. A, Vol. **101**, 5111-5116 (1997)
 
-__ http://pubs.acs.org/doi/abs/10.1021/jp970984n
+__ https://doi.org/10.1021/jp970984n
 
 and here:
 
@@ -467,7 +475,7 @@ and here:
   | `Global Optimization of Clusters, Crystals, and Biomolecules`__
   | Science, Vol. **285**, 1368 (1999)
 
-__ http://www.sciencemag.org/cgi/content/abstract/sci;285/5432/1368
+__ https://science.sciencemag.org/content/285/5432/1368.abstract
 
 Minima hopping
 --------------
@@ -502,12 +510,13 @@ This will run the algorithm until 10 steps are taken; alternatively, if totalste
  | ``timestep`` : 1.0,  # fs, timestep for MD simulations
  | ``optimizer`` : QuasiNewton,  # local optimizer to use
  | ``minima_traj`` : 'minima.traj',  # storage file for minima list
+ | ``fmax`` : 0.05,  # eV/A, max force for optimizations
 
 Specific definitions of the ``alpha``, ``beta``, and ``mdmin`` parameters can be found in the publication by Goedecker. ``minima_threshold`` is used to determine if two atomic configurations are identical; if any atom has moved by more than this amount it is considered a new configuration. Note that the code tries to do this in an intelligent manner: atoms are considered to be indistinguishable, and translations are allowed in the directions of the periodic boundary conditions. Therefore, if a CO is adsorbed in an ontop site on a (211) surface it will be considered identical no matter which ontop site it occupies.
 
 The trajectory file ``minima_traj`` will be populated with the accepted minima as they are found. A log of the progress is kept in ``logfile``.
 
-The code is written such that a stopped simulation (e.g., killed by the batching system when the maximum wall time was exceeded) can usually be restarted without too much effort by the user. In most cases, the script can be resubmitted without any modification -- if the ``logfile`` and ``minima_traj`` are found, the script will attempt to use these to resume. (Note that you may need to clean up files left in the directory by the calculator, however, such as the .nc file produced by Jacapo.)
+The code is written such that a stopped simulation (e.g., killed by the batching system when the maximum wall time was exceeded) can usually be restarted without too much effort by the user. In most cases, the script can be resubmitted without any modification -- if the ``logfile`` and ``minima_traj`` are found, the script will attempt to use these to resume. (Note that you may need to clean up files left in the directory by the calculator, however.)
 
 Note that these searches can be quite slow, so it can pay to have multiple searches running at a time. Multiple searches can run in parallel and share one list of minima. (Run each script from a separate directory but specify the location to the same absolute location for ``minima_traj``). Each search will use the global information of the list of minima, but will keep its own local information of the initial temperature and `E_\mathrm{diff}`.
 

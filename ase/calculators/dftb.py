@@ -52,13 +52,8 @@ class Dftb(FileIOCalculator):
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='dftb', atoms=None, kpts=None,
-                 run_manyDftb_steps=False,
                  **kwargs):
         """Construct a DFTB+ calculator.
-
-        run_manyDftb_steps:  Logical
-            True: many steps are run by DFTB+,
-            False:a single force&energy calculation at given positions
 
         kpts: (int, int, int), dict, or 2D-array
             If kpts is a tuple (or list) of 3 integers, it is interpreted
@@ -86,21 +81,7 @@ class Dftb(FileIOCalculator):
         else:
             self.slako_dir = './'
 
-        if run_manyDftb_steps:
-            # minimisation of molecular dynamics is run by native DFTB+
-            self.default_parameters = dict(
-                Hamiltonian_='DFTB',
-                Hamiltonian_SlaterKosterFiles_='Type2FileNames',
-                Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,
-                Hamiltonian_SlaterKosterFiles_Separator='"-"',
-                Hamiltonian_SlaterKosterFiles_Suffix='".skf"',
-                Hamiltonian_MaxAngularMomentum_='',
-                Options_='',
-                Options_WriteResultsTag='Yes')
-        else:
-            # using ase to get forces and energy only
-            # (single point calculation)
-            self.default_parameters = dict(
+        self.default_parameters = dict(
                 Hamiltonian_='DFTB',
                 Hamiltonian_SlaterKosterFiles_='Type2FileNames',
                 Hamiltonian_SlaterKosterFiles_Prefix=self.slako_dir,
@@ -240,8 +221,10 @@ class Dftb(FileIOCalculator):
                 outfile.write(str(value) + ' \n')
             elif ((key == 'Hamiltonian_ReadInitialCharges') and 
                   (str(value).upper() == 'YES')):
-                if not os.path.isfile(self.directory + os.sep + 'charges.dat'):
-                    print('charges.dat not found, switching off guess')
+                f1 = os.path.isfile(self.directory + os.sep + 'charges.dat')
+                f2 = os.path.isfile(self.directory + os.sep + 'charges.bin')
+                if not (f1 or f2):
+                    print('charges.dat or .bin not found, switching off guess')
                     value = 'No'
                 outfile.write(key.rsplit('_')[-1] + ' = ' + str(value) + ' \n')
             else:
@@ -290,8 +273,9 @@ class Dftb(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         from ase.io import write
-        if properties is not None and 'forces' in properties:
-            self.do_forces = True
+        if properties is not None:
+            if 'forces' in properties or 'stress' in properties:
+                self.do_forces = True
         FileIOCalculator.write_input(
             self, atoms, properties, system_changes)
         self.write_dftb_in(os.path.join(self.directory, 'dftb_in.hsd'))
@@ -387,7 +371,7 @@ class Dftb(FileIOCalculator):
 
         qm_charges = []
         for n, line in enumerate(lines):
-            if ('Atom' and 'Net charge' in line):
+            if ('Atom' and 'Charge' in line):
                 chargestart = n + 1
                 break
         else:

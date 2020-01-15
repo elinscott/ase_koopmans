@@ -1,4 +1,3 @@
-from __future__ import print_function
 from math import sqrt
 
 import numpy as np
@@ -136,8 +135,7 @@ class Images:
         return radii
 
     def read(self, filenames, default_index=':', filetype=None):
-        from ase.utils import basestring
-        if isinstance(default_index, basestring):
+        if isinstance(default_index, str):
             default_index = string2index(default_index)
 
         images = []
@@ -151,6 +149,16 @@ class Images:
             else:
                 actual_filename, index = parse_filename(filename,
                                                         default_index)
+
+            # Read from stdin:
+            if filename == '-':
+                import sys
+                from io import BytesIO
+                buf = BytesIO(sys.stdin.buffer.read())
+                buf.seek(0)
+                filename = buf
+                filetype = 'traj'
+
             imgs = read(filename, index, filetype)
             if hasattr(imgs, 'iterimages'):
                 imgs = list(imgs.iterimages())
@@ -189,7 +197,7 @@ class Images:
                     quantity = get_quantity()
             except Exception as err:
                 quantity = None
-                errmsg = ('An error occured while retrieving {} '
+                errmsg = ('An error occurred while retrieving {} '
                           'from the calculator: {}'.format(name, err))
                 warnings.warn(errmsg)
             return quantity
@@ -373,8 +381,9 @@ class Images:
                 s += sqrt((dR**2).sum())
         return xy
 
-    def write(self, filename, rotations='', show_unit_cell=False, bbox=None,
+    def write(self, filename, rotations='', bbox=None,
               **kwargs):
+        # XXX We should show the unit cell whenever there is one
         indices = range(len(self))
         p = filename.rfind('@')
         if p != -1:
@@ -391,7 +400,7 @@ class Images:
         images = [self.get_atoms(i) for i in indices]
         if len(filename) > 4 and filename[-4:] in ['.eps', '.png', '.pov']:
             write(filename, images,
-                  rotation=rotations, show_unit_cell=show_unit_cell,
+                  rotation=rotations,
                   bbox=bbox, **kwargs)
         else:
             write(filename, images, **kwargs)

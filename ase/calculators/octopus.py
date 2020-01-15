@@ -1,4 +1,3 @@
-# coding=utf-8
 """ASE-interface to Octopus.
 
 Ask Hjorth Larsen <asklarsen@gmail.com>
@@ -81,7 +80,7 @@ def read_eigenvalues_file(fd):
     unit = None
 
     for line in fd:
-        m = re.match('Eigenvalues\s*\[(.+?)\]', line)
+        m = re.match(r'Eigenvalues\s*\[(.+?)\]', line)
         if m is not None:
             unit = m.group(1)
             break
@@ -976,8 +975,9 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         self.octopus_keywords = octopus_keywords
 
         if label is not None:
-            import warnings
-            warnings.warn('Please use directory=... instead of label')
+            # restart mechanism in Calculator tends to set the label.
+            #import warnings
+            #warnings.warn('Please use directory=... instead of label')
             directory = label.rstrip('/')
 
         if directory is None:
@@ -1138,7 +1138,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         octopus_keywords = self.octopus_keywords
         if octopus_keywords is None:
             # Will not do automatic pretty capitalization
-            octopus_keywords = self.kwargs
+            octopus_keywords = {}
         txt = generate_input(atoms, process_special_kwargs(atoms, self.kwargs),
                              octopus_keywords)
         fd = open(self._getpath('inp'), 'w')

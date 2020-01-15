@@ -1,31 +1,17 @@
-from __future__ import unicode_literals
-try:
-    # Python 3
-    import tkinter as tk
-    import tkinter.ttk as ttk
-    from tkinter.messagebox import askokcancel as ask_question
-    from tkinter.messagebox import showerror, showwarning, showinfo
-    from tkinter.filedialog import LoadFileDialog, SaveFileDialog
-except ImportError:
-    # Python 2
-    import Tkinter as tk
-    try:
-        import ttk
-    except ImportError:
-        ttk = None
-    from tkMessageBox import (askokcancel as ask_question, showerror,
-                              showwarning, showinfo)
-    from FileDialog import LoadFileDialog, SaveFileDialog
-
 import re
 import sys
 from collections import namedtuple
 from functools import partial
-from ase.gui.i18n import _
 
 import numpy as np
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter.messagebox import askokcancel as ask_question
+from tkinter.messagebox import showerror, showwarning, showinfo
+from tkinter.filedialog import LoadFileDialog, SaveFileDialog
 
-from ase.utils import basestring
+from ase.gui.i18n import _
+
 
 __all__ = [
     'error', 'ask_question', 'MainWindow', 'LoadFileDialog', 'SaveFileDialog',
@@ -86,7 +72,7 @@ class BaseWindow(object):
     title = property(None, title)
 
     def add(self, stuff, anchor='w'):  # 'center'):
-        if isinstance(stuff, basestring):
+        if isinstance(stuff, str):
             stuff = Label(stuff)
         elif isinstance(stuff, list):
             stuff = Row(stuff)
@@ -131,7 +117,7 @@ class Row(Widget):
     def create(self, parent):
         self.widget = tk.Frame(parent)
         for thing in self.things:
-            if isinstance(thing, basestring):
+            if isinstance(thing, str):
                 thing = Label(thing)
             thing.pack(self.widget, 'left')
         return self.widget
@@ -381,7 +367,7 @@ class Rows(Widget):
         return widget
 
     def add(self, row):
-        if isinstance(row, basestring):
+        if isinstance(row, str):
             row = Label(row)
         elif isinstance(row, list):
             row = Row(row)
@@ -516,7 +502,17 @@ class MainWindow(BaseWindow):
         self.configured = True
 
     def run(self):
-        tk.mainloop()
+        # Workaround for nasty issue with tkinter on Mac:
+        # https://gitlab.com/ase/ase/issues/412
+        #
+        # It is apparently a compatibility issue between Python and Tkinter.
+        # Some day we should remove this hack.
+        while True:
+            try:
+                tk.mainloop()
+                break
+            except UnicodeDecodeError:
+                pass
 
     def test(self, test, close_after_test=False):
         def callback():

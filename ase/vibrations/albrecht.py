@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division
 import sys
 import numpy as np
 from itertools import combinations_with_replacement

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os
 from ase.calculators.siesta.siesta import Siesta
 from ase.constraints import FixAtoms, FixedLine, FixedPlane

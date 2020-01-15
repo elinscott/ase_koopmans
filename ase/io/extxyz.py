@@ -11,7 +11,6 @@ description of the Extended XYZ file format.
 Contributed by James Kermode <james.kermode@gmail.com>
 """
 
-from __future__ import print_function
 
 from itertools import islice
 import re
@@ -24,7 +23,6 @@ from ase.calculators.calculator import all_properties, Calculator
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
-from ase.utils import basestring
 from ase.constraints import FixAtoms, FixCartesian
 from ase.io.formats import index2range
 
@@ -139,7 +137,7 @@ def key_val_str_to_dict(string, sep=None):
 
             # Parse boolean values: 'T' -> True, 'F' -> False,
             #                       'T T F' -> [True, True, False]
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 str_to_bool = {'T': True, 'F': False}
 
                 try:
@@ -210,7 +208,7 @@ def key_val_str_to_dict_regex(s):
 
             # Parse boolean values: 'T' -> True, 'F' -> False,
             #                       'T T F' -> [True, True, False]
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 str_to_bool = {'T': True, 'F': False}
 
                 if len(value.split()) > 1:
@@ -241,7 +239,9 @@ def key_val_dict_to_str(d, sep=' ', tolerant=False):
         val = d[key]
         if isinstance(val, dict):
             continue
-        if hasattr(val, '__iter__'):
+        if isinstance(val, str):
+            pass
+        elif hasattr(val, '__iter__'):
             try:
                 val = np.array(list(val))
                 val = ' '.join(str(type_val_map.get((type(x), x), x))
@@ -268,7 +268,7 @@ def key_val_dict_to_str(d, sep=' ', tolerant=False):
 
         if val is None:
             s = s + '%s%s' % (key, sep)
-        elif isinstance(val, basestring) and ' ' in val:
+        elif isinstance(val, str) and ' ' in val:
             s = s + '%s="%s"%s' % (key, val, sep)
         else:
             s = s + '%s=%s%s' % (key, str(val), sep)
@@ -330,11 +330,11 @@ def parse_properties(prop_str):
 
 def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0):
     # comment line
-    line = next(lines)
+    line = next(lines).strip()
     if nvec > 0:
-        info = {'comment': line.strip()}
+        info = {'comment': line}
     else:
-        info = properties_parser(line)
+        info = properties_parser(line) if line else {}
 
     pbc = None
     if 'pbc' in info:
@@ -565,7 +565,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
     deal with most use cases, ``extxyz.key_val_str_to_dict_regex`` is slightly
     faster but has fewer features.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     if not isinstance(index, int) and not isinstance(index, slice):
@@ -626,19 +626,19 @@ def output_column_format(atoms, columns, arrays,
     """
     Helper function to build extended XYZ comment line
     """
-    fmt_map = {'d': ('R', '%16.8f '),
-               'f': ('R', '%16.8f '),
-               'i': ('I', '%8d '),
-               'O': ('S', '%s '),
-               'S': ('S', '%s '),
-               'U': ('S', '%s '),
-               'b': ('L', ' %.1s ')}
+    fmt_map = {'d': ('R', '%16.8f'),
+               'f': ('R', '%16.8f'),
+               'i': ('I', '%8d'),
+               'O': ('S', '%s'),
+               'S': ('S', '%s'),
+               'U': ('S', '%-2s'),
+               'b': ('L', ' %.1s')}
 
     # NB: Lattice is stored as tranpose of ASE cell,
     # with Fortran array ordering
     lattice_str = ('Lattice="'
                    + ' '.join([str(x) for x in np.reshape(atoms.cell.T,
-                                                        9, order='F')]) +
+                                                          9, order='F')]) +
                    '"')
 
     property_names = []
@@ -687,7 +687,7 @@ def output_column_format(atoms, columns, arrays,
     comment_str += ' ' + key_val_dict_to_str(info, tolerant=tolerant)
 
     dtype = np.dtype(dtypes)
-    fmt = ''.join(formats) + '\n'
+    fmt = ' '.join(formats) + '\n'
 
     return comment_str, property_ncols, dtype, fmt
 
@@ -703,7 +703,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
     XYZ comment line (default is True) and the results of any
     calculator attached to this Atoms.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         mode = 'w'
         if append:
             mode = 'a'
@@ -723,7 +723,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
         if fr_cols is None:
             fr_cols = (['symbols', 'positions']
                        + [key for key in atoms.arrays.keys() if
-                        key not in ['symbols', 'positions', 'numbers',
+                          key not in ['symbols', 'positions', 'numbers',
                                       'species', 'pos']])
 
         if vec_cell:
@@ -775,7 +775,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
         else:
             symbols = atoms.get_chemical_symbols()
 
-        if natoms > 0 and not isinstance(symbols[0], basestring):
+        if natoms > 0 and not isinstance(symbols[0], str):
             raise ValueError('First column must be symbols-like')
 
         # Check second column "looks like" atomic positions

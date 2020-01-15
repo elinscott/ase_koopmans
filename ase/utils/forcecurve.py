@@ -1,8 +1,11 @@
 import numpy as np
+from collections import namedtuple
 from ase.geometry import find_mic
 
 
 def fit_raw(energies, forces, positions, cell=None, pbc=None):
+    """Calculates parameters for fitting images to a band, as for
+    a NEB plot."""
     E = energies
     F = forces
     R = positions
@@ -60,9 +63,10 @@ def fit_raw(energies, forces, positions, cell=None, pbc=None):
     Efit[-1] = E[-1]
     return ForceFit(s, E, Sfit, Efit, lines)
 
-from collections import namedtuple
 
 class ForceFit(namedtuple('ForceFit', ['s', 'E', 'Sfit', 'Efit', 'lines'])):
+    """Data container to hold fitting parameters for force curves."""
+
     def plot(self, ax=None):
         import matplotlib.pyplot as plt
         if ax is None:
@@ -72,18 +76,21 @@ class ForceFit(namedtuple('ForceFit', ['s', 'E', 'Sfit', 'Efit', 'lines'])):
         for x, y in self.lines:
             ax.plot(x, y, '-g')
         ax.plot(self.Sfit, self.Efit, 'k-')
-        ax.set_xlabel(r'path [$\AA$]')
+        ax.set_xlabel(r'path [Å]')
         ax.set_ylabel('energy [eV]')
         Ef = max(self.E) - self.E[0]
         Er = max(self.E) - self.E[-1]
         dE = self.E[-1] - self.E[0]
-        ax.set_title('$E_\mathrm{f} \\approx$ %.3f eV; '
-                     '$E_\mathrm{r} \\approx$ %.3f eV; '
-                     '$\\Delta E$ = %.3f eV'
-                     % (Ef, Er, dE))
+        ax.set_title(r'$E_\mathrm{{f}} \approx$ {:.3f} eV; '
+                     r'$E_\mathrm{{r}} \approx$ {:.3f} eV; '
+                     r'$\Delta E$ = {:.3f} eV'.format(Ef, Er, dE))
         return ax
 
+
 def fit_images(images):
+    """Fits a series of images with a smoothed line for producing a standard
+    NEB plot. Returns a `ForceFit` data structure; the plot can be produced
+    by calling the `plot` method of `ForceFit`."""
     R = [atoms.positions for atoms in images]
     E = [atoms.get_potential_energy() for atoms in images]
     F = [atoms.get_forces() for atoms in images]  # XXX force consistent???

@@ -59,7 +59,7 @@ class SciPyOptimizer(Optimizer):
         """
         restart = None
         Optimizer.__init__(self, atoms, restart, logfile, trajectory,
-                           master, force_consistent)
+                           master, force_consistent=force_consistent)
         self.force_calls = 0
         self.callback_always = callback_always
         self.H0 = alpha
@@ -220,7 +220,7 @@ class SciPyGradientlessOptimizer(Optimizer):
         """
         restart = None
         Optimizer.__init__(self, atoms, restart, logfile, trajectory,
-                           master, force_consistent)
+                           master, force_consistent=force_consistent)
         self.function_calls = 0
         self.callback_always = callback_always
 

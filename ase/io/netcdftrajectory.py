@@ -16,7 +16,6 @@ VMD (http://www.ks.uiuc.edu/Research/vmd/)
 or Ovito (http://www.ovito.org/, starting with version 2.3).
 """
 
-from __future__ import division
 
 import os
 import warnings
@@ -65,7 +64,7 @@ class NetCDFTrajectory:
 
     def __init__(self, filename, mode='r', atoms=None, types_to_numbers=None,
                  double=True, netcdf_format='NETCDF3_CLASSIC', keep_open=True,
-                 index_var='id', index_offset=-1, chunk_size=1000000):
+                 index_var='id', chunk_size=1000000):
         """
         A NetCDFTrajectory can be created in read, write or append mode.
 
@@ -119,11 +118,7 @@ class NetCDFTrajectory:
         index_var='id':
             Name of variable containing the atom indices. Atoms are reordered
             by this index upon reading if this variable is present. Default
-            value is for LAMMPS output.
-
-        index_offset=-1:
-            Set to 0 if atom index is zero based, set to -1 if atom index is
-            one based. Default value is for LAMMPS output.
+            value is for LAMMPS output. None switches atom indices off.
 
         chunk_size=1000000:
             Maximum size of consecutive number of records (along the 'atom')
@@ -145,9 +140,9 @@ class NetCDFTrajectory:
             self.types_to_numbers = np.array(types_to_numbers)
 
         self.index_var = index_var
-        self.index_offset = index_offset
 
-        self._default_vars += [self.index_var]
+        if self.index_var is not None:
+            self._default_vars += [self.index_var]
 
         # 'l' should be a valid type according to the netcdf4-python
         # documentation, but does not appear to work.
@@ -520,15 +515,19 @@ class NetCDFTrajectory:
                 origin = np.zeros([3], dtype=float)
 
             # Do we have an index variable?
-            if self._has_variable(self.index_var):
-                index = np.array(self.nc.variables[self.index_var][i][:]) + \
-                    self.index_offset
+            if self.index_var is not None and \
+                self._has_variable(self.index_var):
+                index = np.array(self.nc.variables[self.index_var][i][:])
+                # The index variable can be non-consecutive, we here construct
+                # a consecutive one.
+                consecutive_index = np.zeros_like(index)
+                consecutive_index[np.argsort(index)] = np.arange(self.n_atoms)
             else:
-                index = np.arange(self.n_atoms)
+                consecutive_index = np.arange(self.n_atoms)
 
             # Read element numbers
-            self.numbers = self._get_data(self._numbers_var, i, index,
-                                          exc=False)
+            self.numbers = self._get_data(self._numbers_var, i,
+                                          consecutive_index, exc=False)
             if self.numbers is None:
                 self.numbers = np.ones(self.n_atoms, dtype=int)
             if self.types_to_numbers is not None:
@@ -536,7 +535,8 @@ class NetCDFTrajectory:
             self.masses = atomic_masses[self.numbers]
 
             # Read positions
-            positions = self._get_data(self._positions_var, i, index)
+            positions = self._get_data(self._positions_var, i,
+                                       consecutive_index)
 
             # Determine cell size for non-periodic directions from shrink
             # wrapped cell.
@@ -551,8 +551,8 @@ class NetCDFTrajectory:
             )
 
             # Compute momenta from velocities (if present)
-            momenta = self._get_data(self._velocities_var, i, index,
-                                     exc=False)
+            momenta = self._get_data(self._velocities_var, i,
+                                     consecutive_index, exc=False)
             if momenta is not None:
                 momenta *= self.masses.reshape(-1, 1)
 
@@ -575,9 +575,11 @@ class NetCDFTrajectory:
 
             # Attach additional arrays found in the NetCDF file
             for name in self.extra_per_frame_vars:
-                atoms.set_array(name, self._get_data(name, i, index))
+                atoms.set_array(name, self._get_data(name, i,
+                                                     consecutive_index))
             for name in self.extra_per_file_vars:
-                atoms.set_array(name, self._get_data(name, i, index))
+                atoms.set_array(name, self._get_data(name, i,
+                                                     consecutive_index))
             self._close()
             return atoms
 

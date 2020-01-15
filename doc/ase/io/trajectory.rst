@@ -46,7 +46,7 @@ The function returns a TrajectoryReader or a TrajectoryWriter object.
 
 Reading a trajectory file is done by indexing the TrajectoryReader
 object, i.e. traj[0] reads the first configuration, traj[-1] reads the
-last, etc.
+last, traj[3:8] returns a list of the third through seventh, etc.
 
 Writing a trajectory file is done by calling the ``write`` method.  If no
 atoms object was given when creating the object, it must be given as

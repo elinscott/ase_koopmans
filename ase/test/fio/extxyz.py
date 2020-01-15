@@ -1,6 +1,6 @@
 # additional tests of the extended XYZ file I/O
 # (which is also included in oi.py test case)
-# maintainted by James Kermode <james.kermode@gmail.com>
+# maintained by James Kermode <james.kermode@gmail.com>
 
 import os
 
@@ -190,6 +190,10 @@ expected_dict = {
 }
 
 parsed_dict = extxyz.key_val_str_to_dict(complex_xyz_string)
+np.testing.assert_equal(parsed_dict, expected_dict)
+
+key_val_str = extxyz.key_val_dict_to_str(expected_dict)
+parsed_dict = extxyz.key_val_str_to_dict(key_val_str)
 np.testing.assert_equal(parsed_dict, expected_dict)
 
 # Round trip through a file with complex line.

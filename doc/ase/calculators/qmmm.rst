@@ -20,9 +20,18 @@ are explicitly coupled with an electrostatic interaction term.
 This requires that the electrostatic potential from the classical charges of the
 MM subsystem is fed into the QM calculator. This is built into GPAW_. More info
 `In this paper <https://doi.org/10.1021/acs.jctc.7b00621>`__, which should be
-cited if the method is used.
+cited if the method is used. 
 
-.. _GPAW: http://wiki.fysik.dtu.dk/gpaw
+Other ASE-calculators that currently support EIQMMM:
+
+1. DFTBplus_  
+2. CRYSTAL_  
+3. TURBOMOLE_  
+
+.. _GPAW: https://wiki.fysik.dtu.dk/gpaw
+.. _DFTBplus: https://wiki.fysik.dtu.dk/ase/ase/calculators/dftb.html
+.. _CRYSTAL: https://wiki.fysik.dtu.dk/ase/ase/calculators/crystal.html
+.. _TURBOMOLE: https://wiki.fysik.dtu.dk/ase/ase/calculators/turbomole.html
 
 .. seealso::
 
@@ -44,6 +53,10 @@ Here, you need to specify the interaction::
 For Lennard-Jones type of interactions you can use:
 
 .. autoclass:: LJInteractions
+
+Or, for couplings requiring more generality, you should use:
+
+.. autoclass:: LJInteractionsGeneral
 
 You can control how the QM part is embedded in the MM part by supplying your
 own embedding object when you construct the :class:`EIQMMM` instance.  The

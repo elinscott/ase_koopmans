@@ -1,4 +1,3 @@
-from __future__ import print_function, division
 # Copyright (C) 2010, Jesper Friis
 # (see accompanying license files for details).
 
@@ -13,190 +12,6 @@ from __future__ import print_function, division
 import numpy as np
 from numpy import pi, sin, cos, arccos, sqrt, dot
 from numpy.linalg import norm
-
-from ase.utils.arraywrapper import arraylike
-
-
-@arraylike
-class Cell:
-    """Parallel epipedal unit cell of up to three dimensions.
-
-    This object resembles a 3x3 array whose [i, j]-th element is the jth
-    Cartesian coordinate of the ith unit vector.
-
-    Cells of less than three dimensions are represented by placeholder
-    unit vectors that are zero."""
-
-    ase_objtype = 'cell'  # For JSON'ing
-
-    def __init__(self, array, pbc=None):
-        if pbc is None:
-            # pbc defaults to whether each cell vector is nonzero:
-            pbc = array.any(1)
-
-        # We could have lazy attributes for structure (bcc, fcc, ...)
-        # and other things.  However this requires making the cell
-        # array readonly, else people will modify it and things will
-        # be out of synch.
-        assert array.shape == (3, 3)
-        assert array.dtype == float
-        assert pbc.shape == (3,)
-        assert pbc.dtype == bool
-        self.array = array
-        self.pbc = pbc
-
-    def cellpar(self, radians=False):
-        return cell_to_cellpar(self.array, radians)
-
-    def todict(self):
-        return dict(array=self.array, pbc=self.pbc)
-
-    @property
-    def shape(self):
-        return self.array.shape
-
-    @classmethod
-    def new(cls, cell=None, pbc=None):
-        if pbc is None:
-            pbc = getattr(cell, 'pbc', None)
-
-        if cell is None:
-            cell = np.zeros((3, 3))
-
-        cell = np.array(cell, float)
-
-        if cell.shape == (3,):
-            cell = np.diag(cell)
-        elif cell.shape == (6,):
-            cell = cellpar_to_cell(cell)
-        elif cell.shape != (3, 3):
-            raise ValueError('Cell must be length 3 sequence, length 6 '
-                             'sequence or 3x3 matrix!')
-
-        cellobj = cls(cell)
-        if pbc is not None:
-            cellobj.pbc[:] = pbc
-
-        return cellobj
-
-    @classmethod
-    def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None,
-                    pbc=None):
-        """Return new Cell from cell parameters.
-
-        This is similar to cellpar_to_cell()."""
-        cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
-        return Cell(cell, pbc=pbc)
-
-    def get_bravais_lattice(self, eps=2e-4, _niggli_reduce=False, _warn=True):
-        # We want to always reduce (so things are as robust as possible)
-        # ...or not.  It is not very reliable somehow.
-        from ase.geometry.bravais import get_bravais_lattice
-        return get_bravais_lattice(self, eps=eps,
-                                   _niggli_reduce=_niggli_reduce)
-
-    def bandpath(self, path=None, npoints=None, density=None, eps=2e-4):
-        bravais = self.get_bravais_lattice(eps=eps)
-        transformation = bravais.get_transformation(self.array)
-        return bravais.bandpath(path=path, npoints=npoints, density=density,
-                                transformation=transformation)
-
-    def complete(self):
-        """Convert missing cell vectors into orthogonal unit vectors."""
-        return Cell(complete_cell(self.array), self.pbc.copy())
-
-    def copy(self):
-        return Cell(self.array.copy(), self.pbc.copy())
-
-    @property
-    def dtype(self):
-        return self.array.dtype
-
-    @property
-    def size(self):
-        return self.array.size
-
-    @property
-    def T(self):
-        return self.array.T
-
-    @property
-    def flat(self):
-        return self.array.flat
-
-    @property
-    def rank(self):
-        """"Dimension of the cell, i.e., number of nonzero lattice vectors."""
-        # The name ndim clashes with ndarray.ndim
-        return self.array.any(1).sum()
-
-    @property
-    def orthorhombic(self):
-        return is_orthorhombic(self.array)
-
-    def lengths(self):
-        return np.array([np.linalg.norm(v) for v in self.array])
-
-    def angles(self):
-        return self.cellpar()[3:].copy()
-
-    @property
-    def ndim(self):
-        return self.array.ndim
-
-    def __array__(self, dtype=float):
-        if dtype != float:
-            raise ValueError('Cannot convert cell to array of type {}'
-                             .format(dtype))
-        return self.array
-
-    def __bool__(self):
-        return bool(self.array.any())
-
-    def __ne__(self, other):
-        return self.array != other
-
-    def __eq__(self, other):
-        return self.array == other
-
-    __nonzero__ = __bool__
-
-    @property
-    def volume(self):
-        # Fail or 0 for <3D cells?
-        # Definitely 0 since this is currently a property.
-        # I think normally it is more convenient just to get zero
-        return np.abs(np.linalg.det(self.array))
-
-    def tolist(self):
-        return self.array.tolist()
-
-    def scaled_positions(self, positions):
-        return np.linalg.solve(self.complete().array.T, positions.T).T
-
-    def cartesian_positions(self, scaled_positions):
-        return scaled_positions @ self.complete()
-
-    def reciprocal(self):
-        return np.linalg.pinv(self.array).transpose()
-
-    def __repr__(self):
-        if self.orthorhombic:
-            numbers = self.lengths().tolist()
-        else:
-            numbers = self.tolist()
-
-        pbc = self.pbc
-        if all(pbc):
-            pbc = True
-        elif not any(pbc):
-            pbc = False
-        return 'Cell({}, pbc={})'.format(numbers, pbc)
-
-    def niggli_reduce(self):
-        from ase.build.tools import niggli_reduce_cell
-        cell, op = niggli_reduce_cell(self.array)
-        return Cell(cell, self.pbc), op
 
 
 def unit_vector(x):
@@ -310,7 +125,9 @@ def cellpar_to_cell(cellpar, ab_normal=(0, 0, 1), a_direction=None):
     vb = b * np.array([cos_gamma, sin_gamma, 0])
     cx = cos_beta
     cy = (cos_alpha - cos_beta * cos_gamma) / sin_gamma
-    cz = sqrt(1. - cx * cx - cy * cy)
+    cz_sqr = 1. - cx * cx - cy * cy
+    assert cz_sqr >= 0
+    cz = sqrt(cz_sqr)
     vc = c * np.array([cx, cy, cz])
 
     # Convert to the Cartesian x,y,z-system
@@ -418,3 +235,7 @@ def orthorhombic(cell):
     if not is_orthorhombic(cell):
         raise ValueError('Not orthorhombic')
     return cell.diagonal().copy()
+
+
+# We make the Cell object available for import from here for compatibility
+from ase.cell import Cell  # noqa

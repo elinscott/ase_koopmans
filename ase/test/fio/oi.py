@@ -1,11 +1,10 @@
-from __future__ import print_function
 import os
 import warnings
 
 import numpy as np
 from ase import Atoms
 from ase.io import write, read, iread
-from ase.io.formats import all_formats, get_ioformat
+from ase.io.formats import all_formats, ioformats
 from ase.calculators.singlepoint import SinglePointCalculator
 
 try:
@@ -121,7 +120,7 @@ def test(format):
 
     images = [atoms, atoms]
 
-    io = get_ioformat(format)
+    io = ioformats[format]
     print('{0:20}{1}{2}{3}{4}'.format(format,
                                       ' R'[bool(io.read)],
                                       ' W'[bool(io.write)],

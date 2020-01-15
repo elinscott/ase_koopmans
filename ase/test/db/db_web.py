@@ -1,8 +1,13 @@
 from ase import Atoms
 from ase.db import connect
+from ase.test.testsuite import importorskip
+
+importorskip('flask')
 import ase.db.app as app
 
-c = connect('test.db', append=False)
+
+
+db = connect('test.db', append=False)
 x = [0, 1, 2]
 t1 = [1, 2, 0]
 t2 = [[2, 3], [1, 1], [1, 0]]
@@ -11,23 +16,19 @@ atoms = Atoms('H2O')
 atoms.center(vacuum=5)
 atoms.set_pbc(True)
 
-c.write(atoms,
-        foo=42.0,
-        bar='abc',
-        data={'x': x,
-              't1': t1,
-              't2': t2})
-c.metadata = {'title': 'Test title'}
-c.python = {'key_descriptions': {'foo': ('FOO', 'FOO ...', '`m_e`')},
-            'default_columns': ['foo', 'formula', 'bar']}
-app.databases['default'] = c
-app.initialize_databases()
+db.write(atoms,
+         foo=42.0,
+         bar='abc',
+         data={'x': x,
+               't1': t1,
+               't2': t2})
+app.add_project(db)
 app.app.testing = True
 c = app.app.test_client()
 page = c.get('/').data.decode()
-assert 'Test title' in page
-assert 'FOO' in page
-c.get('/default/row/1')
+assert 'foo' in page
+p1 = c.get('/default/row/1').data.decode()
+print(p1)
 c.get('/default/json/1').data
 c.get('/default/sqlite/1').data
 c.get('/default/sqlite?x=1').data

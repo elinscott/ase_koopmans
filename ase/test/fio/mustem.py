@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Check writing and reading a xtl mustem file."""
 
 from ase import Atoms

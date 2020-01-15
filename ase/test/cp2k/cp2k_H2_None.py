@@ -1,15 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """Test suit for the CP2K ASE calulator.
 
 http://www.cp2k.org
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
-from __future__ import division, print_function
-import os
-
-import unittest
 from ase.build import molecule
 from ase.calculators.cp2k import CP2K
 
@@ -41,9 +35,6 @@ inp = """
 
 
 def main():
-    if "ASE_CP2K_COMMAND" not in os.environ:
-        raise unittest.SkipTest('$ASE_CP2K_COMMAND not defined')
-
     # Basically, the entire CP2K input is passed in explicitly.
     # Disable ASE's input generation by setting everything to None.
     # ASE should only add the CELL and the COORD section.

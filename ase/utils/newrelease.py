@@ -11,6 +11,12 @@ import subprocess
 import re
 import argparse
 from time import strftime
+import shutil
+from pathlib import Path
+
+
+os.environ['LANGUAGE'] = 'C'
+
 
 def runcmd(cmd, output=False, error_ok=False):
     print('Executing:', cmd)
@@ -33,9 +39,6 @@ bash = runcmd
 
 def py(cmd, output=False):
     return runcmd('python3 {}'.format(cmd))
-
-def py2(cmd, output=False):
-    return runcmd('python2 {}'.format(cmd))
 
 def git(cmd, error_ok=False):
     cmd = 'git {}'.format(cmd)
@@ -87,12 +90,8 @@ def main():
     print('New release: {}'.format(version))
 
     txt = git('status')
-    branch = re.match('On branch (\S+)', txt).group(1)
-    print('Currently on branch {}'.format(repr(branch)))
-    if branch != 'master':
-        git('checkout master')
-
-
+    branch = re.match(r'On branch (\S+)', txt).group(1)
+    print('Creating new release from branch {}'.format(repr(branch)))
     git('checkout -b {}'.format(branchname))
 
     def update_version(version):
@@ -183,10 +182,10 @@ News
     with open(installdoc) as fd:
         txt = fd.read()
 
-    txt, nsub = re.subn(r'ase-\d+\.\d+.\d+',
+    txt, nsub = re.subn(r'ase-\d+\.\d+\.\d+',
                         'ase-{}'.format(version), txt)
     assert nsub > 0
-    txt, nsub = re.subn(r'git clone -b \d+\.\d+.\d+',
+    txt, nsub = re.subn(r'git clone -b \d+\.\d+\.\d+',
                         'git clone -b {}'.format(version), txt)
     assert nsub == 1
 
@@ -214,8 +213,15 @@ News
     git('commit -m "ASE version {}"'.format(version))
     git('tag -s {0} -m "ase-{0}"'.format(version))
 
+    buildpath = Path('build')
+    if buildpath.is_dir():
+        print('Removing stale build directory, since it exists')
+        assert Path('ase/__init__.py').exists()
+        assert Path('setup.py').exists()
+        shutil.rmtree('build')
+    else:
+        print('No stale build directory found; proceeding')
     py('setup.py sdist > setup_sdist.log')
-    py2('setup.py bdist_wheel > setup_bdist_wheel2.log')
     py('setup.py bdist_wheel > setup_bdist_wheel3.log')
     bash('gpg --armor --yes --detach-sign dist/ase-{}.tar.gz'.format(version))
     git('checkout -b web-page')
@@ -241,7 +247,6 @@ News
     print('git merge {}'.format(branchname))
     print('twine upload '
           'dist/ase-{v}.tar.gz '
-          'dist/ase-{v}-py2-none-any.whl '
           'dist/ase-{v}-py3-none-any.whl '
           'dist/ase-{v}.tar.gz.asc'.format(v=version))
     print('git push --tags origin master  # Assuming your remote is "origin"')

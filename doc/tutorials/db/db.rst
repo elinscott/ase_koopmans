@@ -1,8 +1,8 @@
 .. _db tutorial:
 
-======================
-Using the ASE database
-======================
+===============================================
+Surface adsorption study using the ASE database
+===============================================
 
 In this tutorial we will adsorb C, N and O on 7 different FCC(111) surfaces
 with 1, 2 and 3 layers and we will use database files to store the results.
@@ -50,7 +50,7 @@ The :file:`bulk.db` is an SQLite3_ database in a single file::
     $ file bulk.db
     bulk.db: SQLite 3.x database
 
-.. _SQLite3: http://www.sqlite.org/
+.. _SQLite3: https://www.sqlite.org/index.html
 
 If you want to see what's inside you can convert the database file to a json
 file and open that in your text editor::

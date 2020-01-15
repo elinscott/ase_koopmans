@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-
 """Resonant Raman intensities"""
 
-from __future__ import print_function, division
 import pickle
 import os
 import sys
@@ -10,10 +7,10 @@ import sys
 import numpy as np
 
 import ase.units as u
-from ase.parallel import  world, rank, parprint, paropen
+from ase.parallel import world, parprint, paropen
 from ase.vibrations import Vibrations
 from ase.utils.timing import Timer
-from ase.utils import convert_string_to_fd, basestring
+from ase.utils import convert_string_to_fd
 
 
 class ResonantRaman(Vibrations):
@@ -22,7 +19,7 @@ class ResonantRaman(Vibrations):
     Parameters
     ----------
     overlap : function or False
-        Function to calculate overlaps between excitation at 
+        Function to calculate overlaps between excitation at
         equilibrium and at a displaced position. Calculators are
         given as first and second argument, respectively.
     """
@@ -98,7 +95,7 @@ class ResonantRaman(Vibrations):
             Minimal absolute overlap to consider. Defaults to 0.02 to avoid
             numerical garbage.
         minrep: float
-            Minimal represention to consider derivative, defaults to 0.8
+            Minimal representation to consider derivative, defaults to 0.8
         """
         assert(nfree == 2)
         Vibrations.__init__(self, atoms, indices, gsname, delta, nfree)
@@ -132,7 +129,7 @@ class ResonantRaman(Vibrations):
         self.minrep = minrep
 
         self.comm = comm
-        
+
     @property
     def approximation(self):
         return self._approx
@@ -166,18 +163,18 @@ class ResonantRaman(Vibrations):
         assert(atoms == self.atoms)  # XXX action required
         self.timer.start('Ground state')
         forces = self.atoms.get_forces()
-        if rank == 0:
+        if world.rank == 0:
             pickle.dump(forces, fd, protocol=2)
             fd.close()
         if self.overlap:
             self.timer.start('Overlap')
             """Overlap is determined as
 
-            ov_ij = \int dr displaced*_i(r) eqilibrium_j(r)
+            ov_ij = int dr displaced*_i(r) eqilibrium_j(r)
             """
             ov_nn = self.overlap(self.atoms.get_calculator(),
                                  self.eq_calculator)
-            if rank == 0:
+            if world.rank == 0:
                 np.save(filename + '.ov', ov_nn)
             self.timer.stop('Overlap')
         self.timer.stop('Ground state')
@@ -296,7 +293,7 @@ class ResonantRaman(Vibrations):
 
         We assume that the wave function overlaps are determined as
 
-        ov_ij = \int dr displaced*_i(r) eqilibrium_j(r)
+        ov_ij = int dr displaced*_i(r) eqilibrium_j(r)
         """
         self.timer.start('read excitations')
         self.timer.start('read+rotate')
@@ -321,7 +318,7 @@ class ResonantRaman(Vibrations):
             rep0_p *= (ov_pp.real**2 + ov_pp.imag**2).sum(axis=0)
             self.timer.stop('ex overlap')
             return ex_p, ov_pp
-            
+
         def rotate(ex_p, ov_pp):
             e_p = np.array([ex.energy for ex in ex_p])
             m_pc = np.array(
@@ -497,7 +494,7 @@ class ResonantRaman(Vibrations):
                      m2(alpha_Qcc[:, 0, 0] - alpha_Qcc[:, 2, 2]) +
                      m2(alpha_Qcc[:, 1, 1] - alpha_Qcc[:, 2, 2])) / 2)
         return alpha2_r, gamma2_r, delta2_r
-        
+
     def absolute_intensity(self, omega, gamma=0.1, delta=0):
         """Absolute Raman intensity or Raman scattering factor
 
@@ -519,7 +516,7 @@ class ResonantRaman(Vibrations):
         -------
         raman intensity, unit Ang**4/amu
         """
-        
+
         alpha2_r, gamma2_r, delta2_r = self._invariants(
             self.electronic_me_Qcc(omega, gamma))
         return 45 * alpha2_r + delta * delta2_r + 7 * gamma2_r
@@ -633,8 +630,8 @@ class ResonantRaman(Vibrations):
             ts = str(10**te)
         else:
             ts = '10^{0}'.format(te)
-	
-        if isinstance(log, basestring):
+
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         parprint('-------------------------------------', file=log)

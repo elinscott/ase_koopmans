@@ -93,9 +93,6 @@ class Langevin(MolecularDynamics):
         self.c5 = dt**1.5 * sigma / (2 * np.sqrt(3))
         self.c4 = fr / 2. * self.c5
 
-        # Works in parallel Asap, #GLOBAL number of atoms:
-        self.natoms = self.atoms.get_number_of_atoms()
-
     def step(self, f=None):
         atoms = self.atoms
         natoms = len(atoms)

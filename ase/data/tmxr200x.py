@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 import os
 import pprint
 import re
@@ -57,12 +57,12 @@ def read_geometries(filename, dir='.'):
     table = table.split(firstsplit)
     table = table[1]
     # remove one or two digit numbers (page numbers/numbers of atoms in xyz format)
-    table = re.sub('\n\d\d\n', '\n', table)
-    table = re.sub('\n\d\n', '\n', table)
+    table = re.sub(r'\n\d\d\n', '\n', table)
+    table = re.sub(r'\n\d\n', '\n', table)
     # remove S + two digit numbers (page numbers)
-    table = re.sub('\nS\d\d\n', '\n', table)
+    table = re.sub(r'\nS\d\d\n', '\n', table)
     # remove S + one digit (page numbers)
-    table = re.sub('\nS\d\n', '\n', table)
+    table = re.sub(r'\nS\d\n', '\n', table)
     # remove empty lines
     # http://stackoverflow.com/questions/1140958/whats-a-quick-one-liner-to-remove-empty-lines-from-a-python-string
     table = os.linesep.join([s for s in table.splitlines() if s])
@@ -122,7 +122,7 @@ def read_geometries(filename, dir='.'):
             'MeHg(CN), qzvp (SDD/def-qzvp for metal)\\\\0,1\\Hg,0.,0.,0.1975732257',
             'MeHg(Cl), qzvp (SDD/def-qzvp for metal)\\\\0,1\\Hg,0.,0.,0.1975732257')
         # split on compound end marks
-        table = table.split('\\\@')
+        table = table.split('\\\\@')
         # remove empty elements
         table = [l.strip() for l in table]
         table = [l for l in table if len(l) > 1]

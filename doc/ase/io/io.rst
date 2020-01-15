@@ -12,6 +12,7 @@ File input and output
 .. toctree::
     :hidden:
 
+    formatoptions
     trajectory
     ulm
     opls
@@ -23,6 +24,11 @@ The :mod:`ase.io` module has three basic functions: :func:`read`,
 .. autofunction:: read
 .. autofunction:: iread
 .. autofunction:: write
+
+Use ``ase info --formats`` to see a list of formats.  This information
+is programmatically accessible as ``ase.io.formats.ioformats``, a
+dictionary which maps format names to :class:`ase.io.formats.IOFormat`
+objects.
 
 These are the file-formats that are recognized (formats with a ``+`` support
 multiple configurations):
@@ -50,8 +56,7 @@ multiple configurations):
 .. note::
 
     ASE can read and write directly to compressed files. Simply add ``.gz``,
-    ``.bz2`` or ``.xz`` to your filename (``.xz`` requires the
-    ``backports.lzma`` module on Python 2).
+    ``.bz2`` or ``.xz`` to your filename.
 
 The :func:`read` function is only designed to retrieve the atomic configuration
 from a file, but for the CUBE format you can import the function:
@@ -105,6 +110,12 @@ Here is an example using ``bbox``
 ...       bbox=(d, 0, 3 * d, d * 3**0.5))
 
 .. image:: io3.png
+
+This is an axample of display bond order for molecule
+
+.. literalinclude:: save_C2H4.py
+
+.. image:: C2H4.png
 
 Note that in general the XYZ-format does not contain information about the unit cell, however, ASE uses the extended XYZ-format which stores the unitcell:
 

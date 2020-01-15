@@ -1,6 +1,3 @@
-from __future__ import print_function
-from ase.utils import basestring
-
 # Copyright (C) 2010 by CAMd, DTU
 # Please see the accompanying LICENSE file for further information.
 
@@ -43,7 +40,7 @@ class GaussianReader:
 
     def __init__(self, filename, read_structures=False):
         """filename is NOT optional"""
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             fileobj = open(filename, 'r')
         elif hasattr(filename,'seek'):
             fileobj = filename
@@ -142,7 +139,10 @@ class GaussianReader:
                 while position < len(i) and i[position] != "":
                     s = i[position].split(",")
                     atoms.append(atomic_numbers[s[0].capitalize()])
-                    positions.append([float(s[1]), float(s[2]), float(s[3])])
+                    #if fragments are specified, there are 4 numbers
+                    #first one integer and then xyz coords
+                    #therefore use xyz from the end
+                    positions.append([float(s[-3]), float(s[-2]), float(s[-1])])
                     position = position + 1
 
                 new_dict["Atomic_numbers"] = atoms

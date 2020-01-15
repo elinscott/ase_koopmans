@@ -45,9 +45,14 @@ class Espresso(FileIOCalculator):
             Generate a grid of k-points with this as the minimum distance,
             in A^-1 between them in reciprocal space. If set to None, kpts
             will be used instead.
-        kpts: (int, int, int) or dict
+        kpts: (int, int, int), dict, or BandPath
             If kpts is a tuple (or list) of 3 integers, it is interpreted
             as the dimensions of a Monkhorst-Pack grid.
+            If ``kpts`` is set to ``None``, only the Γ-point will be included
+            and QE will use routines optimized for Γ-point-only calculations.
+            Compared to Γ-point-only calculations without this optimization
+            (i.e. with ``kpts=(1, 1, 1)``), the memory and CPU requirements
+            are typically reduced by half.
             If kpts is a dict, it will either be interpreted as a path
             in the Brillouin zone (*) if it contains the 'path' keyword,
             otherwise it is converted to a Monkhorst-Pack grid (**).
@@ -64,8 +69,8 @@ class Espresso(FileIOCalculator):
 
         .. note::
            Band structure plots can be made as follows:
-           
-           
+
+
            1. Perform a regular self-consistent calculation,
               saving the wave functions at the end, as well as
               getting the Fermi energy:
@@ -75,26 +80,24 @@ class Espresso(FileIOCalculator):
               >>> atoms.set_calculator(calc)
               >>> atoms.get_potential_energy()
               >>> fermi_level = calc.get_fermi_level()
-              
+
            2. Perform a non-self-consistent 'band structure' run
               after updating your input_data and kpts keywords:
-              
+
               >>> input_data['control'].update({'calculation':'bands',
               >>>                               'restart_mode':'restart',
               >>>                               'verbosity':'high'})
               >>> calc.set(kpts={<your Brillouin zone path>},
               >>>          input_data=input_data)
               >>> calc.calculate(atoms)
-              
+
            3. Make the plot using the BandStructure functionality,
               after setting the Fermi level to that of the prior
               self-consistent calculation:
-              
+
               >>> bs = calc.band_structure()
               >>> bs.reference = fermi_energy
               >>> bs.plot()
-                  
-           
 
         """
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
@@ -128,6 +131,14 @@ class Espresso(FileIOCalculator):
             warnings.warn(warn_template % 'IBZ k-points')
         return ibzkpts
 
+    def get_k_point_weights(self):
+        if self.calc is None:
+            raise PropertyNotPresent(error_template % 'K-point weights')
+        k_point_weights = self.calc.get_k_point_weights()
+        if k_point_weights is None:
+            warnings.warn(warn_template % 'K-point weights')
+        return k_point_weights
+
     def get_eigenvalues(self, **kwargs):
         if self.calc is None:
             raise PropertyNotPresent(error_template % 'Eigenvalues')
@@ -143,8 +154,3 @@ class Espresso(FileIOCalculator):
         if nspins is None:
             warnings.warn(warn_template % 'Number of spins')
         return nspins
-
-    def socket_driver(self, **kwargs):
-        from ase.calculators.socketio import SocketIOCalculator
-        calc = SocketIOCalculator(self, **kwargs)
-        return calc

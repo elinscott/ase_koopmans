@@ -67,15 +67,12 @@ def run_client():
     atoms = getatoms()
     atoms.calc = EMT()
 
-    import socket
-    BrokenPipe = socket.error if sys.version_info[0] == 2 else BrokenPipeError
-
     try:
         with open('client.log', 'w') as fd:
             client = SocketClient(log=fd, port=port,
                                   timeout=timeout)
             client.run(atoms, use_stress=False)
-    except BrokenPipe:
+    except BrokenPipeError:
         # I think we can find a way to close sockets so as not to get an
         # error, but presently things are not like that.
         pass
@@ -87,8 +84,14 @@ def launch_client_thread():
     return thread
 
 
-#try:
-run_server()
-#finally:
-#    if os.path.exists(unixsocket):
-#        os.unlink(unixsocket)
+try:
+    run_server()
+except OSError as err:
+    # The AppVeyor CI tests sometimes fail when we try to open sockets on
+    # computers where this is forbidden.  For now we will simply skip
+    # this test when that happens:
+    if 'forbidden by its access permissions' in err.strerror:
+        from unittest import SkipTest
+        raise SkipTest(err.strerror)
+    else:
+        raise

@@ -5,10 +5,8 @@ X3DOM outputs to html pages that should display 3-d manipulatable atoms in
 modern web browsers.
 """
 
-from __future__ import print_function
 from ase.data import covalent_radii
 from ase.data.colors import jmol_colors
-from ase.utils import basestring
 
 
 def write_x3d(filename, atoms, format=None):
@@ -106,7 +104,7 @@ class WriteToFile:
     """Creates convenience function to write to a file."""
 
     def __init__(self, filename, mode='w'):
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             self._f = open(filename, mode)
         else:
             self._f = filename

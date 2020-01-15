@@ -1,6 +1,5 @@
 "Base class for simulation windows"
 
-from __future__ import unicode_literals
 from ase.gui.i18n import _
 
 import ase.gui.ui as ui

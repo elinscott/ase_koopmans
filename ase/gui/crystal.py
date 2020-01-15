@@ -1,8 +1,6 @@
-# encoding: utf-8
 """crystal.py - Window for setting up arbitrary crystal lattices
 """
 
-from __future__ import unicode_literals
 from ase.gui.i18n import _
 
 import ase.gui.ui as ui

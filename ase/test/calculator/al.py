@@ -1,6 +1,6 @@
 import unittest
 from ase.build import bulk
-from ase.calculators.calculator import get_calculator
+from ase.calculators.calculator import get_calculator_class
 
 
 omx_par = {'definition_of_atomic_species': [['Al', 'Al8.0-p1', 'Al_CA13'],
@@ -16,7 +16,7 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001, chksymbreak=0),
 
 
 def run(name):
-    Calculator = get_calculator(name)
+    Calculator = get_calculator_class(name)
     par = required.get(name, {})
     calc = Calculator(label=name, xc='LDA', kpts=1.0, **par)
     al = bulk('AlO', crystalstructure='rocksalt', a=4.5)
@@ -36,9 +36,15 @@ def run(name):
     print(Calculator.read_atoms(label).get_potential_energy())
 
 
-names = ['abinit', 'aims', 'elk', 'cp2k', 'openmx']
-for name in names:
+def tryrun(name):
     try:
         run(name)
     except unittest.SkipTest:
         pass
+
+
+tryrun('abinit')
+tryrun('aims')
+tryrun('elk')
+tryrun('cp2k')
+tryrun('openmx')

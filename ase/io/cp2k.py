@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Reader for CP2Ks DCD_ALIGNED_CELL format.
 
@@ -31,20 +32,20 @@ __all__ = ['read_cp2k_dcd', 'iread_cp2k_dcd']
 #   f8  = float64 (double precision)
 #   S80 = string of length 80 (80 chars)
 _HEADER_TYPES = [\
-    ('blk0-0',  'i4',1  ),  # 84 (start of first block, size=84 bytes)
-    ('hdr',     'S4',1  ),  # 'CORD'
-    ('9int',    'i4',9  ),  # 9 ints, mostly 0
-    ('timestep','f4',1  ),  # timestep (float32)
-    ('10int',   'i4',10 ),  # 10 ints, mostly 0, last is 24
-    ('blk0-1',  'i4',1  ),  # 84
-    ('blk1-0',  'i4',1  ),  # 164
-    ('ntitle',  'i4',1  ),  # 2
-    ('remark1', 'S80',1 ),  # remark1
-    ('remark2', 'S80',1 ),  # remark2
-    ('blk1-1',  'i4',1  ),  # 164
-    ('blk2-0',  'i4',1  ),  # 4 (4 bytes = int32)
-    ('natoms',  'i4',1  ),  # natoms (int32)
-    ('blk2-1',  'i4',1  ),  # 4
+    ('blk0-0',  'i4'      ),  # 84 (start of first block, size=84 bytes)
+    ('hdr',     'S4'      ),  # 'CORD'
+    ('9int',    ('i4',9)  ),  # 9 ints, mostly 0
+    ('timestep','f4'      ),  # timestep (float32)
+    ('10int',   ('i4',10) ),  # 10 ints, mostly 0, last is 24
+    ('blk0-1',  'i4'      ),  # 84
+    ('blk1-0',  'i4'      ),  # 164
+    ('ntitle',  'i4'      ),  # 2
+    ('remark1', 'S80'     ),  # remark1
+    ('remark2', 'S80'     ),  # remark2
+    ('blk1-1',  'i4'      ),  # 164
+    ('blk2-0',  'i4'      ),  # 4 (4 bytes = int32)
+    ('natoms',  'i4'      ),  # natoms (int32)
+    ('blk2-1',  'i4'      ),  # 4
     ]
 
 _HEADER_DTYPE = np.dtype(_HEADER_TYPES)

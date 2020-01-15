@@ -1,12 +1,11 @@
-from __future__ import print_function
-
 # Copyright (C) 2003  CAMP
 # Please see the accompanying LICENSE file for further information.
 
 
+import inspect
+import functools
 import sys
 import time
-import functools
 
 
 def function_timer(func, *args, **kwargs):
@@ -167,13 +166,27 @@ class timer:
         self.name = name
 
     def __call__(self, method):
-        @functools.wraps(method)
-        def new_method(slf, *args, **kwargs):
-            slf.timer.start(self.name)
-            x = method(slf, *args, **kwargs)
-            try:
-                slf.timer.stop()
-            except IndexError:
-                pass
-            return x
+        if inspect.isgeneratorfunction(method):
+            @functools.wraps(method)
+            def new_method(slf, *args, **kwargs):
+                gen = method(slf, *args, **kwargs)
+                while True:
+                    slf.timer.start(self.name)
+                    try:
+                        x = next(gen)
+                    except StopIteration:
+                        break
+                    finally:
+                        slf.timer.stop()
+                    yield x
+        else:
+            @functools.wraps(method)
+            def new_method(slf, *args, **kwargs):
+                slf.timer.start(self.name)
+                x = method(slf, *args, **kwargs)
+                try:
+                    slf.timer.stop()
+                except IndexError:
+                    pass
+                return x
         return new_method

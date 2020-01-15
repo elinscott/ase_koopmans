@@ -1,5 +1,4 @@
 import numpy as np
-from ase.utils import basestring
 
 
 def cut(atoms, a=(1, 0, 0), b=(0, 1, 0), c=None, clength=None,
@@ -13,7 +12,7 @@ def cut(atoms, a=(1, 0, 0), b=(0, 1, 0), c=None, clength=None,
     coordinates and defines the returned cell and should normally be
     integer-valued in order to end up with a periodic
     structure. However, for systems with sub-translations, like fcc,
-    integer multiples of 1/2 or 1/3 might also make sence for some
+    integer multiples of 1/2 or 1/3 might also make sense for some
     directions (and will be treated correctly).
 
     Parameters:
@@ -374,7 +373,7 @@ def rotate(atoms, a1, a2, b1, b2, rotate_cell=True, center=(0, 0, 0)):
     will rotate the atoms out of the cell, even if *rotate_cell* is
     True.
     """
-    if isinstance(center, basestring) and center.lower() == 'com':
+    if isinstance(center, str) and center.lower() == 'com':
         center = atoms.get_center_of_mass()
 
     R = rotation_matrix(a1, a2, b1, b2)
@@ -412,7 +411,7 @@ def minimize_tilt_ij(atoms, modified=1, fixed=0, fold_atoms=True):
     atoms.set_cell(cell_cc)
 
     if fold_atoms:
-        atoms.set_scaled_positions(atoms.get_scaled_positions())
+        atoms.wrap()
 
 
 def minimize_tilt(atoms, order=range(3), fold_atoms=True):
@@ -434,15 +433,21 @@ def niggli_reduce_cell(cell, epsfactor=None):
 
     cell = np.asarray(cell)
 
-    C = np.eye(3, dtype=int)
+    I3 = np.eye(3, dtype=int)
+    I6 = np.eye(6, dtype=int)
 
-    g = np.zeros(6, dtype=float)
-    g[0] = np.dot(cell[0], cell[0])
-    g[1] = np.dot(cell[1], cell[1])
-    g[2] = np.dot(cell[2], cell[2])
-    g[3] = 2 * np.dot(cell[1], cell[2])
-    g[4] = 2 * np.dot(cell[0], cell[2])
-    g[5] = 2 * np.dot(cell[0], cell[1])
+    C = I3.copy()
+    D = I6.copy()
+
+    g0 = np.zeros(6, dtype=float)
+    g0[0] = np.dot(cell[0], cell[0])
+    g0[1] = np.dot(cell[1], cell[1])
+    g0[2] = np.dot(cell[2], cell[2])
+    g0[3] = 2 * np.dot(cell[1], cell[2])
+    g0[4] = 2 * np.dot(cell[0], cell[2])
+    g0[5] = 2 * np.dot(cell[0], cell[1])
+
+    g = np.dot(D, g0)
 
     def lt(x, y, eps=eps):
         return x < y - eps
@@ -453,22 +458,22 @@ def niggli_reduce_cell(cell, epsfactor=None):
     def eq(x, y, eps=eps):
         return not (lt(x, y, eps) or gt(x, y, eps))
 
-    while True:
+    for _ in range(10000):
         if (gt(g[0], g[1])
                 or (eq(g[0], g[1]) and gt(abs(g[3]), abs(g[4])))):
-            A = -np.eye(3)[[1, 0, 2]]
-            C = np.dot(C, A)
-            g = g[[1, 0, 2, 4, 3, 5]]
+            C = np.dot(C, -I3[[1, 0, 2]])
+            D = np.dot(I6[[1, 0, 2, 4, 3, 5]], D)
+            g = np.dot(D, g0)
             continue
         elif (gt(g[1], g[2])
                 or (eq(g[1], g[2]) and gt(abs(g[4]), abs(g[5])))):
-            A = -np.eye(3)[[0, 2, 1]]
-            C = np.dot(C, A)
-            g = g[[0, 2, 1, 3, 5, 4]]
+            C = np.dot(C, -I3[[0, 2, 1]])
+            D = np.dot(I6[[0, 2, 1, 3, 5, 4]], D)
+            g = np.dot(D, g0)
             continue
 
-        lmn = np.array(gt(g[3:], 0), dtype=int)
-        lmn -= np.array(lt(g[3:], 0), dtype=int)
+        lmn = np.array(gt(g[3:], 0, eps=eps/2), dtype=int)
+        lmn -= np.array(lt(g[3:], 0, eps=eps/2), dtype=int)
 
         if lmn.prod() == 1:
             ijk = lmn.copy()
@@ -487,73 +492,103 @@ def niggli_reduce_cell(cell, epsfactor=None):
                 if ijk.prod() == -1:
                     ijk[r] = -1
 
-        g[3] *= ijk[1] * ijk[2]
-        g[4] *= ijk[0] * ijk[2]
-        g[5] *= ijk[0] * ijk[1]
-        A = np.diag(ijk)
-        C = np.dot(C, A)
+        C *= ijk[np.newaxis]
+
+        D[3] *= ijk[1] * ijk[2]
+        D[4] *= ijk[0] * ijk[2]
+        D[5] *= ijk[0] * ijk[1]
+        g = np.dot(D, g0)
 
         if (gt(abs(g[3]), g[1])
                 or (eq(g[3], g[1]) and lt(2 * g[4], g[5]))
                 or (eq(g[3], -g[1]) and lt(g[5], 0))):
-            A = np.eye(3, dtype=int)
-            A[1, 2] = -np.sign(g[3])
+            s = np.int(np.sign(g[3]))
+
+            A = I3.copy()
+            A[1, 2] = -s
             C = np.dot(C, A)
 
-            s = np.sign(g[3])
-            gp = g.copy()
-            gp[2] += g[1] - s * g[3]
-            gp[3] -= 2 * s * g[1]
-            gp[4] -= s * g[5]
-            g = gp
+            B = I6.copy()
+            B[2, 1] = 1
+            B[2, 3] = -s
+            B[3, 1] = -2 * s
+            B[4, 5] = -s
+            D = np.dot(B, D)
+            g = np.dot(D, g0)
         elif (gt(abs(g[4]), g[0])
                 or (eq(g[4], g[0]) and lt(2 * g[3], g[5]))
                 or (eq(g[4], -g[0]) and lt(g[5], 0))):
-            A = np.eye(3, dtype=int)
-            A[0, 2] = -np.sign(g[4])
+            s = np.int(np.sign(g[4]))
+
+            A = I3.copy()
+            A[0, 2] = -s
             C = np.dot(C, A)
 
-            s = np.sign(g[4])
-            gp = g.copy()
-            gp[2] += g[0] - s * g[4]
-            gp[3] -= s * g[5]
-            gp[4] -= 2 * s * g[0]
-            g = gp
+            B = I6.copy()
+            B[2, 0] = 1
+            B[2, 4] = -s
+            B[3, 5] = -s
+            B[4, 0] = -2 * s
+            D = np.dot(B, D)
+            g = np.dot(D, g0)
         elif (gt(abs(g[5]), g[0])
                 or (eq(g[5], g[0]) and lt(2 * g[3], g[4]))
                 or (eq(g[5], -g[0]) and lt(g[4], 0))):
-            A = np.eye(3, dtype=int)
-            A[0, 1] = -np.sign(g[5])
+            s = np.int(np.sign(g[5]))
+
+            A = I3.copy()
+            A[0, 1] = -s
             C = np.dot(C, A)
 
-            s = np.sign(g[5])
-            gp = g.copy()
-            gp[1] += g[0] - s * g[5]
-            gp[3] -= s * g[4]
-            gp[5] -= 2 * s * g[0]
-            g = gp
+            B = I6.copy()
+            B[1, 0] = 1
+            B[1, 5] = -s
+            B[3, 4] = -s
+            B[5, 0] = -2 * s
+            D = np.dot(B, D)
+            g = np.dot(D, g0)
         elif (lt(g[[0, 1, 3, 4, 5]].sum(), 0)
                 or (eq(g[[0, 1, 3, 4, 5]].sum(), 0)
                     and gt(2 * (g[0] + g[4]) + g[5], 0))):
-            A = np.eye(3, dtype=int)
+            A = I3.copy()
             A[:, 2] = 1
             C = np.dot(C, A)
 
-            gp = g.copy()
-            gp[2] = g.sum()
-            gp[3] += 2 * g[1] + g[5]
-            gp[4] += 2 * g[0] + g[5]
-            g = gp
+            B = I6.copy()
+            B[2, :] = 1
+            B[3, 1] = 2
+            B[3, 5] = 1
+            B[4, 0] = 2
+            B[4, 5] = 1
+            D = np.dot(B, D)
+            g = np.dot(D, g0)
         else:
             break
+    else:
+        raise RuntimeError('Niggli reduction not done in 10000 steps!\n'
+                           'cell={}\n'
+                           'operation={}'
+                           .format(cell.tolist(), C.tolist()))
 
     abc = np.sqrt(g[:3])
-    cosangles = g[3:] / (2 * abc.prod() / abc)
+    # Prevent division by zero e.g. for cell==zeros((3, 3)):
+    abcprod = max(abc.prod(), 1e-100)
+    cosangles = abc * g[3:] / (2 * abcprod)
     angles = 180 * np.arccos(cosangles) / np.pi
     newcell = np.array(cellpar_to_cell(np.concatenate([abc, angles])),
                        dtype=float)
 
     return newcell, C
+
+
+def update_cell_and_positions(atoms, new_cell, op):
+    """Helper method for transforming cell and positions of atoms object."""
+    scpos = np.linalg.solve(op, atoms.get_scaled_positions().T).T
+    scpos %= 1.0
+    scpos %= 1.0
+
+    atoms.set_cell(new_cell)
+    atoms.set_scaled_positions(scpos)
 
 
 def niggli_reduce(atoms):
@@ -576,13 +611,21 @@ def niggli_reduce(atoms):
     """
 
     assert all(atoms.pbc), 'Can only reduce 3d periodic unit cells!'
-    new_cell, C = niggli_reduce_cell(atoms.cell)
-    scpos = np.linalg.solve(C, atoms.get_scaled_positions().T).T
-    scpos %= 1.0
-    scpos %= 1.0
+    new_cell, op = niggli_reduce_cell(atoms.cell)
+    update_cell_and_positions(atoms, new_cell, op)
 
-    atoms.set_cell(new_cell)
-    atoms.set_scaled_positions(scpos)
+
+def reduce_lattice(atoms, eps=2e-4):
+    """Reduce atoms object to canonical lattice.
+
+    This changes the cell and positions such that the atoms object has
+    the canonical form used for defining band paths but is otherwise
+    physically equivalent.  The eps parameter is used as a tolerance
+    for determining the cell's Bravais lattice."""
+    from ase.geometry.bravais_type_engine import identify_lattice
+    niggli_reduce(atoms)
+    lat, op = identify_lattice(atoms.cell, eps=eps)
+    update_cell_and_positions(atoms, lat.tocell(), np.linalg.inv(op))
 
 
 def sort(atoms, tags=None):

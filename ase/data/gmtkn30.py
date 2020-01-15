@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 import os
 import pprint
 import re
@@ -73,7 +73,7 @@ def download_file(url, filename, dir='.'):
 
 def read_charge_filter(s):
     try:
-        return re.search('\(([-+]\d+)\)', s).group(1)
+        return re.search(r'\(([-+]\d+)\)', s).group(1)
     except AttributeError:
         return False
 
@@ -84,7 +84,7 @@ def read_charge(filename, dir='.'):
     for line in lines:
         sline = line.split()
         charge.append((sline[0],
-                       float(re.search('\(([-+]\d+)\)', sline[1]).group(1))))
+                       float(re.search(r'\(([-+]\d+)\)', sline[1]).group(1))))
     fh.close()
     return charge
 
@@ -100,7 +100,7 @@ def read_charges(dirname, dir='.'):
 
 def read_number_of_unpaired_electrons_filter(s):
     try:
-        return re.search('\((\d+)\)', s).group(1)
+        return re.search(r'\((\d+)\)', s).group(1)
     except AttributeError:
         return False
 
@@ -110,7 +110,7 @@ def read_number_of_unpaired_electrons(filename, dir='.'):
     number_of_unpaired_electrons = []
     for line in lines:
         sline = line.split()
-        no_unpaired_electrons = float(re.search('\((\d+)\)', sline[1]).group(1))
+        no_unpaired_electrons = float(re.search(r'\((\d+)\)', sline[1]).group(1))
         number_of_unpaired_electrons.append((sline[0], no_unpaired_electrons))
     fh.close()
     return number_of_unpaired_electrons
@@ -185,8 +185,12 @@ def read_html(filename, dir='.'):
             litem = []
             for f in item.split(separator):
                 fs = f.strip()
+                msg = """This functionality relies on eval() and has been \
+disabled for security reasons since it could result in execution of code \
+from an untrusted source."""
+                raise NotImplementedError(msg)
                 try:
-                    v = eval(fs)
+                    v = None  # eval(fs) <-- disabled, dangerous
                     if fs.isdigit() and str(v) != fs: # e.g. undesirable eval('001') = 1
                         v = fs
                 # string: NameError, .*[+-*], etc: SyntaxError
@@ -252,7 +256,7 @@ def unzip_file(filename, dir='.'):
             outfile.close()
     fh.close()
 
-    
+
 def format_data(database, geometries, no_unpaired_electrons=[], charges=[]):
     "Return data in the custom format.  "
     data = {}

@@ -1,5 +1,7 @@
-from __future__ import print_function
 import sys
+from ase.test.testsuite import importorskip
+
+importorskip('Scientific')
 
 import numpy as np
 

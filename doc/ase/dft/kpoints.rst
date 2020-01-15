@@ -48,18 +48,18 @@ Special points in the Brillouin zone
 
 .. data:: special_points
 
-The below table lists the special points from [Setyawana-Curtarolo]_.
+The below table lists the special points from [Setyawan-Curtarolo]_.
 
 
 .. toctree:: bztable
 
 .. include:: bztable.rst
 
-.. [Setyawana-Curtarolo]
+.. [Setyawan-Curtarolo]
     High-throughput electronic band structure calculations:
     Challenges and tools
 
-    Wahyu Setyawana, Stefano Curtarolo
+    Wahyu Setyawan, Stefano Curtarolo
 
     Computational Materials Science,
     Volume 49, Issue 2, August 2010, Pages 299–312
@@ -69,20 +69,30 @@ The below table lists the special points from [Setyawana-Curtarolo]_.
 You can find the special points in the Brillouin zone:
 
 >>> from ase.build import bulk
->>> from ase.dft.kpoints import get_special_points
->>> from ase.dft.kpoints import bandpath
 >>> si = bulk('Si', 'diamond', a=5.459)
->>> points = get_special_points('fcc', si.cell)
->>> GXW = [points[k] for k in 'GXW']
->>> kpts, x, X = bandpath(GXW, si.cell, 100)
->>> print(kpts.shape, len(x), len(X))
-(100, 3) 100 3
+>>> lat = si.cell.get_bravais_lattice()
+>>> print(list(lat.get_special_points()))
+['G', 'K', 'L', 'U', 'W', 'X']
+>>> path = si.cell.bandpath('GXW', npoints=100)
+>>> print(path.kpts.shape)
+(100, 3)
 
 .. autofunction:: get_special_points
 .. autofunction:: bandpath
 .. autofunction:: parse_path_string
 .. autofunction:: labels_from_kpts
 
+
+Band path
+---------
+
+The :class:`~ase.dft.kpoints.BandPath` class stores all the relevant
+band path information in a single object.
+It is typically created by helper functions such as
+:meth:`ase.cell.Cell.bandpath` or :meth:`ase.lattice.BravaisLattice.bandpath`.
+
+.. autoclass:: BandPath
+               :members:
 
 Band structure
 --------------
@@ -108,15 +118,26 @@ High symmetry paths
 
 .. data:: special_paths
 
-The ``special_paths`` dictionary contains suggestions for high symmetry
-paths in the BZ from the [Setyawana-Curtarolo]_ paper.
+The :mod:`ase.lattice` framework provides suggestions for high symmetry
+paths in the BZ from the [Setyawan-Curtarolo]_ paper.
 
->>> from ase.dft.kpoints(import special_paths, special_points,
+>>> from ase.lattice import BCC
+>>> lat = BCC(3.5)
+>>> lat.get_special_points()
+{'G': array([0, 0, 0]), 'H': array([ 0.5, -0.5,  0.5]), 'P': array([0.25, 0.25, 0.25]), 'N': array([0. , 0. , 0.5])}
+>>> lat.special_path
+'GHNGPH,PN'
+
+In case you want this information *without* providing the lattice parameter
+(which is possible for those lattices where the points do not depend on the
+lattice parameters), the data is also available as dictionaries:
+
+>>> from ase.dft.kpoints(import special_paths, sc_special_points,
 ...                      parse_path_string)
->>> paths = special_paths['bcc']
+>>> paths = sc_special_paths['bcc']
 >>> paths
 [['G', 'H', 'N', 'G', 'P', 'H'], ['P', 'N']]
->>> points = special_points['bcc']
+>>> points = sc_special_points['bcc']
 >>> points
 {'H': [0.5, -0.5, 0.5], 'N': [0, 0, 0.5], 'P': [0.25, 0.25, 0.25],
  'G': [0, 0, 0]}

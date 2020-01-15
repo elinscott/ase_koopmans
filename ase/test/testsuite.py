@@ -1,33 +1,44 @@
-from __future__ import print_function
 import os
 import sys
 import subprocess
 from contextlib import contextmanager
+import importlib
 from multiprocessing import Process, cpu_count, Queue
 import tempfile
 import unittest
 from glob import glob
-from distutils.version import LooseVersion
+import runpy
 import time
 import traceback
 import warnings
 
-import numpy as np
-
-from ase.calculators.calculator import names as calc_names, get_calculator
+from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.utils import devnull, ExperimentalFeatureWarning
 from ase.cli.info import print_info
 
-test_calculator_names = []
 
-if sys.version_info[0] == 2:
-    class ResourceWarning(UserWarning):
-        pass  # Placeholder - this warning does not exist in Py2 at all.
+def importorskip(module):
+    # The pytest importorskip() function raises a wierd exception
+    # which claims to come from the builtins module, but doesn't!
+    #
+    # That exception messes with our pipeline when sending stacktraces
+    # through multiprocessing.  Argh.
+    #
+    # We provide our own implementation then!
+    try:
+        return importlib.import_module(module)
+    except ImportError:  # From py3.6 we can use ModuleNotFoundError
+        raise unittest.SkipTest('Optional module not present: {}'
+                                .format(module))
+
+
+test_calculator_names = ['emt']
 
 
 def require(calcname):
     if calcname not in test_calculator_names:
-        raise unittest.SkipTest('use --calculators={0} to enable'.format(calcname))
+        raise unittest.SkipTest('use --calculators={0} to enable'
+                                .format(calcname))
 
 
 def get_tests(files=None):
@@ -75,15 +86,22 @@ def runtest_almost_no_magic(test):
         if any(s in test for s in skip):
             raise unittest.SkipTest('not on windows')
     try:
-        with open(path) as fd:
-            exec(compile(fd.read(), path, 'exec'), {})
+        runpy.run_path(path, run_name='test')
     except ImportError as ex:
         module = ex.args[0].split()[-1].replace("'", '').split('.')[0]
-        if module in ['scipy', 'matplotlib', 'Scientific', 'lxml', 'Tkinter',
-                      'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2']:
+        if module in ['matplotlib', 'Scientific', 'lxml', 'Tkinter',
+                      'flask', 'gpaw', 'GPAW', 'netCDF4', 'psycopg2', 'kimpy']:
             raise unittest.SkipTest('no {} module'.format(module))
         else:
             raise
+    # unittest.main calls sys.exit, which raises SystemExit.
+    # Uncatched SystemExit, a subclass of BaseException, marks a test as ERROR
+    # even if its exit code is zero (test passes).
+    # Here, AssertionError is raised to mark a test as FAILURE if exit code is
+    # non-zero.
+    except SystemExit as ex:
+        if ex.code != 0:
+            raise AssertionError
 
 
 def run_single_test(filename, verbose, strict):
@@ -177,13 +195,18 @@ def runtests_subprocess(task_queue, result_queue, verbose, strict):
             #  * doctest exceptions appear to be unpicklable.
             #    Probably they contain a reference to a module or something.
             #  * gui/run may deadlock for unknown reasons in subprocess
+            #  * Anything that uses matplotlib (we don't know why)
+            #  * pubchem (https://gitlab.com/ase/ase/merge_requests/1477)
 
             t = test.replace('\\', '/')
-            if t in ['bandstructure.py', 'bandstructure2.py',
+
+            if t in ['bandstructure.py',
+                     'bandstructure_many.py',
                      'doctests.py', 'gui/run.py',
                      'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
-                     'forcecurve.py',
-                     'fio/animate.py', 'db/db_web.py', 'x3d.py']:
+                     'forcecurve.py', 'neb.py',
+                     'fio/animate.py', 'db/db_web.py', 'x3d.py',
+                     'pubchem.py']:
                 result = Result(name=test, status='please run on master')
                 result_queue.put(result)
                 continue
@@ -304,10 +327,6 @@ def test(calculators=[], jobs=0,
          stream=sys.stdout, files=None, verbose=False, strict=False):
     """Main test-runner for ASE."""
 
-    if LooseVersion(np.__version__) >= '1.14':
-        # Our doctests need this (spacegroup.py)
-        np.set_printoptions(legacy='1.13')
-
     test_calculator_names.extend(calculators)
     disable_calculators([name for name in calc_names
                          if name not in calculators])
@@ -364,14 +383,14 @@ def disable_calculators(names):
         if name in ['emt', 'lj', 'eam', 'morse', 'tip3p']:
             continue
         try:
-            cls = get_calculator(name)
+            cls = get_calculator_class(name)
         except ImportError:
             pass
         else:
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
                     raise unittest.SkipTest('use --calculators={0} to enable'
-                                       .format(name))
+                                            .format(name))
                 return mock_init
 
             def mock_del(obj):
@@ -409,6 +428,13 @@ class must_raise:
             raise RuntimeError('Failed to fail: ' + str(self.exception))
         return issubclass(exc_type, self.exception)
 
+@contextmanager
+def must_warn(category):
+    with warnings.catch_warnings(record=True) as ws:
+        yield
+        did_warn = any(w.category == category for w in ws)
+    if not did_warn:
+        raise RuntimeError('Failed to warn: ' + str(category))
 
 @contextmanager
 def no_warn():
@@ -444,6 +470,8 @@ class CLICommand:
                             'Mostly useful when inspecting a single test')
         parser.add_argument('--strict', action='store_true',
                             help='convert warnings to errors')
+        parser.add_argument('--nogui', action='store_true',
+                            help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
                             help='Specify particular test files.  '
                             'Glob patterns are accepted.')
@@ -473,6 +501,9 @@ class CLICommand:
                                  '{}.\n'.format(calculator,
                                                 ', '.join(calc_names)))
                 sys.exit(1)
+
+        if args.nogui:
+            os.environ.pop('DISPLAY')
 
         ntrouble = test(calculators=calculators, jobs=args.jobs,
                         strict=args.strict,

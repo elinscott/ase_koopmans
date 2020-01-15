@@ -1,8 +1,8 @@
 .. _constraints diffusion tutorial:
 
-======================================================
-Diffusion of gold atom on Al(100) surface (constraint)
-======================================================
+=======================================================
+Surface diffusion energy barriers using ASE constraints
+=======================================================
 
 In this tutorial, we will calculate the energy barrier that was found
 using the :mod:`NEB <ase.neb>` method in the :ref:`diffusion tutorial`

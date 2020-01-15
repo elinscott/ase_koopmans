@@ -1,9 +1,26 @@
+Bravais lattices
+================
+
+.. module:: ase.lattice
+
+This package provides two features that are mostly used independently
+of each other:
+
+ * Bravais lattice objects, which represent primitive cells and Brillouin
+   zone information which is useful for calculating band structures
+
+ * A general framework for building :class:`~ase.Atoms` objects based
+   Bravais lattice and basis
+
+.. autoclass:: ase.lattice.BravaisLattice
+               :members:
+
+
 .. _general-crystal-section:
 
 General crystal structures and surfaces
 =======================================
 
-.. module:: ase.lattice
 
 Modules for creating crystal structures are found in the module
 :mod:`ase.lattice`.  Most Bravais lattices are implemented, as
