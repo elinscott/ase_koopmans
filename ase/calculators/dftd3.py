@@ -197,7 +197,6 @@ class DFTD3(FileIOCalculator):
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
-
         # We don't call FileIOCalculator.calculate here, because that method
         # calls subprocess.call(..., shell=True), which we don't want to do.
         # So, we reproduce some content from that method here.
