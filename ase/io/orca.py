@@ -4,52 +4,24 @@ from ase.io import read
 # Made from NWChem interface
 
 
-def read_orca_output(filename):
-    """Method to read geometry from a ORCA output."""
-
-    f = filename
-    if isinstance(filename, str):
-        f = open(filename)
-
-    lines = f.readlines()
-
-    i = 0
-    while i < len(lines):
-        if lines[i].find('XYZ format geometry') >= 0:
-            natoms = int(lines[i + 2].split()[0])
-            string = ''
-            for j in range(2, natoms + 4):
-                xyzstring = lines[i + j]
-                symbol = xyzstring.split()[0].strip()
-                # replace bq ghost with X: MDTMP can we do better?
-                if symbol.startswith('bq'):
-                    xyzstring = xyzstring.replace(symbol, 'X')
-                string += xyzstring
-            atoms = read(StringIO(string), format='xyz')
-            i += natoms + 4
-        else:
-            i += 1
-
-    if isinstance(filename, str):
-        f.close()
-
-    return atoms
-
-
-def read_orca(filename):
+def read_geom_orcainp(filename):
     """Method to read geometry from an ORCA input file."""
     f = filename
     if isinstance(filename, str):
         f = open(filename)
     lines = f.readlines()
+    if type(filename) == str:
+        f.close()
 
     # Find geometry region of input file.
     stopline = 0
     for index, line in enumerate(lines):
-        if line.startswith('geometry'):
+        if line[1:].startswith('xyz '):
             startline = index + 1
             stopline = -1
         elif (line.startswith('end') and stopline == -1):
+            stopline = index
+        elif (line.startswith('*') and stopline == -1):
             stopline = index
     # Format and send to read_xyz.
     xyz_text = '%i\n' % (stopline - startline)
@@ -58,9 +30,6 @@ def read_orca(filename):
         xyz_text += line
     atoms = read(StringIO(xyz_text), format='xyz')
     atoms.set_cell((0., 0., 0.))  # no unit cell defined
-
-    if type(filename) == str:
-        f.close()
 
     return atoms
 
