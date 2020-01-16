@@ -6,13 +6,6 @@ from ase.io.orca import write_orca
 from ase.calculators.calculator import FileIOCalculator, Parameters, ReadError
 
 
-class KPoint:
-    def __init__(self, s):
-        self.s = s
-        self.eps_n = []
-        self.f_n = []
-
-
 class ORCA(FileIOCalculator):
     implemented_properties = ['energy', 'forces']
 
