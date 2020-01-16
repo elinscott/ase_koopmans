@@ -92,12 +92,13 @@ class BravaisLattice(ABC):
         cell = self._cell(**self._parameters)
         return Cell(cell)
 
-    def get_transformation(self, cell):
+    def get_transformation(self, cell, eps=1e-5):
         # Get transformation matrix relating input cell to canonical cell
         T = cell.dot(np.linalg.pinv(self.tocell()))
         msg = 'This transformation changes the length/area/volume of the cell'
         assert np.isclose(np.abs(np.linalg.det(T[:self.ndim,
-                                                 :self.ndim])), 1), msg
+                                                 :self.ndim])), 1,
+                          atol=eps), msg
         return T
 
     def cellpar(self):
@@ -1408,7 +1409,7 @@ def get_2d_bravais_lattice(origcell, eps=2e-4, *, pbc=True):
                 lat = OBL(a, b, gamma)
                 rank = 1
 
-        op = lat.get_transformation(origcell)
+        op = lat.get_transformation(origcell, eps=eps)
         if not allclose(np.dot(op, lat.tocell())[pbc][:, pbc],
                         origcell.array[pbc][:, pbc]):
             msg = ('Cannot recognize cell at all somehow! {}, {}, {}'.
