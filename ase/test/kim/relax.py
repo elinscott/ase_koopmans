@@ -6,6 +6,8 @@ matches a known precomputed value for an example model.
 """
 import numpy as np
 from ase.cluster import Icosahedron
+from pytest import importorskip
+importorskip('kimpy')
 from ase.calculators.kim import KIM
 from ase.optimize import BFGS
 

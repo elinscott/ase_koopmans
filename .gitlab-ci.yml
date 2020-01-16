@@ -13,56 +13,25 @@ variables:
   MYSQL_ROOT_PASSWORD: ase
   OMP_NUM_THREADS: "1"
 
-# TODO: Port to custom docker
-#
 # Check oldest supported Python with oldest supported libraries.
 # Does not install any optional libraries except matplotlib.
-# This test does not use the --strict flag because things like
-# deprecation warnings may be rampant, yet these are only important
-# for the future, not the past.
 #
-# Py3.5 wheels exist from scipy-0.16.x, July 2015.  We choose scipy-0.17.1.
-# Consistent with numpy-1.10.x (October 2015).  We choose 1.10.4.
+# With older python, pytest-xdist jumbles the tests differently
+# on different codes, then complains.  So we use -j 0.
 oldlibs:
   image: registry.gitlab.com/ase/ase:ase-oldlibs
   script:
     - pip install --no-deps .
-    - ase test
+    - ase test -j 0 --pytest --color=yes
 
-# TODO: Remove once we are happy with the docker setups.
+# For testing newest versions of libraries against standard images
+# on dockerhub.
 #
-# Check newest Python with all the standard dependencies at newest versions.
-#
-# Scipy does not compile on 3.8 image.  So using 3.7-slim (askhl, 2019-10-16)
-# We currently use scipy 1.2.1 because of failures with 1.3.0 on py3.7.
-# TODO: Make things work with 1.3.0
 # psycopg2-binary is for testing the postgres backend for ase.db
-python_3_tests:
-  image: python:3.7-slim
-  script:
-    - python --version
-    - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
-    - pip install pytest
-    - pip install scipy==1.2.1  # TODO: Delete me
-    - pip install .
-    - ase test --strict
-    - cd $CI_PROJECT_DIR
-    - python -We:invalid -m compileall -f -q ase/
-  when: manual
-
-main:
-  image: registry.gitlab.com/ase/ase:ase-main
-  script:
-    - python --version
-    - pip install --no-deps .
-    - ase info --calculators
-    - ase test --strict --calculators asap,eam,ff,lj,morse,tip3p,tip4p
-    - cd $CI_PROJECT_DIR
-    - python -We:invalid -m compileall -f -q ase/
-
-# TODO: Port to custom docker
-#
-python_3_pytests:
+# Currently we have trouble with pyhon3.8 where we need to compile some
+# libraries that don't have binary wheels; we don't want to install gcc
+# in this test job.
+pipinstall:
   image: python:3.7-slim
   script:
     - python --version
@@ -70,12 +39,34 @@ python_3_pytests:
     - pip install pytest pytest-xdist
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
-    - pytest $CI_PROJECT_DIR/ase/test
+    - ase test --pytest --color=yes
+    - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
+  when: manual
+
+# This is the main test job using new versions of libraries.
+# The intention is to enable as many features and libraries as possible.
+main:
+  image: registry.gitlab.com/ase/ase:ase-main
+  script:
+    - python --version
+    - pip install --no-deps .
+    - ase info --calculators
+    - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --pytest --color=yes
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
-# TODO: Port to custom docker
-#
+# Supposed to be equivalent to 'main', except we run pytest directly on
+# the test files. Useful if something is wrong with 'ase test'.
+pytest:
+  image: registry.gitlab.com/ase/ase:ase-main
+  script:
+    - pip install --no-deps .
+    - pytest -v $CI_PROJECT_DIR/ase/test --color=yes
+    - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
+  when: manual
+
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
 # issue with the gitlab runners.
@@ -88,7 +79,7 @@ python_3_pytests:
   image: registry.gitlab.com/ase/ase:ase-anaconda
   script:
     - pip install . --no-deps
-    - ase test --strict
+    - ase test
 
 # Should be same image as python_3_tests except
 # not slim because then we don't have tk

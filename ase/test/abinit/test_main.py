@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from ase.build import bulk, molecule
 from ase.calculators.abinit import Abinit
@@ -16,7 +17,7 @@ required_quantities = {'eigenvalues',
                        'kpoint_weights'}
 
 
-def run_test(atoms, name):
+def run(atoms, name):
     dirname = 'test-abinit/{}'.format(name)
     with workdir(dirname, mkdir=True):
         header = 'test {} in {}'.format(name, dirname)
@@ -50,17 +51,17 @@ def abinit(**kwargs):
 def test_si():
     atoms = bulk('Si')
     atoms.calc = abinit(nbands=4 * len(atoms))
-    run_test(atoms, 'bulk-si')
+    run(atoms, 'bulk-si')
 
 
-def test_au(pps, **kwargs):
+def run_au(pps, **kwargs):
     atoms = bulk('Au')
     atoms.calc = abinit(nbands=10 * len(atoms), pps=pps,
                         tsmear=0.1,
                         occopt=3,
                         kpts=[2, 2, 2],
                         **kwargs)
-    run_test(atoms, 'bulk-au-{}'.format(pps))
+    run(atoms, 'bulk-au-{}'.format(pps))
 
 
 def _test_fe(name, **kwargs):
@@ -69,7 +70,7 @@ def _test_fe(name, **kwargs):
     calc = abinit(nbands=8,
                   kpts=[2, 2, 2], **kwargs)
     atoms.calc = calc
-    run_test(atoms, name)
+    run(atoms, name)
     # Grrr we want to test magmoms but the caching doesn't work.
     # We should fix this.
     #magmom = atoms.get_magnetic_moment()
@@ -91,39 +92,44 @@ def test_fe_any_magmom():
 def test_h2o():
     atoms = molecule('H2O', vacuum=2.5)
     atoms.calc = abinit(nbands=8)
-    run_test(atoms, 'molecule')
+    run(atoms, 'molecule')
 
 
 def test_o2():
     atoms = molecule('O2', vacuum=2.5)
     atoms.calc = abinit(nbands=8, occopt=7)
-    run_test(atoms, 'molecule-spin')
+    run(atoms, 'molecule-spin')
     magmom = atoms.get_magnetic_moment()
     print('magmom', magmom)
 
 
-def test_manykpts():  # Test not enabled.
+@pytest.mark.skip('expensive')
+def test_manykpts():
     atoms = bulk('Au') * (2, 2, 2)
     atoms.rattle(stdev=0.01)
     atoms.symbols[:2] = 'Cu'
     atoms.calc = abinit(nbands=len(atoms) * 7,
                         kpts=[8, 8, 8])
-    run_test(atoms, 'manykpts')
+    run(atoms, 'manykpts')
 
 
-def test_manyatoms():  # Test not enabled
+@pytest.mark.skip('expensive')
+def test_manyatoms():
     atoms = bulk('Ne', cubic=True) * (4, 2, 2)
     atoms.rattle(stdev=0.01)
     atoms.calc = abinit(nbands=len(atoms) * 5)
-    run_test(atoms, 'manyatoms')
+    run(atoms, 'manyatoms')
 
 
 #test_many()
 #test_big()
-test_si()
-test_au(pps='fhi')
-test_au(pps='paw', pawecutdg=6.0 * Hartree)
-test_fe_fixed_magmom()
-test_fe_any_magmom()
-test_h2o()
-test_o2()
+#test_si()
+def test_au_fhi():
+    run_au(pps='fhi')
+
+def test_au_paw():
+    run_au(pps='paw', pawecutdg=6.0 * Hartree)
+#test_fe_fixed_magmom()
+#test_fe_any_magmom()
+#test_h2o()
+#test_o2()
