@@ -65,9 +65,19 @@ def read_orca(filename):
     return atoms
 
 
-def write_orca(filename, atoms, charge, mult):
+def write_orca(filename, atoms, **params):
     """Function to write ORCA input file coordinates in simple format
     """
+    charge = params['charge']
+    mult = params['mult']
+    label = params['label']
+
+    if 'pcpot' in params.keys():
+        pcpot = params['pcpot']
+        pcstring = '% pointcharges \"' +\
+                   label + '.pc\"\n\n'
+        params['orcablocks'] += pcstring
+        pcpot.write_mmcharges(label)
 
     if isinstance(filename, str):
         f = open(filename, 'w')

@@ -56,18 +56,16 @@ class ORCA(FileIOCalculator):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         p = self.parameters
 
+        p['label'] = self.label
         if self.pcpot:  # also write point charge file and add things to input
-            pcstring = '% pointcharges \"' +\
-                       self.label + '.pc\"\n\n'
-            p['orcablocks'] += pcstring
-            self.pcpot.write_mmcharges(self.label)
+            p['pcpot'] = self.pcpot
 
         p.write(self.label + '.ase')
         f = open(self.label + '.inp', 'w')
         f.write("! tightscf engrad %s \n" % p.orcasimpleinput)
         f.write("%s \n" % p.orcablocks)
 
-        write_orca(f, atoms, p.charge, p.mult)
+        write_orca(f, atoms, **p)
         f.close()
 
     def read(self, label):
