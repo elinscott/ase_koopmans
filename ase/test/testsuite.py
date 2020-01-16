@@ -110,6 +110,29 @@ MULTIPROCESSING_DISABLED = 0
 MULTIPROCESSING_AUTO = -1
 
 
+def test(calculators=tuple(), jobs=0, verbose=False,
+         stream='ignored', strict='ignored'):
+    """Run the tests programmatically.
+
+    This is here for compatibility and perhaps convenience."""
+    from ase.cli.main import main
+
+    if stream != 'ignored':
+        warnings.warn('Ignoring old "stream" keyword', FutureWarning)
+    if strict != 'ignored':
+        warnings.warn('Ignoring old "strict" keyword', FutureWarning)
+
+    args = ['test']
+    if verbose:
+        args += ['--verbose']
+    if calculators:
+        args += ['--calculators={}'.format(','.join(calculators))]
+    if jobs:
+        args += '--jobs={}'.format(jobs)
+
+    main(args=args)
+
+
 class CLICommand:
     """Run ASE's test-suite.
 

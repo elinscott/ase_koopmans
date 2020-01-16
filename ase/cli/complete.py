@@ -80,7 +80,8 @@ commands = {
          '--eos-type', '-o', '--output', '--modify', '--after'],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
-         '--jobs', '-v', '--verbose', '--strict', '--nogui'],
+         '--jobs', '-v', '--verbose', '--strict', '--nogui',
+         '--pytest'],
     'ulm':
         ['-n', '--index', '-d', '--delete', '-v', '--verbose']}
 # End of computer generated data
