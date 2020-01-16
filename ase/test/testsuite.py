@@ -8,10 +8,9 @@ import warnings
 import argparse
 from multiprocessing import cpu_count
 
-import pytest
-
 from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.cli.info import print_info
+from ase.cli.main import CLIError
 
 
 def importorskip(module):
@@ -133,6 +132,14 @@ def test(calculators=tuple(), jobs=0, verbose=False,
     main(args=args)
 
 
+def have_module(module):
+    try:
+        importlib.import_module(module)
+        return True
+    except ImportError:
+        return False
+
+
 class CLICommand:
     """Run ASE's test-suite.
 
@@ -160,7 +167,8 @@ class CLICommand:
                             help='write test outputs to stdout.  '
                             'Mostly useful when inspecting a single test')
         parser.add_argument('--strict', action='store_true',
-                            help='convert warnings to errors')
+                            help='convert warnings to errors.  '
+                            'This option currently has no effect')
         parser.add_argument('--nogui', action='store_true',
                             help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
@@ -179,6 +187,7 @@ class CLICommand:
             calculators = []
 
         print_info()
+        print()
 
         if args.list_calculators:
             for name in calc_names:
@@ -204,14 +213,17 @@ class CLICommand:
         if args.list:
             add_args('--collect-only')
 
-        if args.jobs == MULTIPROCESSING_DISABLED:
-            pass
-        else:
-            if args.jobs == MULTIPROCESSING_AUTO:
-                nworkers = min(cpu_count(), MULTIPROCESSING_MAX_WORKERS)
+        jobs = args.jobs
+        if jobs == MULTIPROCESSING_AUTO:
+            if have_module('xdist'):
+                jobs = min(cpu_count(), MULTIPROCESSING_MAX_WORKERS)
             else:
-                nworkers = args.jobs
-            add_args('--numprocesses={}'.format(nworkers))
+                print('Multiprocessing disabled as pytest-xdist is not installed')
+                jobs = MULTIPROCESSING_DISABLED
+
+        if jobs != MULTIPROCESSING_DISABLED:
+            print('Multiprocessing with {} workers'.format(jobs))
+            add_args('--numprocesses={}'.format(jobs))
 
         add_args('--pyargs')
 
@@ -259,5 +271,12 @@ class CLICommand:
         print('About to run pytest with these parameters:')
         for line in pytest_args:
             print('    ' + line)
+
+
+
+        if not have_module('pytest'):
+            raise CLIError('Cannot import pytest; please install pytest to run tests')
+
+        import pytest
         exitcode = pytest.main(pytest_args)
         sys.exit(exitcode)
