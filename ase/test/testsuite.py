@@ -104,11 +104,6 @@ def no_warn():
         yield
 
 
-MULTIPROCESSING_MAX_WORKERS = 32
-MULTIPROCESSING_DISABLED = 0
-MULTIPROCESSING_AUTO = -1
-
-
 def test(calculators=tuple(), jobs=0, verbose=False,
          stream='ignored', strict='ignored'):
     """Run the tests programmatically.
@@ -140,11 +135,25 @@ def have_module(module):
         return False
 
 
+MULTIPROCESSING_MAX_WORKERS = 32
+MULTIPROCESSING_DISABLED = 0
+MULTIPROCESSING_AUTO = -1
+
+
+def choose_how_many_workers(jobs):
+    if jobs == MULTIPROCESSING_AUTO:
+        if have_module('xdist'):
+            jobs = min(cpu_count(), MULTIPROCESSING_MAX_WORKERS)
+        else:
+            jobs = MULTIPROCESSING_DISABLED
+    return jobs
+
+
 class CLICommand:
     """Run ASE's test-suite.
 
-    By default, tests for external calculators are skipped.  Enable with
-    "-c name".
+    Requires the pytest package.  pytest-xdist is recommended
+    in addition as the tests will then run in parallel.
     """
 
     @staticmethod
@@ -156,13 +165,13 @@ class CLICommand:
                             help='print all tests and exit')
         parser.add_argument('--list-calculators', action='store_true',
                             help='print all calculator names and exit')
-        parser.add_argument('-j', '--jobs', type=int, metavar='N',
-                            default=MULTIPROCESSING_AUTO,
-                            help='number of worker processes.  '
-                            'By default use all available processors '
-                            'up to a maximum of {}.  '
-                            '0 disables multiprocessing'
-                            .format(MULTIPROCESSING_MAX_WORKERS))
+        parser.add_argument(
+            '-j', '--jobs', type=int, metavar='N',
+            default=MULTIPROCESSING_AUTO,
+            help='number of worker processes.  If pytest-xdist is available,'
+            ' defaults to all available processors up to a maximum of {}.  '
+            '0 disables multiprocessing'
+            .format(MULTIPROCESSING_MAX_WORKERS))
         parser.add_argument('-v', '--verbose', action='store_true',
                             help='write test outputs to stdout.  '
                             'Mostly useful when inspecting a single test')
@@ -172,8 +181,8 @@ class CLICommand:
         parser.add_argument('--nogui', action='store_true',
                             help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
-                            help='specify particular test files.  '
-                            'Glob patterns are accepted.')
+                            help='specify particular test files '
+                            'or directories')
         parser.add_argument('--pytest', nargs=argparse.REMAINDER,
                             help='forward all remaining arguments to pytest.  '
                             'See pytest --help')
@@ -182,6 +191,10 @@ class CLICommand:
     def run(args):
         if args.calculators:
             calculators = args.calculators.split(',')
+            # Hack: We use ASE_TEST_CALCULATORS to communicate to pytest
+            # (in conftest.py) which calculators we have enabled.
+            # This also provides an (undocumented) way to enable
+            # calculators when running pytest independently.
             os.environ['ASE_TEST_CALCULATORS'] = ' '.join(calculators)
         else:
             calculators = []
@@ -205,7 +218,7 @@ class CLICommand:
         if args.nogui:
             os.environ.pop('DISPLAY')
 
-        pytest_args = ['-v']
+        pytest_args = ['--pyargs', '-v']
 
         def add_args(*args):
             pytest_args.extend(args)
@@ -213,19 +226,9 @@ class CLICommand:
         if args.list:
             add_args('--collect-only')
 
-        jobs = args.jobs
-        if jobs == MULTIPROCESSING_AUTO:
-            if have_module('xdist'):
-                jobs = min(cpu_count(), MULTIPROCESSING_MAX_WORKERS)
-            else:
-                print('Multiprocessing disabled as pytest-xdist is not installed')
-                jobs = MULTIPROCESSING_DISABLED
-
-        if jobs != MULTIPROCESSING_DISABLED:
-            print('Multiprocessing with {} workers'.format(jobs))
+        jobs = choose_how_many_workers(args.jobs)
+        if jobs:
             add_args('--numprocesses={}'.format(jobs))
-
-        add_args('--pyargs')
 
         if args.tests:
             from ase.test.newtestsuite import TestModule
