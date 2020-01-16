@@ -13,21 +13,6 @@ from ase.cli.info import print_info
 from ase.cli.main import CLIError
 
 
-def importorskip(module):
-    # The pytest importorskip() function raises a wierd exception
-    # which claims to come from the builtins module, but doesn't!
-    #
-    # That exception messes with our pipeline when sending stacktraces
-    # through multiprocessing.  Argh.
-    #
-    # We provide our own implementation then!
-    try:
-        return importlib.import_module(module)
-    except ImportError:  # From py3.6 we can use ModuleNotFoundError
-        raise unittest.SkipTest('Optional module not present: {}'
-                                .format(module))
-
-
 test_calculator_names = ['emt']
 
 
