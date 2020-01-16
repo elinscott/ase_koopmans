@@ -7,7 +7,7 @@ occurring at one point (see https://gitlab.com/ase/ase/merge_requests/1442)!
 """
 import numpy as np
 from ase import Atoms
-from ase.test.testsuite import importorskip
+from pytest import importorskip
 importorskip('kimpy')
 from ase.calculators.kim import KIM
 

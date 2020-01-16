@@ -3,7 +3,7 @@ from ase.build import molecule
 from ase.calculators.calculator import get_calculator_class
 from ase.units import Ry
 from ase.utils import workdir
-from ase.test.testsuite import importorskip
+from pytest import importorskip
 
 
 class CalculatorInputs:
