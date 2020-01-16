@@ -17,7 +17,7 @@ class ORCA(FileIOCalculator):
     default_parameters = dict(
         charge=0, mult=1,
         task='gradient',
-        orcasimpleinput='PBE def2-SVP',
+        orcasimpleinput='tightscf PBE def2-SVP',
         orcablocks='%scf maxiter 200 end')
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
@@ -55,18 +55,13 @@ class ORCA(FileIOCalculator):
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         p = self.parameters
-
+        p.write(self.label + '.ase')
         p['label'] = self.label
         if self.pcpot:  # also write point charge file and add things to input
             p['pcpot'] = self.pcpot
 
-        p.write(self.label + '.ase')
-        f = open(self.label + '.inp', 'w')
-        f.write("! tightscf engrad %s \n" % p.orcasimpleinput)
-        f.write("%s \n" % p.orcablocks)
-
-        write_orca(f, atoms, **p)
-        f.close()
+        
+        write_orca(atoms, **p)
 
     def read(self, label):
         FileIOCalculator.read(self, label)

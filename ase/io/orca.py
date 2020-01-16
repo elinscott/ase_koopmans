@@ -65,8 +65,8 @@ def read_orca(filename):
     return atoms
 
 
-def write_orca(filename, atoms, **params):
-    """Function to write ORCA input file coordinates in simple format
+def write_orca(atoms, **params):
+    """Function to write ORCA input file
     """
     charge = params['charge']
     mult = params['mult']
@@ -79,22 +79,20 @@ def write_orca(filename, atoms, **params):
         params['orcablocks'] += pcstring
         pcpot.write_mmcharges(label)
 
-    if isinstance(filename, str):
-        f = open(filename, 'w')
-    else:  # Assume it's a 'file-like object'
-        f = filename
-    f.write('*xyz')
-    f.write(" %d" % charge)
-    f.write(" %d \n" % mult)
-    for atom in atoms:
-        if atom.tag == 71:  # 71 is ascii G (Ghost)
-            symbol = atom.symbol + ' : '
-        else:
-            symbol = atom.symbol + '   '
-        f.write(symbol +
-                str(atom.position[0]) + ' ' +
-                str(atom.position[1]) + ' ' +
-                str(atom.position[2]) + '\n')
-    f.write('*\n')
+    with open(label + '.inp', 'w') as f:
+        f.write("! engrad %s \n" % params['orcasimpleinput'])
+        f.write("%s \n" % params['orcablocks'])
 
-    f.close()
+        f.write('*xyz')
+        f.write(" %d" % charge)
+        f.write(" %d \n" % mult)
+        for atom in atoms:
+            if atom.tag == 71:  # 71 is ascii G (Ghost)
+                symbol = atom.symbol + ' : '
+            else:
+                symbol = atom.symbol + '   '
+            f.write(symbol +
+                    str(atom.position[0]) + ' ' +
+                    str(atom.position[1]) + ' ' +
+                    str(atom.position[2]) + '\n')
+        f.write('*\n')
