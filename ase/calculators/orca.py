@@ -82,18 +82,18 @@ class ORCA(FileIOCalculator):
         if not os.path.isfile(self.label + '.out'):
             raise ReadError
 
-        f = open(self.label + '.inp')
-        for line in f:
-            if line.startswith('geometry'):
-                break
-        symbols = []
-        positions = []
-        for line in f:
-            if line.startswith('end'):
-                break
-            words = line.split()
-            symbols.append(words[0])
-            positions.append([float(word) for word in words[1:]])
+        with open(self.label + '.inp') as f:
+            for line in f:
+                if line.startswith('geometry'):
+                    break
+            symbols = []
+            positions = []
+            for line in f:
+                if line.startswith('end'):
+                    break
+                words = line.split()
+                symbols.append(words[0])
+                positions.append([float(word) for word in words[1:]])
 
         self.parameters = Parameters.read(self.label + '.ase')
         self.read_results()
