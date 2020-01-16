@@ -92,7 +92,7 @@ class BravaisLattice(ABC):
         cell = self._cell(**self._parameters)
         return Cell(cell)
 
-    def get_transformation(self, cell, eps=1e-5):
+    def get_transformation(self, cell, eps=1e-8):
         # Get transformation matrix relating input cell to canonical cell
         T = cell.dot(np.linalg.pinv(self.tocell()))
         msg = 'This transformation changes the length/area/volume of the cell'
