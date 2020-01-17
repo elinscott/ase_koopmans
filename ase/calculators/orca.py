@@ -60,7 +60,6 @@ class ORCA(FileIOCalculator):
         if self.pcpot:  # also write point charge file and add things to input
             p['pcpot'] = self.pcpot
 
-        
         write_orca(atoms, **p)
 
     def read(self, label):
