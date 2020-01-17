@@ -1,40 +1,38 @@
-""" Implementation of the cut and splice paring operator described by
-Deaven and Ho.
-
-"""
+"""Implementation of the cut-and-splice paring operator."""
 import numpy as np
-from ase import Atoms
 from random import random, randrange
-from ase.ga.utilities import atoms_too_close
-from ase.ga.utilities import atoms_too_close_two_sets
+from ase import Atoms
+from ase.geometry import find_mic
+from ase.ga.utilities import (atoms_too_close, atoms_too_close_two_sets,
+                              gather_atoms_by_tag)
 from ase.ga.offspring_creator import OffspringCreator
-from math import pi, cos, sin
 
 
-class Position(object):
-    """Position helper object.
-
-    This class is just a simple representation used by the pairing
-    operator.
+class Positions(object):
+    """Helper object to simplify the pairing process.
 
     Parameters:
 
-    position: [x, y, z] coordinate
-    number: Atomic species at the position
-    distance: Signed distance to the cutting plane
-    origin: Either 0 or 1 and determines which side of the plane
-    the position should be at.
-
+    scaled_positions: (Nx3) array
+        Positions in scaled coordinates
+    cop: (1x3) array
+        Center-of-positions (also in scaled coordinates)
+    symbols: str
+        String with the atomic symbols
+    distance: float
+        Signed distance to the cutting plane
+    origin: int (0 or 1)
+        Determines at which side of the plane the position should be.
     """
-    def __init__(self, position, number, distance, origin):
-        self.number = number
-        self.position = position
+    def __init__(self, scaled_positions, cop, symbols, distance, origin):
+        self.scaled_positions = scaled_positions
+        self.cop = cop
+        self.symbols = symbols
         self.distance = distance
         self.origin = origin
 
     def to_use(self):
-        """ Method which tells if this position is at the right side.
-        """
+        """Tells whether this position is at the right side."""
         if self.distance > 0. and self.origin == 0:
             return True
         elif self.distance < 0. and self.origin == 1:
@@ -43,106 +41,145 @@ class Position(object):
             return False
 
 
-def get_distance(point, cutting_plane, cutting_point):
-    """
-    Utility method for calculating the distance from a plane to a point
-    """
-    cm = cutting_point
-    n = cutting_plane
-    d = np.dot(point - cm, n)
-    return d
-
-
 class CutAndSplicePairing(OffspringCreator):
+    """The Cut and Splice operator by Deaven and Ho.
 
-    """ The Cut and splice operator implemented as described in
-    L.B. Vilhelmsen and B. Hammer, PRL, 108, 126101 (2012)
+    Creates offspring from two parent structures using
+    a randomly generated cutting plane.
+
+    The parents may have different unit cells, in which
+    case the offspring unit cell will be a random combination
+    of the parent cells.
+
+    The basic implementation (for fixed unit cells) is
+    described in:
+
+    `L.B. Vilhelmsen and B. Hammer, PRL, 108, 126101 (2012)`__
+
+    __ https://doi.org/10.1103/PhysRevLett.108.126101
+
+    The extension to variable unit cells is similar to:
+
+    * `Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720`__
+
+      __ https://doi.org/10.1016/j.cpc.2006.07.020
+
+    * `Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387`__
+
+      __ https://doi.org/10.1016/j.cpc.2010.07.048
+
+    The operator can furthermore preserve molecular identity
+    if desired (see the *use_tags* kwarg). Atoms with the same
+    tag will then be considered as belonging to the same molecule,
+    and their internal geometry will not be changed by the operator.
+
+    If use_tags is enabled, the operator will also conserve the
+    number of molecules of each kind (in addition to conserving
+    the overall stoichiometry). Currently, molecules are considered
+    to be of the same kind if their chemical symbol strings are
+    identical. In rare cases where this may not be sufficient
+    (i.e. when desiring to keep the same ratio of isomers), the
+    different isomers can be differentiated by giving them different
+    elemental orderings (e.g. 'XY2' and 'Y2X').
 
     Parameters:
 
-    slab: Atoms object with supercell to optimize the structure in
-    n_top: The number of atoms to optimize
-    blmin: Dictionary with pairs of atom numbers and the closest
-    distance these can have to each other.
-       """
-    def __init__(self, slab, n_top, blmin, verbose=False):
+    slab: Atoms object
+        Specifies the cell vectors and periodic boundary conditions
+        to be applied to the randomly generated structures.
+        Any included atoms (e.g. representing an underlying slab)
+        are copied to these new structures.
+
+    n_top: int
+        The number of atoms to optimize
+
+    blmin: dict
+        Dictionary with minimal interatomic distances.
+        Note: when preserving molecular identity (see use_tags),
+        the blmin dict will (naturally) only be applied
+        to intermolecular distances (not the intramolecular
+        ones).
+
+    number_of_variable_cell_vectors: int (default 0)
+        The number of variable cell vectors (0, 1, 2 or 3).
+        To keep things simple, it is the 'first' vectors which
+        will be treated as variable, i.e. the 'a' vector in the
+        univariate case, the 'a' and 'b' vectors in the bivariate
+        case, etc.
+
+    p1: float or int between 0 and 1
+        Probability that a parent is shifted over a random
+        distance along the normal of the cutting plane
+        (only operative if number_of_variable_cell_vectors > 0).
+
+    p2: float or int between 0 and 1
+        Same as p1, but for shifting along the directions
+        in the cutting plane (only operative if
+        number_of_variable_cell_vectors > 0).
+
+    minfrac: float between 0 and 1, or None (default)
+        Minimal fraction of atoms a parent must contribute
+        to the child. If None, each parent must contribute
+        at least one atom.
+
+    cellbounds: ase.ga.bulk_utilities.CellBounds instance
+        Describing limits on the cell shape, see
+        :class:`~ase.ga.bulk_utilities.CellBounds`.
+        Note that it only make sense to impose conditions
+        regarding cell vectors which have been marked as
+        variable (see number_of_variable_cell_vectors).
+
+    use_tags: bool
+        Whether to use the atomic tags to preserve
+        molecular identity.
+
+    test_dist_to_slab: bool (default True)
+        Whether to make sure that the distances between
+        the atoms and the slab satisfy the blmin.
+    """
+    def __init__(self, slab, n_top, blmin, number_of_variable_cell_vectors=0,
+                 p1=1, p2=0.05, minfrac=None, cellbounds=None,
+                 test_dist_to_slab=True, use_tags=False, verbose=False):
+
         OffspringCreator.__init__(self, verbose)
-        self.blmin = blmin
         self.slab = slab
         self.n_top = n_top
+        self.blmin = blmin
+        assert number_of_variable_cell_vectors in range(4)
+        self.number_of_variable_cell_vectors = number_of_variable_cell_vectors
+        self.p1 = p1
+        self.p2 = p2
+        self.minfrac = minfrac
+        self.cellbounds = cellbounds
+        self.test_dist_to_slab = test_dist_to_slab
+        self.use_tags = use_tags
+
+        self.scaling_volume = None
         self.descriptor = 'CutAndSplicePairing'
         self.min_inputs = 2
 
-    def _get_pairing_(self, a1, a2, cutting_plane, cutting_point):
-        """ Pairs configuration a1 and a2 through the defined plane.
-            This method does not check if atoms are too close.
+    def update_scaling_volume(self, population, w_adapt=0.5, n_adapt=0):
+        """Updates the scaling volume that is used in the pairing
+
+        w_adapt: weight of the new vs the old scaling volume
+        n_adapt: number of best candidates in the population that
+                 are used to calculate the new scaling volume
         """
-        N = len(a1)
-        num = a1.numbers[:]
-        unique_types = list(set(num))
+        if not n_adapt:
+            # take best 20% of the population
+            n_adapt = int(round(0.2 * len(population)))
+        v_new = np.mean([a.get_volume() for a in population[:n_adapt]])
 
-        types = dict()
-        for u in unique_types:
-            types[u] = sum(num == u)
-
-        # Generate list of all atoms
-        p1 = [Position(a.position, a.number,
-                       get_distance(a.position,
-                                    cutting_plane,
-                                    cutting_point), origin=0) for a in a1]
-        p2 = [Position(a.position, a.number,
-                       get_distance(a.position,
-                                    cutting_plane,
-                                    cutting_point), origin=1) for a in a2]
-        all_points = p1
-        all_points.extend(p2)
-
-        # Sort these by their atomic number
-        all_points.sort(key=lambda x: x.number, reverse=True)
-
-        # For each atom type make the pairing
-        unique_types.sort()
-        use_total = dict()
-        for u in unique_types:
-            used = []
-            not_used = []
-            # The list is looked trough in
-            # reverse order so atoms can be removed
-            # from the list along the way.
-            for i in reversed(range(len(all_points))):
-                # If there are no more atoms of this type
-                if all_points[i].number != u:
-                    break
-                # Check if the atom should be included
-                if all_points[i].to_use():
-                    used.append(all_points.pop(i))
-                else:
-                    not_used.append(all_points.pop(i))
-
-            assert len(used) + len(not_used) == types[u] * 2
-
-            # While we have too few of the given atom type
-            while len(used) < types[u]:
-                used.append(not_used.pop(randrange(0, len(not_used))))
-
-            # While we have too many of the given atom type
-            while len(used) > types[u]:
-                index = used.index(max(used, key=lambda x: abs(x.distance)))
-                not_used.append(used.pop(index))
-
-            use_total[u] = used
-
-        n_tot = sum([len(ll) for ll in use_total.values()])
-        assert n_tot == N
-
-        # Reorder the atoms to follow the atom types in the original order
-        pos_new = [use_total[n].pop().position for n in num]
-        return Atoms(numbers=num,
-                     positions=pos_new, pbc=a1.get_pbc(), cell=a1.get_cell())
+        if not self.scaling_volume:
+            self.scaling_volume = v_new
+        else:
+            volumes = [self.scaling_volume, v_new]
+            weights = [1 - w_adapt, w_adapt]
+            self.scaling_volume = np.average(volumes, weights=weights)
 
     def get_new_individual(self, parents):
-        """ The method called by the user that
-        returns the paired structure. """
+        """The method called by the user that
+        returns the paired structure."""
         f, m = parents
 
         indi = self.cross(f, m)
@@ -156,80 +193,258 @@ class CutAndSplicePairing(OffspringCreator):
         indi = self.initialize_individual(f, indi)
         indi.info['data']['parents'] = [f.info['confid'],
                                         m.info['confid']]
-        
+
         return self.finalize_individual(indi), desc
 
-    def cross(self, a1, a2, test_dist_to_slab=True):
+    def cross(self, a1, a2):
         """Crosses the two atoms objects and returns one"""
-        
+
         if len(a1) != len(self.slab) + self.n_top:
             raise ValueError('Wrong size of structure to optimize')
         if len(a1) != len(a2):
             raise ValueError('The two structures do not have the same length')
-        
+
         N = self.n_top
 
         # Only consider the atoms to optimize
         a1 = a1[len(a1) - N: len(a1)]
         a2 = a2[len(a2) - N: len(a2)]
-        
-        # if not np.array_equal(a1.numbers, a2.numbers):
-        #     a1.numbers.sort()
-        #     a2.numbers.sort()
 
         if not np.array_equal(a1.numbers, a2.numbers):
             err = 'Trying to pair two structures with different stoichiometry'
             raise ValueError(err)
 
-        # Find the common center of the two clusters
-        c1cm = np.average(a1.get_positions(), axis=0)
-        c2cm = np.average(a2.get_positions(), axis=0)
-        cutting_point = (c1cm + c2cm) / 2.
+        if self.use_tags and not np.array_equal(a1.get_tags(), a2.get_tags()):
+            err = 'Trying to pair two structures with different tags'
+            raise ValueError(err)
 
+        cell1 = a1.get_cell()
+        cell2 = a2.get_cell()
+
+        if self.cellbounds is not None:
+            assert self.cellbounds.is_within_bounds(cell1)
+            assert self.cellbounds.is_within_bounds(cell2)
+
+        for i in range(self.number_of_variable_cell_vectors, 3):
+            err = 'Unit cells are supposed to be identical in direction %d'
+            assert np.allclose(cell1[i], cell2[i]), (err % i, cell1, cell2)
+
+        invalid = True
         counter = 0
-        too_close = True
-        n_max = 1000
-        # Run until a valid pairing is made or 1000 pairings are tested.
-        while too_close and counter < n_max:
+        maxcount = 1000
+        a1_copy = a1.copy()
+        a2_copy = a2.copy()
 
-            # Generate the cutting plane
-            theta = pi * random()
-            phi = 2. * pi * random()
-            n = (cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta))
-            n = np.array(n)
-
-            # Get the pairing
-            top = self._get_pairing_(a1, a2,
-                                     cutting_plane=n,
-                                     cutting_point=cutting_point)
-
-            # Check if the candidate is valid
-            too_close = atoms_too_close(top, self.blmin)
-            if not too_close and test_dist_to_slab:
-                too_close = atoms_too_close_two_sets(self.slab,
-                                                     top, self.blmin)
-
-            # Verify that the generated structure contains atoms from
-            # both parents
-            n1 = -1 * np.ones((N, ))
-            n2 = -1 * np.ones((N, ))
-            for i in range(N):
-                for j in range(N):
-                    if np.all(a1.positions[j, :] == top.positions[i, :]):
-                        n1[i] = j
-                        break
-                    elif np.all(a2.positions[j, :] == top.positions[i, :]):
-                        n2[i] = j
-                        break
-                assert (n1[i] > -1 and n2[i] == -1) or (n1[i] == -1 and
-                                                        n2[i] > -1)
-
-            if not (len(n1[n1 > -1]) > 0 and len(n2[n2 > -1]) > 0):
-                too_close = True
-
+        # Run until a valid pairing is made or maxcount pairings are tested.
+        while invalid and counter < maxcount:
             counter += 1
 
-        if counter == n_max:
+            # Choose direction of cutting plane normal
+            if self.number_of_variable_cell_vectors == 0:
+                # Will be generated entirely at random
+                theta = np.pi * random()
+                phi = 2. * np.pi * random()
+                cut_n = np.array([np.cos(phi) * np.sin(theta),
+                                  np.sin(phi) * np.sin(theta), np.cos(theta)])
+            else:
+                # Pick one of the 'variable' cell vectors
+                cut_n = np.random.choice(self.number_of_variable_cell_vectors)
+
+            # Randomly translate parent structures
+            for a_copy, a in zip([a1_copy, a2_copy], [a1, a2]):
+                a_copy.set_positions(a.get_positions())
+
+                cell = a_copy.get_cell()
+                for i in range(self.number_of_variable_cell_vectors):
+                    r = random()
+                    cond1 = i == cut_n and r < self.p1
+                    cond2 = i != cut_n and r < self.p2
+                    if cond1 or cond2:
+                        a_copy.positions += random() * cell[i]
+
+                if self.use_tags:
+                    # For correct determination of the center-
+                    # of-position of the multi-atom blocks,
+                    # we need to group their constituent atoms
+                    # together
+                    gather_atoms_by_tag(a_copy)
+                else:
+                    a_copy.wrap()
+
+            # Generate the cutting point in scaled coordinates
+            cosp1 = np.average(a1_copy.get_scaled_positions(), axis=0)
+            cosp2 = np.average(a2_copy.get_scaled_positions(), axis=0)
+            cut_p = np.zeros((1, 3))
+            for i in range(3):
+                if i < self.number_of_variable_cell_vectors:
+                    cut_p[0, i] = np.random.random()
+                else:
+                    cut_p[0, i] = 0.5 * (cosp1[i] + cosp2[i])
+
+            # Perform the pairing:
+            child = self._get_pairing(a1_copy, a2_copy, cut_p, cut_n)
+            if child is None:
+                continue
+
+            # Verify whether the atoms are too close or not:
+            if atoms_too_close(child, self.blmin, use_tags=self.use_tags):
+                continue
+
+            if self.test_dist_to_slab and len(self.slab) > 0:
+                if atoms_too_close_two_sets(self.slab, child, self.blmin):
+                    continue
+
+            # Passed all the tests
+            cell = child.get_cell()
+            child = self.slab + child
+            child.set_cell(cell, scale_atoms=False)
+            child.wrap()
+            return child
+        else:
+            # Reached max iteration count in the while loop
             return None
-        
-        return self.slab + top
+
+    def _get_pairing(self, a1, a2, cutting_point, cutting_normal):
+        """Creates a child from two parents using the given cut.
+
+        Returns None if the generated structure does not contain
+        a large enough fraction of each parent (see self.minfrac).
+
+        Does not check whether atoms are too close, but does
+        ensure that the cell complies with self.cellbounds.
+
+        Assumes the 'slab' parts have been removed from the parent
+        structures and that these have been checked for equal
+        lengths, stoichiometries, and tags (if self.use_tags).
+
+        Parameters:
+
+        cutting_normal: int or (1x3) array
+
+        cutting_point: (1x3) array
+            In fractional coordinates
+        """
+        symbols = a1.get_chemical_symbols()
+        tags = a1.get_tags() if self.use_tags else np.arange(len(a1))
+
+        # Generate list of all atoms / atom groups:
+        p1, p2, sym = [], [], []
+        for i in np.unique(tags):
+            indices = np.where(tags == i)[0]
+            s = ''.join([symbols[j] for j in indices])
+            sym.append(s)
+
+            for i, (a, p) in enumerate(zip([a1, a2], [p1, p2])):
+                cell = a.get_cell()
+                cop = np.mean(a.positions[indices], axis=0)
+                cut_p = np.dot(cutting_point, cell)
+                if isinstance(cutting_normal, int):
+                    vecs = [cell[j] for j in range(3) if j != cutting_normal]
+                    cut_n = np.cross(vecs[0], vecs[1])
+                else:
+                    cut_n = np.dot(cutting_normal, cell)
+                d = np.dot(cop - cut_p, cut_n)
+                spos = a.get_scaled_positions()[indices]
+                scop = np.mean(spos, axis=0)
+                p.append(Positions(spos, scop, s, d, i))
+
+        all_points = p1 + p2
+        unique_sym = np.unique(sym)
+        types = {s: sym.count(s) for s in unique_sym}
+
+        # Sort these by chemical symbols:
+        all_points.sort(key=lambda x: x.symbols, reverse=True)
+
+        # For each atom type make the pairing
+        unique_sym.sort()
+        use_total = dict()
+        for s in unique_sym:
+            used = []
+            not_used = []
+            # The list is looked trough in
+            # reverse order so atoms can be removed
+            # from the list along the way.
+            for i in reversed(range(len(all_points))):
+                # If there are no more atoms of this type
+                if all_points[i].symbols != s:
+                    break
+                # Check if the atom should be included
+                if all_points[i].to_use():
+                    used.append(all_points.pop(i))
+                else:
+                    not_used.append(all_points.pop(i))
+
+            assert len(used) + len(not_used) == types[s] * 2
+
+            # While we have too few of the given atom type
+            while len(used) < types[s]:
+                used.append(not_used.pop(randrange(0, len(not_used))))
+
+            # While we have too many of the given atom type
+            while len(used) > types[s]:
+                # remove randomly:
+                index = randrange(0, len(used))
+                not_used.append(used.pop(index))
+
+            use_total[s] = used
+
+        n_tot = sum([len(ll) for ll in use_total.values()])
+        assert n_tot == len(sym)
+
+        # check if the generated structure contains
+        # atoms from both parents:
+        count1, count2, N = 0, 0, len(a1)
+        for x in use_total.values():
+            count1 += sum([y.origin == 0 for y in x])
+            count2 += sum([y.origin == 1 for y in x])
+
+        nmin = 1 if self.minfrac is None else int(round(self.minfrac * N))
+        if count1 < nmin or count2 < nmin:
+            return None
+
+        # calculate the scaling volume
+        if not self.scaling_volume:
+            v_ref = 0.5 * (a1.get_volume() + a2.get_volume())
+        else:
+            v_ref = self.scaling_volume
+
+        # generate the unit cell
+        cell1 = a1.get_cell()
+        cell2 = a2.get_cell()
+        if self.number_of_variable_cell_vectors == 0:
+            newcell = cell1
+        else:
+            found = False
+            while not found:
+                r = random()
+                newcell = r * cell1 + (1 - r) * cell2
+                vol = abs(np.linalg.det(newcell))
+                scaling = v_ref / vol
+                scaling **= 1. / self.number_of_variable_cell_vectors
+                newcell[:self.number_of_variable_cell_vectors] *= scaling
+                if self.cellbounds is not None:
+                    found = self.cellbounds.is_within_bounds(newcell)
+                else:
+                    found = True
+
+        # Construct the cartesian positions and reorder the atoms
+        # to follow the original order
+        newpos = []
+        pbc = a1.get_pbc()
+        for s in sym:
+            p = use_total[s].pop()
+            c = cell1 if p.origin == 0 else cell2
+            pos = np.dot(p.scaled_positions, c)
+            cop = np.dot(p.cop, c)
+            vectors, lengths = find_mic(pos - cop, c, pbc)
+            newcop = np.dot(p.cop, newcell)
+            pos = newcop + vectors
+            for row in pos:
+                newpos.append(row)
+
+        newpos = np.reshape(newpos, (N, 3))
+        num = a1.get_atomic_numbers()
+        child = Atoms(numbers=num, positions=newpos, pbc=pbc, cell=newcell,
+                      tags=tags)
+        child.wrap()
+        return child
