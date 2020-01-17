@@ -1,13 +1,13 @@
 """ Various utility methods used troughout the GA. """
-from ase.data import covalent_radii
-import itertools
-import numpy as np
-from ase.io import write, read
 import os
 import time
 import math
-from ase.ga import get_neighbor_list
+import itertools
+import numpy as np
 from scipy.spatial.distance import cdist
+from ase.io import write, read
+from ase.data import covalent_radii
+from ase.ga import get_neighbor_list
 
 
 def closest_distances_generator(atom_numbers, ratio_of_covalent_radii):
