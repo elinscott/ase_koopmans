@@ -113,11 +113,7 @@ def test(calculators=tuple(), jobs=0, verbose=False,
 
 
 def have_module(module):
-    try:
-        importlib.import_module(module)
-        return True
-    except ImportError:
-        return False
+    return importlib.find_loader(module) is not None
 
 
 MULTIPROCESSING_MAX_WORKERS = 32
