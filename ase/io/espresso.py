@@ -1591,15 +1591,13 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 mask = ''
 
             if crystal_coordinates:
-                atomic_positions_str.append(
-                    '{atom.symbol} '
-                    '{atom.a:.10f} {atom.b:.10f} {atom.c:.10f} '
-                    '{mask}\n'.format(atom=atom, mask=mask))
+                coords = [atom.a, atom.b, atom.c]
             else:
-                atomic_positions_str.append(
-                    '{atom.symbol} '
-                    '{atom.x:.10f} {atom.y:.10f} {atom.z:.10f} '
-                    '{mask}\n'.format(atom=atom, mask=mask))
+                coords = atom.position
+            atomic_positions_str.append(
+                '{atom.symbol} '
+                '{coords[0]:.10f} {coords[1]:.10f} {coords[2]:.10f} '
+                '{mask}\n'.format(atom=atom, coords=coords, mask=mask))
 
     # Add computed parameters
     # different magnetisms means different types
