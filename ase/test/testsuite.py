@@ -224,7 +224,6 @@ class CLICommand:
             groups = {}
             for name in dct:
                 groupname = name.split('.')[0]
-                print(groupname, name)
                 if groupname not in dct:
                     groups.setdefault(groupname, []).append(name)
 
