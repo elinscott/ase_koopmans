@@ -291,7 +291,7 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     calc.results['job_done'] = job_done
     structure.set_calculator(calc)
 
-    return structure
+    yield structure
 
 def parse_cp_start(lines, index=0):
     """Parse Quantum ESPRESSO calculation info from lines,
