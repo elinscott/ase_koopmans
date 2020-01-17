@@ -31,10 +31,11 @@ class FancyDict(dict):
 
 def atoms2dict(atoms):
     dct = {
-        'pbc': atoms.pbc,
         'numbers': atoms.numbers,
         'positions': atoms.positions,
         'unique_id': '%x' % randint(16**31, 16**32 - 1)}
+    if atoms.pbc.any():
+        dct['pbc'] = atoms.pbc
     if atoms.cell.any():
         dct['cell'] = atoms.cell
     if atoms.has('initial_magmoms'):
