@@ -124,8 +124,11 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
     # Extract calculation results
     energy = None
+    lumo_energy = None
+    homo_energy = None
     lambda_ii = None
     eigenvalues = []
+    job_done = False
     for i_line, line in enumerate(cpo_lines):
 
         # Energy
@@ -146,6 +149,15 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                     eigenvalues[-1] += [float(e) for e in cpo_lines[i_line + 6].split()]
                 except:
                     pass
+
+        if 'HOMO Eigenvalue (eV)' in line:
+            homo_energy = float(cpo_lines[i_line + 2])
+    
+        if 'LUMO Eigenvalue (eV)' in line:
+            lumo_energy = float(cpo_lines[i_line + 2])
+
+        if 'JOB DONE' in line:
+            job_done = True
     
     # Forces
     # forces = None
@@ -271,11 +283,15 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     #                                 magmoms=magmoms, efermi=efermi,
     #                                 ibzkpts=ibzkpts)
     # calc.kpts = kpts
+    calc.results['energy'] = energy
+    calc.results['homo_energy'] = homo_energy
+    calc.results['lumo_energy'] = lumo_energy
     calc.results['eigenvalues'] = eigenvalues
     calc.results['lambda_ii'] = lambda_ii
+    calc.results['job_done'] = job_done
     structure.set_calculator(calc)
 
-    yield structure
+    return structure
 
 def parse_cp_start(lines, index=0):
     """Parse Quantum ESPRESSO calculation info from lines,
