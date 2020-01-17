@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 
-from ase.test.testsuite import importorskip
+from pytest import importorskip
 importorskip('netCDF4')
 
 from ase import Atom, Atoms

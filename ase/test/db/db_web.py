@@ -1,6 +1,6 @@
 from ase import Atoms
 from ase.db import connect
-from ase.test.testsuite import importorskip
+from pytest import importorskip
 
 importorskip('flask')
 import ase.db.app as app

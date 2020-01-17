@@ -28,8 +28,7 @@ with open('ase/__init__.py') as fd:
 package_data = {'ase': ['spacegroup/spacegroup.dat',
                         'collections/*.json',
                         'db/templates/*',
-                        'db/static/*',
-                        'test/pytest.ini']}
+                        'db/static/*']}
 
 
 class build_py(_build_py):
@@ -71,7 +70,8 @@ setup(name='ase',
       license='LGPLv2.1+',
       platforms=['unix'],
       packages=find_packages(),
-      install_requires=['numpy', 'scipy', 'matplotlib'],
+      install_requires=['numpy', 'scipy', 'matplotlib',
+                        'pytest', 'pytest-xdist'],
       extras_require={'docs': ['sphinx', 'sphinx_rtd_theme', 'pillow']},
       package_data=package_data,
       entry_points={'console_scripts': ['ase=ase.cli.main:main',

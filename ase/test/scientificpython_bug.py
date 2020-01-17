@@ -1,5 +1,5 @@
 import sys
-from ase.test.testsuite import importorskip
+from pytest import importorskip
 
 importorskip('Scientific')
 
