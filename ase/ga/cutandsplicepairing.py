@@ -1,6 +1,5 @@
 """Implementation of the cut-and-splice paring operator."""
 import numpy as np
-from random import random, randrange
 from ase import Atoms
 from ase.geometry import find_mic
 from ase.ga.utilities import (atoms_too_close, atoms_too_close_two_sets,
@@ -242,8 +241,8 @@ class CutAndSplicePairing(OffspringCreator):
             # Choose direction of cutting plane normal
             if self.number_of_variable_cell_vectors == 0:
                 # Will be generated entirely at random
-                theta = np.pi * random()
-                phi = 2. * np.pi * random()
+                theta = np.pi * np.random.random()
+                phi = 2. * np.pi * np.random.random()
                 cut_n = np.array([np.cos(phi) * np.sin(theta),
                                   np.sin(phi) * np.sin(theta), np.cos(theta)])
             else:
@@ -256,11 +255,11 @@ class CutAndSplicePairing(OffspringCreator):
 
                 cell = a_copy.get_cell()
                 for i in range(self.number_of_variable_cell_vectors):
-                    r = random()
+                    r = np.random.random()
                     cond1 = i == cut_n and r < self.p1
                     cond2 = i != cut_n and r < self.p2
                     if cond1 or cond2:
-                        a_copy.positions += random() * cell[i]
+                        a_copy.positions += np.random.random() * cell[i]
 
                 if self.use_tags:
                     # For correct determination of the center-
@@ -378,12 +377,13 @@ class CutAndSplicePairing(OffspringCreator):
 
             # While we have too few of the given atom type
             while len(used) < types[s]:
-                used.append(not_used.pop(randrange(0, len(not_used))))
+                index = np.random.randint(len(not_used))
+                used.append(not_used.pop(index))
 
             # While we have too many of the given atom type
             while len(used) > types[s]:
                 # remove randomly:
-                index = randrange(0, len(used))
+                index = np.random.randint(len(used))
                 not_used.append(used.pop(index))
 
             use_total[s] = used
@@ -416,7 +416,7 @@ class CutAndSplicePairing(OffspringCreator):
         else:
             found = False
             while not found:
-                r = random()
+                r = np.random.random()
                 newcell = r * cell1 + (1 - r) * cell2
                 vol = abs(np.linalg.det(newcell))
                 scaling = v_ref / vol

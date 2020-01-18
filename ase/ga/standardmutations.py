@@ -1,7 +1,6 @@
 """ A collection of mutations that can be used. """
 
 import numpy as np
-from random import random, gauss
 from math import cos, sin, pi
 from ase.build import niggli_reduce
 from ase.calculators.lammpslib import convert_cell
@@ -262,8 +261,8 @@ class MirrorMutation(OffspringCreator):
             cm = np.average(top.get_positions(), axis=0)
 
             # first select a randomly oriented cutting plane
-            theta = pi * random()
-            phi = 2. * pi * random()
+            theta = pi * np.random.random()
+            phi = 2. * pi * np.random.random()
             n = (cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta))
             n = np.array(n)
 
@@ -452,10 +451,11 @@ class StrainMutation(OffspringCreator):
             strain = np.identity(3)
             for i in range(self.number_of_variable_cell_vectors):
                 for j in range(i + 1):
+                    r = np.random.normal(loc=0., scale=self.stddev)
                     if i == j:
-                        strain[i, j] += gauss(0, self.stddev)
+                        strain[i, j] += r
                     else:
-                        epsilon = 0.5 * gauss(0, self.stddev)
+                        epsilon = 0.5 * r
                         strain[i, j] += epsilon
                         strain[j, i] += epsilon
 

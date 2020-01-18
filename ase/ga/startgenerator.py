@@ -1,6 +1,5 @@
 """Tools for generating new random starting candidates."""
 import numpy as np
-from random import shuffle, random, choice
 from ase import Atoms
 from ase.data import atomic_numbers
 from ase.build import molecule
@@ -218,7 +217,7 @@ class StartGenerator(object):
         pbc = self.slab.get_pbc()
 
         # Choose cell splitting
-        r = random()
+        r = np.random.random()
         cumprob = 0
         for split, prob in self.splits.items():
             cumprob += prob
@@ -230,7 +229,7 @@ class StartGenerator(object):
         directions = [i for i in range(3) if pbc[i]]
         repeat = [1, 1, 1]
         for number in split:
-            d = choice(directions)
+            d = np.random.choice(directions)
             repeat[d] = number
         repeat = tuple(repeat)
 
@@ -268,8 +267,8 @@ class StartGenerator(object):
 
         # Shuffle the ordering so different blocks
         # are added in random order
-        order = list(range(N_blocks))
-        shuffle(order)
+        order = np.arange(N_blocks)
+        np.random.shuffle(order)
         blocks = [blocks[i] for i in order]
         ids = np.array(ids)[order]
 
@@ -438,7 +437,7 @@ class StartGenerator(object):
                 cell[i, i] *= repeat[i]
                 for j in range(i):
                     # off-diagonal values
-                    cell[i, j] = (random() - 0.5) * cell[i - 1, i - 1]
+                    cell[i, j] = (np.random.random() - 0.5) * cell[i - 1, i - 1]
 
             # volume scaling
             for i in range(self.number_of_variable_cell_vectors, 3):
