@@ -1,17 +1,11 @@
-"""Mutation operations intended for bulk structures.
-If you find this implementation useful in your work,
-please consider citing:
-    M. Van den Bossche, Henrik Gronbeck, B. Hammer,
-    J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
-in addition to the papers mentioned in the docstrings."""
+"""Soft-mutation operator and associated tools"""
 import inspect
 import json
 import numpy as np
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 from ase.ga.offspring_creator import OffspringCreator
-from ase.ga.utilities import (atoms_too_close,
-                              gather_atoms_by_tag)
+from ase.ga.utilities import atoms_too_close, gather_atoms_by_tag
 from scipy.spatial.distance import cdist
 
 
@@ -193,6 +187,12 @@ class SoftMutation(OffspringCreator):
     As in the reference above, the next-lowest mode is used if the
     structure has already been softmutated along the current-lowest
     mode.
+
+    If you find this implementation useful in your work,
+    please consider citing:
+        M. Van den Bossche, Henrik Gronbeck, B. Hammer,
+        J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
+    in addition to the paper mentioned above.
 
     Parameters:
 
