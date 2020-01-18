@@ -20,31 +20,33 @@ params = {}
 params['pair_style'] = 'eam'
 params['pair_coeff'] = ['1 1 {}'.format(pot_fn)]
 
-calc = LAMMPS(specorder=['Pt'], files=[pot_fn], **params)
-slab.set_calculator(calc)
+with LAMMPS(specorder=['Pt'], files=[pot_fn], **params) as calc:
+    slab.set_calculator(calc)
 
-assert_allclose(slab.get_potential_energy(), -110.3455014595596,
-                atol=1e-4, rtol=1e-4)
+    assert_allclose(slab.get_potential_energy(), -110.3455014595596,
+                    atol=1e-4, rtol=1e-4)
 
-params['group'] = ['lower_atoms id '
-                   + ' '.join([str(i+1) for i,
-                              tag in enumerate(slab.get_tags()) if tag >= 4])]
-params['fix'] = ['freeze_lower_atoms lower_atoms setforce 0.0 0.0 0.0']
-params['run'] = 100
-params['timestep'] = 0.0005
-params['dump_period'] = 10
-params['write_velocities'] = True
-calc.parameters = params
-# set_atoms=True to read final coordinates and velocities after NVE simulation
-calc.run(set_atoms=True)
+    params['group'] = ['lower_atoms id '
+                       + ' '.join([str(i+1) for i,
+                                  tag in enumerate(slab.get_tags())
+                                   if tag >= 4])]
+    params['fix'] = ['freeze_lower_atoms lower_atoms setforce 0.0 0.0 0.0']
+    params['run'] = 100
+    params['timestep'] = 0.0005
+    params['dump_period'] = 10
+    params['write_velocities'] = True
+    calc.parameters = params
+    # set_atoms=True to read final coordinates and velocities after
+    # NVE simulation
+    calc.run(set_atoms=True)
 
-new_slab = calc.atoms.copy()
+    new_slab = calc.atoms.copy()
 
-Ek = calc.atoms.copy().get_kinetic_energy()
-assert_allclose(Ek, 0.1014556059885532, atol=1e-4, rtol=1e-4)
-assert_allclose(Ek, calc.thermo_content[-1]['ke'],
-                atol=1e-4, rtol=1e-4)
-assert_allclose(slab.get_potential_energy(), -110.4469605087525,
-                atol=1e-4, rtol=1e-4)
+    Ek = calc.atoms.copy().get_kinetic_energy()
+    assert_allclose(Ek, 0.1014556059885532, atol=1e-4, rtol=1e-4)
+    assert_allclose(Ek, calc.thermo_content[-1]['ke'],
+                    atol=1e-4, rtol=1e-4)
+    assert_allclose(slab.get_potential_energy(), -110.4469605087525,
+                    atol=1e-4, rtol=1e-4)
 
-os.remove(pot_fn)
+    os.remove(pot_fn)
