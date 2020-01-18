@@ -1,7 +1,6 @@
 """A collection of mutations that can be used."""
 import numpy as np
 from math import cos, sin, pi
-from ase.build import niggli_reduce
 from ase.calculators.lammpslib import convert_cell
 from ase.ga.utilities import (atoms_too_close,
                               atoms_too_close_two_sets,
@@ -450,7 +449,7 @@ class StrainMutation(OffspringCreator):
         """ Does the actual mutation. """
         cell_ref = atoms.get_cell()
         pos_ref = atoms.get_positions()
-        vol = atoms.get_volume()
+
         if self.use_tags:
             tags = atoms.get_tags()
             gather_atoms_by_tag(atoms)
