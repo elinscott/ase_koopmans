@@ -408,7 +408,7 @@ class StrainMutation(OffspringCreator):
         """
         if not n_adapt:
             # if not set, take best 20% of the population
-            n_adapt = int(round(0.2 * len(population)))
+            n_adapt = int(np.ceil(0.2 * len(population)))
         v_new = np.mean([a.get_volume() for a in population[:n_adapt]])
 
         if not self.scaling_volume:
