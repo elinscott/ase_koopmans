@@ -1,5 +1,4 @@
-""" A collection of mutations that can be used. """
-
+"""A collection of mutations that can be used."""
 import numpy as np
 from math import cos, sin, pi
 from ase.build import niggli_reduce
@@ -13,23 +12,29 @@ from ase import Atoms
 
 
 class RattleMutation(OffspringCreator):
-    """ An implementation of the rattle mutation as described in
-        R.L. Johnston Dalton Transactions, Vol. 22,
-        No. 22. (2003), pp. 4193-4207
+    """An implementation of the rattle mutation as described in:
 
-        Parameters:
+    R.L. Johnston Dalton Transactions, Vol. 22,
+    No. 22. (2003), pp. 4193-4207
 
-        blmin: Dictionary defining the minimum distance between atoms
+    Parameters:
+
+    blmin: Dictionary defining the minimum distance between atoms
         after the rattle.
-        n_top: Number of atoms optimized by the GA.
-        rattle_strength: Strength with which the atoms are moved.
-        rattle_prop: The probability with which each atom is rattled.
-        test_dist_to_slab: whether to also make sure that the distances
-                  between the atoms and the slab satisfy the blmin.
-        use_tags: if True, the atomic tags will be used to preserve
-                  molecular identity. Same-tag atoms will then be
-                  displaced collectively, so that the internal
-                  geometry is preserved.
+
+    n_top: Number of atoms optimized by the GA.
+
+    rattle_strength: Strength with which the atoms are moved.
+
+    rattle_prop: The probability with which each atom is rattled.
+
+    test_dist_to_slab: whether to also make sure that the distances
+        between the atoms and the slab satisfy the blmin.
+
+    use_tags: if True, the atomic tags will be used to preserve
+        molecular identity. Same-tag atoms will then be
+        displaced collectively, so that the internal
+        geometry is preserved.
     """
     def __init__(self, blmin, n_top, rattle_strength=0.8,
                  rattle_prop=0.4, test_dist_to_slab=True, use_tags=False,
@@ -41,6 +46,7 @@ class RattleMutation(OffspringCreator):
         self.rattle_prop = rattle_prop
         self.test_dist_to_slab = test_dist_to_slab
         self.use_tags = use_tags
+
         self.descriptor = 'RattleMutation'
         self.min_inputs = 1
 
@@ -50,14 +56,14 @@ class RattleMutation(OffspringCreator):
         indi = self.mutate(f)
         if indi is None:
             return indi, 'mutation: rattle'
-            
+
         indi = self.initialize_individual(f, indi)
         indi.info['data']['parents'] = [f.info['confid']]
 
         return self.finalize_individual(indi), 'mutation: rattle'
 
     def mutate(self, atoms):
-        """ Does the actual mutation. """
+        """Does the actual mutation."""
         N = len(atoms) if self.n_top is None else self.n_top
         slab = atoms[:len(atoms) - N]
         atoms = atoms[-N:]
@@ -98,26 +104,29 @@ class RattleMutation(OffspringCreator):
         mutant = slab + top
         return mutant
 
-        
+
 class PermutationMutation(OffspringCreator):
     """Mutation that permutes a percentage of the atom types in the cluster.
 
-       Parameters:
+    Parameters:
 
-       n_top: Number of atoms optimized by the GA.
-       probability: The probability with which an atom is permuted.
-       test_dist_to_slab: whether to also make sure that the distances
-                 between the atoms and the slab satisfy the blmin.
-       use_tags: if True, the atomic tags will be used to preserve
-                 molecular identity. Permutations will then happen
-                 at the molecular level, i.e. swapping the center-of-
-                 positions of two moieties while preserving their
-                 internal geometries.
-       blmin:  Dictionary defining the minimum distance between atoms
-               after the permutation. If equal to None (the default),
-               no such check is performed.
+    n_top: Number of atoms optimized by the GA.
+
+    probability: The probability with which an atom is permuted.
+
+    test_dist_to_slab: whether to also make sure that the distances
+        between the atoms and the slab satisfy the blmin.
+
+    use_tags: if True, the atomic tags will be used to preserve
+        molecular identity. Permutations will then happen
+        at the molecular level, i.e. swapping the center-of-
+        positions of two moieties while preserving their
+        internal geometries.
+
+    blmin: Dictionary defining the minimum distance between atoms
+        after the permutation. If equal to None (the default),
+        no such check is performed.
     """
-
     def __init__(self, n_top, probability=0.33, test_dist_to_slab=True,
                  use_tags=False, blmin=None, verbose=False):
         OffspringCreator.__init__(self, verbose)
@@ -126,6 +135,7 @@ class PermutationMutation(OffspringCreator):
         self.test_dist_to_slab = test_dist_to_slab
         self.use_tags = use_tags
         self.blmin = blmin
+
         self.descriptor = 'PermutationMutation'
         self.min_inputs = 1
 
@@ -135,14 +145,14 @@ class PermutationMutation(OffspringCreator):
         indi = self.mutate(f)
         if indi is None:
             return indi, 'mutation: permutation'
-            
+
         indi = self.initialize_individual(f, indi)
         indi.info['data']['parents'] = [f.info['confid']]
 
         return self.finalize_individual(indi), 'mutation: permutation'
 
     def mutate(self, atoms):
-        """ Does the actual mutation. """
+        """Does the actual mutation."""
         N = len(atoms) if self.n_top is None else self.n_top
         slab = atoms[:len(atoms) - N]
         atoms = atoms[-N:]
@@ -203,24 +213,28 @@ class PermutationMutation(OffspringCreator):
 
 
 class MirrorMutation(OffspringCreator):
-    """ A mirror mutation, as described in
-        TO BE PUBLISHED.
-        This mutation mirrors half of the cluster in a
-        randomly oriented cutting plane discarding the other half.
+    """A mirror mutation, as described in
+    TO BE PUBLISHED.
 
-        Parameters:
-        blmin: Dictionary defining the minimum allowed
+    This mutation mirrors half of the cluster in a
+    randomly oriented cutting plane discarding the other half.
+
+    Parameters:
+
+    blmin: Dictionary defining the minimum allowed
         distance between atoms.
-        n_top: Number of atoms the GA optimizes.
-        reflect: Defines if the mirrored half is also reflected
-        perpendicular to the mirroring plane.
 
+    n_top: Number of atoms the GA optimizes.
+
+    reflect: Defines if the mirrored half is also reflected
+        perpendicular to the mirroring plane.
     """
     def __init__(self, blmin, n_top, reflect=False, verbose=False):
         OffspringCreator.__init__(self, verbose)
         self.blmin = blmin
         self.n_top = n_top
         self.reflect = reflect
+
         self.descriptor = 'MirrorMutation'
         self.min_inputs = 1
 
@@ -230,7 +244,7 @@ class MirrorMutation(OffspringCreator):
         indi = self.mutate(f)
         if indi is None:
             return indi, 'mutation: mirror'
-            
+
         indi = self.initialize_individual(f, indi)
         indi.info['data']['parents'] = [f.info['confid']]
 
@@ -238,7 +252,6 @@ class MirrorMutation(OffspringCreator):
 
     def mutate(self, atoms):
         """ Do the mutation of the atoms input. """
-
         reflect = self.reflect
         tc = True
         slab = atoms[0:len(atoms) - self.n_top]
@@ -248,7 +261,7 @@ class MirrorMutation(OffspringCreator):
         nu = dict()
         for u in unique_types:
             nu[u] = sum(num == u)
-            
+
         n_tries = 1000
         counter = 0
         changed = False
@@ -327,14 +340,18 @@ class MirrorMutation(OffspringCreator):
 
             # Finally we check that nothing is too close in the end product.
             cand = Atoms(num, p_use, cell=slab.get_cell(), pbc=slab.get_pbc())
+
             tc = atoms_too_close(cand, self.blmin)
             if tc:
                 continue
             tc = atoms_too_close_two_sets(slab, cand, self.blmin)
+
             if not changed and counter > n_tries // 2:
                 reflect = not reflect
                 changed = True
+
             tot = slab + cand
+
         if counter == n_tries:
             return None
         return tot
@@ -362,16 +379,16 @@ class StrainMutation(OffspringCreator):
     Parameters:
 
     blmin: dict
-           The closest allowed interatomic distances on the form:
-           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
+        The closest allowed interatomic distances on the form:
+        {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
 
     cellbounds: ase.ga.bulk_utilities.CellBounds instance
-                Describing limits on the cell shape, see
-                :class:`~ase.ga.bulk_utilities.CellBounds`.
+        Describes limits on the cell shape, see
+        :class:`~ase.ga.bulk_utilities.CellBounds`.
 
     stddev: float
-            Standard deviation used in the generation of the
-            strain matrix elements.
+        Standard deviation used in the generation of the
+        strain matrix elements.
 
     number_of_variable_cell_vectors: int (default 3)
         The number of variable cell vectors (1, 2 or 3).
@@ -381,9 +398,8 @@ class StrainMutation(OffspringCreator):
         case, etc.
 
     use_tags: boolean
-              Whether to use the atomic tags to preserve molecular identity.
+        Whether to use the atomic tags to preserve molecular identity.
     """
-
     def __init__(self, blmin, cellbounds=None, stddev=0.7,
                  number_of_variable_cell_vectors=3, use_tags=False,
                  verbose=False):
@@ -402,6 +418,7 @@ class StrainMutation(OffspringCreator):
         """Function to initialize or update the scaling volume in a GA run.
 
         w_adapt: weight of the new vs the old scaling volume
+
         n_adapt: number of best candidates in the population that
                  are used to calculate the new scaling volume
         """
@@ -508,7 +525,7 @@ class StrainMutation(OffspringCreator):
 
 
 class PermuStrainMutation(CombinationMutation):
-    """ Combination of PermutationMutation and StrainMutation.
+    """Combination of PermutationMutation and StrainMutation.
 
     For more information, see also:
 
@@ -519,12 +536,11 @@ class PermuStrainMutation(CombinationMutation):
     Parameters:
 
     permutationmutation: OffspringCreator instance
-                         A mutation that permutes atom types.
+        A mutation that permutes atom types.
 
     strainmutation: OffspringCreator instance
-                    A mutation that mutates by straining.
+        A mutation that mutates by straining.
     """
-
     def __init__(self, permutationmutation, strainmutation, verbose=False):
         super(PermuStrainMutation, self).__init__(permutationmutation,
                                                   strainmutation,
@@ -533,9 +549,10 @@ class PermuStrainMutation(CombinationMutation):
 
 
 class RotationalMutation(OffspringCreator):
-    """ Mutates a candidate by applying random rotations
+    """Mutates a candidate by applying random rotations
     to multi-atom moieties in the structure (atoms with
     the same tag are considered part of one such moiety).
+
     Only performs whole-molecule rotations, no internal
     rotations.
 
@@ -549,28 +566,27 @@ class RotationalMutation(OffspringCreator):
     Parameters:
 
     blmin: dict
-           The closest allowed interatomic distances on the form:
-           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
+        The closest allowed interatomic distances on the form:
+        {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
 
     n_top: int or None
-           The number of atoms to optimize (None = include all).
+        The number of atoms to optimize (None = include all).
 
     fraction: float
-              Fraction of the moieties to be rotated.
+        Fraction of the moieties to be rotated.
 
     tags: None or list of integers
-          Specifies, respectively, whether all moieties or only those
-          with matching tags are eligible for rotation.
+        Specifies, respectively, whether all moieties or only those
+        with matching tags are eligible for rotation.
 
     min_angle: float
-               Minimal angle (in radians) for each rotation;
-               should lie in the interval [0, pi].
+        Minimal angle (in radians) for each rotation;
+        should lie in the interval [0, pi].
 
     test_dist_to_slab: boolean
-                       Whether also the distances to the slab
-                       should be checked to satisfy the blmin.
+        Whether also the distances to the slab
+        should be checked to satisfy the blmin.
     """
-
     def __init__(self, blmin, n_top=None, fraction=0.33, tags=None,
                  min_angle=1.57, test_dist_to_slab=True, verbose=False):
         OffspringCreator.__init__(self, verbose)
@@ -596,7 +612,7 @@ class RotationalMutation(OffspringCreator):
         return self.finalize_individual(indi), 'mutation: rotational'
 
     def mutate(self, atoms):
-        """ Does the actual mutation. """
+        """Does the actual mutation."""
         N = len(atoms) if self.n_top is None else self.n_top
         slab = atoms[:len(atoms) - N]
         atoms = atoms[-N:]
@@ -661,17 +677,16 @@ class RotationalMutation(OffspringCreator):
 
 
 class RattleRotationalMutation(CombinationMutation):
-    """ Combination of RattleMutation and RotationalMutation.
+    """Combination of RattleMutation and RotationalMutation.
 
     Parameters:
 
     rattlemutation: OffspringCreator instance
-                    A mutation that rattles atoms.
+        A mutation that rattles atoms.
 
     rotationalmutation: OffspringCreator instance
-                        A mutation that rotates moieties.
+        A mutation that rotates moieties.
     """
-
     def __init__(self, rattlemutation, rotationalmutation, verbose=False):
         super(RattleRotationalMutation, self).__init__(rattlemutation,
                                                        rotationalmutation,

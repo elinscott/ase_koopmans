@@ -1,4 +1,4 @@
-""" Various utility methods used troughout the GA. """
+"""Various utility methods used troughout the GA."""
 import os
 import time
 import math
@@ -12,8 +12,8 @@ from ase.ga import get_neighbor_list
 
 
 def closest_distances_generator(atom_numbers, ratio_of_covalent_radii):
-    """ Generates the blmin dict used across the GA.
-        The distances are based on the covalent radii of the atoms.
+    """Generates the blmin dict used across the GA.
+    The distances are based on the covalent radii of the atoms.
     """
     cr = covalent_radii
     ratio = ratio_of_covalent_radii
@@ -31,10 +31,10 @@ def closest_distances_generator(atom_numbers, ratio_of_covalent_radii):
 
 
 def get_mic_distance(p1, p2, cell, pbc):
-    """ This method calculates the shortest distance between p1 and p2
-         through the cell boundaries defined by cell and pbc.
-         This method works for reasonable unit cells, but not for extremely
-         elongated ones.
+    """This method calculates the shortest distance between p1 and p2
+    through the cell boundaries defined by cell and pbc.
+    This method works for reasonable unit cells, but not for extremely
+    elongated ones.
     """
     ct = cell.T
     pos = np.array((p1, p2))
@@ -55,10 +55,10 @@ def get_mic_distance(p1, p2, cell, pbc):
 
 
 def db_call_with_error_tol(db_cursor, expression, args=[]):
-    """ In case the GA is used on older versions of networking
-         filesystems there might be some delays. For this reason
-         some extra error tolerance when calling the SQLite db is
-         employed.
+    """In case the GA is used on older versions of networking
+    filesystems there might be some delays. For this reason
+    some extra error tolerance when calling the SQLite db is
+    employed.
     """
     import sqlite3
     i = 0
@@ -75,9 +75,9 @@ def db_call_with_error_tol(db_cursor, expression, args=[]):
 
 
 def save_trajectory(confid, trajectory, folder):
-    """ Saves traj files to the database folder.
-         This method should never be used directly,
-         but only through the DataConnection object.
+    """Saves traj files to the database folder.
+    This method should never be used directly,
+    but only through the DataConnection object.
     """
     fname = os.path.join(folder, 'traj%05d.traj' % confid)
     write(fname, trajectory)
@@ -85,7 +85,7 @@ def save_trajectory(confid, trajectory, folder):
 
 
 def get_trajectory(fname):
-    """ Extra error tolerance when loading traj files. """
+    """Extra error tolerance when loading traj files."""
     fname = str(fname)
     try:
         t = read(fname)
@@ -95,8 +95,8 @@ def get_trajectory(fname):
 
 
 def gather_atoms_by_tag(atoms):
-    """ Translates same-tag atoms so that they lie 'together',
-        with distance vectors as in the minimum image convention. """
+    """Translates same-tag atoms so that they lie 'together',
+    with distance vectors as in the minimum image convention."""
     tags = atoms.get_tags()
     pos = atoms.get_positions()
     for tag in list(set(tags)):
@@ -110,20 +110,21 @@ def gather_atoms_by_tag(atoms):
 
 
 def atoms_too_close(atoms, bl, use_tags=False):
-    """ Checks if any atoms in a are too close, as defined by
-        the distances in the bl dictionary.
+    """Checks if any atoms in a are too close, as defined by
+    the distances in the bl dictionary.
 
-        use_tags: whether to use the Atoms tags to disable distance
-                  checking within a set of atoms with the same tag.
+    use_tags: whether to use the Atoms tags to disable distance
+        checking within a set of atoms with the same tag.
 
-        Note: if certain atoms are constrained and use_tags is True,
-        this method may return unexpected results in case the
-        contraints prevent same-tag atoms to be gathered together in
-        the minimum-image-convention. In such cases, one should
-        (1) release the relevant constraints,
-        (2) apply the gather_atoms_by_tag function, and
-        (3) re-apply the constraints, before using the
-            atoms_too_close function. """
+    Note: if certain atoms are constrained and use_tags is True,
+    this method may return unexpected results in case the
+    contraints prevent same-tag atoms to be gathered together in
+    the minimum-image-convention. In such cases, one should
+    (1) release the relevant constraints,
+    (2) apply the gather_atoms_by_tag function, and
+    (3) re-apply the constraints, before using the
+        atoms_too_close function.
+    """
     a = atoms.copy()
     if use_tags:
         gather_atoms_by_tag(a)
@@ -166,7 +167,7 @@ def atoms_too_close(atoms, bl, use_tags=False):
 
 def atoms_too_close_two_sets(a, b, bl):
     """Checks if any atoms in a are too close to an atom in b,
-       as defined by the bl dictionary."""
+    as defined by the bl dictionary."""
     pbc_a = a.get_pbc()
     pbc_b = b.get_pbc()
     cell_a = a.get_cell()
@@ -205,9 +206,10 @@ def atoms_too_close_two_sets(a, b, bl):
 
 
 def get_all_atom_types(slab, atom_numbers_to_optimize):
-    """ Utility method used to extract all unique atom types
-        from the atoms object slab and the list of atomic numbers
-        atom_numbers_to_optimize. """
+    """Utility method used to extract all unique atom types
+    from the atoms object slab and the list of atomic numbers
+    atom_numbers_to_optimize.
+    """
     from_slab = list(set(slab.numbers))
     from_top = list(set(atom_numbers_to_optimize))
     from_slab.extend(from_top)
@@ -215,12 +217,14 @@ def get_all_atom_types(slab, atom_numbers_to_optimize):
 
 
 def get_distance_matrix(atoms, self_distance=1000):
-    """ NB: This function is way slower than atoms.get_all_distances()
-        Returns a numpy matrix with the distances between the atoms
-        in the supplied atoms object, with the indices of the matrix
-        corresponding to the indices in the atoms object.
-        The parameter self_distance will be put in the diagonal
-        elements ([i][i])
+    """NB: This function is way slower than atoms.get_all_distances()
+
+    Returns a numpy matrix with the distances between the atoms
+    in the supplied atoms object, with the indices of the matrix
+    corresponding to the indices in the atoms object.
+
+    The parameter self_distance will be put in the diagonal
+    elements ([i][i])
     """
     dm = np.zeros([len(atoms), len(atoms)])
     for i in range(len(atoms)):
@@ -234,8 +238,7 @@ def get_distance_matrix(atoms, self_distance=1000):
 
 def get_rdf(atoms, rmax, nbins, distance_matrix=None,
             elements=None, no_dists=False):
-    """
-    Returns two numpy arrays; the radial distribution function
+    """Returns two numpy arrays; the radial distribution function
     and the corresponding distances of the supplied atoms object.
     If no_dists = True then only the first array is returned.
 
@@ -319,9 +322,9 @@ def get_rdf(atoms, rmax, nbins, distance_matrix=None,
 
 
 def get_nndist(atoms, distance_matrix):
-    """
-    Returns an estimate of the nearest neighbor bond distance
+    """Returns an estimate of the nearest neighbor bond distance
     in the supplied atoms object given the supplied distance_matrix.
+
     The estimate comes from the first peak in the radial distribution
     function.
     """
@@ -332,8 +335,7 @@ def get_nndist(atoms, distance_matrix):
 
 
 def get_nnmat(atoms, mic=False):
-    """
-    Calculate the nearest neighbor matrix as specified in
+    """Calculate the nearest neighbor matrix as specified in
     S. Lysgaard et al., Top. Catal., 2014, 57 (1-4), pp 33-39
 
     Returns an array of average numbers of nearest neighbors
@@ -383,8 +385,7 @@ def get_nnmat_string(atoms, decimals=2, mic=False):
 
 
 def get_connections_index(atoms, max_conn=5, no_count_types=None):
-    """
-    This method returns a dictionary where each key value are a
+    """This method returns a dictionary where each key value are a
     specific number of neighbors and list of atoms indices with
     that amount of neighbors respectively. The method utilizes the
     neighbor list and hence inherit the restrictions for
@@ -426,8 +427,7 @@ def get_connections_index(atoms, max_conn=5, no_count_types=None):
 
 
 def get_atoms_connections(atoms, max_conn=5, no_count_types=None):
-    """
-    This method returns a list of the numbers of atoms
+    """This method returns a list of the numbers of atoms
     with X number of neighbors. The method utilizes the
     neighbor list and hence inherit the restrictions for
     neighbors. Option added to remove connections between
@@ -444,8 +444,7 @@ def get_atoms_connections(atoms, max_conn=5, no_count_types=None):
 
 
 def get_angles_distribution(atoms, ang_grid=9):
-    """
-    Method to get the distribution of bond angles
+    """Method to get the distribution of bond angles
     in bins (default 9) with bonds defined from
     the get_neighbor_list().
     """
@@ -471,8 +470,7 @@ def get_angles_distribution(atoms, ang_grid=9):
 
 
 def get_neighborlist(atoms, dx=0.2, no_count_types=None):
-    """
-    Method to get the a dict with list of neighboring
+    """Method to get the a dict with list of neighboring
     atoms defined as the two covalent radii + fixed distance.
     Option added to remove neighbors between defined atom types.
     """
@@ -504,8 +502,7 @@ def get_neighborlist(atoms, dx=0.2, no_count_types=None):
 
 def get_atoms_distribution(atoms, number_of_bins=5, max_distance=8,
                            center=None, no_count_types=None):
-    """
-    Method to get the distribution of atoms in the
+    """Method to get the distribution of atoms in the
     structure in bins of distances from a defined
     center. Option added to remove counting of
     certain atom types.
@@ -538,8 +535,7 @@ def get_atoms_distribution(atoms, number_of_bins=5, max_distance=8,
 
 
 def get_rings(atoms, rings=[5, 6, 7]):
-    """
-    This method return a list of the number of atoms involved
+    """This method return a list of the number of atoms involved
     in rings in the structures. It uses the neighbor
     list hence inherit the restriction used for neighbors.
     """

@@ -10,9 +10,9 @@ from scipy.spatial.distance import cdist
 
 
 class TagFilter:
-    ''' Filter which constrains same-tag atoms to behave
-        like internally rigid moieties '''
-
+    """Filter which constrains same-tag atoms to behave
+    like internally rigid moieties.
+    """
     def __init__(self, atoms):
         self.atoms = atoms
         gather_atoms_by_tag(self.atoms)
@@ -59,9 +59,9 @@ class TagFilter:
 
 
 class PairwiseHarmonicPotential:
-    """ Parent class for interatomic potentials of the type
-        E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2 """
-
+    """Parent class for interatomic potentials of the type
+    E(r_ij) = 0.5 * k_ij * (r_ij - r0_ij) ** 2
+    """
     def __init__(self, atoms, rcut=10.):
         self.atoms = atoms
         self.pos0 = atoms.get_positions()
@@ -101,8 +101,9 @@ class PairwiseHarmonicPotential:
 
 
 def get_number_of_valence_electrons(Z):
-    """ Return the number of valence electrons for the element with
-        atomic number Z, simply based on its periodic table group """
+    """Return the number of valence electrons for the element with
+    atomic number Z, simply based on its periodic table group.
+    """
     groups = [[], [1, 3, 11, 19, 37, 55, 87], [2, 4, 12, 20, 38, 56, 88],
               [21, 39, 57, 89]]
 
@@ -123,18 +124,17 @@ def get_number_of_valence_electrons(Z):
 
 
 class BondElectroNegativityModel(PairwiseHarmonicPotential):
-    """ Pairwise harmonic potential where the force constants are
-        determined using the "bond electronegativity" model, see:
+    """Pairwise harmonic potential where the force constants are
+    determined using the "bond electronegativity" model, see:
 
-      * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
+    * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
 
-        __ https://dx.doi.org/10.1016/j.cpc.2010.06.007
+      __ https://dx.doi.org/10.1016/j.cpc.2010.06.007
 
-      * `Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103`__
+    * `Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103`__
 
-        __ https://dx.doi.org/10.1103/PhysRevB.84.092103
+      __ https://dx.doi.org/10.1103/PhysRevB.84.092103
     """
-
     def calculate_force_constants(self):
         cell = self.atoms.get_cell()
         pos = self.atoms.get_positions()
@@ -176,9 +176,8 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
 
 
 class SoftMutation(OffspringCreator):
-    """
-    Mutates the structure by displacing it along the lowest (nonzero)
-    frequency modes found by vibrational analysis, as in:
+    """Mutates the structure by displacing it along the lowest
+    (nonzero) frequency modes found by vibrational analysis, as in:
 
     * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
 
@@ -197,43 +196,42 @@ class SoftMutation(OffspringCreator):
     Parameters:
 
     blmin: dict
-           The closest allowed interatomic distances on the form:
-           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
+        The closest allowed interatomic distances on the form:
+        {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
 
     bounds: list
-            Lower and upper limits (in Angstrom) for the largest
-            atomic displacement in the structure. For a given mode,
-            the algorithm starts at zero amplitude and increases
-            it until either blmin is violated or the largest
-            displacement exceeds the provided upper bound).
-            If the largest displacement in the resulting structure
-            is lower than the provided lower bound, the mutant is
-            considered too similar to the parent and None is
-            returned.
+        Lower and upper limits (in Angstrom) for the largest
+        atomic displacement in the structure. For a given mode,
+        the algorithm starts at zero amplitude and increases
+        it until either blmin is violated or the largest
+        displacement exceeds the provided upper bound).
+        If the largest displacement in the resulting structure
+        is lower than the provided lower bound, the mutant is
+        considered too similar to the parent and None is
+        returned.
 
     calculator: ASE calculator object
-                The calculator to be used in the vibrational
-                analysis. The default is to use a calculator
-                based on pairwise harmonic potentials with force
-                constants from the "bond electronegativity"
-                model described in the reference above.
-                Any calculator with a working :func:`get_forces()`
-                method will work.
+        The calculator to be used in the vibrational
+        analysis. The default is to use a calculator
+        based on pairwise harmonic potentials with force
+        constants from the "bond electronegativity"
+        model described in the reference above.
+        Any calculator with a working :func:`get_forces()`
+        method will work.
 
     rcut: float
-          Cutoff radius in Angstrom for the pairwise harmonic
-          potentials.
+        Cutoff radius in Angstrom for the pairwise harmonic
+        potentials.
 
     used_modes_file: str or None
-                     Name of json dump file where previously used
-                     modes will be stored (and read). If None,
-                     no such file will be used. Default is to use
-                     the filename 'used_modes.json'.
+        Name of json dump file where previously used
+        modes will be stored (and read). If None,
+        no such file will be used. Default is to use
+        the filename 'used_modes.json'.
 
     use_tags: boolean
-              Whether to use the atomic tags to preserve molecular identity.
+        Whether to use the atomic tags to preserve molecular identity.
     """
-
     def __init__(self, blmin, bounds=[0.5, 2.0],
                  calculator=BondElectroNegativityModel, rcut=10.,
                  used_modes_file='used_modes.json', use_tags=False,
@@ -256,8 +254,7 @@ class SoftMutation(OffspringCreator):
                 pass
 
     def _get_hessian(self, atoms, dx):
-        """
-        Returns the Hessian matrix d2E/dxi/dxj using a first-order
+        """Returns the Hessian matrix d2E/dxi/dxj using a first-order
         central difference scheme with displacements dx.
         """
         N = len(atoms)
@@ -308,14 +305,14 @@ class SoftMutation(OffspringCreator):
         return animation
 
     def read_used_modes(self, filename):
-        """ Read used modes from json file. """
+        """Read used modes from json file."""
         with open(filename, 'r') as f:
             modes = json.load(f)
             self.used_modes = {int(k): modes[k] for k in modes}
         return
 
     def write_used_modes(self, filename):
-        """ Dump used modes to json file. """
+        """Dump used modes to json file."""
         with open(filename, 'w') as f:
             json.dump(self.used_modes, f)
         return
@@ -333,7 +330,7 @@ class SoftMutation(OffspringCreator):
         return self.finalize_individual(indi), 'mutation: soft'
 
     def mutate(self, atoms):
-        """ Does the actual mutation. """
+        """Does the actual mutation."""
         a = atoms.copy()
 
         if inspect.isclass(self.calc):
