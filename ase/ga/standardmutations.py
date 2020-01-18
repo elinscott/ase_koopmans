@@ -1,12 +1,14 @@
 """ A collection of mutations that can be used. """
 
 import numpy as np
-from random import random
+from random import random, gauss
 from math import cos, sin, pi
+from ase.build import niggli_reduce
 from ase.ga.utilities import (atoms_too_close,
                               atoms_too_close_two_sets,
-                              gather_atoms_by_tag)
-from ase.ga.offspring_creator import OffspringCreator
+                              gather_atoms_by_tag,
+                              get_rotation_matrix)
+from ase.ga.offspring_creator import OffspringCreator, CombinationMutation
 from ase import Atoms
 
 
@@ -336,3 +338,317 @@ class MirrorMutation(OffspringCreator):
         if counter == n_tries:
             return None
         return tot
+
+
+class StrainMutation(OffspringCreator):
+    """ Mutates a candidate by applying a randomly generated strain.
+
+    For more information, see also:
+
+      * `Glass, Oganov, Hansen, Comp. Phys. Comm. 175 (2006) 713-720`__
+
+        __ https://doi.org/10.1016/j.cpc.2006.07.020
+
+      * `Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387`__
+
+        __ https://doi.org/10.1016/j.cpc.2010.07.048
+
+    After initialization of the mutation, a scaling volume
+    (to which each mutated structure is scaled before checking the
+    constraints) is typically generated from the population,
+    which is then also occasionally updated in the course of the
+    GA run.
+
+    Parameters:
+
+    blmin: dict
+           The closest allowed interatomic distances on the form:
+           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
+
+    cellbounds: ase.ga.bulk_utilities.CellBounds instance
+                Describing limits on the cell shape, see
+                :class:`~ase.ga.bulk_utilities.CellBounds`.
+
+    stddev: float
+            Standard deviation used in the generation of the
+            strain matrix elements.
+
+    use_tags: boolean
+              Whether to use the atomic tags to preserve molecular identity.
+    """
+
+    def __init__(self, blmin, cellbounds=None, stddev=0.7, use_tags=False,
+                 verbose=False):
+        OffspringCreator.__init__(self, verbose)
+        self.blmin = blmin
+        self.cellbounds = cellbounds
+        self.stddev = stddev
+        self.use_tags = use_tags
+        self.scaling_volume = None
+        self.descriptor = 'StrainMutation'
+        self.min_inputs = 1
+
+    def update_scaling_volume(self, population, w_adapt=0.5, n_adapt=0):
+        """Function to initialize or update the scaling volume in a GA run."""
+        if not n_adapt:
+            # if not set, take best 20% of the population
+            n_adapt = int(round(0.2 * len(population)))
+        v_new = np.mean([a.get_volume() for a in population[:n_adapt]])
+
+        if not self.scaling_volume:
+            self.scaling_volume = v_new
+        else:
+            volumes = [self.scaling_volume, v_new]
+            weights = [1 - w_adapt, w_adapt]
+            self.scaling_volume = np.average(volumes, weights=weights)
+
+    def get_new_individual(self, parents):
+        f = parents[0]
+
+        indi = self.mutate(f)
+        if indi is None:
+            return indi, 'mutation: strain'
+
+        indi = self.initialize_individual(f, indi)
+        indi.info['data']['parents'] = [f.info['confid']]
+
+        return self.finalize_individual(indi), 'mutation: strain'
+
+    def mutate(self, atoms):
+        """ Does the actual mutation. """
+        cell_ref = atoms.get_cell()
+        pos_ref = atoms.get_positions()
+        vol = atoms.get_volume()
+        if self.use_tags:
+            tags = atoms.get_tags()
+            gather_atoms_by_tag(atoms)
+            pos = atoms.get_positions()
+
+        mutant = atoms.copy()
+        if self.cellbounds is not None:
+            if not self.cellbounds.is_within_bounds(cell_ref):
+                niggli_reduce(mutant)
+
+        count = 0
+        too_close = True
+        maxcount = 1000
+        while too_close and count < maxcount:
+            mutant.set_cell(cell_ref, scale_atoms=False)
+            mutant.set_positions(pos_ref)
+
+            # generating the strain matrix:
+            strain = np.identity(3)
+            for i in range(3):
+                for j in range(i + 1):
+                    if i == j:
+                        strain[i, j] += gauss(0, self.stddev)
+                    else:
+                        epsilon = 0.5 * gauss(0, self.stddev)
+                        strain[i, j] += epsilon
+                        strain[j, i] += epsilon
+
+            # applying the strain:
+            cell_new = np.dot(strain, cell_ref)
+
+            # volume scaling:
+            v = abs(np.linalg.det(cell_new))
+            if self.scaling_volume is None:
+                cell_new *= (vol / v)**(1. / 3)
+            else:
+                cell_new *= (self.scaling_volume / v)**(1. / 3)
+
+            # check cell dimensions:
+            if not self.cellbounds.is_within_bounds(cell_new):
+                continue
+
+            if self.use_tags:
+                transfo = np.linalg.solve(cell_ref, cell_new)
+                for tag in np.unique(tags):
+                    select = np.where(tags == tag)
+                    cop = np.mean(pos[select], axis=0)
+                    disp = np.dot(cop, transfo) - cop
+                    mutant.positions[select] += disp
+
+            mutant.set_cell(cell_new, scale_atoms=not self.use_tags)
+
+            # check distances:
+            too_close = atoms_too_close(mutant, self.blmin,
+                                        use_tags=self.use_tags)
+            count += 1
+
+        if count == maxcount:
+            mutant = None
+
+        return mutant
+
+
+class PermuStrainMutation(CombinationMutation):
+    """ Combination of PermutationMutation and StrainMutation.
+
+    For more information, see also:
+
+      * `Lonie, Zurek, Comp. Phys. Comm. 182 (2011) 372-387`__
+
+        __ https://doi.org/10.1016/j.cpc.2010.07.048
+
+    Parameters:
+
+    permutationmutation: OffspringCreator instance
+                         A mutation that permutes atom types.
+
+    strainmutation: OffspringCreator instance
+                    A mutation that mutates by straining.
+    """
+
+    def __init__(self, permutationmutation, strainmutation, verbose=False):
+        super(PermuStrainMutation, self).__init__(permutationmutation,
+                                                  strainmutation,
+                                                  verbose=verbose)
+        self.descriptor = 'permustrain'
+
+
+class RotationalMutation(OffspringCreator):
+    """ Mutates a candidate by applying random rotations
+    to multi-atom moieties in the structure (atoms with
+    the same tag are considered part of one such moiety).
+    Only performs whole-molecule rotations, no internal
+    rotations.
+
+    For more information, see also:
+
+      * `Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
+        Acta Cryst. (2012), B68, 215-226.`__
+
+        __ https://dx.doi.org/10.1107/S0108768112017466
+
+    Parameters:
+
+    blmin: dict
+           The closest allowed interatomic distances on the form:
+           {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
+
+    n_top: int or None
+           The number of atoms to optimize (None = include all).
+
+    fraction: float
+              Fraction of the moieties to be rotated.
+
+    tags: None or list of integers
+          Specifies, respectively, whether all moieties or only those
+          with matching tags are eligible for rotation.
+
+    min_angle: float
+               Minimal angle (in radians) for each rotation;
+               should lie in the interval [0, pi].
+
+    test_dist_to_slab: boolean
+                       Whether also the distances to the slab
+                       should be checked to satisfy the blmin.
+    """
+
+    def __init__(self, blmin, n_top=None, fraction=0.33, tags=None,
+                 min_angle=1.57, test_dist_to_slab=True, verbose=False):
+        OffspringCreator.__init__(self, verbose)
+        self.blmin = blmin
+        self.n_top = n_top
+        self.fraction = fraction
+        self.tags = tags
+        self.min_angle = min_angle
+        self.test_dist_to_slab = test_dist_to_slab
+        self.descriptor = 'RotationalMutation'
+        self.min_inputs = 1
+
+    def get_new_individual(self, parents):
+        f = parents[0]
+
+        indi = self.mutate(f)
+        if indi is None:
+            return indi, 'mutation: rotational'
+
+        indi = self.initialize_individual(f, indi)
+        indi.info['data']['parents'] = [f.info['confid']]
+
+        return self.finalize_individual(indi), 'mutation: rotational'
+
+    def mutate(self, atoms):
+        """ Does the actual mutation. """
+        N = len(atoms) if self.n_top is None else self.n_top
+        slab = atoms[:len(atoms) - N]
+        atoms = atoms[-N:]
+
+        mutant = atoms.copy()
+        gather_atoms_by_tag(mutant)
+        pos = mutant.get_positions()
+        tags = mutant.get_tags()
+        eligible_tags = tags if self.tags is None else self.tags
+
+        indices = {}
+        for tag in np.unique(tags):
+            hits = np.where(tags == tag)[0]
+            if len(hits) > 1 and tag in eligible_tags:
+                indices[tag] = hits
+
+        n_rot = int(np.ceil(len(indices) * self.fraction))
+        chosen_tags = np.random.choice(list(indices.keys()), size=n_rot,
+                                       replace=False)
+
+        too_close = True
+        count = 0
+        maxcount = 10000
+        while too_close and count < maxcount:
+            newpos = np.copy(pos)
+            for tag in chosen_tags:
+                p = np.copy(newpos[indices[tag]])
+                cop = np.mean(p, axis=0)
+
+                if len(p) == 2:
+                    line = (p[1] - p[0]) / np.linalg.norm(p[1] - p[0])
+                    while True:
+                        axis = np.random.random(3)
+                        axis /= np.linalg.norm(axis)
+                        a = np.arccos(np.dot(axis, line))
+                        if np.pi / 4 < a < np.pi * 3 / 4:
+                            break
+                else:
+                    axis = np.random.random(3)
+                    axis /= np.linalg.norm(axis)
+
+                angle = self.min_angle
+                angle += 2 * (np.pi - self.min_angle) * np.random.random()
+
+                m = get_rotation_matrix(axis, angle)
+                newpos[indices[tag]] = np.dot(m, (p - cop).T).T + cop
+
+            mutant.set_positions(newpos)
+            mutant.wrap()
+            too_close = atoms_too_close(mutant, self.blmin, use_tags=True)
+            count += 1
+
+            if not too_close and self.test_dist_to_slab:
+                too_close = atoms_too_close_two_sets(slab, mutant, self.blmin)
+
+        if count == maxcount:
+            mutant = None
+        else:
+            mutant = slab + mutant
+
+        return mutant
+
+
+class RattleRotationalMutation(CombinationMutation):
+    """ Combination of RattleMutation and RotationalMutation.
+
+    Parameters:
+
+    rattlemutation: OffspringCreator instance
+                    A mutation that rattles atoms.
+
+    rotationalmutation: OffspringCreator instance
+                        A mutation that rotates moieties.
+    """
+
+    def __init__(self, rattlemutation, rotationalmutation, verbose=False):
+        super(RattleRotationalMutation, self).__init__(rattlemutation,
+                                                       rotationalmutation,
+                                                       verbose=verbose)
+        self.descriptor = 'rattlerotational'
