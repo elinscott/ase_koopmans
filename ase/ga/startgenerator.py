@@ -32,6 +32,7 @@ class StartGenerator(object):
 
     blocks: list
         List of building units for the structure. Each item can be:
+
         * an integer: representing a single atom by its atomic number,
         * a string: for a single atom (a chemical symbol) or a
           molecule (name recognized by ase.build.molecule),
@@ -40,6 +41,7 @@ class StartGenerator(object):
           and B is the number of A units to include.
 
         A few examples:
+
         >>> blocks = ['Ti'] * 4 + ['O'] * 8
         >>> blocks = [('Ti', 4), ('O', 8)]
         >>> blocks = [('CO2', 3)]  # 3 CO2 molecules

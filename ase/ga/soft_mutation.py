@@ -179,9 +179,9 @@ class SoftMutation(OffspringCreator):
     """Mutates the structure by displacing it along the lowest
     (nonzero) frequency modes found by vibrational analysis, as in:
 
-    * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
+    `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
 
-      __ https://dx.doi.org/10.1016/j.cpc.2010.06.007
+    __ https://dx.doi.org/10.1016/j.cpc.2010.06.007
 
     As in the reference above, the next-lowest mode is used if the
     structure has already been softmutated along the current-lowest
@@ -189,8 +189,11 @@ class SoftMutation(OffspringCreator):
 
     If you find this implementation useful in your work,
     please consider citing:
-        M. Van den Bossche, Henrik Gronbeck, B. Hammer,
-        J. Chem. Theory Comput., doi:10.1021/acs.jctc.8b00039
+
+    `Van den Bossche, Gronbeck, Hammer, J. Chem. Theory Comput. 14 (2018)`__
+
+    __ https://dx.doi.org/10.1021/acs.jctc.8b00039
+
     in addition to the paper mentioned above.
 
     Parameters:
