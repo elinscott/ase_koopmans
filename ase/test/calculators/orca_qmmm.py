@@ -19,7 +19,6 @@ atoms.calc = EIQMMM(selection=[0, 1, 2],
                     output='orca_qmmm.log')
                             
 
-
 e = atoms.get_potential_energy()
 
 assert abs(e + 2077.45445852) < 1.0
