@@ -32,9 +32,7 @@ cd = closest_distances_generator(atom_numbers=unique_atom_types,
                                  ratio_of_covalent_radii=0.7)
 
 # create the starting population
-sg = StartGenerator(slab=slab,
-                    atom_numbers=atom_numbers,
-                    closest_allowed_distances=cd,
+sg = StartGenerator(slab, atom_numbers, cd,
                     box_to_place_in=[p0, [v1, v2, v3]])
 
 # generate the starting population

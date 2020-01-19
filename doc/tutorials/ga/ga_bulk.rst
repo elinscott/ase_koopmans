@@ -66,20 +66,20 @@ local optimization, is imported from :download:`ga_bulk_relax.py`.
 .. literalinclude:: ga_bulk_run.py
 
 
-All the bulk operators
-----------------------
+Typical bulk GA operators
+-------------------------
 
-.. autoclass:: ase.ga.bulk_crossovers.CutAndSplicePairing
-.. autoclass:: ase.ga.bulk_mutations.StrainMutation
-.. autoclass:: ase.ga.bulk_mutations.PermuStrainMutation
-.. autoclass:: ase.ga.bulk_mutations.SoftMutation
-.. autoclass:: ase.ga.bulk_mutations.RotationalMutation
-.. autoclass:: ase.ga.bulk_mutations.RattleRotationalMutation
+.. autoclass:: ase.ga.cutandsplicepairing.CutAndSplicePairing
+.. autoclass:: ase.ga.standardmutations.StrainMutation
+.. autoclass:: ase.ga.standardmutations.PermuStrainMutation
+.. autoclass:: ase.ga.standardmutations.RotationalMutation
+.. autoclass:: ase.ga.standardmutations.RattleRotationalMutation
+.. autoclass:: ase.ga.soft_mutation.SoftMutation
 
 
-All the helper functions
-------------------------
+Useful helper functions
+-----------------------
 
-.. autoclass:: ase.ga.bulk_utilities.CellBounds
-.. autoclass:: ase.ga.bulk_startgenerator.StartGenerator
+.. autoclass:: ase.ga.utilities.CellBounds
+.. autoclass:: ase.ga.startgenerator.StartGenerator
 .. autoclass:: ase.ga.ofp_comparator.OFPComparator

@@ -2,23 +2,24 @@ from ase.io import write
 from ase.ga import get_raw_score
 from ase.ga.data import DataConnection
 from ase.ga.population import Population
-from ase.ga.utilities import closest_distances_generator
-from ase.ga.bulk_utilities import CellBounds
+from ase.ga.utilities import closest_distances_generator, CellBounds
 from ase.ga.ofp_comparator import OFPComparator
 from ase.ga.offspring_creator import OperationSelector
-from ase.ga.bulk_mutations import StrainMutation, SoftMutation
-from ase.ga.bulk_crossovers import CutAndSplicePairing
+from ase.ga.standardmutations import StrainMutation
+from ase.ga.soft_mutation import SoftMutation
+from ase.ga.cutandsplicepairing import CutAndSplicePairing
 from ga_bulk_relax import relax
 
 
 # Connect to the database and retrieve some information
 da = DataConnection('gadb.db')
+slab = da.get_slab()
 atom_numbers_to_optimize = da.get_atom_numbers_to_optimize()
-n_to_optimize = len(atom_numbers_to_optimize)
+n_top = len(atom_numbers_to_optimize)
 
 # Use Oganov's fingerprint functions to decide whether
 # two structures are identical or not
-comp = OFPComparator(n_top=n_to_optimize, dE=1.0,
+comp = OFPComparator(n_top=n_top, dE=1.0,
                      cos_dist_max=1e-3, rcut=10., binwidth=0.05,
                      pbc=[True, True, True], sigma=0.05, nsigma=4,
                      recalculate=False)
@@ -27,20 +28,21 @@ comp = OFPComparator(n_top=n_to_optimize, dE=1.0,
 # that the candidates must obey
 blmin = closest_distances_generator(atom_numbers_to_optimize, 0.5)
 
-cellbounds = CellBounds(bounds={'phi': [20, 160],
-                                'chi': [20, 160],
-                                'psi': [20, 160],
-                                'a': [2, 60], 'b': [2, 60], 'c': [2, 60]})
+cellbounds = CellBounds(bounds={'phi': [20, 160], 'chi': [20, 160],
+                                'psi': [20, 160], 'a': [2, 60],
+                                'b': [2, 60], 'c': [2, 60]})
 
 # Define a pairing operator with 100% (0%) chance that the first
 # (second) parent will be randomly translated, and with each parent
 # contributing to at least 15% of the child's scaled coordinates
-pairing = CutAndSplicePairing(blmin, p1=1., p2=0., minfrac=0.15,
+pairing = CutAndSplicePairing(slab, n_top, blmin, p1=1., p2=0., minfrac=0.15,
+                              number_of_variable_cell_vectors=3,
                               cellbounds=cellbounds, use_tags=False)
 
 # Define a strain mutation with a typical standard deviation of 0.7
 # for the strain matrix elements (drawn from a normal distribution)
 strainmut = StrainMutation(blmin, stddev=0.7, cellbounds=cellbounds,
+                           number_of_variable_cell_vectors=3,
                            use_tags=False)
 
 # Define a soft mutation; we need to provide a dictionary with
