@@ -159,7 +159,15 @@ class StartGenerator(object):
             else:
                 raise ValueError('Cannot parse this block:', block)
 
-            self.blocks.append((block, count))
+            # Add to self.blocks, taking into account that
+            # we want to group the same blocks together.
+            # This is important for the cell splitting.
+            for i, (b, c) in enumerate(self.blocks):
+                if block == b:
+                    self.blocks[i][1] += count
+                    break
+            else:
+                self.blocks.append([block, count])
 
         if isinstance(blmin, dict):
             self.blmin = blmin
