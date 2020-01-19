@@ -533,6 +533,12 @@ potentials)
 
         os.chdir(cwd)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self._lmp_end()
+
     def read_lammps_log(self, lammps_log=None):
         # !TODO: somehow communicate 'thermo_content' explicitly
         """Method which reads a LAMMPS output log file."""

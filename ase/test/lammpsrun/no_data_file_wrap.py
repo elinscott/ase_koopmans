@@ -15,7 +15,8 @@ from ase.calculators.lammpsrun import LAMMPS
 
 # Make a periodic box and put one atom outside of it
 pos = [[0.0, 0.0, 0.0], [-2.0, 0.0, 0.0]]
-atoms = Atoms(symbols=["Ar"] * 2, positions=pos, cell=[10.0, 10.0, 10.0], pbc=True)
+atoms = Atoms(symbols=["Ar"] * 2, positions=pos, cell=[10.0, 10.0, 10.0],
+              pbc=True)
 
 # Set parameters for calculator
 params = {}
@@ -27,9 +28,6 @@ params["pair_coeff"] = ["1 1 0.0108102 3.345"]
 # 'create_atoms' commands into the LAMMPS input file
 params["no_data_file"] = True
 
-calc = LAMMPS(specorder=["Ar"], **params)
-
-atoms.set_calculator(calc)
-
-# Attempt to compute the energy
-energy = atoms.get_potential_energy()
+with LAMMPS(specorder=["Ar"], **params) as calc:
+    atoms.calc = calc
+    energy = atoms.get_potential_energy()
