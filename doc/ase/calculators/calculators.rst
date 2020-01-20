@@ -96,7 +96,6 @@ gaussian                                  Gaussian based electronic structure co
 :mod:`~ase.calculators.octopus`           Real-space pseudopotential code
 :mod:`~ase.calculators.onetep`            Linear-scaling pseudopotential code
 :mod:`~ase.calculators.openmx`            LCAO pseudopotential code
-:mod:`~ase.calculators.orca`              Gaussian based electronic structure code
 :mod:`~ase.calculators.psi4`              Gaussian based electronic structure code
 :mod:`~ase.calculators.qchem`             Gaussian based electronic structure code
 :mod:`~ase.calculators.siesta`            LCAO pseudopotential code
@@ -233,7 +232,6 @@ the :meth:`set` method:
    octopus
    onetep
    openmx
-   orca
    psi4
    qchem
    siesta
