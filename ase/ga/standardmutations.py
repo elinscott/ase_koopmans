@@ -449,6 +449,7 @@ class StrainMutation(OffspringCreator):
         """ Does the actual mutation. """
         cell_ref = atoms.get_cell()
         pos_ref = atoms.get_positions()
+        vol_ref = atoms.get_volume()
 
         if self.use_tags:
             tags = atoms.get_tags()
@@ -484,7 +485,12 @@ class StrainMutation(OffspringCreator):
             # volume scaling:
             if self.number_of_variable_cell_vectors > 0:
                 volume = abs(np.linalg.det(cell_new))
-                scaling = self.scaling_volume / volume
+                if self.scaling_volume is None:
+                    # The scaling_volume has not been set (yet),
+                    # so we give it the same volume as the parent
+                    scaling = vol_ref / volume
+                else:
+                    scaling = self.scaling_volume / volume
                 scaling **= 1. / self.number_of_variable_cell_vectors
                 cell_new[:self.number_of_variable_cell_vectors] *= scaling
 
