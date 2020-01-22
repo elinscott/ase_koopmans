@@ -23,6 +23,8 @@ Git master branch
 
 * Write support has been added for the Vasp 5 XDATCAR file format.
 
+* Added :mod:`ORCA <ase.calculators.orca>` calculator.
+
 Version 3.19.0
 ==============
 
