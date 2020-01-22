@@ -24,14 +24,12 @@ cited if the method is used.
 
 Other ASE-calculators that currently support EIQMMM:
 
-1. DFTBplus_  
-2. CRYSTAL_  
-3. TURBOMOLE_  
+1. :mod:`DFTB+ <ase.calculators.dftb>`
+2. :mod:`CRYSTAL <ase.calculators.crystal>`
+3. :mod:`TURBOMOLE <ase.calculators.turbomole>`
+4. :mod:`ORCA <ase.calculators.orca>` 
 
 .. _GPAW: https://wiki.fysik.dtu.dk/gpaw
-.. _DFTBplus: https://wiki.fysik.dtu.dk/ase/ase/calculators/dftb.html
-.. _CRYSTAL: https://wiki.fysik.dtu.dk/ase/ase/calculators/crystal.html
-.. _TURBOMOLE: https://wiki.fysik.dtu.dk/ase/ase/calculators/turbomole.html
 
 .. seealso::
 
