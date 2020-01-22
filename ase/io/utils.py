@@ -15,7 +15,8 @@ class PlottingVariables:
         self.numbers = atoms.get_atomic_numbers()
         self.colors = colors
         if colors is None:
-            self.colors = jmol_colors[self.numbers]
+            ncolors = len(jmol_colors)
+            self.colors = jmol_colors[self.numbers.clip(max=ncolors - 1)]
 
         if radii is None:
             radii = covalent_radii[self.numbers]
