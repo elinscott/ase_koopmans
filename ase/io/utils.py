@@ -7,15 +7,17 @@ from ase.utils import rotate
 from ase.data import covalent_radii, atomic_numbers
 from ase.data.colors import jmol_colors
 
+
 class PlottingVariables:
     # removed writer - self
     def __init__(self, atoms, rotation='', show_unit_cell=2,
-                              radii=None, bbox=None, colors=None, scale=20,
-                              maxwidth=500, extra_offset=(0., 0.)):
+                 radii=None, bbox=None, colors=None, scale=20,
+                 maxwidth=500, extra_offset=(0., 0.)):
         self.numbers = atoms.get_atomic_numbers()
         self.colors = colors
         if colors is None:
-            self.colors = jmol_colors[self.numbers]
+            ncolors = len(jmol_colors)
+            self.colors = jmol_colors[self.numbers.clip(max=ncolors - 1)]
 
         if radii is None:
             radii = covalent_radii[self.numbers]
@@ -180,7 +182,9 @@ def make_patch_list(writer):
 
                 start = 0
                 # start with the dominant species
-                for sym, occ in sorted(site_occ.items(), key=lambda x: x[1], reverse=True):
+                for sym, occ in sorted(site_occ.items(),
+                                       key=lambda x: x[1],
+                                       reverse=True):
                     if np.round(occ, decimals=4) == 1.0:
                         patch = Circle(xy, r, facecolor=writer.colors[a],
                                        edgecolor='black')
@@ -188,9 +192,10 @@ def make_patch_list(writer):
                     else:
                         # jmol colors for the moment
                         extent = 360. * occ
-                        patch = Wedge(xy, r, start, start+extent,
-                                      facecolor=jmol_colors[atomic_numbers[sym]],
-                                      edgecolor='black')
+                        patch = Wedge(
+                            xy, r, start, start + extent,
+                            facecolor=jmol_colors[atomic_numbers[sym]],
+                            edgecolor='black')
                         patch_list.append(patch)
                         start += extent
 
