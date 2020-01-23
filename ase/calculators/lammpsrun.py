@@ -1,4 +1,3 @@
-
 # lammps.py (2011/03/29)
 # An ASE calculator for the LAMMPS classical MD code available from
 #       http://lammps.sandia.gov/
@@ -26,7 +25,7 @@
 import os
 import shutil
 import shlex
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 from threading import Thread
 from re import compile as re_compile, IGNORECASE
 from tempfile import mkdtemp, NamedTemporaryFile, mktemp as uns_mktemp
@@ -328,9 +327,15 @@ potentials)
         # Close lammps input and wait for lammps to end. Return process
         # return value
         if self._lmp_alive():
-            self._lmp_handle.stdin.close()
             # !TODO: handle lammps error codes
-            # return self._lmp_handle.wait()
+            try:
+                self._lmp_handle.communicate(timeout=5)
+            except TimeoutExpired:
+                self._lmp_handle.kill()
+                self._lmp_handle.communicate()
+            err = self._lmp_handle.poll()
+            assert err is not None
+            return err
 
     def set_missing_parameters(self):
         """Verify that all necessary variables are set.
@@ -533,6 +538,12 @@ potentials)
             lammps_data_fd.close()
 
         os.chdir(cwd)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self._lmp_end()
 
     def read_lammps_log(self, lammps_log=None):
         # !TODO: somehow communicate 'thermo_content' explicitly

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from ase.gui.i18n import _
 from math import sqrt, pi, acos
 

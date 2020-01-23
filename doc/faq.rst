@@ -69,7 +69,7 @@ If you find ASE useful in your research please cite:
    | `The Atomic Simulation Environment—A Python library for working with atoms`__
    | J. Phys.: Condens. Matter Vol. **29** 273002, 2017
 
-   __ http://dx.doi.org/10.1021/jp063532w
+   __ https://doi.org/10.1088/1361-648X/aa680e
 
 An older paper corresponding to an early version of ASE is:
 

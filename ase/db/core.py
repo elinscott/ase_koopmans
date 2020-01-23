@@ -24,21 +24,23 @@ T2000 = 946681200.0  # January 1. 2000
 YEAR = 31557600.0  # 365.25 days
 
 
+# Format of key description: ('short', 'long', 'unit')
 default_key_descriptions = {
     'id': ('ID', 'Uniqe row ID', ''),
     'age': ('Age', 'Time since creation', ''),
     'formula': ('Formula', 'Chemical formula', ''),
-    'pbc': ('PBC', '', ''),
+    'pbc': ('PBC', 'Periodic boundary conditions', ''),
     'user': ('Username', '', ''),
     'calculator': ('Calculator', 'ASE-calculator name', ''),
     'energy': ('Energy', 'Total energy', 'eV'),
     'fmax': ('Maximum force', '', 'eV/Ang'),
-    'smax': ('Maximum stress', '', '`\\text{eV/Ang}^3`'),
-    'charge': ('Charge', '', '|e|'),
-    'mass': ('Mass', '', 'au'),
+    'smax': ('Maximum stress', 'Maximum stress on unit cell',
+             '`\\text{eV/Ang}^3`'),
+    'charge': ('Charge', 'Net charge in unit cell', '|e|'),
+    'mass': ('Mass', 'Sum of atomic masses in unit cell', 'au'),
     'magmom': ('Magnetic moment', '', 'au'),
     'unique_id': ('Unique ID', 'Random (unique) ID', ''),
-    'volume': ('Volume', 'Volume of unit-cell', '`\\text{Ang}^3`')}
+    'volume': ('Volume', 'Volume of unit cell', '`\\text{Ang}^3`')}
 
 
 def now():

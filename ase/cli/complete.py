@@ -80,7 +80,8 @@ commands = {
          '--eos-type', '-o', '--output', '--modify', '--after'],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
-         '--jobs', '-v', '--verbose', '--strict', '--nogui'],
+         '--jobs', '-v', '--verbose', '--strict', '--nogui',
+         '--pytest'],
     'ulm':
         ['-n', '--index', '-d', '--delete', '-v', '--verbose']}
 # End of computer generated data
@@ -122,8 +123,9 @@ def complete(word, previous, line, point):
             # Suggest names of tests.  We suggest all matching tests.
             # It might be better to autocomplete only up to directory
             # names.
-            from ase.test.testsuite import get_tests
-            words = get_tests()
+            from ase.test.newtestsuite import TestModule
+            words = [mod.testname
+                     for mod in TestModule.glob_all_test_modules()]
 
     return words
 

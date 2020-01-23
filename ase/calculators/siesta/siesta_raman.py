@@ -1,5 +1,4 @@
 # flake8: noqa
-# -*- coding: utf-8 -*-
 
 """Infrared and Raman intensities using siesta and MBPT_LCAO"""
 

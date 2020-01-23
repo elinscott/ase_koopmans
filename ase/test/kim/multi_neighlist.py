@@ -9,6 +9,10 @@ returned are compared to numerical estimates via finite difference.
 """
 import numpy as np
 from ase import Atoms
+
+from pytest import importorskip
+importorskip('kimpy')
+
 from ase.calculators.kim import KIM
 
 # Create random cluster of atoms

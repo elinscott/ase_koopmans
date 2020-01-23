@@ -445,8 +445,8 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
             if self.coord_transform is not None:
                 vel = np.dot(vel, self.coord_transform)
             if velocity_field is None:
-                vel = convert(atoms.get_velocities(), "velocity", "ASE",
-                        self.units)
+                atoms.set_velocities(convert(vel, 'velocity', self.units,
+                                             'ASE'))
 
         # Extract the forces and energy
         self.results['energy'] = convert(self.lmp.extract_variable('pe', None, 0), "energy", self.units,

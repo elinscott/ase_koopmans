@@ -22,31 +22,32 @@ pair_coeff += ['1 2 4117.9 0.3048 0.0']
 masses = ['1 {}'.format(atomic_masses[atomic_numbers['Na']]),
           '2 {}'.format(atomic_masses[atomic_numbers['Cl']])]
 
-calc = LAMMPS(specorder=['Na', 'Cl'],
-              pair_style=pair_style,
-              pair_coeff=pair_coeff,
-              masses=masses,
-              atom_style='charge',
-              kspace_style='pppm 1.0e-5',
-              keep_tmp_files=True,
-              )
+with LAMMPS(
+        specorder=['Na', 'Cl'],
+        pair_style=pair_style,
+        pair_coeff=pair_coeff,
+        masses=masses,
+        atom_style='charge',
+        kspace_style='pppm 1.0e-5',
+        keep_tmp_files=True,
+) as calc:
 
-for a in nacl:
-    if a.symbol == 'Na':
-        a.charge = +1.
-    else:
-        a.charge = -1.
+    for a in nacl:
+        if a.symbol == 'Na':
+            a.charge = +1.
+        else:
+            a.charge = -1.
 
-nacl.set_calculator(calc)
+    nacl.set_calculator(calc)
 
-assert_allclose(nacl.get_potential_energy(), -1896.216737561538,
-                atol=1e-4, rtol=1e-4)
+    assert_allclose(nacl.get_potential_energy(), -1896.216737561538,
+                    atol=1e-4, rtol=1e-4)
 
-E = nacl.get_potential_energy()
+    E = nacl.get_potential_energy()
 
-ucf = UnitCellFilter(nacl)
-dyn = QuasiNewton(ucf, force_consistent=False)
-dyn.run(fmax=1.0E-2)
+    ucf = UnitCellFilter(nacl)
+    dyn = QuasiNewton(ucf, force_consistent=False)
+    dyn.run(fmax=1.0E-2)
 
-assert_allclose(nacl.get_potential_energy(), -1897.208861729178,
-                atol=1e-4, rtol=1e-4)
+    assert_allclose(nacl.get_potential_energy(), -1897.208861729178,
+                    atol=1e-4, rtol=1e-4)

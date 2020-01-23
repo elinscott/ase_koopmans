@@ -23,6 +23,8 @@ had failed to ever register as a neighbor, then we'll get zero once
 again.
 """
 import numpy as np
+from pytest import importorskip
+importorskip('kimpy')
 from ase.calculators.kim import KIM
 from ase import Atoms
 
