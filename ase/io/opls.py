@@ -217,7 +217,7 @@ minimize        1.0e-14 1.0e-5 100000 100000
         else:
             molid = [1] * len(atoms)
         for i, r in enumerate(
-            p.positions_to_lammps_strs(atoms.get_positions())):
+                p.positions_to_lammps_strs(atoms.get_positions())):
             atype = atoms.types[tag[i]]
             if len(atype) < 2:
                 atype = atype + ' '

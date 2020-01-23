@@ -111,7 +111,7 @@ class WriteToFile:
 
     def __call__(self, indent, line):
         text = ' ' * indent
-        print('%s%s\n'%(text,line), file=self._f)
+        print('%s%s\n' % (text, line), file=self._f)
 
     def close(self):
         self._f.close()
