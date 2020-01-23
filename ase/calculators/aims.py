@@ -279,8 +279,8 @@ class Aims(FileIOCalculator):
 
         # filter the command and set the member variables "aims_command" and "outfilename"
         self.__update_command(command=command,
-                             aims_command=aims_command,
-                             outfilename=outfilename)
+                              aims_command=aims_command,
+                              outfilename=outfilename)
 
     # legacy handling of the (run_)command behavior a.k.a. a universal setter routine
     def __update_command(self, command=None, aims_command=None,
@@ -508,11 +508,11 @@ class Aims(FileIOCalculator):
 
         if ('sc_accuracy_stress' in self.parameters or
             ('compute_numerical_stress' in self.parameters
-            and self.parameters['compute_numerical_stress']) or
+             and self.parameters['compute_numerical_stress']) or
             ('compute_analytical_stress' in self.parameters
-            and self.parameters['compute_analytical_stress']) or
+             and self.parameters['compute_analytical_stress']) or
             ('compute_heat_flux' in self.parameters
-            and self.parameters['compute_heat_flux'])):
+             and self.parameters['compute_heat_flux'])):
             self.read_stress()
 
         if ('compute_heat_flux' in self.parameters

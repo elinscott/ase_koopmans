@@ -155,7 +155,7 @@ def read_bundle_info(name):
                 mdata = pickle.load(f)
         else:
             raise IOError("'%s' does not appear to be a BundleTrajectory (no %s)"
-                        % (name, bestmetaname))
+                          % (name, bestmetaname))
     if 'format' not in mdata or mdata['format'] != 'BundleTrajectory':
         raise IOError("'%s' does not appear to be a BundleTrajectory" %
                       (name,))

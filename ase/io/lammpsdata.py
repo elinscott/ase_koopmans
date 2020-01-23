@@ -453,7 +453,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
 
     # Get cell parameters and convert from ASE units to LAMMPS units
     xhi, yhi, zhi, xy, xz, yz = convert(p.get_lammps_prism(), "distance",
-            "ASE", units)
+                                        "ASE", units)
 
     f.write("0.0 {0:23.17g}  xlo xhi\n".format(xhi))
     f.write("0.0 {0:23.17g}  ylo yhi\n".format(yhi))
