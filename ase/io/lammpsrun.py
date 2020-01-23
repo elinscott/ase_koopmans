@@ -168,6 +168,12 @@ def lammps_data_to_ase_atoms(
         calculator = SinglePointCalculator(out_atoms, energy=0.0, forces=forces)
         out_atoms.set_calculator(calculator)
 
+    #process the extra columns of fixes, variables and computes that can be dumped - add as additional data
+    for colname in colnames:
+        # determine if it is a compute or fix (but not the quaternian)
+        if ('f_' in colname or 'v_' in colname or ('c_' in colname and 'c_q[' not in colname) ):
+            out_atoms.new_array(colname,get_quantity([colname]),dtype='float')
+
     return out_atoms
 
 
