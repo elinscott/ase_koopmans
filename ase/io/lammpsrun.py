@@ -27,7 +27,9 @@ def read_lammps_dump(infileobj, **kwargs):
     # !TODO: add support for lammps-regex naming schemes (output per
     # processor and timestep wildcards)
 
+    opened = False
     if isinstance(infileobj, str):
+        opened = True
         suffix = splitext(infileobj)[-1]
         if suffix == ".bin":
             fileobj = paropen(infileobj, "rb")
@@ -41,9 +43,17 @@ def read_lammps_dump(infileobj, **kwargs):
         fileobj = infileobj
 
     if suffix == ".bin":
-        return read_lammps_dump_binary(fileobj, **kwargs)
+        out = read_lammps_dump_binary(fileobj, **kwargs)
+        if opened:
+            fileobj.close()
+        return out
 
-    return read_lammps_dump_text(fileobj, **kwargs)
+    out = read_lammps_dump_text(fileobj, **kwargs)
+
+    if opened:
+        fileobj.close()
+
+    return out
 
 
 def lammps_data_to_ase_atoms(
