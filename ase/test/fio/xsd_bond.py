@@ -43,7 +43,7 @@ AtomIds = list(AtomIdsToBondIds.keys())
 Newconnectivitymatrix = np.zeros((5,5))
 for AtomId in AtomIdsToBondIds:
     for BondId in AtomIdsToBondIds[AtomId]:
-        OtherAtomId = [a  for a in BondIdsToConnectedAtomIds[BondId] if a != AtomId]
+        OtherAtomId = [a for a in BondIdsToConnectedAtomIds[BondId] if a != AtomId]
         i = AtomIds.index(AtomId)
         j = AtomIds.index(OtherAtomId[0])
         Newconnectivitymatrix[i,j] = 1

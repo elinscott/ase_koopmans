@@ -76,11 +76,11 @@ def run_flake8():
 
 max_errors = {
     # do not compare types, use 'isinstance()'
-    'E721': 1,
+    'E721': 0,
     # multiple imports on one line
-    'E401': 1,
+    'E401': 0,
     # multiple spaces before keyword
-    'E272': 1,
+    'E272': 0,
     # continuation line under-indented for hanging indent
     'E121': 2,
     # whitespace before '('

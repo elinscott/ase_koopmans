@@ -5,7 +5,8 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 import unittest
-import shutil, subprocess
+import shutil
+import subprocess
 import numpy as np
 from ase.build import molecule
 from ase.calculators.cp2k import CP2K
