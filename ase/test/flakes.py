@@ -82,9 +82,9 @@ max_errors = {
     # multiple spaces before keyword
     'E272': 0,
     # continuation line under-indented for hanging indent
-    'E121': 2,
+    'E121': 0,
     # whitespace before '('
-    'E211': 2,
+    'E211': 0,
     # continuation line with same indent as next logical line
     'E125': 3,
     # comparison to True should be 'if cond is True:' or 'if cond:'
