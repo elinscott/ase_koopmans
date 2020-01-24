@@ -68,7 +68,7 @@ for calc in [TIP3P(),
                (r, (3, 5)), (r, (4, 5))],
         angles=[(a, (0, 2, 1)), (a, (3, 5, 4))])
     opt = GPMin(dimer,
-               trajectory=calc.name + '.traj', logfile=calc.name + 'd.log')
+                trajectory=calc.name + '.traj', logfile=calc.name + 'd.log')
     opt.run(0.01)
 
     e0 = dimer.get_potential_energy()

@@ -11,7 +11,7 @@ calc = QChem(label='calc/ethane',
 mol.set_calculator(calc)
 # Check energy and forces
 np.testing.assert_allclose(mol.get_potential_energy(), -2172.379183703419,
-    atol=10.)
+                           atol=10.)
 np.testing.assert_allclose(
     mol.get_forces(),
     np.array([[0., 0.00240141, 0.04992568],

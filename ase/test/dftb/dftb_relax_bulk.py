@@ -1,5 +1,6 @@
 import os
 from ase.test import require
+from ase.test.testsuite import datafiles_directory
 from ase.build import bulk
 from ase.calculators.dftb import Dftb
 from ase.optimize import QuasiNewton
@@ -7,8 +8,7 @@ from ase.constraints import ExpCellFilter
 
 require('dftb')
 
-p = os.path.dirname(__file__)
-os.environ['DFTB_PREFIX'] = p if p else './'
+os.environ['DFTB_PREFIX'] = datafiles_directory
 
 calc = Dftb(label='dftb',
             kpts=(3,3,3),

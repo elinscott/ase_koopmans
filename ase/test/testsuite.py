@@ -14,6 +14,7 @@ from ase.cli.main import CLIError
 
 
 test_calculator_names = ['emt']
+datafiles_directory = os.path.join(os.path.dirname(__file__), 'datafiles', '')
 
 
 def require(calcname):

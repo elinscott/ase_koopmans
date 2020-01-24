@@ -314,7 +314,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
         # Create local copy of positions that are wrapped along any periodic
         # directions
         pos = wrap_positions(atoms.get_positions(), atoms.get_cell(),
-                atoms.get_pbc())
+                             atoms.get_pbc())
         pos = convert(pos, "distance", "ASE", self.units)
 
         # If necessary, transform the positions to new coordinate system
@@ -425,7 +425,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
                 self.lmp.command('timestep %.30f' % dt)
             else:
                 self.lmp.command('timestep %.30f' %
-                    convert(dt, "time", "ASE", self.units))
+                                 convert(dt, "time", "ASE", self.units))
         self.lmp.command('run %d' % n_steps)
 
         if n_steps > 0:
@@ -449,8 +449,8 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
                                              'ASE'))
 
         # Extract the forces and energy
-        self.results['energy'] = convert(self.lmp.extract_variable('pe', None, 0), "energy", self.units,
-                "ASE")
+        self.results['energy'] = convert(self.lmp.extract_variable('pe', None, 0),
+                                         "energy", self.units, "ASE")
         self.results['free_energy'] = self.results['energy']
 
         stress = np.empty(6)
@@ -483,7 +483,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
         # definitely yields atom-id ordered force array
         f = convert(np.array(self.lmp.gather_atoms("f", 1, 3)).reshape(-1,3),
-                "force", self.units, "ASE")
+                    "force", self.units, "ASE")
 
         if self.coord_transform is not None:
             self.results['forces'] = np.dot(f, self.coord_transform)

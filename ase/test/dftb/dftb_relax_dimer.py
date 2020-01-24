@@ -1,13 +1,13 @@
 import os
 from ase import Atoms
 from ase.test import require
+from ase.test.testsuite import datafiles_directory
 from ase.calculators.dftb import Dftb
 from ase.optimize import BFGS
 
 require('dftb')
 
-p = os.path.dirname(__file__)
-os.environ['DFTB_PREFIX'] = p if p else './'
+os.environ['DFTB_PREFIX'] = datafiles_directory
 
 calc = Dftb(label='dftb',
             Hamiltonian_SCC='No',

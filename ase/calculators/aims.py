@@ -279,8 +279,8 @@ class Aims(FileIOCalculator):
 
         # filter the command and set the member variables "aims_command" and "outfilename"
         self.__update_command(command=command,
-                             aims_command=aims_command,
-                             outfilename=outfilename)
+                              aims_command=aims_command,
+                              outfilename=outfilename)
 
     # legacy handling of the (run_)command behavior a.k.a. a universal setter routine
     def __update_command(self, command=None, aims_command=None,

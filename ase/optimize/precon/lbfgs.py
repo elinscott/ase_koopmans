@@ -130,10 +130,10 @@ class PreconLBFGS(Optimizer):
             if len(atoms) < 100:
                 precon = None
                 warnings.warn('The system is likely too small to benefit from ' +
-                             'the standard preconditioner, hence it is ' +
-                             'disabled. To re-enable preconditioning, call' +
-                             '`PreconLBFGS` by explicitly providing the ' +
-                             'kwarg `precon`')
+                              'the standard preconditioner, hence it is ' +
+                              'disabled. To re-enable preconditioning, call' +
+                              '`PreconLBFGS` by explicitly providing the ' +
+                              'kwarg `precon`')
             else:
                 precon = 'Exp'
 
