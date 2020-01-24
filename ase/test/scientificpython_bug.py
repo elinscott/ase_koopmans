@@ -1,5 +1,7 @@
-from __future__ import print_function
 import sys
+from pytest import importorskip
+
+importorskip('Scientific')
 
 import numpy as np
 

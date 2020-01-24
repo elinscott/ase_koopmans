@@ -29,18 +29,23 @@ for atoms, name in [(s1, 's1'), (s2, 's2'), (s3, 's3'), (s4, 's4')]:
     write(name + '.pov', atoms,
           rotation='-90x',
           transparent=False,
-          display=False,
           run_povray=True)
 
 import os
+import shutil
+from pathlib import Path
 
-for i in range(2):
-    error = os.system('pdflatex -interaction=nonstopmode general_surface ' +
-                      '> /dev/null')
-    if error:
-        with open('general_surface.pdf', 'w') as fd:
-            fd.write('pdflatex not found\n')
-        break
-    os.remove('general_surface.aux')
-    os.remove('general_surface.log')
-    
+dir = os.environ.get('PDF_FILE_DIR')
+if dir:
+    shutil.copyfile(Path(dir) / 'general_surface.pdf',
+                    'general_surface.pdf')
+else:
+    for i in range(2):
+        error = os.system(
+            'pdflatex -interaction=nonstopmode general_surface > /dev/null')
+        if error:
+            with open('general_surface.pdf', 'w') as fd:
+                fd.write('pdflatex not found\n')
+            break
+        os.remove('general_surface.aux')
+        os.remove('general_surface.log')

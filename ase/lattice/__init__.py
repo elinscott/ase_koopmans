@@ -1,4 +1,4 @@
-from __future__ import division
+# flake8: noqa
 from abc import abstractmethod, ABC
 import functools
 import warnings
@@ -7,6 +7,7 @@ import numpy as np
 from ase.cell import Cell
 from ase.build.bulk import bulk as newbulk
 from ase.dft.kpoints import parse_path_string, sc_special_points, BandPath
+from ase.utils import pbc2pbc
 
 
 @functools.wraps(newbulk)
@@ -89,15 +90,15 @@ class BravaisLattice(ABC):
     def tocell(self):
         """Return this lattice as a :class:`~ase.cell.Cell` object."""
         cell = self._cell(**self._parameters)
-        pbc = np.arange(3) < self.ndim
-        return Cell(cell, pbc=pbc)
+        return Cell(cell)
 
-    def get_transformation(self, cell):
+    def get_transformation(self, cell, eps=1e-8):
         # Get transformation matrix relating input cell to canonical cell
         T = cell.dot(np.linalg.pinv(self.tocell()))
         msg = 'This transformation changes the length/area/volume of the cell'
         assert np.isclose(np.abs(np.linalg.det(T[:self.ndim,
-                                                 :self.ndim])), 1), msg
+                                                 :self.ndim])), 1,
+                          atol=eps), msg
         return T
 
     def cellpar(self):
@@ -174,6 +175,12 @@ class BravaisLattice(ABC):
 
         >>> BCT(3, 5).bandpath()
         BandPath(path='GXYSGZS1NPY1Z,XP', cell=[3x3], special_points={GNPSS1XYY1Z}, kpts=[51x3])
+
+        .. note:: This produces the standard band path following AFlow
+           conventions.  If your cell does not follow this convention,
+           you will need :meth:`ase.cell.Cell.bandpath` instead or
+           the kpoints may not correspond to your particular cell.
+
         """
         if special_points is None:
             special_points = self.get_special_points()
@@ -945,8 +952,14 @@ class OBL(BravaisLattice):
 
     def _special_points(self, a, b, alpha, variant):
         # XXX Check me
-        cosa = np.cos(alpha * _degrees)
-        eta = (1 - a * cosa / b) / (2 * np.sin(alpha * _degrees)**2)
+        if alpha > 90:
+            _alpha = 180 - alpha
+            a, b = b, a
+        else:
+            _alpha = alpha
+
+        cosa = np.cos(_alpha * _degrees)
+        eta = (1 - a * cosa / b) / (2 * np.sin(_alpha * _degrees)**2)
         nu = .5 - eta * b * cosa / a
 
         points = [[0, 0, 0],
@@ -955,6 +968,14 @@ class OBL(BravaisLattice):
                   [.5, .5, 0],
                   [1 - eta, nu, 0],
                   [.5, 0, 0]]
+
+        if alpha > 90:
+            # Then we map the special points back
+            op = np.array([[0, 1, 0],
+                           [-1, 0, 0],
+                           [0, 0, 1]])
+            points = np.dot(points, op.T)
+
         return points
 
 
@@ -1003,19 +1024,31 @@ class CRECT(BravaisLattice):
                          [0, 0, 0.]])
 
     def _special_points(self, a, alpha, variant):
-        sina2 = np.sin(alpha / 2 * _degrees)**2
-        sina = np.sin(alpha * _degrees)**2
+        if alpha > 90:
+            _alpha = 180 - alpha
+        else:
+            _alpha = alpha
+        sina2 = np.sin(_alpha / 2 * _degrees)**2
+        sina = np.sin(_alpha * _degrees)**2
         eta = sina2 / sina
-        cosa = np.cos(alpha * _degrees)
+        cosa = np.cos(_alpha * _degrees)
         xi = eta * cosa
+
         points = [[0, 0, 0],
                   [eta, - eta, 0],
                   [0.5 + xi, 0.5 - xi, 0],
                   [0.5, 0.5, 0]]
+
+        if alpha > 90:
+            # Then we map the special points back
+            op = np.array([[0, 1, 0],
+                           [-1, 0, 0],
+                           [0, 0, 1]])
+            points = np.dot(points, op.T)
         return points
 
 
-@bravaisclass('primitive square', 'tetragonal', None, 'tp', ('a'),
+@bravaisclass('primitive square', 'tetragonal', None, 'tp', ('a',),
               [['SQR', 'GMX', 'MGXM',
                 get_subset_points('GMX', sc_special_points['tetragonal'])]],
               ndim=2)
@@ -1029,18 +1062,17 @@ class SQR(BravaisLattice):
                          [0, 0, 0.]])
 
 
-def get_bravais_lattice(cell, eps=2e-4):
-    cell = Cell.ascell(cell)
+@bravaisclass('primitive line', 'line', None, '?', ('a',),
+              [['LINE', 'GX', 'GX', {'G': [0, 0, 0], 'X': [0.5, 0, 0]}]],
+              ndim=1)
+class LINE(BravaisLattice):
+    def __init__(self, a, **kwargs):
+        BravaisLattice.__init__(self, a=a, **kwargs)
 
-    if cell.pbc.all():
-        lat, op = identify_lattice(cell, eps=eps)
-        return lat
-    elif cell.pbc[:2].all():
-        return get_2d_bravais_lattice(cell, eps)
-    else:
-        raise ValueError('Cell must be periodic either along two first '
-                         'axes or along all three.  Got pbc={}'
-                         .format(cell.pbc))
+    def _cell(self, a):
+        return np.array([[a, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0]])
 
 
 def celldiff(cell1, cell2):
@@ -1048,6 +1080,8 @@ def celldiff(cell1, cell2):
     cell1 = Cell.ascell(cell1).complete()
     cell2 = Cell.ascell(cell2).complete()
     v1v2 = cell1.volume * cell2.volume
+    if v1v2 == 0:
+        raise ZeroDivisionError('Cell volumes are zero')
     scale = v1v2**(-1. / 3.)  # --> 1/Ang^2
     x1 = cell1 @ cell1.T
     x2 = cell2 @ cell2.T
@@ -1066,14 +1100,46 @@ def get_lattice_from_canonical_cell(cell, eps=2e-4):
     return LatticeChecker(cell, eps).match()
 
 
-def identify_lattice(cell, eps=2e-4):
+def identify_lattice(cell, eps=2e-4, *, pbc=True):
     """Find Bravais lattice representing this cell.
 
     Returns Bravais lattice object representing the cell along with
-    and operation that, applied to the cell, yields the same lengths
+    an operation that, applied to the cell, yields the same lengths
     and angles as the Bravais lattice object."""
+
+    pbc = cell.any(1) & pbc2pbc(pbc)
+    npbc = sum(pbc)
+
+    if npbc == 1:
+        i = np.argmax(pbc)  # index of periodic axis
+        a = cell[i, i]
+        if a < 0 or cell[i, [i - 1, i - 2]].any():
+            raise ValueError('Not a 1-d cell ASE can handle: {cell}.'
+                             .format(cell=cell))
+        if i == 0:
+            op = np.eye(3)
+        elif i == 1:
+            op = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+        else:
+            op = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+        return LINE(a), op
+
+    if npbc == 2:
+        lat, op = get_2d_bravais_lattice(cell, eps, pbc=pbc)
+        return lat, op
+
+    if npbc != 3:
+        raise ValueError('System must be periodic either '
+                         'along all three axes, '
+                         'along two first axes or, '
+                         'along the third axis.  '
+                         'Got pbc={}'.format(pbc))
+
     from ase.geometry.bravais_type_engine import niggli_op_table
-    rcell, reduction_op = cell.niggli_reduce()
+
+    if cell.rank < 3:
+        raise ValueError('Expected 3 linearly independent cell vectors')
+    rcell, reduction_op = cell.niggli_reduce(eps=eps)
 
     # We tabulate the cell's Niggli-mapped versions so we don't need to
     # redo any work when the same Niggli-operation appears multiple times
@@ -1282,9 +1348,17 @@ class LatticeChecker:
         return self._check(TRI, *self.cellpar)
 
 
-def get_2d_bravais_lattice(origcell, eps=2e-4):
-    pbc = origcell.pbc
-    assert pbc.sum() == 2
+class UnsupportedLattice(ValueError):
+    pass
+
+
+def get_2d_bravais_lattice(origcell, eps=2e-4, *, pbc=True):
+
+    pbc = origcell.any(1) & pbc2pbc(pbc)
+    if list(pbc) != [1, 1, 0]:
+        raise UnsupportedLattice('Can only get 2D Bravais lattice of cell with '
+                                 'pbc==[1, 1, 0]; but we have {}'.format(pbc))
+
     nonperiodic = pbc.argmin()
     # Start with op = I
     ops = [np.eye(3)]
@@ -1303,12 +1377,12 @@ def get_2d_bravais_lattice(origcell, eps=2e-4):
 
     symrank = 0
     for op in ops:
-        cell = Cell(op.dot(origcell), pbc=pbc)
+        cell = Cell(op.dot(origcell))
         cellpar = cell.cellpar()
         angles = cellpar[3:]
         # Find a, b and gamma
         gamma = angles[~pbc][0]
-        a, b = cellpar[:3][cell.pbc]
+        a, b = cellpar[:3][pbc]
 
         anglesm90 = np.abs(angles - 90)
         # Maximum one angle different from 90 deg in 2d please
@@ -1335,20 +1409,21 @@ def get_2d_bravais_lattice(origcell, eps=2e-4):
                 lat = OBL(a, b, gamma)
                 rank = 1
 
-        op = lat.get_transformation(origcell)
+        op = lat.get_transformation(origcell, eps=eps)
         if not allclose(np.dot(op, lat.tocell())[pbc][:, pbc],
                         origcell.array[pbc][:, pbc]):
             msg = ('Cannot recognize cell at all somehow! {}, {}, {}'.
                    format(a, b, gamma))
             raise RuntimeError(msg)
         if rank > symrank:
+            finalop = op
             symrank = rank
             finallat = lat
 
-    return finallat
+    return finallat, finalop.T
 
 
-def all_variants():
+def all_variants(include_blunt_angles=True):
     """For testing and examples; yield all variants of all lattices."""
     a, b, c = 3., 4., 5.
     alpha = 55.0
@@ -1436,3 +1511,9 @@ def all_variants():
     yield CRECT(a, alpha=alpha)
     yield HEX2D(a)
     yield SQR(a)
+    yield LINE(a)
+
+    if include_blunt_angles:
+        beta = 110
+        yield OBL(a, b, alpha=beta)
+        yield CRECT(a, alpha=beta)

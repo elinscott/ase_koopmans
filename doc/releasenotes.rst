@@ -1,3 +1,4 @@
+
 .. _releasenotes:
 
 =============
@@ -9,7 +10,168 @@ Git master branch
 
 :git:`master <>`.
 
+* The ``ase db db1.db <selection> --insert-into db2.db`` command now respects
+  ``--limit`` and ``--offset``.
+
+* Fixed ``kpts`` option of :class:`ase.calculators.espresso.Espresso` so that specifying a Γ-point calculation with ``kpts=(1, 1, 1)`` does not enable the optimized codepath (which halves memory and cpu). Use ``kpts=None`` to enable the optimized codepath.
+
+* Removed interface to :ref:`Dacapo <jacapo>` due to lack of users and maintainers.
+
+* :class:`ase.neb.NEBTools` now allows the simultaneous plotting of all bands from a trajectory of a nudged elastic band calculation (or similar); this funciton is also available at the command line as ``ase nebplot neb.traj``.
+
+* The image-dependent pair-potential (IDPP) interpolation scheme for connecting states---i.e., in a saddle-point search---has been moved into the method :func:`ase.neb.idpp_interpolate`. This method is a more feature-rich version that that accessible via :meth:`ase.neb.NEB.interpolate`.
+
+* Write support has been added for the Vasp 5 XDATCAR file format.
+
+* Added :mod:`ORCA <ase.calculators.orca>` calculator.
+
+Version 3.19.0
+==============
+
+16 December 2019: :git:`3.19.0 <../3.19.0>`
+
 General changes:
+
+* :func:`ase.build.bulk` now supports elements with tetragonal and
+  rhombohedral lattices.
+
+* The ``rank`` and ``size`` constants from the :mod:`ase.parallel` module have
+  been deprecated.  Use ``world.rank`` and ``world.size`` instead
+  (and ``from ase.parallel import world``).
+
+* ``atoms.set_masses('most_common')`` now sets the masses of each
+  element according to most common isotope as stored in
+  ``ase.data.atomic_masses_common``.
+
+* :mod:`ase.utils.parsemath` added to utils. This module parses simple
+  mathematical expressions and returns their numerical value.
+
+* Plotting functions (such as band structure, EOS, ...)
+  no longer show the figure by default.
+
+* :class:`~ase.Atoms` constructor now accepts ``velocities`` as keyword.
+
+* Documentation: New set of :ref:`introductory ASE tutorials <gettingstarted>`.
+
+* More detailed output of ``ase info --formats``.
+
+* For completeness, :mod:`ase.lattice` now also supports the 1D
+  Bravais lattice.
+
+Algorithms:
+
+* Added :class:`~ase.md.analysis.DiffusionCoefficient` so one can
+  calculate atom/molecule mobility from trajectory as a function of
+  time.
+
+* Added general linear parametric constraints :class:`ase.constraints.FixParametricRelations`,
+  :class:`ase.constraints.FixScaledParametricRelations`, and
+  :class:`ase.constraints.FixCartesianParametricRelations` to
+  :mod:`ase.constraints`. These constraints are based off the work
+  in: https://arxiv.org/abs/1908.01610, and allows for the positions and cell of a
+  structure to be optimized in a reduced parameter space.
+
+* Added :func:`ase.build.graphene` for building graphene monolayers.
+
+* Added :mod:`ase.md.switch_langevin` module for thermodynamic
+  integration via MD simulations.
+
+* Implemented "dynamic" or "ideal gas" contribution from atomic
+  momenta to stress tensor Use :meth:`<ase.Atoms.get_stress>`, e.g.,
+  ``atoms.get_stress(include_ideal_gas=True)``.
+
+Calculators:
+
+* Added :mod:`Q-Chem <ase.calculators.qchem>` calculator.
+
+* Added :class:`~ase.calculators.psi4.Psi4` calculator.
+
+* Added :class:`~ase.calculators.demonnano.DemonNano` calculator.
+
+* Added :mod:`OpenKIM <ase.calculators.kim>` calculator,
+  a special calculator for `OpenKim <https://openkim.org/>`_ models.
+
+* Gulp calculator now provides stress tensor.
+
+* The :mod:`NWChem <ase.calculators.nwchem>` calculator has been completely rewritten, and now supports
+  `DFT <https://github.com/nwchemgit/nwchem/wiki/Density-Functional-Theory-for-Molecules>`_,
+  `SCF (Hartree Fock) <https://github.com/nwchemgit/nwchem/wiki/Hartree-Fock-Theory-for-Molecules>`_,
+  `MP2 <https://github.com/nwchemgit/nwchem/wiki/MP2>`_,
+  `CCSD <https://github.com/nwchemgit/nwchem/wiki/CCSD>`_,
+  and `TCE <https://github.com/nwchemgit/nwchem/wiki/TCE>`_ calculations with gaussian-type orbitals.
+  The calculator also now supports
+  `plane-wave calculations <https://github.com/nwchemgit/nwchem/wiki/Plane-Wave-Density-Functional-Theory>`_,
+  including band structure calculations through ASE's :class:`~ase.dft.band_structure.BandStructure` utilities.
+  To facilitate these changes, the format of the calculator keywords has been changed. Please read the updated
+  :mod:`NWChem <ase.calculators.nwchem>` calculator documentation for more details.
+
+* :class:`~ase.calculators.siesta.siesta.Siesta` calculator refactored.
+  The Siesta calculator now supports the band structure machinery.
+  There is only a single Siesta calculator now covering all versions of Siesta,
+  consistently with other ASE calculators.
+
+* Added :mod:`~ase.calculators.mixing` module for the linear
+  combination of arbitrary :mod:`~ase.calculators`.
+
+* New :class:`ase.calculators.idealgas.IdealGas` calculator for
+  non-interacting atoms.  The calculator does nothing.  This can be
+  useful for testing.
+
+* :class:`~ase.calculators.emt.EMT` calculator now support
+  atom-specific energies as per ``atoms.get_energies()``.
+
+I/O:
+
+* Read and write support for RMCProfile (rmc6f) file format.
+
+* Write support for Materials Studio xtd files.
+
+* More efficient storage of the "data" part of rows in the :mod:`ase.db`
+  database.  NumPy arrays are now stored in binary format instead of as text
+  thereby using approximately a factor of two less space when storing numbers
+  of ``np.float64``.
+
+* The :mod:`~ase.io.pov` module can now render high-order bonds.
+
+* :class:`~ase.Atoms` now provides the general-purpose JSON mechanism
+  from :mod:`ase.io.jsonio`.
+
+* Added :mod:`ase.data.pubchem` module to search for structures
+  in the `PubChem <https://pubchem.ncbi.nlm.nih.gov/>`_ database.
+
+GUI:
+
+* It is now possible to copy and paste atoms: The "add atoms" function
+  (Ctrl+A) will suggest the atoms in the current selection by default.
+
+Version 3.18.2
+==============
+
+15 December 2019: :git:`3.18.2 <../3.18.2>`
+
+* Fix an issue with the binary package (wheel) of 3.18.1.
+  No bugfixes as such.
+
+Version 3.18.1
+==============
+
+20 September 2019: :git:`3.18.1 <../3.18.1>`
+
+* Multiple bugfixes.  Most importantly, deprecate ``atoms.cell.pbc``
+  in order to avoid complexities from dealing with two
+  ways of manipulating this piece of information.
+  Use ``atoms.pbc`` instead; this works the same as always.
+  Also, the :class:`~ase.cell.Cell` object now exposes almost the entire
+  ``ndarray`` interface.  For a list of smaller bugfixes, see the git log.
+
+Version 3.18.0
+==============
+
+19 July 2019: :git:`3.18.0 <../3.18.0>`
+
+General changes:
+
+* ASE no longer supports Python2.
 
 * ``atoms.cell`` is now a :class:`~ase.cell.Cell` object.
   This object resembles a 3x3 array and also provides shortcuts to many common
@@ -30,12 +192,29 @@ General changes:
   :class:`~ase.dft.band_structure.BandStructure` objects now have a band
   path.
 
+* :func:`ase.dft.kpoints.bandpath` now returns a
+  :class:`~ase.dft.kpoints.BandPath` object.  Generation
+  of band paths now works for (almost) any cell.
+
+* Use ``atoms.cell.bandpath()`` as a shortcut to generate band paths.
+
 * New holonomic :class:`constraint <ase.constraints.FixLinearTriatomic>`
   for trilinear molecules.
 
 * Added ``ase info --calculators`` option which shows a list of
   calculators and whether they appear to be installed.
 
+* Added :func:`ase.build.surfaces_with_termination.surfaces_with_termination`,
+  a tool to build surfaces with a particular termination.
+
+* Use the shortcut ``with ase.utils.workdir('mydir', mkdir=True):
+  <code>`` to temporarily change directories.
+
+* The ``ase test`` command now properly autocompletes test names and
+  calculator names.
+
+* Added keyword, ``atoms.wrap(pretty_translation=True)``, to minimize
+  the scaled positions of the atoms.
 
 Calculators:
 
@@ -58,9 +237,27 @@ Calculators:
 
 * Gromacs calculator updated to work with newer Gromacs.
 
+* Fleur calculator updated to work with newer Fleur.
+
 * Added :class:`~ase.calculators.ACN`, a QM/MM forcefield for acetonitrile.
 
+* Improved eigenvalue parsing with Siesta calculator.
+
 Algorithms:
+
+* Determine Bravais lattice for any 2D or 3D cell using
+  ``atoms.cell.get_bravais_lattice()``.
+
+* Added function to Minkowski reduce a cell.
+
+* Improved stability of Niggli reduction algorithm.
+
+* Supercell generation using ``ase.build.make_supercell()`` now uses
+  a constructive algorithm instead of cutting which was prone to tolerance
+  errors.
+
+* Setting an MD velocity distribution now preserves the temperature
+  by default.
 
 * :class:`Analysis tool <ase.geometry.analysis.Analysis>` for extracting
   bond lengths and angles from atoms.
@@ -91,6 +288,10 @@ Algorithms:
 * Holonomic :class:`~ase.constraints.FixLinearTriatomic` for QM/MM
   calculations.
 
+* The :class:`~ase.neighborlist.NeighborList` now uses kdtree from Scipy
+  for improved performance.  It also uses Minkowsky reduction
+  to improve performance for unusually shaped cells.
+
 I/O:
 
 * Database supports user defined tables
@@ -102,6 +303,10 @@ I/O:
 
 * Support for reading CP2K DCD format.
 
+* Support for EON .con files with multiple images.
+
+* Support for writing Materials Studio xtd format.
+
 * Improved JSON support.  :ref:`cli` tools like :program:`ase
   band-structure` and :program:`ase reciprocal` now work with
   JSON representations of band structures and paths.
@@ -111,11 +316,19 @@ I/O:
   library.  This can be useful for CIF features that are not supported
   by the internal CIF parser.
 
-* :ref:`MySQL and MariaDB <MySQL_server>` is supported as database backend
+* :ref:`MySQL and MariaDB <MySQL_server>` are supported as database backend
+
+* Support for writing isosurface information to POV format
+  with :func:`ase.io.pov.add_isosurface_to_pov`
 
 GUI:
 
  * Quickinfo dialog automatically updates when switching image.
+
+ * Display information about custom arrays on Atoms objects; allow colouring
+   by custom arrays.
+
+ * Improved color scales.
 
 Version 3.17.0
 ==============
@@ -261,6 +474,8 @@ GUI:
   in GUI.
 
 * Added Basque translation.
+
+* Added French translation.
 
 Version 3.16.2
 ==============
@@ -597,7 +812,7 @@ Version 3.11.0
 
 10 May 2016: :git:`3.11.0 <../3.11.0>`.
 
-* Special `\mathbf{k}`-points from the [Setyawana-Curtarolo]_ paper was added:
+* Special `\mathbf{k}`-points from the [Setyawan-Curtarolo]_ paper was added:
   :data:`ase.dft.kpoints.special_points`.
 
 * New :mod:`ase.collections` module added.  Currently contains the G2 database
@@ -790,7 +1005,7 @@ Version 3.6.0
 * New ase.lattice.bulk() function.  Will replace old
   ase.build.bulk() function.  The new one will produce a more
   natural hcp lattice and it will use experimental data for crystal
-  structure and lattice constants if not provided explicitely.
+  structure and lattice constants if not provided explicitly.
 
 * New values for ase.data.covalent_radii from Cordeo *et al.*.
 
@@ -856,7 +1071,7 @@ Version 3.5.0
 * Implementation of the Dimer method.
 
 
-.. _ASAP: http://wiki.fysik.dtu.dk/asap
+.. _ASAP: https://wiki.fysik.dtu.dk/asap
 .. _GPAW: https://wiki.fysik.dtu.dk/gpaw/documentation/xc/vdwcorrection.html
 
 

@@ -17,7 +17,6 @@ from ase.atom import Atom
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io.gaussian_reader import GaussianReader as GR
 from ase.calculators.gaussian import Gaussian
-from ase.utils import basestring
 
 
 # http://www.gaussian.com/g_tech/g_ur/k_dft.htm
@@ -38,8 +37,10 @@ allowed_dft_functionals = ['lsda',  # = 'svwn'
 
 
 def read_gaussian_out(filename, index=-1, quantity='atoms'):
-    """"Interface to GaussianReader and returns various quantities.
-        No support for multiple images in one file!
+    """
+    Interface to GaussianReader and returns various quantities.
+    No support for multiple images in one file!
+
     - quantity = 'structures' -> all structures from the file
     - quantity = 'atoms' -> structure from the archive section
     - quantity = 'energy' -> from the archive section
@@ -47,7 +48,9 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
     - quantity = 'dipole' -> from the archive section
     - quantity = 'version' -> from the archive section
     - quantity = 'multiplicity' -> from the archive section
-    - quantity = 'charge' -> from the archive section"""
+    - quantity = 'charge' -> from the archive section
+
+    """
     energy = 0.0
 
     tmpGR = GR(filename, read_structures=bool(quantity == 'structures'))
@@ -56,7 +59,7 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
         structures = tmpGR.get_structures()
 
     data = tmpGR[index]
-    #fix: io.formats passes a slice as index, resulting in data beeing a list
+    #fix: io.formats passes a slice as index, resulting in data being a list
     if isinstance(data, list) and len(data) > 1:
         msg = 'Cannot parse multiple images from Gaussian out files at this'
         msg += ' time.  Please select a single image.'
@@ -85,7 +88,7 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
             energy = value
 
     try:
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             fileobj = open(filename, 'r')
         else:
             fileobj = filename
@@ -137,13 +140,22 @@ def read_gaussian(filename):
 
     atoms = Atoms()
     for n, line in enumerate(lines):
-        if ('#' in line):
+        if ('#' in lines[n] and "#" not in lines[n+1]):
             i = 0
             while (lines[n + i + 5] != '\n'):
                 info = lines[n + i + 5].split()
-                symbol = info[0]
+                if "Fragment" in info[0]:
+                    info[0] = info[0].replace("(", " ")
+                    info[0] = info[0].replace("=", " ")
+                    info[0] = info[0].replace(")", " ")
+                    fragment_line = info[0].split()
+                    symbol = fragment_line[0]
+                    tag = int(fragment_line[2]) - 1
+                else:
+                    symbol = info[0]
+                    tag = 0
                 position = [float(info[1]), float(info[2]), float(info[3])]
-                atoms += Atom(symbol, position=position)
+                atoms += Atom(symbol, position=position, tag=tag)
                 i += 1
     return atoms
 

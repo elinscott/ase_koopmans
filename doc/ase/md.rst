@@ -102,8 +102,8 @@ cyclic reference to the dynamics.
    object directly to the logging object. Instead, create a weak reference
    using the ``proxy`` method of the ``weakref`` package. See the
    *ase.md.MDLogger* source code for an example. (If this is not done, a
-   cyclic reference may be created which can cause certain calculators,
-   such as Jacapo, to not terminate correctly.)
+   cyclic reference may be created which can cause certain calculators
+   to not terminate correctly.)
 
 
 .. autoclass:: MDLogger
@@ -434,3 +434,13 @@ to the correct temperature.
 .. autofunction:: PhononHarmonics
 
 .. autofunction:: phonon_harmonics
+
+Post-simulation Analysis
+========================
+
+Functionality is provided to perform analysis of atomic/molecular behaviour as calculation in a molecular dynamics simulation. Currently, this is presented as a class to address the Einstein equation for diffusivity.
+
+.. module:: ase.md.analysis
+
+.. autoclass:: DiffusionCoefficient
+

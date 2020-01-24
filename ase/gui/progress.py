@@ -1,6 +1,3 @@
-from __future__ import print_function
-# encoding: utf-8
-
 import ase.gui.ui as ui
 import numpy as np
 import sys

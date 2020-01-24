@@ -1,7 +1,6 @@
 import pickle
 
 import numpy as np
-from ase.utils import basestring
 
 class STM:
     def __init__(self, atoms, symmetries=None, use_density=False):
@@ -24,7 +23,7 @@ class STM:
 
         self.use_density = use_density
 
-        if isinstance(atoms, basestring):
+        if isinstance(atoms, str):
             with open(atoms, 'rb') as f:
                 self.ldos, self.bias, self.cell = pickle.load(f)
             self.atoms = None
@@ -245,7 +244,7 @@ class STM:
         zp = int(zp) % nz
 
         # 3D interpolation of the LDOS at point (x,y,z) at given bias.
-        xyzldos =  (((1 - dx) + (1 - dy) + (1 - dz)) * self.ldos[xp, yp, zp] +
+        xyzldos = (((1 - dx) + (1 - dy) + (1 - dz)) * self.ldos[xp, yp, zp] +
                    dx * self.ldos[(xp + 1) % nx, yp, zp] +
                    dy * self.ldos[xp, (yp + 1) % ny, zp] +
                    dz * self.ldos[xp, yp, (zp + 1) % nz])

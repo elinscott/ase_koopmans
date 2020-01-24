@@ -250,7 +250,10 @@ class DFTD3(FileIOCalculator):
             if pbc:
                 fname = os.path.join(self.directory,
                                      '{}.POSCAR'.format(self.label))
-                write_vasp(fname, atoms)
+                # We sort the atoms so that the atomtypes list becomes as
+                # short as possible.  The dftd3 program can only handle 10
+                # atomtypes
+                write_vasp(fname, atoms, sort=True)
             else:
                 fname = os.path.join(
                     self.directory, '{}.xyz'.format(self.label))
@@ -359,6 +362,9 @@ class DFTD3(FileIOCalculator):
                         forces[i] = np.array([float(x) for x in line.split()])
                 forces *= -Hartree / Bohr
             self.comm.broadcast(forces, 0)
+            if self.atoms.pbc.any():
+                ind = np.argsort(self.atoms.get_chemical_symbols())
+                forces[ind] = forces.copy()
             self.results['forces'] = forces
 
             if any(self.atoms.pbc):

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """Vibrational modes."""
-from __future__ import division
 
 import os
 import os.path as op
@@ -12,9 +10,9 @@ import numpy as np
 
 import ase.units as units
 from ase.io.trajectory import Trajectory
-from ase.parallel import rank, paropen
+from ase.parallel import world, paropen
 
-from ase.utils import opencew, pickleload, basestring
+from ase.utils import opencew, pickleload
 from ase.calculators.singlepoint import SinglePointCalculator
 
 
@@ -175,7 +173,7 @@ class Vibrations:
             dipole = self.calc.get_dipole_moment(atoms)
         if self.ram:
             freq, noninPol, pol = self.get_polarizability()
-        if rank == 0:
+        if world.rank == 0:
             if self.ir and self.ram:
                 pickle.dump([forces, dipole, freq, noninPol, pol], fd, protocol=2)
                 sys.stdout.write(
@@ -200,7 +198,7 @@ class Vibrations:
 
         """
 
-        if rank != 0:
+        if world.rank != 0:
             return 0
 
         n = 0
@@ -225,7 +223,7 @@ class Vibrations:
         of data structure at a time.
 
         """
-        if rank != 0:
+        if world.rank != 0:
             return 0
         filenames = [self.name + '.eq.pckl']
         for dispName, a, i, disp in self.displacements():
@@ -257,7 +255,7 @@ class Vibrations:
         sort of data structure at a time.
 
         """
-        if rank != 0:
+        if world.rank != 0:
             return 0
         combined_name = self.name + '.all.pckl'
         if not op.isfile(combined_name):
@@ -390,7 +388,7 @@ class Vibrations:
             file to create.
         """
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
         write = log.write
 

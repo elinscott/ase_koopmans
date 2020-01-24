@@ -1,7 +1,5 @@
-# encoding: utf-8
 '''surfaceslab.py - Window for setting up surfaces
 '''
-from __future__ import division, unicode_literals
 from ase.gui.i18n import _, ngettext
 
 import ase.gui.ui as ui

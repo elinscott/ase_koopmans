@@ -54,6 +54,18 @@ Swap the positions of two atoms with index 3 and 4:
 >>> atoms.positions[[3, 4]] = atoms.positions[[4, 3]]
 
 
+Sorting
+-------
+
+>>> atoms = Atoms('H2OH2OH2O')
+>>> atoms
+Atoms(symbols='H2OH2OH2O', pbc=False)
+>>> atoms[atoms.numbers.argsort()]
+Atoms(symbols='H6O3', pbc=False)
+
+See also :meth:`numpy.ndarray.argsort`.
+
+
 Trajectories
 ============
 

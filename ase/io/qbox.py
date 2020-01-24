@@ -2,7 +2,6 @@
 
 from ase import Atom, Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
-from ase.utils import basestring
 
 import re
 import xml.etree.ElementTree as ET
@@ -18,11 +17,12 @@ def read_qbox(f, index=-1):
     Inputs:
         f - str or fileobj, path to file or file object to read from
         index - int or slice, which frames to return
+
     Returns:
         list of Atoms or atoms, requested frame(s)
     """
 
-    if isinstance(f, basestring):
+    if isinstance(f, str):
         f = open(f, 'r')
 
     # Check whether this is a QB@all output
@@ -101,8 +101,8 @@ def _find_blocks(fp, tag, stopwords='[qbox]'):
         list of xml.ElementTree, parsed XML blocks found by this class
     """
 
-    start_tag = '<%s'%tag
-    end_tag = '</%s>'%tag
+    start_tag = '<%s' % tag
+    end_tag = '</%s>' % tag
 
     blocks = []  # Stores all blocks
     cur_block = []  # Block being filled

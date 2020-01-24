@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import numpy as np
 
 from ase.db.core import float_to_time_string, now

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
 """This module defines an interface to CASTEP for
     use by the ASE (Webpage: http://wiki.fysik.dtu.dk/ase)
 
@@ -29,15 +27,18 @@ import warnings
 import subprocess
 from copy import deepcopy
 from collections import namedtuple
+from itertools import product
 
 import ase
 import ase.units as units
 from ase.calculators.general import Calculator
 from ase.calculators.calculator import compare_atoms
 from ase.calculators.calculator import PropertyNotImplementedError
-from ase.utils import basestring
+from ase.calculators.calculator import kpts2sizeandoffsets
+from ase.dft.kpoints import BandPath
 from ase.parallel import paropen
 from ase.io.castep import read_param
+from ase.io.castep import read_bands
 from ase.constraints import FixCartesian
 
 __all__ = [
@@ -350,6 +351,31 @@ Special features:
   set to the same directory, only the label is preceded by 'copy_of\_'  to
   avoid overwriting.
 
+``.set_kpts(kpoints)``
+  This is equivalent to initialising the calculator with
+  ``calc = Castep(kpts=kpoints)``. ``kpoints`` can be specified in many
+  convenient forms: simple Monkhorst-Pack grids can be specified e.g.
+  ``(2, 2, 3)`` or ``'2 2 3'``; lists of specific weighted k-points can be
+  given in reciprocal lattice coordinates e.g.
+  ``[[0, 0, 0, 0.25], [0.25, 0.25, 0.25, 0.75]]``; a dictionary syntax is
+  available for more complex requirements e.g.
+  ``{'size': (2, 2, 2), 'gamma': True}`` will give a Gamma-centered 2x2x2 M-P
+  grid, ``{'density': 10, 'gamma': False, 'even': False}`` will give a mesh
+  with density of at least 10 Ang (based on the unit cell of currently-attached
+  atoms) with an odd number of points in each direction and avoiding the Gamma
+  point.
+
+``.set_bandpath(bandpath)``
+  This is equivalent to initialialising the calculator with
+  ``calc=Castep(bandpath=bandpath)`` and may be set simultaneously with *kpts*.
+  It allows an electronic band structure path to be set up using ASE BandPath
+  objects. This enables a band structure calculation to be set up conveniently
+  using e.g. calc.set_bandpath(atoms.cell.bandpath().interpolate(npoints=200))
+
+``.band_structure(bandfile=None)``
+  Read a band structure from _seedname.bands_ file. This returns an ase
+  BandStructure object which may be plotted with e.g.
+  ``calc.band_structure().plot()``
 
 Notes/Issues:
 ==============
@@ -364,15 +390,15 @@ Notes/Issues:
 
 .. _CASTEP: http://www.castep.org/
 
-.. _W: http://en.wikipedia.org/wiki/CASTEP
+.. _W: https://en.wikipedia.org/wiki/CASTEP
 
-.. _CODATA: http://physics.nist.gov/cuu/Constants/index.html
+.. _CODATA: https://physics.nist.gov/cuu/Constants/index.html
 
 .. [1] S. J. Clark, M. D. Segall, C. J. Pickard, P. J. Hasnip, M. J. Probert,
        K. Refson, M. C. Payne Zeitschrift für Kristallographie 220(5-6)
        pp.567- 570 (2005) PDF_.
 
-.. _PDF: http://goo.gl/wW50m
+.. _PDF: http://www.tcm.phy.cam.ac.uk/castep/papers/ZKristallogr_2005.pdf
 
 
 End CASTEP Interface Documentation
@@ -512,6 +538,11 @@ End CASTEP Interface Documentation
         self._energy_free = None
         self._energy_0K = None
         self._energy_total_corr = None
+        self._eigenvalues = None
+        self._efermi = None
+        self._ibz_kpts = None
+        self._ibz_weights = None
+        self._band_structure = None
 
         # dispersion corrections
         self._dispcorr_energy_total = None
@@ -538,6 +569,9 @@ End CASTEP Interface Documentation
         self._check_file = None
         self._castep_bin_file = None
 
+        # plane wave cutoff energy (may be derived during PP generation)
+        self._cut_off_energy = None
+
         # runtime information
         self._total_time = None
         self._peak_memory = None
@@ -559,13 +593,179 @@ End CASTEP Interface Documentation
         for keyword, value in kwargs.items():
             # first fetch special keywords issued by ASE CLI
             if keyword == 'kpts':
-                self.__setattr__('kpoint_mp_grid', '%s %s %s' % tuple(value))
+                self.set_kpts(value)
+            elif keyword == 'bandpath':
+                self.set_bandpath(value)
             elif keyword == 'xc':
-                self.__setattr__('xc_functional', str(value))
+                self.xc_functional = value
             elif keyword == 'ecut':
-                self.__setattr__('cut_off_energy', str(value))
+                self.cut_off_energy = value
             else:  # the general case
                 self.__setattr__(keyword, value)
+
+    def band_structure(self, bandfile=None):
+        from ase.dft.band_structure import BandStructure
+
+        if bandfile is None:
+            bandfile = os.path.join(self._directory, self._seed) + '.bands'
+
+        if not os.path.exists(bandfile):
+            raise ValueError('Cannot find band file "{}".'.format(bandfile))
+
+        kpts, weights, eigenvalues, efermi = read_bands(bandfile)
+
+        # Get definitions of high-symmetry points
+        special_points = self.atoms.cell.bandpath(npoints=0).special_points
+        bandpath = BandPath(self.atoms.cell,
+                            kpts=kpts,
+                            special_points=special_points)
+        return BandStructure(bandpath, eigenvalues, reference=efermi)
+
+    def set_bandpath(self, bandpath):
+        """Set a band structure path from ase.dft.kpoints.BandPath object
+
+        This will set the bs_kpoint_list block with a set of specific points
+        determined in ASE. bs_kpoint_spacing will not be used; to modify the
+        number of points, consider using e.g. bandpath.resample(density=20) to
+        obtain a new dense path.
+
+        Args:
+            bandpath (:obj:`ase.dft.kpoints.BandPath` or None):
+                Set to None to remove list of band structure points. Otherwise,
+                sampling will follow BandPath parameters.
+
+        """
+
+        def clear_bs_keywords():
+            bs_keywords = product({'bs_kpoint', 'bs_kpoints'},
+                                  {'path', 'path_spacing',
+                                   'list',
+                                   'mp_grid', 'mp_spacing', 'mp_offset'})
+            for bs_tag in bs_keywords:
+                setattr(self.cell, '_'.join(bs_tag), None)
+
+        if bandpath is None:
+            clear_bs_keywords()
+        elif isinstance(bandpath, BandPath):
+            clear_bs_keywords()
+            self.cell.bs_kpoint_list = [' '.join(map(str, row))
+                                        for row in bandpath.kpts]
+        else:
+            raise TypeError('Band structure path must be an '
+                            'ase.dft.kpoint.BandPath object')
+
+    def set_kpts(self, kpts):
+        """Set k-point mesh/path using a str, tuple or ASE features
+
+        Args:
+            kpts (None, tuple, str, dict):
+
+        This method will set the CASTEP parameters kpoints_mp_grid,
+        kpoints_mp_offset and kpoints_mp_spacing as appropriate. Unused
+        parameters will be set to None (i.e. not included in input files.)
+
+        If kpts=None, all these parameters are set as unused.
+
+        The simplest useful case is to give a 3-tuple of integers specifying
+        a Monkhorst-Pack grid. This may also be formatted as a string separated
+        by spaces; this is the format used internally before writing to the
+        input files.
+
+        A more powerful set of features is available when using a python
+        dictionary with the following allowed keys:
+
+        - 'size' (3-tuple of int) mesh of mesh dimensions
+        - 'density' (float) for BZ sampling density in points per recip. Ang
+          ( kpoint_mp_spacing = 1 / (2pi * density) ). An explicit MP mesh will
+          be set to allow for rounding/centering.
+        - 'spacing' (float) for BZ sampling density for maximum space between
+          sample points in reciprocal space. This is numerically equivalent to
+          the inbuilt ``calc.cell.kpoint_mp_spacing``, but will be converted to
+          'density' to allow for rounding/centering.
+        - 'even' (bool) to round each direction up to the nearest even number;
+          set False for odd numbers, leave as None for no odd/even rounding.
+        - 'gamma' (bool) to offset the Monkhorst-Pack grid to include
+          (0, 0, 0); set False to offset each direction avoiding 0.
+        """
+
+        def clear_mp_keywords():
+            mp_keywords = product({'kpoint', 'kpoints'},
+                                  {'mp_grid', 'mp_offset',
+                                   'mp_spacing', 'list'})
+            for kp_tag in mp_keywords:
+                setattr(self.cell, '_'.join(kp_tag), None)
+
+        # Case 1: Clear parameters with set_kpts(None)
+        if kpts is None:
+            clear_mp_keywords()
+            pass
+
+        # Case 2: list of explicit k-points with weights
+        # e.g. [[ 0,    0,   0,    0.125],
+        #       [ 0,   -0.5, 0,    0.375],
+        #       [-0.5,  0,  -0.5,  0.375],
+        #       [-0.5, -0.5, -0.5, 0.125]]
+
+        elif (isinstance(kpts, (tuple, list))
+              and isinstance(kpts[0], (tuple, list))):
+
+            if not all(map((lambda row: len(row) == 4), kpts)):
+                raise ValueError(
+                    'In explicit kpt list each row should have 4 elements')
+
+            clear_mp_keywords()
+            self.cell.kpoint_list = [' '.join(map(str, row)) for row in kpts]
+
+        # Case 3: list of explicit kpts formatted as list of str
+        # i.e. the internal format of calc.kpoint_list split on \n
+        # e.g. ['0 0 0 0.125', '0 -0.5 0 0.375', '-0.5 0 -0.5 0.375']
+        elif isinstance(kpts, (tuple, list)) and isinstance(kpts[0], str):
+
+            if not all(map((lambda row: len(row.split()) == 4), kpts)):
+                raise ValueError(
+                    'In explicit kpt list each row should have 4 elements')
+
+            clear_mp_keywords()
+            self.cell.kpoint_list = kpts
+
+        # Case 4: list or tuple of MP samples e.g. [3, 3, 2]
+        elif isinstance(kpts, (tuple, list)) and isinstance(kpts[0], int):
+            if len(kpts) != 3:
+                raise ValueError('Monkhorst-pack grid should have 3 values')
+            clear_mp_keywords()
+            self.cell.kpoint_mp_grid = '%d %d %d' % tuple(kpts)
+
+        # Case 5: str representation of Case 3 e.g. '3 3 2'
+        elif isinstance(kpts, str):
+            self.set_kpts([int(x) for x in kpts.split()])
+
+        # Case 6: dict of options e.g. {'size': (3, 3, 2), 'gamma': True}
+        # 'spacing' is allowed but transformed to 'density' to get mesh/offset
+        elif isinstance(kpts, dict):
+            kpts = kpts.copy()
+
+            if (kpts.get('spacing') is not None
+                and kpts.get('density') is not None):
+                raise ValueError(
+                    'Cannot set kpts spacing and density simultaneously.')
+            else:
+                if kpts.get('spacing') is not None:
+                    kpts = kpts.copy()
+                    spacing = kpts.pop('spacing')
+                    kpts['density'] = 1 / (np.pi * spacing)
+
+                clear_mp_keywords()
+                size, offsets = kpts2sizeandoffsets(atoms=self.atoms, **kpts)
+                self.cell.kpoint_mp_grid = '%d %d %d' % tuple(size)
+                self.cell.kpoint_mp_offset = '%f %f %f' % tuple(offsets)
+
+        # Case 7: some other iterator. Try treating as a list:
+        elif hasattr(kpts, '__iter__'):
+            self.set_kpts(list(kpts))
+
+        # Otherwise, give up
+        else:
+            raise TypeError('Cannot interpret kpts of this type')
 
     def todict(self, skip_default=True):
         """Create dict with settings of .param and .cell"""
@@ -587,7 +787,7 @@ End CASTEP Interface Documentation
 
         returns (record_start, record_end, end_found, last_record_complete)
         """
-        if isinstance(castep_file, basestring):
+        if isinstance(castep_file, str):
             castep_file = paropen(castep_file, 'r')
             file_opened = True
         else:
@@ -620,13 +820,7 @@ End CASTEP Interface Documentation
                 if 'warn' in line.lower():
                     self._warnings.append(line)
 
-                # HOTFIX: This string appears twice from CASTEP 7 on and thus
-                # prevents reading forces. So, better go for another keyword
-                # to indicate the regular end of a run.
-                # 'Initialization time' seems to do the job.
-                # if 'Writing analysis data to' in line:
-                # if 'Writing model to' in line:
-                if 'Peak Memory Use' in line:
+                if 'Finalisation time   =' in line:
                     end_found = True
                     record_end = castep_file.tell()
                     break
@@ -661,7 +855,7 @@ End CASTEP Interface Documentation
             if not os.path.exists(castep_file):
                 print('No CASTEP file found')
 
-        elif isinstance(castep_file, basestring):
+        elif isinstance(castep_file, str):
             out = paropen(castep_file, 'r')
 
         else:
@@ -767,16 +961,22 @@ End CASTEP Interface Documentation
                 elif 'stress calculation' in line:
                     if line.split()[-1].strip() == 'on':
                         self.param.calculate_stress = True
+                elif 'basis set accuracy' in line:
+                    self.param.basis_precision = line.split()[-1]
                 elif 'plane wave basis set cut-off' in line:
+                    # NB this is set as a private "result" attribute to avoid
+                    # conflict with input option basis_precision
                     cutoff = float(line.split()[-2])
-                    self.param.cut_off_energy = cutoff
+                    self._cut_off_energy = cutoff
+                    if self.param.basis_precision.value is None:
+                        self.param.cut_off_energy = cutoff
                 elif 'total energy / atom convergence tol.' in line:
                     elec_energy_tol = float(line.split()[-2])
                     self.param.elec_energy_tol = elec_energy_tol
                 elif 'convergence tolerance window' in line:
                     elec_convergence_win = int(line.split()[-2])
                     self.param.elec_convergence_win = elec_convergence_win
-                elif re.match('\sfinite basis set correction\s*:', line):
+                elif re.match(r'\sfinite basis set correction\s*:', line):
                     finite_basis_corr = line.split()[-1]
                     fbc_possibilities = {'none': 0,
                                          'manual': 1, 'automatic': 2}
@@ -831,7 +1031,7 @@ End CASTEP Interface Documentation
                         self.param.task = ctype
                 elif 'using functional' in line:
                     used_functional = line.split(":")[-1]
-                    used_functional = re.sub('\s+', ' ', used_functional)
+                    used_functional = re.sub(r'\s+', ' ', used_functional)
                     used_functional = used_functional.strip()
                     if used_functional != 'Local Density Approximation':
                         used_functional_possibilities = {
@@ -1045,8 +1245,8 @@ End CASTEP Interface Documentation
                     line = out.readline()
                     if "Pressure:" in line:
                         self._pressure = float(line.split()[-2]) * units.GPa
-                elif ('BFGS: starting iteration' in line or
-                      'BFGS: improving iteration' in line):
+                elif ('BFGS: starting iteration' in line
+                      or 'BFGS: improving iteration' in line):
                     if n_cell_const < 6:
                         lattice_real = []
                         lattice_reci = []
@@ -1105,16 +1305,16 @@ End CASTEP Interface Documentation
 
                 # fetch some last info
                 elif 'Total time' in line:
-                    pattern = '.*=\s*([\d\.]+) s'
+                    pattern = r'.*=\s*([\d\.]+) s'
                     self._total_time = float(re.search(pattern, line).group(1))
 
                 elif 'Peak Memory Use' in line:
-                    pattern = '.*=\s*([\d]+) kB'
+                    pattern = r'.*=\s*([\d]+) kB'
                     self._peak_memory = int(re.search(pattern, line).group(1))
 
             except Exception as exception:
-                sys.stderr.write(line + '|-> line triggered exception: ' +
-                                 str(exception))
+                sys.stderr.write(line + '|-> line triggered exception: '
+                                 + str(exception))
                 raise
 
         if _close:
@@ -1171,8 +1371,8 @@ End CASTEP Interface Documentation
             # castep file corresponding atomic number
             for iase in range(n_atoms):
                 for icastep in range(n_atoms):
-                    if (species[icastep] == self.atoms[iase].symbol and
-                            not atoms_assigned[icastep]):
+                    if (species[icastep] == self.atoms[iase].symbol
+                            and not atoms_assigned[icastep]):
                         positions_frac_atoms[iase] = \
                             positions_frac_castep[icastep]
                         forces_atoms[iase] = np.array(forces_castep[icastep])
@@ -1243,6 +1443,22 @@ End CASTEP Interface Documentation
         # reset
         self._warnings = []
 
+        # Read in eigenvalues from bands file
+        bands_file = castep_file[:-7] + '.bands'
+        if (self.param.task.value is not None
+            and self.param.task.value.lower() == 'bandstructure'):
+            self._band_structure = self.band_structure(bandfile=bands_file)
+        else:
+            try:
+                (self._ibz_kpts, 
+                 self._ibz_weights,
+                 self._eigenvalues, 
+                 self._efermi) = read_bands(filename=bands_file)
+            except FileNotFoundError:
+                warnings.warn('Could not load .bands file, eigenvalues and '
+                              'Fermi energy are unknown')
+
+
     def read_symops(self, castep_castep=None):
         # TODO: check that this is really backwards compatible
         # with previous routine with this name...
@@ -1251,7 +1467,7 @@ End CASTEP Interface Documentation
         if castep_castep is None:
             castep_castep = self._seed + '.castep'
 
-        if isinstance(castep_castep, basestring):
+        if isinstance(castep_castep, str):
             if not os.path.isfile(castep_castep):
                 print('Warning: CASTEP file %s not found!' % castep_castep)
             f = paropen(castep_castep, 'r')
@@ -1408,7 +1624,7 @@ End CASTEP Interface Documentation
 
     def find_pspots(self, pspot='.+', elems=None,
                     notelems=None, clear=True, suffix='(usp|UPF|recpot)'):
-        """Quickly find and set all pseudo-potentials by searching in
+        r"""Quickly find and set all pseudo-potentials by searching in
         castep_pp_path:
 
         This one is more flexible than set_pspots, and also checks if the files
@@ -1470,11 +1686,10 @@ End CASTEP Interface Documentation
                 if self._pedantic:
                     print('Pseudopotential for species {} not found!'.format(elem))
             elif not len(pps) == 1:
-                raise RuntimeError('Pseudopotential for species {} not unique!\n'.format(elem)
+                raise RuntimeError('Pseudopotential for species ''{} not unique!\n'.format(elem)
                                    + 'Found the following files in {}\n'.format(self._castep_pp_path)
-                                   + '\n'.join(['    {}'.format(pp)
-                                              for pp in pps]) +
-                                   '\nConsider a stricter search pattern in `find_pspots()`.')
+                                   + '\n'.join(['    {}'.format(pp) for pp in pps])
+                                   + '\nConsider a stricter search pattern in `find_pspots()`.')
             else:
                 self.cell.species_pot = (elem, pps[0])
 
@@ -1701,9 +1916,9 @@ End CASTEP Interface Documentation
 
         # if we have new instance of the calculator,
         # move existing results out of the way, first
-        if (os.path.isdir(self._directory) and
-                self._calls == 0 and
-                self._rename_existing_dir):
+        if (os.path.isdir(self._directory)
+                and self._calls == 0
+                and self._rename_existing_dir):
             if os.listdir(self._directory) == []:
                 os.rmdir(self._directory)
             else:
@@ -1887,8 +2102,8 @@ End CASTEP Interface Documentation
             return
 
         attr = attr.lower()
-        if attr not in (list(self.cell._options.keys()) +
-                        list(self.param._options.keys())):
+        if attr not in (list(self.cell._options.keys())
+                        + list(self.param._options.keys())):
             # what is left now should be meant to be a castep keyword
             # so we first check if it defined, and if not offer some error
             # correction
@@ -1904,7 +2119,7 @@ End CASTEP Interface Documentation
             else:
                 warnings.warn('Option "%s" is not known - please set any new'
                               ' options directly in the .cell or .param '
-                              'objects')
+                              'objects' % attr)
                 return
 
         # here we know it must go into one of the component param or cell
@@ -1927,7 +2142,7 @@ End CASTEP Interface Documentation
                     self.param.__setattr__(key, option.value)
             return
 
-        elif isinstance(param, basestring):
+        elif isinstance(param, str):
             param_file = open(param, 'r')
             _close = True
 
@@ -2047,8 +2262,8 @@ End CASTEP Interface Documentation
         """
         # should be a '==' right? Otherwise setting _castep_pp_path is not
         # honored.
-        if (not os.environ.get('PSPOT_DIR', None) and
-                self._castep_pp_path == os.path.abspath('.')):
+        if (not os.environ.get('PSPOT_DIR', None)
+                and self._castep_pp_path == os.path.abspath('.')):
             # By default CASTEP consults the environment variable
             # PSPOT_DIR. If this contains a list of colon separated
             # directories it will check those directories for pseudo-
@@ -2088,8 +2303,8 @@ End CASTEP Interface Documentation
             for (species, pspot) in pspots.items():
                 orig_pspot_file = os.path.join(self._castep_pp_path, pspot)
                 cp_pspot_file = os.path.join(directory, pspot)
-                if (os.path.exists(orig_pspot_file) and
-                        not os.path.exists(cp_pspot_file)):
+                if (os.path.exists(orig_pspot_file)
+                        and not os.path.exists(cp_pspot_file)):
                     if self._copy_pspots:
                         shutil.copy(orig_pspot_file, directory)
                     elif self._link_pspots:
@@ -2207,9 +2422,9 @@ def create_castep_keywords(castep_command, filename='castep_keywords.json',
         doc, _ = shell_stdouterr('%s -help %s' % (castep_command, option))
 
         # Stand Back! I know regular expressions (http://xkcd.com/208/) :-)
-        match = re.match(r'(?P<before_type>.*)Type: (?P<type>.+?)\s+' +
-                         r'Level: (?P<level>[^ ]+)\n\s*\n' +
-                         r'(?P<doc>.*?)(\n\s*\n|$)', doc, re.DOTALL)
+        match = re.match(r'(?P<before_type>.*)Type: (?P<type>.+?)\s+'
+                         + r'Level: (?P<level>[^ ]+)\n\s*\n'
+                         + r'(?P<doc>.*?)(\n\s*\n|$)', doc, re.DOTALL)
 
         processed_n += 1
 
@@ -2256,8 +2471,8 @@ def create_castep_keywords(castep_command, filename='castep_keywords.json',
 
             frac = (o_i + 1.0) / to_process
             sys.stdout.write('\rProcessed: [{0}] {1:>3.0f}%'.format(
-                             '#' * int(frac * 20) + ' ' *
-                             (20 - int(frac * 20)),
+                             '#' * int(frac * 20) + ' '
+                             * (20 - int(frac * 20)),
                              100 * frac))
             sys.stdout.flush()
 
@@ -2338,28 +2553,33 @@ class CastepOption(object):
         """Reset the value of the option to None again"""
         self._value = None
 
-    def _parse_bool(self, value):
+    @staticmethod
+    def _parse_bool(value):
         try:
             value = _tf_table[str(value).strip().title()]
         except (KeyError, ValueError):
             raise ValueError()
         return value
 
-    def _parse_str(self, value):
+    @staticmethod
+    def _parse_str(value):
         value = str(value)
         return value
 
-    def _parse_int(self, value):
+    @staticmethod
+    def _parse_int(value):
         value = int(value)
         return value
 
-    def _parse_float(self, value):
+    @staticmethod
+    def _parse_float(value):
         value = float(value)
         return value
 
-    def _parse_int_vector(self, value):
+    @staticmethod
+    def _parse_int_vector(value):
         # Accepts either a string or an actual list/numpy array of ints
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if ',' in value:
                 value = value.replace(',', ' ')
             value = list(map(int, value.split()))
@@ -2371,9 +2591,10 @@ class CastepOption(object):
 
         return list(value)
 
-    def _parse_float_vector(self, value):
+    @staticmethod
+    def _parse_float_vector(value):
         # Accepts either a string or an actual list/numpy array of floats
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if ',' in value:
                 value = value.replace(',', ' ')
             value = list(map(float, value.split()))
@@ -2385,9 +2606,10 @@ class CastepOption(object):
 
         return list(value)
 
-    def _parse_float_physical(self, value):
+    @staticmethod
+    def _parse_float_physical(value):
         # If this is a string containing units, saves them
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.split()
 
         try:
@@ -2411,9 +2633,10 @@ class CastepOption(object):
 
         return value
 
-    def _parse_block(self, value):
+    @staticmethod
+    def _parse_block(value):
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return value
         elif hasattr(value, '__getitem__'):
             return '\n'.join(value)  # Arrays of lines
@@ -2458,6 +2681,8 @@ class CastepInputFile(object):
 
     """Master class for CastepParam and CastepCell to inherit from"""
 
+    _keyword_conflicts = []
+
     def __init__(self, options_dict=None, keyword_tolerance=1):
         object.__init__(self)
 
@@ -2471,6 +2696,10 @@ class CastepInputFile(object):
         # 1 = new attributes allowed, warning given
         # 2 = new attributes allowed, silent
         self._perm = np.clip(keyword_tolerance, 0, 2)
+
+        # Compile a dictionary for quick check of conflict sets
+        self._conflict_dict = {kw: set(cset).difference({kw})
+                               for cset in self._keyword_conflicts for kw in cset}
 
     def __repr__(self):
         expr = ''
@@ -2496,10 +2725,10 @@ class CastepInputFile(object):
 
             if self._perm > 0:
                 # Do we consider it a string or a block?
-                is_str = isinstance(value, basestring)
+                is_str = isinstance(value, str)
                 is_block = False
-                if ((hasattr(value, '__getitem__') and not is_str) or
-                        (is_str and len(value.split('\n')) > 1)):
+                if ((hasattr(value, '__getitem__') and not is_str)
+                        or (is_str and len(value.split('\n')) > 1)):
                     is_block = True
 
             if self._perm == 0:
@@ -2524,11 +2753,21 @@ class CastepInputFile(object):
             attr = attr.lower()
             opt = self._options[attr]
 
-        if not opt.type.lower() == 'block' and isinstance(value, basestring):
+        if not opt.type.lower() == 'block' and isinstance(value, str):
             value = value.replace(':', ' ')
 
         # If it is, use the appropriate parser, unless a custom one is defined
         attrparse = '_parse_%s' % attr.lower()
+
+        # Check for any conflicts
+        cset = self._conflict_dict.get(attr.lower(), {})
+        for c in cset:
+            if (c in self._options and self._options[c].value):
+                warnings.warn(
+                    'option "{attr}" conflicts with "{conflict}" in '
+                    'calculator. Setting "{conflict}" to '
+                    'None.'.format(attr=attr, conflict=c))
+                self._options[c].value = None
 
         if hasattr(self, attrparse):
             self._options[attr].value = self.__getattribute__(attrparse)(value)
@@ -2559,8 +2798,9 @@ class CastepInputFile(object):
 
 
 class CastepParam(CastepInputFile):
-
     """CastepParam abstracts the settings that go into the .param file"""
+
+    _keyword_conflicts = [{'cut_off_energy', 'basis_precision'}, ]
 
     def __init__(self, castep_keywords, keyword_tolerance=1):
         self._castep_version = castep_keywords.castep_version
@@ -2598,6 +2838,32 @@ class CastepParam(CastepInputFile):
 class CastepCell(CastepInputFile):
 
     """CastepCell abstracts all setting that go into the .cell file"""
+
+    _keyword_conflicts = [
+        {'kpoint_mp_grid', 'kpoint_mp_spacing', 'kpoint_list',
+         'kpoints_mp_grid', 'kpoints_mp_spacing', 'kpoints_list'},
+        {'bs_kpoint_mp_grid', 'bs_kpoint_mp_spacing', 'bs_kpoint_list',
+         'bs_kpoint_path',
+         'bs_kpoints_mp_grid', 'bs_kpoints_mp_spacing', 'bs_kpoints_list',
+         'bs_kpoints_path'},
+        {'spectral_kpoint_mp_grid', 'spectral_kpoint_mp_spacing', 'spectral_kpoint_list',
+         'spectral_kpoint_path',
+         'spectral_kpoints_mp_grid', 'spectral_kpoints_mp_spacing', 'spectral_kpoints_list',
+         'spectral_kpoints_path'},
+        {'phonon_kpoint_mp_grid', 'phonon_kpoint_mp_spacing', 'phonon_kpoint_list',
+         'phonon_kpoint_path',
+         'phonon_kpoints_mp_grid', 'phonon_kpoints_mp_spacing', 'phonon_kpoints_list',
+         'phonon_kpoints_path'},
+        {'fine_phonon_kpoint_mp_grid', 'fine_phonon_kpoint_mp_spacing', 'fine_phonon_kpoint_list',
+         'fine_phonon_kpoint_path'},
+        {'magres_kpoint_mp_grid', 'magres_kpoint_mp_spacing', 'magres_kpoint_list',
+         'magres_kpoint_path'},
+        {'elnes_kpoint_mp_grid', 'elnes_kpoint_mp_spacing', 'elnes_kpoint_list',
+         'elnes_kpoint_path'},
+        {'optics_kpoint_mp_grid', 'optics_kpoint_mp_spacing', 'optics_kpoint_list',
+         'optics_kpoint_path'},
+        {'supercell_kpoint_mp_grid', 'supercell_kpoint_mp_spacing', 'supercell_kpoint_list',
+         'supercell_kpoint_path'},]
 
     def __init__(self, castep_keywords, keyword_tolerance=1):
         self._castep_version = castep_keywords.castep_version

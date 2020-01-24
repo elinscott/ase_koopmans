@@ -1,3 +1,4 @@
+# flake8: noqa
 """Tools for analyzing instances of :class:`~ase.Atoms`
 """
 
@@ -114,7 +115,7 @@ class Analysis(object):
         """All Bonds.
 
         A list with indices of bonded atoms for each neighborlist in *self*.
-        Atom i is connected to all atoms inside result[i]. Duplicates from PBC are
+        Atom i is connected to all atoms inside result[i]. Duplicates from PBCs are
         removed. See also :data:`unique_bonds`.
 
         **No setter or deleter, only getter**
@@ -415,7 +416,7 @@ class Analysis(object):
         return r
 
 
-    def get_bond_value(self, imIdx, idxs, **kwargs):
+    def get_bond_value(self, imIdx, idxs, mic=True, **kwargs):
         """Get bond length.
 
         Parameters:
@@ -424,6 +425,9 @@ class Analysis(object):
             Index of Image to get value from.
         idxs: tuple or list of integers
             Get distance between atoms idxs[0]-idxs[1].
+        mic: bool
+            Passed on to :func:`ase.Atoms.get_distance` for retrieving the value, defaults to True.
+            If the cell of the image is correctly set, there should be no reason to change this.
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_distance`.
 
@@ -432,9 +436,9 @@ class Analysis(object):
         return: float
             Value returned by image.get_distance.
         """
-        return self.images[imIdx].get_distance(idxs[0], idxs[1], **kwargs)
+        return self.images[imIdx].get_distance(idxs[0], idxs[1], mic=mic, **kwargs)
 
-    def get_angle_value(self, imIdx, idxs, **kwargs):
+    def get_angle_value(self, imIdx, idxs, mic=True, **kwargs):
         """Get angle.
 
         Parameters:
@@ -443,6 +447,9 @@ class Analysis(object):
             Index of Image to get value from.
         idxs: tuple or list of integers
             Get angle between atoms idxs[0]-idxs[1]-idxs[2].
+        mic: bool
+            Passed on to :func:`ase.Atoms.get_angle` for retrieving the value, defaults to True.
+            If the cell of the image is correctly set, there should be no reason to change this.
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_angle`.
 
@@ -451,9 +458,9 @@ class Analysis(object):
         return: float
             Value returned by image.get_angle.
         """
-        return self.images[imIdx].get_angle(idxs[0], idxs[1], idxs[2], **kwargs)
+        return self.images[imIdx].get_angle(idxs[0], idxs[1], idxs[2], mic=True, **kwargs)
 
-    def get_dihedral_value(self, imIdx, idxs, **kwargs):
+    def get_dihedral_value(self, imIdx, idxs, mic=True, **kwargs):
         """Get dihedral.
 
         Parameters:
@@ -462,6 +469,9 @@ class Analysis(object):
             Index of Image to get value from.
         idxs: tuple or list of integers
             Get angle between atoms idxs[0]-idxs[1]-idxs[2]-idxs[3].
+        mic: bool
+            Passed on to :func:`ase.Atoms.get_dihedral` for retrieving the value, defaults to True.
+            If the cell of the image is correctly set, there should be no reason to change this.
         kwargs: options or dict
             Passed on to :func:`ase.Atoms.get_dihedral`.
 
@@ -470,9 +480,9 @@ class Analysis(object):
         return: float
             Value returned by image.get_dihedral.
         """
-        return self.images[imIdx].get_dihedral(idxs[0], idxs[1], idxs[2], idxs[3], **kwargs)
+        return self.images[imIdx].get_dihedral(idxs[0], idxs[1], idxs[2], idxs[3], mic=mic, **kwargs)
 
-    def get_values(self, inputList, imageIdx=None, **kwargs):
+    def get_values(self, inputList, imageIdx=None, mic=True, **kwargs):
         """Get Bond/Angle/Dihedral values.
 
         Parameters:
@@ -484,6 +494,9 @@ class Analysis(object):
         imageIdx: integer or slice
             The images from :data:`images` to be analyzed. If None, all frames will be analyzed.
             See :func:`~ase.geometry.analysis.Analysis._get_slice` for details.
+        mic: bool
+            Passed on to :class:`~ase.Atoms` for retrieving the values, defaults to True.
+            If the cells of the images are correctly set, there should be no reason to change this.
         kwargs: options or dict
             Passed on to the :class:`~ase.Atoms` classes functions for retrieving the values.
 
@@ -527,7 +540,7 @@ class Analysis(object):
             if singleNL:
                 inputIdx = 0
             for tupl in inputList[inputIdx]:
-                r[-1].append(get(imageIdx, tupl, **kwargs))
+                r[-1].append(get(imageIdx, tupl, mic=mic, **kwargs))
 
         return r
 
@@ -542,13 +555,13 @@ class Analysis(object):
         rmax: float
             Maximum distance of RDF.
         nbins: int
-            Number of bins to devide RDF.
+            Number of bins to divide RDF.
         imageIdx: int/slice/None
             Images to analyze, see :func:`_get_slice` for details.
         elements: str/int/list/tuple
             Make partial RDFs.
 
-        If elements is `None`, a full RDF is calculated. If elements is an *integer* or a *list/tuple
+        If elements is *None*, a full RDF is calculated. If elements is an *integer* or a *list/tuple
         of integers*, only those atoms will contribute to the RDF (like a mask). If elements
         is a *string* or a *list/tuple of strings*, only Atoms of those elements will contribute.
 

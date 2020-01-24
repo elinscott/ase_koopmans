@@ -4,7 +4,7 @@
 NWChem
 ======
 
-`NWChem <http://www.nwchem-sw.org>`_ is a computational chemistry code
+`NWChem <http://www.nwchem-sw.org/index.php/Main_Page>`_ is a computational chemistry code
 based on gaussian basis functions or plane-waves.
 
 
@@ -14,10 +14,10 @@ Setup
 .. highlight:: bash
 
 You first need to install a working copy of NWChem for ASE to call;
-follow the instructions on the `NWChem website <http://www.nwchem-sw.org>`_.
+follow the instructions on the `NWChem website <http://www.nwchem-sw.org/index.php/Main_Page>`_.
 
 The default command that ASE will use to start NWChem is
-``nwchem PREFIX.nw > PREFIX.out``. You can change this command by setting the
+``nwchem PREFIX.nwi > PREFIX.nwo``. You can change this command by setting the
 environment variable :envvar:`ASE_NWCHEM_COMMAND`. (For example, add a line
 to your ``.bashrc`` with ``export ASE_NWCHEM_COMMAND="my new command"``.)
 
@@ -25,7 +25,7 @@ The default command will only allow you to run NWChem on a single core. To
 run on multiple processors you will need to specify your MPI (or similar)
 command, which typically requires telling the MPI command the number of tasks
 to dedicate to the process. An example command to allow multiprocessing is
-``mpirun -n $SLURM_NTASKS nwchem PREFIX.nw > PREFIX.out``, for the SLURM
+``mpirun -n $SLURM_NTASKS nwchem PREFIX.nwi > PREFIX.nwo``, for the SLURM
 queueing system. If you use a different queueing system replace
 ``$SLURM_NTASKS`` with the appropriate variable, such as ``$PBS_NP``.
 
@@ -54,58 +54,94 @@ An example of creating an NWChem calculator in the python interface is::
   from ase.calculators.nwchem import NWChem
 
   calc = NWChem(label='calc/nwchem',
-                maxiter=2000,
-                xc='B3LYP',
+                dft=dict(maxiter=2000,
+                         xc='B3LYP'),
                 basis='6-31+G*')
-
-If you need to request more memory, it is typically not sufficient to do so
-only through your queuing system. You need to also let NWChem know about the
-additional available memory, with NWChem's `memory` keyword which in turn is 
-added through ASE's `raw` keyword (which puts raw text lines in the NWChem
-input file). An example is below; see the official NWChem documentation for
-the proper use of the `memory` keyword.
-
-.. code-block:: python
-   :emphasize-lines: 2
-
-   calc = NWChem(label='calc/nwchem',
-                 raw='memory 2000 MB')
-
 
 Parameters
 ==========
 
-The list of possible parameters and their defaults is shown below.
-See the NWChem documentation for full explanations of these different options.
+.. highlight:: none
 
-=============== ======== ======================== ============================
-keyword         type     default value            description
-=============== ======== ======================== ============================
-``label``       ``str``  ``'nwchem'``             Label for saved files.
-``xc``          ``str``  ``'LDA'``                Exchange-correlation
-                                                  functional.
-``smearing``             ``None``                 Smearing.
-``charge``               ``None``                 Charge
-``task``        ``str``  ``'gradient'``           Task to perform. 'gradient'
-                                                  means force call.
-``geometry``    ``str``  ``'nocenter noautosym'`` Geometry arguments. Note
-                                                  NWChem centers the
-                                                  coordinates by default.
-``convergence`` ``dict``                          Convergence criteria.
-``basis``       ``str``  ``'3-21G'``              Basis set.
-``print``       ``str``  ``None``                 Flags within the DFT block
-                                                  steering the output details.
-``basispar``             ``None``
-``ecp``                  ``None``
-``so``                   ``None``
-``tddft``                ``None``                 Enable time-dependent DFT
-``spinorbit``            ``None``                 Use spin-orbit DFT module.
-``odft``                 ``None``                 Use open-shell (spin-polarized)
-                                                  DFT.
-``raw``                  ``''``                   Raw text outside DFT block
-                                                  control string.
-=============== ======== ======================== ============================
+The NWChem calculator represents nested keyword blocks in the input file using
+nested Python dictionaries. For example, consider the following block of input::
 
-See the source code link below for further details.
+  memory 1024mb
+
+  dft
+    xc B3LYP
+    mult 2
+    odft
+    convergence energy 1e-5 density 1e-4 gradient 5e-3
+  end
+
+.. highlight:: python
+
+This would be represented by the following keyword arguments to the NWChem
+calculator::
+
+  NWChem(memory='1024mb',
+         dft=dict(xc='B3LYP',
+                  mult=2,
+                  odft=None,
+                  convergence=dict(energy=1e-5,
+                                   density=1e-4,
+                                   gradient=5e-3),
+                  ),
+         )
+
+
+Most input files can be constructed in this way. The NWChem calculator also
+has several special keywords which do not directly enter into the input file;
+these are described in the table below
+
+============== ======== =============== ==================================================
+keyword        type     default value   description
+============== ======== =============== ==================================================
+``label``      ``str``  ``'nwchem'``    Used to name input and output files. Also,
+                                        used as the default name of the perm and
+                                        scratch directory, unless otherwise
+                                        specified.
+``theory``     ``str``  See description Theory specifies the kind of calculation
+                                        you want to do. Currently supported
+                                        values are ``dft``, ``scf``, ``mp2``,
+                                        ``ccsd``, ``tce``, ``tddft``, ``pspw``,
+                                        ``band``, and ``paw``. Other settings
+                                        may work, but have not been tested.
+                                        If not provided, the Calculator will
+                                        attempt to guess based on the provided
+                                        keywords.
+``center``     ``bool`` ``False``       Whether NWChem should automatically
+                                        center your atoms. You probably
+                                        don't want to change this.
+``autosym``    ``bool`` ``False``       Whether NWChem should automatically
+                                        symmetrize your atoms. You probably
+                                        don't want to change this.
+``autoz``      ``bool`` ``False``       Whether NWChem should automatically
+                                        generate a Z-matrix for your system.
+``basis``      ``str``  ``3-21G``       If provided with a string, the
+                                        specified basis set will be used for
+                                        all atoms. Alternatively, you can set
+                                        element-specific basis sets by passing
+                                        a dict, e.g. ``basis=dict(C='6-31G', O='3-21G')``.
+``basispar``   ``str``  ``''``          Additional keywords to go in the
+                                        first line of the ``basis`` block.
+``task``       ``str``  See description What kind of calculation is to be
+                                        performed, e.g. ``'energy'``,
+                                        ``'gradient'``, or ``'optimize'``.
+                                        If not provided, it will be
+                                        automatically determined by the
+                                        Calculator.
+``symmetry``   ``str``  ``''``          The symmetry group or number of your
+                                        system.
+``geompar``    ``str``  ``''``          Additional keywords to go in the first
+                                        line of the ``geometry`` block.
+``set``        ``dict`` ``dict()``      A set of keys and values to be added
+                                        directly to the NWChem rtdb. This
+                                        isn't necessary for most commonly
+                                        done tasks, but it is required for
+                                        certain functionality in plane-wave
+                                        mode.
+============== ======== =============== ==================================================
 
 .. autoclass:: NWChem

@@ -1,5 +1,5 @@
-from __future__ import print_function
 import warnings
+from typing import Tuple
 
 import numpy as np
 
@@ -179,6 +179,7 @@ class TrajectoryWriter:
                                                   allow_calculation=False)
                         except (PropertyNotImplementedError, KeyError):
                             # KeyError is needed for Jacapo.
+                            # XXX We can perhaps remove this.
                             x = None
                 if x is not None:
                     if prop in ['stress', 'dipole']:
@@ -250,14 +251,18 @@ class TrajectoryReader:
         self.backend.close()
 
     def __getitem__(self, i=-1):
+        if isinstance(i, slice):
+            return SlicedTrajectory(self, i)
         b = self.backend[i]
         if 'numbers' in b:
             # numbers and other header info was written alongside the image:
-            atoms = read_atoms(b)
+            atoms = read_atoms(b, traj=self)
         else:
             # header info was not written because they are the same:
-            atoms = read_atoms(b, header=[self.pbc, self.numbers, self.masses,
-                                          self.constraints])
+            atoms = read_atoms(b,
+                               header=[self.pbc, self.numbers, self.masses,
+                                       self.constraints],
+                               traj=self)
         if 'calculator' in b:
             results = {}
             implemented_properties = []
@@ -284,6 +289,27 @@ class TrajectoryReader:
             yield self[i]
 
 
+class SlicedTrajectory:
+    """Wrapper to return a slice from a trajectory without loading
+    from disk. Initialize with a trajectory (in read mode) and the
+    desired slice object."""
+
+    def __init__(self, trajectory, sliced):
+        self.trajectory = trajectory
+        self.map = range(len(self.trajectory))[sliced]
+
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            # Map directly to the original traj, not recursively.
+            traj = SlicedTrajectory(self.trajectory, slice(0, None))
+            traj.map = self.map[i]
+            return traj
+        return self.trajectory[self.map[i]]
+
+    def __len__(self):
+        return len(self.map)
+
+
 def get_header_data(atoms):
     return {'pbc': atoms.pbc.copy(),
             'numbers': atoms.get_atomic_numbers(),
@@ -299,7 +325,30 @@ def headers_equal(headers1, headers2):
     return eq
 
 
-def read_atoms(backend, header=None):
+class VersionTooOldError(Exception):
+    pass
+
+
+def read_atoms(backend,
+               header: Tuple = None,
+               traj: TrajectoryReader = None,
+               _try_except: bool = True) -> Atoms:
+
+    if _try_except:
+        try:
+            return read_atoms(backend, header, traj, False)
+        except Exception as ex:
+            from distutils.version import LooseVersion
+            if LooseVersion(__version__) < traj.ase_version:
+                msg = ('You are trying to read a trajectory file written ' +
+                       'with ASE-{v1} from ASE-{v2}. ' +
+                       'It might help to update your ASE').format(
+                    v1=traj.ase_version,
+                    v2=__version__)
+                raise VersionTooOldError(msg) from ex
+            else:
+                raise
+
     b = backend
     if header:
         pbc, numbers, masses, constraints = header

@@ -1,3 +1,5 @@
+---  # ASE Gitlab CI configuration
+
 services:
   - postgres:latest
   - mysql:latest
@@ -9,53 +11,116 @@ variables:
   POSTGRES_PASSWORD: "ase"
   MYSQL_DATABASE: testase_mysql
   MYSQL_ROOT_PASSWORD: ase
+  OMP_NUM_THREADS: "1"
 
 # Check oldest supported Python with oldest supported libraries.
 # Does not install any optional libraries except matplotlib.
-# This test does not use the --strict flag because things like
-# deprecation warnings may be rampant, yet these are only important
-# for the future, not the past.
 #
-# Py3.5 wheels exist from scipy-0.16.x, July 2015.  We choose scipy-0.16.1.
-# Consistent with numpy-1.10.x (October 2015).  We choose 1.10.4.
-python_3_oldlibs_tests:
-  image: python:3.5-slim
+# With older python, pytest-xdist jumbles the tests differently
+# on different codes, then complains.  So we use -j 0.
+oldlibs:
+  image: registry.gitlab.com/ase/ase:ase-oldlibs
   script:
-    - pip install numpy==1.10.4 scipy==0.16.1 matplotlib==2.0.0
     - pip install --no-deps .
-    - python --version
-    - ase test
+    - ase test -j 0 --pytest --color=yes
 
-# Check newest Python with all the standard dependencies at newest versions.
+# For testing newest versions of libraries against standard images
+# on dockerhub.
 #
-# We currently use scipy 1.2.1 because of failures with 1.3.0 on py3.7.
-# TODO: Make things work with 1.3.0
-python_3_tests:
-  image: python:3-slim
+# psycopg2-binary is for testing the postgres backend for ase.db
+# Currently we have trouble with pyhon3.8 where we need to compile some
+# libraries that don't have binary wheels; we don't want to install gcc
+# in this test job.
+pipinstall:
+  image: python:3.7-slim
   script:
+    - python --version
     - pip install flake8 psycopg2-binary netCDF4 pymysql cryptography
-    - pip install flake8 psycopg2-binary netCDF4
+    - pip install pytest pytest-xdist
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
-    - python --version
-    - ase test --strict
+    - ase test --pytest --color=yes
     - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
+  when: manual
 
-conda_tests:
-   image: continuumio/anaconda3
-   script:
-     - apt-get update
-     - apt-get install -yq libgl1-mesa-glx
-     - conda install -yq pip wheel numpy scipy matplotlib flask
-     - pip install .
-     - python --version
-     - ase test --strict
-
-docs_test:
-  image: python:3
+# This is the main test job using new versions of libraries.
+# The intention is to enable as many features and libraries as possible.
+main:
+  image: registry.gitlab.com/ase/ase:ase-main
   script:
-    - pip install .[docs]
+    - python --version
+    - pip install --no-deps .
+    - ase info --calculators
+    - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --pytest --color=yes
+    - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
+
+# Supposed to be equivalent to 'main', except we run pytest directly on
+# the test files. Useful if something is wrong with 'ase test'.
+pytest:
+  image: registry.gitlab.com/ase/ase:ase-main
+  script:
+    - pip install --no-deps .
+    - pytest -v $CI_PROJECT_DIR/ase/test --color=yes
+    - cd $CI_PROJECT_DIR
+    - python -We:invalid -m compileall -f -q ase/
+  when: manual
+
+# Currently (2019-07-26) facing a problem where PATH does not include
+# /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
+# issue with the gitlab runners.
+#
+# Same scipy versioning issue as for the ordinary tests.
+#
+# Grrr.  Failing after image updates, or something.  Disabling.
+# --askhl 2019-10-16
+.conda:
+  image: registry.gitlab.com/ase/ase:ase-anaconda
+  script:
+    - pip install . --no-deps
+    - ase test
+
+# Plan: Test as many calculators as possible as well as possible.
+# Obviously this is kind of expensive so the job is manually activated.
+# Also, the docker serves as a knowledgebase for how to set up those
+# calculators with ASE.
+#
+# It would be great if someone could enable more calculators with this.
+calculators:
+  image: registry.gitlab.com/ase/ase:ase-full-monty
+  script:
+    - pip install . --no-deps
+    - ase info --calculators
+    - export ASE_LAMMPSRUN_COMMAND=lmp
+    - ase test cp2k lammpsrun standardization abinit --calculators abinit,cp2k,lammpsrun --pytest --color=yes --durations 20
+  when: manual
+
+doc:
+  image: registry.gitlab.com/ase/ase:ase-main
+  script:
+    - pip install --no-deps .[docs]
     - ase info
     - which sphinx-build
     - cd $CI_PROJECT_DIR/doc
+    - python -m ase.utils.sphinx run  # test scripts
     - sphinx-build -W . build
+
+distribution_package:
+  image: python:3.7
+  script:
+    - apt-get update
+    - apt-get install -y gettext  # For compiling ase gui translations
+    - mkdir dist
+    - python setup.py sdist | tee dist/setup_sdist.log
+    - python setup.py bdist_wheel | tee dist/setup_bdist_wheel.log
+    - pip install dist/ase-*.tar.gz
+    - ase test
+    - pip uninstall --yes ase
+    - pip install dist/ase-*-py3-none-any.whl
+    - ase test
+  artifacts:
+    paths:
+      - dist
+    expire_in: 1 week
+  when: manual

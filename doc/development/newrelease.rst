@@ -4,6 +4,12 @@
 New release
 ===========
 
+The ``ase/utils/newrelease.py`` script generates a new release.
+The instructions below were written before this script, so some
+of these steps are in fact automatic now.
+
+
+
 * Make sure all tests pass.
 
 * Go through the git-logs and make sure all important changes since last
@@ -55,7 +61,7 @@ New release
 
   If the commands above fail, you need to `integrate EasyBuild with github`_.
 
-* Export issues, MR's, ... from GitLab (https://gitlab.com/ase/ase/export)
+* Export issues, MR's, ... from GitLab (https://gitlab.com/ase/ase/)
   and store the tar-file in a safe place.
 
 * Merge *master* into the *web-page* branch (which is used for creating the

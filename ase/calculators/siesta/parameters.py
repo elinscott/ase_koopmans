@@ -1,9 +1,9 @@
 from ase.calculators.calculator import Parameters
-from ase.utils import basestring
 
 """
 2017.04 - Pedro Brandimarte: changes for python 2-3 compatible
 """
+
 
 class PAOBasisBlock(Parameters):
     """
@@ -27,7 +27,7 @@ class PAOBasisBlock(Parameters):
                                5.00 0.00
                      See siesta manual for details.
         """
-        assert isinstance(block, basestring)
+        assert isinstance(block, str)
         Parameters.__init__(self, block=block)
 
     def script(self, label):
@@ -76,12 +76,12 @@ def format_fdf(key, value):
     key = format_key(key)
     new_value = format_value(value)
 
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list):
         string = '%block ' + key + '\n' +\
             new_value + '\n' + \
             '%endblock ' + key + '\n'
     else:
-        string = '%s  %s\n' % (key, new_value)
+        string = '%s\t%s\n' % (key, new_value)
 
     return string
 

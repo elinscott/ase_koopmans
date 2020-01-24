@@ -1,11 +1,11 @@
-from ase.io.utils import generate_writer_variables, make_patch_list
+from ase.io.utils import PlottingVariables, make_patch_list
 
 
-class Matplotlib:
+class Matplotlib(PlottingVariables):
     def __init__(self, atoms, ax,
                  rotation='', radii=None,
                  colors=None, scale=1, offset=(0, 0), **parameters):
-        generate_writer_variables(
+        PlottingVariables.__init__(
             self, atoms, rotation=rotation,
             radii=radii, colors=colors, scale=scale,
             extra_offset=offset, **parameters)
@@ -42,6 +42,7 @@ def animate(images, ax=None,
     fig = ax.get_figure()
 
     nframes = [0]
+
     def drawimage(atoms):
         ax.clear()
         ax.axis('off')

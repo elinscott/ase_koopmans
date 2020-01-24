@@ -10,14 +10,14 @@ from ase.build import molecule
 from ase.test import must_raise
 
 
-for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
+def test(name):
     if name == 'postgresql':
         if os.environ.get('POSTGRES_DB'):  # gitlab-ci
             name = 'postgresql://ase:ase@postgres:5432/testase'
         else:
             name = os.environ.get('ASE_TEST_POSTGRES_URL')
             if name is None:
-                continue
+                return
     elif name == 'mysql':
         if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
             name = 'mysql://root:ase@mysql:3306/testase_mysql'
@@ -25,7 +25,7 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
             name = os.environ.get('MYSQL_DB_URL')
 
         if name is None:
-            continue
+            return
     elif name == 'mariadb':
         if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
             name = 'mariadb://root:ase@mariadb:3306/testase_mysql'
@@ -33,7 +33,7 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
             name = os.environ.get('MYSQL_DB_URL')
 
         if name is None:
-            continue
+            return
 
     c = connect(name)
     print(name, c)
@@ -60,7 +60,7 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
 
     row = c.get(id)
     print(row.data['1-butyne'], row.data.chi)
-    assert (row.data.chi == chi).all()
+    assert (row.data.chi == chi).all(), (row.data.chi, chi)
     print(row)
 
     assert len(c.get_atoms(C=1).constraints) == 2
@@ -92,6 +92,9 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
         c.write(Atoms(), pi='3.14')  # number as a string
 
     with must_raise(ValueError):
+        c.write(Atoms(), fmax=0.0)  # reserved word
+
+    with must_raise(ValueError):
         c.write(Atoms(), S=42)  # chemical symbol as key
 
     id = c.write(Atoms(),
@@ -99,7 +102,8 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
                  i=np.int64(42),
                  n=np.nan,
                  x=np.inf,
-                 s='NaN2')
+                 s='NaN2',
+                 A=42)
     row = c[id]
     assert isinstance(row.b, bool)
     assert isinstance(row.i, int)
@@ -113,3 +117,15 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
 
     e = [row.get('energy') for row in c.select(sort='energy')]
     assert len(e) == 5 and abs(e[0] - 1.991) < 0.0005
+
+    # Test the offset keyword
+    ids = [row.get('id') for row in c.select()]
+    offset = 2
+    assert next(c.select(offset=offset)).id == ids[offset]
+
+
+test('testase.json')
+test('testase.db')
+test('postgresql')
+test('mysql')
+test('mariadb')

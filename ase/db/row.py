@@ -1,15 +1,18 @@
 from random import randint
+from typing import Dict, Tuple, Any
 
 import numpy as np
 
 from ase import Atoms
 from ase.constraints import dict2constraint
-from ase.calculators.calculator import get_calculator_class, all_properties
-from ase.calculators.calculator import PropertyNotImplementedError
+from ase.calculators.calculator import (get_calculator_class, all_properties,
+                                        PropertyNotImplementedError,
+                                        kptdensity2monkhorstpack)
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import chemical_symbols, atomic_masses
-from ase.io.jsonio import decode
 from ase.formula import Formula
+from ase.geometry import cell_to_cellpar
+from ase.io.jsonio import decode
 
 
 class FancyDict(dict):
@@ -31,8 +34,9 @@ def atoms2dict(atoms):
         'numbers': atoms.numbers,
         'positions': atoms.positions,
         'unique_id': '%x' % randint(16**31, 16**32 - 1)}
-    if atoms.cell.any():
+    if atoms.pbc.any():
         dct['pbc'] = atoms.pbc
+    if atoms.cell.any():
         dct['cell'] = atoms.cell
     if atoms.has('initial_magmoms'):
         dct['initial_magmoms'] = atoms.get_initial_magnetic_moments()
@@ -83,6 +87,7 @@ class AtomsRow:
         self.__dict__.update(dct)
         if 'cell' not in dct:
             self.cell = np.zeros((3, 3))
+        if 'pbc' not in dct:
             self.pbc = np.zeros(3, bool)
 
     def __contains__(self, key):
@@ -140,8 +145,11 @@ class AtomsRow:
     @property
     def data(self):
         """Data dict."""
-        if not isinstance(self._data, dict):
+        if isinstance(self._data, str):
             self._data = decode(self._data)  # lazy decoding
+        elif isinstance(self._data, bytes):
+            from ase.db.core import bytes_to_object
+            self._data = bytes_to_object(self._data)  # lazy decoding
         return FancyDict(self._data)
 
     @property
@@ -152,7 +160,7 @@ class AtomsRow:
     @property
     def formula(self):
         """Chemical formula string."""
-        return Formula('', [(self.symbols, 1)]).format('metal')
+        return Formula('', _tree=[(self.symbols, 1)]).format('metal')
 
     @property
     def symbols(self):
@@ -247,3 +255,64 @@ class AtomsRow:
                 atoms.info['data'] = data
 
         return atoms
+
+
+def row2dct(row,
+            key_descriptions: Dict[str, Tuple[str, str, str]] = {}
+            ) -> Dict[str, Any]:
+    """Convert row to dict of things for printing or a web-page."""
+
+    from ase.db.core import float_to_time_string, now
+
+    dct = {}
+
+    atoms = Atoms(cell=row.cell, pbc=row.pbc)
+    dct['size'] = kptdensity2monkhorstpack(atoms,
+                                           kptdensity=1.8,
+                                           even=False)
+
+    dct['cell'] = [['{:.3f}'.format(a) for a in axis] for axis in row.cell]
+    par = ['{:.3f}'.format(x) for x in cell_to_cellpar(row.cell)]
+    dct['lengths'] = par[:3]
+    dct['angles'] = par[3:]
+
+    stress = row.get('stress')
+    if stress is not None:
+        dct['stress'] = ', '.join('{0:.3f}'.format(s) for s in stress)
+
+    dct['formula'] = Formula(row.formula).format('abc')
+
+    dipole = row.get('dipole')
+    if dipole is not None:
+        dct['dipole'] = ', '.join('{0:.3f}'.format(d) for d in dipole)
+
+    data = row.get('data')
+    if data:
+        dct['data'] = ', '.join(data.keys())
+
+    constraints = row.get('constraints')
+    if constraints:
+        dct['constraints'] = ', '.join(c.__class__.__name__
+                                       for c in constraints)
+
+    keys = ({'id', 'energy', 'fmax', 'smax', 'mass', 'age'} |
+            set(key_descriptions) |
+            set(row.key_value_pairs))
+    dct['table'] = []
+    for key in keys:
+        if key == 'age':
+            age = float_to_time_string(now() - row.ctime, True)
+            dct['table'].append(('ctime', 'Age', age))
+            continue
+        value = row.get(key)
+        if value is not None:
+            if isinstance(value, float):
+                value = '{:.3f}'.format(value)
+            elif not isinstance(value, str):
+                value = str(value)
+            desc, unit = key_descriptions.get(key, ['', '', ''])[1:]
+            if unit:
+                value += ' ' + unit
+            dct['table'].append((key, desc, value))
+
+    return dct

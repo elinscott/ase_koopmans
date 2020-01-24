@@ -11,9 +11,9 @@ Versions:
 6) Use REAL for magmom and drop possibility for non-collinear spin
 7) Volume can be None
 8) Added name='metadata' row to "information" table
+9) Row data is now stored in binary format.
 """
 
-from __future__ import absolute_import, print_function
 import json
 import numbers
 import os
@@ -25,14 +25,11 @@ import numpy as np
 import ase.io.jsonio
 from ase.data import atomic_numbers
 from ase.db.row import AtomsRow
-from ase.db.core import Database, ops, now, lock, invop, parse_selection
+from ase.db.core import (Database, ops, now, lock, invop, parse_selection,
+                         object_to_bytes, bytes_to_object)
 from ase.parallel import parallel_function
-from ase.utils import basestring
 
-if sys.version >= '3':
-    buffer = memoryview
-
-VERSION = 8
+VERSION = 9
 
 init_statements = [
     """CREATE TABLE systems (
@@ -62,7 +59,7 @@ init_statements = [
     magmom REAL,
     charges BLOB,
     key_value_pairs TEXT,  -- key-value pairs and data as json
-    data TEXT,
+    data BLOB,
     natoms INTEGER,  -- stuff for making queries faster
     fmax REAL,
     smax REAL,
@@ -97,8 +94,7 @@ init_statements = [
     name TEXT,
     value TEXT)""",
 
-    "INSERT INTO information VALUES ('version', '{}')".format(VERSION),
-    ]
+    "INSERT INTO information VALUES ('version', '{}')".format(VERSION)]
 
 index_statements = [
     'CREATE INDEX unique_id_index ON systems(unique_id)',
@@ -130,11 +126,17 @@ class SQLite3Database(Database, object):
     columnnames = [line.split()[0].lstrip()
                    for line in init_statements[0].splitlines()[1:]]
 
-    def encode(self, obj):
+    def encode(self, obj, binary=False):
+        if binary:
+            return object_to_bytes(obj)
         return ase.io.jsonio.encode(obj)
 
-    def decode(self, txt):
-        return ase.io.jsonio.decode(txt)
+    def decode(self, txt, lazy=False):
+        if lazy:
+            return txt
+        if isinstance(txt, str):
+            return ase.io.jsonio.decode(txt)
+        return bytes_to_object(txt)
 
     def blob(self, array):
         """Convert array to blob/buffer object."""
@@ -147,7 +149,7 @@ class SQLite3Database(Database, object):
             array = array.astype(np.int32)
         if not np.little_endian:
             array = array.byteswap()
-        return buffer(np.ascontiguousarray(array))
+        return memoryview(np.ascontiguousarray(array))
 
     def deblob(self, buf, dtype=float, shape=None):
         """Convert blob/buffer object to ndarray of correct dtype and shape.
@@ -295,8 +297,8 @@ class SQLite3Database(Database, object):
 
         if not data:
             data = row._data
-        if not isinstance(data, basestring):
-            data = encode(data)
+        if not isinstance(data, (str, bytes)):
+            data = encode(data, binary=self.version >= 9)
 
         values += (row.get('energy'),
                    row.get('free_energy'),
@@ -338,7 +340,7 @@ class SQLite3Database(Database, object):
             if isinstance(value, (numbers.Real, np.bool_)):
                 number_key_values.append([key, float(value), id])
             else:
-                assert isinstance(value, basestring)
+                assert isinstance(value, str)
                 text_key_values.append([key, value, id])
 
         cur.executemany('INSERT INTO text_key_values VALUES (?, ?, ?)',
@@ -394,11 +396,12 @@ class SQLite3Database(Database, object):
         mtime = now()
 
         cur.execute(
-            "UPDATE systems SET mtime={}, key_value_pairs='{}' WHERE id={}"
-            .format(mtime, encode(key_value_pairs), id))
+            'UPDATE systems SET mtime=?, key_value_pairs=? WHERE id=?',
+            (mtime, encode(key_value_pairs), id))
         if data:
-            cur.execute("UPDATE systems set data='{}' where id={}"
-                        .format(encode(data), id))
+            if not isinstance(data, (str, bytes)):
+                data = encode(data, binary=self.version >= 9)
+            cur.execute('UPDATE systems set data=? where id=?', (data, id))
 
         self._delete(cur, [id], ['keys', 'text_key_values',
                                  'number_key_values'])
@@ -409,7 +412,7 @@ class SQLite3Database(Database, object):
             if isinstance(value, (numbers.Real, np.bool_)):
                 number_key_values.append([key, float(value), id])
             else:
-                assert isinstance(value, basestring)
+                assert isinstance(value, str)
                 text_key_values.append([key, value, id])
 
         cur.executemany('INSERT INTO text_key_values VALUES (?, ?, ?)',
@@ -420,9 +423,9 @@ class SQLite3Database(Database, object):
                         [(key, id) for key in key_value_pairs])
 
         for tabname, values in ext_tab.items():
-            values['id'] = id
             try:
                 dtype = self._guess_type(values)
+                values['id'] = id
                 self._create_table_if_not_exists(tabname, dtype, db_con=con)
                 self._insert_in_external_table(
                     cur, name=tabname, entries=values)
@@ -460,7 +463,6 @@ class SQLite3Database(Database, object):
             c.execute('SELECT * FROM systems WHERE id=?', (id,))
         values = c.fetchone()
 
-        values = self._old2new(values)
         return self._convert_tuple_to_row(values)
 
     def _convert_tuple_to_row(self, values):
@@ -514,7 +516,7 @@ class SQLite3Database(Database, object):
         if values[25] != '{}':
             dct['key_value_pairs'] = decode(values[25])
         if len(values) >= 27 and values[26] != 'null':
-            dct['data'] = decode(values[26])
+            dct['data'] = decode(values[26], lazy=True)
 
         # Now we need to update with info from the external tables
         external_tab = self._get_external_table_names()
@@ -600,7 +602,7 @@ class SQLite3Database(Database, object):
 
             elif self.type == 'postgresql':
                 jsonop = '->'
-                if isinstance(value, basestring):
+                if isinstance(value, str):
                     jsonop = '->>'
                 elif isinstance(value, bool):
                     jsonop = '->>'
@@ -609,7 +611,7 @@ class SQLite3Database(Database, object):
                              .format(jsonop, key, op))
                 args.append(str(value))
 
-            elif isinstance(value, basestring):
+            elif isinstance(value, str):
                 where.append('systems.id in (select id from text_key_values ' +
                              'where key=? and value{}?)'.format(op))
                 args += [key, value]
@@ -670,7 +672,7 @@ class SQLite3Database(Database, object):
                 for dct in self._select(keys + [sort], cmps=[], limit=1,
                                         include_data=False,
                                         columns=['key_value_pairs']):
-                    if isinstance(dct['key_value_pairs'][sort], basestring):
+                    if isinstance(dct['key_value_pairs'][sort], str):
                         sort_table = 'text_key_values'
                     else:
                         sort_table = 'number_key_values'
@@ -697,7 +699,7 @@ class SQLite3Database(Database, object):
             sql += '\nLIMIT {0}'.format(limit)
 
         if offset:
-            sql += '\nOFFSET {0}'.format(offset)
+            sql += self.get_offset_string(offset, limit=limit)
 
         if verbosity == 2:
             print(sql, args)
@@ -725,6 +727,15 @@ class SQLite3Database(Database, object):
                                         include_data=include_data,
                                         columns=columns):
                     yield row
+
+    def get_offset_string(self, offset, limit=None):
+        sql = ''
+        if not limit:
+            # In sqlite you cannot have offset without limit, so we
+            # set it to -1 meaning no limit
+            sql += '\nLIMIT -1'
+        sql += '\nOFFSET {0}'.format(offset)
+        return sql
 
     @parallel_function
     def count(self, selection=None, **kwargs):
@@ -827,7 +838,7 @@ class SQLite3Database(Database, object):
         # Insert an entry saying that there is a new external table
         # present and an entry with the datatype
         cur.execute(sql, ("external_table_name", name))
-        cur.execute(sql, (name+"_dtype", dtype))
+        cur.execute(sql, (name + "_dtype", dtype))
 
         if self.connection is None and db_con is None:
             con.commit()
@@ -847,7 +858,7 @@ class SQLite3Database(Database, object):
         sql = "DELETE FROM information WHERE value=?"
         cur.execute(sql, (name,))
         sql = "DELETE FROM information WHERE name=?"
-        cur.execute(sql, (name+"_dtype",))
+        cur.execute(sql, (name + "_dtype",))
 
         if self.connection is None:
             con.commit()
@@ -871,7 +882,7 @@ class SQLite3Database(Database, object):
         dtype = self._guess_type(entries)
         expected_dtype = self._get_value_type_of_table(cursor, name)
         if dtype != expected_dtype:
-            raise ValueError("The provided data type for table {}"
+            raise ValueError("The provided data type for table {} "
                              "is {}, while it is initialized to "
                              "be of type {}"
                              "".format(name, dtype, expected_dtype))
@@ -918,7 +929,7 @@ class SQLite3Database(Database, object):
     def _get_value_type_of_table(self, cursor, tab_name):
         """Return the expected value name."""
         sql = "SELECT value FROM information WHERE name=?"
-        cursor.execute(sql, (tab_name+"_dtype",))
+        cursor.execute(sql, (tab_name + "_dtype",))
         return cursor.fetchone()[0]
 
     def _read_external_table(self, name, id):
@@ -933,8 +944,8 @@ class SQLite3Database(Database, object):
             con.close()
         return dictionary
 
+
 if __name__ == '__main__':
-    import sys
     from ase.db import connect
     con = connect(sys.argv[1])
     con._initialize(con._connect())

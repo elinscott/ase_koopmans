@@ -1,4 +1,3 @@
-from __future__ import print_function
 """Module for calculating phonons of periodic systems."""
 
 import sys
@@ -12,10 +11,10 @@ import numpy.linalg as la
 import numpy.fft as fft
 
 import ase.units as units
-from ase.parallel import rank
+from ase.parallel import world
 from ase.dft import monkhorst_pack
 from ase.io.trajectory import Trajectory
-from ase.utils import opencew, pickleload, basestring
+from ase.utils import opencew, pickleload
 
 
 class Displacement:
@@ -96,8 +95,8 @@ class Displacement:
         assert isinstance(atoms, list)
         assert len(atoms) <= len(self.atoms)
 
-        if isinstance(atoms[0], basestring):
-            assert np.all([isinstance(atom, basestring) for atom in atoms])
+        if isinstance(atoms[0], str):
+            assert np.all([isinstance(atom, str) for atom in atoms])
             sym_a = self.atoms.get_chemical_symbols()
             # List for atomic indices
             indices = []
@@ -151,7 +150,7 @@ class Displacement:
             # Call derived class implementation of __call__
             output = self.__call__(atoms_N)
             # Write output to file
-            if rank == 0:
+            if world.rank == 0:
                 pickle.dump(output, fd, protocol=2)
                 sys.stdout.write('Writing %s\n' % filename)
                 fd.close()
@@ -183,7 +182,7 @@ class Displacement:
                     # Call derived class implementation of __call__
                     output = self.__call__(atoms_N)
                     # Write output to file
-                    if rank == 0:
+                    if world.rank == 0:
                         pickle.dump(output, fd, protocol=2)
                         sys.stdout.write('Writing %s\n' % filename)
                         fd.close()
@@ -655,7 +654,7 @@ class Phonons(Displacement):
         return omega_kl
 
     def get_dos(self, kpts=(10, 10, 10), npts=1000, delta=1e-3, indices=None):
-        #dos = self.dos(kpts, npts, delta, indices)
+        # dos = self.dos(kpts, npts, delta, indices)
         kpts_kc = monkhorst_pack(kpts)
         omega_w = self.band_structure(kpts_kc).ravel()
         from ase.dft.pdos import DOS

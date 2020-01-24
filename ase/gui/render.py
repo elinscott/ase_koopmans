@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-from __future__ import print_function, unicode_literals
 from ase.gui.i18n import _
 import ase.gui.ui as ui
 from ase.io.pov import write_pov

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
 #
@@ -12,7 +10,6 @@ import numpy as np
 from numpy import eye, absolute, sqrt, isinf
 from ase.utils.linesearch import LineSearch
 from ase.optimize.optimize import Optimizer
-from ase.utils import basestring
 
 
 # These have been copied from Numeric's MLab.py
@@ -83,7 +80,7 @@ class BFGSLineSearch(Optimizer):
         self.replay = False
 
         Optimizer.__init__(self, atoms, restart, logfile, trajectory,
-                           master, force_consistent)
+                           master, force_consistent=force_consistent)
 
     def read(self):
         self.r0, self.g0, self.e0, self.task, self.H = self.load()
@@ -185,7 +182,7 @@ class BFGSLineSearch(Optimizer):
     def replay_trajectory(self, traj):
         """Initialize hessian from old trajectory."""
         self.replay = True
-        if isinstance(traj, basestring):
+        if isinstance(traj, str):
             from ase.io.trajectory import Trajectory
             traj = Trajectory(traj, 'r')
         r0 = None

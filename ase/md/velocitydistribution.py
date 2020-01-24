@@ -1,4 +1,3 @@
-# encoding: utf-8
 # VelocityDistributions.py -- set up a velocity distribution
 
 """Module for setting up velocity distributions such as Maxwell–Boltzmann.
@@ -13,6 +12,9 @@ temperature.
 import numpy as np
 from ase.parallel import world
 from ase import units
+
+# define a ``zero'' temperature to avoid divisions by zero
+eps_temp = 1e-12
 
 
 class UnitError(Exception):
@@ -38,8 +40,11 @@ def force_temperature(atoms, temperature, unit="K"):
     else:
         raise UnitError("'{}' is not supported, use 'K' or 'eV'.".format(unit))
 
-    E_kin0 = atoms.get_kinetic_energy() / len(atoms) / 1.5
-    gamma = E_temp / E_kin0
+    if temperature > eps_temp:
+        E_kin0 = atoms.get_kinetic_energy() / len(atoms) / 1.5
+        gamma = E_temp / E_kin0
+    else:
+        gamma = 0.0
     atoms.set_momenta(atoms.get_momenta() * np.sqrt(gamma))
 
 
@@ -128,7 +133,7 @@ def n_BE(temp, omega):
     omega = np.asarray(omega)
 
     # 0K limit
-    if temp < 1e-12:
+    if temp < eps_temp:
         n = np.zeros_like(omega)
     else:
         n = 1 / (np.exp(omega / (temp)) - 1)

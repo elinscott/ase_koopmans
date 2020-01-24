@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import os.path as op
 import subprocess
@@ -55,7 +54,6 @@ class CLICommand:
                        'Original error: {}'
                        .format(tokenfile, err))
                 raise CLIError(msg)
-
 
         cmd = ('tar cf - {} | '
                'curl -XPUT -# -HX-Token:{} '

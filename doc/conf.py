@@ -41,8 +41,8 @@ html_favicon = 'static/ase.ico'
 html_static_path = ['static']
 html_last_updated_fmt = '%a, %d %b %Y %H:%M:%S'
 
-ase_dev_version = '3.18.0b1'  # This line auto-edited by newrelease script
-ase_stable_version = '3.17.0'  # This line auto-edited by newrelease script
+ase_dev_version = '3.20.0b1'  # This line auto-edited by newrelease script
+ase_stable_version = '3.19.0'  # This line auto-edited by newrelease script
 
 html_context = {
     'current_version': __version__,
@@ -63,8 +63,11 @@ intersphinx_mapping = {'gpaw': ('https://wiki.fysik.dtu.dk/gpaw', None),
 
 # Avoid GUI windows during doctest:
 doctest_global_setup = """
+import numpy as np
 import ase.visualize as visualize
 from ase import Atoms
 visualize.view = lambda atoms: None
 Atoms.edit = lambda self: None
 """
+
+autodoc_mock_imports = ["kimpy"]

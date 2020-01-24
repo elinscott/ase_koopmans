@@ -18,29 +18,15 @@ from ase.formula import formula_hill, formula_metal
 
 __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'devnull', 'gcd', 'convert_string_to_fd', 'Lock',
-           'opencew', 'OpenLock', 'rotate', 'irotate', 'givens',
+           'opencew', 'OpenLock', 'rotate', 'irotate', 'pbc2pbc', 'givens',
            'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
            'formula_hill', 'formula_metal', 'PurePath']
 
 
-# Python 2+3 compatibility stuff:
-if sys.version_info[0] > 2:
-    import builtins
-    exec_ = getattr(builtins, 'exec')
-    basestring = str
-    from io import StringIO
-    pickleload = functools.partial(pickle.load, encoding='bytes')
-    FileNotFoundError = getattr(builtins, 'FileNotFoundError')
-else:
-    class FileNotFoundError(OSError):
-        pass
-
-    # Legacy Python:
-    def exec_(code, dct):
-        exec('exec code in dct')
-    basestring = basestring
-    from StringIO import StringIO
-    pickleload = pickle.load
+# Python 2+3 compatibility stuff (let's try to remove these things):
+basestring = str
+from io import StringIO
+pickleload = functools.partial(pickle.load, encoding='bytes')
 StringIO  # appease pyflakes
 
 
@@ -108,8 +94,8 @@ def convert_string_to_fd(name, world=None):
         return devnull
     if name == '-':
         return sys.stdout
-    if isinstance(name, basestring):
-        return open(name, 'w')
+    if isinstance(name, (basestring, PurePath)):
+        return open(str(name), 'w')  # str for py3.5 pathlib
     return name  # we assume name is already a file-descriptor
 
 
@@ -211,7 +197,7 @@ def search_current_git_hash(arg, world=None):
         return None
 
     # Check argument
-    if isinstance(arg, basestring):
+    if isinstance(arg, str):
         # Directory path
         dpath = arg
     else:
@@ -315,6 +301,12 @@ def irotate(rotation, initial=np.identity(3)):
     return x, y, z
 
 
+def pbc2pbc(pbc):
+    newpbc = np.empty(3, bool)
+    newpbc[:] = pbc
+    return newpbc
+
+
 def hsv2rgb(h, s, v):
     """http://en.wikipedia.org/wiki/HSL_and_HSV
 
@@ -379,7 +371,7 @@ def workdir(path, mkdir=False):
         path.mkdir(parents=True, exist_ok=True)
 
     olddir = os.getcwd()
-    os.chdir(path.name)
+    os.chdir(str(path))  # py3.6 allows chdir(path) but we still need 3.5
     try:
         yield  # Yield the Path or dirname maybe?
     finally:
@@ -393,11 +385,11 @@ def iofunction(func, mode):
 
     @functools.wraps(func)
     def iofunc(file, *args, **kwargs):
-        openandclose = isinstance(file, basestring)
+        openandclose = isinstance(file, (basestring, PurePath))
         fd = None
         try:
             if openandclose:
-                fd = open(file, mode)
+                fd = open(str(file), mode)
             else:
                 fd = file
             obj = func(fd, *args, **kwargs)
@@ -475,3 +467,50 @@ def experimental(func):
                       ExperimentalFeatureWarning)
         return func(*args, **kwargs)
     return expfunc
+
+
+def lazymethod(meth):
+    """Decorator for lazy evaluation and caching of data.
+
+    Example::
+
+      class MyClass:
+
+         @lazymethod
+         def thing(self):
+             return expensive_calculation()
+
+    The method body is only executed first time thing() is called, and
+    its return value is stored.  Subsequent calls return the cached
+    value."""
+    name = meth.__name__
+
+    @functools.wraps(meth)
+    def getter(self):
+        try:
+            cache = self._lazy_cache
+        except AttributeError:
+            cache = self._lazy_cache = {}
+
+        if name not in cache:
+            cache[name] = meth(self)
+        return cache[name]
+    return getter
+
+
+def lazyproperty(meth):
+    """Decorator like lazymethod, but making item available as a property."""
+    return property(lazymethod(meth))
+
+
+def deprecated(msg):
+    """Return a decorator deprecating a function.
+
+    Use like @deprecated('warning message and explanation')."""
+    def deprecated_decorator(func):
+        @functools.wraps(func)
+        def deprecated_function(*args, **kwargs):
+            warnings.warn(msg, FutureWarning)
+            return func(*args, **kwargs)
+        return deprecated_function
+    return deprecated_decorator

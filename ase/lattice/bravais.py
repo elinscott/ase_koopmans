@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 """Bravais.py - class for generating Bravais lattices etc.
 
 This is a base class for numerous classes setting up pieces of crystal.
@@ -9,7 +9,6 @@ import math
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.utils import gcd, basestring
 import ase.data
 
 
@@ -191,7 +190,7 @@ class Bravais:
         "Extract atomic number from element"
         # The types that can be elements: integers and strings
         if self.element_basis is None:
-            if isinstance(element, basestring):
+            if isinstance(element, str):
                 self.atomicnumber = ase.data.atomic_numbers[element]
             elif isinstance(element, int):
                 self.atomicnumber = element
@@ -212,7 +211,7 @@ class Bravais:
                          +" (one for each kind of lattice position")
                         % (max(self.element_basis)+1,))
             for e in element:
-                if isinstance(e, basestring):
+                if isinstance(e, str):
                     atomicnumber.append(ase.data.atomic_numbers[e])
                 elif isinstance(e, int):
                     atomicnumber.append(e)
@@ -442,14 +441,14 @@ def cross(a, b):
 def reduceindex(M):
     """Reduce Miller index to the lowest equivalent integers."""
     oldM = M
-    g = gcd(M[0], M[1])
-    h = gcd(g, M[2])
+    g = math.gcd(M[0], M[1])
+    h = math.gcd(g, M[2])
     while h != 1:
         if h == 0:
             raise ValueError("Division by zero: Are the miller indices linearly dependent?")
         M = M // h
-        g = gcd(M[0], M[1])
-        h = gcd(g, M[2])
+        g = math.gcd(M[0], M[1])
+        h = math.gcd(g, M[2])
     if np.dot(oldM, M) > 0:
         return M
     else:

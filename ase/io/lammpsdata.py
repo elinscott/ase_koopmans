@@ -3,7 +3,6 @@ import numpy as np
 
 from ase.atoms import Atoms
 from ase.parallel import paropen
-from ase.utils import basestring
 from ase.calculators.lammps import Prism, convert
 
 
@@ -15,7 +14,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
     switch it off.
     Units are set by default to the style=metal setting in LAMMPS.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         f = paropen(fileobj)
     else:
         f = fileobj
@@ -39,7 +38,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
     pos_in = {}
     travel_in = {}
     mol_id_in = {}
-    mmcharge_in = {}
+    charge_in = {}
     mass_in = {}
     vel_in = {}
     bonds_in = []
@@ -163,7 +162,7 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
                         float(fields[6]),
                     )
                     mol_id_in[id] = int(fields[1])
-                    mmcharge_in[id] = float(fields[3])
+                    charge_in[id] = float(fields[3])
                     if len(fields) == 10:
                         travel_in[id] = (
                             int(fields[7]),
@@ -196,6 +195,21 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
                         float(fields[5]),
                     )
                     mol_id_in[id] = int(fields[1])
+                    if len(fields) == 9:
+                        travel_in[id] = (
+                            int(fields[6]),
+                            int(fields[7]),
+                            int(fields[8]),
+                        )
+                elif style == "charge" and (len(fields) == 6 or len(fields) == 9):
+                    # id type q x y z [tx ty tz]
+                    pos_in[id] = (
+                        int(fields[1]),
+                        float(fields[3]),
+                        float(fields[4]),
+                        float(fields[5]),
+                    )
+                    charge_in[id] = float(fields[2])
                     if len(fields) == 9:
                         travel_in[id] = (
                             int(fields[6]),
@@ -269,10 +283,10 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
         mol_id = np.zeros((N), int)
     else:
         mol_id = None
-    if len(mmcharge_in) > 0:
-        mmcharge = np.zeros((N), float)
+    if len(charge_in) > 0:
+        charge = np.zeros((N), float)
     else:
-        mmcharge = None
+        charge = None
     if len(travel_in) > 0:
         travel = np.zeros((N, 3), int)
     else:
@@ -307,8 +321,8 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
             travel[ind] = travel_in[id]
         if mol_id is not None:
             mol_id[ind] = mol_id_in[id]
-        if mmcharge is not None:
-            mmcharge[ind] = mmcharge_in[id]
+        if charge is not None:
+            charge[ind] = charge_in[id]
         ids[ind] = id
         # by type
         types[ind] = type
@@ -343,8 +357,9 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
         at.arrays["travel"] = travel
     if mol_id is not None:
         at.arrays["mol-id"] = mol_id
-    if mmcharge is not None:
-        at.arrays["mmcharge"] = mmcharge
+    if charge is not None:
+        at.arrays["initial_charges"] = charge
+        at.arrays["mmcharges"] = charge.copy()
 
     if bonds is not None:
         for (type, a1, a2) in bonds_in:
@@ -393,14 +408,19 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
 def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                       prismobj=None, velocities=False, units="metal",
                       atom_style='atomic'):
-    """Write atomic structure data to a LAMMPS data_ file."""
-    if isinstance(fileobj, basestring):
-        f = paropen(fileobj, "wb")
+    """Write atomic structure data to a LAMMPS data file."""
+    if isinstance(fileobj, str):
+        f = paropen(fileobj, "w", encoding="ascii")
         close_file = True
     else:
         # Presume fileobj acts like a fileobj
         f = fileobj
         close_file = False
+
+    # FIXME: We should add a check here that the encoding of the file object
+    #        is actually ascii once the 'encoding' attribute of IOFormat objects
+    #        starts functioning in implementation (currently it doesn't do
+    #         anything).
 
     if isinstance(atoms, list):
         if len(atoms) > 1:
@@ -409,11 +429,11 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
             )
         atoms = atoms[0]
 
-    f.write("{0} (written by ASE) \n\n".format(f.name).encode("utf-8"))
+    f.write("{0} (written by ASE) \n\n".format(f.name))
 
     symbols = atoms.get_chemical_symbols()
     n_atoms = len(symbols)
-    f.write("{0} \t atoms \n".format(n_atoms).encode("utf-8"))
+    f.write("{0} \t atoms \n".format(n_atoms))
 
     if specorder is None:
         # This way it is assured that LAMMPS atom types are always
@@ -424,7 +444,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
         # (indices must correspond to order in the potential file)
         species = specorder
     n_atom_types = len(species)
-    f.write("{0}  atom types\n".format(n_atom_types).encode("utf-8"))
+    f.write("{0}  atom types\n".format(n_atom_types))
 
     if prismobj is None:
         p = Prism(atoms.get_cell())
@@ -433,21 +453,21 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
 
     # Get cell parameters and convert from ASE units to LAMMPS units
     xhi, yhi, zhi, xy, xz, yz = convert(p.get_lammps_prism(), "distance",
-            "ASE", units)
+                                        "ASE", units)
 
-    f.write("0.0 {0:23.17g}  xlo xhi\n".format(xhi).encode("utf-8"))
-    f.write("0.0 {0:23.17g}  ylo yhi\n".format(yhi).encode("utf-8"))
-    f.write("0.0 {0:23.17g}  zlo zhi\n".format(zhi).encode("utf-8"))
+    f.write("0.0 {0:23.17g}  xlo xhi\n".format(xhi))
+    f.write("0.0 {0:23.17g}  ylo yhi\n".format(yhi))
+    f.write("0.0 {0:23.17g}  zlo zhi\n".format(zhi))
 
     if force_skew or p.is_skewed():
         f.write(
             "{0:23.17g} {1:23.17g} {2:23.17g}  xy xz yz\n".format(
                 xy, xz, yz
-            ).encode("utf-8")
+            )
         )
-    f.write("\n\n".encode("utf-8"))
+    f.write("\n\n")
 
-    f.write("Atoms \n\n".encode("utf-8"))
+    f.write("Atoms \n\n")
     pos = p.vector_to_lammps(atoms.get_positions(), wrap=True)
 
     if atom_style == 'atomic':
@@ -458,7 +478,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
             f.write(
                 "{0:>6} {1:>3} {2:23.17g} {3:23.17g} {4:23.17g}\n".format(
                     *(i + 1, s) + tuple(r)
-                ).encode("utf-8")
+                )
             )
     elif atom_style == 'charge':
         charges = atoms.get_initial_charges()
@@ -470,7 +490,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
             f.write(
                 "{0:>6} {1:>3} {2:>5} {3:23.17g} {4:23.17g} {5:23.17g}\n".format(
                     *(i + 1, s, q) + tuple(r)
-                ).encode("utf-8")
+                )
             )
     elif atom_style == 'full':
         charges = atoms.get_initial_charges()
@@ -481,15 +501,15 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
             q = convert(q, "charge", "ASE", units)
             s = species.index(symbols[i]) + 1
             f.write(
-                "{0:>6} {1>3} {2:>3} {3:>5} {4:23.17g} {5:23.17g} {6:23.17g}\n".format(
+                "{0:>6} {1:>3} {2:>3} {3:>5} {4:23.17g} {5:23.17g} {6:23.17g}\n".format(
                     *(i + 1, molecule, s, q) + tuple(r)
-                ).encode("utf-8")
+                )
             )
     else:
         raise NotImplementedError
 
     if velocities and atoms.get_velocities() is not None:
-        f.write("\n\nVelocities \n\n".encode("utf-8"))
+        f.write("\n\nVelocities \n\n")
         vel = p.vector_to_lammps(atoms.get_velocities())
         for i, v in enumerate(vel):
             # Convert velocity from ASE units to LAMMPS units
@@ -497,7 +517,7 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
             f.write(
                 "{0:>6} {1:23.17g} {2:23.17g} {3:23.17g}\n".format(
                     *(i + 1,) + tuple(v)
-                ).encode("utf-8")
+                )
             )
 
     f.flush()

@@ -1,12 +1,11 @@
+from math import gcd
 import numpy as np
 from numpy.linalg import norm, solve
 
-from ase.utils import gcd, basestring
 from ase.build import bulk
-from copy import deepcopy
 
 
-def surface(lattice, indices, layers, vacuum=None, tol=1e-10, termination=0):
+def surface(lattice, indices, layers, vacuum=None, tol=1e-10, periodic=False):
     """Create surface from a given lattice and Miller indices.
 
     lattice: Atoms object or str
@@ -20,12 +19,8 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10, termination=0):
         Number of equivalent layers of the slab.
     vacuum: float
         Amount of vacuum added on both sides of the slab.
-    termination: int
-        The termination "number" for your crystal. The same value will not
-        produce the same termination for different symetrically identical
-        bulk structures, but changing this value allows your to explore all
-        the possible terminations for the bulk structure you provide it.
-        note: this code is not well tested
+    periodic: bool
+        Whether the surface is periodic in the normal to the surface
     """
 
     indices = np.asarray(indices)
@@ -33,36 +28,12 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10, termination=0):
     if indices.shape != (3,) or not indices.any() or indices.dtype != int:
         raise ValueError('%s is an invalid surface type' % indices)
 
-    if isinstance(lattice, basestring):
+    if isinstance(lattice, str):
         lattice = bulk(lattice, cubic=True)
 
     h, k, l = indices
     h0, k0, l0 = (indices == 0)
-    
-    if termination != 0:  #changing termination
-        import warnings
-        warnings.warn('Work on changing terminations is currently in '
-                      'progress.  Code may not behave as expected.')
-        lattice1 = deepcopy(lattice)
-        cell = lattice1.get_cell()
-        pt = [0,0,0]
-        millers = list(indices)
-        for index,item in enumerate(millers):
-            if item == 0:
-                millers[index] = 10**9 #make zeros large numbers
-            elif pt == [0,0,0]:        #for numerical stability
-                pt = list(cell[index]/float(item)/np.linalg.norm(cell[index]))
-        h1,k1,l1 = millers
-        N = np.array(cell[0]/h1+cell[1]/k1+cell[2]/l1)
-        n = N/np.linalg.norm(N)# making a unit vector normal to cut plane
-        d = [np.round(np.dot(n,(a-pt)),4) for a in lattice.get_scaled_positions()]
-        d = set(d)
-        d = sorted(list(d))
-        d = [0]+d #distances of atoms from cut plane
-        displacement = (h*cell[0]+k*cell[1]+l*cell[2])*d[termination]
-        lattice1.positions += displacement
-        lattice = lattice1
-       
+
     if h0 and k0 or h0 and l0 or k0 and l0:  # if two indices are zero
         if not h0:
             c1, c2, c3 = [(0, 1, 0), (0, 0, 1), (1, 0, 0)]
@@ -91,13 +62,13 @@ def surface(lattice, indices, layers, vacuum=None, tol=1e-10, termination=0):
         c2 = np.array((0, l, -k)) // abs(gcd(l, k))
         c3 = (b, a * p, a * q)
 
-    surf = build(lattice, np.array([c1, c2, c3]), layers, tol)
+    surf = build(lattice, np.array([c1, c2, c3]), layers, tol, periodic)
     if vacuum is not None:
         surf.center(vacuum=vacuum, axis=2)
     return surf
 
 
-def build(lattice, basis, layers, tol):
+def build(lattice, basis, layers, tol, periodic):
     surf = lattice.copy()
     scaled = solve(basis.T, surf.get_scaled_positions().T).T
     scaled -= np.floor(scaled + tol)
@@ -119,14 +90,15 @@ def build(lattice, basis, layers, tol):
                    (0, 0, norm(a3))],
                   scale_atoms=True)
 
-    surf.pbc = (True, True, False)
+    surf.pbc = (True, True, periodic)
 
     # Move atoms into the unit cell:
     scaled = surf.get_scaled_positions()
     scaled[:, :2] %= 1
     surf.set_scaled_positions(scaled)
 
-    surf.cell[2] = 0.0
+    if not periodic:
+        surf.cell[2] = 0.0
 
     return surf
 

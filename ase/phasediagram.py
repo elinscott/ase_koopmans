@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import fractions
 import functools
 import re
@@ -139,12 +138,18 @@ class Pourbaix:
             assert not kwargs
             kwargs = parse_formula(formula)[0]
 
+        if 'O' not in kwargs:
+            kwargs['O'] = 1
+        if 'H' not in kwargs:
+            kwargs['H'] = 1
+
         self.kT = units.kB * T
         self.references = []
         for name, energy in references:
             if name == 'O':
                 continue
             count, charge, aq = parse_formula(name)
+
             for symbol in count:
                 if aq:
                     if not (symbol in 'HO' or symbol in kwargs):
@@ -159,10 +164,7 @@ class Pourbaix:
 
         self.count = kwargs
 
-        if 'O' not in self.count:
-            self.count['O'] = 0
-
-        self.N = {'e-': 0, 'H': 1}
+        self.N = {'e-': 0}
         for symbol in kwargs:
             if symbol not in self.N:
                 self.N[symbol] = len(self.N)
@@ -194,7 +196,7 @@ class Pourbaix:
         # First two equations are charge and number of hydrogens, and
         # the rest are the remaining species.
 
-        eq1 = [0, 0] + list(self.count.values())
+        eq1 = [0] + list(self.count.values())
         eq2 = []
         energies = []
         bounds = []
@@ -221,10 +223,8 @@ class Pourbaix:
             energies.append(energy)
             names.append(name)
 
-        try:
-            from scipy.optimize import linprog
-        except ImportError:
-            from ase.utils._linprog import linprog
+        from scipy.optimize import linprog
+
         result = linprog(c=energies,
                          A_eq=np.transpose(eq2),
                          b_eq=eq1,
@@ -237,7 +237,7 @@ class Pourbaix:
 
         return result.x, result.fun
 
-    def diagram(self, U, pH, plot=True, show=True, ax=None):
+    def diagram(self, U, pH, plot=True, show=False, ax=None):
         """Calculate Pourbaix diagram.
 
         U: list of float
@@ -300,7 +300,7 @@ class Pourbaix:
 
     def colorfunction(self, U, pH, colors):
         coefs, energy = self.decompose(U, pH, verbose=False)
-        indices = tuple(sorted(np.where(abs(coefs) > 1e-7)[0]))
+        indices = tuple(sorted(np.where(abs(coefs) > 1e-3)[0]))
         color = colors.get(indices)
         if color is None:
             color = len(colors)
@@ -450,7 +450,7 @@ class PhaseDiagram:
 
         return energy, indices, np.array(coefs)
 
-    def plot(self, ax=None, dims=None, show=True):
+    def plot(self, ax=None, dims=None, show=False):
         """Make 2-d or 3-d plot of datapoints and convex hull.
 
         Default is 2-d for 2- and 3-component diagrams and 3-d for a

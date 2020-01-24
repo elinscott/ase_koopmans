@@ -1,15 +1,11 @@
 """Checks that writing and reading of NWChem input files is consistent."""
 
 from ase.build import molecule
-from ase.calculators.nwchem import NWChem
 from ase import io
 
 atoms = molecule('CH3COOH')
-
-calc = NWChem()
-calc.write_input(atoms)
-
-atoms2 = io.read('nwchem.nw')
+io.write('nwchem.nwi', atoms)
+atoms2 = io.read('nwchem.nwi')
 
 tol = 1e-8
 

@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """This module defines an ASE interface to CP2K.
 
-http://www.cp2k.org
+https://www.cp2k.org/
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
-from __future__ import print_function
 
 import os
 import os.path
@@ -30,7 +27,7 @@ class CP2K(Calculator):
     CP2K is freely available under the GPL license.
     It is written in Fortran 2003 and can be run efficiently in parallel.
 
-    Check http://www.cp2k.org about how to obtain and install CP2K.
+    Check https://www.cp2k.org about how to obtain and install CP2K.
     Make sure that you also have the CP2K-shell available, since it is required
     by the CP2K-calulator.
 
@@ -72,7 +69,7 @@ class CP2K(Calculator):
         The command used to launch the CP2K-shell.
         If ``command`` is not passed as an argument to the
         constructor, the class-variable ``CP2K.command``,
-        and then the environment variabel
+        and then the environment variable
         ``$ASE_CP2K_COMMAND`` are checked.
         Eventually, ``cp2k_shell`` is used as default.
     cutoff: float
@@ -204,7 +201,7 @@ class CP2K(Calculator):
     def write(self, label):
         'Write atoms, parameters and calculated results into restart files.'
         if self._debug:
-            print("Writting restart to: ", label)
+            print("Writing restart to: ", label)
         self.atoms.write(label + '_restart.traj')
         self.parameters.write(label + '_params.ase')
         from ase.io.jsonio import write_json

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Check writing and reading a xtl mustem file."""
 
 from ase import Atoms
@@ -64,4 +63,4 @@ with must_raise(ValueError):
                               [0.5, 0, 0.5],
                               [0, 0.5, 0.5]])
     atoms4.write(filename, keV=300,
-                DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02})
+                 DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02})

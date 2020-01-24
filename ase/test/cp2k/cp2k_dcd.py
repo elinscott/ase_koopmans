@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
-
 """Test suit for the CP2K ASE calulator.
 
 http://www.cp2k.org
 Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
-from __future__ import print_function
 import unittest
-import shutil, subprocess
+import shutil
+import subprocess
 import numpy as np
 from ase.build import molecule
 from ase.calculators.cp2k import CP2K

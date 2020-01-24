@@ -17,7 +17,10 @@ def get_cell_angles_lengths(cell):
         ab = np.linalg.norm(
             np.cross(cell[(i + 1) % 3, :], cell[(i + 2) % 3, :]))
         c = np.linalg.norm(cell[i, :])
-        values[param] = np.arcsin(np.abs(volume / (ab * c)))
+        s = np.abs(volume / (ab * c))
+        if 1 + 1e-6 > s > 1:
+            s = 1.
+        values[param] = np.arcsin(s)
 
     return values
 

@@ -1,5 +1,3 @@
-from __future__ import print_function
-# -*- coding: utf-8 -*-
 """This module defines I/O routines with CASTEP files.
 The key idea is that all function accept or return  atoms objects.
 CASTEP specific parameters will be returned through the <atoms>.calc
@@ -859,8 +857,8 @@ def read_castep_geom(fd, index=None, units=units_CODATA2002):
 
     Contribution by Wei-Bing Zhang. Thanks!
 
-    Routine now accepts a filedescriptor in order to out-source the *.gz and
-    *.bz2 handling to formats.py. Note that there is a fallback routine
+    Routine now accepts a filedescriptor in order to out-source the gz and
+    bz2 handling to formats.py. Note that there is a fallback routine
     read_geom() that behaves like previous versions did.
     """
     from ase.calculators.singlepoint import SinglePointCalculator
@@ -1352,3 +1350,59 @@ def read_seed(seed, new_seed=None, ignore_internal_keys=False):
     atoms.calc.push_oldstate()
 
     return atoms
+
+def read_bands(filename='', fd=None, units=units_CODATA2002):
+    """Read Castep.bands file to kpoints, weights and eigenvalues
+
+    Args:
+        filename (str):
+            path to seedname.bands file
+        fd (fd):
+            file descriptor for open bands file
+        units (dict):
+            Conversion factors for atomic units
+
+    Returns:
+        (tuple):
+            (kpts, weights, eigenvalues, efermi)
+
+            Where ``kpts`` and ``weights`` are 1d numpy arrays, eigenvalues
+            is an array of shape (spin, kpts, nbands) and efermi is a float
+    """
+
+    Hartree = units['Eh']
+
+    if fd is None:
+        if filename == '':
+            raise ValueError('One between filename and fd must be provided')
+        fd = open(filename)
+    elif filename:
+        warnings.warn('Filestream used to read param, file name will be '
+                      'ignored')
+
+    nkpts, nspin, _, nbands, efermi = [t(fd.readline().split()[-1]) for t in
+                                       [int, int, float, int, float]]
+
+    kpts, weights = np.zeros((nkpts, 3)), np.zeros(nkpts)
+    eigenvalues = np.zeros((nspin, nkpts, nbands))
+
+    # Skip unit cell
+    for _ in range(4):
+        fd.readline()
+
+    def _kptline_to_i_k_wt(line):
+        line = line.split()
+        line = [int(line[1])] + list(map(float, line[2:]))
+        return (line[0] - 1, line[1:4], line[4])
+
+    # CASTEP often writes these out-of-order, so check index and write directly
+    # to the correct row
+    for kpt_line in range(nkpts):
+        i_kpt, kpt, wt = _kptline_to_i_k_wt(fd.readline())
+        kpts[i_kpt,:], weights[i_kpt] = kpt, wt
+        for spin in range(nspin):
+            fd.readline()  # Skip 'Spin component N' line
+            eigenvalues[spin, i_kpt, :] = [float(fd.readline())
+                                           for _ in range(nbands)]
+
+    return (kpts, weights, eigenvalues * Hartree, efermi * Hartree)

@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 """Function-like object creating hexagonal lattices.
 
 The following lattice creators are defined:
