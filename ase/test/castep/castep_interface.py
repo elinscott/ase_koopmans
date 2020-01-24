@@ -45,7 +45,7 @@ except CastepVersionError:
 # Start by testing the fundamental parts of a CastepCell/CastepParam object
 boolOpt = CastepOption('test_bool', 'basic', 'defined')
 boolOpt.value = 'TRUE'
-assert boolOpt.raw_value == True
+assert boolOpt.raw_value is True
 
 float3Opt = CastepOption('test_float3', 'basic', 'real vector')
 float3Opt.value = '1.0 2.0 3.0'

@@ -244,10 +244,10 @@ class STM:
         zp = int(zp) % nz
 
         # 3D interpolation of the LDOS at point (x,y,z) at given bias.
-        xyzldos =  (((1 - dx) + (1 - dy) + (1 - dz)) * self.ldos[xp, yp, zp] +
-                    dx * self.ldos[(xp + 1) % nx, yp, zp] +
-                    dy * self.ldos[xp, (yp + 1) % ny, zp] +
-                    dz * self.ldos[xp, yp, (zp + 1) % nz])
+        xyzldos = (((1 - dx) + (1 - dy) + (1 - dz)) * self.ldos[xp, yp, zp] +
+                   dx * self.ldos[(xp + 1) % nx, yp, zp] +
+                   dy * self.ldos[xp, (yp + 1) % ny, zp] +
+                   dz * self.ldos[xp, yp, (zp + 1) % nz])
 
         return dos2current(bias, xyzldos)
 

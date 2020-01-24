@@ -222,7 +222,7 @@ def GCD(a,b):
     #print "--"
     while a != 0:
         #print a,b,">",
-        a,b = b%a,a
+        a, b = b % a, a
         #print a,b
     return b
 

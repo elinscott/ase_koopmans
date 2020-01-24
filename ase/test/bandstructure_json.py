@@ -16,6 +16,6 @@ bs.path.write('path.json')
 bs1 = read_json('bs.json')
 bs2 = BandStructure.read('bs.json')
 path1 = read_json('path.json')
-assert type(bs1) == type(bs)
-assert type(bs2) == type(bs)
-assert type(path1) == type(bs.path)
+assert type(bs1) == type(bs)  # noqa
+assert type(bs2) == type(bs)  # noqa
+assert type(path1) == type(bs.path)  # noqa

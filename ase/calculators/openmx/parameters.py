@@ -293,7 +293,7 @@ class OpenMXParameters(Parameters):
             'LSDA-CA',
             'CA',
             'PW',
-        ]
+    ]
 
     def __init__(self, **kwargs):
         kw = omx_parameter_defaults.copy()

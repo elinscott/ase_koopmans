@@ -45,6 +45,7 @@ if hasattr(np.ndarray, '__matmul__'):
 
 def forward_inplace_call(name):
     arraymeth = getattr(np.ndarray, name)
+
     def f(self, obj):
         a = self.__array__()
         arraymeth(a, obj)
@@ -60,6 +61,7 @@ def wrap_array_attribute(name):
     if wrappee is None:  # For example, __hash__ is None
         assert name == '__hash__'
         return None
+
     def attr(self):
         array = np.asarray(self)
         return getattr(array, name)
