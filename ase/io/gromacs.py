@@ -201,8 +201,9 @@ def write_gromacs(fileobj, images):
 
     # gromac line see http://manual.gromacs.org/documentation/current/user-guide/file-formats.html#gro
     #    1WATER  OW1    1   0.126   1.624   1.679  0.1227 -0.0580  0.0434
-    for resnb, resname, atomtype, xyz, vxyz in zip\
-            (residuenumbers, gromacs_residuenames, gromacs_atomtypes, pos, vel):
+    for (resnb, resname, atomtype, xyz,
+         vxyz) in zip(residuenumbers, gromacs_residuenames,
+                      gromacs_atomtypes, pos, vel):
 
         # THIS SHOULD BE THE CORRECT, PYTHON FORMATTING, EQUIVALENT TO THE
         # C FORMATTING GIVEN IN THE GROMACS DOCUMENTATION: 

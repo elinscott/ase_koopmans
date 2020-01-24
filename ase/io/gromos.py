@@ -118,8 +118,9 @@ def write_gromos(fileobj, images):
     count = 1
     rescount = 0
     oldresname = ''
-    for resname, atomtype, xyz in zip\
-            (gromos_residuenames, gromos_atomtypes, pos):
+    for resname, atomtype, xyz in zip(gromos_residuenames,
+                                      gromos_atomtypes,
+                                      pos):
         if resname != oldresname:
             oldresname = resname
             rescount = rescount + 1

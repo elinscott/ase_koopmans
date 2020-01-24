@@ -101,8 +101,8 @@ def _find_blocks(fp, tag, stopwords='[qbox]'):
         list of xml.ElementTree, parsed XML blocks found by this class
     """
 
-    start_tag = '<%s'%tag
-    end_tag = '</%s>'%tag
+    start_tag = '<%s' % tag
+    end_tag = '</%s>' % tag
 
     blocks = []  # Stores all blocks
     cur_block = []  # Block being filled
