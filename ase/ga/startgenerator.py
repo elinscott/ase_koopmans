@@ -238,9 +238,10 @@ class StartGenerator(object):
         # and by how much
         directions = [i for i in range(3) if pbc[i]]
         repeat = [1, 1, 1]
-        for number in split:
-            d = np.random.choice(directions)
-            repeat[d] = number
+        if len(directions) > 0:
+            for number in split:
+                d = np.random.choice(directions)
+                repeat[d] = number
         repeat = tuple(repeat)
 
         # Generate the 'full' unit cell
