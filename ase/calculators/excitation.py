@@ -13,15 +13,30 @@ class ExcitationList(list):
 
     """
 
-    def __init__(self, calculator=None, txt=None):
+    def __init__(self, calculator=None, txt='-'):
+        """
+        Parameters
+        ----------
+        calculator: object or string
+        
+        """
+        if isinstance(calculator, str):
+            # initialize from a file
+            filename = calculator
+            self.calculator = None
+        else:
+            filename = None
+            self.calculator = calculator
 
         # initialise empty list
         list.__init__(self)
 
-        self.calculator = calculator
         if not txt and calculator:
             txt = calculator.log.fd
         self.txt = convert_string_to_fd(txt, world)
+
+        if filename is not None:
+            self.read(filename)
 
     def get_calculator(self):
         return self.calculator
