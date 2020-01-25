@@ -17,21 +17,21 @@ v2 = cell[1, :] * 0.8
 v3 = cell[2, :]
 v3[2] = 3.
 
-cd = closest_distances_generator(atom_numbers=[47, 79],
-                                 ratio_of_covalent_radii=0.7)
+blmin = closest_distances_generator(atom_numbers=[47, 79],
+                                    ratio_of_covalent_radii=0.7)
 
 atom_numbers = 2 * [47] + 2 * [79]
 n_top = len(atom_numbers)
 sg = StartGenerator(slab=slab,
-                    atom_numbers=atom_numbers,
-                    closest_allowed_distances=cd,
+                    blocks=atom_numbers,
+                    blmin=blmin,
                     box_to_place_in=[p0, [v1, v2, v3]])
 
 c1 = sg.get_new_candidate()
 c1.info['confid'] = 1
 
 # first verify that the rattle mutation works
-rmut = RattleMutation(cd, n_top, rattle_strength=0.8, rattle_prop=0.4)
+rmut = RattleMutation(blmin, n_top, rattle_strength=0.8, rattle_prop=0.4)
 
 c2, desc = rmut.get_new_individual([c1])
 

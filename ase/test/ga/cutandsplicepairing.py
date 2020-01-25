@@ -17,14 +17,14 @@ v2 = cell[1, :] * 0.8
 v3 = cell[2, :]
 v3[2] = 3.
 
-cd = closest_distances_generator(atom_numbers=[47, 79],
-                                 ratio_of_covalent_radii=0.7)
+blmin = closest_distances_generator(atom_numbers=[47, 79],
+                                    ratio_of_covalent_radii=0.7)
 
 atom_numbers = 2 * [47] + 2 * [79]
 
 sg = StartGenerator(slab=slab,
-                    atom_numbers=atom_numbers,
-                    closest_allowed_distances=cd,
+                    blocks=atom_numbers,
+                    blmin=blmin,
                     box_to_place_in=[p0, [v1, v2, v3]])
 
 c1 = sg.get_new_candidate()
@@ -34,7 +34,7 @@ c2.info['confid'] = 2
 
 n_top = len(atom_numbers)
 
-pairing = CutAndSplicePairing(slab, n_top, cd)
+pairing = CutAndSplicePairing(slab, n_top, blmin)
 
 c3, desc = pairing.get_new_individual([c1, c2])
 
@@ -62,4 +62,4 @@ for i in range(n_top):
 assert len(n1[n1 > -1]) > 0 and len(n2[n2 > -1]) > 0
 
 # verify no atoms too close
-assert not atoms_too_close(top3, cd)
+assert not atoms_too_close(top3, blmin)

@@ -25,16 +25,16 @@ v3 = cell[2, :]
 v3[2] = 3.
 
 # define the closest distance between two atoms of a given species
-cd = closest_distances_generator(atom_numbers=[47, 79],
-                                 ratio_of_covalent_radii=0.7)
+blmin = closest_distances_generator(atom_numbers=[47, 79],
+                                    ratio_of_covalent_radii=0.7)
 
 # Define the composition of the atoms to optimize
 atom_numbers = 2 * [47] + 2 * [79]
 
 # create the starting population
 sg = StartGenerator(slab=slab,
-                    atom_numbers=atom_numbers,
-                    closest_allowed_distances=cd,
+                    blocks=atom_numbers,
+                    blmin=blmin,
                     box_to_place_in=[p0, [v1, v2, v3]])
 
 # generate the starting population

@@ -28,13 +28,13 @@ atom_numbers = 2 * [47] + 2 * [79]
 
 # define the closest distance two atoms of a given species can be to each other
 unique_atom_types = get_all_atom_types(slab, atom_numbers)
-cd = closest_distances_generator(atom_numbers=unique_atom_types,
-                                 ratio_of_covalent_radii=0.7)
+blmin = closest_distances_generator(atom_numbers=unique_atom_types,
+                                    ratio_of_covalent_radii=0.7)
 
 # create the starting population
 sg = StartGenerator(slab=slab,
-                    atom_numbers=atom_numbers,
-                    closest_allowed_distances=cd,
+                    blocks=atom_numbers,
+                    blmin=blmin,
                     box_to_place_in=[p0, [v1, v2, v3]])
 
 # generate the starting population

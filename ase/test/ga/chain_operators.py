@@ -3,7 +3,6 @@ also works for a case with 1 variable cell vector."""
 import random
 import numpy as np
 from ase import Atoms
-from ase.build import molecule
 from ase.ga.startgenerator import StartGenerator
 from ase.ga.cutandsplicepairing import CutAndSplicePairing
 from ase.ga.standardmutations import StrainMutation
