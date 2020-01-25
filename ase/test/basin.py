@@ -49,7 +49,7 @@ for GlobalOptimizer in [BasinHopping(s,
 
     # check that only minima were written
     last_energy = None
-    for im in io.read(ftraj + '@:'):
+    for im in io.read(ftraj, index=':'):
         energy = im.get_potential_energy()
         if last_energy is not None:
             assert energy < last_energy

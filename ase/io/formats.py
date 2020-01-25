@@ -563,7 +563,8 @@ def _write(filename, fd, format, io, images, parallel=None, append=False,
             io.write(filename, images, **kwargs)
 
 
-def read(filename, index=None, format=None, parallel=True, **kwargs):
+def read(filename, index=None, format=None, parallel=True,
+         do_not_split_by_at_sign=False, **kwargs):
     """Read Atoms object(s) from file.
 
     filename: str or file
@@ -583,6 +584,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
     parallel: bool
         Default is to read on master and broadcast to slaves.  Use
         parallel=False to read on all slaves.
+    do_not_split_by_at_sign: bool
+        If False (default) ``filename`` is splited by at sign ``@``
 
     Many formats allow on open file-like object to be passed instead
     of ``filename``. In this case the format cannot be auto-decected,
@@ -598,7 +601,7 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
         except ValueError:
             pass
 
-    filename, index = parse_filename(filename, index)
+    filename, index = parse_filename(filename, index, do_not_split_by_at_sign)
     if index is None:
         index = -1
     format = format or filetype(filename)
@@ -612,7 +615,8 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
                            parallel=parallel, **kwargs))
 
 
-def iread(filename, index=None, format=None, parallel=True, **kwargs):
+def iread(filename, index=None, format=None, parallel=True,
+          do_not_split_by_at_sign=False, **kwargs):
     """Iterator for reading Atoms objects from file.
 
     Works as the `read` function, but yields one Atoms object at a time
@@ -621,7 +625,7 @@ def iread(filename, index=None, format=None, parallel=True, **kwargs):
     if isinstance(index, str):
         index = string2index(index)
 
-    filename, index = parse_filename(filename, index)
+    filename, index = parse_filename(filename, index, do_not_split_by_at_sign)
 
     if index is None or index == ':':
         index = slice(None, None, None)
@@ -679,12 +683,12 @@ def _iread(filename, index, format, io, parallel=None, full_output=False,
             fd.close()
 
 
-def parse_filename(filename, index=None):
+def parse_filename(filename, index=None, do_not_split_by_at_sign=False):
     if not isinstance(filename, str):
         return filename, index
 
-    extension = os.path.basename(filename)
-    if '@' not in extension:
+    basename = os.path.basename(filename)
+    if do_not_split_by_at_sign or '@' not in basename:
         return filename, index
 
     newindex = None
@@ -703,7 +707,11 @@ def parse_filename(filename, index=None):
 def string2index(string):
     """Convert index string to either int or slice"""
     if ':' not in string:
-        return int(string)
+        # may contain database accessor
+        try:
+            return int(string)
+        except ValueError:
+            return string
     i = []
     for s in string.split(':'):
         if s == '':

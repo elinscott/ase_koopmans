@@ -46,4 +46,4 @@ for i in range(len(images)):
 with Trajectory('out.traj', 'a') as atraj:
     atraj.write(molecule('H2'))
     atraj.write(molecule('H2'))
-read('out.traj@:')
+read('out.traj', index=':')

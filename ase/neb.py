@@ -430,10 +430,10 @@ class IDPP(Calculator):
 
 
 class SingleCalculatorNEB(NEB):
-    def __init__(self, images, k=0.1, climb=False):
+    def __init__(self, images, k=0.1, climb=False, index=None):
         if isinstance(images, str):
             # this is a filename
-            images = read(images)
+            images = read(images, index=index)
 
         NEB.__init__(self, images, k, climb, False)
         self.calculators = [None] * self.nimages
