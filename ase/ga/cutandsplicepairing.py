@@ -219,11 +219,6 @@ class CutAndSplicePairing(OffspringCreator):
 
         cell1 = a1.get_cell()
         cell2 = a2.get_cell()
-
-        if self.cellbounds is not None:
-            assert self.cellbounds.is_within_bounds(cell1)
-            assert self.cellbounds.is_within_bounds(cell2)
-
         for i in range(self.number_of_variable_cell_vectors, 3):
             err = 'Unit cells are supposed to be identical in direction %d'
             assert np.allclose(cell1[i], cell2[i]), (err % i, cell1, cell2)
