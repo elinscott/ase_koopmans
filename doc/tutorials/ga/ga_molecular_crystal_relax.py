@@ -79,14 +79,11 @@ class HarmonicPlusLennardJones(LennardJones):
         if rc is None:
             rc = 3 * r0
 
-        positions = self.atoms.positions
-        cell = self.atoms.cell
-        tags = self.atoms.get_tags()
-
         energy = 0.0
         forces = np.zeros((natoms, 3))
         stress = np.zeros((3, 3))
 
+        tags = self.atoms.get_tags()
         for tag in np.unique(tags):
             # Adding (intramolecular) harmonic potential part
             indices = np.where(tags == tag)[0]

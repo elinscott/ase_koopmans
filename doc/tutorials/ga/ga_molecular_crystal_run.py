@@ -1,11 +1,10 @@
 import numpy as np
 from ase.io import write
-from ase.ga import get_raw_score, set_raw_score
+from ase.ga import get_raw_score
 from ase.ga.data import DataConnection
 from ase.ga.population import Population
 from ase.ga.utilities import closest_distances_generator, CellBounds
 from ase.ga.ofp_comparator import OFPComparator
-from ase.ga.startgenerator import StartGenerator
 from ase.ga.offspring_creator import OperationSelector
 from ase.ga.cutandsplicepairing import CutAndSplicePairing
 from ase.ga.standardmutations import (RattleMutation, StrainMutation,
@@ -99,10 +98,10 @@ for step in range(n_to_test):
         pairing.update_scaling_volume(current_pop, w_adapt=0.5, n_adapt=4)
 
     # Print out information for easier follow-up/analysis/plotting:
-    print('Step %d %s %.3f %.3f %.3f' % (step, desc,\
+    print('Step %d %s %.3f %.3f %.3f' % (step, desc,
           get_raw_score(a1), get_raw_score(a2), get_raw_score(a3)))
 
-    print('Step %d highest raw score in pop: %.3f' % \
+    print('Step %d highest raw score in pop: %.3f' %
           (step, get_raw_score(current_pop[0])))
 
 print('GA finished after step %d' % step)
