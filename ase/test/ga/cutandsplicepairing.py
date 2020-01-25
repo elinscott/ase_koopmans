@@ -50,10 +50,10 @@ n1 = -1 * np.ones((n_top, ))
 n2 = -1 * np.ones((n_top, ))
 for i in range(n_top):
     for j in range(n_top):
-        if np.all(top1.positions[j, :] == top3.positions[i, :]):
+        if np.allclose(top1.positions[j, :], top3.positions[i, :]):
             n1[i] = j
             break
-        elif np.all(top2.positions[j, :] == top3.positions[i, :]):
+        elif np.allclose(top2.positions[j, :], top3.positions[i, :]):
             n2[i] = j
             break
     assert (n1[i] > -1 and n2[i] == -1) or (n1[i] == -1 and n2[i] > -1)
