@@ -44,4 +44,4 @@ assert (vectors[0] == compareVec).all()
 assert len(vectors) == 2
 assert len(vectors[1]) == 3
 assert (mols[0].get_cell() == compareVec).all()
-assert mols[1].get_pbc().all() == True
+assert mols[1].get_pbc().all()

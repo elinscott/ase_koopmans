@@ -40,9 +40,9 @@ Supported :mod:`Calculators <ase.calculators>`
 |abinit| |Asap| |Atomistica| |CASTEP| |CP2K| |CRYSTAL| |deMon| |dftb|
 |dftd4| |elk| |exciting| |EMT|
 |fhi-aims| |fleur| |gpaw| |gromacs|
-|hotbit| |jacapo| |jdftx| |kim| |lammps| |nwchem|
+|hotbit| |jdftx| |kim| |lammps| |nwchem|
 |octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
-|xtb|
+|xtb| |orca|
 :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
@@ -228,9 +228,6 @@ Contents
 .. |hotbit| image:: static/hotbit.png
    :target: https://github.com/pekkosk/hotbit
    :align: middle
-.. |jacapo| image:: static/jacapo.png
-   :target: ase/calculators/jacapo.html
-   :align: middle
 .. |jdftx| image:: static/jdftx.png
    :target: http://jdftx.org/ASE.html
    :align: middle
@@ -271,7 +268,9 @@ Contents
 .. |xtb| image:: static/xtb.png
    :target: https://github.com/grimme-lab/xtb/tree/master/python
    :align: middle
-
+.. |orca| image:: static/orca_logo_mpi.png
+   :target: ase/calculators/orca.html
+   :align: middle
 
 .. _Gaussian: http://gaussian.com/
 .. _Mopac: ase/calculators/mopac.html

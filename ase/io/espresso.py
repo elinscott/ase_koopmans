@@ -27,7 +27,6 @@ from ase.dft.kpoints import kpoint_convert
 from ase.constraints import FixAtoms, FixCartesian
 from ase.data import chemical_symbols, atomic_numbers
 from ase.units import create_units
-from ase.utils import basestring
 
 
 # Quantum ESPRESSO uses CODATA 2006 internally
@@ -98,7 +97,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
 
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rU')
 
     # work with a copy in memory for faster random access
@@ -468,7 +467,7 @@ def read_espresso_in(fileobj):
         Raised for missing keys that are required to process the file
     """
     # TODO: use ase opening mechanisms
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rU')
 
     # parse namelist section and extract remaining lines
@@ -1406,7 +1405,7 @@ def kspacing_to_grid(atoms, spacing, calculated_spacing=None):
 
 def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                       kspacing=None, kpts=None, koffset=(0, 0, 0),
-                      **kwargs):
+                      crystal_coordinates=False, **kwargs):
     """
     Create an input file for pw.x.
 
@@ -1474,6 +1473,9 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     koffset: (int, int, int)
         Offset of kpoints in each direction. Must be 0 (no offset) or
         1 (half grid offset). Setting to True is equivalent to (1, 1, 1).
+    crystal_coordinates: bool
+        Whether the atomic positions should be written to the QE input file in
+        absolute (False, default) or relative (crystal) coordinates (True).
 
     """
 
@@ -1588,10 +1590,14 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
             else:
                 mask = ''
 
+            if crystal_coordinates:
+                coords = [atom.a, atom.b, atom.c]
+            else:
+                coords = atom.position
             atomic_positions_str.append(
                 '{atom.symbol} '
-                '{atom.x:.10f} {atom.y:.10f} {atom.z:.10f} '
-                '{mask}\n'.format(atom=atom, mask=mask))
+                '{coords[0]:.10f} {coords[1]:.10f} {coords[2]:.10f} '
+                '{mask}\n'.format(atom=atom, coords=coords, mask=mask))
 
     # Add computed parameters
     # different magnetisms means different types
@@ -1682,7 +1688,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         pwi.append('\n')
 
     # Positions - already constructed, but must appear after namelist
-    pwi.append('ATOMIC_POSITIONS angstrom\n')
+    if crystal_coordinates:
+        pwi.append('ATOMIC_POSITIONS crystal\n')
+    else:
+        pwi.append('ATOMIC_POSITIONS angstrom\n')
     pwi.extend(atomic_positions_str)
     pwi.append('\n')
 

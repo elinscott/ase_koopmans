@@ -17,7 +17,6 @@ from ase.atom import Atom
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io.gaussian_reader import GaussianReader as GR
 from ase.calculators.gaussian import Gaussian
-from ase.utils import basestring
 
 
 # http://www.gaussian.com/g_tech/g_ur/k_dft.htm
@@ -89,7 +88,7 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
             energy = value
 
     try:
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             fileobj = open(filename, 'r')
         else:
             fileobj = filename
@@ -141,7 +140,7 @@ def read_gaussian(filename):
 
     atoms = Atoms()
     for n, line in enumerate(lines):
-        if ('#' in line):
+        if ('#' in lines[n] and "#" not in lines[n+1]):
             i = 0
             while (lines[n + i + 5] != '\n'):
                 info = lines[n + i + 5].split()

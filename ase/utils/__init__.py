@@ -197,7 +197,7 @@ def search_current_git_hash(arg, world=None):
         return None
 
     # Check argument
-    if isinstance(arg, basestring):
+    if isinstance(arg, str):
         # Directory path
         dpath = arg
     else:
@@ -484,6 +484,7 @@ def lazymethod(meth):
     its return value is stored.  Subsequent calls return the cached
     value."""
     name = meth.__name__
+
     @functools.wraps(meth)
     def getter(self):
         try:

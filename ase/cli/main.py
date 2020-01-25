@@ -1,10 +1,9 @@
-
 import argparse
 import sys
 import textwrap
+from importlib import import_module
 
 from ase import __version__
-from ase.utils import import_module
 
 
 class CLIError(Exception):

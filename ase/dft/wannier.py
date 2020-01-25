@@ -272,12 +272,9 @@ class Wannier:
 
           ``verbose``: True / False level of verbosity.
           """
-        # Bloch phase sign convention
+        # Bloch phase sign convention.
+        # May require special cases depending on which code is used.
         sign = -1
-        classname = calc.__class__.__name__
-        if classname in ['Dacapo', 'Jacapo']:
-            print('Using ' + classname)
-            sign = +1
 
         self.nwannier = nwannier
         self.calc = calc
@@ -527,7 +524,7 @@ class Wannier:
         """
         scaled_wc = np.angle(self.Z_dww[:3].diagonal(0, 1, 2)).T  * \
                     self.kptgrid / (2 * pi)
-        trans_wc =  np.array(cell)[None] - np.floor(scaled_wc)
+        trans_wc = np.array(cell)[None] - np.floor(scaled_wc)
         for kpt_c, U_ww in zip(self.kpt_kc, self.U_kww):
             U_ww *= np.exp(2.j * pi * np.dot(trans_wc, kpt_c))
         self.update()

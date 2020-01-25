@@ -3,7 +3,6 @@ import numpy as np
 import ase
 from ase.data import chemical_symbols
 from ase.parallel import paropen
-from ase.utils import basestring
 
 cfg_default_fields = np.array(['positions', 'momenta', 'numbers', 'magmoms'])
 
@@ -12,7 +11,7 @@ def write_cfg(f, a):
     """Write atomic configuration to a CFG-file (native AtomEye format).
        See: http://mt.seas.upenn.edu/Archive/Graphics/A/
     """
-    if isinstance(f, basestring):
+    if isinstance(f, str):
         f = paropen(f, 'w')
     if isinstance(a, list):
         if len(a) == 1:
@@ -119,7 +118,7 @@ def write_clr(f, atoms):
 
     radius.shape = (-1, 1)
 
-    if isinstance(f, basestring):
+    if isinstance(f, str):
         f = paropen(f, 'w')
     for c1, c2, c3, r in np.append(color, radius, axis=1):
         f.write('%f %f %f %f\n' % (c1, c2, c3, r))
@@ -129,7 +128,7 @@ def read_cfg(f):
     """Read atomic configuration from a CFG-file (native AtomEye format).
        See: http://mt.seas.upenn.edu/Archive/Graphics/A/
     """
-    if isinstance(f, basestring):
+    if isinstance(f, str):
         f = open(f)
 
     nat = None

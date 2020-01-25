@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Vibrational modes."""
 
 import os
@@ -13,7 +12,7 @@ import ase.units as units
 from ase.io.trajectory import Trajectory
 from ase.parallel import world, paropen
 
-from ase.utils import opencew, pickleload, basestring
+from ase.utils import opencew, pickleload
 from ase.calculators.singlepoint import SinglePointCalculator
 
 
@@ -389,7 +388,7 @@ class Vibrations:
             file to create.
         """
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
         write = log.write
 

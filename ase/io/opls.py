@@ -7,7 +7,6 @@ from ase.calculators.lammpsrun import Prism
 from ase.neighborlist import NeighborList
 from ase.data import atomic_masses, chemical_symbols
 from ase.io import read
-from ase.utils import basestring
 
 
 def twochar(name):
@@ -75,7 +74,7 @@ class OPLSff:
             self.read(fileobj)
 
     def read(self, fileobj, comments='#'):
-        if isinstance(fileobj, basestring):
+        if isinstance(fileobj, str):
             fileobj = open(fileobj)
 
         def read_block(name, symlen, nvalues):
@@ -145,7 +144,7 @@ class OPLSff:
 
     def write_lammps_in(self):
         fileobj = self.prefix + '_in'
-        if isinstance(fileobj, basestring):
+        if isinstance(fileobj, str):
             fileobj = open(fileobj, 'w')
         fileobj.write("""# LAMMPS relaxation (written by ASE)
 
@@ -218,7 +217,7 @@ minimize        1.0e-14 1.0e-5 100000 100000
         else:
             molid = [1] * len(atoms)
         for i, r in enumerate(
-            p.positions_to_lammps_strs(atoms.get_positions())):
+                p.positions_to_lammps_strs(atoms.get_positions())):
             atype = atoms.types[tag[i]]
             if len(atype) < 2:
                 atype = atype + ' '
@@ -456,7 +455,7 @@ minimize        1.0e-14 1.0e-5 100000 100000
         """Write force field definitions for LAMMPS."""
 
         fileobj = self.prefix + '_opls'
-        if isinstance(fileobj, basestring):
+        if isinstance(fileobj, str):
             fileobj = open(fileobj, 'w')
 
         fileobj.write('# OPLS potential\n')
@@ -612,7 +611,7 @@ class OPLSStructure(Atoms):
 
         update_types: update atom types from the masses
         """
-        if isinstance(fileobj, basestring):
+        if isinstance(fileobj, str):
             fileobj = open(fileobj, 'r')
 
         lines = fileobj.readlines()

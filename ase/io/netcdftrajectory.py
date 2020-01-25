@@ -515,8 +515,8 @@ class NetCDFTrajectory:
                 origin = np.zeros([3], dtype=float)
 
             # Do we have an index variable?
-            if self.index_var is not None and \
-                self._has_variable(self.index_var):
+            if (self.index_var is not None and
+                    self._has_variable(self.index_var)):
                 index = np.array(self.nc.variables[self.index_var][i][:])
                 # The index variable can be non-consecutive, we here construct
                 # a consecutive one.

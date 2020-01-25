@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """colors.py - select how to color the atoms in the GUI."""
 from ase.gui.i18n import _
 

@@ -2,13 +2,13 @@ import os
 import subprocess
 from unittest import SkipTest
 from ase.test import require
+from ase.test.testsuite import datafiles_directory
 from ase.calculators.dftb import Dftb
 from ase.build import bulk
 
 require('dftb')
 
-p = os.path.dirname(__file__)
-os.environ['DFTB_PREFIX'] = p if p else './'
+os.environ['DFTB_PREFIX'] = datafiles_directory
 
 # We need to get the DFTB+ version to know
 # whether to skip this test or not.
@@ -45,7 +45,7 @@ atoms.get_potential_energy()
 efermi = calc.get_fermi_level()
 assert abs(efermi - -2.90086680996455) < 1.
 
-# DOS does not currently work because of 
+# DOS does not currently work because of
 # missing "get_k_point_weights" function
 #from ase.dft.dos import DOS
 #dos = DOS(calc, width=0.2)

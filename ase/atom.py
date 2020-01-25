@@ -3,7 +3,6 @@
 import numpy as np
 
 from ase.data import atomic_numbers, chemical_symbols, atomic_masses
-from ase.utils import basestring
 
 # Singular, plural, default value:
 names = {'position': ('positions', np.zeros(3)),
@@ -34,13 +33,16 @@ def abcproperty(index):
     """Helper function to easily create Atom ABC-property."""
 
     def getter(self):
-        spos = self.atoms.get_scaled_positions()
-        return spos[self.index][index]
+        return self.scaled_position[index]
 
     def setter(self, value):
-        spos = self.atoms.get_scaled_positions()
-        spos[self.index][index] = value
-        self.atoms.set_scaled_positions(spos)
+        # We can't just do self.scaled_position[i] = value
+        # because scaled_position is a new buffer, not a view into
+        # something we can write back to.
+        # This is a clear bug!
+        spos = self.scaled_position
+        spos[index] = value
+        self.scaled_position = spos
 
     return property(getter, setter, doc='ABC'[index] + '-coordinate')
 
@@ -88,7 +90,7 @@ class Atom(object):
 
         if atoms is None:
             # This atom is not part of any Atoms object:
-            if isinstance(symbol, basestring):
+            if isinstance(symbol, str):
                 d['number'] = atomic_numbers[symbol]
             else:
                 d['number'] = symbol
@@ -105,6 +107,17 @@ class Atom(object):
 
         self.index = index
         self.atoms = atoms
+
+    @property
+    def scaled_position(self):
+        pos = self.position
+        spos = self.atoms.cell.scaled_positions(pos[np.newaxis])
+        return spos[0]
+
+    @scaled_position.setter
+    def scaled_position(self, value):
+        pos = self.atoms.cell.cartesian_positions(value)
+        self.position = pos
 
     def __repr__(self):
         s = "Atom('%s', %s" % (self.symbol, list(self.position))
@@ -197,7 +210,6 @@ class Atom(object):
     y = xyzproperty(1)
     z = xyzproperty(2)
 
-    scaled_position = atomproperty('scaled_position', 'ABC-coordinates')
     a = abcproperty(0)
     b = abcproperty(1)
     c = abcproperty(2)

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8
 "Module for displaying information about the system."
 
 
@@ -20,6 +19,7 @@ def info(gui):
     atoms = gui.atoms
 
     tokens = []
+
     def add(token=''):
         tokens.append(token)
 

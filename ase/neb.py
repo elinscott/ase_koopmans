@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import threading
 
@@ -605,6 +604,11 @@ class NEBTools:
 
     def __init__(self, images):
         self.images = images
+
+    @deprecated('NEBTools.get_fit() is deprecated.  '
+                'Please use ase.utils.forcecurve.fit_images(images).')
+    def get_fit(self):
+        return fit_images(self.images)
 
     def get_barrier(self, fit=True, raw=False):
         """Returns the barrier estimate from the NEB, along with the

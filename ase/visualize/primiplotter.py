@@ -15,7 +15,6 @@ import numpy as np
 
 from ase.visualize.colortable import color_table
 import ase.data
-from ase.utils import basestring
 
 
 class PrimiPlotterBase:
@@ -920,7 +919,7 @@ def _colorsfromdict(dict, cls):
     isgray, isrgb = 0, 0
     for k in dict.keys():
         v = dict[k]
-        if isinstance(v, basestring):
+        if isinstance(v, str):
             v = color_table[v]
             dict[k] = v
         try:

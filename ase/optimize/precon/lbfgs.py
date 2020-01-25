@@ -4,7 +4,6 @@ import warnings
 from math import sqrt
 import numpy as np
 
-from ase.utils import basestring
 from ase.optimize.optimize import Optimizer
 from ase.constraints import UnitCellFilter
 
@@ -131,10 +130,10 @@ class PreconLBFGS(Optimizer):
             if len(atoms) < 100:
                 precon = None
                 warnings.warn('The system is likely too small to benefit from ' +
-                             'the standard preconditioner, hence it is ' +
-                             'disabled. To re-enable preconditioning, call' +
-                             '`PreconLBFGS` by explicitly providing the ' +
-                             'kwarg `precon`')
+                              'the standard preconditioner, hence it is ' +
+                              'disabled. To re-enable preconditioning, call' +
+                              '`PreconLBFGS` by explicitly providing the ' +
+                              'kwarg `precon`')
             else:
                 precon = 'Exp'
 
@@ -156,7 +155,7 @@ class PreconLBFGS(Optimizer):
         self.p = None
 
         # construct preconditioner if passed as a string
-        if isinstance(precon, basestring):
+        if isinstance(precon, str):
             if precon == 'C1':
                 precon = C1()
             if precon == 'Exp':
@@ -290,7 +289,7 @@ class PreconLBFGS(Optimizer):
 
     def replay_trajectory(self, traj):
         """Initialize history from old trajectory."""
-        if isinstance(traj, basestring):
+        if isinstance(traj, str):
             from ase.io.trajectory import Trajectory
             traj = Trajectory(traj, 'r')
         r0 = None

@@ -1,11 +1,9 @@
-
 import numpy as np
 
 from ase.calculators.siesta.siesta import Siesta
 from ase.calculators.siesta.parameters import Species, PAOBasisBlock
 from ase.calculators.calculator import FileIOCalculator
 from ase import Atoms
-from ase.utils import basestring
 
 # Setup test structures.
 h = Atoms('H', [(0.0, 0.0, 0.0)])
@@ -22,7 +20,7 @@ siesta = Siesta()
 assert isinstance(siesta, FileIOCalculator)
 assert isinstance(siesta.implemented_properties, tuple)
 assert isinstance(siesta.default_parameters, dict)
-assert isinstance(siesta.name, basestring)
+assert isinstance(siesta.name, str)
 assert isinstance(siesta.default_parameters, dict)
 
 # Test simple fdf-argument case.

@@ -17,28 +17,30 @@ from ase.db.row import AtomsRow
 from ase.formula import Formula
 from ase.io.jsonio import create_ase_object
 from ase.parallel import world, DummyMPI, parallel_function, parallel_generator
-from ase.utils import Lock, basestring, PurePath
+from ase.utils import Lock, PurePath
 
 
 T2000 = 946681200.0  # January 1. 2000
 YEAR = 31557600.0  # 365.25 days
 
 
+# Format of key description: ('short', 'long', 'unit')
 default_key_descriptions = {
     'id': ('ID', 'Uniqe row ID', ''),
     'age': ('Age', 'Time since creation', ''),
     'formula': ('Formula', 'Chemical formula', ''),
-    'pbc': ('PBC', '', ''),
+    'pbc': ('PBC', 'Periodic boundary conditions', ''),
     'user': ('Username', '', ''),
     'calculator': ('Calculator', 'ASE-calculator name', ''),
     'energy': ('Energy', 'Total energy', 'eV'),
     'fmax': ('Maximum force', '', 'eV/Ang'),
-    'smax': ('Maximum stress', '', '`\\text{eV/Ang}^3`'),
-    'charge': ('Charge', '', '|e|'),
-    'mass': ('Mass', '', 'au'),
+    'smax': ('Maximum stress', 'Maximum stress on unit cell',
+             '`\\text{eV/Ang}^3`'),
+    'charge': ('Charge', 'Net charge in unit cell', '|e|'),
+    'mass': ('Mass', 'Sum of atomic masses in unit cell', 'au'),
     'magmom': ('Magnetic moment', '', 'au'),
     'unique_id': ('Unique ID', 'Random (unique) ID', ''),
-    'volume': ('Volume', 'Volume of unit-cell', '`\\text{Ang}^3`')}
+    'volume': ('Volume', 'Volume of unit cell', '`\\text{Ang}^3`')}
 
 
 def now():
@@ -104,9 +106,9 @@ def check(key_value_pairs):
                 'chemical formula.  If you do a "db.select({0!r})",'
                 'you will not find rows with your key.  Instead, you wil get '
                 'rows containing the atoms in the formula!'.format(key))
-        if not isinstance(value, (numbers.Real, basestring, np.bool_)):
+        if not isinstance(value, (numbers.Real, str, np.bool_)):
             raise ValueError('Bad value for {!r}: {}'.format(key, value))
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             for t in [int, float]:
                 if str_represents(value, t):
                     raise ValueError(
@@ -150,7 +152,7 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type == 'extract_from_name':
         if name is None:
             type = None
-        elif not isinstance(name, basestring):
+        elif not isinstance(name, str):
             type = 'json'
         elif (name.startswith('postgresql://') or
               name.startswith('postgres://')):
@@ -169,7 +171,7 @@ def connect(name, type='extract_from_name', create_indices=True,
         if isinstance(name, str) and os.path.isfile(name):
             os.remove(name)
 
-    if type not in ['postgresql', 'mysql'] and isinstance(name, basestring):
+    if type not in ['postgresql', 'mysql'] and isinstance(name, str):
         name = os.path.abspath(name)
 
     if type == 'json':
@@ -276,7 +278,7 @@ def parse_selection(selection, **kwargs):
         elif key in atomic_numbers:
             key = atomic_numbers[key]
             value = int(value)
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             value = convert_str_to_int_float_or_str(value)
         if key in numeric_keys and not isinstance(value, (int, float)):
             msg = 'Wrong type for "{}{}{}" - must be a number'
@@ -297,11 +299,11 @@ class Database:
             to interact with the database on the master only and then
             distribute results to all slaves.
         """
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             filename = os.path.expanduser(filename)
         self.filename = filename
         self.create_indices = create_indices
-        if use_lock_file and isinstance(filename, basestring):
+        if use_lock_file and isinstance(filename, str):
             self.lock = Lock(filename + '.lock', world=DummyMPI())
         else:
             self.lock = None

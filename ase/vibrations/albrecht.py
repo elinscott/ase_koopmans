@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys
 import numpy as np
 from itertools import combinations_with_replacement

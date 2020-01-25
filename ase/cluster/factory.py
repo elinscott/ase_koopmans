@@ -4,7 +4,6 @@ from ase.data import atomic_numbers as ref_atomic_numbers
 from ase.spacegroup import Spacegroup
 from ase.cluster.base import ClusterBase
 from ase.cluster.cluster import Cluster
-from ase.utils import basestring
 
 
 class ClusterFactory(ClusterBase):
@@ -109,7 +108,7 @@ class ClusterFactory(ClusterBase):
         # The types that can be elements: integers and strings
         atomic_numbers = []
         if self.element_basis is None:
-            if isinstance(symbols, basestring):
+            if isinstance(symbols, str):
                 atomic_numbers.append(ref_atomic_numbers[symbols])
             elif isinstance(symbols, int):
                 atomic_numbers.append(symbols)
@@ -130,7 +129,7 @@ class ClusterFactory(ClusterBase):
                                 " (one for each kind of lattice position")
 
             for s in symbols:
-                if isinstance(s, basestring):
+                if isinstance(s, str):
                     atomic_numbers.append(ref_atomic_numbers[s])
                 elif isinstance(s, int):
                     atomic_numbers.append(s)
@@ -223,7 +222,7 @@ def GCD(a,b):
     #print "--"
     while a != 0:
         #print a,b,">",
-        a,b = b%a,a
+        a, b = b % a, a
         #print a,b
     return b
 

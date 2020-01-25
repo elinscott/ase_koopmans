@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from ase.db.core import float_to_time_string, now
