@@ -369,8 +369,8 @@ class StartGenerator(object):
 
                 for tag in np.unique(tags):
                     too_far = True
-                    indices_i = np.where(tags == i)[0]
-                    indices_j = np.where(tags != i)[0]
+                    indices_i = np.where(tags == tag)[0]
+                    indices_j = np.where(tags != tag)[0]
                     too_far = not atoms_too_close_two_sets(cand[indices_i],
                                                            cand[indices_j],
                                                            blmin_too_far)
