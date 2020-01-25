@@ -374,6 +374,14 @@ class StartGenerator(object):
                     too_far = not atoms_too_close_two_sets(cand[indices_i],
                                                            cand[indices_j],
                                                            blmin_too_far)
+
+                    if too_far and len(self.slab) > 0:
+                        # the block is too far from the rest
+                        # but might still be sufficiently
+                        # close to the slab
+                        too_far = not atoms_too_close_two_sets(cand[indices_i],
+                                                               self.slab,
+                                                               blmin_too_far)
                     if too_far:
                         break
                 else:
