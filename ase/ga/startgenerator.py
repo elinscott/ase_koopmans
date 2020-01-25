@@ -393,7 +393,6 @@ class StartGenerator(object):
             # Passed all the tests
             cand = self.slab + cand
             cand.set_cell(cell, scale_atoms=False)
-            cand.wrap()
             break
         else:
             # Reached max iteration count in the while loop
