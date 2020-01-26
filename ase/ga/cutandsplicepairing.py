@@ -233,6 +233,14 @@ class CutAndSplicePairing(OffspringCreator):
         while invalid and counter < maxcount:
             counter += 1
 
+            newcell = self.generate_unit_cell(cell1, cell2)
+            if newcell is None:
+                # No valid unit cell could be generated.
+                # This strongly suggests that it is near-impossible
+                # to generate one from these parent cells and it is
+                # better to abort now.
+                break
+
             # Choose direction of cutting plane normal
             if self.number_of_variable_cell_vectors == 0:
                 # Will be generated entirely at random
@@ -276,7 +284,7 @@ class CutAndSplicePairing(OffspringCreator):
                     cut_p[0, i] = 0.5 * (cosp1[i] + cosp2[i])
 
             # Perform the pairing:
-            child = self._get_pairing(a1_copy, a2_copy, cut_p, cut_n)
+            child = self._get_pairing(a1_copy, a2_copy, cut_p, cut_n, newcell)
             if child is None:
                 continue
 
@@ -289,23 +297,65 @@ class CutAndSplicePairing(OffspringCreator):
                     continue
 
             # Passed all the tests
-            cell = child.get_cell()
             child = self.slab + child
-            child.set_cell(cell, scale_atoms=False)
+            child.set_cell(newcell, scale_atoms=False)
             child.wrap()
             return child
-        else:
-            # Reached max iteration count in the while loop
-            return None
 
-    def _get_pairing(self, a1, a2, cutting_point, cutting_normal):
+        return None
+
+    def generate_unit_cell(self, cell1, cell2, maxcount=10000):
+        """Generates a new unit cell by a random linear combination
+        of the parent cells. The new cell must satisfy the
+        self.cellbounds constraints. Returns None if no such cell
+        was generated within a given number of attempts.
+
+	Parameters:
+
+        maxcount: int
+            The maximal number of attempts.
+	"""
+        # First calculate the scaling volume
+        if not self.scaling_volume:
+            v_ref = 0.5 * (a1.get_volume() + a2.get_volume())
+        else:
+            v_ref = self.scaling_volume
+
+        # Now the cell vectors
+        if self.number_of_variable_cell_vectors == 0:
+            assert np.allclose(cell1, cell2), 'Parent cells are not the same'
+            newcell = np.copy(cell1)
+        else:
+            count = 0
+            while count < maxcount:
+                r = np.random.random()
+                newcell = r * cell1 + (1 - r) * cell2
+
+                vol = abs(np.linalg.det(newcell))
+                scaling = v_ref / vol
+                scaling **= 1. / self.number_of_variable_cell_vectors
+                newcell[:self.number_of_variable_cell_vectors] *= scaling
+
+                found = True
+                if self.cellbounds is not None:
+                    found = self.cellbounds.is_within_bounds(newcell)
+                if found:
+                    break
+
+                count += 1
+            else:
+                # Did not find acceptable cell
+                newcell = None
+
+        return newcell
+
+    def _get_pairing(self, a1, a2, cutting_point, cutting_normal, cell):
         """Creates a child from two parents using the given cut.
 
         Returns None if the generated structure does not contain
         a large enough fraction of each parent (see self.minfrac).
 
-        Does not check whether atoms are too close, but does
-        ensure that the cell complies with self.cellbounds.
+        Does not check whether atoms are too close.
 
         Assumes the 'slab' parts have been removed from the parent
         structures and that these have been checked for equal
@@ -317,6 +367,9 @@ class CutAndSplicePairing(OffspringCreator):
 
         cutting_point: (1x3) array
             In fractional coordinates
+
+	cell: (3x3) array
+            The unit cell for the child structure
         """
         symbols = a1.get_chemical_symbols()
         tags = a1.get_tags() if self.use_tags else np.arange(len(a1))
@@ -397,49 +450,24 @@ class CutAndSplicePairing(OffspringCreator):
         if count1 < nmin or count2 < nmin:
             return None
 
-        # calculate the scaling volume
-        if not self.scaling_volume:
-            v_ref = 0.5 * (a1.get_volume() + a2.get_volume())
-        else:
-            v_ref = self.scaling_volume
-
-        # generate the unit cell
-        cell1 = a1.get_cell()
-        cell2 = a2.get_cell()
-        if self.number_of_variable_cell_vectors == 0:
-            newcell = cell1
-        else:
-            found = False
-            while not found:
-                r = np.random.random()
-                newcell = r * cell1 + (1 - r) * cell2
-                vol = abs(np.linalg.det(newcell))
-                scaling = v_ref / vol
-                scaling **= 1. / self.number_of_variable_cell_vectors
-                newcell[:self.number_of_variable_cell_vectors] *= scaling
-                if self.cellbounds is not None:
-                    found = self.cellbounds.is_within_bounds(newcell)
-                else:
-                    found = True
-
         # Construct the cartesian positions and reorder the atoms
         # to follow the original order
         newpos = []
         pbc = a1.get_pbc()
         for s in sym:
             p = use_total[s].pop()
-            c = cell1 if p.origin == 0 else cell2
+            c = a1.get_cell() if p.origin == 0 else a2.get_cell()
             pos = np.dot(p.scaled_positions, c)
             cop = np.dot(p.cop, c)
             vectors, lengths = find_mic(pos - cop, c, pbc)
-            newcop = np.dot(p.cop, newcell)
+            newcop = np.dot(p.cop, cell)
             pos = newcop + vectors
             for row in pos:
                 newpos.append(row)
 
         newpos = np.reshape(newpos, (N, 3))
         num = a1.get_atomic_numbers()
-        child = Atoms(numbers=num, positions=newpos, pbc=pbc, cell=newcell,
+        child = Atoms(numbers=num, positions=newpos, pbc=pbc, cell=cell,
                       tags=tags)
         child.wrap()
         return child
