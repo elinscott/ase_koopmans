@@ -317,7 +317,10 @@ class CutAndSplicePairing(OffspringCreator):
 	"""
         # First calculate the scaling volume
         if not self.scaling_volume:
-            v_ref = 0.5 * (a1.get_volume() + a2.get_volume())
+            v1 = np.abs(np.linalg.det(cell1))
+            v2 = np.abs(np.linalg.det(cell2))
+            r = np.random.random()
+            v_ref = r * v1 + (1 - r) * v2
         else:
             v_ref = self.scaling_volume
 
