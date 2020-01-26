@@ -25,6 +25,7 @@ def H2LJ():
     atoms = Atoms('H2', positions=np.zeros((2, 3)))
     atoms[1].position[2] = Re[0]
     atoms.set_calculator(H2ljState(0))
+    atoms.get_potential_energy()
     return atoms
 
 class H2ljState(LennardJones):
@@ -81,7 +82,7 @@ class FakeExcitation(Excitation):
         self.muv = np.array([float(l.pop(0)) for i in range(3)])
 
 
-class H2ljExcitedStates(ExcitationList):
+class H2LJExcitedStates(ExcitationList):
     """First singlet excited state of H2 as Lennard-Jones potentials"""
     def __init__(self, calculator):
         ExcitationList.__init__(self, calculator)

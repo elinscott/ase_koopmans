@@ -5,7 +5,7 @@ import numpy as np
 
 from ase.parallel import world
 from ase.utils import convert_string_to_fd
-
+from ase.units import Hartree
 
 class ExcitationList(list):
 
@@ -188,10 +188,8 @@ class Excitation:
         return pre * np.dot(mu, self.magn)
 
     def __str__(self):
-        string = '# '
-        string = '# <KSSingle> %d->%d %d(%d) eji=%g[eV]' % \
-            (self.i, self.j, self.pspin, self.spin,
-             self.energy * Hartree)
+        string = '# <' + self.__class__.__name__ + '> '
+        string += 'eji=%g[eV]' % self.energy
         if self.me.dtype == float:
             string += ' (%g,%g,%g)' % (self.me[0], self.me[1], self.me[2])
         else:
