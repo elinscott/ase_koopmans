@@ -65,7 +65,10 @@ class LennardJones(Calculator):
             r2 = (d**2).sum(1)
             c6 = (sigma**2 / r2)**3
             c6[r2 > rc**2] = 0.0
-            energy -= e0 * (c6 != 0.0).sum()
+            # no idea why this term was there, but removing it
+            # gives the correct dimer energy, see
+            # ase/test/calculators/test_lj.py
+            # energy -= e0 * (c6 != 0.0).sum()
             c12 = c6**2
             energy += 4 * epsilon * (c12 - c6).sum()
             f = (24 * epsilon * (2 * c12 - c6) / r2)[:, np.newaxis] * d
