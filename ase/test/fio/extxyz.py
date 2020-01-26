@@ -41,7 +41,7 @@ os.unlink('comment.xyz')
 # in commit r4542
 images = [at, at * (2, 1, 1), at * (3, 1, 1)]
 ase.io.write('multi.xyz', images, format='extxyz')
-read_images = ase.io.read('multi.xyz@:')
+read_images = ase.io.read('multi.xyz', index=':')
 assert read_images == images
 
 #test vec_cell writing and reading
@@ -55,7 +55,7 @@ cell = images[2].get_cell()
 cell[-1] = [0.0, 0.0, 0.0]
 cell[-2] = [0.0, 0.0, 0.0]
 images[2].set_cell(cell)
-read_images = ase.io.read('multi.xyz@:')
+read_images = ase.io.read('multi.xyz', index=':')
 assert read_images == images
 os.unlink('multi.xyz')
 # also test for vec_cell with whitespaces

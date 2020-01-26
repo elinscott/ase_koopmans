@@ -53,13 +53,13 @@ check(atoms, ref_bulk)
 # .arc format
 fname = 'dmol_tmp.arc'
 write(fname, ref_molecule_images, format='dmol-arc')
-images = read(fname + '@:', format='dmol-arc')
+images = read(fname, index=':', format='dmol-arc')
 for image, ref_image in zip(images, ref_molecule_images):
     check(image, ref_image)
 
 fname = 'dmol_tmp.arc'
 write(fname, ref_bulk_images, format='dmol-arc')
-images = read(fname + '@:', format='dmol-arc')
+images = read(fname, index=':', format='dmol-arc')
 for image, ref_image in zip(images, ref_bulk_images):
     R, _ = find_transformation(image, ref_image)
     image.cell = np.dot(image.cell, R)

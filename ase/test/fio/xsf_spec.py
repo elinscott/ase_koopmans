@@ -9,6 +9,7 @@ from ase.io import read, write
 #
 # See the data below
 
+
 def check(name, xsf_text, check_data):
     fname = '%s.xsf' % name
     fd = open(fname, 'w')
@@ -16,7 +17,7 @@ def check(name, xsf_text, check_data):
     fd.close()
 
     print('Read: %s' % fname)
-    images = read(fname + '@:', read_data=check_data)
+    images = read(fname, index=':', read_data=check_data)
     if check_data:
         array, images = images
 
@@ -33,7 +34,7 @@ def check(name, xsf_text, check_data):
         write(outfname, images)
 
     # ...and read it back in:
-    images2 = read(outfname + '@:', read_data=check_data)
+    images2 = read(outfname, index=':', read_data=check_data)
     if check_data:
         array2, images2 = images2
 
