@@ -10,7 +10,7 @@ from ase.vibrations import Vibrations
 from ase.vibrations.placzek import Placzek, Profeta
 from ase.vibrations.albrecht import Albrecht
 from ase.calculators.excitation import ExcitationList, Excitation
-from ase.calculators.h2_ljexcitation import H2LJ, H2ljExcitedStates
+from ase.calculators.h2lj import H2LJ, H2LJExcitedStates
 
 
 atoms = H2LJ()
@@ -21,7 +21,7 @@ if 0:
     vib.run()
     vib.summary()
 
-pz = Placzek(atoms, H2ljExcitedStates, txt='-')
+pz = Placzek(atoms, H2LJExcitedStates, txt='-')
 pz.run()
 print('??? 2')
 

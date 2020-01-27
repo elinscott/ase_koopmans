@@ -1,6 +1,7 @@
 import numpy as np
 from ase import Atoms
 from ase.units import invcm
+from ase.data import atomic_masses
 from ase.calculators.calculator import all_changes
 from ase.calculators.lj import LennardJones
 from ase.calculators.excitation import ExcitationList, Excitation
@@ -16,7 +17,8 @@ Ee = np.array(Ee) * invcm
 
 # LJ parameters
 sigma = np.array(Re) * 2**(-1 / 6)
-k = ome**2 * 0.5 * (4401.21 / 226.2)**2  # XXXX correct factor?
+m = atomic_masses[1]
+k = ome**2 * 0.5 * m # * (4401.21 / 226.2)**2  # XXXX correct factor
 epsilon = k * sigma**2 / 72 / 2**(1 / 3)
 Ee -= epsilon[0]
 
@@ -31,7 +33,7 @@ def H2LJ():
 class H2ljState(LennardJones):
     """H2 ground state as Lennard-Jones potential"""
     def __init__(self, index):
-        LennardJones.__init__(self,
+        LennardJones.__init__(self, rc=1.e5,
                               sigma=sigma[index], epsilon=epsilon[index])
 
     def calculate(self, atoms=None, properties=['energy'],
