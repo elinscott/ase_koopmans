@@ -157,7 +157,7 @@ class Row:
             if c == 'age':
                 value = float_to_time_string(now() - self.dct.ctime)
             elif c == 'pbc':
-                value = ''.join('FT'[p] for p in self.dct.pbc)
+                value = ''.join('FT'[int(p)] for p in self.dct.pbc)
             else:
                 value = getattr(self.dct, c, None)
             self.values.append(value)
