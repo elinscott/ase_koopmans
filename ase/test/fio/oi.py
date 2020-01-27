@@ -139,7 +139,7 @@ def test(format):
 
             if not io.single:
                 if format in ['json', 'db']:
-                    aa = read(fname2 + '@id=1') + read(fname2 + '@id=2')
+                    aa = read(fname2, index='id=1') + read(fname2, index='id=2')
                 else:
                     aa = [read(fname2), read(fname2, 0)]
                 aa += read(fname2, ':')

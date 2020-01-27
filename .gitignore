@@ -13,8 +13,7 @@ doc/tutorials/deltacodesdft/fit.json
 doc/ase/io/formatoptions.rst
 
 # Editor backup files
-*.py~
-*.rst~
+*~
 
 # Ignore PyCharm settings
 .idea/
@@ -24,3 +23,8 @@ doc/ase/io/formatoptions.rst
 
 # Translation template
 ase/gui/po/ag.pot
+
+# Pytest
+.cache
+
+.mypy_cache
