@@ -13,16 +13,17 @@ from ase.calculators.excitation import ExcitationList, Excitation
 from ase.calculators.h2lj import H2LJ, H2LJExcitedStates
 
 
-atoms = H2LJ()
+def test_placzek_run():
+    atoms = H2LJ()
+    pz = Placzek(atoms, H2LJExcitedStates, txt='-')
+    pz.run()
 
-# check ground state vibrations
-if 0:
-    vib = Vibrations(atoms)
-    vib.run()
-    vib.summary()
 
-pz = Placzek(atoms, H2LJExcitedStates, txt='-')
-pz.run()
+test_placzek_run()
+
+sys.exit()
+
+
 print('??? 2')
 
 om = 0.1

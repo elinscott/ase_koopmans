@@ -3,7 +3,7 @@ from ase import Atoms
 from ase.units import invcm
 from ase.data import atomic_masses
 from ase.calculators.calculator import all_changes
-from ase.calculators.lj import LennardJones
+from ase.calculators.morse import MorsePotential
 from ase.calculators.excitation import ExcitationList, Excitation
 
 # data from:
@@ -26,15 +26,16 @@ def H2LJ():
     """Return Lennard-Jones H2 with calculator attached."""
     atoms = Atoms('H2', positions=np.zeros((2, 3)))
     atoms[1].position[2] = Re[0]
-    atoms.set_calculator(H2ljState(0))
+    atoms.set_calculator(H2MorseState(0))
     atoms.get_potential_energy()
     return atoms
 
-class H2ljState(LennardJones):
-    """H2 ground state as Lennard-Jones potential"""
+class H2MorseState(MorsePotential):
+    """H2 ground state as Morse potential"""
     def __init__(self, index):
-        LennardJones.__init__(self, rc=1.e5,
-                              sigma=sigma[index], epsilon=epsilon[index])
+        MorsePotential.__init__(self, 
+                                epsilon=epsilon[index],
+                                rho0=Re[index])
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
