@@ -727,7 +727,7 @@ def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
     size = np.asarray(size)
     i = (np.indices(size + 2 * pad_width)
          .transpose((1, 2, 3, 0)).reshape((-1, 3)))
-    k = (i - pad_width / 2) / size - 0.5 + offset
+    k = (i - pad_width + 0.5) / size - 0.5 + offset
     k = np.dot(k, icell)
 
     # Fill in boundary values:
