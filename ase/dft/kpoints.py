@@ -696,7 +696,25 @@ def get_special_points(cell, lattice=None, eps=2e-4):
 def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
                                size, offset=(0, 0, 0), pad_width=2):
     """Interpolate values from Monkhorst-Pack sampling.
+    
+    `monkhorst_pack_interpolate` takes a set of `values`, for example
+    eigenvalues, that are resolved on a Monkhorst Pack k-point grid given by
+    `size` and `offset` and interpolates the values onto the k-points
+    in `path`.
+    
+    Note
+    ----
+    For the interpolation to work, path has to lie inside the domain
+    that is spanned by the MP kpoint grid given by size and offset.
 
+    To try to ensure this we expand the domain slightly by adding additional
+    entries along the edges and sides of the domain with values determined by
+    wrapping the values to the opposite side of the domain. In this way we
+    assume that the function to be interpolated is a periodic function in
+    k-space. The padding width is determined by the `pad_width` parameter.
+
+    Parameters
+    ----------
     path: (nk, 3) array-like
         Desired path in units of reciprocal lattice vectors.
     values: (nibz, ...) array-like
@@ -712,7 +730,10 @@ def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
     pad_width: int
         Padding width to aid interpolation
 
-    Returns *values* interpolated to *path*.
+    Returns
+    -------
+    (nbz,) array-like
+        *values* interpolated to *path*.
     """
     from scipy.interpolate import LinearNDInterpolator
 
