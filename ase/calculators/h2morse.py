@@ -13,30 +13,37 @@ from ase.calculators.excitation import ExcitationList, Excitation
 Re = [0.74144, 1.2928,  1.0327,  1.0327 ]  # eq. bond length
 ome= [4401.21, 1358.09, 2443.77, 2443.77]  # vibrational frequency
 ome = np.array(ome)
-Ee = [0,       91700.0, 100089.9, 100089.9]  # transition energy at Re[0]
-Ee = np.array(Ee) * invcm - Ha / 2 
+# electronic transition energy
+Etrans = [0,       91700.0, 100089.9, 100089.9]
+Etrans = np.array(Etrans) * invcm
 
-# LJ parameters
-sigma = np.array(Re) * 2**(-1 / 6)
-m = atomic_masses[1]
-k = (ome * invcm)**2 * 0.5 * m * (4401.21 / 227.12282214145904)**2  # XXXX correct factor
-epsilon = k * sigma**2 / 72 / 2**(1 / 3)
+# dissociation energy
+# GS: https://aip.scitation.org/doi/10.1063/1.3120443
+De = np.ones(4) * 36118.069 * invcm
+# B, C separated energy E(1s) - E(2p)
+De[1:] += Ha / 2 - Ha / 8
+De -= Etrans
+
+# Morse parameter
+m = atomic_masses[1] * 0.5  # reduced mass
+# XXX find scaling factor
+rho0 = Re * ome * invcm * np.sqrt(m / 2 / De) * 4401.21 / 284.55677429605862
 
 
-def H2Morse():
-    """Return Lennard-Jones H2 with calculator attached."""
+def H2Morse(state=0):
+    """Return H2 as a Morse-Potential with calculator attached."""
     atoms = Atoms('H2', positions=np.zeros((2, 3)))
-    atoms[1].position[2] = Re[0]
-    atoms.set_calculator(H2MorseState(0))
+    atoms[1].position[2] = Re[state]
+    atoms.set_calculator(H2MorseState(state))
     atoms.get_potential_energy()
     return atoms
 
 class H2MorseState(MorsePotential):
-    """H2 ground state as Morse potential"""
-    def __init__(self, index):
+    """H2 ground or excited state as Morse potential"""
+    def __init__(self, state):
         MorsePotential.__init__(self, 
-                                epsilon=Ee[index],
-                                rho0=Re[index])
+                                epsilon=De[state],
+                                r0=Re[state], rho0=rho0[state])
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
@@ -44,6 +51,58 @@ class H2MorseState(MorsePotential):
             assert len(atoms) == 2
         MorsePotential.calculate(self, atoms, properties, system_changes)
 
+
+class H2MorseExcitedStates(ExcitationList):
+    """First singlet excited state of H2 as Lennard-Jones potentials"""
+    def __init__(self, calculator):
+        ExcitationList.__init__(self, calculator)
+
+    def calculate(self):
+        """Caclculate excitation spectrum"""
+        # molecular axis
+        atoms = self.calculator.get_atoms()
+        vr = atoms[1].position - atoms[0].position
+        r = np.linalg.norm(vr)
+        hr = vr / r
+        # perpendicular axes
+        vrand = np.random.rand(3)
+        hx = np.cross(hr, vrand)
+        hx /= np.linalg.norm(hx)
+        hy = np.cross(hr, hx)
+        hy /= np.linalg.norm(hy)
+
+        # central me value and rise
+        hvec = [None, hr, hx, hy]
+        mc = [0, 0.9, 0.8, 0.8]
+        mr = [0, 1.0, 0.5, 0.5]
+
+        calc = H2MorseState(0)
+        calc.calculate(atoms)
+        E0 = calc.get_potential_energy()
+        for i in range(1, 4):
+            energy = Ha * (0.5 - 1. / 8) - E0
+            calc = H2MorseState(i)
+            calc.calculate(atoms)
+            energy += calc.get_potential_energy() 
+            
+            mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i])
+            muv = mur 
+
+            self.append(FakeExcitation(energy, mur, muv))
+
+    def read(self, filename):
+        """Read myself from a file"""
+        with open(filename, 'r') as f:
+            self.filename = filename
+            n = int(f.readline().split()[0])
+            for i in range(n):
+                self.append(FakeExcitation(string=f.readline()))
+
+    def write(self, fname):
+        with open(fname, 'w') as f:
+            print(len(self), file=f)
+            for ex in self:
+                 f.write(ex.outstring())
 
 class FakeExcitation(Excitation):
     def __init__(self, energy=None, mur=None, muv=None, magn=None, string=None):
@@ -86,53 +145,3 @@ class FakeExcitation(Excitation):
         self.muv = np.array([float(l.pop(0)) for i in range(3)])
 
 
-class H2LJExcitedStates(ExcitationList):
-    """First singlet excited state of H2 as Lennard-Jones potentials"""
-    def __init__(self, calculator):
-        ExcitationList.__init__(self, calculator)
-
-        h2lj = H2LJ()
-
-        # molecular axis
-        atoms = calculator.get_atoms()
-        vr = atoms[1].position - atoms[0].position
-        r = np.linalg.norm(vr)
-        hr = vr / r
-        # perpendicular axes
-        vrand = np.random.rand(3)
-        hx = np.cross(hr, vrand)
-        hx /= np.linalg.norm(hx)
-        hy = np.cross(hr, hx)
-        hy /= np.linalg.norm(hy)
-
-        # central me value and rise
-        hvec = [None, hr, hx, hy]
-        mc = [0, 0.9, 0.8, 0.8]
-        mr = [0, 1.0, 0.5, 0.5]
-            
-        for i in range(1, 4):
-            calc = H2ljState(i)
-            calc.calculate(calculator.get_atoms())
-            energy = Ee[i] + calc.get_potential_energy()
-            calc.calculate(h2lj)
-            energy -= calc.get_potential_energy()
-            #print('i, e=', i, energy)
-            
-            mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i])
-            muv = mur 
-
-            self.append(FakeExcitation(energy, mur, muv))
-
-    def read(self, filename):
-        """Read myself from a file"""
-        with open(filename, 'r') as f:
-            self.filename = filename
-            n = int(f.readline().split()[0])
-            for i in range(n):
-                self.append(FakeExcitation(string=f.readline()))
-
-    def write(self, fname):
-        with open(fname, 'w') as f:
-            print(len(self), file=f)
-            for ex in self:
-                 f.write(ex.outstring())

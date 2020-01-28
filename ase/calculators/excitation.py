@@ -18,25 +18,23 @@ class ExcitationList(list):
         Parameters
         ----------
         calculator: object or string
-        
+          if calculator is a string: read 
+          else: calculate
         """
-        if isinstance(calculator, str):
-            # initialize from a file
-            filename = calculator
-            self.calculator = None
-        else:
-            filename = None
-            self.calculator = calculator
-
         # initialise empty list
         list.__init__(self)
 
-        if not txt and calculator:
+        if not txt and hasattr(calculator, 'log'):
             txt = calculator.log.fd
         self.txt = convert_string_to_fd(txt, world)
 
-        if filename is not None:
-            self.read(filename)
+        if isinstance(calculator, str):
+            # initialize from a file
+            self.calculator = None
+            self.read(calculator)
+        else:
+            self.calculator = calculator
+            self.calculate()
 
     def get_calculator(self):
         return self.calculator
