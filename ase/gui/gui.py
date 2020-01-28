@@ -404,7 +404,7 @@ class GUI(View, Status):
         self.window.close()
 
     def new(self, key=None):
-        os.system('ase gui &')
+        subprocess.Popen([sys.executable, '-m', 'ase', 'gui'])
 
     def save(self, key=None):
         return save_dialog(self)
