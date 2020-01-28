@@ -28,3 +28,17 @@ def test_excited_state():
         exl = H2MorseExcitedStates(exatoms.get_calculator())
         assert (exl[i - 1].energy ==
                 pytest.approx(Etrans[i] - Egs + Egs0, 1e-8))
+
+
+def test_excited_io():
+    """Check writing and reading"""
+    fname = 'exlist.dat'
+    atoms = H2Morse()
+    exl1 = H2MorseExcitedStates(atoms.get_calculator())
+    exl1.write(fname)
+
+    exl2 = H2MorseExcitedStates(fname)
+    for ex1, ex2 in zip(exl1, exl2):
+        assert ex1.energy == pytest.approx(ex2.energy, 1e-3)
+        assert ex1.mur == pytest.approx(ex2.mur, 1e-5)
+        assert ex1.muv == pytest.approx(ex2.muv, 1e-5)

@@ -89,7 +89,7 @@ class H2MorseExcitedStates(ExcitationList):
             mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i])
             muv = mur
 
-            self.append(FakeExcitation(energy, mur, muv))
+            self.append(BasicExcitation(energy, mur, muv))
 
     def read(self, filename):
         """Read myself from a file"""
@@ -97,7 +97,7 @@ class H2MorseExcitedStates(ExcitationList):
             self.filename = filename
             n = int(f.readline().split()[0])
             for i in range(n):
-                self.append(FakeExcitation(string=f.readline()))
+                self.append(BasicExcitation(string=f.readline()))
 
     def write(self, fname):
         with open(fname, 'w') as f:
@@ -106,7 +106,7 @@ class H2MorseExcitedStates(ExcitationList):
                 f.write(ex.outstring())
 
 
-class FakeExcitation(Excitation):
+class BasicExcitation(Excitation):
     def __init__(self, energy=None,
                  mur=None, muv=None, magn=None, string=None):
         if string is not None:
