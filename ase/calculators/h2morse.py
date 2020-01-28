@@ -9,12 +9,12 @@ from ase.calculators.excitation import ExcitationList, Excitation
 
 # data from:
 # https://webbook.nist.gov/cgi/cbook.cgi?ID=C1333740&Mask=1000#Diatomic
-#     X        B        C
-Re = [0.74144, 1.2928,  1.0327,  1.0327 ]  # eq. bond length
-ome= [4401.21, 1358.09, 2443.77, 2443.77]  # vibrational frequency
+#      X        B        C        C
+Re =  [0.74144, 1.2928,  1.0327,  1.0327 ]  # eq. bond length
+ome = [4401.21, 1358.09, 2443.77, 2443.77]  # vibrational frequency
 ome = np.array(ome)
 # electronic transition energy
-Etrans = [0,       91700.0, 100089.9, 100089.9]
+Etrans = [0,    91700.0, 100089.9, 100089.9]
 Etrans = np.array(Etrans) * invcm
 
 # dissociation energy
@@ -38,10 +38,11 @@ def H2Morse(state=0):
     atoms.get_potential_energy()
     return atoms
 
+
 class H2MorseState(MorsePotential):
     """H2 ground or excited state as Morse potential"""
     def __init__(self, state):
-        MorsePotential.__init__(self, 
+        MorsePotential.__init__(self,
                                 epsilon=De[state],
                                 r0=Re[state], rho0=rho0[state])
 
@@ -83,10 +84,10 @@ class H2MorseExcitedStates(ExcitationList):
             energy = Ha * (0.5 - 1. / 8) - E0
             calc = H2MorseState(i)
             calc.calculate(atoms)
-            energy += calc.get_potential_energy() 
-            
+            energy += calc.get_potential_energy()
+
             mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i])
-            muv = mur 
+            muv = mur
 
             self.append(FakeExcitation(energy, mur, muv))
 
@@ -102,10 +103,12 @@ class H2MorseExcitedStates(ExcitationList):
         with open(fname, 'w') as f:
             print(len(self), file=f)
             for ex in self:
-                 f.write(ex.outstring())
+                f.write(ex.outstring())
+
 
 class FakeExcitation(Excitation):
-    def __init__(self, energy=None, mur=None, muv=None, magn=None, string=None):
+    def __init__(self, energy=None,
+                 mur=None, muv=None, magn=None, string=None):
         if string is not None:
             self.fromstring(string)
         else:
@@ -143,5 +146,3 @@ class FakeExcitation(Excitation):
         self.energy = float(l.pop(0))
         self.mur = np.array([float(l.pop(0)) for i in range(3)])
         self.muv = np.array([float(l.pop(0)) for i in range(3)])
-
-

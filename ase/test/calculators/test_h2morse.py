@@ -5,7 +5,7 @@ from ase.calculators.h2morse import H2MorseExcitedStates
 
 
 def test_gs_minimum():
-    """Test ground state minimum distance, energy and 
+    """Test ground state minimum distance, energy and
     vibrational frequency"""
     atoms = H2Morse()
     assert atoms.get_distance(0, 1) == Re[0]
@@ -13,7 +13,6 @@ def test_gs_minimum():
     # check ground state vibrations
     vib = Vibrations(atoms)
     vib.run()
-    #vib.summary()
     assert (vib.get_frequencies().real[-1] ==
             pytest.approx(ome[0], 1e-2))
 
@@ -29,4 +28,3 @@ def test_excited_state():
         exl = H2MorseExcitedStates(exatoms.get_calculator())
         assert (exl[i - 1].energy ==
                 pytest.approx(Etrans[i] - Egs + Egs0, 1e-8))
-
