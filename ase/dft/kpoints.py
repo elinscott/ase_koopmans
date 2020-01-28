@@ -740,7 +740,7 @@ def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
     # NaN values indicate points outside interpolation domain, if fail
     # try increasing padding
     assert not np.isnan(interpolated_points).any(), \
-        "Points outside interpolations domain. Try increasing pad_width."
+        "Points outside interpolation domain. Try increasing pad_width."
 
     return interpolated_points
 
