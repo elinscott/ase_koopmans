@@ -1,10 +1,11 @@
 import numpy as np
 from ase import Atoms
-from ase.units import invcm
+from ase.units import invcm, Ha
 from ase.data import atomic_masses
 from ase.calculators.calculator import all_changes
 from ase.calculators.morse import MorsePotential
 from ase.calculators.excitation import ExcitationList, Excitation
+
 
 # data from:
 # https://webbook.nist.gov/cgi/cbook.cgi?ID=C1333740&Mask=1000#Diatomic
@@ -13,16 +14,16 @@ Re = [0.74144, 1.2928,  1.0327,  1.0327 ]  # eq. bond length
 ome= [4401.21, 1358.09, 2443.77, 2443.77]  # vibrational frequency
 ome = np.array(ome)
 Ee = [0,       91700.0, 100089.9, 100089.9]  # transition energy at Re[0]
-Ee = np.array(Ee) * invcm
+Ee = np.array(Ee) * invcm - Ha / 2 
 
 # LJ parameters
 sigma = np.array(Re) * 2**(-1 / 6)
 m = atomic_masses[1]
 k = (ome * invcm)**2 * 0.5 * m * (4401.21 / 227.12282214145904)**2  # XXXX correct factor
 epsilon = k * sigma**2 / 72 / 2**(1 / 3)
-Ee -= epsilon[0]
 
-def H2LJ():
+
+def H2Morse():
     """Return Lennard-Jones H2 with calculator attached."""
     atoms = Atoms('H2', positions=np.zeros((2, 3)))
     atoms[1].position[2] = Re[0]
@@ -34,14 +35,14 @@ class H2MorseState(MorsePotential):
     """H2 ground state as Morse potential"""
     def __init__(self, index):
         MorsePotential.__init__(self, 
-                                epsilon=epsilon[index],
+                                epsilon=Ee[index],
                                 rho0=Re[index])
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
         if atoms is not None:
             assert len(atoms) == 2
-        LennardJones.calculate(self, atoms, properties, system_changes)
+        MorsePotential.calculate(self, atoms, properties, system_changes)
 
 
 class FakeExcitation(Excitation):
