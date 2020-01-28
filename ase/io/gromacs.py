@@ -128,24 +128,20 @@ def read_gromacs(filename):
                 float(inp[7]) * 10.0, \
                 float(inp[8]) * 10.0
             mycell = []
-            #gromacs manual (manual.gromacs.org/online/gro.html) says:
-            #v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y)
+            # gromacs manual (manual.gromacs.org/online/gro.html) says:
+            # v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y)
             #
-            #v1(x) v2(y) v3(z) fv0[0 1 2]  v1(x) v2(x) v3(x)
-            #v1(y) v1(z) v2(x) fv1[0 1 2]  v1(y) v2(y) v3(y)
-            #v2(z) v3(x) v3(y) fv2[0 1 2]  v1(z) v2(z) v3(z)
-            mycell += [[floatvect0[0], floatvect1[2], floatvect2[1]]]
-            mycell += [[floatvect1[0], floatvect0[1], floatvect2[2]]]
-            mycell += [[floatvect1[1], floatvect2[0], floatvect0[2]]]
+            # cell[i,j] is the jth Cartesian coordinate of the ith unit vector
+            # cell[0,0] cell[1,1] cell[2,2] v1(x) v2(y) v3(z) fv0[0 1 2]
+            # cell[0,1] cell[0,2] cell[1,0] v1(y) v1(z) v2(x) fv1[0 1 2]
+            # cell[1,2] cell[2,0] cell[2,1] v2(z) v3(x) v3(y) fv2[0 1 2]
+            mycell += [[floatvect0[0], floatvect1[0], floatvect1[1]]]
+            mycell += [[floatvect1[2], floatvect0[1], floatvect2[0]]]
+            mycell += [[floatvect2[1], floatvect2[2], floatvect0[2]]]
             atoms.set_cell(mycell)
             atoms.set_pbc(True)
         except:
-            mycell = []
-            #gromacs manual (manual.gromacs.org/online/gro.html) says:
-            #v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y)
-            mycell += [[floatvect0[0],           0.0,           0.0]]
-            mycell += [[          0.0, floatvect0[1],           0.0]]
-            mycell += [[          0.0,           0.0, floatvect0[2]]]
+            # only diagonal given
             atoms.set_cell(floatvect0)
             atoms.set_pbc(True)
     except:
@@ -199,7 +195,7 @@ def write_gromacs(fileobj, images):
     fileobj.write('%5d\n' % len(images[-1]))
     count = 1
 
-    # gromac line see http://manual.gromacs.org/documentation/current/user-guide/file-formats.html#gro
+    # gromacs line see http://manual.gromacs.org/documentation/current/user-guide/file-formats.html#gro
     #    1WATER  OW1    1   0.126   1.624   1.679  0.1227 -0.0580  0.0434
     for (resnb, resname, atomtype, xyz,
          vxyz) in zip(residuenumbers, gromacs_residuenames,
@@ -222,21 +218,22 @@ def write_gromacs(fileobj, images):
         # gromacs manual (manual.gromacs.org/online/gro.html) says:
         # v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y)
         #
-        # cell[0,0] cell[1,0] cell[2,0] v1(x) v2(y) v3(z) fv0[0 1 2]
-        # cell[0,1] cell[1,1] cell[2,1] v1(y) v1(z) v2(x) fv1[0 1 2]
-        # cell[0,2] cell[1,2] cell[2,2] v2(z) v3(x) v3(y) fv2[0 1 2]
+        # cell[i,j] is the jth Cartesian coordinate of the ith unit vector
+        # cell[0,0] cell[1,1] cell[2,2] v1(x) v2(y) v3(z) fv0[0 1 2]
+        # cell[0,1] cell[0,2] cell[1,0] v1(y) v1(z) v2(x) fv1[0 1 2]
+        # cell[1,2] cell[2,0] cell[2,1] v2(z) v3(x) v3(y) fv2[0 1 2]
         fileobj.write('%10.5f%10.5f%10.5f' \
                           % (mycell[0, 0] * 0.1, \
                                  mycell[1, 1] * 0.1, \
                                  mycell[2, 2] * 0.1))
         fileobj.write('%10.5f%10.5f%10.5f' \
-                          % (mycell[1, 0] * 0.1, \
-                                 mycell[2, 0] * 0.1, \
-                                 mycell[0, 1] * 0.1))
-        fileobj.write('%10.5f%10.5f%10.5f\n' \
-                          % (mycell[2, 1] * 0.1, \
+                          % (mycell[0, 1] * 0.1, \
                                  mycell[0, 2] * 0.1, \
-                                 mycell[1, 2] * 0.1))
+                                 mycell[1, 0] * 0.1))
+        fileobj.write('%10.5f%10.5f%10.5f\n' \
+                          % (mycell[1, 2] * 0.1, \
+                                 mycell[2, 0] * 0.1, \
+                                 mycell[2, 1] * 0.1))
     else:
         # When we do not have a cell, the cell is specified as an empty line
         fileobj.write("\n")
