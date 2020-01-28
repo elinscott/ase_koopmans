@@ -80,6 +80,7 @@ def parameters_to_keywords(label=None, atoms=None, parameters=None,
     from collections import OrderedDict
     keywords = OrderedDict()
     sequence = ['system_currentdirectory', 'system_name', 'data_path',
+                'level_of_fileout',
                 'species_number', 'definition_of_atomic_species',
                 'atoms_number', 'atoms_speciesandcoordinates_unit',
                 'atoms_speciesandcoordinates', 'atoms_unitvectors_unit',
@@ -104,7 +105,8 @@ def parameters_to_keywords(label=None, atoms=None, parameters=None,
     curdir = os.path.join(os.getcwd(), prefix)
     keywords['system_currentdirectory'] = curdir  # Need absolute directory
     keywords['system_name'] = prefix
-    keywords['data_path'] = os.environ.get('OPENMX_DFT_DATA_PATH')
+    keywords['data_path'] = parameters.get('data_path', os.environ.get(
+                                           'OPENMX_DFT_DATA_PATH'))
     keywords['species_number'] = len(get_species(atoms.get_chemical_symbols()))
     keywords['atoms_number'] = len(atoms)
     keywords['atoms_unitvectors_unit'] = 'Ang'
