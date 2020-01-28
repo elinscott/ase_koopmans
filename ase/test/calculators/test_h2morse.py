@@ -5,7 +5,8 @@ from ase.calculators.h2morse import H2MorseExcitedStates
 
 
 def test_gs_minimum():
-    """Test ground state minimum distance and energy"""
+    """Test ground state minimum distance, energy and 
+    vibrational frequency"""
     atoms = H2Morse()
     assert atoms.get_distance(0, 1) == Re[0]
     assert atoms.get_potential_energy() == -De[0]
@@ -20,13 +21,12 @@ def test_gs_minimum():
 def test_excited_state():
     """Test excited state transition energies"""
     gsatoms = H2Morse()
+    Egs0 = gsatoms.get_potential_energy()
     for i in range(1, 4):
         exatoms = H2Morse()
         exatoms[1].position[2] = Re[i]
+        Egs = exatoms.get_potential_energy()
         exl = H2MorseExcitedStates(exatoms.get_calculator())
-        print(exl[i - 1].energy, Etrans[i])
-        assert exl[i - 1].energy == Etrans[i]
+        assert (exl[i - 1].energy ==
+                pytest.approx(Etrans[i] - Egs + Egs0, 1e-8))
 
-
-#test_gs_minimum()
-test_excited_state()
