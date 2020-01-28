@@ -694,9 +694,27 @@ def get_special_points(cell, lattice=None, eps=2e-4):
 
 
 def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
-                               size, offset=(0, 0, 0)):
+                               size, offset=(0, 0, 0), pad_width=2):
     """Interpolate values from Monkhorst-Pack sampling.
+    
+    `monkhorst_pack_interpolate` takes a set of `values`, for example
+    eigenvalues, that are resolved on a Monkhorst Pack k-point grid given by
+    `size` and `offset` and interpolates the values onto the k-points
+    in `path`.
+    
+    Note
+    ----
+    For the interpolation to work, path has to lie inside the domain
+    that is spanned by the MP kpoint grid given by size and offset.
 
+    To try to ensure this we expand the domain slightly by adding additional
+    entries along the edges and sides of the domain with values determined by
+    wrapping the values to the opposite side of the domain. In this way we
+    assume that the function to be interpolated is a periodic function in
+    k-space. The padding width is determined by the `pad_width` parameter.
+
+    Parameters
+    ----------
     path: (nk, 3) array-like
         Desired path in units of reciprocal lattice vectors.
     values: (nibz, ...) array-like
@@ -709,8 +727,13 @@ def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
         Size of Monkhorst-Pack grid.
     offset: (3,) array-like
         Offset of Monkhorst-Pack grid.
+    pad_width: int
+        Padding width to aid interpolation
 
-    Returns *values* interpolated to *path*.
+    Returns
+    -------
+    (nbz,) array-like
+        *values* interpolated to *path*.
     """
     from scipy.interpolate import LinearNDInterpolator
 
@@ -723,22 +746,24 @@ def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
 
     # Create padded Monkhorst-Pack grid:
     size = np.asarray(size)
-    i = np.indices(size + 2).transpose((1, 2, 3, 0)).reshape((-1, 3))
-    k = (i - 0.5) / size - 0.5 + offset
+    i = (np.indices(size + 2 * pad_width)
+         .transpose((1, 2, 3, 0)).reshape((-1, 3)))
+    k = (i - pad_width + 0.5) / size - 0.5 + offset
     k = np.dot(k, icell)
 
     # Fill in boundary values:
-    V = np.zeros(tuple(size + 2) + v.shape[3:])
-    V[1:-1, 1:-1, 1:-1] = v
-    V[0, 1:-1, 1:-1] = v[-1]
-    V[-1, 1:-1, 1:-1] = v[0]
-    V[:, 0, 1:-1] = V[:, -2, 1:-1]
-    V[:, -1, 1:-1] = V[:, 1, 1:-1]
-    V[:, :, 0] = V[:, :, -2]
-    V[:, :, -1] = V[:, :, 1]
+    V = np.pad(v, [(pad_width, pad_width)] * 3 +
+               [(0, 0)] * (v.ndim - 3), mode="wrap")
 
     interpolate = LinearNDInterpolator(k, V.reshape((-1,) + V.shape[3:]))
-    return interpolate(path)
+    interpolated_points = interpolate(path)
+
+    # NaN values indicate points outside interpolation domain, if fail
+    # try increasing padding
+    assert not np.isnan(interpolated_points).any(), \
+        "Points outside interpolation domain. Try increasing pad_width."
+
+    return interpolated_points
 
 
 # ChadiCohen k point grids. The k point grids are given in units of the
