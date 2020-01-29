@@ -89,7 +89,7 @@ class H2MorseExcitedStates(ExcitationList):
             mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i])
             muv = mur
 
-            self.append(BasicExcitation(energy, mur, muv))
+            self.append(BasicExcitation(energy, i, mur, muv))
 
     def read(self, filename):
         """Read myself from a file"""
@@ -107,20 +107,31 @@ class H2MorseExcitedStates(ExcitationList):
 
 
 class BasicExcitation(Excitation):
-    def __init__(self, energy=None,
+    def __init__(self, energy=None, index=None,
                  mur=None, muv=None, magn=None, string=None):
         if string is not None:
             self.fromstring(string)
         else:
             self.energy = energy
+            self.index = index
             self.mur = mur
             self.muv = muv
             self.magn = magn
         self.fij = 1.
         self.me = - self.mur * np.sqrt(self.energy)
 
+    def __eq__(self, other):
+        """Considered to be equal when their indices are equal."""
+        return self.index == other.index
+
+    def __hash__(self):
+        """Hash similar to __eq__"""
+        if not hasattr(self, 'hash'):
+            self.hash = hash(self.index)
+        return self.hash
+
     def outstring(self):
-        string = '{0:g}   '.format(self.energy)
+        string = '{0:g}  {1}  '.format(self.energy, self.index)
 
         def format_me(me):
             string = ''
@@ -144,5 +155,6 @@ class BasicExcitation(Excitation):
     def fromstring(self, string):
         l = string.split()
         self.energy = float(l.pop(0))
+        self.index = int(l.pop(0))
         self.mur = np.array([float(l.pop(0)) for i in range(3)])
         self.muv = np.array([float(l.pop(0)) for i in range(3)])
