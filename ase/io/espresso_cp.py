@@ -50,7 +50,10 @@ KEYS['EE']        += ['which_compensation']
 KEYS['NKSIC']      = ['do_innerloop', 'one_innerloop_only', 'nkscalfact', 'odd_nkscalfact', 
                       'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
                       'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
-                      'innerloop_init_n', 'hartree_only_sic']
+                      'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr', 
+                      'do_innerloop_cg', 'innerloop_nmax']
+KEYS['IONS']      += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
+                      'ion_radius(4)'] 
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
