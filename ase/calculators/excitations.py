@@ -6,7 +6,8 @@ import numpy as np
 
 from ase.parallel import world
 from ase.utils import convert_string_to_fd
-from ase.units import Hartree, Bohr
+from ase.units import Bohr
+# from ase.units import Hartree, Bohr
 
 
 class ExcitationList(list):
@@ -16,7 +17,7 @@ class ExcitationList(list):
         Parameters
         ----------
         calculator: object or string
-          if calculator is a string: read 
+          if calculator is a string: read
           else: calculate
         """
         # initialise empty list

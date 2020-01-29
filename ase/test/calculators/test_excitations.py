@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 from ase.calculators.excitations import polarizability
 from ase.calculators.h2morse import H2Morse

@@ -4,7 +4,7 @@ Test resonant Raman implementations
 import pytest
 
 from ase.vibrations.placzek import Placzek, Profeta
-from ase.vibrations.albrecht import Albrecht
+# from ase.vibrations.albrecht import Albrecht
 from ase.calculators.h2morse import H2Morse, H2MorseExcitedStates
 
 

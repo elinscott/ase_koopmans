@@ -9,12 +9,12 @@ from ase.calculators.excitations import ExcitationList, Excitation
 
 # data from:
 # https://webbook.nist.gov/cgi/cbook.cgi?ID=C1333740&Mask=1000#Diatomic
-#      X        B        C        C
-Re =  [0.74144, 1.2928,  1.0327,  1.0327 ]  # eq. bond length
+#     X        B       C       C
+Re = [0.74144, 1.2928, 1.0327, 1.0327]  # eq. bond length
 ome = [4401.21, 1358.09, 2443.77, 2443.77]  # vibrational frequency
 ome = np.array(ome)
 # electronic transition energy
-Etrans = [0,    91700.0, 100089.9, 100089.9]
+Etrans = [0, 91700.0, 100089.9, 100089.9]
 Etrans = np.array(Etrans) * invcm
 
 # dissociation energy
