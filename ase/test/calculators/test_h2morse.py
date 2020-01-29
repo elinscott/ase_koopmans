@@ -42,3 +42,10 @@ def test_excited_io():
         assert ex1.energy == pytest.approx(ex2.energy, 1e-3)
         assert ex1.mur == pytest.approx(ex2.mur, 1e-5)
         assert ex1.muv == pytest.approx(ex2.muv, 1e-5)
+
+
+def main():
+    test_excited_io()
+
+if __name__ == '__main__':
+    main()
