@@ -2,9 +2,7 @@ import numpy as np
 
 import ase.units as u
 from ase.vibrations.resonant_raman import ResonantRaman
-
-# XXX remove gpaw dependence
-from gpaw.lrtddft.spectrum import polarizability
+from ase.calculators.excitations import polarizability
 
 
 class Placzek(ResonantRaman):

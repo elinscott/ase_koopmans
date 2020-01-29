@@ -9,7 +9,7 @@ from ase.vibrations import Vibrations
 
 from ase.vibrations.placzek import Placzek, Profeta
 from ase.vibrations.albrecht import Albrecht
-from ase.calculators.excitation import ExcitationList, Excitation
+from ase.calculators.excitations import ExcitationList, Excitation
 from ase.calculators.h2morse import H2Morse, H2MorseExcitedStates
 
 
@@ -36,7 +36,7 @@ def test_compare_intensities():
     prname = pzname
     pr = Profeta(atoms, H2MorseExcitedStates,
                  gsname=prname, exname=prname, txt=None)
-    om = 11
+    om = 1
     pzi = pz.absolute_intensity(omega=om)[-1]
     pri = pr.absolute_intensity(omega=om)[-1]
     pz.summary(om)

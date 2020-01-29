@@ -206,6 +206,7 @@ class ResonantRaman(Vibrations):
         self.log('reading ' + self.exname + '.eq' + self.exext)
         ex0_object = self.exobj(self.exname + '.eq' + self.exext,
                                 **self.exkwargs)
+        eu = ex0_object.energy_to_eV_scale
         self.timer.stop('really read')
         self.timer.start('index')
         matching = frozenset(ex0_object)
@@ -254,7 +255,6 @@ class ResonantRaman(Vibrations):
 
         self.timer.start('me and energy')
 
-        eu = u.Hartree
         self.ex0E_p = np.array([ex.energy * eu for ex in ex0])
         self.ex0m_pc = (np.array(
             [ex.get_dipole_me(form=self.dipole_form) for ex in ex0]) *
@@ -302,6 +302,7 @@ class ResonantRaman(Vibrations):
         self.log('reading ' + self.exname + '.eq' + self.exext)
         ex0 = self.exobj(self.exname + '.eq' + self.exext,
                          **self.exkwargs)
+        eu = ex0.energy_to_eV_scale
         rep0_p = np.ones((len(ex0)), dtype=float)
 
         def load(name, pm, rep0_p):
@@ -355,7 +356,6 @@ class ResonantRaman(Vibrations):
         self.comm.product(rep0_p)
         select = np.where(rep0_p > self.minrep)[0]
 
-        eu = u.Hartree
         self.ex0E_p = np.array([ex.energy * eu for ex in ex0])[select]
         self.ex0m_pc = (np.array(
             [ex.get_dipole_me(form=self.dipole_form)
@@ -673,6 +673,7 @@ class LrResonantRaman(ResonantRaman):
         self.log('reading ' + self.exname + '.eq' + self.exext)
         ex0_object = self.exobj(self.exname + '.eq' + self.exext,
                                 **self.exkwargs)
+        eu = ex0_object.energy_to_eV_scale
         self.timer.stop('really read')
         self.timer.start('index')
         matching = frozenset(ex0_object.kss)
@@ -725,7 +726,6 @@ class LrResonantRaman(ResonantRaman):
 
         self.timer.start('me and energy')
 
-        eu = u.Hartree
         self.ex0E_p = np.array([ex.energy * eu for ex in ex0])
 #        self.exmE_p = np.array([ex.energy * eu for ex in exm])
 #        self.expE_p = np.array([ex.energy * eu for ex in exp])

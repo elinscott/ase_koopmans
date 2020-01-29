@@ -9,11 +9,7 @@ from ase.utils import convert_string_to_fd
 from ase.units import Hartree, Bohr
 
 class ExcitationList(list):
-
-    """General Excitation List class.
-
-    """
-
+    """Excitation list base class."""
     def __init__(self, calculator=None, txt='-'):
         """
         Parameters
@@ -23,7 +19,10 @@ class ExcitationList(list):
           else: calculate
         """
         # initialise empty list
-        list.__init__(self)
+        super().__init__(self)
+
+        # set default energy scale to get eV
+        self.energy_to_eV_scale = 1.
 
         if not txt and hasattr(calculator, 'log'):
             txt = calculator.log.fd
@@ -239,7 +238,9 @@ def polarizability(exlist, omega, form='v',
         om2 = np.array(omega, dtype=float)**2
     except (TypeError, np.ComplexWarning):
         om2 = np.array(omega, dtype=complex)**2
-        
+
+    esc = exlist.energy_to_eV_scale
+
     if tensor:
         try:
             om2 = om2[:, None, None]
@@ -249,11 +250,11 @@ def polarizability(exlist, omega, form='v',
                          dtype=om2.dtype)
         for ex in exlist:
             alpha += ex.get_dipole_tensor(form=form) / (
-                ex.energy**2 - om2)
+                (ex.energy * esc)**2 - om2)
     else:
         alpha = np.zeros_like(om2)
         for ex in exlist:
             alpha += ex.get_oscillator_strength(form=form)[index] / (
-                ex.energy**2 - om2)
+                (ex.energy * esc)**2 - om2)
             
     return alpha * Bohr**2 * Hartree
