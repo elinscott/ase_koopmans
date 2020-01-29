@@ -8,12 +8,15 @@ Built for CP
 Units are converted using CODATA 2006, as used internally by Quantum
 ESPRESSO.
 """
-
 import os
 import operator as op
 import warnings
 from collections import OrderedDict
 from os import path
+
+# For reading in JSON files containing CP directives
+import json
+from ase.io.jsonio import numpyfy
 
 import numpy as np
 
@@ -24,7 +27,7 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 # from ase.dft.kpoints import kpoint_convert
 # from ase.constraints import FixAtoms, FixCartesian
 # from ase.data import chemical_symbols, atomic_numbers
-from ase.units import create_units
+from ase.units import create_units, Hartree, Bohr
 from ase.utils import basestring
 
 from ase.io.espresso import Namelist, KEYS, SSSP_VALENCE, \
@@ -82,6 +85,63 @@ def read_espresso_cp_in(fileobj):
 
     return atoms
 
+def read_espresso_cp_json(fileobj):
+    """Reads JSON files containing CP directives
+
+    Parameters
+    ----------
+    fileobj : file|str
+        A file like object or filename
+
+    Returns
+    -------
+    A dictionary of atoms objects with Espresso_cp calculators
+
+    """
+    if isinstance(fileobj, basestring):
+        fileobj = open(fileobj, 'rU')
+
+    # Decode JSON file
+    cp_decoder = json.JSONDecoder().decode
+    bigdct = numpyfy(cp_decoder(fileobj.read()))
+
+    all_atoms = {}
+    for bigkey, dct in bigdct.items():
+        dct = {k.lower() : v for k, v in dct.items()}
+
+        # Create a blank atoms object
+        calc = Espresso_cp()
+
+        # Storing CP keywords in atoms.calc.parameters
+        cp_keys = [key for block in KEYS.values() for key in block]
+        cp_dct = {k : v for k, v in dct.items() if k in cp_keys}
+        dct = {k : v for k, v in dct.items() if k not in cp_keys}
+        calc.parameters['input_data'] = construct_namelist(cp_dct)
+
+        # Going over keywords that correspond to CP blocks
+        if 'atomic_positions' in dct:
+            dct['positions'] = np.array([l.split()[1:] for l in dct['atomic_positions'].strip().split('\n')], dtype=float)
+            del dct['atomic_positions']
+        if 'cell_size' in dct:
+            dct['cell'] = np.array([l.split() for l in dct['cell_size'].strip().split('\n')], dtype=float)
+            del dct['cell_size']
+        if 'atomic_species' in dct:
+            calc.parameters['pseudopotentials'] = {l.split()[0] : l.split()[2] for l in dct['atomic_species'].strip().split('\n')}
+            del dct['atomic_species']
+        # Dealing with units
+        units = {'bohr' : Bohr, 'ang' : 1.0}
+        if 'unit_cell' in dct:
+            dct['cell'] *= units[dct['unit_cell'].lower()]
+            del dct['unit_cell']
+
+        # Assuming all remaining keys will be parseable by ASE
+        atoms = Atoms(**dct)
+        calc.atoms = atoms
+        atoms.calc = calc
+
+        all_atoms[bigkey] = atoms
+
+    return all_atoms
 
 def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     """Reads Quantum ESPRESSO output files.
@@ -124,11 +184,13 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
     # Extract calculation results
     energy = None
+    odd_energy = None
     lumo_energy = None
     homo_energy = None
     lambda_ii = None
     eigenvalues = []
     job_done = False
+    orbital_data = {'charge' : [], 'centres' : [], 'spreads' : [], 'self-Hartree' : []}
     for i_line, line in enumerate(cpo_lines):
 
         # Energy
@@ -150,6 +212,9 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                 except:
                     pass
 
+        if 'odd energy' in line:
+            odd_energy = float(line.split()[3])*Hartree
+
         if 'HOMO Eigenvalue (eV)' in line:
             homo_energy = float(cpo_lines[i_line + 2])
     
@@ -158,7 +223,21 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
         if 'JOB DONE' in line:
             job_done = True
-    
+
+        if 'Orb -- Charge  ---' in line:
+            for key in orbital_data:
+                orbital_data[key].append([])
+            j_line = i_line + 2
+            line = cpo_lines[j_line]
+            while 'OCC' in line:
+                splitline = line.split()
+                orbital_data['charge'][-1].append(float(splitline[3]))
+                orbital_data['centres'][-1].append([float(x)*Bohr for x in splitline[5:8]])
+                orbital_data['spreads'][-1].append(float(splitline[9])*Bohr**2)
+                orbital_data['self-Hartree'][-1].append(float(splitline[10]))
+                j_line += 1
+                line = cpo_lines[j_line]
+
     # Forces
     # forces = None
     # for force_index in indexes[_CP_FORCE]:
@@ -284,37 +363,13 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     #                                 ibzkpts=ibzkpts)
     # calc.kpts = kpts
     calc.results['energy'] = energy
+    calc.results['odd_energy'] = odd_energy
     calc.results['homo_energy'] = homo_energy
     calc.results['lumo_energy'] = lumo_energy
     calc.results['eigenvalues'] = eigenvalues
     calc.results['lambda_ii'] = lambda_ii
     calc.results['job_done'] = job_done
+    calc.results['orbital_data'] = orbital_data
     structure.set_calculator(calc)
 
     yield structure
-
-def parse_cp_start(lines, index=0):
-    """Parse Quantum ESPRESSO calculation info from lines,
-    starting from index. Return a dictionary containing extracted
-    information.
-
-    Parameters
-    ----------
-    lines : list[str]
-        Contents of CP output file.
-    index : int
-        Line number to begin parsing. Only first calculation will
-        be read.
-
-    Returns
-    -------
-    info : dict
-        Dictionary of calculation parameters, including `celldm(1)`, `cell`,
-        `symbols`, `positions`, `atoms`.
-
-    """
-
-    info = {}
-
-    return info 
-
