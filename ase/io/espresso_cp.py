@@ -44,7 +44,7 @@ KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'd
 KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep']
 KEYS['NKSIC']      = ['do_innerloop', 'one_innerloop_only', 'nkscalfact', 'odd_nkscalfact', 
                       'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
-                      'index_empty_to_save']
+                      'index_empty_to_save', 'esic_conv_thr']
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
