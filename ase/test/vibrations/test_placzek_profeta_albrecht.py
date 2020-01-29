@@ -2,14 +2,9 @@
 Test resonant Raman implementations
 """
 import pytest
-import numpy as np
-from ase import Atoms
-from ase.calculators.lj import LennardJones
-from ase.vibrations import Vibrations
 
 from ase.vibrations.placzek import Placzek, Profeta
 from ase.vibrations.albrecht import Albrecht
-from ase.calculators.excitations import ExcitationList, Excitation
 from ase.calculators.h2morse import H2Morse, H2MorseExcitedStates
 
 
@@ -20,6 +15,7 @@ def test_placzek_run():
                  gsname=name, exname=name, txt='-')
     pz.run()
 
+
 def test_profeta_run():
     atoms = H2Morse()
     name = 'profeta'
@@ -27,28 +23,25 @@ def test_profeta_run():
                  gsname=name, exname=name, txt='-')
     pr.run()
 
-def test_compare_intensities():
+
+def test_compare_placzek_implementation_intensities():
+    """Intensities of different Placzek implementations
+    should be similar"""
     atoms = H2Morse()
-    pzname = 'placzek'
+    name = 'placzek'
     pz = Placzek(atoms, H2MorseExcitedStates,
-                 gsname=pzname, exname=pzname, txt=None)
-    prname = 'profeta'
-    prname = pzname
-    pr = Profeta(atoms, H2MorseExcitedStates,
-                 gsname=prname, exname=prname, txt=None)
+                 gsname=name, exname=name, txt=None)
+    pz.run()
+    pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
+                 gsname=name, exname=name, txt=None)
     om = 1
     pri = pr.absolute_intensity(omega=om)[-1]
     pzi = pz.absolute_intensity(omega=om)[-1]
-    #pr.summary(om)
-    print(pzi, pri)
-    assert pzi == pytest.approx(pri, 1e-5)
+    assert pzi == pytest.approx(pri, 1e-3)
 
 
 def main():
-    if 1:
-        test_placzek_run()
-        test_profeta_run()
-    test_compare_intensities()
+    test_compare_placzek_implementation_intensities()
 
 if __name__ == '__main__':
     main()

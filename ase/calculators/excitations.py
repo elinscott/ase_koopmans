@@ -8,6 +8,7 @@ from ase.parallel import world
 from ase.utils import convert_string_to_fd
 from ase.units import Hartree, Bohr
 
+
 class ExcitationList(list):
     """Excitation list base class."""
     def __init__(self, calculator=None, txt='-'):
@@ -209,7 +210,7 @@ class Excitation:
 
 def polarizability(exlist, omega, form='v',
                    tensor=False, index=0):
-    """Evaluate the photon energy dependent polarizability 
+    """Evaluate the photon energy dependent polarizability
     from the sum over states
 
     Parameters
@@ -257,4 +258,4 @@ def polarizability(exlist, omega, form='v',
             alpha += ex.get_oscillator_strength(form=form)[index] / (
                 (ex.energy * esc)**2 - om2)
             
-    return alpha * Bohr**2 * Hartree
+    return alpha * Bohr**2  # * Hartree # XXX why is this not needed anymore ?
