@@ -175,9 +175,9 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
             if dimensions == 3:
                 ax.scatter(p[0], p[1], p[2], **kw)
             elif dimensions == 2:
-                ax.scatter(p[0], p[1], c='b', zorder=4)
+                ax.scatter(p[0], p[1], zorder=4, **kw)
             else:
-                ax.scatter(p[0], 0, c='b', zorder=4)
+                ax.scatter(p[0], 0, zorder=4, **kw)
 
     ax.set_axis_off()
 
