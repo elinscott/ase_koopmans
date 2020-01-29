@@ -43,11 +43,14 @@ units = create_units('2006')
 
 KEYS['CONTROL']   += ['ndr', 'ndw']
 KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
-                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw']
-KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep']
+                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx']
+KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
+                      'electron_dynamics', 'passop']
+KEYS['EE']        += ['which_compensation']
 KEYS['NKSIC']      = ['do_innerloop', 'one_innerloop_only', 'nkscalfact', 'odd_nkscalfact', 
                       'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
-                      'index_empty_to_save']
+                      'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
+                      'innerloop_init_n', 'hartree_only_sic']
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
@@ -85,6 +88,7 @@ def read_espresso_cp_in(fileobj):
 
     return atoms
 
+
 def read_espresso_cp_json(fileobj):
     """Reads JSON files containing CP directives
 
@@ -120,7 +124,10 @@ def read_espresso_cp_json(fileobj):
 
         # Going over keywords that correspond to CP blocks
         if 'atomic_positions' in dct:
-            dct['positions'] = np.array([l.split()[1:] for l in dct['atomic_positions'].strip().split('\n')], dtype=float)
+            pos_array = np.array([l.split() for l in dct['atomic_positions'].strip().split('\n')])
+            labels = pos_array[:, 0]
+            positions = np.array(pos_array[:, 1:], dtype = float)
+            dct['positions'] = positions
             del dct['atomic_positions']
         if 'cell_size' in dct:
             dct['cell'] = np.array([l.split() for l in dct['cell_size'].strip().split('\n')], dtype=float)
@@ -136,12 +143,46 @@ def read_espresso_cp_json(fileobj):
 
         # Assuming all remaining keys will be parseable by ASE
         atoms = Atoms(**dct)
+        atoms.set_chemical_symbols([''.join([c for c in label if c.isalpha()]) for label in labels])
+        atoms.set_array('labels', labels)
         calc.atoms = atoms
         atoms.calc = calc
 
         all_atoms[bigkey] = atoms
 
     return all_atoms
+
+def write_espresso_cp_json(calc, fileobj, exclude = []):
+    """Writes JSON files containing CP directives
+
+    Parameters
+    ----------
+    calc : Espresso_cp
+        An Espresso_cp calculator
+
+    fileobj : file|str
+        A file like object or filename
+
+    exclude : list
+        A list of keywords to exclude from the JSON file
+
+    """
+    dct = {k : v for block in calc.parameters['input_data'].values() for k, v in block.items() if k not in exclude}
+    dct['cell_size'] = ' \n '.join([' '.join([str(v) for v in line]) for line in calc.atoms.get_cell()])
+    dct['atomic_species'] = ' \n '.join([f'{key} 1.0 {val}' for key, val in calc.parameters.pseudopotentials.items()])
+    try:
+        labels = calc.atoms.get_array('labels')
+    except:
+        labels = calc.atoms.get_chemical_symbols()
+    dct['atomic_positions'] = ' \n '.join([label + ' ' + ' '.join([str(x) for x in pos]) for label, pos in zip(labels, calc.atoms.get_positions())])
+    bigdct = {str(calc.atoms.symbols) : dct}
+
+    if isinstance(fileobj, basestring):
+        fileobj = open(fileobj, 'w')
+
+    fileobj.write(json.dumps(bigdct, sort_keys=True, indent=4))
+    fileobj.close()
+
 
 def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     """Reads Quantum ESPRESSO output files.
