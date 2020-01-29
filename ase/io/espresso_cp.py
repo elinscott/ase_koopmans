@@ -114,7 +114,7 @@ def read_espresso_cp_json(fileobj):
 
         # Storing CP keywords in atoms.calc.parameters
         cp_keys = [key for block in KEYS.values() for key in block]
-        cp_dct = {k : v for k, v in dct.items() if k in cp_keys}
+        cp_dct = {k : json.loads(v) for k, v in dct.items() if k in cp_keys}
         dct = {k : v for k, v in dct.items() if k not in cp_keys}
         calc.parameters['input_data'] = construct_namelist(cp_dct)
 
