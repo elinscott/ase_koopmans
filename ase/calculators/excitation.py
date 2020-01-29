@@ -1,6 +1,7 @@
 """Excitation lists base classes
 
 """
+import warnings
 import numpy as np
 
 from ase.parallel import world
@@ -40,7 +41,7 @@ class ExcitationList(list):
         return self.calculator
 
     def get_energies(self):
-        """Get excitation energies in Hartrees"""
+        """Get excitation energies in eV"""
         el = []
         for ex in self:
             el.append(ex.get_energy())
@@ -109,7 +110,7 @@ class Excitation:
     """Base class for a single excited state"""
     def get_energy(self):
         """Get the excitations energy relative to the ground state energy
-        in Hartrees.
+        in eV.
         """
         return self.energy
 
@@ -233,9 +234,10 @@ def polarizability(exlist, omega, form='v',
         shape = (omega.shape,) if tensor == False
         shape = (omega.shape, 3, 3) else
     """
+    warnings.filterwarnings(action="error", category=np.ComplexWarning)
     try:
         om2 = np.array(omega, dtype=float)**2
-    except TypeError:
+    except (TypeError, np.ComplexWarning):
         om2 = np.array(omega, dtype=complex)**2
         
     if tensor:
@@ -247,11 +249,11 @@ def polarizability(exlist, omega, form='v',
                          dtype=om2.dtype)
         for ex in exlist:
             alpha += ex.get_dipole_tensor(form=form) / (
-                (ex.energy * Hartree)**2 - om2)
+                ex.energy**2 - om2)
     else:
         alpha = np.zeros_like(om2)
         for ex in exlist:
             alpha += ex.get_oscillator_strength(form=form)[index] / (
-                (ex.energy * Hartree)**2 - om2)
+                ex.energy**2 - om2)
             
     return alpha * Bohr**2 * Hartree

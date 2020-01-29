@@ -10,8 +10,6 @@ def test_polarizabilty():
     atoms = H2Morse()
     exl = H2MorseExcitedStates(atoms.get_calculator())
 
-    
-
     alpha = polarizability(exl, range(2))
     assert alpha.shape == (2, )
     assert alpha.dtype == float
