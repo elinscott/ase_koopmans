@@ -4,7 +4,7 @@ from ase.units import invcm, Ha
 from ase.data import atomic_masses
 from ase.calculators.calculator import all_changes
 from ase.calculators.morse import MorsePotential
-from ase.calculators.excitation import ExcitationList, Excitation
+from ase.calculators.excitations import ExcitationList, Excitation
 
 
 # data from:

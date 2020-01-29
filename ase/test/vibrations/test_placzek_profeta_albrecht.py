@@ -36,15 +36,19 @@ def test_compare_intensities():
     prname = pzname
     pr = Profeta(atoms, H2MorseExcitedStates,
                  gsname=prname, exname=prname, txt=None)
-    om = 5
+    om = 11
     pzi = pz.absolute_intensity(omega=om)[-1]
     pri = pr.absolute_intensity(omega=om)[-1]
     pz.summary(om)
     print(pzi, pri)
     assert pzi == pytest.approx(pri, 1e-5)
 
-if 0:
-    test_placzek_run()
-    test_profeta_run()
-test_compare_intensities()
 
+def main():
+    if 0:
+        test_placzek_run()
+        test_profeta_run()
+    test_compare_intensities()
+
+if __name__ == '__main__':
+    main()
