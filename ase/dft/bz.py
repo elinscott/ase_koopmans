@@ -154,16 +154,16 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                     if num:
                         name = '{}_{{{}}}'.format(name, num)
                 if dimensions == 3:
-                    ax.text(x, y, z, '$' + name + '$',
+                    ax.text(x, y, z, '$\\mathrm{' + name + '}$',
                             ha='center', va='bottom', color='g')
                 elif dimensions == 2:
                     if abs(z) < 1e-6:
-                        ax.text(x, y, '$' + name + '$',
+                        ax.text(x, y, '$\\mathrm{' + name + '}$',
                                 ha='right', va='bottom', color='g',
                                 zorder=5)
                 else:
                     if abs(y) < 1e-6 and abs(z) < 1e-6:
-                        ax.text(x, y, '$' + name + '$',
+                        ax.text(x, y, '$\\mathrm{' + name + '}$',
                                 ha='center', va='bottom', color='g',
                                 zorder=5)
 
