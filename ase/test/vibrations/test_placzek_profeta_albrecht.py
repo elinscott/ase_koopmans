@@ -35,9 +35,8 @@ def test_compare_placzek_implementation_intensities():
     pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
                  gsname=name, exname=name, txt=None)
     om = 1
-    pri = pr.absolute_intensity(omega=om)[-1]
     pzi = pz.absolute_intensity(omega=om)[-1]
-    print(pri, pzi)
+    pri = pr.absolute_intensity(omega=om)[-1]
     assert pzi == pytest.approx(pri, 1e-3)
 
 

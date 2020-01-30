@@ -120,15 +120,14 @@ class Excitation:
     def get_dipole_me(self, form='r'):
         """return the excitations dipole matrix element
         including the occupation factor sqrt(fij)"""
-        if form == 'r':
-            # length form
-            return self.me / np.sqrt(self.energy)
-        elif form == 'v':
-            # velocity form
-            return - np.sqrt(self.fij) * self.muv
+        if form == 'r':  # length form
+            me = - self.mur
+        elif form == 'v':  # velocity form
+            me = - self.muv
         else:
             raise RuntimeError('Unknown form >' + form + '<')
-
+        return np.sqrt(self.fij) * me
+        
     def get_dipole_tensor(self, form='r'):
         """Return the "oscillator strength tensor"
 
@@ -142,17 +141,8 @@ class Excitation:
 
           |I>, |J>
         """
-
-        if form == 'r':
-            # length form
-            me = self.me
-        elif form == 'v':
-            # velocity form
-            me = self.muv * np.sqrt(self.fij * self.energy)
-        else:
-            raise RuntimeError('Unknown form >' + form + '<')
-        
-        return 2 * np.outer(me, me.conj())
+        me = self.get_dipole_me(form)
+        return 2 * np.outer(me, me.conj()) * self.energy / Hartree
 
     def get_oscillator_strength(self, form='r'):
         """Return the excitations dipole oscillator strength."""

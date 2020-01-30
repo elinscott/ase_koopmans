@@ -76,7 +76,7 @@ class H2MorseExcitedStates(ExcitationList):
         hvec = [None, hr, hx, hy]
         # central me value and rise, unit Bohr
         # from DOI: 10.1021/acs.jctc.9b00584
-        mc = [0, 0.9, 0.8, 0.8]
+        mc = [0, 0.8, 0.7, 0.7]
         mr = [0, 1.0, 0.5, 0.5]
 
         calc = H2MorseState(0)
@@ -88,7 +88,7 @@ class H2MorseExcitedStates(ExcitationList):
             calc.calculate(atoms)
             energy += calc.get_potential_energy()
 
-            mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i]) / np.sqrt(Ha)
+            mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i])
             muv = mur
 
             self.append(BasicExcitation(energy, i, mur, muv))
@@ -103,7 +103,7 @@ class H2MorseExcitedStates(ExcitationList):
 
     def write(self, fname):
         with open(fname, 'w') as f:
-            print(len(self), file=f)
+            f.write('{0}\n'.format(len(self)))
             for ex in self:
                 f.write(ex.outstring())
 
@@ -120,7 +120,7 @@ class BasicExcitation(Excitation):
             self.muv = muv
             self.magn = magn
         self.fij = 1.
-        self.me = - self.mur * np.sqrt(self.energy)
+        self.me = - self.mur * np.sqrt(self.energy / Ha)
 
     def __eq__(self, other):
         """Considered to be equal when their indices are equal."""
@@ -156,7 +156,8 @@ class BasicExcitation(Excitation):
 
     def fromstring(self, string):
         l = string.split()
-        self.energy = float(l.pop(0))
-        self.index = int(l.pop(0))
-        self.mur = np.array([float(l.pop(0)) for i in range(3)])
-        self.muv = np.array([float(l.pop(0)) for i in range(3)])
+        energy = float(l.pop(0))
+        index = int(l.pop(0))
+        mur = np.array([float(l.pop(0)) for i in range(3)])
+        muv = np.array([float(l.pop(0)) for i in range(3)])
+        self.__init__(energy, index, mur, muv)
