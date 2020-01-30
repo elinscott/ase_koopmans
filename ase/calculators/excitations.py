@@ -6,8 +6,7 @@ import numpy as np
 
 from ase.parallel import world
 from ase.utils import convert_string_to_fd
-from ase.units import Bohr
-# from ase.units import Hartree, Bohr
+from ase.units import Hartree, Bohr
 
 
 class ExcitationList(list):
@@ -19,6 +18,8 @@ class ExcitationList(list):
         calculator: object or string
           if calculator is a string: read
           else: calculate
+        txt:
+          output channel, default '-'
         """
         # initialise empty list
         super().__init__(self)
@@ -26,6 +27,7 @@ class ExcitationList(list):
         # set default energy scale to get eV
         self.energy_to_eV_scale = 1.
 
+        # initialize ouput channel
         if not txt and hasattr(calculator, 'log'):
             txt = calculator.log.fd
         self.txt = convert_string_to_fd(txt, world)
@@ -135,7 +137,7 @@ class Excitation:
           form='r': sqrt(f * E) * <I|r|J>,
           form='v': sqrt(f / E) * <I|d/(dr)|J>
 
-        for f = multiplicity, E = transition energy and initial and
+        for f = multiplicity, E = transition energy between initial and
         final states::
 
           |I>, |J>
@@ -258,5 +260,5 @@ def polarizability(exlist, omega, form='v',
         for ex in exlist:
             alpha += ex.get_oscillator_strength(form=form)[index] / (
                 (ex.energy * esc)**2 - om2)
-            
-    return alpha * Bohr**2  # * Hartree # XXX why is this not needed anymore ?
+
+    return alpha * Bohr**2 * Hartree

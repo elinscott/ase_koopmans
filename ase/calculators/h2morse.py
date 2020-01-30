@@ -72,8 +72,10 @@ class H2MorseExcitedStates(ExcitationList):
         hy = np.cross(hr, hx)
         hy /= np.linalg.norm(hy)
 
-        # central me value and rise
+        # matrix element directions
         hvec = [None, hr, hx, hy]
+        # central me value and rise, unit Bohr
+        # from DOI: 10.1021/acs.jctc.9b00584
         mc = [0, 0.9, 0.8, 0.8]
         mr = [0, 1.0, 0.5, 0.5]
 
@@ -86,7 +88,7 @@ class H2MorseExcitedStates(ExcitationList):
             calc.calculate(atoms)
             energy += calc.get_potential_energy()
 
-            mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i])
+            mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i]) / np.sqrt(Ha)
             muv = mur
 
             self.append(BasicExcitation(energy, i, mur, muv))
