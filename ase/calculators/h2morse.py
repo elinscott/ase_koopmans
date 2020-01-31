@@ -58,7 +58,6 @@ class H2MorseState(MorsePotential):
         # to the molecular axis
         
         # molecular axis
-        atoms = self.calculator.get_atoms()
         vr = atoms[1].position - atoms[0].position
         r = np.linalg.norm(vr)
         hr = vr / r
@@ -73,48 +72,37 @@ class H2MorseState(MorsePotential):
         berry = (-1)**np.random.randint(0, 2, 4)
         self.wfs = [wf * b for wf, b in zip(wfs, berry)]
         
-    def write(filename, option=None):
+    def write(self, filename, option=None):
         """write calculated state to a file"""
         with open(filename, 'w') as f:
             for wf in self.wfs:
                 f.write(str(wf) + '\n')
- 
+
+
 class H2MorseExcitedStates(ExcitationList):
     """First singlet excited state of H2 as Lennard-Jones potentials"""
     def __init__(self, calculator):
         ExcitationList.__init__(self, calculator)
 
     def calculate(self):
-        """Caclculate excitation spectrum"""
-        # molecular axis
-        atoms = self.calculator.get_atoms()
-        vr = atoms[1].position - atoms[0].position
-        r = np.linalg.norm(vr)
-        hr = vr / r
-        # perpendicular axes
-        vrand = np.random.rand(3)
-        hx = np.cross(hr, vrand)
-        hx /= np.linalg.norm(hx)
-        hy = np.cross(hr, hx)
-        hy /= np.linalg.norm(hy)
-
-        # matrix element directions
-        hvec = [None, hr, hx, hy]
+        """Calculate excitation spectrum"""
         # central me value and rise, unit Bohr
         # from DOI: 10.1021/acs.jctc.9b00584
         mc = [0, 0.8, 0.7, 0.7]
         mr = [0, 1.0, 0.5, 0.5]
 
-        calc = H2MorseState(0)
-        calc.calculate(atoms)
-        E0 = calc.get_potential_energy()
+        cgs = self.calculator
+        atoms = cgs.get_atoms()
+        r = atoms.get_distance(0, 1)
+        E0 = cgs.get_potential_energy()
         for i in range(1, 4):
+            hvec = cgs.wfs[0] * cgs.wfs[i]
             energy = Ha * (0.5 - 1. / 8) - E0
             calc = H2MorseState(i)
             calc.calculate(atoms)
             energy += calc.get_potential_energy()
 
-            mur = hvec[i] * (mc[i] + (r - Re[0]) * mr[i])
+            mur = hvec * (mc[i] + (r - Re[0]) * mr[i])
             muv = mur
 
             self.append(BasicExcitation(energy, i, mur, muv))

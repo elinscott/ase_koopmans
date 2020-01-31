@@ -32,10 +32,21 @@ def test_compare_placzek_implementation_intensities():
     pz = Placzek(atoms, H2MorseExcitedStates,
                  gsname=name, exname=name, txt=None)
     pz.run()
-    pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
-                 gsname=name, exname=name, txt=None)
     om = 1
     pzi = pz.absolute_intensity(omega=om)[-1]
+
+    # Profeta using frozenset 
+    pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
+                 gsname=name, exname=name, txt=None)
+    pri = pr.absolute_intensity(omega=om)[-1]
+    assert pzi == pytest.approx(pri, 1e-3)
+    
+    # Profeta using overlap
+    name = 'profeta'
+    # pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
+    #             gsname=name, exname=name, overlap=True, txt=None)
+    #pr.run()
+    print('pri, pzi',  pri, pzi)
     pri = pr.absolute_intensity(omega=om)[-1]
     assert pzi == pytest.approx(pri, 1e-3)
 
