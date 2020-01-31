@@ -157,9 +157,14 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                     ax.text(x, y, z, '$\\mathrm{' + name + '}$',
                             ha='center', va='bottom', color='g')
                 elif dimensions == 2:
+                    ha_s = ['right', 'left', 'right']
+                    va_s = ['bottom', 'bottom', 'top']
+
+                    ha = ha_s[int(np.sign(x))]
+                    va = va_s[int(np.sign(y))]
                     if abs(z) < 1e-6:
                         ax.text(x, y, '$\\mathrm{' + name + '}$',
-                                ha='right', va='bottom', color='g',
+                                ha=ha, va=va, color='g',
                                 zorder=5)
                 else:
                     if abs(y) < 1e-6 and abs(z) < 1e-6:
