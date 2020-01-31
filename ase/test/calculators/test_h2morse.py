@@ -16,7 +16,15 @@ def test_gs_minimum():
     assert (vib.get_frequencies().real[-1] ==
             pytest.approx(ome[0], 1e-2))
 
-
+def test_gs_io_overlap():
+    """Test ground state IO and 'wave function' overlap"""
+    atoms1 = H2Morse()
+    #calc1 = 
+    atoms1.get_calculator().write('calc1')
+    atoms2 = H2Morse()
+    
+    
+    
 def test_excited_state():
     """Test excited state transition energies"""
     gsatoms = H2Morse()
@@ -46,6 +54,7 @@ def test_excited_io():
 
 def main():
     test_excited_io()
+    #test_gs_io_overlap()
 
 if __name__ == '__main__':
     main()

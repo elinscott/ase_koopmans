@@ -52,7 +52,33 @@ class H2MorseState(MorsePotential):
             assert len(atoms) == 2
         MorsePotential.calculate(self, atoms, properties, system_changes)
 
-
+        # determine 'wave functions' including
+        # Berry phase (arbitrary sign) and
+        # random orientation of wave functions perpendicular
+        # to the molecular axis
+        
+        # molecular axis
+        atoms = self.calculator.get_atoms()
+        vr = atoms[1].position - atoms[0].position
+        r = np.linalg.norm(vr)
+        hr = vr / r
+        # perpendicular axes
+        vrand = np.random.rand(3)
+        hx = np.cross(hr, vrand)
+        hx /= np.linalg.norm(hx)
+        hy = np.cross(hr, hx)
+        hy /= np.linalg.norm(hy)
+        wfs = [1, hr, hx, hy]
+        # Berry phase
+        berry = (-1)**np.random.randint(0, 2, 4)
+        self.wfs = [wf * b for wf, b in zip(wfs, berry)]
+        
+    def write(filename, option=None):
+        """write calculated state to a file"""
+        with open(filename, 'w') as f:
+            for wf in self.wfs:
+                f.write(str(wf) + '\n')
+ 
 class H2MorseExcitedStates(ExcitationList):
     """First singlet excited state of H2 as Lennard-Jones potentials"""
     def __init__(self, calculator):
