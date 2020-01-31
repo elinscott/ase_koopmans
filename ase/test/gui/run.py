@@ -132,17 +132,7 @@ def test_fracocc(gui):
     gui.open(filename='fracocc.cif')
 
 
-p = argparse.ArgumentParser()
-p.add_argument('tests', nargs='*')
-p.add_argument('-p', '--pause', action='store_true')
-
-if __name__ == '__main__':
-    args = p.parse_args()
-else:
-    # We are running inside the test framework: ignore sys.args
-    args = p.parse_args([])
-
-for name in args.tests or alltests:
+for name in alltests:
     for n in alltests:
         if n.startswith(name):
             name = n
@@ -155,8 +145,7 @@ for name in args.tests or alltests:
 
     def f():
         test(gui)
-        if not args.pause:
-            gui.exit()
+        gui.exit()
     gui.run(test=f)
 
 
