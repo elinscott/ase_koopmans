@@ -182,7 +182,7 @@ def window():
 
 def run():
     win = window()
-    win.test(test)
+    win.win.after_idle(test)
 
 
 def test(win):

@@ -514,9 +514,6 @@ class MainWindow(BaseWindow):
             except UnicodeDecodeError:
                 pass
 
-    def test(self, test):
-        self.win.after_idle(test)
-
     def __getitem__(self, name):
         return self.menu[name].get()
 
