@@ -348,11 +348,12 @@ class BandPath:
             if label not in points_already_plotted:
                 paths.append(([label], [self._scale(point)]))
 
-        kw = {'vectors': True}
+        kw = {'vectors': True,
+              'pointstyle': {'marker': '.'}}
+
         kw.update(plotkwargs)
         return bz.bz_plot(self.cell, paths=paths,
                           points=self.cartesian_kpts(),
-                          pointstyle={'marker': '.'},
                           **kw)
 
     def free_electron_band_structure(self, **kwargs):
