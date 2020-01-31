@@ -46,12 +46,12 @@ class Error:
 
 ui.error = Error()
 
-alltests = []
+alltests = {}
 
 
 def guitest(f):
     """Decorator for marking tests."""
-    alltests.append(f.__name__)
+    alltests[f.__name__] = f
     return f
 
 
@@ -132,16 +132,15 @@ def test_fracocc(gui):
     gui.open(filename='fracocc.cif')
 
 
-for name in alltests:
+for name, test in alltests.items():
     print(name)
-    test = globals()[name]
     gui = GUI()
 
     def f():
         test(gui)
         gui.exit()
 
-    gui.window.test(f)
+    gui.window.win.after_idle(f)
 
 
 def window():
