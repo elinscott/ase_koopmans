@@ -1,6 +1,7 @@
+import numpy as np
 import pytest
 from ase.vibrations import Vibrations
-from ase.calculators.h2morse import H2Morse, Re, De, ome, Etrans
+from ase.calculators.h2morse import H2Morse, H2MorseState, Re, De, ome, Etrans
 from ase.calculators.h2morse import H2MorseExcitedStates
 
 
@@ -18,11 +19,21 @@ def test_gs_minimum():
 
 def test_gs_io_overlap():
     """Test ground state IO and 'wave function' overlap"""
-    atoms1 = H2Morse()
-    #calc1 = 
-    atoms1.get_calculator().write('calc1')
-    atoms2 = H2Morse()
+    atoms0 = H2Morse()
+    calc0 = atoms0.get_calculator()
+    fname = 'calc0'
+    calc0.write(fname)
+    calc1 = H2MorseState(fname)
+    for wf0, wf1 in zip(calc0.wfs, calc1.wfs):
+        assert wf0 == pytest.approx(wf1, 1e-5)
     
+    atoms1 = H2Morse()
+    ov = calc0.overlap(calc0)
+    # own overlap is the unity matrix
+    assert np.eye(4) == pytest.approx(calc0.overlap(calc0), 1e-8)
+    # self and other - test on unitarity
+    ov = calc0.overlap(atoms1.get_calculator())
+    assert np.eye(4) == pytest.approx(ov.dot(ov.T), 1e-8)
     
     
 def test_excited_state():
@@ -53,8 +64,8 @@ def test_excited_io():
 
 
 def main():
-    test_excited_io()
-    #test_gs_io_overlap()
+    #test_excited_io()
+    test_gs_io_overlap()
 
 if __name__ == '__main__':
     main()

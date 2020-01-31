@@ -42,9 +42,12 @@ def H2Morse(state=0):
 class H2MorseState(MorsePotential):
     """H2 ground or excited state as Morse potential"""
     def __init__(self, state):
-        MorsePotential.__init__(self,
-                                epsilon=De[state],
-                                r0=Re[state], rho0=rho0[state])
+        if isinstance(state, str):
+            self.read(state)
+        else:
+            MorsePotential.__init__(self,
+                                    epsilon=De[state],
+                                    r0=Re[state], rho0=rho0[state])
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
@@ -71,12 +74,29 @@ class H2MorseState(MorsePotential):
         # Berry phase
         berry = (-1)**np.random.randint(0, 2, 4)
         self.wfs = [wf * b for wf, b in zip(wfs, berry)]
+
+    def read(self, filename):
+        with open(filename) as f:
+            self.wfs = [int(f.readline().split()[0])]
+            for i in range(1, 4):
+                self.wfs.append(
+                    np.array([float(x)
+                              for x in f.readline().split()[:4]]))
         
     def write(self, filename, option=None):
         """write calculated state to a file"""
         with open(filename, 'w') as f:
-            for wf in self.wfs:
-                f.write(str(wf) + '\n')
+            f.write('{}\n'.format(self.wfs[0]))
+            for wf in self.wfs[1:]:
+                f.write('{0:g} {1:g} {2:g}\n'.format(*wf))
+
+    def overlap(self, other):
+        ov = np.zeros((4, 4))
+        ov[0, 0] = self.wfs[0] * other.wfs[0]
+        wfs = np.array(self.wfs[1:])
+        owfs = np.array(other.wfs[1:])
+        ov[1:, 1:] = np.dot(wfs, owfs.T)
+        return ov
 
 
 class H2MorseExcitedStates(ExcitationList):
