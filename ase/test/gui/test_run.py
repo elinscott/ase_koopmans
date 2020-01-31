@@ -46,20 +46,13 @@ class Error:
 
 ui.error = Error()
 
-alltests = {}
-
-
-def grumble(f):
-    """Decorator for marking tests."""
-    alltests[f.__name__] = f
-    return f
-
 
 @pytest.fixture
 def gui():
     gui = GUI()
     yield gui
     gui.exit()
+
 
 def test_nanotube(gui):
     nt = gui.nanotube_window()
@@ -129,18 +122,6 @@ def test_fracocc(gui):
     with open('./fracocc.cif', 'w') as f:
         f.write(content)
     gui.open(filename='fracocc.cif')
-
-
-def test_gui1():
-    for name, function in alltests.items():
-        print(name)
-        gui = GUI()
-
-        def f():
-            function(gui)
-            gui.exit()
-
-        gui.window.win.after_idle(f)
 
 
 def window():
