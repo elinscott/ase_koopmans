@@ -3,6 +3,8 @@ import os
 from functools import partial
 import unittest
 
+import pytest
+
 
 if not os.environ.get('DISPLAY'):
     raise unittest.SkipTest('No display')
@@ -22,8 +24,6 @@ import ase.gui.ui as ui
 from ase.gui.i18n import _
 from ase.gui.gui import GUI
 from ase.gui.save import save_dialog
-
-
 
 
 class Error:
@@ -55,8 +55,13 @@ def grumble(f):
     return f
 
 
-@grumble
-def nanotube(gui):
+@pytest.fixture
+def gui():
+    gui = GUI()
+    yield gui
+    gui.exit()
+
+def test_nanotube(gui):
     nt = gui.nanotube_window()
     nt.apply()
     nt.element[1].value = '?'
@@ -69,8 +74,7 @@ def nanotube(gui):
     assert len(gui.images[0]) == 20
 
 
-@grumble
-def nanopartickle(gui):
+def test_nanopartickle(gui):
     n = gui.nanoparticle_window()
     n.element.symbol = 'Cu'
     n.apply()
@@ -81,8 +85,7 @@ def nanopartickle(gui):
     n.apply()
 
 
-@grumble
-def color(gui):
+def test_color(gui):
     a = Atoms('C10', magmoms=np.linspace(1, -1, 10))
     a.positions[:] = np.linspace(0, 9, 10)[:, None]
     a.calc = SinglePointCalculator(a, forces=a.positions)
@@ -100,23 +103,20 @@ def color(gui):
     c.change_mnmx(101, 120)
 
 
-@grumble
-def settings(gui):
+def test_settings(gui):
     gui.new_atoms(molecule('H2O'))
     s = gui.settings()
     s.scale.value = 1.9
     s.scale_radii()
 
 
-@grumble
-def rotate(gui):
+def test_rotate(gui):
     gui.window['toggle-show-bonds'] = True
     gui.new_atoms(molecule('H2O'))
     gui.rotate_window()
 
 
-@grumble
-def open_and_save(gui):
+def test_open_and_save(gui):
     mol = molecule('H2O')
     for i in range(3):
         mol.write('h2o.json')
@@ -124,13 +124,11 @@ def open_and_save(gui):
     save_dialog(gui, 'h2o.cif@-1')
 
 
-@grumble
-def fracocc(gui):
+def test_fracocc(gui):
     from ase.test.fio.cif import content
     with open('./fracocc.cif', 'w') as f:
         f.write(content)
     gui.open(filename='fracocc.cif')
-
 
 
 def test_gui1():
@@ -182,15 +180,12 @@ def window():
     return win
 
 
-def run():
-    win = window()
-    win.win.after_idle(runcallbacks)
-
-
 def runcallbacks(win):
     win.things[1].callback()
     win.things[1].callback()
     win.close()
 
-def test_gui2():
-    run()
+
+def test_callbacks():
+    win = window()
+    win.win.after_idle(runcallbacks)
