@@ -1,20 +1,6 @@
-import argparse
 import os
-from functools import partial
-import unittest
 
 import pytest
-
-
-if not os.environ.get('DISPLAY'):
-    raise unittest.SkipTest('No display')
-
-try:
-    import tkinter  # noqa
-except ImportError:
-    raise unittest.SkipTest('tkinter not available')
-
-
 import numpy as np
 
 from ase import Atoms
@@ -24,6 +10,8 @@ import ase.gui.ui as ui
 from ase.gui.i18n import _
 from ase.gui.gui import GUI
 from ase.gui.save import save_dialog
+
+pytest.importorskip('tkinter')
 
 
 class Error:
@@ -49,6 +37,8 @@ ui.error = Error()
 
 @pytest.fixture
 def gui():
+    if not os.environ.get('DISPLAY'):
+        raise pytest.skip('no display')
     gui = GUI()
     yield gui
     gui.exit()
