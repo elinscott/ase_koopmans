@@ -514,20 +514,6 @@ class MainWindow(BaseWindow):
             except UnicodeDecodeError:
                 pass
 
-    def test(self, test, close_after_test=False):
-        def callback():
-            try:
-                next(test)
-            except StopIteration:
-                if close_after_test:
-                    self.close()
-            else:
-                self.win.after_idle(callback)
-
-        test.__name__ = str('?')
-        self.win.after_idle(test)  # callback)
-        self.run()
-
     def __getitem__(self, name):
         return self.menu[name].get()
 
