@@ -515,9 +515,7 @@ class MainWindow(BaseWindow):
                 pass
 
     def test(self, test):
-        test.__name__ = str('?')
-        self.win.after_idle(test)  # callback)
-        self.run()
+        self.win.after_idle(test)
 
     def __getitem__(self, name):
         return self.menu[name].get()

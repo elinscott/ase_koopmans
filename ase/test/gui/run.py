@@ -183,7 +183,9 @@ def window():
 
 def run():
     win = window()
-    win.test(partial(test, win))
+    x = partial(test, win)
+    x.__name__ = '?'
+    win.test(x)
 
 
 def test(win):
