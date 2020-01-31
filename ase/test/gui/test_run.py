@@ -11,8 +11,6 @@ from ase.gui.i18n import _
 from ase.gui.gui import GUI
 from ase.gui.save import save_dialog
 
-pytest.importorskip('tkinter')
-
 
 class Error:
     """Fake window for testing puposes."""
@@ -32,16 +30,23 @@ class Error:
         return text is None or text == self.text
 
 
-ui.error = Error()
+@pytest.fixture
+def display():
+    pytest.importorskip('tkinter')
+    if not os.environ.get('DISPLAY'):
+        raise pytest.skip('no display')
 
 
 @pytest.fixture
-def gui():
-    if not os.environ.get('DISPLAY'):
-        raise pytest.skip('no display')
-    gui = GUI()
-    yield gui
-    gui.exit()
+def gui(display):
+    orig_ui_error = ui.error
+    try:
+        ui.error = Error()
+        gui = GUI()
+        yield gui
+        gui.exit()
+    finally:
+        ui.error = orig_ui_error
 
 
 def test_nanotube(gui):
@@ -57,7 +62,7 @@ def test_nanotube(gui):
     assert len(gui.images[0]) == 20
 
 
-def test_nanopartickle(gui):
+def test_nanoparticle(gui):
     n = gui.nanoparticle_window()
     n.element.symbol = 'Cu'
     n.apply()
@@ -157,6 +162,6 @@ def runcallbacks(win):
     win.close()
 
 
-def test_callbacks():
+def test_callbacks(display):
     win = window()
     win.win.after_idle(runcallbacks)
