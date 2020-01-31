@@ -6,6 +6,9 @@ from ase.calculators.calculator import all_changes
 from ase.calculators.morse import MorsePotential
 from ase.calculators.excitations import ExcitationList, Excitation
 
+"""The H2 molecule represented by Morse-Potentials for
+gound and first 3 excited singlet states B + C(doubly degenerate)"""
+
 
 # data from:
 # https://webbook.nist.gov/cgi/cbook.cgi?ID=C1333740&Mask=1000#Diatomic
@@ -126,6 +129,9 @@ class H2MorseExcitedStates(ExcitationList):
             muv = mur
 
             self.append(BasicExcitation(energy, i, mur, muv))
+
+    def overlap(self, ov_nn, other):
+        return ov_nn[1:, 1:]
 
     def read(self, filename):
         """Read myself from a file"""

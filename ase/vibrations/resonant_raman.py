@@ -157,7 +157,11 @@ class ResonantRaman(Vibrations):
             fname = self.exname + '.eq.gpw'
             self.eq_calculator.write(fname, 'all')
             self.eq_calculator = self.eq_calculator.__class__(fname)
-            self.eq_calculator.converge_wave_functions()
+            try:
+                # XXX GPAW specific
+                self.eq_calculator.converge_wave_functions()
+            except AttributeError:
+                pass
         Vibrations.run(self)
 
     def calculate(self, atoms, filename, fd):

@@ -4,7 +4,7 @@ Test resonant Raman implementations
 import pytest
 
 from ase.vibrations.placzek import Placzek, Profeta
-# from ase.vibrations.albrecht import Albrecht
+from ase.vibrations.albrecht import Albrecht
 from ase.calculators.h2morse import H2Morse, H2MorseExcitedStates
 
 
@@ -43,16 +43,40 @@ def test_compare_placzek_implementation_intensities():
     
     # Profeta using overlap
     name = 'profeta'
-    # pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
-    #             gsname=name, exname=name, overlap=True, txt=None)
-    # pr.run()
-    print('pri, pzi', pri, pzi)
-    pri = pr.absolute_intensity(omega=om)[-1]
-    assert pzi == pytest.approx(pri, 1e-3)
+    pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
+                 gsname=name, exname=name,
+                 overlap=lambda x, y: x.overlap(y),
+                 txt=None)
+    pr.run()
+    pro = pr.absolute_intensity(omega=om)[-1]
+    # print('pri, pro, pzi', pri, pro, pzi)
+    assert pro == pytest.approx(pri, 1e-3)
+
+def test_compare_placzek_albrecht_intensities():
+    """Intensities of Placzek and Albrecht should be similar"""
+    atoms = H2Morse()
+    name = 'profeta'
+    pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
+                 gsname=name, exname=name,
+                 overlap=lambda x, y: x.overlap(y),
+                 txt=None)
+    pr.run()
+    om = 1
+    
+    """Albrecht and Placzek are approximately equal"""
+    
+    if 0:
+        pri = pr.absolute_intensity(omega=om)[-1]
+        al = Albrecht(atoms, H2MorseExcitedStates,
+                      gsname=name, exname=name, overlap=True,
+                      approximation='Albrecht', txt=None)
+        ali = al.absolute_intensity(omega=om)[-1]
+        print('pri, ali', pri, ali)
 
 
 def main():
-    test_compare_placzek_implementation_intensities()
+    #test_compare_placzek_implementation_intensities()
+    test_compare_placzek_albrecht_intensities()
 
 if __name__ == '__main__':
     main()
