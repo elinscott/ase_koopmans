@@ -133,12 +133,6 @@ def test_fracocc(gui):
 
 
 for name in alltests:
-    for n in alltests:
-        if n.startswith(name):
-            name = n
-            break
-    else:
-        1 / 0
     print(name)
     test = globals()[name]
     gui = GUI()
