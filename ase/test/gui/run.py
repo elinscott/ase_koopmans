@@ -49,13 +49,13 @@ ui.error = Error()
 alltests = []
 
 
-def test(f):
+def guitest(f):
     """Decorator for marking tests."""
     alltests.append(f.__name__)
     return f
 
 
-@test
+@guitest
 def nanotube(gui):
     nt = gui.nanotube_window()
     nt.apply()
@@ -69,7 +69,7 @@ def nanotube(gui):
     assert len(gui.images[0]) == 20
 
 
-@test
+@guitest
 def nanopartickle(gui):
     n = gui.nanoparticle_window()
     n.element.symbol = 'Cu'
@@ -81,7 +81,7 @@ def nanopartickle(gui):
     n.apply()
 
 
-@test
+@guitest
 def color(gui):
     a = Atoms('C10', magmoms=np.linspace(1, -1, 10))
     a.positions[:] = np.linspace(0, 9, 10)[:, None]
@@ -100,7 +100,7 @@ def color(gui):
     c.change_mnmx(101, 120)
 
 
-@test
+@guitest
 def settings(gui):
     gui.new_atoms(molecule('H2O'))
     s = gui.settings()
@@ -108,14 +108,14 @@ def settings(gui):
     s.scale_radii()
 
 
-@test
+@guitest
 def rotate(gui):
     gui.window['toggle-show-bonds'] = True
     gui.new_atoms(molecule('H2O'))
     gui.rotate_window()
 
 
-@test
+@guitest
 def open_and_save(gui):
     mol = molecule('H2O')
     for i in range(3):
@@ -124,7 +124,7 @@ def open_and_save(gui):
     save_dialog(gui, 'h2o.cif@-1')
 
 
-@test
+@guitest
 def test_fracocc(gui):
     from ase.test.fio.cif import content
     with open('./fracocc.cif', 'w') as f:
