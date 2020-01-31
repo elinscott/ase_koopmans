@@ -29,21 +29,21 @@ H2 = Atoms([Atom('H', (a / 2, a / 2, (c - R) / 2)),
            cell=(a, a, c))
 
 gsname = exname = 'rraman'
-exkwargs={'eps':0.0, 'jend':3}
+exkwargs = {'eps': 0.0, 'jend': 3}
 
 if 1:
     calc = GPAW(xc=xc, nbands=7,
-                convergence={'bands':3},
-                spinpol=False, #eigensolver='rmm-diis',
+                convergence={'bands': 3},
+                spinpol=False,  # eigensolver='rmm-diis',
                 txt=txt)
     H2.set_calculator(calc)
-    #H2.get_potential_energy()
+    # H2.get_potential_energy()
 
     pz = Placzek(H2, KSSingles, gsname=gsname, exname=exname,
                  exkwargs=exkwargs,
                  # XXX full does not work in parallel due to boxes
                  # on different nodes
-                 #overlap=lambda x, y: Overlap(x).full(y)[0],
+                 # overlap=lambda x, y: Overlap(x).full(y)[0],
                  overlap=lambda x, y: Overlap(x).pseudo(y)[0],
                  txt=txt)
     pz.run()
@@ -62,7 +62,7 @@ pr = Profeta(H2, KSSingles, gsname=gsname, exname=exname,
 pri = pr.absolute_intensity(omega=om)[-1]
 equal(pzi, pri, 0.1)
 
-pr = Profeta(H2, KSSingles, gsname=gsname, exname=exname, 
+pr = Profeta(H2, KSSingles, gsname=gsname, exname=exname,
              overlap=True,
              approximation='Placzek', txt=txt)
 pri = pr.absolute_intensity(omega=om)[-1]
@@ -70,23 +70,23 @@ equal(pzi, pri, 0.1)
 
 """Albrecht and Placzek are approximately equal"""
 
-al = Albrecht(H2, KSSingles, gsname=gsname, exname=exname, 
-             overlap=True,
-             approximation='Albrecht', txt=txt)
+al = Albrecht(H2, KSSingles, gsname=gsname, exname=exname,
+              overlap=True,
+              approximation='Albrecht', txt=txt)
 ali = al.absolute_intensity(omega=om)[-1]
 equal(pzi, ali, 1.5)
 
 """Albrecht A and P-P are approximately equal"""
 
-pr = Profeta(H2, KSSingles, gsname=gsname, exname=exname, 
+pr = Profeta(H2, KSSingles, gsname=gsname, exname=exname,
              overlap=True,
              approximation='P-P', txt=txt)
 pri = pr.absolute_intensity(omega=om)[-1]
 pr_me_cc = pr.electronic_me_Qcc(om, 0.1)[-1]
 
-al = Albrecht(H2, KSSingles, gsname=gsname, exname=exname, 
-             overlap=True,
-             approximation='Albrecht A', txt=txt)
+al = Albrecht(H2, KSSingles, gsname=gsname, exname=exname,
+              overlap=True,
+              approximation='Albrecht A', txt=txt)
 ali = al.absolute_intensity(omega=om)[-1]
 equal(pri, ali, 3)
 al_me_cc = al.electronic_me_Qcc(om, 0.1)[-1]
@@ -103,4 +103,3 @@ ali = al.absolute_intensity(omega=om)[-1]
 equal(pri, ali, 3)
 al_me_cc = al.electronic_me_Qcc(om, 0.1)[-1]
 assert (np.abs(pr_me_cc - al_me_cc) / np.abs(pr_me_cc).max() < 0.02).all()
-
