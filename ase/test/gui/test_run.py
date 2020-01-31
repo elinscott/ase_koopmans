@@ -49,13 +49,13 @@ ui.error = Error()
 alltests = {}
 
 
-def guitest(f):
+def grumble(f):
     """Decorator for marking tests."""
     alltests[f.__name__] = f
     return f
 
 
-@guitest
+@grumble
 def nanotube(gui):
     nt = gui.nanotube_window()
     nt.apply()
@@ -69,7 +69,7 @@ def nanotube(gui):
     assert len(gui.images[0]) == 20
 
 
-@guitest
+@grumble
 def nanopartickle(gui):
     n = gui.nanoparticle_window()
     n.element.symbol = 'Cu'
@@ -81,7 +81,7 @@ def nanopartickle(gui):
     n.apply()
 
 
-@guitest
+@grumble
 def color(gui):
     a = Atoms('C10', magmoms=np.linspace(1, -1, 10))
     a.positions[:] = np.linspace(0, 9, 10)[:, None]
@@ -100,7 +100,7 @@ def color(gui):
     c.change_mnmx(101, 120)
 
 
-@guitest
+@grumble
 def settings(gui):
     gui.new_atoms(molecule('H2O'))
     s = gui.settings()
@@ -108,14 +108,14 @@ def settings(gui):
     s.scale_radii()
 
 
-@guitest
+@grumble
 def rotate(gui):
     gui.window['toggle-show-bonds'] = True
     gui.new_atoms(molecule('H2O'))
     gui.rotate_window()
 
 
-@guitest
+@grumble
 def open_and_save(gui):
     mol = molecule('H2O')
     for i in range(3):
@@ -124,23 +124,25 @@ def open_and_save(gui):
     save_dialog(gui, 'h2o.cif@-1')
 
 
-@guitest
-def test_fracocc(gui):
+@grumble
+def fracocc(gui):
     from ase.test.fio.cif import content
     with open('./fracocc.cif', 'w') as f:
         f.write(content)
     gui.open(filename='fracocc.cif')
 
 
-for name, test in alltests.items():
-    print(name)
-    gui = GUI()
 
-    def f():
-        test(gui)
-        gui.exit()
+def test_gui1():
+    for name, function in alltests.items():
+        print(name)
+        gui = GUI()
 
-    gui.window.win.after_idle(f)
+        def f():
+            function(gui)
+            gui.exit()
+
+        gui.window.win.after_idle(f)
 
 
 def window():
@@ -182,12 +184,13 @@ def window():
 
 def run():
     win = window()
-    win.win.after_idle(test)
+    win.win.after_idle(runcallbacks)
 
 
-def test(win):
+def runcallbacks(win):
     win.things[1].callback()
     win.things[1].callback()
     win.close()
 
-run()
+def test_gui2():
+    run()
