@@ -85,11 +85,8 @@ class GUI(View, Status):
     def moving(self):
         return self.arrowkey_mode != self.ARROWKEY_SCAN
 
-    def run(self, test=None):
-        if test:
-            self.window.test(test)
-        else:
-            self.window.run()
+    def run(self):
+        self.window.run()
 
     def toggle_move_mode(self, key=None):
         self.toggle_arrowkey_mode(self.ARROWKEY_MOVE)

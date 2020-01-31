@@ -140,10 +140,8 @@ for name in alltests:
     def f():
         test(gui)
         gui.exit()
-    gui.run(test=f)
 
-
-
+    gui.window.test(f)
 
 
 def window():
