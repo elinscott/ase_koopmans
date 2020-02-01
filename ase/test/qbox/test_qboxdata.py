@@ -1,4 +1,6 @@
 # flake8: noqa
+# This is not a real test but we name it test_xxx so the test suite
+# won't pick it up (except if we add test_xxx() functions)
 def writefiles():
     with open('04_md_ntc.reference.xml', 'w') as fd:
         fd.write("""<?xml version="1.0" encoding="UTF-8"?>
