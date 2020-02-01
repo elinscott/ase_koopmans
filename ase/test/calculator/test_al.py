@@ -1,5 +1,4 @@
 import pytest
-import unittest
 from ase.build import bulk
 from ase.calculators.calculator import get_calculator_class
 

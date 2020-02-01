@@ -2,8 +2,6 @@ import pytest
 from ase.calculators.calculator import get_calculator_class
 from ase.io import read, write
 from ase.build import molecule
-from ase.test import test_calculator_names
-from ase.utils import workdir
 
 
 parameters = {
