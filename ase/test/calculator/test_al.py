@@ -1,3 +1,4 @@
+import pytest
 import unittest
 from ase.build import bulk
 from ase.calculators.calculator import get_calculator_class
@@ -15,7 +16,8 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001, chksymbreak=0),
             'openmx': omx_par}
 
 
-def run(name):
+@pytest.mark.parametrize('name', sorted(required))
+def test_al(name):
     Calculator = get_calculator_class(name)
     par = required.get(name, {})
     calc = Calculator(label=name, xc='LDA', kpts=1.0, **par)
@@ -34,17 +36,3 @@ def run(name):
     calc = Calculator(label=label, atoms=al, xc='LDA', kpts=1.0, **par)
     print(al.get_potential_energy())
     print(Calculator.read_atoms(label).get_potential_energy())
-
-
-def tryrun(name):
-    try:
-        run(name)
-    except unittest.SkipTest:
-        pass
-
-def test_al():
-    tryrun('abinit')
-    tryrun('aims')
-    tryrun('elk')
-    tryrun('cp2k')
-    tryrun('openmx')
