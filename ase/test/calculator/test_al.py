@@ -42,9 +42,9 @@ def tryrun(name):
     except unittest.SkipTest:
         pass
 
-
-tryrun('abinit')
-tryrun('aims')
-tryrun('elk')
-tryrun('cp2k')
-tryrun('openmx')
+def test_al():
+    tryrun('abinit')
+    tryrun('aims')
+    tryrun('elk')
+    tryrun('cp2k')
+    tryrun('openmx')
