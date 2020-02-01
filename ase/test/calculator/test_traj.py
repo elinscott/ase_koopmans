@@ -20,6 +20,9 @@ parameters = {
 
 @pytest.mark.parametrize('name', sorted(parameters))
 def test_h2_traj(name):
+    if name == 'gpaw':
+        pytest.importorskip('gpaw')
+
     par = parameters[name]
     h2 = molecule('H2', pbc=par.pop('pbc', False))
     h2.center(vacuum=2.0)

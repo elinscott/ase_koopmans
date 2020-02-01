@@ -17,6 +17,9 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001, chksymbreak=0),
 
 @pytest.mark.parametrize('name', sorted(required))
 def test_al(name):
+    if name == 'gpaw':
+        pytest.importorskip('gpaw')
+
     Calculator = get_calculator_class(name)
     par = required.get(name, {})
     calc = Calculator(label=name, xc='LDA', kpts=1.0, **par)
