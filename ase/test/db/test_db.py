@@ -14,16 +14,16 @@ ase -T db -v testase.json natoms=1,Cu=1 --delete --yes &&
 ase -T db -v testase.json "H>0" -k hydro=1,abc=42,foo=bar &&
 ase -T db -v testase.json "H>0" --delete-keys foo"""
 
-names = ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']
+
+names = ['testase.json',
+         pytest.param('testase.db', marks=pytest.mark.xfail),
+         'postgresql',
+         'mysql',
+         'mariadb']
 
 
-def test_all_db():
-    for name in names:
-        tst_db(name)
-
-
-#@pytest.mark.parametrize('name', names)
-def tst_db(name):
+@pytest.mark.parametrize('name', names)
+def test_db(name):
     def count(n, *args, **kwargs):
         m = len(list(con.select(columns=['id'], *args, **kwargs)))
         assert m == n, (m, n)
