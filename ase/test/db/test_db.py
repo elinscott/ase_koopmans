@@ -1,5 +1,5 @@
+import pytest
 import os
-import time
 from ase.test import cli
 from ase.db import connect
 
@@ -14,21 +14,27 @@ ase -T db -v testase.json natoms=1,Cu=1 --delete --yes &&
 ase -T db -v testase.json "H>0" -k hydro=1,abc=42,foo=bar &&
 ase -T db -v testase.json "H>0" --delete-keys foo"""
 
-
-def count(n, *args, **kwargs):
-    m = len(list(con.select(columns=['id'], *args, **kwargs)))
-    assert m == n, (m, n)
+names = ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']
 
 
-t0 = time.time()
-for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
+def test_all_db():
+    for name in names:
+        tst_db(name)
+
+
+#@pytest.mark.parametrize('name', names)
+def tst_db(name):
+    def count(n, *args, **kwargs):
+        m = len(list(con.select(columns=['id'], *args, **kwargs)))
+        assert m == n, (m, n)
+
     if name == 'postgresql':
         if os.environ.get('POSTGRES_DB'):  # gitlab-ci
             name = 'postgresql://ase:ase@postgres:5432/testase'
         else:
             name = os.environ.get('ASE_TEST_POSTGRES_URL')
             if name is None:
-                continue
+                return
     elif name == 'mysql':
         if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
             name = 'mysql://root:ase@mysql:3306/testase_mysql'
@@ -36,7 +42,7 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
             name = os.environ.get('MYSQL_DB_URL')
 
         if name is None:
-            continue
+            return
     elif name == 'mariadb':
         if os.environ.get('CI_PROJECT_DIR'):  # gitlab-ci
             name = 'mariadb://root:ase@mariadb:3306/testase_mysql'
@@ -44,10 +50,9 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
             name = os.environ.get('MYSQL_DB_URL')
 
         if name is None:
-            continue
+            return
 
     con = connect(name)
-    t1 = time.time()
     if 'postgres' in name or 'mysql' in name or 'mariadb' in name:
         con.delete([row.id for row in con.select()])
 
@@ -101,13 +106,3 @@ for name in ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']:
         count(3 * factor, 'fmax<0.1')
         count(factor, '0.5<mass<1.5')
         count(5 * factor, 'energy')
-
-    t2 = time.time()
-
-    print('----------------------------------')
-    print('Finished test for {}'.format(name))
-    print('runtime = {} sec'.format(t2 - t1))
-    print('----------------------------------')
-
-
-print('Total runtime = {} sec'.format(t2 - t0))
