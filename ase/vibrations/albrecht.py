@@ -88,8 +88,32 @@ class Albrecht(ResonantRaman):
             data_ro[self.slize] = arr_ro
         self.comm.sum(data_ro)
         return data_ro
-        
+
     def Huang_Rhys_factors(self, forces_r):
+        """Evaluate Huang-Rhys factors derived from forces."""
+        return 0.5 * self.displacements(forces_r)**2
+
+    def displacements(self, forces_r):
+        """Evaluate unitless displacements from forces"""
+        self.timer.start('displacements')
+        assert(len(forces_r.flat) == self.ndof)
+        
+        eigv_q, eigw_rq = np.linalg.eigh(self.im[:, None] * self.H * self.im)
+        # there might be zero eigenvalues
+        Dm1_q = np.divide(1, eigv_q, out=np.zeros_like(eigv_q),
+                          where=eigv_q!=0)
+        ##Dm1_q = np.where(eigv_q == 0, 0, 1 / eigv_q)
+        X_r = eigw_rq @ np.diag(Dm1_q) @ eigw_rq.T @ (
+            forces_r.flat * self.im)
+
+        d_Q = np.dot(self.modes, X_r)
+        s = 1.e-20 / u.kg / u.C / u._hbar**2
+        d_Q *= np.sqrt(s * self.om_Q)
+
+        self.timer.stop('displacements')
+        return d_Q
+
+    def Huang_Rhys_factors_old(self, forces_r):
         """Evaluate Huang-Rhys factors derived from forces."""
         self.timer.start('Huang-Rhys')
         assert(len(forces_r.flat) == self.ndof)
@@ -104,7 +128,7 @@ class Albrecht(ResonantRaman):
         self.timer.stop('Huang-Rhys')
         return s * d_Q**2 * self.om_Q / 2.
 
-    def displacements(self, forces_r):
+    def displacements_old(self, forces_r):
         """Evaluate unitless displacements from forces"""
         self.timer.start('displacements')
         assert(len(forces_r.flat) == self.ndof)
@@ -116,6 +140,7 @@ class Albrecht(ResonantRaman):
         self.timer.stop('displacements')
 
         s = 1.e-20 / u.kg / u.C / u._hbar**2
+        self.timer.stop('displacements')
         return d_Q * np.sqrt(s * self.om_Q)
 
     def omegaLS(self, omega, gamma):

@@ -65,11 +65,12 @@ def test_compare_placzek_albrecht_intensities():
     
     """Albrecht and Placzek are approximately equal"""
     
-    if 0:
+    if 1:
+        pr.approximation = 'p-p'
         pri = pr.absolute_intensity(omega=om)[-1]
         al = Albrecht(atoms, H2MorseExcitedStates,
                       gsname=name, exname=name, overlap=True,
-                      approximation='Albrecht', txt=None)
+                      approximation='Albrecht A', txt=None)
         ali = al.absolute_intensity(omega=om)[-1]
         print('pri, ali', pri, ali)
 
