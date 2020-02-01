@@ -66,14 +66,30 @@ def test_compare_placzek_albrecht_intensities():
     """Albrecht and Placzek are approximately equal"""
     
     if 1:
-        pr.approximation = 'p-p'
         pri = pr.absolute_intensity(omega=om)[-1]
         al = Albrecht(atoms, H2MorseExcitedStates,
                       gsname=name, exname=name, overlap=True,
-                      approximation='Albrecht A', txt=None)
+                      approximation='Albrecht', txt=None)
         ali = al.absolute_intensity(omega=om)[-1]
         print('pri, ali', pri, ali)
+        
+        """Albrecht A and P-P are approximately equal"""
+        
+        pr.approximation = 'p-p'
+        pri = pr.absolute_intensity(omega=om)[-1]
+        al.approximation = 'Albrecht A'
+        ali = al.absolute_intensity(omega=om)[-1]
+        print('pri, ali', pri, ali)
+        assert pri == pytest.approx(ali, 1e-1)
 
+        """Albrecht B+C and Profeta are approximately equal"""
+        
+        pr.approximation = 'Profeta'
+        pri = pr.absolute_intensity(omega=om)[-1]
+        al.approximation = 'Albrecht BC'
+        ali = al.absolute_intensity(omega=om)[-1]
+        print('pri, ali', pri, ali)
+        ## assert pri == pytest.approx(ali, 1e-3)
 
 def main():
     #test_compare_placzek_implementation_intensities()
