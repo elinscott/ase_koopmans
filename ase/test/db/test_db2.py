@@ -1,4 +1,6 @@
 import os
+
+import pytest
 import numpy as np
 
 from ase import Atoms
@@ -9,8 +11,11 @@ from ase.io import read
 from ase.build import molecule
 from ase.test import must_raise
 
+names = ['testase.json', 'testase.db', 'postgresql', 'mysql', 'mariadb']
 
-def test(name):
+
+@pytest.mark.parametrize('name', names)
+def test_db2(name):
     if name == 'postgresql':
         if os.environ.get('POSTGRES_DB'):  # gitlab-ci
             name = 'postgresql://ase:ase@postgres:5432/testase'
@@ -122,10 +127,3 @@ def test(name):
     ids = [row.get('id') for row in c.select()]
     offset = 2
     assert next(c.select(offset=offset)).id == ids[offset]
-
-
-test('testase.json')
-test('testase.db')
-test('postgresql')
-test('mysql')
-test('mariadb')
