@@ -30,3 +30,14 @@ def use_tmp_workdir(tmp_path):
     path = Path(str(tmp_path))
     with workdir(path, mkdir=True):
         yield tmp_path
+
+@pytest.fixture
+def figure():
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise pytest.skip('no matplotlib')
+
+    fig = plt.figure()
+    yield fig
+    plt.close(fig)

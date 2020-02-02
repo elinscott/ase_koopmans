@@ -11,16 +11,14 @@ import matplotlib.pyplot as plt
                          [pytest.param(i, lat, id=str(lat))
                           for i, lat in enumerate(all_variants())
                           if lat.ndim == 3])
-def test_lattice_bandstructure(i, lat):
-    with workdir('files', mkdir=True):
-        xid = '{:02d}.{}'.format(i, lat.variant)
-        path = lat.bandpath(density=10)
-        path.write('path.{}.json'.format(xid))
-        atoms = Atoms(cell=lat.tocell(), pbc=True)
-        atoms.calc = FreeElectrons(nvalence=0, kpts=path.kpts)
-        bs = calculate_band_structure(atoms, path)
-        bs.write('bs.{}.json'.format(xid))
+def test_lattice_bandstructure(i, lat, figure):
+    xid = '{:02d}.{}'.format(i, lat.variant)
+    path = lat.bandpath(density=10)
+    path.write('path.{}.json'.format(xid))
+    atoms = Atoms(cell=lat.tocell(), pbc=True)
+    atoms.calc = FreeElectrons(nvalence=0, kpts=path.kpts)
+    bs = calculate_band_structure(atoms, path)
+    bs.write('bs.{}.json'.format(xid))
 
-        ax = plt.gca()
-        bs.plot(ax=ax, emin=0, emax=20, filename='fig.{}.png'.format(xid))
-        ax.clear()
+    ax = figure.gca()
+    bs.plot(ax=ax, emin=0, emax=20, filename='fig.{}.png'.format(xid))
