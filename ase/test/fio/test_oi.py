@@ -1,3 +1,4 @@
+import pytest
 import os
 import warnings
 
@@ -67,15 +68,8 @@ def check(a, ref_atoms, format):
         assert abs(a.get_forces() - ref_atoms.get_forces()).max() < 1e-12
 
 
-testdir = 'tmp_io_testdir'
-if os.path.isdir(testdir):
-    import shutil
-    shutil.rmtree(testdir)
-
-os.mkdir(testdir)
-
-
-def test(format):
+@pytest.mark.parametrize('format', all_formats)
+def test_format(format):
     if format in ['abinit', 'castep-cell', 'dftb', 'eon', 'gaussian',
                   'lammps-data']:
         # Someone should do something ...
@@ -126,8 +120,8 @@ def test(format):
                                       ' W'[bool(io.write)],
                                       '+1'[io.single],
                                       'SF'[io.acceptsfd]))
-    fname1 = '{}/io-test.1.{}'.format(testdir, format)
-    fname2 = '{}/io-test.2.{}'.format(testdir, format)
+    fname1 = 'io-test.1.{}'.format(format)
+    fname2 = 'io-test.2.{}'.format(format)
     if io.write:
         write(fname1, atoms, format=format)
         if not io.single:
@@ -149,8 +143,8 @@ def test(format):
                 for a in aa:
                     check(a, atoms, format)
 
-for format in sorted(all_formats):
-    with warnings.catch_warnings():
-        if format in ['proteindatabank', 'netcdftrajectory']:
-            warnings.simplefilter('ignore', UserWarning)
-        test(format)
+#for format in sorted(all_formats):
+#    with warnings.catch_warnings():
+#        if format in ['proteindatabank', 'netcdftrajectory']:
+#            warnings.simplefilter('ignore', UserWarning)
+#        test(format)
