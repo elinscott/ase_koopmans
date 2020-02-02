@@ -128,7 +128,7 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
         f.write(all_lines)
 
 
-def read_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
+def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
                          isotope_masses=None):
 
     """
@@ -265,4 +265,4 @@ def read_gpumd(fileobj='xyz.in', species_types=None, isotope_masses=None):
         Raised if the list of species is incompatible with the input file
     """
    
-    return read_xyz_input_gpumd(fileobj, species_types, isotope_masses)[0]
+    return load_xyz_input_gpumd(fileobj, species_types, isotope_masses)[0]
