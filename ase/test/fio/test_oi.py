@@ -1,8 +1,8 @@
-import pytest
-import os
 import warnings
 
+import pytest
 import numpy as np
+
 from ase import Atoms
 from ase.io import write, read, iread
 from ase.io.formats import all_formats, ioformats
@@ -12,11 +12,6 @@ try:
     import matplotlib
 except ImportError:
     matplotlib = 0
-
-try:
-    from lxml import etree
-except ImportError:
-    etree = 0
 
 try:
     import Scientific
@@ -29,7 +24,8 @@ except ImportError:
     netCDF4 = 0
 
 
-def get_atoms():
+@pytest.fixture
+def atoms():
     a = 5.0
     d = 1.9
     c = a / 2
@@ -68,46 +64,45 @@ def check(a, ref_atoms, format):
         assert abs(a.get_forces() - ref_atoms.get_forces()).max() < 1e-12
 
 
-@pytest.mark.parametrize('format', all_formats)
-def test_format(format):
-    if format in ['abinit', 'castep-cell', 'dftb', 'eon', 'gaussian',
-                  'lammps-data']:
-        # Someone should do something ...
-        return
+@pytest.fixture
+def catch_warnings():
+    return warnings.catch_warnings()
 
-    if format in ['v-sim', 'mustem']:
-        # Standalone test used as not compatible with 1D periodicity
-        return
 
-    if format in ['mustem']:
-        # Standalone test used as specific arguments are required
-        return
+def all_tested_formats():
+    skip = []
 
-    if format in ['dmol-arc', 'dmol-car', 'dmol-incoor']:
-        # We have a standalone dmol test
-        return
+    # Someone should do something ...
+    skip += ['abinit', 'castep-cell', 'dftb', 'eon', 'gaussian', 'lammps-data']
 
-    if format in ['gif', 'mp4']:
-        # Complex dependencies; see animate.py test
-        return
+    # Standalone test used as not compatible with 1D periodicity
+    skip += ['v-sim', 'mustem']
 
-    if format in ['postgresql', 'trj', 'vti', 'vtu', 'mysql']:
-        # Let's not worry about these.
-        return
+    # We have a standalone dmol test
+    skip += ['dmol-arc', 'dmol-car', 'dmol-incoor']
 
-    if not matplotlib and format in ['eps', 'png']:
-        return
+    # Complex dependencies; see animate.py test
+    skip += ['gif', 'mp4']
 
-    if not etree and format == 'exciting':
-        return
+    # Let's not worry about these.
+    skip += ['postgresql', 'trj', 'vti', 'vtu', 'mysql']
 
-    if not Scientific and format == 'etsf':
-        return
+    if not matplotlib:
+        skip += ['eps', 'png']
 
-    if not netCDF4 and format == 'netcdftrajectory':
-        return
+    if not Scientific:
+        skip += ['etsf']
 
-    atoms = get_atoms()
+    if not netCDF4:
+        skip += ['netcdftrajectory']
+
+    return sorted(set(all_formats) - set(skip))
+
+
+@pytest.mark.parametrize('format', all_tested_formats())
+def test_ioformat(format, atoms, catch_warnings):
+    if format in ['proteindatabank', 'netcdftrajectory']:
+        warnings.simplefilter('ignore', UserWarning)
 
     if format == 'dlp4':
         atoms.pbc = (1, 1, 0)
@@ -142,9 +137,3 @@ def test_format(format):
                 assert len(aa) == 6, aa
                 for a in aa:
                     check(a, atoms, format)
-
-#for format in sorted(all_formats):
-#    with warnings.catch_warnings():
-#        if format in ['proteindatabank', 'netcdftrajectory']:
-#            warnings.simplefilter('ignore', UserWarning)
-#        test(format)
