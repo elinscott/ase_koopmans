@@ -1,17 +1,30 @@
 import numpy as np
 from itertools import product
 from ..neighborlist import NeighborList
+from ..data import atomic_masses, chemical_symbols
 
 
-def write_atoms_gpumd(fname, atoms, maximum_neighbors=None, cutoff=None,
+def find_nearest_index(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
+
+
+def find_nearest_value(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
+
+
+def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
                       velocities=None, groupings=None, use_triclinic=False):
     """
     Writes atoms into GPUMD input format.
 
     Parameters
     ----------
-    fname : file | str
-        Name of file to which to write atoms object
+    fileobj : file | str
+        File object or name of file to which to write atoms object
     atoms : Atoms
         Input structure
     maximum_neighbors: int
@@ -93,12 +106,14 @@ def write_atoms_gpumd(fname, atoms, maximum_neighbors=None, cutoff=None,
     lines += head_lines
 
     # symbols to integers starting at 0
-    symbols = atoms.get_chemical_symbols()
-    types = {s: i for i, s in enumerate(set(symbols))}
+    symbol_type_map = {}
+    for symbol in atoms.get_chemical_symbols():
+        if symbol not in symbol_type_map:
+            symbol_type_map[symbol] = len(symbol_type_map)
 
     # atoms lines
     for a, atm in enumerate(atoms):
-        t = types[atm.symbol]
+        t = symbol_type_map[atm.symbol]
         line = (' {}' * 5)[1:].format(t, *atm.position, atm.mass)
         if groupings is not None:
             for grouping in groupings:
@@ -108,7 +123,146 @@ def write_atoms_gpumd(fname, atoms, maximum_neighbors=None, cutoff=None,
                         break
         lines.append(line)
 
-    with open(fname, 'w') as f:
+    with open(fileobj, 'w') as f:
         all_lines = '\n'.join(lines)
         f.write(all_lines)
 
+
+def read_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
+                         isotope_masses=None):
+
+    """
+    Read the structure input file for GPUMD and return an ase Atoms object
+    togehter with a dictionary with parameters and a types-to-symbols map
+
+    Parameters
+    ----------
+    fileobj : file | str
+        File object or name of file from which to read the Atoms object
+    species_types : List[str]
+        List with the chemical symbols that correspond to each type, will take
+        precedence over isotope_masses
+    isotope_masses: Dict[str, List[float]]
+        Dictionary with chemical symbols and lists of the associated atomic
+        masses, which is used to identify the chemical symbols that correspond
+        to the types not found in species_types. The default is to find the 
+        closest match :data:`ase.data.atomic_masses`.
+
+    Returns
+    -------
+    atoms : Atoms
+        Atoms object
+    input_parameters : Dict[str, int]
+        Dictionary with parameters from the first row of the input file, namely
+        'N', 'M', 'cutoff', 'use_triclinic', 'has_velocity' and 'num_of_groups'
+    type_symbol_map : Dict[int, str]
+        Dictionary with types and the corresponding chemical symbols
+
+    Raises 
+    ------
+    ValueError
+        Raised if the list of species is incompatible with the input file
+    """
+    if isotope_masses is not None:
+        mass_symbols = {mass: symbol for symbol, masses in
+                        isotope_masses.items() for mass in masses}
+
+    # Read file
+    with open(fileobj) as f:
+        first_line = np.loadtxt(f, max_rows=1)
+        second_line = np.loadtxt(f, max_rows=1)
+        xyz = np.loadtxt(f)
+
+    # Parse first line
+    input_parameters = {}
+    keys = ['N', 'M', 'cutoff', 'use_triclinic', 'has_velocity',
+            'num_of_groups']
+    types = [float if key == 'cutoff' else int for key in keys]
+    for k, (key, typ) in enumerate(zip(keys, types)):
+        input_parameters[key] = typ(first_line[k])
+
+    # Parse second line
+    pbc = second_line[:3].astype(int)
+    if input_parameters['use_triclinic']:
+        cell = second_line[3:].reshape((3, 3))
+    else:
+        cell = np.diag(second_line[3:])
+
+    # Initiate the ase Atoms object
+    info = dict()
+    atoms = Atoms()
+    atoms.set_pbc(pbc)
+    atoms.set_cell(cell)
+
+    if species_types is not None:
+        if len(species_types) > input_parameters['N']:
+             raise ValueError('The number of species types ({}) exceeds the'
+                              ' number of atom types'
+                              ' {}'.format(len(species_types),
+                                           input_parameters['N'])
+        type_symbol_map = {index: symbol for index, symbol in
+                            enumerate(species_types)}
+    else:
+        type_symbol_map = {}
+    for i, xyz_row in enumerate(xyz):
+        # Determine the atomic species from the mass
+        atom_type = xyz_row[0]
+        mass = xyz_row[4]
+        if atom_type not in type_symbol_map:
+            if isotope_masses is not None:
+                nearest_mass = find_nearest_value(mass_symbols.keys(), mass)
+                symbol = mass_symbols[nearest_mass]
+            else:
+                symbol = chemical_symbols[
+                    find_nearest_index(atomic_masses, mass)]
+            type_symbol_map[atom_type] = symbol
+
+        # Create and add an ase Atom object
+        position = xyz_row[1:4]
+        symbol = type_symbol_map[atom_type]
+        atom = Atom(symbol, position, mass=mass)
+        atoms.append(atom)
+
+        # Collect data regarding velocities and groups
+        data = dict()
+        if input_parameters['has_velocity']:
+            data['velocity'] = xyz_row[5:8]
+        if input_parameters['num_of_groups']:
+            data['groups'] = xyz_row[8:].astype(int)
+        info[i] = data
+
+    # Add data regarding velocities and groups
+    atoms.info = info
+
+    return atoms, input_parameters, type_symbol_map
+
+
+def read_gpumd(fileobj='xyz.in', species_types=None, isotope_masses=None):
+    """
+    Read Atoms object from a GPUMD structure input file
+
+    Parameters
+    ----------
+    fileobj : file | str
+        File object or name of file from which to read the Atoms object
+    species_types : List[str]
+        List with the chemical symbols that correspond to each type, will take
+        precedence over isotope_masses
+    isotope_masses: Dict[str, List[float]]
+        Dictionary with chemical symbols and lists of the associated atomic
+        masses, which is used to identify the chemical symbols that correspond
+        to the types not found in species_types. The default is to find the 
+        closest match :data:`ase.data.atomic_masses`.
+
+    Returns
+    -------
+    atoms : Atoms
+        Atoms object
+
+    Raises 
+    ------
+    ValueError
+        Raised if the list of species is incompatible with the input file
+    """
+   
+    return read_xyz_input_gpumd(fileobj, species_types, isotope_masses)[0]
