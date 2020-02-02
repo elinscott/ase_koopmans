@@ -1,18 +1,6 @@
-import argparse
 import os
-from functools import partial
-import unittest
 
-
-if not os.environ.get('DISPLAY'):
-    raise unittest.SkipTest('No display')
-
-try:
-    import tkinter  # noqa
-except ImportError:
-    raise unittest.SkipTest('tkinter not available')
-
-
+import pytest
 import numpy as np
 
 from ase import Atoms
@@ -22,8 +10,6 @@ import ase.gui.ui as ui
 from ase.gui.i18n import _
 from ase.gui.gui import GUI
 from ase.gui.save import save_dialog
-
-
 
 
 class Error:
@@ -44,19 +30,26 @@ class Error:
         return text is None or text == self.text
 
 
-ui.error = Error()
-
-alltests = []
-
-
-def test(f):
-    """Decorator for marking tests."""
-    alltests.append(f.__name__)
-    return f
+@pytest.fixture
+def display():
+    pytest.importorskip('tkinter')
+    if not os.environ.get('DISPLAY'):
+        raise pytest.skip('no display')
 
 
-@test
-def nanotube(gui):
+@pytest.fixture
+def gui(display):
+    orig_ui_error = ui.error
+    try:
+        ui.error = Error()
+        gui = GUI()
+        yield gui
+        gui.exit()
+    finally:
+        ui.error = orig_ui_error
+
+
+def test_nanotube(gui):
     nt = gui.nanotube_window()
     nt.apply()
     nt.element[1].value = '?'
@@ -69,8 +62,7 @@ def nanotube(gui):
     assert len(gui.images[0]) == 20
 
 
-@test
-def nanopartickle(gui):
+def test_nanoparticle(gui):
     n = gui.nanoparticle_window()
     n.element.symbol = 'Cu'
     n.apply()
@@ -81,8 +73,7 @@ def nanopartickle(gui):
     n.apply()
 
 
-@test
-def color(gui):
+def test_color(gui):
     a = Atoms('C10', magmoms=np.linspace(1, -1, 10))
     a.positions[:] = np.linspace(0, 9, 10)[:, None]
     a.calc = SinglePointCalculator(a, forces=a.positions)
@@ -100,23 +91,20 @@ def color(gui):
     c.change_mnmx(101, 120)
 
 
-@test
-def settings(gui):
+def test_settings(gui):
     gui.new_atoms(molecule('H2O'))
     s = gui.settings()
     s.scale.value = 1.9
     s.scale_radii()
 
 
-@test
-def rotate(gui):
+def test_rotate(gui):
     gui.window['toggle-show-bonds'] = True
     gui.new_atoms(molecule('H2O'))
     gui.rotate_window()
 
 
-@test
-def open_and_save(gui):
+def test_open_and_save(gui):
     mol = molecule('H2O')
     for i in range(3):
         mol.write('h2o.json')
@@ -124,43 +112,11 @@ def open_and_save(gui):
     save_dialog(gui, 'h2o.cif@-1')
 
 
-@test
 def test_fracocc(gui):
     from ase.test.fio.cif import content
     with open('./fracocc.cif', 'w') as f:
         f.write(content)
     gui.open(filename='fracocc.cif')
-
-
-p = argparse.ArgumentParser()
-p.add_argument('tests', nargs='*')
-p.add_argument('-p', '--pause', action='store_true')
-
-if __name__ == '__main__':
-    args = p.parse_args()
-else:
-    # We are running inside the test framework: ignore sys.args
-    args = p.parse_args([])
-
-for name in args.tests or alltests:
-    for n in alltests:
-        if n.startswith(name):
-            name = n
-            break
-    else:
-        1 / 0
-    print(name)
-    test = globals()[name]
-    gui = GUI()
-
-    def f():
-        test(gui)
-        if not args.pause:
-            gui.exit()
-    gui.run(test=f)
-
-
-
 
 
 def window():
@@ -200,14 +156,12 @@ def window():
     return win
 
 
-def run():
-    win = window()
-    win.test(partial(test, win))
-
-
-def test(win):
+def runcallbacks(win):
     win.things[1].callback()
     win.things[1].callback()
     win.close()
 
-run()
+
+def test_callbacks(display):
+    win = window()
+    win.win.after_idle(runcallbacks)

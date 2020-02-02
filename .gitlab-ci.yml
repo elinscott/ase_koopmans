@@ -56,6 +56,20 @@ main:
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
+coverage:
+  image: registry.gitlab.com/ase/ase:ase-main
+  script:
+    - python --version
+    - pip install coverage
+    - pip install --editable .
+    - coverage run
+    - coverage html
+  artifacts:
+    paths:
+      - coverage-html
+    expire_in: 1 week
+  when: manual
+
 # Supposed to be equivalent to 'main', except we run pytest directly on
 # the test files. Useful if something is wrong with 'ase test'.
 pytest:
@@ -93,7 +107,7 @@ calculators:
     - pip install . --no-deps
     - ase info --calculators
     - export ASE_LAMMPSRUN_COMMAND=lmp
-    - ase test cp2k lammpsrun standardization abinit --calculators abinit,cp2k,lammpsrun --pytest --color=yes --durations 20
+    - ase test cp2k lammpsrun standardization abinit gromacs --calculators abinit,cp2k,lammpsrun,gromacs --pytest --color=yes --durations 20
   when: manual
 
 doc:

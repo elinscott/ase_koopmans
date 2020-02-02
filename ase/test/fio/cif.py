@@ -5,6 +5,23 @@ import warnings
 from ase.io import read
 from ase.io import write
 
+def check_fractional_occupancies(atoms):
+    """ Checks fractional occupancy entries in atoms.info dict """
+    assert atoms.info['occupancy']
+    assert atoms.info['spacegroup_kinds']
+
+    occupancies = atoms.info['occupancy']
+    kinds = atoms.info['spacegroup_kinds']
+    for a in atoms:
+        if a.symbol == 'Na':
+            assert len(occupancies[kinds[a.index]]) == 2
+            assert occupancies[kinds[a.index]]['K'] == 0.25
+            assert occupancies[kinds[a.index]]['Na'] == 0.75
+        else:
+            assert len(occupancies[kinds[a.index]]) == 1
+        if a.symbol == 'Cl':
+            assert occupancies[kinds[a.index]]['Cl'] == 0.3
+
 content = u"""
 data_1
 
@@ -234,54 +251,40 @@ cif_file = io.StringIO(content)
 # legacy behavior is to not read the K atoms
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    atoms = read(cif_file, format='cif', fractional_occupancies=False)
-elements = np.unique(atoms.get_atomic_numbers())
+    atoms_leg = read(cif_file, format='cif', fractional_occupancies=False)
+elements = np.unique(atoms_leg.get_atomic_numbers())
 for n in (11, 17, 53):
     assert n in elements
 try:
-    atoms.info['occupancy']
+    atoms_leg.info['occupancy']
     raise AssertionError
 except KeyError:
     pass
 
 cif_file = io.StringIO(content)
-# new behavior is to still not read the K atoms, but build tags and info
-natoms = read(cif_file, format='cif', fractional_occupancies=True)
+# new behavior is to still not read the K atoms, but build info
+atoms = read(cif_file, format='cif', fractional_occupancies=True)
 
-assert len(atoms) == len(natoms)
-assert np.all(atoms.get_atomic_numbers() == natoms.get_atomic_numbers())
-# yield the same old atoms...
-assert atoms == natoms
+# yield the same old atoms for fractional_occupancies case
+assert len(atoms_leg) == len(atoms)
+assert np.all(atoms_leg.get_atomic_numbers() == atoms.get_atomic_numbers())
+assert atoms_leg == atoms
 
-elements = np.unique(atoms.get_atomic_numbers())
+elements = np.unique(atoms_leg.get_atomic_numbers())
 for n in (11, 17, 53):
     assert n in elements
 
-assert natoms.info['occupancy']
-for a in natoms:
-    if a.symbol == 'Na':
-        assert len(natoms.info['occupancy'][a.tag]) == 2
-        assert natoms.info['occupancy'][a.tag]['K'] == 0.25
-        assert natoms.info['occupancy'][a.tag]['Na'] == 0.75
-    else:
-        assert len(natoms.info['occupancy'][a.tag]) == 1
+check_fractional_occupancies(atoms)
 
 # read/write
 fname = 'testfile.cif'
 with open(fname, 'wb') as fd:
-    write(fd, natoms, format='cif')
+    write(fd, atoms, format='cif')
 
 with open(fname) as fd:
-    natoms = read(fd, format='cif', fractional_occupancies=True)
+    atoms = read(fd, format='cif', fractional_occupancies=True)
 
-assert natoms.info['occupancy']
-for a in natoms:
-    if a.symbol == 'Na':
-        assert len(natoms.info['occupancy'][a.tag]) == 2
-        assert natoms.info['occupancy'][a.tag]['K'] == 0.25
-        assert natoms.info['occupancy'][a.tag]['Na'] == 0.75
-    else:
-        assert len(natoms.info['occupancy'][a.tag]) == 1
+check_fractional_occupancies(atoms)
 
 # ICSD-like file from issue #293
 content = u"""
