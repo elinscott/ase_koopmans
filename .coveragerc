@@ -1,0 +1,10 @@
+[run]
+source = ase
+command_line = ase test -j0
+omit =
+    ase/test/*
+    ase/calculators/*
+    ase/io/*
+
+[html]
+directory = coverage-html
