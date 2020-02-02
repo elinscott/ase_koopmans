@@ -56,6 +56,20 @@ main:
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
+coverage:
+  image: registry.gitlab.com/ase/ase:ase-main
+  script:
+    - python --version
+    - pip install coverage
+    - pip install --editable .
+    - coverage run
+    - coverage html
+  artifacts:
+    paths:
+      - coverage-html
+    expire_in: 1 week
+  when: manual
+
 # Supposed to be equivalent to 'main', except we run pytest directly on
 # the test files. Useful if something is wrong with 'ase test'.
 pytest:
