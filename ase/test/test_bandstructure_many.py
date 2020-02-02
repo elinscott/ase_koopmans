@@ -4,7 +4,6 @@ from ase.lattice import all_variants
 from ase.dft.band_structure import calculate_band_structure
 from ase.utils import workdir
 from ase import Atoms
-import matplotlib.pyplot as plt
 
 
 @pytest.mark.parametrize("i, lat",

@@ -31,13 +31,21 @@ def use_tmp_workdir(tmp_path):
     with workdir(path, mkdir=True):
         yield tmp_path
 
-@pytest.fixture
-def figure():
+
+@pytest.fixture(scope='session')
+def plt():
     try:
-        import matplotlib.pyplot as plt
+        import matplotlib
     except ImportError:
         raise pytest.skip('no matplotlib')
+    matplotlib.use('Agg', warn=False)
 
+    import matplotlib.pyplot as plt
+    return plt
+
+
+@pytest.fixture
+def figure(plt):
     fig = plt.figure()
     yield fig
     plt.close(fig)
