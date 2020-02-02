@@ -2,12 +2,11 @@ import pytest
 from ase.calculators.test import FreeElectrons
 from ase.lattice import all_variants
 from ase.dft.band_structure import calculate_band_structure
-from ase.utils import workdir
 from ase import Atoms
 
 
 @pytest.mark.parametrize("i, lat",
-                         [pytest.param(i, lat, id=str(lat))
+                         [pytest.param(i, lat, id=lat.variant)
                           for i, lat in enumerate(all_variants())
                           if lat.ndim == 3])
 def test_lattice_bandstructure(i, lat, figure):
