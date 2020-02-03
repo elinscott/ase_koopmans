@@ -4,32 +4,7 @@ from ase.units import kJ
 
 import numpy as np
 
-try:
-    from scipy.optimize import curve_fit
-except ImportError:
-    try:
-        from scipy.optimize import leastsq
-
-        # this part comes from
-        # http://projects.scipy.org/scipy/browser/trunk/scipy/optimize/minpack.py
-        def _general_function(params, xdata, ydata, function):
-            return function(xdata, *params) - ydata
-        # end of this part
-
-        def curve_fit(f, x, y, p0):
-            func = _general_function
-            args = (x, y, f)
-            # this part comes from
-            # http://projects.scipy.org/scipy/browser/trunk/scipy/optimize/minpack.py
-            popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args,
-                                                      full_output=1)
-
-            if ier not in [1, 2, 3, 4]:
-                raise RuntimeError("Optimal parameters not found: " + mesg)
-            # end of this part
-            return popt, pcov
-    except ImportError:
-        curve_fit = None
+from scipy.optimize import curve_fit
 
 
 eos_names = ['sj', 'taylor', 'murnaghan', 'birch', 'birchmurnaghan',
