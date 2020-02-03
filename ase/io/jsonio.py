@@ -80,7 +80,7 @@ def create_ase_object(objtype, dct):
     # We can formalize this later if it ever becomes necessary.
     if objtype == 'cell':
         from ase.cell import Cell
-        pbc = dct.pop('pbc', None)  # compatibility; we once had pbc
+        dct.pop('pbc', None)  # compatibility; we once had pbc
         obj = Cell(**dct)
     elif objtype == 'bandstructure':
         from ase.dft.band_structure import BandStructure
