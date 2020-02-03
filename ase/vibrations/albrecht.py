@@ -91,18 +91,17 @@ class Albrecht(ResonantRaman):
 
     def Huang_Rhys_factors(self, forces_r):
         """Evaluate Huang-Rhys factors derived from forces."""
-        return 0.5 * self.displacements(forces_r)**2
+        return 0.5 * self.unitless_displacements(forces_r)**2
 
-    def displacements(self, forces_r):
+    def unitless_displacements(self, forces_r):
         """Evaluate unitless displacements from forces"""
-        self.timer.start('displacements')
+        self.timer.start('unitless_displacements')
         assert(len(forces_r.flat) == self.ndof)
         
         eigv_q, eigw_rq = np.linalg.eigh(self.im[:, None] * self.H * self.im)
         # there might be zero eigenvalues
         Dm1_q = np.divide(1, eigv_q, out=np.zeros_like(eigv_q),
                           where=eigv_q!=0)
-        ##Dm1_q = np.where(eigv_q == 0, 0, 1 / eigv_q)
         X_r = eigw_rq @ np.diag(Dm1_q) @ eigw_rq.T @ (
             forces_r.flat * self.im)
 
@@ -110,38 +109,8 @@ class Albrecht(ResonantRaman):
         s = 1.e-20 / u.kg / u.C / u._hbar**2
         d_Q *= np.sqrt(s * self.om_Q)
 
-        self.timer.stop('displacements')
+        self.timer.stop('unitless_displacements')
         return d_Q
-
-    def Huang_Rhys_factors_old(self, forces_r):
-        """Evaluate Huang-Rhys factors derived from forces."""
-        self.timer.start('Huang-Rhys')
-        assert(len(forces_r.flat) == self.ndof)
-
-        # solve the matrix equation for the equilibrium displacements
-        X_q = np.linalg.solve(self.im[:, None] * self.H * self.im,
-                              forces_r.flat * self.im)
-        d_Q = np.dot(self.modes, X_q)
-
-        # Huang-Rhys factors S
-        s = 1.e-20 / u.kg / u.C / u._hbar**2
-        self.timer.stop('Huang-Rhys')
-        return s * d_Q**2 * self.om_Q / 2.
-
-    def displacements_old(self, forces_r):
-        """Evaluate unitless displacements from forces"""
-        self.timer.start('displacements')
-        assert(len(forces_r.flat) == self.ndof)
-
-        # solve the matrix equation for the equilibrium displacements
-        X_q = np.linalg.solve(self.im[:, None] * self.H * self.im,
-                              forces_r.flat * self.im)
-        d_Q = np.dot(self.modes, X_q)  # unit eV / sqrt(amu) / Angstrom
-        self.timer.stop('displacements')
-
-        s = 1.e-20 / u.kg / u.C / u._hbar**2
-        self.timer.stop('displacements')
-        return d_Q * np.sqrt(s * self.om_Q)
 
     def omegaLS(self, omega, gamma):
         omL = omega + 1j * gamma
@@ -183,7 +152,7 @@ class Albrecht(ResonantRaman):
         m_Qcc = np.zeros((self.ndof, 3, 3), dtype=complex)
         for p in myp:
             energy = self.ex0E_p[p]
-            d_Q = self.displacements(exF_pr[p])
+            d_Q = self.unitless_displacements(exF_pr[p])
             energy_Q = energy - self.om_Q * d_Q**2 / 2.
             me_cc = np.outer(self.ex0m_pc[p], self.ex0m_pc[p].conj())
 
@@ -259,7 +228,7 @@ class Albrecht(ResonantRaman):
         m_vcc = np.zeros((nv, 3, 3), dtype=complex)
         for p in myp:
             energy = self.ex0E_p[p]
-            d_Q = self.displacements(exF_pr[p])[self.skip:]
+            d_Q = self.unitless_displacements(exF_pr[p])[self.skip:]
             S_Q = d_Q**2 / 2.
             energy_v = energy - self.d_vQ.dot(om_Q * S_Q)
             me_cc = np.outer(self.ex0m_pc[p], self.ex0m_pc[p].conj())
