@@ -56,6 +56,8 @@ main:
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
+
+# See the 'pages' job further down for how the data is published.
 coverage:
   image: registry.gitlab.com/ase/ase:ase-main
   script:
@@ -66,8 +68,7 @@ coverage:
     - coverage html
   artifacts:
     paths:
-      - coverage-html
-    expire_in: 1 week
+      - coverage-html/
   when: manual
 
 # Supposed to be equivalent to 'main', except we run pytest directly on
@@ -138,3 +139,22 @@ distribution_package:
       - dist
     expire_in: 1 week
   when: manual
+
+# Publish code coverage data on web.
+#  * The deploy starge is specially recognized by gitlab
+#  * The jobname pages is specially recognized by gitlab
+#  * The public/ directory is specially recognized by gitlab
+# https://about.gitlab.com/blog/2016/11/03/publish-code-coverage-report-with-gitlab-pages/
+#
+# If we make this automatic, it should run only for master.
+# Right now we will have it run as manually activated
+pages:
+  stage: deploy
+  dependencies:
+    - coverage
+  script:
+    - mv coverage-html public
+  artifacts:
+    paths:
+      - public
+    expire_in: 3 weeks
