@@ -55,12 +55,13 @@ def test_compare_placzek_implementation_intensities():
 def test_compare_placzek_albrecht_intensities():
     """Intensities of Placzek and Albrecht should be similar"""
     atoms = H2Morse()
-    name = 'profeta'
+    name = 'rrmorse'
     pr = Profeta(atoms, H2MorseExcitedStates, approximation='Placzek',
                  gsname=name, exname=name,
                  overlap=lambda x, y: x.overlap(y),
                  txt=None)
-    pr.run()
+    if 1:
+        pr.run()
 
     om = 10
 
