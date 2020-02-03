@@ -140,6 +140,7 @@ class Atoms(object):
                  velocities=None):
 
         self._cellobj = Cell.new()
+        self._pbc = np.zeros(3, bool)
 
         atoms = None
 
@@ -408,7 +409,7 @@ class Atoms(object):
 
     def set_pbc(self, pbc):
         """Set periodic boundary condition flags."""
-        self.cell._pbc[:] = pbc
+        self._pbc[:] = pbc
 
     def get_pbc(self):
         """Get periodic boundary condition flags."""
@@ -1982,8 +1983,7 @@ class Atoms(object):
 
     def _get_pbc(self):
         """Return reference to pbc-flags for in-place manipulations."""
-        # XXX deprecating cell.pbc
-        return self.cell._pbc
+        return self._pbc
 
     pbc = property(_get_pbc, set_pbc,
                    doc='Attribute for direct manipulation ' +
