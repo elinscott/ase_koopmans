@@ -104,7 +104,9 @@ class H2MorseState(MorsePotential):
 
 class H2MorseExcitedStates(ExcitationList):
     """First singlet excited state of H2 as Lennard-Jones potentials"""
-    def __init__(self, calculator):
+    def __init__(self, calculator, nstates=3):
+        assert nstates > 0 and nstates < 4
+        self.nstates = nstates
         ExcitationList.__init__(self, calculator)
 
     def calculate(self):
@@ -118,7 +120,7 @@ class H2MorseExcitedStates(ExcitationList):
         atoms = cgs.get_atoms()
         r = atoms.get_distance(0, 1)
         E0 = cgs.get_potential_energy()
-        for i in range(1, 4):
+        for i in range(1, self.nstates + 1):
             hvec = cgs.wfs[0] * cgs.wfs[i]
             energy = Ha * (0.5 - 1. / 8) - E0
             calc = H2MorseState(i)
@@ -131,14 +133,14 @@ class H2MorseExcitedStates(ExcitationList):
             self.append(BasicExcitation(energy, i, mur, muv))
 
     def overlap(self, ov_nn, other):
-        return ov_nn[1:, 1:]
+        return ov_nn[1:self.nstates + 1, 1:self.nstates + 1]
 
     def read(self, filename):
         """Read myself from a file"""
         with open(filename, 'r') as f:
             self.filename = filename
             n = int(f.readline().split()[0])
-            for i in range(n):
+            for i in range(min(n, self.nstates)):
                 self.append(BasicExcitation(string=f.readline()))
 
     def write(self, fname):
