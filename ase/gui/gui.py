@@ -12,7 +12,6 @@ import numpy as np
 
 from ase import __version__
 import ase.gui.ui as ui
-from ase.gui.crystal import SetupBulkCrystal
 from ase.gui.defaults import read_defaults
 from ase.gui.graphene import SetupGraphene
 from ase.gui.images import Images
@@ -343,9 +342,6 @@ class GUI(View, Status):
             return exists
         self.attach(update, info_win)
 
-    def bulk_window(self):
-        SetupBulkCrystal(self)
-
     def surface_window(self):
         SetupSurfaceSlab(self)
 
@@ -508,8 +504,7 @@ class GUI(View, Status):
 
             # TRANSLATORS: Set up (i.e. build) surfaces, nanoparticles, ...
             (_('_Setup'),
-             [M(_('_Bulk Crystal'), self.bulk_window, disabled=True),
-              M(_('_Surface slab'), self.surface_window, disabled=False),
+             [M(_('_Surface slab'), self.surface_window, disabled=False),
               M(_('_Nanoparticle'),
                 self.nanoparticle_window),
               M(_('Nano_tube'), self.nanotube_window),
