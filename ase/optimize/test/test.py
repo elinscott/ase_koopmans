@@ -65,33 +65,14 @@ class Wrapper:
     def get_positions(self):
         return self.atoms.get_positions()
 
-    @property
-    def cell(self):
-        return self.atoms.cell
-
-    def get_cell(self, complete=False):
-        return self.atoms.get_cell(complete)
-
-    @property
-    def pbc(self):
-        return self.atoms.pbc
-
-    @property
-    def positions(self):
-        return self.atoms.positions
-
-    @property
-    def constraints(self):
-        return self.atoms.constraints
-
-    def copy(self):
-        return self.atoms.copy()
-
     def get_calculator(self):
         return self.atoms.calc
 
     def __len__(self):
         return len(self.atoms)
+
+    def __getattr__(self, name):
+        return self.atoms.__getattribute__(name)
 
 
 def run_test(atoms, optimizer, tag, fmax=0.02):
