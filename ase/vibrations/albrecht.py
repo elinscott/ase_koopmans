@@ -97,14 +97,18 @@ class Albrecht(ResonantRaman):
         """Evaluate unitless displacements from forces"""
         self.timer.start('unitless_displacements')
         assert(len(forces_r.flat) == self.ndof)
-        
-        eigv_q, eigw_rq = np.linalg.eigh(self.im[:, None] * self.H * self.im)
-        # there might be zero eigenvalues
-        Dm1_q = np.divide(1, eigv_q, out=np.zeros_like(eigv_q),
-                          where=eigv_q!=0)
+
+        if not hasattr(self, 'Dm1_q'):
+            self.eigv_q, self.eigw_rq = np.linalg.eigh(
+                self.im[:, None] * self.H * self.im)
+            # there might be zero eigenvalues
+            self.Dm1_q = np.divide(1, self.eigv_q,
+                out=np.zeros_like(self.eigv_q),
+                              where=eigv_q!=0)
         X_r = eigw_rq @ np.diag(Dm1_q) @ eigw_rq.T @ (
             forces_r.flat * self.im)
-
+        print('X_r=', X_r)
+        
         d_Q = np.dot(self.modes, X_r)
         s = 1.e-20 / u.kg / u.C / u._hbar**2
         d_Q *= np.sqrt(s * self.om_Q)
@@ -148,11 +152,15 @@ class Albrecht(ResonantRaman):
         omS_Q = omL - self.om_Q
         
         n_p, myp, exF_pr = self.init_parallel_excitations()
-
+        exF_pr = np.where(np.abs(exF_pr) > 1e-2, exF_pr, 0)
+ 
         m_Qcc = np.zeros((self.ndof, 3, 3), dtype=complex)
         for p in myp:
             energy = self.ex0E_p[p]
+            #exF_pr[p] = [0, 0, -6.43000474, 0, 0, 6.43000474]
             d_Q = self.unitless_displacements(exF_pr[p])
+            print('A: exF_pr', p, exF_pr[p]) 
+            print('d_Q', d_Q)
             energy_Q = energy - self.om_Q * d_Q**2 / 2.
             me_cc = np.outer(self.ex0m_pc[p], self.ex0m_pc[p].conj())
 
@@ -173,7 +181,8 @@ class Albrecht(ResonantRaman):
             m_Qcc += np.einsum('a,bc->abc', wp_Q, me_cc.conj())
             self.timer.stop('einsum')
         self.comm.sum(m_Qcc)
-                
+
+        ## print('A: m_Qcc', m_Qcc[np.where(np.abs(m_Qcc) >  1e-5)])
         self.timer.stop('AlbrechtA')
         return m_Qcc  # e^2 Angstrom^2 / eV
 

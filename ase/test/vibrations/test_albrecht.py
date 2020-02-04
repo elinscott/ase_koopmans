@@ -26,24 +26,27 @@ def test_overlap():
                   gsname=name, exname=name, overlap=True,
                   approximation='Albrecht A', txt=None)
     ao.run()
-    aoi = ao.absolute_intensity(omega=om)[-1]
-    al = Albrecht(atoms, H2MorseExcitedStates, exkwargs={'nstates':1},
-                  gsname=name, exname=name, 
-                  approximation='Albrecht A', txt=None)
-    ali = al.absolute_intensity(omega=om)[-1]
-    print('w/o and with overlap', ali, aoi)
-    assert ali == pytest.approx(aoi, 1e-9)
+    if 0:
+        aoi = ao.absolute_intensity(omega=om)[-1]
+        al = Albrecht(atoms, H2MorseExcitedStates, exkwargs={'nstates':1},
+                      gsname=name, exname=name, 
+                      approximation='Albrecht A', txt=None)
+        ali = al.absolute_intensity(omega=om)[-1]
+        print('w/o and with overlap', ali, aoi)
+        assert ali == pytest.approx(aoi, 1e-9)
 
     """Include degenerate states"""
     
-    ao = Albrecht(atoms, H2MorseExcitedStates, exkwargs={'nstates':1},
+    ao = Albrecht(atoms, H2MorseExcitedStates, exkwargs={'nstates':3},
                   gsname=name, exname=name, overlap=True,
                   approximation='Albrecht A', txt=None)
     ao.run()
+    print('overlap -----------------------')
     aoi = ao.absolute_intensity(omega=om)[-1]
-    al = Albrecht(atoms, H2MorseExcitedStates, exkwargs={'nstates':1},
+    al = Albrecht(atoms, H2MorseExcitedStates, exkwargs={'nstates':3},
                   gsname=name, exname=name, 
                   approximation='Albrecht A', txt=None)
+    print('without -----------------------')
     ali = al.absolute_intensity(omega=om)[-1]
     print('w/o and with overlap', ali, aoi)
     assert ali == pytest.approx(aoi, 1e-9)
