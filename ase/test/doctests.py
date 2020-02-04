@@ -31,7 +31,6 @@ ase.geometry.cell
 ase.geometry.geometry
 ase.io.ulm
 ase.lattice
-ase.spacegroup.findsym
 ase.spacegroup.spacegroup
 ase.spacegroup.xtal
 ase.symbols
@@ -39,10 +38,6 @@ ase.symbols
 
 
 for modname in module_names.splitlines():
-    if modname == 'ase.spacegroup.findsym' and not shutil.which('findsym'):
-        print('Skipping {} because we do not have findsym'.format(modname))
-        continue
-
     mod = importlib.import_module(modname)
     with np.printoptions(legacy='1.13'):
         print(mod, doctest.testmod(mod, raise_on_error=True))
