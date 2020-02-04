@@ -1,7 +1,8 @@
 import sys
 import numpy as np
 
-from ase.vibrations.franck_condon import FranckCondonOverlap, FranckCondonRecursive
+from ase.vibrations.franck_condon import FranckCondonOverlap
+from ase.vibrations.franck_condon import FranckCondonRecursive
 from math import factorial
 
 
@@ -64,4 +65,3 @@ for m in [2, 7]:
     equal(fcr.ov1mm2(m, delta),
           fcr.ov1m(m, delta) * fcr.ov2m(m, delta), 1.e-15)
     equal(fcr.direct1mm2(m, delta), fcr.ov1mm2(m, delta), 1.e-15)
-
