@@ -219,10 +219,6 @@ class GUI(View, Status):
             self.set_frame()
             self.draw()
 
-    def execute(self):
-        from ase.gui.execute import Execute
-        Execute(self)
-
     def constraints_window(self):
         from ase.gui.constraints import Constraints
         Constraints(self)
@@ -501,7 +497,6 @@ class GUI(View, Status):
             (_('_Tools'),
              [M(_('Graphs ...'), self.plot_graphs),
               M(_('Movie ...'), self.movie),
-              M(_('Expert mode ...'), self.execute, disabled=True),
               M(_('Constraints ...'), self.constraints_window),
               M(_('Render scene ...'), self.render_window),
               M(_('_Move selected atoms'), self.toggle_move_mode, 'Ctrl+M'),
