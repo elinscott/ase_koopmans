@@ -81,7 +81,7 @@ class Albrecht(ResonantRaman):
 
     def _collect_r(self, arr_ro, oshape, dtype):
         """Collect an array that is distributed."""
-        if len(self.myr) == self.ndof: # serial
+        if len(self.myr) == self.ndof:  # serial
             return arr_ro
         data_ro = np.zeros([self.ndof] + oshape, dtype)
         if len(arr_ro):
@@ -93,21 +93,33 @@ class Albrecht(ResonantRaman):
         """Evaluate Huang-Rhys factors derived from forces."""
         return 0.5 * self.unitless_displacements(forces_r)**2
 
-    def unitless_displacements(self, forces_r):
-        """Evaluate unitless displacements from forces"""
+    def unitless_displacements(self, forces_r, mineigv=1e-12):
+        """Evaluate unitless displacements from forces
+
+        Parameters
+        ----------
+        forces_r: array
+          Forces in cartesian coordinates
+        mineigv: float
+          Minimal Eigenvalue to consider in matrix inversion to handle
+          numerical noise. Default 1e-12
+
+        Returns
+        -------
+        Unitless displacements in Eigenmode coordinates
+        """
         self.timer.start('unitless_displacements')
         assert(len(forces_r.flat) == self.ndof)
-
+        
         if not hasattr(self, 'Dm1_q'):
             self.eigv_q, self.eigw_rq = np.linalg.eigh(
                 self.im[:, None] * self.H * self.im)
-            # there might be zero eigenvalues
+            # there might be zero or nearly zero eigenvalues
             self.Dm1_q = np.divide(1, self.eigv_q,
-                out=np.zeros_like(self.eigv_q),
-                              where=eigv_q!=0)
-        X_r = eigw_rq @ np.diag(Dm1_q) @ eigw_rq.T @ (
+                                   out=np.zeros_like(self.eigv_q),
+                                   where=np.abs(self.eigv_q) > mineigv)
+        X_r = self.eigw_rq @ np.diag(self.Dm1_q) @ self.eigw_rq.T @ (
             forces_r.flat * self.im)
-        print('X_r=', X_r)
         
         d_Q = np.dot(self.modes, X_r)
         s = 1.e-20 / u.kg / u.C / u._hbar**2
@@ -157,10 +169,7 @@ class Albrecht(ResonantRaman):
         m_Qcc = np.zeros((self.ndof, 3, 3), dtype=complex)
         for p in myp:
             energy = self.ex0E_p[p]
-            #exF_pr[p] = [0, 0, -6.43000474, 0, 0, 6.43000474]
             d_Q = self.unitless_displacements(exF_pr[p])
-            print('A: exF_pr', p, exF_pr[p]) 
-            print('d_Q', d_Q)
             energy_Q = energy - self.om_Q * d_Q**2 / 2.
             me_cc = np.outer(self.ex0m_pc[p], self.ex0m_pc[p].conj())
 
@@ -182,7 +191,6 @@ class Albrecht(ResonantRaman):
             self.timer.stop('einsum')
         self.comm.sum(m_Qcc)
 
-        ## print('A: m_Qcc', m_Qcc[np.where(np.abs(m_Qcc) >  1e-5)])
         self.timer.stop('AlbrechtA')
         return m_Qcc  # e^2 Angstrom^2 / eV
 
@@ -271,7 +279,6 @@ class Albrecht(ResonantRaman):
                     for n in range(self.nm):
                         fco2_v = d_ovQ[1].dot(fco1_mQ[n])
                         e_v = em_v + n * om_ov[1]
-                        ## print('e_v', e_v[:3])
                         fco_v = nvib_ov[1] * fco1_v * fco2_v
                         wm_v += fco_v / (e_v - omL)
                         wp_v += fco_v / (e_v + omS_v)
@@ -318,11 +325,11 @@ class Albrecht(ResonantRaman):
             energy = self.ex0E_p[p]
             S_Q = self.Huang_Rhys_factors(exF_pr[p])
             # relaxed excited state energy
-            ## n_vQ = np.where(self.n_vQ > 0, 1, 0)
-            ## energy_v = energy - n_vQ.dot(self.om_Q * S_Q)
+            # # n_vQ = np.where(self.n_vQ > 0, 1, 0)
+            # # energy_v = energy - n_vQ.dot(self.om_Q * S_Q)
             energy_Q = energy - self.om_Q * S_Q
 
-            ## me_cc = np.outer(self.ex0m_pc[p], self.ex0m_pc[p].conj())
+            # # me_cc = np.outer(self.ex0m_pc[p], self.ex0m_pc[p].conj())
             m_c = self.ex0m_pc[p]  # e Angstrom
             dmdQ_Qc = dmdQ_Qpc[:, p]  # e / sqrt(amu)
 
@@ -335,8 +342,6 @@ class Albrecht(ResonantRaman):
                 f0mmQ1_Q = (self.fco.directT0(m, S_Q) +
                             np.sqrt(2) * self.fco.direct0mm2(m, S_Q))
                 f0Qmm1_Q = self.fco.direct(1, m, S_Q)
-##                if (self.n_vQ > 1).any():
-##                    fco2_Q = self.fco.direct0mm2(m, S_Q)
                 self.timer.stop('0mm1/2')
                 
                 self.timer.start('weight_Q')
@@ -404,7 +409,7 @@ class Albrecht(ResonantRaman):
                 V_vcc += vel_vcc * self.vib01_Q[:, None, None]
             else:
                 vel_vcc = self.meBCmult(omega, gamma)
-                V_vcc = 0 
+                V_vcc = 0
         elif approx == 'albrecht b':
             assert(self.combinations == 1)
             vel_vcc = self.meBC(omega, gamma, term='B')
