@@ -4,7 +4,7 @@ from ase.db.core import float_to_time_string, now
 
 
 all_columns = ['id', 'age', 'user', 'formula', 'calculator',
-               'energy', 'fmax', 'pbc', 'volume',
+               'energy', 'natoms', 'fmax', 'pbc', 'volume',
                'charge', 'mass', 'smax', 'magmom']
 
 
