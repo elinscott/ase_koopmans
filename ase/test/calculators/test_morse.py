@@ -25,5 +25,6 @@ def main():
     test_gs_minimum_energy()
     test_gs_vibrations()
 
+
 if __name__ == '__main__':
     main()
