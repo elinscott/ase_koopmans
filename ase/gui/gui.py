@@ -13,7 +13,6 @@ import numpy as np
 from ase import __version__
 import ase.gui.ui as ui
 from ase.gui.defaults import read_defaults
-from ase.gui.graphene import SetupGraphene
 from ase.gui.images import Images
 from ase.gui.nanoparticle import SetupNanoparticle
 from ase.gui.nanotube import SetupNanotube
@@ -348,9 +347,6 @@ class GUI(View, Status):
     def nanoparticle_window(self):
         return SetupNanoparticle(self)
 
-    def graphene_window(self, menuitem):
-        SetupGraphene(self)
-
     def nanotube_window(self):
         return SetupNanotube(self)
 
@@ -507,8 +503,7 @@ class GUI(View, Status):
              [M(_('_Surface slab'), self.surface_window, disabled=False),
               M(_('_Nanoparticle'),
                 self.nanoparticle_window),
-              M(_('Nano_tube'), self.nanotube_window),
-              M(_('Graphene'), self.graphene_window, disabled=True)]),
+              M(_('Nano_tube'), self.nanotube_window)]),
 
             # (_('_Calculate'),
             # [M(_('Set _Calculator'), self.calculator_window, disabled=True),
