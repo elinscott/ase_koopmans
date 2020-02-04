@@ -13,7 +13,7 @@ for dct in dcts:
     refs.append((dct.formula, -dct.raw_score))
 
 pd = PhaseDiagram(refs)
-pd.plot(only_label_simplices=True)
+pd.plot(show=True, only_label_simplices=True)
 
 # View the simplices of the convex hull
 simplices = []
