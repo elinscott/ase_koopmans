@@ -1,9 +1,5 @@
 import numpy as np
-try:
-    import scipy.optimize as opt
-except ImportError:
-    pass
-
+import scipy.optimize as opt
 from ase.optimize.optimize import Optimizer
 
 
