@@ -1,10 +1,9 @@
 """
-Test resonant Raman implementations
+Test Placzek type resonant Raman implementations
 """
 import pytest
 
 from ase.vibrations.placzek import Placzek, Profeta
-from ase.vibrations.albrecht import Albrecht
 from ase.calculators.h2morse import H2Morse, H2MorseExcitedStates
 
 
@@ -31,7 +30,7 @@ def test_overlap():
     name = 'rrmorse'
     nstates = 3
     po = Profeta(atoms, H2MorseExcitedStates,
-                 exkwargs={'nstates':nstates}, approximation='Placzek',
+                 exkwargs={'nstates': nstates}, approximation='Placzek',
                  overlap=lambda x, y: x.overlap(y),
                  gsname=name, exname=name, txt='-')
     po.run()
@@ -39,14 +38,14 @@ def test_overlap():
     om = 1
     poi = po.absolute_intensity(omega=om)[-1]
 
-    pr = Profeta(atoms, H2MorseExcitedStates, 
-                 exkwargs={'nstates':nstates}, approximation='Placzek',
+    pr = Profeta(atoms, H2MorseExcitedStates,
+                 exkwargs={'nstates': nstates}, approximation='Placzek',
                  gsname=name, exname=name,
                  txt=None)
     pri = pr.absolute_intensity(omega=om)[-1]
 
     print('overlap', pri, poi, poi / pri)
-    assert pri == pytest.approx(poi, 1e-6)
+    assert pri == pytest.approx(poi, 1e-4)
 
 
 def test_compare_placzek_implementation_intensities():
@@ -74,12 +73,10 @@ def test_compare_placzek_implementation_intensities():
                  txt=None)
     pr.run()
     pro = pr.absolute_intensity(omega=om)[-1]
-    # print('pri, pro, pzi', pri, pro, pzi)
     assert pro == pytest.approx(pri, 1e-3)
 
+
 def main():
-    #test_compare_placzek_implementation_intensities()
-    #test_compare_placzek_albrecht_intensities()
     test_overlap()
 
 if __name__ == '__main__':

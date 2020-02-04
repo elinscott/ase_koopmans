@@ -363,7 +363,7 @@ class Albrecht(ResonantRaman):
                 me_Qcc += np.multiply(wCSL_Q, dmdQm_Qcc.T).T
             self.timer.stop('einsum')
         self.comm.sum(me_Qcc)
-                
+        
         self.timer.stop('AlbrechtBC')
         return me_Qcc  # unit e^2 Angstrom / eV / sqrt(amu)
 

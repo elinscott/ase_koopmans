@@ -133,7 +133,8 @@ class H2MorseExcitedStates(ExcitationList):
             self.append(BasicExcitation(energy, i, mur, muv))
 
     def overlap(self, ov_nn, other):
-        return ov_nn[1:self.nstates + 1, 1:self.nstates + 1]
+        return (ov_nn[1:self.nstates + 1, 1:self.nstates + 1] *
+                ov_nn[0, 0])
 
     def read(self, filename):
         """Read myself from a file"""
