@@ -69,7 +69,8 @@ coverage:
   artifacts:
     paths:
       - coverage-html/
-  when: manual
+  only:
+      - master
 
 # Supposed to be equivalent to 'main', except we run pytest directly on
 # the test files. Useful if something is wrong with 'ase test'.
