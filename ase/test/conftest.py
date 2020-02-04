@@ -6,9 +6,10 @@ from pathlib import Path
 
 @pytest.fixture(scope='session', autouse=True)
 def disable_calculators(request):
-    from ase.test.testsuite import disable_calculators
+    from ase.test.testsuite import disable_calculators, test_calculator_names
     from ase.calculators.calculator import names as calculator_names
     enabled_names = os.environ.get('ASE_TEST_CALCULATORS', '').split()
+    test_calculator_names += enabled_names
     disable_calculators([name for name in calculator_names
                          if name not in enabled_names])
 
@@ -29,3 +30,22 @@ def use_tmp_workdir(tmp_path):
     path = Path(str(tmp_path))
     with workdir(path, mkdir=True):
         yield tmp_path
+
+
+@pytest.fixture(scope='session')
+def plt():
+    try:
+        import matplotlib
+    except ImportError:
+        raise pytest.skip('no matplotlib')
+    matplotlib.use('Agg', warn=False)
+
+    import matplotlib.pyplot as plt
+    return plt
+
+
+@pytest.fixture
+def figure(plt):
+    fig = plt.figure()
+    yield fig
+    plt.close(fig)

@@ -6,9 +6,12 @@
 
       <div class="row">
         <div class="col-xs-6">
-          <h5><b>
+          <b>
           Displaying rows {{ s.row1 }}-{{ s.row2 }} out of {{ s.nrows }}
-          </b></h5>
+          </b>
+          {% if s.query %}
+          <a href="/{{ p.name }}/?query={{ s.query }}"> (direct link) </a>
+          {% endif %}
         </div>
 
         <div class="col-xs-6">
@@ -20,11 +23,11 @@
             Add Column <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
-            {% for key in t.addcolumns %}
+            {% for key, value in p.key_descriptions|dictsort(false, "value") if key in t.addcolumns %}
               <li><a href="javascript:update_table({{ s.id }},
                                                    'toggle',
                                                    '{{ key }}')">
-              {{ p.key_descriptions[key][1] }} ({{key}}) </a></li>
+              {{ value[1] }} ({{key}}) </a></li>
             {% endfor %}
             </ul>
           </div>

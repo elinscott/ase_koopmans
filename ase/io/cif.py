@@ -222,7 +222,7 @@ def parse_cif_pycodcif(fileobj):
             'parse_cif_pycodcif requires pycodcif ' +
             '(http://wiki.crystallography.net/cod-tools/pycodcif/)')
 
-    data,_,_ = parse(fileobj)
+    data, _, _ = parse(fileobj)
 
     for datablock in data:
         tags = datablock['values']
@@ -496,8 +496,12 @@ def write_enc(fileobj, s):
     fileobj.write(s.encode("latin-1"))
 
 
-def write_cif(fileobj, images, format='default'):
-    """Write *images* to CIF file."""
+def write_cif(fileobj, images, format='default',
+              wrap=True) -> None:
+    """Write *images* to CIF file.
+
+    wrap: Wrap atoms into unit cell.
+    """
     if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'wb')
 
@@ -569,19 +573,20 @@ def write_cif(fileobj, images, format='default'):
             write_enc(fileobj, '  _atom_site_type_symbol\n')
 
         if coord_type == 'fract':
-            coords = atoms.get_scaled_positions().tolist()
+            coords = atoms.get_scaled_positions(wrap).tolist()
         else:
-            coords = atoms.get_positions().tolist()
+            coords = atoms.get_positions(wrap).tolist()
         symbols = atoms.get_chemical_symbols()
         occupancies = [1 for i in range(len(symbols))]
 
-        # try to fetch occupancies // rely on the tag - occupancy mapping
+        # try to fetch occupancies // spacegroup_kinds - occupancy mapping
         try:
             occ_info = atoms.info['occupancy']
-            for i, tag in enumerate(atoms.get_tags()):
-                occupancies[i] = occ_info[tag][symbols[i]]
+            kinds = atoms.info['spacegroup_kinds']
+            for i, kind in enumerate(kinds):
+                occupancies[i] = occ_info[kind][symbols[i]]
                 # extend the positions array in case of mixed occupancy
-                for sym, occ in occ_info[tag].items():
+                for sym, occ in occ_info[kind].items():
                     if sym != symbols[i]:
                         symbols.append(sym)
                         coords.append(coords[i])
