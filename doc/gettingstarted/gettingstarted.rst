@@ -2,7 +2,23 @@
 
 Getting started
 ===============
-Welcome to the introductory ASE tutorials. This is where to start. The
+Welcome to the introductory ASE tutorials. This is where to start.
+
+If you are not familiar with Python please read :ref:`what is python`.
+
+.. toctree::
+   :hidden:
+
+   ../python
+
+If your ASE scripts make extensive use of matrices you may want to familiarize yourself with :ref:`numpy`.
+
+.. toctree::
+   :hidden:
+
+   ../numpy
+
+The
 purpose of these tutorials is to teach you the essentials of ASE for
 actual production use, and they are regarded as prerequisite for
 any of the :ref:`Specialized tutorials <tutorials>`.
