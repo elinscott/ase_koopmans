@@ -450,7 +450,7 @@ class PhaseDiagram:
 
         return energy, indices, np.array(coefs)
 
-    def plot(self, ax=None, dims=None, show=False):
+    def plot(self, ax=None, dims=None, show=False, **plotkwargs):
         """Make 2-d or 3-d plot of datapoints and convex hull.
 
         Default is 2-d for 2- and 3-component diagrams and 3-d for a
@@ -481,7 +481,7 @@ class PhaseDiagram:
 
         if dims == 2:
             if N == 2:
-                self.plot2d2(ax)
+                self.plot2d2(ax, **plotkwargs)
             elif N == 3:
                 self.plot2d3(ax)
             else:
@@ -499,7 +499,8 @@ class PhaseDiagram:
             plt.show()
         return ax
 
-    def plot2d2(self, ax=None):
+    def plot2d2(self, ax=None,
+                only_label_simplices=False, only_plot_simplices=False):
         x, e = self.points[:, 1:].T
         names = [re.sub(r'(\d+)', r'$_{\1}$', ref[2])
                  for ref in self.references]
@@ -512,8 +513,13 @@ class PhaseDiagram:
             for i, j in simplices:
                 ax.plot(x[[i, j]], e[[i, j]], '-b')
             ax.plot(x[hull], e[hull], 'sg')
-            ax.plot(x[~hull], e[~hull], 'or')
+            if not only_plot_simplices:
+                ax.plot(x[~hull], e[~hull], 'or')
 
+            if only_plot_simplices or only_label_simplices:
+                x = x[self.hull]
+                e = e[self.hull]
+                names = [name for name, h in zip(names, self.hull) if h]
             for a, b, name in zip(x, e, names):
                 ax.text(a, b, name, ha='center', va='top')
 
