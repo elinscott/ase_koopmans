@@ -2,7 +2,7 @@ from gpaw import GPAW
 
 calc = GPAW('groundstate.rutile.gpw')
 atoms = calc.get_atoms()
-path = calc.bandpath(density=7)
+path = atoms.cell.bandpath(density=7)
 path.write('path.rutile.json')
 
 calc.set(kpts=path, fixdensity=True,
