@@ -248,4 +248,4 @@ follows::
 .. [Erhart] P. Erhart, B. Sadigh, A. Schleife, and D. Åberg.
    First-principles study of codoping in lanthanum bromide,
    Phys. Rev. B, Vol **91**, 165206 (2012),
-   `doi: 10.1103/PhysRevB.91.165206 <http://dx.doi.org/10.1103/PhysRevB.91.165206>`_; Appendix C
+   `doi: 10.1103/PhysRevB.91.165206 <https://doi.org/10.1103/PhysRevB.91.165206>`_; Appendix C
