@@ -82,27 +82,3 @@ def test_db(name):
     cli('ase -T gui --terminal -n 3 {}'.format(name))
 
     con.delete([id])
-
-    if name != 'testase.json':  # transfer between db formats
-        if name == 'testase.db':
-            from_db = 'testase.json'
-            factor = 2
-        else:
-            from_db = 'testase.db'
-            factor = 3
-
-        cli('ase db {} --insert-into {}'.format(from_db, name))
-
-        count(5 * factor)
-        count(3 * factor, 'hydro')
-        count(0, 'foo')
-        count(3 * factor, abc=42)
-        count(3 * factor, 'abc')
-        count(0, 'abc,foo')
-        count(3 * factor, 'abc,hydro')
-        count(0, foo='bar')
-        count(factor, formula='H2')
-        count(factor, formula='H2O')
-        count(3 * factor, 'fmax<0.1')
-        count(factor, '0.5<mass<1.5')
-        count(5 * factor, 'energy')
