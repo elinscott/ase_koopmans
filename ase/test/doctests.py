@@ -1,6 +1,5 @@
 import doctest
 import importlib
-import shutil
 import sys
 from unittest import SkipTest
 from distutils.version import LooseVersion
