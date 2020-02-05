@@ -5,14 +5,19 @@ standard cell correctly.
 
 2) For those Bravais lattices that we can recognize in non-standard form,
    Niggli-reduce them and recognize them as well."""
+
+import pytest
 import numpy as np
+
 from ase.lattice import (get_lattice_from_canonical_cell, all_variants,
                          identify_lattice)
 
-for lat in all_variants():
-    if lat.ndim == 2:
-        break
 
+variants = [lat for lat in all_variants() if lat.ndim == 3]
+
+
+@pytest.mark.parametrize('lat', variants)
+def test_lattice(lat):
     cell = lat.tocell()
 
     def check(lat1):
@@ -27,7 +32,7 @@ for lat in all_variants():
         # all_variants() are reduced to a form with smaller
         # orthogonality defect) which might be desirable but would
         # trigger an error in this test.
-        continue
+        return
 
     stdcell, op = identify_lattice(cell, 1e-4)
     check(stdcell)

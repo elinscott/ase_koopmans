@@ -33,6 +33,7 @@ default_key_descriptions = {
     'user': ('Username', '', ''),
     'calculator': ('Calculator', 'ASE-calculator name', ''),
     'energy': ('Energy', 'Total energy', 'eV'),
+    'natoms': ('Number of atoms', '', ''),
     'fmax': ('Maximum force', '', 'eV/Ang'),
     'smax': ('Maximum stress', 'Maximum stress on unit cell',
              '`\\text{eV/Ang}^3`'),
