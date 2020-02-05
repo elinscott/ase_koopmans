@@ -668,7 +668,7 @@ def get_special_points(cell, lattice=None, eps=2e-4):
     The definitions are from a paper by Wahyu Setyawana and Stefano
     Curtarolo::
 
-        http://dx.doi.org/10.1016/j.commatsci.2010.05.010
+        https://doi.org/10.1016/j.commatsci.2010.05.010
 
     cell: 3x3 ndarray
         Unit cell.
@@ -875,7 +875,7 @@ cc162_1x1 = np.array([
 
 # The following is a list of the critical points in the 1st Brillouin zone
 # for some typical crystal structures following the conventions of Setyawan
-# and Curtarolo [http://dx.doi.org/10.1016/j.commatsci.2010.05.010].
+# and Curtarolo [https://doi.org/10.1016/j.commatsci.2010.05.010].
 #
 # In units of the reciprocal basis vectors.
 #

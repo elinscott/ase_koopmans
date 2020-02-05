@@ -88,7 +88,7 @@ Force-based QM/MM
 This QM/MM calculator mixes forces from any pair of ASE calculators.
 A finite buffer is added around the core QM region to ensure accurate forces; careful testing
 of the required buffer size is required. See
-`N. Bernstein, J. R. Kermode, and G. Csányi, Rep. Prog. Phys. 72, 026501 (2009) <http://dx.doi.org/10.1088/0034-4885/72/2/026501>`__
+`N. Bernstein, J. R. Kermode, and G. Csányi, Rep. Prog. Phys. 72, 026501 (2009) <https://doi.org/10.1088/0034-4885/72/2/026501>`__
 for a review of force-based QM/MM approaches, which should be cited if this method is used,
 and `T. D. Swinburne and J. R. Kermode, Phys. Rev. B 96, 144102 (2017). <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.144102>`__
 for an application which used this implementation.
