@@ -139,9 +139,9 @@ class Pourbaix:
             kwargs = parse_formula(formula)[0]
 
         if 'O' not in kwargs:
-            kwargs['O'] = 1
+            kwargs['O'] = 0
         if 'H' not in kwargs:
-            kwargs['H'] = 1
+            kwargs['H'] = 0
 
         self.kT = units.kB * T
         self.references = []
@@ -214,7 +214,7 @@ class Pourbaix:
                 elif name == 'H+(aq)':
                     energy = -pH * alpha
             else:
-                bounds.append((0, 1))
+                bounds.append((0, np.inf))
                 if aq:
                     energy -= entropy
             if verbose:
