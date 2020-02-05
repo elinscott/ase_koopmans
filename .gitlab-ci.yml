@@ -159,3 +159,5 @@ pages:
     paths:
       - public
     expire_in: 3 weeks
+  only:
+    - master
