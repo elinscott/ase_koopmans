@@ -173,9 +173,9 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
 
     # Read file
     with open(fileobj) as f:
-        first_line = np.loadtxt(f, max_rows=1)
-        second_line = np.loadtxt(f, max_rows=1)
-        xyz = np.loadtxt(f)
+        first_line = np.genfromtxt(f, max_rows=1)
+        second_line = np.genfromtxt(f, max_rows=1)
+        xyz = np.genfromtxt(f)
 
     # Parse first line
     input_parameters = {}
