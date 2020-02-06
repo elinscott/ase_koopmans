@@ -172,7 +172,7 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
                         isotope_masses.items() for mass in masses}
 
     # Read file
-    with open(fileobj) as f:
+    with open(fileobj, 'rb') as f:
         first_line = np.genfromtxt(f, max_rows=1)
         second_line = np.genfromtxt(f, max_rows=1)
         xyz = np.genfromtxt(f)
