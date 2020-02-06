@@ -8,7 +8,7 @@ def main():
     """Perform C_{\\inf v} calculation on Cr_2."""
     # PBE from
     # J. Chem. Phys. 112 , 5576 (2000)
-    # http://dx.doi.org/10.1063/1.481183
+    # https://doi.org/10.1063/1.481183
     e_literature = -1.34
 
     names = ['Cr2_sp_up.mos',
