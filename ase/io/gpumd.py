@@ -1,7 +1,7 @@
 import numpy as np
-from itertools import product
-from ..neighborlist import NeighborList
-from ..data import atomic_masses, chemical_symbols
+from ase.neighborlist import NeighborList
+from ase.data import atomic_masses, chemical_symbols
+from ase import Atoms, Atom
 
 
 def find_nearest_index(array, value):
@@ -17,7 +17,7 @@ def find_nearest_value(array, value):
 
 
 def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
-                      velocities=None, groupings=None, use_triclinic=False):
+                velocities=None, groupings=None, use_triclinic=False):
     """
     Writes atoms into GPUMD input format.
 
@@ -45,7 +45,7 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
     use_triclinic: bool
         Use format for triclinic cells
 
-    Raises 
+    Raises
     ------
     ValueError
         Raised if parameters are incompatible
@@ -56,29 +56,30 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
         has_velocity = 0
     else:
         has_velocity = 1
-        if len(velocities) != len(atoms)):
+        if len(velocities) != len(atoms):
             raise ValueError('The number of velocities ({}) does not match the'
                              ' number of atoms'
-                             ' ({})!'.format(len(velocities), len(atoms))
+                             ' ({})!'.format(len(velocities), len(atoms)))
 
     # Check groupings parameter
     if groupings is None:
         number_of_grouping_methods = 0
     else:
         number_of_grouping_methods = len(groupings)
-        if number_of_grouping_methods > 3
-        raise ValueError('There can be no more than 3 grouping methods!')
+        if number_of_grouping_methods > 3:
+            raise ValueError('There can be no more than 3 grouping methods!')
         for g, grouping in enumerate(groupings):
             all_indices = [i for group in grouping for i in group]
             if len(all_indices) != len(atoms) or\
-                    if set(all_indices) != set(range(len(atoms)):
+                    set(all_indices) != set(range(len(atoms))):
                 raise ValueError('The indices listed in grouping method {} are'
                                  ' not compatible with the input'
-                                 ' structure!'.format(g)
-    # try to estimate a good maximum_neighbors
+                                 ' structure!'.format(g))
+
+    # If not specified, estimate the maximum_neighbors
     if maximum_neighbors is None:
-        if cutoffs is None:
-            cutoffs = 0.1
+        if cutoff is None:
+            cutoff = 0.1
             maximum_neighbors = 1
         else:
             nl = NeighborList([cutoff/2]*len(atoms), skin=2, bothways=True)
@@ -89,32 +90,34 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
                                         len(nl.get_neighbors(atom.index)[0]))
                 maximum_neighbors *= 2
 
-    # header with cell
+    # Add header and cell parameters
     lines = []
     if atoms.cell.orthorhombic and not use_triclinic:
         head_lines = ['{} {} {} 0 {} {}'.format(len(atoms), maximum_neighbors,
-                                                 cutoff, has_velocity,
-                                                 number_of_grouping_methods)]
+                                                cutoff, has_velocity,
+                                                number_of_grouping_methods)]
         head_lines.append((' {}' * 6)[1:].format(*atoms.pbc.astype(int),
                                                  *atoms.cell.lengths()))
     else:
         head_lines = ['{} {} {} 1 {} {}'.format(len(atoms), maximum_neighbors,
-                                                 cutoff, has_velocity,
-                                                 number_of_grouping_methods)]
+                                                cutoff, has_velocity,
+                                                number_of_grouping_methods)]
         head_lines.append((' {}' * 12)[1:].format(*atoms.pbc.astype(int),
                                                   *atoms.cell[:].flatten()))
     lines += head_lines
 
-    # symbols to integers starting at 0
+    # Create symbols-to-type map, i.e. integers starting at 0
     symbol_type_map = {}
     for symbol in atoms.get_chemical_symbols():
         if symbol not in symbol_type_map:
             symbol_type_map[symbol] = len(symbol_type_map)
 
-    # atoms lines
+    # Add lines for all atoms
     for a, atm in enumerate(atoms):
         t = symbol_type_map[atm.symbol]
         line = (' {}' * 5)[1:].format(t, *atm.position, atm.mass)
+        if velocities is not None:
+            line += (' {}' * 3).format(*velocities[a])
         if groupings is not None:
             for grouping in groupings:
                 for i, group in enumerate(grouping):
@@ -123,6 +126,7 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
                         break
         lines.append(line)
 
+    # Write file
     with open(fileobj, 'w') as f:
         all_lines = '\n'.join(lines)
         f.write(all_lines)
@@ -145,7 +149,7 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
     isotope_masses: Dict[str, List[float]]
         Dictionary with chemical symbols and lists of the associated atomic
         masses, which is used to identify the chemical symbols that correspond
-        to the types not found in species_types. The default is to find the 
+        to the types not found in species_types. The default is to find the
         closest match :data:`ase.data.atomic_masses`.
 
     Returns
@@ -158,7 +162,7 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
     type_symbol_map : Dict[int, str]
         Dictionary with types and the corresponding chemical symbols
 
-    Raises 
+    Raises
     ------
     ValueError
         Raised if the list of species is incompatible with the input file
@@ -196,12 +200,12 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
 
     if species_types is not None:
         if len(species_types) > input_parameters['N']:
-             raise ValueError('The number of species types ({}) exceeds the'
-                              ' number of atom types'
-                              ' {}'.format(len(species_types),
-                                           input_parameters['N'])
+            raise ValueError('The number of species types ({}) exceeds the'
+                             ' number of atom types'
+                             ' {}'.format(len(species_types),
+                                          input_parameters['N']))
         type_symbol_map = {index: symbol for index, symbol in
-                            enumerate(species_types)}
+                           enumerate(species_types)}
     else:
         type_symbol_map = {}
     for i, xyz_row in enumerate(xyz):
@@ -210,8 +214,9 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
         mass = xyz_row[4]
         if atom_type not in type_symbol_map:
             if isotope_masses is not None:
-                nearest_mass = find_nearest_value(mass_symbols.keys(), mass)
-                symbol = mass_symbols[nearest_mass]
+                nearest_value = find_nearest_value(list(mass_symbols.keys()),
+                                                   mass)
+                symbol = mass_symbols[nearest_value]
             else:
                 symbol = chemical_symbols[
                     find_nearest_index(atomic_masses, mass)]
@@ -227,8 +232,11 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
         data = dict()
         if input_parameters['has_velocity']:
             data['velocity'] = xyz_row[5:8]
-        if input_parameters['num_of_groups']:
-            data['groups'] = xyz_row[8:].astype(int)
+            if input_parameters['num_of_groups']:
+                data['groups'] = xyz_row[8:].astype(int)
+        else:
+            if input_parameters['num_of_groups']:
+                data['groups'] = xyz_row[5:].astype(int)
         info[i] = data
 
     # Add data regarding velocities and groups
@@ -251,7 +259,7 @@ def read_gpumd(fileobj='xyz.in', species_types=None, isotope_masses=None):
     isotope_masses: Dict[str, List[float]]
         Dictionary with chemical symbols and lists of the associated atomic
         masses, which is used to identify the chemical symbols that correspond
-        to the types not found in species_types. The default is to find the 
+        to the types not found in species_types. The default is to find the
         closest match :data:`ase.data.atomic_masses`.
 
     Returns
@@ -259,10 +267,10 @@ def read_gpumd(fileobj='xyz.in', species_types=None, isotope_masses=None):
     atoms : Atoms
         Atoms object
 
-    Raises 
+    Raises
     ------
     ValueError
         Raised if the list of species is incompatible with the input file
     """
-   
+
     return load_xyz_input_gpumd(fileobj, species_types, isotope_masses)[0]

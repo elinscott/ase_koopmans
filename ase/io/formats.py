@@ -170,6 +170,7 @@ extension2format = {}
 all_formats = ioformats  # Aliased for compatibility only.  Please do not use.
 format2modulename = {}  # Left for compatibility only.
 
+
 def define_io_format(name, desc, code, *, module=None, ext=None,
                      glob=None, magic=None, encoding=None):
     if module is None:
@@ -224,7 +225,7 @@ F('abinit-in', 'ABINIT input file', '1F',
   module='abinit', magic=b'*znucl *'),
 F('abinit-out', 'ABINIT output file', '1F',
   module='abinit', magic=b'*.Version * of ABINIT'),
-F('aims', 'FHI-aims geometry file', '1S',ext='in'),
+F('aims', 'FHI-aims geometry file', '1S', ext='in'),
 F('aims-output', 'FHI-aims output', '+S',
   module='aims', magic=b'*Invoking FHI-aims ...'),
 F('bundletrajectory', 'ASE bundle trajectory', '+S'),
@@ -270,7 +271,7 @@ F('espresso-in', 'Quantum espresso in file', '1F',
 F('espresso-out', 'Quantum espresso out file', '+F',
   module='espresso', ext=['out', 'pwo'], magic=b'*Program PWSCF'),
 F('etsf', 'ETSF format', '1S'),
-F('exciting', 'exciting input', '1S',glob='input.xml'),
+F('exciting', 'exciting input', '1S', glob='input.xml'),
 F('extxyz', 'Extended XYZ file', '+F'),
 F('findsym', 'FINDSYM-format', '+F'),
 F('gaussian', 'Gaussian com (input) file', '1S',
@@ -301,8 +302,7 @@ F('lammps-dump-text', 'LAMMPS text dump file', '+F',
 F('lammps-dump-binary', 'LAMMPS binary dump file', '+B',
   module='lammpsrun')
 F('lammps-data', 'LAMMPS data file', '1F', module='lammpsdata',
-  encoding='ascii'
-),
+  encoding='ascii'),
 F('magres', 'MAGRES ab initio NMR data file', '1F'),
 F('mol', 'MDL Molfile', '1F'),
 F('mp4', 'MP4 animation', '+S',
@@ -546,7 +546,7 @@ def _write(filename, fd, format, io, images, parallel=None, append=False,
                 mode = mode.replace('w', 'a')
             fd = open_with_compression(filename, mode)
             # XXX remember to re-enable compressed open
-            #fd = io.open(filename, mode)
+            # fd = io.open(filename, mode)
         io.write(fd, images, **kwargs)
         if open_new:
             fd.close()
@@ -761,7 +761,6 @@ def filetype(filename, read=True, guess=True):
         for fmt in ioformats.values():
             if fmt.match_name(basename):
                 return fmt.name
-
 
         if not read:
             if ext is None:

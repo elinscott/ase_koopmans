@@ -295,7 +295,7 @@ def test_read_gpumd_input():
         assert len(gpumd_input_atoms.info) == len(gpumd_input_atoms)
         assert all(np.array_equal(
             gpumd_input_atoms.info[i]['groups'], np.array([i])) for i in
-            range(len(gpumd_input_atoms))
+            range(len(gpumd_input_atoms)))
 
         # Test without specifying the species-type map
         gpumd_input_atoms = io.read('xyz.in', format='gpumd')
@@ -317,22 +317,22 @@ def test_load_gpumd_input():
         gpumd_input_f.write(gpumd_input_text)
 
     try:
+        species_types = {'Al': 0}
         gpumd_input_atoms, input_parameters, type_symbol_map =\
-            load_xyz_input_gpumd('xyz.in')
+            load_xyz_input_gpumd('xyz.in', species_types=species_types)
         input_parameters_ref = {'N': 256, 'M': 1, 'cutoff': 0.1,
                                 'use_triclinic': 0, 'has_velocity': 0,
                                 'num_of_groups': 1}
         assert all(k in input_parameters for k in input_parameters_ref.keys())
-        assert all(v == input_parameters[k] for k, v in 
+        assert all(v == input_parameters[k] for k, v in
                    input_parameters_ref.items())
         type_symbol_map_ref = {v: k for k, v in species_types.items()}
         assert all(k in type_symbol_map for k in type_symbol_map_ref.keys())
-        assert all(v == type_symbol_map[k] for k, v in 
+        assert all(v == type_symbol_map[k] for k, v in
                    type_symbol_map_ref.items())
 
     finally:
         os.unlink('xyz.in')
-
 
 
 def test_gpumd_input_write():
@@ -345,39 +345,38 @@ def test_gpumd_input_write():
         readback = io.read('xyz.in')
         assert np.allclose(atoms.positions, readback.positions)
         assert np.allclose(atoms.cell, readback.cell)
-        assert np.arrays_equal(atoms.numbers, readback.numbers)
+        assert np.array_equal(atoms.numbers, readback.numbers)
 
         # Test write and load with groupings
-        groupings = [[[i for i in i, s in
-                       enumerate(atoms.get_chemical_symbols()) if s == 'Ni'], 
-                      [i for i in i, s in
+        groupings = [[[i for i, s in
+                       enumerate(atoms.get_chemical_symbols()) if s == 'Ni'],
+                      [i for i, s in
                        enumerate(atoms.get_chemical_symbols()) if s == 'O']],
                      [[i] for i in range(len(atoms))]]
-        groups = [[[j for j, group in enumerate(groups) if i in group][0]
+        groups = [[[j for j, group in enumerate(grouping) if i in group][0]
                    for grouping in groupings] for i in range(len(atoms))]
         atoms.write('xyz.in', groupings=groupings)
         readback, input_parameters, _ = load_xyz_input_gpumd('xyz.in')
         assert input_parameters['num_of_groups'] == 2
         assert len(readback.info) == len(atoms)
-        assert all(np.arrays_equal(
-            readback.info[i]['groups'], np.array(groups(i))) for i in
-            range(len(atoms))
+        assert all(np.array_equal(
+            readback.info[i]['groups'], np.array(groups[i])) for i in
+            range(len(atoms)))
 
         # Test write and read with velocities
-        veloctities = np.array([[-0.3, 2.3, 0.7], [0.0, 0.3, 0.8],
-                                [-0.6, 0.9, 0.1], [-1.7, -0.1, -0.5],
-                                [-0.5, 0.0, 0.6], [-0.2, 0.1, 0.5],
-                                [-0.1, 1.4, -1.9], [-1.0, -0.5, -1.2]])
+        velocities = np.array([[-0.3, 2.3, 0.7], [0.0, 0.3, 0.8],
+                               [-0.6, 0.9, 0.1], [-1.7, -0.1, -0.5],
+                               [-0.5, 0.0, 0.6], [-0.2, 0.1, 0.5],
+                               [-0.1, 1.4, -1.9], [-1.0, -0.5, -1.2]])
         atoms.write('xyz.in', velocities=velocities)
         readback, input_parameters, _ = load_xyz_input_gpumd('xyz.in')
         assert input_parameters['has_velocity'] == 1
         assert len(readback.info) == len(atoms)
-        assert all(np.allclose(readback.info[i]['velocity'], velocities(i))
-                   for i in range(len(atoms))
+        assert all(np.allclose(readback.info[i]['velocity'], velocities[i])
+                   for i in range(len(atoms)))
 
     finally:
         os.unlink('xyz.in')
-
 
 
 if __name__ in ('__main__', 'test'):
