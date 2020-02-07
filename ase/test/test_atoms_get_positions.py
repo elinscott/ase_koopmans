@@ -22,9 +22,3 @@ def test_positions_wrapped(atoms=atoms):
 def test_wrapped_positions(atoms=atoms):
     atoms.wrap()
     assert np.allclose(positions_wrapped, atoms.get_positions())
-
-
-if __name__ == "__main__":
-    test_positions()
-    test_positions_wrapped()
-    test_wrapped_positions()
