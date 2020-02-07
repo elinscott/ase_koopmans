@@ -11,12 +11,10 @@ import pytest
 from ase import io
 from ase.io import formats
 from ase.build import bulk
-import unittest
 
 
 single = bulk('Au')
 multiple = [bulk('Fe'), bulk('Zn'), bulk('Li')]
-
 compressions = ['gz', 'bz2', 'xz']
 
 
@@ -36,7 +34,6 @@ def test_compression_write_single(ext):
     filename = 'single.xsf.{ext}'.format(ext=ext)
     io.write(filename, single)
     assert os.path.exists(filename)
-    os.unlink(filename)
 
 
 @pytest.mark.parametrize('ext', compressions)
@@ -50,7 +47,6 @@ def test_compression_read_write_single(ext):
     reread = io.read(filename)
     assert reread.get_chemical_symbols() == single.get_chemical_symbols()
     assert np.allclose(reread.positions, single.positions)
-    os.unlink(filename)
 
 
 @pytest.mark.parametrize('ext', compressions)
@@ -59,7 +55,6 @@ def test_compression_write_multiple(ext):
     filename = 'multiple.xyz.{ext}'.format(ext=ext)
     io.write(filename, multiple)
     assert os.path.exists(filename)
-    os.unlink(filename)
 
 
 @pytest.mark.parametrize('ext', compressions)
@@ -71,7 +66,6 @@ def test_compression_read_write_multiple(ext):
     reread = io.read(filename, ':')
     assert len(reread) == len(multiple)
     assert np.allclose(reread[-1].positions, multiple[-1].positions)
-    os.unlink(filename)
 
 
 @pytest.mark.parametrize('ext', compressions)
@@ -91,5 +85,3 @@ def test_modes(ext):
                 assert tmp.read() == b'some text'
             else:
                 assert tmp.read() == 'some text'
-
-    os.unlink(filename)
