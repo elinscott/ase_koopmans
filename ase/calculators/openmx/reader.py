@@ -120,6 +120,12 @@ def read_file(filename, debug=False):
             for key in param.list_bool_keys:
                 if key in line:
                     out_data[get_standard_key(key)] = read_list_bool(line)
+            for key in param.tuple_integer_keys:
+                if key in line:
+                    out_data[get_standard_key(key)] = read_tuple_integer(line)
+            for key in param.tuple_float_keys:
+                if key in line:
+                    out_data[get_standard_key(key)] = read_tuple_float(line)
             for key in param.matrix_keys:
                 if '<'+key in line:
                     out_data[get_standard_key(key)] = read_matrix(line, key, f)
@@ -358,8 +364,7 @@ def read_band_file(filename=None):
 
 def read_electron_valency(filename='H_CA13'):
     array = []
-    with open(os.path.join(os.environ['OPENMX_DFT_DATA_PATH'],
-                           'VPS/' + filename + '.vps'), 'r') as f:
+    with open(filename, 'r') as f:
         array = f.readlines()
         f.close()
     required_line = ''
@@ -497,15 +502,14 @@ def read_eigenvalues(line, f, debug=False):
     f.seek(current_line)  # Retrun to the original position
 
     kgrid = read_tuple_integer(line)
-    prind('scf.Kgrid is %d, %d, %d' % kgrid)
-
     line = f.readline()
     line = f.readline()
-    if '1' not in line:  # Non - Gamma point calculation
+    if kgrid != ():
         prind('Non-Gamma point calculation')
+        prind('scf.Kgrid is %d, %d, %d' % kgrid)
         gamma_flag = False
         f.seek(f.tell()+57)
-    else:                        # Gamma point calculation case
+    else:
         prind('Gamma point calculation')
         gamma_flag = True
 
@@ -737,8 +741,11 @@ def get_results(out_data=None, log_data=None, restart_data=None,
     return results
 
 
-def get_file_name(extension='.out', filename=None):
+def get_file_name(extension='.out', filename=None, absolute_directory=True):
     directory, prefix = os.path.split(filename)
     if directory == '':
         directory = os.curdir
-    return os.path.abspath(directory + '/' + prefix + extension)
+    if absolute_directory:
+        return os.path.abspath(directory + '/' + prefix + extension)
+    else:
+        return os.path.basename(directory + '/' + prefix + extension)

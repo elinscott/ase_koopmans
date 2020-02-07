@@ -44,7 +44,7 @@ CODATA = {
              '_amu': 1.6605402e-27},         # atomic mass unit, kg
 
     # CODATA 1998 taken from
-    # http://dx.doi.org/10.1103/RevModPhys.72.351
+    # https://doi.org/10.1103/RevModPhys.72.351
     '1998': {'_c': 299792458.,
              '_mu0': 4.0e-7 * pi,
              '_Grav': 6.673e-11,
@@ -57,7 +57,7 @@ CODATA = {
              '_amu': 1.66053873e-27},
 
     # CODATA 2002 taken from
-    # http://dx.doi.org/10.1103/RevModPhys.77.1
+    # https://doi.org/10.1103/RevModPhys.77.1
     '2002': {'_c': 299792458.,
              '_mu0': 4.0e-7 * pi,
              '_Grav': 6.6742e-11,
@@ -70,7 +70,7 @@ CODATA = {
              '_amu': 1.66053886e-27},
 
     # CODATA 2006 taken from
-    # http://dx.doi.org/10.1103/RevModPhys.80.633
+    # https://doi.org/10.1103/RevModPhys.80.633
     '2006': {'_c': 299792458.,
              '_mu0': 4.0e-7 * pi,
              '_Grav': 6.67428e-11,
@@ -83,7 +83,7 @@ CODATA = {
              '_amu': 1.660538782e-27},
 
     # CODATA 2010 taken from
-    # http://dx.doi.org/10.1103/RevModPhys.84.1527
+    # https://doi.org/10.1103/RevModPhys.84.1527
     '2010': {'_c': 299792458.,
              '_mu0': 4.0e-7 * pi,
              '_Grav': 6.67384e-11,

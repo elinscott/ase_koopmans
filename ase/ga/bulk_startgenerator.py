@@ -64,7 +64,7 @@ class StartGenerator(object):
 
             * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-32`__
 
-            __ http://dx.doi.org/10.1016/j.cpc.2010.06.007
+            __ https://doi.org/10.1016/j.cpc.2010.06.007
 
             This should be a dict specifying the relative probabilities
             for each split, written as tuples. For example,

@@ -10,7 +10,7 @@ from ase.db.table import Table, all_columns
 
 class Session:
     next_id = 1
-    sessions: Dict[int, 'Session'] = {}
+    sessions = {}
 
     def __init__(self, project_name: str):
         self.id = Session.next_id
