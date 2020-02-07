@@ -59,9 +59,3 @@ def test_scaled_wrapped(atoms=atoms):
         )
 
     Path(file).unlink()
-
-
-if __name__ == "__main__":
-    test_cartesian()
-    test_scaled()
-    test_scaled_wrapped()
