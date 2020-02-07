@@ -31,6 +31,7 @@ ase.geometry.cell
 ase.geometry.geometry
 ase.io.ulm
 ase.lattice
+ase.phasediagram
 ase.spacegroup.findsym
 ase.spacegroup.spacegroup
 ase.spacegroup.xtal
