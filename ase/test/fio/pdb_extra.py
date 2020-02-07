@@ -43,15 +43,12 @@ def test_pdb_read():
                           [-11.713, -201.677, 9.060]]
     expected_species = ['C', 'C', 'Si', 'O', 'C', 'Si']
 
-    try:
-        pdb_atoms = io.read('pdb_test.pdb')
-        assert len(pdb_atoms) == 6
-        assert np.allclose(pdb_atoms.cell, expected_cell)
-        assert np.allclose(pdb_atoms.positions, expected_positions)
-        assert pdb_atoms.get_chemical_symbols() == expected_species
-        assert 'occupancy' not in pdb_atoms.arrays
-    finally:
-        os.unlink('pdb_test.pdb')
+    pdb_atoms = io.read('pdb_test.pdb')
+    assert len(pdb_atoms) == 6
+    assert np.allclose(pdb_atoms.cell, expected_cell)
+    assert np.allclose(pdb_atoms.positions, expected_positions)
+    assert pdb_atoms.get_chemical_symbols() == expected_species
+    assert 'occupancy' not in pdb_atoms.arrays
 
 
 def test_pdb_read_with_arrays():
@@ -62,13 +59,10 @@ def test_pdb_read_with_arrays():
     expected_occupancy = [0.0, 0.0, 1.0, 0.4]
     expected_bfactor = [0.0, 0.0, 0.0, 38.51]
 
-    try:
-        pdb_atoms = io.read('pdb_test_2.pdb')
-        assert len(pdb_atoms) == 4
-        assert np.allclose(pdb_atoms.arrays['occupancy'], expected_occupancy)
-        assert np.allclose(pdb_atoms.arrays['bfactor'], expected_bfactor)
-    finally:
-        os.unlink('pdb_test_2.pdb')
+    pdb_atoms = io.read('pdb_test_2.pdb')
+    assert len(pdb_atoms) == 4
+    assert np.allclose(pdb_atoms.arrays['occupancy'], expected_occupancy)
+    assert np.allclose(pdb_atoms.arrays['bfactor'], expected_bfactor)
 
 
 if __name__ in ('__main__', 'test'):
