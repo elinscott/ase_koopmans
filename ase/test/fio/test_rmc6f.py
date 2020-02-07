@@ -254,18 +254,3 @@ def test_rmc6f_write_output():
     fmt = "%8d %s%14.6f %14.6f %14.6f %8d %8d %8d %8d \n"
     with open('output.rmc6f', 'w') as fileobj:
         io.rmc6f._write_output(fileobj, header_lines, data, fmt)
-
-
-# Tests
-test_rmc6f_read()
-test_rmc6f_write()
-test_rmc6f_write_with_order()
-test_rmc6f_write_with_triclinic_system()
-test_rmc6f_read_construct_regex()
-test_rmc6f_read_line_of_atoms_section_style_no_labels()
-test_rmc6f_read_line_of_atoms_section_style_labels()
-test_rmc6f_read_line_of_atoms_section_style_magnetic()
-test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell()
-test_rmc6f_read_process_rmc6f_lines_to_pos_and_cell_padded_whitespace()
-test_rmc6f_write_output_column_format()
-test_rmc6f_write_output()
