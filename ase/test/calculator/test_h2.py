@@ -1,4 +1,4 @@
-import unittest
+import pytest
 from ase.build import molecule
 from ase.calculators.calculator import get_calculator_class
 
@@ -8,8 +8,11 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001),
             'gpaw': dict(mode='lcao', basis='sz(dzp)', realspace=False),
             'cp2k': dict(auto_write=True, uks=True)}
 
+names = ['abinit', 'aims', 'gaussian', 'nwchem', 'cp2k']
 
-def h2dft(name):
+
+@pytest.mark.parametrize('name', names)
+def test_h2dft(name):
     Calculator = get_calculator_class(name)
     par = required.get(name, {})
     calc = Calculator(label=name, xc='LDA', **par)
@@ -43,10 +46,3 @@ def h2dft(name):
     calc = Calculator(label=label, atoms=h1, xc='LDA', **par)
     print(h1.get_potential_energy())
     print(Calculator.read_atoms(label).get_potential_energy())
-
-names = ['abinit', 'aims', 'gaussian', 'nwchem', 'cp2k']
-for name in names:
-    try:
-        h2dft(name)
-    except unittest.SkipTest:
-        pass
