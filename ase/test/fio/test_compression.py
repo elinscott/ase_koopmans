@@ -6,6 +6,7 @@ import os
 import os.path
 
 import numpy as np
+import pytest
 
 from ase import io
 from ase.io import formats
@@ -15,6 +16,8 @@ import unittest
 
 single = bulk('Au')
 multiple = [bulk('Fe'), bulk('Zn'), bulk('Li')]
+
+compressions = ['gz', 'bz2', 'xz']
 
 
 def test_get_compression():
@@ -27,7 +30,8 @@ def test_get_compression():
     assert formats.get_compression('crystal.cif') == ('crystal.cif', None)
 
 
-def test_compression_write_single(ext='gz'):
+@pytest.mark.parametrize('ext', compressions)
+def test_compression_write_single(ext):
     """Writing compressed file."""
     filename = 'single.xsf.{ext}'.format(ext=ext)
     io.write(filename, single)
@@ -35,7 +39,8 @@ def test_compression_write_single(ext='gz'):
     os.unlink(filename)
 
 
-def test_compression_read_write_single(ext='gz'):
+@pytest.mark.parametrize('ext', compressions)
+def test_compression_read_write_single(ext):
     """Re-reading a compressed file."""
     # Use xsf filetype as it needs to check the 'magic'
     # filetype guessing when reading
@@ -48,7 +53,8 @@ def test_compression_read_write_single(ext='gz'):
     os.unlink(filename)
 
 
-def test_compression_write_multiple(ext='gz'):
+@pytest.mark.parametrize('ext', compressions)
+def test_compression_write_multiple(ext):
     """Writing compressed file, with multiple configurations."""
     filename = 'multiple.xyz.{ext}'.format(ext=ext)
     io.write(filename, multiple)
@@ -56,7 +62,8 @@ def test_compression_write_multiple(ext='gz'):
     os.unlink(filename)
 
 
-def test_compression_read_write_multiple(ext='gz'):
+@pytest.mark.parametrize('ext', compressions)
+def test_compression_read_write_multiple(ext):
     """Re-reading a compressed file with multiple configurations."""
     filename = 'multiple.xyz.{ext}'.format(ext=ext)
     io.write(filename, multiple)
@@ -67,7 +74,8 @@ def test_compression_read_write_multiple(ext='gz'):
     os.unlink(filename)
 
 
-def test_modes(ext='gz'):
+@pytest.mark.parametrize('ext', compressions)
+def test_modes(ext):
     """Test the different read/write modes for a compression format."""
     filename = 'testrw.{ext}'.format(ext=ext)
     for mode in ['w', 'wb', 'wt']:
@@ -85,25 +93,3 @@ def test_modes(ext='gz'):
                 assert tmp.read() == 'some text'
 
     os.unlink(filename)
-
-
-if __name__ in ('__main__', 'test'):
-    test_get_compression()
-    # gzip
-    test_compression_write_single()
-    test_compression_read_write_single()
-    test_compression_write_multiple()
-    test_compression_read_write_multiple()
-    test_modes()
-    # bz2
-    test_compression_write_single('bz2')
-    test_compression_read_write_single('bz2')
-    test_compression_write_multiple('bz2')
-    test_compression_read_write_multiple('bz2')
-    test_modes('bz2')
-    # xz
-    test_compression_write_single('xz')
-    test_compression_read_write_single('xz')
-    test_compression_write_multiple('xz')
-    test_compression_read_write_multiple('xz')
-    test_modes('xz')
