@@ -61,37 +61,28 @@ def test_rmc6f_read():
     with open('input.rmc6f', 'w') as rmc6f_input_f:
         rmc6f_input_f.write(rmc6f_input_text)
 
-    try:
-        rmc6f_input_atoms = io.read('input.rmc6f')
-        assert len(rmc6f_input_atoms) == 7
-        assert rmc6f_input_atoms == rmc6f_atoms
-    finally:
-        os.unlink('input.rmc6f')
+    rmc6f_input_atoms = io.read('input.rmc6f')
+    assert len(rmc6f_input_atoms) == 7
+    assert rmc6f_input_atoms == rmc6f_atoms
 
 
 def test_rmc6f_write():
     """Test for writing rmc6f input file."""
     tol = 1e-5
-    try:
-        io.write('output.rmc6f', rmc6f_atoms)
-        readback = io.read('output.rmc6f')
-        assert np.allclose(rmc6f_atoms.positions, readback.positions, rtol=tol)
-        assert readback == rmc6f_atoms
-    finally:
-        os.unlink('output.rmc6f')
+    io.write('output.rmc6f', rmc6f_atoms)
+    readback = io.read('output.rmc6f')
+    assert np.allclose(rmc6f_atoms.positions, readback.positions, rtol=tol)
+    assert readback == rmc6f_atoms
 
 
 def test_rmc6f_write_with_order():
     """Test for writing rmc6f input file with order passed in."""
     tol = 1e-5
-    try:
-        io.write('output.rmc6f', rmc6f_atoms, order=['F', 'S'])
-        readback = io.read('output.rmc6f')
-        reordered_positions = np.vstack(
-            (rmc6f_atoms.positions[1:7], rmc6f_atoms.positions[0]))
-        assert np.allclose(reordered_positions, readback.positions, rtol=tol)
-    finally:
-        os.unlink('output.rmc6f')
+    io.write('output.rmc6f', rmc6f_atoms, order=['F', 'S'])
+    readback = io.read('output.rmc6f')
+    reordered_positions = np.vstack(
+        (rmc6f_atoms.positions[1:7], rmc6f_atoms.positions[0]))
+    assert np.allclose(reordered_positions, readback.positions, rtol=tol)
 
 
 def test_rmc6f_write_with_triclinic_system():
@@ -113,15 +104,13 @@ def test_rmc6f_write_with_triclinic_system():
     va = [5.143, 0.0, 0.0]
     vb = [0.015596, 5.382977, 0.0]
     vc = [-0.00364124, -0.101684, 14.901653]
-    try:
-        io.write('output.rmc6f', fe4o6)
-        readback = io.read('output.rmc6f')
-        assert np.allclose(fe4o6.positions, readback.positions, rtol=tol)
-        assert np.allclose(va, readback.cell[0], rtol=tol)
-        assert np.allclose(vb, readback.cell[1], rtol=tol)
-        assert np.allclose(vc, readback.cell[2], rtol=tol)
-    finally:
-        os.unlink('output.rmc6f')
+
+    io.write('output.rmc6f', fe4o6)
+    readback = io.read('output.rmc6f')
+    assert np.allclose(fe4o6.positions, readback.positions, rtol=tol)
+    assert np.allclose(va, readback.cell[0], rtol=tol)
+    assert np.allclose(vb, readback.cell[1], rtol=tol)
+    assert np.allclose(vc, readback.cell[2], rtol=tol)
 
 
 def test_rmc6f_read_construct_regex():
