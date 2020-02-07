@@ -334,11 +334,3 @@ def test_pw_input_write():
         assert np.allclose(bulk.positions, readback.positions)
     finally:
         os.unlink('espresso_test.pwi')
-
-
-
-if __name__ in ('__main__', 'test'):
-    test_pw_input()
-    test_pw_output()
-    test_pw_results_required()
-    test_pw_input_write()
