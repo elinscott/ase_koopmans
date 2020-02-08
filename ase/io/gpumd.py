@@ -1,5 +1,6 @@
 import numpy as np
 from ase.neighborlist import NeighborList
+from ase.utils import basestring
 from ase.data import atomic_masses, chemical_symbols
 from ase import Atoms, Atom
 
@@ -16,15 +17,15 @@ def find_nearest_value(array, value):
     return array[idx]
 
 
-def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
-                velocities=None, groupings=None, use_triclinic=False):
+def write_gpumd(fd, atoms, maximum_neighbors=None, cutoff=None,
+                groupings=None, use_triclinic=False):
     """
     Writes atoms into GPUMD input format.
 
     Parameters
     ----------
-    fileobj : file | str
-        File object or name of file to which to write atoms object
+    fileobj : file
+        File like object to which the atoms object should be written
     atoms : Atoms
         Input structure
     maximum_neighbors: int
@@ -33,8 +34,6 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
     cutoff: float
         Initial cutoff distance used for building the neighbor list (not
         relevant when using force constant potentials)
-    velocities: list[list[float]]
-        Initial velocity components for all atoms
     groupings : list[list[list[int]]]
         Groups into which the individual atoms should be divided in the form of
         a list of list of lists. Specifically, the outer list corresponds to
@@ -52,14 +51,11 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
     """
 
     # Check velocties parameter
-    if velocities is None:
+    if atoms.get_velocities() is None:
         has_velocity = 0
     else:
         has_velocity = 1
-        if len(velocities) != len(atoms):
-            raise ValueError('The number of velocities ({}) does not match the'
-                             ' number of atoms'
-                             ' ({})!'.format(len(velocities), len(atoms)))
+        velocities = atoms.get_velocities()
 
     # Check groupings parameter
     if groupings is None:
@@ -93,18 +89,18 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
     # Add header and cell parameters
     lines = []
     if atoms.cell.orthorhombic and not use_triclinic:
-        head_lines = ['{} {} {} 0 {} {}'.format(len(atoms), maximum_neighbors,
-                                                cutoff, has_velocity,
-                                                number_of_grouping_methods)]
-        head_lines.append((' {}' * 6)[1:].format(*atoms.pbc.astype(int),
-                                                 *atoms.cell.lengths()))
+        triclinic = 1
     else:
-        head_lines = ['{} {} {} 1 {} {}'.format(len(atoms), maximum_neighbors,
-                                                cutoff, has_velocity,
-                                                number_of_grouping_methods)]
-        head_lines.append((' {}' * 12)[1:].format(*atoms.pbc.astype(int),
-                                                  *atoms.cell[:].flatten()))
-    lines += head_lines
+        triclinic = 0
+    lines.append('{} {} {} {} {} {}'.format(len(atoms), maximum_neighbors,
+                                            cutoff, triclinic, has_velocity,
+                                            number_of_grouping_methods))
+    if triclinic:
+        lines.append((' {}' * 12)[1:].format(*atoms.pbc.astype(int),
+                                             *atoms.cell[:].flatten()))
+    else:
+        lines.append((' {}' * 6)[1:].format(*atoms.pbc.astype(int),
+                                            *atoms.cell.lengths()))
 
     # Create symbols-to-type map, i.e. integers starting at 0
     symbol_type_map = {}
@@ -116,7 +112,7 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
     for a, atm in enumerate(atoms):
         t = symbol_type_map[atm.symbol]
         line = (' {}' * 5)[1:].format(t, *atm.position, atm.mass)
-        if velocities is not None:
+        if has_velocity:
             line += (' {}' * 3).format(*velocities[a])
         if groupings is not None:
             for grouping in groupings:
@@ -127,13 +123,10 @@ def write_gpumd(fileobj, atoms, maximum_neighbors=None, cutoff=None,
         lines.append(line)
 
     # Write file
-    with open(fileobj, 'w') as f:
-        all_lines = '\n'.join(lines)
-        f.write(all_lines)
+    fd.write('\n'.join(lines))
 
 
-def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
-                         isotope_masses=None):
+def load_xyz_input_gpumd(fileobj, species_types=None, isotope_masses=None):
 
     """
     Read the structure input file for GPUMD and return an ase Atoms object
@@ -172,10 +165,11 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
                         isotope_masses.items() for mass in masses}
 
     # Read file
-    with open(fileobj, 'rb') as f:
-        first_line = np.genfromtxt(f, max_rows=1)
-        second_line = np.genfromtxt(f, max_rows=1)
-        xyz = np.genfromtxt(f)
+    if isinstance(fileobj, basestring):
+        fileobj = open(fileobj, 'rb')
+    first_line = np.genfromtxt(fileobj, max_rows=1)
+    second_line = np.genfromtxt(fileobj, max_rows=1)
+    xyz = np.genfromtxt(fileobj)
 
     # Parse first line
     input_parameters = {}
@@ -186,28 +180,29 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
         input_parameters[key] = typ(first_line[k])
 
     # Parse second line
-    pbc = second_line[:3].astype(int)
+    pbc = second_line[:3].astype(bool)
     if input_parameters['use_triclinic']:
         cell = second_line[3:].reshape((3, 3))
     else:
         cell = np.diag(second_line[3:])
 
-    # Initiate the ase Atoms object
-    info = dict()
-    atoms = Atoms()
-    atoms.set_pbc(pbc)
-    atoms.set_cell(cell)
-
+    # Initiate lists and dictionaries
+    atom_list = []
+    if input_parameters['has_velocity']:
+        velocities = []
+    if input_parameters['num_of_groups']:
+        info = dict()
     if species_types is not None:
         if len(species_types) > input_parameters['N']:
             raise ValueError('The number of species types ({}) exceeds the'
                              ' number of atom types'
                              ' {}'.format(len(species_types),
                                           input_parameters['N']))
-        type_symbol_map = {index: symbol for index, symbol in
-                           enumerate(species_types)}
+        type_symbol_map = dict(enumerate(species_types))
     else:
         type_symbol_map = {}
+
+    # Extract Atom objects from all rows
     for i, xyz_row in enumerate(xyz):
         # Determine the atomic species from the mass
         atom_type = xyz_row[0]
@@ -226,26 +221,28 @@ def load_xyz_input_gpumd(fileobj='xyz.in', species_types=None,
         position = xyz_row[1:4]
         symbol = type_symbol_map[atom_type]
         atom = Atom(symbol, position, mass=mass)
-        atoms.append(atom)
+        atom_list.append(atom)
 
         # Collect data regarding velocities and groups
-        data = dict()
         if input_parameters['has_velocity']:
-            data['velocity'] = xyz_row[5:8]
-            if input_parameters['num_of_groups']:
-                data['groups'] = xyz_row[8:].astype(int)
-        else:
-            if input_parameters['num_of_groups']:
-                data['groups'] = xyz_row[5:].astype(int)
-        info[i] = data
+            velocities.append(xyz_row[5:8])
+        if input_parameters['num_of_groups']:
+            start_col = 5 + 3 * input_parameters['has_velocity']
+            info[i] = {'groups': xyz_row[start_col:].astype(int)}
 
-    # Add data regarding velocities and groups
-    atoms.info = info
+    # Create an Atoms object from the list of Atom objects
+    atoms = Atoms(atom_list)
+    atoms.set_pbc(pbc)
+    atoms.set_cell(cell)
+    if input_parameters['has_velocity']:
+        atoms.set_velocities(velocities)
+    if input_parameters['num_of_groups']:
+        atoms.info = info
 
     return atoms, input_parameters, type_symbol_map
 
 
-def read_gpumd(fileobj='xyz.in', species_types=None, isotope_masses=None):
+def read_gpumd(fileobj, species_types=None, isotope_masses=None):
     """
     Read Atoms object from a GPUMD structure input file
 
