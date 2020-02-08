@@ -2,8 +2,6 @@
 # (which is also included in oi.py test case)
 # maintained by James Kermode <james.kermode@gmail.com>
 
-import os
-
 import numpy as np
 
 import ase.io

@@ -5,7 +5,6 @@ compliant with the specification.
 
 """
 
-import os
 import warnings
 
 import numpy as np

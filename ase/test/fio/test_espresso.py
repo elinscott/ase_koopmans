@@ -6,8 +6,6 @@ Implemented:
 
 """
 
-import os
-
 import numpy as np
 
 from ase import io

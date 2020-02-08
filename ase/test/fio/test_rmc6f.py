@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from ase import Atoms, io
 from ase.lattice.compounds import TRI_Fe2O3
