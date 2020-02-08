@@ -1,8 +1,6 @@
 """Check that reading and writing .con files is consistent."""
 
-import tempfile
 import os
-import shutil
 
 from numpy import array
 import ase
@@ -226,10 +224,9 @@ data = ase.Atoms('Cu96',
                  pbc=(True, True, True))
 
 
-tempdir = tempfile.mkdtemp()
-try:
+def test_eon_readwrite():
     # First, write a correct .con file and try to read it.
-    con_file = os.path.join(tempdir, 'pos.con')
+    con_file = 'pos.con'
     with open(con_file, 'w') as f:
         f.write(CON_FILE)
     box = ase.io.read(con_file, format='eon')
@@ -241,7 +238,7 @@ try:
 
     # Now that we know that reading a .con file works, we will write
     # one and read it back in.
-    out_file = os.path.join(tempdir, 'out.con')
+    out_file = 'out.con'
     ase.io.write(out_file, data, format='eon')
     data2 = ase.io.read(out_file, format='eon')
     # Check cell vectors.
@@ -250,5 +247,3 @@ try:
     # Check atom positions.
     # write: position check
     assert (abs(data2.positions - data.positions)).sum() < TOL
-finally:
-    shutil.rmtree(tempdir)
