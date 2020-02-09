@@ -2,7 +2,7 @@ import numpy as np
 from ase.neighborlist import NeighborList
 from ase.utils import basestring
 from ase.data import atomic_masses, chemical_symbols
-from ase import Atoms, Atom
+from ase import Atoms
 
 
 def find_nearest_index(array, value):
@@ -24,7 +24,7 @@ def write_gpumd(fd, atoms, maximum_neighbors=None, cutoff=None,
 
     Parameters
     ----------
-    fileobj : file
+    fd : file
         File like object to which the atoms object should be written
     atoms : Atoms
         Input structure
@@ -126,7 +126,7 @@ def write_gpumd(fd, atoms, maximum_neighbors=None, cutoff=None,
     fd.write('\n'.join(lines))
 
 
-def load_xyz_input_gpumd(fileobj, species_types=None, isotope_masses=None):
+def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
 
     """
     Read the structure input file for GPUMD and return an ase Atoms object
@@ -134,7 +134,7 @@ def load_xyz_input_gpumd(fileobj, species_types=None, isotope_masses=None):
 
     Parameters
     ----------
-    fileobj : file | str
+    fd : file | str
         File object or name of file from which to read the Atoms object
     species_types : List[str]
         List with the chemical symbols that correspond to each type, will take
@@ -160,53 +160,52 @@ def load_xyz_input_gpumd(fileobj, species_types=None, isotope_masses=None):
     ValueError
         Raised if the list of species is incompatible with the input file
     """
-    if isotope_masses is not None:
-        mass_symbols = {mass: symbol for symbol, masses in
-                        isotope_masses.items() for mass in masses}
-
     # Read file
-    if isinstance(fileobj, basestring):
-        fileobj = open(fileobj, 'rb')
-    first_line = np.genfromtxt(fileobj, max_rows=1)
-    second_line = np.genfromtxt(fileobj, max_rows=1)
-    xyz = np.genfromtxt(fileobj)
+    if isinstance(fd, basestring):
+        fd = open(fd)
 
     # Parse first line
+    first_line = next(fd)
+    print(first_line)
     input_parameters = {}
     keys = ['N', 'M', 'cutoff', 'use_triclinic', 'has_velocity',
             'num_of_groups']
     types = [float if key == 'cutoff' else int for key in keys]
     for k, (key, typ) in enumerate(zip(keys, types)):
-        input_parameters[key] = typ(first_line[k])
+        input_parameters[key] = typ(first_line.split()[k])
 
     # Parse second line
-    pbc = second_line[:3].astype(bool)
+    second_line = next(fd)
+    second_arr = np.array(second_line.split())
+    pbc = second_arr[:3].astype(bool)
     if input_parameters['use_triclinic']:
-        cell = second_line[3:].reshape((3, 3))
+        cell = second_arr[3:].astype(float).reshape((3, 3))
     else:
-        cell = np.diag(second_line[3:])
+        cell = np.diag(second_arr[3:].astype(float))
 
-    # Initiate lists and dictionaries
-    atom_list = []
-    if input_parameters['has_velocity']:
-        velocities = []
-    if input_parameters['num_of_groups']:
-        info = dict()
+    # Parse all remaining rows
+    n_rows = input_parameters['N']
+    n_columns = 5 + input_parameters['has_velocity'] * 3 +\
+        input_parameters['num_of_groups']
+    rest_lines = [next(fd) for _ in range(n_rows)]
+    rest_arr = np.array([line.split() for line in rest_lines])
+    assert rest_arr.shape == (n_rows, n_columns)
+
+    # Extract atom types, positions and masses
+    atom_types = rest_arr[:, 0].astype(int)
+    positions = rest_arr[:, 1:4].astype(float)
+    masses = rest_arr[:, 4].astype(float)
+
+    # Determine the atomic species
     if species_types is not None:
-        if len(species_types) > input_parameters['N']:
-            raise ValueError('The number of species types ({}) exceeds the'
-                             ' number of atom types'
-                             ' {}'.format(len(species_types),
-                                          input_parameters['N']))
         type_symbol_map = dict(enumerate(species_types))
     else:
         type_symbol_map = {}
-
-    # Extract Atom objects from all rows
-    for i, xyz_row in enumerate(xyz):
-        # Determine the atomic species from the mass
-        atom_type = xyz_row[0]
-        mass = xyz_row[4]
+    if isotope_masses is not None:
+        mass_symbols = {mass: symbol for symbol, masses in
+                        isotope_masses.items() for mass in masses}
+    symbols = []
+    for atom_type, mass in zip(atom_types, masses):
         if atom_type not in type_symbol_map:
             if isotope_masses is not None:
                 nearest_value = find_nearest_value(list(mass_symbols.keys()),
@@ -216,39 +215,31 @@ def load_xyz_input_gpumd(fileobj, species_types=None, isotope_masses=None):
                 symbol = chemical_symbols[
                     find_nearest_index(atomic_masses, mass)]
             type_symbol_map[atom_type] = symbol
+        else:
+            symbol = type_symbol_map[atom_type]
+        symbols.append(symbol) 
 
-        # Create and add an ase Atom object
-        position = xyz_row[1:4]
-        symbol = type_symbol_map[atom_type]
-        atom = Atom(symbol, position, mass=mass)
-        atom_list.append(atom)
-
-        # Collect data regarding velocities and groups
-        if input_parameters['has_velocity']:
-            velocities.append(xyz_row[5:8])
-        if input_parameters['num_of_groups']:
-            start_col = 5 + 3 * input_parameters['has_velocity']
-            info[i] = {'groups': xyz_row[start_col:].astype(int)}
-
-    # Create an Atoms object from the list of Atom objects
-    atoms = Atoms(atom_list)
-    atoms.set_pbc(pbc)
-    atoms.set_cell(cell)
+    # Create the Atoms object
+    atoms = Atoms(symbols=symbols, positions=positions, masses=masses, pbc=pbc,
+                  cell=cell)
     if input_parameters['has_velocity']:
+        velocities = rest_arr[:, 5:8].astype(float)
         atoms.set_velocities(velocities)
     if input_parameters['num_of_groups']:
-        atoms.info = info
+        start_col = 5 + 3 * input_parameters['has_velocity']
+        groups = rest_arr[:, start_col:].astype(int)
+        atoms.info = {i: {'groups': groups[i, :]} for i in range(n_rows)}
 
     return atoms, input_parameters, type_symbol_map
 
 
-def read_gpumd(fileobj, species_types=None, isotope_masses=None):
+def read_gpumd(fd, species_types=None, isotope_masses=None):
     """
     Read Atoms object from a GPUMD structure input file
 
     Parameters
     ----------
-    fileobj : file | str
+    fd : file | str
         File object or name of file from which to read the Atoms object
     species_types : List[str]
         List with the chemical symbols that correspond to each type, will take
@@ -270,4 +261,4 @@ def read_gpumd(fileobj, species_types=None, isotope_masses=None):
         Raised if the list of species is incompatible with the input file
     """
 
-    return load_xyz_input_gpumd(fileobj, species_types, isotope_masses)[0]
+    return load_xyz_input_gpumd(fd, species_types, isotope_masses)[0]

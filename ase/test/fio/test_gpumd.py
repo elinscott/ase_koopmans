@@ -15,8 +15,7 @@ from ase.io.gpumd import load_xyz_input_gpumd
 # This file is parsed correctly by GPUMD, since it include
 # among the examples distributed with the package, i.e.
 # GPUMD/examples/ex5/xyz.in
-gpumd_input_text = """
-15 1 0.1 0 0 1
+gpumd_input_text = """15 1 0.1 0 0 1
 1 1 1 16.2 16.2 16.2
 0 0.0993428 -0.0276529 0.129538 26.9815 0
 0 0.304606 1.97817 1.97817 26.9815 1
@@ -32,9 +31,7 @@ gpumd_input_text = """
 0 1.81346 2.18951 7.85583 26.9815 11
 0 0.0417727 -0.391934 11.8844 26.9815 12
 0 0.0393722 2.17269 14.2093 26.9815 13
-0 2.00187 -0.0602207 13.8793 26.9815 14
-"""
-
+0 2.00187 -0.0602207 13.8793 26.9815 14"""
 
 def test_read_gpumd_input():
     """Read GPUMD input file."""
