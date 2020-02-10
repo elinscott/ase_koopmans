@@ -276,7 +276,7 @@ F('findsym', 'FINDSYM-format', '+F'),
 F('gamessus-out', 'GAMESS-US output file', '1F',
   module='gamessus', magic=b'*GAMESS')
 F('gamessus-in', 'GAMESS-US input file', '1F',
-  module='gamessus', magic=b'*GAMESS')
+  module='gamessus')
 F('gaussian', 'Gaussian com (input) file', '1S',
   ext=['com', 'gjf']),
 F('gaussian-out', 'Gaussian output file', '1F',
