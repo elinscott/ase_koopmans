@@ -273,6 +273,10 @@ F('etsf', 'ETSF format', '1S'),
 F('exciting', 'exciting input', '1S',glob='input.xml'),
 F('extxyz', 'Extended XYZ file', '+F'),
 F('findsym', 'FINDSYM-format', '+F'),
+F('gamessus-out', 'GAMESS-US output file', '1F',
+  module='gamessus', magic=b'*GAMESS')
+F('gamessus-in', 'GAMESS-US input file', '1F',
+  module='gamessus', magic=b'*GAMESS')
 F('gaussian', 'Gaussian com (input) file', '1S',
   ext=['com', 'gjf']),
 F('gaussian-out', 'Gaussian output file', '1F',
