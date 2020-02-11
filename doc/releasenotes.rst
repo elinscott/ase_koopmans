@@ -27,6 +27,8 @@ Git master branch
 
 * Added :mod:`ORCA <ase.calculators.orca>` calculator.
 
+* Added :mod:`GAMESS-US <ase.calculators.gamess_us>` calculator.
+
 Version 3.19.0
 ==============
 
