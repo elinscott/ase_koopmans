@@ -34,12 +34,27 @@ def _write_geom(atoms):
     return '\n'.join(out)
 
 
+def _write_ecp(atoms, ecp):
+    out = [' $ECP']
+    for i, symbol in enumerate(atoms.symbols):
+        if i in ecp:
+            out.append(ecp[i])
+        elif symbol in ecp:
+            out.append(ecp[symbol])
+        else:
+            raise ValueError('Could not find an appropriate ECP for '
+                             'atom number {}!'.format(i))
+    out.append(' $END')
+    return '\n'.join(out)
+
+
 def write_gamess_us_in(fd, atoms, properties=None, **params):
     params = deepcopy(params)
 
     if properties is None:
         properties = ['energy']
 
+    # set RUNTYP from properties iff value not provided by the user
     contrl = params.pop('contrl', dict())
     if 'runtyp' not in contrl:
         if 'forces' in properties:
@@ -47,12 +62,19 @@ def write_gamess_us_in(fd, atoms, properties=None, **params):
         else:
             contrl['runtyp'] = 'energy'
 
-    # Set a default basis set, since GAMESS-US doesn't.
+    # effective core potentials
+    ecp = params.pop('ecp')
+    if ecp is not None and 'ecp' not in contrl:
+        contrl['ecp'] = 'READ'
+
+    # If no basis set is provided, use 3-21G by default.
     if 'basis' not in params:
         params['basis'] = dict(gbasis='N21', ngauss=3)
 
     out = [_write_block('contrl', contrl)]
     out += [_write_block(*item) for item in params.items()]
+    if ecp is not None:
+        out.append(_write_ecp(atoms, ecp))
     out.append(_write_geom(atoms))
     fd.write('\n\n'.join(out))
 
@@ -89,6 +111,11 @@ def read_gamess_us_out(fd):
         ematch = _energy_re.match(line)
         if ematch is not None:
             energy = float(ematch.group(1)) * Hartree
+
+        # Higher-level energy (e.g. coupled cluster)
+        # Supplants energy parsed above.
+        elif line.strip().startswith('THE FOLLOWING METHOD AND ENERGY'):
+            energy = float(fd.readline().strip().split()[-1]) * Hartree
 
         # Gradients
         elif _grad_re.match(line):
