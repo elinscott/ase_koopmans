@@ -28,7 +28,7 @@ def _write_block(name, args):
 def _write_geom(atoms):
     out = [' $DATA', atoms.get_chemical_formula(), 'C1']
     for atom in atoms:
-        out.append('{} {:>2} {:24.16e} {:24.16e} {:24.16e}'
+        out.append('{:<3} {:>3} {:20.13e} {:20.13e} {:20.13e}'
                    .format(atom.symbol, atom.number, *atom.position))
     out.append(' $END')
     return '\n'.join(out)
@@ -46,6 +46,10 @@ def write_gamess_us_in(fd, atoms, properties=None, **params):
             contrl['runtyp'] = 'gradient'
         else:
             contrl['runtyp'] = 'energy'
+
+    # Set a default basis set, since GAMESS-US doesn't.
+    if 'basis' not in params:
+        params['basis'] = dict(gbasis='N21', ngauss=3)
 
     out = [_write_block('contrl', contrl)]
     out += [_write_block(*item) for item in params.items()]
