@@ -55,8 +55,7 @@ def _calculate(spec, name):
                mixer={'beta': 0.6}),
         inputs('octopus', stdout="'stdout.log'", stderr="'stderr.log'"),
         inputs('openmx', energy_cutoff=350),
-        inputs('gamess_us', contrl={'scftyp': 'RHF'},
-               basis={'gbasis': 'N21', 'ngauss': 3}),
+        inputs('gamess_us'),
         pytest.param(inputs('siesta'), marks=pytest.mark.xfail),
     ],
     ids=lambda spec: spec.name)
