@@ -1,9 +1,12 @@
+import os
 import re
-import numpy as np
-
+from subprocess import Popen
 from copy import deepcopy
 
+import numpy as np
+
 from ase import Atoms
+from ase.utils import workdir
 from ase.units import Hartree, Bohr, Debye
 from ase.calculators.singlepoint import SinglePointCalculator
 
@@ -101,3 +104,25 @@ def read_gamessus_out(fd):
     atoms.calc = SinglePointCalculator(atoms, energy=energy,
                                        forces=forces, dipole=dipole)
     return atoms
+
+
+def clean_userscr(userscr, prefix):
+    for fname in os.listdir(userscr):
+        tokens = fname.split('.')
+        if tokens[0] == prefix and tokens[-1] != 'bak':
+            fold = os.path.join(userscr, fname)
+            os.rename(fold, fold + '.bak')
+
+
+def get_userscr(prefix, command):
+    prefix_test = prefix + '_test'
+    with workdir(prefix_test, mkdir=True):
+        command = command.replace('PREFIX', prefix_test)
+        Popen(command, shell=True).wait()
+
+        with open(prefix_test + '.log') as f:
+            for line in f:
+                if line.startswith('GAMESS supplementary output files'):
+                    return ' '.join(line.split(' ')[8:]).strip()
+
+    return None

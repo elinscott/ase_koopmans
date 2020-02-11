@@ -1,8 +1,7 @@
 import warnings
-import os
-from subprocess import Popen
 
 from ase.io import read, write
+from ase.io.gamessus import clean_userscr, get_userscr
 from ase.calculators.calculator import FileIOCalculator
 
 
@@ -21,7 +20,7 @@ class GAMESSUS(FileIOCalculator):
     def calculate(self, *args, **kwargs):
         if self.userscr is None:
             if 'rungms' in self.command:
-                self.userscr = self.get_userscr()
+                self.userscr = get_userscr(self.prefix, self.command)
 
         if self.userscr is None:
             warnings.warn("Could not determine USERSCR! "
@@ -29,7 +28,7 @@ class GAMESSUS(FileIOCalculator):
                           "this job. Please pass userscr to the GAMESSUS "
                           "Calculator if you run into problems!")
         else:
-            self.clean_userscr()
+            clean_userscr(self.userscr, self.prefix)
 
         FileIOCalculator.calculate(self, *args, **kwargs)
 
@@ -42,31 +41,3 @@ class GAMESSUS(FileIOCalculator):
         output = read(self.label + '.log')
         self.calc = output.calc
         self.results = output.calc.results
-
-    def get_userscr(self):
-        """Runs rungms without an input file to determine USERSCR"""
-        # I'm probably overthinking this, but what if prefix_test.inp exists?
-        # Keep appending _test until we get a name that doesn't exist.
-        prefix = self.prefix + '_test'
-        while os.path.exists(prefix + '.inp'):
-            prefix += '_test'
-
-        command = self.command.replace('PREFIX', prefix)
-        proc = Popen(command, shell=True, cwd=self.directory)
-        err = proc.wait()
-
-        with open(prefix + '.log') as f:
-            for line in f:
-                if line.startswith('GAMESS supplementary output files'):
-                    # in case USERSCR has spaces in it...
-                    return ' '.join(line.split(' ')[8:]).strip()
-        return None
-
-    def clean_userscr(self):
-        """Backs up any conflicting files in USERSCR"""
-        assert self.userscr is not None
-        for fname in os.listdir(self.userscr):
-            tokens = fname.split('.')
-            if tokens[0] == self.prefix and tokens[-1] != 'bak':
-                fold = os.path.join(self.userscr, fname)
-                os.rename(fold, fold + '.bak')
