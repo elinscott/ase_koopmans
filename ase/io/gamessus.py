@@ -81,7 +81,7 @@ def read_gamessus_out(fd):
         # Energy
         ematch = _energy_re.match(line)
         if ematch is not None:
-            energy = float(ematch.groups()[0]) * Hartree
+            energy = float(ematch.group(1)) * Hartree
 
         # Gradients
         elif _grad_re.match(line):
