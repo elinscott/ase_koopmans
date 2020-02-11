@@ -131,7 +131,11 @@ def read_gamess_us_punch(fd):
         elif line.strip().startswith('DIPOLE'):
             dipole = np.array(list(map(float, line.split()[1:]))) * Debye
         elif line.strip() == '$GRAD':
-            fd.readline()
+            # The gradient block also contains the energy, which we prefer
+            # over the energy obtained above because it is more likely to
+            # be consistent with the gradients. It probably doesn't actually
+            # make a difference though.
+            energy = float(fd.readline().split()[1]) * Hartree
             grad = []
             while line.strip() != '$END':
                 line = fd.readline()

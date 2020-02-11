@@ -139,6 +139,7 @@ special = {'cp2k': 'CP2K',
            'crystal': 'CRYSTAL',
            'ff': 'ForceField',
            'fleur': 'FLEUR',
+           'gamess_us': 'GAMESSUS',
            'gulp': 'GULP',
            'kim': 'KIM',
            'lammpsrun': 'LAMMPS',
@@ -179,8 +180,6 @@ def get_calculator_class(name):
         from ase.calculators.acemolecule import ACE as Calculator
     elif name == 'Psi4':
         from ase.calculators.psi4 import Psi4 as Calculator
-    elif name == 'gamess_us':
-        from ase.calculators.gamess_us import GAMESSUS as Calculator
     elif name in external_calculators:
         Calculator = external_calculators[name]
     else:

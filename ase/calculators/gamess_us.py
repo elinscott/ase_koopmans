@@ -8,7 +8,7 @@ from ase.calculators.calculator import FileIOCalculator
 
 class GAMESSUS(FileIOCalculator):
     implemented_properties = ['energy', 'forces', 'dipole']
-    command = 'rungms PREFIX.inp > PREFIX.log'
+    command = 'rungms PREFIX.inp > PREFIX.log 2> PREFIX.err'
     discard_results_on_any_change = True
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
