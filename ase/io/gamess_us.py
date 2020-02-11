@@ -34,7 +34,7 @@ def _write_geom(atoms):
     return '\n'.join(out)
 
 
-def write_gamessus_in(fd, atoms, properties=None, **params):
+def write_gamess_us_in(fd, atoms, properties=None, **params):
     params = deepcopy(params)
 
     if properties is None:
@@ -54,13 +54,13 @@ def write_gamessus_in(fd, atoms, properties=None, **params):
 
 
 _geom_re = re.compile(r'^\s*ATOM\s+ATOMIC\s+COORDINATES')
-_atom_re = re.compile(r'^\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
+_atom_re = re.compile(r'^\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*\n')
 _energy_re = re.compile(r'^\s*FINAL [\S\s]+ ENERGY IS\s+(\S+) AFTER')
 _grad_re = re.compile(r'^\s*GRADIENT OF THE ENERGY\s*')
 _dipole_re = re.compile(r'^\s+DX\s+DY\s+DZ\s+\/D\/\s+\(DEBYE\)')
 
 
-def read_gamessus_out(fd):
+def read_gamess_us_out(fd):
     atoms = None
     energy = None
     forces = None
@@ -103,6 +103,47 @@ def read_gamessus_out(fd):
 
     atoms.calc = SinglePointCalculator(atoms, energy=energy,
                                        forces=forces, dipole=dipole)
+    return atoms
+
+
+def read_gamess_us_punch(fd):
+    atoms = None
+    energy = None
+    forces = None
+    dipole = None
+    for line in fd:
+        if line.strip() == '$DATA':
+            symbols = []
+            pos = []
+            while line.strip() != '$END':
+                line = fd.readline()
+                atom = _atom_re.match(line)
+                if atom is None:
+                    # The basis set specification is interlaced with the
+                    # molecular geometry. We don't care about the basis
+                    # set, so ignore lines that don't match the pattern.
+                    continue
+                symbols.append(atom.group(1))
+                pos.append(list(map(float, atom.group(3, 4, 5))))
+            atoms = Atoms(symbols, np.array(pos))
+        elif line.startswith('E('):
+            energy = float(line.split()[1][:-1]) * Hartree
+        elif line.strip().startswith('DIPOLE'):
+            dipole = np.array(list(map(float, line.split()[1:]))) * Debye
+        elif line.strip() == '$GRAD':
+            fd.readline()
+            grad = []
+            while line.strip() != '$END':
+                line = fd.readline()
+                atom = _atom_re.match(line)
+                if atom is None:
+                    continue
+                grad.append(list(map(float, atom.group(3, 4, 5))))
+            forces = -np.array(grad) * Hartree / Bohr
+
+    atoms.calc = SinglePointCalculator(atoms, energy=energy, forces=forces,
+                                       dipole=dipole)
+
     return atoms
 
 
