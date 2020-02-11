@@ -46,6 +46,7 @@ Supported :mod:`Calculators <ase.calculators>`
 :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
+:mod:`GAMESS-US <ase.calculators.gamess_us>`
 Gaussian_
 :mod:`Grimme DFT-D3 <ase.calculators.dftd3>`
 :mod:`~ase.calculators.gulp`
