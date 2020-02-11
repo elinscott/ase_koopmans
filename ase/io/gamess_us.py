@@ -25,11 +25,19 @@ def _write_block(name, args):
     return '\n'.join(out)
 
 
-def _write_geom(atoms):
+def _write_geom(atoms, basis_spec):
     out = [' $DATA', atoms.get_chemical_formula(), 'C1']
-    for atom in atoms:
+    for i, atom in enumerate(atoms):
         out.append('{:<3} {:>3} {:20.13e} {:20.13e} {:20.13e}'
                    .format(atom.symbol, atom.number, *atom.position))
+        if basis_spec is not None:
+            basis = basis_spec.get(i)
+            if basis is None:
+                basis = basis_spec.get(atom.symbol)
+            if basis is None:
+                raise ValueError('Could not find an appropriate basis set '
+                                 'for atom number {}!'.format(i))
+            out += [basis, '']
     out.append(' $END')
     return '\n'.join(out)
 
@@ -63,19 +71,29 @@ def write_gamess_us_in(fd, atoms, properties=None, **params):
             contrl['runtyp'] = 'energy'
 
     # effective core potentials
-    ecp = params.pop('ecp')
-    if ecp is not None and 'ecp' not in contrl:
-        contrl['ecp'] = 'READ'
+    ecp = params.pop('ecp', None)
+    if ecp is not None and 'pp' not in contrl:
+        contrl['pp'] = 'READ'
 
     # If no basis set is provided, use 3-21G by default.
+    basis_spec = None
     if 'basis' not in params:
         params['basis'] = dict(gbasis='N21', ngauss=3)
+    else:
+        keys = set(params['basis'])
+        # Check if the user is specifying a literal per-atom basis.
+        # We assume they are passing a per-atom basis if the keys of the
+        # basis dict are atom symbols, or if they are atom indices, or
+        # a mixture of both.
+        if (keys.intersection(set(atoms.symbols))
+                or any(map(lambda x: isinstance(x, int), keys))):
+            basis_spec = params.pop('basis')
 
     out = [_write_block('contrl', contrl)]
     out += [_write_block(*item) for item in params.items()]
+    out.append(_write_geom(atoms, basis_spec))
     if ecp is not None:
         out.append(_write_ecp(atoms, ecp))
-    out.append(_write_geom(atoms))
     fd.write('\n\n'.join(out))
 
 
@@ -102,7 +120,7 @@ def read_gamess_us_out(fd):
                 if atom is None:
                     break
                 symbol, _, x, y, z = atom.groups()
-                symbols.append(symbol)
+                symbols.append(symbol.capitalize())
                 pos.append(list(map(float, [x, y, z])))
             atoms = Atoms(symbols, np.array(pos) * Bohr)
             continue
@@ -154,7 +172,7 @@ def read_gamess_us_punch(fd):
                     # molecular geometry. We don't care about the basis
                     # set, so ignore lines that don't match the pattern.
                     continue
-                symbols.append(atom.group(1))
+                symbols.append(atom.group(1).capitalize())
                 pos.append(list(map(float, atom.group(3, 4, 5))))
             atoms = Atoms(symbols, np.array(pos))
         elif line.startswith('E('):
