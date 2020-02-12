@@ -44,9 +44,9 @@ Examples
 ========
 
 Here is a command line example of how to optimize the geometry of a
-water mlecule using the PBE density functional::
+water molecule using the PBE density functional::
 
-  $ ase build H2O | ase run gamess_us -p "contrl={dfttyp: 'pbe'}" -f 0.02
+  $ ase build H2O | ase run gamess_us -p xc=PBE -f 0.02
   $ ase gui stdin.traj@-1 -tg "a(1,0,2),d(0,1)"
   102.59049267228833 1.0079388022627982
 
