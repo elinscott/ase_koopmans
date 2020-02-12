@@ -1,6 +1,5 @@
 import numpy as np
 
-from ase.utils import workdir
 from ase.build import molecule
 from ase.calculators.gamess_us import GAMESSUS
 
