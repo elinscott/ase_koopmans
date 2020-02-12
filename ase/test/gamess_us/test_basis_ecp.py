@@ -77,9 +77,8 @@ ecp['Cl'] = """CL-ECP GEN    10    2
      15.3439560       2       3.1831000"""
 
 
-def test_gamess_us_basis_ecp(tmp_path):
-    with workdir(str(tmp_path), mkdir=True):
-        atoms = molecule('NaCl')
-        atoms.calc = GAMESSUS(basis=basis, ecp=ecp, label='NaCl')
-        e = atoms.get_potential_energy()
-        np.testing.assert_allclose(e, -407.32054460869796, atol=1e-3, rtol=1e-3)
+def test_gamess_us_basis_ecp():
+    atoms = molecule('NaCl')
+    atoms.calc = GAMESSUS(basis=basis, ecp=ecp, label='NaCl')
+    e = atoms.get_potential_energy()
+    np.testing.assert_allclose(e, -407.32054460869796, atol=1e-3, rtol=1e-3)

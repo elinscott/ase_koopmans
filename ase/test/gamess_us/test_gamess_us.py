@@ -2,7 +2,6 @@ import pytest
 
 import numpy as np
 
-from ase.utils import workdir
 from ase.build import molecule
 from ase.calculators.gamess_us import GAMESSUS
 
@@ -29,13 +28,12 @@ grad = [True, True, True, True, False]
 
 
 @pytest.mark.parametrize('kwargs, eref, grad', zip(kwargs, erefs, grad))
-def test_gamess(water, tmp_path, kwargs, eref, grad):
-    with workdir(str(tmp_path), mkdir=True):
-        water.calc = GAMESSUS(**kwargs)
-        e = water.get_potential_energy()
-        if eref is not None:
-            assert abs(eref - e) < 1e-3
-        if grad:
-            f = water.get_forces()
-            f_numer = water.calc.calculate_numerical_forces(water, 1e-4)
-            np.testing.assert_allclose(f, f_numer, atol=1e-3, rtol=1e-3)
+def test_gamess(water, kwargs, eref, grad):
+    water.calc = GAMESSUS(**kwargs)
+    e = water.get_potential_energy()
+    if eref is not None:
+        assert abs(eref - e) < 1e-3
+    if grad:
+        f = water.get_forces()
+        f_numer = water.calc.calculate_numerical_forces(water, 1e-4)
+        np.testing.assert_allclose(f, f_numer, atol=1e-3, rtol=1e-3)

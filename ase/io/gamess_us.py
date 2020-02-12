@@ -1,6 +1,6 @@
 import os
 import re
-from subprocess import Popen
+from subprocess import call, TimeoutExpired
 from copy import deepcopy
 
 import numpy as np
@@ -79,16 +79,15 @@ def write_gamess_us_in(fd, atoms, properties=None, **params):
         contrl['dfttyp'] = _xc.get(xc.upper(), xc.upper())
 
     # Automatically determine multiplicity from magnetic moment
-    magmom_tot = int(atoms.get_initial_magnetic_moments().sum())
+    magmom_tot = int(round(atoms.get_initial_magnetic_moments().sum()))
     if 'mult' not in contrl:
         contrl['mult'] = abs(magmom_tot) + 1
 
     # Since we're automatically determining multiplicity, we also
     # need to automatically switch to UHF when the multiplicity
     # is not 1
-    mult = contrl['mult']
     if 'scftyp' not in contrl:
-        contrl['scftyp'] = 'rhf' if mult == 1 else 'uhf'
+        contrl['scftyp'] = 'rhf' if contrl['mult'] == 1 else 'uhf'
 
     # effective core potentials
     ecp = params.pop('ecp', None)
@@ -234,13 +233,19 @@ def clean_userscr(userscr, prefix):
 
 def get_userscr(prefix, command):
     prefix_test = prefix + '_test'
+    command = command.replace('PREFIX', prefix_test)
     with workdir(prefix_test, mkdir=True):
-        command = command.replace('PREFIX', prefix_test)
-        Popen(command, shell=True).wait()
+        try:
+            call(command, shell=True, timeout=2)
+        except TimeoutExpired:
+            pass
 
-        with open(prefix_test + '.log') as f:
-            for line in f:
-                if line.startswith('GAMESS supplementary output files'):
-                    return ' '.join(line.split(' ')[8:]).strip()
+        try:
+            with open(prefix_test + '.log') as f:
+                for line in f:
+                    if line.startswith('GAMESS supplementary output files'):
+                        return ' '.join(line.split(' ')[8:]).strip()
+        except FileNotFoundError:
+            return None
 
     return None
