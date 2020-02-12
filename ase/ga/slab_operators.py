@@ -96,10 +96,13 @@ def get_ordered_composition(syms, pools=None):
         pool_index = dict((sym, 0) for sym in set(syms))
     else:
         pool_index = {}
-        for sym in set(syms):
-            for i, pool in enumerate(pools):
-                if sym in pool:
-                    pool_index[sym] = i
+        for i, pool in enumerate(pools):
+            if isinstance(pool, str):
+                pool_index[pool] = i
+            else:
+                for sym in set(syms):
+                    if sym in pool:
+                        pool_index[sym] = i
     syms = [(sym, pool_index[sym], c)
             for sym, c in zip(*np.unique(syms, return_counts=True))]
     unique_syms, pn, comp = zip(
@@ -224,7 +227,8 @@ class SlabOperator(OffspringCreator):
 
 
 class CutSpliceSlabCrossover(SlabOperator):
-    def __init__(self, allowed_compositions=None, element_pools=None, verbose=False,
+    def __init__(self, allowed_compositions=None, element_pools=None,
+                 verbose=False,
                  num_muts=1, tries=1000, min_ratio=0.25,
                  distribution_correction_function=None):
         SlabOperator.__init__(self, verbose, num_muts,
@@ -334,6 +338,7 @@ class RandomCompositionMutation(SlabOperator):
                 self.descriptor + parent_message)
 
     def operate(self, atoms):
+        allowed_comps = self.allowed_compositions
         if self.allowed_compositions is None:
             n_elems = len(set(atoms.get_chemical_symbols()))
             n_atoms = len(atoms)
@@ -349,9 +354,9 @@ class RandomCompositionMutation(SlabOperator):
         # Choose the composition to change to
         for i, allowed in enumerate(allowed_comps):
             if comp == tuple(allowed):
+                allowed_comps = np.delete(allowed_comps, i, axis=0)
                 break
-        comps_to_choose_from = np.delete(allowed_comps, i, axis=0)
-        new_comp = random.choice(comps_to_choose_from)
+        new_comp = random.choice(allowed_comps)
         comp_diff = self.get_composition_diff(comp, new_comp)
 
         # Get difference from current composition
