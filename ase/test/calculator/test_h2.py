@@ -8,7 +8,7 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001),
             'gpaw': dict(mode='lcao', basis='sz(dzp)', realspace=False),
             'cp2k': dict(auto_write=True, uks=True)}
 
-names = ['abinit', 'aims', 'gaussian', 'nwchem', 'cp2k']
+names = ['abinit', 'aims', 'gamess_us', 'gaussian', 'nwchem', 'cp2k']
 
 
 @pytest.mark.parametrize('name', names)

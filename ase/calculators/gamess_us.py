@@ -47,7 +47,16 @@ class GAMESSUS(FileIOCalculator):
         Otherwise, `basis` is assumed to contain keywords for the $BASIS
         block, such as GBASIS and NGAUSS.
 
+        If a multiplicity is not set in contrl['mult'], the multiplicity
+        will be guessed based on the Atoms object's initial magnetic moments.
+
         The GAMESSUS calculator has some special keyword:
+
+        xc: str
+            The exchange-correlation functional to use for DFT calculations.
+            In most circumstances, setting xc is equivalent to setting
+            contrl['dfttyp']. xc will be ignored if a value has also
+            been provided to contrl['dfttyp'].
 
         userscr: str
             The location of the USERSCR directory specified in your

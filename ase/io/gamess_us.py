@@ -56,6 +56,9 @@ def _write_ecp(atoms, ecp):
     return '\n'.join(out)
 
 
+_xc = dict(LDA='SVWN')
+
+
 def write_gamess_us_in(fd, atoms, properties=None, **params):
     params = deepcopy(params)
 
@@ -69,6 +72,23 @@ def write_gamess_us_in(fd, atoms, properties=None, **params):
             contrl['runtyp'] = 'gradient'
         else:
             contrl['runtyp'] = 'energy'
+
+    # Support xc keyword for functional specification
+    xc = params.pop('xc', None)
+    if xc is not None and 'dfttyp' not in contrl:
+        contrl['dfttyp'] = _xc.get(xc.upper(), xc.upper())
+
+    # Automatically determine multiplicity from magnetic moment
+    magmom_tot = int(atoms.get_initial_magnetic_moments().sum())
+    if 'mult' not in contrl:
+        contrl['mult'] = abs(magmom_tot) + 1
+
+    # Since we're automatically determining multiplicity, we also
+    # need to automatically switch to UHF when the multiplicity
+    # is not 1
+    mult = contrl['mult']
+    if 'scftyp' not in contrl:
+        contrl['scftyp'] = 'rhf' if mult == 1 else 'uhf'
 
     # effective core potentials
     ecp = params.pop('ecp', None)
@@ -130,8 +150,12 @@ def read_gamess_us_out(fd):
         if ematch is not None:
             energy = float(ematch.group(1)) * Hartree
 
+        # MPn energy. Supplants energy parsed above.
+        elif line.strip().startswith('TOTAL ENERGY'):
+            energy = float(line.strip().split()[-1]) * Hartree
+
         # Higher-level energy (e.g. coupled cluster)
-        # Supplants energy parsed above.
+        # Supplants energies parsed above.
         elif line.strip().startswith('THE FOLLOWING METHOD AND ENERGY'):
             energy = float(fd.readline().strip().split()[-1]) * Hartree
 
