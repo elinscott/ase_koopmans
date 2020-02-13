@@ -1,9 +1,12 @@
+import pytest
+
 from ase.build import fcc111
 from ase.ga.slab_operators import (CutSpliceSlabCrossover,
                                    RandomCompositionMutation)
 
 
-def get_Cu_slab():
+@pytest.fixture
+def cu_slab():
     a = 1
     size = (2, 4, 3)
     p1 = fcc111('Cu', size, orthogonal=True, a=a)
@@ -11,13 +14,13 @@ def get_Cu_slab():
     return p1
 
 
-def test_cut_splice():
+def test_cut_splice(cu_slab):
     ratio = .4
     op = CutSpliceSlabCrossover(min_ratio=ratio)
-    p1 = get_Cu_slab()
+    p1 = cu_slab
     natoms = len(p1)
 
-    p2 = get_Cu_slab()
+    p2 = cu_slab.copy()
     p2.symbols = ['Au'] * natoms
 
     p2.info['confid'] = 2
@@ -35,15 +38,17 @@ def test_cut_splice():
     assert child.get_chemical_symbols().count('Au') == 12
 
 
-def test_random_mutation():
-    p1 = get_Cu_slab()
+def test_random_composition_mutation(cu_slab):
+    p1 = cu_slab
     p1.symbols[3] = 'Au'
     op = RandomCompositionMutation(element_pools=['Cu', 'Au'],
                                    allowed_compositions=[(12, 12),
                                                          (18, 6)])
     child, _ = op.get_new_individual([p1])
-    assert child.get_chemical_symbols().count('Au') in [6, 12]
+    no_Au = (child.symbols == 'Au').sum()
+    assert no_Au in [6, 12]
 
-
-if __name__ == "__main__":
-    test_random_mutation()
+    op = RandomCompositionMutation(element_pools=['Cu', 'Au'])
+    child2 = op.operate(child)
+    # Make sure we have gotten a new stoichiometry
+    assert (child2.symbols == 'Au').sum() != no_Au

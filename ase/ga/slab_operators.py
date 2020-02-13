@@ -339,7 +339,7 @@ class RandomCompositionMutation(SlabOperator):
 
     def operate(self, atoms):
         allowed_comps = self.allowed_compositions
-        if self.allowed_compositions is None:
+        if allowed_comps is None:
             n_elems = len(set(atoms.get_chemical_symbols()))
             n_atoms = len(atoms)
             allowed_comps = [c for c in permutations(range(1, n_atoms),
