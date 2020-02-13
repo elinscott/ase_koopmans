@@ -2,7 +2,9 @@ import pytest
 
 from ase.build import fcc111
 from ase.ga.slab_operators import (CutSpliceSlabCrossover,
-                                   RandomCompositionMutation)
+                                   RandomCompositionMutation,
+                                   RandomElementMutation,
+                                   NeighborhoodElementMutation)
 
 
 @pytest.fixture
@@ -52,3 +54,19 @@ def test_random_composition_mutation(cu_slab):
     child2 = op.operate(child)
     # Make sure we have gotten a new stoichiometry
     assert (child2.symbols == 'Au').sum() != no_Au
+
+
+def test_random_element_mutation(cu_slab):
+    op = RandomElementMutation(element_pools=[['Cu', 'Au']])
+
+    child, desc = op.get_new_individual([cu_slab])
+
+    assert (child.symbols == 'Au').sum() == 24
+
+
+def test_neighborhood_element_mutation(cu_slab):
+    op = NeighborhoodElementMutation(element_pools=[['Cu', 'Ni', 'Au']])
+
+    child, desc = op.get_new_individual([cu_slab])
+
+    assert (child.symbols == 'Ni').sum() == 24
