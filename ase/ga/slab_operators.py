@@ -8,7 +8,7 @@ from itertools import permutations
 import numpy as np
 
 from ase.ga.offspring_creator import OffspringCreator
-from ase.ga.element_mutations import get_row_column
+from ase.ga.element_mutations import get_periodic_table_distance
 
 try:
     import spglib
@@ -427,15 +427,10 @@ class NeighborhoodElementMutation(SlabOperator):
         return (self.finalize_individual(indi),
                 self.descriptor + parent_message)
 
-    def get_periodic_table_distance(self, s1, s2):
-        rc1 = np.array(get_row_column(s1))
-        rc2 = np.array(get_row_column(s2))
-        return sum(np.abs(rc1 - rc2))
-
     def operate(self, atoms):
         least_diff = 1e22
         for mut in self.get_all_element_mutations(atoms):
-            dist = self.get_periodic_table_distance(*mut)
+            dist = get_periodic_table_distance(*mut)
             if dist < least_diff:
                 poss_muts = [mut]
                 least_diff = dist

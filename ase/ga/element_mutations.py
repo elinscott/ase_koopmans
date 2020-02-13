@@ -15,6 +15,7 @@ def chunks(l, n):
 class ElementMutation(OffspringCreator):
     """The base class for all operators where the elements
     of the atoms objects are mutated"""
+
     def __init__(self, element_pool, max_diff_elements,
                  min_percentage_elements, verbose, num_muts=1):
         OffspringCreator.__init__(self, verbose, num_muts=num_muts)
@@ -124,6 +125,7 @@ class RandomElementMutation(ElementMutation):
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
                  min_percentage_elements=None, verbose=False,
                  num_muts=1):
@@ -187,6 +189,12 @@ def get_row_column(element):
                     return i, 3
 
 
+def get_periodic_table_distance(e1, e2):
+    rc1 = np.array(get_row_column(e1))
+    rc2 = np.array(get_row_column(e2))
+    return sum(np.abs(rc1 - rc2))
+
+
 class MoveDownMutation(ElementMutation):
     """
     Mutation that exchanges an element with an element one step
@@ -225,6 +233,7 @@ class MoveDownMutation(ElementMutation):
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
                  min_percentage_elements=None, verbose=False,
                  num_muts=1):
@@ -315,6 +324,7 @@ class MoveUpMutation(ElementMutation):
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
                  min_percentage_elements=None, verbose=False, num_muts=1):
         ElementMutation.__init__(self, element_pool, max_diff_elements,
@@ -405,6 +415,7 @@ class MoveRightMutation(ElementMutation):
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
                  min_percentage_elements=None, verbose=False, num_muts=1):
         ElementMutation.__init__(self, element_pool, max_diff_elements,
@@ -493,6 +504,7 @@ class MoveLeftMutation(ElementMutation):
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
                  min_percentage_elements=None, verbose=False, num_muts=1):
         ElementMutation.__init__(self, element_pool, max_diff_elements,
@@ -559,6 +571,7 @@ class FullElementMutation(OffspringCreator):
         grouped if the individual consist of different types of elements.
         The list should then be a list of lists e.g. [[list1], [list2]]
     """
+
     def __init__(self, element_pool, verbose=False, num_muts=1):
         OffspringCreator.__init__(self, verbose, num_muts=num_muts)
         self.descriptor = 'FullElementMutation'
