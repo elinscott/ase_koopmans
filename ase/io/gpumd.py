@@ -1,6 +1,5 @@
 import numpy as np
 from ase.neighborlist import NeighborList
-from ase.utils import basestring
 from ase.data import atomic_masses, chemical_symbols
 from ase import Atoms
 
@@ -89,9 +88,9 @@ def write_gpumd(fd, atoms, maximum_neighbors=None, cutoff=None,
     # Add header and cell parameters
     lines = []
     if atoms.cell.orthorhombic and not use_triclinic:
-        triclinic = 1
-    else:
         triclinic = 0
+    else:
+        triclinic = 1
     lines.append('{} {} {} {} {} {}'.format(len(atoms), maximum_neighbors,
                                             cutoff, triclinic, has_velocity,
                                             number_of_grouping_methods))
@@ -213,7 +212,7 @@ def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
             type_symbol_map[atom_type] = symbol
         else:
             symbol = type_symbol_map[atom_type]
-        symbols.append(symbol) 
+        symbols.append(symbol)
 
     # Create the Atoms object
     atoms = Atoms(symbols=symbols, positions=positions, masses=masses, pbc=pbc,
