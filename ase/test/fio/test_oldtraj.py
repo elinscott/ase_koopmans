@@ -27,18 +27,13 @@ def write():
     print('data = {!r}  # noqa'.format(data))
 
 
-def test():
+def test_oldtraj():
     Path('old.traj').write_bytes(b64decode(data))
     a1, a2 = read('old.traj@:')
     assert len(a1.constraints) == 1
     assert len(a2.constraints) == 0
     assert not a1.pbc.any()
     assert a2.pbc.all()
-
-
-if __name__ == '__main__':
-    # write()
-    test()
 
 
 # base64 encoded old traj file with 2 images:

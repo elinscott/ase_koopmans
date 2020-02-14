@@ -1,5 +1,4 @@
-import unittest
-
+import pytest
 from ase.build import bulk
 from ase.dft.bandgap import bandgap
 from ase.calculators.calculator import get_calculator_class
@@ -14,8 +13,12 @@ required = {'abinit': dict(ecut=200, toldfe=0.0001, chksymbreak=0),
             'elk': dict(tasks=0, rgkmax=5.0),
             'gpaw': dict(mode='pw')}
 
+# XXX This test is in shambles, it's broken for several calculators.
+# Not sure whether it works for *any* calculator.
+# Someone should rehabilitate this, or we delete it.  --askhl
 
-def run(name):
+@pytest.mark.parametrize('name', ['aims', 'elk', 'openmx'])
+def test_bandgap(name):
     Calculator = get_calculator_class(name)
     par = required.get(name, {})
     calc = Calculator(label=name + '_bandgap', xc='PBE',
@@ -42,13 +45,3 @@ def run(name):
     si.set_calculator(calc)
     si.get_potential_energy()
     print(name, bandgap(si.calc))
-
-
-# gpaw does not conform to the new ase interface standard:
-# XXX abinit not working for some reason.  We should probably fix that.
-names = ['aims', 'elk', 'openmx']
-for name in names:
-    try:
-        run(name)
-    except unittest.SkipTest:
-        pass

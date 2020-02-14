@@ -9,7 +9,6 @@ or VASP_SCRIPT environment variables
 
 import filecmp
 import os
-import shutil
 
 from ase.test.vasp import installed2 as installed
 
@@ -89,7 +88,3 @@ assert not os.path.isfile(os.path.join(calc.directory, file3))
 
 # Check that we loaded energy correctly
 assert en1 == en2
-
-# Clean up
-shutil.rmtree(testdir)  # Remove dummy directory (non-empty)
-os.remove(file2)

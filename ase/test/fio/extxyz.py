@@ -2,8 +2,6 @@
 # (which is also included in oi.py test case)
 # maintained by James Kermode <james.kermode@gmail.com>
 
-import os
-
 import numpy as np
 
 import ase.io
@@ -27,15 +25,11 @@ ase.io.write('to_new.xyz', at, format='extxyz')
 at_new = ase.io.read('to_new.xyz')
 assert at_new.arrays['ns_extra_data'].shape == (2,)
 
-os.unlink('to.xyz')
-os.unlink('to_new.xyz')
-
 #test comment read/write with vec_cell
 at.info['comment'] = 'test comment'
 ase.io.write('comment.xyz', at, comment=at.info['comment'], vec_cell=True)
 r = ase.io.read('comment.xyz')
 assert at == r
-os.unlink('comment.xyz')
 
 # write sequence of images with different numbers of atoms -- bug fixed
 # in commit r4542
@@ -57,7 +51,6 @@ cell[-2] = [0.0, 0.0, 0.0]
 images[2].set_cell(cell)
 read_images = ase.io.read('multi.xyz', index=':')
 assert read_images == images
-os.unlink('multi.xyz')
 # also test for vec_cell with whitespaces
 f = open('structure.xyz', 'w')
 f.write("""1
@@ -73,7 +66,6 @@ f.close()
 a = ase.io.read('structure.xyz',index=0)
 b = ase.io.read('structure.xyz',index=1)
 assert a == b
-os.unlink('structure.xyz')
 
 # read xyz containing trailing blank line
 # also test for upper case elements
@@ -89,7 +81,6 @@ C         -7.28250        4.71303       -3.82016
 f.close()
 a = ase.io.read('structure.xyz')
 assert a[0].symbol == 'Mg'
-os.unlink('structure.xyz')
 
 # read xyz with / and @ signs in key value
 f = open('slash.xyz', 'w')
@@ -106,14 +97,12 @@ assert a.info['key1'] == r'a'
 assert a.info['key2'] == r'a/b'
 assert a.info['key3'] == r'a@b'
 assert a.info['key4'] == r'a@b'
-os.unlink('slash.xyz')
 
 struct = Atoms('H4', pbc=[True, True, True],
                 cell=[[4.00759, 0.0, 0.0], [-2.003795, 3.47067475, 0.0], [3.06349683e-16, 5.30613216e-16, 5.00307]], positions=[[-2.003795e-05, 2.31379473, 0.875437189], [2.00381504, 1.15688001, 4.12763281], [2.00381504, 1.15688001, 3.37697219], [-2.003795e-05, 2.31379473, 1.62609781]])
 struct.info = {'key_value_pairs': {'dataset': 'deltatest', 'kpoints': np.array([28, 28, 20]), 'identifier': 'deltatest_H_1.00'}, 'unique_id': '4cf83e2f89c795fb7eaf9662e77542c1'}
 
 ase.io.write('tmp.xyz', struct)
-os.unlink('tmp.xyz')
 
 # Complex properties line. Keys and values that break with a regex parser.
 # see https://gitlab.com/ase/ase/issues/53 for more info
@@ -214,8 +203,6 @@ if False:
         else:
             np.testing.assert_equal(complex_atoms.info[key], value)
 
-    os.unlink('complex.xyz')
-
 #write multiple atoms objects to one xyz
 frames = [at, at * (2, 1, 1), at * (3, 1, 1)]
 for atoms in frames:
@@ -228,6 +215,3 @@ readFrames = ase.io.read('append.xyz.gz',index=slice(0,None))
 assert readFrames == frames
 singleFrame = ase.io.read('not_append.xyz',index=slice(0,None))
 assert singleFrame[-1] == frames[-1]
-os.unlink('append.xyz')
-os.unlink('append.xyz.gz')
-os.unlink('not_append.xyz')

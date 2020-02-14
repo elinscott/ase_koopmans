@@ -23,6 +23,7 @@ class Dftb(FileIOCalculator):
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='dftb', atoms=None, kpts=None,
+                 slako_dir=None,
                  **kwargs):
         """
         All keywords for the dftb_in.hsd input file (see the DFTB+ manual)
@@ -81,10 +82,12 @@ class Dftb(FileIOCalculator):
             An external point charge potential (for QM/MM calculations)
         """
 
-        if 'DFTB_PREFIX' in os.environ:
-            self.slako_dir = os.environ['DFTB_PREFIX'].rstrip('/') + '/'
-        else:
-            self.slako_dir = './'
+        if slako_dir is None:
+            slako_dir = os.environ.get('DFTB_PREFIX', './')
+            if not slako_dir.endswith('/'):
+                slako_dir += '/'
+
+        self.slako_dir = slako_dir
 
         self.default_parameters = dict(
                 Hamiltonian_='DFTB',

@@ -154,16 +154,21 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
                     if num:
                         name = '{}_{{{}}}'.format(name, num)
                 if dimensions == 3:
-                    ax.text(x, y, z, '$' + name + '$',
+                    ax.text(x, y, z, '$\\mathrm{' + name + '}$',
                             ha='center', va='bottom', color='g')
                 elif dimensions == 2:
+                    ha_s = ['right', 'left', 'right']
+                    va_s = ['bottom', 'bottom', 'top']
+
+                    ha = ha_s[int(np.sign(x))]
+                    va = va_s[int(np.sign(y))]
                     if abs(z) < 1e-6:
-                        ax.text(x, y, '$' + name + '$',
-                                ha='right', va='bottom', color='g',
+                        ax.text(x, y, '$\\mathrm{' + name + '}$',
+                                ha=ha, va=va, color='g',
                                 zorder=5)
                 else:
                     if abs(y) < 1e-6 and abs(z) < 1e-6:
-                        ax.text(x, y, '$' + name + '$',
+                        ax.text(x, y, '$\\mathrm{' + name + '}$',
                                 ha='center', va='bottom', color='g',
                                 zorder=5)
 
@@ -175,9 +180,9 @@ def bz_plot(cell, vectors=False, paths=None, points=None,
             if dimensions == 3:
                 ax.scatter(p[0], p[1], p[2], **kw)
             elif dimensions == 2:
-                ax.scatter(p[0], p[1], c='b', zorder=4)
+                ax.scatter(p[0], p[1], zorder=4, **kw)
             else:
-                ax.scatter(p[0], 0, c='b', zorder=4)
+                ax.scatter(p[0], 0, zorder=4, **kw)
 
     ax.set_axis_off()
 

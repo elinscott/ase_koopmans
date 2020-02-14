@@ -139,9 +139,9 @@ class Pourbaix:
             kwargs = parse_formula(formula)[0]
 
         if 'O' not in kwargs:
-            kwargs['O'] = 1
+            kwargs['O'] = 0
         if 'H' not in kwargs:
-            kwargs['H'] = 1
+            kwargs['H'] = 0
 
         self.kT = units.kB * T
         self.references = []
@@ -181,7 +181,39 @@ class Pourbaix:
         concentration: float
             Concentration of solvated references.
 
-        Returns optimal coefficients and energy.
+        Returns optimal coefficients and energy:
+
+        >>> from ase.phasediagram import Pourbaix, solvated
+        >>> refs = solvated('CoO') + [
+        ...     ('Co', 0.0),
+        ...     ('CoO', -2.509),
+        ...     ('Co3O4', -9.402)]
+        >>> pb = Pourbaix(refs, Co=3, O=4)
+        >>> coefs, energy = pb.decompose(U=1.5, pH=0,
+        ...                              concentration=1e-6,
+        ...                              verbose=True)
+        0    HCoO2-(aq)    -3.974
+        1    CoO2--(aq)    -3.098
+        2    H2O(aq)       -2.458
+        3    CoOH+(aq)     -2.787
+        4    CoO(aq)       -2.265
+        5    CoOH++(aq)    -1.355
+        6    Co++(aq)      -0.921
+        7    H+(aq)         0.000
+        8    Co+++(aq)      1.030
+        9    Co             0.000
+        10   CoO           -2.509
+        11   Co3O4         -9.402
+        12   e-            -1.500
+        reference    coefficient      energy
+        ------------------------------------
+        H2O(aq)                4      -2.458
+        Co++(aq)               3      -0.921
+        H+(aq)                -8       0.000
+        e-                    -2      -1.500
+        ------------------------------------
+        Total energy:                 -9.596
+        ------------------------------------
         """
 
         alpha = np.log(10) * self.kT
@@ -214,7 +246,7 @@ class Pourbaix:
                 elif name == 'H+(aq)':
                     energy = -pH * alpha
             else:
-                bounds.append((0, 1))
+                bounds.append((0, np.inf))
                 if aq:
                     energy -= entropy
             if verbose:

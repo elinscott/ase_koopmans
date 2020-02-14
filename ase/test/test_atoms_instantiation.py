@@ -52,10 +52,3 @@ def _test_keywords(**kw):
         was_raised = True
 
     assert was_raised
-
-
-if __name__ == "__main__":
-    test_atoms()
-    test_symbols()
-    test_momenta()
-    test_positions()
