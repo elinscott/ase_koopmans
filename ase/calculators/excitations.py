@@ -1,7 +1,6 @@
 """Excitation lists base classes
 
 """
-import warnings
 import numpy as np
 
 from ase.parallel import world
@@ -199,19 +198,17 @@ def polarizability(exlist, omega, form='v',
         shape = (omega.shape,) if tensor == False
         shape = (omega.shape, 3, 3) else
     """
-    warnings.filterwarnings(action="error", category=np.ComplexWarning)
-    try:
-        om2 = np.array(omega, dtype=float)**2
-    except (TypeError, np.ComplexWarning):
+    omega = np.asarray(omega)
+    if omega.dtype == complex:
         om2 = np.array(omega, dtype=complex)**2
+    else:
+        om2 = np.array(omega, dtype=float)**2
 
     esc = exlist.energy_to_eV_scale
 
     if tensor:
-        try:
+        if not np.isscalar(om2):
             om2 = om2[:, None, None]
-        except IndexError:  # om2 is just a number
-            pass
         alpha = np.zeros(np.array(omega).shape + (3, 3),
                          dtype=om2.dtype)
         for ex in exlist:
