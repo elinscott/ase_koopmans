@@ -151,7 +151,7 @@ def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
         Atoms object
     input_parameters : Dict[str, int]
         Dictionary with parameters from the first row of the input file, namely
-        'N', 'M', 'cutoff', 'use_triclinic', 'has_velocity' and 'num_of_groups'
+        'N', 'M', 'cutoff', 'triclinic', 'has_velocity' and 'num_of_groups'
     type_symbol_map : Dict[int, str]
         Dictionary with types and the corresponding chemical symbols
 
@@ -160,15 +160,11 @@ def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
     ValueError
         Raised if the list of species is incompatible with the input file
     """
-    # Read file
-    if isinstance(fd, basestring):
-        fd = open(fd)
-
     # Parse first line
     first_line = next(fd)
     print(first_line)
     input_parameters = {}
-    keys = ['N', 'M', 'cutoff', 'use_triclinic', 'has_velocity',
+    keys = ['N', 'M', 'cutoff', 'triclinic', 'has_velocity',
             'num_of_groups']
     types = [float if key == 'cutoff' else int for key in keys]
     for k, (key, typ) in enumerate(zip(keys, types)):
@@ -178,7 +174,7 @@ def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
     second_line = next(fd)
     second_arr = np.array(second_line.split())
     pbc = second_arr[:3].astype(bool)
-    if input_parameters['use_triclinic']:
+    if input_parameters['triclinic']:
         cell = second_arr[3:].astype(float).reshape((3, 3))
     else:
         cell = np.diag(second_arr[3:].astype(float))
