@@ -37,7 +37,7 @@ def H2Morse(state=0):
     """Return H2 as a Morse-Potential with calculator attached."""
     atoms = Atoms('H2', positions=np.zeros((2, 3)))
     atoms[1].position[2] = Re[state]
-    atoms.set_calculator(H2MorseState(state))
+    atoms.calc = H2MorseState(state)
     atoms.get_potential_energy()
     return atoms
 

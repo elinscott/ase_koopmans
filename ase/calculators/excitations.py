@@ -69,28 +69,6 @@ class ExcitationList(list):
                 S[l] += e ** (-2 * l) * f
         return S
 
-    def set_calculator(self, calculator):
-        self.calculator = calculator
-
-    def __truediv__(self, x):
-        return self.__mul__(1. / x)
-
-    __div__ = __truediv__
-
-    def __rmul__(self, x):
-        return self.__mul__(x)
-
-    def __mul__(self, x):
-        """Multiply with a number"""
-        if isinstance(x, (float, int)):
-            result = self.__class__()
-            result.dtype = self.dtype
-            for kss in self:
-                result.append(x * kss)
-            return result
-        else:
-            return RuntimeError('not a number')
-
     def __sub__(self, other):
         result = self.__class__()
         result.dtype = self.dtype
@@ -105,18 +83,12 @@ class ExcitationList(list):
             string += ', %d excitations:' % len(self)
         string += '\n'
         for ex in self:
-            string += '#  ' + ex.__str__() + '\n'
+            string += '#  {}\n'.format(ex)
         return string
 
 
 class Excitation:
     """Base class for a single excited state"""
-    def get_energy(self):
-        """Get the excitations energy relative to the ground state energy
-        in eV.
-        """
-        return self.energy
-
     def get_dipole_me(self, form='r'):
         """return the excitations dipole matrix element
         including the occupation factor sqrt(fij)"""
