@@ -192,3 +192,14 @@ class H2Excitation(Excitation):
         if not hasattr(self, 'hash'):
             self.hash = hash(self.index)
         return self.hash
+
+
+class H2MorseExcitedStatesListAndCalculator(
+        H2MorseExcitedStatesCalculator, H2MorseExcitedStates):
+    """Traditional joined object"""
+    def __init__(self, calculator=None, *args, **kwargs):
+        if isinstance(calculator, str):
+            H2MorseExcitedStates(self, calculator, *args, **kwargs)
+        else:
+            excalc = H2MorseExcitedStatesCalculator(calculator)
+            self = excalc.calculate()

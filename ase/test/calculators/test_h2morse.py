@@ -3,7 +3,8 @@ import pytest
 from ase.vibrations import Vibrations
 from ase.calculators.h2morse import H2Morse, H2MorseState, Re, De, ome, Etrans
 from ase.calculators.h2morse import (H2MorseExcitedStatesCalculator,
-                                     H2MorseExcitedStates)
+                                     H2MorseExcitedStates,
+                                     H2MorseExcitedStatesListAndCalculator)
 
 
 def test_gs_minimum():
@@ -69,9 +70,21 @@ def test_excited_io():
         assert ex1.muv == pytest.approx(ex2.muv, 1e-5)
 
 
+def test_traditional():
+    """Check that traditional calling works"""
+    fname = 'exlist.dat'
+    atoms = H2Morse()
+    exc = H2MorseExcitedStatesCalculator()
+    exl1 = exc.calculate(atoms)
+    exl1.write(fname)
+
+    fname = 'exlist_old.dat'
+    exl0 = H2MorseExcitedStatesListAndCalculator(atoms.calc)
+    exl0.write(fname)
+
+
 def main():
-    test_excited_io()
-    test_excited_io()
+    test_traditional()
 
 
 if __name__ == '__main__':
