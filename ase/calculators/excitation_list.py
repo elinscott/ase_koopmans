@@ -41,6 +41,7 @@ class Excitation:
         return string
 
     def fromstring(self, string):
+        """Initialize yourself from a string"""
         l = string.split()
         energy = float(l.pop(0))
         index = int(l.pop(0))
