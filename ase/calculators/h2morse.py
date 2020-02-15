@@ -102,24 +102,47 @@ class H2MorseState(MorsePotential):
         return ov
 
 
-class H2MorseExcitedStates(ExcitationList):
+class H2MorseExcitedStatesCalculator():
     """First singlet excited state of H2 as Lennard-Jones potentials"""
-    def __init__(self, calculator, nstates=3):
+    def __init__(self, gscalculator=None, nstates=3, txt='-'):
+        """
+        Parameters
+        ----------
+        gscalculator: object
+          Calculator for ground state energies
+        nstates: int
+          Numer of states to calculate 0 < nstates < 4, default 3
+        txt:
+          output channel, default '-'
+        """
         assert nstates > 0 and nstates < 4
         self.nstates = nstates
-        ExcitationList.__init__(self, calculator)
+        self.gscalc = gscalculator
 
-    def calculate(self):
-        """Calculate excitation spectrum"""
+    def calculate(self, atoms):
+        """Calculate excitation spectrum
+
+        Parameters
+        ----------
+        atoms: Ase atoms object
+           Default None
+        """
         # central me value and rise, unit Bohr
         # from DOI: 10.1021/acs.jctc.9b00584
         mc = [0, 0.8, 0.7, 0.7]
         mr = [0, 1.0, 0.5, 0.5]
 
-        cgs = self.calculator
-        atoms = cgs.get_atoms()
+        if atoms is None:
+            atoms = self.gscalc.atoms
+        
+        if self.gscalc is not None:
+            cgs = self.gscalc
+        else:
+            cgs = atoms.calc
         r = atoms.get_distance(0, 1)
-        E0 = cgs.get_potential_energy()
+        E0 = cgs.get_potential_energy(atoms)
+        
+        exl = H2MorseExcitedStates()
         for i in range(1, self.nstates + 1):
             hvec = cgs.wfs[0] * cgs.wfs[i]
             energy = Ha * (0.5 - 1. / 8) - E0
@@ -130,10 +153,19 @@ class H2MorseExcitedStates(ExcitationList):
             mur = hvec * (mc[i] + (r - Re[0]) * mr[i])
             muv = mur
 
-            self.append(BasicExcitation(energy, i, mur, muv))
+            exl.append(BasicExcitation(energy, i, mur, muv))
+        return exl
+
+
+class H2MorseExcitedStates(ExcitationList):
+    """First singlet excited state of H2 as Lennard-Jones potentials"""
+    def __init__(self, filename=None, nstates=3):
+        self.nstates = nstates
+        if filename is not None:
+            self.read(filename)
 
     def overlap(self, ov_nn, other):
-        return (ov_nn[1:self.nstates + 1, 1:self.nstates + 1] *
+        return (ov_nn[1:len(self) + 1, 1:len(self) + 1] *
                 ov_nn[0, 0])
 
     def read(self, filename):
