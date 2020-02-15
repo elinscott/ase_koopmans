@@ -1,0 +1,132 @@
+import numpy as np
+
+from ase.units import Hartree, Bohr
+
+
+class Excitation:
+    """Base class for a single excitation"""
+    def __init__(self, energy=None, index=None,
+                 mur=None, muv=None, magn=None, string=None):
+        if string is not None:
+            self.fromstring(string)
+        else:
+            self.energy = energy
+            self.index = index
+            self.mur = mur
+            self.muv = muv
+            self.magn = magn
+        self.fij = 1.
+
+    def outstring(self):
+        """Format yourself as a string"""
+        string = '{0:g}  {1}  '.format(self.energy, self.index)
+
+        def format_me(me):
+            string = ''
+            if me.dtype == float:
+                for m in me:
+                    string += ' {0:g}'.format(m)
+            else:
+                for m in me:
+                    string += ' {0.real:g}{0.imag:+g}j'.format(m)
+            return string
+
+        string += '  ' + format_me(self.mur)
+        if self.muv is not None:
+            string += '  ' + format_me(self.muv)
+        if self.magn is not None:
+            string += '  ' + format_me(self.magn)
+        string += '\n'
+
+        return string
+
+    def get_dipole_me(self, form='r'):
+        """Return the excitations dipole matrix element
+        including the occupation factor sqrt(fij)"""
+        if form == 'r':  # length form
+            me = - self.mur
+        elif form == 'v':  # velocity form
+            me = - self.muv
+        else:
+            raise RuntimeError('Unknown form >' + form + '<')
+        return np.sqrt(self.fij) * me
+
+    def get_dipole_tensor(self, form='r'):
+        """Return the oscillator strength tensor"""
+        me = self.get_dipole_me(form)
+        return 2 * np.outer(me, me.conj()) * self.energy / Hartree
+
+    def get_oscillator_strength(self, form='r'):
+        """Return the excitations dipole oscillator strength."""
+        me2_c = self.get_dipole_tensor(form).diagonal().real
+        return np.array([np.sum(me2_c) / 3.] + me2_c.tolist())
+
+
+class ExcitationList(list):
+    """Base class for excitions from the ground state"""
+    def __init__(self, filename=None):
+        """
+        Parameters
+        ----------
+        filename: str or None
+          Filename to read, default None
+        """
+        # initialise empty list
+        super().__init__(self)
+        
+        # set default energy scale to get eV
+        self.energy_to_eV_scale = 1.
+
+        if filename is not None:
+            self.read(filename)
+
+
+def polarizability(exlist, omega, form='v',
+                   tensor=False, index=0):
+    """Evaluate the photon energy dependent polarizability
+    from the sum over states
+
+    Parameters
+    ----------
+    exlist: ExcitationList
+    omega:
+        Photon energy (eV)
+    form: {'v', 'r'}
+        Form of the dipole matrix element, default 'v'
+    index: {0, 1, 2, 3}
+        0: averaged, 1,2,3:alpha_xx, alpha_yy, alpha_zz, default 0
+    tensor: boolean
+        if True returns alpha_ij, i,j=x,y,z
+        index is ignored, default False
+
+    Returns
+    -------
+    alpha:
+        Unit (e^2 Angstrom^2 / eV).
+        Multiply with Bohr * Ha to get (Angstrom^3)
+        shape = (omega.shape,) if tensor == False
+        shape = (omega.shape, 3, 3) else
+    """
+    omega = np.asarray(omega)
+    if omega.dtype == complex:
+        om2 = np.array(omega, dtype=complex)**2
+    else:
+        om2 = np.array(omega, dtype=float)**2
+
+    esc = exlist.energy_to_eV_scale
+
+    if tensor:
+        if not np.isscalar(om2):
+            om2 = om2[:, None, None]
+        alpha = np.zeros(np.array(omega).shape + (3, 3),
+                         dtype=om2.dtype)
+        for ex in exlist:
+            alpha += ex.get_dipole_tensor(form=form) / (
+                (ex.energy * esc)**2 - om2)
+    else:
+        alpha = np.zeros_like(om2)
+        for ex in exlist:
+            alpha += ex.get_oscillator_strength(form=form)[index] / (
+                (ex.energy * esc)**2 - om2)
+
+    return alpha * Bohr**2 * Hartree

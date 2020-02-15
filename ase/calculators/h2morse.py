@@ -4,7 +4,7 @@ from ase.units import invcm, Ha
 from ase.data import atomic_masses
 from ase.calculators.calculator import all_changes
 from ase.calculators.morse import MorsePotential
-from ase.calculators.excitations import ExcitationList, Excitation
+from ase.calculators.excitation_list import Excitation, ExcitationList
 
 """The H2 molecule represented by Morse-Potentials for
 gound and first 3 excited singlet states B + C(doubly degenerate)"""
@@ -119,7 +119,7 @@ class H2MorseExcitedStatesCalculator():
         self.nstates = nstates
         self.gscalc = gscalculator
 
-    def calculate(self, atoms):
+    def calculate(self, atoms=None):
         """Calculate excitation spectrum
 
         Parameters
@@ -153,7 +153,7 @@ class H2MorseExcitedStatesCalculator():
             mur = hvec * (mc[i] + (r - Re[0]) * mr[i])
             muv = mur
 
-            exl.append(BasicExcitation(energy, i, mur, muv))
+            exl.append(H2Excitation(energy, i, mur, muv))
         return exl
 
 
@@ -161,8 +161,7 @@ class H2MorseExcitedStates(ExcitationList):
     """First singlet excited state of H2 as Lennard-Jones potentials"""
     def __init__(self, filename=None, nstates=3):
         self.nstates = nstates
-        if filename is not None:
-            self.read(filename)
+        ExcitationList.__init__(self, filename)
 
     def overlap(self, ov_nn, other):
         return (ov_nn[1:len(self) + 1, 1:len(self) + 1] *
@@ -174,7 +173,7 @@ class H2MorseExcitedStates(ExcitationList):
             self.filename = filename
             n = int(f.readline().split()[0])
             for i in range(min(n, self.nstates)):
-                self.append(BasicExcitation(string=f.readline()))
+                self.append(H2Excitation(string=f.readline()))
 
     def write(self, fname):
         with open(fname, 'w') as f:
@@ -183,20 +182,7 @@ class H2MorseExcitedStates(ExcitationList):
                 f.write(ex.outstring())
 
 
-class BasicExcitation(Excitation):
-    def __init__(self, energy=None, index=None,
-                 mur=None, muv=None, magn=None, string=None):
-        if string is not None:
-            self.fromstring(string)
-        else:
-            self.energy = energy
-            self.index = index
-            self.mur = mur
-            self.muv = muv
-            self.magn = magn
-        self.fij = 1.
-        self.me = - self.mur * np.sqrt(self.energy / Ha)
-
+class H2Excitation(Excitation):
     def __eq__(self, other):
         """Considered to be equal when their indices are equal."""
         return self.index == other.index
