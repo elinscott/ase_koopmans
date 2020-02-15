@@ -1,13 +1,13 @@
 import pytest
-from ase.calculators.excitations import polarizability
+from ase.calculators.excitation_list import polarizability
 from ase.calculators.h2morse import H2Morse
-from ase.calculators.h2morse import H2MorseExcitedStates
+from ase.calculators.h2morse import H2MorseExcitedStatesCalculator
 
 
-def test_polarizabilty():
-    """Test evaluation of polarizabily"""
+def test_shapes():
+    """Test evaluation of polarizabily and resulting shapes"""
     atoms = H2Morse()
-    exl = H2MorseExcitedStates(atoms.get_calculator())
+    exl = H2MorseExcitedStatesCalculator(atoms.calc).calculate()
 
     alphaf = polarizability(exl, range(2))
     assert alphaf.shape == (2, )
@@ -25,7 +25,7 @@ def test_polarizabilty():
 
 
 def main():
-    test_polarizabilty()
+    test_shapes()
 
 
 if __name__ == '__main__':
