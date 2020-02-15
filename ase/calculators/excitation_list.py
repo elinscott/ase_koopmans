@@ -40,6 +40,22 @@ class Excitation:
 
         return string
 
+    def fromstring(self, string):
+        l = string.split()
+        energy = float(l.pop(0))
+        index = int(l.pop(0))
+        mur = np.array([float(l.pop(0)) for i in range(3)])
+        try:
+            muv = np.array([float(l.pop(0)) for i in range(3)])
+        except IndexError:
+            muv = None
+        try:
+            magn = np.array([float(l.pop(0)) for i in range(3)])
+        except IndexError:
+            magn = None
+       
+        self.__init__(energy, index, mur, muv, magn)
+
     def get_dipole_me(self, form='r'):
         """Return the excitations dipole matrix element
         including the occupation factor sqrt(fij)"""

@@ -192,33 +192,3 @@ class H2Excitation(Excitation):
         if not hasattr(self, 'hash'):
             self.hash = hash(self.index)
         return self.hash
-
-    def outstring(self):
-        string = '{0:g}  {1}  '.format(self.energy, self.index)
-
-        def format_me(me):
-            string = ''
-            if me.dtype == float:
-                for m in me:
-                    string += ' {0:.5e}'.format(m)
-            else:
-                for m in me:
-                    string += ' {0.real:.5e}{0.imag:+.5e}j'.format(m)
-            return string
-
-        string += '  ' + format_me(self.mur)
-        if self.muv is not None:
-            string += '  ' + format_me(self.muv)
-        if self.magn is not None:
-            string += '  ' + format_me(self.magn)
-        string += '\n'
-
-        return string
-
-    def fromstring(self, string):
-        l = string.split()
-        energy = float(l.pop(0))
-        index = int(l.pop(0))
-        mur = np.array([float(l.pop(0)) for i in range(3)])
-        muv = np.array([float(l.pop(0)) for i in range(3)])
-        self.__init__(energy, index, mur, muv)
