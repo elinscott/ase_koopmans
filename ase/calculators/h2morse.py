@@ -194,12 +194,15 @@ class H2Excitation(Excitation):
         return self.hash
 
 
-class H2MorseExcitedStatesListAndCalculator(
+class H2MorseExcitedStatesAndCalculator(
         H2MorseExcitedStatesCalculator, H2MorseExcitedStates):
     """Traditional joined object"""
-    def __init__(self, calculator=None, *args, **kwargs):
+    def __init__(self, calculator=None, nstates=3):
         if isinstance(calculator, str):
-            H2MorseExcitedStates(self, calculator, *args, **kwargs)
+            H2MorseExcitedStates.__init__(self, calculator, nstates)
         else:
-            excalc = H2MorseExcitedStatesCalculator(calculator)
-            self = excalc.calculate()
+            excalc = H2MorseExcitedStatesCalculator(calculator, nstates)
+            exlist = excalc.calculate()
+            H2MorseExcitedStates.__init__(self, nstates=nstates)
+            for ex in exlist:
+                self.append(ex)

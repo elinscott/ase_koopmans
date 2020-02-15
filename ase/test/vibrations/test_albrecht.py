@@ -1,6 +1,6 @@
 import pytest
 
-from ase.calculators.h2morse import H2Morse, H2MorseExcitedStates
+from ase.calculators.h2morse import H2Morse, H2MorseExcitedStatesAndCalculator
 from ase.vibrations.albrecht import Albrecht
 
 
@@ -9,7 +9,7 @@ def test_overlap():
     atoms = H2Morse()
     om = 1
 
-    ao = Albrecht(atoms, H2MorseExcitedStates,
+    ao = Albrecht(atoms, H2MorseExcitedStatesAndCalculator,
                   gsname=name, exname=name,
                   overlap=lambda x, y: x.overlap(y),
                   approximation='Albrecht A', txt=None)
@@ -17,12 +17,14 @@ def test_overlap():
 
     """One state only"""
     
-    ao = Albrecht(atoms, H2MorseExcitedStates, exkwargs={'nstates': 1},
+    ao = Albrecht(atoms, H2MorseExcitedStatesAndCalculator,
+                  exkwargs={'nstates': 1},
                   gsname=name, exname=name, overlap=True,
                   approximation='Albrecht A', txt=None)
     aoi = ao.absolute_intensity(omega=om)[-1]
     
-    al = Albrecht(atoms, H2MorseExcitedStates, exkwargs={'nstates': 1},
+    al = Albrecht(atoms, H2MorseExcitedStatesAndCalculator,
+                  exkwargs={'nstates': 1},
                   gsname=name, exname=name,
                   approximation='Albrecht A', txt=None)
     ali = al.absolute_intensity(omega=om)[-1]
@@ -30,12 +32,12 @@ def test_overlap():
 
     """Include degenerate states"""
     
-    ao = Albrecht(atoms, H2MorseExcitedStates,
+    ao = Albrecht(atoms, H2MorseExcitedStatesAndCalculator,
                   gsname=name, exname=name, overlap=True,
                   approximation='Albrecht A', txt=None)
     aoi = ao.absolute_intensity(omega=om)[-1]
 
-    al = Albrecht(atoms, H2MorseExcitedStates,
+    al = Albrecht(atoms, H2MorseExcitedStatesAndCalculator,
                   gsname=name, exname=name,
                   approximation='Albrecht A', txt=None)
     ali = al.absolute_intensity(omega=om)[-1]
