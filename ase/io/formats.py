@@ -643,7 +643,7 @@ def iread(
         format: str = None,
         parallel: bool = True,
         do_not_split_by_at_sign: bool = False,
-        **kwargs,
+        **kwargs
 ) -> Iterable[Atoms]:
     """Iterator for reading Atoms objects from file.
 
