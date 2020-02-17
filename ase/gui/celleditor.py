@@ -37,7 +37,8 @@ class CellEditor:
                                   rounding=7, width=9))
             self.cell_grid.append(row)
             self.pbc.append(ui.CheckButton('', bool(pbc[i]), self.apply_pbc))
-            self.angles.append(ui.SpinBox(angles[i], -360, 360, 15, self.apply_angles,
+            self.angles.append(ui.SpinBox(angles[i], -360, 360, 15,
+                                          self.apply_angles,
                                           rounding=7, width=9))
 
         self.scale_atoms = ui.CheckButton('', False)
@@ -145,24 +146,27 @@ class CellEditor:
 
     def notify_atoms_changed(self):
         atoms = self.gui.atoms
+        self.update(atoms.cell, atoms.pbc)
 
-        cell = atoms.cell
-        mags = atoms.get_cell_lengths_and_angles()[0:3]
-        angles = atoms.get_cell_lengths_and_angles()[3:6]
-        pbc = atoms.pbc
+    def update(self, cell, pbc):
+        cell = Cell(cell)
+        mags = cell.lengths()
+        angles = cell.angles()
 
-        for i in [0, 1, 2]:
-            for j in [0, 1, 2]:
+        for i in range(3):
+            for j in range(3):
                 if np.isnan(cell[i][j]):
                     cell[i][j] = 0
                 self.cell_grid[i][j].value = cell[i][j]
 
             if np.isnan(mags[i]):
-                    mags[i] = 0
+                mags[i] = 0
             self.cell_grid[i][3].value = mags[i]
 
             if np.isnan(angles[i]):
-                    angles[i] = 0
+                angles[i] = 0
             self.angles[i].value = angles[i]
 
+            print('GRRR', self.pbc[i].var.get())
             self.pbc[i].var.set(bool(pbc[i]))
+            print('GRRR2', self.pbc[i].var.get())
