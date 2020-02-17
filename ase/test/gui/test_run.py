@@ -125,6 +125,23 @@ def test_add_atoms(gui):
     dia.add()
     assert str(gui.atoms.symbols) == str(molecule('CH3CH2OH').symbols)
 
+def test_cell_editor(gui):
+    from ase.build import bulk
+    au = bulk('Au')
+    gui.new_atoms(au.copy())
+
+    dia = gui.cell_editor()
+
+    ti = bulk('Ti')
+
+    for i in range(3):
+        for j in range(3):
+            dia.cell_grid[i][j].value = ti.cell[i, j]
+
+    dia.apply_vectors()
+    # Tolerance reflects the rounding (currently 7 digits)
+    assert np.abs(gui.atoms.cell - ti.cell).max() < 3e-7
+
 
 def window():
 

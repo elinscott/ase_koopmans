@@ -325,7 +325,7 @@ class GUI(View, Status):
 
     def cell_editor(self, key=None):
         from ase.gui.celleditor import CellEditor
-        CellEditor(self)
+        return CellEditor(self)
 
     def quick_info_window(self, key=None):
         from ase.gui.quickinfo import info
