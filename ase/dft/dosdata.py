@@ -8,6 +8,83 @@ Info = Dict[str, str]  # For now we will be strict about this. Perhaps later we
                        # will allow other types that have reliable comparison
                        # operations.
 
+def RawDOSData(DOSData):
+    """A collection of weighted delta functions which sum to form a DOS
+
+    This is an appropriate data container for DOS or spectral data where the
+    energy data values not form a known regular grid. The data may be plotted
+    or resampled for further analysis using the sample(), sample_grid() and
+    plot() methods. Multiple weights at the same energy value will _only_ be
+    combined in output data, and data stored in RawDOSData is never resampled.
+
+    Metadata may be stored in the info dict, in which keys and values must be
+    strings. This data is used for selecting and combining multiple DOSData
+    objects in a DOSCollection object.
+
+    When RawDOSData objects are combined with the addition operator::
+
+      big_dos = raw_dos_1 + raw_dos_2
+
+    the energy and weights data is _concatenated_ (i.e. combined without
+    sorting or replacement) and the new info dictionary consists of the
+    _intersection_ of the inputs: only key-value pairs that were common to both
+    of the input objects will be retained in the new combined object. For 
+    example:
+
+    (RawDOSData([x1], [y1], info={'symbol': 'O', 'index': '1'})
+     + RawDOSData([x2], [y2], info={'symbol': 'O', 'index': '2'})
+
+    will yield the equivalent of
+
+    RawDOSData([x1, x2], [y1, y2], info={'symbol': 'O'})
+
+    """
+    def __init__(self,
+                 energies: Sequence[float],
+                 weights: Sequence[float],
+                 info: Info = None) -> None:
+        super().__init__(info=info)
+
+        n_entries = len(energies)
+        if len(weights) != n_entries:
+            raise ValueError("Energies and weights must be the same length")
+
+        # Internally store the data as a np array with two rows; energy, weight
+        self._data = np.empty((2, n_entries), dtype=float, order='C')
+        self._data[0, :] = energies
+        self._data[1, :] = weights
+
+    def get_energies(self) -> Sequence[float]:
+        return self._data[0, :].copy()
+
+    def get_weights(self) -> Sequence[float]:
+        return self._data[1, :].copy()
+
+    def sample(self, x, width=0.1, smearing='Gauss'):
+        if width <= 0.0:
+            msg = 'Cannot add 0 or negative width smearing'
+            raise ValueError(msg)
+
+        weights_grid = np.dot(self.get_weights(),
+                              self.delta(x,
+                                         self.get_energies()[:, np.newaxis],
+                                         width,
+                                         smearing=smearing))
+        return weights_grid    
+
+    @staticmethod
+    def _delta(x, x0, width, smearing='Gauss'):
+        """Return a delta-function centered at 'x0'."""
+        if smearing.lower() == 'gauss':
+            x1 = -((x - x0) / width)**2
+            return np.exp(x1) / (np.sqrt(np.pi) * width)
+        else:
+            msg = 'Requested smearing type not recognized. Got {}'.format(
+                smearing)
+            raise ValueError(msg)
+
+
+
 def DOSData(object):
     """Abstract base class for a single series of DOS-like data"""
     def __init__(self,
