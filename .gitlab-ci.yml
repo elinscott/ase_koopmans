@@ -65,7 +65,9 @@ coverage:
     - pip install coverage
     - pip install --editable .
     - coverage run
+    - coverage report
     - coverage html
+  coverage: '/TOTAL.+ ([0-9]+%)/'
   artifacts:
     paths:
       - coverage-html/
