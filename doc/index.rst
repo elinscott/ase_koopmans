@@ -39,14 +39,13 @@ Supported :mod:`Calculators <ase.calculators>`
 
 |abinit| |Asap| |Atomistica| |CASTEP| |CP2K| |CRYSTAL| |deMon| |dftb|
 |dftd4| |elk| |exciting| |EMT|
-|fhi-aims| |fleur| |gpaw| |gromacs|
+|fhi-aims| |fleur| |gamess_us| |gpaw| |gromacs|
 |hotbit| |jdftx| |kim| |lammps| |nwchem|
 |octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
 |xtb| |orca|
 :mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
-:mod:`GAMESS-US <ase.calculators.gamess_us>`
 Gaussian_
 :mod:`Grimme DFT-D3 <ase.calculators.dftd3>`
 :mod:`~ase.calculators.gulp`
@@ -219,6 +218,9 @@ Contents
    :align: middle
 .. |fleur| image:: static/fleur.png
    :target: ase/calculators/fleur.html
+   :align: middle
+.. |gamess_us| image:: static/gamess_us.png
+   :target: ase/calculators/gamess_us.html
    :align: middle
 .. |gpaw| image:: static/gpaw.png
    :target: https://wiki.fysik.dtu.dk/gpaw/
