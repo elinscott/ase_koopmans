@@ -119,6 +119,13 @@ def test_fracocc(gui):
     gui.open(filename='fracocc.cif')
 
 
+def test_add_atoms(gui):
+    dia = gui.add_atoms()
+    dia.combobox.value = 'CH3CH2OH'
+    dia.add()
+    assert str(gui.atoms.symbols) == str(molecule('CH3CH2OH').symbols)
+
+
 def window():
 
     def hello(event=None):

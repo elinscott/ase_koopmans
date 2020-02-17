@@ -321,7 +321,7 @@ class GUI(View, Status):
 
     def add_atoms(self, key=None):
         from ase.gui.add import AddAtoms
-        AddAtoms(self)
+        return AddAtoms(self)
 
     def cell_editor(self, key=None):
         from ase.gui.celleditor import CellEditor
