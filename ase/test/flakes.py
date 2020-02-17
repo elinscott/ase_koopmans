@@ -46,32 +46,12 @@ def run_flake8():
         files[filename] += 1
         offenses[e] += [stdout_line]
 
-    # print('Bad files:')
-    # for f, n in sorted(files.items(), key=lambda i: i[1]):
-    #     print(f, n)
-
-    # print('\nmax_errors = {')
-    # for e, n in sorted(errors.items(), key=lambda i: i[1]):
-    #     print('    # {}\n    {!r}: {},'
-    #           .format(descriptions[e][6:], e, n))
-    # print('}')
-
     errmsg = ''
     for err, nerrs in errors.items():
         nmaxerrs = max_errors.get(err, 0)
         if nerrs <= nmaxerrs:
             continue
-    #        conclusion = 'OK'
-        #else:
-            #flakes.append(offenses[err])
-    #        conclusion = 'FAILED'
-    #        errmsg += ('Maximum number of flake8 errors exceeded: '
-    #                   '{} {} errors; max is {}.  '
-    #                   'Please run flake8 on your code and clean up.\n'
-    #                   .format(nerrs, err, nmaxerrs))
         errmsg += 'Offenses:\n' + '\n'.join(offenses[err]) + '\n'
-    #    print('{:4s}: errs={} max={}: {}'.format(err, nerrs, nmaxerrs,
-    #                                             conclusion))
 
     assert errmsg == '', errmsg
 
