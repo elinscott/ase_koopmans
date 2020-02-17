@@ -584,7 +584,7 @@ def read(
         index: Any = None,
         format: str = None,
         parallel: bool = True,
-        do_not_split_by_at_sign: bool =False,
+        do_not_split_by_at_sign: bool = False,
         **kwargs
 ) -> Union[Atoms, List[Atoms]]:
     """Read Atoms object(s) from file.
@@ -753,7 +753,7 @@ def string2index(string: str) -> Union[int, slice, str]:
 def filetype(
         filename: NameOrFile,
         read: bool = True,
-        guess: bool =True
+        guess: bool = True,
 ) -> str:
     """Try to guess the type of the file.
 
