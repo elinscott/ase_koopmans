@@ -72,17 +72,6 @@ coverage:
   only:
       - master
 
-# Supposed to be equivalent to 'main', except we run pytest directly on
-# the test files. Useful if something is wrong with 'ase test'.
-pytest:
-  image: registry.gitlab.com/ase/ase:ase-main
-  script:
-    - pip install --no-deps .
-    - pytest -v $CI_PROJECT_DIR/ase/test --color=yes
-    - cd $CI_PROJECT_DIR
-    - python -We:invalid -m compileall -f -q ase/
-  when: manual
-
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
 # issue with the gitlab runners.
