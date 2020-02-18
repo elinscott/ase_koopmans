@@ -62,10 +62,8 @@ Git master branch
 
 * Added :mod:`ORCA <ase.calculators.orca>` calculator.
 
-* Added :mod:`GAMESS-US <ase.calculators.gamess_us>` calculator. 
+* Added :mod:`GAMESS-US <ase.calculators.gamess_us>` calculator.
 
-* Standardized optimizer maximum step varibale name to maxstep and default value to 0.2 for all optimizers
-l
 Version 3.19.0
 ==============
 

@@ -13,7 +13,7 @@ class LBFGS(Optimizer):
 
     """
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 maxstep=0.2, memory=100, damping=1.0, alpha=70.0,
+                 maxstep=None, memory=100, damping=1.0, alpha=70.0,
                  use_line_search=False, master=None,
                  force_consistent=None):
         """Parameters:
@@ -36,7 +36,7 @@ class LBFGS(Optimizer):
         maxstep: float
             How far is a single atom allowed to move. This is useful for DFT
             calculations where wavefunctions can be reused if steps are small.
-            Default is 0.2 Angstrom.
+            Default is 0.04 Angstrom.
 
         memory: int
             Number of steps to be stored. Default value is 100. Three numpy
