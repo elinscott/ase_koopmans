@@ -164,9 +164,6 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
         info['unit_cell'] = 'primitive'
     else:
         info['unit_cell'] = 'conventional'
-
-    if kinds:
-        info['spacegroup_kinds'] = kinds
         
     if 'info' in kwargs:
         info.update(kwargs['info'])
@@ -189,6 +186,9 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
                 array = basis.get_array(name)
                 atoms.new_array(name, [array[i] for i in kinds],
                                 dtype=array.dtype, shape=array.shape[1:])
+                
+    if kinds:
+        atoms.new_array('spacegroup_kinds', np.asarray(kinds, dtype=int))
 
     if primitive_cell:
         from ase.build import cut
