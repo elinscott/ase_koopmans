@@ -350,11 +350,11 @@ class GUI(View, Status):
     def nanotube_window(self):
         return SetupNanotube(self)
 
-    def new_atoms(self, atoms, init_magmom=False):
+    def new_atoms(self, atoms):
         "Set a new atoms object."
         rpt = getattr(self.images, 'repeat', None)
         self.images.repeat_images(np.ones(3, int))
-        self.images.initialize([atoms], init_magmom=init_magmom)
+        self.images.initialize([atoms])
         self.frame = 0  # Prevent crashes
         self.images.repeat_images(rpt)
         self.set_frame(frame=0, focus=True)

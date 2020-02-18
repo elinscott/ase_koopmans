@@ -70,7 +70,7 @@ class Images:
         else:
             return F
 
-    def initialize(self, images, filenames=None, init_magmom=False):
+    def initialize(self, images, filenames=None):
         nimages = len(images)
         if filenames is None:
             filenames = [None] * nimages
