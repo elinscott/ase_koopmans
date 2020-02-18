@@ -8,7 +8,7 @@ from ase.optimize.optimize import Optimizer
 
 class BFGS(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 maxstep=0.04, master=None):
+                 maxstep=0.2, master=None):
         """BFGS optimizer.
 
         Parameters:
@@ -30,7 +30,7 @@ class BFGS(Optimizer):
 
         maxstep: float
             Used to set the maximum distance an atom can move per
-            iteration (default value is 0.04 Å).
+            iteration (default value is 0.2 Å).
 
         master: boolean
             Defaults to None, which causes only rank 0 to save files.  If

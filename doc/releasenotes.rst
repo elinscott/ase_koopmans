@@ -10,6 +10,8 @@ Git master branch
 
 :git:`master <>`.
 
+* Standardize optimizers maximum step variable name to maxstep and default value to 0.2 for all optimizers.
+
 * The ``ase db db1.db <selection> --insert-into db2.db`` command now respects
   ``--limit`` and ``--offset``.
 
