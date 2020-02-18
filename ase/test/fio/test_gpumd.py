@@ -83,13 +83,13 @@ def test_load_gpumd_input():
     input_parameters_ref = {'N': 16, 'M': 4, 'cutoff': 1.1,
                             'triclinic': 0, 'has_velocity': 1,
                             'num_of_groups': 2}
-    assert all(k in input_parameters for k in input_parameters_ref.keys())
+    assert all(k in input_parameters for k in input_parameters_ref)
     assert all(v == input_parameters[k] for k, v in
                input_parameters_ref.items())
     type_symbol_map_ref = {v: k for k, v in species_types.items()}
-    assert all(k in type_symbol_map for k in type_symbol_map_ref.keys())
-    assert all(v == type_symbol_map[k] for k, v in
-               type_symbol_map_ref.items())
+    assert all(k in type_symbol_map for k in type_symbol_map_ref)
+    assert all([v == type_symbol_map[k] for k, v in
+                type_symbol_map_ref.items()])
 
 
 def test_gpumd_input_write():
