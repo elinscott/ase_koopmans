@@ -17,7 +17,8 @@ import ase
 def filenames2modules(filenames):
     modules = []
     for filename in filenames:
-        module = str(filename).rsplit('.', 1)[0]
+        filename = Path(filename).as_posix()
+        module = filename.rsplit('.', 1)[0]
         module = module.replace('/', '.')
         if module == 'ase.data.tmxr200x':
             continue
