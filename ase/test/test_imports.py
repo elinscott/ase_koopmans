@@ -41,7 +41,8 @@ all_modules = filenames2modules(glob_modules())
 
 ignore_imports = {
     'flask', 'psycopg2', 'kimpy', 'pymysql', 'IPython',
-    'gpaw.lrtddft'  # ase.vibrations.placzek
+    'gpaw',  # ase.vibrations.placzek
+    'gpaw.lrtddft',  # ase.vibrations.placzek
 }
 
 
