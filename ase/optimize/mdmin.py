@@ -34,10 +34,13 @@ class MDMin(Optimizer):
 
         if dt is not None:
             self.dt = dt
+        if maxstep is not None:
+            self.maxstep = maxstep
 
     def initialize(self):
         self.v = None
-        self.dt = 0.2
+        self.dt = 0.2 
+        self.maxstep = 0.2
 
     def read(self):
         self.v, self.dt = self.load()
@@ -62,8 +65,8 @@ class MDMin(Optimizer):
 
         self.v += 0.5 * self.dt * f
         r = atoms.get_positions()
-        if (self.dt * self.v) <= maxstep:
+        if (self.dt * self.v) <= self.maxstep:
             atoms.set_positions(r + self.dt * self.v)
         else : 
-            atoms.set_positions(r + maxstep)
+            atoms.set_positions(r + self.maxstep)
         self.dump((self.v, self.dt))
