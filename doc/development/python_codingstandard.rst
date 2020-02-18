@@ -27,7 +27,8 @@ The project follows the generic coding conventions as
 specified in the `Style Guide for Python Code`_ and `Docstring
 Conventions`_ PEPs, clarified and extended as follows:
 
-* Do not use ``from module import *``.  Instead, list imports explicitly.
+* Do not use "``*``" imports such as ``from module import *``.  Instead,
+  list imports explicitly.
 
 * Use 4 spaces per indentation level.  No tabs.
 
