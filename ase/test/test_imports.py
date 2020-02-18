@@ -51,6 +51,5 @@ def test_imports():
         try:
             import_module(module)
         except ImportError as err:
-            modname = err.name
             if err.name not in ignore_imports:
                 raise
