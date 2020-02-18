@@ -56,7 +56,7 @@ def test_imports():
     for module in all_modules:
         try:
             import_module(module)
-        except SyntaxError as err:
+        except SyntaxError:
             if module not in newpy_only_modules:
                 raise
         except ImportError as err:
