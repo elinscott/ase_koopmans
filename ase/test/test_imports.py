@@ -46,12 +46,18 @@ ignore_imports = {
     'gpaw.lrtddft',  # ase.vibrations.placzek
 }
 
+newpy_only_modules = {
+    'ase.utils.build_web_page'
+}
 
 @pytest.mark.filterwarnings('ignore:Moved to')
 def test_imports():
     for module in all_modules:
         try:
             import_module(module)
+        except SyntaxError as err:
+            if module not in newpy_only_modules:
+                raise
         except ImportError as err:
             if err.name not in ignore_imports:
                 raise
