@@ -8,10 +8,10 @@ from ase.io import write
 def check_fractional_occupancies(atoms):
     """ Checks fractional occupancy entries in atoms.info dict """
     assert atoms.info['occupancy']
-    assert atoms.info['spacegroup_kinds']
+    assert list(atoms.arrays['spacegroup_kinds'])
 
     occupancies = atoms.info['occupancy']
-    kinds = atoms.info['spacegroup_kinds']
+    kinds = atoms.arrays['spacegroup_kinds']
     for a in atoms:
         if a.symbol == 'Na':
             assert len(occupancies[kinds[a.index]]) == 2
@@ -285,6 +285,10 @@ with open(fname) as fd:
     atoms = read(fd, format='cif', fractional_occupancies=True)
 
 check_fractional_occupancies(atoms)
+
+# check repeating atoms
+atoms = atoms.repeat([2,1,1])
+assert len(atoms.arrays['spacegroup_kinds']) == len(atoms.arrays['numbers'])
 
 # ICSD-like file from issue #293
 content = u"""
