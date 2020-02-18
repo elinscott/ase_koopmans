@@ -5,7 +5,7 @@ from ase.optimize.optimize import Optimizer
 
 class MDMin(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 dt=None, master=None):
+                 dt=None, master=None, maxstep=0.2):
         """Parameters:
 
         atoms: Atoms object
@@ -62,5 +62,8 @@ class MDMin(Optimizer):
 
         self.v += 0.5 * self.dt * f
         r = atoms.get_positions()
-        atoms.set_positions(r + self.dt * self.v)
+        if (self.dt * self.v) > 0.2:
+            atoms.set_positions(r + 0.2)
+        else:
+            atoms.set_positions(r + self.dt * self.v)
         self.dump((self.v, self.dt))
