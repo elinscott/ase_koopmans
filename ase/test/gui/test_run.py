@@ -49,6 +49,13 @@ def gui(display):
         ui.error = orig_ui_error
 
 
+@pytest.fixture
+def atoms(gui):
+    atoms = bulk('Ti') * (2, 1, 1)
+    gui.new_atoms(atoms)
+    return atoms
+
+
 def test_nanotube(gui):
     nt = gui.nanotube_window()
     nt.apply()
@@ -151,6 +158,16 @@ def test_cell_editor(gui):
     dia.update(np.eye(3), newpbc)
     dia.apply_pbc()
     assert (gui.atoms.pbc == newpbc).all()
+
+def test_constrain(gui, atoms):
+    gui.select_all()
+    dia = gui.constraints_window()
+
+    assert len(atoms.constraints) == 0
+    dia.selected()  # constrain selected
+    assert len(atoms.constraints) == 1
+
+    assert sorted(atoms.constraints[0].index) == list(range(len(atoms)))
 
 def window():
 

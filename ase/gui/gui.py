@@ -219,7 +219,7 @@ class GUI(View, Status):
 
     def constraints_window(self):
         from ase.gui.constraints import Constraints
-        Constraints(self)
+        return Constraints(self)
 
     def select_all(self, key=None):
         self.images.selected[:] = True
