@@ -12,9 +12,7 @@ import numpy as np
 
 from ase import __version__
 import ase.gui.ui as ui
-from ase.gui.crystal import SetupBulkCrystal
 from ase.gui.defaults import read_defaults
-from ase.gui.graphene import SetupGraphene
 from ase.gui.images import Images
 from ase.gui.nanoparticle import SetupNanoparticle
 from ase.gui.nanotube import SetupNanotube
@@ -219,10 +217,6 @@ class GUI(View, Status):
             self.set_frame()
             self.draw()
 
-    def execute(self):
-        from ase.gui.execute import Execute
-        Execute(self)
-
     def constraints_window(self):
         from ase.gui.constraints import Constraints
         Constraints(self)
@@ -327,11 +321,11 @@ class GUI(View, Status):
 
     def add_atoms(self, key=None):
         from ase.gui.add import AddAtoms
-        AddAtoms(self)
+        return AddAtoms(self)
 
     def cell_editor(self, key=None):
         from ase.gui.celleditor import CellEditor
-        CellEditor(self)
+        return CellEditor(self)
 
     def quick_info_window(self, key=None):
         from ase.gui.quickinfo import info
@@ -347,17 +341,11 @@ class GUI(View, Status):
             return exists
         self.attach(update, info_win)
 
-    def bulk_window(self):
-        SetupBulkCrystal(self)
-
     def surface_window(self):
         SetupSurfaceSlab(self)
 
     def nanoparticle_window(self):
         return SetupNanoparticle(self)
-
-    def graphene_window(self, menuitem):
-        SetupGraphene(self)
 
     def nanotube_window(self):
         return SetupNanotube(self)
@@ -501,7 +489,6 @@ class GUI(View, Status):
             (_('_Tools'),
              [M(_('Graphs ...'), self.plot_graphs),
               M(_('Movie ...'), self.movie),
-              M(_('Expert mode ...'), self.execute, disabled=True),
               M(_('Constraints ...'), self.constraints_window),
               M(_('Render scene ...'), self.render_window),
               M(_('_Move selected atoms'), self.toggle_move_mode, 'Ctrl+M'),
@@ -513,12 +500,10 @@ class GUI(View, Status):
 
             # TRANSLATORS: Set up (i.e. build) surfaces, nanoparticles, ...
             (_('_Setup'),
-             [M(_('_Bulk Crystal'), self.bulk_window, disabled=True),
-              M(_('_Surface slab'), self.surface_window, disabled=False),
+             [M(_('_Surface slab'), self.surface_window, disabled=False),
               M(_('_Nanoparticle'),
                 self.nanoparticle_window),
-              M(_('Nano_tube'), self.nanotube_window),
-              M(_('Graphene'), self.graphene_window, disabled=True)]),
+              M(_('Nano_tube'), self.nanotube_window)]),
 
             # (_('_Calculate'),
             # [M(_('Set _Calculator'), self.calculator_window, disabled=True),

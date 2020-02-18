@@ -6,8 +6,6 @@ Implemented:
 
 """
 
-import os
-
 import numpy as np
 
 from ase import io
@@ -277,11 +275,8 @@ def test_pw_input():
     with open('pw_input.pwi', 'w') as pw_input_f:
         pw_input_f.write(pw_input_text)
 
-    try:
-        pw_input_atoms = io.read('pw_input.pwi', format='espresso-in')
-        assert len(pw_input_atoms) == 8
-    finally:
-        os.unlink('pw_input.pwi')
+    pw_input_atoms = io.read('pw_input.pwi', format='espresso-in')
+    assert len(pw_input_atoms) == 8
 
 
 def test_pw_output():
@@ -289,12 +284,9 @@ def test_pw_output():
     with open('pw_output.pwo', 'w') as pw_output_f:
         pw_output_f.write(pw_output_text)
 
-    try:
-        pw_output_traj = io.read('pw_output.pwo', index=':')
-        assert len(pw_output_traj) == 2
-        assert pw_output_traj[1].get_volume() > pw_output_traj[0].get_volume()
-    finally:
-        os.unlink('pw_output.pwo')
+    pw_output_traj = io.read('pw_output.pwo', index=':')
+    assert len(pw_output_traj) == 2
+    assert pw_output_traj[1].get_volume() > pw_output_traj[0].get_volume()
 
 
 def test_pw_results_required():
@@ -302,24 +294,21 @@ def test_pw_results_required():
     with open('pw_output.pwo', 'w') as pw_output_f:
         pw_output_f.write(pw_output_text)
 
-    try:
-        # ignore 'final coordinates' with no results
-        pw_output_traj = io.read('pw_output.pwo', index=':')
-        assert 'energy' in pw_output_traj[-1].get_calculator().results
-        assert len(pw_output_traj) == 2
-        # include un-calculated final config
-        pw_output_traj = io.read('pw_output.pwo', index=':',
-                                 results_required=False)
-        assert len(pw_output_traj) == 3
-        assert 'energy' not in pw_output_traj[-1].get_calculator().results
-        # get default index=-1 with results
-        pw_output_config = io.read('pw_output.pwo')
-        assert 'energy' in pw_output_config.get_calculator().results
-        # get default index=-1 with no results "final coordinates'
-        pw_output_config = io.read('pw_output.pwo', results_required=False)
-        assert 'energy' not in pw_output_config.get_calculator().results
-    finally:
-        os.unlink('pw_output.pwo')
+    # ignore 'final coordinates' with no results
+    pw_output_traj = io.read('pw_output.pwo', index=':')
+    assert 'energy' in pw_output_traj[-1].get_calculator().results
+    assert len(pw_output_traj) == 2
+    # include un-calculated final config
+    pw_output_traj = io.read('pw_output.pwo', index=':',
+                             results_required=False)
+    assert len(pw_output_traj) == 3
+    assert 'energy' not in pw_output_traj[-1].get_calculator().results
+    # get default index=-1 with results
+    pw_output_config = io.read('pw_output.pwo')
+    assert 'energy' in pw_output_config.get_calculator().results
+    # get default index=-1 with no results "final coordinates'
+    pw_output_config = io.read('pw_output.pwo', results_required=False)
+    assert 'energy' not in pw_output_config.get_calculator().results
 
 
 def test_pw_input_write():
@@ -328,17 +317,6 @@ def test_pw_input_write():
     bulk.set_initial_magnetic_moments([2.2 if atom.symbol == 'Ni' else 0.0
                                        for atom in bulk])
 
-    try:
-        bulk.write('espresso_test.pwi')
-        readback = io.read('espresso_test.pwi')
-        assert np.allclose(bulk.positions, readback.positions)
-    finally:
-        os.unlink('espresso_test.pwi')
-
-
-
-if __name__ in ('__main__', 'test'):
-    test_pw_input()
-    test_pw_output()
-    test_pw_results_required()
-    test_pw_input_write()
+    bulk.write('espresso_test.pwi')
+    readback = io.read('espresso_test.pwi')
+    assert np.allclose(bulk.positions, readback.positions)

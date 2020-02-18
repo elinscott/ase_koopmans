@@ -52,7 +52,7 @@ main:
     - python --version
     - pip install --no-deps .
     - ase info --calculators
-    - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --pytest --color=yes
+    - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --pytest --color=yes --durations 20
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
 
@@ -65,23 +65,14 @@ coverage:
     - pip install coverage
     - pip install --editable .
     - coverage run
+    - coverage report
     - coverage html
+  coverage: '/TOTAL.+ ([0-9]+%)/'
   artifacts:
     paths:
       - coverage-html/
   only:
       - master
-
-# Supposed to be equivalent to 'main', except we run pytest directly on
-# the test files. Useful if something is wrong with 'ase test'.
-pytest:
-  image: registry.gitlab.com/ase/ase:ase-main
-  script:
-    - pip install --no-deps .
-    - pytest -v $CI_PROJECT_DIR/ase/test --color=yes
-    - cd $CI_PROJECT_DIR
-    - python -We:invalid -m compileall -f -q ase/
-  when: manual
 
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary

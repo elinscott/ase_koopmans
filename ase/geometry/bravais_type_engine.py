@@ -228,50 +228,7 @@ def generate_niggli_op_table(lattices=None,
     print(pprint.pformat(niggli_op_table))
     return niggli_op_table
 
-def test():
-    length_grid = np.logspace(-0.5, 1.5, 11).round(3)
-    angle_grid = np.linspace(10, 179, 11).round()
-    #all_ops = find_all_niggli_ops(length_grid, angle_grid)
-    #niggli_op_table.clear()
-    #niggli_op_table.update(all_ops)
 
-    for latname in bravais_names:
-        if latname in ['MCL', 'MCLC', 'TRI']:
-            continue
-        latcls = bravais_lattices[latname]
-        if latcls.ndim != 3:
-            continue
-
-        print('Check', latname)
-        maxerr = 0.0
-
-        for lat in lattice_loop(latcls, length_grid, angle_grid):
-            cell = lat.tocell()
-            from ase.lattice import identify_lattice
-            out_lat, op = identify_lattice(cell, eps=2e-4)
-
-            # Some lattices represent simpler lattices,
-            # e.g. TET(a, a) is cubic.  What we need to check is that
-            # the cell parameters are the same.
-            cellpar = cell.cellpar()
-            outcellpar = out_lat.tocell().cellpar()
-            err = np.abs(outcellpar - cellpar).max()
-            maxerr = max(err, maxerr)
-            if lat.name != out_lat.name:
-                print(repr(lat), '-->', repr(out_lat))
-            assert err < 1e-8, (err, repr(lat), repr(out_lat))
-
-        print('    OK.  Maxerr={}'.format(maxerr))
-
-if __name__ == '__main__':
-    import sys
-    lattices = sys.argv[1:]
-    if not lattices:
-        lattices = None
-    length_grid = np.logspace(-1, 1, 60)
-    angle_grid = np.linspace(30, 90, 60 + 59)
-    table = generate_niggli_op_table(lattices=lattices,
-                                     angle_grid=angle_grid,
-                                     length_grid=length_grid)
-    for key in table:
-        print('{}: {}'.format(key, len(table[key])))
+# For generation of the table, please see the test_bravais_engine unit test.
+# In case there's any trouble, some legacy code can be found also in
+# 6e2b1c6cae0ae6ee04638a9887821e7b1a1f2f3f .

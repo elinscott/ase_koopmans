@@ -13,17 +13,56 @@ Git master branch
 * The ``ase db db1.db <selection> --insert-into db2.db`` command now respects
   ``--limit`` and ``--offset``.
 
-* Fixed ``kpts`` option of :class:`ase.calculators.espresso.Espresso` so that specifying a Γ-point calculation with ``kpts=(1, 1, 1)`` does not enable the optimized codepath (which halves memory and cpu). Use ``kpts=None`` to enable the optimized codepath.
+* Fixed ``kpts`` option of :class:`ase.calculators.espresso.Espresso`
+  so that specifying a Γ-point calculation with ``kpts=(1, 1, 1)``
+  does not enable the optimized codepath (which halves memory and
+  cpu). Use ``kpts=None`` to enable the optimized codepath.
 
-* Removed interface to :ref:`Dacapo <jacapo>` due to lack of users and maintainers.
+* Removed interface to :ref:`Dacapo <jacapo>` due to lack of users and
+  maintainers.
+
+* Removed interface to `FindSym
+  <https://stokes.byu.edu/iso/findsym.php>`_ due to lack of users and
+  maintainers.  If you need this, please find it in git history,
+  make it work, and write tests.
+
+* Removed old GUI modules which were never fully ported to Tkinter.
+  If you miss them, please find them in git history and rehabilitate
+  them.
 
 * :class:`ase.neb.NEBTools` now allows the simultaneous plotting of all bands from a trajectory of a nudged elastic band calculation (or similar); this funciton is also available at the command line as ``ase nebplot neb.traj``.
 
 * The image-dependent pair-potential (IDPP) interpolation scheme for connecting states---i.e., in a saddle-point search---has been moved into the method :func:`ase.neb.idpp_interpolate`. This method is a more feature-rich version that that accessible via :meth:`ase.neb.NEB.interpolate`.
 
+* Test suite now uses `pytest <https://docs.pytest.org/>`_.
+  This means it requires pytest and optionally
+  `pytest-xdist <https://github.com/pytest-dev/pytest-xdist>`_ for
+  parallelization.  The ``ase test`` command works as before although
+  its output will be different and improved.
+
+* Many tests have been improved and simplified, making use of pytest
+  for parametrization and test fixtures.
+
+* The continuous integration tests on Gitlab now use custom dockers.
+  The docker files can be found at https://gitlab.com/ase/ase-dockers.
+
+* Some calculators can now be tested via Gitlab's CI.
+
+* Code coverage statistics are now available on https://ase.gitlab.io/ase.
+  They currently exclude calculators and IO formats.
+
+* The deprecated ``atoms.cell.pbc`` has been removed.
+
+* Multiple improvements and bugfixes to OpenMX calculator;
+  OpenMX calculator now supports OpenMX 3.9.
+
+* Added Russian translation.
+
 * Write support has been added for the Vasp 5 XDATCAR file format.
 
 * Added :mod:`ORCA <ase.calculators.orca>` calculator.
+
+* Added :mod:`GAMESS-US <ase.calculators.gamess_us>` calculator.
 
 Version 3.19.0
 ==============

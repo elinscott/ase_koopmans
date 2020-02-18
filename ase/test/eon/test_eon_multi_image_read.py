@@ -1,9 +1,7 @@
 # flake8: noqa
 """Check that reading multi image .con files is consistent."""
 
-import tempfile
 import os
-import shutil
 
 from numpy import array
 import ase
@@ -295,11 +293,9 @@ data = ase.Atoms('Cr17',cell = array([[8.123222, 0, 0],
 
 
 
-
-tempdir = tempfile.mkdtemp()
-try:
+def test_eon():
     # First, write a correct .con file and try to read it.
-    con_file = os.path.join(tempdir, 'neb.con')
+    con_file = 'neb.con'
     with open(con_file, 'w') as f:
         f.write(CON_FILE)
     images = ase.io.read(con_file, format='eon', index =':')
@@ -312,7 +308,7 @@ try:
 
     # Now that we know that reading a .con file works, we will write
     # one and read it back in.
-    out_file = os.path.join(tempdir, 'out.con')
+    out_file = 'out.con'
     ase.io.write(out_file, data, format='eon')
     data2 = ase.io.read(out_file, format='eon')
     # Check cell vectors.
@@ -321,5 +317,3 @@ try:
     # Check atom positions.
     # write: position check
     assert (abs(data2.positions - data.positions)).sum() < TOL
-finally:
-    shutil.rmtree(tempdir)

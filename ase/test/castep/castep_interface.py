@@ -1,7 +1,6 @@
 """Simple shallow test of the CASTEP interface"""
 import os
 import re
-import shutil
 import tempfile
 import warnings
 
@@ -17,7 +16,6 @@ from ase.calculators.castep import (Castep, CastepOption,
                                     CastepVersionError)
 
 tmp_dir = tempfile.mkdtemp()
-cwd = os.getcwd()
 
 # We have fundamentally two sets of tests: one if CASTEP is present, the other
 # if it isn't
@@ -284,7 +282,3 @@ kpt_list = c.cell.bs_kpoint_list.value.split('\n')
 assert len(kpt_list) == 10
 assert list(map(float, kpt_list[0].split())) == [0., 0., 0.]
 assert list(map(float, kpt_list[-1].split())) == [0.5, 0.0, 0.5]
-
-# cleanup
-os.chdir(cwd)
-shutil.rmtree(tmp_dir)

@@ -21,8 +21,6 @@ def test_cartesian(atoms=atoms):
 
     assert np.allclose(atoms.positions, new_atoms.positions)
 
-    Path(file).unlink()
-
 
 # check scaled
 def test_scaled(atoms=atoms):
@@ -35,8 +33,6 @@ def test_scaled(atoms=atoms):
         atoms.positions,
         new_atoms.positions,
     )
-
-    Path(file).unlink()
 
 
 # this should fail
@@ -57,11 +53,3 @@ def test_scaled_wrapped(atoms=atoms):
             atoms.positions,
             new_atoms.positions,
         )
-
-    Path(file).unlink()
-
-
-if __name__ == "__main__":
-    test_cartesian()
-    test_scaled()
-    test_scaled_wrapped()
