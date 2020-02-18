@@ -51,7 +51,7 @@ def gui(display):
 
 @pytest.fixture
 def atoms(gui):
-    atoms = bulk('Ti') * (2, 1, 1)
+    atoms = bulk('Ti') * (2, 2, 2)
     gui.new_atoms(atoms)
     return atoms
 
@@ -159,6 +159,7 @@ def test_cell_editor(gui):
     dia.apply_pbc()
     assert (gui.atoms.pbc == newpbc).all()
 
+
 def test_constrain(gui, atoms):
     gui.select_all()
     dia = gui.constraints_window()
@@ -168,6 +169,21 @@ def test_constrain(gui, atoms):
     assert len(atoms.constraints) == 1
 
     assert sorted(atoms.constraints[0].index) == list(range(len(atoms)))
+
+
+def test_quickinfo(gui, atoms):
+    from ase.gui.quickinfo import info
+    from ase.gui.i18n import _
+
+    # (Note: String can be in any language)
+    refstring = _('Single image loaded.')
+    infostring = info(gui)
+    assert refstring in infostring
+
+    dia = gui.quick_info_window()
+    label = dia.things[0]
+    txt = dia.things[0].text
+    assert refstring in txt
 
 def window():
 

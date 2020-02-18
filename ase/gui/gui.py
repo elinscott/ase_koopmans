@@ -340,6 +340,7 @@ class GUI(View, Status):
                 window.things[0].text = info(self)
             return exists
         self.attach(update, info_win)
+        return info_win
 
     def surface_window(self):
         SetupSurfaceSlab(self)
