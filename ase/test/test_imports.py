@@ -45,6 +45,7 @@ ignore_imports = {
 }
 
 
+@pytest.mark.filterwarnings('ignore:Moved to')
 def test_imports():
     for module in all_modules:
         try:
