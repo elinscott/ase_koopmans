@@ -64,6 +64,8 @@ Git master branch
 
 * Added :mod:`GAMESS-US <ase.calculators.gamess_us>` calculator.
 
+* Added :class:`Pyberny <ase.optimize.Berny>` geometry optimizer.
+
 Version 3.19.0
 ==============
 

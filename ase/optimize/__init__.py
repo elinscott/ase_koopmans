@@ -7,8 +7,10 @@ from ase.optimize.bfgslinesearch import BFGSLineSearch
 from ase.optimize.bfgs import BFGS
 from ase.optimize.oldqn import GoodOldQuasiNewton
 from ase.optimize.gpmin.gpmin import GPMin
+from ase.optimize.berny import Berny
 QuasiNewton = BFGSLineSearch
 
 __all__ = ['MDMin', 'FIRE', 'LBFGS',
            'LBFGSLineSearch', 'BFGSLineSearch', 'BFGS',
-           'GoodOldQuasiNewton', 'QuasiNewton', 'GPMin']
+           'GoodOldQuasiNewton', 'QuasiNewton', 'GPMin',
+           'Berny']
