@@ -1,5 +1,6 @@
 # Refactor of DOS-like data objects
 # towards replacing ase.dft.dos and ase.dft.pdos
+from abc import ABCMeta, abstractmethod
 
 from matplotlib.axes import Axes
 import numpy as np
@@ -10,7 +11,7 @@ from typing import Dict, Sequence, Tuple
 Info = Dict[str, str]
 
 
-class DOSData:
+class DOSData(metaclass=ABCMeta):
     """Abstract base class for a single series of DOS-like data"""
     def __init__(self,
                  info: Info = None) -> None:
@@ -21,15 +22,21 @@ class DOSData:
         else:
             raise TypeError("Info must be a dict or None")
 
+    @abstractmethod
     def get_energies(self) -> Sequence[float]:
         """Get energy data stored in this object"""
         raise NotImplementedError
 
+    @abstractmethod
     def get_weights(self) -> Sequence[float]:
         """Get DOS weights stored in this object"""
         raise NotImplementedError
 
-    def sample(self, x: Sequence[float], **broadening_args) -> Sequence[float]:
+    @abstractmethod
+    def sample(self,
+               x: Sequence[float],
+               width: float = 0.1,
+               smearing: str = 'Gauss') -> np.ndarray:
         """Sample the DOS data at chosen points, with broadening"""
         raise NotImplementedError
 
@@ -37,7 +44,9 @@ class DOSData:
                     npts: int,
                     xmin: float = None,
                     xmax: float = None,
-                    **broadening_args
+                    padding: float = 3,
+                    width: float = 0.1,
+                    smearing: str = 'Gauss',
                     ) -> Tuple[Sequence[float], Sequence[float]]:
         """Sample the DOS data on an evenly-spaced energy grid
 
@@ -45,28 +54,30 @@ class DOSData:
             npts: Number of sampled points
             xmin: Minimum sampled x value; if unspecified, a default is chosen
             xmax: Maximum sampled x value; if unspecified, a default is chosen
-            **broadening_args: broadening options passed to self.sample()
+            width: Width of broadening kernel, passed to self.sample()
+            smearing: selection of broadening kernel, passed to self.sample()
 
         Returns:
             (x-values, sampled DOS)
         """
 
         if xmin is None:
-            xmin = min(self.get_energies())
+            xmin = min(self.get_energies()) - (padding * width)
         if xmax is None:
-            xmax = max(self.get_weights())
+            xmax = max(self.get_energies()) + (padding * width)
         x = np.linspace(xmin, xmax, npts)
-        return x, self.sample(x, **broadening_args)
+        return x, self.sample(x, width=width, smearing=smearing)
 
     def plot_dos(self,
                  npts: int = 1000,
                  xmin: float = None,
                  xmax: float = None,
+                 width: float = 0.1,
+                 smearing: str = 'Gauss',
                  ax: Axes = None,
                  show: bool = False,
                  filename: str = None,
-                 mplargs: dict = None,
-                 **broadening_args) -> Axes:
+                 mplargs: dict = None) -> Axes:
         """Simple 1-D plot of DOS data, resampled onto a grid
 
         If the special key 'label' is present in self.info, this will be set
@@ -76,14 +87,15 @@ class DOSData:
 
         Args:
             npts, xmin, xmax: output data range, as passed to self.sample_grid
+            width: Width of broadening kernel, passed to self.sample()
+            smearing: selection of broadening kernel, passed to self.sample()
             ax: existing Matplotlib axes object. If not provided, a new figure
                 with one set of axes will be created using Pyplot
             show: show the figure on-screen
             filename: if a path is given, save the figure to this file
             mplargs: additional arguments to pass to matplotlib plot command
                 (e.g. {'linewidth': 2} for a thicker line.
-            **broadening_args: remaining keyword arguments are used for
-                  sampling/broadening and should be supported by self.sample()
+
 
         Returns:
             Plotting axes. If "ax" was set, this is the same object.
@@ -98,7 +110,8 @@ class DOSData:
         if mplargs is None:
             mplargs = {}
 
-        x, y = self.sample_grid(npts, xmin=xmin, xmax=xmax, **broadening_args)
+        x, y = self.sample_grid(npts, xmin=xmin, xmax=xmax,
+                                width=width, smearing=smearing)
         ax.plot(x, y, **mplargs)
 
         if show:
@@ -155,13 +168,16 @@ class RawDOSData(DOSData):
         self._data[0, :] = energies
         self._data[1, :] = weights
 
-    def get_energies(self) -> Sequence[float]:
+    def get_energies(self) -> np.ndarray:
         return self._data[0, :].copy()
 
-    def get_weights(self) -> Sequence[float]:
+    def get_weights(self) -> np.ndarray:
         return self._data[1, :].copy()
 
-    def sample(self, x, width=0.1, smearing='Gauss'):
+    def sample(self,
+               x: Sequence[float],
+               width: float = 0.1,
+               smearing: str = 'Gauss') -> np.ndarray:
         if width <= 0.0:
             msg = 'Cannot add 0 or negative width smearing'
             raise ValueError(msg)
@@ -173,38 +189,11 @@ class RawDOSData(DOSData):
                                           smearing=smearing))
         return weights_grid
 
-    def sample_grid(self,
-                    npts: int,
-                    xmin: float = None,
-                    xmax: float = None,
-                    padding: float = 3,
-                    width: float = 0.1,
-                    **broadening_args
-                    ) -> Tuple[Sequence[float], Sequence[float]]:
-        """Sample the DOS data on an evenly-spaced energy grid
-
-        Args:
-            npts: Number of sampled points
-            xmin: Minimum sampled x value; if unspecified, a default is chosen
-            xmax: Maximum sampled x value; if unspecified, a default is chosen
-            padding: If xmin or xmax is not given, the range will be padded by
-                (padding * width) to avoid cutting off peaks too sharply.
-            width: Width of broadening kernel, passed with other
-                **broadening_args to self.sample()
-
-        Returns:
-            (x-values, sampled DOS)
-        """
-
-        if xmin is None:
-            xmin = min(self.get_energies()) - (padding * width)
-        if xmax is None:
-            xmax = max(self.get_energies()) + (padding * width)
-        x = np.linspace(xmin, xmax, npts)
-        return x, self.sample(x, width=width, **broadening_args)
-
     @staticmethod
-    def _delta(x, x0, width, smearing='Gauss'):
+    def _delta(x: np.ndarray,
+               x0: np.ndarray,
+               width: float,
+               smearing: str = 'Gauss') -> Sequence[Sequence[float]]:
         """Return a delta-function centered at 'x0'."""
         if smearing.lower() == 'gauss':
             x1 = -0.5 * ((x - x0) / width)**2

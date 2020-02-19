@@ -5,6 +5,18 @@ import pytest
 from ase.dft.dosdata import DOSData, RawDOSData
 
 
+class MinimalDOSData(DOSData):
+    """Inherit from ABC to test its features"""
+    def get_energies(self):
+        super().get_energies()
+
+    def get_weights(self):
+        super().get_weights()
+
+    def sample(self, x, **kwargs):
+        super().sample(x, **kwargs)
+
+
 class TestDosData:
     """Test the abstract base class for DOS data"""
 
@@ -20,9 +32,9 @@ class TestDosData:
         """Check 'info' parameter is handled properly"""
         if isinstance(expected, type) and isinstance(expected(), Exception):
             with pytest.raises(expected):
-                dos_data = DOSData(info=info)
+                dos_data = MinimalDOSData(info=info)
         else:
-            dos_data = DOSData(info=info)
+            dos_data = MinimalDOSData(info=info)
             assert dos_data.info == expected
 
     dosdata_abc_notimplemented_methods_args = [('get_energies', tuple()),
@@ -33,7 +45,7 @@ class TestDosData:
                              dosdata_abc_notimplemented_methods_args)
     def test_dosdata_notimplemented(self, method, args):
         """Check NotImplementedError raised from abstract base class"""
-        dos_data = DOSData()
+        dos_data = MinimalDOSData()
         with pytest.raises(NotImplementedError):
             getattr(dos_data, method)(*args)
 
