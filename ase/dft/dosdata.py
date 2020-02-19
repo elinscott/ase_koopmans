@@ -95,6 +95,9 @@ class DOSData:
         else:
             fig = ax.get_figure()
 
+        if mplargs is None:
+            mplargs = {}
+
         x, y = self.sample_grid(npts, xmin=xmin, xmax=xmax, **broadening_args)
         ax.plot(x, y, **mplargs)
 
@@ -164,18 +167,48 @@ class RawDOSData(DOSData):
             raise ValueError(msg)
 
         weights_grid = np.dot(self.get_weights(),
-                              self.delta(x,
-                                         self.get_energies()[:, np.newaxis],
-                                         width,
-                                         smearing=smearing))
+                              self._delta(x,
+                                          self.get_energies()[:, np.newaxis],
+                                          width,
+                                          smearing=smearing))
         return weights_grid
+
+    def sample_grid(self,
+                    npts: int,
+                    xmin: float = None,
+                    xmax: float = None,
+                    padding: float = 3,
+                    width: float = 0.1,
+                    **broadening_args
+                    ) -> Tuple[Sequence[float], Sequence[float]]:
+        """Sample the DOS data on an evenly-spaced energy grid
+
+        Args:
+            npts: Number of sampled points
+            xmin: Minimum sampled x value; if unspecified, a default is chosen
+            xmax: Maximum sampled x value; if unspecified, a default is chosen
+            padding: If xmin or xmax is not given, the range will be padded by
+                (padding * width) to avoid cutting off peaks too sharply.
+            width: Width of broadening kernel, passed with other
+                **broadening_args to self.sample()
+
+        Returns:
+            (x-values, sampled DOS)
+        """
+
+        if xmin is None:
+            xmin = min(self.get_energies()) - (padding * width)
+        if xmax is None:
+            xmax = max(self.get_energies()) + (padding * width)
+        x = np.linspace(xmin, xmax, npts)
+        return x, self.sample(x, width=width, **broadening_args)
 
     @staticmethod
     def _delta(x, x0, width, smearing='Gauss'):
         """Return a delta-function centered at 'x0'."""
         if smearing.lower() == 'gauss':
-            x1 = -((x - x0) / width)**2
-            return np.exp(x1) / (np.sqrt(np.pi) * width)
+            x1 = -0.5 * ((x - x0) / width)**2
+            return np.exp(x1) / (np.sqrt(2 * np.pi) * width)
         else:
             msg = 'Requested smearing type not recognized. Got {}'.format(
                 smearing)
