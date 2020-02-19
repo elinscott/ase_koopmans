@@ -293,8 +293,8 @@ def write_nwchem_in(fd, atoms, properties=None, **params):
     params = _update_mult(magmom_tot, **params)
 
     label = params.get('label', 'nwchem')
-    perm = os.path.abspath(params.get('perm', label))
-    scratch = os.path.abspath(params.get('scratch', label))
+    perm = os.path.abspath(params.pop('perm', label))
+    scratch = os.path.abspath(params.pop('scratch', label))
     out = ['title "{}"'.format(label),
            'permanent_dir {}'.format(perm),
            'scratch_dir {}'.format(scratch),

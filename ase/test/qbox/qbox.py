@@ -9,7 +9,7 @@ from ase.io import formats
 # We don't like shipping raw datafiles, because they must all be listed
 # in the manifest.  So we invoke a function that prepares the files that
 # we need:
-from ase.test.qbox.qboxdata import writefiles
+from ase.test.qbox.test_qboxdata import writefiles
 writefiles()
 
 test_qbox = 'test.xml'

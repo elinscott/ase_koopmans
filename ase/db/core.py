@@ -33,6 +33,7 @@ default_key_descriptions = {
     'user': ('Username', '', ''),
     'calculator': ('Calculator', 'ASE-calculator name', ''),
     'energy': ('Energy', 'Total energy', 'eV'),
+    'natoms': ('Number of atoms', '', ''),
     'fmax': ('Maximum force', '', 'eV/Ang'),
     'smax': ('Maximum stress', 'Maximum stress on unit cell',
              '`\\text{eV/Ang}^3`'),
@@ -627,6 +628,8 @@ def o2b(obj: Any, parts: List[bytes]):
     if isinstance(obj, (list, tuple)):
         return [o2b(value, parts) for value in obj]
     if isinstance(obj, np.ndarray):
+        assert obj.dtype != object, \
+            'Cannot convert ndarray of type "object" to bytes.'
         offset = sum(len(part) for part in parts)
         if not np.little_endian:
             obj = obj.byteswap()

@@ -271,7 +271,7 @@ def main(args):
         return
 
     if args.delete:
-        ids = [row['id'] for row in db.select(query)]
+        ids = [row['id'] for row in db.select(query, include_data=False)]
         if ids and not args.yes:
             msg = 'Delete %s? (yes/No): ' % plural(len(ids), 'row')
             if input(msg).lower() != 'yes':

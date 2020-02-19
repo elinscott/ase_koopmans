@@ -139,9 +139,9 @@ class Pourbaix:
             kwargs = parse_formula(formula)[0]
 
         if 'O' not in kwargs:
-            kwargs['O'] = 1
+            kwargs['O'] = 0
         if 'H' not in kwargs:
-            kwargs['H'] = 1
+            kwargs['H'] = 0
 
         self.kT = units.kB * T
         self.references = []
@@ -181,7 +181,39 @@ class Pourbaix:
         concentration: float
             Concentration of solvated references.
 
-        Returns optimal coefficients and energy.
+        Returns optimal coefficients and energy:
+
+        >>> from ase.phasediagram import Pourbaix, solvated
+        >>> refs = solvated('CoO') + [
+        ...     ('Co', 0.0),
+        ...     ('CoO', -2.509),
+        ...     ('Co3O4', -9.402)]
+        >>> pb = Pourbaix(refs, Co=3, O=4)
+        >>> coefs, energy = pb.decompose(U=1.5, pH=0,
+        ...                              concentration=1e-6,
+        ...                              verbose=True)
+        0    HCoO2-(aq)    -3.974
+        1    CoO2--(aq)    -3.098
+        2    H2O(aq)       -2.458
+        3    CoOH+(aq)     -2.787
+        4    CoO(aq)       -2.265
+        5    CoOH++(aq)    -1.355
+        6    Co++(aq)      -0.921
+        7    H+(aq)         0.000
+        8    Co+++(aq)      1.030
+        9    Co             0.000
+        10   CoO           -2.509
+        11   Co3O4         -9.402
+        12   e-            -1.500
+        reference    coefficient      energy
+        ------------------------------------
+        H2O(aq)                4      -2.458
+        Co++(aq)               3      -0.921
+        H+(aq)                -8       0.000
+        e-                    -2      -1.500
+        ------------------------------------
+        Total energy:                 -9.596
+        ------------------------------------
         """
 
         alpha = np.log(10) * self.kT
@@ -214,7 +246,7 @@ class Pourbaix:
                 elif name == 'H+(aq)':
                     energy = -pH * alpha
             else:
-                bounds.append((0, 1))
+                bounds.append((0, np.inf))
                 if aq:
                     energy -= entropy
             if verbose:
@@ -450,7 +482,7 @@ class PhaseDiagram:
 
         return energy, indices, np.array(coefs)
 
-    def plot(self, ax=None, dims=None, show=False):
+    def plot(self, ax=None, dims=None, show=False, **plotkwargs):
         """Make 2-d or 3-d plot of datapoints and convex hull.
 
         Default is 2-d for 2- and 3-component diagrams and 3-d for a
@@ -481,7 +513,7 @@ class PhaseDiagram:
 
         if dims == 2:
             if N == 2:
-                self.plot2d2(ax)
+                self.plot2d2(ax, **plotkwargs)
             elif N == 3:
                 self.plot2d3(ax)
             else:
@@ -499,7 +531,8 @@ class PhaseDiagram:
             plt.show()
         return ax
 
-    def plot2d2(self, ax=None):
+    def plot2d2(self, ax=None,
+                only_label_simplices=False, only_plot_simplices=False):
         x, e = self.points[:, 1:].T
         names = [re.sub(r'(\d+)', r'$_{\1}$', ref[2])
                  for ref in self.references]
@@ -512,8 +545,13 @@ class PhaseDiagram:
             for i, j in simplices:
                 ax.plot(x[[i, j]], e[[i, j]], '-b')
             ax.plot(x[hull], e[hull], 'sg')
-            ax.plot(x[~hull], e[~hull], 'or')
+            if not only_plot_simplices:
+                ax.plot(x[~hull], e[~hull], 'or')
 
+            if only_plot_simplices or only_label_simplices:
+                x = x[self.hull]
+                e = e[self.hull]
+                names = [name for name, h in zip(names, self.hull) if h]
             for a, b, name in zip(x, e, names):
                 ax.text(a, b, name, ha='center', va='top')
 

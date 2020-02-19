@@ -10,7 +10,7 @@ the following publication:
     D. Packwood, J. R. Kermode, L. Mones, N. Bernstein, J. Woolley,
     N. Gould, C. Ortner, and G. Csanyi, A universal preconditioner for
     simulating condensed phase materials, J. Chem. Phys. 144, 164109 (2016).
-    DOI: http://dx.doi.org/10.1063/1.4947024
+    DOI: https://doi.org/10.1063/1.4947024
 
 A preconditioned version of FIRE is also included, this is less well tested.
 

@@ -54,7 +54,7 @@ class Symbols:
 
     """
     def __init__(self, numbers):
-        self.numbers = numbers
+        self.numbers = np.asarray(numbers)
 
     @classmethod
     def fromsymbols(cls, symbols):

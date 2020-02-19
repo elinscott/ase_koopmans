@@ -25,6 +25,7 @@ or this::
 import io
 import sys
 from typing import Dict, Any
+from pathlib import Path
 
 from flask import Flask, render_template, request
 
@@ -36,7 +37,8 @@ from ase.db.row import row2dct, AtomsRow
 from ase.db.table import all_columns
 
 
-app = Flask(__name__)
+root = Path(__file__).parent.parent.parent
+app = Flask(__name__, template_folder=str(root))
 
 projects = {}  # type: Dict[str, Dict[str, Any]]
 
@@ -52,6 +54,7 @@ def search(project_name: str):
     session = Session(project_name)
     project = projects[project_name]
     return render_template(project['search_template'],
+                           q=request.args.get('query', ''),
                            p=project,
                            session_id=session.id)
 
@@ -72,7 +75,7 @@ def update(sid: int, what: str, x: str):
     project = projects[session.project_name]
     session.update(what, x, request.args, project)
     table = session.create_table(project['database'], project['uid_key'])
-    return render_template('table.html',
+    return render_template('ase/db/templates/table.html',
                            t=table,
                            p=project,
                            s=session)
@@ -96,9 +99,10 @@ def atoms(project_name: str, id: int, type: str):
     row = projects[project_name]['database'].get(id=id)
     a = row.toatoms()
     if type == 'cif':
-        fd = io.BytesIO()
-        a.write(fd, 'cif')
-        return fd.getvalue(), 200, []
+        b = io.BytesIO()
+        a.pbc = True
+        a.write(b, 'cif', wrap=False)
+        return b.getvalue(), 200, []
 
     fd = io.StringIO()
     if type == 'xyz':
@@ -177,8 +181,8 @@ def add_project(db: Database) -> None:
         'row_to_dict_function': row_to_dict,
         'handle_query_function': handle_query,
         'default_columns': all_columns[:],
-        'search_template': 'search.html',
-        'row_template': 'row.html'}
+        'search_template': 'ase/db/templates/search.html',
+        'row_template': 'ase/db/templates/row.html'}
 
 
 if __name__ == '__main__':

@@ -8,11 +8,11 @@ class DiffusionCoefficient:
 
         This class calculates the Diffusion Coefficient for the given Trajectory using the Einstein Equation:
         
-        :math: `\\left \\langle  \\left | r(t) - r(0) \\right | ^{2} \\right \\rangle  = 2nDt`
+        ..math:: \\left \\langle  \\left | r(t) - r(0) \\right | ^{2} \\right \\rangle  = 2nDt
         
         where r(t) is the position of atom at time t, n is the degrees of freedom and D is the Diffusion Coefficient
         
-        Solved herein by fitting with :math: `y = mx + c`, i.e. :math: `\\frac{1}{2n} \\left \\langle  \\left | r(t) - r(0) \\right | ^{2} \\right \\rangle  = Dt`, with m = D and c = 0
+        Solved herein by fitting with :math:`y = mx + c`, i.e. :math:`\\frac{1}{2n} \\left \\langle  \\left | r(t) - r(0) \\right | ^{2} \\right \\rangle  = Dt`, with m = D and c = 0
 
         wiki : https://en.wikibooks.org/wiki/Molecular_Simulation/Diffusion_Coefficients
 
@@ -21,7 +21,7 @@ class DiffusionCoefficient:
                 Trajectory of atoms objects (images)
             timestep (Float): 
                 Timestep between *each image in the trajectory*, in ASE timestep units
-                (For an MD simulation with timestep of N, and images written every M iterations, our timestep here is N * M  
+                (For an MD simulation with timestep of N, and images written every M iterations, our timestep here is N * M) 
             atom_indices (List of Int): 
                 The indices of atoms whose Diffusion Coefficient is to be calculated explicitly
             molecule (Boolean)
