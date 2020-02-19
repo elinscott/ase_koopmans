@@ -106,7 +106,7 @@ class DOSData:
         return ax
 
 
-def RawDOSData(DOSData):
+class RawDOSData(DOSData):
     """A collection of weighted delta functions which sum to form a DOS
 
     This is an appropriate data container for DOS or spectral data where the
@@ -180,3 +180,19 @@ def RawDOSData(DOSData):
             msg = 'Requested smearing type not recognized. Got {}'.format(
                 smearing)
             raise ValueError(msg)
+
+    def __add__(self, other: 'RawDOSData') -> 'RawDOSData':
+        if not isinstance(other, RawDOSData):
+            raise TypeError("RawDOSData can only be combined with other "
+                            "RawDOSData objects")
+
+        # Take intersection of metadata (i.e. only common entries are retained)
+        new_info = dict(set(self.info.items()) & set(other.info.items()))
+
+        # Concatenate the energy/weight data
+        new_data = np.concatenate((self._data, other._data), axis=1)
+
+        new_object = RawDOSData([], [], info=new_info)
+        new_object._data = new_data
+
+        return new_object
