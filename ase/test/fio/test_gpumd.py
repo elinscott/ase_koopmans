@@ -40,9 +40,9 @@ def test_read_gpumd_input():
     with open('xyz.in', 'w') as f:
         f.write(gpumd_input_text)
 
-    # Test when specifying the species-type map
-    species_types = {'Si': 0, 'C': 1}
-    atoms = io.read('xyz.in', format='gpumd', species_types=species_types)
+    # Test when specifying the species
+    species = ['Si', 'C']
+    atoms = io.read('xyz.in', format='gpumd', species=species)
     groupings = [[[i] for i in range(len(atoms))],
                  [[i for i, s in
                    enumerate(atoms.get_chemical_symbols()) if s == 'Si'],
@@ -51,7 +51,7 @@ def test_read_gpumd_input():
     groups = [[[j for j, group in enumerate(grouping) if i in group][0]
                for grouping in groupings] for i in range(len(atoms))]
     assert len(atoms) == 16
-    assert set(atoms.symbols) == set(species_types)
+    assert set(atoms.symbols) == set(species)
     assert all(atoms.get_pbc())
     assert len(atoms.info) == len(atoms)
     assert all(np.array_equal(
@@ -61,13 +61,13 @@ def test_read_gpumd_input():
 
     # Test without specifying the species-type map
     atoms = io.read('xyz.in', format='gpumd')
-    assert set(atoms.symbols) == set(species_types)
+    assert set(atoms.symbols) == set(species)
 
     # Test when specifying the isotope masses
     isotope_masses = {'Si': [28.085], 'C': [12.011]}
     atoms = io.read('xyz.in', format='gpumd',
                     isotope_masses=isotope_masses)
-    assert set(atoms.symbols) == set(species_types)
+    assert set(atoms.symbols) == set(species)
 
 
 def test_load_gpumd_input():
@@ -75,16 +75,15 @@ def test_load_gpumd_input():
     with open('xyz.in', 'w') as f:
         f.write(gpumd_input_text)
 
-    species_types = {'Si': 0, 'C': 1}
+    species_ref = ['Si', 'C']
     with open('xyz.in', 'r') as f:
-        atoms, input_parameters, type_symbol_map =\
-            load_xyz_input_gpumd(f, species_types=species_types)
+        atoms, input_parameters, species =\
+            load_xyz_input_gpumd(f, species=species_ref)
     input_parameters_ref = {'N': 16, 'M': 4, 'cutoff': 1.1,
                             'triclinic': 0, 'has_velocity': 1,
                             'num_of_groups': 2}
     assert input_parameters == input_parameters_ref
-    type_symbol_map_ref = {v: k for k, v in species_types.items()}
-    assert type_symbol_map == type_symbol_map_ref
+    assert species == species_ref
 
 
 def test_gpumd_input_write():

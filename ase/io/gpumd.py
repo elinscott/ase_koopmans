@@ -125,7 +125,7 @@ def write_gpumd(fd, atoms, maximum_neighbors=None, cutoff=None,
     fd.write('\n'.join(lines))
 
 
-def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
+def load_xyz_input_gpumd(fd, species=None, isotope_masses=None):
 
     """
     Read the structure input file for GPUMD and return an ase Atoms object
@@ -135,7 +135,7 @@ def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
     ----------
     fd : file | str
         File object or name of file from which to read the Atoms object
-    species_types : List[str]
+    species : List[str]
         List with the chemical symbols that correspond to each type, will take
         precedence over isotope_masses
     isotope_masses: Dict[str, List[float]]
@@ -151,8 +151,8 @@ def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
     input_parameters : Dict[str, int]
         Dictionary with parameters from the first row of the input file, namely
         'N', 'M', 'cutoff', 'triclinic', 'has_velocity' and 'num_of_groups'
-    type_symbol_map : Dict[int, str]
-        Dictionary with types and the corresponding chemical symbols
+    species : List[str]
+        List with the chemical symbols that correspond to each type
 
     Raises
     ------
@@ -192,27 +192,34 @@ def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
     masses = rest_arr[:, 4].astype(float)
 
     # Determine the atomic species
-    if species_types is not None:
-        type_symbol_map = dict(enumerate(species_types))
-    else:
+    if species is None:
         type_symbol_map = {}
     if isotope_masses is not None:
         mass_symbols = {mass: symbol for symbol, masses in
                         isotope_masses.items() for mass in masses}
     symbols = []
     for atom_type, mass in zip(atom_types, masses):
-        if atom_type not in type_symbol_map:
-            if isotope_masses is not None:
-                nearest_value = find_nearest_value(list(mass_symbols.keys()),
-                                                   mass)
-                symbol = mass_symbols[nearest_value]
+        if species is None:
+            if atom_type not in type_symbol_map:
+                if isotope_masses is not None:
+                    nearest_value = find_nearest_value(
+                        list(mass_symbols.keys()), mass)
+                    symbol = mass_symbols[nearest_value]
+                else:
+                    symbol = chemical_symbols[
+                        find_nearest_index(atomic_masses, mass)]
+                type_symbol_map[atom_type] = symbol
             else:
-                symbol = chemical_symbols[
-                    find_nearest_index(atomic_masses, mass)]
-            type_symbol_map[atom_type] = symbol
+                symbol = type_symbol_map[atom_type]
         else:
-            symbol = type_symbol_map[atom_type]
+            if atom_type > len(species):
+                raise Exception('There is no entry for atom type {} in the '
+                                'species list!'.format(atom_type))
+            symbol = species[atom_type]
         symbols.append(symbol)
+
+    if species is None:
+        species = [type_symbol_map[i] for i in sorted(type_symbol_map.keys())]
 
     # Create the Atoms object
     atoms = Atoms(symbols=symbols, positions=positions, masses=masses, pbc=pbc,
@@ -225,10 +232,10 @@ def load_xyz_input_gpumd(fd, species_types=None, isotope_masses=None):
         groups = rest_arr[:, start_col:].astype(int)
         atoms.info = {i: {'groups': groups[i, :]} for i in range(n_rows)}
 
-    return atoms, input_parameters, type_symbol_map
+    return atoms, input_parameters, species
 
 
-def read_gpumd(fd, species_types=None, isotope_masses=None):
+def read_gpumd(fd, species=None, isotope_masses=None):
     """
     Read Atoms object from a GPUMD structure input file
 
@@ -236,7 +243,7 @@ def read_gpumd(fd, species_types=None, isotope_masses=None):
     ----------
     fd : file | str
         File object or name of file from which to read the Atoms object
-    species_types : List[str]
+    species : List[str]
         List with the chemical symbols that correspond to each type, will take
         precedence over isotope_masses
     isotope_masses: Dict[str, List[float]]
@@ -256,4 +263,4 @@ def read_gpumd(fd, species_types=None, isotope_masses=None):
         Raised if the list of species is incompatible with the input file
     """
 
-    return load_xyz_input_gpumd(fd, species_types, isotope_masses)[0]
+    return load_xyz_input_gpumd(fd, species, isotope_masses)[0]
