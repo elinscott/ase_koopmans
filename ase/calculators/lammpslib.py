@@ -1,6 +1,5 @@
 """ASE LAMMPS Calculator Library Version"""
 
-from __future__ import print_function
 
 import ctypes
 import operator
@@ -8,11 +7,12 @@ import operator
 import numpy as np
 from numpy.linalg import norm
 
-import ase.units
 from ase.calculators.calculator import Calculator
-from ase.data import chemical_symbols, atomic_masses
-from ase.utils import basestring
-
+from ase.data import (atomic_numbers as ase_atomic_numbers,
+                      chemical_symbols as ase_chemical_symbols,
+                      atomic_masses as ase_atomic_masses)
+from ase.calculators.lammps import convert
+from ase.geometry import wrap_positions
 
 # TODO
 # 1. should we make a new lammps object each time ?
@@ -27,22 +27,23 @@ from ase.utils import basestring
 #    lammpsrun.py
 
 
-# this one may be moved to some more generial place
+# this one may be moved to some more generic place
 def is_upper_triangular(arr, atol=1e-8):
     """test for upper triangular matrix based on numpy"""
     # must be (n x n) matrix
-    assert len(arr.shape)==2
+    assert len(arr.shape) == 2
     assert arr.shape[0] == arr.shape[1]
-    return np.allclose(np.tril(arr, k=-1), 0., atol=atol)
+    return np.allclose(np.tril(arr, k=-1), 0., atol=atol) and \
+        np.all(np.diag(arr) >= 0.0)
 
 
 def convert_cell(ase_cell):
     """
-    Convert a parallel piped (forming right hand basis)
+    Convert a parallelepiped (forming right hand basis)
     to lower triangular matrix LAMMPS can accept. This
     function transposes cell matrix so the bases are column vectors
     """
-    cell = np.matrix.transpose(ase_cell)
+    cell = ase_cell.T
 
     if not is_upper_triangular(cell):
         # rotate bases into triangular matrix
@@ -70,38 +71,6 @@ def convert_cell(ase_cell):
         return cell, None
 
 
-lammps_real = {
-    "mass": 0.001 * ase.units.kg / ase.units.mol,
-    "distance": ase.units.Angstrom,
-    "time": ase.units.fs,
-    "energy": ase.units.kcal/ase.units.mol,
-    "velocity": ase.units.Angstrom / ase.units.fs,
-    "force": ase.units.kcal/ase.units.mol/ase.units.Angstrom,
-    "pressure": 101325 * ase.units.Pascal
-}
-
-lammps_metal = {
-    "mass": 0.001 * ase.units.kg / ase.units.mol,
-    "distance": ase.units.Angstrom,
-    "time": 1e-12 * ase.units.second,
-    "energy": ase.units.eV,
-    "velocity": ase.units.Angstrom / (1e-12*ase.units.second),
-    "force": ase.units.eV/ase.units.Angstrom,
-    "pressure": 1e5 * ase.units.Pascal
-}
-
-lammps_units = {"real": lammps_real,
-                "metal": lammps_metal}
-
-
-def unit_convert(quantity, units='metal'):
-    try:
-        return lammps_units[units][quantity]
-    except:
-        raise NotImplementedError("Unit {} in unit system {} is not "
-                                  "implemented.".format(quantity, units))
-
-
 class LAMMPSlib(Calculator):
     r"""
 **Introduction**
@@ -116,34 +85,46 @@ is still experimental code.
 
 **Arguments**
 
-=================  ==========================================================
-Keyword                               Description
-=================  ==========================================================
-``lmpcmds``        list of strings of LAMMPS commands. You need to supply
-                   enough to define the potential to be used e.g.
+====================  ==========================================================
+Keyword                                  Description
+====================  ==========================================================
+``lmpcmds``           list of strings of LAMMPS commands. You need to supply
+                      enough to define the potential to be used e.g.
 
-                   ["pair_style eam/alloy",
-                    "pair_coeff * * potentials/NiAlH_jea.eam.alloy Ni Al"]
+                      ["pair_style eam/alloy",
+                       "pair_coeff * * potentials/NiAlH_jea.eam.alloy Ni Al"]
 
-``atom_types``     dictionary of ``atomic_symbol :lammps_atom_type`` pairs,
-                   e.g. ``{'Cu':1}`` to bind copper to lammps atom type 1.
-                   Default method assigns lammps atom types in order that they
-                   appear in the atoms model. Autocreated if <None>.
+``atom_types``        dictionary of ``atomic_symbol :lammps_atom_type`` pairs,
+                      e.g. ``{'Cu':1}`` to bind copper to lammps atom type 1.
+                      If <None>, autocreated by assigning lammps atom types in
+                      order that they appear in the first used atoms object.
 
-``log_file``       string
-                   path to the desired LAMMPS log file
+``atom_type_masses``  dictionary of ``atomic_symbol :mass`` pairs,
+                      e.g. ``{'Cu':63.546}`` to optionally assign masses that
+                      override default ase.data.atomic_masses.  Note that since
+                      unit conversion is done automatically in this module,
+                      these quantities must be given in the standard ase mass
+                      units (g/mol)
 
-``lammps_header``  string to use for lammps setup. Default is to use
-                   metal units and simple atom simulation.
+``log_file``          string
+                      path to the desired LAMMPS log file
 
-                   lammps_header=['units metal',
+``lammps_header``     string to use for lammps setup. Default is to use
+                      metal units and simple atom simulation.
+
+                      lammps_header=['units metal',
                                   'atom_style atomic',
                                   'atom_modify map array sort 0 0'])
 
-``keep_alive``     Boolean
-                   whether to keep the lammps routine alive for more commands
+``amendments``        extra list of strings of LAMMPS commands to be run post
+                      post initialization. (Use: Initialization amendments) e.g.
 
-=================  ==========================================================
+                      ["mass 1 58.6934"]
+
+``keep_alive``        Boolean
+                      whether to keep the lammps routine alive for more commands
+
+====================  ==========================================================
 
 
 **Requirements**
@@ -181,10 +162,10 @@ potentials)
 
     from ase import Atom, Atoms
     from ase.build import bulk
-    from lammpslib import LAMMPSlib
+    from ase.calculators.lammpslib import LAMMPSlib
 
     cmds = ["pair_style eam/alloy",
-            "pair_coeff * * NiAlH_jea.eam.alloy Al H"]
+            "pair_coeff * * NiAlH_jea.eam.alloy Ni H"]
 
     Ni = bulk('Ni', cubic=True)
     H = Atom('H', position=Ni.cell.diagonal()/2)
@@ -212,7 +193,7 @@ interface are::
     lmp.extract_global(...) # extracts a global variable
     lmp.close() # close the lammps object
 
-For a single atom model the following lammps file commands would be run
+For a single Ni atom model the following lammps file commands would be run
 by invoking the get_potential_energy() method::
 
     units metal
@@ -226,10 +207,13 @@ by invoking the get_potential_energy() method::
 
     ## user lmpcmds get executed here
     pair_style eam/alloy
-    pair_coeff * * NiAlH_jea.eam.alloy Al
+    pair_coeff * * NiAlH_jea.eam.alloy Ni
     ## end of user lmmpcmds
 
     run 0
+
+where xhi, yhi and zhi are the lattice vector lengths and xy,
+xz and yz are the tilt of the lattice vectors, all to be edited.
 
 
 **Notes**
@@ -260,12 +244,14 @@ by invoking the get_potential_energy() method::
 
     default_parameters = dict(
         atom_types=None,
+        atom_type_masses=None,
         log_file=None,
         lammps_name='',
         keep_alive=False,
         lammps_header=['units metal',
                        'atom_style atomic',
                        'atom_modify map array sort 0 0'],
+        amendments=None,
         boundary=True,
         create_box=True,
         create_atoms=True,
@@ -279,20 +265,20 @@ by invoking the get_potential_energy() method::
     def __del__(self):
         if self.started:
             self.lmp.close()
+            self.started = False
+            self.lmp = None
 
     def set_cell(self, atoms, change=False):
         lammps_cell, self.coord_transform = convert_cell(atoms.get_cell())
-        xhi = lammps_cell[0, 0]
-        yhi = lammps_cell[1, 1]
-        zhi = lammps_cell[2, 2]
-        xy = lammps_cell[0, 1]
-        xz = lammps_cell[0, 2]
-        yz = lammps_cell[1, 2]
+
+        xhi, xy, xz, _, yhi, yz, _, _, zhi = convert(
+                lammps_cell.flatten(order='C'), "distance", "ASE", self.units)
+        box_hi = [xhi, yhi, zhi]
 
         if change:
             cell_cmd = ('change_box all     '
                         'x final 0 {} y final 0 {} z final 0 {}      '
-                        'xy final {} xz final {} yz final {}'
+                        'xy final {} xz final {} yz final {} units box'
                         ''.format(xhi, yhi, zhi, xy, xz, yz))
         else:
             # just in case we'll want to run with a funny shape box,
@@ -300,15 +286,36 @@ by invoking the get_potential_energy() method::
             # any calculation
             if self.parameters.create_box:
                 self.lmp.command('box tilt large')
+
+            # Check if there are any indefinite boundaries. If so, shrink-wrapping will
+            # end up being used, but we want to define the LAMMPS region and box fairly
+            # tight around the atoms to avoid losing any
+            lammps_boundary_conditions = self.lammpsbc(atoms).split()
+            if 's' in lammps_boundary_conditions:
+                pos = atoms.get_positions()
+                if self.coord_transform is not None:
+                    pos = np.dot(self.coord_transform, pos.transpose())
+                    pos = pos.transpose()
+                posmin = np.amin(pos, axis=0)
+                posmax = np.amax(pos, axis=0)
+
+                for i in range(0,3):
+                    if lammps_boundary_conditions[i] == 's':
+                        box_hi[i] = 1.05*abs(posmax[i] - posmin[i])
+
             cell_cmd = ('region cell prism    '
                         '0 {} 0 {} 0 {}     '
                         '{} {} {}     units box'
-                        ''.format(xhi, yhi, zhi, xy, xz, yz))
+                        ''.format(*box_hi, xy, xz, yz))
 
         self.lmp.command(cell_cmd)
 
-    def set_lammps_pos(self, atoms, wrap=True):
-        pos = atoms.get_positions(wrap=wrap) / unit_convert("distance", self.units)
+    def set_lammps_pos(self, atoms):
+        # Create local copy of positions that are wrapped along any periodic
+        # directions
+        pos = wrap_positions(atoms.get_positions(), atoms.get_cell(),
+                             atoms.get_pbc())
+        pos = convert(pos, "distance", "ASE", self.units)
 
         # If necessary, transform the positions to new coordinate system
         if self.coord_transform is not None:
@@ -330,7 +337,6 @@ by invoking the get_potential_energy() method::
 
     def propagate(self, atoms, properties, system_changes, n_steps, dt=None,
                   dt_not_real_time=False, velocity_field=None):
-
         """"atoms: Atoms object
             Contains positions, unit-cell, ...
         properties: list of str
@@ -352,13 +358,21 @@ by invoking the get_potential_energy() method::
         if not self.initialized:
             self.initialise_lammps(atoms)
         else:  # still need to reset cell
-            # reset positions so that if they are crazy from last
-            # propagation, change_box (in set_cell()) won't hang
-            # could do this only after testing for crazy positions?
-            # could also use scatter_atoms() to set values (requires
+            # Apply only requested boundary condition changes. Note this needs to happen
+            # before the call to set_cell since 'change_box' will apply any
+            # shrink-wrapping *after* it's updated the cell dimensions
+            if 'pbc' in system_changes:
+                change_box_str = 'change_box all boundary {}'
+                change_box_cmd = change_box_str.format(self.lammpsbc(atoms))
+                self.lmp.command(change_box_cmd)
+
+            # Reset positions so that if they are crazy from last
+            # propagation, change_box (in set_cell()) won't hang.
+            # Could do this only after testing for crazy positions?
+            # Could also use scatter_atoms() to set values (requires
             # MPI comm), or extra_atoms() to get pointers to local
-            # data structures to zero, but then will have to be
-            # careful with parallelism
+            # data structures to zero, but then we would have to be
+            # careful with parallelism.
             self.lmp.command("set atom * x 0.0 y 0.0 z 0.0")
             self.set_cell(atoms, change=True)
 
@@ -368,7 +382,8 @@ by invoking the get_potential_energy() method::
         do_rebuild = (not np.array_equal(atoms.numbers, self.previous_atoms_numbers)
                       or ("numbers" in system_changes))
         if not do_rebuild:
-            do_redo_atom_types = not np.array_equal(atoms.numbers, self.previous_atoms_numbers)
+            do_redo_atom_types = not np.array_equal(
+                atoms.numbers, self.previous_atoms_numbers)
         else:
             do_redo_atom_types = False
 
@@ -381,17 +396,20 @@ by invoking the get_potential_energy() method::
 
         self.set_lammps_pos(atoms)
 
+        if self.parameters.amendments is not None:
+            for cmd in self.parameters.amendments:
+                self.lmp.command(cmd)
+
         if n_steps > 0:
             if velocity_field is None:
-                vel = (atoms.get_velocities() /
-                       unit_convert("velocity", self.units))
+                vel = convert(atoms.get_velocities(), "velocity", "ASE", self.units)
             else:
+                # FIXME: Do we need to worry about converting to lammps units here?
                 vel = atoms.arrays[velocity_field]
 
             # If necessary, transform the velocities to new coordinate system
             if self.coord_transform is not None:
-                vel = np.dot(self.coord_transform, np.matrix.transpose(vel))
-                vel = np.matrix.transpose(vel)
+                vel = np.dot(self.coord_transform, vel.T).T
 
             # Convert ase velocities matrix to lammps-style velocities array
             lmp_velocities = list(vel.ravel())
@@ -407,7 +425,7 @@ by invoking the get_potential_energy() method::
                 self.lmp.command('timestep %.30f' % dt)
             else:
                 self.lmp.command('timestep %.30f' %
-                                 (dt/unit_convert("time", self.units)))
+                                 convert(dt, "time", "ASE", self.units))
         self.lmp.command('run %d' % n_steps)
 
         if n_steps > 0:
@@ -416,20 +434,24 @@ by invoking the get_potential_energy() method::
                 [x for x in self.lmp.gather_atoms("x", 1, 3)]).reshape(-1, 3)
             if self.coord_transform is not None:
                 pos = np.dot(pos, self.coord_transform)
-            atoms.set_positions(
-                pos * unit_convert("distance", self.units))
+
+            # Convert from LAMMPS units to ASE units
+            pos = convert(pos, "distance", self.units, "ASE")
+
+            atoms.set_positions(pos)
 
             vel = np.array(
                 [v for v in self.lmp.gather_atoms("v", 1, 3)]).reshape(-1, 3)
             if self.coord_transform is not None:
                 vel = np.dot(vel, self.coord_transform)
             if velocity_field is None:
-                atoms.set_velocities(
-                    vel * unit_convert("velocity", self.units))
+                atoms.set_velocities(convert(vel, 'velocity', self.units,
+                                             'ASE'))
 
         # Extract the forces and energy
-        self.results['energy'] = (self.lmp.extract_variable('pe', None, 0) *
-                                  unit_convert("energy", self.units))
+        self.results['energy'] = convert(self.lmp.extract_variable('pe', None, 0),
+                                         "energy", self.units, "ASE")
+        self.results['free_energy'] = self.results['energy']
 
         stress = np.empty(6)
         stress_vars = ['pxx', 'pyy', 'pzz', 'pyz', 'pxz', 'pxy']
@@ -457,21 +479,11 @@ by invoking the get_potential_energy() method::
         stress[4] = stress_mat[0, 2]
         stress[5] = stress_mat[0, 1]
 
-        self.results['stress'] = (stress *
-                                  (-unit_convert("pressure", self.units)))
+        self.results['stress'] = convert(-stress, "pressure", self.units, "ASE")
 
-        # this does not necessarily yield the forces ordered by atom-id!
-        # f = np.zeros((len(atoms), 3))
-        # force_vars = ['fx', 'fy', 'fz']
-        # for i, var in enumerate(force_vars):
-        #     f[:, i] = (
-        #         np.asarray(
-        #             self.lmp.extract_variable(var, 'all', 1)[:len(atoms)]) *
-        #         unit_convert("force", self.units))
-
-        # definitely yields atom-id ordered array
-        f = (np.array(self.lmp.gather_atoms("f", 1, 3)).reshape(-1,3) *
-                unit_convert("force", self.units))
+        # definitely yields atom-id ordered force array
+        f = convert(np.array(self.lmp.gather_atoms("f", 1, 3)).reshape(-1,3),
+                    "force", self.units, "ASE")
 
         if self.coord_transform is not None:
             self.results['forces'] = np.dot(f, self.coord_transform)
@@ -484,11 +496,29 @@ by invoking the get_potential_energy() method::
         if not self.parameters.keep_alive:
             self.lmp.close()
 
-    def lammpsbc(self, pbc):
-        if pbc:
-            return 'p'
+    def lammpsbc(self, atoms):
+        """
+        Determine LAMMPS boundary types based on ASE pbc settings. For non-periodic
+        dimensions, if the cell length is finite then fixed BCs ('f') are used; if the
+        cell length is approximately zero, shrink-wrapped BCs ('s') are used.
+        """
+        retval = ''
+        pbc = atoms.get_pbc()
+        if np.all(pbc):
+            retval = 'p p p'
         else:
-            return 's'
+            cell = atoms.get_cell()
+            for i in range(0, 3):
+                if pbc[i]:
+                    retval += 'p '
+                else:
+                    # See if we're using indefinite ASE boundaries along this direction
+                    if np.linalg.norm(cell[i]) < np.finfo(cell[i][0]).tiny:
+                        retval += 's '
+                    else:
+                        retval += 'f '
+
+        return retval.strip()
 
     def rebuild(self, atoms):
         try:
@@ -502,7 +532,8 @@ by invoking the get_potential_energy() method::
                 self.lmp.command("pair_coeff * * 1 1")
 
                 for cmd in self.parameters.lmpcmds:
-                    if ("pair_style" in cmd) or ("pair_coeff" in cmd):
+                    if (("pair_style" in cmd) or ("pair_coeff" in cmd) or
+                            ("qeq/reax" in cmd)):
                         self.lmp.command(cmd)
 
             cmd = "create_atoms 1 random {} 1 NULL".format(n_diff)
@@ -523,7 +554,7 @@ by invoking the get_potential_energy() method::
 
         try:
             previous_types = set(
-                (i + 1, self.parameters.atom_types[chemical_symbols[Z]])
+                (i + 1, self.parameters.atom_types[ase_chemical_symbols[Z]])
                 for i, Z in enumerate(self.previous_atoms_numbers))
         except:
             previous_types = set()
@@ -563,7 +594,7 @@ by invoking the get_potential_energy() method::
             self.lmp = lammps(self.parameters.lammps_name, self.cmd_args,
                               comm=self.parameters.comm)
 
-        # Use metal units: Angstrom, ps, and eV
+        # Run header commands to set up lammps (units, etc.)
         for cmd in self.parameters.lammps_header:
             self.lmp.command(cmd)
 
@@ -583,27 +614,21 @@ by invoking the get_potential_energy() method::
         if self.parameters.boundary:
             # if the boundary command is in the supplied commands use that
             # otherwise use atoms pbc
-            pbc = atoms.get_pbc()
             for cmd in self.parameters.lmpcmds:
                 if 'boundary' in cmd:
                     break
             else:
-                self.lmp.command('boundary ' +
-                                 ' '.join([self.lammpsbc(bc) for bc in pbc]))
+                self.lmp.command('boundary ' + self.lammpsbc(atoms))
 
         # Initialize cell
         self.set_cell(atoms, change=not self.parameters.create_box)
 
         if self.parameters.atom_types is None:
-            # if None is given, create von atoms object in order of appearance
+            # if None is given, create from atoms object in order of appearance
             s = atoms.get_chemical_symbols()
             _, idx = np.unique(s, return_index=True)
             s_red = np.array(s)[np.sort(idx)].tolist()
-            self.parameters.atom_types = {j : i+1  for i, j in enumerate(s_red)}
-
-
-        # Collect chemical symbols
-        symbols = np.asarray(atoms.get_chemical_symbols())
+            self.parameters.atom_types = {j: i + 1 for i, j in enumerate(s_red)}
 
         # Initialize box
         if self.parameters.create_box:
@@ -625,17 +650,16 @@ by invoking the get_potential_energy() method::
         for cmd in self.parameters.lmpcmds:
             self.lmp.command(cmd)
 
-        # Set masses after user commands,
-        # to override EAM provided masses, e.g.
-        masses = atoms.get_masses()
+        # Set masses after user commands, e.g. to override
+        # EAM-provided masses
         for sym in self.parameters.atom_types:
-            for i in range(len(atoms)):
-                if symbols[i] == sym:
-                    # convert from amu (ASE) to lammps mass unit)
-                    self.lmp.command('mass %d %.30f' % (
-                        self.parameters.atom_types[sym],
-                        masses[i] / unit_convert("mass", self.units)))
-                    break
+            if self.parameters.atom_type_masses is None:
+                mass = ase_atomic_masses[ase_atomic_numbers[sym]]
+            else:
+                mass = self.parameters.atom_type_masses[sym]
+            self.lmp.command('mass %d %.30f' % (
+                self.parameters.atom_types[sym],
+                convert(mass, "mass", "ASE", self.units)))
 
         # Define force & energy variables for extraction
         self.lmp.command('variable pxx equal pxx')
@@ -648,7 +672,7 @@ by invoking the get_potential_energy() method::
         # I am not sure why we need this next line but LAMMPS will
         # raise an error if it is not there. Perhaps it is needed to
         # ensure the cell stresses are calculated
-        self.lmp.command('thermo_style custom pe pxx')
+        self.lmp.command('thermo_style custom pe pxx emol ecoul')
 
         self.lmp.command('variable fx atom fx')
         self.lmp.command('variable fy atom fy')
@@ -662,12 +686,11 @@ by invoking the get_potential_energy() method::
         self.initialized = True
 
 
-
 # keep this one for the moment being...
 def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
                       molecule_ids=None, charges=None, units='metal'):
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         fh = open(filename, 'w')
     else:
         fh = filename
@@ -678,7 +701,6 @@ def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
 
     fh.write('{0} atoms\n'.format(len(atoms)))
     fh.write('{0} atom types\n'.format(len(atom_types)))
-
 
     fh.write('\n')
     cell, coord_transform = convert_cell(atoms.get_cell())
@@ -693,13 +715,14 @@ def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
     masses = atoms.get_masses()
     symbols = atoms.get_chemical_symbols()
     for sym in atom_types:
-        for i in range(len(atoms)):
+        for i in range(len(atoms)): # TODO: Make this more efficient
             if symbols[i] == sym:
-                sym_mass[sym] = masses[i] / unit_convert("mass", units)
+                sym_mass[sym] = convert(masses[i], "mass", "ASE", units)
                 break
             else:
-                sym_mass[sym] = (atomic_masses[chemical_symbols.index(sym)] /
-                                 unit_convert("mass", units))
+                sym_mass[sym] = convert(
+                        ase_atomic_masses[ase_chemical_symbols.index(sym)],
+                        "mass", "ASE", units)
 
     for (sym, typ) in sorted(atom_types.items(), key=operator.itemgetter(1)):
         fh.write('{0} {1}\n'.format(typ, sym_mass[sym]))
@@ -715,5 +738,5 @@ def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
         fh.write('{0} {1} {2} {3:16.8e} {4:16.8e} {5:16.8e} {6:16.8e}\n'
                  .format(i + 1, mol, typ, q, pos[0], pos[1], pos[2]))
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         fh.close()

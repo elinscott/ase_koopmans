@@ -1,4 +1,5 @@
 # creates: vasp_si_bandstructure.png
+# flake8: noqa
 from ase.build import bulk
 from ase.dft.band_structure import BandStructure
 import numpy as np
@@ -159,8 +160,14 @@ energies = np.array([[[ -1.8719,  -1.8719,   1.896 ,   1.896 ,   9.9847,   9.984
                         18.6257,  18.6257,  24.5738,  24.5739,  25.3583,  25.3583,
                         25.9521,  25.9521,  27.1466,  27.1466,  31.3822,  31.3825]]])
 
-bs = BandStructure(cell=atoms.cell,
-                   kpts=kpts,
+# Update to new band structure stuff
+lattice = atoms.cell.get_bravais_lattice()
+bandpath = lattice.bandpath('WGX', npoints=30)
+maxerr = np.abs(bandpath.kpts - kpts).max()
+assert maxerr < 1e-5
+
+
+bs = BandStructure(bandpath,
                    energies=energies,
                    reference=ref)
 

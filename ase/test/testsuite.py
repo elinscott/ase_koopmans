@@ -1,306 +1,26 @@
-from __future__ import print_function
 import os
 import sys
 import subprocess
-from multiprocessing import Process, cpu_count, Queue
-import tempfile
+from contextlib import contextmanager
+import importlib
 import unittest
-from glob import glob
-from distutils.version import LooseVersion
-import time
-import traceback
+import warnings
+import argparse
+from multiprocessing import cpu_count
 
-import numpy as np
-
-from ase.calculators.calculator import names as calc_names, get_calculator
-from ase.utils import devnull
+from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.cli.info import print_info
+from ase.cli.main import CLIError
 
-NotAvailable = unittest.SkipTest
 
-test_calculator_names = []
+test_calculator_names = ['emt']
+datafiles_directory = os.path.join(os.path.dirname(__file__), 'datafiles', '')
 
 
 def require(calcname):
     if calcname not in test_calculator_names:
-        raise NotAvailable('use --calculators={0} to enable'.format(calcname))
-
-
-def get_tests(files=None):
-    dirname, _ = os.path.split(__file__)
-    if files:
-        files = [os.path.join(dirname, f) for f in files]
-    else:
-        files = glob(os.path.join(dirname, '*'))
-        files.remove(os.path.join(dirname, 'testsuite.py'))
-
-    sdirtests = []  # tests from subdirectories: only one level assumed
-    tests = []
-    for f in files:
-        if os.path.isdir(f):
-            # add test subdirectories (like calculators)
-            sdirtests.extend(glob(os.path.join(f, '*.py')))
-        else:
-            # add py files in testdir
-            if f.endswith('.py'):
-                tests.append(f)
-    tests.sort()
-    sdirtests.sort()
-    tests.extend(sdirtests)  # run test subdirectories at the end
-    tests = [os.path.relpath(test, dirname)
-             for test in tests if not test.endswith('__.py')]
-    return tests
-
-
-def runtest_almost_no_magic(test):
-    dirname, _ = os.path.split(__file__)
-    path = os.path.join(dirname, test)
-    # exclude some test for windows, not done automatic
-    if os.name == 'nt':
-        skip = [name for name in calc_names]
-        skip += ['db_web', 'h2.py', 'bandgap.py', 'al.py',
-                 'runpy.py', 'oi.py']
-        if any(s in test for s in skip):
-            raise NotAvailable('not on windows')
-    try:
-        with open(path) as fd:
-            exec(compile(fd.read(), path, 'exec'), {})
-    except ImportError as ex:
-        module = ex.args[0].split()[-1].replace("'", '').split('.')[0]
-        if module in ['scipy', 'matplotlib', 'Scientific', 'lxml',
-                      'flask', 'gpaw', 'GPAW', 'netCDF4']:
-            raise unittest.SkipTest('no {} module'.format(module))
-        else:
-            raise
-
-
-def run_single_test(filename):
-    """Execute single test and return results as dictionary."""
-    result = Result(name=filename)
-
-    # Some tests may write to files with the same name as other tests.
-    # Hence, create new subdir for each test:
-    cwd = os.getcwd()
-    testsubdir = filename.replace(os.sep, '_').replace('.', '_')
-    os.mkdir(testsubdir)
-    os.chdir(testsubdir)
-    t1 = time.time()
-
-    sys.stdout = devnull
-    try:
-        runtest_almost_no_magic(filename)
-    except KeyboardInterrupt:
-        raise
-    except unittest.SkipTest as ex:
-        result.status = 'SKIPPED'
-        result.whyskipped = str(ex)
-        result.exception = ex
-    except AssertionError as ex:
-        result.status = 'FAIL'
-        result.exception = ex
-        result.traceback = traceback.format_exc()
-    except BaseException as ex:
-        result.status = 'ERROR'
-        result.exception = ex
-        result.traceback = traceback.format_exc()
-    else:
-        result.status = 'OK'
-    finally:
-        sys.stdout = sys.__stdout__
-        t2 = time.time()
-        os.chdir(cwd)
-
-    result.time = t2 - t1
-    return result
-
-
-class Result:
-    """Represents the result of a test; for communicating between processes."""
-    attributes = ['name', 'pid', 'exception', 'traceback', 'time', 'status',
-                  'whyskipped']
-
-    def __init__(self, **kwargs):
-        d = {key: None for key in self.attributes}
-        d['pid'] = os.getpid()
-        for key in kwargs:
-            assert key in d
-            d[key] = kwargs[key]
-        self.__dict__ = d
-
-
-def runtests_subprocess(task_queue, result_queue):
-    """Main test loop to be called within subprocess."""
-
-    try:
-        while True:
-            result = test = None
-
-            test = task_queue.get()
-            if test == 'no more tests':
-                return
-
-            # We need to run some tests on master:
-            #  * doctest exceptions appear to be unpicklable.
-            #    Probably they contain a reference to a module or something.
-            #  * gui/run may deadlock for unknown reasons in subprocess
-
-            if test in ['bandstructure.py', 'doctests.py', 'gui/run.py',
-                        'matplotlib_plot.py', 'fio/oi.py', 'fio/v_sim.py',
-                        'db/db_web.py']:
-                result = Result(name=test, status='please run on master')
-                result_queue.put(result)
-                continue
-
-            result = run_single_test(test)
-
-            # Any subprocess that uses multithreading is unsafe in
-            # subprocesses due to a fork() issue:
-            #   https://gitlab.com/ase/ase/issues/244
-            # Matplotlib uses multithreading and we must therefore make sure
-            # that any test which imports matplotlib runs on master.
-            # Hence check whether matplotlib was somehow imported:
-            assert 'matplotlib' not in sys.modules, test
-            result_queue.put(result)
-
-    except KeyboardInterrupt:
-        print('Worker pid={} interrupted by keyboard while {}'
-              .format(os.getpid(),
-                      'running ' + test if test else 'not running'))
-    except BaseException as err:
-        # Failure outside actual test -- i.e. internal test suite error.
-        result = Result(pid=os.getpid(), name=test, exception=err,
-                        traceback=traceback.format_exc(),
-                        time=0.0, status='ABORT')
-        result_queue.put(result)
-
-
-def print_test_result(result):
-    msg = result.status
-    if msg == 'SKIPPED':
-        msg = 'SKIPPED: {}'.format(result.whyskipped)
-    print('{name:36} {time:6.2f}s {msg}'
-          .format(name=result.name, time=result.time, msg=msg))
-    if result.traceback:
-        print('=' * 78)
-        print('Error in {} on pid {}:'.format(result.name, result.pid))
-        print(result.traceback.rstrip())
-        print('=' * 78)
-
-
-def runtests_parallel(nprocs, tests):
-    # Test names will be sent, and results received, into synchronized queues:
-    task_queue = Queue()
-    result_queue = Queue()
-
-    for test in tests:
-        task_queue.put(test)
-
-    for i in range(nprocs):  # Each process needs to receive this
-        task_queue.put('no more tests')
-
-    procs = []
-    try:
-        # Start tasks:
-        for i in range(nprocs):
-            p = Process(target=runtests_subprocess,
-                        name='ASE-test-worker-{}'.format(i),
-                        args=[task_queue, result_queue])
-            procs.append(p)
-            p.start()
-
-        # Collect results:
-        for i in range(len(tests)):
-            result = result_queue.get()  # blocking call
-            if result.status == 'please run on master':
-                result = run_single_test(result.name)
-            print_test_result(result)
-            yield result
-
-            if result.status == 'ABORT':
-                raise RuntimeError('ABORT: Internal error in test suite')
-    except KeyboardInterrupt:
-        raise
-    except BaseException:
-        for proc in procs:
-            proc.terminate()
-        raise
-    finally:
-        for proc in procs:
-            proc.join()
-
-
-def summary(results):
-    ntests = len(results)
-    err = [r for r in results if r.status == 'ERROR']
-    fail = [r for r in results if r.status == 'FAIL']
-    skip = [r for r in results if r.status == 'SKIPPED']
-    ok = [r for r in results if r.status == 'OK']
-
-    print('========== Summary ==========')
-    print('Number of tests   {:3d}'.format(ntests))
-    print('Passes:           {:3d}'.format(len(ok)))
-    print('Failures:         {:3d}'.format(len(fail)))
-    print('Errors:           {:3d}'.format(len(err)))
-    print('Skipped:          {:3d}'.format(len(skip)))
-    print('=============================')
-
-    if fail or err:
-        print('Test suite failed!')
-    else:
-        print('Test suite passed!')
-
-
-def test(calculators=[], jobs=0,
-         stream=sys.stdout, files=None):
-    """Main test-runner for ASE."""
-
-    if LooseVersion(np.__version__) >= '1.14':
-        # Our doctests need this (spacegroup.py)
-        np.set_printoptions(legacy='1.13')
-
-    test_calculator_names.extend(calculators)
-    disable_calculators([name for name in calc_names
-                         if name not in calculators])
-
-    tests = get_tests(files)
-    if len(set(tests)) != len(tests):
-        # Since testsubdirs are based on test name, we will get race
-        # conditions on IO if the same test runs more than once.
-        print('Error: One or more tests specified multiple times',
-              file=sys.stderr)
-        sys.exit(1)
-
-    if jobs == 0:
-        jobs = min(cpu_count(), len(tests))
-
-    print_info()
-
-    origcwd = os.getcwd()
-    testdir = tempfile.mkdtemp(prefix='ase-test-')
-    os.chdir(testdir)
-
-    # Note: :25 corresponds to ase.cli indentation
-    print('{:25}{}'.format('test directory', testdir))
-    print('{:25}{}'.format('number of processes', jobs))
-    print('{:25}{}'.format('time', time.strftime('%c')))
-    print()
-
-    t1 = time.time()
-    results = []
-    try:
-        for result in runtests_parallel(jobs, tests):
-            results.append(result)
-    except KeyboardInterrupt:
-        print('Interrupted by keyboard')
-        return 1
-    else:
-        summary(results)
-        ntrouble = len([r for r in results if r.status in ['FAIL', 'ERROR']])
-        return ntrouble
-    finally:
-        t2 = time.time()
-        print('Time elapsed: {:.1f} s'.format(t2 - t1))
-        os.chdir(origcwd)
+        raise unittest.SkipTest('use --calculators={0} to enable'
+                                .format(calcname))
 
 
 def disable_calculators(names):
@@ -308,14 +28,14 @@ def disable_calculators(names):
         if name in ['emt', 'lj', 'eam', 'morse', 'tip3p']:
             continue
         try:
-            cls = get_calculator(name)
+            cls = get_calculator_class(name)
         except ImportError:
             pass
         else:
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
-                    raise NotAvailable('use --calculators={0} to enable'
-                                       .format(name))
+                    raise unittest.SkipTest('use --calculators={0} to enable'
+                                            .format(name))
                 return mock_init
 
             def mock_del(obj):
@@ -328,14 +48,16 @@ def cli(command, calculator_name=None):
     if (calculator_name is not None and
         calculator_name not in test_calculator_names):
         return
-    proc = subprocess.Popen(' '.join(command.split('\n')),
+    actual_command = ' '.join(command.split('\n')).strip()
+    proc = subprocess.Popen(actual_command,
                             shell=True,
                             stdout=subprocess.PIPE)
     print(proc.stdout.read().decode())
     proc.wait()
+
     if proc.returncode != 0:
-        raise RuntimeError('Failed running a shell command.  '
-                           'Please set you $PATH environment variable!')
+        raise RuntimeError('Command "{}" exited with error code {}'
+                           .format(actual_command, proc.returncode))
 
 
 class must_raise:
@@ -352,36 +74,115 @@ class must_raise:
         return issubclass(exc_type, self.exception)
 
 
+@contextmanager
+def must_warn(category):
+    with warnings.catch_warnings(record=True) as ws:
+        yield
+        did_warn = any(w.category == category for w in ws)
+    if not did_warn:
+        raise RuntimeError('Failed to warn: ' + str(category))
+
+
+@contextmanager
+def no_warn():
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        yield
+
+
+def test(calculators=tuple(), jobs=0, verbose=False,
+         stream='ignored', strict='ignored'):
+    """Run the tests programmatically.
+
+    This is here for compatibility and perhaps convenience."""
+    from ase.cli.main import main
+
+    if stream != 'ignored':
+        warnings.warn('Ignoring old "stream" keyword', FutureWarning)
+    if strict != 'ignored':
+        warnings.warn('Ignoring old "strict" keyword', FutureWarning)
+
+    args = ['test']
+    if verbose:
+        args += ['--verbose']
+    if calculators:
+        args += ['--calculators={}'.format(','.join(calculators))]
+    if jobs:
+        args += '--jobs={}'.format(jobs)
+
+    main(args=args)
+
+
+def have_module(module):
+    return importlib.find_loader(module) is not None
+
+
+MULTIPROCESSING_MAX_WORKERS = 32
+MULTIPROCESSING_DISABLED = 0
+MULTIPROCESSING_AUTO = -1
+
+
+def choose_how_many_workers(jobs):
+    if jobs == MULTIPROCESSING_AUTO:
+        if have_module('xdist'):
+            jobs = min(cpu_count(), MULTIPROCESSING_MAX_WORKERS)
+        else:
+            jobs = MULTIPROCESSING_DISABLED
+    return jobs
+
+
 class CLICommand:
-    short_description = 'Test ASE'
+    """Run ASE's test-suite.
+
+    Requires the pytest package.  pytest-xdist is recommended
+    in addition as the tests will then run in parallel.
+    """
 
     @staticmethod
     def add_arguments(parser):
         parser.add_argument(
             '-c', '--calculators',
-            help='Comma-separated list of calculators to test.')
+            help='comma-separated list of calculators to test')
         parser.add_argument('--list', action='store_true',
                             help='print all tests and exit')
         parser.add_argument('--list-calculators', action='store_true',
                             help='print all calculator names and exit')
-        parser.add_argument('-j', '--jobs', type=int, default=0,
-                            metavar='N',
-                            help='number of parallel jobs '
-                            '[default: number of available processors]')
-        parser.add_argument('tests', nargs='*')
+        parser.add_argument(
+            '-j', '--jobs', type=int, metavar='N',
+            default=MULTIPROCESSING_AUTO,
+            help='number of worker processes.  If pytest-xdist is available,'
+            ' defaults to all available processors up to a maximum of {}.  '
+            '0 disables multiprocessing'
+            .format(MULTIPROCESSING_MAX_WORKERS))
+        parser.add_argument('-v', '--verbose', action='store_true',
+                            help='write test outputs to stdout.  '
+                            'Mostly useful when inspecting a single test')
+        parser.add_argument('--strict', action='store_true',
+                            help='convert warnings to errors.  '
+                            'This option currently has no effect')
+        parser.add_argument('--nogui', action='store_true',
+                            help='do not run graphical tests')
+        parser.add_argument('tests', nargs='*',
+                            help='specify particular test files '
+                            'or directories')
+        parser.add_argument('--pytest', nargs=argparse.REMAINDER,
+                            help='forward all remaining arguments to pytest.  '
+                            'See pytest --help')
 
     @staticmethod
     def run(args):
         if args.calculators:
             calculators = args.calculators.split(',')
+            # Hack: We use ASE_TEST_CALCULATORS to communicate to pytest
+            # (in conftest.py) which calculators we have enabled.
+            # This also provides an (undocumented) way to enable
+            # calculators when running pytest independently.
+            os.environ['ASE_TEST_CALCULATORS'] = ' '.join(calculators)
         else:
             calculators = []
 
-        if args.list:
-            dirname, _ = os.path.split(__file__)
-            for testfile in get_tests():
-                print(os.path.join(dirname, testfile))
-            sys.exit(0)
+        print_info()
+        print()
 
         if args.list_calculators:
             for name in calc_names:
@@ -396,6 +197,70 @@ class CLICommand:
                                                 ', '.join(calc_names)))
                 sys.exit(1)
 
-        ntrouble = test(calculators=calculators, jobs=args.jobs,
-                        files=args.tests)
-        sys.exit(ntrouble)
+        if args.nogui:
+            os.environ.pop('DISPLAY')
+
+        pytest_args = ['--pyargs', '-v']
+
+        def add_args(*args):
+            pytest_args.extend(args)
+
+        if args.list:
+            add_args('--collect-only')
+
+        jobs = choose_how_many_workers(args.jobs)
+        if jobs:
+            add_args('--numprocesses={}'.format(jobs))
+
+        if args.tests:
+            from ase.test.newtestsuite import TestModule
+
+            dct = TestModule.all_test_modules_as_dict()
+
+            # Hack: Make it recognize groups of tests like fio/*.py
+            groups = {}
+            for name in dct:
+                groupname = name.split('.')[0]
+                if groupname not in dct:
+                    groups.setdefault(groupname, []).append(name)
+
+            testnames = []
+            for arg in args.tests:
+                if arg in groups:
+                    testnames += groups[arg]
+                else:
+                    testnames.append(arg)
+
+            for testname in testnames:
+                mod = dct[testname]
+                if mod.is_pytest_style:
+                    pytest_args.append(mod.module)
+                else:
+                    # XXX Not totally logical
+                    add_args('ase.test.test_modules::{}'
+                             .format(mod.pytest_function_name))
+        else:
+            add_args('ase.test')
+
+        if args.verbose:
+            add_args('--capture=no')
+
+        if args.pytest:
+            add_args(*args.pytest)
+
+        print()
+        calcstring = ','.join(calculators) if calculators else 'none'
+        print('Enabled calculators: {}'.format(calcstring))
+        print()
+        print('About to run pytest with these parameters:')
+        for line in pytest_args:
+            print('    ' + line)
+
+
+
+        if not have_module('pytest'):
+            raise CLIError('Cannot import pytest; please install pytest to run tests')
+
+        import pytest
+        exitcode = pytest.main(pytest_args)
+        sys.exit(exitcode)

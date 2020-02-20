@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import os.path as op
 import sys
@@ -12,7 +11,13 @@ from ase.db.row import atoms2dict
 
 
 class CLICommand:
-    short_description = 'Find files with atoms in them'
+    """Find files with atoms in them.
+
+    Search through files known to ASE applying a query to filter the results.
+
+    See https://wiki.fysik.dtu.dk/ase/ase/db/db.html#querying for more
+    informations on how to construct the query string.
+    """
 
     @staticmethod
     def add_arguments(parser):
@@ -22,7 +27,8 @@ class CLICommand:
             help='Examples: More than 2 hydrogens and no silver: "H>2,Ag=0". '
             'More than 1000 atoms: "natoms>1000". '
             'Slab geometry containing Cu and Ni: "pbc=TTF,Cu,Ni".')
-        parser.add_argument('-v', '--verbose', action='store_true')
+        parser.add_argument('-v', '--verbose', action='store_true',
+                            help='More output.')
         parser.add_argument('-l', '--long', action='store_true',
                             help='Show also periodic boundary conditions, '
                             'chemical formula and filetype.')

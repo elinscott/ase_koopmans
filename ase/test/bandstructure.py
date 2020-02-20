@@ -1,4 +1,3 @@
-import matplotlib
 from ase.build import bulk
 from ase.calculators.test import FreeElectrons
 from ase.dft.kpoints import special_paths
@@ -17,5 +16,4 @@ bs = BandStructure.read('hmm.json')
 coords, labelcoords, labels = bs.get_labels()
 print(labels)
 assert ''.join(labels) == 'GXWKGLUWLKUX'
-matplotlib.use('Agg', warn=False)
 bs.plot(emax=10, filename='bs.png')

@@ -13,6 +13,7 @@ from ase.io import Trajectory
 
 all_optimizers = ase.optimize.__all__ + ['PreconLBFGS', 'PreconFIRE',
                                          'SciPyFminCG', 'SciPyFminBFGS']
+all_optimizers.remove('QuasiNewton')
 
 
 def get_optimizer(name):
@@ -94,33 +95,14 @@ class Wrapper:
     def get_positions(self):
         return self.atoms.get_positions()
 
-    @property
-    def cell(self):
-        return self.atoms.cell
-
-    def get_cell(self, complete=False):
-        return self.atoms.get_cell(complete)
-
-    @property
-    def pbc(self):
-        return self.atoms.pbc
-
-    @property
-    def positions(self):
-        return self.atoms.positions
-
-    @property
-    def constraints(self):
-        return self.atoms.constraints
-
-    def copy(self):
-        return self.atoms.copy()
-
     def get_calculator(self):
         return self.atoms.calc
 
     def __len__(self):
         return len(self.atoms)
+
+    def __getattr__(self, name):
+        return self.atoms.__getattribute__(name)
 
 
 def run_test(atoms, optimizer, tag, fmax=0.02, eggbox=0.0):
@@ -151,15 +133,14 @@ def test_optimizer(systems, optimizer, calculator, prefix='', db=None,
                    eggbox=0.0):
     """Test optimizer on systems."""
 
-    for atoms in systems:
-        formula = atoms.get_chemical_formula()
+    for name, atoms in systems:
         if db is not None:
             optname = optimizer.__name__
-            id = db.reserve(optimizer=optname, name=formula)
+            id = db.reserve(optimizer=optname, name=name)
             if id is None:
                 continue
         atoms = atoms.copy()
-        tag = '{}{}-{}'.format(prefix, optname, formula)
+        tag = '{}{}-{}'.format(prefix, optname, name)
         atoms.calc = calculator(txt=tag + '.txt')
         error, nsteps, texcl, tincl = run_test(atoms, optimizer, tag,
                                                eggbox=eggbox)
@@ -168,7 +149,7 @@ def test_optimizer(systems, optimizer, calculator, prefix='', db=None,
             db.write(atoms,
                      id=id,
                      optimizer=optname,
-                     name=formula,
+                     name=name,
                      error=error,
                      n=nsteps,
                      t=texcl,
@@ -190,7 +171,8 @@ def main():
 
     args = parser.parse_args()
 
-    systems = [row.toatoms() for row in ase.db.connect(args.systems).select()]
+    systems = [(row.name, row.toatoms())
+               for row in ase.db.connect(args.systems).select()]
 
     db = ase.db.connect('results.db')
 

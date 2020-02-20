@@ -8,17 +8,18 @@ import numpy as np
 from collections import OrderedDict
 import re
 # Example molecule
-atoms = Atoms('CH4',[[ 1.08288111e-09, 1.74602682e-09,-1.54703448e-09],
-    [-6.78446715e-01, 8.73516584e-01,-8.63073811e-02],
-    [-4.09602527e-01,-8.46016530e-01,-5.89280858e-01],
-    [ 8.52016070e-02,-2.98243876e-01, 1.06515792e+00],
-    [ 1.00284763e+00, 2.70743821e-01,-3.89569679e-01]])
-connectivitymatrix = np.array([[0, 1, 1, 1, 1], # Carbon(index 0), is connected to other hydrogen atoms (index 1-4)
-    [1, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0], 
-    [1, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0]])
-write('xsd_test_CH4.xsd',atoms,connectivity = connectivitymatrix)
+atoms = Atoms('CH4', [[ 1.08288111e-09, 1.74602682e-09,-1.54703448e-09],
+                      [-6.78446715e-01, 8.73516584e-01,-8.63073811e-02],
+                      [-4.09602527e-01,-8.46016530e-01,-5.89280858e-01],
+                      [ 8.52016070e-02,-2.98243876e-01, 1.06515792e+00],
+                      [ 1.00284763e+00, 2.70743821e-01,-3.89569679e-01]])
+# Carbon(index 0), is connected to other hydrogen atoms (index 1-4)
+connectivitymatrix = np.array([[0, 1, 1, 1, 1],
+                               [1, 0, 0, 0, 0],
+                               [1, 0, 0, 0, 0],
+                               [1, 0, 0, 0, 0],
+                               [1, 0, 0, 0, 0]])
+write('xsd_test_CH4.xsd', atoms, connectivity=connectivitymatrix)
 
 # Read and see if the atom information and bond information matches.
 AtomIdsToBondIds = OrderedDict()
@@ -43,7 +44,7 @@ AtomIds = list(AtomIdsToBondIds.keys())
 Newconnectivitymatrix = np.zeros((5,5))
 for AtomId in AtomIdsToBondIds:
     for BondId in AtomIdsToBondIds[AtomId]:
-        OtherAtomId = [a  for a in BondIdsToConnectedAtomIds[BondId] if a != AtomId]
+        OtherAtomId = [a for a in BondIdsToConnectedAtomIds[BondId] if a != AtomId]
         i = AtomIds.index(AtomId)
         j = AtomIds.index(OtherAtomId[0])
         Newconnectivitymatrix[i,j] = 1

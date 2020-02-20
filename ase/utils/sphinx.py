@@ -1,14 +1,12 @@
-from __future__ import print_function
 import os
 import traceback
 import warnings
 from os.path import join
 from stat import ST_MTIME
+import re
 
 from docutils import nodes
 from docutils.parsers.rst.roles import set_classes
-
-from ase.utils import exec_
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
@@ -19,14 +17,18 @@ def mol_role(role, rawtext, text, lineno, inliner, options={}, content=[]):
     t = ''
     while text:
         if text[0] == '_':
-            n.append(nodes.Text(t))
+            n.append(nodes.inline(text=t))
             t = ''
-            n.append(nodes.subscript(text=text[1]))
-            text = text[2:]
+            m = re.match(r'\d+', text[1:])
+            if m is None:
+                raise RuntimeError('Expected one or more digits after "_"')
+            digits = m.group()
+            n.append(nodes.subscript(text=digits))
+            text = text[1 + len(digits):]
         else:
             t += text[0]
             text = text[1:]
-    n.append(nodes.Text(t))
+    n.append(nodes.inline(text=t))
     return n, []
 
 
@@ -77,7 +79,7 @@ def creates():
                     yield dirpath, filename, outnames
 
 
-def create_png_files():
+def create_png_files(raise_exceptions=False):
     errcode = os.system('povray -h 2> /dev/null')
     if errcode:
         warnings.warn('No POVRAY!')
@@ -117,14 +119,20 @@ def create_png_files():
             import matplotlib.pyplot as plt
             plt.figure()
             try:
-                exec_(compile(open(pyname).read(), pyname, 'exec'), {})
+                exec(compile(open(pyname).read(), pyname, 'exec'), {})
             except KeyboardInterrupt:
                 return
-            except:
-                traceback.print_exc()
+            except Exception:
+                if raise_exceptions:
+                    raise
+                else:
+                    traceback.print_exc()
             finally:
                 os.chdir(olddir)
-            plt.close()
+
+            for n in plt.get_fignums():
+                plt.close(n)
+
             for outname in outnames:
                 print(dir, outname)
 
@@ -162,7 +170,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Process generated files.')
     parser.add_argument('command', nargs='?', default='list',
-                        choices=['list', 'inspect', 'clean'])
+                        choices=['list', 'inspect', 'clean', 'run'])
     args = parser.parse_args()
     if args.command == 'clean':
         clean()
@@ -170,5 +178,7 @@ if __name__ == '__main__':
         for dir, pyname, outnames in creates():
             for outname in outnames:
                 print(os.path.join(dir, outname))
+    elif args.command == 'run':
+        create_png_files(raise_exceptions=True)
     else:
         visual_inspection()

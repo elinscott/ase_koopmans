@@ -1,4 +1,3 @@
-from __future__ import print_function
 """ write gromos96 geometry files
 (the exact file format is copied from the freely available
 gromacs package, http://www.gromacs.org
@@ -6,7 +5,6 @@ its procedure src/gmxlib/confio.c (write_g96_conf)
 """
 
 from ase.parallel import paropen
-from ase.utils import basestring
 
 
 def read_gromos(fileobj, index=-1):
@@ -21,7 +19,7 @@ def read_gromos(fileobj, index=-1):
     from ase.data import chemical_symbols
     import sys
 
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'r')
 
     if (index != -1):
@@ -53,7 +51,7 @@ def read_gromos(fileobj, index=-1):
                     symbols.append(symbol[0].lower().capitalize())
             if symbols[-1] not in chemical_symbols:
                 print('Symbol not in chemical symbols, please check',\
-                    symbols[-1])
+                      symbols[-1])
                 sys.exit()
         if read_box:
             try:
@@ -86,7 +84,7 @@ def write_gromos(fileobj, images):
 
     from ase import units
 
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'w')
 
     if not isinstance(images, (list, tuple)):
@@ -120,8 +118,9 @@ def write_gromos(fileobj, images):
     count = 1
     rescount = 0
     oldresname = ''
-    for resname, atomtype, xyz in zip\
-            (gromos_residuenames, gromos_atomtypes, pos):
+    for resname, atomtype, xyz in zip(gromos_residuenames,
+                                      gromos_atomtypes,
+                                      pos):
         if resname != oldresname:
             oldresname = resname
             rescount = rescount + 1

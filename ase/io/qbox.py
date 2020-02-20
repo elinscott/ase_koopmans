@@ -2,10 +2,13 @@
 
 from ase import Atom, Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
-from ase.utils import basestring
 
 import re
 import xml.etree.ElementTree as ET
+
+
+# Compile regexs for fixing XML
+re_find_bad_xml = re.compile(r'<(/?)([A-z]+) expectation ([a-z]+)')
 
 
 def read_qbox(f, index=-1):
@@ -14,11 +17,12 @@ def read_qbox(f, index=-1):
     Inputs:
         f - str or fileobj, path to file or file object to read from
         index - int or slice, which frames to return
+
     Returns:
         list of Atoms or atoms, requested frame(s)
     """
 
-    if isinstance(f, basestring):
+    if isinstance(f, str):
         f = open(f, 'r')
 
     # Check whether this is a QB@all output
@@ -58,7 +62,7 @@ def read_qbox(f, index=-1):
             species[name] = spec_data
     else:
         # Find all species
-        species_blocks = _find_blocks(f, 'species', '[qbox]')
+        species_blocks = _find_blocks(f, 'species', '<cmd>run')
 
         for spec in species_blocks:
             name = spec.get('name')
@@ -97,8 +101,8 @@ def _find_blocks(fp, tag, stopwords='[qbox]'):
         list of xml.ElementTree, parsed XML blocks found by this class
     """
 
-    start_tag = '<%s'%tag
-    end_tag = '</%s>'%tag
+    start_tag = '<%s' % tag
+    end_tag = '</%s>' % tag
 
     blocks = []  # Stores all blocks
     cur_block = []  # Block being filled
@@ -129,8 +133,15 @@ def _find_blocks(fp, tag, stopwords='[qbox]'):
             else:
                 raise Exception('Parsing failed: End tag found before start tag')
 
+    # Join strings in a block into a single string
+    blocks = [''.join(b) for b in blocks]
+
+    # Ensure XML compatibility. There are two specific tags in QBall that are not
+    #  valid XML, so we need to run a
+    blocks = [re_find_bad_xml.sub(r'<\1\2_expectation_\3', b) for b in blocks]
+
     # Parse the blocks
-    return [ET.fromstring(''.join(b)) for b in blocks]
+    return [ET.fromstring(b) for b in blocks]
 
 
 def _parse_frame(tree, species):

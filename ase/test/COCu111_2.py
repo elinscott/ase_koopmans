@@ -73,7 +73,7 @@ dyn.run(fmax=0.1)
 # dyn.run(fmax=39.1)
 
 # read from the trajectory
-neb = SingleCalculatorNEB('mep_2coarse.traj@-4:')
+neb = SingleCalculatorNEB('mep_2coarse.traj', index='-4:')
 
 # refine in the important region
 neb.refine(2, 1, 3)

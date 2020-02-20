@@ -11,14 +11,12 @@ All additions and modifications to ASE should be tested.
 Test scripts should be put in the :git:`ase/test` directory.
 Run all tests with::
 
-  python -c "from ase.test import test; test(2)"
+  ase test
 
-It is using the function:
+This requires installing pytest and pytest-xdist.
+See ``ase test --help`` for more information.
 
-.. function:: test.test(verbosity=1, dir=None)
-    
-    Runs the test scripts in :git:`ase/test`.
-
+You can also run ``pytest`` directly from within the ``ase.test`` directory.
 
 .. important::
 
@@ -27,18 +25,23 @@ It is using the function:
   chance!
 
 
+How to add a test
+=================
+
+Create a module somewhere under ``ase.test``.  Make sure its name
+starts with ``test_``.  Inside the module, each test should be a
+function whose name starts with ``test_``.  This ensures that pytest
+finds the test.  Use ``ase test --list`` to see which tests it will
+find.
+
+You may note that many tests do not follow these rules.
+These are older tests.  We expect to port them one day.
+
 How to fail successfully
 ========================
 
-The test suite provided by :func:`test.test` automatically runs all test
+The test suite provided by :mod:`ase.test` automatically runs all test
 scripts in the :git:`ase/test` directory and summarizes the results.
-
-.. note::
-
-  Test scripts are run from within Python using the :func:`execfile` function.
-  Among other things, this provides the test scripts with an specialized global
-  :term:`namespace`, which means they may fail or behave differently if you try
-  to run them directly e.g. using :command:`python testscript.py`.
 
 If a test script causes an exception to be thrown, or otherwise terminates
 in an unexpected way, it will show up in this summary. This is the most
@@ -59,36 +62,31 @@ Remember, great tests should serve a dual purpose:
     they are, :func:`assert` it!
 
 .. function:: assert(expression)
-    
+
     Raises an ``AssertionError`` if the ``expression`` does not
     evaluate to ``True``.
+
+
 
 Example::
 
   from ase import molecule
-  atoms = molecule('C60')
-  atoms.center(vacuum=4.0)
-  result = atoms.get_positions().mean(axis=0)
-  expected = 0.5*atoms.get_cell().diagonal()
-  tolerance = 1e-4
-  assert (abs(result - expected) < tolerance).all()
+
+  def test_c60():
+      atoms = molecule('C60')
+      atoms.center(vacuum=4.0)
+      result = atoms.get_positions().mean(axis=0)
+      expected = 0.5*atoms.get_cell().diagonal()
+      tolerance = 1e-4
+      assert (abs(result - expected) < tolerance).all()
 
 
-Using functions to repeat calculations with different parameters::
+To run the same test with different inputs, use pytest fixtures.
+For example::
 
-  def test(parameter):
+  @pytest.mark.parametrize('parameter', [0.1, 0.3, 0.7])
+  def test_something(parameter):
       # setup atoms here...
       atoms.set_something(parameter)
       # calculations here...
       assert everything_is_going_to_be_alright
-
-  if __name__ in ['__main__', '__builtin__']:
-      test(0.1)
-      test(0.3)
-      test(0.7)
-          
-.. important::
-
-  Unlike normally, the module *__name__* will be set to ``'__builtin__'``
-  when a test script is run by the test suite.
-

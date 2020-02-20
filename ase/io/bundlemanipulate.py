@@ -14,7 +14,6 @@ Usage from command line:
 python -m ase.io.bundlemanipulate inbundle outbundle [start [end [step]]]
 """
 
-from __future__ import print_function
 from ase.io.bundletrajectory import PickleBundleBackend, UlmBundleBackend
 import os
 import pickle
@@ -156,7 +155,7 @@ def read_bundle_info(name):
                 mdata = pickle.load(f)
         else:
             raise IOError("'%s' does not appear to be a BundleTrajectory (no %s)"
-                        % (name, bestmetaname))
+                          % (name, bestmetaname))
     if 'format' not in mdata or mdata['format'] != 'BundleTrajectory':
         raise IOError("'%s' does not appear to be a BundleTrajectory" %
                       (name,))

@@ -39,6 +39,8 @@ class SinglePointCalculator(Calculator):
         return '{}({})'.format(self.__class__.__name__, ', '.join(tokens))
 
     def get_property(self, name, atoms=None, allow_calculation=True):
+        if atoms is None:
+            atoms = self.atoms
         if name not in self.results or self.check_state(atoms):
             if allow_calculation:
                 raise PropertyNotImplementedError(
@@ -58,6 +60,24 @@ class SinglePointKPoint:
         self.k = k  # k-point index
         self.eps_n = eps_n
         self.f_n = f_n
+
+
+def arrays_to_kpoints(eigenvalues, occupations, weights):
+    """Helper function for building SinglePointKPoints.
+
+    Convert eigenvalue, occupation, and weight arrays to list of
+    SinglePointKPoint objects."""
+    nspins, nkpts, nbands = eigenvalues.shape
+    assert eigenvalues.shape == occupations.shape
+    assert len(weights) == nkpts
+    kpts = []
+    for s in range(nspins):
+        for k in range(nkpts):
+            kpt = SinglePointKPoint(
+                weight=weights[k], s=s, k=k,
+                eps_n=eigenvalues[s, k], f_n=occupations[s, k])
+            kpts.append(kpt)
+    return kpts
 
 
 class SinglePointDFTCalculator(SinglePointCalculator):
@@ -113,6 +133,16 @@ class SinglePointDFTCalculator(SinglePointCalculator):
                     if kpt == counter:
                         return kpoint
                     counter += 1
+        return None
+
+    def get_k_point_weights(self):
+        """ Retunrs the weights of the k points """
+        if not self.kpts is None:
+            weights = []
+            for kpoint in self.kpts:
+                if kpoint.s == 0:
+                    weights.append(kpoint.weight)
+            return np.array(weights)
         return None
 
     def get_occupation_numbers(self, kpt=0, spin=0):

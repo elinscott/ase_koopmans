@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 import warnings
 
 import numpy as np
 from numpy.linalg import eigh
 
 from ase.optimize.optimize import Optimizer
-from ase.utils import basestring
 
 
 class BFGS(Optimizer):
@@ -59,8 +57,12 @@ class BFGS(Optimizer):
     def read(self):
         self.H, self.r0, self.f0, self.maxstep = self.load()
 
-    def step(self, f):
+    def step(self, f=None):
         atoms = self.atoms
+
+        if f is None:
+            f = atoms.get_forces()
+
         r = atoms.get_positions()
         f = f.reshape(-1)
         self.update(r.flat, f, self.r0, self.f0)
@@ -103,7 +105,7 @@ class BFGS(Optimizer):
 
     def replay_trajectory(self, traj):
         """Initialize hessian from old trajectory."""
-        if isinstance(traj, basestring):
+        if isinstance(traj, str):
             from ase.io.trajectory import Trajectory
             traj = Trajectory(traj, 'r')
         self.H = None

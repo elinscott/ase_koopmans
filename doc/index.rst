@@ -7,12 +7,13 @@ modules for setting up, manipulating, running, visualizing and analyzing
 atomistic simulations.  The code is freely available under the :ref:`GNU LGPL
 license <license info>`.
 
-.. _Python: http://www.python.org
+.. _Python: https://www.python.org/
 
 ASE provides interfaces to different codes through :mod:`Calculators
 <ase.calculators>` which are used together with the central
 :mod:`Atoms <ase.atoms>` object and the many available algorithms in
 ASE.
+
 
 >>> # Example: structure optimization of hydrogen molecule
 >>> from ase import Atoms
@@ -33,39 +34,49 @@ BFGS:   3  19:10:51    -31.492848     0.0023
 >>> h2.get_potential_energy()
 -31.492847800329216
 
-Supported :mod:`Calculators <ase.calculators>`:
+Supported :mod:`Calculators <ase.calculators>`
+==============================================
 
 |abinit| |Asap| |Atomistica| |CASTEP| |CP2K| |CRYSTAL| |deMon| |dftb|
-|elk| |exciting| |EMT|
-|fhi-aims| |fleur| |gpaw| |gromacs|
-|hotbit| |jacapo| |jdftx| |lammps| |nwchem|
-|octopus| |onetep| |q_espresso| |siesta| |turbomole| |vasp|
+|dftd4| |elk| |exciting| |EMT|
+|fhi-aims| |fleur| |gamess_us| |gpaw| |gromacs|
+|hotbit| |jdftx| |kim| |lammps| |nwchem|
+|octopus| |onetep| |openmx| |psi4| |q_espresso| |siesta| |turbomole| |vasp|
+|xtb| |orca|
+:mod:`ACE-Molecule <ase.calculators.acemolecule>`
 :mod:`~ase.calculators.amber`
 :mod:`DMol³ <ase.calculators.dmol>`
 Gaussian_
 :mod:`Grimme DFT-D3 <ase.calculators.dftd3>`
 :mod:`~ase.calculators.gulp`
 Mopac_
-:mod:`~ase.calculators.tip3p`
+:mod:`~ase.calculators.qchem`
 :mod:`~ase.calculators.qmmm`
+:mod:`~ase.calculators.tip3p`
+:mod:`~deMon-Nano <ase.calculators.demonnano>`
 
 
-`Reference publication on ASE <https://doi.org/10.1088/1361-648X/aa680e>`__
-
-
-Please go through this check-list to figure out if you need to convert your
-old ASE trajectory files to the modern file-format:
-
-.. image:: static/oldtraj.png
-    :align: center
-
-See how to identify and convert old trajectory files here: :ref:`convert`.
+`Reference publication on ASE <https://iopscience.iop.org/article/10.1088/1361-648X/aa680e/meta>`__
 
 
 .. _news:
 
 News
 ====
+
+* :ref:`ASE version 3.19.0 <releasenotes>` released (16 December 2019).
+
+* :ref:`ASE version 3.18.2 <releasenotes>` released (15 December 2019).
+
+* First `ASE Workshop <https://ase-workshop.materialsmodeling.org/>`_
+  held at Chalmers University of Technology, Gothenburg, Sweden,
+  November 19-22, 2019 (15 December 2019).
+
+* :ref:`ASE version 3.18.1 <releasenotes>` released (20 September 2019).
+
+* :ref:`ASE version 3.18.0 <releasenotes>` released (19 July 2019).
+
+* :ref:`ASE version 3.17.0 <releasenotes>` released (12 November 2018).
 
 * :ref:`ASE version 3.16.2 <releasenotes>` released (5 June 2018).
 
@@ -97,7 +108,7 @@ News
 * :ref:`ASE version 3.10.0 <releasenotes>` released (17 March 2016).
 
 * Web-page now uses the `Read the Docs Sphinx Theme
-  <https://github.com/snide/sphinx_rtd_theme>`_ (20 February 2016).
+  <https://github.com/readthedocs/sphinx_rtd_theme>`_ (20 February 2016).
 
 * The source code is now on https://gitlab.com/ase/ase (18 September 2015).
 
@@ -153,6 +164,7 @@ Contents
 
     about
     install
+    gettingstarted/gettingstarted
     tutorials/tutorials
     ase/ase
     cmdline
@@ -160,15 +172,16 @@ Contents
     gallery/gallery
     releasenotes
     contact
+    otherprojects
     development/development
     faq
-
+    ASE Workshop 2019 <workshop/workshop>
 
 .. |abinit| image:: static/abinit.png
    :target: ase/calculators/abinit.html
    :align: middle
 .. |Asap| image:: static/asap.png
-   :target: http://wiki.fysik.dtu.dk/asap
+   :target: https://wiki.fysik.dtu.dk/asap
    :align: middle
 .. |Atomistica| image:: static/atomistica.png
    :target: https://github.com/Atomistica/atomistica
@@ -184,6 +197,9 @@ Contents
    :align: middle
 .. |deMon| image:: static/demon.png
    :target: ase/calculators/demon.html
+   :align: middle
+.. |dftd4| image:: static/dftd4.png
+   :target: https://github.com/dftd4/dftd4/tree/master/python
    :align: middle
 .. |elk| image:: static/elk.png
    :target: http://elk.sourceforge.net/
@@ -203,8 +219,11 @@ Contents
 .. |fleur| image:: static/fleur.png
    :target: ase/calculators/fleur.html
    :align: middle
+.. |gamess_us| image:: static/gamess_us.png
+   :target: ase/calculators/gamess_us.html
+   :align: middle
 .. |gpaw| image:: static/gpaw.png
-   :target: http://wiki.fysik.dtu.dk/gpaw
+   :target: https://wiki.fysik.dtu.dk/gpaw/
    :align: middle
 .. |gromacs| image:: static/gromacs.png
    :target: ase/calculators/gromacs.html
@@ -212,11 +231,11 @@ Contents
 .. |hotbit| image:: static/hotbit.png
    :target: https://github.com/pekkosk/hotbit
    :align: middle
-.. |jacapo| image:: static/jacapo.png
-   :target: ase/calculators/jacapo.html
-   :align: middle
 .. |jdftx| image:: static/jdftx.png
    :target: http://jdftx.org/ASE.html
+   :align: middle
+.. |kim| image:: static/kim.png
+   :target: ase/calculators/kim.html
    :align: middle
 .. |lammps| image:: static/lammps.png
    :target: ase/calculators/lammps.html
@@ -229,6 +248,12 @@ Contents
    :align: middle
 .. |onetep| image:: static/onetep.png
    :target: ase/calculators/onetep.html
+   :align: middle
+.. |openmx| image:: static/openmx.png
+   :target: ase/calculators/openmx.html
+   :align: middle
+.. |psi4| image:: static/psi4.png
+   :target: ase/calculators/psi4.html
    :align: middle
 .. |q_espresso| image:: static/espresso.png
    :target: ase/calculators/espresso.html
@@ -243,10 +268,15 @@ Contents
 .. |vasp| image:: static/vasp.png
    :target: ase/calculators/vasp.html
    :align: middle
+.. |xtb| image:: static/xtb.png
+   :target: https://github.com/grimme-lab/xtb/tree/master/python
+   :align: middle
+.. |orca| image:: static/orca_logo_mpi.png
+   :target: ase/calculators/orca.html
+   :align: middle
 
-
-.. _Gaussian: http://www.gaussian.com/
+.. _Gaussian: http://gaussian.com/
 .. _Mopac: ase/calculators/mopac.html
 .. _Sphinx: http://sphinx.pocoo.org
-.. _Asap: http://wiki.fysik.dtu.dk/asap
-.. _CAMd: http://www.camd.dtu.dk
+.. _Asap: https://wiki.fysik.dtu.dk/asap
+.. _CAMd: https://www.fysik.dtu.dk/english/research/camd/

@@ -1,5 +1,3 @@
-# coding: utf-8
-
 from ase import Atoms
 
 
@@ -20,13 +18,13 @@ class NGLDisplay:
         self.atoms = atoms
         if isinstance(atoms[0], Atoms):
             # Assume this is a trajectory or struct list
-            self.view = nglview.show_asetraj(atoms)
+            self.view = nglview.show_asetraj(atoms, default=False)
             self.frm = IntSlider(value=0, min=0, max=len(atoms) - 1)
             self.frm.observe(self._update_frame)
             self.struct = atoms[0]
         else:
             # Assume this is just a single structure
-            self.view = nglview.show_ase(atoms)
+            self.view = nglview.show_ase(atoms, default=False)
             self.struct = atoms
             self.frm = None
 
@@ -35,7 +33,6 @@ class NGLDisplay:
                                args=['%dpx' % (xsize,), '%dpx' % (ysize,)])
         self.view.add_unitcell()
         self.view.add_spacefill()
-        self.view.remove_ball_and_stick()
         self.view.camera = 'orthographic'
         self.view.parameters = { "clipDist": 0 }
 
@@ -46,9 +43,9 @@ class NGLDisplay:
                              value='All', description='Show')
 
         self.csel = Dropdown(options=nglview.color.COLOR_SCHEMES,
-                             value=' ', description='Color scheme')
+                             value='element', description='Color scheme')
 
-        self.rad = FloatSlider(value=0.8, min=0.0, max=1.5, step=0.01,
+        self.rad = FloatSlider(value=0.5, min=0.0, max=1.5, step=0.01,
                                description='Ball size')
 
         self.asel.observe(self._select_atom)
@@ -56,7 +53,7 @@ class NGLDisplay:
         self.rad.observe(self._update_repr)
 
         self.view.update_spacefill(radiusType='covalent',
-                                   scale=0.8,
+                                   radiusScale=0.5,
                                    color_scheme=self.csel.value,
                                    color_scale='rainbow')
 
@@ -72,7 +69,7 @@ class NGLDisplay:
 
     def _update_repr(self, chg=None):
         self.view.update_spacefill(radiusType='covalent',
-                                   scale=self.rad.value,
+                                   radiusScale=self.rad.value,
                                    color_scheme=self.csel.value,
                                    color_scale='rainbow')
 

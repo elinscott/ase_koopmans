@@ -5,6 +5,7 @@ from ase.build import fcc111, fcc100, add_adsorbate
 from ase.db import connect
 from ase.constraints import FixAtoms
 from ase.lattice.cubic import FaceCenteredCubic
+from ase.cluster import wulff_construction
 
 systems = []
 
@@ -80,11 +81,30 @@ constraint = FixAtoms(mask=mask)
 slab.set_constraint(constraint)
 systems.append((slab, 'C/Cu(100)'))
 
+#
+surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]
+esurf = [0.9151, 0.9771, 0.7953] #Surface energies
+size = 10    #number of atoms
+atoms = wulff_construction('Al', surfaces, esurf, size, 'fcc', 
+                                 rounding = 'above')
+atoms.center(vacuum=6)
+atoms.rattle(0.2)
+systems.append((atoms, 'Alumninum cluster'))
+
 
 def create_database():
     db = connect('systems.db', append=False)
     for atoms, description in systems:
-        db.write(atoms, description=description)
+        name = atoms.get_chemical_formula()
+        db.write(atoms, description=description, name=name)
+
+    if False:
+        for atoms, description in systems:
+            for seed in range(5):
+                a = atoms.copy()
+                a.rattle(0.1, seed=seed)
+                name = a.get_chemical_formula() + '-' + str(seed)
+                db.write(a, description=description, seed=seed, name=name)
 
 
 if __name__ == '__main__':

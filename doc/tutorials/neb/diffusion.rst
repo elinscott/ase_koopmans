@@ -1,8 +1,8 @@
 .. _diffusion tutorial:
 
-===============================================
-Diffusion of gold atom on Al(100) surface (NEB)
-===============================================
+=============================================================================
+Surface diffusion energy barriers using the Nudged Elastic Band  (NEB) method
+=============================================================================
 
 First, set up the initial and final states:
 
@@ -18,16 +18,20 @@ Now, do the NEB calculation:
 
 Visualize the results with::
 
-    $ ase gui neb.traj
+    $ ase gui neb.traj@-5:
 
 and select Tools->NEB.
 
 |ts| |barrier|
 
-You can also analyze within a python script, which can be useful particularly
-if you are analyzing the output of many NEB jobs, with the
-:class:`ase.neb.NEBTools` class. Some examples of its use are below; the final
-example was used to make the figure you see above.
+You can also create a series of plots like above, that show the progression
+of the NEB relaxation, directly at the command line::
+
+    $ ase nebplot -xy neb.traj
+
+For more customizable analysis of the output of many NEB jobs, you can use
+the :class:`ase.neb.NEBTools` class. Some examples of its use are below; the
+final example was used to make the figure you see above.
 
 .. literalinclude:: diffusion5.py
 

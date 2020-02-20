@@ -1,6 +1,6 @@
-.. _TIPnP Water Box Equillibration:
+.. _tipnp water box equilibration:
 
-Equilibrating A TIPnP Water Box
+Equilibrating a TIPnP Water Box
 ===============================
 
 This tutorial shows how to use the TIP3P and TIP4P force fields in

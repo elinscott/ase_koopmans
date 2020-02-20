@@ -7,21 +7,21 @@ Installation
 Requirements
 ============
 
-* Python_ 2.7, 3.4-3.6
-* NumPy_ 1.9 or newer (base N-dimensional array package)
-* SciPy_ (library for scientific computing)
+* Python_ 3.5 or newer
+* NumPy_ 1.10 or newer (base N-dimensional array package)
+* SciPy_ 0.17 or newer (library for scientific computing)
 
 Optional:
 
-* Matplotlib_ (plotting)
+* Matplotlib_ 2.0.0 or newer (plotting)
 * :mod:`tkinter` (for :mod:`ase.gui`)
 * Flask_ (for :mod:`ase.db` web-interface)
 
-.. _Python: http://www.python.org/
-.. _NumPy: http://docs.scipy.org/doc/numpy/reference/
-.. _SciPy: http://docs.scipy.org/doc/scipy/reference/
-.. _Matplotlib: http://matplotlib.org/
-.. _Flask: http://flask.pocoo.org/
+.. _Python: https://www.python.org/
+.. _NumPy: https://docs.scipy.org/doc/numpy/reference/
+.. _SciPy: https://docs.scipy.org/doc/scipy/reference/
+.. _Matplotlib: https://matplotlib.org/
+.. _Flask: https://palletsprojects.com/p/flask/
 .. _PyPI: https://pypi.org/project/ase
 .. _PIP: https://pip.pypa.io/en/stable/
 
@@ -44,13 +44,21 @@ dependencies and make ASE available for all users.
 Max OSX (Homebrew)
 ------------------
 
-Mac users may be familiar with Homebrew_.  Before installing ASE with pip_ as
-described in the next section. Homebrew's ``python`` package provides an up-
-to-date version of Python 2.7.x and sets up ``pip`` for you::
+The old version of Python included in Mac OSX is incompatible with ASE
+and does not include the pip_ package manager.
+
+Before installing ASE with ``pip`` as described in the next section, Mac
+users need to install an appropriate Python version.  One option is
+to use the Homebrew_ package manager, which provides an up-to-date version
+of Python 3 including ``pip`` and the tkinter graphical interface bindings::
 
   $ brew install python
 
+For more information about the quirks of brewed Python see this guide_.
+
 .. _Homebrew: http://brew.sh
+
+.. _guide: https://docs.brew.sh/Homebrew-and-Python
 
 
 .. index:: pip
@@ -105,13 +113,13 @@ from Git.
 :Tar-file:
 
     You can get the source as a `tar-file <http://xkcd.com/1168/>`__ for the
-    latest stable release (ase-3.16.2.tar.gz_) or the latest
+    latest stable release (ase-3.19.0.tar.gz_) or the latest
     development snapshot (`<snapshot.tar.gz>`_).
 
     Unpack and make a soft link::
 
-        $ tar -xf ase-3.16.2.tar.gz
-        $ ln -s ase-3.16.2 ase
+        $ tar -xf ase-3.19.0.tar.gz
+        $ ln -s ase-3.19.0 ase
 
     Here is a `list of tarballs <https://pypi.org/simple/ase/>`__.
 
@@ -120,7 +128,7 @@ from Git.
     Alternatively, you can get the source for the latest stable release from
     https://gitlab.com/ase/ase like this::
 
-        $ git clone -b 3.16.2 https://gitlab.com/ase/ase.git
+        $ git clone -b 3.19.0 https://gitlab.com/ase/ase.git
 
     or if you want the development version::
 
@@ -151,7 +159,7 @@ Finally, please `run the tests`_.
     dates of older releases can be found there.
 
 
-.. _ase-3.16.2.tar.gz: https://pypi.org/packages/source/a/ase/ase-3.16.2.tar.gz
+.. _ase-3.19.0.tar.gz: https://pypi.org/packages/source/a/ase/ase-3.19.0.tar.gz
 
 
 Environment variables

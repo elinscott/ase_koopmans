@@ -3,14 +3,13 @@ import numpy as np
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.calculators.singlepoint import SinglePointKPoint
-from ase.utils import basestring
 
 
 def read_gpaw_out(fileobj, index):
     notfound = []
 
     def index_startswith(lines, string):
-        if not isinstance(string, basestring):
+        if not isinstance(string, str):
             # assume it's a list
             for entry in string:
                 try:
@@ -51,6 +50,11 @@ def read_gpaw_out(fileobj, index):
     images = []
     while True:
         try:
+            i = index_startswith(lines, 'reference energy:')
+            Eref = float(lines[i].split()[-1])
+        except ValueError:
+            Eref = None
+        try:
             i = lines.index('unit cell:\n')
         except ValueError:
             pass
@@ -89,12 +93,7 @@ def read_gpaw_out(fileobj, index):
             atoms = Atoms(cell=cell, pbc=pbc)
         lines = lines[i + 5:]
         try:
-            ii = index_startswith(lines, 'reference energy:')
-            Eref = float(lines[ii].split()[-1])
-        except ValueError:
-            Eref = None
-        try:
-            ii = index_pattern(lines, '\d+ k-point')
+            ii = index_pattern(lines, '\\d+ k-point')
             word = lines[ii].split()
             kx = int(word[2])
             ky = int(word[4])

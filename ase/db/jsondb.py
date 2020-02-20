@@ -1,4 +1,3 @@
-from __future__ import absolute_import, print_function
 import os
 import sys
 
@@ -8,7 +7,6 @@ from ase.db.core import Database, ops, lock, now
 from ase.db.row import AtomsRow
 from ase.io.jsonio import encode, decode
 from ase.parallel import world, parallel_function
-from ase.utils import basestring
 
 
 class JSONDatabase(Database, object):
@@ -25,7 +23,7 @@ class JSONDatabase(Database, object):
         ids = []
         nextid = 1
 
-        if (isinstance(self.filename, basestring) and
+        if (isinstance(self.filename, str) and
             os.path.isfile(self.filename)):
             try:
                 bigdct, ids, nextid = self._read_json()
@@ -71,13 +69,19 @@ class JSONDatabase(Database, object):
         return id
 
     def _read_json(self):
-        if isinstance(self.filename, basestring):
+        if isinstance(self.filename, str):
             with open(self.filename) as fd:
                 bigdct = decode(fd.read())
         else:
             bigdct = decode(self.filename.read())
             if self.filename is not sys.stdin:
                 self.filename.seek(0)
+
+        if not isinstance(bigdct, dict) or not ('ids' in bigdct
+                                                or 1 in bigdct):
+            from ase.io.formats import UnknownFileTypeError
+            raise UnknownFileTypeError('Does not resemble ASE JSON database')
+
         ids = bigdct.get('ids')
         if ids is None:
             # Allow for missing "ids" and "nextid":
@@ -91,7 +95,7 @@ class JSONDatabase(Database, object):
         if world.rank > 0:
             return
 
-        if isinstance(self.filename, basestring):
+        if isinstance(self.filename, str):
             fd = open(self.filename, 'w')
         else:
             fd = self.filename
@@ -128,7 +132,8 @@ class JSONDatabase(Database, object):
         return AtomsRow(dct)
 
     def _select(self, keys, cmps, explain=False, verbosity=0,
-                limit=None, offset=0, sort=None, include_data=True):
+                limit=None, offset=0, sort=None, include_data=True,
+                columns='all'):
         if explain:
             yield {'explain': (0, 0, 0, 'scan table')}
             return

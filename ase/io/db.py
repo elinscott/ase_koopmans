@@ -1,12 +1,11 @@
 import ase.db
-from ase.utils import basestring
 from ase.io.formats import string2index
 
 
 def read_db(filename, index, **kwargs):
     db = ase.db.connect(filename, serial=True, **kwargs)
 
-    if isinstance(index, basestring):
+    if isinstance(index, str):
         try:
             index = string2index(index)
         except ValueError:
@@ -15,7 +14,7 @@ def read_db(filename, index, **kwargs):
     if isinstance(index, int):
         index = slice(index, index + 1 or None)
 
-    if isinstance(index, basestring):
+    if isinstance(index, str):
         # index is a database query string:
         for row in db.select(index):
             yield row.toatoms()
@@ -28,8 +27,8 @@ def read_db(filename, index, **kwargs):
             yield row.toatoms()
 
 
-def write_db(filename, images, **kwargs):
-    con = ase.db.connect(filename, serial=True, **kwargs)
+def write_db(filename, images, append=False, **kwargs):
+    con = ase.db.connect(filename, serial=True, append=append, **kwargs)
     for atoms in images:
         con.write(atoms)
 
@@ -38,3 +37,5 @@ read_json = read_db
 write_json = write_db
 read_postgresql = read_db
 write_postgresql = write_db
+read_mysql = read_db
+write_mysql = write_db

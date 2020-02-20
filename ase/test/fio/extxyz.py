@@ -1,8 +1,6 @@
 # additional tests of the extended XYZ file I/O
 # (which is also included in oi.py test case)
-# maintainted by James Kermode <james.kermode@gmail.com>
-
-import os
+# maintained by James Kermode <james.kermode@gmail.com>
 
 import numpy as np
 
@@ -10,11 +8,16 @@ import ase.io
 from ase.io import extxyz
 from ase.atoms import Atoms
 from ase.build import bulk
+from ase.test.testsuite import no_warn
 
 # array data of shape (N, 1) squeezed down to shape (N, ) -- bug fixed
 # in commit r4541
 at = bulk('Si')
-ase.io.write('to.xyz', at, format='extxyz')
+# Check that unashable data type in info does not break output
+at.info['bad-info'] = [[1, np.array([0,1])], [2, np.array([0,1])]]
+with no_warn():
+    ase.io.write('to.xyz', at, format='extxyz', tolerant=True)
+del at.info['bad-info']
 at.arrays['ns_extra_data'] = np.zeros((len(at), 1))
 assert at.arrays['ns_extra_data'].shape == (2, 1)
 
@@ -22,21 +25,17 @@ ase.io.write('to_new.xyz', at, format='extxyz')
 at_new = ase.io.read('to_new.xyz')
 assert at_new.arrays['ns_extra_data'].shape == (2,)
 
-os.unlink('to.xyz')
-os.unlink('to_new.xyz')
-
 #test comment read/write with vec_cell
 at.info['comment'] = 'test comment'
 ase.io.write('comment.xyz', at, comment=at.info['comment'], vec_cell=True)
 r = ase.io.read('comment.xyz')
 assert at == r
-os.unlink('comment.xyz')
 
 # write sequence of images with different numbers of atoms -- bug fixed
 # in commit r4542
 images = [at, at * (2, 1, 1), at * (3, 1, 1)]
 ase.io.write('multi.xyz', images, format='extxyz')
-read_images = ase.io.read('multi.xyz@:')
+read_images = ase.io.read('multi.xyz', index=':')
 assert read_images == images
 
 #test vec_cell writing and reading
@@ -50,9 +49,8 @@ cell = images[2].get_cell()
 cell[-1] = [0.0, 0.0, 0.0]
 cell[-2] = [0.0, 0.0, 0.0]
 images[2].set_cell(cell)
-read_images = ase.io.read('multi.xyz@:')
+read_images = ase.io.read('multi.xyz', index=':')
 assert read_images == images
-os.unlink('multi.xyz')
 # also test for vec_cell with whitespaces
 f = open('structure.xyz', 'w')
 f.write("""1
@@ -68,7 +66,6 @@ f.close()
 a = ase.io.read('structure.xyz',index=0)
 b = ase.io.read('structure.xyz',index=1)
 assert a == b
-os.unlink('structure.xyz')
 
 # read xyz containing trailing blank line
 # also test for upper case elements
@@ -84,7 +81,6 @@ C         -7.28250        4.71303       -3.82016
 f.close()
 a = ase.io.read('structure.xyz')
 assert a[0].symbol == 'Mg'
-os.unlink('structure.xyz')
 
 # read xyz with / and @ signs in key value
 f = open('slash.xyz', 'w')
@@ -101,14 +97,12 @@ assert a.info['key1'] == r'a'
 assert a.info['key2'] == r'a/b'
 assert a.info['key3'] == r'a@b'
 assert a.info['key4'] == r'a@b'
-os.unlink('slash.xyz')
 
 struct = Atoms('H4', pbc=[True, True, True],
                 cell=[[4.00759, 0.0, 0.0], [-2.003795, 3.47067475, 0.0], [3.06349683e-16, 5.30613216e-16, 5.00307]], positions=[[-2.003795e-05, 2.31379473, 0.875437189], [2.00381504, 1.15688001, 4.12763281], [2.00381504, 1.15688001, 3.37697219], [-2.003795e-05, 2.31379473, 1.62609781]])
 struct.info = {'key_value_pairs': {'dataset': 'deltatest', 'kpoints': np.array([28, 28, 20]), 'identifier': 'deltatest_H_1.00'}, 'unique_id': '4cf83e2f89c795fb7eaf9662e77542c1'}
 
 ase.io.write('tmp.xyz', struct)
-os.unlink('tmp.xyz')
 
 # Complex properties line. Keys and values that break with a regex parser.
 # see https://gitlab.com/ase/ase/issues/53 for more info
@@ -187,6 +181,10 @@ expected_dict = {
 parsed_dict = extxyz.key_val_str_to_dict(complex_xyz_string)
 np.testing.assert_equal(parsed_dict, expected_dict)
 
+key_val_str = extxyz.key_val_dict_to_str(expected_dict)
+parsed_dict = extxyz.key_val_str_to_dict(key_val_str)
+np.testing.assert_equal(parsed_dict, expected_dict)
+
 # Round trip through a file with complex line.
 # Create file with the complex line and re-read it afterwards.
 # Test is disabled as it requires that file io defaults to utf-8 encoding
@@ -205,8 +203,6 @@ if False:
         else:
             np.testing.assert_equal(complex_atoms.info[key], value)
 
-    os.unlink('complex.xyz')
-
 #write multiple atoms objects to one xyz
 frames = [at, at * (2, 1, 1), at * (3, 1, 1)]
 for atoms in frames:
@@ -219,6 +215,3 @@ readFrames = ase.io.read('append.xyz.gz',index=slice(0,None))
 assert readFrames == frames
 singleFrame = ase.io.read('not_append.xyz',index=slice(0,None))
 assert singleFrame[-1] == frames[-1]
-os.unlink('append.xyz')
-os.unlink('append.xyz.gz')
-os.unlink('not_append.xyz')

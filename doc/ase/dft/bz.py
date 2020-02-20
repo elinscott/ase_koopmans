@@ -1,39 +1,43 @@
-# creates: cubic.svg, fcc.svg, bcc.svg, tetragonal.svg, orthorhombic.svg
-# creates: hexagonal.svg, monoclinic.svg
-import numpy as np
-import matplotlib.pyplot as plt
+# creates: bztable.rst
+# creates: 00.CUB.svg 01.FCC.svg 02.BCC.svg 03.TET.svg 04.BCT1.svg
+# creates: 05.BCT2.svg 06.ORC.svg 07.ORCF1.svg 08.ORCF2.svg 09.ORCF3.svg
+# creates: 10.ORCI.svg 11.ORCC.svg 12.HEX.svg 13.RHL1.svg 14.RHL2.svg
+# creates: 15.MCL.svg 16.MCLC1.svg 17.MCLC3.svg 18.MCLC5.svg 19.TRI1a.svg
+# creates: 20.TRI1b.svg 21.TRI2a.svg 22.TRI2b.svg
+# creates: 23.OBL.svg 24.RECT.svg 25.CRECT.svg 26.HEX2D.svg 27.SQR.svg
 
-from ase.dft.kpoints import (get_special_points, special_paths,
-                             parse_path_string)
-from ase.dft.bz import bz3d_plot
+from ase.lattice import all_variants
 
 
-for X, cell in [
-    ('cubic', np.eye(3)),
-    ('fcc', [[0, 1, 1], [1, 0, 1], [1, 1, 0]]),
-    ('bcc', [[-1, 1, 1], [1, -1, 1], [1, 1, -1]]),
-    ('tetragonal', [[1, 0, 0], [0, 1, 0], [0, 0, 1.3]]),
-    ('orthorhombic', [[1, 0, 0], [0, 1.2, 0], [0, 0, 1.4]]),
-    ('hexagonal', [[1, 0, 0], [-0.5, 3**0.5 / 2, 0], [0, 0, 1]]),
-    ('monoclinic', [[1, 0, 0], [0, 1, 0], [0, 0.2, 1]])]:
+header = """\
 
-    icell = np.linalg.inv(cell)
-    print(cell, X)
-    special_points = get_special_points(cell, X)
-    paths = []
-    for names in parse_path_string(special_paths[X]):
-        points = []
-        for name in names:
-            points.append(np.dot(icell, special_points[name]))
-        paths.append((names, points))
+Brillouin zone data
+-------------------
 
-    if X == 'bcc':
-        scale = 0.6
-        elev = 0.24
-        # pi / 13
-    else:
-        scale = 1
-        elev = None
+.. list-table::
+    :widths: 10 15 45
+"""
 
-    bz3d_plot(cell=cell, paths=paths, elev=elev, scale=scale)
-    plt.savefig(X + '.svg')
+
+entry = """\
+    * - {name} ({longname})
+      - {bandpath}
+      - .. image:: {fname}
+            :width: 40 %
+"""
+
+with open('bztable.rst', 'w') as fd:
+    print(header, file=fd)
+
+    for i, lat in enumerate(all_variants(include_blunt_angles=False)):
+        id = '{:02d}.{}'.format(i, lat.variant)
+        imagefname = '{}.svg'.format(id)
+        txt = entry.format(name=lat.variant,
+                           longname=lat.longname,
+                           bandpath=lat.bandpath().path,
+                           fname=imagefname)
+        print(txt, file=fd)
+        ax = lat.plot_bz()
+        fig = ax.get_figure()
+        fig.savefig(imagefname, bbox_inches='tight')
+        fig.clear()

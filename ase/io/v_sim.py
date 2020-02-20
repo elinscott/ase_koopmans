@@ -5,7 +5,6 @@ Atoms object in V_Sim 3.5+ ascii format.
 """
 
 import numpy as np
-from ase.utils import basestring
 
 
 def read_v_sim(filename='demo.ascii'):
@@ -18,7 +17,7 @@ def read_v_sim(filename='demo.ascii'):
     from ase.geometry import cellpar_to_cell
     import re
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename)
     else:  # Assume it's a file-like object
         f = filename
@@ -36,8 +35,8 @@ def read_v_sim(filename='demo.ascii'):
     symbols   = []
     unit      = 1.0
 
-    re_comment = re.compile('^\s*[#!]')
-    re_node    = re.compile('^\s*\S+\s+\S+\s+\S+\s+\S+')
+    re_comment = re.compile(r'^\s*[#!]')
+    re_node    = re.compile(r'^\s*\S+\s+\S+\s+\S+\s+\S+')
 
     while(True):
         line = f.readline()
@@ -99,7 +98,7 @@ def write_v_sim(filename, atoms):
     """
     from ase.geometry import cellpar_to_cell, cell_to_cellpar
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         f = open(filename)
     else:  # Assume it's a file-like object
         f = filename
@@ -126,9 +125,10 @@ def write_v_sim(filename, atoms):
     elif np.array_equiv(atoms.pbc, [True, False, True]):
         f.write('#keyword: surface\n')
     else:
-        raise Exception('Only supported boundary conditions are full PBC,'
-        ' no periodic boundary, and surface which is free in y direction'
-        ' (i.e. Atoms.pbc = [True, False, True]).')
+        raise Exception(
+            'Only supported boundary conditions are full PBC,'
+            ' no periodic boundary, and surface which is free in y direction'
+            ' (i.e. Atoms.pbc = [True, False, True]).')
 
     # Add atoms (scaled positions)
     for position, symbol in zip(atoms.get_scaled_positions(),

@@ -5,10 +5,13 @@ Units
 =====
 
 Physical units are defined in the :git:`ase/units.py` module.  Electron volts
-(``eV``) and angstroms (``Ang``) are defined as 1.0.
+(``eV``), Ångström (``Ang``), and atomic mass units are defined as 1.0.
 Other units are (amongst others)
 ``nm``, ``Bohr``, ``Hartree`` or ``Ha``, ``kJ``, ``kcal``, ``mol``,
 ``Rydberg`` or ``Ry``, ``second``, ``fs`` and ``kB``.
+
+Time is given in units of :math:`\textrm Å \sqrt{\textrm{u} / \textrm{eV}}`.  Thus, for example, :math:`1\textrm{ fs} \approx 0.098 \textrm Å \sqrt{\textrm{u} / \textrm{eV}}`, where `\textrm u` is the atomic mass unit.
+
 
 .. note::
 
@@ -18,8 +21,8 @@ Other units are (amongst others)
     depending on other versions of CODATA via the :func:`create_units` function
     (see Changing the CODATA version).
 
-.. _1986: http://physics.nist.gov/cuu/Constants/archive1986.html
-.. _2014: http://arxiv.org/pdf/1507.07956.pdf
+.. _1986: https://physics.nist.gov/cuu/Constants/archive1986.html
+.. _2014: https://arxiv.org/pdf/1507.07956.pdf
 
 Examples:
 

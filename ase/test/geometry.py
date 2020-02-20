@@ -1,12 +1,11 @@
 """Test the ase.geometry module and ase.build.cut() function."""
 
-from __future__ import division
 
 import numpy as np
 
-from ase.build import cut, bulk
-from ase.geometry import (get_layers, wrap_positions,
-                          crystal_structure_from_cell)
+from ase.build import cut, bulk, fcc111
+from ase.cell import Cell
+from ase.geometry import get_layers, wrap_positions
 from ase.spacegroup import crystal, get_spacegroup
 
 al = crystal('Al', [(0, 0, 0)], spacegroup=225, cellpar=4.05)
@@ -81,8 +80,11 @@ assert np.allclose(correct_pos, al.positions)
 # Create an Ag(111)/Si(111) interface
 ag = crystal(['Ag'], basis=[(0, 0, 0)], spacegroup=225, cellpar=4.09)
 si = crystal(['Si'], basis=[(0, 0, 0)], spacegroup=227, cellpar=5.43)
-assert get_spacegroup(ag).no == 225
-assert get_spacegroup(si).no == 227
+try:
+    assert get_spacegroup(ag).no == 225
+    assert get_spacegroup(si).no == 227
+except ImportError:
+    pass
 
 ag111 = cut(ag, a=(4, -4, 0), b=(4, 4, -8), nlayers=5)
 si111 = cut(si, a=(3, -3, 0), b=(3, 3, -6), nlayers=5)
@@ -152,17 +154,41 @@ correct_pos = [[4.7425, 1.2575, 8.7425],
                [0.67, -0.1, 10.1]]
 assert np.allclose(correct_pos, result_positions)
 
+# Test pretty_translation keyword
+positions = np.array([
+    [0, 0, 0],
+    [0, 1, 1],
+    [1, 0, 1],
+    [1, 1, 0.]])
+cell = np.diag([2, 2, 2])
+result = wrap_positions(positions, cell, pbc=[True, True, True],
+                        pretty_translation=True)
+assert np.max(result) < 1 + 1E-10
+assert np.min(result) > -1E-10
+
+result = wrap_positions(positions - 5, cell, pbc=[True, True, True],
+                        pretty_translation=True)
+assert np.max(result) < 1 + 1E-10
+
+result = wrap_positions(positions - 5, cell, pbc=[False, True, True],
+                        pretty_translation=True)
+assert np.max(result[:, 0]) < -3
+assert np.max(result[:, 1:]) < 1 + 1E-10
+
 # Get the correct crystal structure from a range of different cells
-assert crystal_structure_from_cell(bulk('Al').get_cell()) == 'fcc'
-assert crystal_structure_from_cell(bulk('Fe').get_cell()) == 'bcc'
-assert crystal_structure_from_cell(bulk('Zn').get_cell()) == 'hexagonal'
-cell = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-assert crystal_structure_from_cell(cell) == 'cubic'
-cell = [[1, 0, 0], [0, 1, 0], [0, 0, 2]]
-assert crystal_structure_from_cell(cell) == 'tetragonal'
-cell = [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
-assert crystal_structure_from_cell(cell) == 'orthorhombic'
-cell = [[1, 0, 0], [0, 2, 0], [0.5, 0, 3]]
-assert crystal_structure_from_cell(cell) == 'monoclinic'
-cell = [[1, 0, 0], [0.5, 3**0.5 / 2, 0], [0, 0, 3]]
-assert crystal_structure_from_cell(cell) == 'hexagonal'
+
+def checkcell(cell, name):
+    cell = Cell.ascell(cell)
+    lat = cell.get_bravais_lattice()
+    assert lat.name == name, (lat.name, name)
+
+checkcell(bulk('Al').cell, 'FCC')
+checkcell(bulk('Fe').cell, 'BCC')
+checkcell(bulk('Zn').cell, 'HEX')
+checkcell(fcc111('Au', size=(1, 1, 3), periodic=True).cell, 'HEX')
+checkcell([[1, 0, 0], [0, 1, 0], [0, 0, 1]], 'CUB')
+checkcell([[1, 0, 0], [0, 1, 0], [0, 0, 2]], 'TET')
+checkcell([[1, 0, 0], [0, 2, 0], [0, 0, 3]], 'ORC')
+checkcell([[1, 0, 0], [0, 2, 0], [0.5, 0, 3]], 'ORCC')
+checkcell([[1, 0, 0], [0, 2, 0], [0.501, 0, 3]], 'MCL')
+checkcell([[1, 0, 0], [0.5, 3**0.5 / 2, 0], [0, 0, 3]], 'HEX')

@@ -34,14 +34,14 @@ install:
       {
         echo "install with conda"
         conda update -yq conda
-        conda install -yq pip wheel numpy scipy pyflakes matplotlib flask
+        conda install -yq pip wheel numpy scipy pyflakes matplotlib flask pytest
       }
       else
       {
         echo "install with pip"
         #pip install --upgrade pip
         python.exe -m pip install --upgrade pip
-        pip install wheel
+        pip install wheel pytest
       }
   # install ase into the current python
   - "echo %cd%"

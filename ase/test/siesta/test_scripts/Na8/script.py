@@ -25,7 +25,7 @@ siesta = Siesta(
         'COOP.Write': True,
         'WriteDenchar': True,
         'PAO.BasisType': 'split',
-        'DM.Tolerance': 1e-4,
+        'SCF.DM.Tolerance': 1e-4,
         'DM.MixingWeight': 0.01,
         'MaxSCFIterations': 3,
         'DM.NumberPulay': 4})

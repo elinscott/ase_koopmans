@@ -1,5 +1,5 @@
 # i18n = i(18 letters omitted)n = internationalization
-"""Module for localization with gettext.
+"""Module for l10n (localization) with gettext.
 
 When this module is imported, ASE-GUI will use translations depending
 on system settings.  Usually language is taken from the LANG or LANGUAGE
@@ -20,7 +20,6 @@ along with ngettext if they want to translate messages with plurals
 (e.g. "Save 1 file", "Save %d files")."""
 
 import os
-import sys
 import gettext
 
 
@@ -29,9 +28,5 @@ localedir = '%s/po/' % os.path.dirname(__file__)
 translation = gettext.translation(domain, localedir, fallback=True)
 
 
-if sys.version_info[0] == 2:
-    _ = translation.ugettext
-    ngettext = translation.ungettext
-else:
-    _ = translation.gettext
-    ngettext = translation.ngettext
+_ = translation.gettext
+ngettext = translation.ngettext

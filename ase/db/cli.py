@@ -1,45 +1,54 @@
-from __future__ import print_function
-import collections
 import json
-import os
 import sys
+from collections import defaultdict
 from random import randint
 
 import ase.io
 from ase.db import connect
 from ase.db.core import convert_str_to_int_float_or_str
-from ase.db.summary import Summary
+from ase.db.row import row2dct
 from ase.db.table import Table, all_columns
-from ase.db.web import process_metadata
-from ase.calculators.calculator import get_calculator
-from ase.utils import plural, basestring
-
-try:
-    input = raw_input  # Python 2+3 compatibility
-except NameError:
-    pass
+from ase.utils import plural
 
 
 class CLICommand:
-    short_description = 'Manipulate and query ASE database'
+    """Manipulate and query ASE database.
 
-    description = """Query is a comma-separated list of
+    Query is a comma-separated list of
     selections where each selection is of the type "ID", "key" or
     "key=value".  Instead of "=", one can also use "<", "<=", ">=", ">"
     and  "!=" (these must be protected from the shell by using quotes).
-    Special keys: id, user, calculator, age, natoms, energy, magmom,
-    and charge.  Chemical symbols can also be used to select number of
+    Special keys:
+
+    * id
+    * user
+    * calculator
+    * age
+    * natoms
+    * energy
+    * magmom
+    * charge
+
+    Chemical symbols can also be used to select number of
     specific atomic species (H, He, Li, ...).  Selection examples:
-    'calculator=nwchem', 'age<1d', 'natoms=1', 'user=alice',
-    '2.2<bandgap<4.1', 'Cu>=10'"""
+
+        calculator=nwchem
+        age<1d
+        natoms=1
+        user=alice
+        2.2<bandgap<4.1
+        Cu>=10
+
+    See also: https://wiki.fysik.dtu.dk/ase/ase/db/db.html.
+    """
 
     @staticmethod
     def add_arguments(parser):
         add = parser.add_argument
-        add('database')
-        add('query', nargs='*')
-        add('-v', '--verbose', action='store_true')
-        add('-q', '--quiet', action='store_true')
+        add('database', help='SQLite3 file, JSON file or postgres URL.')
+        add('query', nargs='*', help='Query string.')
+        add('-v', '--verbose', action='store_true', help='More output.')
+        add('-q', '--quiet', action='store_true', help='Less output.')
         add('-n', '--count', action='store_true',
             help='Count number of selected rows.')
         add('-l', '--long', action='store_true',
@@ -47,14 +56,18 @@ class CLICommand:
         add('-i', '--insert-into', metavar='db-name',
             help='Insert selected rows into another database.')
         add('-a', '--add-from-file', metavar='filename',
-            help='Add results from file.')
+            help='Add configuration(s) from file.  '
+            'If the file contains more than one configuration then you can '
+            'use the syntax filename@: to add all of them.  Default is to '
+            'only add the last.')
         add('-k', '--add-key-value-pairs', metavar='key1=val1,key2=val2,...',
             help='Add key-value pairs to selected rows.  Values must '
             'be numbers or strings and keys must follow the same rules as '
             'keywords.')
-        add('-L', '--limit', type=int, default=20, metavar='N',
-            help='Show only first N rows (default is 20 rows).  Use --limit=0 '
-            'to show all.')
+        add('-L', '--limit', type=int, default=-1, metavar='N',
+            help='Show only first N rows.  Use --limit=0 '
+            'to show all.  Default is 20 rows when listing rows and no '
+            'limit when --insert-into is used.')
         add('--offset', type=int, default=0, metavar='N',
             help='Skip first N rows.  By default, no rows are skipped')
         add('--delete', action='store_true',
@@ -78,8 +91,6 @@ class CLICommand:
         add('-p', '--plot', metavar='x,y1,y2,...',
             help='Example: "-p x,y": plot y row against x row. Use '
             '"-p a:x,y" to make a plot for each value of a.')
-        add('-P', '--plot-data', metavar='name',
-            help="Show plot from data['name'] from the selected row.")
         add('--csv', action='store_true',
             help='Write comma-separated-values file.')
         add('-w', '--open-web-browser', action='store_true',
@@ -100,6 +111,10 @@ class CLICommand:
             help='Give rows a new unique id when using --insert-into.')
         add('--strip-data', action='store_true',
             help='Strip data when using --insert-into.')
+        add('--show-keys', action='store_true',
+            help='Show all keys.')
+        add('--show-values', metavar='key1,key2,...',
+            help='Show values for key(s).')
 
     @staticmethod
     def run(args):
@@ -138,16 +153,51 @@ def main(args):
         db.analyse()
         return
 
+    if args.show_keys:
+        keys = defaultdict(int)
+        for row in db.select(query):
+            for key in row._keys:
+                keys[key] += 1
+
+        n = max(len(key) for key in keys) + 1
+        for key, number in keys.items():
+            print('{:{}} {}'.format(key + ':', n, number))
+        return
+
+    if args.show_values:
+        keys = args.show_values.split(',')
+        values = {key: defaultdict(int) for key in keys}
+        numbers = set()
+        for row in db.select(query):
+            kvp = row.key_value_pairs
+            for key in keys:
+                value = kvp.get(key)
+                if value is not None:
+                    values[key][value] += 1
+                    if not isinstance(value, str):
+                        numbers.add(key)
+
+        n = max(len(key) for key in keys) + 1
+        for key in keys:
+            vals = values[key]
+            if key in numbers:
+                print('{:{}} [{}..{}]'
+                      .format(key + ':', n, min(vals), max(vals)))
+            else:
+                print('{:{}} {}'
+                      .format(key + ':', n,
+                              ', '.join('{}({})'.format(v, n)
+                                        for v, n in vals.items())))
+        return
+
     if args.add_from_file:
         filename = args.add_from_file
-        if ':' in filename:
-            calculator_name, filename = filename.split(':')
-            atoms = get_calculator(calculator_name)(filename).get_atoms()
-        else:
-            atoms = ase.io.read(filename)
-        db.write(atoms, key_value_pairs=add_key_value_pairs)
-        out('Added {0} from {1}'.format(atoms.get_chemical_formula(),
-                                        filename))
+        configs = ase.io.read(filename)
+        if not isinstance(configs, list):
+            configs = [configs]
+        for atoms in configs:
+            db.write(atoms, key_value_pairs=add_key_value_pairs)
+        out('Added ' + plural(len(configs), 'row'))
         return
 
     if args.count:
@@ -155,28 +205,17 @@ def main(args):
         print('%s' % plural(n, 'row'))
         return
 
-    if args.explain:
-        for row in db.select(query, explain=True,
-                             verbosity=verbosity,
-                             limit=args.limit, offset=args.offset):
-            print(row['explain'])
-        return
-
-    if args.show_metadata:
-        print(json.dumps(db.metadata, sort_keys=True, indent=4))
-        return
-
-    if args.set_metadata:
-        with open(args.set_metadata) as fd:
-            db.metadata = json.load(fd)
-        return
-
     if args.insert_into:
+        if args.limit == -1:
+            args.limit = 0
         nkvp = 0
         nrows = 0
         with connect(args.insert_into,
                      use_lock_file=not args.no_lock_file) as db2:
-            for row in db.select(query, sort=args.sort):
+            for row in db.select(query,
+                                 sort=args.sort,
+                                 limit=args.limit,
+                                 offset=args.offset):
                 kvp = row.get('key_value_pairs', {})
                 nkvp -= len(kvp)
                 kvp.update(add_key_value_pairs)
@@ -193,6 +232,25 @@ def main(args):
             (plural(nkvp, 'key-value pair'),
              plural(len(add_key_value_pairs) * nrows - nkvp, 'pair')))
         out('Inserted %s' % plural(nrows, 'row'))
+        return
+
+    if args.limit == -1:
+        args.limit = 20
+
+    if args.explain:
+        for row in db.select(query, explain=True,
+                             verbosity=verbosity,
+                             limit=args.limit, offset=args.offset):
+            print(row['explain'])
+        return
+
+    if args.show_metadata:
+        print(json.dumps(db.metadata, sort_keys=True, indent=4))
+        return
+
+    if args.set_metadata:
+        with open(args.set_metadata) as fd:
+            db.metadata = json.load(fd)
         return
 
     if add_key_value_pairs or delete_keys:
@@ -213,18 +271,13 @@ def main(args):
         return
 
     if args.delete:
-        ids = [row['id'] for row in db.select(query)]
+        ids = [row['id'] for row in db.select(query, include_data=False)]
         if ids and not args.yes:
             msg = 'Delete %s? (yes/No): ' % plural(len(ids), 'row')
             if input(msg).lower() != 'yes':
                 return
         db.delete(ids)
         out('Deleted %s' % plural(len(ids), 'row'))
-        return
-
-    if args.plot_data:
-        from ase.db.plot import dct2plot
-        dct2plot(db.get(query).data, args.plot_data)
         return
 
     if args.plot:
@@ -235,14 +288,14 @@ def main(args):
             tags = []
             keys = args.plot
         keys = keys.split(',')
-        plots = collections.defaultdict(list)
+        plots = defaultdict(list)
         X = {}
         labels = []
         for row in db.select(query, sort=args.sort, include_data=False):
             name = ','.join(str(row[tag]) for tag in tags)
             x = row.get(keys[0])
             if x is not None:
-                if isinstance(x, basestring):
+                if isinstance(x, str):
                     if x not in X:
                         X[x] = len(X)
                         labels.append(x)
@@ -267,54 +320,86 @@ def main(args):
         db2.write(row, data=row.get('data'), **kvp)
         return
 
-    db.python = args.metadata_from_python_script
-    db.meta = process_metadata(db, html=args.open_web_browser)
-
     if args.long:
-        # Remove .png files so that new ones will be created.
-        for func, filenames in db.meta.get('functions', []):
-            for filename in filenames:
-                try:
-                    os.remove(filename)
-                except OSError:  # Python 3 only: FileNotFoundError
-                    pass
-
         row = db.get(query)
-        summary = Summary(row, db.meta)
-        summary.write()
-    else:
-        if args.open_web_browser:
-            import ase.db.app as app
-            app.databases['default'] = db
-            app.app.run(host='0.0.0.0', debug=True)
-        else:
-            columns = list(all_columns)
-            c = args.columns
-            if c and c.startswith('++'):
-                keys = set()
-                for row in db.select(query,
-                                     limit=args.limit, offset=args.offset,
-                                     include_data=False):
-                    keys.update(row._keys)
-                columns.extend(keys)
-                if c[2:3] == ',':
-                    c = c[3:]
-                else:
-                    c = ''
-            if c:
-                if c[0] == '+':
-                    c = c[1:]
-                elif c[0] != '-':
-                    columns = []
-                for col in c.split(','):
-                    if col[0] == '-':
-                        columns.remove(col[1:])
-                    else:
-                        columns.append(col.lstrip('+'))
+        print(row2str(row))
+        return
 
-            table = Table(db, verbosity, args.cut)
-            table.select(query, columns, args.sort, args.limit, args.offset)
-            if args.csv:
-                table.write_csv()
+    if args.open_web_browser:
+        try:
+            import flask  # noqa
+        except ImportError:
+            print('Please install Flask: python3 -m pip install flask')
+            return
+        import ase.db.app as app
+        app.add_project(db)
+        app.app.run(host='0.0.0.0', debug=True)
+        return
+
+    columns = list(all_columns)
+    c = args.columns
+    if c and c.startswith('++'):
+        keys = set()
+        for row in db.select(query,
+                             limit=args.limit, offset=args.offset,
+                             include_data=False):
+            keys.update(row._keys)
+        columns.extend(keys)
+        if c[2:3] == ',':
+            c = c[3:]
+        else:
+            c = ''
+    if c:
+        if c[0] == '+':
+            c = c[1:]
+        elif c[0] != '-':
+            columns = []
+        for col in c.split(','):
+            if col[0] == '-':
+                columns.remove(col[1:])
             else:
-                table.write(query)
+                columns.append(col.lstrip('+'))
+
+    table = Table(db, verbosity=verbosity, cut=args.cut)
+    table.select(query, columns, args.sort, args.limit, args.offset)
+    if args.csv:
+        table.write_csv()
+    else:
+        table.write(query)
+
+
+def row2str(row) -> str:
+    t = row2dct(row)
+    S = [t['formula'] + ':',
+         'Unit cell in Ang:',
+         'axis|periodic|          x|          y|          z|' +
+         '    length|     angle']
+    c = 1
+    fmt = ('   {0}|     {1}|{2[0]:>11}|{2[1]:>11}|{2[2]:>11}|' +
+           '{3:>10}|{4:>10}')
+    for p, axis, L, A in zip(row.pbc, t['cell'], t['lengths'], t['angles']):
+        S.append(fmt.format(c, [' no', 'yes'][p], axis, L, A))
+        c += 1
+    S.append('')
+
+    if 'stress' in t:
+        S += ['Stress tensor (xx, yy, zz, zy, zx, yx) in eV/Ang^3:',
+              '   {}\n'.format(t['stress'])]
+
+    if 'dipole' in t:
+        S.append('Dipole moment in e*Ang: ({})\n'.format(t['dipole']))
+
+    if 'constraints' in t:
+        S.append('Constraints: {}\n'.format(t['constraints']))
+
+    if 'data' in t:
+        S.append('Data: {}\n'.format(t['data']))
+
+    width0 = max(max(len(row[0]) for row in t['table']), 3)
+    width1 = max(max(len(row[1]) for row in t['table']), 11)
+    S.append('{:{}} | {:{}} | Value'
+             .format('Key', width0, 'Description', width1))
+    for key, desc, value in t['table']:
+        S.append('{:{}} | {:{}} | {}'
+                 .format(key, width0, desc, width1, value))
+    return '\n'.join(S)

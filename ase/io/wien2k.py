@@ -94,7 +94,7 @@ def read_struct(filename, ase=True):
         
 def write_struct(filename, atoms2=None, rmt=None, lattice='P', zza=None):
     atoms = atoms2.copy()
-    atoms.set_scaled_positions(atoms.get_scaled_positions())
+    atoms.wrap()
     f = open(filename, 'w')
     f.write('ASE generated\n')
     nat = len(atoms)
@@ -169,6 +169,8 @@ def c2p(lattice):
         cell = np.array([[0.5, 0.5, 0.0], [0.5, -0.5, 0.0], [0.0, 0.0, -1.0]])
     elif lattice == 'B':
         cell = np.array([[0.5, 0.0, 0.5], [0.0, 1.0, 0.0], [0.5, 0.0, -0.5]])
+    elif lattice == 'A':
+        cell = np.array([[-1.0, 0.0, 0.0], [0.0, -0.5, 0.5], [0.0, 0.5, 0.5]])
     elif lattice == 'R':
         cell = np.array([[2.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0],
                          [-1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0],

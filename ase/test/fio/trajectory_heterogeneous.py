@@ -1,4 +1,3 @@
-from __future__ import print_function
 from ase.constraints import FixAtoms, FixBondLength
 from ase.build import molecule, bulk
 from ase.io.trajectory import Trajectory, get_header_data
@@ -47,4 +46,4 @@ for i in range(len(images)):
 with Trajectory('out.traj', 'a') as atraj:
     atraj.write(molecule('H2'))
     atraj.write(molecule('H2'))
-read('out.traj@:')
+read('out.traj', index=':')

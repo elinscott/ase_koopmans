@@ -10,23 +10,19 @@ the following publication:
     D. Packwood, J. R. Kermode, L. Mones, N. Bernstein, J. Woolley,
     N. Gould, C. Ortner, and G. Csanyi, A universal preconditioner for
     simulating condensed phase materials, J. Chem. Phys. 144, 164109 (2016).
-    DOI: http://dx.doi.org/10.1063/1.4947024
+    DOI: https://doi.org/10.1063/1.4947024
 
 A preconditioned version of FIRE is also included, this is less well tested.
 
 Optional dependencies
 ---------------------
 
-    - matscipy, https://github.com/libAtoms/matscipy, for faster
-      neighbour list asssembly with large systems. The module
-      falls back on `ase.neighbour_list` if matscipy is not available.
     - scipy, `pip install scipy` for efficient sparse linear algebra,
       important for large systems (>1000 atoms).
     - PyAMG, `pip install pyamg`, for iterative adaptive multi grid
       invesion of the preconditioner, again important for large systems.
 """
 
-from __future__ import print_function
 
 from ase.optimize.precon.precon import Precon, Exp, C1, Pfrommer, FF, Exp_FF
 from ase.optimize.precon.lbfgs import PreconLBFGS

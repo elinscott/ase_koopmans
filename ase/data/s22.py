@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 The following contains the S22 and s26 databases of weakly interacting dimers and complexes
 

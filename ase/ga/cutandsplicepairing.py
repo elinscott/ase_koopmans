@@ -1,4 +1,4 @@
-""" Implementaiton of the cut and splice paring operator described by
+""" Implementation of the cut and splice paring operator described by
 Deaven and Ho.
 
 """

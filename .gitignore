@@ -7,10 +7,13 @@ MANIFEST
 *.traj
 /build
 /ase.egg-info
+/ase/db/static/jsmol
+doc/ase/dft/bztable.rst
+doc/tutorials/deltacodesdft/fit.json
+doc/ase/io/formatoptions.rst
 
-#editor backup files
-*.py~
-*.rst~
+# Editor backup files
+*~
 
 # Ignore PyCharm settings
 .idea/
@@ -20,3 +23,8 @@ MANIFEST
 
 # Translation template
 ase/gui/po/ag.pot
+
+# Pytest
+.cache
+
+.mypy_cache

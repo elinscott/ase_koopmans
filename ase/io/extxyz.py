@@ -11,10 +11,11 @@ description of the Extended XYZ file format.
 Contributed by James Kermode <james.kermode@gmail.com>
 """
 
-from __future__ import print_function
 
 from itertools import islice
 import re
+import warnings
+
 import numpy as np
 
 from ase.atoms import Atoms
@@ -22,7 +23,8 @@ from ase.calculators.calculator import all_properties, Calculator
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
-from ase.utils import basestring
+from ase.constraints import FixAtoms, FixCartesian
+from ase.io.formats import index2range
 
 __all__ = ['read_xyz', 'write_xyz', 'iread_xyz']
 
@@ -34,10 +36,10 @@ PROPERTY_NAME_MAP = {'positions': 'pos',
 REV_PROPERTY_NAME_MAP = dict(zip(PROPERTY_NAME_MAP.values(),
                                  PROPERTY_NAME_MAP.keys()))
 
-KEY_QUOTED_VALUE = re.compile(r'([A-Za-z_]+[A-Za-z0-9_-]*)' +
-                              r'\s*=\s*["\{\}]([^"\{\}]+)["\{\}]\s*')
-KEY_VALUE = re.compile(r'([A-Za-z_]+[A-Za-z0-9_]*)\s*=' +
-                       r'\s*([^\s]+)\s*')
+KEY_QUOTED_VALUE = re.compile(r'([A-Za-z_]+[A-Za-z0-9_-]*)'
+                              + r'\s*=\s*["\{\}]([^"\{\}]+)["\{\}]\s*')
+KEY_VALUE = re.compile(r'([A-Za-z_]+[A-Za-z0-9_]*)\s*='
+                       + r'\s*([^\s]+)\s*')
 KEY_RE = re.compile(r'([A-Za-z_]+[A-Za-z0-9_-]*)\s*')
 
 UNPROCESSED_KEYS = ['uid']
@@ -135,7 +137,7 @@ def key_val_str_to_dict(string, sep=None):
 
             # Parse boolean values: 'T' -> True, 'F' -> False,
             #                       'T T F' -> [True, True, False]
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 str_to_bool = {'T': True, 'F': False}
 
                 try:
@@ -206,7 +208,7 @@ def key_val_str_to_dict_regex(s):
 
             # Parse boolean values: 'T' -> True, 'F' -> False,
             #                       'T T F' -> [True, True, False]
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 str_to_bool = {'T': True, 'F': False}
 
                 if len(value.split()) > 1:
@@ -220,7 +222,7 @@ def key_val_str_to_dict_regex(s):
     return d
 
 
-def key_val_dict_to_str(d, sep=' '):
+def key_val_dict_to_str(d, sep=' ', tolerant=False):
     """
     Convert atoms.info dictionary to extended XYZ string representation
     """
@@ -237,10 +239,26 @@ def key_val_dict_to_str(d, sep=' '):
         val = d[key]
         if isinstance(val, dict):
             continue
-        if hasattr(val, '__iter__'):
-            val = np.array(val)
-            val = ' '.join(str(type_val_map.get((type(x), x), x))
-                           for x in val.reshape(val.size, order='F'))
+        if isinstance(val, str):
+            pass
+        elif hasattr(val, '__iter__'):
+            try:
+                val = np.array(list(val))
+                val = ' '.join(str(type_val_map.get((type(x), x), x))
+                               for x in val.reshape(val.size, order='F'))
+            except (TypeError, ValueError) as exc:
+                # It may fail if the type is unhashable
+                # ValueError is only relevant for non-uniform arrays
+                # with older numpy (1.10.4) and affects the creation
+                # of the array.  Can be removed in the future.
+                if tolerant:
+                    warnings.warn('Skipping unhashable information '
+                                  '{0}'.format(key))
+                    continue
+                else:
+                    raise RuntimeError('Unhashable object in info dictionary,'
+                                       ' please remove it or use '
+                                       'tolerant=True') from exc
             val.replace('[', '')
             val.replace(']', '')
         elif isinstance(val, Spacegroup):
@@ -250,7 +268,7 @@ def key_val_dict_to_str(d, sep=' '):
 
         if val is None:
             s = s + '%s%s' % (key, sep)
-        elif isinstance(val, basestring) and ' ' in val:
+        elif isinstance(val, str) and ' ' in val:
             s = s + '%s="%s"%s' % (key, val, sep)
         else:
             s = s + '%s=%s%s' % (key, str(val), sep)
@@ -312,11 +330,11 @@ def parse_properties(prop_str):
 
 def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0):
     # comment line
-    line = next(lines)
+    line = next(lines).strip()
     if nvec > 0:
-        info = {'comment': line.strip()}
+        info = {'comment': line}
     else:
-        info = properties_parser(line)
+        info = properties_parser(line) if line else {}
 
     pbc = None
     if 'pbc' in info:
@@ -327,7 +345,7 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
         # is True in all directions
         pbc = [True, True, True]
     elif nvec > 0:
-        #cell information given as pseudo-Atoms
+        # cell information given as pseudo-Atoms
         pbc = [False, False, False]
 
     cell = None
@@ -336,8 +354,8 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
         cell = info['Lattice'].T
         del info['Lattice']
     elif nvec > 0:
-        #cell information given as pseudo-Atoms
-        cell = np.zeros((3,3))
+        # cell information given as pseudo-Atoms
+        cell = np.zeros((3, 3))
 
     if 'Properties' not in info:
         # Default set of properties is atomic symbols and positions only
@@ -362,7 +380,7 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
         raise XYZError('Badly formatted data '
                        'or end of file reached before end of frame')
 
-    #Read VEC entries if present
+    # Read VEC entries if present
     if nvec > 0:
         for ln in range(nvec):
             try:
@@ -378,9 +396,10 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
                 n = int(entry[0][3:])
                 if n != ln + 1:
                     raise XYZError('Expected VEC{}, got VEC{}'
-                                   .format(ln+1,n))
+                                   .format(ln + 1, n))
             except:
-                raise XYZError('Expected VEC{}, got VEC{}'.format(ln+1,entry[0][3:]))
+                raise XYZError('Expected VEC{}, got VEC{}'.format(
+                    ln + 1, entry[0][3:]))
 
             cell[ln] = np.array([float(x) for x in entry[1:]])
             pbc[ln] = True
@@ -395,7 +414,7 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
             value = data[name]
         else:
             value = np.vstack([data[name + str(c)]
-                              for c in range(cols)]).T
+                               for c in range(cols)]).T
         arrays[ase_name] = value
 
     symbols = None
@@ -425,10 +444,21 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
     atoms = Atoms(symbols=symbols,
                   positions=positions,
                   numbers=numbers,
-                  charges = charges,
+                  charges=charges,
                   cell=cell,
                   pbc=pbc,
                   info=info)
+
+    # Read and set constraints
+    if 'move_mask' in arrays:
+        if properties['move_mask'][1] == 3:
+            atoms.set_constraint(
+                [FixCartesian(a, mask=arrays['move_mask'][a, :]) for a in range(natoms)])
+        elif properties['move_mask'][1] == 1:
+            atoms.set_constraint(FixAtoms(mask=~arrays['move_mask']))
+        else:
+            raise XYZError('Not implemented constraint')
+        del arrays['move_mask']
 
     for name, array in arrays.items():
         atoms.new_array(name, array)
@@ -491,6 +521,7 @@ def ixyzchunks(fd):
 
 class ImageIterator:
     """"""
+
     def __init__(self, ichunks):
         self.ichunks = ichunks
 
@@ -534,7 +565,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
     deal with most use cases, ``extxyz.key_val_str_to_dict_regex`` is slightly
     faster but has fewer features.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     if not isinstance(index, int) and not isinstance(index, slice):
@@ -564,7 +595,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
         fileobj.readline()  # read comment line
         for i in range(natoms):
             fileobj.readline()
-        #check for VEC
+        # check for VEC
         nvec = 0
         while True:
             lastPos = fileobj.tell()
@@ -580,33 +611,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
         if last_frame is not None and len(frames) > last_frame:
             break
 
-    if isinstance(index, int):
-        if index < 0:
-            tmpsnp = len(frames) + index
-            trbl = range(tmpsnp, tmpsnp + 1, 1)
-        else:
-            trbl = range(index, index + 1, 1)
-    elif isinstance(index, slice):
-        start = index.start
-        stop = index.stop
-        step = index.step
-
-        if start is None:
-            start = 0
-        elif start < 0:
-            start = len(frames) + start
-
-        if step is None:
-            step = 1
-
-        if stop is None:
-            stop = len(frames)
-        elif stop < 0:
-            stop = len(frames) + stop
-
-        trbl = range(start, stop, step)
-        if step < 0:
-            trbl.reverse()
+    trbl = index2range(index, len(frames))
 
     for index in trbl:
         frame_pos, natoms, nvec = frames[index]
@@ -617,23 +622,23 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
 
 
 def output_column_format(atoms, columns, arrays,
-                         write_info=True, results=None):
+                         write_info=True, results=None, tolerant=False):
     """
     Helper function to build extended XYZ comment line
     """
-    fmt_map = {'d': ('R', '%16.8f '),
-               'f': ('R', '%16.8f '),
-               'i': ('I', '%8d '),
-               'O': ('S', '%s '),
-               'S': ('S', '%s '),
-               'U': ('S', '%s '),
-               'b': ('L', ' %.1s ')}
+    fmt_map = {'d': ('R', '%16.8f'),
+               'f': ('R', '%16.8f'),
+               'i': ('I', '%8d'),
+               'O': ('S', '%s'),
+               'S': ('S', '%s'),
+               'U': ('S', '%-2s'),
+               'b': ('L', ' %.1s')}
 
     # NB: Lattice is stored as tranpose of ASE cell,
     # with Fortran array ordering
-    lattice_str = ('Lattice="' +
-                   ' '.join([str(x) for x in np.reshape(atoms.cell.T,
-                                                        9, order='F')]) +
+    lattice_str = ('Lattice="'
+                   + ' '.join([str(x) for x in np.reshape(atoms.cell.T,
+                                                          9, order='F')]) +
                    '"')
 
     property_names = []
@@ -651,8 +656,8 @@ def output_column_format(atoms, columns, arrays,
         property_names.append(property_name)
         property_types.append(property_type)
 
-        if (len(array.shape) == 1 or
-                (len(array.shape) == 2 and array.shape[1] == 1)):
+        if (len(array.shape) == 1
+                or (len(array.shape) == 2 and array.shape[1] == 1)):
             ncol = 1
             dtypes.append((column, dtype))
         else:
@@ -679,16 +684,17 @@ def output_column_format(atoms, columns, arrays,
     if results is not None:
         info.update(results)
     info['pbc'] = atoms.get_pbc()  # always save periodic boundary conditions
-    comment_str += ' ' + key_val_dict_to_str(info)
+    comment_str += ' ' + key_val_dict_to_str(info, tolerant=tolerant)
 
     dtype = np.dtype(dtypes)
-    fmt = ''.join(formats) + '\n'
+    fmt = ' '.join(formats) + '\n'
 
     return comment_str, property_ncols, dtype, fmt
 
 
 def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
-              write_results=True, plain=False, vec_cell=False, append=False):
+              write_results=True, plain=False, vec_cell=False, append=False, 
+              tolerant=False):
     """
     Write output in extended XYZ format
 
@@ -697,7 +703,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
     XYZ comment line (default is True) and the results of any
     calculator attached to this Atoms.
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         mode = 'w'
         if append:
             mode = 'a'
@@ -715,10 +721,10 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
             fr_cols = columns[:]
 
         if fr_cols is None:
-            fr_cols = (['symbols', 'positions'] +
-                       [key for key in atoms.arrays.keys() if
-                        key not in ['symbols', 'positions', 'numbers',
-                                    'species', 'pos']])
+            fr_cols = (['symbols', 'positions']
+                       + [key for key in atoms.arrays.keys() if
+                          key not in ['symbols', 'positions', 'numbers',
+                                      'species', 'pos']])
 
         if vec_cell:
             plain = True
@@ -732,15 +738,15 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
         per_atom_results = {}
         if write_results:
             calculator = atoms.get_calculator()
-            if (calculator is not None and
-                    isinstance(calculator, Calculator)):
+            if (calculator is not None
+                    and isinstance(calculator, Calculator)):
                 for key in all_properties:
                     value = calculator.results.get(key, None)
                     if value is None:
                         # skip missing calculator results
                         continue
-                    if (isinstance(value, np.ndarray) and
-                            value.shape[0] == len(atoms)):
+                    if (isinstance(value, np.ndarray)
+                            and value.shape[0] == len(atoms)):
                         # per-atom quantities (forces, energies, stresses)
                         per_atom_results[key] = value
                     else:
@@ -768,7 +774,8 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
             symbols = atoms.arrays[fr_cols[0]]
         else:
             symbols = atoms.get_chemical_symbols()
-        if not isinstance(symbols[0], basestring):
+
+        if natoms > 0 and not isinstance(symbols[0], str):
             raise ValueError('First column must be symbols-like')
 
         # Check second column "looks like" atomic positions
@@ -776,24 +783,40 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
         if pos.shape != (natoms, 3) or pos.dtype.kind != 'f':
             raise ValueError('Second column must be position-like')
 
-        #if vec_cell add cell information as pseudo-atoms
+        # if vec_cell add cell information as pseudo-atoms
         if vec_cell:
             pbc = list(atoms.get_pbc())
             cell = atoms.get_cell()
 
             if True in pbc:
                 nPBC = 0
-                for i,b in enumerate(pbc):
+                for i, b in enumerate(pbc):
                     if b:
                         nPBC += 1
-                        symbols.append('VEC'+str(nPBC))
+                        symbols.append('VEC' + str(nPBC))
                         pos = np.vstack((pos, cell[i]))
-                #add to natoms
+                # add to natoms
                 natoms += nPBC
                 if pos.shape != (natoms, 3) or pos.dtype.kind != 'f':
-                    raise ValueError('Pseudo Atoms containing cell have bad coords')
+                    raise ValueError(
+                        'Pseudo Atoms containing cell have bad coords')
 
-
+        # Move mask
+        if 'move_mask' in fr_cols:
+            cnstr = images[0]._get_constraints()
+            if len(cnstr) > 0:
+                c0 = cnstr[0]
+                if isinstance(c0, FixAtoms):
+                    cnstr = np.ones((natoms,), dtype=np.bool)
+                    for idx in c0.index:
+                        cnstr[idx] = False
+                elif isinstance(c0, FixCartesian):
+                    for i in range(len(cnstr)):
+                        idx = cnstr[i].a
+                        cnstr[idx] = cnstr[i].mask
+                    cnstr = np.asarray(cnstr)
+            else:
+                fr_cols.remove('move_mask')
 
         # Collect data to be written out
         arrays = {}
@@ -804,18 +827,28 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                 arrays[column] = atoms.arrays[column]
             elif column == 'symbols':
                 arrays[column] = np.array(symbols)
+            elif column == 'move_mask':
+                arrays[column] = cnstr
             else:
                 raise ValueError('Missing array "%s"' % column)
 
         if write_results:
-            fr_cols += per_atom_results.keys()
+            for key in per_atom_results:
+                if key not in fr_cols:
+                    fr_cols += [key]
+                else:
+                    warnings.warn('write_xyz() overwriting array "{0}" present '
+                                  'in atoms.arrays with stored results '
+                                  'from calculator'.format(key))
             arrays.update(per_atom_results)
 
         comm, ncols, dtype, fmt = output_column_format(atoms,
                                                        fr_cols,
                                                        arrays,
                                                        write_info,
-                                                       per_frame_results)
+                                                       per_frame_results, 
+                                                       tolerant)
+
         if plain or comment != '':
             # override key/value pairs with user-speficied comment string
             comm = comment
@@ -831,7 +864,8 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                     data[column + str(c)] = value[:, c]
 
         nat = natoms
-        if vec_cell: nat -= nPBC
+        if vec_cell:
+            nat -= nPBC
         # Write the output
         fileobj.write('%d\n' % nat)
         fileobj.write('%s\n' % comm)

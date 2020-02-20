@@ -11,7 +11,6 @@ or run::
 
 """
 
-from __future__ import print_function
 import os
 import sys
 from glob import glob
@@ -33,21 +32,26 @@ commands = {
          '--crystal-structure', '-a', '--lattice-constant',
          '--orthorhombic', '--cubic', '-r', '--repeat', '-g',
          '--gui', '--periodic'],
+    'completion':
+        [],
     'convert':
         ['-v', '--verbose', '-i', '--input-format', '-o',
          '--output-format', '-f', '--force', '-n',
-         '--image-number'],
+         '--image-number', '-e', '--exec-code', '-E',
+         '--exec-file', '-a', '--arrays', '-I', '--info', '-s',
+         '--split-output', '--read-args', '--write-args'],
     'db':
         ['-v', '--verbose', '-q', '--quiet', '-n', '--count', '-l',
          '--long', '-i', '--insert-into', '-a',
          '--add-from-file', '-k', '--add-key-value-pairs', '-L',
          '--limit', '--offset', '--delete', '--delete-keys',
          '-y', '--yes', '--explain', '-c', '--columns', '-s',
-         '--sort', '--cut', '-p', '--plot', '-P', '--plot-data',
-         '--csv', '-w', '--open-web-browser', '--no-lock-file',
-         '--analyse', '-j', '--json', '-m', '--show-metadata',
+         '--sort', '--cut', '-p', '--plot', '--csv', '-w',
+         '--open-web-browser', '--no-lock-file', '--analyse',
+         '-j', '--json', '-m', '--show-metadata',
          '--set-metadata', '-M', '--metadata-from-python-script',
-         '--unique', '--strip-data'],
+         '--unique', '--strip-data', '--show-keys',
+         '--show-values'],
     'eos':
         ['-p', '--plot', '-t', '--type'],
     'find':
@@ -58,23 +62,26 @@ commands = {
          '-o', '--output', '-g', '--graph', '-t', '--terminal',
          '--interpolate', '-b', '--bonds', '-s', '--scale'],
     'info':
-        ['-v', '--verbose', '--formats'],
+        ['-v', '--verbose', '--formats', '--calculators'],
+    'nebplot':
+        ['--nimages', '--share-x', '--share-y'],
+    'nomad-get':
+        [],
     'nomad-upload':
-        ['-t', '--token', '-n', '--do-not-save-token', '-0', '--dry-run'],
+        ['-t', '--token', '-n', '--no-save-token', '-0', '--dry-run'],
     'reciprocal':
         ['-v', '--verbose', '-p', '--path', '-d', '--dimension',
          '--no-vectors', '-k', '--k-points', '-i',
          '--ibz-k-points'],
     'run':
-        ['-t', '--tag', '-p', '--parameters', '-d', '--database', '-S',
-         '--skip', '--properties', '-f', '--maximum-force',
-         '--constrain-tags', '-s', '--maximum-stress', '-E',
-         '--equation-of-state', '--eos-type', '-i',
-         '--interactive', '-c', '--collection', '--modify',
-         '--after'],
+        ['-p', '--parameters', '-t', '--tag', '--properties', '-f',
+         '--maximum-force', '--constrain-tags', '-s',
+         '--maximum-stress', '-E', '--equation-of-state',
+         '--eos-type', '-o', '--output', '--modify', '--after'],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
-         '--jobs'],
+         '--jobs', '-v', '--verbose', '--strict', '--nogui',
+         '--pytest'],
     'ulm':
         ['-n', '--index', '-d', '--delete', '-v', '--verbose']}
 # End of computer generated data
@@ -110,16 +117,35 @@ def complete(word, previous, line, point):
                      'rocksalt', 'cesiumchloride', 'fluorite', 'wurtzite']
 
     elif command == 'test':
-        if previous in ['-c', '--calculator']:
+        if previous in ['-c', '--calculators']:
             from ase.calculators.calculator import names as words
+        elif not word.startswith('-'):
+            # Suggest names of tests.  We suggest all matching tests.
+            # It might be better to autocomplete only up to directory
+            # names.
+            from ase.test.newtestsuite import TestModule
+            words = [mod.testname
+                     for mod in TestModule.glob_all_test_modules()]
 
     return words
 
 
-word, previous = sys.argv[2:]
-line = os.environ['COMP_LINE']
-point = int(os.environ['COMP_POINT'])
-words = complete(word, previous, line, point)
-for w in words:
-    if w.startswith(word):
-        print(w)
+if sys.version_info[0] == 2:
+    import warnings
+    warnings.warn('Command-line completion running with python2.  '
+                  'Your ASE autocompletion setup is probably outdated.  '
+                  'Please consider rerunning \'ase completion\'.')
+
+
+def main():
+    word, previous = sys.argv[2:]
+    line = os.environ['COMP_LINE']
+    point = int(os.environ['COMP_POINT'])
+    words = complete(word, previous, line, point)
+    for w in words:
+        if w.startswith(word):
+            print(w)
+
+
+if __name__ == '__main__':
+    main()

@@ -28,12 +28,41 @@ eos             Calculate equation of state
 ulm             Show content of ulm-file
 nomad-upload    Upload files to NOMAD
 band-structure  Plot band-structure
+nebplot         Analyze NEB trajectories
 completion      Add tab-completion for Bash
 ==============  =================================================
 
 .. note::
 
     The ase CLI interface is not quite stable.  Use with care in scripts!
+
+
+Help
+====
+
+For all command-line tools, you can do::
+
+    $ ase --help
+    $ ase sub-command --help
+    $ python -m module --help
+
+to get help (or ``-h`` for short).
+
+
+.. _bash completion:
+
+Bash completion
+===============
+
+You can enable bash completion like this::
+
+    $ ase completion >> ~/.bashrc
+
+This will append a line like this::
+
+    complete -o default -C "/path/to/python3 /path/to/ase/ase/cli/complete.py" ase
+
+to your ``~/.bashrc``.
 
 
 Python -m tricks
@@ -57,31 +86,3 @@ Convert old db-files to new::
 :ref:`convert`::
 
     $ python -m ase.io.pickletrajectory a1.traj [a2.traj ...]
-
-
-Help
-====
-
-For all command-line tools, you can do::
-
-    $ ase --help
-    $ ase sub-command --help
-    $ python -m module --help
-
-to get help (or ``-h`` for short).
-
-
-.. _bash completion:
-
-Bash completion
-===============
-
-You can enable bash completion like this::
-
-    $ ase completions
-
-This will append a line like this::
-
-    complete -o default -C /path/to/ase/ase/cli/complete.py ase
-
-to your ``~/.bashrc``.

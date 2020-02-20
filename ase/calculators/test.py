@@ -1,4 +1,3 @@
-from __future__ import division
 from math import pi
 
 import numpy as np
@@ -136,16 +135,20 @@ class FreeElectrons(Calculator):
     """
 
     implemented_properties = ['energy']
+    default_parameters = {'kpts': np.zeros((1, 3)),
+                          'nvalence': 0.0,
+                          'nbands': 20,
+                          'gridsize': 7}
 
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms)
         self.kpts = kpts2ndarray(self.parameters.kpts, atoms)
         icell = atoms.get_reciprocal_cell() * 2 * np.pi * Bohr
-        n = 7
+        n = self.parameters.gridsize
         offsets = np.indices((n, n, n)).T.reshape((n**3, 1, 3)) - n // 2
         eps = 0.5 * (np.dot(self.kpts + offsets, icell)**2).sum(2).T
         eps.sort()
-        self.eigenvalues = eps[:, :20] * Ha
+        self.eigenvalues = eps[:, :self.parameters.nbands] * Ha
         self.results = {'energy': 0.0}
 
     def get_eigenvalues(self, kpt, spin=0):

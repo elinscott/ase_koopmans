@@ -11,17 +11,20 @@ SIESTA_ is a density-functional theory code for very large systems
 based on atomic orbital (LCAO) basis sets.
 
 
-.. _SIESTA: http://www.uam.es/siesta/
+.. _SIESTA: https://departments.icmab.es/leem/siesta/
 
 
 
 Environment variables
 =====================
 
-The environment variable :envvar:`SIESTA_COMMAND` must hold the command
-to invoke the siesta calculation. The variable must be a python format
-string with exactly two string fields for the input and output files.
-Examples: ``siesta < %s > %s``, ``mpirun -np 4 /bin/siesta3.2 < %s > %s``.
+The environment variable :envvar:`ASE_SIESTA_COMMAND` must hold the command
+to invoke the siesta calculation. The variable must be a string 
+where ``PREFIX.fdf``/``PREFIX.out`` are the placeholders for the 
+input/output files. This variable allows you to specify serial or parallel 
+execution of SIESTA.
+Examples: ``siesta < PREFIX.fdf > PREFIX.out`` and
+``mpirun -np 4 /bin/siesta4.0 < PREFIX.fdf > PREFIX.out``.
 
 A default directory holding pseudopotential files :file:`.vps/.psf` can be
 defined to avoid defining this every time the calculator is used.
@@ -34,52 +37,60 @@ Set both environment variables in your shell configuration file:
 
 ::
 
-  $ export SIESTA_COMMAND="siesta < ./%s > ./%s"
+  $ export ASE_SIESTA_COMMAND="siesta < PREFIX.fdf > PREFIX.out"
   $ export SIESTA_PP_PATH=$HOME/mypps
 
 .. highlight:: python
 
 Alternatively, the path to the pseudopotentials can be given in
-the calculator initialization.
+the calculator initialization. Listed below all parameters 
+related to pseudopotential control.
 
 ===================== ========= ============= =====================================
 keyword               type      default value description
 ===================== ========= ============= =====================================
 ``pseudo_path``       ``str``   ``None``      Directory for pseudopotentials to use
                                               None means using $SIESTA_PP_PATH
+``pseudo_qualifier``  ``str``   ``None``      String for picking out specific type
+                                              type of pseudopotentials. Giving
+                                              ``example`` means that
+                                              ``H.example.psf`` or
+                                              ``H.example.vps`` will be used. None
+                                              means that the XC.functional keyword
+                                              is used, e.g. ``H.lda.psf``
+``symlink_pseudos``   ``bool``  ``---``       Whether psedos will be sym-linked 
+                                              into the execution directory. If 
+                                              False they will be copied in stead.
+                                              Default is True on Unix and False on
+                                              Windows.
 ===================== ========= ============= =====================================
+
 
 SIESTA Calculator
 =================
 
 These parameters are set explicitly and overrides the native values if different.
 
-==================== ========= ============= =====================================
-keyword              type      default value description
-==================== ========= ============= =====================================
-``label``            ``str``   ``'siesta'``  Name of the output file
-``mesh_cutoff``      ``float`` ``200*Ry``    Mesh cut-off energy in eV
-``xc``               ``str``   ``'LDA'``     Exchange-correlation functional.
-                                             Corresponds to either XC.functional
-                                             or XC.authors keyword in SIESTA
-``energy_shift``     ``float`` ``100 meV``   Energy shift for determining cutoff
-                                             radii
-``kpts``             ``list``  ``[1,1,1]``   Monkhorst-Pack k-point sampling
-``basis_set``        ``str``   ``DZP``       Type of basis set ('SZ', 'DZ', 'SZP',
-                                             'DZP')
-``spin``             ``float`` ``COLLINEAR`` The spin approximation used, must be
-                                             either ``UNPOLARIZED``, ``COLLINEAR``
-                                             or ``FULL``
-``species``          ``list``  ``[]``        A method for specifying a specific
-                                             description for some atoms.
-``pseudo_qualifier`` ``str``   ``None``      String for picking out specific type
-                                             type of pseudopotentials. Giving
-                                             ``example`` means that
-                                             ``H.example.psf`` or
-                                             ``H.example.vps`` will be used. None
-                                             means that the XC.functional keyword
-                                             is used, i.e. ``H.lda.psf``
-==================== ========= ============= =====================================
+================ ========= =================== =====================================
+keyword          type      default value       description
+================ ========= =================== =====================================
+``label``        ``str``   ``'siesta'``        Name of the output file
+``mesh_cutoff``  ``float`` ``200*Ry``          Mesh cut-off energy in eV
+``xc``           ``str``   ``'LDA'``           Exchange-correlation functional.
+                                               Corresponds to either XC.functional
+                                               or XC.authors keyword in SIESTA
+``energy_shift`` ``float`` ``100 meV``         Energy shift for determining cutoff
+                                               radii
+``kpts``         ``list``  ``[1,1,1]``         Monkhorst-Pack k-point sampling
+``basis_set``    ``str``   ``DZP``             Type of basis set ('SZ', 'DZ', 'SZP',
+                                               'DZP')
+``spin``         ``str``   ``'non-polarized'`` The spin approximation used, must be
+                                               either ``'non-polarized'``, 
+                                               ``'collinear'``, ``'non-collinear'``
+                                               or ``'spin-orbit'``.
+``species``      ``list``  ``[]``              A method for specifying the basis set  
+                                               for some atoms.
+================ ========= =================== =====================================
 
 Most other parameters are set to the default values of the native interface.
 
@@ -101,7 +112,7 @@ keywords, even if it breaks calculator functionality.
 The complete list of the FDF entries can be found in the official `SIESTA
 manual`_.
 
-.. _SIESTA manual: http://departments.icmab.es/leem/siesta/Documentation/Manuals/manuals.html
+.. _SIESTA manual: https://departments.icmab.es/leem/siesta/Documentation/Manuals/manuals.html
 
 Example
 =======
@@ -149,7 +160,7 @@ element and the tag set on the atom.
 
 For instance if we wish to investigate a H2 molecule and put a ghost atom
 (the basis set corresponding to an atom but without the actual atom) in the middle
-with a special type of basis you would write:
+with a special type of basis set you would write:
 
 >>> from ase.calculators.siesta.parameters import Specie, PAOBasisBlock
 >>> from ase import Atoms
@@ -188,8 +199,13 @@ Pseudopotentials generated from the ABINIT code and converted to
 the SIESTA format are available in the `SIESTA`_ website.
 A database of user contributed pseudopotentials is also available there.
 
+Optimized GGA–PBE pseudos and DZP basis sets for some common elements
+are also available from the `SIMUNE`_ website.
+
 You can also find an on-line pseudopotential generator_ from the
 OCTOPUS code.
+
+.. _SIMUNE: https://www.simuneatomistics.com/siesta-pro/siesta-pseudos-and-basis-database/
 
 .. _generator: http://www.tddft.org/programs/octopus/wiki/index.php/Pseudopotentials
 
@@ -200,7 +216,7 @@ Species can also be used to specify pseudopotentials:
 
 When specifying the pseudopotential in this manner, both absolute
 and relative paths can be given.
-Relative paths are considered relative to the default
+Relative paths are interpreted as relative to the set 
 pseudopotential path.
 
 Restarting from an old Calculation
@@ -211,6 +227,20 @@ interface or not, you can set the keyword ``restart`` to the siesta ``.XV``
 file. The keyword ``ignore_bad_restart`` (True/False) will decide whether
 a broken file will result in an error(False) or the whether the calculator
 will simply continue without the restart file.
+
+Choosing the coordinate format
+==============================
+If you are mainly using ASE to generate SIESTA files for relaxation with native
+SIESTA relaxation, you may want to write the coordinates in the Z-matrix format
+which will best allow you to use the advanced constraints present in SIESTA.
+
+======================= ========= ============= =====================================
+keyword                 type      default value description
+======================= ========= ============= =====================================
+``atomic_coord_format`` ``str``   ``'xyz'``     Choose between ``'xyz'`` and 
+                                                ``'zmatrix'`` for the format that 
+                                                coordinates will be written in.
+======================= ========= ============= =====================================
 
 TDDFT Calculations
 ==================
@@ -253,7 +283,7 @@ Example of code to calculate polarizability of Na8 cluster,::
                   'COOP.Write': True,
                   'WriteDenchar': True,
                   'PAO.BasisType': 'split',
-                  'DM.Tolerance': 1e-4,
+                  'SCF.DM.Tolerance': 1e-4,
                   'DM.MixingWeight': 0.01,
                   'MaxSCFIterations': 300,
                   'DM.NumberPulay': 4,
@@ -299,12 +329,12 @@ Then you need to add the pyscf directory to your PYTHONPATH
 
   export PYTHONPATH=/PATH-TO-PYSCF/pyscf:$PYTHONPATH
 
-
+.. _Siesta Raman:
 
 Raman Calculations with SIESTA and PYSCF-NAO
 ============================================
 
-It is possible to calulate the Raman spectra with SIESTA, PYSCF-NAO anf the
+It is possible to calculate the Raman spectra with SIESTA, PYSCF-NAO anf the
 vibration module from ASE. Example with CO2,::
 
   from ase.units import Ry, eV, Ha
@@ -341,7 +371,7 @@ vibration module from ASE. Example with CO2,::
           'WriteDenchar': True,
           'PAO.BasisType': 'split',
           "PAO.SoftDefault": True,
-          'DM.Tolerance': 1e-4,
+          'SCF.DM.Tolerance': 1e-4,
           'DM.MixingWeight': 0.01,
           'MaxSCFIterations': 300,
           'DM.NumberPulay': 4,
@@ -367,4 +397,4 @@ on how the calculator can be used.
 Siesta Calculator Class
 =======================
 
-.. autoclass:: ase.calculators.siesta.base_siesta.BaseSiesta
+.. autoclass:: ase.calculators.siesta.siesta.Siesta

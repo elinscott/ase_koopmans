@@ -11,6 +11,12 @@ import subprocess
 import re
 import argparse
 from time import strftime
+import shutil
+from pathlib import Path
+
+
+os.environ['LANGUAGE'] = 'C'
+
 
 def runcmd(cmd, output=False, error_ok=False):
     print('Executing:', cmd)
@@ -34,9 +40,6 @@ bash = runcmd
 def py(cmd, output=False):
     return runcmd('python3 {}'.format(cmd))
 
-def py2(cmd, output=False):
-    return runcmd('python2 {}'.format(cmd))
-
 def git(cmd, error_ok=False):
     cmd = 'git {}'.format(cmd)
     return runcmd(cmd, output=True, error_ok=error_ok)
@@ -52,10 +55,12 @@ def get_version():
 
 
 def main():
-    p = argparse.ArgumentParser(usage='Generate new release of ASE.',
+    p = argparse.ArgumentParser(description='Generate new release of ASE.',
                                 epilog='Run from the root directory of ASE.')
-    p.add_argument('version', nargs='?',
-                 help='new version number')
+    p.add_argument('version', nargs=1,
+                 help='version number for new release')
+    p.add_argument('nextversion', nargs=1,
+                   help='development version after release')
     p.add_argument('--clean', action='store_true',
                    help='delete release branch and tag')
     args = p.parse_args()
@@ -68,11 +73,8 @@ def main():
 
     print('Current version: {}'.format(current_version))
 
-    if not args.version:
-        p.print_help()
-        raise SystemExit
-
-    version = args.version
+    version = args.version[0]
+    next_devel_version = args.nextversion[0]
 
     branchname = 'ase-{}'.format(version)
     current_version = get_version()
@@ -88,18 +90,9 @@ def main():
     print('New release: {}'.format(version))
 
     txt = git('status')
-    branch = re.match('On branch (\S+)', txt).group(1)
-    print('Currently on branch {}'.format(repr(branch)))
-    if branch != 'master':
-        git('checkout master')
-
-
+    branch = re.match(r'On branch (\S+)', txt).group(1)
+    print('Creating new release from branch {}'.format(repr(branch)))
     git('checkout -b {}'.format(branchname))
-
-    majormiddle, minor = version.rsplit('.', 1)
-    minor = int(minor)
-    nextminor = minor + 1
-    next_devel_version = '{}.{}b1'.format(majormiddle, nextminor)
 
     def update_version(version):
         print('Editing {}: version {}'.format(versionfile, version))
@@ -189,10 +182,10 @@ News
     with open(installdoc) as fd:
         txt = fd.read()
 
-    txt, nsub = re.subn(r'ase-\d+\.\d+.\d+',
+    txt, nsub = re.subn(r'ase-\d+\.\d+\.\d+',
                         'ase-{}'.format(version), txt)
     assert nsub > 0
-    txt, nsub = re.subn(r'git clone -b \d+\.\d+.\d+',
+    txt, nsub = re.subn(r'git clone -b \d+\.\d+\.\d+',
                         'git clone -b {}'.format(version), txt)
     assert nsub == 1
 
@@ -220,8 +213,15 @@ News
     git('commit -m "ASE version {}"'.format(version))
     git('tag -s {0} -m "ase-{0}"'.format(version))
 
+    buildpath = Path('build')
+    if buildpath.is_dir():
+        print('Removing stale build directory, since it exists')
+        assert Path('ase/__init__.py').exists()
+        assert Path('setup.py').exists()
+        shutil.rmtree('build')
+    else:
+        print('No stale build directory found; proceeding')
     py('setup.py sdist > setup_sdist.log')
-    py2('setup.py bdist_wheel > setup_bdist_wheel2.log')
     py('setup.py bdist_wheel > setup_bdist_wheel3.log')
     bash('gpg --armor --yes --detach-sign dist/ase-{}.tar.gz'.format(version))
     git('checkout -b web-page')
@@ -247,11 +247,12 @@ News
     print('git merge {}'.format(branchname))
     print('twine upload '
           'dist/ase-{v}.tar.gz '
-          'dist/ase-{v}-py2-none-any.whl '
           'dist/ase-{v}-py3-none-any.whl '
           'dist/ase-{v}.tar.gz.asc'.format(v=version))
     print('git push --tags origin master  # Assuming your remote is "origin"')
     print('git checkout web-page')
     print('git push --force origin web-page')
 
-main()
+
+if __name__ == '__main__':
+    main()

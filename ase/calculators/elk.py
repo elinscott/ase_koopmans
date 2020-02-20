@@ -221,7 +221,13 @@ class ELK(FileIOCalculator, EigenvalOccupationMixin):
         else:
             # use default species
             # if sppath is present in elk.in it overwrites species blocks!
-            fd.write("sppath\n'%s'\n\n" % os.environ['ELK_SPECIES_PATH'])
+            species_path = os.environ['ELK_SPECIES_PATH']
+
+            # Elk seems to concatenate path and filename in such a way
+            # that we must put a / at the end:
+            if not species_path.endswith('/'):
+                species_path += '/'
+            fd.write("sppath\n'{}'\n\n".format(species_path))
 
     def read(self, label):
         FileIOCalculator.read(self, label)

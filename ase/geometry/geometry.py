@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Copyright (C) 2010, Jesper Friis
 # (see accompanying license files for details).
 
@@ -8,15 +7,31 @@ different orientations.
    - detection of duplicate atoms / atoms within cutoff radius
 """
 
-from math import pi
-
+import itertools
 import numpy as np
-
 from ase.geometry import complete_cell
+from ase.geometry.minkowski_reduction import minkowski_reduce
+from ase.utils import pbc2pbc
+
+
+def translate_pretty(fractional, pbc):
+    """Translates atoms such that fractional positions are minimized."""
+
+    for i in range(3):
+        if not pbc[i]:
+            continue
+
+        indices = np.argsort(fractional[:, i])
+        sp = fractional[indices, i]
+
+        widths = (np.roll(sp, 1) - sp) % 1.0
+        fractional[:, i] -= sp[np.argmin(widths)]
+        fractional[:, i] %= 1.0
+    return fractional
 
 
 def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
-                   eps=1e-7):
+                   pretty_translation=False, eps=1e-7):
     """Wrap positions to unit cell.
 
     Returns positions changed by a multiple of the unit cell vectors to
@@ -35,6 +50,8 @@ def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
     center: three float
         The positons in fractional coordinates that the new positions
         will be nearest possible to.
+    pretty_translation: bool
+        Translates atoms such that fractional coordinates are minimized.
     eps: float
         Small number to prevent slightly negative coordinates from being
         wrapped.
@@ -48,12 +65,10 @@ def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
     array([[ 0.9 ,  0.01, -0.5 ]])
     """
 
-    if not hasattr(pbc, '__len__'):
-        pbc = (pbc,) * 3
-
     if not hasattr(center, '__len__'):
         center = (center,) * 3
 
+    pbc = pbc2pbc(pbc)
     shift = np.asarray(center) - 0.5 - eps
 
     # Don't change coordinates when pbc is False
@@ -65,10 +80,16 @@ def wrap_positions(positions, cell, pbc=True, center=(0.5, 0.5, 0.5),
     fractional = np.linalg.solve(cell.T,
                                  np.asarray(positions).T).T - shift
 
-    for i, periodic in enumerate(pbc):
-        if periodic:
-            fractional[:, i] %= 1.0
-            fractional[:, i] += shift[i]
+    if pretty_translation:
+        fractional = translate_pretty(fractional, pbc)
+        shift = np.asarray(center) - 0.5
+        shift[np.logical_not(pbc)] = 0.0
+        fractional += shift
+    else:
+        for i, periodic in enumerate(pbc):
+            if periodic:
+                fractional[:, i] %= 1.0
+                fractional[:, i] += shift[i]
 
     return np.dot(fractional, cell)
 
@@ -126,71 +147,40 @@ def get_layers(atoms, miller, tolerance=0.001):
     return tags, levels
 
 
-def find_mic(D, cell, pbc=True):
-    """Finds the minimum-image representation of vector(s) D"""
+def find_mic(v, cell, pbc=True):
+    """Finds the minimum-image representation of vector(s) v"""
 
-    cell = complete_cell(cell)
-    # Calculate the 4 unique unit cell diagonal lengths
-    diags = np.sqrt((np.dot([[1, 1, 1],
-                             [-1, 1, 1],
-                             [1, -1, 1],
-                             [-1, -1, 1],
-                             ], cell)**2).sum(1))
+    pbc = cell.any(1) & pbc2pbc(pbc)
+    v = np.array(v)
+    single = len(v.shape) == 1
+    v = np.atleast_2d(v)
 
-    # calculate 'mic' vectors (D) and lengths (D_len) using simple method
-    Dr = np.dot(D, np.linalg.inv(cell))
-    D = np.dot(Dr - np.round(Dr) * pbc, cell)
-    D_len = np.sqrt((D**2).sum(1))
-    # return mic vectors and lengths for only orthorhombic cells,
-    # as the results may be wrong for non-orthorhombic cells
-    if (max(diags) - min(diags)) / max(diags) < 1e-9:
-        return D, D_len
+    if np.sum(pbc) > 0:
+        cell = complete_cell(cell)
+        rcell, _ = minkowski_reduce(cell, pbc=pbc)
 
-    # The cutoff radius is the longest direct distance between atoms
-    # or half the longest lattice diagonal, whichever is smaller
-    cutoff = min(max(D_len), max(diags) / 2.)
+        # in a Minkowski-reduced cell we only need to test nearest neighbors
+        cs = [np.arange(-1 * p, p + 1) for p in pbc]
+        neighbor_cells = list(itertools.product(*cs))
 
-    # The number of neighboring images to search in each direction is
-    # equal to the ceiling of the cutoff distance (defined above) divided
-    # by the length of the projection of the lattice vector onto its
-    # corresponding surface normal. a's surface normal vector is e.g.
-    # b x c / (|b| |c|), so this projection is (a . (b x c)) / (|b| |c|).
-    # The numerator is just the lattice volume, so this can be simplified
-    # to V / (|b| |c|). This is rewritten as V |a| / (|a| |b| |c|)
-    # for vectorization purposes.
-    latt_len = np.sqrt((cell**2).sum(1))
-    V = abs(np.linalg.det(cell))
-    n = pbc * np.array(np.ceil(cutoff * np.prod(latt_len) /
-                               (V * latt_len)), dtype=int)
+        positions = wrap_positions(v, rcell, pbc=pbc, eps=0)
+        vmin = positions.copy()
+        vlen = np.linalg.norm(positions, axis=1)
+        for nbr in neighbor_cells:
+            trial = positions + np.dot(rcell.T, nbr)
+            trial_len = np.linalg.norm(trial, axis=1)
 
-    # Construct a list of translation vectors. For example, if we are
-    # searching only the nearest images (27 total), tvecs will be a
-    # 27x3 array of translation vectors. This is the only nested loop
-    # in the routine, and it takes a very small fraction of the total
-    # execution time, so it is not worth optimizing further.
-    tvecs = []
-    for i in range(-n[0], n[0] + 1):
-        latt_a = i * cell[0]
-        for j in range(-n[1], n[1] + 1):
-            latt_ab = latt_a + j * cell[1]
-            for k in range(-n[2], n[2] + 1):
-                tvecs.append(latt_ab + k * cell[2])
-    tvecs = np.array(tvecs)
+            indices = np.where(trial_len < vlen)
+            vmin[indices] = trial[indices]
+            vlen[indices] = trial_len[indices]
+    else:
+        vmin = v.copy()
+        vlen = np.linalg.norm(vmin, axis=1)
 
-    # Translate the direct displacement vectors by each translation
-    # vector, and calculate the corresponding lengths.
-    D_trans = tvecs[np.newaxis] + D[:, np.newaxis]
-    D_trans_len = np.sqrt((D_trans**2).sum(2))
-
-    # Find mic distances and corresponding vector(s) for each given pair
-    # of atoms. For symmetrical systems, there may be more than one
-    # translation vector corresponding to the MIC distance; this finds the
-    # first one in D_trans_len.
-    D_min_len = np.min(D_trans_len, axis=1)
-    D_min_ind = D_trans_len.argmin(axis=1)
-    D_min = D_trans[list(range(len(D_min_ind))), D_min_ind]
-
-    return D_min, D_min_len
+    if single:
+        return vmin[0], vlen[0]
+    else:
+        return vmin, vlen
 
 
 def get_angles(v1, v2, cell=None, pbc=None):
@@ -202,23 +192,25 @@ def get_angles(v1, v2, cell=None, pbc=None):
     convention, otherwise angles are taken as-is.
     """
 
-    f = 180 / pi
-
     # Check if using mic
     if cell is not None or pbc is not None:
         if cell is None or pbc is None:
             raise ValueError("cell or pbc must be both set or both be None")
 
         v1 = find_mic(v1, cell, pbc)[0]
-        v2= find_mic(v2, cell, pbc)[0]
+        v2 = find_mic(v2, cell, pbc)[0]
 
+    nv1 = np.linalg.norm(v1, axis=1)[:, np.newaxis]
+    nv2 = np.linalg.norm(v2, axis=1)[:, np.newaxis]
+    if (nv1 <= 0).any() or (nv2 <= 0).any():
+        raise ZeroDivisionError('Undefined angle')
+    v1 /= nv1
+    v2 /= nv2
 
-    v1 /= np.linalg.norm(v1, axis=1)[:, np.newaxis]
-    v2 /= np.linalg.norm(v2, axis=1)[:, np.newaxis]
-
-    angles = np.arccos(np.einsum('ij,ij->i', v1, v2))
-
-    return angles * f
+    # We just normalized the vectors, but in some cases we can get
+    # bad things like 1+2e-16.  These we clip away:
+    angles = np.arccos(np.einsum('ij,ij->i', v1, v2).clip(-1.0, 1.0))
+    return np.degrees(angles)
 
 
 def get_distances(p1, p2=None, cell=None, pbc=None):
@@ -229,19 +221,14 @@ def get_distances(p1, p2=None, cell=None, pbc=None):
 
     Use set cell and pbc to use the minimum image convention.
     """
+    p1 = np.atleast_2d(p1)
     if p2 is None:
-        p2 = p1
-
-    p1, p2 = np.array(p1), np.array(p2)
-
-    # Allocate matrix for vectors as [p1, p2, 3]
-    D = np.zeros((len(p1), len(p2), 3))
-
-    for offset, pos1 in enumerate(p1):
-        D[offset, :, :] = p2 - pos1 
-
-    # Collapse to linear indexing
-    D.shape = (-1, 3)
+        np1 = len(p1)
+        ind1, ind2 = np.triu_indices(np1, k=1)
+        D = p1[ind2] - p1[ind1]
+    else:
+        p2 = np.atleast_2d(p2)
+        D = (p2[np.newaxis, :, :] - p1[:, np.newaxis, :]).reshape((-1, 3))
 
     # Check if using mic
     if cell is not None or pbc is not None:
@@ -251,6 +238,16 @@ def get_distances(p1, p2=None, cell=None, pbc=None):
         D, D_len = find_mic(D, cell, pbc)
     else:
         D_len = np.sqrt((D**2).sum(1))
+
+    if p2 is None:
+        Dout = np.zeros((np1, np1, 3))
+        Dout[(ind1, ind2)] = D
+        Dout -= np.transpose(Dout, axes=(1, 0, 2))
+
+        Dout_len = np.zeros((np1, np1))
+        Dout_len[(ind1, ind2)] = D_len
+        Dout_len += Dout_len.T
+        return Dout, Dout_len
 
     # Expand back to matrix indexing
     D.shape = (-1, len(p2), 3)
@@ -288,3 +285,18 @@ def _row_col_from_pdist(dim, i):
         return list(zip(x, y))
     else:
         return [(x, y)]
+
+
+def permute_axes(atoms, permutation):
+    """Permute axes of unit cell and atom positions. Considers only cell and
+    atomic positions. Other vector quantities such as momenta are not
+    modified."""
+    assert (np.sort(permutation) == np.arange(3)).all()
+
+    permuted = atoms.copy()
+    scaled = permuted.get_scaled_positions()
+    permuted.set_cell(permuted.cell.permute_axes(permutation),
+                      scale_atoms=False)
+    permuted.set_scaled_positions(scaled[:, permutation])
+    permuted.set_pbc(permuted.pbc[permutation])
+    return permuted

@@ -1,4 +1,3 @@
-.. module:: ase.cluster
 
 ==========================
 Nanoparticles and clusters
@@ -125,13 +124,5 @@ and SimpleCubic.  Other structures are implemented, but do currently
 not work correctly.
 
 
-Wulff constructions
-===================
-
-As an alternative to specifying the number of layers, a Wulff
-construction can be used to create a nanoparticle (with cubic
-symmetry).  The function can be imported as::
-
-  from ase.cluster import wulff_construction
-
-.. autofunction:: ase.cluster.wulff_construction
+.. automodule:: ase.cluster
+                :members:

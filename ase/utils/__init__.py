@@ -5,51 +5,28 @@ import pickle
 import sys
 import time
 import string
+import warnings
 from importlib import import_module
 from math import sin, cos, radians, atan2, degrees
 from contextlib import contextmanager
-
-try:
-    from math import gcd
-except ImportError:
-    from fractions import gcd
-
-try:
-    from pathlib import PurePath
-except ImportError:
-    class PurePath:
-        pass
+from math import gcd
+from pathlib import PurePath, Path
 
 import numpy as np
 
-from ase.utils.formula import formula_hill, formula_metal
-from ase.data import covalent_radii
+from ase.formula import formula_hill, formula_metal
 
 __all__ = ['exec_', 'basestring', 'import_module', 'seterr', 'plural',
            'devnull', 'gcd', 'convert_string_to_fd', 'Lock',
-           'opencew', 'OpenLock', 'rotate', 'irotate', 'givens',
+           'opencew', 'OpenLock', 'rotate', 'irotate', 'pbc2pbc', 'givens',
            'hsv2rgb', 'hsv', 'pickleload', 'FileNotFoundError',
            'formula_hill', 'formula_metal', 'PurePath']
 
 
-# Python 2+3 compatibility stuff:
-if sys.version_info[0] > 2:
-    import builtins
-    exec_ = getattr(builtins, 'exec')
-    basestring = str
-    from io import StringIO
-    pickleload = functools.partial(pickle.load, encoding='bytes')
-    FileNotFoundError = getattr(builtins, 'FileNotFoundError')
-else:
-    class FileNotFoundError(OSError):
-        pass
-
-    # Legacy Python:
-    def exec_(code, dct):
-        exec('exec code in dct')
-    basestring = basestring
-    from StringIO import StringIO
-    pickleload = pickle.load
+# Python 2+3 compatibility stuff (let's try to remove these things):
+basestring = str
+from io import StringIO
+pickleload = functools.partial(pickle.load, encoding='bytes')
 StringIO  # appease pyflakes
 
 
@@ -60,8 +37,10 @@ def seterr(**kwargs):
     See np.seterr() for more details.
     """
     old = np.seterr(**kwargs)
-    yield
-    np.seterr(**old)
+    try:
+        yield
+    finally:
+        np.seterr(**old)
 
 
 def plural(n, word):
@@ -96,6 +75,9 @@ class DevNull:
     def isatty(self):
         return False
 
+    def read(self, n=-1):
+        return ''
+
 
 devnull = DevNull()
 
@@ -112,8 +94,8 @@ def convert_string_to_fd(name, world=None):
         return devnull
     if name == '-':
         return sys.stdout
-    if isinstance(name, basestring):
-        return open(name, 'w')
+    if isinstance(name, (basestring, PurePath)):
+        return open(str(name), 'w')  # str for py3.5 pathlib
     return name  # we assume name is already a file-descriptor
 
 
@@ -154,19 +136,25 @@ def opencew(filename, world=None):
 
 
 class Lock:
-    def __init__(self, name='lock', world=None):
+    def __init__(self, name='lock', world=None, timeout=float('inf')):
         self.name = str(name)
-
+        self.timeout = timeout
         if world is None:
             from ase.parallel import world
         self.world = world
 
     def acquire(self):
+        dt = 0.2
+        t1 = time.time()
         while True:
             fd = opencew(self.name, self.world)
             if fd is not None:
                 break
-            time.sleep(1.0)
+            time_left = self.timeout - (time.time() - t1)
+            if time_left <= 0:
+                raise TimeoutError
+            time.sleep(min(dt, time_left))
+            dt *= 2
 
     def release(self):
         self.world.barrier()
@@ -209,13 +197,13 @@ def search_current_git_hash(arg, world=None):
         return None
 
     # Check argument
-    if isinstance(arg, basestring):
+    if isinstance(arg, str):
         # Directory path
         dpath = arg
     else:
         # Assume arg is module
         dpath = os.path.dirname(arg.__file__)
-    #dpath = os.path.abspath(dpath)
+    # dpath = os.path.abspath(dpath)
     # in case this is just symlinked into $PYTHONPATH
     dpath = os.path.realpath(dpath)
     dpath = os.path.dirname(dpath)  # Go to the parent directory
@@ -313,6 +301,12 @@ def irotate(rotation, initial=np.identity(3)):
     return x, y, z
 
 
+def pbc2pbc(pbc):
+    newpbc = np.empty(3, bool)
+    newpbc[:] = pbc
+    return newpbc
+
+
 def hsv2rgb(h, s, v):
     """http://en.wikipedia.org/wiki/HSL_and_HSV
 
@@ -356,22 +350,6 @@ def hsv(array, s=.9, v=.9):
     return np.reshape(result, array.shape + (3,))
 
 
-def natural_cutoffs(atoms, mult=1, **kwargs):
-    """Generate a radial cutoff for every atom based on covalent radii
-
-    The covalent radii are a reasonable cutoff estimation for bonds in
-    many applications such as neighborlists, so function generates an
-    atoms length list of radii based on this idea.
-
-    atoms: An atoms object
-    mult: A multiplier for all cutoffs, useful for coarse grained adjustment
-    kwargs: Symbol of the atom and its corresponding cutoff, used to override
-            the covalent radii
-    """
-    return [kwargs.get(atom.symbol, covalent_radii[atom.number] * mult)
-            for atom in atoms]
-
-
 # This code does the same, but requires pylab
 # def cmap(array, name='hsv'):
 #     import pylab
@@ -383,3 +361,156 @@ def natural_cutoffs(atoms, mult=1, **kwargs):
 def longsum(x):
     """128-bit floating point sum."""
     return float(np.asarray(x, dtype=np.longdouble).sum())
+
+
+@contextmanager
+def workdir(path, mkdir=False):
+    """Temporarily change, and optionally create, working directory."""
+    path = Path(path)
+    if mkdir:
+        path.mkdir(parents=True, exist_ok=True)
+
+    olddir = os.getcwd()
+    os.chdir(str(path))  # py3.6 allows chdir(path) but we still need 3.5
+    try:
+        yield  # Yield the Path or dirname maybe?
+    finally:
+        os.chdir(olddir)
+
+
+def iofunction(func, mode):
+    """Decorate func so it accepts either str or file.
+
+    (Won't work on functions that return a generator.)"""
+
+    @functools.wraps(func)
+    def iofunc(file, *args, **kwargs):
+        openandclose = isinstance(file, (basestring, PurePath))
+        fd = None
+        try:
+            if openandclose:
+                fd = open(str(file), mode)
+            else:
+                fd = file
+            obj = func(fd, *args, **kwargs)
+            return obj
+        finally:
+            if openandclose and fd is not None:
+                # fd may be None if open() failed
+                fd.close()
+    return iofunc
+
+
+def writer(func):
+    return iofunction(func, 'w')
+
+
+def reader(func):
+    return iofunction(func, 'r')
+
+
+# The next two functions are for hotplugging into a JSONable class
+# using the jsonable decorator.  We are supposed to have this kind of stuff
+# in ase.io.jsonio, but we'd rather import them from a 'basic' module
+# like ase/utils than one which triggers a lot of extra (cyclic) imports.
+
+def write_json(self, fd):
+    """Write to JSON file."""
+    from ase.io.jsonio import write_json as _write_json
+    _write_json(fd, self)
+
+
+@classmethod
+def read_json(cls, fd):
+    """Read new instance from JSON file."""
+    from ase.io.jsonio import read_json as _read_json
+    obj = _read_json(fd)
+    assert type(obj) is cls
+    return obj
+
+
+def jsonable(name):
+    """Decorator for facilitating JSON I/O with a class.
+
+    Pokes JSON-based read and write functions into the class.
+
+    In order to write an object to JSON, it needs to be a known simple type
+    (such as ndarray, float, ...) or implement todict().  If the class
+    defines a string called ase_objtype, the decoder will want to convert
+    the object back into its original type when reading."""
+    def jsonableclass(cls):
+        cls.ase_objtype = name
+        if not hasattr(cls, 'todict'):
+            raise TypeError('Class must implement todict()')
+
+        # We may want the write and read to be optional.
+        # E.g. a calculator might want to be JSONable, but not
+        # that .write() produces a JSON file.
+        #
+        # This is mostly for 'lightweight' object IO.
+        cls.write = write_json
+        cls.read = read_json
+        return cls
+    return jsonableclass
+
+
+class ExperimentalFeatureWarning(Warning):
+    pass
+
+
+def experimental(func):
+    """Decorator for functions not ready for production use."""
+    @functools.wraps(func)
+    def expfunc(*args, **kwargs):
+        warnings.warn('This function may change or misbehave: {}()'
+                      .format(func.__qualname__),
+                      ExperimentalFeatureWarning)
+        return func(*args, **kwargs)
+    return expfunc
+
+
+def lazymethod(meth):
+    """Decorator for lazy evaluation and caching of data.
+
+    Example::
+
+      class MyClass:
+
+         @lazymethod
+         def thing(self):
+             return expensive_calculation()
+
+    The method body is only executed first time thing() is called, and
+    its return value is stored.  Subsequent calls return the cached
+    value."""
+    name = meth.__name__
+
+    @functools.wraps(meth)
+    def getter(self):
+        try:
+            cache = self._lazy_cache
+        except AttributeError:
+            cache = self._lazy_cache = {}
+
+        if name not in cache:
+            cache[name] = meth(self)
+        return cache[name]
+    return getter
+
+
+def lazyproperty(meth):
+    """Decorator like lazymethod, but making item available as a property."""
+    return property(lazymethod(meth))
+
+
+def deprecated(msg):
+    """Return a decorator deprecating a function.
+
+    Use like @deprecated('warning message and explanation')."""
+    def deprecated_decorator(func):
+        @functools.wraps(func)
+        def deprecated_function(*args, **kwargs):
+            warnings.warn(msg, FutureWarning)
+            return func(*args, **kwargs)
+        return deprecated_function
+    return deprecated_decorator

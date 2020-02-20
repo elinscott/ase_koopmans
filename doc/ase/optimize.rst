@@ -3,6 +3,7 @@
 ======================
 Structure optimization
 ======================
+
 .. module:: ase.optimize
    :synopsis: Structure Optimization
 
@@ -15,9 +16,9 @@ minimum (a much harder task).
 Local optimization
 ==================
 
-The local optimization algorithms available in ASE are:
-``BFGS``, ``LBFGS``, ``BFGSLineSearch``, ``LBFGSLineSearch``,
-``MDMin``, and ``FIRE``.
+The local optimization algorithms available in ASE are: :class:`BFGS`,
+:class:`BFGSLineSearch`, :class:`LBFGS`, :class:`LBFGSLineSearch`,
+:class:`GPMin`, :class:`MDMin` and :class:`FIRE`.
 
 .. seealso::
 
@@ -49,8 +50,8 @@ should be less than *fmax*:
 
 BFGS
 ----
-.. module:: ase.optimize.qn
-   :synopsis: Quasi-Newton
+
+.. class:: BFGS
 
 The ``BFGS`` object is one of the minimizers in the ASE package. The below
 script uses ``BFGS`` to optimize the structure of a water molecule, starting
@@ -101,7 +102,7 @@ quantities to decide where to move the atoms on each step:
 * the forces on each atom, as returned by the associated
   :class:`~ase.calculators.calculator.Calculator` object
 * the Hessian matrix, i.e. the matrix of second derivatives
-  :math:`\frac{\partial^2 E}{\partial x_i \partial x_j}` of the
+  `\frac{\partial^2 E}{\partial x_i \partial x_j}` of the
   total energy with respect to nuclear coordinates.
 
 If the atoms are close to the minimum, such that the potential energy
@@ -152,7 +153,9 @@ retained by replaying the trajectory as above.
 
 LBFGS
 -----
-.. module:: ase.optimize.lbfgs
+
+.. class:: LBFGS
+.. class:: LBFGSLineSearch
 
 LBFGS is the limited memory version of the BFGS algorithm, where
 the inverse of Hessian matrix is updated instead of the Hessian
@@ -173,9 +176,36 @@ where the trajectory and the restart save the trajectory of the
 optimization and the vectors needed to generate the Hessian Matrix.
 
 
+GPMin
+-----
+
+.. class:: GPMin
+
+The GPMin (Gaussian Process minimizer) produces a model for the Potential
+Energy Surface using the information about the potential energies and
+the forces of the configurations it has already visited and uses it
+to speed up BFGS local minimzations.
+
+Read more about this algorithm here:
+
+  | Estefanía Garijo del Río, Jens Jørgen Mortensen, Karsten W. Jacobsen
+  | `Local Bayesian optimizer for atomic structures`__
+  | Physical Review B, Vol. **100**, 104103 (2019)
+
+__ https://link.aps.org/doi/10.1103/PhysRevB.100.104103
+
+.. warning:: The memory of the optimizer scales as O(n²N²) where
+             N is the number of atoms and n the number of steps.
+             If the number of atoms is sufficiently high, this
+             may cause a memory issue.
+             This class prints a warning if the user tries to 
+             run GPMin with more than 100 atoms in the unit cell.
+
+
 FIRE
 ----
-.. module:: ase.optimize.fire
+
+.. class:: FIRE
 
 Read about this algorithm here:
 
@@ -183,12 +213,13 @@ Read about this algorithm here:
   | `Structural Relaxation Made Simple`__
   | Physical Review Letters, Vol. **97**, 170201 (2006)
 
-__ http://dx.doi.org/10.1103/PhysRevLett.97.170201
+__ https://doi.org/10.1103/PhysRevLett.97.170201
 
 
 MDMin
 -----
-.. module:: ase.optimize.mdmin
+
+.. class:: MDMin
 
 The MDmin algorithm is a modification of the usual velocity-Verlet
 molecular dynamics algorithm.  Newtons second law is solved
@@ -215,7 +246,6 @@ Newton*.
 
 SciPy optimizers
 ----------------
-.. module:: ase.optimize.sciopt
 
 SciPy provides a number of optimizers. An interface module for a couple of
 these have been written for ASE. Most notable are the optimizers SciPyFminBFGS
@@ -230,7 +260,9 @@ as::
 
 BFGSLineSearch
 --------------
-.. module:: ase.optimize.bfgslinesearch
+
+.. class:: BFGSLineSearch
+.. class:: QuasiNewton
 
 BFGSLineSearch is the BFGS algorithm with a line search mechanism
 that enforces the step taken fulfills the Wolfe conditions, so that
@@ -255,6 +287,15 @@ optimization and the information needed to generate the Hessian Matrix.
 The BFGSLineSearch algorithm is not compatible with nudged elastic band
 calculations.
 
+Pyberny
+-------
+
+ASE includes a wrapper for the Pyberny_ optimizer. This requires installing
+Pyberny::
+
+    pip install pyberny
+
+.. autoclass:: Berny
 
 .. module:: ase.optimize.precon
 
@@ -279,24 +320,28 @@ You can read more about the theory and implementation here:
   | `A universal preconditioner for simulating condensed phase materials`__
   | J. Chem. Phys. *144*, 164109 (2016).
 
-__ http://dx.doi.org/10.1063/1.4947024
+__ https://doi.org/10.1063/1.4947024
 
-Tests with a variety of solid-state systems using both DFT and
-classical interatomic potentials driven though ASE calculators show
-speedup factors of up to an order of magnitude for preconditioned
-L-BFGS over standard L-BFGS, and the gain grows with system
-size. Precomputations are performed to automatically estimate all
-parameters required. A linesearch based on enforcing only the first
-Wolff condition (i.e. the Armijo sufficient descent condition) is also
-provided in :mod:`ase.utils.linesearcharmijo`; this typically leads to a
-further speed up when used in conjunction with the preconditioner.
+Tests with a variety of solid-state systems using both DFT and classical
+interatomic potentials driven though ASE calculators show speedup factors of up
+to an order of magnitude for preconditioned L-BFGS over standard L-BFGS, and the
+gain grows with system size. Precomputations are performed to automatically
+estimate all parameters required. A linesearch based on enforcing only the first
+Wolff condition (i.e. the Armijo sufficient descent condition) is also provided
+in :mod:`ase.utils.linesearcharmijo`; this typically leads to a further speed up
+when used in conjunction with the preconditioner.
 
-The preconditioned L-BFGS method implemented in ASE does not require
-external dependencies, but the :mod:`scipy.sparse` module can be used for
-efficient sparse linear algebra, and the :mod:`matscipy` package is used for
-fast computation of neighbour lists if available. The PyAMG package can be
-used to efficiently invert the preconditioner using an adaptive multigrid
-method.
+For small systems, unless they are highly ill-conditioned due to large
+variations in bonding stiffness, it is unlikely that preconditioning provides a
+performance gain, and standard BFGS and LBFGS should be preferred. Therefore,
+for systems with fewer than 100 atoms, `PreconLBFGS` reverts to standard LBFGS.
+Preconditioning can be enforces with the keyword argument `precon`.
+
+The preconditioned L-BFGS method implemented in ASE does not require external
+dependencies, but the :mod:`scipy.sparse` module can be used for efficient
+sparse linear algebra, and the :mod:`matscipy` package is used for fast
+computation of neighbour lists if available. The PyAMG package can be used to
+efficiently invert the preconditioner using an adaptive multigrid method.
 
 Usage is very similar to the standard optimizers. The example below compares
 unpreconditioned LBGFS with the default `Exp` preconditioner for a 3x3x3 bulk
@@ -400,6 +445,7 @@ a convenient tool for plotting convergence and walltime.
 
   .. image:: precon.png
 
+
 Global optimization
 ===================
 
@@ -408,6 +454,7 @@ There are currently two global optimisation algorithms available.
 
 Basin hopping
 -------------
+
 .. module:: ase.optimize.basin
 
 The global optimization algorithm can be used quite similar as a
@@ -429,7 +476,7 @@ Read more about this algorithm here:
   | `Global Optimization by Basin-Hopping and the Lowest Energy Structures of Lennard-Jones Clusters Containing up to 110 Atoms`__
   | J. Phys. Chem. A, Vol. **101**, 5111-5116 (1997)
 
-__ http://pubs.acs.org/doi/abs/10.1021/jp970984n
+__ https://doi.org/10.1021/jp970984n
 
 and here:
 
@@ -437,7 +484,7 @@ and here:
   | `Global Optimization of Clusters, Crystals, and Biomolecules`__
   | Science, Vol. **285**, 1368 (1999)
 
-__ http://www.sciencemag.org/cgi/content/abstract/sci;285/5432/1368
+__ https://science.sciencemag.org/content/285/5432/1368.abstract
 
 Minima hopping
 --------------
@@ -448,9 +495,9 @@ The minima hopping algorithm was developed and described by Goedecker:
   | `Minima hopping: An efficient search method for the global minimum of the potential energy surface of complex molecular systems`__
   | J. Chem. Phys., Vol. **120**, 9911 (2004)
 
-__ http://dx.doi.org/10.1063/1.1724816
+__ https://doi.org/10.1063/1.1724816
 
-This algorithm utilizes a series of alternating steps of NVE molecular dynamics and local optimizations, and has two parameters that the code dynamically adjusts in response to the progress of the search. The first parameter is the initial temperature of the NVE simulation. Whenever a step finds a new minimum this temperature is decreased; if the step finds a previously found minimum the temperature is increased. The second dynamically adjusted parameter is :math:`E_\mathrm{diff}`, which is an energy threshold for accepting a newly found minimum. If the new minimum is no more than :math:`E_\mathrm{diff}` eV higher than the previous minimum, it is acccepted and :math:`E_\mathrm{diff}` is decreased; if it is more than :math:`E_\mathrm{diff}` eV higher it is rejected and :math:`E_\mathrm{diff}` is increased. The method is used as::
+This algorithm utilizes a series of alternating steps of NVE molecular dynamics and local optimizations, and has two parameters that the code dynamically adjusts in response to the progress of the search. The first parameter is the initial temperature of the NVE simulation. Whenever a step finds a new minimum this temperature is decreased; if the step finds a previously found minimum the temperature is increased. The second dynamically adjusted parameter is `E_\mathrm{diff}`, which is an energy threshold for accepting a newly found minimum. If the new minimum is no more than `E_\mathrm{diff}` eV higher than the previous minimum, it is acccepted and `E_\mathrm{diff}` is decreased; if it is more than `E_\mathrm{diff}` eV higher it is rejected and `E_\mathrm{diff}` is increased. The method is used as::
 
    from ase.optimize.minimahopping import MinimaHopping
    opt = MinimaHopping(atoms=system)
@@ -472,13 +519,14 @@ This will run the algorithm until 10 steps are taken; alternatively, if totalste
  | ``timestep`` : 1.0,  # fs, timestep for MD simulations
  | ``optimizer`` : QuasiNewton,  # local optimizer to use
  | ``minima_traj`` : 'minima.traj',  # storage file for minima list
+ | ``fmax`` : 0.05,  # eV/A, max force for optimizations
 
 Specific definitions of the ``alpha``, ``beta``, and ``mdmin`` parameters can be found in the publication by Goedecker. ``minima_threshold`` is used to determine if two atomic configurations are identical; if any atom has moved by more than this amount it is considered a new configuration. Note that the code tries to do this in an intelligent manner: atoms are considered to be indistinguishable, and translations are allowed in the directions of the periodic boundary conditions. Therefore, if a CO is adsorbed in an ontop site on a (211) surface it will be considered identical no matter which ontop site it occupies.
 
 The trajectory file ``minima_traj`` will be populated with the accepted minima as they are found. A log of the progress is kept in ``logfile``.
 
-The code is written such that a stopped simulation (e.g., killed by the batching system when the maximum wall time was exceeded) can usually be restarted without too much effort by the user. In most cases, the script can be resubmitted without any modification -- if the ``logfile`` and ``minima_traj`` are found, the script will attempt to use these to resume. (Note that you may need to clean up files left in the directory by the calculator, however, such as the .nc file produced by Jacapo.)
+The code is written such that a stopped simulation (e.g., killed by the batching system when the maximum wall time was exceeded) can usually be restarted without too much effort by the user. In most cases, the script can be resubmitted without any modification -- if the ``logfile`` and ``minima_traj`` are found, the script will attempt to use these to resume. (Note that you may need to clean up files left in the directory by the calculator, however.)
 
-Note that these searches can be quite slow, so it can pay to have multiple searches running at a time. Multiple searches can run in parallel and share one list of minima. (Run each script from a separate directory but specify the location to the same absolute location for ``minima_traj``). Each search will use the global information of the list of minima, but will keep its own local information of the initial temperature and :math:`E_\mathrm{diff}`.
+Note that these searches can be quite slow, so it can pay to have multiple searches running at a time. Multiple searches can run in parallel and share one list of minima. (Run each script from a separate directory but specify the location to the same absolute location for ``minima_traj``). Each search will use the global information of the list of minima, but will keep its own local information of the initial temperature and `E_\mathrm{diff}`.
 
 For an example of use, see the :ref:`mhtutorial` tutorial.

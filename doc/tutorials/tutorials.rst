@@ -9,9 +9,16 @@ Python
 If you are not familiar with Python please read :ref:`what is python`.
 
 .. toctree::
-   :maxdepth: 3
+   :hidden:
 
    ../python
+
+If your ASE scripts make extensive use of matrices you may want to familiarize yourself with :ref:`numpy`.
+
+.. toctree::
+   :hidden:
+
+   ../numpy
 
 ASE
 ---
@@ -19,40 +26,77 @@ ASE
 Most of the tutorials will use the :mod:`EMT <ase.calculators.emt>` potential,
 but any other :mod:`Calculator <ase.calculators>` could be plugged in instead.
 
+Basic property calculations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
-   surface
-   manipulating_atoms
    atomization
-   lattice_constant
    eos/eos
+   lattice_constant
+
+Surface adsorption
+^^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
    db/db
-   constraints/diffusion
-   selfdiffusion/al110
-   neb/diffusion
-   neb/idpp
-   dissociation
-   md/md
-   tipnp_equil/tipnp_equil
-   wannier/wannier
+
+Global optimization
+^^^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
    minimahopping/minimahopping
    ga/ga_optimize
    ga/ga_fcc_alloys
    ga/ga_convex_hull
+
+Calculating diffusion/dissociation properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
+   neb/diffusion
+   constraints/diffusion
+   dissociation
+   neb/idpp
+   selfdiffusion/al110
+
+ASE database
+^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
+   tut06_database/database
+
+Surface adsorption
+^^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
+   db/db
+
+Molecular Dynamics
+^^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
+   md/md
+   tipnp_equil/tipnp_equil
+   acn_equil/acn_equil
+
+Uncategorized
+^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
+
    defects/defects
    qmmm/qmmm
-
-
-NumPy
------
-
-If your ASE scripts make extensive use of matrices you may want to familiarize yourself with :ref:`numpy`.
-
-.. toctree::
-   :maxdepth: 3
-
-   ../numpy
+   dimensionality/dimensionality
+   deltacodesdft/deltacodesdft
+   wannier/wannier
+   tut03_vibrations/vibrations
 
 
 Further reading

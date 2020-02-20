@@ -1,11 +1,12 @@
-from __future__ import print_function
 import numpy as np
+
 from ase.units import Bohr
-from ase.utils import basestring
+from ase.data import atomic_numbers
+
 
 def attach_charges(atoms, fileobj='ACF.dat', displacement=1e-4):
     """Attach the charges from the fileobj to the Atoms."""
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     sep = '---------------'
@@ -23,10 +24,10 @@ def attach_charges(atoms, fileobj='ACF.dat', displacement=1e-4):
                 j = headings.split().index('CHARGE')
             else:
                 print('Can\'t find keyword "BADER" or "CHARGE".' \
-                +' Assuming the ACF.dat file has 6 columns.')
+                      +' Assuming the ACF.dat file has 6 columns.')
                 j = 4
                 assume6columns = True
-        if sep in line: # Stop at last seperator line
+        if sep in line: # Stop at last separator line
             if k == 1:
                 break
             k += 1
@@ -40,7 +41,7 @@ def attach_charges(atoms, fileobj='ACF.dat', displacement=1e-4):
                                   'Check that Bader program version >= 0.25')
                 
             atom = atoms[int(words[0]) - 1]
-            atom.charge = float(words[j])
+            atom.charge = atomic_numbers[atom.symbol] - float(words[j])
             if displacement is not None: # check if the atom positions match
                 xyz = np.array([float(w) for w in words[1:4]])
                 # ACF.dat units could be Bohr or Angstrom

@@ -4,7 +4,6 @@ import warnings
 from math import sqrt
 import numpy as np
 
-from ase.utils import basestring
 from ase.optimize.optimize import Optimizer
 from ase.constraints import UnitCellFilter
 
@@ -14,27 +13,31 @@ from ase.utils.linesearcharmijo import LineSearchArmijo
 from ase.optimize.precon import Exp, C1, Pfrommer
 
 class PreconLBFGS(Optimizer):
-    """Preconditioned version of the Limited memory BFGS optimizer.
+    """Preconditioned version of the Limited memory BFGS optimizer, to
+    be used as a drop-in replacement for ase.optimize.lbfgs.LBFGS for systems
+    where a good preconditioner is available.
+
+    In the standard bfgs and lbfgs algorithms, the inverse of Hessian matrix
+    is a (usually fixed) diagonal matrix. By contrast, PreconLBFGS,
+    updates the hessian after each step with a general "preconditioner".
+    By default, the ase.optimize.precon.Exp preconditioner is applied.
+    This preconditioner is well-suited for large condensed phase structures,
+    in particular crystalline. For systems outside this category,
+    PreconLBFGS with Exp preconditioner may yield unpredictable results.
+
+    In time this implementation is expected to replace
+    ase.optimize.lbfgs.LBFGS.
 
     See this article for full details: D. Packwood, J. R. Kermode, L. Mones,
     N. Bernstein, J. Woolley, N. Gould, C. Ortner, and G. Csanyi, A universal
     preconditioner for simulating condensed phase materials
-    J. Chem. Phys. 144, 164109 (2016), DOI: http://dx.doi.org/10.1063/1.4947024
-
-    A limited memory version of the bfgs algorithm. Unlike the bfgs algorithm
-    used in bfgs.py, the inverse of Hessian matrix is updated.  The inverse
-    Hessian is represented only as a diagonal matrix to save memory.
-
-    By default, the ase.optimize.precon.Exp preconditioner is applied.
-
-    In time this implementation is expected to replace
-    ase.optimize.lbfgs.LBFGS.
+    J. Chem. Phys. 144, 164109 (2016), DOI: https://doi.org/10.1063/1.4947024
     """
 
     # CO : added parameters rigid_units and rotation_factors
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
                  maxstep=None, memory=100, damping=1.0, alpha=70.0,
-                 master=None, precon='Exp', variable_cell=False,
+                 master=None, precon='auto', variable_cell=False,
                  use_armijo=True, c1=0.23, c2=0.46, a_min=None,
                  rigid_units=None, rotation_factors=None, Hinv=None):
         """Parameters:
@@ -77,12 +80,14 @@ class PreconLBFGS(Optimizer):
             Defaults to None, which causes only rank 0 to save files.  If
             set to true,  this rank will save files.
 
-        precon: ase.optimize.precon.Precon instance or compatible
-            Apply the given preconditione during optimization. Defaults to
-            'Exp', which constructs an ase.optimize.precon.Exp instance.
-            Other options include 'C1' and 'Pfrommer'-
-            see the corresponding classes in this module for more details.
-            Pass precon=None or precon='ID' to disable preconditioner.
+        precon: ase.optimize.precon.Precon instance or compatible.
+            Apply the given preconditioner during optimization. Defaults to
+            'auto', which will choose the `Exp` preconditioner unless the system
+            is too small (< 100 atoms) in which case a standard LBFGS fallback
+            is used. To enforce use of the `Exp` preconditioner, use `precon =
+            'Exp'`. Other options include 'C1', 'Pfrommer' and 'FF' - see the
+            corresponding classes in the `ase.optimize.precon` module for more
+            details. Pass precon=None or precon='ID' to disable preconditioning.
 
         use_armijo: boolean
             Enforce only the Armijo condition of sufficient decrease of
@@ -97,7 +102,7 @@ class PreconLBFGS(Optimizer):
             c2 parameter for the line search. Default is c2=0.46.
 
         a_min: float
-            minimal value for the line search step parameter. Default is 
+            minimal value for the line search step parameter. Default is
             a_min=1e-8 (use_armijo=False) or 1e-10 (use_armijo=True).
             Higher values can be useful to avoid performing many
             line searches for comparatively small changes in geometry.
@@ -119,6 +124,19 @@ class PreconLBFGS(Optimizer):
             atoms = UnitCellFilter(atoms)
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master)
 
+        # default preconditioner
+        #   TODO: introduce a heuristic for different choices of preconditioners
+        if precon == 'auto':
+            if len(atoms) < 100:
+                precon = None
+                warnings.warn('The system is likely too small to benefit from ' +
+                              'the standard preconditioner, hence it is ' +
+                              'disabled. To re-enable preconditioning, call' +
+                              '`PreconLBFGS` by explicitly providing the ' +
+                              'kwarg `precon`')
+            else:
+                precon = 'Exp'
+
         if maxstep is not None:
             if maxstep > 1.0:
                 raise ValueError('You are using a much too large value for ' +
@@ -137,7 +155,7 @@ class PreconLBFGS(Optimizer):
         self.p = None
 
         # construct preconditioner if passed as a string
-        if isinstance(precon, basestring):
+        if isinstance(precon, str):
             if precon == 'C1':
                 precon = C1()
             if precon == 'Exp':
@@ -167,11 +185,11 @@ class PreconLBFGS(Optimizer):
         self._just_reset_hessian = True
         self.s = []
         self.y = []
-        self.rho = []  # Store also rho, to avoid calculationg the dot product
+        self.rho = []  # Store also rho, to avoid calculating the dot product
         # again and again
 
     def initialize(self):
-        """Initalize everything so no checks have to be done in step"""
+        """Initialize everything so no checks have to be done in step"""
         self.iteration = 0
         self.reset_hessian()
         self.r0 = None
@@ -187,12 +205,15 @@ class PreconLBFGS(Optimizer):
             self.r0, self.f0, self.e0, self.task = self.load()
         self.load_restart = True
 
-    def step(self, f):
+    def step(self, f=None):
         """Take a single step
 
         Use the given forces, update the history and calculate the next step --
         then take it"""
         r = self.atoms.get_positions()
+
+        if f is None:
+            f = self.atoms.get_forces()
 
         previously_reset_hessian = self._just_reset_hessian
         self.update(r, f, self.r0, self.f0)
@@ -268,7 +289,7 @@ class PreconLBFGS(Optimizer):
 
     def replay_trajectory(self, traj):
         """Initialize history from old trajectory."""
-        if isinstance(traj, basestring):
+        if isinstance(traj, str):
             from ase.io.trajectory import Trajectory
             traj = Trajectory(traj, 'r')
         r0 = None
@@ -315,7 +336,7 @@ class PreconLBFGS(Optimizer):
                 ls = LineSearchArmijo(self.func, c1=self.c1, tol=1e-14)
                 step, func_val, no_update = ls.run(
                     r, self.p, a_min=self.a_min,
-                    func_start=e, 
+                    func_start=e,
                     func_prime_start=g,
                     func_old=self.e0,
                     rigid_units=self.rigid_units,
@@ -340,7 +361,7 @@ class PreconLBFGS(Optimizer):
             ls = LineSearch()
             self.alpha_k, e, self.e0, self.no_update = \
                 ls._line_search(self.func, self.fprime, r, self.p, g,
-                                e, self.e0, stpmin=self.a_min, 
+                                e, self.e0, stpmin=self.a_min,
                                 maxstep=self.maxstep, c1=self.c1,
                                 c2=self.c2, stpmax=50.)
             self.e1 = e
@@ -353,7 +374,9 @@ class PreconLBFGS(Optimizer):
         self.smax = smax
         return Optimizer.run(self, fmax, steps)
 
-    def log(self, forces):
+    def log(self, forces=None):
+        if forces is None:
+            forces = self.atoms.get_forces()
         if isinstance(self.atoms, UnitCellFilter):
             natoms = len(self.atoms.atoms)
             forces, stress = forces[:natoms], self.atoms.stress

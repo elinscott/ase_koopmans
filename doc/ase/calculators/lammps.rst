@@ -4,14 +4,14 @@
 LAMMPS Calculators
 ==================
 
-LAMMPS_link_ (Large-scale Atomic/Molecular Massively Parallel Simulator) is
+LAMMPS_ (Large-scale Atomic/Molecular Massively Parallel Simulator) is
 a classical molecular dynamics code.
 
 There are two calculators that interface to the LAMMPS molecular
 dynamics code that can be used to solve an atoms model for energy,
 atom forces and cell stresses. They are:
 
-1. :mod:`ase.clculators.LAMMPSrun` which interfaces to LAMMPS via writing a
+1. :mod:`ase.calculators.LAMMPSrun` which interfaces to LAMMPS via writing a
 controlling input file that is then run automatically through LAMMPS
 and the results read back in. These results are currently limited to
 total energy, atomic forces and cell stress.
@@ -24,7 +24,7 @@ explicitly closed. Any additional variables calculated by LAMMPS can
 also be extracted. Note however, any mistakes in the code sent to the
 LAMMPS routine will cause python to terminate. Further information on the
 python interface of LAMMPS can be found at lammpspy_link_. Note that it can be
-very benefitial to compile lammps with C++ exceptions. Otherwise there will be
+very beneficial to compile lammps with C++ exceptions. Otherwise there will be
 no error messages upon crashes.
 
 It should not matter which code you use, but if you want access to

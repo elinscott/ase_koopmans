@@ -12,7 +12,7 @@ class NDPoly:
             Number of dimensions.
         order: int
             Order of polynomium."""
-        
+
         if ndims == 0:
             exponents = [()]
         else:
@@ -22,7 +22,7 @@ class NDPoly:
                 exponents += [(i,) + tuple(e) for e in E]
         self.exponents = np.array(exponents)
         self.c = None
-        
+
     def __call__(self, *x):
         """Evaluate polynomial at x."""
         return np.dot(self.c, (x**self.exponents).prod(1))
@@ -38,12 +38,12 @@ def polyfit(x, y, order=3):
 
     With D dimensions and N points, x must have shape (N, D) and y
     must have length N."""
-    
+
     p = NDPoly(len(x[0]), order)
     p.fit(x, y)
     return p
 
-    
+
 a0 = 3.52 / np.sqrt(2)
 c0 = np.sqrt(8 / 3.0) * a0
 print('%.4f %.3f' % (a0, c0 / a0))
@@ -58,7 +58,7 @@ for i in range(3):
             traj.write(ni)
     traj.close()
 
-    configs = read('Ni.traj@:')
+    configs = read('Ni.traj', index=':')
     energies = [config.get_potential_energy() for config in configs]
     ac = [(config.cell[0, 0], config.cell[2, 2]) for config in configs]
     p = polyfit(ac, energies, 2)
@@ -67,5 +67,4 @@ for i in range(3):
     print('%.4f %.3f' % (a0, c0 / a0))
 assert abs(a0 - 2.466) < 0.001
 assert abs(c0 / a0 - 1.632) < 0.005
-
 

@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 """QM/MM interface with QM=FHI-aims, MM=gromacs
 
 QM could be something else, but you need to read in qm-atom charges
@@ -1534,7 +1534,7 @@ class AseQmmmManyqm:
                     oklines.append(line)
                 elif check == 'bond':
                     bondedatoms = set(indexes[0:2])
-                    #set empty bond intereaction for qm-qm bonds (type 5)
+                    #set empty bond interaction for qm-qm bonds (type 5)
                     #(this way LJ and electrostatics is not messed up)
                     if (bondedatoms.issubset(qm)):
                         newline = str(indexes1[0]).rjust(8)+\

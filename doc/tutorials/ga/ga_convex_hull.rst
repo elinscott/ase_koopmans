@@ -2,7 +2,7 @@
 Determination of convex hull with a genetic algorithm
 =====================================================
 
-In this tutorial we will determine the convex hull of a binary alloy slab. The convex hull can be used to check whether a certain composition is stable or it will decompose into mixed phases of the neighboring stable compositions. We will use a (111) slab to represent a close packed surface, the method can easily be extended for use in other systems, e.g. bulk, nanoparticle, ... We choose a rather small atomic structure with 24 atoms in the unit cell, in a binary system the number of different atomic distributions for a single composition is determined by the binomial coefficient :math:`\frac{N!}{n_A!n_B!}`, where :math:`N` is the total number of atoms in the slab, :math:`n_A` and :math:`n_B` is the number of A and B atoms respectively. This number rises combinatorially towards the 1:1 composition and in total there exists 16.8 million different atomic distributions for the 24 atom slab (without taking symmetry into account which will reduce the number significantly see :ref:`symmetry`). A number of this size warrants a search method other than brute force, here we use a genetic algorithm (GA).
+In this tutorial we will determine the convex hull of a binary alloy slab. The convex hull can be used to check whether a certain composition is stable or it will decompose into mixed phases of the neighboring stable compositions. We will use a (111) slab to represent a close packed surface, the method can easily be extended for use in other systems, e.g. bulk, nanoparticle, ... We choose a rather small atomic structure with 24 atoms in the unit cell, in a binary system the number of different atomic distributions for a single composition is determined by the binomial coefficient `\frac{N!}{n_A!n_B!}`, where `N` is the total number of atoms in the slab, `n_A` and `n_B` is the number of A and B atoms respectively. This number rises combinatorially towards the 1:1 composition and in total there exists 16.8 million different atomic distributions for the 24 atom slab (without taking symmetry into account which will reduce the number significantly see :ref:`symmetry`). A number of this size warrants a search method other than brute force, here we use a genetic algorithm (GA).
 
 Outline of the GA run
 ---------------------
@@ -14,8 +14,8 @@ We will create an initial population of (111) slabs each with a random compositi
 The candidates are evaluated with the :mod:`EMT potential <ase.calculators.emt>`. To make comparisons between different compositions we define the mixing or excess energy by:
 
 .. math:: E_\text{mixing} = E_{AB} - \frac{E_A \cdot n_A}{N} - \frac{E_B \cdot n_B}{N}
-          
-where :math:`E_\text{AB}` is the energy of the mixed slab, :math:`E_A` and :math:`E_B` are the energies of the pure A and B slabs respectively.
+
+where `E_\text{AB}` is the energy of the mixed slab, `E_A` and `E_B` are the energies of the pure A and B slabs respectively.
 
 We will take advantage of the :class:`ase.ga.population.RankFitnessPopulation`, that allows us to optimize a full composition range at once. It works by grouping candidates according to a variable (composition in this case) and then ranking candidates within each group. This means that the fittest candidate in each group is given equal fitness and has the same probability for being selected for procreation. This means that the entire convex hull is mapped out contrary to just the candidates with lowest mixing energies. This "all in one" approach is more efficient than running each composition individually since the chemical ordering is similar for different compositions.
 
@@ -29,9 +29,9 @@ Initial population
 We choose a population size large enough so that the entire composition range will be represented in the population. The pure slabs are set up using experimental lattice constants, and for the mixed slabs we use Vegard's law (interpolation). :download:`ga_convex_start.py`
 
 .. literalinclude:: ga_convex_start.py
-                    
+
 Now we have the file :file:`hull.db`, that can be examined like a regular :mod:`ase.db` database. The first row is special as it contains the parameters we have chosen to save (population size, reference energies,  etc.). The rest of the rows are candidates marked with ``relaxed=0`` for not evaluated, ``queued=1`` for a candidate submitted for evaluation using a queueing system on a computer cluster and ``relaxed=1`` for evaluated candidates.
-                    
+
 Run the algorithm
 =================
 
@@ -40,11 +40,13 @@ With the database properly initiated we are ready to start the GA. Below is a sh
 .. literalinclude:: ga_convex_run.py
 
 We can evaluate the results of the algorithm continuously while the database is being updated. We use the :class:`ase.phasediagram.PhaseDiagram` to plot the convex hull. In the script below we retrieve the evaluated candidates and plot the convex hull. We also write a trajectory file with all the candidates that make up the convex hull. :download:`plot_convex_hull.py`
-                    
+
 .. literalinclude:: plot_convex_hull.py
-                    
+
 All evaluated structures are put in the plot, if the number of points is disturbing the plot try to put ``only_plot_simplices=True`` instead of ``only_label_simplices=True``.
-                    
+
+.. image:: hull.png
+
 We then view the structures on the convex hull by doing (on the command-line)::
 
     $ ase gui hull.traj
@@ -81,7 +83,7 @@ The list of elements in the candidate determines the structure completely, thus 
             dup = db.is_duplicate(atoms_string=atoms_string)
 
 .. _symmetry:
-            
+
 Symmetric duplicate identification
 ==================================
 
@@ -89,7 +91,7 @@ Having identical or very similar in the population will limit the diversity and 
 
 .. math:: \text{NN}_\text{avg} = [\frac{\#\text{Cu-Cu}}{N_{\text{Cu}}} , \frac{\#\text{Cu-Pt}}{N_{\text{Cu}}}, \frac{\#\text{Pt-Cu}}{N_{\text{Pt}}}, \frac{\#\text{Pt-Pt}}{N_{\text{Pt}}}]
 
-where :math:`\#\text{Cu-Cu}` is the number of Cu - Cu nearest neighbors and :math:`N_\text{Cu}` is the total number of Cu atoms in the slab. This check can be performed at two points; either just after candidate creation before evaluation or after evaluation before potential inclusion into the population. We will use the latter method here and add a comparator to the population.
+where `\#\text{Cu-Cu}` is the number of Cu - Cu nearest neighbors and `N_\text{Cu}` is the total number of Cu atoms in the slab. This check can be performed at two points; either just after candidate creation before evaluation or after evaluation before potential inclusion into the population. We will use the latter method here and add a comparator to the population.
 
 The nearest neighbor average is put in ``candidate.info['key_value_pairs']`` as a string rounded off to two decimal points. *Note* this accuracy is fitting for this size slab, but need testing for other systems.
 
@@ -113,7 +115,7 @@ The nearest neighbor average is put in ``candidate.info['key_value_pairs']`` as 
        set_raw_score(a, -get_mixing_energy(a))
        db.add_relaxed_step(a)
    pop.update()
-   
+
    ...
 
    # If a candidate is not an exact duplicate the nnmat should be calculated

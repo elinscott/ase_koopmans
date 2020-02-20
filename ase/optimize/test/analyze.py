@@ -1,5 +1,5 @@
 from collections import defaultdict
-from math import inf
+from numpy import inf
 
 import ase.db
 

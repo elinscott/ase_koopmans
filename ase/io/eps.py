@@ -1,23 +1,24 @@
 import time
 from distutils.version import LooseVersion
-from ase.io.utils import generate_writer_variables, make_patch_list
+from ase.io.utils import PlottingVariables, make_patch_list
 
 
-class EPS:
+class EPS(PlottingVariables):
     def __init__(self, atoms,
-                 rotation='', show_unit_cell=0, radii=None,
-                 bbox=None, colors=None, scale=20, maxwidth=500):
+                 rotation='', radii=None,
+                 bbox=None, colors=None, scale=20, maxwidth=500,
+                 **kwargs):
         """Encapsulated PostScript writer.
 
         show_unit_cell: int
             0: Don't show unit cell (default).  1: Show unit cell.
             2: Show unit cell and make sure all of it is visible.
         """
-        generate_writer_variables(
+        PlottingVariables.__init__(
             self, atoms, rotation=rotation,
-            show_unit_cell=show_unit_cell,
             radii=radii, bbox=bbox, colors=colors, scale=scale,
-            maxwidth=maxwidth)
+            maxwidth=maxwidth,
+            **kwargs)
 
     def write(self, filename):
         self.filename = filename

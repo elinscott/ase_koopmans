@@ -5,19 +5,15 @@ environment variables
 
 """
 
-from ase.test import NotAvailable
+import numpy as np
+
 from ase.test.vasp import installed
 from ase import Atoms
 from ase.calculators.vasp import Vasp
 from ase.io import read
-import numpy as np
-import sys
 
 
 def main():
-    if sys.version_info < (2, 7):
-        raise NotAvailable('read_xml requires Python version 2.7 or greater')
-
     assert installed()
 
     # simple test calculation of CO molecule
@@ -26,12 +22,14 @@ def main():
                pbc=True)
     co.center(vacuum=5.)
 
-    calc = Vasp(xc='PBE',
+    calc = Vasp(xc='LDA',
                 prec='Low',
                 algo='Fast',
                 ismear=0,
                 sigma=1.,
+                nbands=12,
                 istart=0,
+                nelm=3,
                 lwave=False,
                 lcharg=False,
                 ldipol=True)
