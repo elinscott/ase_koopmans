@@ -136,17 +136,13 @@ def polarizability(exlist, omega, form='v',
         shape = (omega.shape, 3, 3) else
     """
     omega = np.asarray(omega)
-    if omega.dtype == complex:
-        om2 = np.array(omega, dtype=complex)**2
-    else:
-        om2 = np.array(omega, dtype=float)**2
-
+    om2 = 1. * omega**2
     esc = exlist.energy_to_eV_scale
 
     if tensor:
         if not np.isscalar(om2):
             om2 = om2[:, None, None]
-        alpha = np.zeros(np.array(omega).shape + (3, 3),
+        alpha = np.zeros(omega.shape + (3, 3),
                          dtype=om2.dtype)
         for ex in exlist:
             alpha += ex.get_dipole_tensor(form=form) / (
