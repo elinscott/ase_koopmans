@@ -173,7 +173,7 @@ class H2MorseExcitedStates(ExcitationList):
             self.filename = filename
             n = int(f.readline().split()[0])
             for i in range(min(n, self.nstates)):
-                self.append(H2Excitation(string=f.readline()))
+                self.append(H2Excitation.fromstring(f.readline()))
 
     def write(self, fname):
         with open(fname, 'w') as f:
