@@ -77,7 +77,7 @@ def write_gpumd(fd, atoms, maximum_neighbors=None, cutoff=None,
             cutoff = 0.1
             maximum_neighbors = 1
         else:
-            nl = NeighborList([cutoff/2]*len(atoms), skin=2, bothways=True)
+            nl = NeighborList([cutoff / 2] * len(atoms), skin=2, bothways=True)
             nl.update(atoms)
             maximum_neighbors = 0
             for atom in atoms:
