@@ -6,7 +6,6 @@ Implemented:
 """
 
 import numpy as np
-import pytest
 
 from ase import io
 from ase.build import bulk
@@ -36,15 +35,14 @@ gpumd_input_text = """16 4 1.1 0 1 2
 1 8.91989 -1.32745 44.8546 12.011 0.00351112 -0.00690595 0.040041 15 1 """
 
 
-@pytest.mark.xfail
 def test_read_gpumd_input():
     """Read GPUMD input file."""
     with open('xyz.in', 'w') as f:
         f.write(gpumd_input_text)
 
-    # Test when specifying the species-type map
-    species_types = {'Si': 0, 'C': 1}
-    atoms = io.read('xyz.in', format='gpumd', species_types=species_types)
+    # Test when specifying the species
+    species = ['Si', 'C']
+    atoms = io.read('xyz.in', format='gpumd', species=species)
     groupings = [[[i] for i in range(len(atoms))],
                  [[i for i, s in
                    enumerate(atoms.get_chemical_symbols()) if s == 'Si'],
@@ -53,7 +51,7 @@ def test_read_gpumd_input():
     groups = [[[j for j, group in enumerate(grouping) if i in group][0]
                for grouping in groupings] for i in range(len(atoms))]
     assert len(atoms) == 16
-    assert all(s in species_types for s in atoms.get_chemical_symbols())
+    assert set(atoms.symbols) == set(species)
     assert all(atoms.get_pbc())
     assert len(atoms.info) == len(atoms)
     assert all(np.array_equal(
@@ -63,39 +61,31 @@ def test_read_gpumd_input():
 
     # Test without specifying the species-type map
     atoms = io.read('xyz.in', format='gpumd')
-    assert all(s in species_types for s in
-               atoms.get_chemical_symbols())
+    assert set(atoms.symbols) == set(species)
 
     # Test when specifying the isotope masses
     isotope_masses = {'Si': [28.085], 'C': [12.011]}
     atoms = io.read('xyz.in', format='gpumd',
                     isotope_masses=isotope_masses)
-    assert all(s in species_types for s in atoms.get_chemical_symbols())
+    assert set(atoms.symbols) == set(species)
 
 
-@pytest.mark.xfail
 def test_load_gpumd_input():
     """Load all information from a GPUMD input file."""
     with open('xyz.in', 'w') as f:
         f.write(gpumd_input_text)
 
-    species_types = {'Si': 0, 'C': 1}
+    species_ref = ['Si', 'C']
     with open('xyz.in', 'r') as f:
-        atoms, input_parameters, type_symbol_map =\
-            load_xyz_input_gpumd(f, species_types=species_types)
+        atoms, input_parameters, species =\
+            load_xyz_input_gpumd(f, species=species_ref)
     input_parameters_ref = {'N': 16, 'M': 4, 'cutoff': 1.1,
                             'triclinic': 0, 'has_velocity': 1,
                             'num_of_groups': 2}
-    assert all(k in input_parameters for k in input_parameters_ref)
-    assert all(v == input_parameters[k] for k, v in
-               input_parameters_ref.items())
-    type_symbol_map_ref = {v: k for k, v in species_types.items()}
-    assert all(k in type_symbol_map for k in type_symbol_map_ref)
-    assert all([v == type_symbol_map[k] for k, v in
-                type_symbol_map_ref.items()])
+    assert input_parameters == input_parameters_ref
+    assert species == species_ref
 
 
-@pytest.mark.xfail
 def test_gpumd_input_write():
     """Write a structure and read it back."""
     atoms = bulk('NiO', 'rocksalt', 4.813, cubic=True)
