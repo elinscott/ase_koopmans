@@ -28,9 +28,8 @@ class Cell:
         array: 3x3 arraylike object
           The three cell vectors: cell[0], cell[1], and cell[2].
         """
-        array = np.asarray(array)
+        array = np.asarray(array, dtype=float)
         assert array.shape == (3, 3)
-        assert array.dtype == float
         self.array = array
 
     def cellpar(self, radians=False):
@@ -259,7 +258,7 @@ class Cell:
         """Get reciprocal lattice as a 3x3 array.
 
         Does not include factor of 2 pi."""
-        return np.linalg.pinv(self).transpose()
+        return Cell(np.linalg.pinv(self).transpose())
 
     def __repr__(self):
         if self.orthorhombic:
