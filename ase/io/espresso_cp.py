@@ -14,9 +14,6 @@ import warnings
 from collections import OrderedDict
 from os import path
 
-# For reading in JSON files containing CP directives
-import json
-from ase.io.jsonio import numpyfy
 
 import numpy as np
 
