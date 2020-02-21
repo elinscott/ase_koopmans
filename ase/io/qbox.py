@@ -85,17 +85,22 @@ def read_qbox(f, index=-1):
 def _find_blocks(fp, tag, stopwords='[qbox]'):
     """Find and parse a certain block of the file.
 
-    Reads a file sequentially and stops when it either encounters the end of the file, or until the it encounters a line
-    that contains a user-defined string *after it has already found at least one desired block*. Use the stopwords
-    ``[qbox]`` to read until the next command is issued.
+    Reads a file sequentially and stops when it either encounters the
+    end of the file, or until the it encounters a line that contains a
+    user-defined string *after it has already found at least one
+    desired block*. Use the stopwords ``[qbox]`` to read until the next
+    command is issued.
 
-    Groups the text between the first line that contains <tag> and the next line that contains </tag>, inclusively. The
-    function then parses the XML and returns the Element object.
+    Groups the text between the first line that contains <tag> and the
+    next line that contains </tag>, inclusively. The function then
+    parses the XML and returns the Element object.
 
     Inputs:
-        fp - file-like object, file to be read from
-        tag - str, tag to search for (e.g., 'iteration'). `None` if you want to read until the end of the file
-        stopwords - str, halt parsing if a line containing this string is encountered
+        fp        - file-like object, file to be read from
+        tag       - str, tag to search for (e.g., 'iteration').
+                    `None` if you want to read until the end of the file
+        stopwords - str, halt parsing if a line containing this string
+                    is encountered
 
     Returns:
         list of xml.ElementTree, parsed XML blocks found by this class
@@ -131,13 +136,14 @@ def _find_blocks(fp, tag, stopwords='[qbox]'):
                 cur_block = []
                 in_block = False
             else:
-                raise Exception('Parsing failed: End tag found before start tag')
+                raise Exception('Parsing failed: End tag found before start '
+                                'tag')
 
     # Join strings in a block into a single string
     blocks = [''.join(b) for b in blocks]
 
-    # Ensure XML compatibility. There are two specific tags in QBall that are not
-    #  valid XML, so we need to run a
+    # Ensure XML compatibility. There are two specific tags in QBall that are
+    # not valid XML, so we need to run a
     blocks = [re_find_bad_xml.sub(r'<\1\2_expectation_\3', b) for b in blocks]
 
     # Parse the blocks

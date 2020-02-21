@@ -63,7 +63,6 @@ def object_hook(dct):
     return dct
 
 
-
 def create_ndarray(shape, dtype, data):
     """Create ndarray from shape, dtype and flattened data."""
     array = np.empty(shape, dtype=dtype)

@@ -103,9 +103,12 @@ def copy_frames(inbundle, outbundle, start=0, end=None, step=1,
                 if ulm:
                     assert 'ID_0.ulm' in firstnames and 'ID_0.ulm' in names
                 else:
-                    assert 'ID_0.pickle' in firstnames and 'ID_0.pickle' in names
+                    assert ('ID_0.pickle' in firstnames
+                            and 'ID_0.pickle' in names)
                 backend.nfrag = fragments0
-                f0_id, dummy = backend.read_split(os.path.join(inbundle, "F0"), "ID")
+                f0_id, dummy = backend.read_split(
+                    os.path.join(inbundle, "F0"), "ID"
+                )
                 backend.nfrag = fragments1
                 fn_id, fn_sizes = backend.read_split(indir, "ID")
                 for name in firstnames:
@@ -117,7 +120,9 @@ def copy_frames(inbundle, outbundle, start=0, end=None, step=1,
                         arrayname = name.split('_')[0]
                         print("    Reading", arrayname)
                         backend.nfrag = fragments0
-                        f0_data, dummy = backend.read_split(os.path.join(inbundle, "F0"), arrayname)
+                        f0_data, dummy = backend.read_split(
+                            os.path.join(inbundle, "F0"), arrayname
+                        )
                         # Sort data
                         f0_data[f0_id] = np.array(f0_data)
                         # Unsort with new ordering
@@ -127,19 +132,20 @@ def copy_frames(inbundle, outbundle, start=0, end=None, step=1,
                         pointer = 0
                         backend.nfrag = fragments1
                         for i, s in enumerate(fn_sizes):
-                            segment = f0_data[pointer:pointer+s]
+                            segment = f0_data[pointer:pointer + s]
                             pointer += s
-                            backend.write(outdir, arrayname+"_{0}".format(i), segment)
+                            backend.write(outdir, '{}_{}'.format(arrayname, i),
+                                          segment)
     # Finally, write the number of frames
     f = open(os.path.join(outbundle, 'frames'), 'w')
     f.write(str(len(frames)) + '\n')
     f.close()
-    
+
 
 # Helper functions
 def read_bundle_info(name):
     """Read global info about a bundle.
-    
+
     Returns (metadata, nframes)
     """
     if not os.path.isdir(name):
@@ -154,8 +160,8 @@ def read_bundle_info(name):
             with open(metaname, "rb") as f:
                 mdata = pickle.load(f)
         else:
-            raise IOError("'%s' does not appear to be a BundleTrajectory (no %s)"
-                          % (name, bestmetaname))
+            raise IOError("'{}' does not appear to be a BundleTrajectory "
+                          "(no {})".format(name, bestmetaname))
     if 'format' not in mdata or mdata['format'] != 'BundleTrajectory':
         raise IOError("'%s' does not appear to be a BundleTrajectory" %
                       (name,))

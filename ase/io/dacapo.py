@@ -47,7 +47,6 @@ def read_dacapo_text(fileobj):
     return atoms
 
 
-
 def read_dacapo(filename):
     from ase.io.pupynere import NetCDFFile
 
@@ -77,7 +76,8 @@ def read_dacapo(filename):
     except KeyError:
         energy = None
         force = None
-    calc = SinglePointCalculator(atoms, energy=energy, forces=force)  ### Fixme magmoms
+    # Fixme magmoms
+    calc = SinglePointCalculator(atoms, energy=energy, forces=force)
     atoms.set_calculator(calc)
-        
+
     return atoms

@@ -748,9 +748,10 @@ def read_vasp_xml(filename='vasprun.xml', index=-1):
         # e_0_energy - e_fr_energy from calculation/scstep/energy, then
         # apply that correction to e_fr_energy from calculation/energy.
         lastscf = step.findall('scstep/energy')[-1]
-        try:
-            lastdipole = step.findall('scstep/dipole')[-1]
-        except:
+        dipoles = step.findall('scstep/dipole')
+        if dipoles:
+            lastdipole = dipoles[-1]
+        else:
             lastdipole = None
 
         de = (float(lastscf.find('i[@name="e_0_energy"]').text) -

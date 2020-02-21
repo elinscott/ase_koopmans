@@ -91,7 +91,7 @@ def write_dmol_car(filename, atoms):
 
     for i, (sym, pos) in enumerate(zip(symbols, positions)):
         f.write('%-6s  %12.8f   %12.8f   %12.8f XXXX 1      xx      %-2s  '
-                '0.000\n' % (sym + str(i+1), pos[0], pos[1], pos[2], sym))
+                '0.000\n' % (sym + str(i + 1), pos[0], pos[1], pos[2], sym))
     f.write('end\nend\n')
     f.close()
 
@@ -237,7 +237,7 @@ def write_dmol_arc(filename, images):
                 'PBC must be all true or all false for .arc format')
         for i, (sym, pos) in enumerate(zip(symbols, positions)):
             f.write('%-6s  %12.8f   %12.8f   %12.8f XXXX 1      xx      %-2s  '
-                    '0.000\n' % (sym + str(i+1), pos[0], pos[1], pos[2], sym))
+                    '0.000\n' % (sym + str(i + 1), pos[0], pos[1], pos[2], sym))
         f.write('end\nend\n')
         f.write('\n')
     f.close()

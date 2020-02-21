@@ -173,7 +173,7 @@ restart         100000 test_relax
 
 min_style       fire
 minimize        1.0e-14 1.0e-5 100000 100000
-""")
+""")  # noqa: E501
         fileobj.close()
 
     def write_lammps_atoms(self, atoms, connectivities):
@@ -245,43 +245,37 @@ minimize        1.0e-14 1.0e-5 100000 100000
                            typ, cs))
 
         # bonds
-        if len(blist):
+        if blist:
             fileobj.write('\nBonds\n\n')
             for ib, bvals in enumerate(blist):
                 fileobj.write('%8d %6d %6d %6d ' %
                               (ib + 1, bvals[0] + 1, bvals[1] + 1,
                                bvals[2] + 1))
-                try:
+                if bvals[0] in btypes:
                     fileobj.write('# ' + btypes[bvals[0]])
-                except:
-                    pass
                 fileobj.write('\n')
 
         # angles
-        if len(alist):
+        if alist:
             fileobj.write('\nAngles\n\n')
             for ia, avals in enumerate(alist):
                 fileobj.write('%8d %6d %6d %6d %6d ' %
                               (ia + 1, avals[0] + 1,
                                avals[1] + 1, avals[2] + 1, avals[3] + 1))
-                try:
+                if avals[0] in atypes:
                     fileobj.write('# ' + atypes[avals[0]])
-                except:
-                    pass
                 fileobj.write('\n')
 
         # dihedrals
-        if len(dlist):
+        if dlist:
             fileobj.write('\nDihedrals\n\n')
             for i, dvals in enumerate(dlist):
                 fileobj.write('%8d %6d %6d %6d %6d %6d ' %
                               (i + 1, dvals[0] + 1,
                                dvals[1] + 1, dvals[2] + 1,
                                dvals[3] + 1, dvals[4] + 1))
-                try:
+                if dvals[0] in dtypes:
                     fileobj.write('# ' + dtypes[dvals[0]])
-                except:
-                    pass
                 fileobj.write('\n')
 
     def update_neighbor_list(self, atoms):

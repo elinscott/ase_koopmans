@@ -504,7 +504,7 @@ def read_castep_cell(fd, index=None, calculator_args={}, find_spg=False,
     lines = pos_block.split('\n')
     line_tokens = [l.split() for l in lines]
 
-    if not 'scaled' in pos_type:
+    if 'scaled' not in pos_type:
         u, line_tokens = parse_blockunit(line_tokens, 'positions_abs')
     else:
         u = 1.0
@@ -1351,6 +1351,7 @@ def read_seed(seed, new_seed=None, ignore_internal_keys=False):
 
     return atoms
 
+
 def read_bands(filename='', fd=None, units=units_CODATA2002):
     """Read Castep.bands file to kpoints, weights and eigenvalues
 
@@ -1399,7 +1400,7 @@ def read_bands(filename='', fd=None, units=units_CODATA2002):
     # to the correct row
     for kpt_line in range(nkpts):
         i_kpt, kpt, wt = _kptline_to_i_k_wt(fd.readline())
-        kpts[i_kpt,:], weights[i_kpt] = kpt, wt
+        kpts[i_kpt, :], weights[i_kpt] = kpt, wt
         for spin in range(nspin):
             fd.readline()  # Skip 'Spin component N' line
             eigenvalues[spin, i_kpt, :] = [float(fd.readline())

@@ -30,13 +30,13 @@ def read_v_sim(filename='demo.ascii'):
     for i in range(len(box)):
         box[i] = float(box[i])
 
-    keywords  = []
+    keywords = []
     positions = []
-    symbols   = []
-    unit      = 1.0
+    symbols = []
+    unit = 1.0
 
     re_comment = re.compile(r'^\s*[#!]')
-    re_node    = re.compile(r'^\s*\S+\s+\S+\s+\S+\s+\S+')
+    re_node = re.compile(r'^\s*\S+\s+\S+\s+\S+\s+\S+')
 
     while(True):
         line = f.readline()
@@ -59,9 +59,9 @@ def read_v_sim(filename='demo.ascii'):
                     unit = units.Bohr
 
             fields = line.split()
-            positions.append([unit*float(fields[0]),
-                              unit*float(fields[1]),
-                              unit*float(fields[2])])
+            positions.append([unit * float(fields[0]),
+                              unit * float(fields[1]),
+                              unit * float(fields[2])])
             symbols.append(fields[3])
 
     f.close()
@@ -77,9 +77,9 @@ def read_v_sim(filename='demo.ascii'):
         if (("bohr" in keywords) or ("bohrd0" in keywords) or
             ("atomic" in keywords) or ("atomicd0" in keywords)):
             unit = units.Bohr
-        cell = [[unit*box[0],         0.0,         0.0],
-                [unit*box[1], unit*box[2],         0.0],
-                [unit*box[3], unit*box[4], unit*box[5]]]
+        cell = np.zeros((3, 3))
+        cell.flat[[0, 3, 4, 6, 7, 8]] = box[:6]
+        cell *= unit
 
     if ("reduced" in keywords):
         atoms = Atoms(cell=cell, scaled_positions=positions)

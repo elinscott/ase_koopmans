@@ -354,7 +354,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
                 if spin == 1:
                     assert len(eigenvalues[0]) == len(eigenvalues[1])
-                assert len(eigenvalues[0]) == len(ibzkpts), (np.shape(eigenvalues), len(ibzkpts))
+                assert len(eigenvalues[0]) == len(ibzkpts), \
+                    (np.shape(eigenvalues), len(ibzkpts))
 
                 kpts = []
                 for s in range(spin + 1):
@@ -574,14 +575,14 @@ def ibrav_to_cell(system):
                          [1.0, 1.0, -1.0]]) * (alat / 2)
     elif system['ibrav'] == 4:
         cell = np.array([[1.0, 0.0, 0.0],
-                         [-0.5, 0.5*3**0.5, 0.0],
+                         [-0.5, 0.5 * 3**0.5, 0.0],
                          [0.0, 0.0, c_over_a]]) * alat
     elif system['ibrav'] == 5:
         tx = ((1.0 - cosab) / 2.0)**0.5
         ty = ((1.0 - cosab) / 6.0)**0.5
         tz = ((1 + 2 * cosab) / 3.0)**0.5
         cell = np.array([[tx, -ty, tz],
-                         [0, 2*ty, tz],
+                         [0, 2 * ty, tz],
                          [-tx, -ty, tz]]) * alat
     elif system['ibrav'] == -5:
         ty = ((1.0 - cosab) / 6.0)**0.5
@@ -613,7 +614,7 @@ def ibrav_to_cell(system):
                          [1.0 / 2.0, b_over_a / 2.0, 0.0],
                          [0.0, 0.0, c_over_a]]) * alat
     elif system['ibrav'] == 10:
-        cell = np.array([[1.0 / 2.0, 0.0, c_over_a/2.0],
+        cell = np.array([[1.0 / 2.0, 0.0, c_over_a / 2.0],
                          [1.0 / 2.0, b_over_a / 2.0, 0.0],
                          [0.0, b_over_a / 2.0, c_over_a / 2.0]]) * alat
     elif system['ibrav'] == 11:
@@ -1064,6 +1065,7 @@ def infix_float(text):
 # Input file writing
 ###
 
+
 # Ordered and case insensitive
 KEYS = Namelist((
     ('CONTROL', [
@@ -1391,14 +1393,14 @@ def kspacing_to_grid(atoms, spacing, calculated_spacing=None):
     # reciprocal dimensions
     r_x, r_y, r_z = np.linalg.norm(atoms.get_reciprocal_cell(), axis=1)
 
-    kpoint_grid = [int(r_x/spacing) + 1,
-                   int(r_y/spacing) + 1,
-                   int(r_z/spacing) + 1]
+    kpoint_grid = [int(r_x / spacing) + 1,
+                   int(r_y / spacing) + 1,
+                   int(r_z / spacing) + 1]
 
     if calculated_spacing is not None:
-        calculated_spacing[:] = [r_x/kpoint_grid[0],
-                                 r_y/kpoint_grid[1],
-                                 r_z/kpoint_grid[2]]
+        calculated_spacing[:] = [r_x / kpoint_grid[0],
+                                 r_y / kpoint_grid[1],
+                                 r_z / kpoint_grid[2]]
 
     return kpoint_grid
 

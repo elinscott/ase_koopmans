@@ -8,10 +8,10 @@ from .parser import _define_pattern
 
 # Geometry block parser
 _geom = _define_pattern(
-        r'^[ \t]*geometry[ \t\S]*\n'
-        r'((?:^[ \t]*[\S]+[ \t\S]*\n)+)'
-        r'^[ \t]*end\n\n',
-        """\
+    r'^[ \t]*geometry[ \t\S]*\n'
+    r'((?:^[ \t]*[\S]+[ \t\S]*\n)+)'
+    r'^[ \t]*end\n\n',
+    """\
 geometry units angstrom nocenter noautosym noautoz
   system crystal units angstrom
     lattice_vectors
@@ -28,10 +28,10 @@ end
 
 # Finds crystal specification
 _crystal = _define_pattern(
-        r'^[ \t]*system crystal[ \t\S]*\n'
-        r'((?:[ \t]*[\S]+[ \t\S]*\n)+?)'
-        r'^[ \t]*end[ \t]*\n',
-        """\
+    r'^[ \t]*system crystal[ \t\S]*\n'
+    r'((?:[ \t]*[\S]+[ \t\S]*\n)+?)'
+    r'^[ \t]*end[ \t]*\n',
+    """\
   system crystal units angstrom
     lattice_vectors
       4.0000000000000000e+00 0.0000000000000000e+00 0.0000000000000000e+00
@@ -42,9 +42,9 @@ _crystal = _define_pattern(
 
 # Finds 3d-periodic unit cell
 _cell_3d = _define_pattern(
-        r'^[ \t]*lattice_vectors[ \t]*\n'
-        r'^((?:(?:[ \t]+[\S]+){3}\n){3})',
-        """\
+    r'^[ \t]*lattice_vectors[ \t]*\n'
+    r'^((?:(?:[ \t]+[\S]+){3}\n){3})',
+    """\
     lattice_vectors
       4.0000000000000000e+00 0.0000000000000000e+00 0.0000000000000000e+00
       0.0000000000000000e+00 5.5264780000000000e+00 0.0000000000000000e+00
@@ -53,8 +53,9 @@ _cell_3d = _define_pattern(
 
 # Extracts chemical species from a geometry block
 _species = _define_pattern(
-        r'^[ \t]*[A-Z][a-z]?(?:[ \t]+[\S]+){3}\n',
-        "   O 0.0 0.0 0.0\n", re.M)
+    r'^[ \t]*[A-Z][a-z]?(?:[ \t]+[\S]+){3}\n',
+    "   O 0.0 0.0 0.0\n", re.M,
+)
 
 
 def read_nwchem_in(fobj, index=-1):

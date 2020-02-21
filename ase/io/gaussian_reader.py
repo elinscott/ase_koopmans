@@ -42,12 +42,12 @@ class GaussianReader:
         """filename is NOT optional"""
         if isinstance(filename, str):
             fileobj = open(filename, 'r')
-        elif hasattr(filename,'seek'):
+        elif hasattr(filename, 'seek'):
             fileobj = filename
             fileobj.seek(0)  # Re-wind fileobj
         else:
-            msg = 'Cannot use given filename, make sure it is a string or a fileobject'
-            raise RuntimeError(msg)
+            raise RuntimeError('Cannot use given filename, make sure it is a '
+                               'string or a fileobject')
 
         content = fileobj.read()
 
@@ -56,21 +56,19 @@ class GaussianReader:
 
         self.parse(content)
 
-        #read structures from file
+        # read structures from file
         if read_structures:
             self.read_structures(content)
 
-
     def get_structures(self, content=None):
         """Get Structures"""
-        if hasattr(self,'structures'):
+        if hasattr(self, 'structures'):
             return self.structures
         elif content is None:
             raise RuntimeError('Images not available and no content parsed!')
         else:
             self.read_structures(content)
             return self.structures
-
 
     def read_structures(self, content=None):
         """Read Structures from file and wirte them to self.structures"""
@@ -79,29 +77,29 @@ class GaussianReader:
         images = []
         temp_items = content.split('Standard orientation')[1:]
         for item_i in temp_items:
-            lines = [ line for line in item_i.split('\n') if len(line) > 0 ]
-            #first 5 lines are headers
+            lines = [line for line in item_i.split('\n') if len(line) > 0]
+            # first 5 lines are headers
             del lines[:5]
             images.append(Atoms())
             for line in lines:
-                #if only - in line it is the end
+                # if only - in line it is the end
                 if set(line).issubset(set('- ')):
                     break
                 tmp_line = line.strip().split()
                 if not len(tmp_line) == 6:
-                    raise RuntimeError('Length of line does not match structure!')
+                    raise RuntimeError('Length of line does not match '
+                                       'structure!')
 
-                #read atom
+                # read atom
                 try:
                     atN = int(tmp_line[1])
                     pos = tuple(float(x) for x in tmp_line[3:])
-                except ValueError:
-                    raise ValueError('Expected a line with three integers and three floats.')
-                images[-1].append(Atom(atN,pos))
+                except ValueError as e:
+                    raise ValueError('Expected a line with three integers and '
+                                     'three floats.') from e
+                images[-1].append(Atom(atN, pos))
         self.structures = images
         return
-
-
 
     def parse(self, content):
         from ase.data import atomic_numbers
@@ -122,7 +120,8 @@ class GaussianReader:
                 seq_count += 1
                 for pos in range(len(names)):
                     if names[pos] != "":
-                        #hack, since this section is too short if there is no title
+                        # hack, since this section is too short
+                        # if there is no title
                         if names[pos] == "Title" and i[pos] == "":
                             chg_mult -= 1
                             break
@@ -139,9 +138,9 @@ class GaussianReader:
                 while position < len(i) and i[position] != "":
                     s = i[position].split(",")
                     atoms.append(atomic_numbers[s[0].capitalize()])
-                    #if fragments are specified, there are 4 numbers
-                    #first one integer and then xyz coords
-                    #therefore use xyz from the end
+                    # if fragments are specified, there are 4 numbers
+                    # first one integer and then xyz coords
+                    # therefore use xyz from the end
                     positions.append([float(s[-3]), float(s[-2]), float(s[-1])])
                     position = position + 1
 

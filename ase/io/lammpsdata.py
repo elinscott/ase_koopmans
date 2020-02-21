@@ -201,7 +201,8 @@ def read_lammps_data(fileobj, Z_of_type=None, style="full",
                             int(fields[7]),
                             int(fields[8]),
                         )
-                elif style == "charge" and (len(fields) == 6 or len(fields) == 9):
+                elif (style == "charge"
+                      and (len(fields) == 6 or len(fields) == 9)):
                     # id type q x y z [tx ty tz]
                     pos_in[id] = (
                         int(fields[1]),
@@ -487,24 +488,18 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
             r = convert(r, "distance", "ASE", units)
             q = convert(q, "charge", "ASE", units)
             s = species.index(symbols[i]) + 1
-            f.write(
-                "{0:>6} {1:>3} {2:>5} {3:23.17g} {4:23.17g} {5:23.17g}\n".format(
-                    *(i + 1, s, q) + tuple(r)
-                )
-            )
+            f.write("{0:>6} {1:>3} {2:>5} {3:23.17g} {4:23.17g} {5:23.17g}\n"
+                    .format(*(i + 1, s, q) + tuple(r)))
     elif atom_style == 'full':
         charges = atoms.get_initial_charges()
-        molecule = 1 # Assign all atoms to a single molecule
+        molecule = 1  # Assign all atoms to a single molecule
         for i, (q, r) in enumerate(zip(charges, pos)):
             # Convert position and charge from ASE units to LAMMPS units
             r = convert(r, "distance", "ASE", units)
             q = convert(q, "charge", "ASE", units)
             s = species.index(symbols[i]) + 1
-            f.write(
-                "{0:>6} {1:>3} {2:>3} {3:>5} {4:23.17g} {5:23.17g} {6:23.17g}\n".format(
-                    *(i + 1, molecule, s, q) + tuple(r)
-                )
-            )
+            f.write("{0:>6} {1:>3} {2:>3} {3:>5} {4:23.17g} {5:23.17g} "
+                    "{6:23.17g}\n".format(*(i + 1, molecule, s, q) + tuple(r)))
     else:
         raise NotImplementedError
 
