@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 from ase.vibrations import Vibrations
-from ase.calculators.h2morse import H2Morse, H2MorseState, Re, De, ome, Etrans
+from ase.calculators.h2morse import (H2Morse, H2MorseCalculator,
+                                     Re, De, ome, Etrans)
 from ase.calculators.h2morse import (H2MorseExcitedStatesCalculator,
                                      H2MorseExcitedStates,
                                      H2MorseExcitedStatesAndCalculator)
@@ -26,7 +27,7 @@ def test_gs_io_overlap():
     calc0 = atoms0.calc
     fname = 'calc0'
     calc0.write(fname)
-    calc1 = H2MorseState(fname)
+    calc1 = H2MorseCalculator.read(fname)
     for wf0, wf1 in zip(calc0.wfs, calc1.wfs):
         assert wf0 == pytest.approx(wf1, 1e-5)
     
@@ -86,8 +87,9 @@ def test_traditional():
  
 
 def main():
-    test_traditional()
-
+    #test_traditional()
+    test_gs_io_overlap()
+    
 
 if __name__ == '__main__':
     main()

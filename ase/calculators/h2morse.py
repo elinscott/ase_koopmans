@@ -35,20 +35,17 @@ def H2Morse(state=0):
     """Return H2 as a Morse-Potential with calculator attached."""
     atoms = Atoms('H2', positions=np.zeros((2, 3)))
     atoms[1].position[2] = Re[state]
-    atoms.calc = H2MorseState(state)
+    atoms.calc = H2MorseCalculator(state)
     atoms.get_potential_energy()
     return atoms
 
 
-class H2MorseState(MorsePotential):
+class H2MorseCalculator(MorsePotential):
     """H2 ground or excited state as Morse potential"""
     def __init__(self, state):
-        if isinstance(state, str):
-            self.read(state)
-        else:
-            MorsePotential.__init__(self,
-                                    epsilon=De[state],
-                                    r0=Re[state], rho0=rho0[state])
+        MorsePotential.__init__(self,
+                                epsilon=De[state],
+                                r0=Re[state], rho0=rho0[state])
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=all_changes):
@@ -76,13 +73,17 @@ class H2MorseState(MorsePotential):
         berry = (-1)**np.random.randint(0, 2, 4)
         self.wfs = [wf * b for wf, b in zip(wfs, berry)]
 
-    def read(self, filename):
+    @classmethod
+    def read(cls, filename):
+        ms = cls(3)
         with open(filename) as f:
-            self.wfs = [int(f.readline().split()[0])]
+            ms.wfs = [int(f.readline().split()[0])]
             for i in range(1, 4):
-                self.wfs.append(
+                ms.wfs.append(
                     np.array([float(x)
                               for x in f.readline().split()[:4]]))
+        ms.filename = filename
+        return ms
         
     def write(self, filename, option=None):
         """write calculated state to a file"""
@@ -101,7 +102,7 @@ class H2MorseState(MorsePotential):
 
 
 class H2MorseExcitedStatesCalculator():
-    """First singlet excited state of H2 as Lennard-Jones potentials"""
+    """First singlet excited states of H2 from Morse potentials"""
     def __init__(self, gscalculator=None, nstates=3, txt='-'):
         """
         Parameters
@@ -144,7 +145,7 @@ class H2MorseExcitedStatesCalculator():
         for i in range(1, self.nstates + 1):
             hvec = cgs.wfs[0] * cgs.wfs[i]
             energy = Ha * (0.5 - 1. / 8) - E0
-            calc = H2MorseState(i)
+            calc = H2MorseCalculator(i)
             calc.calculate(atoms)
             energy += calc.get_potential_energy()
 
@@ -156,7 +157,7 @@ class H2MorseExcitedStatesCalculator():
 
 
 class H2MorseExcitedStates(ExcitationList):
-    """First singlet excited state of H2 as Lennard-Jones potentials"""
+    """First singlet excited states of H2"""
     def __init__(self, nstates=3):
         """
         Parameters
