@@ -14,7 +14,6 @@ import warnings
 from collections import OrderedDict
 from os import path
 
-
 import numpy as np
 
 from ase.atoms import Atoms
