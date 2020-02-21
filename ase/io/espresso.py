@@ -1213,9 +1213,6 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
                 sec_list[key] = kwargs.pop(key)
 
             # Check if there is a key(i) version (no extra parsing)
-            for arg_key in parameters.get(section, {}):
-                if arg_key.split('(')[0].strip().lower() == key.lower():
-                    sec_list[arg_key] = parameters[section].pop(arg_key)
             cp_parameters = parameters.copy()
             for arg_key in cp_parameters:
                 if arg_key.split('(')[0].strip().lower() == key.lower():
@@ -1530,16 +1527,23 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     if pseudopotentials is None:
         pseudopotentials = {}
     species_info = {}
-    for species in set(atoms.get_chemical_symbols()):
-        pseudo = pseudopotentials.get(species, '{}_dummy.UPF'.format(species))
+
+    species = atoms.get_chemical_symbols()
+    if 'labels' in atoms.arrays:
+        labels = atoms.get_array('labels')
+    else:
+        labels = species
+
+    for label, specie in set(zip(labels, species)):
+        pseudo = pseudopotentials.get(label, '{}_dummy.UPF'.format(specie))
         for pseudo_dir in pseudo_dirs:
             if path.exists(path.join(pseudo_dir, pseudo)):
                 valence = grep_valence(path.join(pseudo_dir, pseudo))
                 break
         else:  # not found in a file
-            valence = SSSP_VALENCE[atomic_numbers[species]]
+            valence = SSSP_VALENCE[atomic_numbers[specie]]
 
-        species_info[species] = {'pseudo': pseudo,
+        species_info[label] = {'pseudo': pseudo,
                                  'valence': valence}
 
     # Convert atoms into species.
@@ -1560,24 +1564,24 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
 
     if nspin == 2:
         # Spin on
-        for atom, magmom in zip(atoms, atoms.get_initial_magnetic_moments()):
-            if (atom.symbol, magmom) not in atomic_species:
+        for atom, label, magmom in zip(atoms, labels, atoms.get_initial_magnetic_moments()):
+            if (label, magmom) not in atomic_species:
                 # spin as fraction of valence
-                fspin = float(magmom) / species_info[atom.symbol]['valence']
+                fspin = float(magmom) / species_info[label]['valence']
                 # Index in the atomic species list
                 sidx = len(atomic_species) + 1
                 # Index for that atom type; no index for first one
                 tidx = sum(atom.symbol == x[0] for x in atomic_species) or ' '
-                atomic_species[(atom.symbol, magmom)] = (sidx, tidx)
+                atomic_species[(label, magmom)] = (sidx, tidx)
                 # Add magnetization to the input file
                 mag_str = 'starting_magnetization({0})'.format(sidx)
                 input_parameters['system'][mag_str] = fspin
                 atomic_species_str.append(
                     '{species}{tidx} {mass} {pseudo}\n'.format(
-                        species=atom.symbol, tidx=tidx, mass=atom.mass,
-                        pseudo=species_info[atom.symbol]['pseudo']))
+                        species=label, tidx=tidx, mass=atom.mass,
+                        pseudo=species_info[label]['pseudo']))
             # lookup tidx to append to name
-            sidx, tidx = atomic_species[(atom.symbol, magmom)]
+            sidx, tidx = atomic_species[(label, magmom)]
 
             # only inclued mask if something is fixed
             if not all(constraint_mask[atom.index]):
@@ -1588,19 +1592,19 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
 
             # construct line for atomic positions
             atomic_positions_str.append(
-                '{atom.symbol}{tidx} '
-                '{atom.x:.10f} {atom.y:.10f} {atom.z:.10f}'
-                '{mask}\n'.format(atom=atom, tidx=tidx, mask=mask))
+                f'{label}{tidx} '
+                f'{atom.x:.10f} {atom.y:.10f} {atom.z:.10f}'
+                f'{mask}\n')
 
     else:
         # Do nothing about magnetisation
-        for atom in atoms:
-            if atom.symbol not in atomic_species:
-                atomic_species[atom.symbol] = True  # just a placeholder
+        for atom, label in zip(atoms, labels):
+            if label not in atomic_species:
+                atomic_species[label] = True  # just a placeholder
                 atomic_species_str.append(
                     '{species} {mass} {pseudo}\n'.format(
-                        species=atom.symbol, mass=atom.mass,
-                        pseudo=species_info[atom.symbol]['pseudo']))
+                        species=label, mass=atom.mass,
+                        pseudo=species_info[label]['pseudo']))
 
             # only inclued mask if something is fixed
             if not all(constraint_mask[atom.index]):
@@ -1610,9 +1614,9 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 mask = ''
 
             atomic_positions_str.append(
-                '{atom.symbol} '
-                '{atom.x:.10f} {atom.y:.10f} {atom.z:.10f} '
-                '{mask}\n'.format(atom=atom, mask=mask))
+                f'{label} '
+                f'{atom.x:.10f} {atom.y:.10f} {atom.z:.10f} '
+                f'{mask}\n')
 
     # Add computed parameters
     # different magnetisms means different types

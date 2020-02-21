@@ -8,7 +8,6 @@ Built for CP
 Units are converted using CODATA 2006, as used internally by Quantum
 ESPRESSO.
 """
-
 import os
 import operator as op
 import warnings
@@ -24,7 +23,7 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 # from ase.dft.kpoints import kpoint_convert
 # from ase.constraints import FixAtoms, FixCartesian
 # from ase.data import chemical_symbols, atomic_numbers
-from ase.units import create_units
+from ase.units import create_units, Hartree, Bohr
 from ase.utils import basestring
 
 from ase.io.espresso import Namelist, KEYS, SSSP_VALENCE, \
@@ -40,11 +39,17 @@ units = create_units('2006')
 
 KEYS['CONTROL']   += ['ndr', 'ndw']
 KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
-                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw']
-KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep']
+                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx']
+KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
+                      'electron_dynamics', 'passop']
+KEYS['EE']        += ['which_compensation']
 KEYS['NKSIC']      = ['do_innerloop', 'one_innerloop_only', 'nkscalfact', 'odd_nkscalfact', 
                       'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
-                      'index_empty_to_save']
+                      'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
+                      'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr', 
+                      'do_innerloop_cg', 'innerloop_nmax']
+KEYS['IONS']      += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
+                      'ion_radius(4)'] 
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
@@ -124,8 +129,15 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
     # Extract calculation results
     energy = None
+    odd_energy = None
+    lumo_energy = None
+    homo_energy = None
     lambda_ii = None
     eigenvalues = []
+    job_done = False
+    orbital_data = {'charge' : [], 'centres' : [], 'spreads' : [], 'self-Hartree' : []}
+    walltime = None
+
     for i_line, line in enumerate(cpo_lines):
 
         # Energy
@@ -146,7 +158,48 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                     eigenvalues[-1] += [float(e) for e in cpo_lines[i_line + 6].split()]
                 except:
                     pass
+
+        if 'odd energy' in line:
+            odd_energy = float(line.split()[3])*Hartree
+
+        if 'HOMO Eigenvalue (eV)' in line:
+            homo_energy = float(cpo_lines[i_line + 2])
     
+        if 'LUMO Eigenvalue (eV)' in line:
+            lumo_energy = float(cpo_lines[i_line + 2])
+
+        if 'JOB DONE' in line:
+            job_done = True
+
+        # Start of block of orbitals for a given spin channel
+        if 'Orb -- Charge  ---' in line:
+            for key in orbital_data:
+                orbital_data[key].append([])
+
+        # Orbital information
+        if line.startswith(('OCC', 'EMP')):
+            splitline = line.split()
+            orbital_data['charge'][-1].append(float(splitline[3]))
+            orbital_data['centres'][-1].append([float(x)*Bohr for x in splitline[5:8]])
+            orbital_data['spreads'][-1].append(float(splitline[9])*Bohr**2)
+            orbital_data['self-Hartree'][-1].append(float(splitline[10]))
+
+        if 'wall time' in line:
+            time_str = line.split(',')[1].strip().rstrip('wall time')
+            if 'h' in time_str:
+                hours, rem = time_str.split('h')
+            else:
+                hours, rem = 0, time_str
+            if 'm' in rem:
+                minutes, rem = rem.split('m')
+            else:
+                minutes = 0
+            if 's' in rem:
+                seconds = rem.rstrip('s')
+            else:
+                seconds = 0
+            walltime = (float(hours)*60 + float(minutes))*60 + float(seconds)
+
     # Forces
     # forces = None
     # for force_index in indexes[_CP_FORCE]:
@@ -271,34 +324,15 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     #                                 magmoms=magmoms, efermi=efermi,
     #                                 ibzkpts=ibzkpts)
     # calc.kpts = kpts
+    calc.results['energy'] = energy
+    calc.results['odd_energy'] = odd_energy
+    calc.results['homo_energy'] = homo_energy
+    calc.results['lumo_energy'] = lumo_energy
     calc.results['eigenvalues'] = eigenvalues
     calc.results['lambda_ii'] = lambda_ii
+    calc.results['job_done'] = job_done
+    calc.results['orbital_data'] = orbital_data
+    calc.results['walltime'] = walltime
     structure.set_calculator(calc)
 
     yield structure
-
-def parse_cp_start(lines, index=0):
-    """Parse Quantum ESPRESSO calculation info from lines,
-    starting from index. Return a dictionary containing extracted
-    information.
-
-    Parameters
-    ----------
-    lines : list[str]
-        Contents of CP output file.
-    index : int
-        Line number to begin parsing. Only first calculation will
-        be read.
-
-    Returns
-    -------
-    info : dict
-        Dictionary of calculation parameters, including `celldm(1)`, `cell`,
-        `symbols`, `positions`, `atoms`.
-
-    """
-
-    info = {}
-
-    return info 
-
