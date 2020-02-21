@@ -11,7 +11,7 @@ def test_gs_minimum():
     """Test ground state minimum distance, energy and
     vibrational frequency"""
     atoms = H2Morse()
-    assert atoms.get_distance(0, 1) == Re[0]
+    assert atoms.get_distance(0, 1) == pytest.approx(Re[0], 1.e-12)
     assert atoms.get_potential_energy() == -De[0]
     # check ground state vibrations
     vib = Vibrations(atoms)

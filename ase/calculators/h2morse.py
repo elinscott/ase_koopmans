@@ -157,21 +157,30 @@ class H2MorseExcitedStatesCalculator():
 
 class H2MorseExcitedStates(ExcitationList):
     """First singlet excited state of H2 as Lennard-Jones potentials"""
-    def __init__(self, filename=None, nstates=3):
+    def __init__(self, nstates=3):
+        """
+        Parameters
+        ----------
+        nstates: int, 1 <= nstates <= 3
+          Number of excited states to consider, default 3
+        """
         self.nstates = nstates
-        ExcitationList.__init__(self, filename)
+        super().__init__()
 
     def overlap(self, ov_nn, other):
         return (ov_nn[1:len(self) + 1, 1:len(self) + 1] *
                 ov_nn[0, 0])
 
-    def read(self, filename):
+    @classmethod
+    def read(cls, filename, nstates=3):
         """Read myself from a file"""
+        exl = cls(nstates)
         with open(filename, 'r') as f:
-            self.filename = filename
+            exl.filename = filename
             n = int(f.readline().split()[0])
-            for i in range(min(n, self.nstates)):
-                self.append(H2Excitation.fromstring(f.readline()))
+            for i in range(min(n, exl.nstates)):
+                exl.append(H2Excitation.fromstring(f.readline()))
+        return exl
 
     def write(self, fname):
         with open(fname, 'w') as f:
@@ -194,13 +203,13 @@ class H2Excitation(Excitation):
 
 class H2MorseExcitedStatesAndCalculator(
         H2MorseExcitedStatesCalculator, H2MorseExcitedStates):
-    """Traditional joined object"""
+    """Traditional joined object for backward compatibility only"""
     def __init__(self, calculator=None, nstates=3):
         if isinstance(calculator, str):
-            H2MorseExcitedStates.__init__(self, calculator, nstates)
+            exlist = H2MorseExcitedStates.read(calculator, nstates)
         else:
             excalc = H2MorseExcitedStatesCalculator(calculator, nstates)
             exlist = excalc.calculate()
-            H2MorseExcitedStates.__init__(self, nstates=nstates)
-            for ex in exlist:
-                self.append(ex)
+        H2MorseExcitedStates.__init__(self, nstates=nstates)
+        for ex in exlist:
+            self.append(ex)

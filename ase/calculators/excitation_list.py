@@ -92,21 +92,12 @@ class Excitation:
 
 class ExcitationList(list):
     """Base class for excitions from the ground state"""
-    def __init__(self, filename=None):
-        """
-        Parameters
-        ----------
-        filename: str or None
-          Filename to read, default None
-        """
+    def __init__(self):
         # initialise empty list
-        super().__init__(self)
+        super().__init__()
         
         # set default energy scale to get eV
         self.energy_to_eV_scale = 1.
-
-        if filename is not None:
-            self.read(filename)
 
 
 def polarizability(exlist, omega, form='v',
