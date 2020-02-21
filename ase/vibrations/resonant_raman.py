@@ -153,15 +153,13 @@ class ResonantRaman(Vibrations):
         if self.overlap:
             # XXXX stupid way to make a copy
             self.atoms.get_potential_energy()
-            self.eq_calculator = self.atoms.get_calculator()
+            calc = self.atoms.get_calculator()
             fname = self.exname + '.eq.gpw'
-            self.eq_calculator.write(fname, 'all')
-            self.eq_calculator = self.eq_calculator.__class__.read(fname)
-            try:
-                # XXX GPAW specific
+            calc.write(fname, 'all')
+            self.eq_calculator = calc.__class__.read(fname)
+            if hasattr(self.eq_calculator, 'converge_wave_functions'):
                 self.eq_calculator.converge_wave_functions()
-            except AttributeError:
-                pass
+
         Vibrations.run(self)
 
     def calculate(self, atoms, filename, fd):
