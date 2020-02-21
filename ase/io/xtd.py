@@ -147,30 +147,30 @@ def read_xtd(filename, index=-1):
     # the first line is comment
     f.readline()
     pbc = 'ON' in f.readline()
-    l = f.readline()
-    while l != '':
-        if '!' not in l:  # flag for the start of an image
-            l = f.readline()
+    L = f.readline()
+    while L != '':
+        if '!' not in L:  # flag for the start of an image
+            L = f.readline()
             continue
         if pbc:
-            l = f.readline()
-            cell = [float(d) for d in l.split()[1:]]
+            L = f.readline()
+            cell = [float(d) for d in L.split()[1:]]
         else:
             f.readline()
         symbols = []
         coords = []
         while True:
-            l = f.readline().split()
-            if 'end' in l:
+            L = f.readline().split()
+            if 'end' in L:
                 break
-            symbols.append(l[0])
-            coords.append([float(x) for x in l[1:4]])
+            symbols.append(L[0])
+            coords.append([float(x) for x in L[1:4]])
         if pbc:
             image = Atoms(symbols, positions=coords, cell=cell, pbc=pbc)
         else:
             image = Atoms(symbols, positions=coords, pbc=pbc)
         images.append(image)
-        l = f.readline()
+        L = f.readline()
 
     if not index:
         return images

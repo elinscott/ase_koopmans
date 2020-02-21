@@ -137,14 +137,14 @@ class FortranFile(file):
         """Read in exactly num_bytes, raising an error if it can't be done."""
         data = bytes()
         while True:
-            l = len(data)
-            if l == num_bytes:
+            L = len(data)
+            if L == num_bytes:
                 return data
             else:
-                read_data = self.read(num_bytes - l)
+                read_data = self.read(num_bytes - L)
             if read_data == bytes():
                 raise IOError('Could not read enough data.'
-                              '  Wanted %d bytes, got %d.' % (num_bytes, l))
+                              '  Wanted %d bytes, got %d.' % (num_bytes, L))
             data += read_data
 
     def _read_check(self):
@@ -161,10 +161,10 @@ class FortranFile(file):
 
     def readRecord(self):
         """Read a single fortran record"""
-        l = self._read_check()
-        data_str = self._read_exactly(l)
+        L = self._read_check()
+        data_str = self._read_exactly(L)
         check_size = self._read_check()
-        if check_size != l:
+        if check_size != L:
             raise IOError('Error reading record from data file')
         return data_str
 

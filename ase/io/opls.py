@@ -391,30 +391,30 @@ minimize        1.0e-14 1.0e-5 100000 100000
         dih_list = []
         dih_types = []
 
-        def append(name, i, j, k, l):
+        def append(name, i, j, k, L):
             if name not in dih_types:
                 dih_types.append(name)
             index = dih_types.index(name)
-            if (([index, i, j, k, l] not in dih_list) and
-                ([index, l, k, j, i] not in dih_list)):
-                dih_list.append([index, i, j, k, l])
+            if (([index, i, j, k, L] not in dih_list) and
+                ([index, L, k, j, i] not in dih_list)):
+                dih_list.append([index, i, j, k, L])
 
         for angle in ang_types:
-            l, i, j, k = angle
+            L, i, j, k = angle
             iname = types[tags[i]]
             jname = types[tags[j]]
             kname = types[tags[k]]
 
             # search for l-i-j-k
             indicesi, offsetsi = self.nl.get_neighbors(i)
-            for l, offsetl in zip(indicesi, offsetsi):
-                if l == j:
+            for L, offsetl in zip(indicesi, offsetsi):
+                if L == j:
                     continue  # avoid double count
-                lname = types[tags[l]]
+                lname = types[tags[L]]
                 cut = cutoffs.value(iname, lname)
                 if cut is None:
                     continue  # don't have it
-                dist = np.linalg.norm(atoms[i].position - atoms[l].position -
+                dist = np.linalg.norm(atoms[i].position - atoms[L].position -
                                       np.dot(offsetl, cell))
                 if dist > cut:
                     continue  # too far away
@@ -422,18 +422,18 @@ minimize        1.0e-14 1.0e-5 100000 100000
                                                       jname, kname)
                 if name is None:
                     continue  # don't have it
-                append(name, l, i, j, k)
+                append(name, L, i, j, k)
 
             # search for i-j-k-l
             indicesk, offsetsk = self.nl.get_neighbors(k)
-            for l, offsetl in zip(indicesk, offsetsk):
-                if l == j:
+            for L, offsetl in zip(indicesk, offsetsk):
+                if L == j:
                     continue  # avoid double count
-                lname = types[tags[l]]
+                lname = types[tags[L]]
                 cut = cutoffs.value(kname, lname)
                 if cut is None:
                     continue  # don't have it
-                dist = np.linalg.norm(atoms[k].position - atoms[l].position -
+                dist = np.linalg.norm(atoms[k].position - atoms[L].position -
                                       np.dot(offsetl, cell))
                 if dist > cut:
                     continue  # too far away
@@ -441,7 +441,7 @@ minimize        1.0e-14 1.0e-5 100000 100000
                                                       kname, lname)
                 if name is None:
                     continue  # don't have it
-                append(name, i, j, k, l)
+                append(name, i, j, k, L)
 
         return dih_types, dih_list
 

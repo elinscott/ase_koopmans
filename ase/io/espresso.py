@@ -306,9 +306,9 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             ibzkpts = []
             weights = []
             for i in range(nkpts):
-                l = pwo_lines[kpts_index + i].split()
-                weights.append(float(l[-1]))
-                coord = np.array([l[-6], l[-5], l[-4].strip('),')],
+                L = pwo_lines[kpts_index + i].split()
+                weights.append(float(L[-1]))
+                coord = np.array([L[-6], L[-5], L[-4].strip('),')],
                                  dtype=float)
                 coord *= 2 * np.pi / alat
                 coord = kpoint_convert(cell, ckpts_kv=coord)
@@ -332,22 +332,22 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                 spin, bands, eigenvalues = 0, [], [[], []]
 
                 while True:
-                    l = pwo_lines[bands_index].replace('-', ' -').split()
-                    if len(l) == 0:
+                    L = pwo_lines[bands_index].replace('-', ' -').split()
+                    if len(L) == 0:
                         if len(bands) > 0:
                             eigenvalues[spin].append(bands)
                             bands = []
-                    elif l == ['occupation', 'numbers']:
+                    elif L == ['occupation', 'numbers']:
                         # Skip the lines with the occupation numbers
                         bands_index += len(eigenvalues[spin][0]) // 8 + 1
-                    elif l[0] == 'k' and l[1].startswith('='):
+                    elif L[0] == 'k' and L[1].startswith('='):
                         pass
-                    elif 'SPIN' in l:
-                        if 'DOWN' in l:
+                    elif 'SPIN' in L:
+                        if 'DOWN' in L:
                             spin += 1
                     else:
                         try:
-                            bands.extend(map(float, l))
+                            bands.extend(map(float, L))
                         except ValueError:
                             break
                     bands_index += 1
