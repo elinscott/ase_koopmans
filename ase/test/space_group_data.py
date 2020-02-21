@@ -1,9 +1,14 @@
 import pytest
+import numpy as np
+from numpy.testing import assert_allclose
 from ase.spacegroup import (get_bravais_class,
                             get_point_group,
-                            polar_space_group)
+                            polar_space_group,
+                            Spacegroup)
 import ase.lattice
 
+
+TOL = 1E-10
 
 functions = [get_bravais_class, get_point_group, polar_space_group]
 
@@ -27,3 +32,10 @@ def test_nonpositive_spacegroup(func):
 def test_bad_spacegroup(func):
     with pytest.raises(ValueError, match="Bad"):
         func(400)
+
+
+@pytest.mark.parametrize("index", range(1, 231))
+def test_spacegroup_reciprocal_cell(index):
+    sg = Spacegroup(index)
+    inverse_check = np.linalg.inv(sg.scaled_primitive_cell).T
+    assert_allclose(sg.reciprocal_cell, inverse_check, atol=TOL)
