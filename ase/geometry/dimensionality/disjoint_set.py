@@ -4,12 +4,10 @@ import numpy as np
 class DisjointSet:
 
     def __init__(self, num_vertices):
-
-        self.ranks = np.zeros(num_vertices).astype(np.int)
+        self.sizes = np.ones(num_vertices, dtype=int)
         self.parents = np.arange(num_vertices)
 
     def find(self, index):
-
         parents = self.parents
         parent = parents[index]
         while parent != parents[parent]:
@@ -18,26 +16,22 @@ class DisjointSet:
         return parent
 
     def merge(self, a, b):
-
         a = self.find(a)
         b = self.find(b)
         if a == b:
             return False
 
-        ranks = self.ranks
+        sizes = self.sizes
         parents = self.parents
-
-        if ranks[a] < ranks[b]:
+        if sizes[a] < sizes[b]:
             parents[a] = b
-        elif ranks[a] > ranks[b]:
-            parents[b] = a
+            sizes[b] += sizes[a]
         else:
             parents[b] = a
-            ranks[a] += 1
+            sizes[a] += sizes[b]
         return True
 
     def _compress(self):
-
         a = self.parents
         b = a[a]
         while (a != b).any():
@@ -46,7 +40,6 @@ class DisjointSet:
         self.parents = a
 
     def get_components(self, relabel=False):
-
         self._compress()
         if not relabel:
             return self.parents
@@ -68,10 +61,8 @@ class DisjointSet:
         return np.array([ids[e] for e in x])
 
     def get_roots(self):
-
         self._compress()
         return np.unique(self.parents)
 
     def get_num_components(self):
-
         return len(self.get_roots())
