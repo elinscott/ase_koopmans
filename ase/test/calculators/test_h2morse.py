@@ -50,7 +50,7 @@ def test_excited_state():
         exatoms[1].position[2] = Re[i]  # set to potential minimum
         Egs = exatoms.get_potential_energy()
         
-        exc = H2MorseExcitedStatesCalculator(gscalc)
+        exc = H2MorseExcitedStatesCalculator()
         exl = exc.calculate(exatoms)
         assert (exl[i - 1].energy ==
                 pytest.approx(Etrans[i] - Egs + Egs0, 1e-8))
@@ -84,11 +84,10 @@ def test_traditional():
     assert ex1.energy == pytest.approx(ex2.energy, 1e-3)
     assert ex1.mur == pytest.approx(ex2.mur, 1e-5)
     assert ex1.muv == pytest.approx(ex2.muv, 1e-5)
- 
+
 
 def main():
-    #test_traditional()
-    test_gs_io_overlap()
+    test_traditional()
     
 
 if __name__ == '__main__':

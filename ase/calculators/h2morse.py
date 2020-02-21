@@ -103,41 +103,29 @@ class H2MorseCalculator(MorsePotential):
 
 class H2MorseExcitedStatesCalculator():
     """First singlet excited states of H2 from Morse potentials"""
-    def __init__(self, gscalculator=None, nstates=3, txt='-'):
+    def __init__(self, nstates=3):
         """
         Parameters
         ----------
-        gscalculator: object
-          Calculator for ground state energies
         nstates: int
           Numer of states to calculate 0 < nstates < 4, default 3
-        txt:
-          output channel, default '-'
         """
         assert nstates > 0 and nstates < 4
         self.nstates = nstates
-        self.gscalc = gscalculator
 
-    def calculate(self, atoms=None):
+    def calculate(self, atoms):
         """Calculate excitation spectrum
 
         Parameters
         ----------
         atoms: Ase atoms object
-           Default None
         """
         # central me value and rise, unit Bohr
         # from DOI: 10.1021/acs.jctc.9b00584
         mc = [0, 0.8, 0.7, 0.7]
         mr = [0, 1.0, 0.5, 0.5]
 
-        if atoms is None:
-            atoms = self.gscalc.atoms
-        
-        if self.gscalc is not None:
-            cgs = self.gscalc
-        else:
-            cgs = atoms.calc
+        cgs = atoms.calc
         r = atoms.get_distance(0, 1)
         E0 = cgs.get_potential_energy(atoms)
         
@@ -205,12 +193,14 @@ class H2Excitation(Excitation):
 class H2MorseExcitedStatesAndCalculator(
         H2MorseExcitedStatesCalculator, H2MorseExcitedStates):
     """Traditional joined object for backward compatibility only"""
-    def __init__(self, calculator=None, nstates=3):
+    def __init__(self, calculator, nstates=3):
         if isinstance(calculator, str):
             exlist = H2MorseExcitedStates.read(calculator, nstates)
         else:
-            excalc = H2MorseExcitedStatesCalculator(calculator, nstates)
-            exlist = excalc.calculate()
+            atoms = calculator.atoms
+            atoms.calc = calculator
+            excalc = H2MorseExcitedStatesCalculator(nstates)
+            exlist = excalc.calculate(atoms)
         H2MorseExcitedStates.__init__(self, nstates=nstates)
         for ex in exlist:
             self.append(ex)
