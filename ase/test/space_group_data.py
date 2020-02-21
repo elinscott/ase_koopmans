@@ -5,6 +5,7 @@ from ase.spacegroup import (get_bravais_class,
                             get_point_group,
                             polar_space_group,
                             Spacegroup)
+from ase.spacegroup.spacegroup import SpacegroupNotFoundError
 import ase.lattice
 
 
@@ -34,8 +35,12 @@ def test_bad_spacegroup(func):
         func(400)
 
 
-@pytest.mark.parametrize("index", range(1, 231))
-def test_spacegroup_reciprocal_cell(index):
-    sg = Spacegroup(index)
-    inverse_check = np.linalg.inv(sg.scaled_primitive_cell).T
-    assert_allclose(sg.reciprocal_cell, inverse_check, atol=TOL)
+@pytest.mark.parametrize("setting", [1, 2])
+@pytest.mark.parametrize("no", range(1, 231))
+def test_spacegroup_reciprocal_cell(no, setting):
+    try:
+        sg = Spacegroup(no, setting)
+    except SpacegroupNotFoundError:
+        return
+    reciprocal_check = np.linalg.inv(sg.scaled_primitive_cell).T
+    assert_allclose(sg.reciprocal_cell, reciprocal_check, atol=TOL)
