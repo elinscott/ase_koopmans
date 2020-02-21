@@ -46,7 +46,6 @@ def test_excited_state():
     Egs0 = gsatoms.get_potential_energy()
     for i in range(1, 4):
         exatoms = H2Morse()
-        gscalc = exatoms.get_calculator()
         exatoms[1].position[2] = Re[i]  # set to potential minimum
         Egs = exatoms.get_potential_energy()
         

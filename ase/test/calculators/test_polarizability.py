@@ -7,7 +7,7 @@ from ase.calculators.h2morse import H2MorseExcitedStatesCalculator
 def test_shapes():
     """Test evaluation of polarizabily and resulting shapes"""
     atoms = H2Morse()
-    exl = H2MorseExcitedStatesCalculator(atoms.calc).calculate()
+    exl = H2MorseExcitedStatesCalculator().calculate(atoms)
 
     alphaf = polarizability(exl, range(2))
     assert alphaf.shape == (2, )
