@@ -1,4 +1,6 @@
+from itertools import count
 import numpy as np
+
 from ase import Atoms
 from ase.units import invcm, Ha
 from ase.data import atomic_masses
@@ -42,6 +44,8 @@ def H2Morse(state=0):
 
 class H2MorseCalculator(MorsePotential):
     """H2 ground or excited state as Morse potential"""
+    _count = count(0)
+
     def __init__(self, state):
         MorsePotential.__init__(self,
                                 epsilon=De[state],
@@ -62,6 +66,9 @@ class H2MorseCalculator(MorsePotential):
         vr = atoms[1].position - atoms[0].position
         r = np.linalg.norm(vr)
         hr = vr / r
+        # defined seed for tests
+        seed = next(self._count)
+        np.random.seed(seed)
         # perpendicular axes
         vrand = np.random.rand(3)
         hx = np.cross(hr, vrand)
