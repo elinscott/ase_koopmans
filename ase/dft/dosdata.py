@@ -320,6 +320,8 @@ class GridDOSData(DOSData):
         self._data[0, :] = energies
         self._data[1, :] = weights
 
+        self.sigma_cutoff = 3
+
     def get_energies(self) -> np.ndarray:
         return self._data[0, :].copy()
 
@@ -372,21 +374,21 @@ class GridDOSData(DOSData):
         self._check_positive_width(width)
         self._check_spacing(width)
 
+        energies = self.get_energies()
         if xmin is None:
-            xmin = min(self.get_energies()) - (padding * width)
+            xmin = min(energies) - (padding * width)
         if xmax is None:
-            xmax = max(self.get_energies()) + (padding * width)
+            xmax = max(energies) + (padding * width)
 
         new_energies = np.linspace(xmin, xmax, npts)
-        spacing = abs(xmin - xmax) / npts
+        spacing = new_energies[1] - new_energies[0]
         # Define histogram bins as evenly surrounding x points
-        bins = np.linspace(xmin - spacing / 2, xmax - spacing / 2, npts + 1)
+        bins = np.linspace(xmin - spacing / 2, xmax + spacing / 2, npts + 1)
 
-        sigma_cutoff = 3
-        kernel_range_in_pts = int(np.ceil((sigma_cutoff * width) / spacing))
+        kernel_range_in_pts = int(np.ceil(self.sigma_cutoff * width / spacing))
         kernel_range = kernel_range_in_pts * spacing
         kernel_x_values = np.linspace(-kernel_range, kernel_range,
-                                      kernel_range_in_pts)
+                                      kernel_range_in_pts * 2 + 1)
 
         if smearing.lower() == 'gauss':
             # Normalisation term of Gaussian is removed as we will next
@@ -402,10 +404,13 @@ class GridDOSData(DOSData):
         kernel -= kernel[0]
         # Normalise such that peaks sum to 1
         kernel /= kernel.sum()
-
-        # Re-bin the data to the new x-grid
-        weights, _ = np.histogram(self.get_energies(), bins=bins,
-                                  weights=self.get_weights(), density=False)
+        
+        # Re-bin the data to the new x-grid, rescaling for consistent density
+        input_spacing = energies[1] - energies[0]
+        weight_scale = input_spacing / spacing
+        weights, _ = np.histogram(energies, bins=bins,
+                                  weights=self.get_weights() * weight_scale,
+                                  density=False)
 
         # Convolve with kernel on same grid
         return new_energies, convolve(weights, kernel, mode='same')
@@ -420,8 +425,8 @@ class GridDOSData(DOSData):
             raise TypeError("GridDOSData can only be combined with other "
                             "GridDOSData objects")
         if not np.allclose(self._data[0, :], other.get_energies()):
-            raise Exception("Cannot add GridDOSData objects with different "
-                            "energy grids.")
+            raise ValueError("Cannot add GridDOSData objects with different "
+                             "energy grids.")
 
         # Take intersection of metadata (i.e. only common entries are retained)
         new_info = dict(set(self.info.items()) & set(other.info.items()))

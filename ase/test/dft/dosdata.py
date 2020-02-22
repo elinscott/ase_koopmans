@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from ase.dft.dosdata import DOSData, RawDOSData
+from ase.dft.dosdata import DOSData, GridDOSData, RawDOSData
 
 
 class MinimalDOSData(DOSData):
@@ -99,11 +99,8 @@ class TestRawDosData:
                              sampling_data_args_results)
     def test_sampling(self, data, args, result):
         dos = RawDOSData(data[0], data[1])
-        try:
-            assert np.allclose(dos.sample(*args[:-1], **args[-1]), result)
-        except AssertionError:
-            raise AssertionError(dos.sample(*args[:-1], **args[-1]))
-
+        assert np.allclose(dos.sample(*args[:-1], **args[-1]), result)
+        
     def test_sampling_error(self, sparse_dos):
         with pytest.raises(ValueError):
             sparse_dos.sample([1, 2, 3], width=0.)
@@ -152,3 +149,59 @@ class TestRawDosData:
                            [[[1.2, 0.], [1.2, 3.]],
                             [[3.4, 0.], [3.4, 2.1]],
                             [[5., 0.], [5., 0.]]])
+
+
+class TestGridDosData:
+    """Test the grid DOS data container"""
+    def test_init(self):
+        # energies and weights must be equal lengths
+        with pytest.raises(ValueError):
+            GridDOSData(np.linspace(0, 10, 11), np.zeros(10))
+
+        # energies must be evenly spaced
+        with pytest.raises(ValueError):
+            GridDOSData(np.linspace(0, 10, 11)**2, np.zeros(11))
+
+    @pytest.fixture
+    def dense_dos(self):
+        x = np.linspace(0., 10., 11)
+        y = np.sin(x / 10)
+        return GridDOSData(x, y, info={'symbol': 'C', 'orbital': '2s',
+                                       'day': 'Tue'})
+
+    @pytest.fixture
+    def another_dense_dos(self):
+        x = np.linspace(0., 10., 11)
+        y = np.sin(x / 10) * 2
+        return GridDOSData(x, y, info={'symbol': 'C', 'orbital': '2p',
+                                       'month': 'Feb'})
+
+    def test_access(self, dense_dos):
+        assert dense_dos.info == {'symbol': 'C', 'orbital': '2s', 'day': 'Tue'}
+        assert len(dense_dos.get_energies()) == 11
+        assert dense_dos.get_energies()[-2] == 9.
+        assert dense_dos.get_weights()[-1] == np.sin(1)
+
+    def test_addition(self, dense_dos, another_dense_dos):
+        sum_dos = dense_dos + another_dense_dos
+        assert np.allclose(sum_dos.get_energies(), dense_dos.get_energies())
+        assert np.allclose(sum_dos.get_weights(), dense_dos.get_weights() * 3)
+        assert sum_dos.info == {'symbol': 'C'}
+
+        with pytest.raises(TypeError):
+            dense_dos + RawDOSData([1., 2.], [3., 4.])
+
+        with pytest.raises(ValueError):
+            dense_dos + GridDOSData(dense_dos.get_energies()[1:],
+                                    dense_dos.get_weights()[1:])
+
+    @pytest.mark.parametrize('npts, width, padding', [(19, 1, 4)])
+    def test_grid_sampling(self, dense_dos, npts, width, padding):
+        x, y = dense_dos.sample_grid(npts, width=width, padding=padding)
+
+        # Check padding for auto limits
+        assert x[0] == 0 - width * padding
+        assert x[-1] == 10 + width * padding
+
+        assert np.allclose(y, dense_dos.sample(np.linspace(x[0], x[-1], npts),
+                                               width=width), atol=1e-3, rtol=10e-2)
