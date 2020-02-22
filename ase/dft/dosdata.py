@@ -68,6 +68,44 @@ class DOSData(metaclass=ABCMeta):
         x = np.linspace(xmin, xmax, npts)
         return x, self.sample(x, width=width, smearing=smearing)
 
+    def plot_deltas(self,
+                    ax: Axes = None,
+                    show: bool = False,
+                    filename: str = None,
+                    mplargs: dict = None) -> Axes:
+        """Simple plot of sparse DOS data as a set of delta functions
+
+        Items at the same x-value can overlap and will not be summed together
+
+        Args:
+            ax: existing Matplotlib axes object. If not provided, a new figure
+                with one set of axes will be created using Pyplot
+            show: show the figure on-screen
+            filename: if a path is given, save the figure to this file
+            mplargs: additional arguments to pass to matplotlib Axes.vlines
+                command (e.g. {'linewidth': 2} for a thicker line).
+
+        Returns:
+            Plotting axes. If "ax" was set, this is the same object.
+        """
+        if ax is None:
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.get_figure()
+
+        if mplargs is None:
+            mplargs = {}
+
+        ax.vlines(self.get_energies(), 0, self.get_weights(), **mplargs)
+
+        if show:
+            fig.show()
+        if filename is not None:
+            fig.savefig(filename)
+
+        return ax
+
     def plot_dos(self,
                  npts: int = 1000,
                  xmin: float = None,
@@ -94,7 +132,7 @@ class DOSData(metaclass=ABCMeta):
             show: show the figure on-screen
             filename: if a path is given, save the figure to this file
             mplargs: additional arguments to pass to matplotlib plot command
-                (e.g. {'linewidth': 2} for a thicker line.
+                (e.g. {'linewidth': 2} for a thicker line).
 
 
         Returns:
@@ -194,7 +232,12 @@ class RawDOSData(DOSData):
                x0: np.ndarray,
                width: float,
                smearing: str = 'Gauss') -> Sequence[Sequence[float]]:
-        """Return a delta-function centered at 'x0'."""
+        """Return a delta-function centered at 'x0'.
+
+        This function is used with numpy broadcasting; if x is a row and x0 is
+        a column vector, the returned data will be a 2D array with each row
+        corresponding to a different delta center.
+        """
         if smearing.lower() == 'gauss':
             x1 = -0.5 * ((x - x0) / width)**2
             return np.exp(x1) / (np.sqrt(2 * np.pi) * width)

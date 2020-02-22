@@ -131,7 +131,8 @@ class TestRawDosData:
     # - inspect the line values
     # - check that a line styling parameter is correctly passed through mplargs
     # - set a kwarg from self.sample() to check broadening args are recognised
-    @pytest.mark.parametrize('linewidth', [1, 5])
+    linewidths = [1, 5]
+    @pytest.mark.parametrize('linewidth', linewidths)
     def test_plot_dos(self, sparse_dos, linewidth):
         fig, ax = plt.subplots()
         sparse_dos.plot_dos(npts=5, ax=ax,
@@ -143,3 +144,16 @@ class TestRawDosData:
         assert np.allclose(line_data[1],
                            [1.32955452e-01, 1.51568133e-13,
                             9.30688167e-02, 1.06097693e-13, 3.41173568e-78])
+
+    @pytest.mark.parametrize('linewidth', linewidths)
+    def test_plot_deltas(self, sparse_dos, linewidth):
+        fig, ax = plt.subplots()
+        sparse_dos.plot_deltas(ax=ax, mplargs={'linewidth': linewidth})
+
+        assert ax.get_children()[0].get_linewidth() == linewidth
+
+        assert np.allclose(list(map(lambda x: x.vertices,
+                                    ax.get_children()[0].get_paths())),
+                           [[[1.2, 0.], [1.2, 3.]],
+                            [[3.4, 0.], [3.4, 2.1]],
+                            [[5., 0.], [5., 0.]]])
