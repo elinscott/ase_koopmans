@@ -13,9 +13,6 @@ class MinimalDOSData(DOSData):
     def get_weights(self):
         super().get_weights()
 
-    def sample(self, x, **kwargs):
-        super().sample(x, **kwargs)
-
 
 class TestDosData:
     """Test the abstract base class for DOS data"""
@@ -38,9 +35,7 @@ class TestDosData:
             assert dos_data.info == expected
 
     dosdata_abc_notimplemented_methods_args = [('get_energies', tuple()),
-                                               ('get_weights', tuple()),
-                                               ('sample', ([0.1, 0.2],)),
-                                               ]
+                                               ('get_weights', tuple())]
     @pytest.mark.parametrize('method, args',
                              dosdata_abc_notimplemented_methods_args)
     def test_dosdata_notimplemented(self, method, args):
