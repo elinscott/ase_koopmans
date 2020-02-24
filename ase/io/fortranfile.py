@@ -150,13 +150,13 @@ class FortranFile(file):
     def _read_check(self):
         return numpy.fromstring(
             self._read_exactly(self._header_length),
-            dtype=self.ENDIAN + self.HEADER_PREC
+            dtype=self.ENDIAN + self.HEADER_PREC,
         )[0]
 
     def _write_check(self, number_of_bytes):
         """Write the header for the given number of bytes"""
         self.write(numpy.array(
-            number_of_bytes, dtype=self.ENDIAN + self.HEADER_PREC
+            number_of_bytes, dtype=self.ENDIAN + self.HEADER_PREC,
         ).tostring())
 
     def readRecord(self):
