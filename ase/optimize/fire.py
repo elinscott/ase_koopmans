@@ -54,9 +54,9 @@ class FIRE(Optimizer):
 
         self.dt = dt
         self.Nsteps = 0
-	if maxstep is not None: 
+        if maxstep is not None: 
             self.maxstep = maxstep 
-	else:  
+        else:  
             self.maxstep = defaults.maxstep
         self.dtmax = dtmax
         self.Nmin = Nmin

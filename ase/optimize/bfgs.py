@@ -42,7 +42,7 @@ class BFGS(Optimizer):
                           'the maximum step size: %.1f Å' % maxstep)
         if maxstep is not None: 
             self.maxstep = maxstep 
-	else:  
+        else:  
             self.maxstep = defaults.maxstep
 
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master,maxstep)
