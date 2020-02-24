@@ -332,7 +332,7 @@ def write_aims(
 
 
 def get_sym_block(atoms):
-    """Get the symmetry block for the Parametric constraints in atoms.constraints"""
+    """Get symmetry block for Parametric constraints in atoms.constraints"""
     import numpy as np
 
     from ase.constraints import (
@@ -353,7 +353,8 @@ def get_sym_block(atoms):
 
             if np.any(atomic_param_constr[constr.indices] != ""):
                 warnings.warn(
-                    "multiple parametric constraints defined for the same atom, using the last one defined"
+                    "multiple parametric constraints defined for the same "
+                    "atom, using the last one defined"
                 )
 
             atomic_param_constr[constr.indices] = [
@@ -364,7 +365,8 @@ def get_sym_block(atoms):
 
             if np.any(lv_param_constr[constr.indices] != ""):
                 warnings.warn(
-                    "multiple parametric constraints defined for the same lattice vector, using the last one defined"
+                    "multiple parametric constraints defined for the same "
+                    "lattice vector, using the last one defined"
                 )
 
             lv_param_constr[constr.indices] = [
@@ -377,19 +379,22 @@ def get_sym_block(atoms):
     # Check Constraint Parameters
     if len(atomic_sym_params) != len(np.unique(atomic_sym_params)):
         warnings.warn(
-            "Some parameters were used across constraints, they will be combined in the aims calculations"
+            "Some parameters were used across constraints, they will be "
+            "combined in the aims calculations"
         )
         atomic_sym_params = np.unique(atomic_sym_params)
 
     if len(lv_sym_params) != len(np.unique(lv_sym_params)):
         warnings.warn(
-            "Some parameters were used across constraints, they will be combined in the aims calculations"
+            "Some parameters were used across constraints, they will be "
+            "combined in the aims calculations"
         )
         lv_sym_params = np.unique(lv_sym_params)
 
     if np.any(atomic_param_constr == ""):
         raise IOError(
-            "FHI-aims input files require all atoms have defined parametric constraints"
+            "FHI-aims input files require all atoms have defined parametric "
+            "constraints"
         )
 
     cell_inds = np.where(lv_param_constr == "")[0]

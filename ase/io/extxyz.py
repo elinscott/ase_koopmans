@@ -328,7 +328,8 @@ def parse_properties(prop_str):
     return properties, properties_list, dtype, converters
 
 
-def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0):
+def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict,
+                    nvec=0):
     # comment line
     line = next(lines).strip()
     if nvec > 0:
@@ -386,20 +387,21 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
             try:
                 line = next(lines)
             except StopIteration:
-                raise XYZError('ase.io.adfxyz: Frame has {} cell vectors, expected {}'
-                               .format(len(cell), nvec))
+                raise XYZError('ase.io.adfxyz: Frame has {} cell vectors, '
+                               'expected {}'.format(len(cell), nvec))
             entry = line.split()
 
             if not entry[0].startswith('VEC'):
                 raise XYZError('Expected cell vector, got {}'.format(entry[0]))
+
             try:
                 n = int(entry[0][3:])
-                if n != ln + 1:
-                    raise XYZError('Expected VEC{}, got VEC{}'
-                                   .format(ln + 1, n))
-            except:
-                raise XYZError('Expected VEC{}, got VEC{}'.format(
-                    ln + 1, entry[0][3:]))
+            except ValueError as e:
+                raise XYZError('Expected VEC{}, got VEC{}'
+                               .format(ln + 1, entry[0][3:])) from e
+            if n != ln + 1:
+                raise XYZError('Expected VEC{}, got VEC{}'
+                               .format(ln + 1, n))
 
             cell[ln] = np.array([float(x) for x in entry[1:]])
             pbc[ln] = True
@@ -452,8 +454,10 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
     # Read and set constraints
     if 'move_mask' in arrays:
         if properties['move_mask'][1] == 3:
-            atoms.set_constraint(
-                [FixCartesian(a, mask=arrays['move_mask'][a, :]) for a in range(natoms)])
+            cons = []
+            for a in range(natoms):
+                cons.append(FixCartesian(a, mask=arrays['move_mask'][a, :]))
+            atoms.set_constraint(cons)
         elif properties['move_mask'][1] == 1:
             atoms.set_constraint(FixAtoms(mask=~arrays['move_mask']))
         else:
@@ -693,7 +697,7 @@ def output_column_format(atoms, columns, arrays,
 
 
 def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
-              write_results=True, plain=False, vec_cell=False, append=False, 
+              write_results=True, plain=False, vec_cell=False, append=False,
               tolerant=False):
     """
     Write output in extended XYZ format
@@ -846,7 +850,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                                                        fr_cols,
                                                        arrays,
                                                        write_info,
-                                                       per_frame_results, 
+                                                       per_frame_results,
                                                        tolerant)
 
         if plain or comment != '':

@@ -144,15 +144,15 @@ def read_cfg(f):
     current_symbol = None
     current_mass = None
 
-    l = f.readline()
-    while l:
-        l = l.strip()
-        if len(l) != 0 and not l.startswith('#'):
-            if l == '.NO_VELOCITY.':
+    L = f.readline()
+    while L:
+        L = L.strip()
+        if len(L) != 0 and not L.startswith('#'):
+            if L == '.NO_VELOCITY.':
                 vels = None
                 naux += 3
             else:
-                s = l.split('=')
+                s = L.split('=')
                 if len(s) == 2:
                     key, value = s
                     key = key.strip()
@@ -188,12 +188,12 @@ def read_cfg(f):
                     # Everything else must be particle data.
                     # First check if current line contains an element mass or
                     # name. Then we have an extended XYZ format.
-                    s = [x.strip() for x in l.split()]
+                    s = [x.strip() for x in L.split()]
                     if len(s) == 1:
-                        if l in chemical_symbols:
-                            current_symbol = l
+                        if L in chemical_symbols:
+                            current_symbol = L
                         else:
-                            current_mass = float(l)
+                            current_mass = float(L)
                     elif current_symbol is None and current_mass is None:
                         # Standard CFG format
                         masses[current_atom] = float(s[0])
@@ -214,7 +214,7 @@ def read_cfg(f):
                             vels[current_atom, :] = props[3:6]
                         aux[current_atom, :] = props[off:]
                         current_atom += 1
-        l = f.readline()
+        L = f.readline()
 
     # Sanity check
     if current_atom != nat:

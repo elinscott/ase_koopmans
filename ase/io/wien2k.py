@@ -17,7 +17,7 @@ def read_scf(filename):
     except:
         return None
 
-        
+
 def read_struct(filename, ase=True):
     f = open(filename, 'r')
     pip = f.readlines()
@@ -91,7 +91,7 @@ def read_struct(filename, ase=True):
     else:
         return cell, lattice, pos, atomtype, rmt
 
-        
+
 def write_struct(filename, atoms2=None, rmt=None, lattice='P', zza=None):
     atoms = atoms2.copy()
     atoms.wrap()
@@ -130,7 +130,7 @@ def write_struct(filename, atoms2=None, rmt=None, lattice='P', zza=None):
         f.write('                     %9.7f %9.7f %9.7f\n' % (0.0, 0.0, 1.0))
     f.write('   0\n')
 
-    
+
 def cellconst(metT):
     """ metT=np.dot(cell,cell.T) """
     aa = np.sqrt(metT[0, 0])
@@ -141,7 +141,7 @@ def cellconst(metT):
     alpha = np.arccos(metT[1, 2] / (bb * cc)) / np.pi * 180.0
     return np.array([aa, bb, cc, alpha, beta, gamma])
 
-    
+
 def coorsys(latconst):
     a = latconst[0]
     b = latconst[1]
@@ -156,7 +156,7 @@ def coorsys(latconst):
                                         2 * cal * cbe * cga) / sga]
                      ]).transpose()
 
-    
+
 def c2p(lattice):
     """ apply as eg. cell2 = np.dot(c2p('F'), cell)"""
     if lattice == 'P':

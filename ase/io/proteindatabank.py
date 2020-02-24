@@ -22,7 +22,7 @@ from ase.io.espresso import label_to_symbol
 def read_atom_line(line_full):
     """
     Read atom line from pdb format
-    HETATM    1  H14 ORTE    0       6.301   0.693   1.919  1.00  0.00           H
+    HETATM    1  H14 ORTE    0       6.301   0.693   1.919  1.00  0.00        H
     """
 
     line = line_full.rstrip('\n')
@@ -33,7 +33,7 @@ def read_atom_line(line_full):
 
         altloc = line[16]
         resname = line[17:21]
-        # chainid = line[21]        # Not used 
+        # chainid = line[21]        # Not used
 
         resseq = int(line[22:26].split()[0])  # sequence identifier
         # icode = line[26]          # insertion code, not used
@@ -58,7 +58,8 @@ def read_atom_line(line_full):
         try:
             bfactor = float(line[60:66])
         except ValueError:
-            bfactor = 0.0  # The PDB use a default of zero if the data is missing
+            # The PDB use a default of zero if the data is missing
+            bfactor = 0.0
 
         # segid = line[72:76] # not used
         symbol = line[76:78].strip().upper()
@@ -67,6 +68,7 @@ def read_atom_line(line_full):
         raise ValueError("Only ATOM and HETATM supported")
 
     return symbol, name, altloc, resname, coord, occupancy, bfactor, resseq
+
 
 def read_proteindatabank(fileobj, index=-1, read_arrays=True):
     """Read PDB files."""
@@ -186,7 +188,6 @@ def write_proteindatabank(fileobj, images, write_arrays=True):
 
     if hasattr(images, 'get_positions'):
         images = [images]
-
 
     rotation = None
     if images[0].get_pbc().any():
