@@ -2,8 +2,6 @@ import numpy as np
 import pytest
 
 from ase.cluster.icosahedron import Icosahedron
-from ase.cluster.decahedron import Decahedron
-from ase.cluster.octahedron import Octahedron
 from ase.neighborlist import neighbor_list
 
 sym = 'Au'
@@ -11,6 +9,7 @@ a0 = 4.05
 ico_cubocta_sizes = [1, 13, 55, 147, 309, 563, 923, 1415]
 ico_corner_coordination = 6
 ico_corners = 12
+
 
 def coordination_numbers(atoms):
     return np.bincount(neighbor_list('i', atoms, 1.1 * a0))
