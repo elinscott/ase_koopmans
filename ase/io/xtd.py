@@ -160,8 +160,9 @@ def read_xtd(filename, index=-1):
         symbols = []
         coords = []
         while True:
-            L = f.readline().split()
-            if 'end' in L:
+            line = f.readline()
+            L = line.split()
+            if not line or 'end' in L:
                 break
             symbols.append(L[0])
             coords.append([float(x) for x in L[1:4]])
