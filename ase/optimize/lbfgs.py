@@ -63,7 +63,7 @@ class LBFGS(Optimizer):
             falls back to force_consistent=False if not.
         """
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master,
-                           force_consistent=force_consistent, maxstep)
+                           force_consistent=force_consistent)
 
         if maxstep is not None:
             if maxstep > 1.0:

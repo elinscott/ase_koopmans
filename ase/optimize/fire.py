@@ -50,7 +50,7 @@ class FIRE(Optimizer):
             when downhill_check is True.
         """
         Optimizer.__init__(self, atoms, restart, logfile, trajectory,
-                           master, force_consistent=force_consistent, maxstep)
+                           master, force_consistent=force_consistent)
 
         self.dt = dt
         self.Nsteps = 0
