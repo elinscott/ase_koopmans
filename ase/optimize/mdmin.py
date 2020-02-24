@@ -34,9 +34,9 @@ class MDMin(Optimizer):
 
         if dt is not None:
             self.dt = dt 
-	if maxstep is not None: 
+        if maxstep is not None: 
             self.maxstep = maxstep 
-	else:  
+        else:  
             self.maxstep = defaults.maxstep
 	
 
