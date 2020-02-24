@@ -2,7 +2,7 @@ import numpy as np
 
 from ase.optimize.optimize import Optimizer
 from ase.utils.linesearch import LineSearch
-
+import ase.optimize.defaults as defaults 
 
 class LBFGS(Optimizer):
     """Limited memory BFGS optimizer.
@@ -13,7 +13,7 @@ class LBFGS(Optimizer):
 
     """
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 maxstep=0.2, memory=100, damping=1.0, alpha=70.0,
+                 maxstep=None, memory=100, damping=1.0, alpha=70.0,
                  use_line_search=False, master=None,
                  force_consistent=None):
         """Parameters:
@@ -63,7 +63,7 @@ class LBFGS(Optimizer):
             falls back to force_consistent=False if not.
         """
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master,
-                           force_consistent=force_consistent)
+                           force_consistent=force_consistent, maxstep)
 
         if maxstep is not None:
             if maxstep > 1.0:
@@ -72,7 +72,7 @@ class LBFGS(Optimizer):
                                  maxstep)
             self.maxstep = maxstep
         else:
-            self.maxstep = 0.04
+            self.maxstep = defaults.maxstep
 
         self.memory = memory
         # Initial approximation of inverse Hessian 1./70. is to emulate the

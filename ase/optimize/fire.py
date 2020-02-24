@@ -1,11 +1,11 @@
 import numpy as np
 
 from ase.optimize.optimize import Optimizer
-
+import ase.optimize.defaults as defaults 
 
 class FIRE(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 dt=0.1, maxstep=0.2, dtmax=1.0, Nmin=5, finc=1.1, fdec=0.5,
+                 dt=0.1, maxstep=None, dtmax=1.0, Nmin=5, finc=1.1, fdec=0.5,
                  astart=0.1, fa=0.99, a=0.1, master=None, downhill_check=False,
                  position_reset_callback=None, force_consistent=None):
         """Parameters:
@@ -50,11 +50,14 @@ class FIRE(Optimizer):
             when downhill_check is True.
         """
         Optimizer.__init__(self, atoms, restart, logfile, trajectory,
-                           master, force_consistent=force_consistent)
+                           master, force_consistent=force_consistent, maxstep)
 
         self.dt = dt
         self.Nsteps = 0
-        self.maxmove = maxmove
+	if maxstep is not None: 
+            self.maxstep = maxstep 
+	else:  
+            self.maxstep = defaults.maxstep
         self.dtmax = dtmax
         self.Nmin = Nmin
         self.finc = finc
@@ -119,8 +122,8 @@ class FIRE(Optimizer):
         self.v += self.dt * f
         dr = self.dt * self.v
         normdr = np.sqrt(np.vdot(dr, dr))
-        if normdr > self.maxmove:
-            dr = self.maxmove * dr / normdr
+        if normdr > self.maxstep:
+            dr = self.maxstep * dr / normdr
         r = atoms.get_positions()
         atoms.set_positions(r + dr)
         self.dump((self.v, self.dt))
