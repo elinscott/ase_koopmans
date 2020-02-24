@@ -33,18 +33,12 @@ class MDMin(Optimizer):
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master, maxstep)
 
         if dt is not None:
-<<<<<<< HEAD
-            self.dt = dt
-        if maxstep is not None:
-            self.maxstep = maxstep
-=======
             self.dt = dt 
 	if maxstep is not None: 
             self.maxstep = maxstep 
 	else:  
             self.maxstep = defaults.maxstep
 	
->>>>>>> updates to optimizer to work with default.py
 
     def initialize(self):
         self.v = None
