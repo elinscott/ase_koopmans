@@ -315,7 +315,7 @@ def _write_xsd_html(images, connectivity=None):
     if not images[0].pbc.all():
         Molecule = SetChild(ATR, 'Molecule', dict(
             ID='2',
-            NumChildre=str(natoms + nbonds),
+            NumChildren=str(natoms + nbonds),
             Name='Lattice=&quot1.0',
         ))
         # writing images[0]
