@@ -11,7 +11,7 @@ from ase.optimize import MDMin
 from ase.calculators.cp2k import CP2K
 
 
-def main():
+def test_cp2k_stress():
     """Adopted from ase/test/stress.py"""
 
     # setup a Fist Lennard-Jones Potential
@@ -90,7 +90,3 @@ def main():
     assert np.all(abs(g_p_err) < 1)
 
     print('passed test "stress"')
-
-
-main()
-# EOF

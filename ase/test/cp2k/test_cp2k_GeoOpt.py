@@ -9,7 +9,7 @@ from ase.optimize import BFGS
 from ase.calculators.cp2k import CP2K
 
 
-def main():
+def test_geoopt():
     calc = CP2K(label='test_H2_GOPT', print_level='LOW')
     atoms = molecule('H2', calculator=calc)
     atoms.center(vacuum=2.0)
@@ -28,6 +28,3 @@ def main():
     energy = atoms.get_potential_energy()
     assert (energy - energy_ref) / energy_ref < 1e-10
     print('passed test "H2_GEO_OPT"')
-
-
-main()

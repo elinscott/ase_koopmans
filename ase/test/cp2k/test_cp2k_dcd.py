@@ -15,7 +15,7 @@ from ase.io.cp2k import iread_cp2k_dcd
 from ase.calculators.calculator import compare_atoms
 
 
-def main():
+def test_dcd():
     if not shutil.which("cp2k"):
         raise unittest.SkipTest('cp2k command not available')
 
@@ -57,6 +57,3 @@ def main():
     pbc = [mol.get_pbc() for mol in traj]
     assert not np.any(pbc)
     print('passed test "CP2K_DCD"')
-
-
-main()

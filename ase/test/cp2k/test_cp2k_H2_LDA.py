@@ -8,22 +8,12 @@ from ase.build import molecule
 from ase.calculators.cp2k import CP2K
 
 
-def main():
-    inp = """&FORCE_EVAL
-               &DFT
-                 &QS
-                   LS_SCF ON
-                 &END QS
-               &END DFT
-             &END FORCE_EVAL"""
-    calc = CP2K(label='test_H2_LS', inp=inp)
+def test_h2_lda():
+    calc = CP2K(label='test_H2_LDA')
     h2 = molecule('H2', calculator=calc)
     h2.center(vacuum=2.0)
     energy = h2.get_potential_energy()
-    energy_ref = -30.6989581747
+    energy_ref = -30.6989595886
     diff = abs((energy - energy_ref) / energy_ref)
-    assert diff < 5e-7
-    print('passed test "H2_LS"')
-
-
-main()
+    assert diff < 1e-10
+    print('passed test "H2_LDA"')

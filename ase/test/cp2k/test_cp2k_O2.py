@@ -9,7 +9,7 @@ from ase import units
 from ase.calculators.cp2k import CP2K
 
 
-def main():
+def test_o2():
     calc = CP2K(label='test_O2', uks=True, cutoff=150 * units.Rydberg,
                 basis_set="SZV-MOLOPT-SR-GTH")
     o2 = molecule('O2', calculator=calc)
@@ -19,6 +19,3 @@ def main():
     diff = abs((energy - energy_ref) / energy_ref)
     assert diff < 1e-10
     print('passed test "O2"')
-
-
-main()

@@ -34,7 +34,7 @@ inp = """
 """
 
 
-def main():
+def test_h2_none():
     # Basically, the entire CP2K input is passed in explicitly.
     # Disable ASE's input generation by setting everything to None.
     # ASE should only add the CELL and the COORD section.
@@ -56,6 +56,3 @@ def main():
     diff = abs((energy - energy_ref) / energy_ref)
     assert diff < 1e-10
     print('passed test "H2_None"')
-
-
-main()

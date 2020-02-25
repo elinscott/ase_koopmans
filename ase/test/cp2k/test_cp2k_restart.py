@@ -8,7 +8,7 @@ from ase.build import molecule
 from ase.calculators.cp2k import CP2K
 
 
-def main():
+def test_restart():
     calc = CP2K()
     h2 = molecule('H2', calculator=calc)
     h2.center(vacuum=2.0)
@@ -17,6 +17,3 @@ def main():
     calc2 = CP2K(restart='test_restart')  # load a restart
     assert not calc2.calculation_required(h2, ['energy'])
     print('passed test "restart"')
-
-
-main()
