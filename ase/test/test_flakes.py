@@ -1,59 +1,17 @@
 # Run flake8 on main source dir and documentation.
 import sys
-import unittest
 from collections import defaultdict
 from pathlib import Path
 from subprocess import Popen, PIPE
 
+import pytest
+
 import ase
 
-try:
-    import flake8  # noqa
-except ImportError:
-    raise unittest.SkipTest('flake8 module not available')
+pytest.importorskip('flake8')
 
 
 asepath = Path(ase.__path__[0])
-
-
-def run_flake8():
-    proc = Popen([sys.executable,
-                  '-m',
-                  'flake8',
-                  str(asepath),
-                  str((asepath / '../doc').resolve()),
-                  '--exclude',
-                  str((asepath / '../doc/build/*').resolve()),
-                  '--ignore',
-                  'E129,W293,W503,W504,E741'
-                  '-j',
-                  '1'],
-                 stdout=PIPE)
-    stdout, stderr = proc.communicate()
-    stdout = stdout.decode('utf8')
-
-    errors = defaultdict(int)
-    files = defaultdict(int)
-    offenses = defaultdict(list)
-    descriptions = {}
-    for stdout_line in stdout.splitlines():
-        tokens = stdout_line.split(':', 3)
-        filename, lineno, colno, complaint = tokens
-        lineno = int(lineno)
-        e = complaint.strip().split()[0]
-        errors[e] += 1
-        descriptions[e] = complaint
-        files[filename] += 1
-        offenses[e] += [stdout_line]
-
-    errmsg = ''
-    for err, nerrs in errors.items():
-        nmaxerrs = max_errors.get(err, 0)
-        if nerrs <= nmaxerrs:
-            continue
-        errmsg += 'Offenses:\n' + '\n'.join(offenses[err]) + '\n'
-
-    assert errmsg == '', errmsg
 
 
 max_errors = {
@@ -166,4 +124,42 @@ max_errors = {
     # line too long (93 > 79 characters)
     'E501': 737}
 
-run_flake8()
+
+def test_flake8():
+    proc = Popen([sys.executable,
+                  '-m',
+                  'flake8',
+                  str(asepath),
+                  str((asepath / '../doc').resolve()),
+                  '--exclude',
+                  str((asepath / '../doc/build/*').resolve()),
+                  '--ignore',
+                  'E129,W293,W503,W504,E741'
+                  '-j',
+                  '1'],
+                 stdout=PIPE)
+    stdout, stderr = proc.communicate()
+    stdout = stdout.decode('utf8')
+
+    errors = defaultdict(int)
+    files = defaultdict(int)
+    offenses = defaultdict(list)
+    descriptions = {}
+    for stdout_line in stdout.splitlines():
+        tokens = stdout_line.split(':', 3)
+        filename, lineno, colno, complaint = tokens
+        lineno = int(lineno)
+        e = complaint.strip().split()[0]
+        errors[e] += 1
+        descriptions[e] = complaint
+        files[filename] += 1
+        offenses[e] += [stdout_line]
+
+    errmsg = ''
+    for err, nerrs in errors.items():
+        nmaxerrs = max_errors.get(err, 0)
+        if nerrs <= nmaxerrs:
+            continue
+        errmsg += 'Offenses:\n' + '\n'.join(offenses[err]) + '\n'
+
+    assert errmsg == '', errmsg
