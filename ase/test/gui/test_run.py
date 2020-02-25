@@ -181,7 +181,7 @@ def test_quickinfo(gui, atoms):
     assert refstring in infostring
 
     dia = gui.quick_info_window()
-    label = dia.things[0]
+    # This is a bit weird and invasive ...
     txt = dia.things[0].text
     assert refstring in txt
 
