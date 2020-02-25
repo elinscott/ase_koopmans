@@ -54,7 +54,10 @@ def test_optimize(optcls, atoms, ref_atoms):
         optcls = partial(optcls, dihedral=False)
         optcls.__name__ = Berny.__name__
         atoms, ref_atoms = atoms_no_pbc()
-    opt = optcls(atoms, logfile='opt.log')
+    kw = {}
+    if optcls is PreconLBFGS:
+        kw['precon'] = None
+    opt = optcls(atoms, logfile='opt.log', **kw)
     fmax = 0.01
     opt.run(fmax=fmax)
 
