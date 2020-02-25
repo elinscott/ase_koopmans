@@ -1,3 +1,4 @@
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
@@ -58,6 +59,10 @@ class TestRawDosData:
         return RawDOSData([8., 2., 2., 5.], [1., 1., 1., 1.],
                           info={'symbol': 'H', 'number': '2'})
 
+    def test_init(self):
+        with pytest.raises(ValueError):
+            RawDOSData([1, 2, 3], [4, 5], info={'symbol': 'H'})
+
     def test_access(self, sparse_dos):
         assert sparse_dos.info == {'symbol': 'H', 'number': '1', 'food': 'egg'}
         assert np.allclose(sparse_dos.get_energies(), [1.2, 3.4, 5.])
@@ -100,6 +105,9 @@ class TestRawDosData:
     def test_sampling(self, data, args, result):
         dos = RawDOSData(data[0], data[1])
         assert np.allclose(dos.sample(*args[:-1], **args[-1]), result)
+
+        with pytest.raises(ValueError):
+            dos.sample([1], smearing="Gauss's spherical cousin")
         
     def test_sampling_error(self, sparse_dos):
         with pytest.raises(ValueError):
@@ -123,26 +131,48 @@ class TestRawDosData:
     # - inspect the line values
     # - check that a line styling parameter is correctly passed through mplargs
     # - set a kwarg from self.sample() to check broadening args are recognised
-    linewidths = [1, 5]
-    @pytest.mark.parametrize('linewidth', linewidths)
-    def test_plot_dos(self, sparse_dos, linewidth):
-        fig, ax = plt.subplots()
-        sparse_dos.plot_dos(npts=5, ax=ax,
-                            mplargs={'linewidth': linewidth}, smearing='Gauss')
+    linewidths = [1, 5, None]
+    @pytest.mark.parametrize('linewidth, make_ax',
+                             zip(linewidths, [True, False, True]))
+    def test_plot_dos(self, sparse_dos, linewidth, make_ax):
+        if linewidth is None:
+            mplargs = None
+        else:
+            mplargs = {'linewidth': linewidth}
+            
+        if make_ax:
+            _, ax = plt.subplots()
+            ax_out = sparse_dos.plot_dos(npts=5, ax=ax, mplargs=mplargs,
+                                         smearing='Gauss')
+            assert ax_out == ax
+        else:
+            ax = sparse_dos.plot_dos(npts=5, mplargs=mplargs, smearing='Gauss')
 
-        assert ax.lines[0].get_linewidth() == linewidth
         line_data = ax.lines[0].get_data()
         assert np.allclose(line_data[0], np.linspace(0.9, 5.3, 5))
         assert np.allclose(line_data[1],
                            [1.32955452e-01, 1.51568133e-13,
                             9.30688167e-02, 1.06097693e-13, 3.41173568e-78])
+        if linewidth is not None:
+            assert ax.lines[0].get_linewidth() == linewidth
 
-    @pytest.mark.parametrize('linewidth', linewidths)
-    def test_plot_deltas(self, sparse_dos, linewidth):
-        fig, ax = plt.subplots()
-        sparse_dos.plot_deltas(ax=ax, mplargs={'linewidth': linewidth})
+    @pytest.mark.parametrize('linewidth, make_ax',
+                             zip(linewidths, [True, False, True]))
+    def test_plot_deltas(self, sparse_dos, linewidth, make_ax):
+        if linewidth is None:
+            mplargs = None
+        else:
+            mplargs = {'linewidth': linewidth}
 
-        assert ax.get_children()[0].get_linewidth() == linewidth
+        if make_ax:
+            _, ax = plt.subplots()
+            ax_out = sparse_dos.plot_deltas(ax=ax, mplargs=mplargs)
+            assert ax_out == ax
+        else:
+            ax = sparse_dos.plot_deltas(mplargs={'linewidth': linewidth})
+
+        if linewidth is not None:
+            assert ax.get_children()[0].get_linewidth() == linewidth
 
         assert np.allclose(list(map(lambda x: x.vertices,
                                     ax.get_children()[0].get_paths())),
@@ -188,20 +218,39 @@ class TestGridDosData:
         assert np.allclose(sum_dos.get_weights(), dense_dos.get_weights() * 3)
         assert sum_dos.info == {'symbol': 'C'}
 
-        with pytest.raises(TypeError):
-            dense_dos + RawDOSData([1., 2.], [3., 4.])
-
+        with pytest.raises(ValueError):
+            dense_dos + GridDOSData(dense_dos.get_energies() + 1.,
+                                    dense_dos.get_weights())
         with pytest.raises(ValueError):
             dense_dos + GridDOSData(dense_dos.get_energies()[1:],
                                     dense_dos.get_weights()[1:])
 
-    @pytest.mark.parametrize('npts, width, padding', [(19, 1, 4)])
-    def test_grid_sampling(self, dense_dos, npts, width, padding):
-        x, y = dense_dos.sample_grid(npts, width=width, padding=padding)
+    def test_check_spacing(self, dense_dos, caplog):
+        """Check a warning is logged when width < 2 * grid spacing"""
+        # In the sample data, grid spacing is 1.0
+        dense_dos.sample([1], width=2.1)
+        assert len(caplog.record_tuples) == 0
+        dense_dos.sample([1], width=1.9)
+        assert caplog.record_tuples[-1][1] == logging.WARNING
+        assert "The broadening width is small" in caplog.record_tuples[-1][2]
 
-        # Check padding for auto limits
-        assert x[0] == 0 - width * padding
-        assert x[-1] == 10 + width * padding
 
-        assert np.allclose(y, dense_dos.sample(np.linspace(x[0], x[-1], npts),
-                                               width=width), atol=1e-3, rtol=10e-2)
+class TestMultiDosData:
+    """Test interaction between DOS data objects"""
+    @pytest.fixture
+    def sparse_dos(self):
+        return RawDOSData([1.2, 3.4, 5.], [3., 2.1, 0.],
+                          info={'symbol': 'H', 'number': '1', 'food': 'egg'})
+
+    @pytest.fixture
+    def dense_dos(self):
+        x = np.linspace(0., 10., 11)
+        y = np.sin(x / 10)
+        return GridDOSData(x, y, info={'symbol': 'C', 'orbital': '2s',
+                                       'day': 'Tue'})
+
+    def test_addition(self, sparse_dos, dense_dos):
+        with pytest.raises(TypeError):
+            sparse_dos + dense_dos
+        with pytest.raises(TypeError):
+            dense_dos + sparse_dos

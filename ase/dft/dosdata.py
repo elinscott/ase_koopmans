@@ -6,7 +6,6 @@ from typing import Dict, Sequence, Tuple
 
 from matplotlib.axes import Axes
 import numpy as np
-from scipy.signal import convolve
 
 
 # For now we will be strict about Info and say it has to be str->str. Perhaps
@@ -342,79 +341,6 @@ class GridDOSData(DOSData):
         self._check_spacing(width)
         return super().sample(x=x, width=width, smearing=smearing)
 
-    def sample_grid(self,
-                    npts: int,
-                    xmin: float = None,
-                    xmax: float = None,
-                    padding: float = 3,
-                    width: float = 0.1,
-                    smearing: str = 'Gauss'
-                    ) -> Tuple[Sequence[float], Sequence[float]]:
-        """Resample DOS data, broadening with convolution
-
-        Args:
-            npts: Number of sampled points
-            xmin: Minimum sampled x value; if unspecified, a default is chosen
-            xmax: Maximum sampled x value; if unspecified, a default is chosen
-            padding: If xmin/xmax is unspecified, default value will be padded
-                by padding * width to avoid cutting off peaks.
-            width: Width of broadening kernel, passed to self.sample()
-            smearing: selection of broadening kernel, passed to self.sample()
-
-        Returns:
-            (x-values, sampled DOS)
-
-        The broadening kernel is closely approximated within a finite region:
-        The function is truncated at a distance of 3*width; for
-        a Gaussian this corresponds to a value of ~10^-4. The kernel is shifted
-        and rescaled to pass through zero at this point, maintaining unity
-        intensity.
-
-        """
-        self._check_positive_width(width)
-        self._check_spacing(width)
-
-        energies = self.get_energies()
-        if xmin is None:
-            xmin = min(energies) - (padding * width)
-        if xmax is None:
-            xmax = max(energies) + (padding * width)
-
-        new_energies = np.linspace(xmin, xmax, npts)
-        spacing = new_energies[1] - new_energies[0]
-        # Define histogram bins as evenly surrounding x points
-        bins = np.linspace(xmin - spacing / 2, xmax + spacing / 2, npts + 1)
-
-        kernel_range_in_pts = int(np.ceil(self.sigma_cutoff * width / spacing))
-        kernel_range = kernel_range_in_pts * spacing
-        kernel_x_values = np.linspace(-kernel_range, kernel_range,
-                                      kernel_range_in_pts * 2 + 1)
-
-        if smearing.lower() == 'gauss':
-            # Normalisation term of Gaussian is removed as we will next
-            # normalise "the hard way" to account for truncation.
-            kernel = np.exp(-0.5 * (kernel_x_values / width)**2)
-
-        else:
-            msg = 'Requested smearing type not recognized. Got {}'.format(
-                smearing)
-            raise ValueError(msg)
-
-        # Remove "step" at cutoff
-        kernel -= kernel[0]
-        # Normalise such that peaks sum to 1
-        kernel /= kernel.sum()
-        
-        # Re-bin the data to the new x-grid, rescaling for consistent density
-        input_spacing = energies[1] - energies[0]
-        weight_scale = input_spacing / spacing
-        weights, _ = np.histogram(energies, bins=bins,
-                                  weights=self.get_weights() * weight_scale,
-                                  density=False)
-
-        # Convolve with kernel on same grid
-        return new_energies, convolve(weights, kernel, mode='same')
-
     def __add__(self, other: 'GridDOSData') -> 'GridDOSData':
         # This method uses direct access to the mutable energy and weights data
         # (self._data) to avoid redundant copying operations. The __init__
@@ -424,6 +350,10 @@ class GridDOSData(DOSData):
         if not isinstance(other, GridDOSData):
             raise TypeError("GridDOSData can only be combined with other "
                             "GridDOSData objects")
+        if len(self._data[0, :]) != len(other.get_energies()):
+            raise ValueError("Cannot add GridDOSData objects with different-"
+                             "length energy grids.")
+            
         if not np.allclose(self._data[0, :], other.get_energies()):
             raise ValueError("Cannot add GridDOSData objects with different "
                              "energy grids.")
