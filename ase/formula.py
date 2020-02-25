@@ -19,6 +19,7 @@ class Formula:
                  formula: str = '',
                  *,
                  strict: bool = False,
+                 format: str = '',
                  _tree: Tree = None,
                  _count: Dict[str, int] = None):
         """Chemical formula object.
@@ -53,6 +54,9 @@ class Formula:
         ValueError
             on malformed formula
         """
+        if format:
+            assert _tree is None and _count is None
+            formula = Formula(formula).format(format)
         self._formula = formula
         self._tree = _tree or parse(formula)
         self._count = _count or count_tree(self._tree)
@@ -163,14 +167,32 @@ class Formula:
             _, f, N = self.stoichiometry()
             return dict2str({symb: n * N for symb, n in f._count.items()})
 
+        if fmt == 'reduce':
+            symbols = list(self)
+            n = len(symbols)
+            parts = []
+            i = 0
+            for j, symbol in enumerate(symbols):
+                if j == n - 1 or symbol != symbols[j + 1]:
+                    parts.append(symbol)
+                    m = j + 1 - i
+                    if m > 1:
+                        parts.append(str(m))
+                    i = j + 1
+            return ''.join(parts)
+
         if fmt == 'latex':
             return self._tostr('$_{', '}$')
+
         if fmt == 'html':
             return self._tostr('<sub>', '</sub>')
+
         if fmt == 'rest':
             return self._tostr(r'\ :sub`', r'`\ ')
+
         if fmt == '':
             return self._formula
+
         raise ValueError('Invalid format specifier')
 
     @staticmethod
@@ -180,6 +202,7 @@ class Formula:
                        _tree=[([(symb, n) for symb, n in dct.items()], 1)],
                        _count=dict(dct))
 
+    @staticmethod
     def from_list(symbols):  # (List[str]) -> Formula
         """Convert list of chemical symbols to Formula."""
         return Formula(''.join(symbols),
