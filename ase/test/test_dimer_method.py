@@ -14,7 +14,7 @@ def test_dimer_method():
 
     # Calculate using EMT
     atoms.set_calculator(EMT())
-    relaxed_energy = atoms.get_potential_energy()
+    atoms.get_potential_energy()
 
     # Set up the dimer
     d_control = DimerControl(initial_eigenmode_method = 'displacement', \

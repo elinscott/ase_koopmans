@@ -25,5 +25,5 @@ def test_bravais_eps():
 
     # Original cell is not perfect (rounding).
     perfect_bct_cell = bct.tocell()
-    perfect_bct_cellpar = bct.cellpar()
+    # perfect_bct_cellpar = bct.cellpar()
     assert perfect_bct_cell.get_bravais_lattice().name == 'BCT'
