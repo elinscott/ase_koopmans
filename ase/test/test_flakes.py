@@ -102,7 +102,7 @@ max_errors = {
     # ambiguous variable name 'O'
     'E741': 77,
     # too many blank lines (2)
-    'E303': 82,
+    'E303': 90,
     # expected 2 blank lines after class or function definition, found 1
     'E305': 83,
     # module level import not at top of file
@@ -160,6 +160,7 @@ def test_flake8():
         nmaxerrs = max_errors.get(err, 0)
         if nerrs <= nmaxerrs:
             continue
+        errmsg += 'Too many flakes: {} (max={})\n'.format(nerrs, nmaxerrs)
         errmsg += 'Offenses:\n' + '\n'.join(offenses[err]) + '\n'
 
     assert errmsg == '', errmsg
