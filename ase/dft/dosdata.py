@@ -367,3 +367,68 @@ class GridDOSData(DOSData):
         new_object = GridDOSData(self._data[0, :], new_weights,
                                  info=new_info)
         return new_object
+
+    def plot_dos(self,
+                 npts: int = 0,
+                 xmin: float = None,
+                 xmax: float = None,
+                 width: float = 0.1,
+                 smearing: str = 'Gauss',
+                 ax: Axes = None,
+                 show: bool = False,
+                 filename: str = None,
+                 mplargs: dict = None) -> Axes:
+        """Simple 1-D plot of DOS data
+
+        Data will be resampled onto a grid with `npts` points unless `npts` is
+        set to zero, in which case:
+        - no resampling takes place
+        - `width` and `smearing` are ignored
+        - `xmin` and `xmax` affect the axis limits of the plot, not the
+          underlying data.
+
+        If the special key 'label' is present in self.info, this will be set
+        as the label for the plotted line (unless overruled in mplargs). The
+        label is only seen if a legend is added to the plot (i.e. by calling
+        `ax.legend()`).
+
+        Args:
+            npts, xmin, xmax: output data range, as passed to self.sample_grid
+            width: Width of broadening kernel, passed to self.sample()
+            smearing: selection of broadening kernel, passed to self.sample()
+            ax: existing Matplotlib axes object. If not provided, a new figure
+                with one set of axes will be created using Pyplot
+            show: show the figure on-screen
+            filename: if a path is given, save the figure to this file
+            mplargs: additional arguments to pass to matplotlib plot command
+                (e.g. {'linewidth': 2} for a thicker line).
+
+
+        Returns:
+            Plotting axes. If "ax" was set, this is the same object.
+        """
+
+        if ax is None:
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.get_figure()
+
+        if mplargs is None:
+            mplargs = {}
+
+        if npts:
+            x, y = self.sample_grid(npts, xmin=xmin, xmax=xmax,
+                                    width=width, smearing=smearing)
+        else:
+            x, y = self.get_energies(), self.get_weights()
+
+        ax.plot(x, y, **mplargs)
+        ax.set_xlim(left=xmin, right=xmax)
+
+        if show:
+            fig.show()
+        if filename is not None:
+            fig.savefig(filename)
+
+        return ax
