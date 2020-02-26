@@ -31,6 +31,8 @@ class Formula:
             ``'30Cu+2CO'``, ``'Pt(CO)6'``.
         strict: bool
             Only allow real chemical symbols.
+        format: str
+            ???????????
 
         Examples
         --------
