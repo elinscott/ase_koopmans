@@ -4,9 +4,11 @@ import numpy as np
 from ase.build import molecule
 from ase.calculators.nwchem import NWChem
 
+
 @pytest.fixture
 def atoms():
     return molecule('H2')
+
 
 @pytest.mark.parametrize('charge, eref', ((-1, -24.036791014064605),
                                           (1, -14.365500960943171)))
