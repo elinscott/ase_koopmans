@@ -68,6 +68,34 @@ class TestRawDosData:
         assert np.allclose(sparse_dos.get_energies(), [1.2, 3.4, 5.])
         assert np.allclose(sparse_dos.get_weights(), [3., 2.1, 0.])
 
+    @pytest.mark.parametrize('other', [True, 1, 0.5, 'string'])
+    def test_equality_wrongtype(self, sparse_dos, other):
+        assert sparse_dos != other
+
+    equality_data = [(((1., 2.), (3., 4.), {'symbol': 'H'}),
+                      ((1., 2.), (3., 4.), {'symbol': 'H'}),
+                      True),
+                     (((1., 3.), (3., 4.), {'symbol': 'H'}),
+                      ((1., 2.), (3., 4.), {'symbol': 'H'}),
+                      False),
+                     (((1., 2.), (3., 5.), {'symbol': 'H'}),
+                      ((1., 2.), (3., 4.), {'symbol': 'H'}),
+                      False),
+                     (((1., 3.), (3., 5.), {'symbol': 'H'}),
+                      ((1., 2.), (3., 4.), {'symbol': 'H'}),
+                      False),
+                     (((1., 2.), (3., 4.), {'symbol': 'H'}),
+                      ((1., 2.), (3., 4.), {'symbol': 'He'}),
+                      False),
+                     (((1., 3.), (3., 4.), {'symbol': 'H'}),
+                      ((1., 2.), (3., 4.), {'symbol': 'He'}),
+                      False)]
+
+    @pytest.mark.parametrize('data_1, data_2, isequal', equality_data)
+    def test_equality(self, data_1, data_2, isequal):
+        assert (RawDOSData(*data_1[:2], info=data_1[2])
+                == RawDOSData(*data_2[:2], info=data_2[2])) == isequal
+
     def test_addition(self, sparse_dos, another_sparse_dos):
         summed_dos = sparse_dos + another_sparse_dos
         assert summed_dos.info == {'symbol': 'H'}
@@ -108,7 +136,7 @@ class TestRawDosData:
 
         with pytest.raises(ValueError):
             dos.sample([1], smearing="Gauss's spherical cousin")
-        
+
     def test_sampling_error(self, sparse_dos):
         with pytest.raises(ValueError):
             sparse_dos.sample([1, 2, 3], width=0.)
@@ -139,7 +167,7 @@ class TestRawDosData:
             mplargs = None
         else:
             mplargs = {'linewidth': linewidth}
-            
+
         if make_ax:
             _, ax = plt.subplots()
             ax_out = sparse_dos.plot_dos(npts=5, ax=ax, mplargs=mplargs,

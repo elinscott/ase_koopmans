@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from collections.abc import Sequence
 from functools import singledispatch
-from typing import Any, Iterable, Union
+from typing import Any, Iterable, List, overload, Union
 
 import numpy as np
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData
@@ -12,12 +12,22 @@ class DOSCollection(Sequence, metaclass=ABCMeta):
     def __init__(self, dos_series: Iterable[DOSData]) -> None:
         self._data = list(dos_series)
 
-    def __getitem__(self, key: Union[int, slice]):
-        if not isinstance(key, (int, slice)):
-            raise TypeError("index in DOSCollection must be an integer")
-        return self._data[key]
+    @overload  # noqa F811
+    def __getitem__(self, item: int) -> DOSData:
+        ...
 
-    def __len__(self):
+    @overload  # noqa F811
+    def __getitem__(self, item: slice) -> List[DOSData]:
+        ...
+
+    def __getitem__(self, item): # noqa F811
+        if isinstance(item, (int, slice)):
+            return self._data[item]
+        else:
+            raise TypeError("index in DOSCollection must be an integer or "
+                            "slice")
+
+    def __len__(self) -> int:
         return len(self._data)
 
     def __add__(self,
@@ -79,11 +89,37 @@ class GridDOSCollection(DOSCollection):
     def __init__(self, dos_series: Iterable[GridDOSData]) -> None:
         dos_list = list(dos_series)
         self._energies = dos_list[0].get_energies()
+        self._weights = np.empty((len(dos_list), len(self._energies)), float)
+        self._info = []
 
-        for dos_data in dos_list:
+        for i, dos_data in enumerate(dos_list):
             if not isinstance(dos_data, GridDOSData):
                 raise TypeError("GridDOSCollection can only store "
                                 "GridDOSData objects.")
-            if not np.allclose(dos_data.get_energies(), self._energies):
+            if (dos_data.get_energies().shape != self._energies.shape
+                or not np.allclose(dos_data.get_energies(), self._energies)):
                 raise ValueError("All GridDOSData objects in GridDOSCollection"
                                  " must have the same energy axis.")
+            self._weights[i, :] = dos_data.get_weights()
+            self._info.append(dos_data.info)
+
+    def __len__(self) -> int:
+        return self._weights.shape[0]
+
+    @overload  # noqa F811
+    def __getitem__(self, item: int) -> DOSData:
+        ...
+
+    @overload  # noqa F811
+    def __getitem__(self, item: slice) -> List[DOSData]:
+        ...
+
+    def __getitem__(self, item):  # noqa F811
+        if isinstance(item, int):
+            return GridDOSData(self._energies, self._weights[item, :],
+                               info=self._info[item])
+        elif isinstance(item, slice):
+            return [self[i] for i in range(len(self))[item]]
+        else:
+            raise TypeError("index in DOSCollection must be an integer or "
+                            "slice")

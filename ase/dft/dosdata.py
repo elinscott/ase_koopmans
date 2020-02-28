@@ -2,7 +2,7 @@
 # towards replacing ase.dft.dos and ase.dft.pdos
 from abc import ABCMeta, abstractmethod
 import logging
-from typing import Dict, Sequence, Tuple
+from typing import Any, Dict, Sequence, Tuple
 
 from matplotlib.axes import Axes
 import numpy as np
@@ -48,6 +48,16 @@ class DOSData(metaclass=ABCMeta):
                         width,
                         smearing=smearing))
         return weights_grid
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        elif not self.info == other.info:
+            return False
+        elif not np.allclose(self.get_weights(), other.get_weights()):
+            return False
+        else:
+            return np.allclose(self.get_energies(), other.get_energies())
 
     @staticmethod
     def _delta(x: np.ndarray,
