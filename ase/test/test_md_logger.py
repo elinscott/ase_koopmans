@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from ase.optimize import FIRE, BFGS
 from ase.data import s22
@@ -30,7 +31,9 @@ def fmax(forces):
     return np.sqrt((forces ** 2).sum(axis=1).max())
 
 
-def test_opt(cls, atoms, calc, logfile="opt.log", trajectory="opt.traj"):
+@pytest.mark.parametrize('cls', [FIRE, BFGS])
+def test_optimizer(cls, atoms=dimer, calc=calc,
+                   logfile="opt.log", trajectory="opt.traj"):
     """run optimization and verify that log and trajectory coincide"""
 
     # clean files to make sure the correct ones are tested
@@ -57,21 +60,19 @@ def test_opt(cls, atoms, calc, logfile="opt.log", trajectory="opt.traj"):
             assert np.allclose(fmax1, fmax2, atol=0.01), (fmax1, fmax2)
 
 
-def test_md(
-    cls, atoms, calc, kwargs, logfile="md.log", timestep=1 * u.fs, trajectory="md.traj"
-):
+@pytest.mark.parametrize('cls_and_kwargs', md_cls_and_kwargs)
+def test_md(cls_and_kwargs, atoms=dimer, calc=calc, logfile="md.log",
+            timestep=1 * u.fs, trajectory="md.traj"):
     """ run MD for 10 steps and verify that trajectory and log coincide """
 
-    # clean files to make sure the correct ones are tested
-    for file in (*Path().glob("*.log"), *Path().glob("*.traj")):
-        file.unlink()
-
+    cls, kwargs = cls_and_kwargs
     if hasattr(atoms, "constraints"):
         del atoms.constraints
 
     atoms.calc = calc
 
-    md = cls(atoms, logfile=logfile, timestep=timestep, trajectory=trajectory, **kwargs)
+    md = cls(atoms, logfile=logfile, timestep=timestep,
+             trajectory=trajectory, **kwargs)
 
     # run md two times
     md.run(steps=5)
@@ -89,13 +90,3 @@ def test_md(
 
             assert np.allclose(T1, T2, atol=0.1), (T1, T2)
             assert np.allclose(Epot1, Epot2, atol=0.01), (Epot1, Epot2)
-
-
-# test optimizer
-for cls in (FIRE, BFGS):
-    test_opt(cls, dimer, calc)
-
-# test md
-del dimer.constraints
-for cls, kwargs in md_cls_and_kwargs:
-    test_md(cls, dimer, calc, kwargs=kwargs)

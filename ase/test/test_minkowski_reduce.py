@@ -3,7 +3,13 @@ from ase.geometry import minkowski_reduce
 from ase.cell import Cell
 from ase.utils import seterr
 
-with seterr(all='raise'):
+
+def test_minkowski():
+    with seterr(all='raise'):
+        run()
+
+
+def run():
     tol = 1E-14
     rng = np.random.RandomState(0)
 
