@@ -20,7 +20,7 @@ def array_close(val, reference, releps=releps, abseps=abseps):
         close(vali, refflat[i], releps, abseps)
 
 
-def main():
+def test_main():
     # do all non-periodic calculations with Adenine-Thymine complex
     system = create_s22_system('Adenine-thymine_complex_stack')
 
@@ -132,6 +132,3 @@ def main():
     # by dftd3. So, use very loose comparison criteria.
     s_numer = system.calc.calculate_numerical_stress(system, d=1e-4)
     array_close(s_numer, s_ref, releps=1e-2, abseps=1e-3)
-
-
-main()
