@@ -17,7 +17,7 @@ PSEUDO = {'Si': 'Si.rel-pbe-rrkj.UPF'}
 # export ASE_ESPRESSO_COMMAND="mpirun -n 4 $HOME/Compile/q-e/bin/pw.x -in PREFIX.pwi > PREFIX.pwo"
 # export ESPRESSO_PSEUDO="/path/to/pseudos"
 
-def main():
+def test_main():
     silicon = bulk('Si')
     calc = Espresso(pseudopotentials=PSEUDO,
                     ecutwfc=50.0)
@@ -29,5 +29,3 @@ def main():
     assert calc.get_eigenvalues(spin=0, kpt=0) is not None
     assert calc.get_number_of_spins() is not None
     assert calc.get_k_point_weights() is not None
-
-main()
