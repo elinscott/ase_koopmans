@@ -1,12 +1,17 @@
+from random import randint
+import numpy as np
+import pytest
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.utils.structure_comparator import SpgLibNotFoundError
 from ase.build import bulk
 from ase import Atoms
 from ase.spacegroup import spacegroup, crystal
-from random import randint
-import numpy as np
 
 heavy_test = False
+
+@pytest.fixture(scope='module')
+def comparator():
+    return SymmetryEquivalenceCheck()
 
 
 def get_atoms_with_mixed_elements(crystalstructure="fcc"):
@@ -294,29 +299,3 @@ def test_supercell_w_periodic_atom_removed(comparator):
 
     assert comparator.compare(a0, a5)
     assert comparator.compare(a5, a0) == comparator.compare(a0, a5)
-
-
-def run_all_tests(comparator):
-    test_compare(comparator)
-    test_fcc_bcc(comparator)
-    test_single_impurity(comparator)
-    test_translations(comparator)
-    test_rot_60_deg(comparator)
-    test_rot_120_deg(comparator)
-    test_rotations_to_standard(comparator)
-    test_point_inversion(comparator)
-    test_mirror_plane(comparator)
-    test_hcp_symmetry_ops(comparator)
-    test_fcc_symmetry_ops(comparator)
-    test_bcc_symmetry_ops(comparator)
-    test_bcc_translation(comparator)
-    test_one_atom_out_of_pos(comparator)
-    test_reduce_to_primitive(comparator)
-    test_order_of_candidates(comparator)
-    test_one_vs_many()
-    test_original_paper_structures()
-    test_supercell_w_periodic_atom_removed(comparator)
-
-
-comparator = SymmetryEquivalenceCheck()
-run_all_tests(comparator)
