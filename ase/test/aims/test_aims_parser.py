@@ -2,7 +2,8 @@ from numpy.linalg import norm
 from ase.io import read
 
 
-def run():
+def test_run():
+    write_output()
     atoms = read("aims.out", format="aims-output")
 
     # find total energy in aims.out
@@ -55,5 +56,3 @@ def write_output():
         f.write(output)
 
 
-write_output()
-run()
