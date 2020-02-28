@@ -14,91 +14,6 @@ import ase.io
 from ase import units
 from ase.md.verlet import VelocityVerlet
 
-# potential_path must be set as an environment variable
-
-cmds = ["pair_style eam/alloy",
-        "pair_coeff * * NiAlH_jea.eam.alloy Ni H"]
-
-nickel = bulk('Ni', cubic=True)
-nickel += Atom('H', position=nickel.cell.diagonal()/2)
-# Bit of distortion
-nickel.set_cell(nickel.cell + [[0.1, 0.2, 0.4],
-                               [0.3, 0.2, 0.0],
-                               [0.1, 0.1, 0.1]], scale_atoms=True)
-
-lammps = LAMMPSlib(lmpcmds=cmds,
-                   atom_types={'Ni': 1, 'H': 2},
-                   log_file='test.log', keep_alive=True)
-
-nickel.set_calculator(lammps)
-
-E = nickel.get_potential_energy()
-F = nickel.get_forces()
-S = nickel.get_stress()
-
-print('Energy: ', E)
-print('Forces:', F)
-print('Stress: ', S)
-print()
-
-E = nickel.get_potential_energy()
-F = nickel.get_forces()
-S = nickel.get_stress()
-
-
-lammps = LAMMPSlib(lmpcmds=cmds,
-                   log_file='test.log', keep_alive=True)
-nickel.set_calculator(lammps)
-
-E2 = nickel.get_potential_energy()
-F2 = nickel.get_forces()
-S2 = nickel.get_stress()
-
-assert_allclose(E, E2, atol=1e-4, rtol=1e-4)
-assert_allclose(F, F2, atol=1e-4, rtol=1e-4)
-assert_allclose(S, S2, atol=1e-4, rtol=1e-4)
-
-nickel.rattle(stdev=0.2)
-E3 = nickel.get_potential_energy()
-F3 = nickel.get_forces()
-S3 = nickel.get_stress()
-
-print('rattled atoms')
-print('Energy: ', E3)
-print('Forces:', F3)
-print('Stress: ', S3)
-print()
-
-assert not np.allclose(E, E3)
-assert not np.allclose(F, F3)
-assert not np.allclose(S, S3)
-
-nickel += Atom('H', position=nickel.cell.diagonal()/4)
-E4 = nickel.get_potential_energy()
-F4 = nickel.get_forces()
-S4 = nickel.get_stress()
-
-assert not np.allclose(E4, E3)
-assert not np.allclose(F4[:-1, :], F3)
-assert not np.allclose(S4, S3)
-
-
-# the example from the docstring
-
-cmds = ["pair_style eam/alloy",
-        "pair_coeff * * NiAlH_jea.eam.alloy Al H"]
-
-Ni = bulk('Ni', cubic=True)
-H = Atom('H', position=Ni.cell.diagonal()/2)
-NiH = Ni + H
-
-lammps = LAMMPSlib(lmpcmds=cmds, log_file='test.log')
-
-NiH.set_calculator(lammps)
-print("Energy ", NiH.get_potential_energy())
-
-
-# a more complicated example, reading in a LAMMPS data file
 
 # first, we generate the LAMMPS data file
 lammps_data_file = """
@@ -168,35 +83,125 @@ Angles
 3 1 5 6 7
 4 1 6 7 8
 """
-with open('lammps.data', 'w') as fd:
-    fd.write(lammps_data_file)
 
-# then we run the actual test
 
-at = ase.io.read('lammps.data', format='lammps-data', Z_of_type={1: 26},
-                 units='real')
 
-header = ["units           real",
-          "atom_style      full",
-          "boundary        p p p",
-          "box tilt        large",
-          "pair_style      lj/cut/coul/long 12.500",
-          "bond_style      harmonic",
-          "angle_style     harmonic",
-          "kspace_style    ewald 0.0001",
-          "kspace_modify   gewald 0.01",
-          "read_data       lammps.data"]
-cmds = []
 
-lammps = LAMMPSlib(lammps_header=header, lmpcmds=cmds, atom_types={'Fe': 1},
-                   create_atoms=False, create_box=False, boundary=False,
-                   keep_alive=True, log_file='test.log')
-at.set_calculator(lammps)
-dyn = VelocityVerlet(at, 1 * units.fs)
+def test_lammpslib():
+    # potential_path must be set as an environment variable
 
-assert_allclose(at.get_potential_energy(), 2041.411982950972,
-                atol=1e-4, rtol=1e-4)
+    cmds = ["pair_style eam/alloy",
+            "pair_coeff * * NiAlH_jea.eam.alloy Ni H"]
 
-dyn.run(10)
-assert_allclose(at.get_potential_energy(), 312.4315854721744,
-                atol=1e-4, rtol=1e-4)
+    nickel = bulk('Ni', cubic=True)
+    nickel += Atom('H', position=nickel.cell.diagonal()/2)
+    # Bit of distortion
+    nickel.set_cell(nickel.cell + [[0.1, 0.2, 0.4],
+                                   [0.3, 0.2, 0.0],
+                                   [0.1, 0.1, 0.1]], scale_atoms=True)
+
+    lammps = LAMMPSlib(lmpcmds=cmds,
+                       atom_types={'Ni': 1, 'H': 2},
+                       log_file='test.log', keep_alive=True)
+
+    nickel.set_calculator(lammps)
+
+    E = nickel.get_potential_energy()
+    F = nickel.get_forces()
+    S = nickel.get_stress()
+
+    print('Energy: ', E)
+    print('Forces:', F)
+    print('Stress: ', S)
+    print()
+
+    E = nickel.get_potential_energy()
+    F = nickel.get_forces()
+    S = nickel.get_stress()
+
+
+    lammps = LAMMPSlib(lmpcmds=cmds,
+                       log_file='test.log', keep_alive=True)
+    nickel.set_calculator(lammps)
+
+    E2 = nickel.get_potential_energy()
+    F2 = nickel.get_forces()
+    S2 = nickel.get_stress()
+
+    assert_allclose(E, E2, atol=1e-4, rtol=1e-4)
+    assert_allclose(F, F2, atol=1e-4, rtol=1e-4)
+    assert_allclose(S, S2, atol=1e-4, rtol=1e-4)
+
+    nickel.rattle(stdev=0.2)
+    E3 = nickel.get_potential_energy()
+    F3 = nickel.get_forces()
+    S3 = nickel.get_stress()
+
+    print('rattled atoms')
+    print('Energy: ', E3)
+    print('Forces:', F3)
+    print('Stress: ', S3)
+    print()
+
+    assert not np.allclose(E, E3)
+    assert not np.allclose(F, F3)
+    assert not np.allclose(S, S3)
+
+    nickel += Atom('H', position=nickel.cell.diagonal()/4)
+    E4 = nickel.get_potential_energy()
+    F4 = nickel.get_forces()
+    S4 = nickel.get_stress()
+
+    assert not np.allclose(E4, E3)
+    assert not np.allclose(F4[:-1, :], F3)
+    assert not np.allclose(S4, S3)
+
+
+    # the example from the docstring
+
+    cmds = ["pair_style eam/alloy",
+            "pair_coeff * * NiAlH_jea.eam.alloy Al H"]
+
+    Ni = bulk('Ni', cubic=True)
+    H = Atom('H', position=Ni.cell.diagonal()/2)
+    NiH = Ni + H
+
+    lammps = LAMMPSlib(lmpcmds=cmds, log_file='test.log')
+
+    NiH.set_calculator(lammps)
+    print("Energy ", NiH.get_potential_energy())
+
+
+    # a more complicated example, reading in a LAMMPS data file
+
+    # then we run the actual test
+    with open('lammps.data', 'w') as fd:
+        fd.write(lammps_data_file)
+
+    at = ase.io.read('lammps.data', format='lammps-data', Z_of_type={1: 26},
+                     units='real')
+
+    header = ["units           real",
+              "atom_style      full",
+              "boundary        p p p",
+              "box tilt        large",
+              "pair_style      lj/cut/coul/long 12.500",
+              "bond_style      harmonic",
+              "angle_style     harmonic",
+              "kspace_style    ewald 0.0001",
+              "kspace_modify   gewald 0.01",
+              "read_data       lammps.data"]
+    cmds = []
+
+    lammps = LAMMPSlib(lammps_header=header, lmpcmds=cmds, atom_types={'Fe': 1},
+                       create_atoms=False, create_box=False, boundary=False,
+                       keep_alive=True, log_file='test.log')
+    at.set_calculator(lammps)
+    dyn = VelocityVerlet(at, 1 * units.fs)
+
+    assert_allclose(at.get_potential_energy(), 2041.411982950972,
+                    atol=1e-4, rtol=1e-4)
+
+    dyn.run(10)
+    assert_allclose(at.get_potential_energy(), 312.4315854721744,
+                    atol=1e-4, rtol=1e-4)
