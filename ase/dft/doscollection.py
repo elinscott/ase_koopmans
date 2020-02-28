@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from collections.abc import Sequence
 from functools import singledispatch
-from typing import Iterable, Union
+from typing import Any, Iterable, Union
 
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData
 
@@ -39,6 +39,13 @@ class DOSCollection(Sequence, metaclass=ABCMeta):
         """
         return _add_to_collection(other, self)
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        elif not len(self) == len(other):
+            return False
+        else:
+            return all([a == b for a, b in zip(self, other)])
 
 @singledispatch
 def _add_to_collection(other: DOSData,
