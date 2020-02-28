@@ -115,10 +115,3 @@ def test_read_write_bool_key_value_pair():
     row = db.get(id=uid)
     assert row.is_water
     assert not row.is_solid
-
-test_connect()
-test_write_read()
-test_write_read_with_calculator()
-test_update()
-test_delete()
-test_read_write_bool_key_value_pair()

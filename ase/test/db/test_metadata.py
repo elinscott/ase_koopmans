@@ -1,3 +1,4 @@
+import pytest
 from ase.db import connect
 from ase import Atoms
 
@@ -13,7 +14,9 @@ plot = {'a': [0, 1, 2],
                    'xlabel': 'blah-blah [eV]',
                    'ylabel': 'Answers'}}
 
-for name in ['md.json', 'md.db']:
+
+@pytest.mark.parametrize('name', ['md.json', 'md.db'])
+def test_metadata(name):
     print(name)
     db = connect(name)
     db.write(Atoms('H'), answer=42, kind='atom', foo=True)
