@@ -56,7 +56,7 @@ def check(name, xsf_text, check_data):
     assert open(outfname).read() == open(outfname2).read()
 
 
-def main():
+def test_xsf_spec():
     files = {'01-comments': f1,
              '02-atoms': f2,
              '03-periodic': f3,
@@ -272,5 +272,3 @@ datagrid = """BEGIN_BLOCK_DATAGRID_3D
    END_DATAGRID_3D                      
  END_BLOCK_DATAGRID_3D          
 """
-
-main()
