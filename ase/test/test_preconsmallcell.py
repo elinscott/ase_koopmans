@@ -1,10 +1,13 @@
+import pytest
 from ase.build import bulk
 from ase.calculators.emt import EMT
 from ase.optimize.precon import PreconLBFGS
 
 import warnings
 
-for N in [1, 3]:
+
+@pytest.mark.parametrize('N', [1, 3])
+def test_precon(N):
     a0 = bulk('Cu', cubic=True)
     a0 *= (N, N, N)
 
