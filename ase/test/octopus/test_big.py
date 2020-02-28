@@ -43,7 +43,7 @@ def calculate(name, system, **kwargs):
     assert eig_err < 5e-5
     return calc
 
-if 1:
+def test_h2o():
     calc = calculate('H2O',
                      g2['H2O'],
                      OutputFormat='xcrysden',
@@ -60,7 +60,7 @@ if 1:
     energy_err = abs(-463.5944954 - E)
     assert energy_err < 0.01, energy_err
 
-if 1:
+def test_o2():
     atoms = g2['O2']
     atoms.center(vacuum=2.0)
     calc = calculate('O2',
@@ -72,7 +72,7 @@ if 1:
     #magmoms = calc.get_magnetic_moments()
     #print('magmom', magmom)
     #print('magmoms', magmoms)
-if 1:
+def test_si():
     calc = calculate('Si',
                      bulk('Si', orthorhombic=True),
                      KPointsGrid=[[4, 4, 4]],
@@ -84,6 +84,8 @@ if 1:
                      Spacing='0.35 * Angstrom')
     eF = calc.get_fermi_level()
     print('eF', eF)
+
+
 if 0:  # This calculation does not run will in Octopus
     # We will do the "toothless" spin-polarised Si instead.
     calc = calculate('Fe',
