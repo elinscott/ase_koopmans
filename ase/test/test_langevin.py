@@ -1,7 +1,8 @@
 import numpy as np
 from ase import Atoms
 from ase.units import fs, kB
-from ase.calculators.test import TestPotential
+# Rename import so pytest won't pick up the class as a test:
+from ase.calculators.test import TestPotential as TstPotential
 from ase.md import Langevin
 from ase.io import Trajectory, read
 from ase.optimize import QuasiNewton
@@ -21,7 +22,7 @@ def run():
                          (1, 0, 0),
                          (0, 1, 0),
                          (0.1, 0.2, 0.7)],
-              calculator=TestPotential())
+              calculator=TstPotential())
     print(a.get_forces())
     # Langevin should reproduce Verlet if friction is 0.
     md = Langevin(a, 0.5 * fs, 300 * kB, 0.0, logfile='-', loginterval=500)
