@@ -61,7 +61,3 @@ def test_create_units():
     for unit_name in new_units.keys():
         assert getattr(new_units, unit_name) == getattr(ase.units, unit_name)
         assert new_units[unit_name] == getattr(ase.units, unit_name)
-
-
-test_units()
-test_create_units()
