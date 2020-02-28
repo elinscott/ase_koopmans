@@ -1,3 +1,4 @@
+import pytest
 from ase.calculators.calculator import kpts2kpts
 from ase.lattice import all_variants
 from ase import Atoms
@@ -10,7 +11,8 @@ from ase import Atoms
 # isn't fulfilled then it means that something
 # has gone wrong (most likely that the bravais
 # lattice wasn't correctly identified).
-for lat in all_variants():
+@pytest.mark.parametrize('lat', all_variants())
+def test_kpts2kpts():
     print()
     print(lat)
     bandpath = lat.bandpath()
