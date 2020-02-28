@@ -7,7 +7,7 @@ from ase.build import molecule
 from ase.calculators.psi4 import Psi4
 
 
-def main():
+def test_main():
     atoms = molecule('H2O')
     atoms.rotate(30, 'x')
 
@@ -36,6 +36,3 @@ def main():
     # Unfortunately, we can't currently remove timer.dat, because Psi4
     # creates the file after this script exits. Not even atexit works.
     # os.remove('timer.dat')
-
-
-main()
