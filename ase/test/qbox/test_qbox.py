@@ -1,6 +1,7 @@
 """Tests related to QBOX"""
 
 import numpy as np
+import pytest
 
 from ase import Atoms
 from ase.io import qbox
@@ -10,13 +11,17 @@ from ase.io import formats
 # in the manifest.  So we invoke a function that prepares the files that
 # we need:
 from ase.test.qbox.test_qboxdata import writefiles
-writefiles()
+
+
+@pytest.fixture
+def qboxfiles():
+    writefiles()
 
 test_qbox = 'test.xml'
 test_qball = '04_md_ntc.reference.xml'
 
 
-def read_output():
+def test_read_output(qboxfiles):
     """Test reading the output file"""
 
     # Read only one frame
@@ -55,7 +60,7 @@ def read_output():
                        atol=1e-7)  # 2nd frame
 
 
-def test_format():
+def test_format(qboxfiles):
     """Make sure the `formats.py` operations work"""
 
     atoms = formats.read(test_qbox)
@@ -66,8 +71,3 @@ def test_format():
 
     atoms = formats.read(test_qball)
     assert len(atoms) == 32
-
-
-
-read_output()
-test_format()
