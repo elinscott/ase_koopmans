@@ -4,7 +4,7 @@ from ase import Atoms
 from ase.calculators.nwchem import NWChem
 
 
-def main():
+def test_main():
     """Perform C_{\\inf v} calculation on Cr_2."""
     # PBE from
     # J. Chem. Phys. 112 , 5576 (2000)
@@ -43,6 +43,3 @@ def main():
     e_dimer = cr_dimer.get_potential_energy()
     e_tot = e_dimer - fragment_energies.sum()
     assert abs(e_tot - e_literature) < 0.01
-
-
-main()

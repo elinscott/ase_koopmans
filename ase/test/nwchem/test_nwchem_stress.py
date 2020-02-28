@@ -4,7 +4,7 @@ from ase.calculators.nwchem import NWChem
 from numpy.testing import assert_allclose
 
 
-def main():
+def test_main():
     atoms = bulk('C')
 
     testname = 'stress_test'
@@ -25,6 +25,3 @@ def main():
     os.remove(os.path.join(testname, testname + '.db'))
     for suffix in ['psp', 'vpp', 'vpp2']:
         os.remove(os.path.join(testname, 'C.' + suffix))
-
-
-main()

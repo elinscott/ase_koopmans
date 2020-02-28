@@ -34,7 +34,7 @@ def _run_calc(atoms_in, theory, eref, forces=False, **kwargs):
     _try_delete(theory, 'junk', 'inp')
 
 
-def main():
+def test_main():
     atoms = molecule('H2O')
     # GTO calculations
     _run_calc(atoms, 'dft', -2051.9802410863354, basis='3-21G', forces=True)
@@ -49,6 +49,3 @@ def main():
     _run_calc(atoms, 'pspw', -465.1290581383751)
     _run_calc(atoms, 'band', -465.1290611316276)
     _run_calc(atoms, 'paw', -2065.6600649367365)
-
-
-main()
