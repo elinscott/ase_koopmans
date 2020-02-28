@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from functools import singledispatch
 from typing import Any, Iterable, Union
 
+import numpy as np
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData
 
 
@@ -11,8 +12,8 @@ class DOSCollection(Sequence, metaclass=ABCMeta):
     def __init__(self, dos_series: Iterable[DOSData]) -> None:
         self._data = list(dos_series)
 
-    def __getitem__(self, key: int):
-        if not isinstance(key, int):
+    def __getitem__(self, key: Union[int, slice]):
+        if not isinstance(key, (int, slice)):
             raise TypeError("index in DOSCollection must be an integer")
         return self._data[key]
 
@@ -47,6 +48,7 @@ class DOSCollection(Sequence, metaclass=ABCMeta):
         else:
             return all([a == b for a, b in zip(self, other)])
 
+
 @singledispatch
 def _add_to_collection(other: DOSData,
                        collection: DOSCollection) -> DOSCollection:
@@ -71,6 +73,7 @@ class RawDOSCollection(DOSCollection):
             if not isinstance(dos_data, RawDOSData):
                 raise TypeError("RawDOSCollection can only store "
                                 "RawDOSData objects.")
+
 
 class GridDOSCollection(DOSCollection):
     def __init__(self, dos_series: Iterable[GridDOSData]) -> None:
