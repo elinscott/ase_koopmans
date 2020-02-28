@@ -3,6 +3,7 @@
 # The tests and pre-computed values come from the program cctbx, in which
 # this algorithm was originally implemented.
 
+import pytest
 import numpy as np
 
 from ase import Atoms
@@ -134,7 +135,9 @@ cells_out = np.array([
 
 conf = Atoms(pbc=True)
 
-for i, cell in enumerate(cells_in):
+@pytest.mark.parametrize('i', range(len(cells_in)))
+def test_niggli(i):
+    cell = cells_in[i]
     conf.set_cell(cell)
     niggli_reduce(conf)
     cell = conf.get_cell()
