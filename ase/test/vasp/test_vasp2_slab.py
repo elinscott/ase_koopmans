@@ -18,7 +18,7 @@ def create_slab_with_constraints():
     return slab
 
 
-def ase_relax():
+def test_ase_relax():
     slab = create_slab_with_constraints()
     calc = Vasp(xc='LDA', ediffg=-1e-3, lwave=False, lcharg=False)
     slab.set_calculator(calc)
@@ -31,7 +31,7 @@ def ase_relax():
     assert not np.allclose(res.positions[2], init_slab.positions[2])
 
 
-def vasp_relax():
+def test_vasp_relax():
     slab = create_slab_with_constraints()
     calc = Vasp(xc='LDA', isif=0, nsw=3, ibrion=1,
                 ediffg=-1e-3, lwave=False, lcharg=False)
@@ -41,11 +41,3 @@ def vasp_relax():
     res = read('OUTCAR')
     assert np.allclose(res.positions[0], init_slab.positions[0])
     assert not np.allclose(res.positions[2], init_slab.positions[2])
-
-
-def run_tests():
-    ase_relax()
-    vasp_relax()
-
-
-run_tests()
