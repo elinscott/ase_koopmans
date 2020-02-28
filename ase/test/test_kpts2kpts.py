@@ -12,7 +12,7 @@ from ase import Atoms
 # has gone wrong (most likely that the bravais
 # lattice wasn't correctly identified).
 @pytest.mark.parametrize('lat', all_variants())
-def test_kpts2kpts():
+def test_kpts2kpts(lat):
     print()
     print(lat)
     bandpath = lat.bandpath()

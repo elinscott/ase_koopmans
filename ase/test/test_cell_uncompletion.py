@@ -8,7 +8,7 @@ def all_pbcs():
     yield from itertools.product(values, values, values)
 
 
-@pytest.mark.parametrize('cell', Cell.new([3, 4, 5]), Cell.new([2, 0, 3]))
+@pytest.mark.parametrize('cell', [Cell.new([3, 4, 5]), Cell.new([2, 0, 3])])
 def test_uncomplete(cell):
     for pbc in all_pbcs():
         ucell = cell.uncomplete(pbc)
