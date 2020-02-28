@@ -62,10 +62,3 @@ def test_pdb_read_with_arrays():
     assert len(pdb_atoms) == 4
     assert np.allclose(pdb_atoms.arrays['occupancy'], expected_occupancy)
     assert np.allclose(pdb_atoms.arrays['bfactor'], expected_bfactor)
-
-
-if __name__ in ('__main__', 'test'):
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', 'Length of occupancy', UserWarning)
-        test_pdb_read()
-    test_pdb_read_with_arrays()
