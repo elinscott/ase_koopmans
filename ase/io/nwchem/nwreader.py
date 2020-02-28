@@ -332,7 +332,7 @@ def _get_gto_kpts(chunk):
 
 # Extracts MO eigenvalue and occupancy for a GTO calculation
 _extract_vector = _define_pattern(
-    r'^[ \t]+Vector[ \t]+([\S])+[ \t]+Occ=([\S]+)[ \t]+E=([\S]+)[ \t]*\n',
+    r'^[ \t]+Vector[ \t]+([\S])+[ \t]+Occ=([\S]+)[ \t]+E=[ \t]*([\S]+)[ \t]*\n',
     " Vector    1  Occ=2.000000D+00  E=-2.043101D+01\n", re.M,
 )
 
