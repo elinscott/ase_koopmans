@@ -14,7 +14,7 @@ import numpy as np
 assert installed()
 
 
-def main():
+def test_main():
     assert installed()
 
     # simple test calculation of CO molecule
@@ -49,7 +49,3 @@ def main():
 
     # Cleanup
     calc.clean()
-
-
-if 1:
-    main()
