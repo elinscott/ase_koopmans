@@ -265,44 +265,46 @@ C 1 0.696482000 0.624775000 0.484183000 1.0
 END
 """
 
-filepath = 'test.res'
-f = open(filepath, 'w')
-f.write(test_res)
-f.close()
 
-res = Res.from_file(filepath)
-assert res.atoms.get_chemical_formula() == 'C194H60'
+def test_res():
+    filepath = 'test.res'
+    f = open(filepath, 'w')
+    f.write(test_res)
+    f.close()
 
-atoms = read_res(filepath)
-assert res.atoms == atoms
-assert res.energy == atoms.get_potential_energy()
+    res = Res.from_file(filepath)
+    assert res.atoms.get_chemical_formula() == 'C194H60'
 
-spc = SinglePointCalculator(atoms, energy=res.energy)
-atoms.set_calculator(spc)
+    atoms = read_res(filepath)
+    assert res.atoms == atoms
+    assert res.energy == atoms.get_potential_energy()
 
-write_res('test2.res', atoms)
-atoms2 = read_res(filepath)
-assert atoms2 == atoms
+    spc = SinglePointCalculator(atoms, energy=res.energy)
+    atoms.set_calculator(spc)
 
-write_res('test3.res', atoms, write_info=False, significant_figures=9)
-atoms3 = read_res('test3.res')
-assert atoms3 == atoms
+    write_res('test2.res', atoms)
+    atoms2 = read_res(filepath)
+    assert atoms2 == atoms
 
-res_string = """TITL
-CELL 1.0 1.0 1.0 1.0 90.0 90.0 90.0
-LATT -1
-SFAC Si F
-Si 1 0.000000 0.000000 0.000000 1.0
-F 2 0.750000 0.500000 0.750000 1.0"""
-res = Res.from_string(res_string)
-assert res.atoms.get_chemical_formula() == 'FSi'
-assert len(res.atoms) == 2
+    write_res('test3.res', atoms, write_info=False, significant_figures=9)
+    atoms3 = read_res('test3.res')
+    assert atoms3 == atoms
 
-struct = Atoms(cell=[2.5, 3.5, 7.0],
-               symbols=['Na', 'Cl'],
-               positions=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
-res = Res(struct)
-res_string = str(res)
-lines = res_string.splitlines()
-assert lines[1] == ('CELL 1.0 2.500000 3.500000 7.000000 '
-                    '90.000000 90.000000 90.000000')
+    res_string = """TITL
+    CELL 1.0 1.0 1.0 1.0 90.0 90.0 90.0
+    LATT -1
+    SFAC Si F
+    Si 1 0.000000 0.000000 0.000000 1.0
+    F 2 0.750000 0.500000 0.750000 1.0"""
+    res = Res.from_string(res_string)
+    assert res.atoms.get_chemical_formula() == 'FSi'
+    assert len(res.atoms) == 2
+
+    struct = Atoms(cell=[2.5, 3.5, 7.0],
+                   symbols=['Na', 'Cl'],
+                   positions=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    res = Res(struct)
+    res_string = str(res)
+    lines = res_string.splitlines()
+    assert lines[1] == ('CELL 1.0 2.500000 3.500000 7.000000 '
+                        '90.000000 90.000000 90.000000')

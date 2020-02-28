@@ -3937,27 +3937,29 @@ Space group operators:
                  Voluntary context switches:            0
 """
 
-with open('OUTCAR', 'w') as outcar_f:
-    outcar_f.write(outcar)
-tol = 1e-6
 
-a1 = read('OUTCAR', index=-1)
-assert isinstance(a1, Atoms)
-assert np.isclose(a1.get_potential_energy(force_consistent=True),
-                  -68.22868532, atol=tol)
-assert np.isclose(a1.get_potential_energy(force_consistent=False),
-                  -68.23102426, atol=tol)
+def test_vasp_out():
+    with open('OUTCAR', 'w') as outcar_f:
+        outcar_f.write(outcar)
+    tol = 1e-6
 
-a2 = read('OUTCAR', index=':')
-assert isinstance(a2, list)
-assert isinstance(a2[0], Atoms)
-assert len(a2) == 1
+    a1 = read('OUTCAR', index=-1)
+    assert isinstance(a1, Atoms)
+    assert np.isclose(a1.get_potential_energy(force_consistent=True),
+                      -68.22868532, atol=tol)
+    assert np.isclose(a1.get_potential_energy(force_consistent=False),
+                      -68.23102426, atol=tol)
 
-gen = iread('OUTCAR', index=':')
-assert inspect.isgenerator(gen)
-for fc in (True, False):
-    for a3 in gen:
-        assert isinstance(a3, Atoms)
-        assert np.isclose(a3.get_potential_energy(force_consistent=fc),
-                          a1.get_potential_energy(force_consistent=fc),
-                          atol=tol)
+    a2 = read('OUTCAR', index=':')
+    assert isinstance(a2, list)
+    assert isinstance(a2[0], Atoms)
+    assert len(a2) == 1
+
+    gen = iread('OUTCAR', index=':')
+    assert inspect.isgenerator(gen)
+    for fc in (True, False):
+        for a3 in gen:
+            assert isinstance(a3, Atoms)
+            assert np.isclose(a3.get_potential_energy(force_consistent=fc),
+                              a1.get_potential_energy(force_consistent=fc),
+                              atol=tol)

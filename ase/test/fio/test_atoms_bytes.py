@@ -5,7 +5,8 @@ from ase.calculators.calculator import compare_atoms
 atoms = bulk('Ti')
 images = [bulk('Au'), bulk('Ti'), bulk('NaCl', 'rocksalt', 17)]
 
-def test_format(fmt):
+def test_format():
+    fmt = 'traj'  # TODO: parametrize?
     buf = to_bytes(atoms, format=fmt)
     atoms1 = parse_atoms(buf)
 
@@ -18,5 +19,3 @@ def test_format(fmt):
     for img, img1 in zip(images, images1):
         err = compare_atoms(img, img1)
         assert not err, err
-
-test_format('traj')

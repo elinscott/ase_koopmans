@@ -246,52 +246,55 @@ loop_
    I          0.5000  0.250000      0.250000      0.250000     Biso  1.000000 I
 """
 
-cif_file = io.StringIO(content)
 
-# legacy behavior is to not read the K atoms
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    atoms_leg = read(cif_file, format='cif', fractional_occupancies=False)
-elements = np.unique(atoms_leg.get_atomic_numbers())
-for n in (11, 17, 53):
-    assert n in elements
-try:
-    atoms_leg.info['occupancy']
-    raise AssertionError
-except KeyError:
-    pass
+def test_cif():
+    cif_file = io.StringIO(content)
 
-cif_file = io.StringIO(content)
-# new behavior is to still not read the K atoms, but build info
-atoms = read(cif_file, format='cif', fractional_occupancies=True)
+    # legacy behavior is to not read the K atoms
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        atoms_leg = read(cif_file, format='cif', fractional_occupancies=False)
+    elements = np.unique(atoms_leg.get_atomic_numbers())
+    for n in (11, 17, 53):
+        assert n in elements
+    try:
+        atoms_leg.info['occupancy']
+        raise AssertionError
+    except KeyError:
+        pass
 
-# yield the same old atoms for fractional_occupancies case
-assert len(atoms_leg) == len(atoms)
-assert np.all(atoms_leg.get_atomic_numbers() == atoms.get_atomic_numbers())
-assert atoms_leg == atoms
+    cif_file = io.StringIO(content)
+    # new behavior is to still not read the K atoms, but build info
+    atoms = read(cif_file, format='cif', fractional_occupancies=True)
 
-elements = np.unique(atoms_leg.get_atomic_numbers())
-for n in (11, 17, 53):
-    assert n in elements
+    # yield the same old atoms for fractional_occupancies case
+    assert len(atoms_leg) == len(atoms)
+    assert np.all(atoms_leg.get_atomic_numbers() == atoms.get_atomic_numbers())
+    assert atoms_leg == atoms
 
-check_fractional_occupancies(atoms)
+    elements = np.unique(atoms_leg.get_atomic_numbers())
+    for n in (11, 17, 53):
+        assert n in elements
 
-# read/write
-fname = 'testfile.cif'
-with open(fname, 'wb') as fd:
-    write(fd, atoms, format='cif')
+    check_fractional_occupancies(atoms)
 
-with open(fname) as fd:
-    atoms = read(fd, format='cif', fractional_occupancies=True)
+    # read/write
+    fname = 'testfile.cif'
+    with open(fname, 'wb') as fd:
+        write(fd, atoms, format='cif')
 
-check_fractional_occupancies(atoms)
+    with open(fname) as fd:
+        atoms = read(fd, format='cif', fractional_occupancies=True)
 
-# check repeating atoms
-atoms = atoms.repeat([2,1,1])
-assert len(atoms.arrays['spacegroup_kinds']) == len(atoms.arrays['numbers'])
+    check_fractional_occupancies(atoms)
+
+    # check repeating atoms
+    atoms = atoms.repeat([2,1,1])
+    assert len(atoms.arrays['spacegroup_kinds']) == len(atoms.arrays['numbers'])
+
 
 # ICSD-like file from issue #293
-content = u"""
+content2 = u"""
 data_global
 _cell_length_a 9.378(5)
 _cell_length_b 7.488(5)
@@ -338,5 +341,5 @@ Se5 Se2- 2 a 0.1147(4) 0.5633(4) 0.3288(6) 0.1078(6) 1. 0
 Se6 Se2- 2 a 0.0050(4) 0.4480(6) 0.9025(6) 0.9102(6) 1. 0
 """
 
-cif_file = io.StringIO(content)
+cif_file = io.StringIO(content2)
 atoms = read(cif_file, format='cif')

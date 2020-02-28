@@ -46,34 +46,36 @@ Ni+               2   16.000000   -0.730000
   2.8009E+04 -4.5827E+04  3.0655E+05
 """)
 
-cells = []
-cells.append(np.array([[23.01, -0.3943E-01, 0.4612E-01], [-0.9486E-01, 22.98, 0.4551], [0.6568, 0.7694, 19.21]]))
-cells.append(np.array([[22.90, -0.3925E-01, 0.4591E-01], [-0.9443E-01, 22.88, 0.4531], [0.6538, 0.7660, 19.12]]))
-cells.append(np.array([[22.73, -0.3896E-01, 0.4557E-01], [-0.9374E-01, 22.71, 0.4497], [0.6490, 0.7603, 18.98]]))
+
+def test_dlp():
+    cells = []
+    cells.append(np.array([[23.01, -0.3943E-01, 0.4612E-01], [-0.9486E-01, 22.98, 0.4551], [0.6568, 0.7694, 19.21]]))
+    cells.append(np.array([[22.90, -0.3925E-01, 0.4591E-01], [-0.9443E-01, 22.88, 0.4531], [0.6538, 0.7660, 19.12]]))
+    cells.append(np.array([[22.73, -0.3896E-01, 0.4557E-01], [-0.9374E-01, 22.71, 0.4497], [0.6490, 0.7603, 18.98]]))
 
 
 
-traj = aseIO.read(fd, format='dlp-history', index=slice(0,None))
-assert len(traj) == 3
+    traj = aseIO.read(fd, format='dlp-history', index=slice(0,None))
+    assert len(traj) == 3
 
-traj = aseIO.iread(fd, format='dlp-history', index=slice(0,None))
-for i, frame in enumerate(traj):
-    assert len(frame) == 2
-    assert frame[0].symbol == 'O'
-    assert frame[1].symbol == 'Ni'
-    assert np.isclose(frame.get_cell(),cells[i]).all()
+    traj = aseIO.iread(fd, format='dlp-history', index=slice(0,None))
+    for i, frame in enumerate(traj):
+        assert len(frame) == 2
+        assert frame[0].symbol == 'O'
+        assert frame[1].symbol == 'Ni'
+        assert np.isclose(frame.get_cell(),cells[i]).all()
 
-symbols = frame.get_chemical_symbols()
+    symbols = frame.get_chemical_symbols()
 
-traj = iread_dlp_history(fd, symbols)
-for i, frame in enumerate(traj):
-    assert len(frame) == 2
-    assert frame[0].symbol == 'O'
-    assert frame[1].symbol == 'Ni'
-    assert np.isclose(frame.get_cell(),cells[i]).all()
+    traj = iread_dlp_history(fd, symbols)
+    for i, frame in enumerate(traj):
+        assert len(frame) == 2
+        assert frame[0].symbol == 'O'
+        assert frame[1].symbol == 'Ni'
+        assert np.isclose(frame.get_cell(),cells[i]).all()
 
 #Test REVCON reading
-fd = StringIO(u"""                                                                           ch3cl
+fd2 = StringIO(u"""                                                                           ch3cl
          2         0         5   103.350212873    
 c1               1
     0.1843387826E-03    0.9416060951E-04     1.246412527    
@@ -96,5 +98,7 @@ h1               5
  -0.630491688097E-03  0.709696007109E-03  0.401075989715E-02
  -0.564541792647E-01  0.840544009392E-01  0.319768855941    
 """)
-mol = aseIO.read(fd, format='dlp4', symbols=['C', 'Cl', 'H', 'H', 'H'])
-assert (mol.get_array('dlp4_labels') == np.array(['1', 'cl', 'hc', 'hc', '1'])).all()
+
+def test_dlp2():
+    mol = aseIO.read(fd2, format='dlp4', symbols=['C', 'Cl', 'H', 'H', 'H'])
+    assert (mol.get_array('dlp4_labels') == np.array(['1', 'cl', 'hc', 'hc', '1'])).all()

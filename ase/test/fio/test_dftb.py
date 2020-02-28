@@ -34,14 +34,16 @@ fd = StringIO(u"""
  MD Temperature:                     0.0011299245 au         356.8015 K
 """)
 
-vectors = read_dftb_lattice(fd)
-mols = [Atoms(),Atoms()]
-read_dftb_lattice(fd,mols)
 
-compareVec = np.array([[26.1849388999576,5.773808884828536E-006,9.076696618724854E-006],[0.115834159141441,26.1947703089401,9.372892011565608E-006],[0.635711495837792,0.451552307731081,9.42069476334197]])
+def test_dftb():
+    vectors = read_dftb_lattice(fd)
+    mols = [Atoms(),Atoms()]
+    read_dftb_lattice(fd,mols)
 
-assert (vectors[0] == compareVec).all()
-assert len(vectors) == 2
-assert len(vectors[1]) == 3
-assert (mols[0].get_cell() == compareVec).all()
-assert mols[1].get_pbc().all()
+    compareVec = np.array([[26.1849388999576,5.773808884828536E-006,9.076696618724854E-006],[0.115834159141441,26.1947703089401,9.372892011565608E-006],[0.635711495837792,0.451552307731081,9.42069476334197]])
+
+    assert (vectors[0] == compareVec).all()
+    assert len(vectors) == 2
+    assert len(vectors[1]) == 3
+    assert (mols[0].get_cell() == compareVec).all()
+    assert mols[1].get_pbc().all()

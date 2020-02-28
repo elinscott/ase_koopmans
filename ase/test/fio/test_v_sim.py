@@ -195,17 +195,19 @@ Fichier Ni3Au
   1.40700000000000e+01  1.40700000000000e+01  1.40700000000000e+01  Au
 """
 
-fname = 'demo.ascii'
-copy = 'demo2.ascii'
 
-with open(fname, 'w') as fd:
-    fd.write(datafile)
+def test_v_sim():
+    fname = 'demo.ascii'
+    copy = 'demo2.ascii'
 
-atoms = read(fname, format='v-sim')
+    with open(fname, 'w') as fd:
+        fd.write(datafile)
 
-atoms.write(copy)
-atoms2 = read(copy)
+    atoms = read(fname, format='v-sim')
 
-tol = 1e-6
-assert sum(abs((atoms.positions - atoms2.positions).ravel())) < tol
-assert sum(abs((atoms.cell - atoms2.cell).ravel())) < tol
+    atoms.write(copy)
+    atoms2 = read(copy)
+
+    tol = 1e-6
+    assert sum(abs((atoms.positions - atoms2.positions).ravel())) < tol
+    assert sum(abs((atoms.cell - atoms2.cell).ravel())) < tol

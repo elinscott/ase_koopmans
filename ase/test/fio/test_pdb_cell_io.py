@@ -97,16 +97,17 @@ images = [
 ]
 
 
-atoms1 = images[0]
-write('grumbles.pdb', atoms1)
-atoms2 = read('grumbles.pdb')
+def test_pdb_cell_io():
+    atoms1 = images[0]
+    write('grumbles.pdb', atoms1)
+    atoms2 = read('grumbles.pdb')
 
-spos1 = (atoms1.get_scaled_positions() + 0.5) % 1.0
-spos2 = (atoms2.get_scaled_positions() + 0.5) % 1.0
+    spos1 = (atoms1.get_scaled_positions() + 0.5) % 1.0
+    spos2 = (atoms2.get_scaled_positions() + 0.5) % 1.0
 
-for a, b in zip(spos1, spos2):
-    print(a, b)
+    for a, b in zip(spos1, spos2):
+        print(a, b)
 
-err = np.abs(spos1 - spos2).max()
-print(err)
-assert err < 2e-4
+    err = np.abs(spos1 - spos2).max()
+    print(err)
+    assert err < 2e-4
