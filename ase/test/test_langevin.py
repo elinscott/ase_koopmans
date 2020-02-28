@@ -7,9 +7,14 @@ from ase.io import Trajectory, read
 from ase.optimize import QuasiNewton
 from ase.utils import seterr
 
-rng = np.random.RandomState(0)
 
-with seterr(all='raise'):
+def test_langevin():
+    with seterr(all='raise'):
+        run()
+
+
+def run():
+    rng = np.random.RandomState(0)
     a = Atoms('4X',
               masses=[1, 2, 3, 4],
               positions=[(0, 0, 0),
