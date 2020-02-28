@@ -1,12 +1,6 @@
-import tempfile
-import unittest
-
+import pytest
 from ase.io.cif import read_cif
-try:
-    from pycodcif import parse # noqa: F401
-except ImportError:
-    # Skip test if pycodcif installation is broken:
-    raise unittest.SkipTest('pycodcif not available')
+
 
 cif = """data_Quartz
 loop_
@@ -45,13 +39,15 @@ Si   0.44580   0.00000   0.00000
 O    0.39510   0.30310  -0.09210
 """
 
-with tempfile.NamedTemporaryFile() as temp:
-    temp.write(cif.encode("latin-1"))
 
-    temp.seek(0)
-    cif_ase = read_cif(temp, 0, reader='ase')
+def test_pycodcif():
+    pytest.importorskip('pycodcif')
 
-    temp.seek(0)
-    cif_pycodcif = read_cif(temp, 0, reader='pycodcif')
+    with open('myfile.cif', 'wb') as temp:
+        temp.write(cif.encode("latin-1"))
 
-    assert [repr(x) for x in cif_ase] == [repr(x) for x in cif_pycodcif]
+    with open('myfile.cif') as temp:
+        cif_ase = read_cif(temp, 0, reader='ase')
+        cif_pycodcif = read_cif(temp, 0, reader='pycodcif')
+
+        assert [repr(x) for x in cif_ase] == [repr(x) for x in cif_pycodcif]
