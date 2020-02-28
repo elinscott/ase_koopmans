@@ -85,7 +85,3 @@ def test_new_style_interface():
     calc = LennardJones()
     atoms = bulk('Cu')
     rattle_calc(atoms, calc)
-
-
-test_sqlite()
-test_new_style_interface()
