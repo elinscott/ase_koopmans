@@ -87,8 +87,8 @@ def test_geometry():
     except ImportError:
         pass
 
-    ag111 = cut(ag, a=(4, -4, 0), b=(4, 4, -8), nlayers=5)
-    si111 = cut(si, a=(3, -3, 0), b=(3, 3, -6), nlayers=5)
+    ag111 = cut(ag, a=(4, -4, 0), b=(4, 4, -8), nlayers=5)  # noqa
+    si111 = cut(si, a=(3, -3, 0), b=(3, 3, -6), nlayers=5)  # noqa
     #
     # interface = stack(ag111, si111)
     # assert len(interface) == 1000

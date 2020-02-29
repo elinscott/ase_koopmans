@@ -41,8 +41,6 @@ def test_Pt_md_constraints_multistep():
         # NVE simulation
         calc.run(set_atoms=True)
 
-        new_slab = calc.atoms.copy()
-
         Ek = calc.atoms.copy().get_kinetic_energy()
         assert_allclose(Ek, 0.1014556059885532, atol=1e-4, rtol=1e-4)
         assert_allclose(Ek, calc.thermo_content[-1]['ke'],

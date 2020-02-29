@@ -27,11 +27,11 @@ def test_restart_octopus():
     E = system.get_potential_energy()
     print('energy', E)
 
-    errs = check_interface(calc1)
+    check_interface(calc1)
     # view(system)
 
     atoms = Octopus.read_atoms(directory)
-    errs = check_interface(atoms.calc)
+    check_interface(atoms.calc)
 
     changes = calc1.check_state(atoms)
     print('changes', changes)

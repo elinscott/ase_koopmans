@@ -34,8 +34,10 @@ def test_ts09():
     fname = 'out.traj'
     al.write(fname)
 
-    # check that the output exist
-    atoms = io.read(fname)
+    # check that the output exists
+    io.read(fname)
+    # maybe assert something about what we just read?
+
     p = io.read(fname).get_calculator().parameters
     p['calculator']
     p['xc']

@@ -87,7 +87,7 @@ def test_trajectory():
     e = b.get_potential_energy()
     assert e + 42 == 0
     with must_raise(PropertyNotImplementedError):
-        f = b.get_forces()
+        b.get_forces()
 
     # Make sure constraints play well with momenta:
     a = Atoms('H2',

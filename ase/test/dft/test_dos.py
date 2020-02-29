@@ -16,4 +16,5 @@ def test_dos():
     calc = SinglePointDFTCalculator(atoms, efermi=eFermi)
     calc.kpts = kpts
 
-    dos = DOS(calc)
+    DOS(calc)
+    # Maybe actually assert something?

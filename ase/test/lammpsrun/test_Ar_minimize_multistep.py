@@ -19,7 +19,7 @@ def test_Ar_minimize_multistep():
 
         assert_allclose(ar_nc.get_potential_energy(), -0.468147667942117,
                         atol=1e-4, rtol=1e-4)
-        assert_allclose(ar_nc.get_forces(), calc.calculate_numerical_forces(ar_nc),
+        assert_allclose(ar_nc.get_forces(), F1_numer,
                         atol=1e-4, rtol=1e-4)
 
         params['minimize'] = '1.0e-15 1.0e-6 2000 4000'   # add minimize

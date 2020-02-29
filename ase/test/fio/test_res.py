@@ -3,7 +3,7 @@ from ase.calculators.singlepoint import SinglePointCalculator
 
 from ase.io.res import Res, read_res, write_res
 
-test_res = """
+testdata = """
 TITL 23221-ZDsSsJoEW14-3 -2.7839600000000004 1 -31005.480500000001 0 0 254 (P1) n - 1
 CELL 1.0 33.998511000000001 19.938282999999998 6.7999999999999998 90 90 89.981431000000001
 LATT -1
@@ -269,7 +269,7 @@ END
 def test_res():
     filepath = 'test.res'
     f = open(filepath, 'w')
-    f.write(test_res)
+    f.write(testdata)
     f.close()
 
     res = Res.from_file(filepath)

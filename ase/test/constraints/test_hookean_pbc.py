@@ -4,10 +4,10 @@ def test_hookean_pbc():
     from ase.constraints import Hookean
 
     L = 8.  # length of the cubic box
-    d = 2.3  # Au-Au distance 
-    cell = [L]*3
+    d = 2.3  # Au-Au distance
+    cell = [L] * 3
     positions = [[(L - d/2) % L , L/2, L/2], [(L + d/2) % L, L/2, L/2]]
-    a = Atoms('AuAu', cell=[L]*3, positions=positions, pbc=True)
+    a = Atoms('AuAu', cell=cell, positions=positions, pbc=True)
 
     a.set_calculator(EMT())
     e1 = a.get_potential_energy()

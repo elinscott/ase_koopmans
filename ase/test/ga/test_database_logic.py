@@ -51,8 +51,8 @@ def test_database_logic():
     # and now for the actual test
     dc = DataConnection(db_file)
 
-    slab_get = dc.get_slab()
-    an_get = dc.get_atom_numbers_to_optimize()
+    dc.get_slab()
+    dc.get_atom_numbers_to_optimize()
 
     assert dc.get_number_of_unrelaxed_candidates() == 20
 

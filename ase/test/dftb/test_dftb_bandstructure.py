@@ -66,4 +66,5 @@ def test_dftb_bandstructure():
     calc.calculate(atoms)
 
     calc.results['fermi_levels'] = [efermi]
-    bs = calc.band_structure()
+    calc.band_structure()
+    # Maybe write the band structure or assert something?

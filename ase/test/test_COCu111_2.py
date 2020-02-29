@@ -1,3 +1,5 @@
+# XXXXXXXX this is mostly a copy of COCu111 !!!  Grrrr!
+
 def test_COCu111_2():
     from math import sqrt
     from ase import Atoms, Atom
@@ -37,7 +39,6 @@ def test_COCu111_2():
     h = 1.5
     initial += Atom('C', (d / 2, -b / 2, h))
     initial += Atom('O', (d / 2, +b / 2, h))
-    s = initial.copy()
     dyn = Optimizer(initial)
     dyn.run(fmax=0.05)
     # view(initial)

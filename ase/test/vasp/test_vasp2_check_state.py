@@ -63,7 +63,7 @@ def test_vasp2_check_state():
 
     # Check that get_atoms() doesn't reset results
     r1 = dict(calc.results)         # Force a copy
-    atoms2 = calc.get_atoms()
+    calc.get_atoms()
     r2 = dict(calc.results)
     assert r1 == r2
 

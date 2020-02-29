@@ -1,3 +1,5 @@
+# XXXXX GRRRR copied from other qmmm tests.  FOR SHAME!
+
 def test_turbomole_qmmm():
     """Test the Turbomole calculator in simple QMMM and
     explicit interaction QMMM simulations."""
@@ -52,6 +54,7 @@ def test_turbomole_qmmm():
         F1 = np.polyval(np.polyder(np.polyfit(D, E, 7)), D)
         F2 = F[:, :3, 0].sum(1)
         error = abs(F1 - F2).max()
+        assert error < 0.01
 
         dimer.constraints = FixInternals(
             bonds=[(r, (0, 2)), (r, (1, 2)),

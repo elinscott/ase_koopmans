@@ -63,11 +63,11 @@ def test_h2o():
 def test_o2():
     atoms = g2['O2']
     atoms.center(vacuum=2.0)
-    calc = calculate('O2',
-                     atoms,
-                     BoxShape='parallelepiped',
-                     SpinComponents='spin_polarized',
-                     ExtraStates=2)
+    calculate('O2',
+              atoms,
+              BoxShape='parallelepiped',
+              SpinComponents='spin_polarized',
+              ExtraStates=2)
     #magmom = calc.get_magnetic_moment()
     #magmoms = calc.get_magnetic_moments()
     #print('magmom', magmom)

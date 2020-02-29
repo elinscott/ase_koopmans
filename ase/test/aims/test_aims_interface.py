@@ -11,7 +11,7 @@ def test_aims_interface():
     outfilename = 'alternative_aims.out'
     outfilename_default = 'aims.out'
     command = '{0:s} > {1:s}'.format(aims_command, outfilename)
-    command_alternative = '{0:s} > {1:s}'.format(aims_command_alternative, outfilename)
+    #command_alternative = '{0:s} > {1:s}'.format(aims_command_alternative, outfilename)
     command_default = '{0:s} > {1:s}'.format(aims_command, outfilename_default)
     legacy_command = 'aims.version.serial.x > aims.out'
     legacy_aims_command = legacy_command.split('>')[0].strip()

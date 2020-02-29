@@ -24,7 +24,7 @@ def test_mixingcalc():
     atoms1.set_calculator(calc1)
 
     atoms2 = atoms.copy()
-    calc2 = SumCalculator(calcs=[EMT(), EMT()], atoms=atoms2)
+    SumCalculator(calcs=[EMT(), EMT()], atoms=atoms2)
 
     # Check the results.
     assert np.isclose(2 * forces, atoms1.get_forces()).all()
@@ -47,7 +47,7 @@ def test_mixingcalc():
     # LinearCombinationCalculator:
 
     atoms2 = atoms.copy()
-    calc2 = LinearCombinationCalculator([EMT(), EMT()], weights=[.5, .5], atoms=atoms2)
+    LinearCombinationCalculator([EMT(), EMT()], weights=[.5, .5], atoms=atoms2)
 
     # Check the results (it should be the same because it is tha average of the same values).
     assert np.isclose(forces, atoms1.get_forces()).all()

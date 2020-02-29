@@ -26,7 +26,6 @@ def test_Al_rmt():
                 begline = n - 1
         for n, line in enumerate(slines[begline:]):
             if not line.strip():  # first empty line
-                endline = n
                 found = True
                 break
         assert found

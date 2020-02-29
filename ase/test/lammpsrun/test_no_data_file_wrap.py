@@ -31,4 +31,5 @@ def test_no_data_file_wrap():
 
     with LAMMPS(specorder=["Ar"], **params) as calc:
         atoms.calc = calc
-        energy = atoms.get_potential_energy()
+        atoms.get_potential_energy()
+        # assert something?
