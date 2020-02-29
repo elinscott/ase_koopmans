@@ -16,6 +16,12 @@ def test_castep_interface():
                                         import_castep_keywords,
                                         CastepVersionError)
 
+    # XXX on porting this test to pytest it wasn't skipped as it should be.
+    # At any rate it failed then.  Maybe someone should look into that ...
+    #
+    # Hence, call the constructor to trigger our test skipping hack:
+    Castep()
+
     tmp_dir = tempfile.mkdtemp()
 
     # We have fundamentally two sets of tests: one if CASTEP is present, the other
