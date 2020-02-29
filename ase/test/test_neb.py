@@ -1,4 +1,4 @@
-def test_neb():
+def test_neb(plt):
     from ase import Atoms
     from ase.constraints import FixAtoms
     import ase.io

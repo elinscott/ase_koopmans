@@ -49,3 +49,8 @@ def figure(plt):
     fig = plt.figure()
     yield fig
     plt.close(fig)
+
+
+@pytest.fixture(scope='session')
+def psycopg2():
+    return pytest.importorskip('psycopg2')

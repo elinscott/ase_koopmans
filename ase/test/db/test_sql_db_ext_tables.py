@@ -1,4 +1,4 @@
-def test_sql_db_ext_tables():
+def test_sql_db_ext_tables(psycopg2):
     import os
     from ase.db import connect
     from ase import Atoms
