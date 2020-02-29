@@ -1,12 +1,15 @@
-def test_verlet():
-    from ase import Atoms
-    from ase.units import fs
-    from ase.calculators.test import TestPotential
-    from ase.md import VelocityVerlet
-    from ase.io import Trajectory, read
-    from ase.optimize import QuasiNewton
-    from ase.utils import seterr
+import pytest
+from ase import Atoms
+from ase.units import fs
+from ase.calculators.test import TestPotential
+from ase.md import VelocityVerlet
+from ase.io import Trajectory, read
+from ase.optimize import QuasiNewton
+from ase.utils import seterr
 
+
+@pytest.mark.slow
+def test_verlet():
     with seterr(all='raise'):
         a = Atoms('4X',
                   masses=[1, 2, 3, 4],

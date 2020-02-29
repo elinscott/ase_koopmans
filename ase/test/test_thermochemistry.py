@@ -1,18 +1,21 @@
+import numpy as np
+import pytest
+from ase import Atoms
+from ase.build import fcc100, add_adsorbate
+from ase.build import bulk
+from ase.constraints import FixAtoms
+from ase.optimize import QuasiNewton
+from ase.vibrations import Vibrations
+from ase.phonons import Phonons
+from ase.thermochemistry import (IdealGasThermo, HarmonicThermo,
+                                 CrystalThermo, HinderedThermo)
+from ase.calculators.emt import EMT
+
+
+@pytest.mark.slow
 def test_thermochemistry():
     """Tests of the major methods (HarmonicThermo, IdealGasThermo,
     CrystalThermo) from the thermochemistry module."""
-
-    import numpy as np
-    from ase import Atoms
-    from ase.build import fcc100, add_adsorbate
-    from ase.build import bulk
-    from ase.constraints import FixAtoms
-    from ase.optimize import QuasiNewton
-    from ase.vibrations import Vibrations
-    from ase.phonons import Phonons
-    from ase.thermochemistry import (IdealGasThermo, HarmonicThermo,
-                                     CrystalThermo, HinderedThermo)
-    from ase.calculators.emt import EMT
 
     # Ideal gas thermo.
     atoms = Atoms('N2',

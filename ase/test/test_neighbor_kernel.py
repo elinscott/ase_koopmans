@@ -1,15 +1,16 @@
+import numpy as np
+import pytest
+
+import ase
+import ase.lattice.hexagonal
+from ase.build import bulk, molecule
+
+from ase.neighborlist import (mic, neighbor_list, primitive_neighbor_list,
+                              first_neighbors)
+
+
+@pytest.mark.slow
 def test_neighbor_kernel():
-    # flake8: noqa
-
-    import numpy as np
-
-    import ase
-    import ase.lattice.hexagonal
-    from ase.build import bulk, molecule
-
-    from ase.neighborlist import (mic, neighbor_list, primitive_neighbor_list,
-                                  first_neighbors)
-
     tol = 1e-7
 
     # two atoms

@@ -1,11 +1,14 @@
+import numpy as np
+import pytest
+
+from ase.build import bulk
+from ase.calculators.test import gradient_test
+from ase.calculators.lj import LennardJones
+from ase.constraints import UnitCellFilter, ExpCellFilter
+
+
+@pytest.mark.slow
 def test_unitcellfilter2():
-    import numpy as np
-
-    from ase.build import bulk
-    from ase.calculators.test import gradient_test
-    from ase.calculators.lj import LennardJones
-    from ase.constraints import UnitCellFilter, ExpCellFilter
-
     a0 = bulk('Cu', cubic=True)
 
     # perturb the atoms

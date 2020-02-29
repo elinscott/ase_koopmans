@@ -1,30 +1,32 @@
-def test_neighbor():
-    import numpy.random as random
-    import numpy as np
-    from ase import Atoms
-    from ase.neighborlist import (NeighborList, PrimitiveNeighborList,
-                                  NewPrimitiveNeighborList)
-    from ase.build import bulk
+import numpy.random as random
+import numpy as np
+import pytest
+from ase import Atoms
+from ase.neighborlist import (NeighborList, PrimitiveNeighborList,
+                              NewPrimitiveNeighborList)
+from ase.build import bulk
 
+def count(nl, atoms):
+    c = np.zeros(len(atoms), int)
+    R = atoms.get_positions()
+    cell = atoms.get_cell()
+    d = 0.0
+    for a in range(len(atoms)):
+        i, offsets = nl.get_neighbors(a)
+        for j in i:
+            c[j] += 1
+        c[a] += len(i)
+        d += (((R[i] + np.dot(offsets, cell) - R[a])**2).sum(1)**0.5).sum()
+    return d, c
+
+
+@pytest.mark.slow
+def test_neighbor():
     atoms = Atoms(numbers=range(10),
                   cell=[(0.2, 1.2, 1.4),
                         (1.4, 0.1, 1.6),
                         (1.3, 2.0, -0.1)])
     atoms.set_scaled_positions(3 * random.random((10, 3)) - 1)
-
-
-    def count(nl, atoms):
-        c = np.zeros(len(atoms), int)
-        R = atoms.get_positions()
-        cell = atoms.get_cell()
-        d = 0.0
-        for a in range(len(atoms)):
-            i, offsets = nl.get_neighbors(a)
-            for j in i:
-                c[j] += 1
-            c[a] += len(i)
-            d += (((R[i] + np.dot(offsets, cell) - R[a])**2).sum(1)**0.5).sum()
-        return d, c
 
     for sorted in [False, True]:
         for p1 in range(2):

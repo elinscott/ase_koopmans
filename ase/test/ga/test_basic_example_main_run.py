@@ -1,11 +1,15 @@
+import numpy as np
+import pytest
+from ase.ga.data import PrepareDB
+from ase.ga.startgenerator import StartGenerator
+from ase.ga.utilities import closest_distances_generator
+from ase.ga.utilities import get_all_atom_types
+from ase.constraints import FixAtoms
+from ase.build import fcc111
+
+
+@pytest.mark.slow
 def test_basic_example_main_run():
-    from ase.ga.data import PrepareDB
-    from ase.ga.startgenerator import StartGenerator
-    from ase.ga.utilities import closest_distances_generator
-    from ase.ga.utilities import get_all_atom_types
-    from ase.constraints import FixAtoms
-    import numpy as np
-    from ase.build import fcc111
 
     db_file = 'gadb.db'
 
