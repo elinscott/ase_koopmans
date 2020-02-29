@@ -1,4 +1,4 @@
-def test_bandstructure():
+def test_bandstructure(plt):
     from ase.build import bulk
     from ase.calculators.test import FreeElectrons
     from ase.dft.kpoints import special_paths
