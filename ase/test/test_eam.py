@@ -1,9 +1,10 @@
+import numpy as np
+
+from ase.calculators.eam import EAM
+from ase.build import bulk
+
+
 def test_eam():
-    import numpy as np
-
-    from ase.calculators.eam import EAM
-    from ase.build import bulk
-
     # test to generate an EAM potential file using a simplified
     # approximation to the Mishin potential Al99.eam.alloy data
 
@@ -52,12 +53,13 @@ def test_eam():
     a = 4.05  # Angstrom lattice spacing
     al = bulk('Al', 'fcc', a=a)
 
-    mishin_approx = EAM(elements=['Al'], embedded_energy=np.array([m_embeddedf]),
-                        electron_density=np.array([m_densityf]),
-                        phi=np.array([[m_phif]]), cutoff=cutoff, form='alloy',
-                        # the following terms are only required to write out a file
-                        Z=[13], nr=n, nrho=n, dr=cutoff / n, drho=2. / n,
-                        lattice=['fcc'], mass=[26.982], a=[a])
+    mishin_approx = EAM(
+        elements=['Al'], embedded_energy=np.array([m_embeddedf]),
+        electron_density=np.array([m_densityf]),
+        phi=np.array([[m_phif]]), cutoff=cutoff, form='alloy',
+        # the following terms are only required to write out a file
+        Z=[13], nr=n, nrho=n, dr=cutoff / n, drho=2. / n,
+        lattice=['fcc'], mass=[26.982], a=[a])
 
     al.set_calculator(mishin_approx)
     mishin_approx_energy = al.get_potential_energy()
