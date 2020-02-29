@@ -1,6 +1,4 @@
-def test_matplotlib_plot():
-    import matplotlib.pyplot as plt
-
+def test_matplotlib_plot(plt):
     from ase.visualize.plot import plot_atoms
     from ase.lattice.cubic import FaceCenteredCubic
 

@@ -1,4 +1,4 @@
-def test_forcecurve():
+def test_forcecurve(plt):
     from ase.build import bulk
     from ase.calculators.emt import EMT
     from ase.utils.forcecurve import force_curve
