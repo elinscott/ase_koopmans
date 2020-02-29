@@ -1,8 +1,9 @@
-def test_H2O_aims():
-    from ase import Atoms
-    from ase.calculators.aims import Aims, AimsCube
-    from ase.optimize import QuasiNewton
+from ase import Atoms
+from ase.calculators.aims import Aims, AimsCube
+from ase.optimize import QuasiNewton
 
+
+def test_H2O_aims():
     water = Atoms('HOH', [(1, 0, 0), (0, 0, 0), (0, 1, 0)])
 
     water_cube = AimsCube(points=(29, 29, 29),
