@@ -1,6 +1,5 @@
 from ase.build import bulk
 from ase.calculators.nwchem import NWChem
-from ase.utils import workdir
 from ase.dft.band_structure import calculate_band_structure
 
 

@@ -8,12 +8,16 @@ def test_ts09():
     class FakeHirshfeldPartitioning:
         def __init__(self, calculator):
             self.calculator = calculator
+
         def initialize(self):
             pass
+
         def get_effective_volume_ratios(self):
             return [1]
+
         def get_calculator(self):
             return self.calculator
+
     class FakeDFTcalculator(EMT):
         def get_xc_functional(self):
             return 'PBE'

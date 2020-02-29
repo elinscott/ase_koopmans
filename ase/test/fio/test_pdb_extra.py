@@ -5,8 +5,6 @@ compliant with the specification.
 
 """
 
-import warnings
-
 import numpy as np
 
 from ase import io

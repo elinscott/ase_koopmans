@@ -13,6 +13,7 @@ def test_md():
     fcc.set_calculator(EMT())
     fcc.set_momenta([(0.9, 0.0, 0.0), (-0.9, 0, 0)])
     md = VelocityVerlet(fcc, timestep=0.1)
+
     def f():
         print(fcc.get_potential_energy(), fcc.get_total_energy())
     md.attach(f)
