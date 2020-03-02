@@ -6,6 +6,7 @@ source = ase
 # So we write those paths in the report section instead.
 
 [report]
+precision = 2
 omit =
     ase/test/*
     ase/calculators/*
