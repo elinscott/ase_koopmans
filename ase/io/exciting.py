@@ -8,7 +8,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from ase.atoms import Atoms
 from ase.units import Bohr
-from xml.dom import  minidom
+from xml.dom import minidom
 
 
 def read_exciting(fileobj, index=-1):

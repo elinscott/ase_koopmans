@@ -59,12 +59,12 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
         structures = tmpGR.get_structures()
 
     data = tmpGR[index]
-    #fix: io.formats passes a slice as index, resulting in data being a list
+    # fix: io.formats passes a slice as index, resulting in data being a list
     if isinstance(data, list) and len(data) > 1:
         msg = 'Cannot parse multiple images from Gaussian out files at this'
         msg += ' time.  Please select a single image.'
         raise RuntimeError(msg)
-    elif isinstance(data,list):
+    elif isinstance(data, list):
         data = data[-1]
 
     atomic_numbers = data['Atomic_numbers']
@@ -87,28 +87,26 @@ def read_gaussian_out(filename, index=-1, quantity='atoms'):
         if (key in method):
             energy = value
 
-    try:
-        if isinstance(filename, str):
-            fileobj = open(filename, 'r')
-        else:
-            fileobj = filename
-            # Re-wind the file in case it was previously read.
-            fileobj.seek(0)
+    if isinstance(filename, str):
+        fileobj = open(filename, 'r')
+    else:
+        fileobj = filename
+        # Re-wind the file in case it was previously read.
+        fileobj.seek(0)
 
-        lines = fileobj.readlines()
-        iforces = list()
-        for n, line in enumerate(lines):
-            if ('Forces (Hartrees/Bohr)' in line):
-                forces = list()
-                for j in range(len(atoms)):
-                    forces += [[float(lines[n + j + 3].split()[2]),
-                                float(lines[n + j + 3].split()[3]),
-                                float(lines[n + j + 3].split()[4])]]
-                iforces.append(np.array(forces))
+    lines = fileobj.readlines()
+    forces = None
+    for n, line in enumerate(lines):
+        if 'Forces (Hartrees/Bohr)' in line:
+            if forces is None:
+                forces = []
+            iforces = []
+            for j in range(len(atoms)):
+                iforces.append(list(map(float, lines[n + j + 3].split()[2:5])))
+            forces.append(np.array(iforces))
+    if forces is not None:
         convert = ase.units.Hartree / ase.units.Bohr
-        forces = np.array(iforces) * convert
-    except:
-        forces = None
+        forces = np.array(forces) * convert
 
     energy *= ase.units.Hartree  # Convert the energy from a.u. to eV
     calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
@@ -140,7 +138,7 @@ def read_gaussian(filename):
 
     atoms = Atoms()
     for n, line in enumerate(lines):
-        if ('#' in lines[n] and "#" not in lines[n+1]):
+        if ('#' in lines[n] and "#" not in lines[n + 1]):
             i = 0
             while (lines[n + i + 5] != '\n'):
                 info = lines[n + i + 5].split()

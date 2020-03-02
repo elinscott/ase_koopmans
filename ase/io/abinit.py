@@ -555,6 +555,7 @@ def read_results(label):
         results.update(dct)
     return results
 
+
 def get_ppp_list(atoms, species, raise_exception, xc, pps,
                  search_paths):
     ppp_list = []
