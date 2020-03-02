@@ -3,6 +3,7 @@ import sys
 import subprocess
 from contextlib import contextmanager
 import importlib
+from pathlib import Path
 import unittest
 import warnings
 import argparse
@@ -14,6 +15,7 @@ from ase.cli.main import CLIError
 
 
 test_calculator_names = ['emt']
+testdir = Path(__file__).parent
 datafiles_directory = os.path.join(os.path.dirname(__file__), 'datafiles', '')
 
 
@@ -162,6 +164,9 @@ class CLICommand:
                             'This option currently has no effect')
         parser.add_argument('--fast', action='store_true',
                             help='skip slow tests')
+        parser.add_argument('--coverage', action='store_true',
+                            help='measure code coverage.  '
+                            'Requires pytest-cov')
         parser.add_argument('--nogui', action='store_true',
                             help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
@@ -217,6 +222,15 @@ class CLICommand:
 
         if args.fast:
             add_args('-m', 'not slow')
+
+        if args.coverage:
+            # Somewhat ugly way to find .coveragerc; maybe we should move it
+            coveragerc = testdir.parent.parent / '.coveragerc'
+
+            add_args('--cov=ase',
+                     '--cov-config={}'.format(coveragerc),
+                     '--cov-report=term',
+                     '--cov-report=html')
 
         if args.tests:
             from ase.test.newtestsuite import TestModule
