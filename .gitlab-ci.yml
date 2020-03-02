@@ -59,6 +59,10 @@ main:
     - cd $CI_PROJECT_DIR
     - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --coverage --pytest --color=yes --durations 20
     - python -We:invalid -m compileall -f -q ase/
+  coverage: '/TOTAL.+ ([0-9]+%)/'
+  artifacts:
+    paths:
+      - coverage-html/
 
 
 # See the 'pages' job further down for how the data is published.
@@ -147,7 +151,7 @@ distribution_package:
 pages:
   stage: deploy
   dependencies:
-    - coverage
+    - main
   script:
     - mv coverage-html public
   artifacts:
