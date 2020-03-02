@@ -20,6 +20,8 @@ def count(nl, atoms):
     return d, c
 
 
+# scipy sparse uses matrix subclass internally
+@pytest.mark.filterwarnings('ignore:the matrix subclass')
 @pytest.mark.slow
 def test_neighbor():
     atoms = Atoms(numbers=range(10),
