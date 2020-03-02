@@ -65,23 +65,6 @@ main:
       - coverage-html/
 
 
-# See the 'pages' job further down for how the data is published.
-coverage:
-  image: registry.gitlab.com/ase/ase:ase-main
-  script:
-    - python --version
-    - pip install coverage
-    - pip install --editable .
-    - coverage run
-    - coverage report
-    - coverage html
-  coverage: '/TOTAL.+ ([0-9]+%)/'
-  artifacts:
-    paths:
-      - coverage-html/
-  only:
-      - master
-
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
 # issue with the gitlab runners.
@@ -141,13 +124,10 @@ distribution_package:
   when: manual
 
 # Publish code coverage data on web.
-#  * The deploy starge is specially recognized by gitlab
+#  * The deploy stage is specially recognized by gitlab
 #  * The jobname pages is specially recognized by gitlab
 #  * The public/ directory is specially recognized by gitlab
 # https://about.gitlab.com/blog/2016/11/03/publish-code-coverage-report-with-gitlab-pages/
-#
-# If we make this automatic, it should run only for master.
-# Right now we will have it run as manually activated
 pages:
   stage: deploy
   dependencies:
