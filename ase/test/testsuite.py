@@ -224,8 +224,18 @@ class CLICommand:
             add_args('-m', 'not slow')
 
         if args.coverage:
+            # It won't find the .coveragerc unless we are in the right
+            # directory.
             # Somewhat ugly way to find .coveragerc; maybe we should move it
-            coveragerc = testdir.parent.parent / '.coveragerc'
+            cwd = Path.cwd()
+            if testdir.parent.parent != cwd:
+                raise CLIError('Please run ase test --coverage in the ase '
+                               'top directory')
+            coveragerc = cwd / '.coveragerc'
+            if not coveragerc.exists():
+                raise CLIError('No .coveragerc file.  Maybe you are not '
+                               'running the development version.  Please '
+                               'do so, or run coverage manually')
 
             add_args('--cov=ase',
                      '--cov-config={}'.format(coveragerc),
