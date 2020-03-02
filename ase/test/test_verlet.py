@@ -1,7 +1,8 @@
 import pytest
 from ase import Atoms
 from ase.units import fs
-from ase.calculators.test import TestPotential
+# Rename the class so import pytest won't search for tests on it:
+from ase.calculators.test import TestPotential as TstPotential
 from ase.md import VelocityVerlet
 from ase.io import Trajectory, read
 from ase.optimize import QuasiNewton
@@ -17,7 +18,7 @@ def test_verlet():
                              (1, 0, 0),
                              (0, 1, 0),
                              (0.1, 0.2, 0.7)],
-                  calculator=TestPotential())
+                  calculator=TstPotential())
         print(a.get_forces())
         md = VelocityVerlet(a, timestep=0.5 * fs, logfile='-', loginterval=500)
         traj = Trajectory('4N.traj', 'w', a)
