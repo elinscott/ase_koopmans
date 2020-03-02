@@ -124,7 +124,7 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
         out.append('force')
 
     # header, charge, and mult
-    out += ['', '', 'Gaussian input prepared by ASE', '',
+    out += ['', 'Gaussian input prepared by ASE', '',
             '{} {}'.format(charge, mult)]
 
     # atomic positions
@@ -215,7 +215,8 @@ _re_forceblock = re.compile(r'^\s*Center\s+Atomic\s+Forces\s+\S+\s*$')
 # CBS methods have a particular energy formatting
 
 
-def read_gaussian_out(fd):
+def read_gaussian_out(fd, index=-1):
+    configs = []
     atoms = None
     energy = None
     dipole = None
@@ -227,7 +228,7 @@ def read_gaussian_out(fd):
                                                    energy=energy,
                                                    dipole=dipole,
                                                    forces=forces)
-                yield atoms
+                configs.append(atoms)
 
             numbers = []
             positions = []
@@ -249,7 +250,7 @@ def read_gaussian_out(fd):
                     npbc += 1
                 else:
                     numbers.append(max(number, 0))
-                    positions.append(position)
+                    positions.append(pos)
             atoms = Atoms(numbers, positions, pbc=pbc, cell=cell)
         elif line.strip().startswith('SCF Done:'):
             # SCF energy, i.e. HF, DFT, etc.
@@ -262,6 +263,9 @@ def read_gaussian_out(fd):
         elif line.strip().startswith('Wavefunction amplitudes converged. '
                                      'E(Corr)'):
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
+        elif line.strip().startswith('Dipole moment'):
+            tokens = fd.readline().strip().split()
+            dipole = list(map(float, tokens[1:6:2]))
         elif line.strip().startswith('Dipole'):
             dip = line.strip().split('=')[1].replace('D', 'e')
             tokens = dip.split()
@@ -275,7 +279,7 @@ def read_gaussian_out(fd):
                 # next, check if the number of tokens is divisible by 3
                 nchars = len(dip) // 3
                 for i in range(3):
-                    dipole.append(float(dip[dip * i:dip * (i + 1)]))
+                    dipole.append(float(dip[nchars * i:nchars * (i + 1)]))
             else:
                 # otherwise, just give up on trying to parse it.
                 dipole = None
@@ -295,4 +299,5 @@ def read_gaussian_out(fd):
     if atoms is not None:
         atoms.calc = SinglePointCalculator(atoms, energy=energy,
                                            dipole=dipole, forces=forces)
-        yield atoms
+        configs.append(atoms)
+    return configs[index]

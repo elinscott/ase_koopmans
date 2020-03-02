@@ -6,6 +6,10 @@ from ase.calculators.calculator import FileIOCalculator, EnvironmentError
 class Gaussian(FileIOCalculator):
     implemented_properties = ['energy', 'forces', 'dipole']
     command = 'GAUSSIAN < PREFIX.com > PREFIX.log'
+    discard_results_on_any_change = True
+
+    def __init__(self, *args, label='Gaussian', **kwargs):
+        FileIOCalculator.__init__(self, *args, label='Gaussian', **kwargs)
 
     def calculate(self, *args, **kwargs):
         gaussians = ('g16', 'g09', 'g03')
@@ -22,10 +26,10 @@ class Gaussian(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
-        write(self.label + '.com', atoms, properties, format='gaussian-in',
-              **self.parameters)
+        write(self.label + '.com', atoms, properties=properties,
+              format='gaussian-in', **self.parameters)
 
-    def read_output(self):
-        output = read(self.label + '.log')
+    def read_results(self):
+        output = read(self.label + '.log', format='gaussian-out')
         self.calc = output.calc
         self.results = output.calc.results

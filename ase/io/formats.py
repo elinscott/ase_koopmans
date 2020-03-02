@@ -281,7 +281,7 @@ F('gamess-us-in', 'GAMESS-US input file', '1F',
 F('gamess-us-punch', 'GAMESS-US punchcard file', '1F',
   module='gamess_us', magic=b' $DATA', ext='dat')
 F('gaussian-in', 'Gaussian com (input) file', '1F',
-  ext=['com', 'gjf']),
+  module='gaussian', ext=['com', 'gjf']),
 F('gaussian-out', 'Gaussian output file', '+F',
   module='gaussian', ext='log'),
 F('acemolecule-out', 'ACE output file', '1S',
