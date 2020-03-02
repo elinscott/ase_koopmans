@@ -10,7 +10,7 @@ class Gaussian(FileIOCalculator):
     discard_results_on_any_change = True
 
     def __init__(self, *args, label='Gaussian', **kwargs):
-        FileIOCalculator.__init__(self, *args, label='Gaussian', **kwargs)
+        FileIOCalculator.__init__(self, *args, label=label, **kwargs)
 
     def calculate(self, *args, **kwargs):
         gaussians = ('g16', 'g09', 'g03')
