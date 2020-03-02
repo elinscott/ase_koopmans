@@ -229,6 +229,10 @@ def read_gaussian_out(fd, index=-1):
                                                    dipole=dipole,
                                                    forces=forces)
                 configs.append(atoms)
+                atoms = None
+                energy = None
+                dipole = None
+                forces = None
 
             numbers = []
             positions = []
