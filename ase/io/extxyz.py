@@ -5,9 +5,6 @@ Read/write files in "extended" XYZ format, storing additional
 per-configuration information as key-value pairs on the XYZ
 comment line, and additional per-atom properties as extra columns.
 
-See http://jrkermode.co.uk/quippy/io.html#extendedxyz for a full
-description of the Extended XYZ file format.
-
 Contributed by James Kermode <james.kermode@gmail.com>
 """
 
@@ -568,6 +565,87 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
     to a dictionary, ``extxyz.key_val_str_to_dict`` is the default and can
     deal with most use cases, ``extxyz.key_val_str_to_dict_regex`` is slightly
     faster but has fewer features.
+
+    Extended XYZ format is an enhanced version of the `basic XYZ format
+    <http://en.wikipedia.org/wiki/XYZ_file_format>`_ that allows extra
+    columns to be present in the file for additonal per-atom properties as
+    well as standardising the format of the comment line to include the
+    cell lattice and other per-frame parameters.
+
+    It's easiest to describe the format with an example.  Here is a
+    standard XYZ file containing a bulk cubic 8 atom silicon cell ::
+
+        8
+        Cubic bulk silicon cell
+        Si          0.00000000      0.00000000      0.00000000
+        Si        1.36000000      1.36000000      1.36000000
+        Si        2.72000000      2.72000000      0.00000000
+        Si        4.08000000      4.08000000      1.36000000
+        Si        2.72000000      0.00000000      2.72000000
+        Si        4.08000000      1.36000000      4.08000000
+        Si        0.00000000      2.72000000      2.72000000
+        Si        1.36000000      4.08000000      4.08000000
+
+    The first line is the number of atoms, followed by a comment and
+    then one line per atom, giving the element symbol and cartesian
+    x y, and z coordinates in Angstroms.
+
+    Here's the same configuration in extended XYZ format ::
+
+        8
+        Lattice="5.44 0.0 0.0 0.0 5.44 0.0 0.0 0.0 5.44" Properties=species:S:1:pos:R:3 Time=0.0
+        Si        0.00000000      0.00000000      0.00000000
+        Si        1.36000000      1.36000000      1.36000000
+        Si        2.72000000      2.72000000      0.00000000
+        Si        4.08000000      4.08000000      1.36000000
+        Si        2.72000000      0.00000000      2.72000000
+        Si        4.08000000      1.36000000      4.08000000
+        Si        0.00000000      2.72000000      2.72000000
+        Si        1.36000000      4.08000000      4.08000000
+
+    In extended XYZ format, the comment line is replaced by a series of
+    key/value pairs.  The keys should be strings and values can be
+    integers, reals, logicals (denoted by `T` and `F` for true and false)
+    or strings. Quotes are required if a value contains any spaces (like
+    `Lattice` above).  There are two mandatory parameters that any
+    extended XYZ: `Lattice` and `Properties`. Other parameters --
+    e.g. `Time` in the example above --- can be added to the parameter line
+    as needed.
+
+    `Lattice` is a Cartesian 3x3 matrix representation of the cell
+    :attr:`~quippy.atoms.Atoms.lattice` vectors, with each vector stored
+    as a column and the 9 values listed in Fortran column-major order, i.e. in
+    the form ::
+
+      Lattice="R1x R1y R1z R2x R2y R2z R3x R3y R3z"
+
+    where `R1x R1y R1z` are the Cartesian x-, y- and z-components of the
+    first lattice vector (:math:`\mathbf{a}`), `R2x R2y R2z` those of the second
+    lattice vector (:math:`\mathbf{b}`) and `R3x R3y R3z` those of the
+    third lattice vector (:math:`\mathbf{c}`).
+
+    The list of properties in the file is described by the `Properties`
+    parameter, which should take the form of a series of colon separated
+    triplets giving the name, format (`R` for real, `I` for integer) and
+    number of columns of each property. For example::
+
+      Properties="species:S:1:pos:R:3:vel:R:3:select:I:1"
+
+    indicates the first column represents atomic species, the next three
+    columns represent atomic positions, the next three velcoities, and the
+    last is an single integer called `select`. With this property
+    definition, the line ::
+
+      Si        4.08000000      4.08000000      1.36000000   0.00000000      0.00000000      0.00000000       1
+
+    would describe a silicon atom at position (4.08,4.08,1.36) with zero
+    velocity and the `select` property set to 1.
+
+    The extended XYZ format is also supported by the
+    the `Ovito <http://www.ovito.org>`_ visualisation tool
+    (from `v2.4 beta
+    <http://www.ovito.org/index.php/component/content/article?id=25>`_
+    onwards).
     """
     if isinstance(fileobj, str):
         fileobj = open(fileobj)
