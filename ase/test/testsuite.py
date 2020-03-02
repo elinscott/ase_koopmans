@@ -167,6 +167,8 @@ class CLICommand:
         parser.add_argument('--coverage', action='store_true',
                             help='measure code coverage.  '
                             'Requires pytest-cov')
+        parser.add_argument('--coveragerc',
+                            help='coverage rc file')
         parser.add_argument('--nogui', action='store_true',
                             help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
@@ -231,11 +233,14 @@ class CLICommand:
             #if testdir.parent.parent != cwd:
             #    raise CLIError('Please run ase test --coverage in the ase '
             #                   'top directory')
-            coveragerc = testdir / '.coveragerc'
-            if not coveragerc.exists():
-                raise CLIError('No .coveragerc file.  Maybe you are not '
-                               'running the development version.  Please '
-                               'do so, or run coverage manually')
+
+            coveragerc = args.coveragerc
+            if coveragerc is None:
+                coveragerc = testdir / '.coveragerc'
+                if not coveragerc.exists():
+                    raise CLIError('No .coveragerc file.  Maybe you are not '
+                                   'running the development version.  Please '
+                                   'do so, or run coverage manually')
 
             add_args('--cov=ase',
                      '--cov-config={}'.format(coveragerc),
