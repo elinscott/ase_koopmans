@@ -39,6 +39,15 @@ _problem_methods = [
 ]
 
 
+_xc_to_method = dict(
+    pbe='pbepbe',
+    pbe0='pbe1pbe',
+    hse06='hseh1pbe',
+    hse03='ohse2pbe',
+    lda='svwn',  # gaussian "knows about" LSDA, but maybe not LDA.
+)
+
+
 def write_gaussian_in(fd, atoms, properties=None, **params):
     params = deepcopy(params)
 
@@ -46,8 +55,17 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
         properties = ['energy']
 
     # pop method and basis
-    method = params.pop('method', 'hf')
+    method = params.pop('method', None)
     basis = params.pop('basis', None)
+
+    # determine method from xc if it is provided
+    if method is None:
+        xc = params.pop('xc', None)
+        if xc is None:
+            # Default to HF
+            method = 'hf'
+        else:
+            method = _xc_to_method.get(xc.lower(), xc)
 
     # If the user requests a problematic method, rather than raising an error
     # or proceeding blindly, give the user a warning that the results parsed
@@ -109,6 +127,8 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
             out.append(key)
         elif isinstance(val, str) and ',' in val:
             out.append('{}({})'.format(key, val))
+        elif isinstance(val, Iterable):
+            out.append('{}({})'.format(key, ','.join(val)))
         else:
             out.append('{}={}'.format(key, val))
 
@@ -212,7 +232,6 @@ _re_atom = re.compile(
     r'^\s*\S+\s+(\S+)\s+(?:\S+\s+)?(\S+)\s+(\S+)\s+(\S+)\s*$'
 )
 _re_forceblock = re.compile(r'^\s*Center\s+Atomic\s+Forces\s+\S+\s*$')
-# CBS methods have a particular energy formatting
 
 
 def read_gaussian_out(fd, index=-1):
