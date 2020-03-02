@@ -1,6 +1,11 @@
 [run]
 source = ase
-command_line = ase test -j0 --calculators eam,emt,ff,lj,morse,tip3p,tip4p
+
+# We would write the 'omit' section in the run section.
+# But pytest-cov forgets that when generating report.
+# So we write those paths in the report section instead.
+
+[report]
 omit =
     ase/test/*
     ase/calculators/*
