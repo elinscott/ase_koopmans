@@ -1,10 +1,13 @@
+import numpy as np
+import pytest
+
+from ase.calculators.emt import EMT
+from ase.build import bulk
+from ase.optimize import FIRE
+
+
+@pytest.mark.slow
 def test_fire():
-    import numpy as np
-
-    from ase.calculators.emt import EMT
-    from ase.build import bulk
-    from ase.optimize import FIRE
-
     a = bulk('Au')
     a *= (2, 2, 2)
 
@@ -25,7 +28,6 @@ def test_fire():
     a.set_calculator(EMT())
 
     reset_history = []
-
 
     def callback(a, r, e, e_last):
         reset_history.append([e - e_last])

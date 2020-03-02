@@ -1,10 +1,13 @@
 import numpy as np
+import pytest
 
 from ase.build import bulk
 from ase.calculators.lj import LennardJones
 from ase.optimize.precon import PreconLBFGS, Exp
 from ase.constraints import UnitCellFilter, ExpCellFilter
 
+
+@pytest.mark.slow
 def test_precon():
     cu0 = bulk("Cu") * (2, 2, 2)
     lj = LennardJones(sigma=cu0.get_distance(0,1))

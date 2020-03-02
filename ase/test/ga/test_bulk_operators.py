@@ -1,18 +1,21 @@
-def test_bulk_operators():
-    import os
-    import numpy as np
-    from ase import Atoms
-    from ase.build import bulk
-    from ase.ga.utilities import closest_distances_generator, atoms_too_close
-    from ase.ga.bulk_utilities import CellBounds
-    from ase.ga.bulk_startgenerator import StartGenerator
-    from ase.ga.bulk_crossovers import CutAndSplicePairing
-    from ase.ga.bulk_mutations import (SoftMutation, RotationalMutation,
-                                       RattleRotationalMutation, StrainMutation)
-    from ase.ga.ofp_comparator import OFPComparator
-    from ase.ga.offspring_creator import CombinationMutation
-    from ase.ga.standardmutations import RattleMutation, PermutationMutation
+import os
+import numpy as np
+import pytest
+from ase import Atoms
+from ase.build import bulk
+from ase.ga.utilities import closest_distances_generator, atoms_too_close
+from ase.ga.bulk_utilities import CellBounds
+from ase.ga.bulk_startgenerator import StartGenerator
+from ase.ga.bulk_crossovers import CutAndSplicePairing
+from ase.ga.bulk_mutations import (SoftMutation, RotationalMutation,
+                                   RattleRotationalMutation, StrainMutation)
+from ase.ga.ofp_comparator import OFPComparator
+from ase.ga.offspring_creator import CombinationMutation
+from ase.ga.standardmutations import RattleMutation, PermutationMutation
 
+
+@pytest.mark.slow
+def test_bulk_operators():
     h2 = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.75]])
     blocks = [('H', 4), ('H2O', 3), (h2, 2)]  # the building blocks
     volume = 40. * sum([x[1] for x in blocks])  # cell volume in angstrom^3

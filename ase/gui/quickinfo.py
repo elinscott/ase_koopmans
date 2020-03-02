@@ -45,7 +45,8 @@ def info(gui):
         add()
         add(_('Unit cell [Å]:'))
         add(ucellformat.format(*atoms.cell.ravel()))
-        periodic = [[_('no'), _('yes')][periodic] for periodic in atoms.pbc]
+        periodic = [[_('no'), _('yes')][int(periodic)]
+                    for periodic in atoms.pbc]
         # TRANSLATORS: This has the form Periodic: no, no, yes
         add(_('Periodic: {}, {}, {}').format(*periodic))
         add()

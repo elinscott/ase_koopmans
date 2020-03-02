@@ -1,10 +1,13 @@
-def test_minimahop():
-    from ase import Atoms, Atom
-    from ase.build import fcc111
-    from ase.optimize.minimahopping import MinimaHopping
-    from ase.calculators.emt import EMT
-    from ase.constraints import FixAtoms, Hookean
+import pytest
+from ase import Atoms, Atom
+from ase.build import fcc111
+from ase.optimize.minimahopping import MinimaHopping
+from ase.calculators.emt import EMT
+from ase.constraints import FixAtoms, Hookean
 
+
+@pytest.mark.slow
+def test_minimahop():
     # Make Pt 111 slab with Cu2 adsorbate.
     atoms = fcc111('Pt', (2, 2, 1), vacuum=7., orthogonal=True)
     adsorbate = Atoms([Atom('Cu', atoms[2].position + (0., 0., 2.5)),

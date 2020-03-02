@@ -43,10 +43,7 @@ def tkinter():
 
 @pytest.fixture(scope='session')
 def plt(tkinter):
-    try:
-        import matplotlib
-    except ImportError:
-        raise pytest.skip('no matplotlib')
+    matplotlib = pytest.importorskip('matplotlib')
     matplotlib.use('Agg', warn=False)
 
     import matplotlib.pyplot as plt
