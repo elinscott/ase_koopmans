@@ -120,7 +120,7 @@ def test_open_and_save(gui):
 
 
 def test_fracocc(gui):
-    from ase.test.fio.cif import content
+    from ase.test.fio.test_cif import content
     with open('./fracocc.cif', 'w') as f:
         f.write(content)
     gui.open(filename='fracocc.cif')
