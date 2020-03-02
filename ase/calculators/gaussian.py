@@ -1,3 +1,4 @@
+import os
 from shutil import which
 from ase.io import read, write
 from ase.calculators.calculator import FileIOCalculator, EnvironmentError
@@ -33,3 +34,15 @@ class Gaussian(FileIOCalculator):
         output = read(self.label + '.log', format='gaussian-out')
         self.calc = output.calc
         self.results = output.calc.results
+
+    # Method(s) defined in the old calculator, added here for
+    # backwards compatibility
+    def clean(self):
+        for suffix in ['.com', '.chk', '.log']:
+            try:
+                os.remove(os.path.join(self.directory, self.label + suffix))
+            except OSError:
+                pass
+
+    def get_version(self):
+        raise NotImplementedError  # not sure how to do this yet
