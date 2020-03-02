@@ -228,10 +228,10 @@ class CLICommand:
             # directory.
             # Somewhat ugly way to find .coveragerc; maybe we should move it
             cwd = Path.cwd()
-            if testdir.parent.parent != cwd:
-                raise CLIError('Please run ase test --coverage in the ase '
-                               'top directory')
-            coveragerc = cwd / '.coveragerc'
+            #if testdir.parent.parent != cwd:
+            #    raise CLIError('Please run ase test --coverage in the ase '
+            #                   'top directory')
+            coveragerc = testdir / '.coveragerc'
             if not coveragerc.exists():
                 raise CLIError('No .coveragerc file.  Maybe you are not '
                                'running the development version.  Please '
