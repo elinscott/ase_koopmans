@@ -285,7 +285,9 @@ def read_gaussian_out(fd, index=-1):
             energy *= Hartree
         elif line.strip().startswith('Wavefunction amplitudes converged. '
                                      'E(Corr)'):
+            # "correlated method" energy, e.g. CCSD
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
+            energy *= Hartree
         elif line.strip().startswith('Dipole moment'):
             tokens = fd.readline().strip().split()
             dipole = list(map(float, tokens[1:6:2]))
