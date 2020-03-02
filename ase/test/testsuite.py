@@ -160,6 +160,8 @@ class CLICommand:
         parser.add_argument('--strict', action='store_true',
                             help='convert warnings to errors.  '
                             'This option currently has no effect')
+        parser.add_argument('--fast', action='store_true',
+                            help='skip slow tests')
         parser.add_argument('--nogui', action='store_true',
                             help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
@@ -212,6 +214,9 @@ class CLICommand:
         if jobs:
             add_args('--numprocesses={}'.format(jobs))
             add_args('--dist=loadfile')
+
+        if args.fast:
+            add_args('-m', 'not slow')
 
         if args.tests:
             from ase.test.newtestsuite import TestModule
