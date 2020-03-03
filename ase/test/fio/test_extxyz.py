@@ -4,6 +4,7 @@
 
 import os
 import numpy as np
+import pytest
 
 import ase.io
 from ase.io import extxyz
@@ -13,8 +14,19 @@ from ase.test.testsuite import no_warn
 
 # array data of shape (N, 1) squeezed down to shape (N, ) -- bug fixed
 # in commit r4541
-def test_array_shape():
-    at = bulk('Si')
+
+@pytest.fixture
+def at():
+    return bulk('Si')
+
+@pytest.fixture
+def images(at):
+    images = [at, at * (2, 1, 1), at * (3, 1, 1)]
+    images[1].set_pbc([True,True,False])
+    images[2].set_pbc([True,False,False])
+    return images
+
+def test_array_shape(at):
     # Check that unashable data type in info does not break output
     at.info['bad-info'] = [[1, np.array([0,1])], [2, np.array([0,1])]]
     with no_warn():
@@ -29,8 +41,7 @@ def test_array_shape():
 
 
 #test comment read/write with vec_cell
-def test_comment():
-    at = bulk('Si')
+def test_comment(at):
     at.info['comment'] = 'test comment'
     ase.io.write('comment.xyz', at, comment=at.info['comment'], vec_cell=True)
     r = ase.io.read('comment.xyz')
@@ -38,20 +49,13 @@ def test_comment():
 
 # write sequence of images with different numbers of atoms -- bug fixed
 # in commit r4542
-def test_sequence():
-    at = bulk('Si')
-    images = [at, at * (2, 1, 1), at * (3, 1, 1)]
+def test_sequence(images):
     ase.io.write('multi.xyz', images, format='extxyz')
     read_images = ase.io.read('multi.xyz', index=':')
     assert read_images == images
 
 #test vec_cell writing and reading
-def test_vec_cell():
-    at = bulk('Si')
-    images = [at, at * (2, 1, 1), at * (3, 1, 1)]
-
-    images[1].set_pbc([True,True,False])
-    images[2].set_pbc([True,False,False])
+def test_vec_cell(at, images):
     ase.io.write('multi.xyz', images, vec_cell=True)
     cell = images[1].get_cell()
     cell[-1] = [0.0, 0.0, 0.0]
@@ -124,7 +128,7 @@ def test_complex_key_val():
         ' '  # start with a separator
         'str=astring '
         'quot="quoted value" '
-        u'quote_special="a_to_Z_$%%^&*\xfc\u2615" '
+        'quote_special="a_to_Z_$%%^&*\xfc\u2615" '
         r'escaped_quote="esc\"aped" '
         'true_value '
         'false_value = F '
@@ -143,8 +147,8 @@ def test_complex_key_val():
         'bool_array_2=" T, F, T " ' # leading spaces
         'not_bool_array=[T F S] '
         # read and write
-        u'\xfcnicode_key=val\xfce '
-        u'unquoted_special_value=a_to_Z_$%%^&*\xfc\u2615 '
+        '\xfcnicode_key=val\xfce '
+        'unquoted_special_value=a_to_Z_$%%^&*\xfc\u2615 '
         '2body=33.3 '
         'hyphen-ated '
         # parse only
@@ -188,8 +192,8 @@ def test_complex_key_val():
         'bool_array': np.array([True, False, True, False]),
         'bool_array_2': np.array([True, False, True]),
         'not_bool_array': 'T F S',
-        u'\xfcnicode_key': u'val\xfce',
-        'unquoted_special_value': u'a_to_Z_$%%^&*\xfc\u2615',
+        '\xfcnicode_key': 'val\xfce',
+        'unquoted_special_value': 'a_to_Z_$%%^&*\xfc\u2615',
         '2body': 33.3,
         'hyphen-ated': True,
         'many_other_quotes': np.array([4, 8, 12]),
@@ -230,26 +234,18 @@ def test_complex_key_val():
         else:
             np.testing.assert_equal(complex_atoms.info[key], value)
 
-def test_write_multiple():
+def test_write_multiple(at, images):
     #write multiple atoms objects to one xyz
-    at = bulk('Si')
-    frames = [at, at * (2, 1, 1), at * (3, 1, 1)]
-
-    try:
-        for atoms in frames:
-            atoms.write('append.xyz',append=True)
-            atoms.write('comp_append.xyz.gz',append=True)
-            atoms.write('not_append.xyz',append=False)
-        readFrames = ase.io.read('append.xyz',index=slice(0,None))
-        assert readFrames == frames
-        readFrames = ase.io.read('comp_append.xyz.gz',index=slice(0,None))
-        assert readFrames == frames
-        singleFrame = ase.io.read('not_append.xyz',index=slice(0,None))
-        assert singleFrame[-1] == frames[-1]
-    finally:
-        os.unlink("append.xyz")
-        os.unlink("comp_append.xyz.gz")
-        os.unlink("not_append.xyz")
+    for atoms in images:
+        atoms.write('append.xyz',append=True)
+        atoms.write('comp_append.xyz.gz',append=True)
+        atoms.write('not_append.xyz',append=False)
+    readFrames = ase.io.read('append.xyz',index=slice(0,None))
+    assert readFrames == images
+    readFrames = ase.io.read('comp_append.xyz.gz',index=slice(0,None))
+    assert readFrames == images
+    singleFrame = ase.io.read('not_append.xyz',index=slice(0,None))
+    assert singleFrame[-1] == images[-1]
 
 # read xyz with blank comment line
 def test_blank_comment():

@@ -154,7 +154,7 @@ def key_val_str_to_dict(string, sep=None):
                     if value.startswith("_JSON "):
                         d = json.loads(value.replace("_JSON ","",1))
                         value = np.array(d)
-                        if value.dtype.kind not in ['i','f','b']:
+                        if value.dtype.kind not in ['i', 'f', 'b']:
                             value = d
 
         kv_dict[key] = value
@@ -228,41 +228,55 @@ def key_val_str_to_dict_regex(s):
 
     return d
 
-def key_val_dict_to_str(d, sep=' '):
+def key_val_dict_to_str(dct, sep=' '):
     """
     Convert atoms.info dictionary to extended XYZ string representation
     """
-    if len(d) == 0:
-        return ''
-    s = ''
 
-    def known_types_to_str(v):
-        if isinstance(v, bool) or isinstance(v, np.bool_):
-            return 'T' if v else 'F'
-        elif isinstance(v, np.int_) or isinstance(v, np.float_):
-            return '{}'.format(v)
-        elif isinstance(v, Spacegroup):
-            return v.symbol
+    def escape(string):
+        if  (' ' in string or
+             '"' in string or "'" in string or
+             '{' in string or '}' in string or
+             '[' in string or ']' in string):
+            string = string.replace('"','\\"')
+            string = '"%s"' % string
+        return string
+
+    def array_to_string(val):
+        # some ndarrays are special (special 3x3 keys, and scalars/vectors of
+        # numbers or bools), handle them here
+        if key in SPECIAL_3_3_KEYS:
+            # special 3x3 matrix
+            val = ' '.join(str(known_types_to_str(v)) for v in val.reshape(val.size, order='F'))
+        elif val.dtype.kind in ['i', 'f', 'b']:
+            # numerical or bool scalars/vectors are special, for backwards compat.
+            if len(val.shape) == 0:
+                # scalar
+                val = str(known_types_to_str(val))
+            elif len(val.shape) == 1:
+                # vector
+                val = ' '.join(str(known_types_to_str(v)) for v in val)
+        return val
+
+    def known_types_to_str(value):
+        if isinstance(value, bool) or isinstance(value, np.bool_):
+            return 'T' if value else 'F'
+        elif isinstance(value, np.int_) or isinstance(value, np.float_):
+            return '{}'.format(value)
+        elif isinstance(value, Spacegroup):
+            return value.symbol
         else:
-            return v
+            return value
 
-    s = ''
-    for key in d.keys():
-        val = d[key]
+    if len(dct) == 0:
+        return ''
+
+    string = ''
+    for key in dct.keys():
+        val = dct[key]
 
         if isinstance(val, np.ndarray):
-            # some ndarrays are special (special 3x3 keys, and scalars/vectors of numbers or bools), handle them here
-            if key in SPECIAL_3_3_KEYS:
-                # special 3x3 matrix
-                val = ' '.join(str(known_types_to_str(v)) for v in val.reshape(val.size, order='F'))
-            elif val.dtype.kind in ['i', 'f', 'b']:
-                # numerical or bool scalars/vectors are special, for backwards compat.
-                if len(val.shape) == 0:
-                    # scalar
-                    val = str(known_types_to_str(val))
-                elif len(val.shape) == 1:
-                    # vector
-                    val = ' '.join(str(known_types_to_str(v)) for v in val)
+            val = array_to_string(val)
         else:
             # convert any known types to string
             val = known_types_to_str(val)
@@ -279,26 +293,17 @@ def key_val_dict_to_str(d, sep=' '):
                               '{0}'.format(key))
                 continue
 
-        # escape and quote key
-        if  ' ' in key or '"' in key or "'" in key or '{' in key or '}' in key or '[' in key or ']' in key:
-            if '"' in key:
-                key = key.replace('"','\\"')
-            key = '"%s"' % key
-
-        eq="="
+        key = escape(key) # escape and quote key
+        eq = "="
         # Should this really be setting empty value that's going to be interpreted as bool True?
         if val is None:
             val = ""
             eq = ""
-        # escape and quote val
-        if  ' ' in val or '"' in val or "'" in val or '{' in val or '}' in val or '[' in val or ']' in val:
-            if '"' in val:
-                val = val.replace('"','\\"')
-            val = '"%s"' % val
+        val = escape(val)  # escape and quote val
 
-        s += '%s%s%s%s' % (key, eq, val, sep)
+        string += '%s%s%s%s' % (key, eq, val, sep)
 
-    return s.strip()
+    return string.strip()
 
 
 def parse_properties(prop_str):
