@@ -84,13 +84,20 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     charge = params.pop('charge', None)
     if charge is None:
         charge = int(np.round(atoms.get_initial_charges().sum()))
+    else:
+        # make sure it's an int -- one of the tests passes a float
+        # (why though?)
+        charge = int(charge)
 
     # determine multiplicity from initial magnetic moments
     # if not passed explicitly
     mult = params.pop('mult', None)
     if mult is None:
         initial_magmoms = atoms.get_initial_magnetic_moments()
-        mult = int(np.round(2 * initial_magmoms.sum())) + 1
+        mult = int(np.round(initial_magmoms.sum())) + 1
+    else:
+        # same logic as above: make sure user-provided mult is an int
+        mult = int(mult)
 
     # basisfile, only used if basis=gen
     basisfile = params.pop('basisfile', None)
@@ -127,7 +134,7 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
             out.append(key)
         elif isinstance(val, str) and ',' in val:
             out.append('{}({})'.format(key, val))
-        elif isinstance(val, Iterable):
+        elif not isinstance(val, str) and isinstance(val, Iterable):
             out.append('{}({})'.format(key, ','.join(val)))
         else:
             out.append('{}={}'.format(key, val))
@@ -171,7 +178,7 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
             raise InputError('Basis file {} does not exist'
                              .format(basisfile))
         elif basisfile[0] == '@':
-            out += [basisfile, '']
+            out.append(basisfile)
         else:
             with open(basisfile, 'r') as f:
                 out.append(f.read())
@@ -186,7 +193,7 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
         elif isinstance(addsec, Iterable):
             out += list(addsec)
 
-    out.append('')
+    out += ['', '']
     fd.write('\n'.join(out))
 
 
