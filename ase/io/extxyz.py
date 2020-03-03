@@ -649,12 +649,12 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
 
      - Values can be quoted with `""`, `''`, `[]` or `{}` (the latter are included
        to ease command-line usage as the `{}` are not treated specially by the shell)
-     - Quotes within keys or values can be escaped with `\"`
-     - Keys with special names `stress` or `virial` are treated in as 3x3 matrices in
-       Fortran order, as for `Lattice` above
+     - Quotes within keys or values can be escaped with `\"`.
+     - Keys with special names `stress` or `virial` are treated as 3x3 matrices in
+       Fortran order, as for `Lattice` above.
      - Otherwise, values with multiple elements are treated as 1D arrays, first
        assuming integer format and falling back to float if conversion is unsuccessful.
-     - A missing value defaults to `True`, e.g. the comment line ``"cutoff=3.4 have_energy"`
+     - A missing value defaults to `True`, e.g. the comment line `"cutoff=3.4 have_energy"`
        leads to `{'cutoff': 3.4, 'have_energy': True}` in `atoms.info`.
      - Value strings starting with `"_JSON"` are interpreted as JSON content;
        similarly, when writing, anything which does not match the criteria above
