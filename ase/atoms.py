@@ -360,18 +360,6 @@ class Atoms(object):
                 if hasattr(constraint, 'adjust_cell'):
                     constraint.adjust_cell(self, cell)
 
-        # XXX not working well during initialize due to missing _constraints
-        if apply_constraint and hasattr(self, '_constraints'):
-            for constraint in self.constraints:
-                if hasattr(constraint, 'adjust_cell'):
-                    constraint.adjust_cell(self, cell)
-
-        # XXX not working well during initialize due to missing _constraints
-        if apply_constraint and hasattr(self, '_constraints'):
-            for constraint in self.constraints:
-                if hasattr(constraint, 'adjust_cell'):
-                    constraint.adjust_cell(self, cell)
-
         if scale_atoms:
             M = np.linalg.solve(self.cell.complete(), cell.complete())
             self.positions[:] = np.dot(self.positions, M)
