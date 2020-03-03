@@ -176,10 +176,7 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     # if basis='gen', set basisfile. Either give a path to a basisfile, or
     # read in the provided file and paste it verbatim
     if basisfile is not None:
-        if not os.path.isfile(basisfile.rstrip('/N').lstrip('@')):
-            raise InputError('Basis file {} does not exist'
-                             .format(basisfile))
-        elif basisfile[0] == '@':
+        if basisfile[0] == '@':
             out.append(basisfile)
         else:
             with open(basisfile, 'r') as f:
@@ -257,10 +254,10 @@ def read_gaussian_out(fd, index=-1):
                                                    dipole=dipole,
                                                    forces=forces)
                 configs.append(atoms)
-                atoms = None
-                energy = None
-                dipole = None
-                forces = None
+            atoms = None
+            energy = None
+            dipole = None
+            forces = None
 
             numbers = []
             positions = []
