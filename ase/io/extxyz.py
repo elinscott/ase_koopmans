@@ -585,7 +585,7 @@ iread_xyz = ImageIterator(ixyzchunks)
 
 
 def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
-    """
+    r"""
     Read from a file in Extended XYZ format
 
     index is the frame to read, default is last frame (index=-1).
