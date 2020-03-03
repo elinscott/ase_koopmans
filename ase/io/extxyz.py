@@ -613,9 +613,8 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
     as needed.
 
     `Lattice` is a Cartesian 3x3 matrix representation of the cell
-    :attr:`~quippy.atoms.Atoms.lattice` vectors, with each vector stored
-    as a column and the 9 values listed in Fortran column-major order, i.e. in
-    the form ::
+    vectors, with each vector stored as a column and the 9 values listed in
+    Fortran column-major order, i.e. in the form ::
 
       Lattice="R1x R1y R1z R2x R2y R2z R3x R3y R3z"
 
@@ -640,6 +639,26 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
 
     would describe a silicon atom at position (4.08,4.08,1.36) with zero
     velocity and the `select` property set to 1.
+
+    The property names `pos`, `Z`, `mass`, and `charge` map to ASE
+    :attr:`ase.atoms.Atoms.arrays` entries named
+    `positions`, `numbers`, `masses` and `charges` respectively.
+
+    Additional key-value pairs in the comment line are parsed into the
+    :attr:`ase.Atoms.atoms.info` dictionary, with the following conventions
+
+     - Values can be quoted with `""`, `''`, `[]` or `{}` (the latter are included
+       to ease command-line usage as the `{}` are not treated specially by the shell)
+     - Quotes within keys or values can be escaped with `\"`
+     - Keys with special names `stress` or `virial` are treated in as 3x3 matrices in
+       Fortran order, as for `Lattice` above
+     - Otherwise, values with multiple elements are treated as 1D arrays, first
+       assuming integer format and falling back to float if conversion is unsuccessful.
+     - A missing value defaults to `True`, e.g. the comment line ``"cutoff=3.4 have_energy"`
+       leads to `{'cutoff': 3.4, 'have_energy': True}` in `atoms.info`.
+     - Value strings starting with `"_JSON"` are interpreted as JSON content;
+       similarly, when writing, anything which does not match the criteria above
+       is serialised as JSON.
 
     The extended XYZ format is also supported by the
     the `Ovito <http://www.ovito.org>`_ visualisation tool
