@@ -1,12 +1,10 @@
 import re
 import warnings
-from math import sin, cos
 
 import numpy as np
 
 from ase.utils import jsonable
 from ase.cell import Cell
-from ase.geometry import cell_to_cellpar, crystal_structure_from_cell
 
 
 def monkhorst_pack(size):
@@ -495,7 +493,6 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     the second is x coordinates of the special points,
     the third is the special points as strings.
     """
-
 
     if special_points is None:
         special_points = get_special_points(cell)
