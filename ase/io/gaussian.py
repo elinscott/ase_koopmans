@@ -85,21 +85,13 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     # determine charge from initial charges if not passed explicitly
     charge = params.pop('charge', None)
     if charge is None:
-        charge = int(np.round(atoms.get_initial_charges().sum()))
-    else:
-        # make sure it's an int -- one of the tests passes a float
-        # (why though?)
-        charge = int(charge)
+        charge = atoms.get_initial_charges().sum()
 
     # determine multiplicity from initial magnetic moments
     # if not passed explicitly
     mult = params.pop('mult', None)
     if mult is None:
-        initial_magmoms = atoms.get_initial_magnetic_moments()
-        mult = int(np.round(initial_magmoms.sum())) + 1
-    else:
-        # same logic as above: make sure user-provided mult is an int
-        mult = int(mult)
+        mult = atoms.get_initial_magnetic_moments().sum() + 1
 
     # basisfile, only used if basis=gen
     basisfile = params.pop('basisfile', None)
@@ -154,7 +146,7 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
 
     # header, charge, and mult
     out += ['', 'Gaussian input prepared by ASE', '',
-            '{} {}'.format(charge, mult)]
+            '{:.0f} {:.0f}'.format(charge, mult)]
 
     # atomic positions
     for atom in atoms:
