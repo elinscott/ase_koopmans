@@ -1,11 +1,11 @@
 import numpy as np
 
 from ase.optimize.optimize import Optimizer
-import ase.optimize.defaults as defaults 
+
 
 class MDMin(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 dt=None, master=None, maxstep=None):
+                 dt=None, master=None):
         """Parameters:
 
         atoms: Atoms object
@@ -30,20 +30,14 @@ class MDMin(Optimizer):
             Defaults to None, which causes only rank 0 to save files.  If
             set to true,  this rank will save files.
         """
-        Optimizer.__init__(self, atoms, restart, logfile, trajectory, master, maxstep)
+        Optimizer.__init__(self, atoms, restart, logfile, trajectory, master)
 
         if dt is not None:
-            self.dt = dt 
-        if maxstep is not None: 
-            self.maxstep = maxstep 
-        else:  
-            self.maxstep = defaults.maxstep
-	
+            self.dt = dt
 
     def initialize(self):
         self.v = None
-        self.dt = 0.2 
-        self.maxstep = 0.2
+        self.dt = 0.2
 
     def read(self):
         self.v, self.dt = self.load()
@@ -68,8 +62,5 @@ class MDMin(Optimizer):
 
         self.v += 0.5 * self.dt * f
         r = atoms.get_positions()
-        if (self.dt * self.v) <= self.maxstep:
-            atoms.set_positions(r + self.dt * self.v)
-        else : 
-            atoms.set_positions(r + self.maxstep)
+        atoms.set_positions(r + self.dt * self.v)
         self.dump((self.v, self.dt))
