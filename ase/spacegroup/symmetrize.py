@@ -20,8 +20,7 @@ def refine(atoms, symprec=0.01, verbose=False):
     except ImportError:
         from pyspglib import spglib  # For versions 1.8.x or before
 
-    cell = (atoms.cell.array, atoms.positions, atoms.numbers)
-    dataset = spglib.get_symmetry_dataset(cell, symprec=symprec)
+    dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
     if dataset is None:
         raise ValueError("refine failed to get initial symmetry dataset "+
                          spglib.get_error_message())
@@ -39,12 +38,11 @@ def refine(atoms, symprec=0.01, verbose=False):
     atoms.set_cell(rot_trans_std_cell, True)
 
     # get new dataset and primitive cell
-    cell = (atoms.cell.array, atoms.positions, atoms.numbers)
-    dataset = spglib.get_symmetry_dataset(cell, symprec=symprec)
+    dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
     if dataset is None:
         raise ValueError("refine failed to get symmetrized cell symmetry dataset "+
                          self.spglib.get_error_message())
-    (prim_cell, prim_scaled_pos, prim_types) = spglib.find_primitive(cell,
+    (prim_cell, prim_scaled_pos, prim_types) = spglib.find_primitive(atoms,
                                                                      symprec=symprec)
 
     # calculate offset between standard cell and actual cell
@@ -74,8 +72,7 @@ def refine(atoms, symprec=0.01, verbose=False):
     atoms.set_positions(p)
 
     # test final config with tight tol
-    cell = (atoms.cell.array, atoms.positions, atoms.numbers)
-    dataset = spglib.get_symmetry_dataset(cell, symprec=1.0e-4)
+    dataset = spglib.get_symmetry_dataset(atoms, symprec=1.0e-4)
     if dataset is None:
         raise ValueError("refine failed to get final symmetry dataset "+spglib.get_error_message())
     if verbose:
@@ -97,8 +94,7 @@ def check_symmetry(atoms, symprec=1.0e-6, verbose=False):
         import spglib  # For version 1.9 or later
     except ImportError:
         from pyspglib import spglib  # For versions 1.8.x or before
-    cell = (atoms.cell.array, atoms.positions, atoms.numbers)
-    dataset = spglib.get_symmetry_dataset(cell, symprec=symprec)
+    dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
     if verbose:
         print("ase.spacegroup.symmetrize.check_symmetry: prec", symprec,
               "got symmetry group number", dataset["number"],
@@ -119,8 +115,7 @@ def prep(atoms, symprec=1.0e-6):
     except ImportError:
         from pyspglib import spglib  # For versions 1.8.x or before
 
-    cell = (atoms.cell, atoms.positions, atoms.numbers)
-    dataset = spglib.get_symmetry_dataset(cell, symprec=symprec)
+    dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
     print("symmetry.prep: symmetry group number",dataset["number"],
           ", international (Hermann-Mauguin)", dataset["international"],
           ", Hall", dataset["hall"])
