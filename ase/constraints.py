@@ -2176,7 +2176,7 @@ class StrainFilter(Filter):
 
         self.strain = np.zeros(6)
         self.include_ideal_gas = include_ideal_gas
-        
+
         if mask is None:
             mask = np.ones(6)
         else:
@@ -2350,9 +2350,8 @@ class UnitCellFilter(Filter):
 
         Filter.__init__(self, atoms, indices=range(len(atoms)))
         self.atoms = atoms
-        self.deform_grad = np.eye(3)
-        self.atom_positions = atoms.get_positions()
         self.orig_cell = atoms.get_cell()
+        self.orig_cell_inv = np.linalg.inv(self.orig_cell)
         self.stress = None
 
         if mask is None:
@@ -2374,6 +2373,9 @@ class UnitCellFilter(Filter):
         self.copy = self.atoms.copy
         self.arrays = self.atoms.arrays
 
+    def deform_grad(self):
+        return np.dot(self.orig_cell_inv, self.atoms.get_cell()).T
+
     def get_positions(self):
         '''
         this returns an array with shape (natoms + 3,3).
@@ -2383,10 +2385,15 @@ class UnitCellFilter(Filter):
         scaled by self.cell_factor.
         '''
 
+        cur_deform_grad = self.deform_grad()
+        dg_T_inv = np.linalg.inv(cur_deform_grad.T)
+
         natoms = len(self.atoms)
         pos = np.zeros((natoms + 3, 3))
-        pos[:natoms] = self.atom_positions
-        pos[natoms:] = self.cell_factor * self.deform_grad
+        # UnitCellFilter's positions are the self.atoms.positions but without the applied deformation gradient
+        pos[:natoms] = np.dot(self.atoms.positions, dg_T_inv)
+        # UnitCellFilter's cell DOFs are the deformation gradient times a scaling factor
+        pos[natoms:] = self.cell_factor * cur_deform_grad
         return pos
 
     def set_positions(self, new, **kwargs):
@@ -2402,11 +2409,20 @@ class UnitCellFilter(Filter):
         '''
 
         natoms = len(self.atoms)
-        self.atom_positions[:] = new[:natoms]
-        self.deform_grad = new[natoms:] / self.cell_factor
-        self.atoms.set_positions(self.atom_positions, **kwargs)
-        self.atoms.set_cell(self.orig_cell, scale_atoms=False)
-        self.atoms.set_cell(np.dot(self.orig_cell, self.deform_grad.T),
+        new_atom_positions = new[:natoms]
+        new_deform_grad = new[natoms:] / self.cell_factor
+        # take self.atoms back to the original cell (without the deformation gradient)
+        #     be sure to scale atoms so that if set_positions() needs to symmetrize the atom step,
+        #     it does so based on consistent (same cell) initial and final positions
+        self.atoms.set_cell(self.orig_cell, scale_atoms=True)
+        # set the positions from the ones passed in (which are without the deformation gradient applied)
+        # if set_positions() calls adjust_positions(), UnitCellFilter.get_positions() will automatically
+        #    inherit that since it uses self.atoms.positions
+        self.atoms.set_positions(new_atom_positions, **kwargs)
+        # set the new cell from the original cell and the new unscaled deformation gradient
+        # if set_cell() calls adjust_cell(), UnitCellFilter.get_positions() will automatically
+        #     inherit that since it uses self.atoms.get_cell() to calculate the deformation gradient
+        self.atoms.set_cell(np.dot(self.orig_cell, new_deform_grad.T),
                             scale_atoms=True)
 
     def get_potential_energy(self, force_consistent=True):
@@ -2427,15 +2443,15 @@ class UnitCellFilter(Filter):
         computed from the stress tensor.
         '''
 
-        stress = self.atoms.get_stress()
-        atoms_forces = self.atoms.get_forces()
+        stress = self.atoms.get_stress(apply_constraint=apply_constraint)
+        atoms_forces = self.atoms.get_forces(apply_constraint=apply_constraint)
 
         volume = self.atoms.get_volume()
         virial = -volume * (voigt_6_to_full_3x3_stress(stress) +
                             np.diag([self.scalar_pressure] * 3))
-        atoms_forces = np.dot(atoms_forces, self.deform_grad)
-        dg_inv = np.linalg.inv(self.deform_grad)
-        virial = np.dot(virial, dg_inv.T)
+        cur_deform_grad = self.deform_grad()
+        atoms_forces = np.dot(atoms_forces, cur_deform_grad)
+        dg_inv = np.linalg.inv(cur_deform_grad)
 
         if self.hydrostatic_strain:
             vtr = virial.trace()

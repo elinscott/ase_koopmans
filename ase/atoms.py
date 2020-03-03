@@ -360,6 +360,18 @@ class Atoms(object):
                 if hasattr(constraint, 'adjust_cell'):
                     constraint.adjust_cell(self, cell)
 
+        # XXX not working well during initialize due to missing _constraints
+        if apply_constraint and hasattr(self, '_constraints'):
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_cell'):
+                    constraint.adjust_cell(self, cell)
+
+        # XXX not working well during initialize due to missing _constraints
+        if apply_constraint and hasattr(self, '_constraints'):
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_cell'):
+                    constraint.adjust_cell(self, cell)
+
         if scale_atoms:
             M = np.linalg.solve(self.cell.complete(), cell.complete())
             self.positions[:] = np.dot(self.positions, M)
@@ -811,6 +823,11 @@ class Atoms(object):
                 for beta in range(alpha, 3):
                     stress[stresscomp[alpha, beta]] -= (
                         p[:, alpha] * p[:, beta] * invmass).sum() * invvol
+
+        if apply_constraint:
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_stress'):
+                    constraint.adjust_stress(self, stress)
 
         if voigt:
             return stress
