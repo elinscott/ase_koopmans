@@ -133,4 +133,5 @@ def main(args, parser):
     fig.canvas.set_window_title(args.calculation)
     ax = fig.gca()
     bs.plot(ax=ax, filename=args.output, emin=emin, emax=emax)
-    plt.show()
+    if args.output is None:
+        plt.show()
