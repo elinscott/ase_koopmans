@@ -45,6 +45,8 @@ _xc_to_method = dict(
     hse06='hseh1pbe',
     hse03='ohse2pbe',
     lda='svwn',  # gaussian "knows about" LSDA, but maybe not LDA.
+    tpss='tpsstpss',
+    revtpss='revtpssrevtpss',
 )
 
 

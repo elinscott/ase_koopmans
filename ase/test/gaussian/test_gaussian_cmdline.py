@@ -3,7 +3,6 @@ def test_gaussian_cmdline():
     from ase.db import connect
     from ase.io import read
     from ase.io.jsonio import read_json
-    from ase.calculators.gaussian import Gaussian
 
     require('gaussian')
     cli("""\
