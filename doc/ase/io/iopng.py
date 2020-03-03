@@ -18,7 +18,7 @@ write('io3.pov', slab * (2, 2, 1),
       bbox=(d, 0, 3 * d, d * 3**0.5),
       transparent=False, run_povray=True)
 
-write('slab.xyz', slab)
+write('slab.xyz', slab, tolerant=True)
 a = read('slab.xyz')
 a.get_cell()
 a.get_pbc()
