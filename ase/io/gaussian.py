@@ -299,7 +299,7 @@ def read_gaussian_out(fd, index=-1):
             energy *= Hartree
         elif line.strip().startswith('Dipole moment'):
             tokens = fd.readline().strip().split()
-            dipole = list(map(float, tokens[1:6:2]))
+            dipole = np.array(list(map(float, tokens[1:6:2]))) * Debye
         elif line.strip().startswith('Dipole'):
             dip = line.strip().split('=')[1].replace('D', 'e')
             tokens = dip.split()
