@@ -13,6 +13,8 @@ from itertools import islice
 import re
 import warnings
 
+import json
+
 import numpy as np
 
 from ase.atoms import Atoms
@@ -22,6 +24,7 @@ from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
 from ase.constraints import FixAtoms, FixCartesian
 from ase.io.formats import index2range
+
 
 __all__ = ['read_xyz', 'write_xyz', 'iread_xyz']
 
@@ -41,6 +44,8 @@ KEY_RE = re.compile(r'([A-Za-z_]+[A-Za-z0-9_-]*)\s*')
 
 UNPROCESSED_KEYS = ['uid']
 
+SPECIAL_3_3_KEYS = ['Lattice', 'virial', 'stress']
+
 
 def key_val_str_to_dict(string, sep=None):
     """
@@ -48,8 +53,8 @@ def key_val_str_to_dict(string, sep=None):
     various values parsed to native types.
 
     Accepts brackets or quotes to delimit values. Parses integers, floats
-    booleans and arrays thereof. Arrays with 9 values are converted to 3x3
-    arrays with Fortran ordering.
+    booleans and arrays thereof. Arrays with 9 values whose named is listed
+    in SPECIAL_3_3_KEYS are converted to 3x3 arrays with Fortran ordering.
 
     If sep is None, string will split on whitespace, otherwise will split
     key value pairs with the given separator.
@@ -59,36 +64,31 @@ def key_val_str_to_dict(string, sep=None):
     delimiters = {
         "'": "'",
         '"': '"',
-        '(': ')',
         '{': '}',
-        '[': ']',
+        '[': ']'
     }
 
     # Make pairs and process afterwards
     kv_pairs = [
         [[]]]  # List of characters for each entry, add a new list for new value
-    delimiter_stack = []  # push and pop closing delimiters
+    cur_delimiter = None  # push and pop closing delimiters
     escaped = False  # add escaped sequences verbatim
 
     # parse character-by-character unless someone can do nested brackets
     # and escape sequences in a regex
     for char in string.strip():
         if escaped:  # bypass everything if escaped
-            kv_pairs[-1][-1].extend(['\\', char])
+            kv_pairs[-1][-1].append(char)
             escaped = False
-        elif delimiter_stack:  # inside brackets
-            if char == delimiter_stack[-1]:  # find matching delimiter
-                delimiter_stack.pop()
-            elif char in delimiters:
-                delimiter_stack.append(delimiters[char])  # nested brackets
-            elif char == '\\':
-                escaped = True  # so escaped quotes can be ignored
+        elif char == '\\': # escape the next thing
+            escaped = True
+        elif cur_delimiter:  # inside brackets
+            if char == cur_delimiter:  # found matching delimiter
+                cur_delimiter = None
             else:
                 kv_pairs[-1][-1].append(char)  # inside quotes, add verbatim
-        elif char == '\\':
-            escaped = True
         elif char in delimiters:
-            delimiter_stack.append(delimiters[char])  # brackets or quotes
+            cur_delimiter = delimiters[char]  # brackets or quotes
         elif (sep is None and char.isspace()) or char == sep:
             if kv_pairs == [[[]]]:  # empty, beginning of string
                 continue
@@ -125,16 +125,21 @@ def key_val_str_to_dict(string, sep=None):
                     numvalue = np.array(split_value, dtype=float)
                 if len(numvalue) == 1:
                     numvalue = numvalue[0]  # Only one number
-                elif len(numvalue) == 9:
-                    # special case: 3x3 matrix, fortran ordering
-                    numvalue = np.array(numvalue).reshape((3, 3), order='F')
                 value = numvalue
             except (ValueError, OverflowError):
                 pass  # value is unchanged
 
-            # Parse boolean values: 'T' -> True, 'F' -> False,
-            #                       'T T F' -> [True, True, False]
+            # convert special 3x3 matrices
+            if key in SPECIAL_3_3_KEYS:
+                if not isinstance(value, np.ndarray) or value.shape != (9,):
+                    raise ValueError("Got info item {}, expecting special 3x3 matrix, "
+                                     "but value is not in the form of a 9-long numerical vector".format(key))
+                value = np.array(value).reshape((3,3), order = 'F')
+
+            # parse special strings as boolean or JSON
             if isinstance(value, str):
+                # Parse boolean values: 'T' -> True, 'F' -> False,
+                #                       'T T F' -> [True, True, False]
                 str_to_bool = {'T': True, 'F': False}
 
                 try:
@@ -145,7 +150,12 @@ def key_val_str_to_dict(string, sep=None):
                     else:
                         value = boolvalue
                 except KeyError:
-                    pass  # value is unchanged
+                    # parse JSON
+                    if value.startswith("_JSON "):
+                        d = json.loads(value.replace("_JSON ","",1))
+                        value = np.array(d)
+                        if value.dtype.kind not in ['i','f','b']:
+                            value = d
 
         kv_dict[key] = value
 
@@ -218,7 +228,6 @@ def key_val_str_to_dict_regex(s):
 
     return d
 
-
 def key_val_dict_to_str(d, sep=' ', tolerant=False):
     """
     Convert atoms.info dictionary to extended XYZ string representation
@@ -226,49 +235,73 @@ def key_val_dict_to_str(d, sep=' ', tolerant=False):
     if len(d) == 0:
         return ''
     s = ''
-    type_val_map = {(bool, True): 'T',
-                    (bool, False): 'F',
-                    (np.bool_, True): 'T',
-                    (np.bool_, False): 'F'}
+
+    def known_types_to_str(v):
+        if isinstance(v, bool) or isinstance(v, np.bool_):
+            return 'T' if v else 'F'
+        elif isinstance(v, np.int_) or isinstance(v, np.float_):
+            return '{}'.format(v)
+        elif isinstance(v, Spacegroup):
+            return v.symbol
+        else:
+            return v
 
     s = ''
     for key in d.keys():
         val = d[key]
-        if isinstance(val, dict):
-            continue
-        if isinstance(val, str):
-            pass
-        elif hasattr(val, '__iter__'):
+
+        if isinstance(val, np.ndarray):
+            # some ndarrays are special (special 3x3 keys, and scalars/vectors of numbers or bools), handle them here
+            if key in SPECIAL_3_3_KEYS:
+                # special 3x3 matrix
+                val = ' '.join(str(known_types_to_str(v)) for v in val.reshape(val.size, order='F'))
+            elif val.dtype.kind in ['i', 'f', 'b']:
+                # numerical or bool scalars/vectors are special, for backwards compat.
+                if len(val.shape) == 0:
+                    # scalar
+                    val = str(known_types_to_str(val))
+                elif len(val.shape) == 1:
+                    # vector
+                    val = ' '.join(str(known_types_to_str(v)) for v in val)
+        else:
+            # convert any known types to string
+            val = known_types_to_str(val)
+
+        if val is not None and not isinstance(val, str):
+            # what's left is an object, try using JSON
             try:
-                val = np.array(list(val))
-                val = ' '.join(str(type_val_map.get((type(x), x), x))
-                               for x in val.reshape(val.size, order='F'))
-            except (TypeError, ValueError) as exc:
-                # It may fail if the type is unhashable
-                # ValueError is only relevant for non-uniform arrays
-                # with older numpy (1.10.4) and affects the creation
-                # of the array.  Can be removed in the future.
+                if isinstance(val, np.ndarray):
+                    val = val.tolist()
+                val = '_JSON ' + json.dumps(val)
+                # if this fails, let exceptions get caught below to complain or give up, depending on tolerant
+            except (TypeError, ValueError):
                 if tolerant:
                     warnings.warn('Skipping unhashable information '
                                   '{0}'.format(key))
                     continue
                 else:
-                    raise RuntimeError('Unhashable object in info dictionary,'
+                    raise RuntimeError('UnJSONable object key={} in info dictionary,'
                                        ' please remove it or use '
-                                       'tolerant=True') from exc
-            val.replace('[', '')
-            val.replace(']', '')
-        elif isinstance(val, Spacegroup):
-            val = val.symbol
-        else:
-            val = type_val_map.get((type(val), val), val)
+                                       'tolerant=True'.format(key))
 
+        # escape and quote key
+        if  ' ' in key or '"' in key or "'" in key or '{' in key or '}' in key or '[' in key or ']' in key:
+            if '"' in key:
+                key = key.replace('"','\\"')
+            key = '"%s"' % key
+
+        eq="="
+        # Should this really be setting empty value that's going to be interpreted as bool True?
         if val is None:
-            s = s + '%s%s' % (key, sep)
-        elif isinstance(val, str) and ' ' in val:
-            s = s + '%s="%s"%s' % (key, val, sep)
-        else:
-            s = s + '%s=%s%s' % (key, str(val), sep)
+            val = ""
+            eq = ""
+        # escape and quote val
+        if  ' ' in val or '"' in val or "'" in val or '{' in val or '}' in val or '[' in val or ']' in val:
+            if '"' in val:
+                val = val.replace('"','\\"')
+            val = '"%s"' % val
+
+        s += '%s%s%s%s' % (key, eq, val, sep)
 
     return s.strip()
 
@@ -800,9 +833,17 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
     Write output in extended XYZ format
 
     Optionally, specify which columns (arrays) to include in output,
-    and whether to write the contents of the Atoms.info dict to the
-    XYZ comment line (default is True) and the results of any
-    calculator attached to this Atoms.
+    whether to write the contents of the `atoms.info` dict to the
+    XYZ comment line (default is True), the results of any
+    calculator attached to this Atoms. The `plain` argument
+    can be used to write a simple XYZ file with no additional information.
+    `vec_cell` can be used to write the cell vectors as additional
+    pseudo-atoms. If `append` is set to True, the file is for append (mode `a`),
+    otherwise it is overwritten (mode `w`). The `tolerant` option can be
+    set to True to skip over `atoms.info` entries which cannot be serialised.
+
+    See documentation for :func:`read_xyz()` for further details of the extended
+    XYZ file format.
     """
     if isinstance(fileobj, str):
         mode = 'w'
