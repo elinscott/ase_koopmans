@@ -1,5 +1,4 @@
 import re
-import os
 import warnings
 from collections.abc import Iterable
 from copy import deepcopy
