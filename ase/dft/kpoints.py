@@ -406,35 +406,6 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
     return cell.bandpath(path, npoints=npoints, density=density,
                          special_points=special_points, eps=eps)
 
-    # XXX old code for bandpath() function, should be removed once we
-    # weed out any trouble
-    if isinstance(path, str):
-        # XXX we need to update this so we use the new and more complete
-        # cell classification stuff
-        lattice = None
-        if special_points is None:
-            cell = Cell.ascell(cell)
-            cellinfo = get_cellinfo(cell)
-            special_points = cellinfo.special_points
-            lattice = cellinfo.lattice
-        paths = []
-        for names in parse_path_string(path):
-            for name in names:
-                if name not in special_points:
-                    msg = ('K-point label {} not included in {} special '
-                           'points.  Valid labels are: {}'
-                           .format(name, lattice or 'custom dictionary of',
-                                   ', '.join(sorted(special_points))))
-                    raise ValueError(msg)
-            paths.append([special_points[name] for name in names])
-    elif np.array(path[0]).ndim == 1:
-        paths = [path]
-    else:
-        paths = path
-
-    kpts, x, X = paths2kpts(paths, cell, npoints, density)
-    return BandPath(cell, kpts=kpts, special_points=special_points)
-
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
 
