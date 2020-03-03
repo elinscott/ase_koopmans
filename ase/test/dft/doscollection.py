@@ -28,7 +28,7 @@ class TestDOSCollection:
 
     @pytest.fixture
     def another_rawdos(self):
-        return RawDOSData([3., 2., 4.], [1., 0., 2.],
+        return RawDOSData([3., 2., 5.], [1., 0., 2.],
                           info={'other_key': 'other_value'})
 
     @pytest.mark.parametrize('n_entries', [0, 1, 3])
@@ -81,6 +81,53 @@ class TestDOSCollection:
 
         with pytest.raises(TypeError):
             MinimalDOSCollection([rawdos]) + YetAnotherDOSCollection([rawdos])
+
+    
+    @pytest.mark.parametrize('options', [{'x': [1., 1.1, 1.2],
+                                          'width': 1.3,
+                                          'smearing': 'Gauss'},
+                                         {'x': [1.7, 2.1, 2.0],
+                                          'width': 3.4,
+                                          'smearing': 'Gauss'}])
+    def test_sample(self, rawdos, another_rawdos, options):
+        dc = MinimalDOSCollection([rawdos, another_rawdos])
+        sampled_data = dc.sample(**options)
+        for i, data in enumerate((rawdos, another_rawdos)):
+            # Check consistency with individual DOSData objects
+            assert np.allclose(sampled_data[i, :], data.sample(**options))
+            # Check we aren't trivially comparing zeros
+            assert np.all(sampled_data)
+
+    sample_grid_options = [{'npts': 10, 'xmin': -2, 'xmax': 10,
+                            'padding': 3, 'width': 1},
+                           {'npts': 12, 'xmin': 0, 'xmax': 4,
+                            'padding': 2.1, 'width': 2.3}]
+    
+    @pytest.mark.parametrize('options', sample_grid_options)
+    def test_sample_grid(self, rawdos, another_rawdos, options):
+        ref_min = min(rawdos.get_energies())
+        ref_max = max(another_rawdos.get_energies())
+        
+        # Check auto minimum
+        dc = MinimalDOSCollection([rawdos, another_rawdos])
+        energies, dos = dc.sample_grid(10, xmax=options['xmax'],
+                                       padding=options['padding'],
+                                       width=options['width'])
+        assert pytest.approx(energies[0]) == ref_min - options['padding'] * options['width']
+        assert pytest.approx(energies[-1]) == options['xmax']
+
+        # Check auto maximum
+        energies, dos = dc.sample_grid(10, xmin=options['xmin'],
+                                       padding=options['padding'],
+                                       width=options['width'])
+        assert pytest.approx(energies[0]) == options['xmin']
+        assert (pytest.approx(energies[-1])
+                == ref_max + options['padding'] * options['width'])
+
+        # Check values
+        energies, dos = dc.sample_grid(**options)
+        for i, data in enumerate((rawdos, another_rawdos)):
+            assert np.allclose(dos[i, :], data.sample_grid(**options)[1])
 
 
 class TestRawDOSCollection:

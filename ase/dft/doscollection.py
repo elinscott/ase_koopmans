@@ -1,16 +1,71 @@
 from abc import ABCMeta
-from collections.abc import Sequence
+from collections.abc import Sequence as Sequence_abc
 from functools import singledispatch
-from typing import Any, Iterable, List, overload, Union
+from typing import Any, Iterable, List, overload, Sequence, Tuple, Union
 
 import numpy as np
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData
 
 
-class DOSCollection(Sequence, metaclass=ABCMeta):
+class DOSCollection(Sequence_abc, metaclass=ABCMeta):
     """Abstract base class for a collection of DOSData objects"""
     def __init__(self, dos_series: Iterable[DOSData]) -> None:
         self._data = list(dos_series)
+
+    def sample(self,
+               x: Sequence[float],
+               width: float = 0.1,
+               smearing: str = 'Gauss') -> np.ndarray:
+        """Sample the DOS data at chosen points, with broadening
+
+        This samples the underlying DOS data in the same way as the .sample()
+        method of those DOSData items, returning a 2-D array with columns
+        corresponding to x and rows corresponding to the collected data series.
+
+        Args:
+            x: energy values for sampling
+            width: Width of broadening kernel
+            smearing: selection of broadening kernel (only "Gauss" is currently
+                supported)
+
+        Returns:
+            Weights sampled from a broadened DOS at values corresponding to x,
+            in rows corresponding to DOSData entries contained in this object
+        """
+        return np.asarray([data.sample(x, width=width, smearing=smearing)
+                           for data in self])
+
+    def sample_grid(self,
+                    npts: int,
+                    xmin: float = None,
+                    xmax: float = None,
+                    padding: float = 3,
+                    width: float = 0.1,
+                    smearing: str = 'Gauss',
+                    ) -> Tuple[Sequence[float], np.ndarray]:
+        """Sample the DOS data on an evenly-spaced energy grid
+
+        Args:
+            npts: Number of sampled points
+            xmin: Minimum sampled x value; if unspecified, a default is chosen
+            xmax: Maximum sampled x value; if unspecified, a default is chosen
+            padding: If xmin/xmax is unspecified, default value will be padded
+                by padding * width to avoid cutting off peaks.
+            width: Width of broadening kernel, passed to self.sample()
+            smearing: selection of broadening kernel, passed to self.sample()
+
+        Returns:
+            (x-values, sampled DOS)
+        """
+
+        if xmin is None:
+            xmin = (min(min(data.get_energies()) for data in self)
+                    - (padding * width))
+        if xmax is None:
+            xmax = (max(max(data.get_energies()) for data in self)
+                    + (padding * width))
+        x = np.linspace(xmin, xmax, npts)
+        return x, self.sample(x, width=width, smearing=smearing)
 
     @overload  # noqa F811
     def __getitem__(self, item: int) -> DOSData:
@@ -29,6 +84,14 @@ class DOSCollection(Sequence, metaclass=ABCMeta):
 
     def __len__(self) -> int:
         return len(self._data)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        elif not len(self) == len(other):
+            return False
+        else:
+            return all([a == b for a, b in zip(self, other)])
 
     def __add__(self,
                 other: Union['DOSCollection', DOSData]) -> 'DOSCollection':
@@ -49,14 +112,6 @@ class DOSCollection(Sequence, metaclass=ABCMeta):
 
         """
         return _add_to_collection(other, self)
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return False
-        elif not len(self) == len(other):
-            return False
-        else:
-            return all([a == b for a, b in zip(self, other)])
 
 
 @singledispatch

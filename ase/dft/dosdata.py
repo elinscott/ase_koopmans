@@ -38,7 +38,17 @@ class DOSData(metaclass=ABCMeta):
                x: Sequence[float],
                width: float = 0.1,
                smearing: str = 'Gauss') -> np.ndarray:
-        """Sample the DOS data at chosen points, with broadening"""
+        """Sample the DOS data at chosen points, with broadening
+
+        Args:
+            x: energy values for sampling
+            width: Width of broadening kernel
+            smearing: selection of broadening kernel (only "Gauss" is currently
+                supported)
+
+        Returns:
+            Weights sampled from a broadened DOS at values corresponding to x
+        """
 
         self._check_positive_width(width)
         weights_grid = np.dot(
