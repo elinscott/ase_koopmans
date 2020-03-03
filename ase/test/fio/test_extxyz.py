@@ -18,7 +18,7 @@ def test_array_shape():
     # Check that unashable data type in info does not break output
     at.info['bad-info'] = [[1, np.array([0,1])], [2, np.array([0,1])]]
     with no_warn():
-        ase.io.write('to.xyz', at, format='extxyz', tolerant=True)
+        ase.io.write('to.xyz', at, format='extxyz')
     del at.info['bad-info']
     at.arrays['ns_extra_data'] = np.zeros((len(at), 1))
     assert at.arrays['ns_extra_data'].shape == (2, 1)
@@ -30,7 +30,7 @@ def test_array_shape():
 
 #test comment read/write with vec_cell
 def test_comment():
-    at = bulk('Si')    
+    at = bulk('Si')
     at.info['comment'] = 'test comment'
     ase.io.write('comment.xyz', at, comment=at.info['comment'], vec_cell=True)
     r = ase.io.read('comment.xyz')
@@ -39,7 +39,7 @@ def test_comment():
 # write sequence of images with different numbers of atoms -- bug fixed
 # in commit r4542
 def test_sequence():
-    at = bulk('Si')    
+    at = bulk('Si')
     images = [at, at * (2, 1, 1), at * (3, 1, 1)]
     ase.io.write('multi.xyz', images, format='extxyz')
     read_images = ase.io.read('multi.xyz', index=':')
@@ -47,7 +47,7 @@ def test_sequence():
 
 #test vec_cell writing and reading
 def test_vec_cell():
-    at = bulk('Si')    
+    at = bulk('Si')
     images = [at, at * (2, 1, 1), at * (3, 1, 1)]
 
     images[1].set_pbc([True,True,False])

@@ -228,7 +228,7 @@ def key_val_str_to_dict_regex(s):
 
     return d
 
-def key_val_dict_to_str(d, sep=' ', tolerant=False):
+def key_val_dict_to_str(d, sep=' '):
     """
     Convert atoms.info dictionary to extended XYZ string representation
     """
@@ -273,16 +273,11 @@ def key_val_dict_to_str(d, sep=' ', tolerant=False):
                 if isinstance(val, np.ndarray):
                     val = val.tolist()
                 val = '_JSON ' + json.dumps(val)
-                # if this fails, let exceptions get caught below to complain or give up, depending on tolerant
+                # if this fails, let give up
             except (TypeError, ValueError):
-                if tolerant:
-                    warnings.warn('Skipping unhashable information '
-                                  '{0}'.format(key))
-                    continue
-                else:
-                    raise RuntimeError('UnJSONable object key={} in info dictionary,'
-                                       ' please remove it or use '
-                                       'tolerant=True'.format(key))
+                warnings.warn('Skipping unhashable information '
+                              '{0}'.format(key))
+                continue
 
         # escape and quote key
         if  ' ' in key or '"' in key or "'" in key or '{' in key or '}' in key or '[' in key or ']' in key:
@@ -756,7 +751,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
 
 
 def output_column_format(atoms, columns, arrays,
-                         write_info=True, results=None, tolerant=False):
+                         write_info=True, results=None):
     """
     Helper function to build extended XYZ comment line
     """
@@ -818,7 +813,7 @@ def output_column_format(atoms, columns, arrays,
     if results is not None:
         info.update(results)
     info['pbc'] = atoms.get_pbc()  # always save periodic boundary conditions
-    comment_str += ' ' + key_val_dict_to_str(info, tolerant=tolerant)
+    comment_str += ' ' + key_val_dict_to_str(info)
 
     dtype = np.dtype(dtypes)
     fmt = ' '.join(formats) + '\n'
@@ -827,8 +822,7 @@ def output_column_format(atoms, columns, arrays,
 
 
 def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
-              write_results=True, plain=False, vec_cell=False, append=False,
-              tolerant=False):
+              write_results=True, plain=False, vec_cell=False, append=False):
     """
     Write output in extended XYZ format
 
@@ -839,8 +833,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
     can be used to write a simple XYZ file with no additional information.
     `vec_cell` can be used to write the cell vectors as additional
     pseudo-atoms. If `append` is set to True, the file is for append (mode `a`),
-    otherwise it is overwritten (mode `w`). The `tolerant` option can be
-    set to True to skip over `atoms.info` entries which cannot be serialised.
+    otherwise it is overwritten (mode `w`).
 
     See documentation for :func:`read_xyz()` for further details of the extended
     XYZ file format.
@@ -888,7 +881,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                         # skip missing calculator results
                         continue
                     if (isinstance(value, np.ndarray) and len(value.shape) >= 1 and
-                            and value.shape[0] == len(atoms)):
+                            value.shape[0] == len(atoms)):
                         # per-atom quantities (forces, energies, stresses)
                         per_atom_results[key] = value
                     else:
@@ -988,8 +981,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                                                        fr_cols,
                                                        arrays,
                                                        write_info,
-                                                       per_frame_results,
-                                                       tolerant)
+                                                       per_frame_results)
 
         if plain or comment != '':
             # override key/value pairs with user-speficied comment string
