@@ -2449,6 +2449,7 @@ class UnitCellFilter(Filter):
         volume = self.atoms.get_volume()
         virial = -volume * (voigt_6_to_full_3x3_stress(stress) +
                             np.diag([self.scalar_pressure] * 3))
+        virial = np.dot(virial, dg_inv.T)                            
         cur_deform_grad = self.deform_grad()
         atoms_forces = np.dot(atoms_forces, cur_deform_grad)
         dg_inv = np.linalg.inv(cur_deform_grad)
