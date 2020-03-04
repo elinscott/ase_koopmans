@@ -2,7 +2,6 @@
 # (which is also included in oi.py test case)
 # maintained by James Kermode <james.kermode@gmail.com>
 
-import os
 import numpy as np
 import pytest
 
@@ -128,7 +127,7 @@ def test_complex_key_val():
         ' '  # start with a separator
         'str=astring '
         'quot="quoted value" '
-        'quote_special="a_to_Z_$%%^&*\xfc\u2615" '
+        'quote_special="a_to_Z_$%%^&*" '
         r'escaped_quote="esc\"aped" '
         'true_value '
         'false_value = F '
@@ -174,7 +173,7 @@ def test_complex_key_val():
     expected_dict = {
         'str': 'astring',
         'quot': "quoted value",
-        'quote_special': u"a_to_Z_$%%^&*\xfc\u2615",
+        'quote_special': u"a_to_Z_$%%^&*",
         'escaped_quote': 'esc"aped',
         'true_value': True,
         'false_value': False,
