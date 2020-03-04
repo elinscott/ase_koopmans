@@ -8,8 +8,8 @@ def fit_raw(energies, forces, positions, cell=None, pbc=None):
     a NEB plot."""
     energies = np.array(energies) - energies[0]
     n_images = len(energies)
-    Efit = np.empty((n_images - 1) * 20 + 1)
-    Sfit = np.empty((n_images - 1) * 20 + 1)
+    fit_energies = np.empty((n_images - 1) * 20 + 1)
+    fit_path = np.empty((n_images - 1) * 20 + 1)
 
     path = [0]
     for i in range(n_images - 1):
@@ -48,17 +48,18 @@ def fit_raw(energies, forces, positions, cell=None, pbc=None):
                                 np.array([energies[i - 1], energies[i],
                                           lastslope, slope]))
             y = c[0] + x * (c[1] + x * (c[2] + x * c[3]))
-            Sfit[(i - 1) * 20:i * 20] = x
-            Efit[(i - 1) * 20:i * 20] = y
+            fit_path[(i - 1) * 20:i * 20] = x
+            fit_energies[(i - 1) * 20:i * 20] = y
 
         lastslope = slope
 
-    Sfit[-1] = path[-1]
-    Efit[-1] = energies[-1]
-    return ForceFit(path, energies, Sfit, Efit, lines)
+    fit_path[-1] = path[-1]
+    fit_energies[-1] = energies[-1]
+    return ForceFit(path, energies, fit_path, fit_energies, lines)
 
 
-class ForceFit(namedtuple('ForceFit', ['s', 'E', 'Sfit', 'Efit', 'lines'])):
+class ForceFit(namedtuple('ForceFit', ['path', 'energies', 'fit_path',
+                                       'fit_energies', 'lines'])):
     """Data container to hold fitting parameters for force curves."""
 
     def plot(self, ax=None):
@@ -66,15 +67,15 @@ class ForceFit(namedtuple('ForceFit', ['s', 'E', 'Sfit', 'Efit', 'lines'])):
         if ax is None:
             ax = plt.gca()
 
-        ax.plot(self.s, self.E, 'o')
+        ax.plot(self.path, self.energies, 'o')
         for x, y in self.lines:
             ax.plot(x, y, '-g')
-        ax.plot(self.Sfit, self.Efit, 'k-')
+        ax.plot(self.fit_path, self.fit_energies, 'k-')
         ax.set_xlabel(r'path [Å]')
         ax.set_ylabel('energy [eV]')
-        Ef = max(self.E) - self.E[0]
-        Er = max(self.E) - self.E[-1]
-        dE = self.E[-1] - self.E[0]
+        Ef = max(self.energies) - self.energies[0]
+        Er = max(self.energies) - self.energies[-1]
+        dE = self.energies[-1] - self.energies[0]
         ax.set_title(r'$E_\mathrm{{f}} \approx$ {:.3f} eV; '
                      r'$E_\mathrm{{r}} \approx$ {:.3f} eV; '
                      r'$\Delta E$ = {:.3f} eV'.format(Ef, Er, dE))
