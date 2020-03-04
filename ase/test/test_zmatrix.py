@@ -2,53 +2,74 @@ import pytest
 import numpy as np
 from ase.io.zmatrix import parse_zmatrix
 
-tests = dict(
-    h2=dict(
-        zmat=('h;'
-              'h 1 0.74'),
-        pos=[[0, 0, 0], [0.74, 0, 0]],
+pos_ref = [
+    [+0.000, +0.000, +0.000],
+    [+1.310, +0.000, +0.000],
+    [-0.160, +1.300, +0.000],
+    [+1.150, +1.300, +0.000],
+    [-0.394, -0.446, +1.031],
+    [-0.394, -0.446, -1.031],
+    [+1.545, +1.746, -1.031],
+    [+1.545, +1.746, +1.031],
+]
+
+tests = [
+    (
+        (
+            'b;'
+            'h 1 1.31;'
+            'h 1 1.31 2 97;'
+            'b 2 1.31 1 83 3 0;'
+            'h 1 1.19 4 120 2 90;'
+            'h 1 1.19 4 120 3 90;'
+            'h 4 1.19 1 120 2 90;'
+            'h 4 1.19 1 120 3 90'
+        ), None,
     ),
-    h2o2=dict(
-        zmat=[
-            'H1',
-            'O2 1 0.9',
-            'O3 2 1.4 1 105',
-            'H4 3 0.9 2 105 1 120',
+    (
+        [
+            'B1',
+            'H1 B1 bh1',
+            'H2 B1 bh1 H1 hbh1',
+            'B2 H1 bh1 B1 bhb H2 0',
+            'H3 B1 bh2 B2 hbh2 H1 hbbh',
+            'H4 B1 bh2 B2 hbh2 H1 -hbbh',
+            'H5 B2 bh2 B1 hbh2 H2 -hbbh',
+            'H6 B2 bh2 B1 hbh2 H2 hbbh',
+        ], [
+            'bh1 = 1.31',
+            'bh2 = 1.19',
+            'hbh1 = 97',
+            'hbh2 = 120',
+            'bhb = 83',
+            'hbbh = 90',
         ],
-        pos=[[0, 0, 0],
-             [0.9, 0, 0],
-             [1.262, 1.352, 0],
-             [1.742, 1.465, 0.753]],
     ),
-    h2o_gauss=dict(
-        zmat='\n'.join([
-            'O',
-            'H 1 rOH',
-            'H 1 rOH 2 aH2O',
+    (
+        '\n'.join([
+            'B',
+            'H 1 rBH1',
+            'H 1 rBH1 2 aHBH1',
+            'B 1 rBB 2 aBBH 3 0',
+            'H 1 rBH2 4 aHBH2 2 dHBBH',
+            'H 1 rBH2 4 aHBH2 3 dHBBH',
+            'H 4 rBH2 1 aHBH2 2 dHBBH',
+            'H 4 rBH2 1 aHBH2 3 dHBBH',
+        ]), '\n'.join([
+            'rBH1 1.31',
+            'rBH2 1.19',
+            'rBB 1.736',
+            'aHBH1 97',
+            'aHBH2 120',
+            'aBBH 48.5',
+            'dHBBH 90',
         ]),
-        defs="rOH 0.97; aH2O 104",
-        pos=[[0, 0, 0],
-             [0.97, 0, 0],
-             [-0.235, 0.941, 0.]],
     ),
-)
-
-tests['h2o_qchem'] = dict(
-    zmat='\n'.join([
-        'O1',
-        'H1 O1 oh',
-        'H2 O1 oh H1 hoh',
-    ]),
-    defs='\n'.join([
-        'oh = 0.97',
-        'hoh = 104.0',
-    ]),
-    pos=tests['h2o_gauss']['pos'],
-)
+]
 
 
-@pytest.mark.parametrize('name', tests)
-def test_zmatrix(name):
-    atoms = parse_zmatrix(tests[name]['zmat'],
-                          defs=tests[name].get('defs'))
-    assert np.max(np.abs(atoms.positions - tests[name]['pos'])) < 1e-3
+@pytest.mark.parametrize('idx', range(len(tests)))
+def test_zmatrix_diborane(idx):
+    zmat, defs = tests[idx]
+    atoms = parse_zmatrix(zmat, defs=defs)
+    assert np.max(np.abs(atoms.positions - pos_ref)) < 1e-3

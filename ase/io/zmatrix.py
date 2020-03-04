@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 import re
 from string import digits
 import numpy as np
@@ -65,8 +66,11 @@ def parse_zmatrix(zmat, distance_units='angstrom', angle_units='degrees',
     if defs is None:
         defs = dict()
     elif isinstance(defs, str):
+        defs = _re_linesplit.split(defs.strip())
+
+    if not isinstance(defs, dict) and isinstance(defs, Iterable):
         newdefs = dict()
-        for row in _re_linesplit.split(defs.strip()):
+        for row in defs:
             tokens = _re_defs.split(row.strip())
             if len(tokens) == 0:
                 continue
