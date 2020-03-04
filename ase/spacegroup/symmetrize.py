@@ -41,7 +41,7 @@ def refine(atoms, symprec=0.01, verbose=False):
     dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
     if dataset is None:
         raise ValueError("refine failed to get symmetrized cell symmetry dataset "+
-                         self.spglib.get_error_message())
+                         spglib.get_error_message())
     (prim_cell, prim_scaled_pos, prim_types) = spglib.find_primitive(atoms,
                                                                      symprec=symprec)
 
@@ -188,23 +188,14 @@ class FixSymmetry(FixConstraint):
     def adjust_cell(self, atoms, cell):
         if not self.do_adjust_cell:
             return
-        # stress should definitely be symmetrized as a rank 2 tensor
-        # UnitCellFilter uses deformation gradient as cell DOF with steps dF = stress.F^-T
-        # quantity that should be symmetrized is therefore dF . F^T
-        # assume prev F = I, so just symmetrize dF
-        cur_cell = atoms.get_cell()
-        cur_cell_inv = atoms.get_reciprocal_cell().T
-
-        # F defined such that cell = cur_cell . F^T
-        # assume prev F = I, so dF = F - I
-        delta_deform_grad = np.dot(cur_cell_inv, cell).T - np.eye(3)
-
-        symmetrized_delta_deform_grad = symmetrize_rank2(cur_cell, cur_cell_inv,
-                                                   delta_deform_grad, self.rotations)
-        # print('cell step', np.abs(delta_deform_grad).max())
-        # print('cell sym delta_deform_grad', np.abs(symmetrized_delta_deform_grad).max())
-        # print('change in delta_deform_grad', np.abs(symmetrized_delta_deform_grad - delta_deform_grad).max())
-        cell[:] = np.dot(cur_cell, (symmetrized_delta_deform_grad+np.eye(3)).T) #symmetrized_cell
+        # symmetrize cell as a rank 2 tensor
+        symmetrized_cell = symmetrize_rank2(atoms.get_cell(),
+                                            atoms.get_reciprocal_cell().T,
+                                            cell, self.rotations)
+        # print('cell step', np.abs(step).max())
+        # print('cell sym step', np.abs(symmetrized_step).max())
+        # print('change in step', np.abs(symmetrized_step - step).max())
+        cell[:] = cell #symmetrized_cell
 
     def adjust_positions(self, atoms, new):
         if not self.do_adjust_positions:

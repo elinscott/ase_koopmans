@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import pytest
 
@@ -7,7 +6,6 @@ from ase.calculators.lj import LennardJones
 from ase.spacegroup.symmetrize import FixSymmetry, check_symmetry
 from ase.optimize.precon.lbfgs import PreconLBFGS
 from ase.constraints import UnitCellFilter, ExpCellFilter
-import ase.io
 
 # setup an fcc Al cell
 def setup_cell():
