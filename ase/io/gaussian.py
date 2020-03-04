@@ -30,7 +30,7 @@ _link0_keys = [
 # Certain problematic methods do not provide well-defined potential energy
 # surfaces, because these "composite" methods involve geometry optimization
 # and/or vibrational frequency analysis. In addition, the "energy" calculated
-# by these methods are typically ZVPE corrected and/or temperature dependent
+# by these methods are typically ZPVE corrected and/or temperature dependent
 # free energies.
 _problem_methods = [
     'cbs-4m', 'cbs-qb3', 'cbs-apno',
