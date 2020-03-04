@@ -85,8 +85,8 @@ def parse_zmatrix(zmat, distance_units='angstrom', angle_units='degrees',
     dconv = _get_units('distance', distance_units, _dist)
     aconv = _get_units('angle', angle_units, _angle)
 
-    # Start by assuming the z-matrix is 1-indexed, even though it probably
-    # isn't. We figure that out below and modify offset apropriately.
+    # Start by assuming the z-matrix is 0-indexed, even though it probably
+    # isn't. We figure that out below and modify offset appropriately.
     offset = 0
 
     # zmat should be a list containing the rows of the z-matrix.
