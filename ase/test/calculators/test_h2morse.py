@@ -85,9 +85,5 @@ def test_traditional():
     assert ex1.muv == pytest.approx(ex2.muv, 1e-5)
 
 
-def main():
-    test_traditional()
-    
-
 if __name__ == '__main__':
-    main()
+    test_traditional()

@@ -51,8 +51,5 @@ def test_compare_placzek_albrecht_intensities():
     assert pri == pytest.approx(ali, 1e-2)
    
 
-def main():
-    test_compare_placzek_albrecht_intensities()
-
 if __name__ == '__main__':
-    main()
+    test_compare_placzek_albrecht_intensities()

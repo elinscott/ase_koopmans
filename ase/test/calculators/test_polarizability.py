@@ -24,9 +24,5 @@ def test_shapes():
         assert at.diagonal().sum() / 3 == pytest.approx(af, 1.e-8)
 
 
-def main():
-    test_shapes()
-
-
 if __name__ == '__main__':
-    main()
+    test_shapes()
