@@ -10,6 +10,10 @@ Git master branch
 
 :git:`master <>`.
 
+* The tangent estimates used to make the nudged elastic band (NEB) plots are
+  slightly improved to use center, rather than forward differences. This does
+  not affect how NEBs are run; only how they are displayed.
+
 * The ``ase db db1.db <selection> --insert-into db2.db`` command now respects
   ``--limit`` and ``--offset``.
 
@@ -32,7 +36,7 @@ Git master branch
 
 * :class:`ase.neb.NEBTools` now allows the simultaneous plotting of all bands from a trajectory of a nudged elastic band calculation (or similar); this funciton is also available at the command line as ``ase nebplot neb.traj``.
 
-* The image-dependent pair-potential (IDPP) interpolation scheme for connecting states---i.e., in a saddle-point search---has been moved into the method :func:`ase.neb.idpp_interpolate`. This method is a more feature-rich version that that accessible via :meth:`ase.neb.NEB.interpolate`.
+* The image-dependent pair-potential (IDPP) interpolation scheme for connecting states---i.e., in a saddle-point search---has been moved into the method :func:`ase.neb.idpp_interpolate`. This method is a more feature-rich version than that accessible via :meth:`ase.neb.NEB.interpolate`.
 
 * Test suite now uses `pytest <https://docs.pytest.org/>`_.
   This means it requires pytest and optionally
