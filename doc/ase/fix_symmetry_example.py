@@ -8,8 +8,11 @@ from ase.constraints import UnitCellFilter
 
 # setup an fcc Al cell
 a = 2.0/np.sqrt(3.0)
-at_prim = Atoms('Al2', positions=[[0,0,0],[a/2.0, a/2.0, a/2.0]],
-                cell=[[a,0,0],[0,a,0],[0,0,a]], pbc=[True, True, True])
+at_prim = Atoms('Al2', positions=[[0, 0, 0],
+                                  [a/2.0, a/2.0, a/2.0]],
+                cell=[[a, 0, 0],
+                      [0, a, 0],
+                      [0, 0, a]], pbc=[True, True, True])
 
 # without symmetrization
 at_unsym = at_prim * [2,2,2]
@@ -27,7 +30,7 @@ dyn.run(fmax=0.001)
 print("Energy", at_unsym.get_potential_energy())
 
 # with symmetrization
-at_sym = at_prim * [2,2,2]
+at_sym = at_prim * [2, 2, 2]
 at_sym.positions[0,0] += 1.0e-7 # break symmetry by 1e-7
 
 at_sym.set_calculator(LennardJones())

@@ -1350,7 +1350,7 @@ class FixParametricRelations(FixConstraint):
             exp += param_exp
 
             expressions.append(exp)
-        return np.array(expressions).reshape((-1,3))
+        return np.array(expressions).reshape((-1, 3))
 
 
     def todict(self):
@@ -1417,7 +1417,7 @@ class FixScaledParametricRelations(FixParametricRelations):
         """Adjust the values of a set of vectors that are contravariant with the unit transformation"""
         scaled = cell.scaled_positions(vecs).flatten()
         scaled = self.Jacobian_inv @ (scaled - B)
-        scaled = ((self.Jacobian @ scaled) + B).reshape((-1,3))
+        scaled = ((self.Jacobian @ scaled) + B).reshape((-1, 3))
 
         return cell.cartesian_positions(scaled)
 
@@ -2717,15 +2717,15 @@ class ExpCellFilter(UnitCellFilter):
             virial *= self.mask
 
         deform_grad_log_force_naive = virial.copy()
-        Y = np.zeros((6,6))
-        Y[0:3,0:3] = cur_deform_grad_log
-        Y[3:6,3:6] = cur_deform_grad_log
-        Y[0:3,3:6] = -np.dot(virial, expm(-cur_deform_grad_log))
-        deform_grad_log_force = -expm(Y)[0:3,3:6]
-        for (i1,i2) in [(0,1),(0,2),(1,2)]:
-            ff = 0.5*(deform_grad_log_force[i1,i2] + deform_grad_log_force[i2,i1])
-            deform_grad_log_force[i1,i2] = ff
-            deform_grad_log_force[i2,i1] = ff
+        Y = np.zeros((6, 6))
+        Y[0:3, 0:3] = cur_deform_grad_log
+        Y[3:6, 3:6] = cur_deform_grad_log
+        Y[0:3, 3:6] = -np.dot(virial, expm(-cur_deform_grad_log))
+        deform_grad_log_force = -expm(Y)[0:3, 3:6]
+        for (i1, i2) in [(0, 1), (0, 2), (1, 2)]:
+            ff = 0.5*(deform_grad_log_force[i1, i2] + deform_grad_log_force[i2, i1])
+            deform_grad_log_force[i1, i2] = ff
+            deform_grad_log_force[i2, i1] = ff
 
         # check for reasonable alignment between naive and exact search directions
         if (np.sum(deform_grad_log_force*deform_grad_log_force_naive) /
