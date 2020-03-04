@@ -53,7 +53,7 @@ def key_val_str_to_dict(string, sep=None):
     various values parsed to native types.
 
     Accepts brackets or quotes to delimit values. Parses integers, floats
-    booleans and arrays thereof. Arrays with 9 values whose named is listed
+    booleans and arrays thereof. Arrays with 9 values whose name is listed
     in SPECIAL_3_3_KEYS are converted to 3x3 arrays with Fortran ordering.
 
     If sep is None, string will split on whitespace, otherwise will split
@@ -228,19 +228,19 @@ def key_val_str_to_dict_regex(s):
 
     return d
 
+def escape(string):
+    if  (' ' in string or
+         '"' in string or "'" in string or
+         '{' in string or '}' in string or
+         '[' in string or ']' in string):
+        string = string.replace('"','\\"')
+        string = '"%s"' % string
+    return string
+
 def key_val_dict_to_str(dct, sep=' '):
     """
     Convert atoms.info dictionary to extended XYZ string representation
     """
-
-    def escape(string):
-        if  (' ' in string or
-             '"' in string or "'" in string or
-             '{' in string or '}' in string or
-             '[' in string or ']' in string):
-            string = string.replace('"','\\"')
-            string = '"%s"' % string
-        return string
 
     def array_to_string(val):
         # some ndarrays are special (special 3x3 keys, and scalars/vectors of
@@ -272,7 +272,7 @@ def key_val_dict_to_str(dct, sep=' '):
         return ''
 
     string = ''
-    for key in dct.keys():
+    for key in dct:
         val = dct[key]
 
         if isinstance(val, np.ndarray):
@@ -283,12 +283,12 @@ def key_val_dict_to_str(dct, sep=' '):
 
         if val is not None and not isinstance(val, str):
             # what's left is an object, try using JSON
+            if isinstance(val, np.ndarray):
+                val = val.tolist()
             try:
-                if isinstance(val, np.ndarray):
-                    val = val.tolist()
                 val = '_JSON ' + json.dumps(val)
                 # if this fails, let give up
-            except (TypeError, ValueError):
+            except TypeError:
                 warnings.warn('Skipping unhashable information '
                               '{0}'.format(key))
                 continue

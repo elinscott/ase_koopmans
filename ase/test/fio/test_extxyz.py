@@ -260,3 +260,9 @@ def test_blank_comment():
     f.close()
     a = ase.io.read('blankcomment.xyz')
     assert a.info == {}
+
+def test_escape():
+    from ase.io.extxyz import escape
+    assert escape('plain_string') == 'plain_string'
+    assert escape('string_containing_"') == r'"string_containing_\""'
+    assert escape('string with spaces') == '"string with spaces"'
