@@ -153,7 +153,7 @@ def test_complex_key_val():
         'bool_array_2=" T, F, T " ' # leading spaces
         'not_bool_array=[T F S] '
         # read and write
-#        '\xfcnicode_key=val\xfce '  # fails on AppVeyor
+        # '\xfcnicode_key=val\xfce '  # fails on AppVeyor
         'unquoted_special_value=a_to_Z_$%%^&* '
         '2body=33.3 '
         'hyphen-ated '
@@ -198,7 +198,7 @@ def test_complex_key_val():
         'bool_array': np.array([True, False, True, False]),
         'bool_array_2': np.array([True, False, True]),
         'not_bool_array': 'T F S',
-#        '\xfcnicode_key': 'val\xfce',  # fails on AppVeyor
+        # '\xfcnicode_key': 'val\xfce',  # fails on AppVeyor
         'unquoted_special_value': 'a_to_Z_$%%^&*',
         '2body': 33.3,
         'hyphen-ated': True,
