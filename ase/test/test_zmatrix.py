@@ -1,13 +1,12 @@
 import pytest
 import numpy as np
-from ase import Atoms
 from ase.io.zmatrix import parse_zmatrix
 
 tests = dict(
     h2=dict(
         zmat=('h;'
               'h 1 0.74'),
-        atoms_ref=Atoms('H2', [[0, 0, 0], [0.74, 0, 0]]),
+        pos=[[0, 0, 0], [0.74, 0, 0]],
     ),
     h2o2=dict(
         zmat=[
@@ -16,10 +15,10 @@ tests = dict(
             'O3 2 1.4 1 105',
             'H4 3 0.9 2 105 1 120',
         ],
-        atoms_ref=Atoms('HOOH', [[0, 0, 0],
-                                 [0.9, 0, 0],
-                                 [1.262, 1.352, 0],
-                                 [1.742, 1.465, 0.753]]),
+        pos=[[0, 0, 0],
+             [0.9, 0, 0],
+             [1.262, 1.352, 0],
+             [1.742, 1.465, 0.753]],
     ),
     h2o_gauss=dict(
         zmat='\n'.join([
@@ -28,9 +27,9 @@ tests = dict(
             'H 1 rOH 2 aH2O',
         ]),
         defs="rOH 0.97; aH2O 104",
-        atoms_ref=Atoms('OH2', [[0, 0, 0],
-                                [0.97, 0, 0],
-                                [-0.235, 0.941, 0.]]),
+        pos=[[0, 0, 0],
+             [0.97, 0, 0],
+             [-0.235, 0.941, 0.]],
     ),
 )
 
@@ -44,7 +43,7 @@ tests['h2o_qchem'] = dict(
         'oh = 0.97',
         'hoh = 104.0',
     ]),
-    atoms_ref=tests['h2o_gauss']['atoms_ref'],
+    pos=tests['h2o_gauss']['pos'],
 )
 
 
@@ -52,6 +51,4 @@ tests['h2o_qchem'] = dict(
 def test_zmatrix(name):
     atoms = parse_zmatrix(tests[name]['zmat'],
                           defs=tests[name].get('defs'))
-    assert np.max(np.abs(
-        atoms.positions - tests[name]['atoms_ref'].positions
-    )) < 1e-3
+    assert np.max(np.abs(atoms.positions - tests[name]['pos'])) < 1e-3
