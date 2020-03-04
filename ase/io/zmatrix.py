@@ -174,20 +174,13 @@ def parse_zmatrix(zmat, distance_units='angstrom', angle_units='degrees',
         ax2 -= ax1 * (ax2 @ ax1)
         ax2 /= np.linalg.norm(ax2)
 
-        # ax3 is perpendicular to both ax2 and ax2.
-        # The ax1, ax2, and ax3 form a complete basis in R^3
-        ax3 = np.cross(ax2, ax1)
-        ax3 /= np.linalg.norm(ax3)
-
-        # ax4 is a vector that forms the appropriate dihedral angle, though
+        # ax3 is a vector that forms the appropriate dihedral angle, though
         # the bending angle is 90 degrees, rather than a_bend. It is formed
-        # from a linear combination of ax2 and ax3.
-        ax4 = ax2 * np.cos(a_dihedral) + ax3 * np.sin(a_dihedral)
-        ax4 -= ax1 * (ax4 @ ax1)  # this step may not be necessary
-        ax4 /= np.linalg.norm(ax4)
+        # from a linear combination of ax2 and (ax2 x ax1)
+        ax3 = ax2 * np.cos(a_dihedral) + np.cross(ax2, ax1) * np.sin(a_dihedral)
 
-        # The final position vector is a linear combination of ax1 and ax4.
-        vec = ax1 * np.cos(a_bend) - ax4 * np.sin(a_bend)
+        # The final position vector is a linear combination of ax1 and ax3.
+        vec = ax1 * np.cos(a_bend) - ax3 * np.sin(a_bend)
         vec *= dist / np.linalg.norm(vec)
         positions[n] = positions[a] + vec
     return Atoms(symbols, positions)
