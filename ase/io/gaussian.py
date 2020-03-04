@@ -231,6 +231,40 @@ _re_atom = re.compile(
 _re_forceblock = re.compile(r'^\s*Center\s+Atomic\s+Forces\s+\S+\s*$')
 
 
+def _compare_merge_configs(configs, new):
+    """Append new to configs if it contains a new geometry or new data.
+
+    Gaussian sometimes repeats a geometry, for example at the end of an
+    optimization, or when a user requests vibrational frequency
+    analysis in the same calculation as a geometry optimization.
+
+    In those cases, rather than repeating the structure in the list of
+    returned structures, try to merge results if doing so doesn't change
+    any previously calculated values. If that's not possible, then create
+    a new "image" with the new results.
+    """
+    if not configs:
+        configs.append(new)
+        return
+
+    old = configs[-1]
+
+    if old != new:
+        configs.append(new)
+        return
+
+    oldres = old.calc.results
+    newres = new.calc.results
+    common_keys = set(oldres).intersection(newres)
+
+    for key in common_keys:
+        if np.any(oldres[key] != newres[key]):
+            configs.append(new)
+            return
+    else:
+        oldres.update(newres)
+
+
 def read_gaussian_out(fd, index=-1):
     configs = []
     atoms = None
@@ -240,11 +274,11 @@ def read_gaussian_out(fd, index=-1):
     for line in fd:
         if line.strip() == 'Input orientation:':
             if atoms is not None:
-                atoms.calc = SinglePointCalculator(atoms,
-                                                   energy=energy,
-                                                   dipole=dipole,
-                                                   forces=forces)
-                configs.append(atoms)
+                atoms.calc = SinglePointCalculator(
+                    atoms, energy=energy, dipole=dipole, forces=forces,
+                )
+                atoms.calc.name = 'Gaussian'
+                _compare_merge_configs(configs, atoms)
             atoms = None
             energy = None
             dipole = None
@@ -288,7 +322,7 @@ def read_gaussian_out(fd, index=-1):
         elif line.strip().startswith('Dipole moment'):
             tokens = fd.readline().strip().split()
             dipole = np.array(list(map(float, tokens[1:6:2]))) * Debye
-        elif line.strip().startswith('Dipole'):
+        elif line.strip().startswith('Dipole        ='):
             dip = line.strip().split('=')[1].replace('D', 'e')
             tokens = dip.split()
             dipole = []
@@ -319,7 +353,9 @@ def read_gaussian_out(fd, index=-1):
                 forces.append(list(map(float, match.group(2, 3, 4))))
             forces = np.array(forces) * Hartree / Bohr
     if atoms is not None:
-        atoms.calc = SinglePointCalculator(atoms, energy=energy,
-                                           dipole=dipole, forces=forces)
-        configs.append(atoms)
+        atoms.calc = SinglePointCalculator(
+            atoms, energy=energy, dipole=dipole, forces=forces,
+        )
+        atoms.calc.name = 'Gaussian'
+        _compare_merge_configs(configs, atoms)
     return configs[index]
