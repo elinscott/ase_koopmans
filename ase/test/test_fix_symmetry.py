@@ -14,7 +14,7 @@ def setup_cell():
     a = 2.0/np.sqrt(3.0)
     at_prim = Atoms('Al2', positions=[[0,0,0],[a/2.0, a/2.0, a/2.0]],
                     cell=[[a,0,0],[0,a,0],[0,0,a]], pbc=[True, True, True])
-    at_init = at_prim #* [2,2,2]
+    at_init = at_prim # * [2,2,2]
     F = np.array([[1,0.1,0],[0.1,1,0],[0,0,1]])
     at_init.set_cell(np.dot(at_init.get_cell(), F))
 
@@ -62,7 +62,7 @@ def test_no_symmetrization():
     at_unsym = at_init.copy()
     di, df = symmetrized_optimisation(at_unsym)
     assert di["number"] == 63
-    assert df["number"] == 12
+    assert df["number"] == 11
 
 #print("######### ROTATED #########")
 @pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
@@ -78,44 +78,44 @@ def test_no_sym_rotated():
 #print("########### SYMMETRIZATION, ADJUST POS BUT NO CELL #############")
 @pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
 @pytest.mark.filterwarnings('ignore:Armijo linesearch failed')
-def test_sym_adj_pot():
+def test_sym_adj_pos():
     at_init, at_rot = setup_cell()
     at_sym_2 = at_init.copy()
     at_sym_2.set_constraint(FixSymmetry(at_sym_2, adjust_positions=True, adjust_cell=False))
     di, df = symmetrized_optimisation(at_sym_2)
     assert di["number"] == 63
-    assert df["number"] == 63
+    assert df["number"] == 139
 
 #print("######### ROTATED #########")
 @pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
 @pytest.mark.filterwarnings('ignore:Armijo linesearch failed')
-def test_sym_rot_adj_pot():
+def test_sym_rot_adj_pos():
     at_init, at_rot = setup_cell()
     at_sym_2_rot = at_init.copy()
     at_sym_2_rot.set_constraint(FixSymmetry(at_sym_2_rot, adjust_positions=True, adjust_cell=False))
     di, df = symmetrized_optimisation(at_sym_2_rot)
     assert di["number"] == 63
-    assert df["number"] == 63
+    assert df["number"] == 139
 
 # symmetrization, adjust_positions and cell
 #print("########### SYMMETRIZATION, ADJUST POS AND CELL #############")
 @pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
 @pytest.mark.filterwarnings('ignore:Armijo linesearch failed')
-def test_sym_adj_cell():
+def test_sym_adj_pos_cell():
     at_init, at_rot = setup_cell()
     at_sym_3 = at_init.copy()
     at_sym_3.set_constraint(FixSymmetry(at_sym_3, adjust_positions=True, adjust_cell=True))
     di, df = symmetrized_optimisation(at_sym_3)
     assert di["number"] == 63
-    assert df["number"] == 63
+    assert df["number"] == 139
 
 #print("######### ROTATED #########")
 @pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
 @pytest.mark.filterwarnings('ignore:Armijo linesearch failed')
-def test_sym_rot_adj_cell():
+def test_sym_rot_adj_pos_cell():
     at_init, at_rot = setup_cell()
     at_sym_3_rot = at_init.copy()
     at_sym_3_rot.set_constraint(FixSymmetry(at_sym_3_rot, adjust_positions=True, adjust_cell=True))
     di, df = symmetrized_optimisation(at_sym_3_rot)
     assert di["number"] == 63
-    assert df["number"] == 63
+    assert df["number"] == 139
