@@ -14,9 +14,11 @@ from ase.test.testsuite import no_warn
 # array data of shape (N, 1) squeezed down to shape (N, ) -- bug fixed
 # in commit r4541
 
+
 @pytest.fixture
 def at():
     return bulk('Si')
+
 
 @pytest.fixture
 def images(at):
@@ -24,6 +26,7 @@ def images(at):
     images[1].set_pbc([True,True,False])
     images[2].set_pbc([True,False,False])
     return images
+
 
 def test_array_shape(at):
     # Check that unashable data type in info does not break output
@@ -46,12 +49,14 @@ def test_comment(at):
     r = ase.io.read('comment.xyz')
     assert at == r
 
+
 # write sequence of images with different numbers of atoms -- bug fixed
 # in commit r4542
 def test_sequence(images):
     ase.io.write('multi.xyz', images, format='extxyz')
     read_images = ase.io.read('multi.xyz', index=':')
     assert read_images == images
+
 
 #test vec_cell writing and reading
 def test_vec_cell(at, images):
@@ -96,6 +101,7 @@ def test_vec_cell(at, images):
     a = ase.io.read('structure.xyz')
     assert a[0].symbol == 'Mg'
 
+
 # read xyz with / and @ signs in key value
 def test_read_slash():
     f = open('slash.xyz', 'w')
@@ -113,15 +119,16 @@ def test_read_slash():
     assert a.info['key3'] == r'a@b'
     assert a.info['key4'] == r'a@b'
 
+
 def test_read_struct():
     struct = Atoms('H4', pbc=[True, True, True],
                     cell=[[4.00759, 0.0, 0.0], [-2.003795, 3.47067475, 0.0], [3.06349683e-16, 5.30613216e-16, 5.00307]], positions=[[-2.003795e-05, 2.31379473, 0.875437189], [2.00381504, 1.15688001, 4.12763281], [2.00381504, 1.15688001, 3.37697219], [-2.003795e-05, 2.31379473, 1.62609781]])
     struct.info = {'dataset': 'deltatest', 'kpoints': np.array([28, 28, 20]), 'identifier': 'deltatest_H_1.00', 'unique_id': '4cf83e2f89c795fb7eaf9662e77542c1'}
     ase.io.write('tmp.xyz', struct)
 
+
 # Complex properties line. Keys and values that break with a regex parser.
 # see https://gitlab.com/ase/ase/issues/53 for more info
-
 def test_complex_key_val():
     complex_xyz_string = (
         ' '  # start with a separator
@@ -147,7 +154,7 @@ def test_complex_key_val():
         'not_bool_array=[T F S] '
         # read and write
 #        '\xfcnicode_key=val\xfce '  # fails on AppVeyor
-        'unquoted_special_value=a_to_Z_$%%^&*\xfc\u2615 '
+        'unquoted_special_value=a_to_Z_$%%^&* '
         '2body=33.3 '
         'hyphen-ated '
         # parse only
@@ -192,7 +199,7 @@ def test_complex_key_val():
         'bool_array_2': np.array([True, False, True]),
         'not_bool_array': 'T F S',
 #        '\xfcnicode_key': 'val\xfce',  # fails on AppVeyor
-        'unquoted_special_value': 'a_to_Z_$%%^&*\xfc\u2615',
+        'unquoted_special_value': 'a_to_Z_$%%^&*',
         '2body': 33.3,
         'hyphen-ated': True,
         'many_other_quotes': np.array([4, 8, 12]),
@@ -233,6 +240,7 @@ def test_complex_key_val():
         else:
             np.testing.assert_equal(complex_atoms.info[key], value)
 
+
 def test_write_multiple(at, images):
     #write multiple atoms objects to one xyz
     for atoms in images:
@@ -245,6 +253,7 @@ def test_write_multiple(at, images):
     assert readFrames == images
     singleFrame = ase.io.read('not_append.xyz',index=slice(0,None))
     assert singleFrame[-1] == images[-1]
+
 
 # read xyz with blank comment line
 def test_blank_comment():
@@ -259,6 +268,7 @@ def test_blank_comment():
     f.close()
     a = ase.io.read('blankcomment.xyz')
     assert a.info == {}
+
 
 def test_escape():
     from ase.io.extxyz import escape
