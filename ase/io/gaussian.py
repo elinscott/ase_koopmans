@@ -35,6 +35,7 @@ _link0_keys = [
 _problem_methods = [
     'cbs-4m', 'cbs-qb3', 'cbs-apno',
     'g1', 'g2', 'g3', 'g4', 'g2mp2', 'g3mp2', 'g3b3', 'g3mp2b3', 'g4mp4',
+    'w1', 'w1u', 'w1bd', 'w1ro',
 ]
 
 
@@ -272,7 +273,13 @@ def read_gaussian_out(fd, index=-1):
     dipole = None
     forces = None
     for line in fd:
-        if line.strip() == 'Input orientation:':
+        line = line.strip()
+        if line.startswith(r'1\1\GINC'):
+            # We've reached the "archive" block at the bottom, stop parsing
+            break
+
+        if (line == 'Input orientation:'
+                or line == 'Z-Matrix orientation:'):
             if atoms is not None:
                 atoms.calc = SinglePointCalculator(
                     atoms, energy=energy, dipole=dipole, forces=forces,
@@ -306,24 +313,28 @@ def read_gaussian_out(fd, index=-1):
                     numbers.append(max(number, 0))
                     positions.append(pos)
             atoms = Atoms(numbers, positions, pbc=pbc, cell=cell)
-        elif line.strip().startswith('SCF Done:'):
-            # SCF energy, i.e. HF, DFT, etc.
+        elif (line.startswith('Energy=')
+                or line.startswith('SCF Done:')):
+            # Some semi-empirical methods (Huckel, MINDO3, etc.),
+            # or SCF methods (HF, DFT, etc.)
             energy = float(line.split('=')[1].split()[0].replace('D', 'e'))
             energy *= Hartree
-        elif line.strip().startswith('E2 ='):
-            # MP2 energy
+        elif (line.startswith('E2 =') or line.startswith('E3 =')
+                or line.startswith('E4(') or line.startswith('DEMP5 =')
+                or line.startswith('E2(')):
+            # MP{2,3,4,5} energy
+            # also some double hybrid calculations, like B2PLYP
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
             energy *= Hartree
-        elif line.strip().startswith('Wavefunction amplitudes converged. '
-                                     'E(Corr)'):
+        elif line.startswith('Wavefunction amplitudes converged. E(Corr)'):
             # "correlated method" energy, e.g. CCSD
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
             energy *= Hartree
-        elif line.strip().startswith('Dipole moment'):
+        elif line.startswith('Dipole moment'):
             tokens = fd.readline().strip().split()
             dipole = np.array(list(map(float, tokens[1:6:2]))) * Debye
-        elif line.strip().startswith('Dipole        ='):
-            dip = line.strip().split('=')[1].replace('D', 'e')
+        elif line.startswith('Dipole        ='):
+            dip = line.split('=')[1].replace('D', 'e')
             tokens = dip.split()
             dipole = []
             # dipole elements can run together, depending on what method was
