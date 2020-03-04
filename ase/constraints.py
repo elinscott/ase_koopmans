@@ -2390,9 +2390,11 @@ class UnitCellFilter(Filter):
 
         natoms = len(self.atoms)
         pos = np.zeros((natoms + 3, 3))
-        # UnitCellFilter's positions are the self.atoms.positions but without the applied deformation gradient
+        # UnitCellFilter's positions are the self.atoms.positions but without
+        # the applied deformation gradient
         pos[:natoms] = np.dot(self.atoms.positions, dg_T_inv)
-        # UnitCellFilter's cell DOFs are the deformation gradient times a scaling factor
+        # UnitCellFilter's cell DOFs are the deformation gradient times a
+        # scaling factor
         pos[natoms:] = self.cell_factor * cur_deform_grad
         return pos
 
@@ -2411,17 +2413,20 @@ class UnitCellFilter(Filter):
         natoms = len(self.atoms)
         new_atom_positions = new[:natoms]
         new_deform_grad = new[natoms:] / self.cell_factor
-        # take self.atoms back to the original cell (without the deformation gradient)
-        #     be sure to scale atoms so that if set_positions() needs to symmetrize the atom step,
-        #     it does so based on consistent (same cell) initial and final positions
+        # take self.atoms back to the original cell (without the deformation
+        # gradient) be sure to scale atoms so that if set_positions() needs to
+        # symmetrize the atom step, it does so based on consistent (same cell)
+        # initial and final positions
         self.atoms.set_cell(self.orig_cell, scale_atoms=True)
-        # set the positions from the ones passed in (which are without the deformation gradient applied)
-        # if set_positions() calls adjust_positions(), UnitCellFilter.get_positions() will automatically
-        #    inherit that since it uses self.atoms.positions
+        # set the positions from the ones passed in (which are without the
+        # deformation gradient applied) if set_positions() calls
+        # adjust_positions(), UnitCellFilter.get_positions() will automatically
+        # inherit that since it uses self.atoms.positions
         self.atoms.set_positions(new_atom_positions, **kwargs)
-        # set the new cell from the original cell and the new unscaled deformation gradient
-        # if set_cell() calls adjust_cell(), UnitCellFilter.get_positions() will automatically
-        #     inherit that since it uses self.atoms.get_cell() to calculate the deformation gradient
+        # set the new cell from the original cell and the new unscaled
+        # deformation gradient if set_cell() calls adjust_cell(),
+        # UnitCellFilter.get_positions() will automatically inherit that since
+        # it uses self.atoms.get_cell() to calculate the deformation gradient
         self.atoms.set_cell(np.dot(self.orig_cell, new_deform_grad.T),
                             scale_atoms=True)
 
@@ -2642,9 +2647,11 @@ class ExpCellFilter(UnitCellFilter):
         natoms = len(self.atoms)
         pos = np.zeros((natoms + 3, 3))
 
-        # ExpCellFilter's positions are the self.atoms.positions but without the applied deformation gradient
+        # ExpCellFilter's positions are the self.atoms.positions but without the
+        # applied deformation gradient
         pos[:natoms] = np.dot(self.atoms.positions, dg_T_inv)
-        # ExpCellFilter's cell DOFs are the deformation gradient times a scaling factor
+        # ExpCellFilter's cell DOFs are the deformation gradient times a scaling
+        # factor
         pos[natoms:] = cur_deform_grad_log
 
         return pos
@@ -2665,17 +2672,20 @@ class ExpCellFilter(UnitCellFilter):
         new_atom_positions = new[:natoms]
         new_deform_grad_log = new[natoms:]
         new_deform_grad = expm(new_deform_grad_log)
-        # take self.atoms back to the original cell (without the deformation gradient)
-        #     be sure to scale atoms so that if set_positions() needs to symmetrize the atom step,
-        #     it does so based on consistent (same cell) initial and final positions
+        # take self.atoms back to the original cell (without the deformation
+        # gradient) be sure to scale atoms so that if set_positions() needs to
+        # symmetrize the atom step, it does so based on consistent (same cell)
+        # initial and final positions
         self.atoms.set_cell(self.orig_cell, scale_atoms=True)
-        # set the positions from the ones passed in (which are without the deformation gradient applied)
-        # if set_positions() calls adjust_positions(), UnitCellFilter.get_positions() will automatically
-        #    inherit that since it uses self.atoms.positions
+        # set the positions from the ones passed in (which are without the
+        # deformation gradient applied) if set_positions() calls
+        # adjust_positions(), UnitCellFilter.get_positions() will automatically
+        # inherit that since it uses self.atoms.positions
         self.atoms.set_positions(new_atom_positions, **kwargs)
-        # set the new cell from the original cell and the new unscaled deformation gradient
-        # if set_cell() calls adjust_cell(), UnitCellFilter.get_positions() will automatically
-        #     inherit that since it uses self.atoms.get_cell() to calculate the deformation gradient
+        # set the new cell from the original cell and the new unscaled
+        # deformation gradient if set_cell() calls adjust_cell(),
+        # UnitCellFilter.get_positions() will automatically inherit that since
+        # it uses self.atoms.get_cell() to calculate the deformation gradient
         self.atoms.set_cell(np.dot(self.orig_cell, new_deform_grad.T),
                             scale_atoms=True)
 
@@ -2701,7 +2711,8 @@ class ExpCellFilter(UnitCellFilter):
         atoms_forces = self.atoms.get_forces(apply_constraint=apply_constraint)
 
         volume = self.atoms.get_volume()
-        virial = -volume * voigt_6_to_full_3x3_stress(stress) - np.diag([self.scalar_pressure]*3)*volume
+        virial = -(volume * voigt_6_to_full_3x3_stress(stress) -
+                   np.diag([self.scalar_pressure]*3)*volume)
 
         cur_deform_grad = self.deform_grad()
         cur_deform_grad_log = logm(cur_deform_grad)
