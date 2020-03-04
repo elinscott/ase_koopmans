@@ -7,6 +7,8 @@ from ase.spacegroup.symmetrize import FixSymmetry, check_symmetry
 from ase.optimize.precon.lbfgs import PreconLBFGS
 from ase.constraints import UnitCellFilter, ExpCellFilter
 
+spglib = pytest.importorskip('spglib')
+
 # setup an fcc Al cell
 def setup_cell():
     a = 2.0/np.sqrt(3.0)
