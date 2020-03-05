@@ -121,19 +121,19 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     # set up link0 arguments
     out = []
     for key in _link0_keys:
-        val = params.pop(key, None)
-        if val is None:
+        if key not in params:
             continue
-        elif not val or (isinstance(val, str) and key.lower() == val.lower()):
+        val = params.pop(key)
+        if not val or (isinstance(val, str) and key.lower() == val.lower()):
             out.append('%{}'.format(key))
         else:
             out.append('%{}={}'.format(key, val))
 
     # These link0 keywords have a slightly different syntax
     for key in _link0_special:
-        val = params.pop(key, None)
-        if val is None:
+        if key not in params:
             continue
+        val = params.pop(key)
         if not isinstance(val, str) and isinstance(val, Iterable):
             val = ' '.join(val)
         out.append('%{} L{}'.format(key, val))
