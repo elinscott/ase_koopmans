@@ -12,18 +12,31 @@ from ase.calculators.singlepoint import SinglePointCalculator
 
 
 _link0_keys = [
-    'chk',
     'mem',
+    'chk',
+    'oldchk',
+    'schk',
     'rwf',
+    'oldmatrix',
+    'oldrawmatrix',
     'int',
     'd2e',
-    'lindaworkers',
-    'kjob',
-    'subst',
     'save',
     'nosave',
+    'errorsave',
+    'cpu',
     'nprocshared',
-    'nproc',
+    'gpucpu',
+    'lindaworkers',
+    'usessh',
+    'ssh',
+    'debuglinda',
+]
+
+
+_link0_special = [
+    'kjob',
+    'subst',
 ]
 
 
@@ -109,8 +122,21 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     out = []
     for key in _link0_keys:
         val = params.pop(key, None)
-        if val is not None:
+        if val is None:
+            continue
+        elif not val or (isinstance(val, str) and key.lower() == val.lower()):
+            out.append('%{}'.format(key))
+        else:
             out.append('%{}={}'.format(key, val))
+
+    # These link0 keywords have a slightly different syntax
+    for key in _link0_special:
+        val = params.pop(key, None)
+        if val is None:
+            continue
+        if not isinstance(val, str) and isinstance(val, Iterable):
+            val = ' '.join(val)
+        out.append('%{} L{}'.format(key, val))
 
     # begin route line
     # note: unlike in old calculator, each route keyword is put on its own
