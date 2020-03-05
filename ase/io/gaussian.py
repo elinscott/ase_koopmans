@@ -73,6 +73,13 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     method = params.pop('method', None)
     basis = params.pop('basis', None)
 
+    # basisfile, only used if basis=gen
+    basisfile = params.pop('basisfile', None)
+
+    # basis can be omitted if basisfile is provided
+    if basisfile is not None and basis is None:
+        basis = 'gen'
+
     # determine method from xc if it is provided
     if method is None:
         xc = params.pop('xc', None)
@@ -105,9 +112,6 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     mult = params.pop('mult', None)
     if mult is None:
         mult = atoms.get_initial_magnetic_moments().sum() + 1
-
-    # basisfile, only used if basis=gen
-    basisfile = params.pop('basisfile', None)
 
     # pull out raw list of explicit keywords for backwards compatibility
     extra = params.pop('extra', None)

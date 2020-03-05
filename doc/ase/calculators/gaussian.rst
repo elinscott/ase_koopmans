@@ -116,59 +116,34 @@ accepts a few additional convenience arguments.
 ============== ======== =============== ==================================================
 keyword        type     default value   description
 ============== ======== =============== ==================================================
-``label``      ``str``  ``'Gaussian'``  Used to name input and output files.
-``method``     ``str``  None            Used to specify the level of theory to use in the
-                                        calculation, e.g. ``hf``, ``ccsd``, ``mp2``,
-                                        or ``b3lyp``. ``method`` overrides ``xc`` (see
-                                        below) if both are provided to the calculator.
-``xc``         ``str``  None            Used to specify the level of theory, as an
-                                        alternative  to ``method``. Accepts the common
-                                        name of several exchange-correlation functionals,
-                                        such as PBE and TPSS, and will automatically
-                                        convert to Gaussian's internal name for these
-                                        functionals (PBEPBE and TPSSTPSS, respectively).
-``basis``      ``str``  None            The basis set to use for the calculation. If not
-                                        provided, then no basis function will be added
-                                        to the link line. This will usually result in
-                                        ``sto-3g`` being used, unless the ``method``
-                                        or ``xc`` specified implies a particular basis
-                                        set. If you wish to use a basis set file, set
-                                        ``basis='gen'``, and provide the path to your
-                                        basis set file to the ``basisfile`` keyword
+``label``      ``str``  ``'Gaussian'``  Name to use for input and output files.
+``method``     ``str``  None            Level of theory to use, e.g. ``hf``, ``ccsd``,
+                                        ``mp2``, or ``b3lyp``.  Overrides ``xc``
                                         (see below).
-``charge``     ``int``  See description The charge of the system. If not provided, the
-                                        charge will be set to the rounded sum of the
-                                        initial atomic charges for your Atoms object
-                                        (this will usually set the charge to 0).
-``mult``       ``int``  See description The multiplicity of the system (spin + 1).
-                                        If not provided, the multiplicity will be set
-                                        to the rounded sum of the initial atomic
-                                        magnetic moments of your Atoms object, plus 1
-                                        (this will usually set the multiplicity to 1).
-``basisfile``  ``str``  None            The full filesystem path to the basis file to use
-                                        in the calculation, for when ``basis='gen'``.
-                                        The basis file will be read in and inserted
-                                        verbatim into the Gaussian input file, unless
-                                        ``basisfile`` is formatted as in the example
-                                        ``basisfile='@my-basisfile.gbs/N'``, in which
-                                        case the value provided to ``basisfile`` will
-                                        be inserted into the input file, instead of
-                                        the contents of the referred file.
-``extra``      ``str``  None            Any string passed to ``extra`` will be included
-                                        verbatim in the route section of the input file.
-                                        It should not be necessary to use this keyword,
-                                        but it has been included for backwards
-                                        compatibility with previous iterations of the
-                                        Gaussian calculator.
-``addsec``     ``str``  None            A string or collection of strings to be printed
-                                        after the molecular geometry specification.
-                                        For example, this can be used along with
-                                        ``opt='modredundant'`` to fix particular internal
-                                        coordinates during an optimization.
-``ioplist``    ``list`` None            A collection of strings to be included in the
-                                        route line, delimited by ``IOP(`` and ``)``.
-                                        This can be used to change internal settings
-                                        to Gaussian routines.
+``xc``         ``str``  None            Level of theory to use. Translates several XC
+                                        functionals from their common name (e.g. PBE) to
+                                        their internal Gaussian name (e.g. PBEPBE).
+``basis``      ``str``  None            The basis set to use. If not provided, no basis
+                                        set will be requested, which usually results
+                                        in STO-3G.  Maybe omitted if ``basisfile`` is set
+                                        (see below).
+``charge``     ``int``  See description The system charge. If not provided, it will be
+                                        automatically determined from the Atoms object's
+                                        ``initial_charges``.
+``mult``       ``int``  See description The system multiplicity (spin + 1). If not
+                                        provided, it will be automatically determined from
+                                        the Atoms object's ``initial_magnetic_moments``.
+``basisfile``  ``str``  None            The basis file to use. If a value is provided,
+                                        ``basis`` may be omitted (it will be automatically
+                                        set to ``'gen'``)
+``extra``      ``str``  None            Extra lines to be included in the route section
+                                        verbatim. It should not be necessary to use this,
+                                        but it is included for backwards compatibility.
+``addsec``     ``str``  None            Text to be added after the molecular geometry
+                                        specification, e.g. for defining constraints
+                                        with ``opt='modredundant'``.
+``ioplist``    ``list`` None            A collection of IOPs definitions to be included in
+                                        the route line.
 ============== ======== =============== ==================================================
 
 .. autoclass:: Gaussian
