@@ -20,9 +20,9 @@ but it will likely work with newer and older versions of Gaussian as well.
 By default, the Calculator will look for executables named ``g16``, ``g09``,
 and ``g03`` in that order. If your Gaussian executable is named differently,
 or if it is not present in :envvar:`PATH`, then you must pass the path and name
-to your Gaussian executable to the ``command`` keyword argument of the Gaussian
+of your Gaussian executable to the ``command`` keyword argument of the Gaussian
 calculator. The default command looks like ``g16 < PREFIX.com > PREFIX.log``,
-so template the ``command`` to appear similar to that. Alternatively, you may
+so template the ``command`` similarly. Alternatively, you may
 set the :envvar:`ASE_GAUSSIAN_COMMAND` environment variable to the full
 Gaussian executable command.
 
@@ -61,7 +61,7 @@ The Gaussian calculator has three main types of parameters:
 
 The Gaussian calculator maintains a list of Link0 keywords and ASE-specific
 keywords. Any keyword not on one of those two lists is assumed to be a route
-section keyword, and will be printed appropriately.
+section keyword, and will be placed in the Gaussian input file accordingly.
 
 For example, consider the following Gaussian input file::
 
@@ -93,12 +93,13 @@ This would be generated with the following Python code::
                         scf='qc')
   atoms.get_potential_energy()
 
-Alternatively, instead of the ``method`` keyword, you can use the ``xc``
+Alternatively, you may use the ``xc`` keyword in place of the ``method``
 keyword. ``xc`` is almost identical to ``method``, except that ``xc`` can
 translate between the common definitions of some exchange-correlation
 functionals and Gaussian's name for those functions, for example PBE to PBEPBE.
 The ``method`` keyword will not do any translation, whatever value you provide
-to ``method`` will be written to the input file verbatim.
+to ``method`` will be written to the input file verbatim. If both are provided,
+``method`` overrides ``xc``.
 
 Note that the Gaussian calculator puts each route keyword on its own line,
 though this should not affect the result of the calculation.
@@ -108,7 +109,7 @@ like ``scf(qc,maxcycle=1000)`` in the Gaussian input file. There are at least
 two ways of generating this with the Gaussian calculator:
 ``Gaussian(scf="qc,maxcycle=100")`` and
 ``Gaussian(scf=['qc', 'maxcycle=100'])``, with the latter being somewhat more
-convenient for scripting the generation of keyword arguments.
+convenient for scripting purposes.
 
 Aside from the link-line and route section arguments, the Gaussian calculator
 accepts a few additional convenience arguments.
