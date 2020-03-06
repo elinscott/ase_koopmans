@@ -459,7 +459,7 @@ The FixSymmetry class
 The module also provides some utility functions to Prepare
 symmetrized configurations and to check symmetry.
 
-.. autofunction:: ase.spacegroup.symmetrize.refine
+.. autofunction:: ase.spacegroup.symmetrize.refine_symmetry
 
 .. autofunction:: ase.spacegroup.symmetrize.check_symmetry
 
