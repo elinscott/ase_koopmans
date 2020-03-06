@@ -25,6 +25,20 @@ def require(calcname):
                                 .format(calcname))
 
 
+def all_test_modules_and_groups():
+    names = []
+    groups = {}
+    for abspath in testdir.rglob('test_*.py'):
+        path = abspath.relative_to(testdir)
+        name = str(path).rsplit('.', 1)[0].replace('/', '.')
+        if str(path.parent) != '.':
+            groupname = str(path.parent).replace('/', '.')
+            groups.setdefault(groupname, []).append(name)
+        else:
+            names.append(name)
+    return names, groups
+
+
 def disable_calculators(names):
     for name in names:
         if name in ['emt', 'lj', 'eam', 'morse', 'tip3p']:
@@ -243,16 +257,7 @@ class CLICommand:
                      '--cov-report=html')
 
         if args.tests:
-            from ase.test.newtestsuite import TestModule
-
-            dct = TestModule.all_test_modules_as_dict()
-
-            # Hack: Make it recognize groups of tests like fio/*.py
-            groups = {}
-            for name in dct:
-                groupname = name.split('.')[0]
-                if groupname not in dct:
-                    groups.setdefault(groupname, []).append(name)
+            names, groups = all_test_modules_and_groups()
 
             testnames = []
             for arg in args.tests:
@@ -262,13 +267,7 @@ class CLICommand:
                     testnames.append(arg)
 
             for testname in testnames:
-                mod = dct[testname]
-                if mod.is_pytest_style:
-                    pytest_args.append(mod.module)
-                else:
-                    # XXX Not totally logical
-                    add_args('ase.test.test_modules::{}'
-                             .format(mod.pytest_function_name))
+                add_args('ase.test.{}'.format(testname))
         else:
             add_args('ase.test')
 
