@@ -1299,7 +1299,7 @@ class FixParametricRelations(FixConstraint):
                 param_dct[param_str] = 2.0
                 test_2 = float(eval_expression(expression, param_dct))
                 test_2 -= const_shift[expr_ind]
-                if abs(test_2 / test_1 - 2.0) > eps:
+                if bs(test_2 / test_1 - 2.0) > eps:
                     raise ValueError("The FixParametricRelations expressions must be linear.")
                 param_dct[param_str] = 0.0
 
@@ -2351,7 +2351,6 @@ class UnitCellFilter(Filter):
         Filter.__init__(self, atoms, indices=range(len(atoms)))
         self.atoms = atoms
         self.orig_cell = atoms.get_cell()
-        self.orig_cell_inv = np.linalg.inv(self.orig_cell)
         self.stress = None
 
         if mask is None:
@@ -2374,7 +2373,7 @@ class UnitCellFilter(Filter):
         self.arrays = self.atoms.arrays
 
     def deform_grad(self):
-        return np.dot(self.orig_cell_inv, self.atoms.get_cell()).T
+        return np.linalg.solve(self.orig_cell, self.atoms.cell).T
 
     def get_positions(self):
         '''
@@ -2386,13 +2385,11 @@ class UnitCellFilter(Filter):
         '''
 
         cur_deform_grad = self.deform_grad()
-        dg_T_inv = np.linalg.inv(cur_deform_grad.T)
-
         natoms = len(self.atoms)
         pos = np.zeros((natoms + 3, 3))
         # UnitCellFilter's positions are the self.atoms.positions but without
         # the applied deformation gradient
-        pos[:natoms] = np.dot(self.atoms.positions, dg_T_inv)
+        pos[:natoms] = np.linalg.solve(cur_deform_grad, self.atom_positions.T).T
         # UnitCellFilter's cell DOFs are the deformation gradient times a
         # scaling factor
         pos[natoms:] = self.cell_factor * cur_deform_grad
@@ -2427,7 +2424,7 @@ class UnitCellFilter(Filter):
         # deformation gradient if set_cell() calls adjust_cell(),
         # UnitCellFilter.get_positions() will automatically inherit that since
         # it uses self.atoms.get_cell() to calculate the deformation gradient
-        self.atoms.set_cell(np.dot(self.orig_cell, new_deform_grad.T),
+        self.atoms.set_cell(self.orig_cell @ new_deform_grad.T,
                             scale_atoms=True)
 
     def get_potential_energy(self, force_consistent=True):
@@ -2455,9 +2452,8 @@ class UnitCellFilter(Filter):
         virial = -volume * (voigt_6_to_full_3x3_stress(stress) +
                             np.diag([self.scalar_pressure] * 3))
         cur_deform_grad = self.deform_grad()
-        atoms_forces = np.dot(atoms_forces, cur_deform_grad)
-        dg_inv = np.linalg.inv(cur_deform_grad)
-        virial = np.dot(virial, dg_inv.T)
+        atoms_forces = atoms_forces @ cur_deform_grad
+        virial = np.linalg.solve(cur_deform_grad, virial.T).T
 
         if self.hydrostatic_strain:
             vtr = virial.trace()
@@ -2607,7 +2603,6 @@ class ExpCellFilter(UnitCellFilter):
         Filter.__init__(self, atoms, indices=range(len(atoms)))
         self.atoms = atoms
         self.orig_cell = atoms.get_cell()
-        self.orig_cell_inv = np.linalg.inv(self.orig_cell)
         self.stress = None
 
         if mask is None:
@@ -2629,7 +2624,7 @@ class ExpCellFilter(UnitCellFilter):
         self.arrays = self.atoms.arrays
 
     def deform_grad(self):
-        return np.dot(self.orig_cell_inv, self.atoms.get_cell()).T
+        return np.linalg.solve(self.orig_cell, self.atoms.cell).T
 
     def get_positions(self):
         '''
@@ -2641,7 +2636,6 @@ class ExpCellFilter(UnitCellFilter):
         '''
 
         cur_deform_grad = self.deform_grad()
-        dg_T_inv = np.linalg.inv(cur_deform_grad.T)
         cur_deform_grad_log = logm(cur_deform_grad)
 
         natoms = len(self.atoms)
@@ -2649,7 +2643,7 @@ class ExpCellFilter(UnitCellFilter):
 
         # ExpCellFilter's positions are the self.atoms.positions but without the
         # applied deformation gradient
-        pos[:natoms] = np.dot(self.atoms.positions, dg_T_inv)
+        pos[:natoms] = np.linalg.solve(cur_deform_grad, self.atom_positions.T).T
         # ExpCellFilter's cell DOFs are the deformation gradient times a scaling
         # factor
         pos[natoms:] = cur_deform_grad_log
@@ -2686,7 +2680,7 @@ class ExpCellFilter(UnitCellFilter):
         # deformation gradient if set_cell() calls adjust_cell(),
         # UnitCellFilter.get_positions() will automatically inherit that since
         # it uses self.atoms.get_cell() to calculate the deformation gradient
-        self.atoms.set_cell(np.dot(self.orig_cell, new_deform_grad.T),
+        self.atoms.set_cell(self.orig_cell @ new_deform_grad.T,
                             scale_atoms=True)
 
 
@@ -2712,12 +2706,11 @@ class ExpCellFilter(UnitCellFilter):
 
         volume = self.atoms.get_volume()
         virial = -(volume * voigt_6_to_full_3x3_stress(stress) -
-                   np.diag([self.scalar_pressure]*3)*volume)
+                   np.diag([self.scalar_pressure] * 3)*volume)
 
         cur_deform_grad = self.deform_grad()
         cur_deform_grad_log = logm(cur_deform_grad)
-        atoms_forces = np.dot(atoms_forces, cur_deform_grad)
-        dg_inv = np.linalg.inv(cur_deform_grad)
+        atoms_forces = atoms_forces @ cur_deform_grad
 
         if self.hydrostatic_strain:
             vtr = virial.trace()
@@ -2731,7 +2724,7 @@ class ExpCellFilter(UnitCellFilter):
         Y = np.zeros((6, 6))
         Y[0:3, 0:3] = cur_deform_grad_log
         Y[3:6, 3:6] = cur_deform_grad_log
-        Y[0:3, 3:6] = -np.dot(virial, expm(-cur_deform_grad_log))
+        Y[0:3, 3:6] = - virial @ expm(-cur_deform_grad_log)
         deform_grad_log_force = -expm(Y)[0:3, 3:6]
         for (i1, i2) in [(0, 1), (0, 2), (1, 2)]:
             ff = 0.5*(deform_grad_log_force[i1, i2] + deform_grad_log_force[i2, i1])

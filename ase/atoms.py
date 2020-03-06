@@ -812,11 +812,6 @@ class Atoms(object):
                     stress[stresscomp[alpha, beta]] -= (
                         p[:, alpha] * p[:, beta] * invmass).sum() * invvol
 
-        if apply_constraint:
-            for constraint in self.constraints:
-                if hasattr(constraint, 'adjust_stress'):
-                    constraint.adjust_stress(self, stress)
-
         if voigt:
             return stress
         else:
