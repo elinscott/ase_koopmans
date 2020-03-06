@@ -1,10 +1,11 @@
 from abc import ABCMeta
 from collections.abc import Sequence as Sequence_abc
 from functools import singledispatch
-from typing import Any, Iterable, List, overload, Sequence, Tuple, Union
+from typing import (Any, Iterable, List, Optional,
+                    overload, Sequence, Tuple, Union)
 
 import numpy as np
-from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData
+from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData, Info
 
 
 class DOSCollection(Sequence_abc, metaclass=ABCMeta):
@@ -66,6 +67,45 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
                     + (padding * width))
         x = np.linspace(xmin, xmax, npts)
         return x, self.sample(x, width=width, smearing=smearing)
+
+    @classmethod
+    def from_data(cls,
+                  x: Sequence[float],
+                  weights: Sequence[Sequence[float]],
+                  info: Sequence[Info] = None) -> 'DOSCollection':
+        """Create a DOSCollection from data sharing a common set of energies
+
+        This is a convenience method to be used when all the DOS data in the
+        collection has a common x-axis. There is no performance advantage in
+        using this method for the generic DOSCollection, but for
+        GridDOSCollection it is more efficient.
+
+        Args:
+            x: common set x-values for input data
+            weights: array of DOS weights with rows corresponding to different
+                datasets
+            info: sequence of info dicts corresponding to weights rows.
+
+        Returns:
+            Collection of DOS data (in RawDOSData format)
+        """
+
+        info = cls._check_weights_and_info(weights, info)
+
+        return cls(RawDOSData(x, row_weights, row_info)
+                   for row_weights, row_info in zip(weights, info))
+
+    @staticmethod
+    def _check_weights_and_info(weights: Sequence[Sequence[float]],
+                                info: Optional[Sequence[Info]],
+                                ) -> Sequence[Info]:
+        if info is None:
+            info = [{}] * len(weights)
+        else:
+            if len(info) != len(weights):
+                raise ValueError("Length of info must match number of rows in "
+                                 "weights")
+        return info
 
     @overload  # noqa F811
     def __getitem__(self, item: int) -> DOSData:
@@ -178,3 +218,39 @@ class GridDOSCollection(DOSCollection):
         else:
             raise TypeError("index in DOSCollection must be an integer or "
                             "slice")
+
+    @classmethod
+    def from_data(cls,
+                  x: Sequence[float],
+                  weights: Sequence[Sequence[float]],
+                  info: Sequence[Info] = None) -> 'DOSCollection':
+        """Create a GridDOSCollection from data with a common set of energies
+
+        This convenience method may also be more efficient as it limits
+        redundant copying/checking of the data.
+
+        Args:
+            x: common set x-values for input data
+            weights: array of DOS weights with rows corresponding to different
+                datasets
+            info: sequence of info dicts corresponding to weights rows.
+
+        Returns:
+            Collection of DOS data (in RawDOSData format)
+        """
+
+        weights_array = np.asarray(weights, dtype=float)
+        if len(weights_array.shape) != 2:
+            raise IndexError("Weights must be a 2-D array or nested sequence")
+        if weights_array.shape[0] < 1:
+            raise IndexError("Weights cannot be empty")
+        if weights_array.shape[1] != len(x):
+            raise IndexError("Length of weights rows must equal size of x")
+
+        info = cls._check_weights_and_info(weights, info)
+
+        dos_collection = cls([GridDOSData(x, weights_array[0])])
+        dos_collection._weights = weights_array
+        dos_collection._info = list(info)
+
+        return dos_collection

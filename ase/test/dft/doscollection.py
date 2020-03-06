@@ -82,7 +82,6 @@ class TestDOSCollection:
         with pytest.raises(TypeError):
             MinimalDOSCollection([rawdos]) + YetAnotherDOSCollection([rawdos])
 
-    
     @pytest.mark.parametrize('options', [{'x': [1., 1.1, 1.2],
                                           'width': 1.3,
                                           'smearing': 'Gauss'},
@@ -102,18 +101,19 @@ class TestDOSCollection:
                             'padding': 3, 'width': 1},
                            {'npts': 12, 'xmin': 0, 'xmax': 4,
                             'padding': 2.1, 'width': 2.3}]
-    
+
     @pytest.mark.parametrize('options', sample_grid_options)
     def test_sample_grid(self, rawdos, another_rawdos, options):
         ref_min = min(rawdos.get_energies())
         ref_max = max(another_rawdos.get_energies())
-        
+
         # Check auto minimum
         dc = MinimalDOSCollection([rawdos, another_rawdos])
         energies, dos = dc.sample_grid(10, xmax=options['xmax'],
                                        padding=options['padding'],
                                        width=options['width'])
-        assert pytest.approx(energies[0]) == ref_min - options['padding'] * options['width']
+        assert (pytest.approx(energies[0])
+                == ref_min - options['padding'] * options['width'])
         assert pytest.approx(energies[-1]) == options['xmax']
 
         # Check auto maximum
@@ -128,6 +128,25 @@ class TestDOSCollection:
         energies, dos = dc.sample_grid(**options)
         for i, data in enumerate((rawdos, another_rawdos)):
             assert np.allclose(dos[i, :], data.sample_grid(**options)[1])
+
+    @pytest.mark.parametrize('x, weights, bad_info',
+                             [([1, 2, 4, 5],
+                               [[0, 1, 1, 0], [2, 1, 2, 1]],
+                               [{'notenough': 'entries'}]),
+                              ([3.1, 2.4, 1.1],
+                               [[2, 1., 3.12]],
+                               [{'too': 'many'}, {'entries': 'here'}])
+                              ])
+    def test_from_data(self, x, weights, bad_info):
+        dc = DOSCollection.from_data(x, weights)
+
+        for i, dos_data in enumerate(dc):
+            assert dos_data.info == {}
+            assert np.allclose(dos_data.get_energies(), x)
+            assert np.allclose(dos_data.get_weights(), weights[i])
+
+        with pytest.raises(ValueError):
+            dc = DOSCollection.from_data(x, weights, info=bad_info)
 
 
 class TestRawDOSCollection:
@@ -184,3 +203,23 @@ class TestGridDOSCollection:
 
         with pytest.raises(TypeError):
             gdc['string']
+
+    @pytest.mark.parametrize(
+        'x, weights, info, error',
+        [(np.linspace(1, 10, 12), [np.linspace(4, 1, 12), np.sin(range(12))],
+          [{'entry': '1'}, {'entry': '2'}], None),
+         (np.linspace(1, 5, 7), [np.sqrt(range(7))], [{'entry': '1'}], None),
+         (np.linspace(1, 5, 7), [np.ones((3, 3))], None, IndexError),
+         (np.linspace(1, 5, 7), np.array([]).reshape(0, 7), None, IndexError),
+         (np.linspace(1, 5, 7), np.ones(6), None, IndexError)])
+    def test_from_data(self, x, weights, info, error):
+        if error is not None:
+            with pytest.raises(error):
+                dc = GridDOSCollection.from_data(x, weights, info=info)
+        else:
+            dc = GridDOSCollection.from_data(x, weights, info=info)
+
+            for i, dos_data in enumerate(dc):
+                assert dos_data.info == info[i]
+                assert np.allclose(dos_data.get_energies(), x)
+                assert np.allclose(dos_data.get_weights(), weights[i])
