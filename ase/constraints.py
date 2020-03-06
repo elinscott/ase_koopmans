@@ -2389,7 +2389,7 @@ class UnitCellFilter(Filter):
         pos = np.zeros((natoms + 3, 3))
         # UnitCellFilter's positions are the self.atoms.positions but without
         # the applied deformation gradient
-        pos[:natoms] = np.linalg.solve(cur_deform_grad, self.atom_positions.T).T
+        pos[:natoms] = np.linalg.solve(cur_deform_grad, self.atoms.positions.T).T
         # UnitCellFilter's cell DOFs are the deformation gradient times a
         # scaling factor
         pos[natoms:] = self.cell_factor * cur_deform_grad
@@ -2643,15 +2643,14 @@ class ExpCellFilter(UnitCellFilter):
 
         # ExpCellFilter's positions are the self.atoms.positions but without the
         # applied deformation gradient
-        pos[:natoms] = np.linalg.solve(cur_deform_grad, self.atom_positions.T).T
-        # ExpCellFilter's cell DOFs are the deformation gradient times a scaling
-        # factor
+        pos[:natoms] = np.linalg.solve(cur_deform_grad, self.atoms.positions.T).T
+        # ExpCellFilter's cell DOFs are the log of the deformation gradient
         pos[natoms:] = cur_deform_grad_log
 
         return pos
 
     def set_positions(self, new, **kwargs):
-        '''
+        """
         new is an array with shape (natoms+3,3).
 
         the first natoms rows are the positions of the atoms, the last
@@ -2660,7 +2659,7 @@ class ExpCellFilter(UnitCellFilter):
         the positions are first set with respect to the original
         undeformed cell, and then the cell is transformed by the
         current deformation gradient.
-        '''
+        """
 
         natoms = len(self.atoms)
         new_atom_positions = new[:natoms]
@@ -2678,35 +2677,35 @@ class ExpCellFilter(UnitCellFilter):
         self.atoms.set_positions(new_atom_positions, **kwargs)
         # set the new cell from the original cell and the new unscaled
         # deformation gradient if set_cell() calls adjust_cell(),
-        # UnitCellFilter.get_positions() will automatically inherit that since
+        # ExpCellFilter.get_positions() will automatically inherit that since
         # it uses self.atoms.get_cell() to calculate the deformation gradient
         self.atoms.set_cell(self.orig_cell @ new_deform_grad.T,
                             scale_atoms=True)
 
 
     def get_potential_energy(self, force_consistent=True):
-        '''
+        """
         returns potential energy including enthalpy PV term.
-        '''
+        """
         atoms_energy = self.atoms.get_potential_energy(force_consistent=force_consistent)
         return atoms_energy + self.scalar_pressure*self.atoms.get_volume()
 
     def get_forces(self, apply_constraint=False):
-        '''
+        """
         returns an array with shape (natoms+2,3) of the atomic forces
         and unit cell stresses.
 
         the first natoms rows are the forces on the atoms, the last
         three rows are the forces on the unit cell, which are
         computed from the stress tensor.
-        '''
+        """
 
         stress = self.atoms.get_stress(apply_constraint=apply_constraint)
         atoms_forces = self.atoms.get_forces(apply_constraint=apply_constraint)
 
         volume = self.atoms.get_volume()
-        virial = -(volume * voigt_6_to_full_3x3_stress(stress) -
-                   np.diag([self.scalar_pressure] * 3)*volume)
+        virial = -volume * (voigt_6_to_full_3x3_stress(stress) +
+                            np.diag([self.scalar_pressure] * 3))
 
         cur_deform_grad = self.deform_grad()
         cur_deform_grad_log = logm(cur_deform_grad)
@@ -2727,13 +2726,16 @@ class ExpCellFilter(UnitCellFilter):
         Y[0:3, 3:6] = - virial @ expm(-cur_deform_grad_log)
         deform_grad_log_force = -expm(Y)[0:3, 3:6]
         for (i1, i2) in [(0, 1), (0, 2), (1, 2)]:
-            ff = 0.5*(deform_grad_log_force[i1, i2] + deform_grad_log_force[i2, i1])
+            ff = 0.5*(deform_grad_log_force[i1, i2] +
+                      deform_grad_log_force[i2, i1])
             deform_grad_log_force[i1, i2] = ff
             deform_grad_log_force[i2, i1] = ff
 
-        # check for reasonable alignment between naive and exact search directions
+        # check for reasonable alignment between naive and
+        # exact search directions
         if (np.sum(deform_grad_log_force*deform_grad_log_force_naive) /
-            np.sqrt(np.sum(deform_grad_log_force**2) * np.sum(deform_grad_log_force_naive**2)) > 0.8):
+            np.sqrt(np.sum(deform_grad_log_force**2) *
+                    np.sum(deform_grad_log_force_naive**2)) > 0.8):
             deform_grad_log_force = deform_grad_log_force_naive
 
         # Cauchy stress used for convergence testing
@@ -2741,10 +2743,12 @@ class ExpCellFilter(UnitCellFilter):
         if self.constant_volume:
             # apply constraint to force
             dglf_trace = deform_grad_log_force.trace()
-            np.fill_diagonal(deform_grad_log_force, np.diag(deform_grad_log_force) - dglf_trace / 3.0)
+            np.fill_diagonal(deform_grad_log_force,
+                             np.diag(deform_grad_log_force) - dglf_trace / 3.0)
             # apply constraint to Cauchy stress used for convergence testing
             ccs_trace = convergence_crit_stress.trace()
-            np.fill_diagonal(convergence_crit_stress, np.diag(convergence_crit_stress) - ccs_trace / 3.0)
+            np.fill_diagonal(convergence_crit_stress,
+                             np.diag(convergence_crit_stress) - ccs_trace / 3.0)
 
         # pack gradients into vector
         natoms = len(self.atoms)
