@@ -1299,7 +1299,7 @@ class FixParametricRelations(FixConstraint):
                 param_dct[param_str] = 2.0
                 test_2 = float(eval_expression(expression, param_dct))
                 test_2 -= const_shift[expr_ind]
-                if bs(test_2 / test_1 - 2.0) > eps:
+                if abs(test_2 / test_1 - 2.0) > eps:
                     raise ValueError("The FixParametricRelations expressions must be linear.")
                 param_dct[param_str] = 0.0
 

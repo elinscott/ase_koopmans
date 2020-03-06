@@ -1,7 +1,6 @@
 """
 Provides FixSymmetry class to preserve spacegroup symmetry during optimisation
 """
-import sys
 import numpy as np
 
 from ase.constraints import (FixConstraint,
@@ -11,7 +10,7 @@ from ase.constraints import (FixConstraint,
 __all__ = ['refine_symmetry', 'check_symmetry', 'FixSymmetry']
 
 
-def print_symmetry(symprepc, dataset):
+def print_symmetry(symprec, dataset):
     print("ase.spacegroup.symmetrize: prec", symprec,
           "got symmetry group number", dataset["number"],
           ", international (Hermann-Mauguin)", dataset["international"],
@@ -41,7 +40,7 @@ def refine_symmetry(atoms, symprec=0.01, verbose=False):
         from pyspglib import spglib  # For versions 1.8.x or before
 
     # test orig config with desired tol
-    check_symmetry(atoms, symprec, verbose=verbose)
+    dataset = check_symmetry(atoms, symprec, verbose=verbose)
 
     # set actual cell to symmetrized cell vectors by copying
     # transformed and rotated standard cell
@@ -189,7 +188,8 @@ class FixSymmetry(FixConstraint):
                  adjust_positions=True, adjust_cell=True, verbose=False):
         self.verbose = verbose
         refine_symmetry(atoms, symprec, self.verbose)  # refine initial symmetry
-        self.rotations, self.translations, self.symm_map = prep_symmetry(atoms, self.verbose)
+        sym = prep_symmetry(atoms, symprec, self.verbose)
+        self.rotations, self.translations, self.symm_map = sym
         self.do_adjust_positions = adjust_positions
         self.do_adjust_cell = adjust_cell
 
@@ -200,7 +200,22 @@ class FixSymmetry(FixConstraint):
         symmetrized_cell = symmetrize_rank2(atoms.get_cell(),
                                             atoms.get_reciprocal_cell().T,
                                             cell, self.rotations)
-        cell[:] = cell  # symmetrized_cell
+        # stress should definitely be symmetrized as a rank 2 tensor
+        # UnitCellFilter uses deformation gradient as cell DOF with steps dF
+        # = stress.F^-T quantity that should be symmetrized is therefore dF .
+        # F^T assume prev F = I, so just symmetrize dF
+        cur_cell = atoms.get_cell()
+        cur_cell_inv = atoms.get_reciprocal_cell().T
+
+        # F defined such that cell = cur_cell . F^T
+        # assume prev F = I, so dF = F - I
+        delta_deform_grad = np.dot(cur_cell_inv, cell).T - np.eye(3)
+        symmetrized_delta_deform_grad = symmetrize_rank2(cur_cell,
+                                                         cur_cell_inv,
+                                                         delta_deform_grad,
+                                                         self.rotations)
+        cell[:] = np.dot(cur_cell, (symmetrized_delta_deform_grad +
+                                    np.eye(3)).T)
 
     def adjust_positions(self, atoms, new):
         if not self.do_adjust_positions:
