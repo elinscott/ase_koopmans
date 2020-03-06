@@ -29,13 +29,14 @@ def setup_cell():
         l.remove(k)
         (i, j) = l
         R = np.eye(3)
-        R[i, i] = np.cos(0.1 * (k + 1))
-        R[j, j] = np.cos(0.1 * (k + 1))
-        R[i, j] = np.sin(0.1 * (k + 1))
-        R[j, i] = -np.sin(0.1 * (k + 1))
+        theta = 0.1 * (k + 1)
+        R[i, i] = np.cos(theta)
+        R[j, j] = np.cos(theta)
+        R[i, j] = np.sin(theta)
+        R[j, i] = -np.sin(theta)
         F = np.dot(F, R)
     at_rot = at_init.copy()
-    at_rot.set_cell(np.dot(at_rot.get_cell(), F), True)
+    at_rot.set_cell(at_rot.cell @ F, True)
     return at_init, at_rot
 
 

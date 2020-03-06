@@ -8,9 +8,10 @@ from ase.constraints import (FixConstraint,
                              voigt_6_to_full_3x3_stress,
                              full_3x3_to_voigt_6_stress)
 
-__all__ = ['refine', 'check_symmetry', 'FixSymmetry']
+__all__ = ['refine_symmetry', 'check_symmetry', 'FixSymmetry']
 
-def refine(atoms, symprec=0.01, verbose=False):
+
+def refine_symmetry(atoms, symprec=0.01, verbose=False):
     # test orig config with desired tol
 
     # check if we have access to get_spacegroup from spglib
@@ -22,7 +23,7 @@ def refine(atoms, symprec=0.01, verbose=False):
 
     dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
     if dataset is None:
-        raise ValueError("refine failed to get initial symmetry dataset "+
+        raise ValueError("refine failed to get initial symmetry dataset " +
                          spglib.get_error_message())
     if verbose:
         print(("symmetry.refine_symmetry: loose ({})"
@@ -44,7 +45,7 @@ def refine(atoms, symprec=0.01, verbose=False):
     dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
     if dataset is None:
         raise ValueError("refine failed to get symmetrized "
-                         "cell symmetry dataset "+
+                         "cell symmetry dataset " +
                          spglib.get_error_message())
     res = spglib.find_primitive(atoms, symprec=symprec)
     prim_cell, prim_scaled_pos, prim_types = res
@@ -74,21 +75,22 @@ def refine(atoms, symprec=0.01, verbose=False):
         dp = aligned_std_pos[std_i_at] - p[i_at]
         dp_s = np.dot(dp, inv_rot_prim_cell)
         p[i_at] = (aligned_std_pos[std_i_at] -
-                    np.dot(np.round(dp_s), rot_prim_cell))
+                   np.dot(np.round(dp_s), rot_prim_cell))
     atoms.set_positions(p)
 
     # test final config with tight tol
     dataset = spglib.get_symmetry_dataset(atoms, symprec=1.0e-4)
     if dataset is None:
         raise ValueError("refine failed to get final "
-                         "symmetry dataset "+spglib.get_error_message())
+                         "symmetry dataset " + spglib.get_error_message())
     if verbose:
         print(("symmetry.refine_symmetry: precise ({}) "
-               "symmetrized symmetry group number {}, "+
+               "symmetrized symmetry group number {}, " +
                "international (Hermann-Mauguin) {} "
                "Hall {}\n").format(1.0e-4, dataset["number"],
-                                           dataset["international"],
-                                           dataset["hall"]))
+                                   dataset["international"],
+                                   dataset["hall"]))
+
 
 def check_symmetry(atoms, symprec=1.0e-6, verbose=False):
     """
@@ -107,8 +109,9 @@ def check_symmetry(atoms, symprec=1.0e-6, verbose=False):
         print("ase.spacegroup.symmetrize.check_symmetry: prec", symprec,
               "got symmetry group number", dataset["number"],
               ", international (Hermann-Mauguin)", dataset["international"],
-              ", Hall ",dataset["hall"])
+              ", Hall ", dataset["hall"])
     return dataset
+
 
 def prep(atoms, symprec=1.0e-6):
     """
@@ -124,23 +127,24 @@ def prep(atoms, symprec=1.0e-6):
         from pyspglib import spglib  # For versions 1.8.x or before
 
     dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
-    print("symmetry.prep: symmetry group number",dataset["number"],
+    print("symmetry.prep: symmetry group number", dataset["number"],
           ", international (Hermann-Mauguin)", dataset["international"],
           ", Hall", dataset["hall"])
     rotations = dataset['rotations'].copy()
     translations = dataset['translations'].copy()
-    symm_map=[]
+    symm_map = []
     scaled_pos = atoms.get_scaled_positions()
-    for (r, t) in zip(rotations, translations):
+    for (rot, trans) in zip(rotations, translations):
         this_op_map = [-1] * len(atoms)
         for i_at in range(len(atoms)):
-            new_p = np.dot(r, scaled_pos[i_at, :]) + t
+            new_p = rot @ scaled_pos[i_at, :] + trans
             dp = scaled_pos - new_p
             dp -= np.round(dp)
-            i_at_map = np.argmin(np.linalg.norm(dp,  axis=1))
+            i_at_map = np.argmin(np.linalg.norm(dp, axis=1))
             this_op_map[i_at] = i_at_map
         symm_map.append(this_op_map)
     return (rotations, translations, symm_map)
+
 
 def symmetrize_rank1(lattice, inv_lattice, forces, rot, trans, symm_map):
     """
@@ -151,15 +155,17 @@ def symmetrize_rank1(lattice, inv_lattice, forces, rot, trans, symm_map):
     """
     scaled_symmetrized_forces_T = np.zeros(forces.T.shape)
 
-    scaled_forces_T = np.dot(inv_lattice.T,forces.T)
+    scaled_forces_T = np.dot(inv_lattice.T, forces.T)
     for (r, t, this_op_map) in zip(rot, trans, symm_map):
         transformed_forces_T = np.dot(r, scaled_forces_T)
-        scaled_symmetrized_forces_T[:,this_op_map[:]] += transformed_forces_T[:,:]
+        scaled_symmetrized_forces_T[:, this_op_map[:]] += transformed_forces_T[
+                                                          :, :]
     scaled_symmetrized_forces_T /= len(rot)
 
     symmetrized_forces = np.dot(lattice.T, scaled_symmetrized_forces_T).T
 
     return symmetrized_forces
+
 
 def symmetrize_rank2(lattice, lattice_inv, stress_3_3, rot):
     """
@@ -170,16 +176,17 @@ def symmetrize_rank2(lattice, lattice_inv, stress_3_3, rot):
     """
     scaled_stress = np.dot(np.dot(lattice, stress_3_3), lattice.T)
 
-    #NB print('orig', stress_3_3)
-    symmetrized_scaled_stress = np.zeros((3,3))
+    # NB print('orig', stress_3_3)
+    symmetrized_scaled_stress = np.zeros((3, 3))
     for r in rot:
         symmetrized_scaled_stress += np.dot(np.dot(r.T, scaled_stress), r)
     symmetrized_scaled_stress /= len(rot)
 
     sym = np.dot(np.dot(lattice_inv, symmetrized_scaled_stress),
-                  lattice_inv.T)
-    #NB print('sym', sym)
+                 lattice_inv.T)
+    # NB print('sym', sym)
     return sym
+
 
 class FixSymmetry(FixConstraint):
     """
@@ -187,9 +194,10 @@ class FixSymmetry(FixConstraint):
 
     Requires spglib package to be available.
     """
+
     def __init__(self, atoms, symprec=0.01,
                  adjust_positions=True, adjust_cell=True):
-        refine(atoms, symprec) # refine initial symmetry
+        refine_symmetry(atoms, symprec)  # refine initial symmetry
         self.rotations, self.translations, self.symm_map = prep(atoms)
         self.do_adjust_positions = adjust_positions
         self.do_adjust_cell = adjust_cell
@@ -204,7 +212,7 @@ class FixSymmetry(FixConstraint):
         # print('cell step', np.abs(step).max())
         # print('cell sym step', np.abs(symmetrized_step).max())
         # print('change in step', np.abs(symmetrized_step - step).max())
-        cell[:] = cell #symmetrized_cell
+        cell[:] = cell  # symmetrized_cell
 
     def adjust_positions(self, atoms, new):
         if not self.do_adjust_positions:
@@ -224,19 +232,19 @@ class FixSymmetry(FixConstraint):
 
     def adjust_forces(self, atoms, forces):
         # symmetrize forces as rank 1 tensors
-        #print('adjusting forces')
+        # print('adjusting forces')
         forces[:] = symmetrize_rank1(atoms.get_cell(),
-                                      atoms.get_reciprocal_cell().T,
-                                      forces,
-                                      self.rotations,
-                                      self.translations,
-                                      self.symm_map)
+                                     atoms.get_reciprocal_cell().T,
+                                     forces,
+                                     self.rotations,
+                                     self.translations,
+                                     self.symm_map)
 
     def adjust_stress(self, atoms, stress):
         # symmetrize stress as rank 2 tensor
-        #NB print('adjusting stress')
+        # NB print('adjusting stress')
         raw_stress = voigt_6_to_full_3x3_stress(stress)
         symmetrized_stress = symmetrize_rank2(atoms.get_cell(),
-                                               atoms.get_reciprocal_cell().T,
-                                               raw_stress, self.rotations)
+                                              atoms.get_reciprocal_cell().T,
+                                              raw_stress, self.rotations)
         stress[:] = full_3x3_to_voigt_6_stress(symmetrized_stress)
