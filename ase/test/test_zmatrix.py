@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from ase.io.zmatrix import parse_zmatrix
 
-pos_ref = [
+pos_ref = np.array([
     [+0.000, +0.000, +0.000],
     [+1.310, +0.000, +0.000],
     [-0.160, +1.300, +0.000],
@@ -11,7 +11,7 @@ pos_ref = [
     [-0.394, -0.446, -1.031],
     [+1.545, +1.746, -1.031],
     [+1.545, +1.746, +1.031],
-]
+])
 
 tests = [
     (
@@ -84,4 +84,4 @@ tests = [
 def test_zmatrix_diborane(idx):
     zmat, defs = tests[idx]
     atoms = parse_zmatrix(zmat, defs=defs)
-    assert np.max(np.abs(atoms.positions - pos_ref)) < 1e-3
+    assert atoms.positions == pytest.approx(pos_ref, abs=1e-3)
