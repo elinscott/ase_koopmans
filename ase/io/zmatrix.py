@@ -1,23 +1,10 @@
-from collections.abc import Iterable
+from typing import Dict, List, Tuple, Union, Optional
+from collections import namedtuple
 import re
 from string import digits
 import numpy as np
 from ase import Atoms
 from ase.units import Angstrom, Bohr, nm
-
-
-_dist = {'angstrom': Angstrom, 'bohr': Bohr, 'au': Bohr, 'nm': nm}
-_angle = {'radians': 1., 'degrees': np.pi / 180}
-
-
-def _get_units(name, value, known_values):
-    if isinstance(value, str):
-        out = known_values.get(value.lower(), None)
-        if out is None:
-            raise ValueError("Unknown {} units: {}".format(name, value))
-        return out
-    else:
-        return float(value)
 
 
 # split on newlines or semicolons
@@ -26,11 +13,188 @@ _re_linesplit = re.compile(r'\n|;')
 _re_defs = re.compile(r'\s*=\s*|\s+')
 
 
-def _get_var(key, defs, conv=1):
-    # sometimes keys are given with a sign, e.g. "+L1" or "-A3".
-    sign = -1 if key.startswith('-') else 1
-    key = key.lstrip('+-')
-    return sign * conv * float(defs.get(key, key))
+ZMatrixRow = namedtuple(
+    'ZMatrixRow', 'ind1 dist ind2 a_bend ind3 a_dihedral',
+)
+
+
+class ZMatrix:
+    known_units = dict(
+        distance={'angstrom': Angstrom, 'bohr': Bohr, 'au': Bohr, 'nm': nm},
+        angle={'radians': 1., 'degrees': np.pi / 180},
+    )
+
+    def __init__(self, dconv: Union[float, str], aconv: Union[float, str],
+                 defs: Optional[Union[Dict[str, float],
+                                str, List[str]]]):
+        self.dconv = self.get_units('distance', dconv)
+        self.aconv = self.get_units('angle', aconv)
+        self.set_defs(defs)
+        self.name_to_index = dict()
+        self.nrows = 0
+        self.symbols = []
+        self.positions = []
+
+    def get_units(self, kind: str, value: Union[str, float]) -> float:
+        try:
+            return float(value)
+        except ValueError as e:
+            out = self.known_units[kind].get(value.lower())
+            if out is None:
+                raise ValueError("Unknown {} units: {}"
+                                 .format(kind, value)) from e
+        return out
+
+    def set_defs(self, defs: Union[Dict[str, float], str,
+                                   List[str], None]) -> Dict[str, float]:
+        self.defs = dict()
+        if defs is None:
+            return
+
+        if isinstance(defs, dict):
+            self.defs.update(**defs)
+            return
+
+        if isinstance(defs, str):
+            defs = _re_linesplit.split(defs.strip())
+
+        for row in defs:
+            key, val = _re_defs.split(row)
+            self.defs[key] = self.get_var(val)
+
+    def get_var(self, val: str) -> float:
+        try:
+            return float(val)
+        except ValueError as e:
+            val_out = self.defs.get(val.lstrip('+-'))
+            if val_out is None:
+                raise ValueError('Invalid value encountered in Z-matrix: {}'
+                                 .format(val)) from e
+        return val_out * (-1 if val.startswith('-') else 1)
+
+    def get_index(self, name: str) -> int:
+        """Find index for a given atom name"""
+        try:
+            return int(name) - 1
+        except ValueError as e:
+            if self.name_to_index is None or name not in self.name_to_index:
+                raise ValueError('Failed to determine index for name "{}"'
+                                 .format(name)) from e
+        return self.name_to_index[name]
+
+    def set_index(self, name: str) -> None:
+        """Assign index to a given atom name for name -> index lookup"""
+        if self.name_to_index is None:
+            return
+
+        if name in self.name_to_index:
+            # "name" has been encountered before, so name_to_index is no
+            # longer meaningful. Destroy the map.
+            self.name_to_index = None
+            return
+
+        self.name_to_index[name] = self.nrows
+
+    def validate_indices(self, *indices: int) -> None:
+        """Raises an error if indices in a Z-matrix row are invalid."""
+        if any(np.array(indices) >= self.nrows):
+            raise ValueError('An invalid Z-matrix was provided! Row {} refers '
+                             'to atom indices {}, at least one of which '
+                             "hasn't been defined yet!"
+                             .format(self.nrows, indices))
+
+        if len(indices) != len(set(indices)):
+            raise ValueError('An atom index has been used more than once a '
+                             'row of the Z-matrix! Row numbers {}, '
+                             'referred indices: {}'
+                             .format(self.nrows, indices))
+
+    def parse_row(self, row: str) -> Tuple[
+            str, Union[ZMatrixRow, Tuple[float, float, float]],
+    ]:
+        tokens = row.split()
+        name = tokens[0]
+        self.set_index(name)
+        if len(tokens) == 1:
+            assert self.nrows == 0
+            return name, np.zeros(3, dtype=float)
+
+        ind1 = self.get_index(tokens[1])
+        if ind1 == -1:
+            assert len(tokens) == 5
+            return name, np.array(list(map(self.get_var, tokens[2:])),
+                                  dtype=float)
+
+        dist = self.dconv * self.get_var(tokens[2])
+
+        if len(tokens) == 3:
+            assert self.nrows == 1
+            self.validate_indices(ind1)
+            return name, np.array([dist, 0, 0], dtype=float)
+
+        ind2 = self.get_index(tokens[3])
+        a_bend = self.aconv * self.get_var(tokens[4])
+
+        if len(tokens) == 5:
+            assert self.nrows == 2
+            self.validate_indices(ind1, ind2)
+            return name, ZMatrixRow(ind1, dist, ind2, a_bend, None, None)
+
+        ind3 = self.get_index(tokens[5])
+        a_dihedral = self.aconv * self.get_var(tokens[6])
+        self.validate_indices(ind1, ind2, ind3)
+        return name, ZMatrixRow(ind1, dist, ind2, a_bend, ind3,
+                                a_dihedral)
+
+    def add_atom(self, name: str, pos: Tuple[int, int, int]) -> None:
+        """Sets the symbol and position of an atom."""
+        self.nrows += 1
+        self.symbols.append(
+            ''.join([c for c in name if c not in digits]).capitalize()
+        )
+        self.positions.append(pos)
+
+    def add_row(self, row: str) -> None:
+        name, zrow = self.parse_row(row)
+
+        if isinstance(zrow, np.ndarray):
+            self.add_atom(name, zrow)
+            return
+
+        if zrow.ind3 is None:
+            # This is the third atom, so only a bond distance and an angle
+            # have been provided.
+            pos = self.positions[zrow.ind1].copy()
+            pos[0] += zrow.dist * np.cos(zrow.a_bend) * (zrow.ind2 - zrow.ind1)
+            pos[1] += zrow.dist * np.sin(zrow.a_bend)
+            self.add_atom(name, pos)
+            return
+
+        # ax1 is the dihedral axis, which is defined by the bond vector
+        # between the two inner atoms in the dihedral, ind1 and ind2
+        ax1 = self.positions[zrow.ind2] - self.positions[zrow.ind1]
+        ax1 /= np.linalg.norm(ax1)
+
+        # ax2 lies within the 1-2-3 plane, and it is perpendicular
+        # to the dihedral axis
+        ax2 = self.positions[zrow.ind2] - self.positions[zrow.ind3]
+        ax2 -= ax1 * (ax2 @ ax1)
+        ax2 /= np.linalg.norm(ax2)
+
+        # ax3 is a vector that forms the appropriate dihedral angle, though
+        # the bending angle is 90 degrees, rather than a_bend. It is formed
+        # from a linear combination of ax2 and (ax2 x ax1)
+        ax3 = (ax2 * np.cos(zrow.a_dihedral)
+               + np.cross(ax2, ax1) * np.sin(zrow.a_dihedral))
+
+        # The final position vector is a linear combination of ax1 and ax3.
+        pos = ax1 * np.cos(zrow.a_bend) - ax3 * np.sin(zrow.a_bend)
+        pos *= zrow.dist / np.linalg.norm(pos)
+        pos += self.positions[zrow.ind1]
+        self.add_atom(name, pos)
+
+    def to_atoms(self) -> Atoms:
+        return Atoms(self.symbols, self.positions)
 
 
 def parse_zmatrix(zmat, distance_units='angstrom', angle_units='degrees',
@@ -62,129 +226,14 @@ def parse_zmatrix(zmat, distance_units='angstrom', angle_units='degrees',
 
     atoms: Atoms object
     """
-
-    if defs is None:
-        defs = dict()
-    elif isinstance(defs, str):
-        defs = _re_linesplit.split(defs.strip())
-
-    if not isinstance(defs, dict) and isinstance(defs, Iterable):
-        newdefs = dict()
-        for row in defs:
-            tokens = _re_defs.split(row.strip())
-            if len(tokens) == 0:
-                continue
-            elif len(tokens) == 2:
-                # don't convert to float here, that happens below
-                newdefs[tokens[0]] = tokens[1]
-            else:
-                raise ValueError("Failed to parse the definition block! "
-                                 "Problematic entry: {}".format(row))
-        defs = newdefs
-
-    dconv = _get_units('distance', distance_units, _dist)
-    aconv = _get_units('angle', angle_units, _angle)
-
-    # Start by assuming the z-matrix is 0-indexed, even though it probably
-    # isn't. We figure that out below and modify offset appropriately.
-    offset = 0
+    zmatrix = ZMatrix(distance_units, angle_units, defs=defs)
 
     # zmat should be a list containing the rows of the z-matrix.
     # for convenience, allow block strings and split at newlines.
     if isinstance(zmat, str):
         zmat = _re_linesplit.split(zmat.strip())
 
-    natoms = len(zmat)
-    positions = np.zeros((natoms, 3))
+    for row in zmat:
+        zmatrix.add_row(row)
 
-    # when the Z-matrix uses a distinct symbol for each atom (e..g 'C1', 'O2',
-    # etc.), it is possible to refer to other atoms in the Z-matrix by their
-    # symbol rather than their row number. In that case, we still need to know
-    # the row number for the atoms, which is the purpose of this dict.
-    atomname_to_index = dict()
-
-    symbols = []
-    for n, row in enumerate(zmat):
-        tokens = row.strip().split()
-
-        atomname_to_index[tokens[0]] = n
-
-        # sometimes the element symbol has the atom index as well, e.g. "C1",
-        # "O2", "O3". That's extra fun because "C1" could also refer to the
-        # point group of the molecule. Let's just pretend that never happens.
-        symbol = ''.join([char for char in tokens[0] if char not in digits])
-        symbols.append(symbol.capitalize())
-
-        if n == 0:
-            continue
-
-        a = atomname_to_index.get(tokens[1])
-        if a is None:
-            a = int(tokens[1]) + offset
-        # Here and below, we verify the strict ordering of the atom indices
-        # in the z-matrix. If we *don't* check, and the user provides an
-        # invalid z-matrix, then either the user will get a completely bogus
-        # structure, or the code further below will divide by zero, which
-        # will raise error messages that will likely confuse users.
-        if a >= n:
-            if n == 1 and a == 1:
-                # Turns out the z-matrix was 1-indexed. Let's fix offset.
-                offset = -1
-                a += offset
-            else:
-                raise ValueError("An invalid Z-matrix was provided!")
-        dist = _get_var(tokens[2], defs, dconv)
-
-        if n == 1:
-            positions[n, 0] = dist
-            continue
-
-        b = atomname_to_index.get(tokens[3])
-        if b is None:
-            b = int(tokens[3]) + offset
-        if b >= n or b == a:
-            raise ValueError("An invalid Z-matrix was provided!")
-        a_bend = _get_var(tokens[4], defs, aconv)
-
-        if n == 2:
-            vec = np.zeros(3)
-            # this is a convenient trick: if n == 2, then either
-            # (a, b) == (0, 1) OR (a, b) == (1, 0), so (b - a) == +/- 1
-            # The 0->1 bond vector always points in the positive X direction,
-            # so the a->n bond vector will start out pointing in the positive
-            # X direction IFF a == 1, or in the negative X direction IFF
-            # a == 0. (and then it will be rotated into the Y plane according
-            # to the bending angle, a_bend).
-            positions[n] = positions[a]
-            positions[n, 0] += dist * np.cos(a_bend) * (b - a)
-            positions[n, 1] += dist * np.sin(a_bend)
-            continue
-
-        c = atomname_to_index.get(tokens[5])
-        if c is None:
-            c = int(tokens[5]) + offset
-        if c >= n or c == a or c == b:
-            raise ValueError("An invalid Z-matrix was provided!")
-        a_dihedral = _get_var(tokens[6], defs, aconv)
-
-        # ax1 is the dihedral axis, which is defined by the bond vector
-        # between the two inner atoms in the dihedral, a and b
-        ax1 = positions[b] - positions[a]
-        ax1 /= np.linalg.norm(ax1)
-
-        # ax2 lies within the a-b-c plane, and it is perpendicular
-        # to the dihedral axis
-        ax2 = positions[b] - positions[c]
-        ax2 -= ax1 * (ax2 @ ax1)
-        ax2 /= np.linalg.norm(ax2)
-
-        # ax3 is a vector that forms the appropriate dihedral angle, though
-        # the bending angle is 90 degrees, rather than a_bend. It is formed
-        # from a linear combination of ax2 and (ax2 x ax1)
-        ax3 = ax2 * np.cos(a_dihedral) + np.cross(ax2, ax1) * np.sin(a_dihedral)
-
-        # The final position vector is a linear combination of ax1 and ax3.
-        vec = ax1 * np.cos(a_bend) - ax3 * np.sin(a_bend)
-        vec *= dist / np.linalg.norm(vec)
-        positions[n] = positions[a] + vec
-    return Atoms(symbols, positions)
+    return zmatrix.to_atoms()
