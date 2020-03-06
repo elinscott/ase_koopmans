@@ -1,4 +1,5 @@
 from typing import Dict, List, Tuple, Union, Optional
+from numbers import Real
 from collections import namedtuple
 import re
 from string import digits
@@ -24,30 +25,29 @@ class ZMatrix:
         angle={'radians': 1., 'degrees': np.pi / 180},
     )
 
-    def __init__(self, dconv: Union[float, str], aconv: Union[float, str],
+    def __init__(self, dconv: Union[str, Real], aconv: Union[str, Real],
                  defs: Optional[Union[Dict[str, float],
-                                str, List[str]]]):
-        self.dconv = self.get_units('distance', dconv)
-        self.aconv = self.get_units('angle', aconv)
+                                str, List[str]]] = None) -> None:
+        self.dconv = self.get_units('distance', dconv)  # type: float
+        self.aconv = self.get_units('angle', aconv)  # type: float
         self.set_defs(defs)
-        self.name_to_index = dict()
-        self.nrows = 0
-        self.symbols = []
-        self.positions = []
+        self.name_to_index = dict()  # type: Dict[str, int]
+        self.nrows = 0  # type: int
+        self.symbols = []  # type: List[str]
+        self.positions = []  # type: List[Tuple[float, float, float]]
 
-    def get_units(self, kind: str, value: Union[str, float]) -> float:
-        try:
+    def get_units(self, kind: str, value: Union[str, Real]) -> float:
+        if isinstance(value, Real):
             return float(value)
-        except ValueError as e:
-            out = self.known_units[kind].get(value.lower())
-            if out is None:
-                raise ValueError("Unknown {} units: {}"
-                                 .format(kind, value)) from e
+        out = self.known_units[kind].get(value.lower())
+        if out is None:
+            raise ValueError("Unknown {} units: {}"
+                             .format(kind, value))
         return out
 
     def set_defs(self, defs: Union[Dict[str, float], str,
-                                   List[str], None]) -> Dict[str, float]:
-        self.defs = dict()
+                                   List[str], None]) -> None:
+        self.defs = dict()  # type: Dict[str, float]
         if defs is None:
             return
 
@@ -146,7 +146,7 @@ class ZMatrix:
         return name, ZMatrixRow(ind1, dist, ind2, a_bend, ind3,
                                 a_dihedral)
 
-    def add_atom(self, name: str, pos: Tuple[int, int, int]) -> None:
+    def add_atom(self, name: str, pos: Tuple[float, float, float]) -> None:
         """Sets the symbol and position of an atom."""
         self.nrows += 1
         self.symbols.append(
@@ -157,7 +157,7 @@ class ZMatrix:
     def add_row(self, row: str) -> None:
         name, zrow = self.parse_row(row)
 
-        if isinstance(zrow, np.ndarray):
+        if not isinstance(zrow, ZMatrixRow):
             self.add_atom(name, zrow)
             return
 
@@ -197,8 +197,11 @@ class ZMatrix:
         return Atoms(self.symbols, self.positions)
 
 
-def parse_zmatrix(zmat, distance_units='angstrom', angle_units='degrees',
-                  defs=None):
+def parse_zmatrix(zmat: Union[str, List[str]],
+                  distance_units: Union[str, Real] = 'angstrom',
+                  angle_units: Union[str, Real] = 'degrees',
+                  defs: Optional[Union[Dict[str, float], str,
+                                       List[str]]] = None) -> Atoms:
     """Converts a Z-matrix into an Atoms object.
 
     Parameters:
