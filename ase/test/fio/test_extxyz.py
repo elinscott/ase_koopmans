@@ -23,14 +23,14 @@ def at():
 @pytest.fixture
 def images(at):
     images = [at, at * (2, 1, 1), at * (3, 1, 1)]
-    images[1].set_pbc([True,True,False])
-    images[2].set_pbc([True,False,False])
+    images[1].set_pbc([True, True, False])
+    images[2].set_pbc([True, False, False])
     return images
 
 
 def test_array_shape(at):
     # Check that unashable data type in info does not break output
-    at.info['bad-info'] = [[1, np.array([0,1])], [2, np.array([0,1])]]
+    at.info['bad-info'] = [[1, np.array([0, 1])], [2, np.array([0, 1])]]
     with no_warn():
         ase.io.write('to.xyz', at, format='extxyz')
     del at.info['bad-info']
@@ -39,10 +39,10 @@ def test_array_shape(at):
 
     ase.io.write('to_new.xyz', at, format='extxyz')
     at_new = ase.io.read('to_new.xyz')
-    assert at_new.arrays['ns_extra_data'].shape == (2,)
+    assert at_new.arrays['ns_extra_data'].shape == (2, )
 
 
-#test comment read/write with vec_cell
+# test comment read/write with vec_cell
 def test_comment(at):
     at.info['comment'] = 'test comment'
     ase.io.write('comment.xyz', at, comment=at.info['comment'], vec_cell=True)
@@ -58,7 +58,7 @@ def test_sequence(images):
     assert read_images == images
 
 
-#test vec_cell writing and reading
+# test vec_cell writing and reading
 def test_vec_cell(at, images):
     ase.io.write('multi.xyz', images, vec_cell=True)
     cell = images[1].get_cell()
@@ -82,8 +82,8 @@ def test_vec_cell(at, images):
     VEC1 1.0 0.1 1.1
     """)
     f.close()
-    a = ase.io.read('structure.xyz',index=0)
-    b = ase.io.read('structure.xyz',index=1)
+    a = ase.io.read('structure.xyz', index=0)
+    b = ase.io.read('structure.xyz', index=1)
     assert a == b
 
     # read xyz containing trailing blank line
@@ -121,9 +121,19 @@ def test_read_slash():
 
 
 def test_read_struct():
-    struct = Atoms('H4', pbc=[True, True, True],
-                    cell=[[4.00759, 0.0, 0.0], [-2.003795, 3.47067475, 0.0], [3.06349683e-16, 5.30613216e-16, 5.00307]], positions=[[-2.003795e-05, 2.31379473, 0.875437189], [2.00381504, 1.15688001, 4.12763281], [2.00381504, 1.15688001, 3.37697219], [-2.003795e-05, 2.31379473, 1.62609781]])
-    struct.info = {'dataset': 'deltatest', 'kpoints': np.array([28, 28, 20]), 'identifier': 'deltatest_H_1.00', 'unique_id': '4cf83e2f89c795fb7eaf9662e77542c1'}
+    struct = Atoms(
+        'H4', pbc=[True, True, True],
+        cell=[[4.00759, 0.0, 0.0],
+              [-2.003795, 3.47067475, 0.0],
+              [3.06349683e-16, 5.30613216e-16, 5.00307]],
+        positions=[[-2.003795e-05, 2.31379473, 0.875437189],
+                   [2.00381504, 1.15688001, 4.12763281],
+                   [2.00381504, 1.15688001, 3.37697219],
+                   [-2.003795e-05, 2.31379473, 1.62609781]],
+    )
+    struct.info = {'dataset': 'deltatest', 'kpoints': np.array([28, 28, 20]),
+                   'identifier': 'deltatest_H_1.00',
+                   'unique_id': '4cf83e2f89c795fb7eaf9662e77542c1'}
     ase.io.write('tmp.xyz', struct)
 
 
@@ -143,14 +153,14 @@ def test_complex_key_val():
         'int_array={1 2 3} '
         'float_array="3.3 4.4" '
         'virial="1 4 7 2 5 8 3 6 9" '  # special 3x3, fortran ordering
-        'not_a_3x3_array="1 4 7 2 5 8 3 6 9" '  # should be left as a 9-element vector
-        'Lattice="  4.3  0.0 0.0 0.0  3.3 0.0 0.0 0.0  7.0 " '  # spaces in array
+        'not_a_3x3_array="1 4 7 2 5 8 3 6 9" '  # should be left as a 9-vector
+        'Lattice="  4.3  0.0 0.0 0.0  3.3 0.0 0.0 0.0  7.0 " '  # spaces in arr
         'scientific_float=1.2e7 '
         'scientific_float_2=5e-6 '
         'scientific_float_array="1.2 2.2e3 4e1 3.3e-1 2e-2" '
         'not_array="1.2 3.4 text" '
         'bool_array={T F T F} '
-        'bool_array_2=" T, F, T " ' # leading spaces
+        'bool_array_2=" T, F, T " '  # leading spaces
         'not_bool_array=[T F S] '
         # read and write
         # '\xfcnicode_key=val\xfce '  # fails on AppVeyor
@@ -168,12 +178,12 @@ def test_complex_key_val():
         '"with space"="a value" '
         r'space\"="a value" '
         # tests of JSON functionality
-        'f_str_looks_like_array="[[1,2,3],[4,5,6]]" '
-        'f_float_array="_JSON [[1.5,2,3],[4,5,6]]" '
-        'f_int_array="_JSON [[1,2],[3,4]]" '
+        'f_str_looks_like_array="[[1, 2, 3], [4, 5, 6]]" '
+        'f_float_array="_JSON [[1.5, 2, 3], [4, 5, 6]]" '
+        'f_int_array="_JSON [[1, 2], [3, 4]]" '
         'f_bool_bare '
         'f_bool_value=F '
-        'f_irregular_shape="_JSON [[1,2,3],[4,5]]" '
+        'f_irregular_shape="_JSON [[1, 2, 3], [4, 5]]" '
         'f_dict={_JSON {"a" : 1}} '
     )
 
@@ -190,7 +200,9 @@ def test_complex_key_val():
         'float_array': np.array([3.3, 4.4]),
         'virial': np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
         'not_a_3x3_array': np.array([1, 4, 7, 2, 5, 8, 3, 6, 9]),
-        'Lattice': np.array([[4.3, 0.0, 0.0], [0.0, 3.3, 0.0], [0.0, 0.0, 7.0]]),
+        'Lattice': np.array([[4.3, 0.0, 0.0],
+                             [0.0, 3.3, 0.0],
+                             [0.0, 0.0, 7.0]]),
         'scientific_float': 1.2e7,
         'scientific_float_2': 5e-6,
         'scientific_float_array': np.array([1.2, 2200, 40, 0.33, 0.02]),
@@ -211,12 +223,12 @@ def test_complex_key_val():
         'trailing': True,
         'with space': 'a value',
         'space"': 'a value',
-        'f_str_looks_like_array': '[[1,2,3],[4,5,6]]',
-        'f_float_array': np.array([[1.5,2,3],[4,5,6]]),
-        'f_int_array': np.array([[1,2],[3,4]]),
+        'f_str_looks_like_array': '[[1, 2, 3], [4, 5, 6]]',
+        'f_float_array': np.array([[1.5, 2, 3], [4, 5, 6]]),
+        'f_int_array': np.array([[1, 2], [3, 4]]),
         'f_bool_bare': True,
         'f_bool_value': False,
-        'f_irregular_shape': np.array([[1,2,3],[4,5]]),
+        'f_irregular_shape': np.array([[1, 2, 3], [4, 5]]),
         'f_dict': {"a": 1}
     }
 
@@ -242,16 +254,16 @@ def test_complex_key_val():
 
 
 def test_write_multiple(at, images):
-    #write multiple atoms objects to one xyz
+    # write multiple atoms objects to one xyz
     for atoms in images:
-        atoms.write('append.xyz',append=True)
-        atoms.write('comp_append.xyz.gz',append=True)
-        atoms.write('not_append.xyz',append=False)
-    readFrames = ase.io.read('append.xyz',index=slice(0,None))
+        atoms.write('append.xyz', append=True)
+        atoms.write('comp_append.xyz.gz', append=True)
+        atoms.write('not_append.xyz', append=False)
+    readFrames = ase.io.read('append.xyz', index=slice(0, None))
     assert readFrames == images
-    readFrames = ase.io.read('comp_append.xyz.gz',index=slice(0,None))
+    readFrames = ase.io.read('comp_append.xyz.gz', index=slice(0, None))
     assert readFrames == images
-    singleFrame = ase.io.read('not_append.xyz',index=slice(0,None))
+    singleFrame = ase.io.read('not_append.xyz', index=slice(0, None))
     assert singleFrame[-1] == images[-1]
 
 

@@ -80,7 +80,7 @@ def key_val_str_to_dict(string, sep=None):
         if escaped:  # bypass everything if escaped
             kv_pairs[-1][-1].append(char)
             escaped = False
-        elif char == '\\': # escape the next thing
+        elif char == '\\':  # escape the next thing
             escaped = True
         elif cur_delimiter:  # inside brackets
             if char == cur_delimiter:  # found matching delimiter
@@ -132,9 +132,10 @@ def key_val_str_to_dict(string, sep=None):
             # convert special 3x3 matrices
             if key in SPECIAL_3_3_KEYS:
                 if not isinstance(value, np.ndarray) or value.shape != (9,):
-                    raise ValueError("Got info item {}, expecting special 3x3 matrix, "
-                                     "but value is not in the form of a 9-long numerical vector".format(key))
-                value = np.array(value).reshape((3,3), order = 'F')
+                    raise ValueError("Got info item {}, expecting special 3x3 "
+                                     "matrix, but value is not in the form of "
+                                     "a 9-long numerical vector".format(key))
+                value = np.array(value).reshape((3, 3), order='F')
 
             # parse special strings as boolean or JSON
             if isinstance(value, str):
@@ -152,7 +153,7 @@ def key_val_str_to_dict(string, sep=None):
                 except KeyError:
                     # parse JSON
                     if value.startswith("_JSON "):
-                        d = json.loads(value.replace("_JSON ","",1))
+                        d = json.loads(value.replace("_JSON ", "", 1))
                         value = np.array(d)
                         if value.dtype.kind not in ['i', 'f', 'b']:
                             value = d
@@ -228,14 +229,16 @@ def key_val_str_to_dict_regex(s):
 
     return d
 
+
 def escape(string):
-    if  (' ' in string or
-         '"' in string or "'" in string or
-         '{' in string or '}' in string or
-         '[' in string or ']' in string):
-        string = string.replace('"','\\"')
+    if (' ' in string or
+            '"' in string or "'" in string or
+            '{' in string or '}' in string or
+            '[' in string or ']' in string):
+        string = string.replace('"', '\\"')
         string = '"%s"' % string
     return string
+
 
 def key_val_dict_to_str(dct, sep=' '):
     """
@@ -247,9 +250,11 @@ def key_val_dict_to_str(dct, sep=' '):
         # numbers or bools), handle them here
         if key in SPECIAL_3_3_KEYS:
             # special 3x3 matrix
-            val = ' '.join(str(known_types_to_str(v)) for v in val.reshape(val.size, order='F'))
+            val = ' '.join(str(known_types_to_str(v))
+                           for v in val.reshape(val.size, order='F'))
         elif val.dtype.kind in ['i', 'f', 'b']:
-            # numerical or bool scalars/vectors are special, for backwards compat.
+            # numerical or bool scalars/vectors are special, for backwards
+            # compat.
             if len(val.shape) == 0:
                 # scalar
                 val = str(known_types_to_str(val))
@@ -293,9 +298,10 @@ def key_val_dict_to_str(dct, sep=' '):
                               '{0}'.format(key))
                 continue
 
-        key = escape(key) # escape and quote key
+        key = escape(key)  # escape and quote key
         eq = "="
-        # Should this really be setting empty value that's going to be interpreted as bool True?
+        # Should this really be setting empty value that's going to be
+        # interpreted as bool True?
         if val is None:
             val = ""
             eq = ""
@@ -680,15 +686,18 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
     Additional key-value pairs in the comment line are parsed into the
     :attr:`ase.Atoms.atoms.info` dictionary, with the following conventions
 
-     - Values can be quoted with `""`, `''`, `[]` or `{}` (the latter are included
-       to ease command-line usage as the `{}` are not treated specially by the shell)
+     - Values can be quoted with `""`, `''`, `[]` or `{}` (the latter are
+       included to ease command-line usage as the `{}` are not treated
+       specially by the shell)
      - Quotes within keys or values can be escaped with `\"`.
-     - Keys with special names `stress` or `virial` are treated as 3x3 matrices in
-       Fortran order, as for `Lattice` above.
+     - Keys with special names `stress` or `virial` are treated as 3x3 matrices
+       in Fortran order, as for `Lattice` above.
      - Otherwise, values with multiple elements are treated as 1D arrays, first
-       assuming integer format and falling back to float if conversion is unsuccessful.
-     - A missing value defaults to `True`, e.g. the comment line `"cutoff=3.4 have_energy"`
-       leads to `{'cutoff': 3.4, 'have_energy': True}` in `atoms.info`.
+       assuming integer format and falling back to float if conversion is
+       unsuccessful.
+     - A missing value defaults to `True`, e.g. the comment line
+       `"cutoff=3.4 have_energy"` leads to
+       `{'cutoff': 3.4, 'have_energy': True}` in `atoms.info`.
      - Value strings starting with `"_JSON"` are interpreted as JSON content;
        similarly, when writing, anything which does not match the criteria above
        is serialised as JSON.
@@ -698,7 +707,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
     (from `v2.4 beta
     <http://www.ovito.org/index.php/component/content/article?id=25>`_
     onwards).
-    """
+    """  # noqa: E501
     if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
@@ -885,8 +894,8 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                     if value is None:
                         # skip missing calculator results
                         continue
-                    if (isinstance(value, np.ndarray) and len(value.shape) >= 1 and
-                            value.shape[0] == len(atoms)):
+                    if (isinstance(value, np.ndarray) and len(value.shape) >= 1
+                            and value.shape[0] == len(atoms)):
                         # per-atom quantities (forces, energies, stresses)
                         per_atom_results[key] = value
                     else:
