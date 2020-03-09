@@ -70,6 +70,8 @@ Git master branch
 
 * Added :class:`Pyberny <ase.optimize.Berny>` geometry optimizer.
 
+* Added Z-matrix parser for use in input/output file readers.
+
 Version 3.19.0
 ==============
 
