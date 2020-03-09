@@ -237,7 +237,7 @@ def read_gaussian_in(fd):
     # We're looking for charge and multiplicity
     for line in fd:
         if _re_chgmult.match(line) is not None:
-            tokens = fd.readline().strip().split()
+            tokens = fd.readline().split()
             while tokens:
                 symbol = tokens[0]
                 pos = list(map(float, tokens[1:4]))
@@ -248,7 +248,7 @@ def read_gaussian_in(fd):
                 else:
                     symbols.append(symbol)
                     positions.append(pos)
-                tokens = fd.readline().strip().split()
+                tokens = fd.readline().split()
             atoms = Atoms(symbols, positions, pbc=pbc, cell=cell)
             return atoms
 
@@ -260,6 +260,7 @@ _re_atom = re.compile(
     r'^\s*\S+\s+(\S+)\s+(?:\S+\s+)?(\S+)\s+(\S+)\s+(\S+)\s*$'
 )
 _re_forceblock = re.compile(r'^\s*Center\s+Atomic\s+Forces\s+\S+\s*$')
+_re_dipole = re.compile(r'^\s*Dipole\s+=')
 
 
 def _compare_merge_configs(configs, new):
@@ -314,7 +315,6 @@ def read_gaussian_out(fd, index=-1):
                 atoms.calc = SinglePointCalculator(
                     atoms, energy=energy, dipole=dipole, forces=forces,
                 )
-                atoms.calc.name = 'Gaussian'
                 _compare_merge_configs(configs, atoms)
             atoms = None
             energy = None
@@ -361,9 +361,9 @@ def read_gaussian_out(fd, index=-1):
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
             energy *= Hartree
         elif line.startswith('Dipole moment'):
-            tokens = fd.readline().strip().split()
+            tokens = fd.readline().split()
             dipole = np.array(list(map(float, tokens[1:6:2]))) * Debye
-        elif line.startswith('Dipole        ='):
+        elif _re_dipole.match(line):
             dip = line.split('=')[1].replace('D', 'e')
             tokens = dip.split()
             dipole = []
@@ -397,6 +397,5 @@ def read_gaussian_out(fd, index=-1):
         atoms.calc = SinglePointCalculator(
             atoms, energy=energy, dipole=dipole, forces=forces,
         )
-        atoms.calc.name = 'Gaussian'
         _compare_merge_configs(configs, atoms)
     return configs[index]
