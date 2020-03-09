@@ -68,6 +68,11 @@ Git master branch
 
 * Added :mod:`GAMESS-US <ase.calculators.gamess_us>` calculator.
 
+* Completely refactored :mod:`Gaussian <ase.calculators.gaussian>` calculator.
+  The new calculator should be completely backwards compatible with the
+  previous one, while having a more flexible design and supporting more
+  keyword arguments.
+
 * Added :class:`Pyberny <ase.optimize.Berny>` geometry optimizer.
 
 * Added Z-matrix parser for use in input/output file readers.
