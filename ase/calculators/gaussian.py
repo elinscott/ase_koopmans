@@ -40,13 +40,14 @@ class GaussianDynamics:
                 val = kwargs.pop(key)
                 args.append(template.format(val))
 
-        kwargs[args] = args
+        kwargs[self.keyword] = args
 
     def run(self, **kwargs):
         calc_old = self.atoms.calc
         params_old = copy.deepcopy(self.calc.parameters)
 
         self.delete_keywords(kwargs)
+        self.delete_keywords(self.calc.parameters)
         self.set_keywords(kwargs)
 
         self.calc.set(**kwargs)
@@ -64,6 +65,7 @@ class GaussianDynamics:
         self.atoms.positions = atoms.positions
 
         self.calc.parameters = params_old
+        self.calc.reset()
         if calc_old is not None:
             self.atoms.calc = calc_old
 
