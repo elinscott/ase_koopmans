@@ -1,14 +1,18 @@
+import numpy as np
+from numpy.random import RandomState
+import pytest
+from ase.phonons import Phonons
+from ase.data import atomic_numbers
+from ase.optimize import FIRE
+#from asap3 import EMT
+from ase.calculators.emt import EMT
+from ase.build import bulk
+from ase.md.velocitydistribution import PhononHarmonics
+from ase import units
+
+
+@pytest.mark.slow
 def test_phonon_md_init():
-    import numpy as np
-    from numpy.random import RandomState
-    from ase.phonons import Phonons
-    from ase.data import atomic_numbers
-    from ase.optimize import FIRE
-    #from asap3 import EMT
-    from ase.calculators.emt import EMT
-    from ase.build import bulk
-    from ase.md.velocitydistribution import PhononHarmonics
-    from ase import units
 
     # Tests the phonon-based perturbation and velocity distribution
     # for thermal equilibration in MD.

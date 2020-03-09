@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from ase import Atoms
 from ase.units import fs, kB
 # Rename import so pytest won't pick up the class as a test:
@@ -9,6 +10,7 @@ from ase.optimize import QuasiNewton
 from ase.utils import seterr
 
 
+@pytest.mark.slow
 def test_langevin():
     with seterr(all='raise'):
         run()

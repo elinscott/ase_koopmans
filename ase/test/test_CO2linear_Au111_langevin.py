@@ -1,17 +1,21 @@
+from math import pi, cos, sin
+import numpy as np
+import pytest
+from ase import Atoms
+from ase.calculators.emt import EMT
+from ase.constraints import FixLinearTriatomic
+from ase.md import Langevin
+from ase.build import fcc111, add_adsorbate
+import ase.units as units
+
+
+@pytest.mark.slow
 def test_CO2linear_Au111_langevin():
-    from math import pi, cos, sin
-    import numpy as np
-    from ase import Atoms
-    from ase.calculators.emt import EMT
-    from ase.constraints import FixLinearTriatomic
-    from ase.md import Langevin
-    from ase.build import fcc111, add_adsorbate
-    import ase.units as units
     """Test Langevin with constraints for rigid linear
-    triatomic molecules""" 
+    triatomic molecules"""
 
     rng = np.random.RandomState(0)
-    eref = 3.1356 
+    eref = 3.1356
 
     zpos = cos(134.3 / 2.0 * pi / 180.0) * 1.197
     xpos = sin(134.3 / 2.0 * pi / 180.0) * 1.19
@@ -34,13 +38,13 @@ def test_CO2linear_Au111_langevin():
 
     fr = 0.1
     dyn = Langevin(slab, 2.0 * units.fs,
-                   300 * units.kB, fr, 
+                   300 * units.kB, fr,
                    trajectory='langevin_%.1f.traj' % fr,
                    logfile='langevin_%.1f.log' % fr,
                    loginterval=20, rng=rng)
     dyn.run(100)
 
-    # Check that the temperature is within a reasonable range 
+    # Check that the temperature is within a reasonable range
     T = slab.get_temperature()
     assert T > 100
     assert T < 500
@@ -51,6 +55,6 @@ def test_CO2linear_Au111_langevin():
     assert abs(slab.get_distance(-2, -1, mic=1) - d2) < 1e-9
 
     # If the energy differs from the reference energy
-    # it is most probable that the redistribution of 
+    # it is most probable that the redistribution of
     # random forces in Langevin is not working properly
     assert abs(slab.get_potential_energy() - eref) < 1e-4

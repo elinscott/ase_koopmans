@@ -125,6 +125,7 @@ max_errors = {
     'E501': 762}
 
 
+@pytest.mark.slow
 def test_flake8():
     proc = Popen([sys.executable,
                   '-m',

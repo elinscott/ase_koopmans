@@ -72,8 +72,7 @@ class X3D:
             w(2, '</script>')
             w(1, '</head>')
             w(1, '<body>')
-            w(2, '<X3D style="margin:0; padding:0; width:100%; height:100%;'
-                 ' border:none;">')
+            w(2, '<X3D>')
         elif datatype == 'X3D':
             w(0, '<?xml version="1.0" encoding="UTF-8"?>')
             w(0, '<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.2//EN" '

@@ -1,13 +1,15 @@
+from math import sqrt
+import pytest
+from ase import Atoms, Atom
+from ase.constraints import FixAtoms
+from ase.optimize import BFGS
+from ase.neb import SingleCalculatorNEB
+from ase.calculators.emt import EMT
 # XXXXXXXX this is mostly a copy of COCu111 !!!  Grrrr!
 
-def test_COCu111_2():
-    from math import sqrt
-    from ase import Atoms, Atom
-    from ase.constraints import FixAtoms
-    from ase.optimize import BFGS
-    from ase.neb import SingleCalculatorNEB
-    from ase.calculators.emt import EMT
 
+@pytest.mark.slow
+def test_COCu111_2():
     Optimizer = BFGS
 
     # Distance between Cu atoms on a (111) surface:

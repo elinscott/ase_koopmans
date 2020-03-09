@@ -6,6 +6,7 @@ from ase.optimize.precon import PreconLBFGS
 import warnings
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('N', [1, 3])
 def test_precon(N):
     a0 = bulk('Cu', cubic=True)

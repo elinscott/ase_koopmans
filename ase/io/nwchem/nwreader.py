@@ -160,7 +160,7 @@ _gto_grad = _define_pattern(
     r'^[ \t]+[\S]+[ \t]+ENERGY GRADIENTS[ \t]*[\n]+'
     r'^[ \t]+atom[ \t]+coordinates[ \t]+gradient[ \t]*\n'
     r'^(?:[ \t]+x[ \t]+y[ \t]+z){2}[ \t]*\n'
-    r'((?:^(?:[ \t]+[\S]+){8}\n)+)\n',
+    r'((?:^(?:[ \t]+[\S]+){8}\n)+)[ \t]*\n',
     """\
                          UHF ENERGY GRADIENTS
 
@@ -170,7 +170,7 @@ _gto_grad = _define_pattern(
    2 H       1.125380   1.355351   1.125380    0.000086   0.000089   0.000086
    3 H      -1.355351  -1.125380   1.125380   -0.000089  -0.000086   0.000086
    4 H       1.125380  -1.125380  -1.355351    0.000086  -0.000086  -0.000089
-
+ 
 """, re.M)
 
 # Energy parsers for a variety of different GTO calculations

@@ -1,12 +1,15 @@
-def test_COCu111():
-    from math import sqrt
-    from ase import Atoms, Atom
-    from ase.calculators.emt import EMT
-    from ase.constraints import FixAtoms
-    from ase.optimize import BFGS, QuasiNewton
-    from ase.neb import NEB
-    from ase.io import Trajectory
+from math import sqrt
+import pytest
+from ase import Atoms, Atom
+from ase.calculators.emt import EMT
+from ase.constraints import FixAtoms
+from ase.optimize import BFGS, QuasiNewton
+from ase.neb import NEB
+from ase.io import Trajectory
 
+
+@pytest.mark.slow
+def test_COCu111():
     # Distance between Cu atoms on a (111) surface:
     a = 3.6
     d = a / sqrt(2)

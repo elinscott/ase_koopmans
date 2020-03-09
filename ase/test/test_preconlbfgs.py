@@ -1,11 +1,14 @@
+import numpy as np
+import pytest
+
+from ase.build import bulk
+from ase.calculators.emt import EMT
+from ase.optimize.precon import Exp, PreconLBFGS, PreconFIRE
+from ase.constraints import FixBondLength, FixAtoms
+
+
+@pytest.mark.slow
 def test_preconlbfgs():
-    import numpy as np
-
-    from ase.build import bulk
-    from ase.calculators.emt import EMT
-    from ase.optimize.precon import Exp, PreconLBFGS, PreconFIRE
-    from ase.constraints import FixBondLength, FixAtoms
-
     N = 1
     a0 = bulk('Cu', cubic=True)
     a0 *= (N, N, N)

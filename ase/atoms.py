@@ -1045,12 +1045,11 @@ class Atoms(object):
             i = np.array(i)
             # if i is a mask
             if i.dtype == bool:
-                try:
-                    i = np.arange(len(self))[i]
-                except IndexError:
-                    raise IndexError('length of item mask '
-                                     'mismatches that of {0} '
-                                     'object'.format(self.__class__.__name__))
+                if len(i) != len(self):
+                    raise IndexError('Length of mask {} must equal '
+                                     'number of atoms {}'
+                                     .format(len(i), len(self)))
+                i = np.arange(len(self))[i]
 
         import copy
 
