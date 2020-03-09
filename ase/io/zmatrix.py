@@ -14,12 +14,12 @@ _re_linesplit = re.compile(r'\n|;')
 _re_defs = re.compile(r'\s*=\s*|\s+')
 
 
-ZMatrixRow = namedtuple(
+_ZMatrixRow = namedtuple(
     'ZMatrixRow', 'ind1 dist ind2 a_bend ind3 a_dihedral',
 )
 
 
-class ZMatrix:
+class _ZMatrixToAtoms:
     known_units = dict(
         distance={'angstrom': Angstrom, 'bohr': Bohr, 'au': Bohr, 'nm': nm},
         angle={'radians': 1., 'degrees': np.pi / 180},
@@ -32,9 +32,12 @@ class ZMatrix:
         self.aconv = self.get_units('angle', aconv)  # type: float
         self.set_defs(defs)
         self.name_to_index = dict()  # type: Dict[str, int]
-        self.nrows = 0  # type: int
         self.symbols = []  # type: List[str]
         self.positions = []  # type: List[Tuple[float, float, float]]
+
+    @property
+    def nrows(self):
+        return len(self.symbols)
 
     def get_units(self, kind: str, value: Union[str, Real]) -> float:
         if isinstance(value, Real):
@@ -110,7 +113,7 @@ class ZMatrix:
                              .format(self.nrows, indices))
 
     def parse_row(self, row: str) -> Tuple[
-            str, Union[ZMatrixRow, Tuple[float, float, float]],
+            str, Union[_ZMatrixRow, Tuple[float, float, float]],
     ]:
         tokens = row.split()
         name = tokens[0]
@@ -138,17 +141,16 @@ class ZMatrix:
         if len(tokens) == 5:
             assert self.nrows == 2
             self.validate_indices(ind1, ind2)
-            return name, ZMatrixRow(ind1, dist, ind2, a_bend, None, None)
+            return name, _ZMatrixRow(ind1, dist, ind2, a_bend, None, None)
 
         ind3 = self.get_index(tokens[5])
         a_dihedral = self.aconv * self.get_var(tokens[6])
         self.validate_indices(ind1, ind2, ind3)
-        return name, ZMatrixRow(ind1, dist, ind2, a_bend, ind3,
-                                a_dihedral)
+        return name, _ZMatrixRow(ind1, dist, ind2, a_bend, ind3,
+                                 a_dihedral)
 
     def add_atom(self, name: str, pos: Tuple[float, float, float]) -> None:
         """Sets the symbol and position of an atom."""
-        self.nrows += 1
         self.symbols.append(
             ''.join([c for c in name if c not in digits]).capitalize()
         )
@@ -157,7 +159,7 @@ class ZMatrix:
     def add_row(self, row: str) -> None:
         name, zrow = self.parse_row(row)
 
-        if not isinstance(zrow, ZMatrixRow):
+        if not isinstance(zrow, _ZMatrixRow):
             self.add_atom(name, zrow)
             return
 
@@ -229,7 +231,7 @@ def parse_zmatrix(zmat: Union[str, List[str]],
 
     atoms: Atoms object
     """
-    zmatrix = ZMatrix(distance_units, angle_units, defs=defs)
+    zmatrix = _ZMatrixToAtoms(distance_units, angle_units, defs=defs)
 
     # zmat should be a list containing the rows of the z-matrix.
     # for convenience, allow block strings and split at newlines.
