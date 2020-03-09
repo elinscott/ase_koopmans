@@ -6,7 +6,7 @@ from copy import deepcopy
 import numpy as np
 
 from ase import Atoms
-from ase.units import Hartree, Bohr, Debye
+from ase.units import Hartree, Bohr
 from ase.calculators.calculator import InputError
 from ase.calculators.singlepoint import SinglePointCalculator
 
@@ -360,9 +360,6 @@ def read_gaussian_out(fd, index=-1):
             # "correlated method" energy, e.g. CCSD
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
             energy *= Hartree
-        elif line.startswith('Dipole moment'):
-            tokens = fd.readline().split()
-            dipole = np.array(list(map(float, tokens[1:6:2]))) * Debye
         elif _re_dipole.match(line):
             dip = line.split('=')[1].replace('D', 'e')
             tokens = dip.split()
@@ -381,7 +378,9 @@ def read_gaussian_out(fd, index=-1):
                 # otherwise, just give up on trying to parse it.
                 dipole = None
                 continue
-            dipole = np.array(dipole) * Debye
+            # this dipole moment is printed in atomic units, e-Bohr
+            # ASE uses e-Angstrom for dipole moments.
+            dipole = np.array(dipole) * Bohr
         elif _re_forceblock.match(line):
             # skip 2 irrelevant lines
             fd.readline()
