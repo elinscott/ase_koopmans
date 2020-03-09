@@ -1,8 +1,12 @@
+import numpy as np
+import pytest
+from ase.geometry.analysis import Analysis
+from ase.build import molecule
+
+
+@pytest.mark.filterwarnings('ignore:the matrix subclass')
 def test_analysis():
     #test the geometry.analysis module
-    import numpy as np
-    from ase.geometry.analysis import Analysis
-    from ase.build import molecule
 
     mol = molecule('CH3CH2OH')
     ana = Analysis(mol)

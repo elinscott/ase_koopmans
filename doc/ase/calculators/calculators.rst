@@ -86,7 +86,7 @@ elk                                       Full Potential LAPW code
 :mod:`~ase.calculators.aims`              Numeric atomic orbital, full potential code
 :mod:`~ase.calculators.fleur`             Full Potential LAPW code
 :mod:`~ase.calculators.gamess_us`         Gaussian based electronic structure code
-gaussian                                  Gaussian based electronic structure code
+:mod:`~ase.calculators.gaussian`          Gaussian based electronic structure code
 :mod:`~ase.calculators.gromacs`           Classical molecular dynamics code
 :mod:`~ase.calculators.gulp`              Interatomic potential code
 :mod:`~ase.calculators.kim`               Classical MD with standardized models
@@ -223,6 +223,7 @@ the :meth:`set` method:
    FHI-aims
    fleur
    gamess_us
+   gaussian
    gromacs
    gulp
    socketio/socketio

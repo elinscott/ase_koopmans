@@ -1,10 +1,13 @@
+from ase.build import fcc211, add_adsorbate
+from ase.constraints import FixAtoms
+from ase.calculators.emt import EMT
+from ase.optimize import QuasiNewton
+from ase.neb import NEBTools
+from ase.autoneb import AutoNEB
+import pytest
+
+@pytest.mark.slow
 def test_autoneb():
-    from ase.build import fcc211, add_adsorbate
-    from ase.constraints import FixAtoms
-    from ase.calculators.emt import EMT
-    from ase.optimize import QuasiNewton
-    from ase.neb import NEBTools
-    from ase.autoneb import AutoNEB
 
     # Pt atom adsorbed in a hollow site:
     slab = fcc211('Pt', size=(3, 2, 2), vacuum=4.0)
@@ -48,4 +51,4 @@ def test_autoneb():
     autoneb.run()
 
     nebtools = NEBTools(autoneb.all_images)
-    assert abs(nebtools.get_barrier()[0] - 0.938) < 1e-3
+    assert abs(nebtools.get_barrier()[0] - 0.937) < 1e-3

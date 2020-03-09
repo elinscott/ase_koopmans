@@ -1,13 +1,16 @@
-def test_forceqmmm():
-    import numpy as np
-    from ase.build import bulk
-    from ase.calculators.lj import LennardJones
-    from ase.calculators.emt import EMT
-    from ase.calculators.qmmm import ForceQMMM, RescaledCalculator
-    from ase.eos import EquationOfState
-    from ase.optimize import FIRE
-    from ase.neighborlist import neighbor_list
+import numpy as np
+import pytest
+from ase.build import bulk
+from ase.calculators.lj import LennardJones
+from ase.calculators.emt import EMT
+from ase.calculators.qmmm import ForceQMMM, RescaledCalculator
+from ase.eos import EquationOfState
+from ase.optimize import FIRE
+from ase.neighborlist import neighbor_list
 
+
+@pytest.mark.slow
+def test_forceqmmm():
     # parameters
     N_cell = 2
     R_QMs = np.array([3, 7])

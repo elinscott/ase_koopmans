@@ -46,33 +46,24 @@ pipinstall:
 
 # This is the main test job using new versions of libraries.
 # The intention is to enable as many features and libraries as possible.
+#
+# We execute it inside the project dir with --editable in order for
+# the coverage script to correctly resolve the OMIT paths (a bit hacky).
+# It would be better to install it for real, and for things to just work.
 main:
   image: registry.gitlab.com/ase/ase:ase-main
   script:
     - python --version
-    - pip install --no-deps .
+    - pip install --no-deps --editable .
     - ase info --calculators
-    - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --pytest --color=yes --durations 20
     - cd $CI_PROJECT_DIR
+    - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --coverage --pytest --color=yes --durations 20
     - python -We:invalid -m compileall -f -q ase/
-
-
-# See the 'pages' job further down for how the data is published.
-coverage:
-  image: registry.gitlab.com/ase/ase:ase-main
-  script:
-    - python --version
-    - pip install coverage
-    - pip install --editable .
-    - coverage run
-    - coverage report
-    - coverage html
-  coverage: '/TOTAL.+ ([0-9]+%)/'
+  coverage: '/TOTAL.+ ([0-9]+\.[0-9]+%)/'
   artifacts:
     paths:
       - coverage-html/
-  only:
-      - master
+
 
 # Currently (2019-07-26) facing a problem where PATH does not include
 # /opt/conda/bin.  So we manually update the PATH.  This could be a temporary
@@ -133,17 +124,14 @@ distribution_package:
   when: manual
 
 # Publish code coverage data on web.
-#  * The deploy starge is specially recognized by gitlab
+#  * The deploy stage is specially recognized by gitlab
 #  * The jobname pages is specially recognized by gitlab
 #  * The public/ directory is specially recognized by gitlab
 # https://about.gitlab.com/blog/2016/11/03/publish-code-coverage-report-with-gitlab-pages/
-#
-# If we make this automatic, it should run only for master.
-# Right now we will have it run as manually activated
 pages:
   stage: deploy
   dependencies:
-    - coverage
+    - main
   script:
     - mv coverage-html public
   artifacts:

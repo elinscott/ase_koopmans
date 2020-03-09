@@ -6,6 +6,7 @@ compliant with the specification.
 """
 
 import numpy as np
+import pytest
 
 from ase import io
 
@@ -25,6 +26,7 @@ ATOM      1 SIO  SIO     1     -11.713-201.677   9.060************      SIO2Si
 """
 
 
+@pytest.mark.filterwarnings('ignore:Length of occupancy array')
 def test_pdb_read():
     """Read information from pdb file."""
     with open('pdb_test.pdb', 'w') as pdb_file:

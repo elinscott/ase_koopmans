@@ -1,31 +1,35 @@
+import numpy as np
+import pytest
+from ase.data import s22
+from ase.optimize import FIRE
+from ase.constraints import FixBondLengths
+from ase.calculators.tip3p import TIP3P, epsilon0, sigma0
+from ase.calculators.combine_mm import CombineMM
+
+
+def make_atoms():
+    atoms = s22.create_s22_system('Water_dimer')
+    # rotate down in x axis:
+    center = atoms[0].position
+    atoms.translate(-center)  
+    h = atoms[3].position[1]-atoms[0].position[1]
+    l = np.linalg.norm(atoms[0].position - atoms[3].position)
+    angle = np.degrees(np.arcsin(h/l))
+    atoms.rotate(angle, '-z', center=center)
+    return atoms
+
+def make_4mer():
+    atoms = make_atoms()
+    atoms2 = make_atoms()
+    atoms2.translate([0., 3, 0])
+    atoms2.rotate(180, 'y')
+    atoms2.translate([3, 0, 0])
+    atoms += atoms2
+    return atoms
+
+
+@pytest.mark.slow
 def test_combine_mm2():
-    from ase.data import s22
-    from ase.optimize import FIRE
-    from ase.constraints import FixBondLengths
-    from ase.calculators.tip3p import TIP3P, epsilon0, sigma0
-    from ase.calculators.combine_mm import CombineMM
-    import numpy as np
-
-    def make_atoms():
-        atoms = s22.create_s22_system('Water_dimer')
-        # rotate down in x axis:
-        center = atoms[0].position
-        atoms.translate(-center)  
-        h = atoms[3].position[1]-atoms[0].position[1]
-        l = np.linalg.norm(atoms[0].position - atoms[3].position)
-        angle = np.degrees(np.arcsin(h/l))
-        atoms.rotate(angle, '-z', center=center)
-        return atoms
-
-    def make_4mer():
-        atoms = make_atoms()
-        atoms2 = make_atoms()
-        atoms2.translate([0., 3, 0])
-        atoms2.rotate(180, 'y')
-        atoms2.translate([3, 0, 0])
-        atoms += atoms2
-        return atoms
-
     # More biased initial positions for faster test. Set 
     # to false for a slower, harder test. 
     fast_test = True  

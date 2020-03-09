@@ -9,7 +9,7 @@ from docutils import nodes
 from docutils.parsers.rst.roles import set_classes
 
 import matplotlib
-matplotlib.use('Agg', warn=False)
+matplotlib.use('Agg')
 
 
 def mol_role(role, rawtext, text, lineno, inliner, options={}, content=[]):

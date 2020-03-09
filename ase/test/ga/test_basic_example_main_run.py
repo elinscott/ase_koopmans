@@ -1,14 +1,31 @@
+import numpy as np
+import pytest
+from ase.ga.data import PrepareDB
+from ase.ga.startgenerator import StartGenerator
+from ase.constraints import FixAtoms
+from ase.build import fcc111
+from random import random
+from ase.io import write
+from ase.optimize import BFGS
+from ase.calculators.emt import EMT
+
+from ase.ga.data import DataConnection
+from ase.ga.population import Population
+from ase.ga.standard_comparators import InteratomicDistanceComparator
+from ase.ga.cutandsplicepairing import CutAndSplicePairing
+from ase.ga.utilities import closest_distances_generator, get_all_atom_types
+from ase.ga.offspring_creator import OperationSelector
+from ase.ga.standardmutations import MirrorMutation
+from ase.ga.standardmutations import RattleMutation
+from ase.ga.standardmutations import PermutationMutation
+from ase.ga import set_raw_score
+
+
+db_file = 'gadb.db'
+
+
+@pytest.mark.slow
 def test_basic_example_main_run():
-    from ase.ga.data import PrepareDB
-    from ase.ga.startgenerator import StartGenerator
-    from ase.ga.utilities import closest_distances_generator
-    from ase.ga.utilities import get_all_atom_types
-    from ase.constraints import FixAtoms
-    import numpy as np
-    from ase.build import fcc111
-
-    db_file = 'gadb.db'
-
     # create the surface
     slab = fcc111('Au', size=(4, 4, 1), vacuum=10.0, orthogonal=True)
     slab.set_constraint(FixAtoms(mask=len(slab) * [True]))
@@ -54,23 +71,9 @@ def test_basic_example_main_run():
         d.add_unrelaxed_candidate(a)
 
 
-
-    from random import random
-    from ase.io import write
-    from ase.optimize import BFGS
-    from ase.calculators.emt import EMT
-
-    from ase.ga.data import DataConnection
-    from ase.ga.population import Population
-    from ase.ga.standard_comparators import InteratomicDistanceComparator
-    from ase.ga.cutandsplicepairing import CutAndSplicePairing
-    from ase.ga.utilities import closest_distances_generator
-    from ase.ga.utilities import get_all_atom_types
-    from ase.ga.offspring_creator import OperationSelector
-    from ase.ga.standardmutations import MirrorMutation
-    from ase.ga.standardmutations import RattleMutation
-    from ase.ga.standardmutations import PermutationMutation
-    from ase.ga import set_raw_score
+    # XXXXXXXXXX This should be the beginning of a new test,
+    # but we are using some resources from the precious part.
+    # Maybe refactor those things as (module-level?) fixtures.
 
     # Change the following three parameters to suit your needs
     population_size = 5

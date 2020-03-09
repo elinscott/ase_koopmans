@@ -1,13 +1,16 @@
+import numpy as np
+import pytest
+
+from ase.units import GPa
+from ase.build import bulk
+from ase.calculators.test import gradient_test
+from ase.calculators.lj import LennardJones
+from ase.constraints import UnitCellFilter, ExpCellFilter
+from ase.optimize import FIRE, LBFGSLineSearch
+
+
+@pytest.mark.slow
 def test_unitcellfilterpressure():
-    import numpy as np
-
-    from ase.units import GPa
-    from ase.build import bulk
-    from ase.calculators.test import gradient_test
-    from ase.calculators.lj import LennardJones
-    from ase.constraints import UnitCellFilter, ExpCellFilter
-    from ase.optimize import FIRE, LBFGSLineSearch
-
     a0 = bulk('Cu', cubic=True)
 
     # perturb the atoms

@@ -12,29 +12,43 @@ from ase.calculators.singlepoint import SinglePointCalculator
 
 
 _link0_keys = [
-    'chk',
     'mem',
+    'chk',
+    'oldchk',
+    'schk',
     'rwf',
+    'oldmatrix',
+    'oldrawmatrix',
     'int',
     'd2e',
-    'lindaworkers',
-    'kjob',
-    'subst',
     'save',
     'nosave',
+    'errorsave',
+    'cpu',
     'nprocshared',
-    'nproc',
+    'gpucpu',
+    'lindaworkers',
+    'usessh',
+    'ssh',
+    'debuglinda',
+]
+
+
+_link0_special = [
+    'kjob',
+    'subst',
 ]
 
 
 # Certain problematic methods do not provide well-defined potential energy
 # surfaces, because these "composite" methods involve geometry optimization
 # and/or vibrational frequency analysis. In addition, the "energy" calculated
-# by these methods are typically ZVPE corrected and/or temperature dependent
+# by these methods are typically ZPVE corrected and/or temperature dependent
 # free energies.
 _problem_methods = [
     'cbs-4m', 'cbs-qb3', 'cbs-apno',
     'g1', 'g2', 'g3', 'g4', 'g2mp2', 'g3mp2', 'g3b3', 'g3mp2b3', 'g4mp4',
+    'w1', 'w1u', 'w1bd', 'w1ro',
 ]
 
 
@@ -58,6 +72,13 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     # pop method and basis
     method = params.pop('method', None)
     basis = params.pop('basis', None)
+
+    # basisfile, only used if basis=gen
+    basisfile = params.pop('basisfile', None)
+
+    # basis can be omitted if basisfile is provided
+    if basisfile is not None and basis is None:
+        basis = 'gen'
 
     # determine method from xc if it is provided
     if method is None:
@@ -92,9 +113,6 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     if mult is None:
         mult = atoms.get_initial_magnetic_moments().sum() + 1
 
-    # basisfile, only used if basis=gen
-    basisfile = params.pop('basisfile', None)
-
     # pull out raw list of explicit keywords for backwards compatibility
     extra = params.pop('extra', None)
 
@@ -107,9 +125,22 @@ def write_gaussian_in(fd, atoms, properties=None, **params):
     # set up link0 arguments
     out = []
     for key in _link0_keys:
-        val = params.pop(key, None)
-        if val is not None:
+        if key not in params:
+            continue
+        val = params.pop(key)
+        if not val or (isinstance(val, str) and key.lower() == val.lower()):
+            out.append('%{}'.format(key))
+        else:
             out.append('%{}={}'.format(key, val))
+
+    # These link0 keywords have a slightly different syntax
+    for key in _link0_special:
+        if key not in params:
+            continue
+        val = params.pop(key)
+        if not isinstance(val, str) and isinstance(val, Iterable):
+            val = ' '.join(val)
+        out.append('%{} L{}'.format(key, val))
 
     # begin route line
     # note: unlike in old calculator, each route keyword is put on its own
@@ -206,7 +237,7 @@ def read_gaussian_in(fd):
     # We're looking for charge and multiplicity
     for line in fd:
         if _re_chgmult.match(line) is not None:
-            tokens = fd.readline().strip().split()
+            tokens = fd.readline().split()
             while tokens:
                 symbol = tokens[0]
                 pos = list(map(float, tokens[1:4]))
@@ -217,7 +248,7 @@ def read_gaussian_in(fd):
                 else:
                     symbols.append(symbol)
                     positions.append(pos)
-                tokens = fd.readline().strip().split()
+                tokens = fd.readline().split()
             atoms = Atoms(symbols, positions, pbc=pbc, cell=cell)
             return atoms
 
@@ -229,6 +260,41 @@ _re_atom = re.compile(
     r'^\s*\S+\s+(\S+)\s+(?:\S+\s+)?(\S+)\s+(\S+)\s+(\S+)\s*$'
 )
 _re_forceblock = re.compile(r'^\s*Center\s+Atomic\s+Forces\s+\S+\s*$')
+_re_dipole = re.compile(r'^\s*Dipole\s+=')
+
+
+def _compare_merge_configs(configs, new):
+    """Append new to configs if it contains a new geometry or new data.
+
+    Gaussian sometimes repeats a geometry, for example at the end of an
+    optimization, or when a user requests vibrational frequency
+    analysis in the same calculation as a geometry optimization.
+
+    In those cases, rather than repeating the structure in the list of
+    returned structures, try to merge results if doing so doesn't change
+    any previously calculated values. If that's not possible, then create
+    a new "image" with the new results.
+    """
+    if not configs:
+        configs.append(new)
+        return
+
+    old = configs[-1]
+
+    if old != new:
+        configs.append(new)
+        return
+
+    oldres = old.calc.results
+    newres = new.calc.results
+    common_keys = set(oldres).intersection(newres)
+
+    for key in common_keys:
+        if np.any(oldres[key] != newres[key]):
+            configs.append(new)
+            return
+    else:
+        oldres.update(newres)
 
 
 def read_gaussian_out(fd, index=-1):
@@ -238,13 +304,18 @@ def read_gaussian_out(fd, index=-1):
     dipole = None
     forces = None
     for line in fd:
-        if line.strip() == 'Input orientation:':
+        line = line.strip()
+        if line.startswith(r'1\1\GINC'):
+            # We've reached the "archive" block at the bottom, stop parsing
+            break
+
+        if (line == 'Input orientation:'
+                or line == 'Z-Matrix orientation:'):
             if atoms is not None:
-                atoms.calc = SinglePointCalculator(atoms,
-                                                   energy=energy,
-                                                   dipole=dipole,
-                                                   forces=forces)
-                configs.append(atoms)
+                atoms.calc = SinglePointCalculator(
+                    atoms, energy=energy, dipole=dipole, forces=forces,
+                )
+                _compare_merge_configs(configs, atoms)
             atoms = None
             energy = None
             dipole = None
@@ -272,24 +343,28 @@ def read_gaussian_out(fd, index=-1):
                     numbers.append(max(number, 0))
                     positions.append(pos)
             atoms = Atoms(numbers, positions, pbc=pbc, cell=cell)
-        elif line.strip().startswith('SCF Done:'):
-            # SCF energy, i.e. HF, DFT, etc.
+        elif (line.startswith('Energy=')
+                or line.startswith('SCF Done:')):
+            # Some semi-empirical methods (Huckel, MINDO3, etc.),
+            # or SCF methods (HF, DFT, etc.)
             energy = float(line.split('=')[1].split()[0].replace('D', 'e'))
             energy *= Hartree
-        elif line.strip().startswith('E2 ='):
-            # MP2 energy
+        elif (line.startswith('E2 =') or line.startswith('E3 =')
+                or line.startswith('E4(') or line.startswith('DEMP5 =')
+                or line.startswith('E2(')):
+            # MP{2,3,4,5} energy
+            # also some double hybrid calculations, like B2PLYP
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
             energy *= Hartree
-        elif line.strip().startswith('Wavefunction amplitudes converged. '
-                                     'E(Corr)'):
+        elif line.startswith('Wavefunction amplitudes converged. E(Corr)'):
             # "correlated method" energy, e.g. CCSD
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
             energy *= Hartree
-        elif line.strip().startswith('Dipole moment'):
-            tokens = fd.readline().strip().split()
+        elif line.startswith('Dipole moment'):
+            tokens = fd.readline().split()
             dipole = np.array(list(map(float, tokens[1:6:2]))) * Debye
-        elif line.strip().startswith('Dipole'):
-            dip = line.strip().split('=')[1].replace('D', 'e')
+        elif _re_dipole.match(line):
+            dip = line.split('=')[1].replace('D', 'e')
             tokens = dip.split()
             dipole = []
             # dipole elements can run together, depending on what method was
@@ -319,7 +394,8 @@ def read_gaussian_out(fd, index=-1):
                 forces.append(list(map(float, match.group(2, 3, 4))))
             forces = np.array(forces) * Hartree / Bohr
     if atoms is not None:
-        atoms.calc = SinglePointCalculator(atoms, energy=energy,
-                                           dipole=dipole, forces=forces)
-        configs.append(atoms)
+        atoms.calc = SinglePointCalculator(
+            atoms, energy=energy, dipole=dipole, forces=forces,
+        )
+        _compare_merge_configs(configs, atoms)
     return configs[index]

@@ -1,8 +1,11 @@
+import pytest
 from ase.calculators.lj import LennardJones
 from ase.optimize import FIRE, BFGS
 from ase.neb import NEB, NEBTools, idpp_interpolate
 from ase import Atoms
 
+
+@pytest.mark.slow
 def test_neb_tr():
     nimages = 3
     fmax = 0.01
