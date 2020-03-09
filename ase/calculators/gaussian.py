@@ -17,6 +17,10 @@ class GaussianDynamics:
         if calc is not None:
             self.calc = calc
         else:
+            if self.atoms.calc is None:
+                raise ValueError("{} requires a valid Gaussian calculator "
+                                 "object!".format(self.__class__.__name__))
+
             self.calc = self.atoms.calc
 
     def todict(self):
