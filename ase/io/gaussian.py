@@ -260,7 +260,7 @@ _re_atom = re.compile(
     r'^\s*\S+\s+(\S+)\s+(?:\S+\s+)?(\S+)\s+(\S+)\s+(\S+)\s*$'
 )
 _re_forceblock = re.compile(r'^\s*Center\s+Atomic\s+Forces\s+\S+\s*$')
-_re_dipole = re.compile(r'^\s*Dipole\s+=')
+_re_l716 = re.compile(r'^\s*\(Enter .+l716.exe\)$')
 
 
 def _compare_merge_configs(configs, new):
@@ -360,7 +360,17 @@ def read_gaussian_out(fd, index=-1):
             # "correlated method" energy, e.g. CCSD
             energy = float(line.split('=')[-1].strip().replace('D', 'e'))
             energy *= Hartree
-        elif _re_dipole.match(line):
+        elif _re_l716.match(line):
+            # Sometimes Gaussian will print "Rotating derivatives to
+            # standard orientation" after the matched line (which looks like
+            # "(Enter /opt/gaussian/g16/l716.exe)", though the exact path
+            # depends on where Gaussian is installed). We *skip* the dipole
+            # in this case, because it might be rotated relative to the input
+            # orientation (and also it is numerically different even if the
+            # standard orientation is the same as the input orientation).
+            line = fd.readline().strip()
+            if not line.startswith('Dipole'):
+                continue
             dip = line.split('=')[1].replace('D', 'e')
             tokens = dip.split()
             dipole = []
