@@ -2573,6 +2573,9 @@ class ExpCellFilter(UnitCellFilter):
 
         \phi( exp(U+tV) (z+tv) ) ~ \phi'(x) . (exp(U) v) + \phi'(x) .
                                                     ( L(U, V) exp(-U) exp(U) z )
+
+        where
+
                \nabla E(U) : V  =  [S exp(-U)'] : L(U,V)
                                 =  L'(U, S exp(-U)') : V
                                 =  L(U', S exp(-U)') : V
