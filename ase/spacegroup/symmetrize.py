@@ -103,6 +103,20 @@ def check_symmetry(atoms, symprec=1.0e-6, verbose=False):
     return dataset
 
 
+def is_subgroup(sup_data, sub_data):
+    """
+    Test if spglib dataset `sub_data` is a subgroup of dataset `sup_data`
+    """
+    err = np.max([np.min(np.abs(
+                   [np.linalg.norm(sup[0] - sub[0]) +
+                    np.linalg.norm(sup[1] - sub[1])
+                    for sup in zip(sup_data['rotations'],
+                                   sup_data['translations'])]))
+                    for sub in zip(sub_data['rotations'],
+                                   sub_data['translations'])])
+    return err < 1.0e-10
+
+
 def prep_symmetry(atoms, symprec=1.0e-6, verbose=False):
     """
     Prepare `at` for symmetry-preserving minimisation at precision `symprec`
@@ -185,15 +199,15 @@ class FixSymmetry(FixConstraint):
         refine_symmetry(atoms, symprec, self.verbose)  # refine initial symmetry
         sym = prep_symmetry(atoms, symprec, self.verbose)
         self.rotations, self.translations, self.symm_map = sym
-        self.do_adjust_positions = adjust_positions
-        self.do_adjust_cell = adjust_cell
+        self.adjust_positions = adjust_positions
+        self.adjust_cell = adjust_cell
 
     def adjust_cell(self, atoms, cell):
-        if not self.do_adjust_cell:
+        if not self.adjust_cell:
             return
         # stress should definitely be symmetrized as a rank 2 tensor
-        # UnitCellFilter uses deformation gradient as cell DOF with steps dF
-        # = stress.F^-T quantity that should be symmetrized is therefore dF .
+        # UnitCellFilter uses deformation gradient as cell DOF with steps
+        # dF = stress.F^-T quantity that should be symmetrized is therefore dF .
         # F^T assume prev F = I, so just symmetrize dF
         cur_cell = atoms.get_cell()
         cur_cell_inv = atoms.get_reciprocal_cell().T
@@ -208,7 +222,7 @@ class FixSymmetry(FixConstraint):
                          (symmetrized_delta_deform_grad + np.eye(3)).T)
 
     def adjust_positions(self, atoms, new):
-        if not self.do_adjust_positions:
+        if not self.adjust_positions:
             return
         # symmetrize changes in position as rank 1 tensors
         step = new - atoms.positions
@@ -230,5 +244,6 @@ class FixSymmetry(FixConstraint):
         # symmetrize stress as rank 2 tensor
         raw_stress = voigt_6_to_full_3x3_stress(stress)
         symmetrized_stress = symmetrize_rank2(atoms.get_cell(),
-            atoms.get_reciprocal_cell().T, raw_stress, self.rotations)
+                                              atoms.get_reciprocal_cell().T,
+                                              raw_stress, self.rotations)
         stress[:] = full_3x3_to_voigt_6_stress(symmetrized_stress)
