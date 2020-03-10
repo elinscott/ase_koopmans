@@ -2388,7 +2388,8 @@ class UnitCellFilter(Filter):
         pos = np.zeros((natoms + 3, 3))
         # UnitCellFilter's positions are the self.atoms.positions but without
         # the applied deformation gradient
-        pos[:natoms] = np.linalg.solve(cur_deform_grad, self.atoms.positions.T).T
+        pos[:natoms] = np.linalg.solve(cur_deform_grad,
+                                       self.atoms.positions.T).T
         # UnitCellFilter's cell DOFs are the deformation gradient times a
         # scaling factor
         pos[natoms:] = self.cell_factor * cur_deform_grad
@@ -2502,8 +2503,8 @@ class ExpCellFilter(UnitCellFilter):
         - False = fixed, ignore this component
 
         Degrees of freedom are the positions in the original undeformed cell,
-        plus the log of the deformation tensor (extra 3 "atoms"). This gives forces
-        consistent with numerical derivatives of the potential energy
+        plus the log of the deformation tensor (extra 3 "atoms"). This gives
+        forces consistent with numerical derivatives of the potential energy
         with respect to the cell degrees of freedom.
 
         For full details see:
@@ -2566,16 +2567,18 @@ class ExpCellFilter(UnitCellFilter):
             x =  F * F0^{-1} z  = exp(U) z
 
         If we write the energy as a function of U we can transform the
-        stress associated with a perturbation V into a derivative using a linear map
-        V -> L(U, V).
+        stress associated with a perturbation V into a derivative using a
+        linear map V -> L(U, V).
 
-        \phi( exp(U+tV) (z+tv) ) ~ \phi'(x) . (exp(U) v) + \phi'(x) . ( L(U, V) exp(-U) exp(U) z )
+        \phi( exp(U+tV) (z+tv) ) ~ \phi'(x) . (exp(U) v) + \phi'(x) .
+                                                    ( L(U, V) exp(-U) exp(U) z )
                \nabla E(U) : V  =  [S exp(-U)'] : L(U,V)
                                 =  L'(U, S exp(-U)') : V
                                 =  L(U', S exp(-U)') : V
                                 =  L(U, S exp(-U)) : V     (provided U = U')
 
-        where the : operator represents double contraction, i.e. A:B = trace(A'B), and
+        where the : operator represents double contraction,
+        i.e. A:B = trace(A'B), and
 
           F = deformation tensor - 3x3 matrix
           F0 = reference deformation tensor - 3x3 matrix, np.eye(3) here
@@ -2600,7 +2603,8 @@ class ExpCellFilter(UnitCellFilter):
         """
 
         Filter.__init__(self, atoms, indices=range(len(atoms)))
-        UnitCellFilter.__init__(self, atoms, mask, cell_factor, hydrostatic_strain,
+        UnitCellFilter.__init__(self, atoms, mask, cell_factor,
+                                hydrostatic_strain,
                                 constant_volume, scalar_pressure)
         if cell_factor is not None:
             raise ValueError("cell_factor is no longer supported")
@@ -2619,9 +2623,7 @@ class ExpCellFilter(UnitCellFilter):
         UnitCellFilter.set_positions(self, new2, **kwargs)
 
     def get_forces(self, apply_constraint=False):
-        #forces = UnitCellFilter.get_forces(self, apply_constraint)
-
-        atoms_forces = self.atoms.get_forces(apply_constraint=apply_constraint)
+        forces = UnitCellFilter.get_forces(self, apply_constraint)
 
         # forces on atoms are same as UnitCellFilter, we just
         # need to modify the stress contribution
@@ -2675,8 +2677,6 @@ class ExpCellFilter(UnitCellFilter):
 
         # pack gradients into vector
         natoms = len(self.atoms)
-        forces = np.zeros((natoms + 3, 3))
-        forces[:natoms] = atoms_forces
         forces[natoms:] = deform_grad_log_force
         self.stress = full_3x3_to_voigt_6_stress(convergence_crit_stress)
         return forces
