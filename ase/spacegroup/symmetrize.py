@@ -16,6 +16,7 @@ def print_symmetry(symprec, dataset):
           ", international (Hermann-Mauguin)", dataset["international"],
           ", Hall ", dataset["hall"])
 
+
 def refine_symmetry(atoms, symprec=0.01, verbose=False):
     """
     Refine symmetry of an Atoms object
@@ -80,7 +81,7 @@ def refine_symmetry(atoms, symprec=0.01, verbose=False):
     pos = atoms.get_positions()
     for i_at in range(len(atoms)):
         std_i_at = std_mapping_to_primitive.index(mapping_to_primitive[i_at])
-        dp   = aligned_std_pos[std_i_at] - pos[i_at]
+        dp = aligned_std_pos[std_i_at] - pos[i_at]
         dp_s = dp @ inv_rot_prim_cell
         pos[i_at] = (aligned_std_pos[std_i_at] -
                      np.round(dp_s) @ rot_prim_cell)
@@ -103,7 +104,8 @@ def check_symmetry(atoms, symprec=1.0e-6, verbose=False):
     except ImportError:
         from pyspglib import spglib  # For versions 1.8.x or before
     dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
-    if verbose: print_symmetry(symprec, dataset)
+    if verbose:
+        print_symmetry(symprec, dataset)
     return dataset
 
 
@@ -121,7 +123,8 @@ def prep_symmetry(atoms, symprec=1.0e-6, verbose=False):
         from pyspglib import spglib  # For versions 1.8.x or before
 
     dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
-    if verbose: print_symmetry(symprec, dataset)
+    if verbose:
+        print_symmetry(symprec, dataset)
     rotations = dataset['rotations'].copy()
     translations = dataset['translations'].copy()
     symm_map = []
@@ -196,10 +199,6 @@ class FixSymmetry(FixConstraint):
     def adjust_cell(self, atoms, cell):
         if not self.do_adjust_cell:
             return
-        # symmetrize cell as a rank 2 tensor
-        symmetrized_cell = symmetrize_rank2(atoms.get_cell(),
-                                            atoms.get_reciprocal_cell().T,
-                                            cell, self.rotations)
         # stress should definitely be symmetrized as a rank 2 tensor
         # UnitCellFilter uses deformation gradient as cell DOF with steps dF
         # = stress.F^-T quantity that should be symmetrized is therefore dF .
