@@ -456,7 +456,7 @@ The FixSymmetry class
 
 .. autoclass:: ase.spacegroup.symmetrize.FixSymmetry
 
-The module also provides some utility functions to Prepare
+The module also provides some utility functions to prepare
 symmetrized configurations and to check symmetry.
 
 .. autofunction:: ase.spacegroup.symmetrize.refine_symmetry
@@ -464,6 +464,9 @@ symmetrized configurations and to check symmetry.
 .. autofunction:: ase.spacegroup.symmetrize.check_symmetry
 
 Here is an example of using these tools to demonstrate the difference between
-minimising a perturbed fcc Al cell with and without symmetry-preservation.
+minimising a perturbed bcc Al cell with and without symmetry-preservation.
+Since bcc is unstable with respect to fcc with a Lennard Jones model, the
+unsymmetrised case relaxes to fcc, while the constraint keeps the original
+symmetry.
 
 -.. literalinclude:: fix_symmetry_example.py
