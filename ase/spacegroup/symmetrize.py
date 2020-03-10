@@ -51,11 +51,7 @@ def refine_symmetry(atoms, symprec=0.01, verbose=False):
     atoms.set_cell(rot_trans_std_cell, True)
 
     # get new dataset and primitive cell
-    dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
-    if dataset is None:
-        raise ValueError("refine failed to get symmetrized "
-                         "cell symmetry dataset " +
-                         spglib.get_error_message())
+    dataset = check_symmetry(atoms, symprec=symprec, verbose=verbose)
     res = spglib.find_primitive(atoms, symprec=symprec)
     prim_cell, prim_scaled_pos, prim_types = res
 
