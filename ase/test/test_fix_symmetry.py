@@ -12,7 +12,7 @@ spglib = pytest.importorskip('spglib')
 
 def setup_cell():
     # setup an bcc Al cell
-    at_init = bulk('Al', 'bcc', a=2 / sqrt3, cubic=True)
+    at_init = bulk('Al', 'bcc', a=2 / np.sqrt(3), cubic=True)
     F = np.array([[1, 0.1, 0], [0.1, 1, 0], [0, 0, 1]])
     at_init.cell = at_init.cell @ F
 
