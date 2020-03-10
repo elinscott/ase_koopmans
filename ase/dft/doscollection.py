@@ -5,6 +5,7 @@ from typing import (Any, Iterable, List, Optional,
                     overload, Sequence, Tuple, Union)
 
 import numpy as np
+from matplotlib.axes import Axes
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData, Info
 
 
@@ -35,6 +36,66 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
         """
         return np.asarray([data.sample(x, width=width, smearing=smearing)
                            for data in self])
+
+    def plot(self,
+             npts: int = 1000,
+             xmin: float = None,
+             xmax: float = None,
+             width: float = 0.1,
+             smearing: str = 'Gauss',
+             ax: Axes = None,
+             show: bool = False,
+             filename: str = None,
+             mplargs: dict = None) -> Axes:
+        """Simple plot of collected DOS data, resampled onto a grid
+
+        If the special key 'label' is present in self.info, this will be set
+        as the label for the plotted line (unless overruled in mplargs). The
+        label is only seen if a legend is added to the plot (i.e. by calling
+        `ax.legend()`).
+
+        Args:
+            npts, xmin, xmax: output data range, as passed to self.sample_grid
+            width: Width of broadening kernel, passed to self.sample()
+            smearing: selection of broadening kernel, passed to self.sample()
+            ax: existing Matplotlib axes object. If not provided, a new figure
+                with one set of axes will be created using Pyplot
+            show: show the figure on-screen
+            filename: if a path is given, save the figure to this file
+            mplargs: additional arguments to pass to matplotlib plot command
+                (e.g. {'linewidth': 2} for a thicker line).
+
+        Returns:
+            Plotting axes. If "ax" was set, this is the same object.
+        """
+
+        if ax is None:
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.get_figure()
+
+        if mplargs is None:
+            mplargs = {}
+
+        x, all_y = self.sample_grid(npts,
+                                    xmin=xmin, xmax=xmax,
+                                    width=width, smearing=smearing)
+
+        all_labels = [DOSData.label_from_info(data.info) for data in self]
+
+        all_lines = ax.plot(x, all_y.T, label=all_labels, **mplargs)
+        ax.legend(all_lines, all_labels)
+
+        ax.set_xlim(left=min(x), right=max(x))
+        ax.set_ylim(bottom=0)
+
+        if show:
+            fig.show()
+        if filename is not None:
+            fig.savefig(filename)
+
+        return ax
 
     def sample_grid(self,
                     npts: int,

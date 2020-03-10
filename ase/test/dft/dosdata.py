@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -44,6 +45,17 @@ class TestDosData:
         dos_data = MinimalDOSData()
         with pytest.raises(NotImplementedError):
             getattr(dos_data, method)(*args)
+
+    @pytest.mark.parametrize('info, expected',
+                             [({}, ''),
+                              ({'key1': 'value1'}, 'key1: value1'),
+                              (OrderedDict([('key1', 'value1'),
+                                            ('key2', 'value2')]),
+                               'key1: value1; key2: value2'),
+                              ({'key1': 'value1', 'label': 'xyz'}, 'xyz'),
+                              ({'label': 'xyz'}, 'xyz')])
+    def test_label_from_info(self, info, expected):
+        assert DOSData.label_from_info(info) == expected
 
 
 class TestRawDosData:

@@ -165,6 +165,8 @@ class DOSData(metaclass=ABCMeta):
 
         if mplargs is None:
             mplargs = {}
+        if 'label' not in mplargs:
+            mplargs.update({'label': self.label_from_info(self.info)})
 
         x, y = self.sample_grid(npts, xmin=xmin, xmax=xmax,
                                 width=width, smearing=smearing)
@@ -176,6 +178,15 @@ class DOSData(metaclass=ABCMeta):
             fig.savefig(filename)
 
         return ax
+
+    @staticmethod
+    def label_from_info(info: Dict[str, str]):
+        """Generate an automatic legend label from info dict"""
+        if 'label' in info:
+            return info['label']
+        else:
+            return '; '.join(map(lambda x: '{}: {}'.format(x[0], x[1]),
+                                 info.items()))
 
 
 class RawDOSData(DOSData):
