@@ -2604,7 +2604,8 @@ class ExpCellFilter(UnitCellFilter):
         UnitCellFilter.__init__(self, atoms, mask, cell_factor, hydrostatic_strain,
                                 constant_volume, scalar_pressure)
         if cell_factor is not None:
-            warn("cell_factor is no longer used")
+            raise ValueError("cell_factor is no longer supported")
+        self.cell_factor = 1.0
 
     def get_positions(self):
         pos = UnitCellFilter.get_positions(self)
@@ -2614,11 +2615,14 @@ class ExpCellFilter(UnitCellFilter):
 
     def set_positions(self, new, **kwargs):
         natoms = len(self.atoms)
-        new[natoms:] = expm(new[natoms:])
-        UnitCellFilter.set_positions(self, new, **kwargs)
+        new2 = new.copy()
+        new2[natoms:] = expm(new[natoms:])
+        UnitCellFilter.set_positions(self, new2, **kwargs)
 
     def get_forces(self, apply_constraint=False):
-        forces = UnitCellFilter.get_forces(self, apply_constraint)
+        #forces = UnitCellFilter.get_forces(self, apply_constraint)
+
+        atoms_forces = self.atoms.get_forces(apply_constraint=apply_constraint)
 
         # forces on atoms are same as UnitCellFilter, we just
         # need to modify the stress contribution
@@ -2629,6 +2633,7 @@ class ExpCellFilter(UnitCellFilter):
 
         cur_deform_grad = self.deform_grad()
         cur_deform_grad_log = logm(cur_deform_grad)
+        atoms_forces = atoms_forces @ cur_deform_grad
 
         if self.hydrostatic_strain:
             vtr = virial.trace()
@@ -2671,6 +2676,8 @@ class ExpCellFilter(UnitCellFilter):
 
         # pack gradients into vector
         natoms = len(self.atoms)
+        forces = np.zeros((natoms + 3, 3))
+        forces[:natoms] = atoms_forces
         forces[natoms:] = deform_grad_log_force
         self.stress = full_3x3_to_voigt_6_stress(convergence_crit_stress)
         return forces
