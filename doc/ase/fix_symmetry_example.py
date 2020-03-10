@@ -1,54 +1,53 @@
 import numpy as np
 
-from ase.atoms import Atoms
+from ase.build import bulk
 from ase.calculators.lj import LennardJones
 from ase.spacegroup.symmetrize import FixSymmetry, check_symmetry
 from ase.optimize import BFGS
 from ase.constraints import UnitCellFilter
 
-# setup an fcc Al cell
-a = 2.0 / np.sqrt(3.0)
-at_prim = Atoms('Al2', positions=[[0, 0, 0],
-                                  [a / 2.0, a / 2.0, a / 2.0]],
-                cell=[[a, 0, 0],
-                      [0, a, 0],
-                      [0, 0, a]], pbc=[True, True, True])
+# We setup a bcc Al cell - bcc is unstable with LJ potential
+# so without constraint this would relax back to an fcc structure
+atoms_prim = bulk('Al', 'bcc', a=2 / np.sqrt(3), cubic=True)
 
-# without symmetrization
-at_unsym = at_prim * [2, 2, 2]
-at_unsym.positions[0, 0] += 1.0e-7  # break symmetry by 1e-7
-at_init = at_unsym.copy()
+# Now we setup a 2x2x2 supercell, and break the symmetry slightly
+atoms_init = atoms_prim * [2, 2, 2]
+atoms_init.positions[0, 0] += 1.0e-7  # break symmetry by 1e-7
 
-calc = LennardJones()
-at_unsym.set_calculator(calc)
+# We use an LJ calculator, and allow the cell and atomic positions to relax
+atoms_unsym = atoms_init.copy()
+atoms_unsym.calc = LennardJones()
+ucf_unsym = UnitCellFilter(atoms_unsym)
 
-at_cell = UnitCellFilter(at_unsym)
-
-dyn = BFGS(at_cell)
-print("Energy", at_unsym.get_potential_energy())
+dyn = BFGS(ucf_unsym)
+print("Initial Energy", atoms_unsym.get_potential_energy())
 dyn.run(fmax=0.001)
-print("Energy", at_unsym.get_potential_energy())
+print("Final Energy", atoms_unsym.get_potential_energy())
 
-# with symmetrization
-at_sym = at_prim * [2, 2, 2]
-at_sym.positions[0, 0] += 1.0e-7  # break symmetry by 1e-7
+# Now we repeat the optimisation with the symmetrization constraint in place
+atoms_sym = atoms_init.copy()
+atoms_sym.calc = LennardJones()
+atoms_sym.set_constraint(FixSymmetry(atoms_sym))
+ucf_sym = UnitCellFilter(atoms_sym)
 
-at_sym.set_calculator(LennardJones())
-at_sym.set_constraint(FixSymmetry(at_sym))
-
-dyn = BFGS(at_sym)
-print("Energy", at_sym.get_potential_energy())
+dyn = BFGS(ucf_sym)
+print("Initial Energy", atoms_sym.get_potential_energy())
 dyn.run(fmax=0.001)
-print("Energy", at_sym.get_potential_energy())
+print("Final Energy", atoms_sym.get_potential_energy())
 
-print("position difference", np.linalg.norm(at_unsym.get_positions() -
-                                            at_sym.get_positions()))
+print("position difference", np.linalg.norm(atoms_unsym.get_positions() -
+                                            atoms_sym.get_positions()))
 
-print("initial symmetry at 1e-6")
-d_init6 = check_symmetry(at_init, 1.0e-6)
-print("initial symmetry at 1e-8")
-d_init8 = check_symmetry(at_init, 1.0e-8)
-print("unsym symmetry")
-d_unsym = check_symmetry(at_unsym)
-print("sym symmetry")
-d_sym = check_symmetry(at_sym)
+# We print out the initial symmetry groups at two different precision levels
+print("initial symmetry at precision 1e-6")
+check_symmetry(atoms_init, 1.0e-6, verbose=True)
+print("initial symmetry at precision 1e-8")
+check_symmetry(atoms_init, 1.0e-8, verbose=True)
+
+# Printing the final symmetries shows that
+# the "unsym" case relaxes to a lower energy fcc structure
+# with a change in spacegroup, while the "sym" case stays as bcc
+print("unsym symmetry after relaxation")
+d_unsym = check_symmetry(atoms_unsym, verbose=True)
+print("sym symmetry after relaxation")
+d_sym = check_symmetry(atoms_sym, verbose=True)

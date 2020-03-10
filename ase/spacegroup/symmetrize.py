@@ -199,11 +199,11 @@ class FixSymmetry(FixConstraint):
         refine_symmetry(atoms, symprec, self.verbose)  # refine initial symmetry
         sym = prep_symmetry(atoms, symprec, self.verbose)
         self.rotations, self.translations, self.symm_map = sym
-        self.adjust_positions = adjust_positions
-        self.adjust_cell = adjust_cell
+        self.do_adjust_positions = adjust_positions
+        self.do_adjust_cell = adjust_cell
 
     def adjust_cell(self, atoms, cell):
-        if not self.adjust_cell:
+        if not self.do_adjust_cell:
             return
         # stress should definitely be symmetrized as a rank 2 tensor
         # UnitCellFilter uses deformation gradient as cell DOF with steps
@@ -222,7 +222,7 @@ class FixSymmetry(FixConstraint):
                          (symmetrized_delta_deform_grad + np.eye(3)).T)
 
     def adjust_positions(self, atoms, new):
-        if not self.adjust_positions:
+        if not self.do_adjust_positions:
             return
         # symmetrize changes in position as rank 1 tensors
         step = new - atoms.positions
