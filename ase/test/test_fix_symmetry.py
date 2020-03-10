@@ -87,8 +87,8 @@ def test_no_sym_rotated(filter):
     at_unsym_rot = at_rot.copy()
     di, df = symmetrized_optimisation(at_unsym_rot, filter)
     assert di["number"] == 63
-    assert ((filter is ExpCellFilter and df["number"] == 11) or
-            (filter is UnitCellFilter and df["number"] == 2))
+    assert ((filter is ExpCellFilter and df["number"] == 129) or
+            (filter is UnitCellFilter and df["number"] == 71))
 
 
 # symmetrization, adjust_positions, not cell
