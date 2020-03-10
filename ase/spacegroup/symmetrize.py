@@ -149,7 +149,7 @@ def symmetrize_rank1(lattice, inv_lattice, forces, rot, trans, symm_map):
         transformed_forces_T = np.dot(r, scaled_forces_T)
         scaled_symmetrized_forces_T[:, this_op_map] += transformed_forces_T
     scaled_symmetrized_forces_T /= len(rot)
-    symmetrized_forces = lattice.T @ scaled_symmetrized_forces_T
+    symmetrized_forces = (lattice.T @ scaled_symmetrized_forces_T).T
 
     return symmetrized_forces
 

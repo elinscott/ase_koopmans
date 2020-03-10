@@ -1,3 +1,4 @@
+from warnings import warn
 from math import sqrt
 from ase.geometry import find_mic, wrap_positions
 from ase.calculators.calculator import PropertyNotImplementedError
@@ -2607,7 +2608,7 @@ class ExpCellFilter(UnitCellFilter):
                                 hydrostatic_strain,
                                 constant_volume, scalar_pressure)
         if cell_factor is not None:
-            raise ValueError("cell_factor is no longer supported")
+            warn("cell_factor is deprecated")
         self.cell_factor = 1.0
 
     def get_positions(self):
@@ -2634,7 +2635,6 @@ class ExpCellFilter(UnitCellFilter):
 
         cur_deform_grad = self.deform_grad()
         cur_deform_grad_log = logm(cur_deform_grad)
-        atoms_forces = atoms_forces @ cur_deform_grad
 
         if self.hydrostatic_strain:
             vtr = virial.trace()
