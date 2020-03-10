@@ -2600,7 +2600,6 @@ class ExpCellFilter(UnitCellFilter):
         and therefore the contribution to the gradient of the energy is
 
           \nabla E(U) / \nabla U_ij =  [L(U, S exp(-U))]_ij
-
         """
 
         Filter.__init__(self, atoms, indices=range(len(atoms)))
