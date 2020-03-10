@@ -1,5 +1,4 @@
 from math import sqrt
-from warnings import warn
 from ase.geometry import find_mic, wrap_positions
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.utils.parsemath import eval_expression
