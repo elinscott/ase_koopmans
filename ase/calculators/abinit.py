@@ -44,7 +44,7 @@ class Abinit(FileIOCalculator):
         pps='fhi')
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label='abinit', atoms=None, **kwargs):
+                 label='abinit', atoms=None, pp_paths=None, **kwargs):
         """Construct ABINIT-calculator object.
 
         Parameters
@@ -65,6 +65,7 @@ class Abinit(FileIOCalculator):
 
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
+        self.pp_paths = pp_paths
 
     def write_input(self, atoms, properties, system_changes):
         """Write input parameters to files-file."""
@@ -72,6 +73,7 @@ class Abinit(FileIOCalculator):
         with workdir(self.directory, mkdir=True):
             io.write_all_inputs(
                 atoms, properties, parameters=self.parameters,
+                pp_paths=self.pp_paths,
                 label=self.prefix)
 
     def read(self, label):
