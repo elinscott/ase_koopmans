@@ -14,7 +14,9 @@ Info = Dict[str, str]
 
 
 class DOSData(metaclass=ABCMeta):
-    """Abstract base class for a single series of DOS-like data"""
+    """Abstract base class for a single series of DOS-like data
+
+    Only the 'info' is a mutable attribute; DOS data is set at init"""
     def __init__(self,
                  info: Info = None) -> None:
         if info is None:

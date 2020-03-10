@@ -148,7 +148,94 @@ class TestDOSCollection:
         with pytest.raises(ValueError):
             dc = DOSCollection.from_data(x, weights, info=bad_info)
 
+    collection_data = [[([1., 2., 3.], [1., 1., 2.])],
+                       [([1., 2., 3.], [1., 1., 2.]),
+                        ([2., 3.5], [0.5, 1.])],
+                       [([1., 2., 3.], [1., 1., 2.]),
+                        ([2., 3.5], [0.5, 1.]),
+                        ([1.], [0.25])]]
+    collection_info = [[{'el': 'C', 'index': '1'}],
+                       [{'el': 'C', 'index': '1'},
+                        {'el': 'C', 'index': '2'}],
+                       [{'el': 'C', 'index': '1'},
+                        {'el': 'C', 'index': '2'},
+                        {'el': 'C', 'index': '2'}]]
+    expected_sum = [([1., 2., 3.], [1., 1., 2.],
+                     {'el': 'C', 'index': '1'}),
+                    ([1., 2., 3., 2., 3.5], [1., 1., 2., 0.5, 1.],
+                     {'el': 'C'}),
+                    ([1., 2., 3., 2., 3.5, 1.], [1., 1., 2., 0.5, 1., 0.25],
+                     {'el': 'C'})]
 
+    @pytest.mark.parametrize('collection_data, collection_info, expected',
+                             zip(collection_data, collection_info,
+                                 expected_sum))
+    def test_sum_all(self, collection_data, collection_info, expected):
+        dc = DOSCollection([RawDOSData(*item, info=info)
+                            for item, info in zip(collection_data,
+                                                  collection_info)])
+        summed_dc = dc.sum_all()
+        energies, weights, ref_info = expected
+        assert np.allclose(summed_dc.get_energies(), energies)
+        assert np.allclose(summed_dc.get_weights(), weights)
+        assert summed_dc.info == ref_info
+
+    @pytest.mark.parametrize('collection_data, collection_info',
+                             zip(collection_data, collection_info))
+    def test_total(self, collection_data, collection_info):
+        dc = DOSCollection([RawDOSData(*item, info=info)
+                            for item, info in zip(collection_data,
+                                                  collection_info)])
+        summed = dc.sum_all()
+        total = dc.total()
+        assert np.allclose(summed.get_energies(), total.get_energies())
+        assert np.allclose(summed.get_weights(), total.get_weights())
+        assert (set(total.info.items()) - set(summed.info.items())
+                == set([('label', 'Total')]))
+
+    select_info = [[{'a': '1', 'b': '1'}, {'a': '2'}],
+                   [{'a': '1', 'b': '1'}, {'a': '1', 'b': '2'}],
+                   [{'a': '1'}, {'a': '2'}],
+                   [{'a': '1', 'b': '1', 'c': '1'},
+                    {'a': '1', 'b': '1', 'c': '2'},
+                    {'a': '1', 'b': '2', 'c': '3'}]]
+
+    select_query = [{'a': '1'},
+                    {'a': '1'},
+                    {'a': '0'},
+                    {'a': '1', 'b': '1'}]
+
+    select_result = [[{'a': '1', 'b': '1'}],
+                     [{'a': '1', 'b': '1'}, {'a': '1', 'b': '2'}],
+                     None,
+                     [{'a': '1', 'b': '1', 'c': '1'},
+                      {'a': '1', 'b': '1', 'c': '2'}]]
+    select_not_result = [[{'a': '2'}],
+                         None,
+                         [{'a': '1'}, {'a': '2'}],
+                         [{'a': '1', 'b': '2', 'c': '3'}]]
+
+    @pytest.mark.parametrize(
+        'select_info, select_query, select_result, select_not_result',
+        zip(select_info, select_query, select_result, select_not_result))
+    def test_select(self, select_info, select_query,
+                    select_result, select_not_result):
+        dc = DOSCollection([RawDOSData([0.], [0.], info=info)
+                            for info in select_info])
+
+        if select_result is None:
+            assert dc.select(**select_query) is None
+        else:
+            assert select_result == [data.info for data in
+                                     dc.select(**select_query)]
+
+        if select_not_result is None:
+            assert dc.select_not(**select_query) is None
+        else:
+            assert select_not_result == [data.info for data in
+                                         dc.select_not(**select_query)]
+
+        
 class TestRawDOSCollection:
     @pytest.fixture
     def griddos(self):

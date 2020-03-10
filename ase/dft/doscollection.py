@@ -1,6 +1,6 @@
 from abc import ABCMeta
 from collections.abc import Sequence as Sequence_abc
-from functools import singledispatch
+from functools import reduce, singledispatch
 from typing import (Any, Iterable, List, Optional,
                     overload, Sequence, Tuple, Union)
 
@@ -194,8 +194,124 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
         else:
             return all([a == b for a, b in zip(self, other)])
 
-    def __add__(self,
-                other: Union['DOSCollection', DOSData]) -> 'DOSCollection':
+    def total(self) -> DOSData:
+        """Sum all the DOSData in this Collection and label it as 'Total'"""
+        data = self.sum_all()
+        data.info.update({'label': 'Total'})
+        return data
+
+    def sum_all(self) -> DOSData:
+        """Sum all the DOSData contained in this Collection"""
+        if len(self) == 0:
+            raise IndexError("No data to sum")
+        elif len(self) == 1:
+            dos_data = self[0]
+            # Return a _copy_ of the data to avoid surprises when info is
+            # mutated (e.g. to set legend label)
+            new_data = type(dos_data)(dos_data.get_energies(),
+                                      dos_data.get_weights(),
+                                      dos_data.info.copy())
+        else:
+            new_data = reduce(lambda x, y: x + y, self)
+        return new_data
+
+    def select(self, **info_selection: str) -> Optional['DOSCollection']:
+        """Narrow DOSCollection to items with specified info
+
+        For example, if
+
+          dc = DOSCollection([DOSData(x1, y1, info={'a': '1', 'b': '1'}),
+                              DOSData(x2, y2, info={'a': '2', 'b': '1'})])
+        then
+
+          dc.select(b='1')
+
+        will return an identical object to dc, while
+
+          dc.select(a='1')
+
+        will return a DOSCollection with only the first item and
+
+          dc.select(a='2', b='1')
+
+        will return a DOSCollection with only the second item.
+
+        """
+        query = set(info_selection.items())
+        matches = [data for data in self
+                   if query.issubset(set(data.info.items()))]
+        if matches:
+            return type(self)(matches)
+        else:
+            return None
+
+    def select_not(self, **info_selection: str) -> Optional['DOSCollection']:
+        """Narrow DOSCollection to items without specified info
+
+        For example, if
+
+          dc = DOSCollection([DOSData(x1, y1, info={'a': '1', 'b': '1'}),
+                              DOSData(x2, y2, info={'a': '2', 'b': '1'})])
+        then
+
+          dc.select_not(b='2')
+
+        will return an identical object to dc, while
+
+          dc.select_not(a='2')
+
+        will return a DOSCollection with only the first item and
+
+          dc.select_not(a='1', b='1')
+
+        will return a DOSCollection with only the second item.
+
+        """
+        query = set(info_selection.items())
+        matches = [data for data in self
+                   if not query.issubset(set(data.info.items()))]
+        if matches:
+            return type(self)(matches)
+        else:
+            return None
+
+    def sum_by(self, *info_keys: str) -> 'DOSCollection':
+        """Return a DOSCollection with some data summed by common attributes
+
+        For example, if
+
+          dc = DOSCollection([DOSData(x1, y1, info={'a': '1', 'b': '1'}),
+                              DOSData(x2, y2, info={'a': '2', 'b': '1'}),
+                              DOSData(x3, y3, info={'a': '2', 'b': '2'})])
+        then
+
+          dc.sum_by('b')
+
+        will return a collection equivalent to
+
+          DOSCollection([DOSData(x1, y1, info={'a': '1', 'b': '1'})
+                         + DOSData(x2, y2, info={'a': '2', 'b': '1'}),
+                         DOSData(x3, y3, info={'a': '2', 'b': '2'})])
+
+        where the resulting contained DOSData have info attributes of
+        {'b': '1'} and {'b': '2'} respectively.
+
+        dc.sum_by('a', 'b') on the other hand would return the full three-entry
+        collection, as none of the entries have common 'a' *and* 'b' info.
+
+        """
+        all_combos = [set({key: value
+                           for key, value in data.info.items()
+                           if key in info_keys}.items())
+                      for data in self]
+        unique_combos = sorted(set(all_combos))
+
+        collection_data = [self.select(**dict(combo)).sum_all()
+                           for combo in unique_combos]
+        return type(self)(collection_data)
+
+    def __add__(self, other: Union['DOSCollection', DOSData, None]
+                ) -> 'DOSCollection':
         """Join entries between two DOSCollection objects of the same type
 
         It is also possible to add a single DOSData object without wrapping it
@@ -210,6 +326,17 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
         will return
 
           DOSCollection([dosdata1, dosdata2])
+
+        It is also permitted to join a DOSCollection to None:
+
+          DOSCollection([dosdata1]) + None
+
+        will return
+
+          DOSCollection([dosdata1])
+
+        This behaviour is useful when combining query results from the select()
+        and select_not() methods.
 
         """
         return _add_to_collection(other, self)
@@ -230,6 +357,12 @@ def _(other: DOSData, collection: DOSCollection) -> DOSCollection:
     """Return a new DOSCollection with an additional DOSData item"""
     if isinstance(other, DOSData):
         return type(collection)(list(collection) + [other])
+
+
+@_add_to_collection.register(type(None))
+def _(other: None, collection: DOSCollection) -> DOSCollection:
+    if other is None:
+        return collection
 
 
 class RawDOSCollection(DOSCollection):
