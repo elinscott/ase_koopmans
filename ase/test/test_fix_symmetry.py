@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ase.atoms import Atoms
+from ase.build import bulk
 from ase.calculators.lj import LennardJones
 from ase.spacegroup.symmetrize import FixSymmetry, check_symmetry
 from ase.optimize.precon.lbfgs import PreconLBFGS
@@ -10,16 +10,9 @@ from ase.constraints import UnitCellFilter, ExpCellFilter
 spglib = pytest.importorskip('spglib')
 
 
-# setup an fcc Al cell
 def setup_cell():
-    a = 2.0 / np.sqrt(3.0)
-    at_prim = Atoms('Al2', positions=[[0, 0, 0],
-                                      [a / 2.0, a / 2.0, a / 2.0]],
-                    cell=[[a, 0, 0],
-                          [0, a, 0],
-                          [0, 0, a]],
-                    pbc=[True, True, True])
-    at_init = at_prim  # * [2,2,2]
+    # setup an bcc Al cell
+    at_init = bulk('Al', 'bcc', a=2 / sqrt3, cubic=True)
     F = np.array([[1, 0.1, 0], [0.1, 1, 0], [0, 0, 1]])
     at_init.cell = at_init.cell @ F
 
