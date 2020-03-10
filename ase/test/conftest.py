@@ -60,3 +60,50 @@ def figure(plt):
 @pytest.fixture(scope='session')
 def psycopg2():
     return pytest.importorskip('psycopg2')
+
+
+@pytest.fixture(scope='session')
+def datafiles():
+    asetest = pytest.importorskip('asetest')
+    return asetest.datafiles
+
+
+@pytest.fixture(scope='session')
+def executables():
+    import json
+    path = os.environ.get('ASE_EXECUTABLE_CONFIGFILE')
+    if path is None:
+        path = Path.home() / '.ase' / 'executables.json'
+    path = Path(path)
+    if not path.exists():
+        pytest.skip('Environment variable ASE_EXECUTABLE_CONFIG not set '
+                    'and {} does not exist'.format(path))
+    dct = json.loads(path.read_text())
+    return dct
+
+
+class AbinitFactory:
+    def __init__(self, executable, pp_paths):
+        self.executable = executable
+        self.pp_paths = pp_paths
+
+    def _base_kw(self):
+        exe = self.executable
+        command = '{} < PREFIX.files > PREFIX.log'.format(self.executable)
+        return dict(command=command,
+                    pp_paths=self.pp_paths,
+                    ecut=150,
+                    chksymbreak=0,
+                    toldfe=1e-3)
+
+    def calc(self, **kwargs):
+        from ase.calculators.abinit import Abinit
+        kw = self._base_kw()
+        kw.update(kwargs)
+        return Abinit(**kw)
+
+
+@pytest.fixture(scope='session')
+def abinit_factory(executables, datafiles):
+    return AbinitFactory(executables['abinit'],
+                         datafiles.paths['abinit'])
