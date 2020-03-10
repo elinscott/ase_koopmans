@@ -72,6 +72,7 @@ def test_no_symmetrization(filter):
 
 
 # print("######### ROTATED #########")
+@pytest.skip
 @pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
 @pytest.mark.filterwarnings('ignore:Armijo linesearch failed')
 def test_no_sym_rotated(filter):
