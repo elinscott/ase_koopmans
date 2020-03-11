@@ -10,13 +10,13 @@ from ase.dft.dosdata import DOSData, GridDOSData, RawDOSData
 class MinimalDOSData(DOSData):
     """Inherit from ABC to test its features"""
     def get_energies(self):
-        super().get_energies()
+        return super().get_energies()
 
     def get_weights(self):
-        super().get_weights()
+        return super().get_weights()
 
     def copy(self):
-        return type(self)(info=self.info.copy())
+        return super().copy()
 
 
 class TestDosData:
@@ -40,7 +40,8 @@ class TestDosData:
             assert dos_data.info == expected
 
     dosdata_abc_notimplemented_methods_args = [('get_energies', tuple()),
-                                               ('get_weights', tuple())]
+                                               ('get_weights', tuple()),
+                                               ('copy', tuple())]
     @pytest.mark.parametrize('method, args',
                              dosdata_abc_notimplemented_methods_args)
     def test_dosdata_notimplemented(self, method, args):
@@ -290,7 +291,46 @@ class TestGridDosData:
         assert caplog.record_tuples[-1][1] == logging.WARNING
         assert "The broadening width is small" in caplog.record_tuples[-1][2]
 
+    linewidths = [1, 5, None]
+    @pytest.mark.parametrize('linewidth, make_ax',
+                             zip(linewidths, [True, False, True]))
+    def test_plot_dos(self, dense_dos, linewidth, make_ax):
+        if linewidth is None:
+            mplargs = None
+        else:
+            mplargs = {'linewidth': linewidth}
 
+        if make_ax:
+            _, ax = plt.subplots()
+            ax_out = dense_dos.plot_dos(ax=ax, mplargs=mplargs,
+                                        smearing='Gauss')
+            assert ax_out == ax
+        else:
+            ax = dense_dos.plot_dos(mplargs=mplargs, smearing='Gauss')
+
+        line_data = ax.lines[0].get_data()
+
+        # With default settings, plot data should be unchanged from input data;
+        # this is a special feature of "grid" data to avoid repeated broadening
+        assert np.allclose(line_data[0], np.linspace(0., 10., 11))
+        assert np.allclose(line_data[1], np.sin(np.linspace(0., 1., 11)))
+        if linewidth is not None:
+            assert ax.lines[0].get_linewidth() == linewidth
+
+    def test_plot_broad_dos(self, dense_dos):
+        # Check that setting a grid/broadening does not blow up and reproduces
+        # previous results; this result has not been rigorously checked but at
+        # least it should not _change_ unexpectedly
+        ax = dense_dos.plot_dos(npts=10, xmin=0, xmax=9,
+                                width=4, smearing='Gauss')
+        line_data = ax.lines[0].get_data()
+        assert np.allclose(line_data[0], range(10))
+        assert np.allclose(line_data[1],
+                           [0.14659725, 0.19285644, 0.24345501, 0.29505574,
+                            0.34335948, 0.38356488, 0.41104823, 0.42216901,
+                            0.41503382, 0.39000808])
+
+            
 class TestMultiDosData:
     """Test interaction between DOS data objects"""
     @pytest.fixture
