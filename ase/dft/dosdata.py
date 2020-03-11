@@ -36,6 +36,11 @@ class DOSData(metaclass=ABCMeta):
         """Get DOS weights stored in this object"""
         raise NotImplementedError
 
+    @abstractmethod
+    def copy(self) -> 'DOSData':
+        """Returns a copy in which info dict can be safely mutated"""
+        raise NotImplementedError
+
     def sample(self,
                x: Sequence[float],
                width: float = 0.1,
@@ -245,6 +250,10 @@ class RawDOSData(DOSData):
     def get_weights(self) -> np.ndarray:
         return self._data[1, :].copy()
 
+    def copy(self) -> 'RawDOSData':
+        return type(self)(self.get_energies(), self.get_weights(),
+                          info=self.info.copy())
+
     def __add__(self, other: 'RawDOSData') -> 'RawDOSData':
         if not isinstance(other, RawDOSData):
             raise TypeError("RawDOSData can only be combined with other "
@@ -359,6 +368,10 @@ class GridDOSData(DOSData):
 
     def get_weights(self) -> np.ndarray:
         return self._data[1, :].copy()
+
+    def copy(self) -> 'GridDOSData':
+        return type(self)(self.get_energies(), self.get_weights(),
+                          info=self.info.copy())
 
     def _check_spacing(self, width):
         current_spacing = self._data[0, 1] - self._data[0, 0]

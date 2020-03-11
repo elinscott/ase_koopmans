@@ -15,6 +15,9 @@ class MinimalDOSData(DOSData):
     def get_weights(self):
         super().get_weights()
 
+    def copy(self):
+        return type(self)(info=self.info.copy())
+
 
 class TestDosData:
     """Test the abstract base class for DOS data"""
@@ -78,6 +81,13 @@ class TestRawDosData:
         assert sparse_dos.info == {'symbol': 'H', 'number': '1', 'food': 'egg'}
         assert np.allclose(sparse_dos.get_energies(), [1.2, 3.4, 5.])
         assert np.allclose(sparse_dos.get_weights(), [3., 2.1, 0.])
+
+    def test_copy(self, sparse_dos):
+        copy_dos = sparse_dos.copy()
+        assert copy_dos.info == sparse_dos.info
+        sparse_dos.info['symbol'] = 'X'
+        assert sparse_dos.info['symbol'] == 'X'
+        assert copy_dos.info['symbol'] == 'H'
 
     @pytest.mark.parametrize('other', [True, 1, 0.5, 'string'])
     def test_equality_wrongtype(self, sparse_dos, other):
@@ -250,6 +260,13 @@ class TestGridDosData:
         assert len(dense_dos.get_energies()) == 11
         assert dense_dos.get_energies()[-2] == 9.
         assert dense_dos.get_weights()[-1] == np.sin(1)
+
+    def test_copy(self, dense_dos):
+        copy_dos = dense_dos.copy()
+        assert copy_dos.info == dense_dos.info
+        dense_dos.info['symbol'] = 'X'
+        assert dense_dos.info['symbol'] == 'X'
+        assert copy_dos.info['symbol'] == 'C'
 
     def test_addition(self, dense_dos, another_dense_dos):
         sum_dos = dense_dos + another_dense_dos

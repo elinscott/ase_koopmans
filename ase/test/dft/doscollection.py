@@ -1,6 +1,7 @@
 import pytest
 from typing import Iterable
 
+import matplotlib.pyplot as plt
 import numpy as np
 from ase.dft.doscollection import (DOSCollection,
                                    GridDOSCollection,
@@ -31,6 +32,10 @@ class TestDOSCollection:
         return RawDOSData([3., 2., 5.], [1., 0., 2.],
                           info={'other_key': 'other_value'})
 
+    @pytest.fixture
+    def mindoscollection(self, rawdos, another_rawdos):
+        return MinimalDOSCollection([rawdos, another_rawdos])
+
     @pytest.mark.parametrize('n_entries', [0, 1, 3])
     def test_sequence(self, rawdos, n_entries):
         dc = MinimalDOSCollection([rawdos] * n_entries)
@@ -42,6 +47,28 @@ class TestDOSCollection:
             dc[n_entries + 1]
         with pytest.raises(TypeError):
             dc['hello']
+
+    linewidths = [1, 5, None]
+    @pytest.mark.parametrize('linewidth, make_ax', zip(linewidths,
+                                                       [True, False, True]))
+    def test_plot(self, mindoscollection, linewidth, make_ax):
+        npts = 20
+
+        if linewidth is None:
+            mplargs = None
+        else:
+            mplargs = {'linewidth': linewidth}
+
+        if make_ax:
+            _, ax = plt.subplots()
+            
+            ax_out = mindoscollection.plot(npts=npts, ax=ax, mplargs=mplargs)
+            assert ax_out == ax
+        else:
+            ax = mindoscollection.plot(npts=npts, mplargs=mplargs)
+
+        assert ([line.get_label() for line in ax.get_legend().get_lines()]
+                == ['my_key: my_value', 'other_key: other_value'])
 
     def test_slicing(self, rawdos, another_rawdos):
         dc = MinimalDOSCollection([rawdos, another_rawdos, rawdos])
@@ -78,6 +105,8 @@ class TestDOSCollection:
 
         assert (dc + MinimalDOSCollection([another_rawdos])
                 == dc + another_rawdos)
+
+        assert (dc + None) == dc
 
         with pytest.raises(TypeError):
             MinimalDOSCollection([rawdos]) + YetAnotherDOSCollection([rawdos])
@@ -180,6 +209,11 @@ class TestDOSCollection:
         assert np.allclose(summed_dc.get_weights(), weights)
         assert summed_dc.info == ref_info
 
+    def test_sum_empty(self):
+        dc = DOSCollection([])
+        with pytest.raises(IndexError):
+            dc.sum_all()
+
     @pytest.mark.parametrize('collection_data, collection_info',
                              zip(collection_data, collection_info))
     def test_total(self, collection_data, collection_info):
@@ -215,11 +249,18 @@ class TestDOSCollection:
                          [{'a': '1'}, {'a': '2'}],
                          [{'a': '1', 'b': '2', 'c': '3'}]]
 
+    sum_by_result = [[{'a': '1', 'b': '1'}, {'a': '2'}],
+                     [{'a': '1'}],
+                     [{'a': '1'}, {'a': '2'}],
+                     [{'a': '1', 'b': '1'}, {'a': '1', 'b': '2', 'c': '3'}]]
+
     @pytest.mark.parametrize(
-        'select_info, select_query, select_result, select_not_result',
-        zip(select_info, select_query, select_result, select_not_result))
+        'select_info, select_query, '
+        'select_result, select_not_result, sum_by_result',
+        zip(select_info, select_query,
+            select_result, select_not_result, sum_by_result))
     def test_select(self, select_info, select_query,
-                    select_result, select_not_result):
+                    select_result, select_not_result, sum_by_result):
         dc = DOSCollection([RawDOSData([0.], [0.], info=info)
                             for info in select_info])
 
@@ -235,7 +276,10 @@ class TestDOSCollection:
             assert select_not_result == [data.info for data in
                                          dc.select_not(**select_query)]
 
+        assert sum_by_result == [data.info for data in
+                                 dc.sum_by(*sorted(select_query.keys()))]
         
+
 class TestRawDOSCollection:
     @pytest.fixture
     def griddos(self):
@@ -298,7 +342,7 @@ class TestGridDOSCollection:
          (np.linspace(1, 5, 7), [np.sqrt(range(7))], [{'entry': '1'}], None),
          (np.linspace(1, 5, 7), [np.ones((3, 3))], None, IndexError),
          (np.linspace(1, 5, 7), np.array([]).reshape(0, 7), None, IndexError),
-         (np.linspace(1, 5, 7), np.ones(6), None, IndexError)])
+         (np.linspace(1, 5, 7), np.ones((2, 6)), None, IndexError)])
     def test_from_data(self, x, weights, info, error):
         if error is not None:
             with pytest.raises(error):

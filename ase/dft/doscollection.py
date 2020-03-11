@@ -84,8 +84,10 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
 
         all_labels = [DOSData.label_from_info(data.info) for data in self]
 
-        all_lines = ax.plot(x, all_y.T, label=all_labels, **mplargs)
-        ax.legend(all_lines, all_labels)
+        all_lines = ax.plot(x, all_y.T, **mplargs)
+        for line, label in zip(all_lines, all_labels):
+            line.set_label(label)
+        ax.legend()
 
         ax.set_xlim(left=min(x), right=max(x))
         ax.set_ylim(bottom=0)
@@ -205,15 +207,11 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
         if len(self) == 0:
             raise IndexError("No data to sum")
         elif len(self) == 1:
-            dos_data = self[0]
-            # Return a _copy_ of the data to avoid surprises when info is
-            # mutated (e.g. to set legend label)
-            new_data = type(dos_data)(dos_data.get_energies(),
-                                      dos_data.get_weights(),
-                                      dos_data.info.copy())
+            data = self[0].copy()
+
         else:
-            new_data = reduce(lambda x, y: x + y, self)
-        return new_data
+            data = reduce(lambda x, y: x + y, self)
+        return data
 
     def select(self, **info_selection: str) -> Optional['DOSCollection']:
         """Narrow DOSCollection to items with specified info
@@ -300,9 +298,9 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
         collection, as none of the entries have common 'a' *and* 'b' info.
 
         """
-        all_combos = [set({key: value
-                           for key, value in data.info.items()
-                           if key in info_keys}.items())
+        all_combos = [tuple(sorted(set({key: value
+                            for key, value in data.info.items()
+                            if key in info_keys}.items())))
                       for data in self]
         unique_combos = sorted(set(all_combos))
 
