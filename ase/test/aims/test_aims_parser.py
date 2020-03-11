@@ -1,5 +1,24 @@
-from numpy.linalg import norm
+from pathlib import Path
+
+import numpy as np
 from ase.io import read
+from numpy.linalg import norm
+
+parent = Path(__file__).parent
+
+
+def test_parse_socketio():
+    file = parent / "socketio.out"
+    traj = read(file, ":", format="aims-output")
+
+    a1, a2 = traj[0], traj[1]
+    f1, f2, = a1.get_forces(), a2.get_forces()
+
+    assert a1.positions[0, 0] == 0.01
+    assert a2.positions[0, 0] == 0.00
+
+    assert np.allclose(f1[0, 0], -0.119012361951726e00)
+    assert np.allclose(f2[0, 0], 0.454895003232345e-03)
 
 
 def test_run():
@@ -54,5 +73,3 @@ def write_output():
 
     with open("aims.out", "w") as f:
         f.write(output)
-
-
