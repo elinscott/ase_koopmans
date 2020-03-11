@@ -304,9 +304,16 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
                       for data in self]
         unique_combos = sorted(set(all_combos))
 
-        collection_data = [self.select(**dict(combo)).sum_all()
+        collection_data = [self._sum_all_safely(self.select(**dict(combo)))
                            for combo in unique_combos]
         return type(self)(collection_data)
+
+    @staticmethod
+    def _sum_all_safely(selection: Optional['DOSCollection']) -> DOSData:
+        if selection is None:
+            raise ValueError("Something went wrong assembling sum groups")
+        else:
+            return selection.sum_all()
 
     def __add__(self, other: Union['DOSCollection', DOSData, None]
                 ) -> 'DOSCollection':
@@ -351,14 +358,14 @@ def _add_to_collection(other: DOSData,
 
 
 @_add_to_collection.register(DOSData)
-def _(other: DOSData, collection: DOSCollection) -> DOSCollection:
+def _add_data(other: DOSData, collection: DOSCollection) -> DOSCollection:
     """Return a new DOSCollection with an additional DOSData item"""
     if isinstance(other, DOSData):
         return type(collection)(list(collection) + [other])
 
 
 @_add_to_collection.register(type(None))
-def _(other: None, collection: DOSCollection) -> DOSCollection:
+def _add_none(other: None, collection: DOSCollection) -> DOSCollection:
     if other is None:
         return collection
 

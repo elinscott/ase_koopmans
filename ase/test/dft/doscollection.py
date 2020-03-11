@@ -278,7 +278,12 @@ class TestDOSCollection:
 
         assert sum_by_result == [data.info for data in
                                  dc.sum_by(*sorted(select_query.keys()))]
-        
+
+    def test_internal_safe_sum(self, mindoscollection):
+        assert (DOSCollection._sum_all_safely(mindoscollection)
+                == mindoscollection.sum_all())
+        with pytest.raises(ValueError):
+            DOSCollection._sum_all_safely(None)
 
 class TestRawDOSCollection:
     @pytest.fixture
