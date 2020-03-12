@@ -1,5 +1,5 @@
-from warnings import warn
 from math import sqrt
+from warnings import warn
 from ase.geometry import find_mic, wrap_positions
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.utils.parsemath import eval_expression
@@ -1352,7 +1352,6 @@ class FixParametricRelations(FixConstraint):
             expressions.append(exp)
         return np.array(expressions).reshape((-1, 3))
 
-
     def todict(self):
         """Create a dictionary representation of the constraint"""
         return {
@@ -2473,7 +2472,7 @@ class UnitCellFilter(Filter):
         forces[:natoms] = atoms_forces
         forces[natoms:] = virial / self.cell_factor
 
-        self.stress = -full_3x3_to_voigt_6_stress(virial)/volume
+        self.stress = -full_3x3_to_voigt_6_stress(virial) / volume
         return forces
 
     def get_stress(self):
@@ -2653,20 +2652,20 @@ class ExpCellFilter(UnitCellFilter):
         Y[0:3, 3:6] = - virial @ expm(-cur_deform_grad_log)
         deform_grad_log_force = -expm(Y)[0:3, 3:6]
         for (i1, i2) in [(0, 1), (0, 2), (1, 2)]:
-            ff = 0.5*(deform_grad_log_force[i1, i2] +
-                      deform_grad_log_force[i2, i1])
+            ff = 0.5 * (deform_grad_log_force[i1, i2] +
+                        deform_grad_log_force[i2, i1])
             deform_grad_log_force[i1, i2] = ff
             deform_grad_log_force[i2, i1] = ff
 
         # check for reasonable alignment between naive and
         # exact search directions
-        if (np.sum(deform_grad_log_force*deform_grad_log_force_naive) /
+        if (np.sum(deform_grad_log_force * deform_grad_log_force_naive) /
             np.sqrt(np.sum(deform_grad_log_force**2) *
                     np.sum(deform_grad_log_force_naive**2)) > 0.8):
             deform_grad_log_force = deform_grad_log_force_naive
 
         # Cauchy stress used for convergence testing
-        convergence_crit_stress = -(virial/volume)
+        convergence_crit_stress = -(virial / volume)
         if self.constant_volume:
             # apply constraint to force
             dglf_trace = deform_grad_log_force.trace()
