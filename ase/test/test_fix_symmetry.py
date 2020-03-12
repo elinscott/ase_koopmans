@@ -10,19 +10,24 @@ from ase.constraints import UnitCellFilter, ExpCellFilter
 
 spglib = pytest.importorskip('spglib')
 
-np.random.seed(1) # for deterministic results
 
 class NoisyLennardJones(LennardJones):
+    def __init__(self, *args, rng=None, **kwargs):
+        self.rng = rng
+        LennardJones.__init__(self, *args, **kwargs)
+
     def calculate(self, atoms=None,
                   properties=['energy'],
                   system_changes=all_changes):
         LennardJones.calculate(self, atoms, properties, system_changes)
         if 'forces' in self.results:
-            self.results['forces'] += 0.0001*np.random.normal(
-                                             size=self.results['forces'].shape)
+            self.results['forces'] += 1e-4 * self.rng.normal(
+                size=self.results['forces'].shape,
+            )
         if 'stress' in self.results:
-            self.results['stress'] += 0.0001*np.random.normal(
-                                             size=self.results['stress'].shape)
+            self.results['stress'] += 1e-4 * self.rng.normal(
+                size=self.results['stress'].shape,
+            )
 
 
 def setup_cell():
@@ -47,8 +52,9 @@ def setup_cell():
 
 
 def symmetrized_optimisation(at_init, filter):
+    rng = np.random.RandomState(1)
     at = at_init.copy()
-    at.calc = NoisyLennardJones()
+    at.calc = NoisyLennardJones(rng=rng)
 
     at_cell = filter(at)
     dyn = PreconLBFGS(at_cell, precon=None)
