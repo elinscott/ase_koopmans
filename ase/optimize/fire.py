@@ -5,7 +5,7 @@ import ase.optimize.defaults as defaults
 
 class FIRE(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 dt=0.1, maxstep=None, maxmove=None, dtmax=1.0, Nmin=5, finc=1.1, fdec=0.5,
+                 dt=None, maxstep=None, maxmove=None, dtmax=1.0, Nmin=5, finc=1.1, fdec=0.5,
                  astart=0.1, fa=0.99, a=0.1, master=None, downhill_check=False,
                  position_reset_callback=None, force_consistent=None):
         """Parameters:
@@ -52,7 +52,11 @@ class FIRE(Optimizer):
         Optimizer.__init__(self, atoms, restart, logfile, trajectory,
                            master, force_consistent=force_consistent)
 
-        self.dt = dt
+        if dt is not None:        
+	    self.dt = dt
+        else: 
+            self.dt = defaults.dt
+
         self.Nsteps = 0
         
         if maxstep is not None: 
@@ -62,6 +66,7 @@ class FIRE(Optimizer):
             warnings.warn('maxmove is deprecated; please use maxstep', np.VisibleDeprecationWarning)
         else:  
             self.maxstep = defaults.maxstep
+
         self.dtmax = dtmax
         self.Nmin = Nmin
         self.finc = finc
