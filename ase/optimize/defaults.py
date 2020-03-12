@@ -2,4 +2,5 @@
 
 # default maxstep for all optimizers 
 
-maxstep = 0.2
+maxstep = 0.2 
+dt = 0.2

@@ -1,7 +1,7 @@
 import numpy as np
 
 from ase.optimize.optimize import Optimizer
-
+import ase.optimize.defaults as defaults 
 
 class MDMin(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
@@ -34,10 +34,10 @@ class MDMin(Optimizer):
 
         if dt is not None:
             self.dt = dt
-
+        else:  
+            self.dt = defaults.dt
     def initialize(self):
         self.v = None
-        self.dt = 0.2
 
     def read(self):
         self.v, self.dt = self.load()
