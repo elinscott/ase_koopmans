@@ -53,7 +53,7 @@ class FIRE(Optimizer):
                            master, force_consistent=force_consistent)
 
         if dt is not None:        
-	    self.dt = dt
+            self.dt = dt
         else: 
             self.dt = defaults.dt
 
