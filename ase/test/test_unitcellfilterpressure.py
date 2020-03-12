@@ -26,7 +26,7 @@ def test_unitcellfilterpressure():
     atoms.set_calculator(LennardJones())
     ucf = UnitCellFilter(atoms, scalar_pressure=10.0*GPa)
 
-    # test all deritatives
+    # test all derivatives
     f, fn = gradient_test(ucf)
     assert abs(f - fn).max() < 1e-6
 
