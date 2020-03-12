@@ -1,7 +1,6 @@
 import numpy as np
 
 from ase.utils import jsonable
-from ase.dft.kpoints import labels_from_kpts
 from ase.calculators.calculator import PropertyNotImplementedError
 
 
@@ -324,46 +323,3 @@ class BandStructure:
                 .format(self.__class__.__name__, self.path,
                         '{}x{}x{}'.format(*self.energies.shape),
                         self.reference))
-
-
-from ase.io.jsonio import encode, decode
-from ase.parallel import paropen
-# XXX delete me
-class OldBandStructure:
-    def __init__(self, cell, kpts, energies, reference=0.0):
-        """Create band structure object from energies and k-points."""
-        assert cell.shape == (3, 3)
-        self.cell = cell
-        assert kpts.shape[1] == 3
-        self.kpts = kpts
-        self.energies = np.asarray(energies)
-        self.reference = reference
-
-    def get_labels(self):
-        return labels_from_kpts(self.kpts, self.cell)
-
-    def todict(self):
-        dct = dict((key, getattr(self, key))
-                   for key in
-                   ['cell', 'kpts', 'energies', 'reference'])
-        return dct
-
-    def write(self, filename):
-        """Write to json file."""
-        with paropen(filename, 'w') as f:
-            f.write(encode(self))
-
-    @classmethod
-    def read(cls, filename):
-        """Read from json file."""
-        with open(filename, 'r') as f:
-            bs = decode(f.read())
-            # Handle older BS files without __ase_objtype__:
-            if not isinstance(bs, cls):
-                return cls(**bs)
-            return bs
-
-    def plot(self, *args, **kwargs):
-        bsp = BandStructurePlot(self)
-        # Maybe return bsp?  But for now run the plot, for compatibility
-        return bsp.plot(*args, **kwargs)

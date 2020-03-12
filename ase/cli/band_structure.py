@@ -34,6 +34,7 @@ class CLICommand:
         parser.add_argument('-n', '--points', type=int, default=100,
                             help='Number of points along the path '
                             '(default: 100)')
+        parser.add_argument('-o', '--output', help='Write image to a file')
         parser.add_argument('-r', '--range', nargs=2, default=['-3', '3'],
                             metavar=('emin', 'emax'),
                             help='Default: "-3.0 3.0" '
@@ -131,5 +132,6 @@ def main(args, parser):
     fig = plt.gcf()
     fig.canvas.set_window_title(args.calculation)
     ax = fig.gca()
-    bs.plot(ax=ax, emin=emin, emax=emax)
-    plt.show()
+    bs.plot(ax=ax, filename=args.output, emin=emin, emax=emax)
+    if args.output is None:
+        plt.show()

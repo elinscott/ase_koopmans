@@ -54,7 +54,7 @@ class Wrapper:
         t1 = time()
         e = self.atoms.get_potential_energy(force_consistent)
 
-        if self.eggbox is not None:
+        if self.eggbox:
             # Add egg-box error:
             s = np.dot(self.atoms.positions, self.x)
             e += np.cos(2 * pi * s).sum() * self.eggbox / 6
@@ -70,7 +70,7 @@ class Wrapper:
         t1 = time()
         f = self.atoms.get_forces()
 
-        if self.eggbox is not None:
+        if self.eggbox:
             # Add egg-box error:
             s = np.dot(self.atoms.positions, self.x)
             f += np.dot(np.sin(2 * pi * s),

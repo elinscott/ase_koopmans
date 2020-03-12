@@ -51,4 +51,4 @@ def test_autoneb():
     autoneb.run()
 
     nebtools = NEBTools(autoneb.all_images)
-    assert abs(nebtools.get_barrier()[0] - 0.938) < 1e-3
+    assert abs(nebtools.get_barrier()[0] - 0.937) < 1e-3
