@@ -103,18 +103,17 @@ def check_symmetry(atoms, symprec=1.0e-6, verbose=False):
     return dataset
 
 
-def is_subgroup(sup_data, sub_data):
+def is_subgroup(sup_data, sub_data, tol=1e-10):
     """
     Test if spglib dataset `sub_data` is a subgroup of dataset `sup_data`
     """
-    err = np.max([np.min(np.abs(
-                   [np.linalg.norm(sup[0] - sub[0]) +
-                    np.linalg.norm(sup[1] - sub[1])
-                    for sup in zip(sup_data['rotations'],
-                                   sup_data['translations'])]))
-                    for sub in zip(sub_data['rotations'],
-                                   sub_data['translations'])])
-    return err < 1.0e-10
+    for rot1, trns1 in zip(sub_data['rotations'], sub_data['translations']):
+        for rot2, trns2 in zip(sup_data['rotations'], sup_data['translations']):
+            if np.all(rot1 == rot2) and np.linalg.norm(trns1 - trns2) < tol:
+                break
+        else:
+            return False
+    return True
 
 
 def prep_symmetry(atoms, symprec=1.0e-6, verbose=False):
