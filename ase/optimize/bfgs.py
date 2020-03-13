@@ -45,7 +45,7 @@ class BFGS(Optimizer):
         else:  
             self.maxstep = defaults.maxstep
 
-        Optimizer.__init__(self, atoms, restart, logfile, trajectory, master,maxstep)
+        Optimizer.__init__(self, atoms, restart, logfile, trajectory, master)
 
     def todict(self):
         d = Optimizer.todict(self)
