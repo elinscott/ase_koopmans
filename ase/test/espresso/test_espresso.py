@@ -14,10 +14,9 @@ def verify(calc):
 
 def test_main(espresso_factory):
     atoms = bulk('Si')
-    calc = espresso_factory.calc()
-    atoms.calc = calc
+    atoms.calc = espresso_factory.calc()
     atoms.get_potential_energy()
-    verify(calc)
+    verify(atoms.calc)
 
 
 def test_smearing(espresso_factory):
@@ -25,7 +24,6 @@ def test_smearing(espresso_factory):
     input_data = {'system':{'occupations': 'smearing',
                             'smearing': 'fermi-dirac',
                             'degauss': 0.02}}
-    calc = espresso_factory.calc(input_data=input_data)
-    atoms.set_calculator(calc)
+    atoms.calc = espresso_factory.calc(input_data=input_data)
     atoms.get_potential_energy()
-    verify(calc)
+    verify(atoms.calc)
