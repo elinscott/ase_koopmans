@@ -1,7 +1,6 @@
 """Check that QE calculation can run."""
 
 from ase.build import bulk
-from ase.calculators.espresso import Espresso
 
 
 def verify(calc):

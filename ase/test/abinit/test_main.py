@@ -1,9 +1,7 @@
 import pytest
 import numpy as np
 from ase.build import bulk, molecule
-from ase.calculators.abinit import Abinit
 from ase.units import Hartree
-from ase.utils import workdir
 
 
 required_quantities = {'eigenvalues',

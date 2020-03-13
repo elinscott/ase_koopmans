@@ -88,7 +88,6 @@ class AbinitFactory:
         self.pp_paths = pp_paths
 
     def _base_kw(self):
-        exe = self.executable
         command = '{} < PREFIX.files > PREFIX.log'.format(self.executable)
         return dict(command=command,
                     pp_paths=self.pp_paths,
