@@ -112,6 +112,31 @@ class CP2KFactory:
         return CP2K(command=self.executable, **kwargs)
 
 
+class EspressoFactory:
+    def __init__(self, executable, pseudo_dir):
+        self.executable = executable
+        self.pseudo_dir = pseudo_dir
+
+    def _base_kw(self):
+        from ase.units import Ry
+        return dict(ecutwfc=300 / Ry)
+
+    def calc(self, **kwargs):
+        from ase.calculators.espresso import Espresso
+        command = '{} -in PREFIX.pwi > PREFIX.pwo'.format(self.executable)
+        pseudopotentials = {}
+        for path in self.pseudo_dir.glob('*.UPF'):
+            fname = path.name
+            # Names are e.g. si_lda_v1.uspp.F.UPF
+            symbol = fname.split('_', 1)[0].capitalize()
+            pseudopotentials[symbol] = fname
+
+        kw = self._base_kw()
+        kw.update(kwargs)
+        return Espresso(command=command, pseudo_dir=str(self.pseudo_dir),
+                        pseudopotentials=pseudopotentials,
+                        **kw)
+
 @pytest.fixture(scope='session')
 def abinit_factory(executables, datafiles):
     return AbinitFactory(executables['abinit'],
@@ -121,3 +146,10 @@ def abinit_factory(executables, datafiles):
 @pytest.fixture(scope='session')
 def cp2k_factory(executables):
     return CP2KFactory(executables['cp2k'])
+
+
+@pytest.fixture(scope='session')
+def espresso_factory(executables, datafiles):
+    paths = datafiles.paths['espresso']
+    assert len(paths) == 1
+    return EspressoFactory(executables['espresso'], paths[0])
