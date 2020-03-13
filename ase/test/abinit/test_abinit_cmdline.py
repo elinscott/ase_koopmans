@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip('TODO: use abinit_factory or calculator profile')
 def test_abinit_cmdline():
     from ase.test import cli
 
