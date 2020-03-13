@@ -103,7 +103,21 @@ class AbinitFactory:
         return Abinit(**kw)
 
 
+class CP2KFactory:
+    def __init__(self, executable):
+        self.executable = executable
+
+    def calc(self, **kwargs):
+        from ase.calculators.cp2k import CP2K
+        return CP2K(command=self.executable, **kwargs)
+
+
 @pytest.fixture(scope='session')
 def abinit_factory(executables, datafiles):
     return AbinitFactory(executables['abinit'],
                          datafiles.paths['abinit'])
+
+
+@pytest.fixture(scope='session')
+def cp2k_factory(executables):
+    return CP2KFactory(executables['cp2k'])
