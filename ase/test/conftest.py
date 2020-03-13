@@ -137,6 +137,19 @@ class EspressoFactory:
                         pseudopotentials=pseudopotentials,
                         **kw)
 
+
+class SiestaFactory:
+    def __init__(self, executable, pseudo_path):
+        self.executable = executable
+        self.pseudo_path=pseudo_path
+
+    def calc(self, **kwargs):
+        from ase.calculators.siesta import Siesta
+        command = '{} < PREFIX.fdf > PREFIX.out'.format(self.executable)
+        return Siesta(command=command, pseudo_path=self.pseudo_path,
+                      **kwargs)
+
+
 @pytest.fixture(scope='session')
 def abinit_factory(executables, datafiles):
     return AbinitFactory(executables['abinit'],
@@ -153,3 +166,10 @@ def espresso_factory(executables, datafiles):
     paths = datafiles.paths['espresso']
     assert len(paths) == 1
     return EspressoFactory(executables['espresso'], paths[0])
+
+
+@pytest.fixture(scope='session')
+def siesta_factory(executables, datafiles):
+    paths = datafiles.paths['siesta']
+    assert len(paths) == 1
+    return SiestaFactory(executables['siesta'], paths[0])
