@@ -1,10 +1,11 @@
-def test_siesta_read_eigenvalues():
-    import ase.build
-    from ase.calculators.siesta.siesta import Siesta
+import ase.build
 
-    # Test real calculation of the lithium bulk which produced a gapped .EIG file
-    atoms = ase.build.bulk('Li', cubic=True)
-    calc = Siesta(kpts=[2,1,1])
+
+def test_siesta_read_eigenvalues(siesta_factory):
+    # Test real calculation which produces a
+    # gapped .EIG file
+    atoms = ase.build.bulk('Si', cubic=True)
+    calc = siesta_factory.calc(kpts=[2, 1, 1])
     atoms.set_calculator(calc)
     atoms.get_potential_energy()
 

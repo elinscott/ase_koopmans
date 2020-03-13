@@ -141,12 +141,12 @@ class EspressoFactory:
 class SiestaFactory:
     def __init__(self, executable, pseudo_path):
         self.executable = executable
-        self.pseudo_path=pseudo_path
+        self.pseudo_path = pseudo_path
 
     def calc(self, **kwargs):
         from ase.calculators.siesta import Siesta
         command = '{} < PREFIX.fdf > PREFIX.out'.format(self.executable)
-        return Siesta(command=command, pseudo_path=self.pseudo_path,
+        return Siesta(command=command, pseudo_path=str(self.pseudo_path),
                       **kwargs)
 
 
