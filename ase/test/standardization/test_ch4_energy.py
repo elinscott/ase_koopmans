@@ -30,33 +30,22 @@ def inputs(name, **parameters):
     return CalculatorInputs(name, parameters)
 
 
-def _calculate(spec, name):
+def _calculate(code, name):
     atoms = molecule(name)
     atoms.center(vacuum=3.5)
     with workdir('test-{}'.format(name), mkdir=True):
-        atoms.calc = spec.calc()
+        atoms.calc = code.calc()
         return atoms.get_potential_energy()
 
 
 @pytest.mark.parametrize(
     "spec",
     [
-        inputs('abinit', ecut=300, chksymbreak=0, toldfe=1e-4),
-        inputs('cp2k'),
-        # Siesta gets a result of -3.3 eV, not so accurate then.
-        # What should we do about this?
-        inputs(
-            'espresso',
-            ecutwfc=300 / Ry,
-            pseudopotentials={'C': 'C.pz-kjpaw.UPF',
-                              'H': 'H.pz-kjpaw.UPF'},
-        ),
         inputs('gpaw', symmetry='off', mode='pw', txt='gpaw.txt',
                mixer={'beta': 0.6}),
         inputs('octopus', stdout="'stdout.log'", stderr="'stderr.log'"),
         inputs('openmx', energy_cutoff=350),
         inputs('gamess_us', label='ch4'),
-        pytest.param(inputs('siesta'), marks=pytest.mark.xfail),
     ],
     ids=lambda spec: spec.name)
 def test_ch4(tmp_path, spec):
@@ -70,3 +59,18 @@ def test_ch4(tmp_path, spec):
         print(energy)
         ref_energy = -2.8
         assert abs(energy - ref_energy) < 0.3
+
+
+calc = pytest.mark.calculator
+@calc('abinit', ecut=300, chksymbreak=0, toldfe=1e-4)
+@calc('cp2k')
+@calc('espresso', ecutwfc=300 / Ry)
+@calc('siesta', marks=pytest.mark.xfail)
+def test_ch4_reaction(code):
+    e_ch4 = _calculate(code, 'CH4')
+    e_c2h2 = _calculate(code, 'C2H2')
+    e_h2 = _calculate(code, 'H2')
+    energy = e_ch4 - 0.5 * e_c2h2 - 1.5 * e_h2
+    print(energy)
+    ref_energy = -2.8
+    assert abs(energy - ref_energy) < 0.3

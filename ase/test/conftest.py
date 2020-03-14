@@ -239,7 +239,9 @@ siesta_factory = newfactory('siesta')
 
 @pytest.fixture
 def code(request, factories):
-    return factories[request.param]
+    name, kwargs = request.param
+    factory = factories[name]
+    return CalculatorInputs(factory, kwargs)
 
 
 def pytest_generate_tests(metafunc):
@@ -247,10 +249,42 @@ def pytest_generate_tests(metafunc):
 
     We want tests marked with @pytest.mark.calculator(names) to be
     parametrized over the named calculator or calculators."""
-    # Is it okay to use metafunc.definition.iter_markers()?
-    # Or is that private or something?
+
+    calculator_inputs = []
+
     for marker in metafunc.definition.iter_markers(name='calculator'):
-        calculator_names = marker.args[0]
-        if isinstance(calculator_names, str):
-            calculator_names = [calculator_names]
-        metafunc.parametrize('code', calculator_names, indirect=True)
+        calculator_names = marker.args
+        kwargs = dict(marker.kwargs)
+        marks = kwargs.pop('marks', [])
+        for name in calculator_names:
+            calculator_inputs.append(pytest.param((name, kwargs), marks=marks))
+
+    if calculator_inputs:
+        metafunc.parametrize('code', calculator_inputs, indirect=True,
+                             ids=lambda input: input[0])
+
+
+class CalculatorInputs:
+    def __init__(self, factory, parameters=None):
+        if parameters is None:
+            parameters = {}
+        self.parameters = parameters
+        self.factory = factory
+
+    @property
+    def name(self):
+        return self.factory.name
+
+    def __repr__(self):
+        cls = type(self)
+        return '{}({}, {})'.format(cls.__name__,
+                                   self.name, self.parameters)
+
+    def new(self, **kwargs):
+        kw = dict(self.parameters)
+        kw.update(kwargs)
+        return CalculatorInputs(self.factory, kw)
+
+    def calc(self, **kwargs):
+        inputs = self.new(**kwargs)
+        return self.factory.calc(**inputs.parameters)
