@@ -35,12 +35,18 @@ def test_bad_spacegroup(func):
         func(400)
 
 
-@pytest.mark.parametrize("setting", [1, 2])
-@pytest.mark.parametrize("no", range(1, 231))
-def test_spacegroup_reciprocal_cell(no, setting):
+def _spacegroup_reciprocal_cell(no, setting):
     try:
         sg = Spacegroup(no, setting)
     except SpacegroupNotFoundError:
         return
     reciprocal_check = np.linalg.inv(sg.scaled_primitive_cell).T
     assert_allclose(sg.reciprocal_cell, reciprocal_check, atol=TOL)
+
+
+def test_spacegroup_reciprocal_cell():
+    # Would be better to use pytest.mark.parametrize if we can figure out
+    # how to not list hundreds of test cases in the output.
+    for setting in [1, 2]:
+        for no in range(1, 231):
+            _spacegroup_reciprocal_cell(setting, no)
