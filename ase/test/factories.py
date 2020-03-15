@@ -110,6 +110,37 @@ class EspressoFactory:
         return cls(config.executables['espresso'], paths[0])
 
 
+@factory('gpaw')
+class GPAWFactory:
+    def calc(self, **kwargs):
+        from gpaw import GPAW
+        return GPAW(**kwargs)
+
+    @classmethod
+    def fromconfig(cls, config):
+        import importlib
+        spec = importlib.util.find_spec('gpaw')
+        # XXX should be made non-pytest dependent
+        if spec is None:
+            pytest.skip('No gpaw module')
+        return cls()
+
+
+@factory('octopus')
+class OctopusFactory:
+    def __init__(self, executable):
+        self.executable = executable
+
+    def calc(self, **kwargs):
+        from ase.calculators.octopus import Octopus
+        return Octopus(command=self.executable,
+                       stdout='"stdout.log"', stderr='"stderr.log"')
+
+    @classmethod
+    def fromconfig(cls, config):
+        return cls(config.executables['octopus'])
+
+
 @factory('siesta')
 class SiestaFactory:
     def __init__(self, executable, pseudo_path):
@@ -193,5 +224,6 @@ class CalculatorInputs:
         return CalculatorInputs(self.factory, kw)
 
     def calc(self, **kwargs):
-        inputs = self.new(**kwargs)
-        return self.factory.calc(**inputs.parameters)
+        param = dict(self.parameters)
+        param.update(kwargs)
+        return self.factory.calc(**param)

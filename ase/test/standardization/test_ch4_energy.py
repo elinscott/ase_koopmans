@@ -41,9 +41,6 @@ def _calculate(code, name):
 @pytest.mark.parametrize(
     "spec",
     [
-        inputs('gpaw', symmetry='off', mode='pw', txt='gpaw.txt',
-               mixer={'beta': 0.6}),
-        inputs('octopus', stdout="'stdout.log'", stderr="'stderr.log'"),
         inputs('openmx', energy_cutoff=350),
         inputs('gamess_us', label='ch4'),
         inputs('gaussian', xc='lda', basis='3-21G'),
@@ -66,6 +63,8 @@ calc = pytest.mark.calculator
 @calc('abinit', ecut=300, chksymbreak=0, toldfe=1e-4)
 @calc('cp2k')
 @calc('espresso', ecutwfc=300 / Ry)
+@calc('gpaw', symmetry='off', mode='pw', txt='gpaw.txt', mixer={'beta': 0.6})
+@calc('octopus')
 @calc('siesta', marks=pytest.mark.xfail)
 def test_ch4_reaction(code):
     e_ch4 = _calculate(code, 'CH4')
