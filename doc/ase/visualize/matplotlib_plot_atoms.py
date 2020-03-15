@@ -1,4 +1,5 @@
-# creates: matplotlib_plot_atoms1.png, matplotlib_plot_atoms2.png, matplotlib_plot_atoms3.png
+# creates: matplotlib_plot_atoms1.png, matplotlib_plot_atoms2.png
+# creates: matplotlib_plot_atoms3.png
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -28,7 +29,7 @@ fig.savefig('matplotlib_plot_atoms2.png')
 
 stem_image = mpimg.imread('stem_image.jpg')
 atom_pos = [(0.0, 0.0, 0.0), (0.5, 0.5, 0.5), (0.5, 0.5, 0.0)]
-srtio3 = crystal(['Sr','Ti','O'], atom_pos, spacegroup=221, cellpar=3.905,
+srtio3 = crystal(['Sr', 'Ti', 'O'], atom_pos, spacegroup=221, cellpar=3.905,
                  size=(3, 3, 3))
 fig, ax = plt.subplots()
 ax.imshow(stem_image, cmap='gray')

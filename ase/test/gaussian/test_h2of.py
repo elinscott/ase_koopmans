@@ -73,6 +73,9 @@ def test_h2of():
                     density='current',
                     addsec=['%s.wfx' % label]
                    )
+    # FIXME: the "addsec" argument above is correctly incorporated into the
+    # input file, but it doesn't appear to do anything to the calculation.
+    # What is it for? What is it suppsoed to do?
 
     atoms.set_calculator(calc)
     atoms.get_potential_energy()

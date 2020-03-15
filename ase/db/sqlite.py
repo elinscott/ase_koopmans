@@ -452,7 +452,7 @@ class SQLite3Database(Database, object):
             return 0
 
     def _get_row(self, id):
-        con = self._connect()
+        con = self.connection or self._connect()
         self._initialize(con)
         c = con.cursor()
         if id is None:
