@@ -96,6 +96,8 @@ def factories(configured_executables, datafiles, enabled_calculators):
 abinit_factory = make_factory_fixture('abinit')
 cp2k_factory = make_factory_fixture('cp2k')
 espresso_factory = make_factory_fixture('espresso')
+gpaw_factory = make_factory_fixture('gpaw')
+octopus_factory = make_factory_fixture('octopus')
 siesta_factory = make_factory_fixture('siesta')
 
 
