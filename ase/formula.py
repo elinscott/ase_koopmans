@@ -183,7 +183,7 @@ class Formula:
         dct2 = {}
         for symb, n in dct.items():
             if not (isinstance(symb, str) and isinstance(n, int) and n >= 0):
-                raise ValueError(f'Bad dictionary: {dct}')
+                raise ValueError('Bad dictionary: {dct}'.format(dct=dct))
             if n > 0:  # filter out n=0 symbols
                 dct2[symb] = n
         return Formula(dict2str(dct2),
