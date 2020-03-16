@@ -175,12 +175,22 @@ class Formula:
 
     @staticmethod
     def from_dict(dct: Dict[str, int]) -> 'Formula':
-        """Convert dict to Formula."""
-        return Formula(dict2str(dct),
-                       _tree=[([(symb, n) for symb, n in dct.items()], 1)],
-                       _count=dict(dct))
+        """Convert dict to Formula.
 
-    def from_list(symbols):  # (List[str]) -> Formula
+        >>> Formula.from_dict({'H': 2})
+        H2
+        """
+        dct2 = {}
+        for symb, n in dct.items():
+            if not (isinstance(symb, str) and isinstance(n, int) and n >= 0):
+                raise ValueError(f'Bad dictionary: {dct}')
+            if n > 0:  # filter out n=0 symbols
+                dct2[symb] = n
+        return Formula(dict2str(dct2),
+                       _tree=[([(symb, n) for symb, n in dct2.items()], 1)],
+                       _count=dct2)
+
+    def from_list(symbols: List[str]) -> 'Formula':
         """Convert list of chemical symbols to Formula."""
         return Formula(''.join(symbols),
                        _tree=[(symbols[:], 1)])
@@ -198,10 +208,12 @@ class Formula:
 
         Type of *f* must be str or Formula.
 
-        Example
-        -------
+        Examples
+        --------
         >>> 'OH' in Formula('H2O')
         True
+        >>> 'O2' in Formula('H2O')
+        False
         """
         if isinstance(f, str):
             f = Formula(f)
