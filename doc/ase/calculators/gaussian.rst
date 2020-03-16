@@ -147,4 +147,76 @@ keyword        type     default value   description
                                         the route line.
 ============== ======== =============== ==================================================
 
+
+GaussianOptimizer and GaussianIRC
+=================================
+
+There are also two Gaussian-specific :mod:`Optimizer <ase.optimize>`-like classes:
+``GaussianOptimizer`` and ``GaussianIRC``, which can be used for geometry
+optimizations and IRC calculations, respectively. These can be invoked in the
+following way::
+
+  from ase.calculators.gaussian import Gaussian, GaussianOptimizer
+  atoms = ...
+  calc_opt = Gaussian(...)
+  opt = GaussianOptimizer(atoms, calc_opt)
+  opt.run(fmax='tight', steps=100)
+
+Note that this differs from ASE's standard Optimizer classes in a few key ways:
+
+1. The ``fmax`` keyword takes a string rather than a force/energy criterion.
+   Valid keywords are described in the
+   `Gaussian manual page for optimization <http://gaussian.com/opt>`_.
+2. Unlike ASE's standard Optimizer classes, it is not possible to iterate
+   over the optimization with ``opt.irun(...)``.
+3. It is also not possible to create a Trajectory file which records the
+   optimization with ``opt = GaussianOptimizer(..., trajectory='opt.traj')``.
+   However, it should be possible to obtain the trajectory by reading
+   the Gaussian output file after the optimization has finished.
+
+Additional arguments to Gaussian's ``opt`` keyword can be passed to the calculator
+in the following way::
+
+  opt.run(fmax='tight', steps=100, opt='calcfc,ts')
+
+This example requests a Hessian calculation followed by optimization to a saddle point
+("transition state optimization").
+
+The ``GaussianIRC`` class can also be used to run IRC or pseudo-IRC calculations.
+For example, the following script optimizes to a saddle point, then runs an IRC
+optimization in the forward- and reverse-direction::
+
+  from ase.calculators.gaussian import Gaussian, GaussianOptimizer, GaussianIRC
+  atoms = ...
+
+  # Optimize to a saddle point
+  calc_opt = Gaussian(label='opt', ...)
+  opt = GaussianOptimizer(atoms, calc_opt)
+  opt.run(fmax='tight', steps=100, opt='calcfc,ts')
+  tspos = atoms.positions.copy()
+
+  # Do a vibrational frequency calculation and store the Hessian in a
+  # checkpoint file, for use in subsequent IRC calculations
+  atoms.calc = Gaussian(label='sp', chk='sp.chk', freq='')
+  atoms.get_potential_energy()
+
+  # Perform IRC in the "forwards" direction
+  calc_irc_for = Gaussian(label='irc_for', chk='irc_for.chk', oldchk='sp.chk', ...)
+  irc_for = GaussianIRC(atoms, calc_irc_for)
+  irc_for.run(direction='forward', steps=20, irc='rcfc')  # reuses Hessian
+
+  # Perform IRC in the "reverse" direction
+  # First, restore TS positions
+  atoms.positions[:] = tspos
+  calc_irc_rev = Gaussian(label='irc_rev', chk='irc_rev.chk', oldchk='sp.chk', ...)
+  irc_rev = GaussianIRC(atoms, calc_irc_rev)
+  irc_rev.run(direction='reverse', steps=20, irc='rcfc')
+
+It should also be possible to use the same ``Gaussian`` calculator object for
+each of these steps, so long as the label is changed between calculations
+(to avoid overwriting the output file) and the settings are changed appropriately.
+It should also be possible to use the same ``GaussianIRC`` object for both the
+forwards and reverse IRC calculations, so long as the label is changed (again to
+avoid overwriting the output file).
+
 .. autoclass:: Gaussian

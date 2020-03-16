@@ -73,6 +73,12 @@ Git master branch
   previous one, while having a more flexible design and supporting more
   keyword arguments.
 
+* Added :mod:`GaussianOptimizer <ase.calculators.gaussian>` and
+  :mod:`GaussianIRC <ase.calculators.gaussian>` classes for performing geometry
+  optimization and IRC calculations with the Gaussian calculator. These
+  classes are the canonical way to use Gaussian's built-in geometry
+  optimization routines.
+
 * Added :class:`Pyberny <ase.optimize.Berny>` geometry optimizer.
 
 * Added Z-matrix parser for use in input/output file readers.
