@@ -178,7 +178,7 @@ class Formula:
         """Convert dict to Formula.
 
         >>> Formula.from_dict({'H': 2})
-        H2
+        Formula('H2')
         """
         dct2 = {}
         for symb, n in dct.items():
