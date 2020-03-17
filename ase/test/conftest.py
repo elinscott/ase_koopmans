@@ -44,7 +44,7 @@ def tkinter():
 @pytest.fixture(scope='session')
 def plt(tkinter):
     matplotlib = pytest.importorskip('matplotlib')
-    matplotlib.use('Agg', warn=False)
+    matplotlib.use('Agg')
 
     import matplotlib.pyplot as plt
     return plt
