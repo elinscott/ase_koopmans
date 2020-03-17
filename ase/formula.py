@@ -11,6 +11,7 @@ else:
     from collections import OrderedDict as ordereddict
 
 
+# For type hints:
 Tree = Union[str, Tuple['Tree', int], List['Tree']]
 
 
@@ -32,7 +33,8 @@ class Formula:
         strict: bool
             Only allow real chemical symbols.
         format: str
-            ???????????
+            Reorder according to *format*.  Must be one of hill, metal,
+            abc or reduce.
 
         Examples
         --------
@@ -58,6 +60,8 @@ class Formula:
         """
         if format:
             assert _tree is None and _count is None
+            if format not in {'hill', 'metal', 'abc', 'reduce'}:
+                raise ValueError(f'Illegal format: {format}')
             formula = Formula(formula).format(format)
         self._formula = formula
         self._tree = _tree or parse(formula)
@@ -124,6 +128,7 @@ class Formula:
         * ``'hill'``: alphabetically ordered with C and H first
         * ``'metal'``: alphabetically ordered with metals first
         * ``'abc'``: count ordered first then alphabetically ordered
+        * ``'reduce'``: Reduce and keep order (ABBBC -> AB3C)
         * ``'latex'``: LaTeX representation
         * ``'html'``: HTML representation
         * ``'rest'``: reStructuredText representation
@@ -138,8 +143,8 @@ class Formula:
     def __format__(self, fmt: str) -> str:
         """Format Formula as str.
 
-        Possible formats: ``'hill'``, ``'metal'``, ``'abc'``, ``'latex'``,
-        ``'html'``, ``'rest'``.
+        Possible formats: ``'hill'``, ``'metal'``, ``'abc'``, ``'reduce'``,
+        ``'latex'``, ``'html'``, ``'rest'``.
 
         Example
         -------
