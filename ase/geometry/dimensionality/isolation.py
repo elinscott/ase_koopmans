@@ -51,8 +51,7 @@ def orthogonal_basis(X, Y=None):
 
 
 def select_cutoff(atoms):
-
-    intervals = analyze_dimensionality(atoms, method='RDA')
+    intervals = analyze_dimensionality(atoms, method='RDA', merge=False)
     m = intervals[0]
     if m.b == float("inf"):
         return m.a + 0.1
@@ -61,7 +60,6 @@ def select_cutoff(atoms):
 
 
 def traverse_graph(atoms, kcutoff):
-
     if kcutoff is None:
         kcutoff = select_cutoff(atoms)
 
@@ -79,7 +77,6 @@ def traverse_graph(atoms, kcutoff):
 
 
 def build_supercomponent(atoms, components, k, v, anchor=True):
-
     # build supercomponent by mapping components into visited cells
     positions = []
     numbers = []
@@ -209,28 +206,23 @@ def isolate_monolayer(atoms, components, k, v):
 
 
 def isolate_bulk(atoms, components, k, v):
-
     positions, numbers = build_supercomponent(atoms, components, k, v,
                                               anchor=False)
     atoms = ase.Atoms(numbers=numbers, positions=positions, cell=atoms.cell,
                       pbc=[1, 1, 1])
-    atoms.wrap()
+    atoms.wrap(eps=0)
     return atoms
 
 
 def isolate_cluster(atoms, components, k, v):
-
     positions, numbers = build_supercomponent(atoms, components, k, v)
     positions -= np.min(positions, axis=0)
     cell = np.diag(np.max(positions, axis=0))
-
-    atoms = ase.Atoms(numbers=numbers, positions=positions, cell=cell,
-                      pbc=[0, 0, 0])
-    return atoms
+    return ase.Atoms(numbers=numbers, positions=positions, cell=cell,
+                     pbc=False)
 
 
 def isolate_components(atoms, kcutoff=None):
-
     """Isolates components by dimensionality type.
 
     Given a k-value cutoff the components (connected clusters) are
@@ -263,7 +255,6 @@ def isolate_components(atoms, kcutoff=None):
         key: the component dimenionalities.
         values: a list of Atoms objects for each dimensionality type.
     """
-
     data = {}
     components, all_visited, ranks = traverse_graph(atoms, kcutoff)
 

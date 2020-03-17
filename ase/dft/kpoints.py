@@ -1,12 +1,10 @@
 import re
 import warnings
-from math import sin, cos
 
 import numpy as np
 
 from ase.utils import jsonable
 from ase.cell import Cell
-from ase.geometry import cell_to_cellpar, crystal_structure_from_cell
 
 
 def monkhorst_pack(size):
@@ -406,35 +404,6 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
     return cell.bandpath(path, npoints=npoints, density=density,
                          special_points=special_points, eps=eps)
 
-    # XXX old code for bandpath() function, should be removed once we
-    # weed out any trouble
-    if isinstance(path, str):
-        # XXX we need to update this so we use the new and more complete
-        # cell classification stuff
-        lattice = None
-        if special_points is None:
-            cell = Cell.ascell(cell)
-            cellinfo = get_cellinfo(cell)
-            special_points = cellinfo.special_points
-            lattice = cellinfo.lattice
-        paths = []
-        for names in parse_path_string(path):
-            for name in names:
-                if name not in special_points:
-                    msg = ('K-point label {} not included in {} special '
-                           'points.  Valid labels are: {}'
-                           .format(name, lattice or 'custom dictionary of',
-                                   ', '.join(sorted(special_points))))
-                    raise ValueError(msg)
-            paths.append([special_points[name] for name in names])
-    elif np.array(path[0]).ndim == 1:
-        paths = [path]
-    else:
-        paths = path
-
-    kpts, x, X = paths2kpts(paths, cell, npoints, density)
-    return BandPath(cell, kpts=kpts, special_points=special_points)
-
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
 
@@ -525,7 +494,6 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     the third is the special points as strings.
     """
 
-
     if special_points is None:
         special_points = get_special_points(cell)
     points = np.asarray(kpts)
@@ -578,89 +546,6 @@ special_paths = {
     'monoclinic': 'GYHCEM1AXH1,MDZ,YD',
     'rhombohedral type 1': 'GLB1,BZGX,QFP1Z,LP',
     'rhombohedral type 2': 'GPZQGFP1Q1LZ'}
-
-
-class CellInfo:
-    def __init__(self, rcell, lattice, special_points):
-        self.rcell = rcell
-        self.lattice = lattice
-        self.special_points = special_points
-
-
-def get_cellinfo(cell, lattice=None, eps=2e-4):
-    from ase.build.tools import niggli_reduce_cell
-    warnings.warn(
-        "This function is deprecated, use ase.lattice or get_bandpath",
-        np.VisibleDeprecationWarning
-    )
-    rcell, M = niggli_reduce_cell(cell)
-    latt = crystal_structure_from_cell(rcell, niggli_reduce=False)
-    if lattice:
-        assert latt == lattice.lower(), latt
-
-    if latt == 'monoclinic':
-        # Transform From Niggli to Setyawana-Curtarolo cell:
-        a, b, c, alpha, beta, gamma = cell_to_cellpar(rcell, radians=True)
-        if abs(beta - np.pi / 2) > eps:
-            T = np.array([[0, 1, 0],
-                          [-1, 0, 0],
-                          [0, 0, 1]])
-            scell = np.dot(T, rcell)
-        elif abs(gamma - np.pi / 2) > eps:
-            T = np.array([[0, 0, 1],
-                          [1, 0, 0],
-                          [0, -1, 0]])
-        else:
-            raise ValueError('You are using a badly oriented ' +
-                             'monoclinic unit cell. Please choose one with ' +
-                             'either beta or gamma != pi/2')
-
-        scell = np.dot(np.dot(T, rcell), T.T)
-        a, b, c, alpha, beta, gamma = cell_to_cellpar(scell, radians=True)
-
-        assert alpha < np.pi / 2, 'Your monoclinic angle has to be < pi / 2'
-
-        M = np.dot(M, T.T)
-        eta = (1 - b * cos(alpha) / c) / (2 * sin(alpha)**2)
-        nu = 1 / 2 - eta * c * cos(alpha) / b
-        points = {'G': [0, 0, 0],
-                  'A': [1 / 2, 1 / 2, 0],
-                  'C': [0, 1 / 2, 1 / 2],
-                  'D': [1 / 2, 0, 1 / 2],
-                  'D1': [1 / 2, 0, -1 / 2],
-                  'E': [1 / 2, 1 / 2, 1 / 2],
-                  'H': [0, eta, 1 - nu],
-                  'H1': [0, 1 - eta, nu],
-                  'H2': [0, eta, -nu],
-                  'M': [1 / 2, eta, 1 - nu],
-                  'M1': [1 / 2, 1 - eta, nu],
-                  'M2': [1 / 2, eta, -nu],
-                  'X': [0, 1 / 2, 0],
-                  'Y': [0, 0, 1 / 2],
-                  'Y1': [0, 0, -1 / 2],
-                  'Z': [1 / 2, 0, 0]}
-    elif latt == 'rhombohedral type 1':
-        a, b, c, alpha, beta, gamma = cell_to_cellpar(cell=cell, radians=True)
-        eta = (1 + 4 * np.cos(alpha)) / (2 + 4 * np.cos(alpha))
-        nu = 3 / 4 - eta / 2
-        points = {'G': [0, 0, 0],
-                  'B': [eta, 1 / 2, 1 - eta],
-                  'B1': [1 / 2, 1 - eta, eta - 1],
-                  'F': [1 / 2, 1 / 2, 0],
-                  'L': [1 / 2, 0, 0],
-                  'L1': [0, 0, - 1 / 2],
-                  'P': [eta, nu, nu],
-                  'P1': [1 - nu, 1 - nu, 1 - eta],
-                  'P2': [nu, nu, eta - 1],
-                  'Q': [1 - nu, nu, 0],
-                  'X': [nu, 0, -nu],
-                  'Z': [0.5, 0.5, 0.5]}
-    else:
-        points = sc_special_points[latt]
-
-    myspecial_points = {label: np.dot(M, kpt) for label, kpt in points.items()}
-    return CellInfo(rcell=rcell, lattice=latt,
-                    special_points=myspecial_points)
 
 
 def get_special_points(cell, lattice=None, eps=2e-4):

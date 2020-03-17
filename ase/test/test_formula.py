@@ -15,6 +15,20 @@ def test_formula_things():
 def test_atoms_formula_things():
     assert Atoms('MoS2').get_chemical_formula() == 'MoS2'
     assert Atoms('SnO2').get_chemical_formula(mode='metal') == 'SnO2'
+
+
+def test_h0c1():
+    f = Formula.from_dict({'H': 0, 'C': 1})
+    assert f.format('hill') == 'C'
+    with pytest.raises(ValueError):
+        Formula.from_dict({'H': -1})
+    with pytest.raises(ValueError):
+        Formula.from_dict({'H': 1.5})
+    with pytest.raises(ValueError):
+        Formula.from_dict({7: 1})
+
+
+def test_formula():
     for sym in ['', 'Pu', 'Pu2', 'U2Pu2', 'U2((Pu2)2H)']:
         for mode in ['all', 'reduce', 'hill', 'metal']:
             for empirical in [False, True]:

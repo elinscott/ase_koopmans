@@ -160,7 +160,7 @@ _gto_grad = _define_pattern(
     r'^[ \t]+[\S]+[ \t]+ENERGY GRADIENTS[ \t]*[\n]+'
     r'^[ \t]+atom[ \t]+coordinates[ \t]+gradient[ \t]*\n'
     r'^(?:[ \t]+x[ \t]+y[ \t]+z){2}[ \t]*\n'
-    r'((?:^(?:[ \t]+[\S]+){8}\n)+)\n',
+    r'((?:^(?:[ \t]+[\S]+){8}\n)+)[ \t]*\n',
     """\
                          UHF ENERGY GRADIENTS
 
@@ -170,7 +170,7 @@ _gto_grad = _define_pattern(
    2 H       1.125380   1.355351   1.125380    0.000086   0.000089   0.000086
    3 H      -1.355351  -1.125380   1.125380   -0.000089  -0.000086   0.000086
    4 H       1.125380  -1.125380  -1.355351    0.000086  -0.000086  -0.000089
-
+ 
 """, re.M)
 
 # Energy parsers for a variety of different GTO calculations
@@ -332,7 +332,7 @@ def _get_gto_kpts(chunk):
 
 # Extracts MO eigenvalue and occupancy for a GTO calculation
 _extract_vector = _define_pattern(
-    r'^[ \t]+Vector[ \t]+([\S])+[ \t]+Occ=([\S]+)[ \t]+E=([\S]+)[ \t]*\n',
+    r'^[ \t]+Vector[ \t]+([\S])+[ \t]+Occ=([\S]+)[ \t]+E=[ \t]*([\S]+)[ \t]*\n',
     " Vector    1  Occ=2.000000D+00  E=-2.043101D+01\n", re.M,
 )
 

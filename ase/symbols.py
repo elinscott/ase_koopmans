@@ -139,3 +139,10 @@ class Symbols:
                     "Use mode = 'all', 'reduce', 'hill' or 'metal'.")
 
         return formula
+
+    def search(self, symbols):
+        """Return the indices of elements with given symbol or symbols."""
+        numbers = set(symbols2numbers(symbols))
+        indices = [i for i, number in enumerate(self.numbers)
+                   if number in numbers]
+        return np.array(indices, int)
