@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 from ase.neighborlist import NeighborList
 from ase.build import bulk
 
