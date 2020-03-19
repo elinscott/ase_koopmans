@@ -12,9 +12,11 @@ from distutils.command.build_py import build_py as _build_py
 from glob import glob
 from os.path import join
 
+python_requires = (3, 6)
 
-if sys.version_info < (3, 5, 0, 'final', 0):
-    raise SystemExit('Python 3.5 or later is required!')
+
+if sys.version_info < python_requires:
+    raise SystemExit('Python 3.6 or later is required!')
 
 
 install_requires = [
