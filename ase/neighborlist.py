@@ -1050,6 +1050,10 @@ class NeighborList:
         See :meth:`ase.neighborlist.PrimitiveNeighborList.get_neighbors` or
         :meth:`ase.neighborlist.PrimitiveNeighborList.get_neighbors`.
         """
+        if self.nl.nupdates <= 0:
+            raise RuntimeError('Must call update(atoms) on your neighborlist '
+                               'first!')
+
         return self.nl.get_neighbors(a)
 
     def get_connectivity_matrix(self, sparse=True):

@@ -22,7 +22,7 @@ oldlibs:
   image: registry.gitlab.com/ase/ase:ase-oldlibs
   script:
     - pip install --no-deps .
-    - ase test -j 0 --pytest --color=yes
+    - ase test --pytest --color=yes -W "ignore:can't resolve package"
 
 # For testing newest versions of libraries against standard images
 # on dockerhub.
