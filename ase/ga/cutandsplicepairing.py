@@ -310,11 +310,11 @@ class CutAndSplicePairing(OffspringCreator):
         self.cellbounds constraints. Returns None if no such cell
         was generated within a given number of attempts.
 
-	Parameters:
+        Parameters:
 
         maxcount: int
             The maximal number of attempts.
-	"""
+        """
         # First calculate the scaling volume
         if not self.scaling_volume:
             v1 = np.abs(np.linalg.det(cell1))
@@ -371,7 +371,7 @@ class CutAndSplicePairing(OffspringCreator):
         cutting_point: (1x3) array
             In fractional coordinates
 
-	cell: (3x3) array
+        cell: (3x3) array
             The unit cell for the child structure
         """
         symbols = a1.get_chemical_symbols()
