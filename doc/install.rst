@@ -7,15 +7,25 @@ Installation
 Requirements
 ============
 
-* Python_ 3.5 or newer
-* NumPy_ 1.10 or newer (base N-dimensional array package)
-* SciPy_ 0.17 or newer (library for scientific computing)
+* Python_ 3.6 or newer
+* NumPy_ 1.11 or newer (base N-dimensional array package)
+* SciPy_ 0.18 or newer (library for scientific computing)
+
+Optional but strongly recommended:
+
+* Matplotlib_ 2.0.0 or newer for plotting
+* :mod:`tkinter` for :mod:`ase.gui`
 
 Optional:
 
-* Matplotlib_ 2.0.0 or newer (plotting)
-* :mod:`tkinter` (for :mod:`ase.gui`)
-* Flask_ (for :mod:`ase.db` web-interface)
+* Flask_ for :mod:`ase.db` web-interface
+* pytest_ 3.6.1 or newer for running tests
+* pytest-xdist_ 1.22.1 or newer for running tests in parallel
+
+Optional dependencies for specialized features:
+
+* spglib_ for certain symmetry-related features
+* povray_ for 3D rendering with povray
 
 .. _Python: https://www.python.org/
 .. _NumPy: https://docs.scipy.org/doc/numpy/reference/
@@ -24,7 +34,10 @@ Optional:
 .. _Flask: https://palletsprojects.com/p/flask/
 .. _PyPI: https://pypi.org/project/ase
 .. _PIP: https://pip.pypa.io/en/stable/
-
+.. _pytest: https://pypi.org/project/pytest/
+.. _pytest-xdist: https://pypi.org/project/pytest-xdist/
+.. _spglib: https://pypi.org/project/spglib/
+.. _pycodcif: https://pypi.org/project/pycodcif/
 
 Installation using system package managers
 ==========================================
