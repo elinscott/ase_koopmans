@@ -385,14 +385,14 @@ class CutAndSplicePairing(OffspringCreator):
             sym.append(s)
 
             for i, (a, p) in enumerate(zip([a1, a2], [p1, p2])):
-                cell = a.get_cell()
+                c = a.get_cell()
                 cop = np.mean(a.positions[indices], axis=0)
-                cut_p = np.dot(cutting_point, cell)
+                cut_p = np.dot(cutting_point, c)
                 if isinstance(cutting_normal, int):
-                    vecs = [cell[j] for j in range(3) if j != cutting_normal]
+                    vecs = [c[j] for j in range(3) if j != cutting_normal]
                     cut_n = np.cross(vecs[0], vecs[1])
                 else:
-                    cut_n = np.dot(cutting_normal, cell)
+                    cut_n = np.dot(cutting_normal, c)
                 d = np.dot(cop - cut_p, cut_n)
                 spos = a.get_scaled_positions()[indices]
                 scop = np.mean(spos, axis=0)
