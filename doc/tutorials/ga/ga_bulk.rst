@@ -1,8 +1,8 @@
 .. _ga_bulk_tutorial:
 
-=================================
- GA crystal structure prediction
-=================================
+====================================================
+Genetic algorithm search for bulk crystal structures
+====================================================
 
 Here we will use the GA to predict a crystal structure of a given chemical composition.
 

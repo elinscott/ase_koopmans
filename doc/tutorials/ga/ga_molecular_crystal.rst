@@ -1,8 +1,8 @@
 .. _ga_molecular_crystal_tutorial:
 
-============================
- GA with molecular crystals
-============================
+=========================================================
+Genetic algorithm search for molecular crystal structures
+=========================================================
 
 Similar to the :ref:`ga_bulk_tutorial` tutorial, this one illustrates how
 to search for stable crystal structures using the GA, but this time for a
