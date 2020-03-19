@@ -32,7 +32,8 @@ therefore lie in the identity preservation during the various stages of the GA:
   building blocks intact. In the present implementation, this is achieved
   by looking at the *tags* attribute of the parent Atoms objects:
   atoms belong to the same molecule if they have the same tag.
-  These tags are initialized by the initial structure generator.
+  These tags are either initialized by the initial structure generator, or
+  can be added manually using the :meth:`Atoms.set_tags` method.
 
 * The local optimization procedure may, if desired, change these internal
   geometries (i.e. the N-N bond lengths in our example). However, care may
