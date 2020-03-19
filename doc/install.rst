@@ -21,11 +21,7 @@ Optional:
 * Flask_ for :mod:`ase.db` web-interface
 * pytest_ 3.6.1 or newer for running tests
 * pytest-xdist_ 1.22.1 or newer for running tests in parallel
-
-Optional dependencies for specialized features:
-
 * spglib_ for certain symmetry-related features
-* povray_ for 3D rendering with povray
 
 .. _Python: https://www.python.org/
 .. _NumPy: https://docs.scipy.org/doc/numpy/reference/
@@ -37,7 +33,6 @@ Optional dependencies for specialized features:
 .. _pytest: https://pypi.org/project/pytest/
 .. _pytest-xdist: https://pypi.org/project/pytest-xdist/
 .. _spglib: https://pypi.org/project/spglib/
-.. _pycodcif: https://pypi.org/project/pycodcif/
 
 Installation using system package managers
 ==========================================
