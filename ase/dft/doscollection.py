@@ -6,6 +6,7 @@ from typing import (Any, Iterable, Optional,
 
 import numpy as np
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData, Info
+from ase.dft.dosutils import SimplePlottingAxes
 
 # This import is for the benefit of type-checking / mypy
 if False:
@@ -73,33 +74,24 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
             Plotting axes. If "ax" was set, this is the same object.
         """
 
-        if ax is None:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots()
-        else:
-            fig = ax.get_figure()
+        with SimplePlottingAxes(ax=ax, show=show, filename=filename) as ax:
 
-        if mplargs is None:
-            mplargs = {}
+            if mplargs is None:
+                mplargs = {}
 
-        energies, all_y = self.sample_grid(npts,
-                                           xmin=xmin, xmax=xmax,
-                                           width=width, smearing=smearing)
+            energies, all_y = self.sample_grid(npts,
+                                               xmin=xmin, xmax=xmax,
+                                               width=width, smearing=smearing)
 
-        all_labels = [DOSData.label_from_info(data.info) for data in self]
+            all_labels = [DOSData.label_from_info(data.info) for data in self]
 
-        all_lines = ax.plot(energies, all_y.T, **mplargs)
-        for line, label in zip(all_lines, all_labels):
-            line.set_label(label)
-        ax.legend()
+            all_lines = ax.plot(energies, all_y.T, **mplargs)
+            for line, label in zip(all_lines, all_labels):
+                line.set_label(label)
+            ax.legend()
 
-        ax.set_xlim(left=min(energies), right=max(energies))
-        ax.set_ylim(bottom=0)
-
-        if show:
-            fig.show()
-        if filename is not None:
-            fig.savefig(filename)
+            ax.set_xlim(left=min(energies), right=max(energies))
+            ax.set_ylim(bottom=0)
 
         return ax
 

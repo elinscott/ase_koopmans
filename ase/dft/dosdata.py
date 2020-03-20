@@ -4,9 +4,12 @@ from abc import ABCMeta, abstractmethod
 import logging
 from typing import Any, Dict, Sequence, Tuple
 
-from matplotlib.axes import Axes
 import numpy as np
+from ase.dft.dosutils import SimplePlottingAxes
 
+# This import is for the benefit of type-checking / mypy
+if False:
+    import matplotlib.axes
 
 # For now we will be strict about Info and say it has to be str->str. Perhaps
 # later we will allow other types that have reliable comparison operations.
@@ -137,10 +140,10 @@ class DOSData(metaclass=ABCMeta):
                  xmax: float = None,
                  width: float = 0.1,
                  smearing: str = 'Gauss',
-                 ax: Axes = None,
+                 ax: 'matplotlib.axes.Axes' = None,
                  show: bool = False,
                  filename: str = None,
-                 mplargs: dict = None) -> Axes:
+                 mplargs: dict = None) -> 'matplotlib.axes.Axes':
         """Simple 1-D plot of DOS data, resampled onto a grid
 
         If the special key 'label' is present in self.info, this will be set
@@ -164,25 +167,17 @@ class DOSData(metaclass=ABCMeta):
             Plotting axes. If "ax" was set, this is the same object.
         """
 
-        if ax is None:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots()
-        else:
-            fig = ax.get_figure()
+        with SimplePlottingAxes(ax=ax, show=show, filename=filename) as ax:
 
-        if mplargs is None:
-            mplargs = {}
-        if 'label' not in mplargs:
-            mplargs.update({'label': self.label_from_info(self.info)})
+            if mplargs is None:
+                mplargs = {}
+            if 'label' not in mplargs:
+                mplargs.update({'label': self.label_from_info(self.info)})
 
-        energies, intensity = self.sample_grid(npts, xmin=xmin, xmax=xmax,
-                                               width=width, smearing=smearing)
-        ax.plot(energies, intensity, **mplargs)
-
-        if show:
-            fig.show()
-        if filename is not None:
-            fig.savefig(filename)
+            energies, intensity = self.sample_grid(npts, xmin=xmin, xmax=xmax,
+                                                   width=width,
+                                                   smearing=smearing)
+            ax.plot(energies, intensity, **mplargs)
 
         return ax
 
@@ -271,10 +266,10 @@ class RawDOSData(DOSData):
         return new_object
 
     def plot_deltas(self,
-                    ax: Axes = None,
+                    ax: 'matplotlib.axes.Axes' = None,
                     show: bool = False,
                     filename: str = None,
-                    mplargs: dict = None) -> Axes:
+                    mplargs: dict = None) -> 'matplotlib.axes.Axes':
         """Simple plot of sparse DOS data as a set of delta functions
 
         Items at the same x-value can overlap and will not be summed together
@@ -290,21 +285,12 @@ class RawDOSData(DOSData):
         Returns:
             Plotting axes. If "ax" was set, this is the same object.
         """
-        if ax is None:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots()
-        else:
-            fig = ax.get_figure()
+        with SimplePlottingAxes(ax=ax, show=show, filename=filename) as ax:
 
-        if mplargs is None:
-            mplargs = {}
+            if mplargs is None:
+                mplargs = {}
 
-        ax.vlines(self.get_energies(), 0, self.get_weights(), **mplargs)
-
-        if show:
-            fig.show()
-        if filename is not None:
-            fig.savefig(filename)
+            ax.vlines(self.get_energies(), 0, self.get_weights(), **mplargs)
 
         return ax
 
@@ -421,10 +407,10 @@ class GridDOSData(DOSData):
                  xmax: float = None,
                  width: float = 0.1,
                  smearing: str = 'Gauss',
-                 ax: Axes = None,
+                 ax: 'matplotlib.axes.Axes' = None,
                  show: bool = False,
                  filename: str = None,
-                 mplargs: dict = None) -> Axes:
+                 mplargs: dict = None) -> 'matplotlib.axes.Axes':
         """Simple 1-D plot of DOS data
 
         Data will be resampled onto a grid with `npts` points unless `npts` is
@@ -450,33 +436,25 @@ class GridDOSData(DOSData):
             mplargs: additional arguments to pass to matplotlib plot command
                 (e.g. {'linewidth': 2} for a thicker line).
 
-
         Returns:
             Plotting axes. If "ax" was set, this is the same object.
         """
 
-        if ax is None:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots()
-        else:
-            fig = ax.get_figure()
+        with SimplePlottingAxes(ax=ax, show=show, filename=filename) as ax:
 
-        if mplargs is None:
-            mplargs = {}
+            if mplargs is None:
+                mplargs = {}
+            if 'label' not in mplargs:
+                mplargs.update({'label': self.label_from_info(self.info)})
 
-        if npts:
-            energies, intensity = self.sample_grid(npts, xmin=xmin, xmax=xmax,
-                                                   width=width,
-                                                   smearing=smearing)
-        else:
-            energies, intensity = self.get_energies(), self.get_weights()
+            if npts:
+                energies, intensity = self.sample_grid(npts, xmin=xmin,
+                                                       xmax=xmax, width=width,
+                                                       smearing=smearing)
+            else:
+                energies, intensity = self.get_energies(), self.get_weights()
 
-        ax.plot(energies, intensity, **mplargs)
-        ax.set_xlim(left=xmin, right=xmax)
-
-        if show:
-            fig.show()
-        if filename is not None:
-            fig.savefig(filename)
+            ax.plot(energies, intensity, **mplargs)
+            ax.set_xlim(left=xmin, right=xmax)
 
         return ax
