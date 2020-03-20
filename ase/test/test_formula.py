@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import pytest
 from ase import Atoms
@@ -6,8 +5,7 @@ from ase.formula import Formula
 
 
 def test_formula_things():
-    if sys.version_info >= (3, 6):
-        assert Formula('A3B2C2D').format('abc') == 'DB2C2A3'
+    assert Formula('A3B2C2D').format('abc') == 'DB2C2A3'
     assert str(Formula('HHOOO', format='reduce')) == 'H2O3'
     assert Formula('HHOOOUO').format('reduce') == 'H2O3UO'
 
@@ -57,4 +55,4 @@ def test_formulas(x):
     print(f.count(), '{:latex}'.format(f))
     a, b = divmod(f, 'H2O')
     assert a * Formula('H2O') + b == f
-    assert f != 117
+    assert f != 117  # check that formula can be compared to non-formula object

@@ -1,18 +1,12 @@
 from math import gcd
 import re
-import sys
 from typing import Dict, Tuple, List, Union
 
 from ase.data import chemical_symbols, atomic_numbers
 
-if sys.version_info >= (3, 6):
-    ordereddict = dict
-else:
-    from collections import OrderedDict as ordereddict
-
 
 # For type hints:
-Tree = Union[str, Tuple['Tree', int], List['Tree']]
+Tree = Union[str, Tuple['Tree', int], List['Tree']]  # A, A2, A+B
 
 
 class Formula:
@@ -111,8 +105,8 @@ class Formula:
         """
         count1, N = self._reduce()
         c = ord('A')
-        count2 = ordereddict()
-        count3 = ordereddict()
+        count2 = {}
+        count3 = {}
         for n, symb in sorted((n, symb)
                               for symb, n in count1.items()):
             count2[chr(c)] = n
@@ -155,7 +149,7 @@ class Formula:
 
         if fmt == 'hill':
             count = self.count()
-            count2 = ordereddict()
+            count2 = {}
             for symb in 'CH':
                 if symb in count:
                     count2[symb] = count.pop(symb)
@@ -168,7 +162,7 @@ class Formula:
             result2 = [(s, count.pop(s)) for s in non_metals if s in count]
             result = [(s, count[s]) for s in sorted(count)]
             result += sorted(result2)
-            return dict2str(ordereddict(result))
+            return dict2str(dict(result))
 
         if fmt == 'abc':
             _, f, N = self.stoichiometry()
@@ -176,16 +170,16 @@ class Formula:
 
         if fmt == 'reduce':
             symbols = list(self)
-            n = len(symbols)
+            nsymb = len(symbols)
             parts = []
-            i = 0
-            for j, symbol in enumerate(symbols):
-                if j == n - 1 or symbol != symbols[j + 1]:
+            i1 = 0
+            for i2, symbol in enumerate(symbols):
+                if i2 == nsymb - 1 or symbol != symbols[i2 + 1]:
                     parts.append(symbol)
-                    m = j + 1 - i
+                    m = i2 + 1 - i1
                     if m > 1:
                         parts.append(str(m))
-                    i = j + 1
+                    i1 = i2 + 1
             return ''.join(parts)
 
         if fmt == 'latex':
