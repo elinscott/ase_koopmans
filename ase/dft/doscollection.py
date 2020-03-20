@@ -1,7 +1,7 @@
 from abc import ABCMeta
 import collections
 from functools import reduce, singledispatch
-from typing import (Any, Iterable, List, Optional,
+from typing import (Any, Iterable, Optional,
                     overload, Sequence, Tuple, Union)
 
 import numpy as np
@@ -181,12 +181,14 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
         ...
 
     @overload  # noqa F811
-    def __getitem__(self, item: slice) -> List[DOSData]:
+    def __getitem__(self, item: slice) -> 'DOSCollection':
         ...
 
     def __getitem__(self, item): # noqa F811
-        if isinstance(item, (int, slice)):
+        if isinstance(item, int):
             return self._data[item]
+        elif isinstance(item, slice):
+            return type(self)(self._data[item])
         else:
             raise TypeError("index in DOSCollection must be an integer or "
                             "slice")
@@ -424,7 +426,7 @@ class GridDOSCollection(DOSCollection):
         ...
 
     @overload  # noqa F811
-    def __getitem__(self, item: slice) -> List[DOSData]:
+    def __getitem__(self, item: slice) -> 'GridDOSCollection':
         ...
 
     def __getitem__(self, item):  # noqa F811
@@ -432,7 +434,7 @@ class GridDOSCollection(DOSCollection):
             return GridDOSData(self._energies, self._weights[item, :],
                                info=self._info[item])
         elif isinstance(item, slice):
-            return [self[i] for i in range(len(self))[item]]
+            return type(self)([self[i] for i in range(len(self))[item]])
         else:
             raise TypeError("index in DOSCollection must be an integer or "
                             "slice")

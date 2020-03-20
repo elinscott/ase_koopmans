@@ -72,8 +72,8 @@ class TestDOSCollection:
 
     def test_slicing(self, rawdos, another_rawdos):
         dc = MinimalDOSCollection([rawdos, another_rawdos, rawdos])
-        assert dc[1:] == [another_rawdos, rawdos]
-        assert dc[:-1] == [rawdos, another_rawdos]
+        assert dc[1:] == MinimalDOSCollection([another_rawdos, rawdos])
+        assert dc[:-1] == MinimalDOSCollection([rawdos, another_rawdos])
 
     equality_data = [([], [], True),
                      ([rawdos], [rawdos], True),
@@ -335,8 +335,8 @@ class TestGridDOSCollection:
     def test_slicing(self, griddos, another_griddos):
         gdc = GridDOSCollection([griddos, another_griddos, griddos])
 
-        assert gdc[1:] == [another_griddos, griddos]
-        assert gdc[:-1] == [griddos, another_griddos]
+        assert gdc[1:] == GridDOSCollection([another_griddos, griddos])
+        assert gdc[:-1] == GridDOSCollection([griddos, another_griddos])
 
         with pytest.raises(TypeError):
             gdc['string']
