@@ -304,12 +304,26 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
         collection, as none of the entries have common 'a' *and* 'b' info.
 
         """
-        all_combos = [tuple(sorted(set({key: value
-                            for key, value in data.info.items()
-                            if key in info_keys}.items())))
-                      for data in self]
+
+        def _matching_info_tuples(data: DOSData):
+            """Get relevent dict entries in tuple form
+
+            e.g. if data.info = {'a': 1, 'b': 2, 'c': 3}
+                 and info_keys = ('a', 'c')
+
+                 then return (('a', 1), ('c': 3))
+            """
+            matched_keys = set(info_keys) & set(data.info)
+            return tuple(sorted([(key, data.info[key])
+                                 for key in matched_keys]))
+
+        # Sorting inside info matching helps set() to remove redundant matches;
+        # combos are then sorted() to ensure consistent output across sessions.
+        all_combos = map(_matching_info_tuples, self)
         unique_combos = sorted(set(all_combos))
 
+        # For each key/value combination, perform a select() to obtain all
+        # the matching entries and sum them together.
         collection_data = [self._sum_all_safely(self.select(**dict(combo)))
                            for combo in unique_combos]
         return type(self)(collection_data)
