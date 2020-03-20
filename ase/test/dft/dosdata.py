@@ -167,10 +167,10 @@ class TestRawDosData:
 
     def test_sample_grid(self, sparse_dos):
         min_dos = sparse_dos.sample_grid(10, xmax=5, padding=3, width=0.1)
-        assert min_dos[0][0] == 1.2 - 3 * 0.1
+        assert min_dos[0][0] == pytest.approx(1.2 - 3 * 0.1)
 
         max_dos = sparse_dos.sample_grid(10, xmin=0, padding=2, width=0.2)
-        assert max_dos[0][-1] == 5 + 2 * 0.2
+        assert max_dos[0][-1] == pytest.approx(5 + 2 * 0.2)
 
         default_dos = sparse_dos.sample_grid(10)
         assert np.allclose(default_dos[0], np.linspace(0.9, 5.3, 10))
@@ -259,8 +259,8 @@ class TestGridDosData:
     def test_access(self, dense_dos):
         assert dense_dos.info == {'symbol': 'C', 'orbital': '2s', 'day': 'Tue'}
         assert len(dense_dos.get_energies()) == 11
-        assert dense_dos.get_energies()[-2] == 9.
-        assert dense_dos.get_weights()[-1] == np.sin(1)
+        assert dense_dos.get_energies()[-2] == pytest.approx(9.)
+        assert dense_dos.get_weights()[-1] == pytest.approx(np.sin(1))
 
     def test_copy(self, dense_dos):
         copy_dos = dense_dos.copy()

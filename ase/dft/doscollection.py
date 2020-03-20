@@ -1,21 +1,24 @@
 from abc import ABCMeta
-from collections.abc import Sequence as Sequence_abc
+import collections
 from functools import reduce, singledispatch
 from typing import (Any, Iterable, List, Optional,
                     overload, Sequence, Tuple, Union)
 
 import numpy as np
-from matplotlib.axes import Axes
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData, Info
 
+# This import is for the benefit of type-checking / mypy
+if False:
+    import matplotlib.axes
 
-class DOSCollection(Sequence_abc, metaclass=ABCMeta):
+
+class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
     """Abstract base class for a collection of DOSData objects"""
     def __init__(self, dos_series: Iterable[DOSData]) -> None:
         self._data = list(dos_series)
 
     def sample(self,
-               x: Sequence[float],
+               energies: Sequence[float],
                width: float = 0.1,
                smearing: str = 'Gauss') -> np.ndarray:
         """Sample the DOS data at chosen points, with broadening
@@ -25,7 +28,7 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
         corresponding to x and rows corresponding to the collected data series.
 
         Args:
-            x: energy values for sampling
+            energies: energy values for sampling
             width: Width of broadening kernel
             smearing: selection of broadening kernel (only "Gauss" is currently
                 supported)
@@ -34,7 +37,8 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
             Weights sampled from a broadened DOS at values corresponding to x,
             in rows corresponding to DOSData entries contained in this object
         """
-        return np.asarray([data.sample(x, width=width, smearing=smearing)
+        return np.asarray([data.sample(energies,
+                                       width=width, smearing=smearing)
                            for data in self])
 
     def plot(self,
@@ -43,10 +47,10 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
              xmax: float = None,
              width: float = 0.1,
              smearing: str = 'Gauss',
-             ax: Axes = None,
+             ax: 'matplotlib.axes.Axes' = None,
              show: bool = False,
              filename: str = None,
-             mplargs: dict = None) -> Axes:
+             mplargs: dict = None) -> 'matplotlib.axes.Axes':
         """Simple plot of collected DOS data, resampled onto a grid
 
         If the special key 'label' is present in self.info, this will be set
@@ -78,18 +82,18 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
         if mplargs is None:
             mplargs = {}
 
-        x, all_y = self.sample_grid(npts,
-                                    xmin=xmin, xmax=xmax,
-                                    width=width, smearing=smearing)
+        energies, all_y = self.sample_grid(npts,
+                                           xmin=xmin, xmax=xmax,
+                                           width=width, smearing=smearing)
 
         all_labels = [DOSData.label_from_info(data.info) for data in self]
 
-        all_lines = ax.plot(x, all_y.T, **mplargs)
+        all_lines = ax.plot(energies, all_y.T, **mplargs)
         for line, label in zip(all_lines, all_labels):
             line.set_label(label)
         ax.legend()
 
-        ax.set_xlim(left=min(x), right=max(x))
+        ax.set_xlim(left=min(energies), right=max(energies))
         ax.set_ylim(bottom=0)
 
         if show:
@@ -111,15 +115,17 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
 
         Args:
             npts: Number of sampled points
-            xmin: Minimum sampled x value; if unspecified, a default is chosen
-            xmax: Maximum sampled x value; if unspecified, a default is chosen
+            xmin: Minimum sampled energy value; if unspecified, a default is
+                chosen
+            xmax: Maximum sampled energy value; if unspecified, a default is
+                chosen
             padding: If xmin/xmax is unspecified, default value will be padded
                 by padding * width to avoid cutting off peaks.
             width: Width of broadening kernel, passed to self.sample()
             smearing: selection of broadening kernel, passed to self.sample()
 
         Returns:
-            (x-values, sampled DOS)
+            (energy values, sampled DOS)
         """
 
         if xmin is None:
@@ -128,23 +134,23 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
         if xmax is None:
             xmax = (max(max(data.get_energies()) for data in self)
                     + (padding * width))
-        x = np.linspace(xmin, xmax, npts)
-        return x, self.sample(x, width=width, smearing=smearing)
+        energies = np.linspace(xmin, xmax, npts)
+        return energies, self.sample(energies, width=width, smearing=smearing)
 
     @classmethod
     def from_data(cls,
-                  x: Sequence[float],
+                  energies: Sequence[float],
                   weights: Sequence[Sequence[float]],
                   info: Sequence[Info] = None) -> 'DOSCollection':
         """Create a DOSCollection from data sharing a common set of energies
 
         This is a convenience method to be used when all the DOS data in the
-        collection has a common x-axis. There is no performance advantage in
-        using this method for the generic DOSCollection, but for
+        collection has a common energy axis. There is no performance advantage
+        in using this method for the generic DOSCollection, but for
         GridDOSCollection it is more efficient.
 
         Args:
-            x: common set x-values for input data
+            energy: common set of energy values for input data
             weights: array of DOS weights with rows corresponding to different
                 datasets
             info: sequence of info dicts corresponding to weights rows.
@@ -155,7 +161,7 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
 
         info = cls._check_weights_and_info(weights, info)
 
-        return cls(RawDOSData(x, row_weights, row_info)
+        return cls(RawDOSData(energies, row_weights, row_info)
                    for row_weights, row_info in zip(weights, info))
 
     @staticmethod
@@ -163,7 +169,7 @@ class DOSCollection(Sequence_abc, metaclass=ABCMeta):
                                 info: Optional[Sequence[Info]],
                                 ) -> Sequence[Info]:
         if info is None:
-            info = [{}] * len(weights)
+            info = [{} for _ in range(len(weights))]
         else:
             if len(info) != len(weights):
                 raise ValueError("Length of info must match number of rows in "
@@ -360,14 +366,13 @@ def _add_to_collection(other: DOSData,
 @_add_to_collection.register(DOSData)
 def _add_data(other: DOSData, collection: DOSCollection) -> DOSCollection:
     """Return a new DOSCollection with an additional DOSData item"""
-    if isinstance(other, DOSData):
-        return type(collection)(list(collection) + [other])
+    return type(collection)(list(collection) + [other])
 
 
 @_add_to_collection.register(type(None))
 def _add_none(other: None, collection: DOSCollection) -> DOSCollection:
-    if other is None:
-        return collection
+    """Return the original collection if adding None"""
+    return collection
 
 
 class RawDOSCollection(DOSCollection):
@@ -420,7 +425,7 @@ class GridDOSCollection(DOSCollection):
 
     @classmethod
     def from_data(cls,
-                  x: Sequence[float],
+                  energies: Sequence[float],
                   weights: Sequence[Sequence[float]],
                   info: Sequence[Info] = None) -> 'DOSCollection':
         """Create a GridDOSCollection from data with a common set of energies
@@ -429,7 +434,7 @@ class GridDOSCollection(DOSCollection):
         redundant copying/checking of the data.
 
         Args:
-            x: common set x-values for input data
+            energies: common set of energy values for input data
             weights: array of DOS weights with rows corresponding to different
                 datasets
             info: sequence of info dicts corresponding to weights rows.
@@ -443,12 +448,12 @@ class GridDOSCollection(DOSCollection):
             raise IndexError("Weights must be a 2-D array or nested sequence")
         if weights_array.shape[0] < 1:
             raise IndexError("Weights cannot be empty")
-        if weights_array.shape[1] != len(x):
+        if weights_array.shape[1] != len(energies):
             raise IndexError("Length of weights rows must equal size of x")
 
         info = cls._check_weights_and_info(weights, info)
 
-        dos_collection = cls([GridDOSData(x, weights_array[0])])
+        dos_collection = cls([GridDOSData(energies, weights_array[0])])
         dos_collection._weights = weights_array
         dos_collection._info = list(info)
 

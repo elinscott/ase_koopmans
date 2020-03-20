@@ -111,10 +111,10 @@ class TestDOSCollection:
         with pytest.raises(TypeError):
             MinimalDOSCollection([rawdos]) + YetAnotherDOSCollection([rawdos])
 
-    @pytest.mark.parametrize('options', [{'x': [1., 1.1, 1.2],
+    @pytest.mark.parametrize('options', [{'energies': [1., 1.1, 1.2],
                                           'width': 1.3,
                                           'smearing': 'Gauss'},
-                                         {'x': [1.7, 2.1, 2.0],
+                                         {'energies': [1.7, 2.1, 2.0],
                                           'width': 3.4,
                                           'smearing': 'Gauss'}])
     def test_sample(self, rawdos, another_rawdos, options):
@@ -284,6 +284,7 @@ class TestDOSCollection:
                 == mindoscollection.sum_all())
         with pytest.raises(ValueError):
             DOSCollection._sum_all_safely(None)
+
 
 class TestRawDOSCollection:
     @pytest.fixture

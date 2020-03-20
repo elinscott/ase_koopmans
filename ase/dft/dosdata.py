@@ -42,13 +42,13 @@ class DOSData(metaclass=ABCMeta):
         raise NotImplementedError
 
     def sample(self,
-               x: Sequence[float],
+               energies: Sequence[float],
                width: float = 0.1,
                smearing: str = 'Gauss') -> np.ndarray:
         """Sample the DOS data at chosen points, with broadening
 
         Args:
-            x: energy values for sampling
+            energies: energy values for sampling
             width: Width of broadening kernel
             smearing: selection of broadening kernel (only "Gauss" is currently
                 supported)
@@ -60,7 +60,7 @@ class DOSData(metaclass=ABCMeta):
         self._check_positive_width(width)
         weights_grid = np.dot(
             self.get_weights(),
-            self._delta(np.asarray(x),
+            self._delta(np.asarray(energies),
                         np.asarray(self.get_energies())[:, np.newaxis],
                         width,
                         smearing=smearing))
@@ -121,15 +121,15 @@ class DOSData(metaclass=ABCMeta):
             smearing: selection of broadening kernel, passed to self.sample()
 
         Returns:
-            (x-values, sampled DOS)
+            (energy values, sampled DOS)
         """
 
         if xmin is None:
             xmin = min(self.get_energies()) - (padding * width)
         if xmax is None:
             xmax = max(self.get_energies()) + (padding * width)
-        x = np.linspace(xmin, xmax, npts)
-        return x, self.sample(x, width=width, smearing=smearing)
+        energies = np.linspace(xmin, xmax, npts)
+        return energies, self.sample(energies, width=width, smearing=smearing)
 
     def plot_dos(self,
                  npts: int = 1000,
@@ -175,9 +175,9 @@ class DOSData(metaclass=ABCMeta):
         if 'label' not in mplargs:
             mplargs.update({'label': self.label_from_info(self.info)})
 
-        x, y = self.sample_grid(npts, xmin=xmin, xmax=xmax,
-                                width=width, smearing=smearing)
-        ax.plot(x, y, **mplargs)
+        energies, intensity = self.sample_grid(npts, xmin=xmin, xmax=xmax,
+                                               width=width, smearing=smearing)
+        ax.plot(energies, intensity, **mplargs)
 
         if show:
             fig.show()
@@ -381,11 +381,12 @@ class GridDOSData(DOSData):
                 "sampling density. The results are unlikely to be smooth.")
 
     def sample(self,
-               x: Sequence[float],
+               energies: Sequence[float],
                width: float = 0.1,
                smearing: str = 'Gauss') -> np.ndarray:
         self._check_spacing(width)
-        return super().sample(x=x, width=width, smearing=smearing)
+        return super().sample(energies=energies,
+                              width=width, smearing=smearing)
 
     def __add__(self, other: 'GridDOSData') -> 'GridDOSData':
         # This method uses direct access to the mutable energy and weights data
@@ -464,12 +465,13 @@ class GridDOSData(DOSData):
             mplargs = {}
 
         if npts:
-            x, y = self.sample_grid(npts, xmin=xmin, xmax=xmax,
-                                    width=width, smearing=smearing)
+            energies, intensity = self.sample_grid(npts, xmin=xmin, xmax=xmax,
+                                                   width=width,
+                                                   smearing=smearing)
         else:
-            x, y = self.get_energies(), self.get_weights()
+            energies, intensity = self.get_energies(), self.get_weights()
 
-        ax.plot(x, y, **mplargs)
+        ax.plot(energies, intensity, **mplargs)
         ax.set_xlim(left=xmin, right=xmax)
 
         if show:
