@@ -116,7 +116,7 @@ class Vasp2(GenerateVaspInput, Calculator):
         self._xml_data = None
 
         # Utilize the label.setter
-        label = '/'.join((str(directory), label))
+        label = './'.join((str(directory), label))
 
         if restart is True:
             # We restart in the label directory
@@ -131,6 +131,7 @@ class Vasp2(GenerateVaspInput, Calculator):
 
         self.command = command
 
+        self._txt = None
         self.txt = txt          # Set the output txt stream
         self.version = None
 
@@ -1092,13 +1093,13 @@ class Vasp2(GenerateVaspInput, Calculator):
 
     @property
     def txt(self):
-        return self.input_params['txt']
+        return self._txt
 
     @txt.setter
     def txt(self, txt):
         if isinstance(txt, PurePath):
             txt = str(txt)
-        self.input_params['txt'] = txt
+        self._txt = txt
 
     def get_number_of_grid_points(self):
         raise NotImplementedError
