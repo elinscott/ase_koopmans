@@ -348,6 +348,9 @@ def get_atoms_speciesandcoordinates(atoms, parameters):
     Atoms.SpeciesAndCoordinates>
     to know more, link <http://www.openmx-square.org/openmx_man3.7/node85.html>
     """
+
+    if parameters.get('atoms_speciesandcoordinates') is not None:
+        return parameters['atoms_speciesandcoordinates']
     atoms_speciesandcoordinates = []
     xc = parameters.get('_xc')
     year = parameters.get('_year')
@@ -486,7 +489,7 @@ def get_band_kpath(atoms, parameters):
 
 
 def get_mo_kpoint(atoms, parameters):
-    return parameters.get('get_mo_kpoint', [])
+    return parameters.get('mo_kpoint', [])
 
 
 def get_wannier_initial_projectors(atoms, parameters):

@@ -120,12 +120,13 @@ def complete(word, previous, line, point):
         if previous in ['-c', '--calculators']:
             from ase.calculators.calculator import names as words
         elif not word.startswith('-'):
-            # Suggest names of tests.  We suggest all matching tests.
-            # It might be better to autocomplete only up to directory
-            # names.
-            from ase.test.newtestsuite import TestModule
-            words = [mod.testname
-                     for mod in TestModule.glob_all_test_modules()]
+            from ase.test.testsuite import all_test_modules_and_groups
+            names, groups = all_test_modules_and_groups()
+            group_completions = [group + '.' for group in groups]
+            for group in group_completions:
+                if word.startswith(group):
+                    return groups[group[:-1]]
+            words = names + list(groups) + group_completions
 
     return words
 
@@ -137,10 +138,15 @@ if sys.version_info[0] == 2:
                   'Please consider rerunning \'ase completion\'.')
 
 
-word, previous = sys.argv[2:]
-line = os.environ['COMP_LINE']
-point = int(os.environ['COMP_POINT'])
-words = complete(word, previous, line, point)
-for w in words:
-    if w.startswith(word):
-        print(w)
+def main():
+    word, previous = sys.argv[2:]
+    line = os.environ['COMP_LINE']
+    point = int(os.environ['COMP_POINT'])
+    words = complete(word, previous, line, point)
+    for w in words:
+        if w.startswith(word):
+            print(w)
+
+
+if __name__ == '__main__':
+    main()

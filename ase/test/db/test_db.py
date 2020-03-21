@@ -22,6 +22,7 @@ names = ['testase.json',
          'mariadb']
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('name', names)
 def test_db(name):
     def count(n, *args, **kwargs):

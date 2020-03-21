@@ -1,0 +1,19 @@
+[run]
+source = ase
+
+# We would write the 'omit' section in the run section.
+# But pytest-cov forgets that when generating report.
+# So we write those paths in the report section instead.
+
+[report]
+precision = 2
+omit =
+    ase/test/*
+    ase/calculators/*
+    ase/io/*
+    ase/utils/sphinx.py
+    ase/utils/newrelease.py
+    ase/utils/build_web_page.py
+
+[html]
+directory = coverage-html

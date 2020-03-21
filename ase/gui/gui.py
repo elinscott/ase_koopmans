@@ -219,7 +219,7 @@ class GUI(View, Status):
 
     def constraints_window(self):
         from ase.gui.constraints import Constraints
-        Constraints(self)
+        return Constraints(self)
 
     def select_all(self, key=None):
         self.images.selected[:] = True
@@ -321,11 +321,11 @@ class GUI(View, Status):
 
     def add_atoms(self, key=None):
         from ase.gui.add import AddAtoms
-        AddAtoms(self)
+        return AddAtoms(self)
 
     def cell_editor(self, key=None):
         from ase.gui.celleditor import CellEditor
-        CellEditor(self)
+        return CellEditor(self)
 
     def quick_info_window(self, key=None):
         from ase.gui.quickinfo import info
@@ -340,6 +340,7 @@ class GUI(View, Status):
                 window.things[0].text = info(self)
             return exists
         self.attach(update, info_win)
+        return info_win
 
     def surface_window(self):
         SetupSurfaceSlab(self)
@@ -350,11 +351,11 @@ class GUI(View, Status):
     def nanotube_window(self):
         return SetupNanotube(self)
 
-    def new_atoms(self, atoms, init_magmom=False):
+    def new_atoms(self, atoms):
         "Set a new atoms object."
         rpt = getattr(self.images, 'repeat', None)
         self.images.repeat_images(np.ones(3, int))
-        self.images.initialize([atoms], init_magmom=init_magmom)
+        self.images.initialize([atoms])
         self.frame = 0  # Prevent crashes
         self.images.repeat_images(rpt)
         self.set_frame(frame=0, focus=True)

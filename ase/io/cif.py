@@ -582,7 +582,7 @@ def write_cif(fileobj, images, format='default',
         # try to fetch occupancies // spacegroup_kinds - occupancy mapping
         try:
             occ_info = atoms.info['occupancy']
-            kinds = atoms.info['spacegroup_kinds']
+            kinds = atoms.arrays['spacegroup_kinds']
             for i, kind in enumerate(kinds):
                 occupancies[i] = occ_info[kind][symbols[i]]
                 # extend the positions array in case of mixed occupancy

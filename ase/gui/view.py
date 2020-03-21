@@ -442,7 +442,7 @@ class View:
                 ra = d[a]
                 if visible[a]:
                     try:
-                        kinds = self.atoms.info['spacegroup_kinds']
+                        kinds = self.atoms.arrays['spacegroup_kinds']
                         site_occ = self.atoms.info['occupancy'][kinds[a]]
                         # first an empty circle if a site is not fully occupied
                         if (np.sum([v for v in site_occ.values()])) < 1.0:

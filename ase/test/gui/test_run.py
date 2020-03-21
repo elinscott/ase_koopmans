@@ -5,7 +5,7 @@ import numpy as np
 
 from ase import Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
-from ase.build import molecule
+from ase.build import molecule, bulk
 import ase.gui.ui as ui
 from ase.gui.i18n import _
 from ase.gui.gui import GUI
@@ -47,6 +47,13 @@ def gui(display):
         gui.exit()
     finally:
         ui.error = orig_ui_error
+
+
+@pytest.fixture
+def atoms(gui):
+    atoms = bulk('Ti') * (2, 2, 2)
+    gui.new_atoms(atoms)
+    return atoms
 
 
 def test_nanotube(gui):
@@ -113,11 +120,70 @@ def test_open_and_save(gui):
 
 
 def test_fracocc(gui):
-    from ase.test.fio.cif import content
+    from ase.test.fio.test_cif import content
     with open('./fracocc.cif', 'w') as f:
         f.write(content)
     gui.open(filename='fracocc.cif')
 
+
+def test_add_atoms(gui):
+    dia = gui.add_atoms()
+    dia.combobox.value = 'CH3CH2OH'
+    dia.add()
+    assert str(gui.atoms.symbols) == str(molecule('CH3CH2OH').symbols)
+
+def test_cell_editor(gui):
+    au = bulk('Au')
+    gui.new_atoms(au.copy())
+
+    dia = gui.cell_editor()
+
+    ti = bulk('Ti')
+
+    dia.update(ti.cell, ti.pbc)
+    dia.apply_vectors()
+    # Tolerance reflects the rounding (currently 7 digits)
+    tol = 3e-7
+    assert np.abs(gui.atoms.cell - ti.cell).max() < tol
+
+    dia.update(ti.cell * 2, ti.pbc)
+    dia.apply_magnitudes()
+    assert np.abs(gui.atoms.cell - 2 * ti.cell).max() < tol
+
+    dia.update(np.eye(3), ti.pbc)
+    dia.apply_angles()
+    assert abs(gui.atoms.cell.angles() - 90).max() < tol
+
+    newpbc = [0, 1, 0]
+    dia.update(np.eye(3), newpbc)
+    dia.apply_pbc()
+    assert (gui.atoms.pbc == newpbc).all()
+
+
+def test_constrain(gui, atoms):
+    gui.select_all()
+    dia = gui.constraints_window()
+
+    assert len(atoms.constraints) == 0
+    dia.selected()  # constrain selected
+    assert len(atoms.constraints) == 1
+
+    assert sorted(atoms.constraints[0].index) == list(range(len(atoms)))
+
+
+def test_quickinfo(gui, atoms):
+    from ase.gui.quickinfo import info
+    from ase.gui.i18n import _
+
+    # (Note: String can be in any language)
+    refstring = _('Single image loaded.')
+    infostring = info(gui)
+    assert refstring in infostring
+
+    dia = gui.quick_info_window()
+    # This is a bit weird and invasive ...
+    txt = dia.things[0].text
+    assert refstring in txt
 
 def window():
 

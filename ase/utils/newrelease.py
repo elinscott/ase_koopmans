@@ -253,4 +253,6 @@ News
     print('git checkout web-page')
     print('git push --force origin web-page')
 
-main()
+
+if __name__ == '__main__':
+    main()

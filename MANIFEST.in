@@ -1,6 +1,5 @@
 include MANIFEST.in
 include COPYING* LICENSE README.rst CONTRIBUTING.rst CHANGELOG.rst
-include requirements.txt
 include bin/ase
 include ase/spacegroup/spacegroup.dat
 include ase/collections/*.json

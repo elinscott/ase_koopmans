@@ -8,7 +8,7 @@ from itertools import permutations
 import numpy as np
 
 from ase.ga.offspring_creator import OffspringCreator
-from ase.ga.element_mutations import get_row_column
+from ase.ga.element_mutations import get_periodic_table_distance
 
 try:
     import spglib
@@ -96,10 +96,13 @@ def get_ordered_composition(syms, pools=None):
         pool_index = dict((sym, 0) for sym in set(syms))
     else:
         pool_index = {}
-        for sym in set(syms):
-            for i, pool in enumerate(pools):
-                if sym in pool:
-                    pool_index[sym] = i
+        for i, pool in enumerate(pools):
+            if isinstance(pool, str):
+                pool_index[pool] = i
+            else:
+                for sym in set(syms):
+                    if sym in pool:
+                        pool_index[sym] = i
     syms = [(sym, pool_index[sym], c)
             for sym, c in zip(*np.unique(syms, return_counts=True))]
     unique_syms, pn, comp = zip(
@@ -224,7 +227,8 @@ class SlabOperator(OffspringCreator):
 
 
 class CutSpliceSlabCrossover(SlabOperator):
-    def __init__(self, allowed_compositions=None, element_pools=None, verbose=False,
+    def __init__(self, allowed_compositions=None, element_pools=None,
+                 verbose=False,
                  num_muts=1, tries=1000, min_ratio=0.25,
                  distribution_correction_function=None):
         SlabOperator.__init__(self, verbose, num_muts,
@@ -334,7 +338,8 @@ class RandomCompositionMutation(SlabOperator):
                 self.descriptor + parent_message)
 
     def operate(self, atoms):
-        if self.allowed_compositions is None:
+        allowed_comps = self.allowed_compositions
+        if allowed_comps is None:
             n_elems = len(set(atoms.get_chemical_symbols()))
             n_atoms = len(atoms)
             allowed_comps = [c for c in permutations(range(1, n_atoms),
@@ -349,9 +354,9 @@ class RandomCompositionMutation(SlabOperator):
         # Choose the composition to change to
         for i, allowed in enumerate(allowed_comps):
             if comp == tuple(allowed):
+                allowed_comps = np.delete(allowed_comps, i, axis=0)
                 break
-        comps_to_choose_from = np.delete(allowed_comps, i, axis=0)
-        new_comp = random.choice(comps_to_choose_from)
+        new_comp = random.choice(allowed_comps)
         comp_diff = self.get_composition_diff(comp, new_comp)
 
         # Get difference from current composition
@@ -422,15 +427,10 @@ class NeighborhoodElementMutation(SlabOperator):
         return (self.finalize_individual(indi),
                 self.descriptor + parent_message)
 
-    def get_periodic_table_distance(self, s1, s2):
-        rc1 = np.array(get_row_column(s1))
-        rc2 = np.array(get_row_column(s2))
-        return sum(np.abs(rc1 - rc2))
-
     def operate(self, atoms):
         least_diff = 1e22
         for mut in self.get_all_element_mutations(atoms):
-            dist = self.get_periodic_table_distance(*mut)
+            dist = get_periodic_table_distance(*mut)
             if dist < least_diff:
                 poss_muts = [mut]
                 least_diff = dist

@@ -283,10 +283,10 @@ F('gamess-us-in', 'GAMESS-US input file', '1F',
   module='gamess_us')
 F('gamess-us-punch', 'GAMESS-US punchcard file', '1F',
   module='gamess_us', magic=b' $DATA', ext='dat')
-F('gaussian', 'Gaussian com (input) file', '1S',
-  ext=['com', 'gjf']),
-F('gaussian-out', 'Gaussian output file', '1F',
-  module='gaussian', ext='log'),
+F('gaussian-in', 'Gaussian com (input) file', '1F',
+  module='gaussian', ext=['com', 'gjf']),
+F('gaussian-out', 'Gaussian output file', '+F',
+  module='gaussian', ext='log', magic=b'*Entering Gaussian System'),
 F('acemolecule-out', 'ACE output file', '1S',
   module='acemolecule'),
 F('acemolecule-input', 'ACE input file', '1S',
@@ -296,6 +296,7 @@ F('gif', 'Graphics interchange format', '+S',
   module='animation'),
 F('gpaw-out', 'GPAW text output', '+F',
   magic=b'*  ___ ___ ___ _ _ _'),
+F('gpumd', 'GPUMD input file', '1F', glob='xyz.in')
 F('gpw', 'GPAW restart-file', '1S',
   magic=[b'- of UlmGPAW', b'AFFormatGPAW']),
 F('gromacs', 'Gromacs coordinates', '1S',
@@ -330,7 +331,7 @@ F('nwchem-out', 'NWChem output file', '+F',
 F('octopus', 'Octopus input file', '1F', glob='inp'),
 F('proteindatabank', 'Protein Data Bank', '+F',
   ext='pdb'),
-F('png', 'Portable Network Graphics', '1S'),
+F('png', 'Portable Network Graphics', '1B'),
 F('postgresql', 'ASE PostgreSQL database file', '+S', module='db'),
 F('pov', 'Persistance of Vision', '1S'),
 F('py', 'Python file', '+F'),
@@ -562,6 +563,8 @@ def _write(filename, fd, format, io, images, parallel=None, append=False,
             if append:
                 mode = mode.replace('w', 'a')
             fd = open_with_compression(filename, mode)
+            # XXX remember to re-enable compressed open
+            # fd = io.open(filename, mode)
         io.write(fd, images, **kwargs)
         if open_new:
             fd.close()
