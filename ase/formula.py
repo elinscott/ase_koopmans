@@ -1,17 +1,12 @@
 from math import gcd
 import re
-import sys
 from typing import Dict, Tuple, List, Union
 
 from ase.data import chemical_symbols, atomic_numbers
 
-if sys.version_info >= (3, 6):
-    ordereddict = dict
-else:
-    from collections import OrderedDict as ordereddict
 
-
-Tree = Union[str, Tuple['Tree', int], List['Tree']]
+# For type hints:
+Tree = Union[str, Tuple['Tree', int], List['Tree']]  # A, A2, A+B
 
 
 class Formula:
@@ -19,6 +14,7 @@ class Formula:
                  formula: str = '',
                  *,
                  strict: bool = False,
+                 format: str = '',
                  _tree: Tree = None,
                  _count: Dict[str, int] = None):
         """Chemical formula object.
@@ -30,6 +26,9 @@ class Formula:
             ``'30Cu+2CO'``, ``'Pt(CO)6'``.
         strict: bool
             Only allow real chemical symbols.
+        format: str
+            Reorder according to *format*.  Must be one of hill, metal,
+            abc or reduce.
 
         Examples
         --------
@@ -53,6 +52,11 @@ class Formula:
         ValueError
             on malformed formula
         """
+        if format:
+            assert _tree is None and _count is None
+            if format not in {'hill', 'metal', 'abc', 'reduce'}:
+                raise ValueError(f'Illegal format: {format}')
+            formula = Formula(formula).format(format)
         self._formula = formula
         self._tree = _tree or parse(formula)
         self._count = _count or count_tree(self._tree)
@@ -101,8 +105,8 @@ class Formula:
         """
         count1, N = self._reduce()
         c = ord('A')
-        count2 = ordereddict()
-        count3 = ordereddict()
+        count2 = {}
+        count3 = {}
         for n, symb in sorted((n, symb)
                               for symb, n in count1.items()):
             count2[chr(c)] = n
@@ -118,6 +122,7 @@ class Formula:
         * ``'hill'``: alphabetically ordered with C and H first
         * ``'metal'``: alphabetically ordered with metals first
         * ``'abc'``: count ordered first then alphabetically ordered
+        * ``'reduce'``: Reduce and keep order (ABBBC -> AB3C)
         * ``'latex'``: LaTeX representation
         * ``'html'``: HTML representation
         * ``'rest'``: reStructuredText representation
@@ -132,8 +137,8 @@ class Formula:
     def __format__(self, fmt: str) -> str:
         """Format Formula as str.
 
-        Possible formats: ``'hill'``, ``'metal'``, ``'abc'``, ``'latex'``,
-        ``'html'``, ``'rest'``.
+        Possible formats: ``'hill'``, ``'metal'``, ``'abc'``, ``'reduce'``,
+        ``'latex'``, ``'html'``, ``'rest'``.
 
         Example
         -------
@@ -144,7 +149,7 @@ class Formula:
 
         if fmt == 'hill':
             count = self.count()
-            count2 = ordereddict()
+            count2 = {}
             for symb in 'CH':
                 if symb in count:
                     count2[symb] = count.pop(symb)
@@ -157,20 +162,38 @@ class Formula:
             result2 = [(s, count.pop(s)) for s in non_metals if s in count]
             result = [(s, count[s]) for s in sorted(count)]
             result += sorted(result2)
-            return dict2str(ordereddict(result))
+            return dict2str(dict(result))
 
         if fmt == 'abc':
             _, f, N = self.stoichiometry()
             return dict2str({symb: n * N for symb, n in f._count.items()})
 
+        if fmt == 'reduce':
+            symbols = list(self)
+            nsymb = len(symbols)
+            parts = []
+            i1 = 0
+            for i2, symbol in enumerate(symbols):
+                if i2 == nsymb - 1 or symbol != symbols[i2 + 1]:
+                    parts.append(symbol)
+                    m = i2 + 1 - i1
+                    if m > 1:
+                        parts.append(str(m))
+                    i1 = i2 + 1
+            return ''.join(parts)
+
         if fmt == 'latex':
             return self._tostr('$_{', '}$')
+
         if fmt == 'html':
             return self._tostr('<sub>', '</sub>')
+
         if fmt == 'rest':
             return self._tostr(r'\ :sub`', r'`\ ')
+
         if fmt == '':
             return self._formula
+
         raise ValueError('Invalid format specifier')
 
     @staticmethod
@@ -190,6 +213,7 @@ class Formula:
                        _tree=[([(symb, n) for symb, n in dct2.items()], 1)],
                        _count=dct2)
 
+    @staticmethod
     def from_list(symbols: List[str]) -> 'Formula':
         """Convert list of chemical symbols to Formula."""
         return Formula(''.join(symbols),
