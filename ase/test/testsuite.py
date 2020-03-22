@@ -1,6 +1,6 @@
 import os
 import sys
-import subprocess
+from subprocess import Popen, PIPE
 from contextlib import contextmanager
 import importlib
 from pathlib import Path
@@ -12,7 +12,6 @@ from multiprocessing import cpu_count
 from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.cli.info import print_info
 from ase.cli.main import CLIError
-from ase.utils import workdir
 
 
 test_calculator_names = ['emt']
@@ -66,9 +65,9 @@ def cli(command, calculator_name=None):
         calculator_name not in test_calculator_names):
         return
     actual_command = ' '.join(command.split('\n')).strip()
-    proc = subprocess.Popen(actual_command,
-                            shell=True,
-                            stdout=subprocess.PIPE)
+    proc = Popen(actual_command,
+                 shell=True,
+                 stdout=PIPE)
     print(proc.stdout.read().decode())
     proc.wait()
 
@@ -276,7 +275,11 @@ class CLICommand:
             raise CLIError('Cannot import pytest; please install pytest '
                            'to run tests')
 
-        import pytest
-        with workdir(testdir):
-            exitcode = pytest.main(pytest_args)
+        # We run pytest through Popen rather than pytest.main().
+        #
+        # This is because some ASE modules were already imported and
+        # would interfere with code coverage measurement.
+        proc = Popen([sys.executable, '-m', 'pytest'] + pytest_args,
+                     cwd=str(testdir))
+        exitcode = proc.wait()
         sys.exit(exitcode)
