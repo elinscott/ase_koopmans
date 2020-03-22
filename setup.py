@@ -40,7 +40,8 @@ package_data = {'ase': ['spacegroup/spacegroup.dat',
                         'collections/*.json',
                         'db/templates/*',
                         'db/static/*'],
-                'ase.test': ['datafiles/*']}
+                'ase.test': ['pytest.ini',
+                             'datafiles/*']}
 
 
 class build_py(_build_py):
