@@ -12,6 +12,7 @@ from multiprocessing import cpu_count
 from ase.calculators.calculator import names as calc_names, get_calculator_class
 from ase.cli.info import print_info
 from ase.cli.main import CLIError
+from ase.utils import workdir
 
 
 test_calculator_names = ['emt']
@@ -285,11 +286,11 @@ class CLICommand:
         for line in pytest_args:
             print('    ' + line)
 
-
-
         if not have_module('pytest'):
-            raise CLIError('Cannot import pytest; please install pytest to run tests')
+            raise CLIError('Cannot import pytest; please install pytest '
+                           'to run tests')
 
         import pytest
-        exitcode = pytest.main(pytest_args)
+        with workdir(testdir):
+            exitcode = pytest.main(pytest_args)
         sys.exit(exitcode)
