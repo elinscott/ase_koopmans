@@ -1,6 +1,6 @@
 import os
 import sys
-import subprocess
+from subprocess import Popen, PIPE
 from contextlib import contextmanager
 import importlib
 from pathlib import Path
@@ -65,9 +65,9 @@ def cli(command, calculator_name=None):
         calculator_name not in test_calculator_names):
         return
     actual_command = ' '.join(command.split('\n')).strip()
-    proc = subprocess.Popen(actual_command,
-                            shell=True,
-                            stdout=subprocess.PIPE)
+    proc = Popen(actual_command,
+                 shell=True,
+                 stdout=PIPE)
     print(proc.stdout.read().decode())
     proc.wait()
 
@@ -232,27 +232,13 @@ class CLICommand:
         jobs = choose_how_many_workers(args.jobs)
         if jobs:
             add_args('--numprocesses={}'.format(jobs))
-            add_args('--dist=loadfile')
 
         if args.fast:
             add_args('-m', 'not slow')
 
         if args.coverage:
-            # It won't find the .coveragerc unless we are in the right
-            # directory.
-            cwd = Path.cwd()
-            if testdir.parent.parent != cwd:
-                raise CLIError('Please run ase test --coverage in the ase '
-                               'top directory')
-
-            coveragerc = testdir / '.coveragerc'
-            if not coveragerc.exists():
-                raise CLIError('No .coveragerc file.  Maybe you are not '
-                               'running the development version.  Please '
-                               'do so, or run coverage manually')
-
             add_args('--cov=ase',
-                     '--cov-config={}'.format(coveragerc),
+                     '--cov-config=.coveragerc',
                      '--cov-report=term',
                      '--cov-report=html')
 
@@ -285,11 +271,15 @@ class CLICommand:
         for line in pytest_args:
             print('    ' + line)
 
-
-
         if not have_module('pytest'):
-            raise CLIError('Cannot import pytest; please install pytest to run tests')
+            raise CLIError('Cannot import pytest; please install pytest '
+                           'to run tests')
 
-        import pytest
-        exitcode = pytest.main(pytest_args)
+        # We run pytest through Popen rather than pytest.main().
+        #
+        # This is because some ASE modules were already imported and
+        # would interfere with code coverage measurement.
+        proc = Popen([sys.executable, '-m', 'pytest'] + pytest_args,
+                     cwd=str(testdir))
+        exitcode = proc.wait()
         sys.exit(exitcode)

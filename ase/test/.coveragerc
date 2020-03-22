@@ -8,12 +8,12 @@ source = ase
 [report]
 precision = 2
 omit =
-    ase/test/*
-    ase/calculators/*
-    ase/io/*
-    ase/utils/sphinx.py
-    ase/utils/newrelease.py
-    ase/utils/build_web_page.py
+    ./*
+    ../calculators/*
+    ../io/*
+    ../utils/sphinx.py
+    ../utils/newrelease.py
+    ../utils/build_web_page.py
 
 [html]
 directory = coverage-html
