@@ -233,7 +233,6 @@ class CLICommand:
         jobs = choose_how_many_workers(args.jobs)
         if jobs:
             add_args('--numprocesses={}'.format(jobs))
-            add_args('--dist=loadfile')
 
         if args.fast:
             add_args('-m', 'not slow')
