@@ -158,7 +158,7 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
 
     @staticmethod
     def _check_weights_and_info(weights: Sequence[Sequence[float]],
-                                info: Optional[Sequence[Info]],
+                                info: Union[Sequence[Info], None],
                                 ) -> Sequence[Info]:
         if info is None:
             info = [{} for _ in range(len(weights))]

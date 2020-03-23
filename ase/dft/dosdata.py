@@ -32,17 +32,14 @@ class DOSData(metaclass=ABCMeta):
     @abstractmethod
     def get_energies(self) -> Sequence[float]:
         """Get energy data stored in this object"""
-        raise NotImplementedError
 
     @abstractmethod
     def get_weights(self) -> Sequence[float]:
         """Get DOS weights stored in this object"""
-        raise NotImplementedError
 
     @abstractmethod
     def copy(self) -> 'DOSData':
         """Returns a copy in which info dict can be safely mutated"""
-        raise NotImplementedError
 
     def sample(self,
                energies: Sequence[float],

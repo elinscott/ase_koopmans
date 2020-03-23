@@ -10,13 +10,13 @@ from ase.dft.dosdata import DOSData, GridDOSData, RawDOSData
 class MinimalDOSData(DOSData):
     """Inherit from ABC to test its features"""
     def get_energies(self):
-        return super().get_energies()
+        return NotImplementedError()
 
     def get_weights(self):
-        return super().get_weights()
+        return NotImplementedError()
 
     def copy(self):
-        return super().copy()
+        return NotImplementedError()
 
 
 class TestDosData:
@@ -38,17 +38,6 @@ class TestDosData:
         else:
             dos_data = MinimalDOSData(info=info)
             assert dos_data.info == expected
-
-    dosdata_abc_notimplemented_methods_args = [('get_energies', tuple()),
-                                               ('get_weights', tuple()),
-                                               ('copy', tuple())]
-    @pytest.mark.parametrize('method, args',
-                             dosdata_abc_notimplemented_methods_args)
-    def test_dosdata_notimplemented(self, method, args):
-        """Check NotImplementedError raised from abstract base class"""
-        dos_data = MinimalDOSData()
-        with pytest.raises(NotImplementedError):
-            getattr(dos_data, method)(*args)
 
     @pytest.mark.parametrize('info, expected',
                              [({}, ''),
