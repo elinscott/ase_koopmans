@@ -1,4 +1,3 @@
-from abc import ABCMeta
 import collections
 from functools import reduce, singledispatch
 from typing import (Any, Dict, Iterable, List, Optional,
@@ -13,8 +12,8 @@ if False:
     import matplotlib.axes
 
 
-class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
-    """Abstract base class for a collection of DOSData objects"""
+class DOSCollection(collections.abc.Sequence):
+    """Base class for a collection of DOSData objects"""
     def __init__(self, dos_series: Iterable[DOSData]) -> None:
         self._data = list(dos_series)
 
