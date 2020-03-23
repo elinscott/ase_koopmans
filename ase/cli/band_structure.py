@@ -34,6 +34,7 @@ class CLICommand:
         parser.add_argument('-n', '--points', type=int, default=100,
                             help='Number of points along the path '
                             '(default: 100)')
+        parser.add_argument('-o', '--output', help='Write image to a file')
         parser.add_argument('-r', '--range', nargs=2, default=['-3', '3'],
                             metavar=('emin', 'emax'),
                             help='Default: "-3.0 3.0" '
@@ -87,13 +88,14 @@ def atoms2bandstructure(atoms, parser, args):
                             '\nMaybe you want its special path:'
                             ' {}'.format(cs, kptpath))
                 parser.error(err)
-        bz2ibz = calc.get_bz_to_ibz_map()
+            bz2ibz = calc.get_bz_to_ibz_map()
 
-        path_kpts = bandpath(args.path, atoms.cell, args.points)[0]
-        icell = atoms.get_reciprocal_cell()
-        eps = monkhorst_pack_interpolate(path_kpts, eps.transpose(1, 0, 2),
-                                         icell, bz2ibz, size, offset)
-        eps = eps.transpose(1, 0, 2)
+            path_kpts = bandpath(args.path, atoms.cell, args.points).kpts
+
+            icell = atoms.get_reciprocal_cell()
+            eps = monkhorst_pack_interpolate(path_kpts, eps.transpose(1, 0, 2),
+                                             icell, bz2ibz, size, offset)
+            eps = eps.transpose(1, 0, 2)
 
     special_points = get_special_points(cell)
     path = BandPath(atoms.cell, kpts=path_kpts,
@@ -131,5 +133,9 @@ def main(args, parser):
     fig = plt.gcf()
     fig.canvas.set_window_title(args.calculation)
     ax = fig.gca()
-    bs.plot(ax=ax, emin=emin, emax=emax)
-    plt.show()
+    bs.plot(ax=ax,
+            filename=args.output,
+            emin=emin + bs.reference,
+            emax=emax + bs.reference)
+    if args.output is None:
+        plt.show()

@@ -26,6 +26,8 @@ ase.symbols
 """.split()
 
 
+# Fixme: The phasediagram module specifies unknown solver options
+@pytest.mark.filterwarnings('ignore:Unknown solver options')
 @pytest.mark.parametrize('modname', module_names)
 def test_doctest(modname):
     if sys.version_info < (3, 6):

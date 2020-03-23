@@ -15,7 +15,7 @@ here:
 
 An example is shown below.
 
-.. literalinclude:: ../../ase/test/dimer_method.py
+.. literalinclude:: ../../ase/test/test_dimer_method.py
     :end-before: Test
 
 The module contains several classes.

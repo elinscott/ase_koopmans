@@ -1,10 +1,13 @@
+from functools import partial
+
 import pytest
 
 from ase.calculators.emt import EMT
 from ase.optimize import (MDMin, FIRE, LBFGS, LBFGSLineSearch, BFGSLineSearch,
-                          BFGS, GoodOldQuasiNewton, GPMin)
+                          BFGS, GoodOldQuasiNewton, GPMin, Berny)
 from ase.optimize.sciopt import SciPyFminCG, SciPyFminBFGS
 from ase.optimize.precon import PreconFIRE, PreconLBFGS
+from ase.cluster import Icosahedron
 from ase.build import bulk
 
 
@@ -14,6 +17,17 @@ def ref_atoms():
     atoms.calc = EMT()
     atoms.get_potential_energy()
     return atoms
+
+
+def atoms_no_pbc():
+    ref_atoms = Icosahedron('Ag', 2, 3.82975)
+    ref_atoms.calc = EMT()
+    atoms = ref_atoms.copy()
+    atoms.calc = EMT()
+    atoms.rattle(stdev=0.1, seed=7)
+    e_unopt = atoms.get_potential_energy()
+    assert e_unopt > 7  # it's 7.318 as of writing this test
+    return atoms, ref_atoms
 
 
 @pytest.fixture
@@ -29,13 +43,21 @@ def atoms(ref_atoms):
 optclasses = [
     MDMin, FIRE, LBFGS, LBFGSLineSearch, BFGSLineSearch,
     BFGS, GoodOldQuasiNewton, GPMin, SciPyFminCG, SciPyFminBFGS,
-    PreconLBFGS, PreconFIRE,
+    PreconLBFGS, PreconFIRE, Berny,
 ]
 
 
 @pytest.mark.parametrize('optcls', optclasses)
 def test_optimize(optcls, atoms, ref_atoms):
-    opt = optcls(atoms, logfile='opt.log')
+    if optcls is Berny:
+        pytest.importorskip('berny')  # check if pyberny installed
+        optcls = partial(optcls, dihedral=False)
+        optcls.__name__ = Berny.__name__
+        atoms, ref_atoms = atoms_no_pbc()
+    kw = {}
+    if optcls is PreconLBFGS:
+        kw['precon'] = None
+    opt = optcls(atoms, logfile='opt.log', **kw)
     fmax = 0.01
     opt.run(fmax=fmax)
 

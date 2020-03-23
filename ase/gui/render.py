@@ -1,6 +1,6 @@
 from ase.gui.i18n import _
 import ase.gui.ui as ui
-from ase.io.pov import write_pov
+from ase.io.pov import write_pov, get_bondpairs
 from os import system
 import numpy as np
 
@@ -110,10 +110,15 @@ class Render:
             povray_settings['textures'] = self.get_textures()
             povray_settings['colors'] = self.gui.get_colors(rgb=True)
             atoms = self.gui.images.get_atoms(frame)
+            radii_scale = 1                           # atom size multiplier
+            if self.gui.window['toggle-show-bonds']:  # self.gui.config['show_bonds'] is always False
+                print(" | Building bonds")
+                povray_settings['bondatoms'] = get_bondpairs(atoms)
+                radii_scale = 0.65                    # value from draw method of View class
             filename = self.update_outputname()
             print(" | Writing files for image", filename, "...")
             write_pov(
-                filename, atoms, radii=self.gui.get_covalent_radii(),
+                filename, atoms, radii=radii_scale*self.gui.get_covalent_radii(),
                 **povray_settings)
             if not self.keep_files_widget.value:
                 print(" | Deleting temporary file ", filename)

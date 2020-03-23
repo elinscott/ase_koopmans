@@ -102,7 +102,7 @@ bool_keys = [
     'scf.Hubbard.U',
     'scf.Constraint.NC.Spin',
     'scf.ProExpn.VNA',
-    'scf.SpinOrbit.Coupling'
+    'scf.SpinOrbit.Coupling',
     'CntOrb.fileout',
     'orderN.Exact.Inverse.S',
     'orderN.Recalc.Buffer',

@@ -287,6 +287,15 @@ optimization and the information needed to generate the Hessian Matrix.
 The BFGSLineSearch algorithm is not compatible with nudged elastic band
 calculations.
 
+Pyberny
+-------
+
+ASE includes a wrapper for the Pyberny_ optimizer. This requires installing
+Pyberny::
+
+    pip install pyberny
+
+.. autoclass:: Berny
 
 .. module:: ase.optimize.precon
 
