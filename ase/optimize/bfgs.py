@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import eigh
 
 from ase.optimize.optimize import Optimizer
-import ase.optimize.defaults as defaults 
+from ase.optimize import defaults
 
 
 class BFGS(Optimizer):
@@ -40,9 +40,9 @@ class BFGS(Optimizer):
         if maxstep > 1.0:
             warnings.warn('You are using a much too large value for '
                           'the maximum step size: %.1f Å' % maxstep)
-        if maxstep is not None: 
-            self.maxstep = maxstep 
-        else:  
+        if maxstep is not None:
+            self.maxstep = maxstep
+        else:
             self.maxstep = defaults.maxstep
 
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master)

@@ -1,7 +1,8 @@
 import numpy as np
 
+from ase.optimize import defaults
 from ase.optimize.optimize import Optimizer
-import ase.optimize.defaults as defaults 
+
 
 class MDMin(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
@@ -34,8 +35,9 @@ class MDMin(Optimizer):
 
         if dt is not None:
             self.dt = dt
-        else:  
+        else:
             self.dt = defaults.dt
+
     def initialize(self):
         self.v = None
 
@@ -47,7 +49,6 @@ class MDMin(Optimizer):
 
         if f is None:
             f = atoms.get_forces()
-
 
         if self.v is None:
             self.v = np.zeros((len(atoms), 3))

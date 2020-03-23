@@ -2,7 +2,8 @@ import numpy as np
 
 from ase.optimize.optimize import Optimizer
 from ase.utils.linesearch import LineSearch
-import ase.optimize.defaults as defaults 
+from ase.optimize import defaults
+
 
 class LBFGS(Optimizer):
     """Limited memory BFGS optimizer.
