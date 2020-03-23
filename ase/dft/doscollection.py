@@ -1,8 +1,8 @@
 from abc import ABCMeta
 import collections
 from functools import reduce, singledispatch
-from typing import (Any, Iterable, Optional,
-                    overload, Sequence, Tuple, Union)
+from typing import (Any, Dict, Iterable, List, Optional,
+                    overload, Sequence, Tuple, TypeVar, Union)
 
 import numpy as np
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData, Info
@@ -38,6 +38,9 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
             Weights sampled from a broadened DOS at values corresponding to x,
             in rows corresponding to DOSData entries contained in this object
         """
+
+        if len(self) == 0:
+            raise IndexError("No data to sample")
         return np.asarray([data.sample(energies,
                                        width=width, smearing=smearing)
                            for data in self])
@@ -119,6 +122,8 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
         Returns:
             (energy values, sampled DOS)
         """
+        if len(self) == 0:
+            raise IndexError("No data to sample")
 
         if xmin is None:
             xmin = (min(min(data.get_energies()) for data in self)
@@ -209,12 +214,25 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
             raise IndexError("No data to sum")
         elif len(self) == 1:
             data = self[0].copy()
-
         else:
             data = reduce(lambda x, y: x + y, self)
         return data
 
-    def select(self, **info_selection: str) -> Optional['DOSCollection']:
+    D = TypeVar('D', bound=DOSData)
+    @staticmethod
+    def _select_to_list(dos_collection: Sequence[D],         # Bug in flakes
+                        info_selection: Dict[str, str],      # misses 'D' def
+                        negative: bool = False) -> List[D]:  # noqa: F821
+        query = set(info_selection.items())
+
+        if negative:
+            return [data for data in dos_collection
+                    if not query.issubset(set(data.info.items()))]
+        else:
+            return [data for data in dos_collection
+                    if query.issubset(set(data.info.items()))]
+
+    def select(self, **info_selection: str) -> 'DOSCollection':
         """Narrow DOSCollection to items with specified info
 
         For example, if
@@ -236,15 +254,11 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
         will return a DOSCollection with only the second item.
 
         """
-        query = set(info_selection.items())
-        matches = [data for data in self
-                   if query.issubset(set(data.info.items()))]
-        if matches:
-            return type(self)(matches)
-        else:
-            return None
 
-    def select_not(self, **info_selection: str) -> Optional['DOSCollection']:
+        matches = self._select_to_list(self, info_selection)
+        return type(self)(matches)
+
+    def select_not(self, **info_selection: str) -> 'DOSCollection':
         """Narrow DOSCollection to items without specified info
 
         For example, if
@@ -266,13 +280,8 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
         will return a DOSCollection with only the second item.
 
         """
-        query = set(info_selection.items())
-        matches = [data for data in self
-                   if not query.issubset(set(data.info.items()))]
-        if matches:
-            return type(self)(matches)
-        else:
-            return None
+        matches = self._select_to_list(self, info_selection, negative=True)
+        return type(self)(matches)
 
     def sum_by(self, *info_keys: str) -> 'DOSCollection':
         """Return a DOSCollection with some data summed by common attributes
@@ -319,18 +328,11 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
 
         # For each key/value combination, perform a select() to obtain all
         # the matching entries and sum them together.
-        collection_data = [self._sum_all_safely(self.select(**dict(combo)))
+        collection_data = [self.select(**dict(combo)).sum_all()
                            for combo in unique_combos]
         return type(self)(collection_data)
 
-    @staticmethod
-    def _sum_all_safely(selection: Optional['DOSCollection']) -> DOSData:
-        if selection is None:
-            raise ValueError("Something went wrong assembling sum groups")
-        else:
-            return selection.sum_all()
-
-    def __add__(self, other: Union['DOSCollection', DOSData, None]
+    def __add__(self, other: Union['DOSCollection', DOSData]
                 ) -> 'DOSCollection':
         """Join entries between two DOSCollection objects of the same type
 
@@ -347,41 +349,27 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
 
           DOSCollection([dosdata1, dosdata2])
 
-        It is also permitted to join a DOSCollection to None:
-
-          DOSCollection([dosdata1]) + None
-
-        will return
-
-          DOSCollection([dosdata1])
-
-        This behaviour is useful when combining query results from the select()
-        and select_not() methods.
-
         """
         return _add_to_collection(other, self)
 
 
 @singledispatch
-def _add_to_collection(other: DOSData,
+def _add_to_collection(other: DOSCollection,
                        collection: DOSCollection) -> DOSCollection:
     if isinstance(other, type(collection)):
         return type(collection)(list(collection) + list(other))
-    else:
+    elif isinstance(other, DOSCollection):
         raise TypeError("Only DOSCollection objects of the same type may "
                         "be joined with '+'.")
+    else:
+        raise TypeError("DOSCollection may only be joined to DOSData or "
+                        "DOSCollection objects with '+'.")
 
 
 @_add_to_collection.register(DOSData)
 def _add_data(other: DOSData, collection: DOSCollection) -> DOSCollection:
     """Return a new DOSCollection with an additional DOSData item"""
     return type(collection)(list(collection) + [other])
-
-
-@_add_to_collection.register(type(None))
-def _add_none(other: None, collection: DOSCollection) -> DOSCollection:
-    """Return the original collection if adding None"""
-    return collection
 
 
 class RawDOSCollection(DOSCollection):
@@ -394,9 +382,17 @@ class RawDOSCollection(DOSCollection):
 
 
 class GridDOSCollection(DOSCollection):
-    def __init__(self, dos_series: Iterable[GridDOSData]) -> None:
+    def __init__(self, dos_series: Iterable[GridDOSData],
+                 energies: Optional[Sequence[float]] = None) -> None:
         dos_list = list(dos_series)
-        self._energies = dos_list[0].get_energies()
+        if energies is None:
+            if len(dos_list) == 0:
+                raise ValueError("Must provide energies to create a "
+                                 "GridDOSCollection without any DOS data.")
+            self._energies = dos_list[0].get_energies()
+        else:
+            self._energies = np.asarray(energies)
+
         self._weights = np.empty((len(dos_list), len(self._energies)), float)
         self._info = []
 
@@ -467,3 +463,64 @@ class GridDOSCollection(DOSCollection):
         dos_collection._info = list(info)
 
         return dos_collection
+
+    def select(self, **info_selection: str) -> 'DOSCollection':
+        """Narrow GridDOSCollection to items with specified info
+
+        For example, if
+
+          dc = GridDOSCollection([GridDOSData(x, y1,
+                                              info={'a': '1', 'b': '1'}),
+                                  GridDOSData(x, y2,
+                                              info={'a': '2', 'b': '1'})])
+        then
+
+          dc.select(b='1')
+
+        will return an identical object to dc, while
+
+          dc.select(a='1')
+
+        will return a DOSCollection with only the first item and
+
+          dc.select(a='2', b='1')
+
+        will return a DOSCollection with only the second item.
+
+        """
+
+        matches = self._select_to_list(self, info_selection)
+        if len(matches) == 0:
+            return type(self)([], energies=self._energies)
+        else:
+            return type(self)(matches)
+
+    def select_not(self, **info_selection: str) -> 'DOSCollection':
+        """Narrow GridDOSCollection to items without specified info
+
+        For example, if
+
+          dc = GridDOSCollection([GridDOSData(x, y1,
+                                              info={'a': '1', 'b': '1'}),
+                                  GridDOSData(x, y2,
+                                              info={'a': '2', 'b': '1'})])
+        then
+
+          dc.select_not(b='2')
+
+        will return an identical object to dc, while
+
+          dc.select_not(a='2')
+
+        will return a DOSCollection with only the first item and
+
+          dc.select_not(a='1', b='1')
+
+        will return a DOSCollection with only the second item.
+
+        """
+        matches = self._select_to_list(self, info_selection, negative=True)
+        if len(matches) == 0:
+            return type(self)([], energies=self._energies)
+        else:
+            return type(self)(matches)

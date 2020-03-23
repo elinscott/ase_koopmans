@@ -61,7 +61,7 @@ class TestDOSCollection:
 
         if make_ax:
             _, ax = plt.subplots()
-            
+
             ax_out = mindoscollection.plot(npts=npts, ax=ax, mplargs=mplargs)
             assert ax_out == ax
         else:
@@ -82,14 +82,14 @@ class TestDOSCollection:
     # pytest plugin.
     def test_collection_equality(self, rawdos, another_rawdos):
         equality_data = [([], [], True),
-            ([rawdos], [rawdos], True),
-            ([rawdos, another_rawdos],
-             [rawdos, another_rawdos], True),
-            ([], [rawdos], False),
-            ([rawdos], [], False),
-            ([rawdos, another_rawdos], [rawdos], False),
-            ([rawdos, another_rawdos],
-             [another_rawdos, rawdos], False)]        
+                         ([rawdos], [rawdos], True),
+                         ([rawdos, another_rawdos],
+                          [rawdos, another_rawdos], True),
+                         ([], [rawdos], False),
+                         ([rawdos], [], False),
+                         ([rawdos, another_rawdos], [rawdos], False),
+                         ([rawdos, another_rawdos],
+                         [another_rawdos, rawdos], False)]
 
         for series_1, series_2, isequal in equality_data:
             assert (MinimalDOSCollection(series_1)
@@ -110,10 +110,10 @@ class TestDOSCollection:
         assert (dc + MinimalDOSCollection([another_rawdos])
                 )._almost_equals(dc + another_rawdos)
 
-        assert (dc + None)._almost_equals(dc)
-
         with pytest.raises(TypeError):
             MinimalDOSCollection([rawdos]) + YetAnotherDOSCollection([rawdos])
+        with pytest.raises(TypeError):
+            MinimalDOSCollection([rawdos]) + 'string'
 
     @pytest.mark.parametrize('options', [{'energies': [1., 1.1, 1.2],
                                           'width': 1.3,
@@ -161,6 +161,13 @@ class TestDOSCollection:
         energies, dos = dc.sample_grid(**options)
         for i, data in enumerate((rawdos, another_rawdos)):
             assert np.allclose(dos[i, :], data.sample_grid(**options)[1])
+
+    def test_sample_empty(self):
+        empty_dc = MinimalDOSCollection([])
+        with pytest.raises(IndexError):
+            empty_dc.sample(10)
+        with pytest.raises(IndexError):
+            empty_dc.sample_grid(10)
 
     @pytest.mark.parametrize('x, weights, bad_info',
                              [([1, 2, 4, 5],
@@ -269,25 +276,20 @@ class TestDOSCollection:
                             for info in select_info])
 
         if select_result is None:
-            assert dc.select(**select_query) is None
+            assert dc.select(**select_query)._almost_equals(DOSCollection([]))
         else:
             assert select_result == [data.info for data in
                                      dc.select(**select_query)]
 
         if select_not_result is None:
-            assert dc.select_not(**select_query) is None
+            assert (dc.select_not(**select_query)
+                    ._almost_equals(DOSCollection([])))
         else:
             assert select_not_result == [data.info for data in
                                          dc.select_not(**select_query)]
 
         assert sum_by_result == [data.info for data in
                                  dc.sum_by(*sorted(select_query.keys()))]
-
-    def test_internal_safe_sum(self, mindoscollection):
-        assert (DOSCollection._sum_all_safely(mindoscollection)
-                ._almost_equals(mindoscollection.sum_all()))
-        with pytest.raises(ValueError):
-            DOSCollection._sum_all_safely(None)
 
 
 class TestRawDOSCollection:
@@ -326,6 +328,22 @@ class TestGridDOSCollection:
             energies = np.linspace(1, 10, 6)
             GridDOSCollection([griddos,
                                GridDOSData(energies, np.sin(energies))])
+        with pytest.raises(ValueError):
+            GridDOSCollection([], energies=None)
+        with pytest.raises(ValueError):
+            GridDOSCollection([griddos], energies=np.linspace(1, 10, 6))
+
+    def test_select(self, griddos, another_griddos):
+        gdc = GridDOSCollection([griddos, another_griddos])
+        assert (gdc.select(my_key='my_value')
+                ._almost_equals(GridDOSCollection([griddos])))
+        assert (gdc.select(my_key='not_present')._almost_equals(
+            GridDOSCollection([], energies=griddos.get_energies())))
+        assert (gdc.select_not(my_key='my_value')
+                ._almost_equals(GridDOSCollection([another_griddos])))
+        assert (gdc.select(my_key='my_value').select_not(my_key='my_value')
+                ._almost_equals(
+                    GridDOSCollection([], energies=griddos.get_energies())))
 
     def test_sequence(self, griddos, another_griddos):
         gdc = GridDOSCollection([griddos, another_griddos])
