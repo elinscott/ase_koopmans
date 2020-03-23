@@ -30,13 +30,19 @@ class TestPlotManager:
     def xy_data(self):
         return ([1, 2], [3, 4])
 
-    def test_plot_manager_error(self):
+    def test_plot_manager_error(self, plt):
+        # Boot up a figure to help the oldlibs tests manage without graphics
+        plt.figure()
+
         with pytest.raises(AssertionError):
             with SimplePlottingAxes(ax=None, show=False, filename=None) as _:
                 raise AssertionError()
 
-    def test_plot_manager_no_file(self, xy_data):
+    def test_plot_manager_no_file(self, plt, xy_data):
         x, y = xy_data
+
+        # Boot up a figure to help the oldlibs tests manage without graphics
+        plt.figure()
 
         with SimplePlottingAxes(ax=None, show=False, filename=None) as ax:
             ax.plot(x, y)
