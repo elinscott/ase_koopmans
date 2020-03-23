@@ -2,7 +2,7 @@
 # towards replacing ase.dft.dos and ase.dft.pdos
 from abc import ABCMeta, abstractmethod
 import logging
-from typing import Any, Dict, Sequence, Tuple
+from typing import Any, Dict, Sequence, Tuple, TypeVar
 
 import numpy as np
 from ase.utils.plotting import SimplePlottingAxes
@@ -189,7 +189,44 @@ class DOSData(metaclass=ABCMeta):
                                  info.items()))
 
 
-class RawDOSData(DOSData):
+class GeneralDOSData(DOSData):
+    """Base class for a single series of DOS-like data
+
+    Only the 'info' is a mutable attribute; DOS data is set at init
+
+    This is the base class for DOSData objects that accept/set seperate
+    "energies" and "weights" sequences of equal length at init.
+
+    """
+    def __init__(self,
+                 energies: Sequence[float],
+                 weights: Sequence[float],
+                 info: Info = None) -> None:
+        super().__init__(info=info)
+
+        n_entries = len(energies)
+        if len(weights) != n_entries:
+            raise ValueError("Energies and weights must be the same length")
+
+        # Internally store the data as a np array with two rows; energy, weight
+        self._data = np.empty((2, n_entries), dtype=float, order='C')
+        self._data[0, :] = energies
+        self._data[1, :] = weights
+
+    def get_energies(self) -> np.ndarray:
+        return self._data[0, :].copy()
+
+    def get_weights(self) -> np.ndarray:
+        return self._data[1, :].copy()
+
+    D = TypeVar('D', bound='GeneralDOSData')
+
+    def copy(self: D) -> D:  # noqa F821
+        return type(self)(self.get_energies(), self.get_weights(),
+                          info=self.info.copy())
+
+
+class RawDOSData(GeneralDOSData):
     """A collection of weighted delta functions which sum to form a DOS
 
     This is an appropriate data container for density-of-states (DOS) or
@@ -222,30 +259,6 @@ class RawDOSData(DOSData):
     RawDOSData([x1, x2], [y1, y2], info={'symbol': 'O'})
 
     """
-    def __init__(self,
-                 energies: Sequence[float],
-                 weights: Sequence[float],
-                 info: Info = None) -> None:
-        super().__init__(info=info)
-
-        n_entries = len(energies)
-        if len(weights) != n_entries:
-            raise ValueError("Energies and weights must be the same length")
-
-        # Internally store the data as a np array with two rows; energy, weight
-        self._data = np.empty((2, n_entries), dtype=float, order='C')
-        self._data[0, :] = energies
-        self._data[1, :] = weights
-
-    def get_energies(self) -> np.ndarray:
-        return self._data[0, :].copy()
-
-    def get_weights(self) -> np.ndarray:
-        return self._data[1, :].copy()
-
-    def copy(self) -> 'RawDOSData':
-        return type(self)(self.get_energies(), self.get_weights(),
-                          info=self.info.copy())
 
     def __add__(self, other: 'RawDOSData') -> 'RawDOSData':
         if not isinstance(other, RawDOSData):
@@ -293,7 +306,7 @@ class RawDOSData(DOSData):
         return ax
 
 
-class GridDOSData(DOSData):
+class GridDOSData(GeneralDOSData):
     """A collection of regularly-sampled data which represents a DOS
 
     This is an appropriate data container for density-of-states (DOS) or
@@ -330,8 +343,6 @@ class GridDOSData(DOSData):
                  energies: Sequence[float],
                  weights: Sequence[float],
                  info: Info = None) -> None:
-        super().__init__(info=info)
-
         n_entries = len(energies)
         if not np.allclose(energies,
                            np.linspace(energies[0], energies[-1], n_entries)):
@@ -340,22 +351,8 @@ class GridDOSData(DOSData):
         if len(weights) != n_entries:
             raise ValueError("Energies and weights must be the same length")
 
-        # Internally store the data as a np array with two rows; energy, weight
-        self._data = np.empty((2, n_entries), dtype=float, order='C')
-        self._data[0, :] = energies
-        self._data[1, :] = weights
-
+        super().__init__(energies, weights, info=info)
         self.sigma_cutoff = 3
-
-    def get_energies(self) -> np.ndarray:
-        return self._data[0, :].copy()
-
-    def get_weights(self) -> np.ndarray:
-        return self._data[1, :].copy()
-
-    def copy(self) -> 'GridDOSData':
-        return type(self)(self.get_energies(), self.get_weights(),
-                          info=self.info.copy())
 
     def _check_spacing(self, width):
         current_spacing = self._data[0, 1] - self._data[0, 0]
@@ -384,7 +381,7 @@ class GridDOSData(DOSData):
         if len(self._data[0, :]) != len(other.get_energies()):
             raise ValueError("Cannot add GridDOSData objects with different-"
                              "length energy grids.")
-            
+
         if not np.allclose(self._data[0, :], other.get_energies()):
             raise ValueError("Cannot add GridDOSData objects with different "
                              "energy grids.")

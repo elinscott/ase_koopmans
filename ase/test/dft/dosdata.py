@@ -81,7 +81,7 @@ class TestRawDosData:
 
     @pytest.mark.parametrize('other', [True, 1, 0.5, 'string'])
     def test_equality_wrongtype(self, sparse_dos, other):
-        assert sparse_dos != other
+        assert not sparse_dos._almost_equals(other)
 
     equality_data = [(((1., 2.), (3., 4.), {'symbol': 'H'}),
                       ((1., 2.), (3., 4.), {'symbol': 'H'}),
