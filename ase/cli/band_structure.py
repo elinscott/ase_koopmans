@@ -88,13 +88,13 @@ def atoms2bandstructure(atoms, parser, args):
                             '\nMaybe you want its special path:'
                             ' {}'.format(cs, kptpath))
                 parser.error(err)
-        bz2ibz = calc.get_bz_to_ibz_map()
+            bz2ibz = calc.get_bz_to_ibz_map()
 
-        path_kpts = bandpath(args.path, atoms.cell, args.points)[0]
-        icell = atoms.get_reciprocal_cell()
-        eps = monkhorst_pack_interpolate(path_kpts, eps.transpose(1, 0, 2),
-                                         icell, bz2ibz, size, offset)
-        eps = eps.transpose(1, 0, 2)
+            path_kpts = bandpath(args.path, atoms.cell, args.points)[0]
+            icell = atoms.get_reciprocal_cell()
+            eps = monkhorst_pack_interpolate(path_kpts, eps.transpose(1, 0, 2),
+                                             icell, bz2ibz, size, offset)
+            eps = eps.transpose(1, 0, 2)
 
     special_points = get_special_points(cell)
     path = BandPath(atoms.cell, kpts=path_kpts,
