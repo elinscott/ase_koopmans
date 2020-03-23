@@ -5,7 +5,7 @@ import logging
 from typing import Any, Dict, Sequence, Tuple
 
 import numpy as np
-from ase.dft.dosutils import SimplePlottingAxes
+from ase.utils.plotting import SimplePlottingAxes
 
 # This import is for the benefit of type-checking / mypy
 if False:

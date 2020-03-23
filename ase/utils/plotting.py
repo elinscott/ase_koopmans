@@ -1,4 +1,3 @@
-"""Utility functions to support DOSData and DOSCollection objects"""
 from typing import Optional
 
 # This import is for the benefit of type-checking / mypy
@@ -16,7 +15,7 @@ class SimplePlottingAxes:
         self.show = show
         self.filename = filename
         self.figure = None  # type: Optional[matplotlib.figure.Figure]
-        
+
     def __enter__(self) -> 'matplotlib.axes.Axes':
         if self.ax is None:
             import matplotlib.pyplot as plt
@@ -25,11 +24,18 @@ class SimplePlottingAxes:
             self.figure = self.ax.get_figure()
 
         return self.ax
-            
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        if self.figure is None:
-            raise Exception("Did not initialize matplotlib figure properly")
-        if self.show:
-            self.figure.show()
-        if self.filename is not None:
-            self.figure.savefig(self.filename)
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> Optional[bool]:
+        if exc_type is None:
+            # If there was no exception, display/write the plot as appropriate
+            if self.figure is None:
+                raise Exception("Something went wrong initializing matplotlib "
+                                "figure")
+            if self.show:
+                self.figure.show()
+            if self.filename is not None:
+                self.figure.savefig(self.filename)
+
+        else:
+            # Raise any exception from inside the block
+            return False

@@ -6,7 +6,7 @@ from typing import (Any, Iterable, Optional,
 
 import numpy as np
 from ase.dft.dosdata import DOSData, RawDOSData, GridDOSData, Info
-from ase.dft.dosutils import SimplePlottingAxes
+from ase.utils.plotting import SimplePlottingAxes
 
 # This import is for the benefit of type-checking / mypy
 if False:
