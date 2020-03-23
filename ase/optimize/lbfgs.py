@@ -2,7 +2,7 @@ import numpy as np
 
 from ase.optimize.optimize import Optimizer
 from ase.utils.linesearch import LineSearch
-from ase.optimize import defaults
+from ase.optimize.defaults import defaults
 
 
 class LBFGS(Optimizer):

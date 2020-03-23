@@ -1,13 +1,13 @@
 import warnings
 import numpy as np
 
+from ase.optimize.defaults import defaults
 from ase.optimize.optimize import Optimizer
-from ase.optimize import defaults
 
 
 class FIRE(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 dt=None, maxstep=None, maxmove=None, dtmax=1.0, Nmin=5,
+                 dt=0.1, maxstep=None, maxmove=None, dtmax=1.0, Nmin=5,
                  finc=1.1, fdec=0.5,
                  astart=0.1, fa=0.99, a=0.1, master=None, downhill_check=False,
                  position_reset_callback=None, force_consistent=None):
@@ -55,10 +55,7 @@ class FIRE(Optimizer):
         Optimizer.__init__(self, atoms, restart, logfile, trajectory,
                            master, force_consistent=force_consistent)
 
-        if dt is not None:
-            self.dt = dt
-        else:
-            self.dt = defaults.dt
+        self.dt = dt
 
         self.Nsteps = 0
 

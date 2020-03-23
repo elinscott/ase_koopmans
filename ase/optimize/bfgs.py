@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import eigh
 
 from ase.optimize.optimize import Optimizer
-from ase.optimize import defaults
+from ase.optimize.defaults import defaults
 
 
 class BFGS(Optimizer):

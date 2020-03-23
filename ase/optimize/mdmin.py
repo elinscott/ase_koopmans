@@ -1,6 +1,6 @@
 import numpy as np
 
-from ase.optimize import defaults
+from ase.optimize.defaults import defaults
 from ase.optimize.optimize import Optimizer
 
 
@@ -36,7 +36,7 @@ class MDMin(Optimizer):
         if dt is not None:
             self.dt = dt
         else:
-            self.dt = defaults.dt
+            self.dt = defaults.mdmin.dt
 
     def initialize(self):
         self.v = None
