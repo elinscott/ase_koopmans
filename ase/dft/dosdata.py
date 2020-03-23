@@ -66,7 +66,8 @@ class DOSData(metaclass=ABCMeta):
                         smearing=smearing))
         return weights_grid
 
-    def __eq__(self, other: Any) -> bool:
+    def _almost_equals(self, other: Any) -> bool:
+        """Compare with another DOSData for testing purposes"""
         if not isinstance(other, type(self)):
             return False
         elif not self.info == other.info:

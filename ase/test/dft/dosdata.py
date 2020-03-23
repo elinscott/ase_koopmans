@@ -105,7 +105,8 @@ class TestRawDosData:
     @pytest.mark.parametrize('data_1, data_2, isequal', equality_data)
     def test_equality(self, data_1, data_2, isequal):
         assert (RawDOSData(*data_1[:2], info=data_1[2])
-                == RawDOSData(*data_2[:2], info=data_2[2])) == isequal
+                ._almost_equals(RawDOSData(*data_2[:2], info=data_2[2]))
+                ) == isequal
 
     def test_addition(self, sparse_dos, another_sparse_dos):
         summed_dos = sparse_dos + another_sparse_dos

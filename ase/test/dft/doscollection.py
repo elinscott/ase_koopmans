@@ -72,41 +72,45 @@ class TestDOSCollection:
 
     def test_slicing(self, rawdos, another_rawdos):
         dc = MinimalDOSCollection([rawdos, another_rawdos, rawdos])
-        assert dc[1:] == MinimalDOSCollection([another_rawdos, rawdos])
-        assert dc[:-1] == MinimalDOSCollection([rawdos, another_rawdos])
+        assert dc[1:]._almost_equals(
+            MinimalDOSCollection([another_rawdos, rawdos]))
+        assert dc[:-1]._almost_equals(
+            MinimalDOSCollection([rawdos, another_rawdos]))
 
-    equality_data = [([], [], True),
-                     ([rawdos], [rawdos], True),
-                     ([rawdos, another_rawdos],
-                      [rawdos, another_rawdos], True),
-                     ([], [rawdos], False),
-                     ([rawdos], [], False),
-                     ([rawdos, another_rawdos], [rawdos], False),
-                     ([rawdos, another_rawdos],
-                      [another_rawdos, rawdos], False)]
+    # It would be much nicer if this test could be done with parameterization,
+    # but creating equality_data as a parameter list requires the lazy_fixtures
+    # pytest plugin.
+    def test_collection_equality(self, rawdos, another_rawdos):
+        equality_data = [([], [], True),
+            ([rawdos], [rawdos], True),
+            ([rawdos, another_rawdos],
+             [rawdos, another_rawdos], True),
+            ([], [rawdos], False),
+            ([rawdos], [], False),
+            ([rawdos, another_rawdos], [rawdos], False),
+            ([rawdos, another_rawdos],
+             [another_rawdos, rawdos], False)]        
 
-    @pytest.mark.parametrize('series_1, series_2, isequal', equality_data)
-    def test_collection_equality(self, rawdos, another_rawdos,
-                                 series_1, series_2, isequal):
-        assert (MinimalDOSCollection(series_1)
-                == MinimalDOSCollection(series_2)) == isequal
+        for series_1, series_2, isequal in equality_data:
+            assert (MinimalDOSCollection(series_1)
+                    ._almost_equals(MinimalDOSCollection(series_2)) == isequal)
 
     @pytest.mark.parametrize('other', [True, 1, 0.5, 'string', rawdos])
     def test_equality_wrongtype(self, rawdos, other):
-        assert not MinimalDOSCollection([rawdos]) == other
+        assert not MinimalDOSCollection([rawdos])._almost_equals(other)
 
     def test_addition(self, rawdos, another_rawdos):
         dc = MinimalDOSCollection([rawdos])
 
         double_dc = dc + dc
         assert len(double_dc) == 2
-        assert double_dc[0] == rawdos
-        assert double_dc[1] == rawdos
+        assert double_dc[0]._almost_equals(rawdos)
+        assert double_dc[1]._almost_equals(rawdos)
 
         assert (dc + MinimalDOSCollection([another_rawdos])
-                == dc + another_rawdos)
+                )._almost_equals(dc + another_rawdos)
 
-        assert (dc + None) == dc
+        assert (dc + None)._almost_equals(dc)
 
         with pytest.raises(TypeError):
             MinimalDOSCollection([rawdos]) + YetAnotherDOSCollection([rawdos])
@@ -281,7 +285,7 @@ class TestDOSCollection:
 
     def test_internal_safe_sum(self, mindoscollection):
         assert (DOSCollection._sum_all_safely(mindoscollection)
-                == mindoscollection.sum_all())
+                ._almost_equals(mindoscollection.sum_all()))
         with pytest.raises(ValueError):
             DOSCollection._sum_all_safely(None)
 
@@ -329,14 +333,16 @@ class TestGridDOSCollection:
         for i, (coll_dosdata, dosdata) in enumerate(zip(gdc,
                                                         [griddos,
                                                          another_griddos])):
-            assert coll_dosdata == dosdata
-            assert gdc[i] == dosdata
+            assert coll_dosdata._almost_equals(dosdata)
+            assert gdc[i]._almost_equals(dosdata)
 
     def test_slicing(self, griddos, another_griddos):
         gdc = GridDOSCollection([griddos, another_griddos, griddos])
 
-        assert gdc[1:] == GridDOSCollection([another_griddos, griddos])
-        assert gdc[:-1] == GridDOSCollection([griddos, another_griddos])
+        assert gdc[1:]._almost_equals(
+            GridDOSCollection([another_griddos, griddos]))
+        assert gdc[:-1]._almost_equals(
+            GridDOSCollection([griddos, another_griddos]))
 
         with pytest.raises(TypeError):
             gdc['string']

@@ -188,13 +188,14 @@ class DOSCollection(collections.abc.Sequence, metaclass=ABCMeta):
     def __len__(self) -> int:
         return len(self._data)
 
-    def __eq__(self, other: Any) -> bool:
+    def _almost_equals(self, other: Any) -> bool:
+        """Compare with another DOSCollection for testing purposes"""
         if not isinstance(other, type(self)):
             return False
         elif not len(self) == len(other):
             return False
         else:
-            return all([a == b for a, b in zip(self, other)])
+            return all([a._almost_equals(b) for a, b in zip(self, other)])
 
     def total(self) -> DOSData:
         """Sum all the DOSData in this Collection and label it as 'Total'"""
