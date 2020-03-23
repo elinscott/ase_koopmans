@@ -132,6 +132,9 @@ def main(args, parser):
     fig = plt.gcf()
     fig.canvas.set_window_title(args.calculation)
     ax = fig.gca()
-    bs.plot(ax=ax, filename=args.output, emin=emin, emax=emax)
+    bs.plot(ax=ax,
+            filename=args.output,
+            emin=emin + bs.reference,
+            emax=emax + bs.reference)
     if args.output is None:
         plt.show()
