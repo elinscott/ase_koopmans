@@ -27,5 +27,5 @@ def test_emt1():
 
 
     qn.attach(f)
-    qn.run(fmax=0.01)
+    qn.run(fmax=0.001)
     assert abs(cu.get_distance(0, 1) - d0) < 1e-14
