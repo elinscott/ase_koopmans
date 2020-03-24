@@ -70,7 +70,7 @@ def test_qmmm_tip4p():
             bonds=[(r, (0, 1)), (r, (0, 2)),
                    (r, (3, 4)), (r, (3, 5))],
             angles=[(a, (2, 0, 1)), (a, (5, 3, 4))])
-        opt = BFGS(dimer,
+        opt = BFGS(dimer, maxstep=0.04,
                    trajectory=calc.name + '.traj', logfile=calc.name + 'd.log')
         opt.run(0.01)
 

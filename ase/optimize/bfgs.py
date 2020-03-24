@@ -4,11 +4,12 @@ import numpy as np
 from numpy.linalg import eigh
 
 from ase.optimize.optimize import Optimizer
+from ase.optimize.defaults import defaults
 
 
 class BFGS(Optimizer):
     def __init__(self, atoms, restart=None, logfile='-', trajectory=None,
-                 maxstep=0.04, master=None):
+                 maxstep=None, master=None):
         """BFGS optimizer.
 
         Parameters:
@@ -30,16 +31,20 @@ class BFGS(Optimizer):
 
         maxstep: float
             Used to set the maximum distance an atom can move per
-            iteration (default value is 0.04 Å).
+            iteration (default value is 0.2 Å).
 
         master: boolean
             Defaults to None, which causes only rank 0 to save files.  If
             set to true,  this rank will save files.
         """
-        if maxstep > 1.0:
+        if maxstep is not None:
+            self.maxstep = maxstep
+        else:
+            self.maxstep = defaults.maxstep
+
+        if self.maxstep > 1.0:
             warnings.warn('You are using a much too large value for '
                           'the maximum step size: %.1f Å' % maxstep)
-        self.maxstep = maxstep
 
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master)
 

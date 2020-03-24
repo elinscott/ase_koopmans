@@ -5,14 +5,14 @@ def test_qmmm_acn():
     from ase import Atoms
     from ase.calculators.acn import (ACN, m_me, r_cn, r_mec,
                                      sigma_me, sigma_c, sigma_n,
-                                     epsilon_me, epsilon_c, epsilon_n) 
+                                     epsilon_me, epsilon_c, epsilon_n)
     from ase.calculators.qmmm import SimpleQMMM, LJInteractionsGeneral, EIQMMM
     from ase.constraints import FixLinearTriatomic
     from ase.optimize import BFGS
 
-    # From https://www.sciencedirect.com/science/article/pii/S0166128099002079 
+    # From https://www.sciencedirect.com/science/article/pii/S0166128099002079
     eref = 4.9 * units.kcal / units.mol
-    dref = 3.368 
+    dref = 3.368
     aref = 79.1
 
     sigma = np.array([sigma_me, sigma_c, sigma_n])
@@ -43,7 +43,7 @@ def test_qmmm_acn():
 
         dimer.set_constraint(fixd)
 
-        opt = BFGS(dimer, 
+        opt = BFGS(dimer, maxstep=0.04,
                    trajectory=calc.name + '.traj', logfile=calc.name + 'd.log')
         opt.run(0.001, steps=1000)
 
