@@ -62,7 +62,7 @@ main:
   coverage: '/TOTAL.+ ([0-9]+\.[0-9]+%)/'
   artifacts:
     paths:
-      - coverage-html/
+      - ase/test/coverage-html/
 
 
 # Currently (2019-07-26) facing a problem where PATH does not include
@@ -133,7 +133,7 @@ pages:
   dependencies:
     - main
   script:
-    - mv coverage-html public
+    - mv ase/test/coverage-html public
   artifacts:
     paths:
       - public
