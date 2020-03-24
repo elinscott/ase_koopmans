@@ -33,12 +33,18 @@ def use_tmp_workdir(tmp_path):
 
 
 @pytest.fixture(scope='session')
-def plt():
+def tkinter():
+    import tkinter
     try:
-        import matplotlib
-    except ImportError:
-        raise pytest.skip('no matplotlib')
-    matplotlib.use('Agg', warn=False)
+        tkinter.Tk()
+    except tkinter.TclError as err:
+        pytest.skip('no tkinter: {}'.format(err))
+
+
+@pytest.fixture(scope='session')
+def plt(tkinter):
+    matplotlib = pytest.importorskip('matplotlib')
+    matplotlib.use('Agg')
 
     import matplotlib.pyplot as plt
     return plt
@@ -49,3 +55,8 @@ def figure(plt):
     fig = plt.figure()
     yield fig
     plt.close(fig)
+
+
+@pytest.fixture(scope='session')
+def psycopg2():
+    return pytest.importorskip('psycopg2')

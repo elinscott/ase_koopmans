@@ -2,9 +2,7 @@ import numpy as np
 
 import ase.units as u
 from ase.vibrations.resonant_raman import ResonantRaman
-
-# XXX remove gpaw dependence
-from gpaw.lrtddft.spectrum import polarizability
+from ase.calculators.excitation_list import polarizability
 
 
 class Placzek(ResonantRaman):
@@ -17,6 +15,7 @@ class Placzek(ResonantRaman):
         raise ValueError('Approximation can not be set.')
 
     def read_excitations(self):
+        """Read excitations from files written"""
         self.ex0E_p = None  # mark as read
         self.exm_r = []
         self.exp_r = []

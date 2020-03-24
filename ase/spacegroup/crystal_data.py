@@ -1,7 +1,7 @@
 from ase.lattice import bravais_classes
 
 
-_lattice_system = ('Øaammmmmmmmmmmmmoooooooooooooooooooooooooooooooooooooooooo'
+_crystal_family = ('Øaammmmmmmmmmmmmoooooooooooooooooooooooooooooooooooooooooo'
                    'ooooooooooooooooottttttttttttttttttttttttttttttttttttttttt'
                    'ttttttttttttttttttttttttttthhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh'
                    'hhhhhhhhhhhhhhhhhhhhhcccccccccccccccccccccccccccccccccccc')
@@ -65,7 +65,7 @@ def validate_space_group(sg):
 
 def get_bravais_class(sg):
     sg = validate_space_group(sg)
-    pearson_symbol = _lattice_system[sg] + _lattice_centering[sg]
+    pearson_symbol = _crystal_family[sg] + _lattice_centering[sg]
     return bravais_classes[pearson_symbol]
 
 

@@ -56,6 +56,7 @@ def _calculate(spec, name):
         inputs('octopus', stdout="'stdout.log'", stderr="'stderr.log'"),
         inputs('openmx', energy_cutoff=350),
         inputs('gamess_us', label='ch4'),
+        inputs('gaussian', xc='lda', basis='3-21G'),
         pytest.param(inputs('siesta'), marks=pytest.mark.xfail),
     ],
     ids=lambda spec: spec.name)

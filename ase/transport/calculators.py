@@ -398,8 +398,8 @@ class TransportCalculator:
         ht_mm, st_mm, c_mm, e_m = subdiagonalize(h_mm, s_mm, bfs)
         if apply:
             self.uptodate = False
-            h_mm[:] = ht_mm
-            s_mm[:] = st_mm
+            h_mm[:] = ht_mm.real
+            s_mm[:] = st_mm.real
             # Rotate coupling between lead and central region
             for alpha, sigma in enumerate(self.selfenergies):
                 sigma.h_im[:] = np.dot(sigma.h_im, c_mm)

@@ -24,7 +24,9 @@ doc/ase/io/formatoptions.rst
 # Translation template
 ase/gui/po/ag.pot
 
-# Pytest
+# Pytest and code coverage:
 .cache
+.coverage
+coverage-html
 
 .mypy_cache

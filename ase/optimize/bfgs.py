@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import eigh
 
 from ase.optimize.optimize import Optimizer
-import ase.optimize.defaults as defaults 
+from ase.optimize.defaults import defaults
 
 
 class BFGS(Optimizer):
@@ -37,13 +37,14 @@ class BFGS(Optimizer):
             Defaults to None, which causes only rank 0 to save files.  If
             set to true,  this rank will save files.
         """
-        if maxstep > 1.0:
+        if maxstep is not None:
+            self.maxstep = maxstep
+        else:
+            self.maxstep = defaults.maxstep
+
+        if self.maxstep > 1.0:
             warnings.warn('You are using a much too large value for '
                           'the maximum step size: %.1f Å' % maxstep)
-        if maxstep is not None: 
-            self.maxstep = maxstep 
-        else:  
-            self.maxstep = defaults.maxstep
 
         Optimizer.__init__(self, atoms, restart, logfile, trajectory, master)
 
