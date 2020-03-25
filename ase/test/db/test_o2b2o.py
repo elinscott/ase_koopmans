@@ -1,5 +1,4 @@
 import pickle
-import sys
 from ase.db.core import object_to_bytes, bytes_to_object
 from ase.cell import Cell
 import numpy as np
