@@ -60,7 +60,7 @@ def disable_calculators(names):
             cls.__del__ = mock_del
 
 
-def cli(command, calculator_name=None):
+def runshellcommand(command, calculator_name=None):
     if (calculator_name is not None and
         calculator_name not in test_calculator_names):
         return

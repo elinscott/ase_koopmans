@@ -2,6 +2,7 @@ import os
 import pytest
 from ase.utils import workdir
 from pathlib import Path
+from subprocess import Popen, PIPE
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -60,3 +61,26 @@ def figure(plt):
 @pytest.fixture(scope='session')
 def psycopg2():
     return pytest.importorskip('psycopg2')
+
+
+class CLI:
+    def ase(self, args):
+        if isinstance(args, str):
+            import shlex
+            args = shlex.split(args)
+
+        proc = Popen(['ase', '-T'] + args,
+                     stdout=PIPE, stdin=PIPE)
+        stdout, _ = proc.communicate(b'')
+        status = proc.wait()
+        assert status == 0
+        return stdout.decode('utf-8')
+
+    def shell(self, command, calculator_name=None):
+        from ase.test.testsuite import runshellcommand
+        runshellcommand(command, calculator_name=calculator_name)
+
+
+@pytest.fixture
+def cli():
+    return CLI()

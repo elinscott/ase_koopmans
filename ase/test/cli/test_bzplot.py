@@ -7,18 +7,6 @@ from ase.build import bulk, fcc111
 from ase.io import write
 
 
-class CLI:
-    def __call__(self, args):
-        proc = Popen(['ase', '-T'] + args)
-        status = proc.wait()
-        assert status == 0
-
-
-@pytest.fixture
-def cli():
-    return CLI()
-
-
 @pytest.fixture(
     params=[
         bulk('Ti'),
@@ -36,4 +24,4 @@ def file(request):
 
 
 def test_bzplot(cli, file):
-    cli(['reciprocal', file, 'bandpath.svg'])
+    cli.ase(['reciprocal', file, 'bandpath.svg'])
