@@ -21,5 +21,5 @@ def file(request):
     return file
 
 
-def test_bzplot(cli, file, matplotlib):
+def test_bzplot(cli, file, plt):
     cli.ase(['reciprocal', file, 'bandpath.svg'])
