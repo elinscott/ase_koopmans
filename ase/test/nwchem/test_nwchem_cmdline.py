@@ -1,18 +1,15 @@
-from ase.test import cli, require
 from ase.db import connect
 from ase.io.jsonio import read_json
 from ase.io import read
 from numpy.testing import assert_allclose
 
-def test_cmdline():
-    require('nwchem')
-
-
-    cli("""\
+def test_cmdline(cli):
+    cli.shell("""\
 ase build O O.traj &&
 ase run nwchem O.traj -o nwchem_cmdline.json &&
 ase build O2 O2.traj &&
-ase run nwchem O2.traj -o nwchem_cmdline.json""")
+ase run nwchem O2.traj -o nwchem_cmdline.json""",
+    'nwchem')
     c = connect('nwchem_cmdline.json')
     dct = read_json('nwchem_cmdline.json')
     for name in ['O2', 'O']:

@@ -59,10 +59,11 @@ def disable_calculators(names):
             cls.__del__ = mock_del
 
 
-def cli(command, calculator_name=None):
+def runshellcommand(command, calculator_name=None):
     if (calculator_name is not None and
         calculator_name not in test_calculator_names):
-        return
+        import pytest
+        pytest.skip(f'Not available: {calculator_name}')
     actual_command = ' '.join(command.split('\n')).strip()
     proc = Popen(actual_command,
                  shell=True,
@@ -278,6 +279,8 @@ class CLICommand:
         #
         # This is because some ASE modules were already imported and
         # would interfere with code coverage measurement.
+        # (Flush so we don't get our stream mixed with the pytest output)
+        sys.stdout.flush()
         proc = Popen([sys.executable, '-m', 'pytest'] + pytest_args,
                      cwd=str(testdir))
         exitcode = proc.wait()
