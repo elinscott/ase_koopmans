@@ -1,7 +1,3 @@
-import re
-import pytest
-
-
 def test_info(cli):
     assert 'numpy' in cli.ase('info')
 

@@ -1,5 +1,3 @@
-from subprocess import Popen
-
 import pytest
 
 from ase import Atoms
