@@ -63,6 +63,7 @@ def disable_calculators(names):
 def runshellcommand(command, calculator_name=None):
     if (calculator_name is not None and
         calculator_name not in test_calculator_names):
+        import pytest
         pytest.skip(f'Not available: {calculator_name}')
     actual_command = ' '.join(command.split('\n')).strip()
     proc = Popen(actual_command,
