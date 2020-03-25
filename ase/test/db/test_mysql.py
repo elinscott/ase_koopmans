@@ -1,54 +1,54 @@
-from ase.test import must_raise
-import unittest
-try:
-    import pymysql
-    _ = pymysql  # Suppress unused import warning
-except ImportError:
-    raise unittest.SkipTest('No MySQL module')
-
-
-from ase.db import connect
-from ase import Atoms
-from ase.calculators.emt import EMT
-from ase.build import molecule
 import os
 
-ON_CI_SERVER = 'CI_PROJECT_DIR' in os.environ.keys()
+import pytest
 
-if ON_CI_SERVER:
-    URL = 'mysql://root:ase@mysql:3306/testase_mysql'
-    # HOST = 'mysql'
-    # USER = 'root'
-    # PASSWD = 'ase'
-    # DB_NAME = 'testase_mysql'
-else:
-    URL = os.environ.get('MYSQL_DB_URL')
-    # HOST = os.environ.get('MYSQL_HOST', None)
-    # USER = os.environ.get('MYSQL_USER', None)
-    # PASSWD = os.environ.get('MYSQL_PASSWD', None)
-    # DB_NAME = os.environ.get('MYSQL_DB_NAME', None)
-
-if URL is None:
-    raise unittest.SkipTest('Not on GitLab CI server. To run this test '
-                            'host, username, password and database name '
-                            'must be in the environment variables '
-                            'MYSQL_HOST, MYSQL_USER, MYSQL_PASSWD and '
-                            'MYSQL_DB_NAME, respectively.')
+from ase.db import connect
+from ase.calculators.emt import EMT
+from ase.build import molecule
 
 
-def full_db_name():
-    return URL
+@pytest.fixture(scope='module')
+def url():
+    pytest.importorskip('pymysql')
+    ON_CI_SERVER = 'CI_PROJECT_DIR' in os.environ
+
+    if ON_CI_SERVER:
+        URL = 'mysql://root:ase@mysql:3306/testase_mysql'
+        # HOST = 'mysql'
+        # USER = 'root'
+        # PASSWD = 'ase'
+        # DB_NAME = 'testase_mysql'
+    else:
+        URL = os.environ.get('MYSQL_DB_URL')
+        # HOST = os.environ.get('MYSQL_HOST', None)
+        # USER = os.environ.get('MYSQL_USER', None)
+        # PASSWD = os.environ.get('MYSQL_PASSWD', None)
+        # DB_NAME = os.environ.get('MYSQL_DB_NAME', None)
+
+    if URL is None:
+        pytest.skip('Not on GitLab CI server. To run this test '
+                    'host, username, password and database name '
+                    'must be in the environment variables '
+                    'MYSQL_HOST, MYSQL_USER, MYSQL_PASSWD and '
+                    'MYSQL_DB_NAME, respectively.')
 
 
-def test_connect():
-    db = connect(full_db_name())
+@pytest.fixture
+def db(url):
+    return connect(url)
+
+
+@pytest.fixture
+def h2o():
+    return molecule('H2O')
+
+
+def test_connect(db):
     db.delete([row.id for row in db.select()])
 
 
-def test_write_read():
-    db = connect(full_db_name())
-
-    co = Atoms('CO', positions=[(0, 0, 0), (0, 0, 1.1)])
+def test_write_read(db):
+    co = molecule('CO')
     uid = db.write(co, tag=1, type='molecule')
 
     co_db = db.get(id=uid)
@@ -61,10 +61,7 @@ def test_write_read():
     assert co_db.type == 'molecule'
 
 
-def test_write_read_with_calculator():
-    db = connect(full_db_name())
-
-    h2o = molecule('H2O')
+def test_write_read_with_calculator(db, h2o):
     calc = EMT(dummy_param=2.4)
     h2o.set_calculator(calc)
 
@@ -79,11 +76,7 @@ def test_write_read_with_calculator():
     db.get_atoms(H=2)
 
 
-def test_update():
-    db = connect(full_db_name())
-
-    h2o = molecule('H2O')
-
+def test_update(db, h2o):
     uid = db.write(h2o, type='molecule')
     db.update(id=uid, type='oxide')
 
@@ -92,24 +85,18 @@ def test_update():
     assert atoms_type == 'oxide'
 
 
-def test_delete():
-    db = connect(full_db_name())
-
-    h2o = molecule('H2O')
+def test_delete(db, h2o):
     uid = db.write(h2o, type='molecule')
 
     # Make sure that we can get the value
     db.get(id=uid)
     db.delete([uid])
 
-    with must_raise(KeyError):
+    with pytest.raises(KeyError):
         db.get(id=uid)
 
 
-def test_read_write_bool_key_value_pair():
-    db = connect(full_db_name())
-    h2o = molecule('H2O')
-
+def test_read_write_bool_key_value_pair(db, h2o):
     # Make sure we can read and write boolean key value pairs
     uid = db.write(h2o, is_water=True, is_solid=False)
     row = db.get(id=uid)
