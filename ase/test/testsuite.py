@@ -280,6 +280,8 @@ class CLICommand:
         #
         # This is because some ASE modules were already imported and
         # would interfere with code coverage measurement.
+        # (Flush so we don't get our stream mixed with the pytest output)
+        sys.stdout.flush()
         proc = Popen([sys.executable, '-m', 'pytest'] + pytest_args,
                      cwd=str(testdir))
         exitcode = proc.wait()
