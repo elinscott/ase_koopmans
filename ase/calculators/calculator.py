@@ -491,7 +491,7 @@ class Calculator(object):
                                  'directory="{}" and label="{}".  '
                                  'Please omit "/" in label.'
                                  .format(directory, label))
-            self.set_label(label)
+            self.label = '/'.join((directory, label))
 
         if self.parameters is None:
             # Use default parameters if they were not read from file:
