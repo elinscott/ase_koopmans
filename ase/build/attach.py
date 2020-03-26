@@ -1,12 +1,22 @@
 import numpy as np
 
+from ase.parallel import world
 
-def random_unit_vector():
-    """Random unit vector equally distributed on the sphere"""
+
+def random_unit_vector(comm=world):
+    """Random unit vector equally distributed on the sphere
+
+    Parameter:
+    ----------
+
+"""
     ct = -1 + 2 * np.random.rand()
     phi = 2 * np.pi * np.random.rand()
     st = np.sqrt(1 - ct**2)
-    return np.array([st * np.cos(phi), st * np.sin(phi), ct])
+    uvec = np.array([st * np.cos(phi), st * np.sin(phi), ct])
+    if comm:
+        comm.broadcast(uvec, 0)
+    return uvec
 
 
 def nearest(atoms1, atoms2):
