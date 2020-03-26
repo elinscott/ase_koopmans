@@ -1,6 +1,5 @@
 import pytest
 import os
-from ase.test import cli
 from ase.db import connect
 
 cmd = """
@@ -24,7 +23,7 @@ names = ['testase.json',
 
 @pytest.mark.slow
 @pytest.mark.parametrize('name', names)
-def test_db(name):
+def test_db(name, cli):
     def count(n, *args, **kwargs):
         m = len(list(con.select(columns=['id'], *args, **kwargs)))
         assert m == n, (m, n)
@@ -60,7 +59,7 @@ def test_db(name):
     if 'postgres' in name or 'mysql' in name or 'mariadb' in name:
         con.delete([row.id for row in con.select()])
 
-    cli(cmd.replace('testase.json', name))
+    cli.shell(cmd.replace('testase.json', name))
     assert con.get_atoms(H=1)[0].magmom == 1
     count(5)
     count(3, 'hydro')
@@ -83,6 +82,6 @@ def test_db(name):
         count(6, sort=key)
         count(6, sort='-' + key)
 
-    cli('ase -T gui --terminal -n 3 {}'.format(name))
+    cli.shell('ase -T gui --terminal -n 3 {}'.format(name))
 
     con.delete([id])

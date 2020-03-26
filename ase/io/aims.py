@@ -68,7 +68,7 @@ def read_aims(filename, apply_constraints=True):
                 fix_cart.append(FixCartesian(i, xyz))
             floatvect = float(inp[1]), float(inp[2]), float(inp[3])
             positions.append(floatvect)
-            magmoms.append(0.)
+            magmoms.append(0.0)
             symbols.append(inp[-1])
             i += 1
             xyz = np.array([0, 0, 0])
@@ -445,6 +445,28 @@ def read_energy(filename):
     return E
 
 
+def _parse_atoms(fd, n_atoms, molecular_dynamics=False):
+    """parse structure information from aims output to Atoms object"""
+    from ase import Atoms, Atom
+
+    next(fd)
+    atoms = Atoms()
+    for i in range(n_atoms):
+        inp = next(fd).split()
+        if "lattice_vector" in inp[0]:
+            cell = []
+            for i in range(3):
+                cell += [[float(inp[1]), float(inp[2]), float(inp[3])]]
+                inp = next(fd).split()
+            atoms.set_cell(cell)
+            inp = next(fd).split()
+        atoms.append(Atom(inp[4], (inp[1], inp[2], inp[3])))
+        if molecular_dynamics:
+            inp = next(fd).split()
+
+    return atoms
+
+
 def read_aims_output(filename, index=-1):
     """Import FHI-aims output files with all data available, i.e.
     relaxations, MD information, force information etc etc etc."""
@@ -499,30 +521,20 @@ def read_aims_output(filename, index=-1):
                     fix_cart.append(FixCartesian(ind, xyz))
                 else:
                     fix_cart[n].mask[xyz.index(1)] = 0
+
         if "Atomic structure:" in line and not molecular_dynamics:
             next(fd)
             atoms = Atoms()
-            for i in range(n_atoms):
+            for _ in range(n_atoms):
                 inp = next(fd).split()
                 atoms.append(Atom(inp[3], (inp[4], inp[5], inp[6])))
+
         if "Complete information for previous time-step:" in line:
             molecular_dynamics = True
+
         if "Updated atomic structure:" in line and not molecular_dynamics:
-            next(fd)
-            atoms = Atoms()
-            for i in range(n_atoms):
-                inp = next(fd).split()
-                if "lattice_vector" in inp[0]:
-                    cell = []
-                    for i in range(3):
-                        cell += [[float(inp[1]), float(inp[2]), float(inp[3])]]
-                        inp = next(fd).split()
-                    atoms.set_cell(cell)
-                    inp = next(fd).split()
-                atoms.append(Atom(inp[4], (inp[1], inp[2], inp[3])))
-                if molecular_dynamics:
-                    inp = next(fd).split()
-        if "Atomic structure (and velocities)" in line:
+            atoms = _parse_atoms(fd, n_atoms=n_atoms)
+        elif "Atomic structure (and velocities)" in line:
             next(fd)
             atoms = Atoms()
             velocities = []
@@ -538,6 +550,23 @@ def read_aims_output(filename, index=-1):
             else:
                 atoms.set_constraint(fix_cart)
             images.append(atoms)
+
+        # if we enter here, the SocketIO/PIMD Wrapper was used
+        elif (
+            "Atomic structure that "
+            "was used in the preceding time step of the wrapper"
+        ) in line:
+            # parse atoms and add calculator information, i.e., the energies
+            # and forces that were already collected
+            atoms = _parse_atoms(fd, n_atoms=n_atoms)
+            results = images[-1].calc.results
+            atoms.calc = SinglePointCalculator(atoms, **results)
+
+            # replace last image with updated atoms
+            images[-1] = atoms
+
+            # make sure `atoms` does not point to `images[-1` later on
+            atoms = atoms.copy()
 
         # FlK: add analytical stress and replace stress=None
         if "Analytical stress tensor - Symmetrized" in line:

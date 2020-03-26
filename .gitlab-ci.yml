@@ -22,7 +22,7 @@ oldlibs:
   image: registry.gitlab.com/ase/ase:ase-oldlibs
   script:
     - pip install --no-deps .
-    - ase test -j 0 --pytest --color=yes
+    - ase test --pytest --color=yes -W "ignore:can't resolve package"
 
 # For testing newest versions of libraries against standard images
 # on dockerhub.
@@ -62,7 +62,7 @@ main:
   coverage: '/TOTAL.+ ([0-9]+\.[0-9]+%)/'
   artifacts:
     paths:
-      - coverage-html/
+      - ase/test/coverage-html/
 
 
 # Currently (2019-07-26) facing a problem where PATH does not include
@@ -133,7 +133,7 @@ pages:
   dependencies:
     - main
   script:
-    - mv coverage-html public
+    - mv ase/test/coverage-html public
   artifacts:
     paths:
       - public

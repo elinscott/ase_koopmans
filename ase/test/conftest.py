@@ -1,7 +1,10 @@
 import os
-import pytest
-from ase.utils import workdir
 from pathlib import Path
+from subprocess import Popen, PIPE
+
+import pytest
+
+from ase.utils import workdir
 from ase.test.factories import (Factories, CalculatorInputs,
                                 make_factory_fixture, get_testing_executables)
 
@@ -55,7 +58,7 @@ def tkinter():
 @pytest.fixture(scope='session')
 def plt(tkinter):
     matplotlib = pytest.importorskip('matplotlib')
-    matplotlib.use('Agg', warn=False)
+    matplotlib.use('Agg')
 
     import matplotlib.pyplot as plt
     return plt
@@ -111,3 +114,26 @@ def code(request, factories):
 def pytest_generate_tests(metafunc):
     from ase.test.factories import parametrize_calculator_tests
     parametrize_calculator_tests(metafunc)
+
+class CLI:
+    def ase(self, args):
+        if isinstance(args, str):
+            import shlex
+            args = shlex.split(args)
+
+        proc = Popen(['ase', '-T'] + args,
+                     stdout=PIPE, stdin=PIPE)
+        stdout, _ = proc.communicate(b'')
+        status = proc.wait()
+        assert status == 0
+        return stdout.decode('utf-8')
+
+    def shell(self, command, calculator_name=None):
+        from ase.test.testsuite import runshellcommand
+        runshellcommand(command, calculator_name=calculator_name)
+
+
+@pytest.fixture
+def cli():
+    return CLI()
+

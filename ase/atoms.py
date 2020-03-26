@@ -207,6 +207,9 @@ class Atoms(object):
             else:
                 self.new_array('numbers', symbols2numbers(symbols), int)
 
+        if self.numbers.ndim != 1:
+            raise ValueError('"numbers" must be 1-dimensional.')
+
         if cell is None:
             cell = np.zeros((3, 3))
         self.set_cell(cell)

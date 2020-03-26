@@ -10,6 +10,7 @@ Git master branch
 
 :git:`master <>`.
 
+* Standardize optimizers maximum step variable name to maxstep and default value to 0.2 for all optimizers.
 * The tangent estimates used to make the nudged elastic band (NEB) plots are
   slightly improved to use center, rather than forward differences. This does
   not affect how NEBs are run; only how they are displayed.
@@ -72,6 +73,12 @@ Git master branch
   The new calculator should be completely backwards compatible with the
   previous one, while having a more flexible design and supporting more
   keyword arguments.
+
+* Added :mod:`GaussianOptimizer <ase.calculators.gaussian>` and
+  :mod:`GaussianIRC <ase.calculators.gaussian>` classes for performing geometry
+  optimization and IRC calculations with the Gaussian calculator. These
+  classes are the canonical way to use Gaussian's built-in geometry
+  optimization routines.
 
 * Added :class:`Pyberny <ase.optimize.Berny>` geometry optimizer.
 

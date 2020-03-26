@@ -2,6 +2,7 @@ import numpy as np
 
 from ase.optimize.optimize import Optimizer
 from ase.utils.linesearch import LineSearch
+from ase.optimize.defaults import defaults
 
 
 class LBFGS(Optimizer):
@@ -36,7 +37,7 @@ class LBFGS(Optimizer):
         maxstep: float
             How far is a single atom allowed to move. This is useful for DFT
             calculations where wavefunctions can be reused if steps are small.
-            Default is 0.04 Angstrom.
+            Default is 0.2 Angstrom.
 
         memory: int
             Number of steps to be stored. Default value is 100. Three numpy
@@ -72,7 +73,7 @@ class LBFGS(Optimizer):
                                  maxstep)
             self.maxstep = maxstep
         else:
-            self.maxstep = 0.04
+            self.maxstep = defaults.maxstep
 
         self.memory = memory
         # Initial approximation of inverse Hessian 1./70. is to emulate the
