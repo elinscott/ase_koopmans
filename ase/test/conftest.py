@@ -105,7 +105,7 @@ siesta_factory = make_factory_fixture('siesta')
 
 
 @pytest.fixture
-def code(request, factories):
+def factory(request, factories):
     name, kwargs = request.param
     factory = factories[name]
     return CalculatorInputs(factory, kwargs)

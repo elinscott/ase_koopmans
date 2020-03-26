@@ -198,7 +198,7 @@ def parametrize_calculator_tests(metafunc):
             calculator_inputs.append(param)
 
     if calculator_inputs:
-        metafunc.parametrize('code', calculator_inputs, indirect=True,
+        metafunc.parametrize('factory', calculator_inputs, indirect=True,
                              ids=lambda input: input[0])
 
 

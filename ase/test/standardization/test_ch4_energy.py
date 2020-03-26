@@ -66,10 +66,10 @@ calc = pytest.mark.calculator
 @calc('gpaw', symmetry='off', mode='pw', txt='gpaw.txt', mixer={'beta': 0.6})
 @calc('octopus')
 @calc('siesta', marks=pytest.mark.xfail)
-def test_ch4_reaction(code):
-    e_ch4 = _calculate(code, 'CH4')
-    e_c2h2 = _calculate(code, 'C2H2')
-    e_h2 = _calculate(code, 'H2')
+def test_ch4_reaction(factory):
+    e_ch4 = _calculate(factory, 'CH4')
+    e_c2h2 = _calculate(factory, 'C2H2')
+    e_h2 = _calculate(factory, 'H2')
     energy = e_ch4 - 0.5 * e_c2h2 - 1.5 * e_h2
     print(energy)
     ref_energy = -2.8
