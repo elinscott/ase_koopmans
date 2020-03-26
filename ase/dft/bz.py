@@ -3,6 +3,7 @@ import numpy as np
 
 
 def bz_vertices(icell, dim=3):
+    """See https://xkcd.com/1421 ..."""
     from scipy.spatial import Voronoi
     icell = icell.copy()
     if dim < 3:
