@@ -19,9 +19,9 @@ datafiles_directory = os.path.join(os.path.dirname(__file__), 'datafiles', '')
 
 
 def require(calcname):
-    import pytest
+    import unittest
     if calcname not in test_calculator_names:
-        raise pytest.skip(f'use --calculators={calcname} to enable')
+        raise unittest.SkipTest(f'use --calculators={calcname} to enable')
 
 
 def all_test_modules_and_groups():
