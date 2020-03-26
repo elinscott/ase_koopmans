@@ -2,6 +2,8 @@ import os
 import copy
 import subprocess
 from math import pi, sqrt
+import pathlib
+from typing import Union
 
 import numpy as np
 
@@ -458,7 +460,7 @@ class Calculator(object):
         ignore_bad_restart_file: bool
             Ignore broken or missing restart file.  By default, it is an
             error if the restart file is missing or broken.
-        directory: str
+        directory: str or PurePath
             Working directory in which to read and write files and
             perform calculations.
         label: str
@@ -473,6 +475,7 @@ class Calculator(object):
         self.atoms = None  # copy of atoms object from last calculation
         self.results = {}  # calculated properties (energy, forces, ...)
         self.parameters = None  # calculational parameters
+        self._directory = None  # Initialize
 
         if restart is not None:
             try:
@@ -486,12 +489,12 @@ class Calculator(object):
         self.directory = directory
         self.prefix = None
         if label is not None:
-            if directory != '.' and '/' in label:
+            if self.directory != '.' and '/' in label:
                 raise ValueError('Directory redundantly specified though '
                                  'directory="{}" and label="{}".  '
                                  'Please omit "/" in label.'
-                                 .format(directory, label))
-            self.label = '/'.join((directory, label))
+                                 .format(self.directory, label))
+            self.label = '/'.join((self.directory, label))
 
         if self.parameters is None:
             # Use default parameters if they were not read from file:
@@ -511,6 +514,15 @@ class Calculator(object):
 
         if not hasattr(self, 'name'):
             self.name = self.__class__.__name__.lower()
+
+    @property
+    def directory(self) -> str:
+        return self._directory
+
+    @directory.setter
+    def directory(self, directory: Union[str, pathlib.PurePath]):
+        # Normalize path
+        self._directory = str(pathlib.Path(directory))
 
     @property
     def label(self):
