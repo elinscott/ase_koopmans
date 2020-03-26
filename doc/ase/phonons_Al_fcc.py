@@ -40,8 +40,8 @@ dosax.set_xlabel("DOS", fontsize=18)
 fig.savefig('Al_phonon.png')
 
 # --- literalinclude division line ---
-from ase.io.trajectory import Trajectory
-from ase.io import write
+# from ase.io.trajectory import Trajectory
+# from ase.io import write
 
 # Write modes for specific q-vector to trajectory files:
 L = path.special_points['L']
