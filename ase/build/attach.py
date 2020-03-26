@@ -36,6 +36,8 @@ def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
     accuracy: float
       required accuracy for minimal distance (Angstrom), default 1e-5
     """
+    atoms2 = atoms2.copy()
+    
     direction = np.array(direction, dtype=float)
     direction /= np.linalg.norm(direction)
     assert len(direction) == 3
@@ -62,7 +64,7 @@ def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
             return atoms1 + atoms2
         
         # we need to move
-        atoms2.translate(direction * (a - vcost))
+        atoms2.translate(direction * move)
         i1, i2 = nearest(atoms1, atoms2)
 
     raise RuntimeError('attach did not converge')
@@ -70,6 +72,7 @@ def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
 
 def attach_randomly(atoms1, atoms2, distance):
     """Randomly attach two structures with a given minimal distance"""
+    atoms2 = atoms2.copy()
     atoms2.rotate('x', random_unit_vector(),
                   center=atoms2.get_center_of_mass())
     return attach(atoms1, atoms2, distance,
