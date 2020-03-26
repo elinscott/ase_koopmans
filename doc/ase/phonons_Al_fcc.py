@@ -48,6 +48,7 @@ L = path.special_points['L']
 ph.write_modes([l / 2 for l in L], branches=[2], repeat=(8, 8, 8), kT=3e-4,
                center=True)
 
+
 # Generate gif animation:
 # XXX Temporarily disabled due to matplotlib writer compatibility issue.
 # with Trajectory('phonon.mode.2.traj', 'r') as traj:
