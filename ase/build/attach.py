@@ -1,6 +1,14 @@
 import numpy as np
 
 
+def random_unit_vector():
+    """Random unit vector equally distributed on the sphere"""
+    ct = -1 + 2 * np.random.rand()
+    phi = 2 * np.pi * np.random.rand()
+    st = np.sqrt(1 - ct**2)
+    return np.array([st * np.cos(phi), st * np.sin(phi), ct])
+
+
 def nearest(atoms1, atoms2):
     """Return indices of nearest atoms"""
     vd_aac = np.empty((len(atoms1), len(atoms2), 3))
@@ -13,7 +21,7 @@ def nearest(atoms1, atoms2):
 
 
 def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
-           maxiter=100, accuracy=1e-5):
+           maxiter=50, accuracy=1e-5):
     """Attach two structures
 
     Parameters:
@@ -32,7 +40,6 @@ def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
     direction /= np.linalg.norm(direction)
     assert len(direction) == 3
     dist2 = distance**2
-    acc2 = accuracy**2
     
     cm1 = atoms1.get_center_of_mass()
     d1max = np.dot(atoms1.get_positions() - cm1, direction).max()
@@ -44,20 +51,26 @@ def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
                      direction * (distance + d1max + d2max))
     i1, i2 = nearest(atoms1, atoms2)
 
-    for i in range(maxiter):   
+    for i in range(maxiter):
         dv_c = atoms2[i2].position - atoms1[i1].position
         dv2 = (dv_c**2).sum()
-
-        # we need to move
+            
         vcost = np.dot(dv_c, direction)
         a = np.sqrt(max(0, dist2 - dv2 + vcost**2))
-        atoms2.translate(direction * (a - vcost))
-
-        dv_c = atoms2[i2].position - atoms1[i1].position
-        dv2 = (dv_c**2).sum()
-        
-        if (np.sqrt(dv2) - distance)**2 <= acc2:
+        move = a - vcost
+        if abs(move) < accuracy:
             return atoms1 + atoms2
+        
+        # we need to move
+        atoms2.translate(direction * (a - vcost))
+        i1, i2 = nearest(atoms1, atoms2)
 
-    raise
-    
+    raise RuntimeError('attach did not converge')
+
+
+def attach_randomly(atoms1, atoms2, distance):
+    """Randomly attach two structures with a given minimal distance"""
+    atoms2.rotate('x', random_unit_vector(),
+                  center=atoms2.get_center_of_mass())
+    return attach(atoms1, atoms2, distance,
+                  direction=random_unit_vector())
