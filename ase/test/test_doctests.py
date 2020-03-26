@@ -1,6 +1,5 @@
 import doctest
 import importlib
-import sys
 from distutils.version import LooseVersion
 
 import pytest
