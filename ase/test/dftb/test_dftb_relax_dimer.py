@@ -1,6 +1,4 @@
-import os
 from ase import Atoms
-from ase.test import require
 from ase.optimize import BFGS
 
 

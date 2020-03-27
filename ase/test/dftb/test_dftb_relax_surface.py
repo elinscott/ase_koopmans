@@ -1,4 +1,3 @@
-import os
 from ase.build import diamond100
 from ase.optimize import BFGS
 from ase.constraints import FixAtoms

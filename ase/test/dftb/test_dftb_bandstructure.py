@@ -1,12 +1,8 @@
-import os
 import subprocess
 from unittest import SkipTest
 
 import pytest
 
-from ase.test import require
-from ase.test.testsuite import datafiles_directory
-from ase.calculators.dftb import Dftb
 from ase.build import bulk
 
 
@@ -18,9 +14,10 @@ def test_dftb_bandstructure(dftb_factory):
     # the version from the output header.
     #cmd = os.environ['ASE_DFTB_COMMAND'].split()[0]
     #cmd = dftb_factory.ex
-    #proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
     if 0:
+        cmd = 'xxxxx'
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         lines = ''
         for line in proc.stdout:
             l = line.decode()
