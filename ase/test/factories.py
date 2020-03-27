@@ -126,6 +126,22 @@ class GPAWFactory:
         return cls()
 
 
+class BuiltinCalculatorFactory:
+    def calc(self, **kwargs):
+        from ase.calculators.calculator import get_calculator_class
+        cls = get_calculator_class(self.name)
+        return cls(**kwargs)
+
+    @classmethod
+    def fromconfig(cls, config):
+        return cls()
+
+
+@factory('emt')
+class EMTFactory(BuiltinCalculatorFactory):
+    pass
+
+
 @factory('octopus')
 class OctopusFactory:
     def __init__(self, executable):
