@@ -1,22 +1,17 @@
-def test_dftb_relax_surface():
-    import os
-    from ase.test import require
-    from ase.test.testsuite import datafiles_directory
-    from ase.build import diamond100
-    from ase.calculators.dftb import Dftb
-    from ase.optimize import BFGS
-    from ase.constraints import FixAtoms
+import os
+from ase.build import diamond100
+from ase.optimize import BFGS
+from ase.constraints import FixAtoms
 
-    require('dftb')
 
-    os.environ['DFTB_PREFIX'] = datafiles_directory
-
-    calc = Dftb(label='dftb',
-                kpts=(2, 2, 1),
-                Hamiltonian_SCC='Yes',
-                Hamiltonian_Filling='Fermi {',
-                Hamiltonian_Filling_empty='Temperature [Kelvin] = 500.0',
-                )
+def test_dftb_relax_surface(dftb_factory):
+    calc = dftb_factory.calc(
+        label='dftb',
+        kpts=(2, 2, 1),
+        Hamiltonian_SCC='Yes',
+        Hamiltonian_Filling='Fermi {',
+        Hamiltonian_Filling_empty='Temperature [Kelvin] = 500.0',
+    )
 
     a = 5.40632280995384
     atoms = diamond100('Si', (1, 1, 6), a=a, vacuum=6., orthogonal=True,

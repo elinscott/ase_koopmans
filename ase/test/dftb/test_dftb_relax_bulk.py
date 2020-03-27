@@ -1,7 +1,5 @@
 import os
-from ase.test.testsuite import datafiles_directory
 from ase.build import bulk
-from ase.calculators.dftb import Dftb
 from ase.optimize import QuasiNewton
 from ase.constraints import ExpCellFilter
 
@@ -9,7 +7,6 @@ from ase.constraints import ExpCellFilter
 def test_dftb_relax_bulk(dftb_factory):
     calc = dftb_factory.calc(
         label='dftb',
-        slako_dir=datafiles_directory,
         kpts=(3,3,3),
         Hamiltonian_SCC='Yes'
     )
