@@ -8,10 +8,9 @@ import numpy as np
 from ase.build import bulk
 from ase.constraints import UnitCellFilter
 from ase.optimize import MDMin
-from ase.calculators.cp2k import CP2K
 
 
-def test_cp2k_stress():
+def test_cp2k_stress(cp2k_factory):
     """Adopted from ase/test/stress.py"""
 
     # setup a Fist Lennard-Jones Potential
@@ -44,7 +43,8 @@ def test_cp2k_stress():
                   &END MM
                 &END FORCE_EVAL"""
 
-    calc = CP2K(label="test_stress", inp=inp, force_eval_method="Fist")
+    calc = cp2k_factory.calc(
+        label="test_stress", inp=inp, force_eval_method="Fist")
 
     # Theoretical infinite-cutoff LJ FCC unit cell parameters
     vol0 = 4 * 0.91615977036  # theoretical minimum

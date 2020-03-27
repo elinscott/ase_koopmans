@@ -6,12 +6,12 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 
 from ase.build import molecule
 from ase import units
-from ase.calculators.cp2k import CP2K
 
 
-def test_o2():
-    calc = CP2K(label='test_O2', uks=True, cutoff=150 * units.Rydberg,
-                basis_set="SZV-MOLOPT-SR-GTH")
+def test_o2(cp2k_factory):
+    calc = cp2k_factory.calc(
+        label='test_O2', uks=True, cutoff=150 * units.Rydberg,
+        basis_set="SZV-MOLOPT-SR-GTH")
     o2 = molecule('O2', calculator=calc)
     o2.center(vacuum=2.0)
     energy = o2.get_potential_energy()

@@ -1,18 +1,31 @@
 import os
-import pytest
-from ase.utils import workdir
 from pathlib import Path
 from subprocess import Popen, PIPE
 
+import pytest
+
+from ase.utils import workdir
+from ase.test.factories import (Factories, CalculatorInputs,
+                                make_factory_fixture, get_testing_executables)
+
+
+@pytest.fixture(scope='session')
+def enabled_calculators():
+    from ase.calculators.calculator import names as calculator_names
+    all_names = set(calculator_names)
+    names = set(os.environ.get('ASE_TEST_CALCULATORS', '').split())
+    for name in names:
+        assert name in all_names
+    return names
+
 
 @pytest.fixture(scope='session', autouse=True)
-def disable_calculators(request):
+def monkeypatch_disabled_calculators(request, enabled_calculators):
     from ase.test.testsuite import disable_calculators, test_calculator_names
     from ase.calculators.calculator import names as calculator_names
-    enabled_names = os.environ.get('ASE_TEST_CALCULATORS', '').split()
-    test_calculator_names += enabled_names
+    test_calculator_names += enabled_calculators
     disable_calculators([name for name in calculator_names
-                         if name not in enabled_names])
+                         if name not in enabled_calculators])
 
 
 # Backport of tmp_path fixture from pytest 3.9.
@@ -63,6 +76,45 @@ def psycopg2():
     return pytest.importorskip('psycopg2')
 
 
+@pytest.fixture(scope='session')
+def datafiles():
+    try:
+        import asetest
+    except ImportError:
+        return {}
+    else:
+        return asetest.datafiles.paths
+
+
+@pytest.fixture(scope='session')
+def configured_executables():
+    return get_testing_executables()
+
+
+@pytest.fixture(scope='session')
+def factories(configured_executables, datafiles, enabled_calculators):
+    return Factories(configured_executables, datafiles)
+
+
+abinit_factory = make_factory_fixture('abinit')
+cp2k_factory = make_factory_fixture('cp2k')
+espresso_factory = make_factory_fixture('espresso')
+gpaw_factory = make_factory_fixture('gpaw')
+octopus_factory = make_factory_fixture('octopus')
+siesta_factory = make_factory_fixture('siesta')
+
+
+@pytest.fixture
+def factory(request, factories):
+    name, kwargs = request.param
+    factory = factories[name]
+    return CalculatorInputs(factory, kwargs)
+
+
+def pytest_generate_tests(metafunc):
+    from ase.test.factories import parametrize_calculator_tests
+    parametrize_calculator_tests(metafunc)
+
 class CLI:
     def ase(self, args):
         if isinstance(args, str):
@@ -84,3 +136,4 @@ class CLI:
 @pytest.fixture
 def cli():
     return CLI()
+

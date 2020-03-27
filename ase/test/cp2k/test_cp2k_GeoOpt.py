@@ -6,11 +6,10 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 
 from ase.build import molecule
 from ase.optimize import BFGS
-from ase.calculators.cp2k import CP2K
 
 
-def test_geoopt():
-    calc = CP2K(label='test_H2_GOPT', print_level='LOW')
+def test_geoopt(cp2k_factory):
+    calc = cp2k_factory.calc(label='test_H2_GOPT', print_level='LOW')
     atoms = molecule('H2', calculator=calc)
     atoms.center(vacuum=2.0)
 
