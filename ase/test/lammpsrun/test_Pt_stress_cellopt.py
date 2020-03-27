@@ -31,11 +31,10 @@ def test_Pt_stress_cellopt():
             pass
 
         cell1_ref = np.array(
-            [[0.16524 , 3.8999  , 3.92855 ],
+            [[0.16524, 3.8999, 3.92855],
              [4.211015, 0.634928, 5.047811],
              [4.429529, 3.293805, 0.447377]]
         )
-
 
         assert_allclose(np.asarray(atoms.cell), cell1_ref, atol=3e-4, rtol=3e-4)
         assert_allclose(atoms.get_stress(), calc.calculate_numerical_stress(atoms),
