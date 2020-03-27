@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.skip('CLI must support calculator profiles')
 def test_abinit_cmdline(abinit_factory, cli):
     cli.shell("""
     ase build -x fcc -a 4.04 Al |
