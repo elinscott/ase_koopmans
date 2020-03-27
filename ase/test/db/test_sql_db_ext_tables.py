@@ -1,10 +1,13 @@
-def test_sql_db_ext_tables(psycopg2):
-    import os
-    from ase.db import connect
-    from ase import Atoms
-    from ase.test import must_raise
-    import numpy as np
+import os
 
+import pytest
+
+from ase.db import connect
+from ase import Atoms
+import numpy as np
+
+
+def test_sql_db_ext_tables(psycopg2):
     DB_NAMES = ["test_ext_tables.db", "postgresql", "mysql", "mariadb"]
 
 
@@ -76,7 +79,7 @@ def test_sql_db_ext_tables(psycopg2):
 
         # Try to insert something that should not pass
         # i.e. string value into the same table
-        with must_raise(ValueError):
+        with pytest.raises(ValueError):
             db.write(atoms, external_tables={"insert_tab": {"rate": "something"}})
 
         # Try to insert Numpy floats
@@ -85,13 +88,13 @@ def test_sql_db_ext_tables(psycopg2):
 
         # Make sure that we cannot insert a Numpy integer types into
         # a float array
-        with must_raise(ValueError):
+        with pytest.raises(ValueError):
             db.write(
                 atoms, external_tables={
                     "insert_tab": {
                         "rate": np.int32(1.0)}})
 
-        with must_raise(ValueError):
+        with pytest.raises(ValueError):
             db.write(
                 atoms, external_tables={
                     "insert_tab": {
@@ -105,20 +108,20 @@ def test_sql_db_ext_tables(psycopg2):
         db.write(atoms, external_tables={"integer_tab": {"rate": np.int64(1)}})
 
         # Make sure that we cannot insert float
-        with must_raise(ValueError):
+        with pytest.raises(ValueError):
             db.write(
                 atoms, external_tables={
                     "integer_tab": {
                         "rate": np.float32(1)}})
 
-        with must_raise(ValueError):
+        with pytest.raises(ValueError):
             db.write(
                 atoms, external_tables={
                     "integer_tab": {
                         "rate": np.float64(1)}})
 
         # Make sure that ValueError is raised with mixed datatypes
-        with must_raise(ValueError):
+        with pytest.raises(ValueError):
             db.write(
                 atoms,
                 external_tables={
@@ -129,7 +132,7 @@ def test_sql_db_ext_tables(psycopg2):
         # Test that we cannot insert anything into a reserved table name
         from ase.db.sqlite import all_tables
         for tab_name in all_tables:
-            with must_raise(ValueError):
+            with pytest.raises(ValueError):
                 db.write(atoms, external_tables={tab_name: {"value": 1}})
 
 

@@ -4,7 +4,6 @@ from subprocess import Popen, PIPE
 from contextlib import contextmanager
 import importlib
 from pathlib import Path
-import unittest
 import warnings
 import argparse
 from multiprocessing import cpu_count
@@ -20,9 +19,9 @@ datafiles_directory = os.path.join(os.path.dirname(__file__), 'datafiles', '')
 
 
 def require(calcname):
+    import unittest
     if calcname not in test_calculator_names:
-        raise unittest.SkipTest('use --calculators={0} to enable'
-                                .format(calcname))
+        raise unittest.SkipTest(f'use --calculators={calcname} to enable')
 
 
 def all_test_modules_and_groups():
@@ -40,6 +39,7 @@ def all_test_modules_and_groups():
 
 
 def disable_calculators(names):
+    import pytest
     for name in names:
         if name in ['emt', 'lj', 'eam', 'morse', 'tip3p']:
             continue
@@ -50,8 +50,7 @@ def disable_calculators(names):
         else:
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
-                    raise unittest.SkipTest('use --calculators={0} to enable'
-                                            .format(name))
+                    pytest.skip(f'use --calculators={name} to enable')
                 return mock_init
 
             def mock_del(obj):

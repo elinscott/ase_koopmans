@@ -92,6 +92,9 @@ with the following arguments::
                   basis=dict(gbasis='n31', ngauss=6, ndfunc=1),
                   dft=dict(nrad=96, nleb=1202))
 
+.. highlight:: none
+
+
 Note that though GAMESS-US is case insensitive, Python is case sensitive.
 The ``GAMESSUS`` calculator expects lowercase keywords.
 

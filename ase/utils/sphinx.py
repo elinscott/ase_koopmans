@@ -4,6 +4,7 @@ import warnings
 from os.path import join
 from stat import ST_MTIME
 import re
+import runpy
 
 from docutils import nodes
 from docutils.parsers.rst.roles import set_classes
@@ -119,7 +120,7 @@ def create_png_files(raise_exceptions=False):
             import matplotlib.pyplot as plt
             plt.figure()
             try:
-                exec(compile(open(pyname).read(), pyname, 'exec'), {})
+                runpy.run_path(pyname)
             except KeyboardInterrupt:
                 return
             except Exception:
