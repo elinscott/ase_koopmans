@@ -6,6 +6,7 @@ from ase.utils import workdir
 from pytest import importorskip
 
 
+# XXX To be replaced by stuff in ase.test.factories
 class CalculatorInputs:
     def __init__(self, name, parameters=None):
         self.name = name
@@ -19,9 +20,6 @@ class CalculatorInputs:
                                    self.name, self.parameters)
 
     def calc(self):
-        # XXX Can we handle missing imports better?
-        if self.name == 'gpaw':
-            importorskip('gpaw')
         cls = get_calculator_class(self.name)
         return cls(**self.parameters)
 
