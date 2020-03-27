@@ -3,7 +3,6 @@ from ase.build import molecule
 from ase.calculators.calculator import get_calculator_class
 from ase.units import Ry
 from ase.utils import workdir
-from pytest import importorskip
 
 
 # XXX To be replaced by stuff in ase.test.factories
