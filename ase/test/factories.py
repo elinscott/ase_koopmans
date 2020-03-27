@@ -227,3 +227,14 @@ class CalculatorInputs:
         param = dict(self.parameters)
         param.update(kwargs)
         return self.factory.calc(**param)
+
+
+class ObsoleteFactoryWrapper:
+    # We use this for transitioning older tests to the new framework.
+    def __init__(self, name):
+        self.name = name
+
+    def calc(self, **kwargs):
+        from ase.calculators.calculator import get_calculator_class
+        cls = get_calculator_class(self.name)
+        return cls(**kwargs)
