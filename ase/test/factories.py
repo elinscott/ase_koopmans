@@ -77,6 +77,25 @@ class CP2KFactory:
         return CP2KFactory(config.executables['cp2k'])
 
 
+@factory('dftb')
+class DFTBFactory:
+    def __init__(self, executable):
+        self.executable = executable
+
+    def calc(self, **kwargs):
+        from ase.calculators.dftb import Dftb
+        from ase.test.testsuite import datafiles_directory
+        # XXX datafiles should be imported from datafiles project
+        command = f'{self.executable} > PREFIX.out'
+        return Dftb(command=command,
+                    slako_dir=datafiles_directory,
+                    **kwargs)
+
+    @classmethod
+    def fromconfig(cls, config):
+        return cls(config.executables['dftb'])
+
+
 @factory('espresso')
 class EspressoFactory:
     def __init__(self, executable, pseudo_dir):
