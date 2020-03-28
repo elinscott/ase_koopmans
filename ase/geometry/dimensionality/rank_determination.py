@@ -8,7 +8,6 @@ P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
 Phys. Rev. Materials 3 034003, 2019
 https://doi.org/10.1103/PhysRevMaterials.3.034003
 """
-
 import numpy as np
 from collections import defaultdict
 from ase.geometry.dimensionality.disjoint_set import DisjointSet
@@ -30,7 +29,6 @@ def subtract(A, B):
 
 
 def rank_increase(a, b):
-
     if len(a) == 0:
         return True
     elif len(a) == 1:
@@ -54,7 +52,6 @@ def bfs(adjacency, start):
     The graph is traversed until the matrix rank of the subspace spanned by
     the visited components no longer increases.
     """
-
     visited = set()
     cvisited = defaultdict(list)
     queue = [(start, (0, 0, 0))]
@@ -84,7 +81,6 @@ def bfs(adjacency, start):
 
 
 def traverse_component_graphs(adjacency):
-
     vertices = adjacency.keys()
     all_visited = {}
     ranks = {}
@@ -97,7 +93,6 @@ def traverse_component_graphs(adjacency):
 
 
 def build_adjacency_list(parents, bonds):
-
     graph = np.unique(parents)
     adjacency = {e: set() for e in graph}
     for (i, j, offset) in bonds:
@@ -108,7 +103,6 @@ def build_adjacency_list(parents, bonds):
 
 
 def get_dimensionality_histogram(ranks, roots):
-
     h = [0, 0, 0, 0]
     for e in roots:
         h[ranks[e]] += 1
@@ -117,14 +111,13 @@ def get_dimensionality_histogram(ranks, roots):
 
 def merge_mutual_visits(all_visited, ranks, graph):
     """Find components with mutual visits and merge them."""
-
     merged = False
     common = defaultdict(list)
     for b, visited in all_visited.items():
         for offset in visited:
             for a in common[offset]:
                 assert ranks[a] == ranks[b]
-                merged |= graph.merge(a, b)
+                merged |= graph.union(a, b)
             common[offset].append(b)
 
     if not merged:
@@ -132,7 +125,7 @@ def merge_mutual_visits(all_visited, ranks, graph):
 
     merged_visits = defaultdict(set)
     merged_ranks = {}
-    parents = graph.get_components()
+    parents = graph.find_all()
     for k, v in all_visited.items():
         key = parents[k]
         merged_visits[key].update(v)
@@ -143,7 +136,6 @@ def merge_mutual_visits(all_visited, ranks, graph):
 class RDA:
 
     def __init__(self, num_atoms):
-
         """
         Initializes the RDA class.
 
@@ -153,7 +145,6 @@ class RDA:
 
         num_atoms: int    The number of atoms in the unit cell.
         """
-
         self.bonds = []
         self.graph = DisjointSet(num_atoms)
         self.adjacency = None
@@ -162,7 +153,6 @@ class RDA:
         self.cdim_cached = None
 
     def insert_bond(self, i, j, offset):
-
         """
         Adds a bond to the list of graph edges.
 
@@ -170,7 +160,6 @@ class RDA:
         Bonds which cross cell boundaries can inappropriately connect
         components which are not connected in the infinite crystal.  This is
         tested during graph traversal.
-        
 
         Parameters:
 
@@ -178,17 +167,15 @@ class RDA:
         n: int           The index of the second atom.
         offset: tuple    The cell offset of the second atom.
         """
-
         roffset = tuple(-np.array(offset))
 
         if offset == (0, 0, 0):    # only want bonds in aperiodic unit cell
-            self.graph.merge(i, j)
+            self.graph.union(i, j)
         else:
             self.bonds += [(i, j, offset)]
             self.bonds += [(j, i, roffset)]
 
     def check(self):
-
         """
         Determines the dimensionality histogram.
 
@@ -198,8 +185,7 @@ class RDA:
         Returns:
         hist : tuple         Dimensionality histogram.
         """
-
-        adjacency = build_adjacency_list(self.graph.get_components(),
+        adjacency = build_adjacency_list(self.graph.find_all(),
                                          self.bonds)
         if adjacency == self.adjacency:
             return self.hcached
@@ -209,22 +195,20 @@ class RDA:
         res = merge_mutual_visits(self.all_visited, self.ranks, self.graph)
         _, self.all_visited, self.ranks = res
 
-        self.roots = self.graph.get_roots()
+        self.roots = np.unique(self.graph.find_all())
         h = get_dimensionality_histogram(self.ranks, self.roots)
         self.hcached = h
         return h
 
     def get_components(self):
-
         """
         Determines the dimensionality and constituent atoms of each component.
 
         Returns:
         components: array    The component ID of every atom
         """
-
         component_dim = {e: self.ranks[e] for e in self.roots}
-        relabelled_components = self.graph.get_components(relabel=True)
+        relabelled_components = self.graph.find_all(relabel=True)
         relabelled_dim = {}
         for k, v in component_dim.items():
             relabelled_dim[relabelled_components[k]] = v
