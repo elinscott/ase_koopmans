@@ -8,45 +8,17 @@ from ase.calculators.interfacechecker import check_interface
 
 
 def calculate(factory, system, **kwargs):
-    calc = factory.calc()
-    kwargs0 = dict(stdout="'stdout.txt'",
-                   stderr="'stderr.txt'",
-                   FromScratch=True,
-                   RestartWrite=False,
-                   command='octopus')
-    kwargs.update(**kwargs0)
-
-    directory = 'grumble'
-    calc = Octopus(directory=directory, **kwargs)
+    calc = factory.calc(**kwargs)
     system.calc = calc
     E = system.get_potential_energy()
-    eig = calc.get_eigenvalues()
+    calc.get_eigenvalues()
     check_interface(calc)
-
-    restartcalc = Octopus(directory)
-    check_interface(restartcalc)
-
-    # Check reconstruction of Atoms object
-    new_atoms = restartcalc.get_atoms()
-    print('new')
-    print(new_atoms.positions)
-    calc2 = Octopus(directory='ink-restart', **kwargs)
-    new_atoms.calc = calc2
-    E2 = new_atoms.get_potential_energy()
-    #print('energy', E, E2)
-    eig2 = calc2.get_eigenvalues()
-    eig_err = np.abs(eig - eig2).max()
-    e_err = abs(E - E2)
-    print('Restart E err', e_err)
-    print('Restart eig err', eig_err)
-    assert e_err < 5e-5
-    assert eig_err < 5e-5
     return calc
 
 
 calc = pytest.mark.calculator
 
-@calc('octopus')
+@calc('octopus', Spacing='0.3 * angstrom')
 def test_h2o(factory):
     calc = calculate(factory,
                      g2['H2O'],
@@ -80,14 +52,14 @@ def test_o2(factory):
 @calc('octopus')
 def test_si(factory):
     calc = calculate(factory,
-                     bulk('Si', orthorhombic=True),
+                     bulk('Si'), #, orthorhombic=True),
                      KPointsGrid=[[4, 4, 4]],
                      KPointsUseSymmetries=True,
                      SmearingFunction='fermi_dirac',
                      ExtraStates=2,
                      Smearing='0.1 * eV',
                      ExperimentalFeatures=True,
-                     Spacing='0.35 * Angstrom')
+                     Spacing='0.45 * Angstrom')
     eF = calc.get_fermi_level()
     print('eF', eF)
 
