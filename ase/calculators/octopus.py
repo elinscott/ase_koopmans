@@ -258,13 +258,6 @@ def normalize_keywords(kwargs):
     return newkwargs
 
 
-def get_octopus_keywords():
-    """Get dict mapping all normalized keywords to pretty keywords."""
-    proc = Popen(['oct-help', '--search', ''], stdout=PIPE)
-    keywords = proc.stdout.read().decode().split()
-    return normalize_keywords(dict(zip(keywords, keywords)))
-
-
 def input_line_iter(lines):
     """Convenient iterator for parsing input files 'cleanly'.
 
@@ -669,7 +662,7 @@ def atoms2kwargs(atoms, use_ase_cell):
     return kwargs
 
 
-def generate_input(atoms, kwargs, normalized2pretty):
+def generate_input(atoms, kwargs):
     """Convert atoms and keyword arguments to Octopus input file."""
     _lines = []
 
@@ -681,8 +674,7 @@ def generate_input(atoms, kwargs, normalized2pretty):
         append('')
 
     def setvar(key, var):
-        prettykey = normalized2pretty.get(key, key)
-        append('%s = %s' % (prettykey, var))
+        append('%s = %s' % (key, var))
 
     for kw in ['lsize', 'latticevectors', 'latticeparameters']:
         assert kw not in kwargs
@@ -730,7 +722,7 @@ def generate_input(atoms, kwargs, normalized2pretty):
         # Most datatypes are straightforward but blocks require some attention.
         if isinstance(val, list):
             append('')
-            dict_data = list2block(normalized2pretty[key], val)
+            dict_data = list2block(key, val)
             extend(dict_data)
         else:
             setvar(key, str(val))
@@ -946,33 +938,12 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
                  atoms=None,
                  command=None,
                  ignore_troublesome_keywords=None,
-                 check_keywords=True,
+                 check_keywords=False,
                  **kwargs):
         """Create Octopus calculator.
 
         Label is always taken as a subdirectory.
         Restart is taken to be a label."""
-
-        # XXX support the specially defined ASE parameters,
-        # "smear" etc.
-
-        # We run oct-help to get a list of all keywords.
-        # This makes us able to robustly construct the input file
-        # in the face of changing octopus versions, and also of
-        # early partial verification of user input.
-
-        if check_keywords:
-            try:
-                octopus_keywords = get_octopus_keywords()
-            except OSError as err:
-                msg = ('Could not obtain Octopus keyword list from '
-                       'command oct-help: %s.  Octopus not installed in '
-                       'accordance with expectations.  '
-                       'Use check_octopus_keywords=False to override.' % err)
-                raise OSError(msg)
-        else:
-            octopus_keywords = None
-        self.octopus_keywords = octopus_keywords
 
         if label is not None:
             # restart mechanism in Calculator tends to set the label.
@@ -1001,8 +972,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def set(self, **kwargs):
         """Set octopus input file parameters."""
         kwargs = normalize_keywords(kwargs)
-        if self.octopus_keywords is not None:
-            self.check_keywords_exist(kwargs)
 
         for keyword in kwargs:
             if keyword in self.troublesome_keywords:
@@ -1017,15 +986,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
             self.results.clear()
         self.kwargs.update(kwargs)
         # XXX should use 'Parameters' but don't know how
-
-    def check_keywords_exist(self, kwargs):
-        for keyword in kwargs:
-            if (keyword not in self.octopus_keywords
-                  and keyword not in self.special_ase_keywords):
-
-                msg = ('Unknown Octopus keyword %s.  Use oct-help to list '
-                       'available keywords.') % keyword
-                raise OctopusKeywordError(msg)
 
     def get_xc_functional(self):
         """Return the XC-functional identifier.
@@ -1135,12 +1095,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def write_input(self, atoms, properties=None, system_changes=None):
         FileIOCalculator.write_input(self, atoms, properties=properties,
                                      system_changes=system_changes)
-        octopus_keywords = self.octopus_keywords
-        if octopus_keywords is None:
-            # Will not do automatic pretty capitalization
-            octopus_keywords = {}
-        txt = generate_input(atoms, process_special_kwargs(atoms, self.kwargs),
-                             octopus_keywords)
+        txt = generate_input(atoms, process_special_kwargs(atoms, self.kwargs))
         fd = open(self._getpath('inp'), 'w')
         fd.write(txt)
         fd.close()
@@ -1155,8 +1110,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         inp_path = self._getpath('inp')
         fd = open(inp_path)
         kwargs = parse_input_file(fd)
-        if self.octopus_keywords is not None:
-            self.check_keywords_exist(kwargs)
 
         self.atoms, kwargs = kwargs2atoms(kwargs)
         self.kwargs.update(kwargs)
@@ -1176,27 +1129,3 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         else:
             raise OctopusIOError('Expected recipe, but found '
                                  'useful physical output!')
-
-
-def main():
-    from ase.build import bulk
-    from ase.calculators.interfacechecker import check_interface
-
-    system = bulk('Si', 'diamond', orthorhombic=True)
-    calc = Octopus(Spacing=0.275,
-                   KPointsGrid=[[2, 2, 2]],
-                   KPointsUseSymmetries=True,
-                   Smearing=0.1,
-                   SmearingFunction='fermi_dirac',
-                   ExtraStates=2,
-                   stdout='"stdout.log"',
-                   stderr='"stderr.log"',
-                   Output='density + potential + wfs',
-                   OutputFormat='xcrysden')
-    system.set_calculator(calc)
-    system.get_potential_energy()
-
-    check_interface(calc)
-
-if __name__ == '__main__':
-    main()
