@@ -110,7 +110,7 @@ class Gromacs(FileIOCalculator):
             Force field to be used in gromacs runs
 
         command : str
-            Gromacs executable; if None (default), choose avialable one from
+            Gromacs executable; if None (default), choose available one from
             ('gmx', 'gmx_d', 'gmx_mpi', 'gmx_mpi_d')
         """
 

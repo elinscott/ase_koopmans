@@ -50,7 +50,7 @@ class ACN(Calculator):
         When performing molecular dynamics (MD), forces are redistributed
         and only Me and N sites propagated based on a scheme for MD of
         rigid triatomic molecules from Ciccotti et al. Molecular Physics
-        1982 (http://dx.doi.org/10.1080/00268978200100942). Apply constraints
+        1982 (https://doi.org/10.1080/00268978200100942). Apply constraints
         using the FixLinearTriatomic to fix the geometry of the acetonitrile
         molecules.
 
@@ -61,7 +61,7 @@ class ACN(Calculator):
 
         References:
 
-        http://dx.doi.org/10.1080/08927020108024509
+        https://doi.org/10.1080/08927020108024509
         """
         self.rc = rc
         self.width = width

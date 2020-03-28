@@ -8,7 +8,6 @@ from ase.atoms import Atoms
 from ase.quaternions import Quaternions
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.parallel import paropen
-from ase.utils import basestring
 from ase.calculators.lammps import convert
 
 
@@ -28,7 +27,9 @@ def read_lammps_dump(infileobj, **kwargs):
     # !TODO: add support for lammps-regex naming schemes (output per
     # processor and timestep wildcards)
 
-    if isinstance(infileobj, basestring):
+    opened = False
+    if isinstance(infileobj, str):
+        opened = True
         suffix = splitext(infileobj)[-1]
         if suffix == ".bin":
             fileobj = paropen(infileobj, "rb")
@@ -42,9 +43,17 @@ def read_lammps_dump(infileobj, **kwargs):
         fileobj = infileobj
 
     if suffix == ".bin":
-        return read_lammps_dump_binary(fileobj, **kwargs)
+        out = read_lammps_dump_binary(fileobj, **kwargs)
+        if opened:
+            fileobj.close()
+        return out
 
-    return read_lammps_dump_text(fileobj, **kwargs)
+    out = read_lammps_dump_text(fileobj, **kwargs)
+
+    if opened:
+        fileobj.close()
+
+    return out
 
 
 def lammps_data_to_ase_atoms(
@@ -133,7 +142,11 @@ def lammps_data_to_ase_atoms(
             positions = prismobj.vector_to_ase(positions, wrap=True)
 
         out_atoms = atomsobj(
-            symbols=types, positions=positions, pbc=pbc, celldisp=celldisp, cell=cell
+            symbols=types,
+            positions=positions,
+            pbc=pbc,
+            celldisp=celldisp,
+            cell=cell
         )
     elif scaled_positions is not None:
         out_atoms = atomsobj(
@@ -158,6 +171,14 @@ def lammps_data_to_ase_atoms(
         #        parallel runs)
         calculator = SinglePointCalculator(out_atoms, energy=0.0, forces=forces)
         out_atoms.set_calculator(calculator)
+
+    # process the extra columns of fixes, variables and computes
+    #    that can be dumped, add as additional arrays to atoms object
+    for colname in colnames:
+        # determine if it is a compute or fix (but not the quaternian)
+        if (colname.startswith('f_') or colname.startswith('v_') or
+                (colname.startswith('c_') and not colname.startswith('c_q['))):
+            out_atoms.new_array(colname, get_quantity([colname]), dtype='float')
 
     return out_atoms
 
@@ -240,7 +261,8 @@ def read_lammps_dump_text(fileobj, index=-1, **kwargs):
                 # ... otherwise assume default order in 3rd column
                 # (if the latter was present)
                 if len(tilt_items) >= 3:
-                    sort_index = [tilt_items.index(i) for i in ["xy", "xz", "yz"]]
+                    sort_index = [tilt_items.index(i)
+                                  for i in ["xy", "xz", "yz"]]
                     offdiag = offdiag[sort_index]
             else:
                 offdiag = (0.0,) * 3
@@ -298,7 +320,8 @@ def read_lammps_dump_binary(
 
     # Standard columns layout from lammpsrun
     if not colnames:
-        colnames = ["id", "type", "x", "y", "z", "vx", "vy", "vz", "fx", "fy", "fz"]
+        colnames = ["id", "type", "x", "y", "z",
+                    "vx", "vy", "vz", "fx", "fy", "fz"]
 
     images = []
 

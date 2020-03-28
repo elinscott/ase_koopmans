@@ -10,7 +10,7 @@ Introduction
 FHI-aims_ is a all-electron full-potential density functional theory
 code using a numeric local orbital basis set.
 
-.. _FHI-aims: http://www.fhi-berlin.mpg.de/aims/
+.. _FHI-aims: https://aimsclub.fhi-berlin.mpg.de
 
 Running the Calculator
 ======================
@@ -109,6 +109,6 @@ Example
 
 Here is an example of how to obtain the geometry of a water molecule,
 assuming ``ASE_AIMS_COMMAND`` and ``AIMS_SPECIES_DIR`` are set:
-:git:`ase/test/aims/H2O_aims.py`.
+:git:`ase/test/aims/test_H2O_aims.py`.
 
-.. literalinclude:: ../../../ase/test/aims/H2O_aims.py
+.. literalinclude:: ../../../ase/test/aims/test_H2O_aims.py

@@ -159,6 +159,6 @@ def minkowski_reduce(cell, pbc=True):
 
     norms1 = np.sort(np.linalg.norm(cell, axis=1))
     norms2 = np.sort(np.linalg.norm(op @ cell, axis=1))
-    if not (norms2 <= norms1).all():
+    if not (norms2 <= norms1 + 1E-12).all():
         raise RuntimeError("Minkowski reduction failed")
     return op @ cell, op

@@ -1,6 +1,5 @@
 import numpy as np
 import os
-from ase.utils import basestring
 
 
 class MBPT_LCAO:
@@ -42,7 +41,7 @@ class MBPT_LCAO:
         for k, v in self.param.items():
             if isinstance(v, np.ndarray):
                 f.write(k + '  {0}  {1}  {2}\n'.format(v[0], v[1], v[2]))
-            elif isinstance(v, basestring):
+            elif isinstance(v, str):
                 f.write(k + '      ' + v + '\n')
             elif k == 'group_species' or k == 'species_iter':
                 gp = '{'
@@ -68,7 +67,7 @@ class MBPT_LCAO:
         Parameters
         ----------
         output_name : str, optional
-            name of the output file, defualt: mbpt_lcao.out
+            name of the output file, default: mbpt_lcao.out
 
         write_inp : bool, optional
             write the tddft_lr,inp file before to run the program, by default

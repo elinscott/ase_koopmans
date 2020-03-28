@@ -12,7 +12,7 @@ The implementation is based on:
    | `Tight-Binding Approximation-Enhanced Global Optimization`__
    | J. Chem. Theory Comput. 2018, 14, 2797−2807
 
-   __ http://doi.org/10.1021/acs.jctc.8b00039
+   __ https://doi.org/10.1021/acs.jctc.8b00039
 
 and has much the same functionality as e.g. the USPEX program from the Oganov
 group and the XtalOpt code by the Zurek group.

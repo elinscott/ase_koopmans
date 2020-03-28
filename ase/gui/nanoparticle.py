@@ -1,4 +1,3 @@
-# encoding: utf-8
 """nanoparticle.py - Window for setting up crystalline nanoparticles.
 """
 from copy import copy

@@ -28,5 +28,5 @@ You can see examples of the implementation of this for real adsorbates as well a
   | `Global optimization of adsorbate–surface structures while preserving molecular identity`__
   | Top. Catal., Vol. **57**, 40 (2014)
 
-__ http://dx.doi.org/10.1007/s11244-013-0161-8
+__ https://doi.org/10.1007/s11244-013-0161-8
 

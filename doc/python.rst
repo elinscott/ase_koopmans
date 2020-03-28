@@ -15,9 +15,9 @@ language.
 
 
 .. _Recipes: http://code.activestate.com/recipes/langs/python
-.. _Python quick reference card: http://www.limsi.fr/Individu/pointal/python/pqrc
+.. _Python quick reference card: https://perso.limsi.fr/pointal/python/pqrc
 .. _different reference card: http://rgruet.free.fr/
-.. _Python: http://www.python.org
+.. _Python: https://www.python.org/
 
 
 Executing Python code

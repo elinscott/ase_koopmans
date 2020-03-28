@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Infrared intensities"""
 
 import os.path as op
@@ -11,7 +9,7 @@ import numpy as np
 import ase.units as units
 from ase.parallel import parprint, paropen
 from ase.vibrations import Vibrations
-from ase.utils import basestring, pickleload
+from ase.utils import pickleload
 
 
 class Infrared(Vibrations):
@@ -260,7 +258,7 @@ class Infrared(Vibrations):
         elif intensity_unit == 'km/mol':
             iu_string = '   ' + iu_string
             iu_format = ' %7.1f'
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         parprint('-------------------------------------', file=log)

@@ -1,12 +1,11 @@
 import ase.db
-from ase.utils import basestring
 from ase.io.formats import string2index
 
 
 def read_db(filename, index, **kwargs):
     db = ase.db.connect(filename, serial=True, **kwargs)
 
-    if isinstance(index, basestring):
+    if isinstance(index, str):
         try:
             index = string2index(index)
         except ValueError:
@@ -15,7 +14,7 @@ def read_db(filename, index, **kwargs):
     if isinstance(index, int):
         index = slice(index, index + 1 or None)
 
-    if isinstance(index, basestring):
+    if isinstance(index, str):
         # index is a database query string:
         for row in db.select(index):
             yield row.toatoms()

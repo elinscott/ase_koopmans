@@ -17,7 +17,7 @@ def read_turbomole(fd):
     lines = fd.readlines()
     atoms_pos = []
     atom_symbols = []
-    myconstraints=[]
+    myconstraints = []
 
     # find $coord section;
     # does not necessarily have to be the first $<something> in file...
@@ -25,16 +25,18 @@ def read_turbomole(fd):
         if l.strip().startswith('$coord'):
             start = i
             break
-    for line in lines[start+1:]:
-        if line.startswith('$'): # start of new section
+    for line in lines[start + 1:]:
+        if line.startswith('$'):  # start of new section
             break
         else:
             x, y, z, symbolraw = line.split()[:4]
-            symbolshort=symbolraw.strip()
-            symbol=symbolshort[0].upper()+symbolshort[1:].lower()
-            #print symbol
+            symbolshort = symbolraw.strip()
+            symbol = symbolshort[0].upper() + symbolshort[1:].lower()
+            # print(symbol)
             atom_symbols.append(symbol)
-            atoms_pos.append([float(x)*Bohr, float(y)*Bohr, float(z)*Bohr])
+            atoms_pos.append(
+                [float(x) * Bohr, float(y) * Bohr, float(z) * Bohr]
+            )
             cols = line.split()
             if (len(cols) == 5):
                 fixedstr = line.split()[4].strip()
@@ -45,10 +47,21 @@ def read_turbomole(fd):
             else:
                 myconstraints.append(False)
 
-    atoms = Atoms(positions = atoms_pos, symbols = atom_symbols, pbc = False)
-    c = FixAtoms(mask = myconstraints)
+    atoms = Atoms(positions=atoms_pos, symbols=atom_symbols, pbc=False)
+    c = FixAtoms(mask=myconstraints)
     atoms.set_constraint(c)
     return atoms
+
+
+class TurbomoleFormatError(ValueError):
+    default_message = ('Data format in file does not correspond to known '
+                       'Turbomole gradient format')
+
+    def __init__(self, *args, **kwargs):
+        if args or kwargs:
+            ValueError.__init__(self, *args, **kwargs)
+        else:
+            ValueError.__init__(self, self.default_message)
 
 
 def read_turbomole_gradient(fd, index=-1):
@@ -71,51 +84,51 @@ def read_turbomole_gradient(fd, index=-1):
     if end <= start:
         raise RuntimeError('File does not contain a valid \'$grad\' section')
 
-    def formatError():
-        raise RuntimeError('Data format in file does not correspond to known '
-                           'Turbomole gradient format')
-
     # trim lines to $grad
-    del lines[:start+1]
-    del lines[end-1-start:]
+    del lines[:start + 1]
+    del lines[end - 1 - start:]
 
     # Interpret $grad section
     from ase import Atoms, Atom
     from ase.calculators.singlepoint import SinglePointCalculator
     from ase.units import Bohr, Hartree
     images = []
-    while len(lines): # loop over optimization cycles
+    while lines:  # loop over optimization cycles
         # header line
-        # cycle =      1    SCF energy =     -267.6666811409   |dE/dxyz| =  0.157112
+        # cycle =      1    SCF energy =     -267.6666811409   |dE/dxyz| =  0.157112  # noqa: E501
         fields = lines[0].split('=')
         try:
             # cycle = int(fields[1].split()[0])
             energy = float(fields[2].split()[0]) * Hartree
             # gradient = float(fields[3].split()[0])
-        except (IndexError, ValueError):
-            formatError()
+        except (IndexError, ValueError) as e:
+            raise TurbomoleFormatError() from e
 
         # coordinates/gradient
         atoms = Atoms()
         forces = []
         for line in lines[1:]:
             fields = line.split()
-            if len(fields) == 4: # coordinates
-                # 0.00000000000000      0.00000000000000      0.00000000000000      c
+            if len(fields) == 4:  # coordinates
+                # 0.00000000000000      0.00000000000000      0.00000000000000      c  # noqa: E501
                 try:
                     symbol = fields[3].lower().capitalize()
-                    position = tuple([Bohr * float(x) for x in fields[0:3] ])
-                except ValueError:
-                    formatError()
+                    position = tuple([Bohr * float(x) for x in fields[0:3]])
+                except ValueError as e:
+                    raise TurbomoleFormatError() from e
                 atoms.append(Atom(symbol, position))
-            elif len(fields) == 3: # gradients
-                #  -.51654903354681D-07  -.51654903206651D-07  0.51654903169644D-07
-                try:
-                    grad = [-float(x.replace('D', 'E')) * Hartree / Bohr for x in fields[0:3] ]
-                except ValueError:
-                    formatError()
+            elif len(fields) == 3:  # gradients
+                #  -.51654903354681D-07  -.51654903206651D-07  0.51654903169644D-07  # noqa: E501
+                grad = []
+                for val in fields[:3]:
+                    try:
+                        grad.append(
+                            -float(val.replace('D', 'E')) * Hartree / Bohr
+                        )
+                    except ValueError as e:
+                        raise TurbomoleFormatError() from e
                 forces.append(grad)
-            else: # next cycle
+            else:  # next cycle
                 break
 
         # calculator
@@ -126,7 +139,7 @@ def read_turbomole_gradient(fd, index=-1):
         images.append(atoms)
 
         # delete this frame from data to be handled
-        del lines[:2*len(atoms)+1]
+        del lines[:2 * len(atoms) + 1]
 
     return images[index]
 

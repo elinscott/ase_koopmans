@@ -29,7 +29,7 @@ For **small clusters on/in support material** in:
    | `A genetic algorithm for first principles global structure optimization of supported nano structures`__
    | The Journal of chemical physics, Vol. 141 (2014), 044711
 
-   __ http://dx.doi.org/10.1063/1.4886337
+   __ https://doi.org/10.1063/1.4886337
 
 For **medium sized alloy clusters** in:
 
@@ -37,7 +37,7 @@ For **medium sized alloy clusters** in:
    | `Genetic Algorithm Procreation Operators for Alloy Nanoparticle Catalysts`__
    | Topics in Catalysis, Vol **57**, No. 1-4, pp. 33-39, (2014)
    
-   __ http://dx.doi.org/10.1007/s11244-013-0160-9
+   __ https://doi.org/10.1007/s11244-013-0160-9
    
 A search for **mixed metal ammines for ammonia storage** have been performed
 using the GA in:
@@ -46,7 +46,7 @@ using the GA in:
    | `Designing Mixed Metal Halide Ammines for Ammonia Storage Using Density Functional Theory and Genetic Algorithms`__
    | Physical Chemistry Chemical Physics, Vol **16**, No. 36, pp. 19732-19740, (2014)
    
-   __ http://dx.doi.org/10.1039/C4CP03133D
+   __ https://doi.org/10.1039/C4CP03133D
    
 A simple tutorial explaining how to set up a database and perform a
 similar search can be found here: :ref:`fcc_alloys_tutorial`

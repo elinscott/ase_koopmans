@@ -1,6 +1,5 @@
 # creates: formatoptions.rst
-from ase.io.formats import all_formats, format2modulename
-from ase.utils import import_module
+from ase.io.formats import all_formats
 with open('formatoptions.rst', 'w') as fd:
     print('============================================', file=fd)
     print('Format Specific Options', file=fd)

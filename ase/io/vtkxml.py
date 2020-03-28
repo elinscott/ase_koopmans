@@ -3,11 +3,12 @@ import numpy as np
 
 fast = False
 
+
 def write_vti(filename, atoms, data=None):
     from vtk import vtkStructuredPoints, vtkDoubleArray, vtkXMLImageDataWriter
 
-    #if isinstance(fileobj, basestring):
-    #    fileobj = paropen(fileobj, 'w')
+    # if isinstance(fileobj, str):
+    #     fileobj = paropen(fileobj, 'w')
 
     if isinstance(atoms, list):
         if len(atoms) > 1:
@@ -24,25 +25,26 @@ def write_vti(filename, atoms, data=None):
 
     cell = atoms.get_cell()
 
-    assert np.all(cell==np.diag(cell.diagonal())), 'Unit cell must be orthogonal'
+    if not np.all(cell == np.diag(np.diag(cell))):
+        raise ValueError('Unit cell must be orthogonal')
 
-    bbox = np.array(list(zip(np.zeros(3),cell.diagonal()))).ravel()
+    bbox = np.array(list(zip(np.zeros(3), cell.diagonal()))).ravel()
 
     # Create a VTK grid of structured points
     spts = vtkStructuredPoints()
     spts.SetWholeBoundingBox(bbox)
     spts.SetDimensions(data.shape)
     spts.SetSpacing(cell.diagonal() / data.shape)
-    #spts.SetSpacing(paw.gd.h_c * Bohr)
+    # spts.SetSpacing(paw.gd.h_c * Bohr)
 
-    #print 'paw.gd.h_c * Bohr=',paw.gd.h_c * Bohr
-    #print 'atoms.cell.diagonal() / data.shape=', cell.diagonal()/data.shape
-    #assert np.all(paw.gd.h_c * Bohr==cell.diagonal()/data.shape)
+    # print('paw.gd.h_c * Bohr=',paw.gd.h_c * Bohr)
+    # print('atoms.cell.diagonal() / data.shape=', cell.diagonal()/data.shape)
+    # assert np.all(paw.gd.h_c * Bohr==cell.diagonal()/data.shape)
 
-    #s = paw.wfs.kpt_u[0].psit_nG[0].copy()
-    #data = paw.get_pseudo_wave_function(band=0, kpt=0, spin=0, pad=False)
-    #spts.point_data.scalars = data.swapaxes(0,2).flatten()
-    #spts.point_data.scalars.name = 'scalars'
+    # s = paw.wfs.kpt_u[0].psit_nG[0].copy()
+    # data = paw.get_pseudo_wave_function(band=0, kpt=0, spin=0, pad=False)
+    # spts.point_data.scalars = data.swapaxes(0,2).flatten()
+    # spts.point_data.scalars.name = 'scalars'
 
     # Allocate a VTK array of type double and copy data
     da = vtkDoubleArray()
@@ -50,11 +52,11 @@ def write_vti(filename, atoms, data=None):
     da.SetNumberOfComponents(1)
     da.SetNumberOfTuples(np.prod(data.shape))
 
-    for i,d in enumerate(data.swapaxes(0,2).flatten()):
-        da.SetTuple1(i,d)
+    for i, d in enumerate(data.swapaxes(0, 2).flatten()):
+        da.SetTuple1(i, d)
 
     # Assign the VTK array as point data of the grid
-    spd = spts.GetPointData() # type(spd) is vtkPointData
+    spd = spts.GetPointData()  # type(spd) is vtkPointData
     spd.SetScalars(da)
 
     """
@@ -83,7 +85,8 @@ def write_vti(filename, atoms, data=None):
 
 
 def write_vtu(filename, atoms, data=None):
-    from vtk import VTK_MAJOR_VERSION, vtkUnstructuredGrid, vtkPoints, vtkXMLUnstructuredGridWriter
+    from vtk import (VTK_MAJOR_VERSION, vtkUnstructuredGrid, vtkPoints,
+                     vtkXMLUnstructuredGridWriter)
     from vtk.util.numpy_support import numpy_to_vtk
 
     if isinstance(atoms, list):
@@ -98,8 +101,8 @@ def write_vtu(filename, atoms, data=None):
     p = vtkPoints()
     p.SetNumberOfPoints(len(atoms))
     p.SetDataTypeToDouble()
-    for i,pos in enumerate(atoms.get_positions()):
-        p.InsertPoint(i,pos[0],pos[1],pos[2])
+    for i, pos in enumerate(atoms.get_positions()):
+        p.InsertPoint(i, *pos)
     ugd.SetPoints(p)
 
     # add atomic numbers
@@ -114,7 +117,7 @@ def write_vtu(filename, atoms, data=None):
 
     # add covalent radii
     from ase.data import covalent_radii
-    radii = numpy_to_vtk(np.array([covalent_radii[i] for i in atoms.get_atomic_numbers()]), deep=1)
+    radii = numpy_to_vtk(covalent_radii[atoms.numbers], deep=1)
     ugd.GetPointData().AddArray(radii)
     radii.SetName("radii")
 

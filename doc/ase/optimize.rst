@@ -213,7 +213,7 @@ Read about this algorithm here:
   | `Structural Relaxation Made Simple`__
   | Physical Review Letters, Vol. **97**, 170201 (2006)
 
-__ http://dx.doi.org/10.1103/PhysRevLett.97.170201
+__ https://doi.org/10.1103/PhysRevLett.97.170201
 
 
 MDMin
@@ -287,6 +287,15 @@ optimization and the information needed to generate the Hessian Matrix.
 The BFGSLineSearch algorithm is not compatible with nudged elastic band
 calculations.
 
+Pyberny
+-------
+
+ASE includes a wrapper for the Pyberny_ optimizer. This requires installing
+Pyberny::
+
+    pip install pyberny
+
+.. autoclass:: Berny
 
 .. module:: ase.optimize.precon
 
@@ -311,7 +320,7 @@ You can read more about the theory and implementation here:
   | `A universal preconditioner for simulating condensed phase materials`__
   | J. Chem. Phys. *144*, 164109 (2016).
 
-__ http://dx.doi.org/10.1063/1.4947024
+__ https://doi.org/10.1063/1.4947024
 
 Tests with a variety of solid-state systems using both DFT and classical
 interatomic potentials driven though ASE calculators show speedup factors of up
@@ -467,7 +476,7 @@ Read more about this algorithm here:
   | `Global Optimization by Basin-Hopping and the Lowest Energy Structures of Lennard-Jones Clusters Containing up to 110 Atoms`__
   | J. Phys. Chem. A, Vol. **101**, 5111-5116 (1997)
 
-__ http://pubs.acs.org/doi/abs/10.1021/jp970984n
+__ https://doi.org/10.1021/jp970984n
 
 and here:
 
@@ -475,7 +484,7 @@ and here:
   | `Global Optimization of Clusters, Crystals, and Biomolecules`__
   | Science, Vol. **285**, 1368 (1999)
 
-__ http://www.sciencemag.org/cgi/content/abstract/sci;285/5432/1368
+__ https://science.sciencemag.org/content/285/5432/1368.abstract
 
 Minima hopping
 --------------
@@ -486,7 +495,7 @@ The minima hopping algorithm was developed and described by Goedecker:
   | `Minima hopping: An efficient search method for the global minimum of the potential energy surface of complex molecular systems`__
   | J. Chem. Phys., Vol. **120**, 9911 (2004)
 
-__ http://dx.doi.org/10.1063/1.1724816
+__ https://doi.org/10.1063/1.1724816
 
 This algorithm utilizes a series of alternating steps of NVE molecular dynamics and local optimizations, and has two parameters that the code dynamically adjusts in response to the progress of the search. The first parameter is the initial temperature of the NVE simulation. Whenever a step finds a new minimum this temperature is decreased; if the step finds a previously found minimum the temperature is increased. The second dynamically adjusted parameter is `E_\mathrm{diff}`, which is an energy threshold for accepting a newly found minimum. If the new minimum is no more than `E_\mathrm{diff}` eV higher than the previous minimum, it is acccepted and `E_\mathrm{diff}` is decreased; if it is more than `E_\mathrm{diff}` eV higher it is rejected and `E_\mathrm{diff}` is increased. The method is used as::
 
@@ -510,12 +519,13 @@ This will run the algorithm until 10 steps are taken; alternatively, if totalste
  | ``timestep`` : 1.0,  # fs, timestep for MD simulations
  | ``optimizer`` : QuasiNewton,  # local optimizer to use
  | ``minima_traj`` : 'minima.traj',  # storage file for minima list
+ | ``fmax`` : 0.05,  # eV/A, max force for optimizations
 
 Specific definitions of the ``alpha``, ``beta``, and ``mdmin`` parameters can be found in the publication by Goedecker. ``minima_threshold`` is used to determine if two atomic configurations are identical; if any atom has moved by more than this amount it is considered a new configuration. Note that the code tries to do this in an intelligent manner: atoms are considered to be indistinguishable, and translations are allowed in the directions of the periodic boundary conditions. Therefore, if a CO is adsorbed in an ontop site on a (211) surface it will be considered identical no matter which ontop site it occupies.
 
 The trajectory file ``minima_traj`` will be populated with the accepted minima as they are found. A log of the progress is kept in ``logfile``.
 
-The code is written such that a stopped simulation (e.g., killed by the batching system when the maximum wall time was exceeded) can usually be restarted without too much effort by the user. In most cases, the script can be resubmitted without any modification -- if the ``logfile`` and ``minima_traj`` are found, the script will attempt to use these to resume. (Note that you may need to clean up files left in the directory by the calculator, however, such as the .nc file produced by Jacapo.)
+The code is written such that a stopped simulation (e.g., killed by the batching system when the maximum wall time was exceeded) can usually be restarted without too much effort by the user. In most cases, the script can be resubmitted without any modification -- if the ``logfile`` and ``minima_traj`` are found, the script will attempt to use these to resume. (Note that you may need to clean up files left in the directory by the calculator, however.)
 
 Note that these searches can be quite slow, so it can pay to have multiple searches running at a time. Multiple searches can run in parallel and share one list of minima. (Run each script from a separate directory but specify the location to the same absolute location for ``minima_traj``). Each search will use the global information of the list of minima, but will keep its own local information of the initial temperature and `E_\mathrm{diff}`.
 

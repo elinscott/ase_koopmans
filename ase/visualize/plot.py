@@ -42,6 +42,7 @@ def animate(images, ax=None,
     fig = ax.get_figure()
 
     nframes = [0]
+
     def drawimage(atoms):
         ax.clear()
         ax.axis('off')

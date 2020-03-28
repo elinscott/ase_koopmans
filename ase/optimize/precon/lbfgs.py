@@ -4,7 +4,6 @@ import warnings
 from math import sqrt
 import numpy as np
 
-from ase.utils import basestring
 from ase.optimize.optimize import Optimizer
 from ase.constraints import UnitCellFilter
 
@@ -32,7 +31,7 @@ class PreconLBFGS(Optimizer):
     See this article for full details: D. Packwood, J. R. Kermode, L. Mones,
     N. Bernstein, J. Woolley, N. Gould, C. Ortner, and G. Csanyi, A universal
     preconditioner for simulating condensed phase materials
-    J. Chem. Phys. 144, 164109 (2016), DOI: http://dx.doi.org/10.1063/1.4947024
+    J. Chem. Phys. 144, 164109 (2016), DOI: https://doi.org/10.1063/1.4947024
     """
 
     # CO : added parameters rigid_units and rotation_factors
@@ -131,10 +130,10 @@ class PreconLBFGS(Optimizer):
             if len(atoms) < 100:
                 precon = None
                 warnings.warn('The system is likely too small to benefit from ' +
-                             'the standard preconditioner, hence it is ' +
-                             'disabled. To re-enable preconditioning, call' +
-                             '`PreconLBFGS` by explicitly providing the ' +
-                             'kwarg `precon`')
+                              'the standard preconditioner, hence it is ' +
+                              'disabled. To re-enable preconditioning, call' +
+                              '`PreconLBFGS` by explicitly providing the ' +
+                              'kwarg `precon`')
             else:
                 precon = 'Exp'
 
@@ -156,7 +155,7 @@ class PreconLBFGS(Optimizer):
         self.p = None
 
         # construct preconditioner if passed as a string
-        if isinstance(precon, basestring):
+        if isinstance(precon, str):
             if precon == 'C1':
                 precon = C1()
             if precon == 'Exp':
@@ -186,11 +185,11 @@ class PreconLBFGS(Optimizer):
         self._just_reset_hessian = True
         self.s = []
         self.y = []
-        self.rho = []  # Store also rho, to avoid calculationg the dot product
+        self.rho = []  # Store also rho, to avoid calculating the dot product
         # again and again
 
     def initialize(self):
-        """Initalize everything so no checks have to be done in step"""
+        """Initialize everything so no checks have to be done in step"""
         self.iteration = 0
         self.reset_hessian()
         self.r0 = None
@@ -290,7 +289,7 @@ class PreconLBFGS(Optimizer):
 
     def replay_trajectory(self, traj):
         """Initialize history from old trajectory."""
-        if isinstance(traj, basestring):
+        if isinstance(traj, str):
             from ase.io.trajectory import Trajectory
             traj = Trajectory(traj, 'r')
         r0 = None

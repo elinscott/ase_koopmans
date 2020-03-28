@@ -3,14 +3,13 @@ import numpy as np
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.calculators.singlepoint import SinglePointKPoint
-from ase.utils import basestring
 
 
 def read_gpaw_out(fileobj, index):
     notfound = []
 
     def index_startswith(lines, string):
-        if not isinstance(string, basestring):
+        if not isinstance(string, str):
             # assume it's a list
             for entry in string:
                 try:

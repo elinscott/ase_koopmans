@@ -82,7 +82,7 @@ class FieldPlotter(_PrimiPlotter):
                         (0.33, 1, 0, 0),
                         (0.66, 1, 1, 0),
                         (1.0, 1, 1, 1)],
-                       reverse)
+                        reverse)
         
     def set_black_white_colors(self, reverse=False):
         """Set the color to Black-White (greyscale)"""

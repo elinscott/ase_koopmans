@@ -12,11 +12,11 @@ class OFPComparator(object):
 
       * `Oganov, Valle, J. Chem. Phys. 130, 104504 (2009)`__
 
-        __ http://dx.doi.org/10.1063/1.3079326
+        __ https://doi.org/10.1063/1.3079326
 
       * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
 
-        __ http://dx.doi.org/10.1016/j.cpc.2010.06.007
+        __ https://doi.org/10.1016/j.cpc.2010.06.007
 
     Parameters:
 
@@ -48,7 +48,7 @@ class OFPComparator(object):
          Note: for isolated systems (pbc = [False, False, False]),
          the pair correlation function itself is always short-ranged
          (decays to zero beyond a certain radius), so unity is not
-         substracted for calculating the fingerprint. Also the
+         subtracted for calculating the fingerprint. Also the
          volume normalization disappears.
 
     maxdims: list of three floats or None
@@ -420,7 +420,7 @@ class OFPComparator(object):
         """ Returns a list with the local order for every atom,
         using the definition of local order from
         Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632
-        http://dx.doi.org/10.1016/j.cpc.2010.06.007"""
+        https://doi.org/10.1016/j.cpc.2010.06.007"""
 
         # total number of atoms:
         n_tot = sum([len(typedic[key]) for key in typedic])

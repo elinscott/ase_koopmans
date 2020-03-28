@@ -29,12 +29,12 @@ def update(filename, commands):
 
     Run this when ever options are changed::
 
-        python3 -m ase.cli.complete
+        python3 -m ase.cli.completion
 
     """
 
     import textwrap
-    from ase.utils import import_module
+    from importlib import import_module
 
     dct = {}  # Dict[str, List[str]]
 

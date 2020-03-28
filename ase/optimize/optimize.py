@@ -9,8 +9,7 @@ from os.path import isfile
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.parallel import world, barrier
 from ase.io.trajectory import Trajectory
-from ase.utils import basestring
-import collections
+import collections.abc
 
 
 class Dynamics:
@@ -51,7 +50,7 @@ class Dynamics:
             master = world.rank == 0
         if not master:
             logfile = None
-        elif isinstance(logfile, basestring):
+        elif isinstance(logfile, str):
             if logfile == "-":
                 logfile = sys.stdout
             else:
@@ -64,7 +63,7 @@ class Dynamics:
         self.max_steps = 100000000
 
         if trajectory is not None:
-            if isinstance(trajectory, basestring):
+            if isinstance(trajectory, str):
                 mode = "a" if append_trajectory else "w"
                 trajectory = Trajectory(
                     trajectory, mode=mode, atoms=atoms, master=master
@@ -78,7 +77,7 @@ class Dynamics:
         self, function, position=0, interval=1, *args, **kwargs
     ):
         """Insert an observer."""
-        if not isinstance(function, collections.Callable):
+        if not isinstance(function, collections.abc.Callable):
             function = function.write
         self.observers.insert(position, (function, interval, args, kwargs))
 
@@ -125,7 +124,7 @@ class Dynamics:
         >>>     opt1.run()
         """
 
-        # compute inital structure and log the first step
+        # compute initial structure and log the first step
         self.atoms.get_forces()
 
         # yield the first time to inspect before logging

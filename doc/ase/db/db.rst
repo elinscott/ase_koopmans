@@ -21,15 +21,15 @@ MySQL_:
 MariaDB_:
     Server based database.
 
-The JSON and SQLite3 back-ends work "out of the box", whereas PostgreSQL, MySQL 
+The JSON and SQLite3 back-ends work "out of the box", whereas PostgreSQL, MySQL
 and MariaDB requires a server (See :ref:`server` or :ref:`MySQL_server`).
 
 There is a command-line tool called :ref:`ase-db` that can be
 used to query and manipulate databases and also a `Python interface`_.
 
 .. _JSON: http://www.json.org/
-.. _SQLite3: http://www.sqlite.org/
-.. _PostgreSQL: http://www.postgresql.org/
+.. _SQLite3: https://www.sqlite.org/index.html
+.. _PostgreSQL: https://www.postgresql.org/
 .. _MySQL: https://www.mysql.com/
 .. _MariaDB: https://mariadb.org/
 
@@ -542,69 +542,59 @@ into the PostgreSQL database like this::
 
     $ ase db data.db --insert-into $PROJ1
 
-Now you can start the Flask_\ -app ``ase.db.app``.  You can use Flask's own
-web-server or use any WSGI_ compatible server.  We will use
-Twisted_ in the example below. Set the $ASE_DB_APP_CONFIG environment variable
-to point to a Python configuration file containing something similar to this::
-
-    ASE_DB_NAMES = ['postgresql://ase:pw@localhost:5432/project1',
-                    'postgresql://ase:pw@localhost:5432/project2',
-                    ...]
-    ASE_DB_HOMEPAGE = '<a href="https://home.page.org">HOME</a>'
-
-and then start the server with::
-
-    $ ASE_DB_APP_CONFIG=... twistd web --wsgi=ase.db.app.app --port=tcp:8000
+Now you can start the Flask_\ -app ``ase.db.app.app`` with any WSGI_
+compatible server.
 
 .. note::
 
     Please review the code carefully before exposing the ``ase.db.app`` to
     the internet or `bad things <https://xkcd.com/327/>`__ could happen.
 
-.. _Flask: http://flask.pocoo.org/
+.. _Flask: https://palletsprojects.com/p/flask/
 .. _WSGI: https://www.python.org/dev/peps/pep-3333/
-.. _Twisted: https://twistedmatrix.com/
+
 
 .. _MySQL_server:
 
 Running a MySQL server
 ========================
 
-ASE DB can also be run with a MySQL server. First, we need to get the MySQL server
-up and running. There are many online resources describing how to to that, but on 
-a Ubuntu system the following should work::
+ASE DB can also be run with a MySQL server. First, we need to get the MySQL
+server up and running. There are many online resources describing how to to
+that, but on a Ubuntu system the following should work::
 
-  $ sudo apt-get install mysql-server
-  $ sudo mysql_secure_installation
+    $ sudo apt-get install mysql-server
+    $ sudo mysql_secure_installation
 
 Then we need to check if the server is running::
 
-  $ systemctl status mysql.service
+    $ systemctl status mysql.service
 
 if it is not running you can start the service by::
 
-  $ systemctl start mysql.service
+    $ systemctl start mysql.service
 
-Note that on some Linux distributions *mysql.service* should be replaced by *mysqld.service*.
+Note that on some Linux distributions *mysql.service* should be replaced by
+*mysqld.service*.
 
 Once the service is running, we can enter the MySQL shell::
 
     $ mysql -u root -p
 
-where we assume that there is a user named **root**, that will be prompted for a password.
-Now, we can create a user:: 
+where we assume that there is a user named **root**, that will be prompted
+for a password. Now, we can create a user::
 
-  mysql> CREATE USER 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
+    mysql> CREATE USER 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
 
 and then a database for our project::
 
-  mysql> CREATE DATABASE my_awesome_project;
+    mysql> CREATE DATABASE my_awesome_project;
 
 We need to give the ase user privileges to edit this database::
 
-  mysql> GRANT ALL PRIVILEGES ON my_awesome_project.* TO 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
+    mysql> GRANT ALL PRIVILEGES ON my_awesome_project.* TO 'ase'@'localhost' IDENTIFIED BY 'strongPassword';
 
 From a Python script we can now connect to the database via
 
-  >>> mysql_url = 'mysql://ase:strongPassword@localhost:3306/my_awesome_project'
-  >>> connect(mysql_url)  # doctest: +SKIP
+>>> mysql_url = 'mysql://ase:strongPassword@localhost:3306/my_awesome_project'
+>>> connect(mysql_url)  # doctest: +SKIP

@@ -27,7 +27,6 @@ from ase.dft.kpoints import kpoint_convert
 from ase.constraints import FixAtoms, FixCartesian
 from ase.data import chemical_symbols, atomic_numbers
 from ase.units import create_units
-from ase.utils import basestring
 
 
 # Quantum ESPRESSO uses CODATA 2006 internally
@@ -98,7 +97,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
 
     """
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rU')
 
     # work with a copy in memory for faster random access
@@ -307,9 +306,9 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             ibzkpts = []
             weights = []
             for i in range(nkpts):
-                l = pwo_lines[kpts_index + i].split()
-                weights.append(float(l[-1]))
-                coord = np.array([l[-6], l[-5], l[-4].strip('),')],
+                L = pwo_lines[kpts_index + i].split()
+                weights.append(float(L[-1]))
+                coord = np.array([L[-6], L[-5], L[-4].strip('),')],
                                  dtype=float)
                 coord *= 2 * np.pi / alat
                 coord = kpoint_convert(cell, ckpts_kv=coord)
@@ -333,29 +332,30 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                 spin, bands, eigenvalues = 0, [], [[], []]
 
                 while True:
-                    l = pwo_lines[bands_index].replace('-', ' -').split()
-                    if len(l) == 0:
+                    L = pwo_lines[bands_index].replace('-', ' -').split()
+                    if len(L) == 0:
                         if len(bands) > 0:
                             eigenvalues[spin].append(bands)
                             bands = []
-                    elif l == ['occupation', 'numbers']:
+                    elif L == ['occupation', 'numbers']:
                         # Skip the lines with the occupation numbers
                         bands_index += len(eigenvalues[spin][0]) // 8 + 1
-                    elif l[0] == 'k' and l[1].startswith('='):
+                    elif L[0] == 'k' and L[1].startswith('='):
                         pass
-                    elif 'SPIN' in l:
-                        if 'DOWN' in l:
+                    elif 'SPIN' in L:
+                        if 'DOWN' in L:
                             spin += 1
                     else:
                         try:
-                            bands.extend(map(float, l))
+                            bands.extend(map(float, L))
                         except ValueError:
                             break
                     bands_index += 1
 
                 if spin == 1:
                     assert len(eigenvalues[0]) == len(eigenvalues[1])
-                assert len(eigenvalues[0]) == len(ibzkpts), (np.shape(eigenvalues), len(ibzkpts))
+                assert len(eigenvalues[0]) == len(ibzkpts), \
+                    (np.shape(eigenvalues), len(ibzkpts))
 
                 kpts = []
                 for s in range(spin + 1):
@@ -468,7 +468,7 @@ def read_espresso_in(fileobj):
         Raised for missing keys that are required to process the file
     """
     # TODO: use ase opening mechanisms
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rU')
 
     # parse namelist section and extract remaining lines
@@ -575,14 +575,14 @@ def ibrav_to_cell(system):
                          [1.0, 1.0, -1.0]]) * (alat / 2)
     elif system['ibrav'] == 4:
         cell = np.array([[1.0, 0.0, 0.0],
-                         [-0.5, 0.5*3**0.5, 0.0],
+                         [-0.5, 0.5 * 3**0.5, 0.0],
                          [0.0, 0.0, c_over_a]]) * alat
     elif system['ibrav'] == 5:
         tx = ((1.0 - cosab) / 2.0)**0.5
         ty = ((1.0 - cosab) / 6.0)**0.5
         tz = ((1 + 2 * cosab) / 3.0)**0.5
         cell = np.array([[tx, -ty, tz],
-                         [0, 2*ty, tz],
+                         [0, 2 * ty, tz],
                          [-tx, -ty, tz]]) * alat
     elif system['ibrav'] == -5:
         ty = ((1.0 - cosab) / 6.0)**0.5
@@ -614,7 +614,7 @@ def ibrav_to_cell(system):
                          [1.0 / 2.0, b_over_a / 2.0, 0.0],
                          [0.0, 0.0, c_over_a]]) * alat
     elif system['ibrav'] == 10:
-        cell = np.array([[1.0 / 2.0, 0.0, c_over_a/2.0],
+        cell = np.array([[1.0 / 2.0, 0.0, c_over_a / 2.0],
                          [1.0 / 2.0, b_over_a / 2.0, 0.0],
                          [0.0, b_over_a / 2.0, c_over_a / 2.0]]) * alat
     elif system['ibrav'] == 11:
@@ -1065,6 +1065,7 @@ def infix_float(text):
 # Input file writing
 ###
 
+
 # Ordered and case insensitive
 KEYS = Namelist((
     ('CONTROL', [
@@ -1115,7 +1116,7 @@ KEYS = Namelist((
 
 # Number of valence electrons in the pseudopotentials recommended by
 # http://materialscloud.org/sssp/. These are just used as a fallback for
-# calculating inital magetization values which are given as a fraction
+# calculating initial magetization values which are given as a fraction
 # of valence electrons.
 SSSP_VALENCE = [
     0, 1.0, 2.0, 3.0, 4.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 3.0, 4.0,
@@ -1392,21 +1393,21 @@ def kspacing_to_grid(atoms, spacing, calculated_spacing=None):
     # reciprocal dimensions
     r_x, r_y, r_z = np.linalg.norm(atoms.get_reciprocal_cell(), axis=1)
 
-    kpoint_grid = [int(r_x/spacing) + 1,
-                   int(r_y/spacing) + 1,
-                   int(r_z/spacing) + 1]
+    kpoint_grid = [int(r_x / spacing) + 1,
+                   int(r_y / spacing) + 1,
+                   int(r_z / spacing) + 1]
 
     if calculated_spacing is not None:
-        calculated_spacing[:] = [r_x/kpoint_grid[0],
-                                 r_y/kpoint_grid[1],
-                                 r_z/kpoint_grid[2]]
+        calculated_spacing[:] = [r_x / kpoint_grid[0],
+                                 r_y / kpoint_grid[1],
+                                 r_z / kpoint_grid[2]]
 
     return kpoint_grid
 
 
 def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                       kspacing=None, kpts=None, koffset=(0, 0, 0),
-                      **kwargs):
+                      crystal_coordinates=False, **kwargs):
     """
     Create an input file for pw.x.
 
@@ -1461,6 +1462,11 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     kpts: (int, int, int) or dict
         If kpts is a tuple (or list) of 3 integers, it is interpreted
         as the dimensions of a Monkhorst-Pack grid.
+        If ``kpts`` is set to ``None``, only the Γ-point will be included
+        and QE will use routines optimized for Γ-point-only calculations.
+        Compared to Γ-point-only calculations without this optimization
+        (i.e. with ``kpts=(1, 1, 1)``), the memory and CPU requirements
+        are typically reduced by half.
         If kpts is a dict, it will either be interpreted as a path
         in the Brillouin zone (*) if it contains the 'path' keyword,
         otherwise it is converted to a Monkhorst-Pack grid (**).
@@ -1469,6 +1475,9 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     koffset: (int, int, int)
         Offset of kpoints in each direction. Must be 0 (no offset) or
         1 (half grid offset). Setting to True is equivalent to (1, 1, 1).
+    crystal_coordinates: bool
+        Whether the atomic positions should be written to the QE input file in
+        absolute (False, default) or relative (crystal) coordinates (True).
 
     """
 
@@ -1583,10 +1592,14 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
             else:
                 mask = ''
 
+            if crystal_coordinates:
+                coords = [atom.a, atom.b, atom.c]
+            else:
+                coords = atom.position
             atomic_positions_str.append(
                 '{atom.symbol} '
-                '{atom.x:.10f} {atom.y:.10f} {atom.z:.10f} '
-                '{mask}\n'.format(atom=atom, mask=mask))
+                '{coords[0]:.10f} {coords[1]:.10f} {coords[2]:.10f} '
+                '{mask}\n'.format(atom=atom, coords=coords, mask=mask))
 
     # Add computed parameters
     # different magnetisms means different types
@@ -1643,7 +1656,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         else:
             kgrid = kpts
     else:
-        kgrid = (1, 1, 1)
+        kgrid = "gamma"
 
     # True and False work here and will get converted by ':d' format
     if isinstance(koffset, int):
@@ -1658,8 +1671,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         for k in kgrid:
             pwi.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} 0\n'.format(k=k))
         pwi.append('\n')
-    elif all([x == 1 for x in kgrid]) and not any(koffset):
-        # QE defaults to gamma point, make it explicit
+    elif isinstance(kgrid, str) and (kgrid == "gamma"):
         pwi.append('K_POINTS gamma\n')
         pwi.append('\n')
     else:
@@ -1678,7 +1690,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         pwi.append('\n')
 
     # Positions - already constructed, but must appear after namelist
-    pwi.append('ATOMIC_POSITIONS angstrom\n')
+    if crystal_coordinates:
+        pwi.append('ATOMIC_POSITIONS crystal\n')
+    else:
+        pwi.append('ATOMIC_POSITIONS angstrom\n')
     pwi.extend(atomic_positions_str)
     pwi.append('\n')
 

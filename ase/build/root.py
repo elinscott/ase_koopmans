@@ -57,7 +57,7 @@ def bcc111_root(symbol, root, size, a=None,
 
 def root_surface(primitive_slab, root, swap_alpha=False, eps=1e-8):
     """Creates a cell from a primitive cell that repeats along the x and y
-    axis in a way consisent with the primitive cell, that has been cut
+    axis in a way consistent with the primitive cell, that has been cut
     to have a side length of *root*.
 
     *primitive cell* should be a primitive 2d cell of your slab, repeated
@@ -143,7 +143,7 @@ def root_surface(primitive_slab, root, swap_alpha=False, eps=1e-8):
         shift_vector = np.array([eps * 100, eps * 200, eps * 300])
         if shift:
             atoms.translate(shift_vector)
-        atoms.set_scaled_positions(atoms.get_scaled_positions())
+        atoms.wrap()
         valid = [0]
         for x in range(len(atoms)):
             for ypos, y in enumerate(valid):

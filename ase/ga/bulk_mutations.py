@@ -304,11 +304,11 @@ class BondElectroNegativityModel(PairwiseHarmonicPotential):
 
       * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
 
-        __ https://dx.doi.org/10.1016/j.cpc.2010.06.007
+        __ https://doi.org/10.1016/j.cpc.2010.06.007
 
       * `Lyakhov, Oganov, Phys. Rev. B 84 (2011) 092103`__
 
-        __ https://dx.doi.org/10.1103/PhysRevB.84.092103
+        __ https://doi.org/10.1103/PhysRevB.84.092103
 
     """
 
@@ -359,7 +359,7 @@ class SoftMutation(OffspringCreator):
 
     * `Lyakhov, Oganov, Valle, Comp. Phys. Comm. 181 (2010) 1623-1632`__
 
-      __ https://dx.doi.org/10.1016/j.cpc.2010.06.007
+      __ https://doi.org/10.1016/j.cpc.2010.06.007
 
     As in the reference above, the next-lowest mode is used if the
     structure has already been softmutated along the current-lowest
@@ -596,7 +596,7 @@ class RotationalMutation(OffspringCreator):
       * `Zhu Q., Oganov A.R., Glass C.W., Stokes H.T,
         Acta Cryst. (2012), B68, 215-226.`__
 
-        __ https://dx.doi.org/10.1107/S0108768112017466
+        __ https://doi.org/10.1107/S0108768112017466
 
     Parameters:
 

@@ -314,7 +314,7 @@ class Writer:
             self.header = b''
 
     def fill(self, a):
-        """Fill in ndarray chunks for array currently beeing written."""
+        """Fill in ndarray chunks for array currently being written."""
         assert a.dtype == self.dtype
         assert a.shape[1:] == self.shape[len(self.shape) - a.ndim + 1:]
         self.nmissing -= a.size
@@ -531,7 +531,10 @@ class Reader:
     __dir__ = keys  # needed for tab-completion
 
     def __getattr__(self, attr):
-        value = self._data[attr]
+        try:
+            value = self._data[attr]
+        except KeyError:
+            raise AttributeError(attr)
         if isinstance(value, NDArrayReader):
             return value.read()
         return value
@@ -551,7 +554,7 @@ class Reader:
         """Get attr or value if no such attr."""
         try:
             return self.__getattr__(attr)
-        except KeyError:
+        except AttributeError:
             return value
 
     def proxy(self, name, *indices):

@@ -2,7 +2,8 @@ import sys
 
 import numpy as np
 
-from ase.calculators.calculator import (get_calculator_class, names as calcnames,
+from ase.calculators.calculator import (get_calculator_class,
+                                        names as calcnames,
                                         PropertyNotImplementedError)
 from ase.constraints import FixAtoms, UnitCellFilter
 from ase.eos import EquationOfState

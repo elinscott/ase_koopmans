@@ -21,7 +21,6 @@ from ase.geometry.dimensionality.disjoint_set import DisjointSet
 class TSA:
 
     def __init__(self, num_atoms, n=2):
-
         """Initializes the TSA class.
 
         A disjoint set is maintained for the single cell and for the supercell.
@@ -29,13 +28,11 @@ class TSA:
         the dimensionality classification is dependent on the size of the
         initial cell.
 
-
         Parameters:
 
         num_atoms: int    The number of atoms in the unit cell.
         n: int            The number size of the (n, n, n) periodic supercell.
         """
-
         self.n = n
         self.num_atoms = num_atoms
         self.gsingle = DisjointSet(num_atoms)
@@ -46,10 +43,8 @@ class TSA:
         self.offsets = num_atoms * np.dot(self.m, self.cells.T)
 
     def insert_bond(self, i, j, offset):
-
         """Inserts a bond into the component graph, both in the single cell and
         each of the n^3 subcells of the supercell.
-
 
         Parameters:
 
@@ -57,21 +52,20 @@ class TSA:
         n: int           The index of the second atom.
         offset: tuple    The cell offset of the second atom.
         """
-
         nbr_cells = (self.cells + offset) % self.n
         nbr_offsets = self.num_atoms * np.dot(self.m, nbr_cells.T)
 
-        self.gsingle.merge(i, j)
+        self.gsingle.union(i, j)
         for (a, b) in zip(self.offsets, nbr_offsets):
-            self.gsuper.merge(a + i, b + j)
-            self.gsuper.merge(b + i, a + j)
+            self.gsuper.union(a + i, b + j)
+            self.gsuper.union(b + i, a + j)
 
     def _get_component_dimensionalities(self):
 
         n = self.n
         offsets = self.offsets
-        single_roots = self.gsingle.get_roots()
-        super_components = self.gsuper.get_components()
+        single_roots = np.unique(self.gsingle.find_all())
+        super_components = self.gsuper.find_all()
 
         component_dim = {}
         for i in single_roots:
@@ -82,13 +76,11 @@ class TSA:
         return component_dim
 
     def check(self):
-
         """Determines the dimensionality histogram.
 
         Returns:
         hist : tuple         Dimensionality histogram.
         """
-
         cdim = self._get_component_dimensionalities()
         hist = np.zeros(4).astype(np.int)
         bc = np.bincount(list(cdim.values()))
@@ -96,16 +88,14 @@ class TSA:
         return tuple(hist)
 
     def get_components(self):
-
         """Determines the dimensionality and constituent atoms of each
         component.
 
         Returns:
         components: array    The component ID every atom
         """
-
         relabelled_dim = {}
-        relabelled_components = self.gsingle.get_components(relabel=True)
+        relabelled_components = self.gsingle.find_all(relabel=True)
         cdim = self._get_component_dimensionalities()
         for k, v in cdim.items():
             relabelled_dim[relabelled_components[k]] = v

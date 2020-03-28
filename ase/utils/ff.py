@@ -1,9 +1,23 @@
+# flake8: noqa
 import numpy as np
 from numpy import linalg
 from ase import units 
 
-class Morse:
+# Three variables extracted from what used to be endless repetitions below.
+Ax = np.array([[1, 0, 0, -1, 0, 0, 0, 0, 0],
+               [0, 1, 0, 0, -1, 0, 0, 0, 0],
+               [0, 0, 1, 0, 0, -1, 0, 0, 0],
+               [0, 0, 0, -1, 0, 0, 1, 0, 0],
+               [0, 0, 0, 0, -1, 0, 0, 1, 0],
+               [0, 0, 0, 0, 0, -1, 0, 0, 1]])
+Bx = np.array([[1, 0, 0, -1, 0, 0],
+               [0, 1, 0, 0, -1, 0],
+               [0, 0, 1, 0, 0, -1]])
+Mx = Bx
 
+
+
+class Morse:
     def __init__(self, atomi, atomj, D, alpha, r0):
         self.atomi = atomi
         self.atomj = atomj
@@ -13,7 +27,6 @@ class Morse:
         self.r = None
 
 class Bond:
-
     def __init__(self, atomi, atomj, k, b0, 
                  alpha=None, rref=None):
         self.atomi = atomi
@@ -25,7 +38,6 @@ class Bond:
         self.b = None
 
 class Angle:
-
     def __init__(self, atomi, atomj, atomk, k, a0, cos=False, 
                  alpha=None, rref=None):
         self.atomi = atomi
@@ -39,7 +51,6 @@ class Angle:
         self.a = None
 
 class Dihedral:
-
     def __init__(self, atomi, atomj, atomk, atoml, k, d0=None, n=None, 
                  alpha=None, rref=None):
         self.atomi = atomi
@@ -54,7 +65,6 @@ class Dihedral:
         self.d = None
 
 class VdW:
-
     def __init__(self, atomi, atomj, epsilonij=None, sigmaij=None, rminij=None,
                  Aij=None, Bij=None, epsiloni=None, epsilonj=None, 
                  sigmai=None, sigmaj=None, rmini=None, rminj=None, scale=1.0):
@@ -90,7 +100,6 @@ class VdW:
         self.r = None
 
 class Coulomb:
-
     def __init__(self, atomi, atomj, chargeij=None, 
                  chargei=None, chargej=None, scale=1.0):
         self.atomi = atomi
@@ -107,7 +116,6 @@ class Coulomb:
         self.r = None
 
 def get_morse_potential_eta(atoms, morse):
-
     i = morse.atomi
     j = morse.atomj
 
@@ -123,7 +131,6 @@ def get_morse_potential_eta(atoms, morse):
     return eta
 
 def get_morse_potential_value(atoms, morse):
-
     i = morse.atomi
     j = morse.atomj
 
@@ -139,11 +146,6 @@ def get_morse_potential_value(atoms, morse):
     return i, j, v
 
 def get_morse_potential_gradient(atoms, morse):
-
-    Mx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = morse.atomi
     j = morse.atomj
 
@@ -162,11 +164,6 @@ def get_morse_potential_gradient(atoms, morse):
     return i, j, gx
 
 def get_morse_potential_hessian(atoms, morse, spectral=False):
-
-    Mx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = morse.atomi
     j = morse.atomj
 
@@ -195,11 +192,6 @@ def get_morse_potential_hessian(atoms, morse, spectral=False):
     return i, j, Hx
 
 def get_morse_potential_reduced_hessian(atoms, morse):
-
-    Mx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = morse.atomi
     j = morse.atomj
 
@@ -220,7 +212,6 @@ def get_morse_potential_reduced_hessian(atoms, morse):
     return i, j, Hx
 
 def get_bond_potential_value(atoms, bond):
-
     i = bond.atomi
     j = bond.atomj
 
@@ -234,11 +225,6 @@ def get_bond_potential_value(atoms, bond):
     return i, j, v
 
 def get_bond_potential_gradient(atoms, bond):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = bond.atomi
     j = bond.atomj
 
@@ -255,11 +241,6 @@ def get_bond_potential_gradient(atoms, bond):
     return i, j, gx
 
 def get_bond_potential_hessian(atoms, bond, morses=None, spectral=False):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = bond.atomi
     j = bond.atomj
 
@@ -297,11 +278,6 @@ def get_bond_potential_hessian(atoms, bond, morses=None, spectral=False):
     return i, j, Hx
 
 def get_bond_potential_reduced_hessian(atoms, bond, morses=None):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = bond.atomi
     j = bond.atomj
 
@@ -371,14 +347,6 @@ def get_angle_potential_value(atoms, angle):
     return i, j, k, v
 
 def get_angle_potential_gradient(atoms, angle):
-
-    Ax=np.array([[1, 0, 0, -1, 0, 0, 0, 0, 0],
-                 [0, 1, 0, 0, -1, 0, 0, 0, 0],
-                 [0, 0, 1, 0, 0, -1, 0, 0, 0],
-                 [0, 0, 0, -1, 0, 0, 1, 0, 0],
-                 [0, 0, 0, 0, -1, 0, 0, 1, 0],
-                 [0, 0, 0, 0, 0, -1, 0, 0, 1]])
-
     i = angle.atomi
     j = angle.atomj
     k = angle.atomk
@@ -421,14 +389,6 @@ def get_angle_potential_gradient(atoms, angle):
     return i, j, k, gx
 
 def get_angle_potential_hessian(atoms, angle, morses=None, spectral=False):
-
-    Ax=np.array([[1, 0, 0, -1, 0, 0, 0, 0, 0],
-                 [0, 1, 0, 0, -1, 0, 0, 0, 0],
-                 [0, 0, 1, 0, 0, -1, 0, 0, 0],
-                 [0, 0, 0, -1, 0, 0, 1, 0, 0],
-                 [0, 0, 0, 0, -1, 0, 0, 1, 0],
-                 [0, 0, 0, 0, 0, -1, 0, 0, 1]])
-
     i = angle.atomi
     j = angle.atomj
     k = angle.atomk
@@ -524,14 +484,6 @@ def get_angle_potential_hessian(atoms, angle, morses=None, spectral=False):
     return i, j, k, Hx
 
 def get_angle_potential_reduced_hessian(atoms, angle, morses=None):
-
-    Ax=np.array([[1, 0, 0, -1, 0, 0, 0, 0, 0],
-                 [0, 1, 0, 0, -1, 0, 0, 0, 0],
-                 [0, 0, 1, 0, 0, -1, 0, 0, 0],
-                 [0, 0, 0, -1, 0, 0, 1, 0, 0],
-                 [0, 0, 0, 0, -1, 0, 0, 1, 0],
-                 [0, 0, 0, 0, 0, -1, 0, 0, 1]])
-
     i = angle.atomi
     j = angle.atomj
     k = angle.atomk
@@ -596,7 +548,6 @@ def get_angle_potential_reduced_hessian(atoms, angle, morses=None):
     return i, j, k, Hx
 
 def get_angle_potential_reduced_hessian_test(atoms, angle):
-
     i, j, k, v = get_angle_potential_value(atoms, angle)
     i, j, k, gx = get_angle_potential_gradient(atoms, angle)
 
@@ -605,7 +556,6 @@ def get_angle_potential_reduced_hessian_test(atoms, angle):
     return i, j, k, Hx
 
 def get_dihedral_potential_value(atoms, dihedral):
-
     i = dihedral.atomi
     j = dihedral.atomj
     k = dihedral.atomk
@@ -642,7 +592,6 @@ def get_dihedral_potential_value(atoms, dihedral):
     return i, j, k, l, v
 
 def get_dihedral_potential_gradient(atoms, dihedral):
-
     i = dihedral.atomi
     j = dihedral.atomj
     k = dihedral.atomk
@@ -697,7 +646,6 @@ def get_dihedral_potential_gradient(atoms, dihedral):
 
 def get_dihedral_potential_hessian(atoms, dihedral, morses=None, 
                                    spectral=False):
-
     eps = 0.000001
 
     i,j,k,l,g = get_dihedral_potential_gradient(atoms, dihedral)
@@ -754,7 +702,6 @@ def get_dihedral_potential_hessian(atoms, dihedral, morses=None,
     return i, j, k, l, Hx
 
 def get_dihedral_potential_reduced_hessian(atoms, dihedral, morses=None):
-
     i = dihedral.atomi
     j = dihedral.atomj
     k = dihedral.atomk
@@ -830,7 +777,6 @@ def get_dihedral_potential_reduced_hessian(atoms, dihedral, morses=None):
     return i, j, k, l, Hx
 
 def get_dihedral_potential_reduced_hessian_test(atoms, dihedral):
-
     i, j, k, l, gx = get_dihedral_potential_gradient(atoms, dihedral)
 
     if dihedral.n is None:
@@ -844,7 +790,6 @@ def get_dihedral_potential_reduced_hessian_test(atoms, dihedral):
     return i, j, k, l, Hx
 
 def get_vdw_potential_value(atoms, vdw):
-
     i = vdw.atomi
     j = vdw.atomj
 
@@ -858,11 +803,6 @@ def get_vdw_potential_value(atoms, vdw):
     return i, j, v
 
 def get_vdw_potential_gradient(atoms, vdw):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = vdw.atomi
     j = vdw.atomj
 
@@ -879,11 +819,6 @@ def get_vdw_potential_gradient(atoms, vdw):
     return i, j, gx
 
 def get_vdw_potential_hessian(atoms, vdw, spectral=False):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-    
     i = vdw.atomi
     j = vdw.atomj
 
@@ -910,7 +845,6 @@ def get_vdw_potential_hessian(atoms, vdw, spectral=False):
     return i, j, Hx
 
 def get_coulomb_potential_value(atoms, coulomb):
-
     i = coulomb.atomi
     j = coulomb.atomj
 
@@ -924,11 +858,6 @@ def get_coulomb_potential_value(atoms, coulomb):
     return i, j, v
 
 def get_coulomb_potential_gradient(atoms, coulomb):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = coulomb.atomi
     j = coulomb.atomj
 
@@ -945,11 +874,6 @@ def get_coulomb_potential_gradient(atoms, coulomb):
     return i, j, gx
 
 def get_coulomb_potential_hessian(atoms, coulomb, spectral=False):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = coulomb.atomi
     j = coulomb.atomj
 
@@ -1073,7 +997,6 @@ def rotational_vectors(atoms, mass_weighted=False):
     return Rot[:,0:ndof]
 
 def remove_tr_rot_vector(atoms, vecin, mass_weighted=False):
-
     Tr = translational_vectors(atoms, mass_weighted)
     Rot = rotational_vectors(atoms, mass_weighted)
 
@@ -1090,17 +1013,18 @@ def remove_tr_rot_vector(atoms, vecin, mass_weighted=False):
     return vecout
 
 def model_bond_angle_dihedral(atoms, cutoff=10.0):
+    Bohr2 = units.Bohr * units.Bohr
 
     alpha = np.array([[1.0000, 0.3949, 0.3949], 
                       [0.3949, 0.2800, 0.2800], 
-                      [0.3949, 0.2800, 0.2800]]) / units.Bohr / units.Bohr
+                      [0.3949, 0.2800, 0.2800]]) / Bohr2
     rref = np.array([[1.35, 2.10, 2.53], 
                      [2.10, 2.87, 3.40], 
                      [2.53, 3.40, 3.40]]) * units.Bohr
 
-    kbond = 0.45 * units.Hartree / units.Bohr / units.Bohr
-    kangle = 0.15 * units.Hartree / units.Bohr / units.Bohr
-    kdihedral = 0.005 * units.Hartree / units.Bohr / units.Bohr
+    kbond = 0.45 * units.Hartree / Bohr2
+    kangle = 0.15 * units.Hartree / Bohr2
+    kdihedral = 0.005 * units.Hartree / Bohr2
 
     bonds = []
     angles = []
@@ -1159,7 +1083,6 @@ def model_bond_angle_dihedral(atoms, cutoff=10.0):
     return bonds, angles, dihedrals
 
 def row(Z):
-
     if Z <= 2:
         return 1
     elif Z <= 10:

@@ -74,7 +74,7 @@ class GULP(FileIOCalculator):
         self.conditions = conditions
         self.library_check()
         self.atom_types = []
-        self.fractional_coordinates = False # GULP prints the fractional coordinates before the Final lattice vectors so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
+        self.fractional_coordinates = None # GULP prints the fractional coordinates before the Final lattice vectors so they need to be stored and then atoms positions need to be set after we get the Final lattice vectors
 
     def set(self, **kwargs):
         changed_parameters = FileIOCalculator.set(self, **kwargs)
@@ -229,7 +229,7 @@ class GULP(FileIOCalculator):
                     for k in range(3):
                         lattice_vectors[j-s][k]=float(temp[k])
                 self.atoms.set_cell(lattice_vectors)
-                if self.fractional_coordinates != False:
+                if self.fractional_coordinates is not None:
                     self.fractional_coordinates = np.array(self.fractional_coordinates)
                     self.atoms.set_scaled_positions(self.fractional_coordinates)
 
@@ -321,7 +321,7 @@ class Conditions:
         # atom_symbol
         #
         # Example: [['O','O1','O2'],['H', 'H_C', 'H_O']]
-        # this beacuse Atoms oject accept only atoms symbols
+        # this because Atoms oject accept only atoms symbols
         self.atom_types.append([sym1, ifcloselabel1, elselabel1])
         self.atom_types.append([sym2, ifcloselabel2])
 

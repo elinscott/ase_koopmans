@@ -1,5 +1,3 @@
-# coding: utf-8
-
 from ase import Atoms
 
 
@@ -20,13 +18,13 @@ class NGLDisplay:
         self.atoms = atoms
         if isinstance(atoms[0], Atoms):
             # Assume this is a trajectory or struct list
-            self.view = nglview.show_asetraj(atoms)
+            self.view = nglview.show_asetraj(atoms, default=False)
             self.frm = IntSlider(value=0, min=0, max=len(atoms) - 1)
             self.frm.observe(self._update_frame)
             self.struct = atoms[0]
         else:
             # Assume this is just a single structure
-            self.view = nglview.show_ase(atoms)
+            self.view = nglview.show_ase(atoms, default=False)
             self.struct = atoms
             self.frm = None
 
@@ -35,7 +33,6 @@ class NGLDisplay:
                                args=['%dpx' % (xsize,), '%dpx' % (ysize,)])
         self.view.add_unitcell()
         self.view.add_spacefill()
-        self.view.remove_ball_and_stick()
         self.view.camera = 'orthographic'
         self.view.parameters = { "clipDist": 0 }
 

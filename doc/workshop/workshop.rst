@@ -6,8 +6,6 @@ ASE Workshop: Software Development for Atomic Scale Modeling - Chalmers 2019
 
     Up-to-date information is on `the workshop page <https://ase-workshop.materialsmodeling.org>`__.
 
-The ASE Workshop will be held at `Chalmers University of Technology <https://www.chalmers.se/en>`__ in `Gothenburg, Sweden <https://www.goteborg.com/en>`__ from **November 19-22, 2019**.
-
 
 Program
 =======

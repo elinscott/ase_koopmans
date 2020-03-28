@@ -7,7 +7,6 @@ from ase.db.core import Database, ops, lock, now
 from ase.db.row import AtomsRow
 from ase.io.jsonio import encode, decode
 from ase.parallel import world, parallel_function
-from ase.utils import basestring
 
 
 class JSONDatabase(Database, object):
@@ -24,7 +23,7 @@ class JSONDatabase(Database, object):
         ids = []
         nextid = 1
 
-        if (isinstance(self.filename, basestring) and
+        if (isinstance(self.filename, str) and
             os.path.isfile(self.filename)):
             try:
                 bigdct, ids, nextid = self._read_json()
@@ -70,7 +69,7 @@ class JSONDatabase(Database, object):
         return id
 
     def _read_json(self):
-        if isinstance(self.filename, basestring):
+        if isinstance(self.filename, str):
             with open(self.filename) as fd:
                 bigdct = decode(fd.read())
         else:
@@ -96,7 +95,7 @@ class JSONDatabase(Database, object):
         if world.rank > 0:
             return
 
-        if isinstance(self.filename, basestring):
+        if isinstance(self.filename, str):
             fd = open(self.filename, 'w')
         else:
             fd = self.filename

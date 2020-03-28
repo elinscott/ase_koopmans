@@ -48,11 +48,11 @@ class CLICommand:
             help='Write output frames to individual files. '
             'Output file name should be a format string with '
             'a single integer field, e.g. out-{:0>5}.xyz')
-        add('--read-args', nargs='+', action='store', 
+        add('--read-args', nargs='+', action='store',
             default={}, metavar="KEY=VALUE",
             help='Additional keyword arguments to pass to '
             '`ase.io.read()`.')
-        add('--write-args', nargs='+', action='store', 
+        add('--write-args', nargs='+', action='store',
             default={}, metavar="KEY=VALUE",
             help='Additional keyword arguments to pass to '
             '`ase.io.write()`.')
@@ -70,13 +70,15 @@ class CLICommand:
             if args.verbose:
                 print('Filtering to include info: ', ', '.join(args.info))
         if args.read_args:
-            args.read_args = eval("dict({0})".format(', '.join(args.read_args)))
+            args.read_args = eval("dict({0})"
+                                  .format(', '.join(args.read_args)))
         if args.write_args:
-            args.write_args = eval("dict({0})".format(', '.join(args.write_args)))
+            args.write_args = eval("dict({0})"
+                                   .format(', '.join(args.write_args)))
 
         configs = []
         for filename in args.input:
-            atoms = read(filename, args.image_number, 
+            atoms = read(filename, args.image_number,
                          format=args.input_format, **args.read_args)
             if isinstance(atoms, list):
                 configs.extend(atoms)
@@ -93,8 +95,9 @@ class CLICommand:
                 # avoid exec() for Py 2+3 compat.
                 eval(compile(args.exec_code, '<string>', 'exec'))
             if args.exec_file:
-                eval(compile(open(args.exec_file).read(), args.exec_file, 'exec'))
-            if  "_output" not in atoms.info or atoms.info["_output"]:
+                eval(compile(open(args.exec_file).read(), args.exec_file,
+                             'exec'))
+            if "_output" not in atoms.info or atoms.info["_output"]:
                 new_configs.append(atoms)
         configs = new_configs
 
@@ -103,7 +106,8 @@ class CLICommand:
 
         if args.split_output:
             for i, atoms in enumerate(configs):
-                write(args.output.format(i), atoms, 
+                write(args.output.format(i), atoms,
                       format=args.output_format, **args.write_args)
         else:
-            write(args.output, configs, format=args.output_format, **args.write_args)
+            write(args.output, configs, format=args.output_format,
+                  **args.write_args)

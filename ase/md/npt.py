@@ -26,7 +26,6 @@ import weakref
 import numpy as np
 
 from ase.md.md import MolecularDynamics
-from ase.utils import basestring
 
 linalg = np.linalg
 
@@ -328,7 +327,7 @@ class NPT(MolecularDynamics):
         return self.atoms.get_forces()
 
     def stresscalculator(self):
-        return self.atoms.get_stress()
+        return self.atoms.get_stress(include_ideal_gas=True)
 
     def initialize(self):
         """Initialize the dynamics.
@@ -494,7 +493,7 @@ class NPT(MolecularDynamics):
         atoms (optional, internal use only)
             Pre-read atoms.  Do not use.
         """
-        if isinstance(trajectory, basestring):
+        if isinstance(trajectory, str):
             if trajectory.endswith('/'):
                 trajectory = trajectory[:-1]
             if trajectory.endswith('.bundle'):

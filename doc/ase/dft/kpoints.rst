@@ -64,7 +64,7 @@ The below table lists the special points from [Setyawan-Curtarolo]_.
     Computational Materials Science,
     Volume 49, Issue 2, August 2010, Pages 299–312
 
-    http://dx.doi.org/10.1016/j.commatsci.2010.05.010
+    https://doi.org/10.1016/j.commatsci.2010.05.010
 
 You can find the special points in the Brillouin zone:
 

@@ -1,3 +1,4 @@
+# flake8: noqa
 """Definition of the XrDebye class.
 
 This module defines the XrDebye class for calculation

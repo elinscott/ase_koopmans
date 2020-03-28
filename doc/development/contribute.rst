@@ -16,7 +16,7 @@ you want to work on.  Use the :ref:`mailing list <contact>` for that.
 GitLab repository
 =================
 
-All work on the source code takes place on https://gitlab.com using Git_.
+All work on the source code takes place on https://about.gitlab.com/ using Git_.
 
 .. _Git: https://git-scm.com/
 
@@ -45,7 +45,7 @@ repositories (official and forks).
 
 You can learn the basics of git in several places:
 
-* `Git Reference <http://gitref.org>`__
+* `Git Reference <https://services.github.com/>`__
 * `Pro Git <https://git-scm.com/book/en/v2>`__
 * `Introduction to Git with Scott Chacon of GitHub
   <https://www.youtube.com/watch?v=ZDR433b0HJY>`__
@@ -67,7 +67,7 @@ These aliases are quite common::
 The first steps as a developer
 ------------------------------
 
-* Register as a user on https://gitlab.com
+* Register as a user on https://about.gitlab.com/
 * Find and/or change your user-name in your account setting. You will need it.
 
   1. Go to gitlab.com/profile
@@ -80,14 +80,14 @@ The first steps as a developer
   to the right of the button with the star and to the left of the 'SSH' button.
   Forking the project give you your own personal copy of the project.
 
-You will now have a fork situated at https://gitlab.com/your-user-name/ase
+You will now have a fork situated at https://gitlab.com/your-user-name/ase/
 
 * From here on:
 
   - ``upstream`` refers to git@gitlab.com:ase/ase and refers to the official
     repository  of the ase project.
   - ``origin`` refers to your copy of the ase project located at
-    git@gitlab.com:your-user-name/ase or https://gitlab.com/your-user-name/ase
+    git@gitlab.com:your-user-name/ase or https://gitlab.com/your-user-name/ase/
 
   For example, ``upstream/master`` refers to the master (i.e., trunk or
   development) branch of the official ase project.
@@ -201,7 +201,7 @@ machine is:
 
     And a text editor will appear.  Please observe the following guidelines
     for writing your commit message. (stolen from
-    `here <http://chris.beams.io/posts/git-commit/>`_)
+    `here <https://chris.beams.io/posts/git-commit/>`_)
 
     The seven rules of a great git commit message
 
@@ -221,7 +221,7 @@ machine is:
 
         $ git push --set-upstream origin add-contribute-rst
 
-  * Go to gitlab.com/your-user-name/ase <http://gitlab.com/your-user-name/ase>
+  * Go to gitlab.com/your-user-name/ase <https://gitlab.com/your-user-name/ase>
     and click on '## branches' button (where ## is the number of branches on your
     repo)
 
@@ -241,7 +241,7 @@ machine is:
     personal repository and then pushing to your gitlab repository.
 
   * Once the developer community is satisfied with your merge request,
-    anyone with push access to gitlab.com/ase/ase <http://gitlab.com/ase/ase>
+    anyone with push access to gitlab.com/ase/ase <https://gitlab.com/ase/ase>
     can merge your merge request and it will now be part of the master branch
 
   * After the merge-request is approved, delete the branch locally::
@@ -286,7 +286,7 @@ Making small changes
 Say you want to fix a typo somewhere. GitLab has an editing feature that
 can come in handy. Here are the steps to do that there:
 
-* go to https://gitlab.com/your-user-name/ase
+* go to https://gitlab.com/ase/ase/
 * click "Files" and find the file you want to change
 * click "Edit" and fix the typo
 * click "Merge Requests" and add your change from the master branch
@@ -304,13 +304,14 @@ Writing the commit message
 
 Commit messages should be clear and follow a few basic rules.  Example::
 
-   ENH: add functionality X to ase.<submodule>.
+   ENH: add functionality X to ase.<submodule>
 
-   The first line of the commit message starts with a capitalized acronym
-   (options listed below) indicating what type of commit this is.  Then a blank
-   line, then more text if needed.  Lines shouldn't be longer than 72
-   characters.  If the commit is related to a ticket, indicate that with
-   "See #3456", "See ticket 3456", "Closes #3456" or similar.
+   The first line of the commit message starts with a capitalized
+   acronym (options listed below) indicating what type of commit this
+   is.  Then a blank line, then more text if needed.  Lines shouldn't be
+   longer than 72 characters. Subjects shouldn't end with a period. If
+   the commit is related to a ticket, indicate that with "See #3456",
+   "See ticket 3456", "Closes #3456" or similar.
 
 Describing the motivation for a change, the nature of a bug for bug fixes or
 some details on what an enhancement does are also good to include in a commit

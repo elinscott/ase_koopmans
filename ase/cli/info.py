@@ -1,8 +1,8 @@
 import platform
 import os
 import sys
+from importlib import import_module
 
-from ase.utils import import_module
 from ase.utils import search_current_git_hash
 from ase.io.formats import filetype, ioformats, UnknownFileTypeError
 from ase.io.ulm import print_ulm_info
@@ -77,7 +77,7 @@ class CLICommand:
 def print_info():
     versions = [('platform', platform.platform()),
                 ('python-' + sys.version.split()[0], sys.executable)]
-    for name in ['ase', 'numpy', 'scipy', 'ase_ext']:
+    for name in ['ase', 'numpy', 'scipy', 'ase_ext', 'spglib']:
         try:
             module = import_module(name)
         except ImportError:

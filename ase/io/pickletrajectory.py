@@ -25,7 +25,7 @@ from ase.calculators.singlepoint import SinglePointCalculator, all_properties
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.constraints import FixAtoms
 from ase.parallel import world, barrier
-from ase.utils import devnull, basestring
+from ase.utils import devnull
 
 
 class PickleTrajectory:
@@ -107,12 +107,12 @@ class PickleTrajectory:
         """
         self.fd = filename
         if mode == 'r':
-            if isinstance(filename, basestring):
+            if isinstance(filename, str):
                 self.fd = open(filename, 'rb')
             self.read_header()
         elif mode == 'a':
             exists = True
-            if isinstance(filename, basestring):
+            if isinstance(filename, str):
                 exists = os.path.isfile(filename)
                 if exists:
                     exists = os.path.getsize(filename) > 0
@@ -127,7 +127,7 @@ class PickleTrajectory:
                     self.fd = devnull
         elif mode == 'w':
             if self.master:
-                if isinstance(filename, basestring):
+                if isinstance(filename, str):
                     if self.backup and os.path.isfile(filename):
                         try:
                             os.rename(filename, filename + '.bak')
@@ -366,8 +366,8 @@ class PickleTrajectory:
             self.fd.seek(self.offsets[-1])
             try:
                 pickle.load(self.fd)
-            except:
-                raise EOFError('Damaged trajectory file.')
+            except (EOFError, pickle.UnpicklingError) as e:
+                raise EOFError('Damaged trajectory file.') from e
             else:
                 self.offsets.append(self.fd.tell())
 
@@ -385,7 +385,7 @@ class PickleTrajectory:
                         self.fd.seek(self.offsets[-1] + m * step1)
                         try:
                             pickle.load(self.fd)
-                        except:
+                        except (EOFError, pickle.UnpicklingError):
                             m = m // 2
                         else:
                             for i in range(m):
@@ -431,7 +431,7 @@ def stringnify_info(info):
     unpicklable values are dropped and a warning is issued."""
     stringnified = {}
     for k, v in info.items():
-        if not isinstance(k, basestring):
+        if not isinstance(k, str):
             warnings.warn('Non-string info-dict key is not stored in ' +
                           'trajectory: ' + repr(k), UserWarning)
             continue
@@ -441,7 +441,7 @@ def stringnify_info(info):
             # tries to pickle a file object, so by using that, we
             # might end up with file objects in inconsistent states.
             s = pickle.dumps(v, protocol=0)
-        except:
+        except pickle.PicklingError:
             warnings.warn('Skipping not picklable info-dict item: ' +
                           '"%s" (%s)' % (k, sys.exc_info()[1]), UserWarning)
         else:
@@ -457,7 +457,7 @@ def unstringnify_info(stringnified):
     for k, s in stringnified.items():
         try:
             v = pickle.loads(s)
-        except:
+        except pickle.UnpicklingError:
             warnings.warn('Skipping not unpicklable info-dict item: ' +
                           '"%s" (%s)' % (k, sys.exc_info()[1]), UserWarning)
         else:

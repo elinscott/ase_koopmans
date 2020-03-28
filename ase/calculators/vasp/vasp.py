@@ -26,7 +26,7 @@ from ase.calculators.general import Calculator
 import numpy as np
 
 import ase.io
-from ase.utils import devnull, basestring
+from ase.utils import devnull
 
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.calculators.calculator import PropertyNotImplementedError
@@ -58,7 +58,7 @@ class Vasp(GenerateVaspInput, Calculator):
         self.run_counts = 0
 
         # If no XC combination, GGA functional or POTCAR type is specified,
-        # default to PW91. This is mostly chosen for backwards compatiblity.
+        # default to PW91. This is mostly chosen for backwards compatibility.
         if kwargs.get('xc', None):
             pass
         elif not (kwargs.get('gga', None) or kwargs.get('pp', None)):
@@ -145,7 +145,7 @@ class Vasp(GenerateVaspInput, Calculator):
         self.nelect = self.read_number_of_electrons()
 
     def run(self):
-        """Method which explicitely runs VASP."""
+        """Method which explicitly runs VASP."""
 
         if self.track_output:
             self.out = self.output_template + str(self.run_counts) + '.out'
@@ -158,7 +158,7 @@ class Vasp(GenerateVaspInput, Calculator):
             sys.stderr = devnull
         elif p['txt'] == '-':
             pass
-        elif isinstance(p['txt'], basestring):
+        elif isinstance(p['txt'], str):
             sys.stderr = open(p['txt'], 'w')
         if 'VASP_COMMAND' in os.environ:
             vasp = os.environ['VASP_COMMAND']

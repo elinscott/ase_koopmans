@@ -12,9 +12,7 @@ import numpy as np
 
 from ase import __version__
 import ase.gui.ui as ui
-from ase.gui.crystal import SetupBulkCrystal
 from ase.gui.defaults import read_defaults
-from ase.gui.graphene import SetupGraphene
 from ase.gui.images import Images
 from ase.gui.nanoparticle import SetupNanoparticle
 from ase.gui.nanotube import SetupNanotube
@@ -85,11 +83,8 @@ class GUI(View, Status):
     def moving(self):
         return self.arrowkey_mode != self.ARROWKEY_SCAN
 
-    def run(self, test=None):
-        if test:
-            self.window.test(test)
-        else:
-            self.window.run()
+    def run(self):
+        self.window.run()
 
     def toggle_move_mode(self, key=None):
         self.toggle_arrowkey_mode(self.ARROWKEY_MOVE)
@@ -222,13 +217,9 @@ class GUI(View, Status):
             self.set_frame()
             self.draw()
 
-    def execute(self):
-        from ase.gui.execute import Execute
-        Execute(self)
-
     def constraints_window(self):
         from ase.gui.constraints import Constraints
-        Constraints(self)
+        return Constraints(self)
 
     def select_all(self, key=None):
         self.images.selected[:] = True
@@ -280,15 +271,14 @@ class GUI(View, Status):
         ui.error(_('Plotting failed'), '\n'.join([str(err), msg]).strip())
 
     def neb(self):
-        from ase.neb import NEBtools
+        from ase.utils.forcecurve import fit_images
         try:
-            nebtools = NEBtools(self.images)
-            fit = nebtools.get_fit()
+            forcefit = fit_images(self.images)
         except Exception as err:
             self.bad_plot(err, _('Images must have energies and forces, '
                                  'and atoms must not be stationary.'))
         else:
-            self.pipe('neb', fit)
+            self.pipe('neb', forcefit)
 
     def bulk_modulus(self):
         try:
@@ -331,11 +321,11 @@ class GUI(View, Status):
 
     def add_atoms(self, key=None):
         from ase.gui.add import AddAtoms
-        AddAtoms(self)
+        return AddAtoms(self)
 
     def cell_editor(self, key=None):
         from ase.gui.celleditor import CellEditor
-        CellEditor(self)
+        return CellEditor(self)
 
     def quick_info_window(self, key=None):
         from ase.gui.quickinfo import info
@@ -350,9 +340,7 @@ class GUI(View, Status):
                 window.things[0].text = info(self)
             return exists
         self.attach(update, info_win)
-
-    def bulk_window(self):
-        SetupBulkCrystal(self)
+        return info_win
 
     def surface_window(self):
         SetupSurfaceSlab(self)
@@ -360,17 +348,14 @@ class GUI(View, Status):
     def nanoparticle_window(self):
         return SetupNanoparticle(self)
 
-    def graphene_window(self, menuitem):
-        SetupGraphene(self)
-
     def nanotube_window(self):
         return SetupNanotube(self)
 
-    def new_atoms(self, atoms, init_magmom=False):
+    def new_atoms(self, atoms):
         "Set a new atoms object."
         rpt = getattr(self.images, 'repeat', None)
         self.images.repeat_images(np.ones(3, int))
-        self.images.initialize([atoms], init_magmom=init_magmom)
+        self.images.initialize([atoms])
         self.frame = 0  # Prevent crashes
         self.images.repeat_images(rpt)
         self.set_frame(frame=0, focus=True)
@@ -405,7 +390,7 @@ class GUI(View, Status):
         self.window.close()
 
     def new(self, key=None):
-        os.system('ase gui &')
+        subprocess.Popen([sys.executable, '-m', 'ase', 'gui'])
 
     def save(self, key=None):
         return save_dialog(self)
@@ -505,24 +490,21 @@ class GUI(View, Status):
             (_('_Tools'),
              [M(_('Graphs ...'), self.plot_graphs),
               M(_('Movie ...'), self.movie),
-              M(_('Expert mode ...'), self.execute, disabled=True),
               M(_('Constraints ...'), self.constraints_window),
               M(_('Render scene ...'), self.render_window),
               M(_('_Move selected atoms'), self.toggle_move_mode, 'Ctrl+M'),
               M(_('_Rotate selected atoms'), self.toggle_rotate_mode,
                 'Ctrl+R'),
-              M(_('NE_B'), self.neb),
+              M(_('NE_B plot'), self.neb),
               M(_('B_ulk Modulus'), self.bulk_modulus),
               M(_('Reciprocal space ...'), self.reciprocal)]),
 
             # TRANSLATORS: Set up (i.e. build) surfaces, nanoparticles, ...
             (_('_Setup'),
-             [M(_('_Bulk Crystal'), self.bulk_window, disabled=True),
-              M(_('_Surface slab'), self.surface_window, disabled=False),
+             [M(_('_Surface slab'), self.surface_window, disabled=False),
               M(_('_Nanoparticle'),
                 self.nanoparticle_window),
-              M(_('Nano_tube'), self.nanotube_window),
-              M(_('Graphene'), self.graphene_window, disabled=True)]),
+              M(_('Nano_tube'), self.nanotube_window)]),
 
             # (_('_Calculate'),
             # [M(_('Set _Calculator'), self.calculator_window, disabled=True),

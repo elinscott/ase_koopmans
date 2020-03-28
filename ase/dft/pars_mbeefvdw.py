@@ -1,5 +1,5 @@
 import numpy as np
-
+# flake8: noqa
 """
 mBEEF-vdW ensemble matrix
 """

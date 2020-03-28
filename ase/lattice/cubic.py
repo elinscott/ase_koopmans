@@ -10,7 +10,6 @@ The following lattice creators are defined:
 from ase.lattice.bravais import Bravais, reduceindex
 import numpy as np
 from ase.data import reference_states as _refstate
-from ase.utils import basestring
 
 
 class SimpleCubicFactory(Bravais):
@@ -72,7 +71,7 @@ class SimpleCubicFactory(Bravais):
     def find_ortho(self, idx):
         "Replace keyword 'ortho' or 'orthogonal' with a direction."
         for i in range(3):
-            if (isinstance(idx[i], basestring)
+            if (isinstance(idx[i], str)
                 and (idx[i].lower() == "ortho" or
                      idx[i].lower() == "orthogonal")):
                 if self.debug:

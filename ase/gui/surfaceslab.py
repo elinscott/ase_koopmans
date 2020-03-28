@@ -1,4 +1,3 @@
-# encoding: utf-8
 '''surfaceslab.py - Window for setting up surfaces
 '''
 from ase.gui.i18n import _, ngettext

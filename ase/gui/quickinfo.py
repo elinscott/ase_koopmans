@@ -1,4 +1,3 @@
-# -*- encoding: utf-8
 "Module for displaying information about the system."
 
 
@@ -20,6 +19,7 @@ def info(gui):
     atoms = gui.atoms
 
     tokens = []
+
     def add(token=''):
         tokens.append(token)
 
@@ -45,7 +45,8 @@ def info(gui):
         add()
         add(_('Unit cell [Å]:'))
         add(ucellformat.format(*atoms.cell.ravel()))
-        periodic = [[_('no'), _('yes')][periodic] for periodic in atoms.pbc]
+        periodic = [[_('no'), _('yes')][int(periodic)]
+                    for periodic in atoms.pbc]
         # TRANSLATORS: This has the form Periodic: no, no, yes
         add(_('Periodic: {}, {}, {}').format(*periodic))
         add()
@@ -90,7 +91,7 @@ def info(gui):
                         quantity = get_quantity()
                 except Exception as err:
                     quantity = None
-                    errmsg = ('An error occured while retrieving {} '
+                    errmsg = ('An error occurred while retrieving {} '
                               'from the calculator: {}'.format(name, err))
                     warnings.warn(errmsg)
                 return quantity

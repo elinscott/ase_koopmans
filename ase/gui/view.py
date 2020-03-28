@@ -393,9 +393,6 @@ class View:
         X = np.dot(self.X, axes) - offset
         n = len(self.atoms)
 
-        # extension for partial occupancies
-        tags = self.atoms.get_tags()
-
         # The indices enumerate drawable objects in z order:
         self.indices = X[:, 2].argsort()
         r = self.get_covalent_radii() * self.scale
@@ -445,7 +442,8 @@ class View:
                 ra = d[a]
                 if visible[a]:
                     try:
-                        site_occ = self.atoms.info['occupancy'][tags[a]]
+                        kinds = self.atoms.arrays['spacegroup_kinds']
+                        site_occ = self.atoms.info['occupancy'][kinds[a]]
                         # first an empty circle if a site is not fully occupied
                         if (np.sum([v for v in site_occ.values()])) < 1.0:
                             fill = '#ffffff'

@@ -1,23 +1,11 @@
+import ase
+from typing import Mapping, Sequence, Union
 import numpy as np
-from ase.utils import deprecated
 from ase.utils.arraywrapper import arraylike
 from ase.utils import pbc2pbc
 
 
 __all__ = ['Cell']
-
-# We want to deprecate the pbc keyword for Cell.
-# If it defaults to None, then the user could pass None but we wouldn't
-# know.  So we have it default to a non-None placeholder object instead:
-deprecated_placeholder = object()
-deprecation_msg = 'Cell object will no longer have pbc'
-def warn_with_pbc(array, pbc):
-    if pbc is not deprecated_placeholder:
-        import warnings
-        warnings.warn(deprecation_msg, FutureWarning)
-    if pbc is None:
-        pbc = array.any(1)
-    return pbc
 
 
 @arraylike
@@ -32,7 +20,7 @@ class Cell:
 
     ase_objtype = 'cell'  # For JSON'ing
 
-    def __init__(self, array, pbc=deprecated_placeholder):
+    def __init__(self, array):
         """Create cell.
 
         Parameters:
@@ -40,27 +28,9 @@ class Cell:
         array: 3x3 arraylike object
           The three cell vectors: cell[0], cell[1], and cell[2].
         """
-        array = np.asarray(array)
-        pbc = warn_with_pbc(array, pbc)
-        if pbc is deprecated_placeholder:
-            pbc = array.any(1)
-
+        array = np.asarray(array, dtype=float)
         assert array.shape == (3, 3)
-        assert array.dtype == float
-        assert pbc.shape == (3,)
-        assert pbc.dtype == bool
         self.array = array
-        self._pbc = pbc
-
-    @property
-    @deprecated(deprecation_msg)
-    def pbc(self):
-        return self._pbc
-
-    @pbc.setter
-    @deprecated(deprecation_msg)
-    def pbc(self, pbc):
-        self._pbc = pbc
 
     def cellpar(self, radians=False):
         """Get cell lengths and angles of this cell.
@@ -70,7 +40,7 @@ class Cell:
         return cell_to_cellpar(self.array, radians)
 
     def todict(self):
-        return dict(array=self.array, pbc=self._pbc)
+        return dict(array=self.array)
 
     @classmethod
     def ascell(cls, cell):
@@ -82,7 +52,7 @@ class Cell:
         return cls.new(cell)
 
     @classmethod
-    def new(cls, cell=None, pbc=deprecated_placeholder):
+    def new(cls, cell=None):
         """Create new cell from any parameters.
 
         If cell is three numbers, assume three lengths with right angles.
@@ -105,18 +75,17 @@ class Cell:
             raise ValueError('Cell must be length 3 sequence, length 6 '
                              'sequence or 3x3 matrix!')
 
-        cellobj = cls(cell, pbc=pbc)
+        cellobj = cls(cell)
         return cellobj
 
     @classmethod
-    def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None,
-                    pbc=deprecated_placeholder):
+    def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None):
         """Return new Cell from cell lengths and angles.
 
         See also :func:`~ase.geometry.cell.cellpar_to_cell()`."""
         from ase.geometry.cell import cellpar_to_cell
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
-        return cls(cell, pbc=pbc)
+        return cls(cell)
 
     def get_bravais_lattice(self, eps=2e-4, *, pbc=True):
         """Return :class:`~ase.lattice.BravaisLattice` for this cell:
@@ -141,8 +110,16 @@ class Cell:
         lat, op = identify_lattice(self, eps=eps, pbc=pbc)
         return lat
 
-    def bandpath(self, path=None, npoints=None, density=None,
-                 special_points=None, eps=2e-4, *, pbc=True):
+    def bandpath(
+            self,
+            path: str = None,
+            npoints: int = None,
+            *,
+            density: float = None,
+            special_points: Mapping[str, Sequence[float]] = None,
+            eps: float = 2e-4,
+            pbc: Union[bool, Sequence[bool]] = True
+    ) -> "ase.dft.kpoints.BandPath":
         """Build a :class:`~ase.dft.kpoints.BandPath` for this cell.
 
         If special points are None, determine the Bravais lattice of
@@ -185,13 +162,13 @@ class Cell:
         if special_points is None:
             from ase.lattice import identify_lattice
             lat, op = identify_lattice(cell, eps=eps)
-            path = lat.bandpath(path, npoints=npoints, density=density)
-            return path.transform(op)
+            bandpath = lat.bandpath(path, npoints=npoints, density=density)
+            return bandpath.transform(op)
         else:
             from ase.dft.kpoints import BandPath, resolve_custom_points
             path = resolve_custom_points(path, special_points, eps=eps)
-            path = BandPath(cell, path=path, special_points=special_points)
-            return path.interpolate(npoints=npoints, density=density)
+            bandpath = BandPath(cell, path=path, special_points=special_points)
+            return bandpath.interpolate(npoints=npoints, density=density)
 
 
     # XXX adapt the transformation stuff and include in the bandpath method.
@@ -214,13 +191,11 @@ class Cell:
         """Convert missing cell vectors into orthogonal unit vectors."""
         from ase.geometry.cell import complete_cell
         cell = Cell(complete_cell(self.array))
-        cell._pbc = self._pbc.copy()
         return cell
 
     def copy(self):
         """Return a copy of this cell."""
         cell = Cell(self.array.copy())
-        cell._pbc = self._pbc.copy()
         return cell
 
     @property
@@ -283,7 +258,7 @@ class Cell:
         """Get reciprocal lattice as a 3x3 array.
 
         Does not include factor of 2 pi."""
-        return np.linalg.pinv(self).transpose()
+        return Cell(np.linalg.pinv(self).transpose())
 
     def __repr__(self):
         if self.orthorhombic:
@@ -300,7 +275,6 @@ class Cell:
         from ase.build.tools import niggli_reduce_cell
         cell, op = niggli_reduce_cell(self, epsfactor=eps)
         result = Cell(cell)
-        result._pbc = self._pbc.copy()
         return result, op
 
     def minkowski_reduce(self):
@@ -308,16 +282,14 @@ class Cell:
 
         See also :func:`ase.geometry.minkowski_reduction.minkowski_reduce`."""
         from ase.geometry.minkowski_reduction import minkowski_reduce
-        cell, op = minkowski_reduce(self, self.any(1) & pbc2pbc(self._pbc))
+        cell, op = minkowski_reduce(self, self.any(1))
         result = Cell(cell)
-        result._pbc = self._pbc.copy()
         return result, op
 
     def permute_axes(self, permutation):
         """Permute axes of cell."""
         assert (np.sort(permutation) == np.arange(3)).all()
         permuted = Cell(self[permutation][:, permutation])
-        permuted._pbc = self._pbc[permutation]
         return permuted
 
     def standard_form(self):

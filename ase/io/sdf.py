@@ -3,11 +3,10 @@
 See https://en.wikipedia.org/wiki/Chemical_table_file#SDF
 """
 from ase.atoms import Atoms
-from ase.utils import basestring
 
 
 def read_sdf(fileobj):
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     lines = fileobj.readlines()
