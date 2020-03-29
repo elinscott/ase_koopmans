@@ -1,4 +1,3 @@
-import functools
 from abc import ABC, abstractmethod
 from typing import Sequence, Union
 
@@ -142,29 +141,29 @@ defineprop('occupations', float, shape=('nspins', 'nkpts', 'nbands'))
 
 
 
-    #def to_singlepoint(self, atoms):
-    #    from ase.calculators.singlepoint import SinglePointDFTCalculator
-    #    return SinglePointDFTCalculator(atoms,
-    #                                    efermi=self.fermi_level,
+#def to_singlepoint(self, atoms):
+#    from ase.calculators.singlepoint import SinglePointDFTCalculator
+#    return SinglePointDFTCalculator(atoms,
+#                                    efermi=self.fermi_level,
 
-    # We can also retrieve (P)DOS and band structure.  However:
-    #
-    # * Band structure may require bandpath, which is an input, and
-    #   may not necessarily be easy or possible to reconstruct from
-    #   the outputs.
-    #
-    # * Some calculators may produce the whole BandStructure object in
-    #   one go (e.g. while parsing)
-    #
-    # * What about HOMO/LUMO?  Can be obtained from
-    #   eigenvalues/occupations, but some codes provide real data.  We
-    #   probably need to distinguish between HOMO/LUMO inferred by us
-    #   versus values provided within the output.
-    #
-    # * HOMO is sometimes used as alternative reference energy for
-    #   band structure.
-    #
-    # * What about spin-dependent (double) Fermi level?
-    #
-    # * What about 3D arrays?  We will almost certainly want to be
-    #   connected to an object that can load dynamically from a file.
+# We can also retrieve (P)DOS and band structure.  However:
+#
+# * Band structure may require bandpath, which is an input, and
+#   may not necessarily be easy or possible to reconstruct from
+#   the outputs.
+#
+# * Some calculators may produce the whole BandStructure object in
+#   one go (e.g. while parsing)
+#
+# * What about HOMO/LUMO?  Can be obtained from
+#   eigenvalues/occupations, but some codes provide real data.  We
+#   probably need to distinguish between HOMO/LUMO inferred by us
+#   versus values provided within the output.
+#
+# * HOMO is sometimes used as alternative reference energy for
+#   band structure.
+#
+# * What about spin-dependent (double) Fermi level?
+#
+# * What about 3D arrays?  We will almost certainly want to be
+#   connected to an object that can load dynamically from a file.

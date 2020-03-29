@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
-from ase.outputs import Properties, all_properties, Property
+from ase.outputs import Properties, all_properties
+
 
 @pytest.mark.parametrize('name', list(all_properties))
 def test_print_props(name):
