@@ -1,15 +1,22 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from typing import Sequence, Union
 
 import numpy as np
 
 
-class Properties:
+class Properties(Mapping):
     def __init__(self):
         self._dct = {}
 
     def _get_dimension(self, name):
         return self._dct.get(name)
+
+    def __len__(self):
+        return len(self._dct)
+
+    def __iter__(self):
+        return iter(self._dct)
 
     def __getitem__(self, name):
         return self._dct[name]
@@ -130,7 +137,7 @@ defineprop('nbands', int)
 defineprop('nkpts', int)
 defineprop('nspins', int)
 defineprop('fermi_level', float)
-defineprop('kweights', float, shape='nkpts')
+defineprop('kpoint_weights', float, shape='nkpts')
 defineprop('ibz_kpoints', float, shape=('nkpts', 3))
 defineprop('eigenvalues', float, shape=('nspins', 'nkpts', 'nbands'))
 defineprop('occupations', float, shape=('nspins', 'nkpts', 'nbands'))
