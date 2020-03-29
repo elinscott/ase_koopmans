@@ -9,9 +9,6 @@ class Properties(Mapping):
     def __init__(self):
         self._dct = {}
 
-    def _get_dimension(self, name):
-        return self._dct.get(name)
-
     def __len__(self):
         return len(self._dct)
 
