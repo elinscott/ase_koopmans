@@ -1,109 +1,146 @@
 import functools
+from abc import ABC, abstractmethod
+from typing import Sequence, Union
 
 import numpy as np
 
 
-all_properties = set()
+class Properties:
+    def __init__(self):
+        self._dct = {}
 
-def calcprop(dtype=float, shape=tuple()):
-    def checker(func):
-        all_properties.add(func.__name__)
-        @functools.wraps(func)
-        def prop(self):
-            obj = func(self)
-            if not shape:
-                return dtype(obj)
+    def _get_dimension(self, name):
+        return self._dct.get(name)
 
-            actual_shape = tuple(self[key] if isinstance(key, str) else key
-                                 for key in shape)
-            assert np.shape(obj) == actual_shape
-            obj = np.array(obj)
-            assert obj.shape == actual_shape
-            assert obj.dtype == dtype
-            return obj
+    def __getitem__(self, name):
+        return self._dct[name]
 
-            #assert np.issubddtype(dtype)
-            return obj
-        return property(prop)
-    return checker
+    def setvalue(self, name, value):
+        if name in self._dct:
+            # Which error should we raise for already existing property?
+            raise ValueError(f'{name} already set')
+
+        prop = all_properties[name]
+        value = prop.normalize(value)
+        shape = np.shape(value)
+
+        if not prop.shape_is_consistent(self, value):
+            shape = np.shape(value)
+            raise ValueError(f'{name} has bad shape: {shape}')
+
+        for i, spec in enumerate(prop.shapespec):
+            if not isinstance(spec, str) or spec in self._dct:
+                continue
+            self.setvalue(spec, shape[i])
+
+        self._dct[name] = value
+
+    def __repr__(self):
+        clsname = type(self).__name__
+        return f'({clsname}({self._dct})'
 
 
-class CalculatorOutputs:
-    def __init__(self, results):
-        self.results = results
+all_properties = {}
 
-    def __getitem__(self, key):
-        return self.results[key]
 
-    def __contains__(self, key):
-        return key in self.results
+class Property(ABC):
+    def __init__(self, name, dtype, shapespec):
+        self.name = name
+        assert dtype in [float, int]  # Others?
+        self.dtype = dtype
+        self.shapespec = shapespec
 
-    def __iter__(self):
-        return iter(self.results)
+    @abstractmethod
+    def normalize(self, value):
+        ...
 
-    @calcprop()
-    def energy(self):
-        return self['energy']
 
-    @calcprop()
-    def free_energy(self):
-        return self['free_energy']
+    def shape_is_consistent(self, properties: Properties, value) -> bool:
+        """Return whether shape of values is consistent with properties.
 
-    @calcprop(shape=('natoms',))
-    def energies(self):
-        return self['energies']
+        For example, forces of shape (7, 3) are consistent
+        unless properties already have "natoms" with non-7 value.
+        """
+        shapespec = self.shapespec
+        shape = np.shape(value)
+        if len(shapespec) != len(shape):
+            return False
+        for dimspec, dim in zip(shapespec, shape):
+            if isinstance(dimspec, str):
+                dimspec = properties._dct.get(dimspec, dim)
+            if dimspec != dim:
+                return False
+        return True
 
-    # energies?
-    # (free_energies?  But that's unheard of.)
+    def __repr__(self) -> str:
+        typename = {float: 'float', int: 'int'}[self.dtype]
+        shape = ', '.join(str(dim) for dim in self.shapespec)
+        return f'Property({self.name!r}, dtype={typename}, shape=[{shape}])'
 
-    @calcprop(shape=('natoms', 3))
-    def forces(self):
-        # We don't necessarily want to store the whole Atoms object
-        # (after all our purpose is to represent the outputs!)
-        return self['forces']
 
-    @calcprop(shape=(6,))
-    def stress(self):
-        stress = np.array(self['stress'])
-        # Maybe offer to convert to Voigt form for lazy calculators
-        return stress
+class ScalarProperty(Property):
+    def __init__(self, name, dtype):
+        super().__init__(name, dtype, tuple())
 
-    @calcprop(int)
-    def nbands(self):
-        # We can be more intelligent here -- if we have self['eigenvalues'],
-        # we necessarily have nbands.
-        #
-        # But we can also rely on a normalization step to guarantee
-        # the presence of these things.
-        return self['nbands']
+    def normalize(self, value):
+        if not np.isscalar(value):
+            raise TypeError('Expected scalar')
+        return self.dtype(value)
 
-    @calcprop(int)
-    def nspins(self):
-        return self['nspins']
 
-    @calcprop(int)
-    def nkpts(self):
-        return self['nkpts']
+class ArrayProperty(Property):
+    def normalize(self, value):
+        if np.isscalar(value):
+            raise TypeError('Expected array, got scalar')
+        return np.asarray(value, dtype=self.dtype)
 
-    @calcprop(shape=('nspins', 'nkpts', 'nbands'))
-    def eigenvalues(self):
-        return self['eigenvalues']
 
-    @calcprop(shape=('nspins', 'nkpts', 'nbands'))
-    def occupations(self):
-        return self['occupations']
+ShapeSpec = Union[str, int]
 
-    @calcprop()
-    def fermi_level(self):
-        return self['fermi_level']
 
-    @calcprop(shape=('nkpts', 3))
-    def ibz_kpoints(self):
-        return self['ibz_kpoints']
+def defineprop(
+        name: str,
+        dtype: type = float,
+        shape: Union[ShapeSpec, Sequence[ShapeSpec]] = tuple()
+) -> Property:
+    """Create, register, and return a property."""
 
-    @calcprop(shape=('nkpts',))
-    def kpoint_weights(self):
-        return self['kpoint_weights']
+    if isinstance(shape, (int, str)):
+        shape = (shape,)
+
+    shape = tuple(shape)
+    if len(shape) == 0:
+        prop = ScalarProperty(name, dtype)
+    else:
+        prop = ArrayProperty(name, dtype, shape)
+    all_properties[name] = prop
+    return prop
+
+
+# Atoms, energy, forces, stress:
+defineprop('natoms', int)
+defineprop('energy', float)
+defineprop('energies', float, shape='natoms')
+defineprop('free_energy', float)
+defineprop('forces', float, shape=('natoms', 3))
+defineprop('stress', float, shape=6)
+defineprop('stresses', float, shape=('natoms', 6))
+
+# Electronic structure:
+defineprop('nbands', int)
+defineprop('nkpts', int)
+defineprop('nspins', int)
+defineprop('fermi_level', float)
+defineprop('kweights', float, shape='nkpts')
+defineprop('ibz_kpoints', float, shape=('nkpts', 3))
+defineprop('eigenvalues', float, shape=('nspins', 'nkpts', 'nbands'))
+defineprop('occupations', float, shape=('nspins', 'nkpts', 'nbands'))
+
+# We might want to allow properties that are part of Atoms, such as
+# positions, numbers, pbc, cell.  It would be reasonable for those
+# concepts to have a formalization outside the Atoms class.
+
+
 
     #def to_singlepoint(self, atoms):
     #    from ase.calculators.singlepoint import SinglePointDFTCalculator
