@@ -2037,6 +2037,14 @@ class Filter:
         # Present the real atoms object to Trajectory and friends
         return self.atoms.iterimages()
 
+    @property
+    def cell(self):
+        return self.atoms.cell
+
+    @property
+    def pbc(self):
+        return self.atoms.pbc
+
     def get_cell(self):
         """Returns the computational cell.
 
