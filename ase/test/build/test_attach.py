@@ -55,7 +55,3 @@ def test_attach_randomly():
         pos2_ac += atoms.get_positions()[12:, :]
     # the average position should be "zero" approximately
     assert (np.abs(pos2_ac / N) <= 1).all()
-
-
-if __name__ == '__main__':
-    test_attach_to_surface()
