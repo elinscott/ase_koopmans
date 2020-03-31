@@ -7,10 +7,7 @@ from ase.outputs import Properties, all_properties
 def test_print_props(name):
     print(all_properties[name])
 
-
-@pytest.fixture
-def natoms():
-    return 7
+natoms = 7
 
 
 @pytest.fixture
