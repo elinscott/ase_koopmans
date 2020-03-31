@@ -103,7 +103,7 @@ class ArrayProperty(Property):
 ShapeSpec = Union[str, int]
 
 
-def defineprop(
+def _defineprop(
         name: str,
         dtype: type = float,
         shape: Union[ShapeSpec, Sequence[ShapeSpec]] = tuple()
@@ -123,23 +123,23 @@ def defineprop(
 
 
 # Atoms, energy, forces, stress:
-defineprop('natoms', int)
-defineprop('energy', float)
-defineprop('energies', float, shape='natoms')
-defineprop('free_energy', float)
-defineprop('forces', float, shape=('natoms', 3))
-defineprop('stress', float, shape=6)
-defineprop('stresses', float, shape=('natoms', 6))
+_defineprop('natoms', int)
+_defineprop('energy', float)
+_defineprop('energies', float, shape='natoms')
+_defineprop('free_energy', float)
+_defineprop('forces', float, shape=('natoms', 3))
+_defineprop('stress', float, shape=6)
+_defineprop('stresses', float, shape=('natoms', 6))
 
 # Electronic structure:
-defineprop('nbands', int)
-defineprop('nkpts', int)
-defineprop('nspins', int)
-defineprop('fermi_level', float)
-defineprop('kpoint_weights', float, shape='nkpts')
-defineprop('ibz_kpoints', float, shape=('nkpts', 3))
-defineprop('eigenvalues', float, shape=('nspins', 'nkpts', 'nbands'))
-defineprop('occupations', float, shape=('nspins', 'nkpts', 'nbands'))
+_defineprop('nbands', int)
+_defineprop('nkpts', int)
+_defineprop('nspins', int)
+_defineprop('fermi_level', float)
+_defineprop('kpoint_weights', float, shape='nkpts')
+_defineprop('ibz_kpoints', float, shape=('nkpts', 3))
+_defineprop('eigenvalues', float, shape=('nspins', 'nkpts', 'nbands'))
+_defineprop('occupations', float, shape=('nspins', 'nkpts', 'nbands'))
 
 # We might want to allow properties that are part of Atoms, such as
 # positions, numbers, pbc, cell.  It would be reasonable for those
