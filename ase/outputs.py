@@ -29,7 +29,7 @@ class Properties(Mapping):
         value = prop.normalize(value)
         shape = np.shape(value)
 
-        if not prop.shape_is_consistent(self, value):
+        if not self.shape_is_consistent(prop, value):
             shape = np.shape(value)
             raise ValueError(f'{name} has bad shape: {shape}')
 
@@ -39,6 +39,23 @@ class Properties(Mapping):
             self._setvalue(spec, shape[i])
 
         self._dct[name] = value
+
+    def shape_is_consistent(self, prop, value) -> bool:
+        """Return whether shape of values is consistent with properties.
+
+        For example, forces of shape (7, 3) are consistent
+        unless properties already have "natoms" with non-7 value.
+        """
+        shapespec = prop.shapespec
+        shape = np.shape(value)
+        if len(shapespec) != len(shape):
+            return False
+        for dimspec, dim in zip(shapespec, shape):
+            if isinstance(dimspec, str):
+                dimspec = self._dct.get(dimspec, dim)
+            if dimspec != dim:
+                return False
+        return True
 
     def __repr__(self):
         clsname = type(self).__name__
@@ -59,23 +76,6 @@ class Property(ABC):
     def normalize(self, value):
         ...
 
-
-    def shape_is_consistent(self, properties: Properties, value) -> bool:
-        """Return whether shape of values is consistent with properties.
-
-        For example, forces of shape (7, 3) are consistent
-        unless properties already have "natoms" with non-7 value.
-        """
-        shapespec = self.shapespec
-        shape = np.shape(value)
-        if len(shapespec) != len(shape):
-            return False
-        for dimspec, dim in zip(shapespec, shape):
-            if isinstance(dimspec, str):
-                dimspec = properties._dct.get(dimspec, dim)
-            if dimspec != dim:
-                return False
-        return True
 
     def __repr__(self) -> str:
         typename = {float: 'float', int: 'int'}[self.dtype]

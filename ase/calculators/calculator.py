@@ -844,8 +844,6 @@ class Calculator(object):
 
     def calculate_properties(self, atoms, properties):
         """This method is experimental; currently for internal use."""
-        from ase.outputs import all_outputs
-
         for name in properties:
             if name not in all_outputs:
                 raise ValueError(f'No such property: {name}')
