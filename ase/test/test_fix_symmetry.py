@@ -99,30 +99,6 @@ def test_no_sym_rotated(filter):
 
 @pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
 @pytest.mark.filterwarnings('ignore:Armijo linesearch failed')
-def test_sym_adj_pot(filter):
-    print("SYM POS")
-    at_init, at_rot = setup_cell()
-    at_sym_2 = at_init.copy()
-    at_sym_2.set_constraint(
-        FixSymmetry(at_sym_2, adjust_positions=True, adjust_cell=False))
-    di, df = symmetrized_optimisation(at_sym_2, filter)
-    assert di["number"] == 229 and not is_subgroup(sub_data=di, sup_data=df)
-
-
-@pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
-@pytest.mark.filterwarnings('ignore:Armijo linesearch failed')
-def test_sym_rot_adj_pot(filter):
-    print("SYM POS ROT")
-    at_init, at_rot = setup_cell()
-    at_sym_2_rot = at_init.copy()
-    at_sym_2_rot.set_constraint(
-        FixSymmetry(at_sym_2_rot, adjust_positions=True, adjust_cell=False))
-    di, df = symmetrized_optimisation(at_sym_2_rot, filter)
-    assert di["number"] == 229 and not is_subgroup(sub_data=di, sup_data=df)
-
-
-@pytest.mark.filterwarnings('ignore:ASE Atoms-like input is deprecated')
-@pytest.mark.filterwarnings('ignore:Armijo linesearch failed')
 def test_sym_adj_cell(filter):
     print("SYM POS+CELL")
     at_init, at_rot = setup_cell()
@@ -143,3 +119,4 @@ def test_sym_rot_adj_cell(filter):
         FixSymmetry(at_sym_3_rot, adjust_positions=True, adjust_cell=True))
     di, df = symmetrized_optimisation(at_sym_3_rot, filter)
     assert di["number"] == 229 and is_subgroup(sub_data=di, sup_data=df)
+
