@@ -25,7 +25,7 @@ class Properties(Mapping):
             # Which error should we raise for already existing property?
             raise ValueError(f'{name} already set')
 
-        prop = all_properties[name]
+        prop = all_outputs[name]
         value = prop.normalize(value)
         shape = np.shape(value)
 
@@ -45,7 +45,7 @@ class Properties(Mapping):
         return f'({clsname}({self._dct})'
 
 
-all_properties = {}
+all_outputs = {}
 
 
 class Property(ABC):
@@ -118,7 +118,7 @@ def defineprop(
         prop = ScalarProperty(name, dtype)
     else:
         prop = ArrayProperty(name, dtype, shape)
-    all_properties[name] = prop
+    all_outputs[name] = prop
     return prop
 
 

@@ -844,10 +844,10 @@ class Calculator(object):
 
     def calculate_properties(self, atoms, properties):
         """This method is experimental; currently for internal use."""
-        from ase.outputs import all_properties
+        from ase.outputs import all_outputs
 
         for name in properties:
-            if name not in all_properties:
+            if name not in all_outputs:
                 raise ValueError(f'No such property: {name}')
 
         # We ignore system changes for now.
@@ -861,12 +861,8 @@ class Calculator(object):
         return props
 
     def export_properties(self):
-        from ase.outputs import Properties, all_properties
-        props = Properties()
-        for name, value in self.results.items():
-            if name in all_properties:
-                props.setvalue(name, value)
-        return props
+        from ase.outputs import Properties, all_outputs
+        return Properties(self.results)
 
 
 class FileIOCalculator(Calculator):

@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from ase.outputs import Properties, all_properties
+from ase.outputs import Properties, all_outputs
 
 
 @pytest.fixture
@@ -34,9 +34,9 @@ def test_properties_big(rng):
     props = Properties()
     for name, value in results.items():
         props.setvalue(name, value)
-    #assert set(out) == all_properties, all_properties ^ set(out)
+    #assert set(out) == all_outputs, all_outputs ^ set(out)
 
-    for name in all_properties:
+    for name in all_outputs:
         assert name in props, name
         obj = props[name]
         #obj = getattr(out, name)

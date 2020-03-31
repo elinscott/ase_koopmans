@@ -1,11 +1,11 @@
 import pytest
 import numpy as np
-from ase.outputs import Properties, all_properties
+from ase.outputs import Properties, all_outputs
 
 
-@pytest.mark.parametrize('name', list(all_properties))
+@pytest.mark.parametrize('name', list(all_outputs))
 def test_print_props(name):
-    print(all_properties[name])
+    print(all_outputs[name])
 
 
 natoms = 7
