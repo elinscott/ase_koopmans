@@ -6,8 +6,10 @@ import numpy as np
 
 
 class Properties(Mapping):
-    def __init__(self):
+    def __init__(self, dct):
         self._dct = {}
+        for name, value in dct.items():
+            self._setvalue(name, value)
 
     def __len__(self):
         return len(self._dct)
@@ -18,7 +20,7 @@ class Properties(Mapping):
     def __getitem__(self, name):
         return self._dct[name]
 
-    def setvalue(self, name, value):
+    def _setvalue(self, name, value):
         if name in self._dct:
             # Which error should we raise for already existing property?
             raise ValueError(f'{name} already set')
@@ -34,7 +36,7 @@ class Properties(Mapping):
         for i, spec in enumerate(prop.shapespec):
             if not isinstance(spec, str) or spec in self._dct:
                 continue
-            self.setvalue(spec, shape[i])
+            self._setvalue(spec, shape[i])
 
         self._dct[name] = value
 
