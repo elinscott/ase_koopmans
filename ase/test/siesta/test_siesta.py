@@ -1,11 +1,11 @@
-def test_siesta():
-    import numpy as np
+import numpy as np
 
-    from ase.calculators.siesta.siesta import Siesta
-    from ase.calculators.siesta.parameters import Species, PAOBasisBlock
-    from ase.calculators.calculator import FileIOCalculator
-    from ase import Atoms
+from ase.calculators.siesta.parameters import Species, PAOBasisBlock
+from ase.calculators.calculator import FileIOCalculator
+from ase import Atoms
 
+
+def test_siesta(siesta_factory):
     # Setup test structures.
     h = Atoms('H', [(0.0, 0.0, 0.0)])
     ch4 = Atoms('CH4', np.array([
@@ -16,7 +16,7 @@ def test_siesta():
         [0.682793, -0.682793, -0.682793]]))
 
     # Test the initialization.
-    siesta = Siesta()
+    siesta = siesta_factory.calc()
     assert isinstance(siesta, FileIOCalculator)
     assert isinstance(siesta.implemented_properties, tuple)
     assert isinstance(siesta.default_parameters, dict)
@@ -25,7 +25,7 @@ def test_siesta():
 
     # Test simple fdf-argument case.
     atoms = h.copy()
-    siesta = Siesta(
+    siesta = siesta_factory.calc(
         label='test_label',
         fdf_arguments={'DM.Tolerance': 1e-3})
     atoms.set_calculator(siesta)
@@ -38,7 +38,7 @@ def test_siesta():
     assert any([line.split() == ['DM.Tolerance', '0.001'] for line in lines])
 
     # Test (slightly) more complex case of setting fdf-arguments.
-    siesta = Siesta(
+    siesta = siesta_factory.calc(
         label='test_label',
         mesh_cutoff=3000,
         fdf_arguments={
@@ -71,16 +71,16 @@ def test_siesta():
     atoms = ch4.copy()
     species, numbers = siesta.species(atoms)
     assert all(numbers == np.array([1, 2, 2, 2, 2]))
-    siesta = Siesta(species=[Species(symbol='C', tag=1)])
+    siesta = siesta_factory.calc(species=[Species(symbol='C', tag=1)])
     species, numbers = siesta.species(atoms)
     assert all(numbers == np.array([1, 2, 2, 2, 2]))
     atoms.set_tags([0, 0, 0, 1, 0])
     species, numbers = siesta.species(atoms)
     assert all(numbers == np.array([1, 2, 2, 2, 2]))
-    siesta = Siesta(species=[Species(symbol='H', tag=1, basis_set='SZ')])
+    siesta = siesta_factory.calc(species=[Species(symbol='H', tag=1, basis_set='SZ')])
     species, numbers = siesta.species(atoms)
     assert all(numbers == np.array([1, 2, 2, 3, 2]))
-    siesta = Siesta(label='test_label', species=species)
+    siesta = siesta_factory.calc(label='test_label', species=species)
     siesta.write_input(atoms, properties=['energy'])
     with open('test_label.fdf', 'r') as f:
         lines = f.readlines()
@@ -102,7 +102,7 @@ def test_siesta():
     1.00 0.95"""
     basis_set = PAOBasisBlock(c_basis)
     species = Species(symbol='C', basis_set=basis_set)
-    siesta = Siesta(label='test_label', species=[species])
+    siesta = siesta_factory.calc(label='test_label', species=[species])
     siesta.write_input(atoms, properties=['energy'])
     with open('test_label.fdf', 'r') as f:
         lines = f.readlines()

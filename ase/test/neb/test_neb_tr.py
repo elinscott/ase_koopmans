@@ -49,14 +49,14 @@ def test_neb_tr():
         # in this particular system
         idpp_interpolate(neb, fmax=0.1, optimizer=BFGS)
 
-        qn = FIRE(neb, dt=0.005, maxmove=0.05, dtmax=0.1)
+        qn = FIRE(neb, dt=0.005, maxstep=0.05, dtmax=0.1)
         qn.run(steps=20)
 
         # Switch to CI-NEB, still removing the external degrees of freedom
         # Also spesify the linearly varying spring constants
         neb = NEB(images, climb=True,
                   remove_rotation_and_translation=remove_rotation_and_translation)
-        qn = FIRE(neb, dt=0.005, maxmove=0.05, dtmax=0.1)
+        qn = FIRE(neb, dt=0.005, maxstep=0.05, dtmax=0.1)
         qn.run(fmax=fmax)
 
         images = neb.images

@@ -1,6 +1,5 @@
 import doctest
 import importlib
-import sys
 from distutils.version import LooseVersion
 
 import pytest
@@ -30,10 +29,6 @@ ase.symbols
 @pytest.mark.filterwarnings('ignore:Unknown solver options')
 @pytest.mark.parametrize('modname', module_names)
 def test_doctest(modname):
-    if sys.version_info < (3, 6):
-        pytest.skip('Test requires Python 3.6+, this is {}'
-                    .format(sys.version_info))
-
     # Older numpies format arrays differently.
     # We use the printoptions contextmanager from numpy 1.15:
     # https://docs.scipy.org/doc/numpy/release.html#id45

@@ -98,7 +98,7 @@ class Vasp2(GenerateVaspInput, Calculator):
     def __init__(self,
                  atoms=None,
                  restart=None,
-                 directory='',
+                 directory='.',
                  label='vasp',
                  ignore_bad_restart_file=False,
                  command=None,
@@ -115,9 +115,6 @@ class Vasp2(GenerateVaspInput, Calculator):
         # Store atoms objects from vasprun.xml here - None => uninitialized
         self._xml_data = None
 
-        # Utilize the label.setter
-        label = './'.join((str(directory), label))
-
         if restart is True:
             # We restart in the label directory
             restart = label
@@ -126,6 +123,7 @@ class Vasp2(GenerateVaspInput, Calculator):
                             restart=restart,
                             ignore_bad_restart_file=ignore_bad_restart_file,
                             label=label,
+                            directory=directory,
                             atoms=atoms,
                             **kwargs)
 
@@ -185,15 +183,14 @@ class Vasp2(GenerateVaspInput, Calculator):
         changed_parameters = {}
 
         if 'label' in kwargs:
-            label = kwargs.pop('label')
-            self.set_label(label)
+            self.label = kwargs.pop('label')
 
         if 'directory' in kwargs:
-            # If we explicitly set directory, overwrite the one in label.
-            # XXX: Should we just raise an error here if clash?
-            directory = kwargs.pop('directory')
-            label = os.path.join(directory, self.prefix)
-            self.set_label(label)
+            # str() call to deal with pathlib objects
+            self.directory = str(kwargs.pop('directory'))
+
+        if 'txt' in kwargs:
+            self.txt = kwargs.pop('txt')
 
         if 'atoms' in kwargs:
             atoms = kwargs.pop('atoms')

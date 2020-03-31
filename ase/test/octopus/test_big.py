@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 
 from ase.calculators.octopus import Octopus
@@ -6,10 +7,8 @@ from ase.build import bulk, graphene_nanoribbon
 from ase.calculators.interfacechecker import check_interface
 
 
-def calculate(name, system, **kwargs):
-    print('Calculate', name, system)
-    directory = 'ink-%s' % name
-
+def calculate(factory, system, **kwargs):
+    calc = factory.calc()
     kwargs0 = dict(stdout="'stdout.txt'",
                    stderr="'stderr.txt'",
                    FromScratch=True,
@@ -17,6 +16,7 @@ def calculate(name, system, **kwargs):
                    command='octopus')
     kwargs.update(**kwargs0)
 
+    directory = 'grumble'
     calc = Octopus(directory=directory, **kwargs)
     system.calc = calc
     E = system.get_potential_energy()
@@ -30,7 +30,7 @@ def calculate(name, system, **kwargs):
     new_atoms = restartcalc.get_atoms()
     print('new')
     print(new_atoms.positions)
-    calc2 = Octopus(directory='ink-restart-%s' % name, **kwargs)
+    calc2 = Octopus(directory='ink-restart', **kwargs)
     new_atoms.calc = calc2
     E2 = new_atoms.get_potential_energy()
     #print('energy', E, E2)
@@ -43,11 +43,14 @@ def calculate(name, system, **kwargs):
     assert eig_err < 5e-5
     return calc
 
-def test_h2o():
-    calc = calculate('H2O',
+
+calc = pytest.mark.calculator
+
+@calc('octopus')
+def test_h2o(factory):
+    calc = calculate(factory,
                      g2['H2O'],
                      OutputFormat='xcrysden',
-                     Output='density + wfs + potential',
                      SCFCalculateDipole=True)
     dipole = calc.get_dipole_moment()
     E = calc.get_potential_energy()
@@ -60,10 +63,11 @@ def test_h2o():
     energy_err = abs(-463.5944954 - E)
     assert energy_err < 0.01, energy_err
 
-def test_o2():
+@calc('octopus')
+def test_o2(factory):
     atoms = g2['O2']
     atoms.center(vacuum=2.0)
-    calculate('O2',
+    calculate(factory,
               atoms,
               BoxShape='parallelepiped',
               SpinComponents='spin_polarized',
@@ -72,8 +76,10 @@ def test_o2():
     #magmoms = calc.get_magnetic_moments()
     #print('magmom', magmom)
     #print('magmoms', magmoms)
-def test_si():
-    calc = calculate('Si',
+
+@calc('octopus')
+def test_si(factory):
+    calc = calculate(factory,
                      bulk('Si', orthorhombic=True),
                      KPointsGrid=[[4, 4, 4]],
                      KPointsUseSymmetries=True,

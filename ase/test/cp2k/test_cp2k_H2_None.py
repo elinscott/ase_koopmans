@@ -5,7 +5,6 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from ase.build import molecule
-from ase.calculators.cp2k import CP2K
 
 inp = """
 &FORCE_EVAL
@@ -34,21 +33,24 @@ inp = """
 """
 
 
-def test_h2_none():
+def test_h2_none(cp2k_factory):
     # Basically, the entire CP2K input is passed in explicitly.
     # Disable ASE's input generation by setting everything to None.
     # ASE should only add the CELL and the COORD section.
-    calc = CP2K(basis_set=None,
-                basis_set_file=None,
-                max_scf=None,
-                cutoff=None,
-                force_eval_method=None,
-                potential_file=None,
-                poisson_solver=None,
-                pseudo_potential=None,
-                stress_tensor=False,
-                xc=None,
-                label='test_H2_inp', inp=inp)
+    calc = cp2k_factory.calc(
+        basis_set=None,
+        basis_set_file=None,
+        max_scf=None,
+        cutoff=None,
+        force_eval_method=None,
+        potential_file=None,
+        poisson_solver=None,
+        pseudo_potential=None,
+        stress_tensor=False,
+        xc=None,
+        label='test_H2_inp',
+        inp=inp
+    )
     h2 = molecule('H2', calculator=calc)
     h2.center(vacuum=2.0)
     energy = h2.get_potential_energy()

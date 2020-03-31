@@ -5,15 +5,14 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from ase.build import molecule
-from ase.calculators.cp2k import CP2K
 
 
-def test_restart():
-    calc = CP2K()
+def test_restart(cp2k_factory):
+    calc = cp2k_factory.calc()
     h2 = molecule('H2', calculator=calc)
     h2.center(vacuum=2.0)
     h2.get_potential_energy()
     calc.write('test_restart')  # write a restart
-    calc2 = CP2K(restart='test_restart')  # load a restart
+    calc2 = cp2k_factory.calc(restart='test_restart')  # load a restart
     assert not calc2.calculation_required(h2, ['energy'])
     print('passed test "restart"')
