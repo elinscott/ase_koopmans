@@ -21,6 +21,7 @@ from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
 from ase.data import atomic_masses, atomic_masses_common
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
 from ase.symbols import Symbols, symbols2numbers
+from ase.utils import deprecated
 
 
 class Atoms(object):
@@ -269,27 +270,37 @@ class Atoms(object):
         new_symbols = Symbols.fromsymbols(obj)
         self.numbers[:] = new_symbols.numbers
 
+    # @deprecated(DeprecationWarning('Please use atoms.calc = calc'))
+    # XXX deprecate
     def set_calculator(self, calc=None):
         """Attach calculator object.
 
         Please use the equivalent atoms.calc = calc instead of this
         method."""
-        self._calc = calc
-        if hasattr(calc, 'set_atoms'):
-            calc.set_atoms(self)
+        self.calc = calc
 
+    @deprecated(DeprecationWarning('Please use atoms.calc'))
     def get_calculator(self):
         """Get currently attached calculator object.
 
         Please use the equivalent atoms.calc instead of
         atoms.get_calculator()."""
-        return self._calc
+        return self.calc
 
+    @deprecated(DeprecationWarning('Please use atoms.calc = None'))
     def _del_calculator(self):
         self._calc = None
 
-    calc = property(get_calculator, set_calculator, _del_calculator,
-                    doc='Calculator object.')
+    @property
+    def calc(self):
+        """Calculator object."""
+        return self._calc
+
+    @calc.setter
+    def calc(self, calc):
+        self._calc = calc
+        if hasattr(calc, 'set_atoms'):
+            calc.set_atoms(self)
 
     @property
     def number_of_lattice_vectors(self):

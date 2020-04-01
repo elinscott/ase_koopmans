@@ -511,7 +511,10 @@ def deprecated(msg):
     def deprecated_decorator(func):
         @functools.wraps(func)
         def deprecated_function(*args, **kwargs):
-            warnings.warn(msg, FutureWarning)
+            warning = msg
+            if not isinstance(warning, Warning):
+                warning = FutureWarning(warning)
+            warnings.warn(warning)
             return func(*args, **kwargs)
         return deprecated_function
     return deprecated_decorator
