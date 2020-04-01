@@ -26,11 +26,10 @@ class Properties(Mapping):
             raise ValueError(f'{name} already set')
 
         prop = all_outputs[name]
-        value = prop.normalize(value)
+        value = prop.normalize_type(value)
         shape = np.shape(value)
 
         if not self.shape_is_consistent(prop, value):
-            shape = np.shape(value)
             raise ValueError(f'{name} has bad shape: {shape}')
 
         for i, spec in enumerate(prop.shapespec):
@@ -73,9 +72,8 @@ class Property(ABC):
         self.shapespec = shapespec
 
     @abstractmethod
-    def normalize(self, value):
+    def normalize_type(self, value):
         ...
-
 
     def __repr__(self) -> str:
         typename = {float: 'float', int: 'int'}[self.dtype]
@@ -87,14 +85,14 @@ class ScalarProperty(Property):
     def __init__(self, name, dtype):
         super().__init__(name, dtype, tuple())
 
-    def normalize(self, value):
+    def normalize_type(self, value):
         if not np.isscalar(value):
             raise TypeError('Expected scalar')
         return self.dtype(value)
 
 
 class ArrayProperty(Property):
-    def normalize(self, value):
+    def normalize_type(self, value):
         if np.isscalar(value):
             raise TypeError('Expected array, got scalar')
         return np.asarray(value, dtype=self.dtype)
