@@ -36,7 +36,7 @@ is performed:
 
     calc = ...
     cp_calc = CheckpointCalculator(calc)
-    atoms.set_calculator(cp_calc)
+    atoms.calc = cp_calc
     e = atoms.get_potential_energy() # 1st time, does calc, writes to checkfile
                                      # subsequent runs, reads from checkpoint
 """
@@ -147,7 +147,7 @@ class Checkpoint(object):
                     newatoms = dbentry.toatoms()
                     if atoms is not None:
                         # Assign calculator
-                        newatoms.set_calculator(atoms.calc)
+                        newatoms.calc = atoms.calc
                     retvals += [newatoms]
                 else:
                     retvals += [data['{0}{1}'.format(self._value_prefix, i)]]

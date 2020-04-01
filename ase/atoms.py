@@ -255,7 +255,7 @@ class Atoms(object):
         else:
             self.info = dict(info)
 
-        self.set_calculator(calculator)
+        self.calc = calculator
 
     @property
     def symbols(self):
