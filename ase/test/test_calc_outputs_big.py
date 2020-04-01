@@ -31,9 +31,7 @@ def test_properties_big(rng):
         kpoint_weights=rng.rand(nkpts),
     )
 
-    props = Properties()
-    for name, value in results.items():
-        props.setvalue(name, value)
+    props = Properties(results)
     #assert set(out) == all_outputs, all_outputs ^ set(out)
 
     for name in all_outputs:
