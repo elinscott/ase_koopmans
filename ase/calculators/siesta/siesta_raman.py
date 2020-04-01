@@ -119,7 +119,7 @@ class SiestaRaman(Vibrations):
             warnings.warn('WARNING! \n Your Atoms object is constrained. ' +
                   'Some forces may be unintended set to zero. \n')
         self.name = name + '-d%.3f' % delta
-        self.calc = atoms.get_calculator()
+        self.calc = atoms.calc
 
         if directions is None:
             self.directions = np.asarray([0, 1, 2])

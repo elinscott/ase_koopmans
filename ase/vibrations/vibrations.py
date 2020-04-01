@@ -91,7 +91,7 @@ class Vibrations:
     def __init__(self, atoms, indices=None, name='vib', delta=0.01, nfree=2):
         assert nfree in [2, 4]
         self.atoms = atoms
-        self.calc = atoms.get_calculator()
+        self.calc = atoms.calc
         if indices is None:
             indices = range(len(atoms))
         self.indices = np.asarray(indices)
@@ -437,7 +437,7 @@ class Vibrations:
         p = self.atoms.positions.copy()
         n %= 3 * len(self.indices)
         traj = Trajectory('%s.%d.traj' % (self.name, n), 'w')
-        calc = self.atoms.get_calculator()
+        calc = self.atoms.calc
         self.atoms.set_calculator()
         for x in np.linspace(0, 2 * pi, nimages, endpoint=False):
             self.atoms.set_positions(p + sin(x) * mode)

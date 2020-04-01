@@ -485,7 +485,7 @@ class SingleCalculatorNEB(NEB):
         calculators = []
         for i, image in enumerate(self.images):
             if self.calculators[i] is None:
-                calculators.append(image.get_calculator())
+                calculators.append(image.calc)
             else:
                 calculators.append(self.calculators[i])
         return calculators
@@ -519,7 +519,7 @@ class SingleCalculatorNEB(NEB):
 
         def calculate_and_hide(i):
             image = self.images[i]
-            calc = image.get_calculator()
+            calc = image.calc
             if self.calculators[i] is None:
                 self.calculators[i] = calc
             if calc is not None:

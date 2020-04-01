@@ -63,7 +63,7 @@ def test_COCu111_2():
 
     print('Optimize neb using a single calculator')
     neb.set_calculators(EMT())
-    # print('0001', id(neb.images[0]), id(neb.images[0].get_calculator().atoms))
+    # print('0001', id(neb.images[0]), id(neb.images[0].calc.atoms))
     dyn = Optimizer(neb, maxstep=0.04, trajectory='mep_2coarse.traj')
     dyn.run(fmax=0.1)
     # dyn.run(fmax=39.1)

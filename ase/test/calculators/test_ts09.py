@@ -38,7 +38,7 @@ def test_ts09():
     io.read(fname)
     # maybe assert something about what we just read?
 
-    p = io.read(fname).get_calculator().parameters
+    p = io.read(fname).calc.parameters
     p['calculator']
     p['xc']
     p['uncorrected_energy']

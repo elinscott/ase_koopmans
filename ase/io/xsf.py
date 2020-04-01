@@ -60,7 +60,7 @@ def write_xsf(fileobj, images, data=None):
             fileobj.write('ATOMS%s\n' % anim_token)
 
         # Get the forces if it's not too expensive:
-        calc = atoms.get_calculator()
+        calc = atoms.calc
         if (calc is not None and
             (hasattr(calc, 'calculation_required') and
              not calc.calculation_required(atoms, ['forces']))):

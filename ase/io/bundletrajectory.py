@@ -1052,7 +1052,7 @@ def write_bundletrajectory(filename, images):
 
     for atoms in images:
         # Avoid potentially expensive calculations:
-        calc = atoms.get_calculator()
+        calc = atoms.calc
         if hasattr(calc, 'calculation_required'):
             for quantity in ('energy', 'forces', 'stress', 'magmoms'):
                 traj.select_data(quantity,

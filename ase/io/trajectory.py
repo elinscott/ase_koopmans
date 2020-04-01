@@ -152,7 +152,7 @@ class TrajectoryWriter:
 
         write_atoms(b, atoms, write_header=write_header)
 
-        calc = atoms.get_calculator()
+        calc = atoms.calc
 
         if calc is None and len(kwargs) > 0:
             calc = SinglePointCalculator(atoms)

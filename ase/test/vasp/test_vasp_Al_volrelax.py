@@ -71,4 +71,4 @@ def test_vasp_Al_volrelax():
     assert cells_almost_equal(LDA_cell, Al_ase.get_cell())
 
     # Cleanup
-    Al_ase.get_calculator().clean()
+    Al_ase.calc.clean()

@@ -886,7 +886,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
         per_frame_results = {}
         per_atom_results = {}
         if write_results:
-            calculator = atoms.get_calculator()
+            calculator = atoms.calc
             if (calculator is not None
                     and isinstance(calculator, Calculator)):
                 for key in all_properties:

@@ -206,7 +206,7 @@ class PickleTrajectory:
              'cell': atoms.get_cell(),
              'momenta': momenta}
 
-        if atoms.get_calculator() is not None:
+        if atoms.calc is not None:
             if self.write_energy:
                 d['energy'] = atoms.get_potential_energy()
             if self.write_forces:
@@ -514,7 +514,7 @@ def write_trajectory(filename, images):
 
     for atoms in images:
         # Avoid potentially expensive calculations:
-        calc = atoms.get_calculator()
+        calc = atoms.calc
         if hasattr(calc, 'check_state'):
             nochange = len(calc.check_state(atoms)) == 0
             for property in all_properties:

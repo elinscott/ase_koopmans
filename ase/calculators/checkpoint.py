@@ -147,7 +147,7 @@ class Checkpoint(object):
                     newatoms = dbentry.toatoms()
                     if atoms is not None:
                         # Assign calculator
-                        newatoms.set_calculator(atoms.get_calculator())
+                        newatoms.set_calculator(atoms.calc)
                     retvals += [newatoms]
                 else:
                     retvals += [data['{0}{1}'.format(self._value_prefix, i)]]
@@ -293,7 +293,7 @@ class CheckpointCalculator(Calculator):
                     method_name = self.property_to_method_name[prop]
                     method = getattr(self.calculator, method_name)
                     results.append(method(atoms))
-            _calculator = atoms.get_calculator()
+            _calculator = atoms.calc
             try:
                 atoms.set_calculator(self.calculator)
                 self.checkpoint.save(atoms, *results)
