@@ -76,7 +76,7 @@ class Property(ABC):
         ...
 
     def __repr__(self) -> str:
-        typename = {float: 'float', int: 'int'}[self.dtype]
+        typename = self.dtype.__name__  # Extend to other than float/int?
         shape = ', '.join(str(dim) for dim in self.shapespec)
         return f'Property({self.name!r}, dtype={typename}, shape=[{shape}])'
 
