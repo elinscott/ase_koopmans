@@ -270,13 +270,19 @@ class Atoms(object):
         self.numbers[:] = new_symbols.numbers
 
     def set_calculator(self, calc=None):
-        """Attach calculator object."""
+        """Attach calculator object.
+
+        Please use the equivalent atoms.calc = calc instead of this
+        method."""
         self._calc = calc
         if hasattr(calc, 'set_atoms'):
             calc.set_atoms(self)
 
     def get_calculator(self):
-        """Get currently attached calculator object."""
+        """Get currently attached calculator object.
+
+        Please use the equivalent atoms.calc instead of
+        atoms.get_calculator()."""
         return self._calc
 
     def _del_calculator(self):
