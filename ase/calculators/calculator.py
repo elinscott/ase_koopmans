@@ -7,9 +7,10 @@ from typing import Union
 
 import numpy as np
 
-from ase.utils import jsonable
-from ase.dft.kpoints import monkhorst_pack
 from ase.cell import Cell
+from ase.dft.kpoints import monkhorst_pack
+from ase.outputs import Properties, all_outputs
+from ase.utils import jsonable
 
 
 class CalculatorError(RuntimeError):
@@ -859,7 +860,6 @@ class Calculator(object):
         return props
 
     def export_properties(self):
-        from ase.outputs import Properties, all_outputs
         return Properties(self.results)
 
 
