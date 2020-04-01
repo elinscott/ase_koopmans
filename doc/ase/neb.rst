@@ -57,7 +57,7 @@ saved in A.traj and B.traj::
   neb.interpolate()
   # Set calculators:
   for image in images[1:4]:
-      image.set_calculator(MyCalculator(...))
+      image.calc = MyCalculator(...)
   # Optimize:
   optimizer = MDMin(neb, trajectory='A2B.traj')
   optimizer.run(fmax=0.04)
@@ -236,7 +236,7 @@ only some of them have a calculator attached::
   j = world.rank * n // world.size
   for i, image in enumerate(images[1:-1]):
       if i == j:
-          image.set_calculator(EMT())
+          image.calc = EMT()
 
 Create the NEB object with ``NEB(images, parallel=True)``.
 For a complete example using GPAW_, see here_.

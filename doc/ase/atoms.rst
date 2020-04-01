@@ -267,7 +267,7 @@ different :mod:`ase.calculators`.
 
 A calculator object *calc* is attached to the atoms like this:
 
->>> atoms.set_calculator(calc)
+>>> atoms.calc = calc
 
 After the calculator has been appropriately setup the energy of the
 atoms can be obtained through
