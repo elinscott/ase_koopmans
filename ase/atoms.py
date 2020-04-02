@@ -707,6 +707,13 @@ class Atoms(object):
                     energy += constraint.adjust_potential_energy(self)
         return energy
 
+    def get_properties(self, properties):
+        """This method is experimental; currently for internal use."""
+        # XXX Something about constraints.
+        if self._calc is None:
+            raise RuntimeError('Atoms object has no calculator.')
+        return self._calc.calculate_properties(self, properties)
+
     def get_potential_energies(self):
         """Calculate the potential energies of all the atoms.
 

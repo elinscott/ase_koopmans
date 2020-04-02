@@ -975,9 +975,10 @@ class VaspChargeDensity(object):
                     f.write('\n')
                 for dim in chg.shape:
                     f.write(' %4i' % dim)
+                f.write('\n') # a new line after dim is required
                 self._write_chg(f, self.chgdiff[ii], vol, format)
                 if format == 'chgcar':
-                    f.write('\n')
+                    # a new line is always provided self._write_chg
                     f.write(self.augdiff)
             if format == 'chg' and len(self.chg) > 1:
                 f.write('\n')

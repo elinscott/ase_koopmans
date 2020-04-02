@@ -32,6 +32,11 @@ class LennardJones(Calculator):
         """
         Calculator.__init__(self, **kwargs)
 
+        if self.parameters.rc is None:
+            self.parameters.rc = 3 * self.parameters.sigma
+
+        self.nl = None
+
     def calculate(self, atoms=None,
                   properties=['energy'],
                   system_changes=all_changes):
@@ -42,10 +47,8 @@ class LennardJones(Calculator):
         sigma = self.parameters.sigma
         epsilon = self.parameters.epsilon
         rc = self.parameters.rc
-        if rc is None:
-            rc = 3 * sigma
 
-        if 'numbers' in system_changes:
+        if self.nl is None or 'numbers' in system_changes:
             self.nl = NeighborList([rc / 2] * natoms, self_interaction=False)
 
         self.nl.update(self.atoms)

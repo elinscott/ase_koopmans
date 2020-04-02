@@ -7,9 +7,10 @@ from typing import Union
 
 import numpy as np
 
-from ase.utils import jsonable
-from ase.dft.kpoints import monkhorst_pack
 from ase.cell import Cell
+from ase.dft.kpoints import monkhorst_pack
+from ase.outputs import Properties, all_outputs
+from ase.utils import jsonable
 
 
 class CalculatorError(RuntimeError):
@@ -841,6 +842,25 @@ class Calculator(object):
         # the user would have to override this by providing the Fermi level
         # from the selfconsistent calculation.
         return get_band_structure(calc=self)
+
+    def calculate_properties(self, atoms, properties):
+        """This method is experimental; currently for internal use."""
+        for name in properties:
+            if name not in all_outputs:
+                raise ValueError(f'No such property: {name}')
+
+        # We ignore system changes for now.
+        self.calculate(atoms, properties, system_changes=all_changes)
+
+        props = self.export_properties()
+
+        for name in properties:
+            if name not in props:
+                raise PropertyNotPresent(name)
+        return props
+
+    def export_properties(self):
+        return Properties(self.results)
 
 
 class FileIOCalculator(Calculator):
