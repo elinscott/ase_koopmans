@@ -84,6 +84,21 @@ Git master branch
 
 * Added Z-matrix parser for use in input/output file readers.
 
+* Reduced code duplication in the :mod:`ase.ga` module by incorporating the
+  'bulk' GA functionality into the corresponding 'standard' modules.
+  Using the now deprecated 'bulk' GA modules (i.e.
+  :mod:`ase.ga.bulk_startgenerator`, :mod:`ase.ga.bulk_crossovers`,
+  :mod:`ase.ga.bulk_mutations` and :mod:`ase.ga.bulk_utilities`) raises
+  a warning with pointers to the corresponding 'standard' modules.
+
+* Extended the genetic algorithm to cases where 1 or 2 cell vectors are
+  part of the global optimization problem, which can be useful in searching
+  for nanowire and thin film structures.
+
+* Added a new tutorial on molecular crystal structure prediction using
+  a genetic algorithm, see :ref:`ga_molecular_crystal_tutorial`.
+
+
 Version 3.19.0
 ==============
 
