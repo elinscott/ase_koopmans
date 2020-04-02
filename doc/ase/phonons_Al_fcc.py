@@ -1,4 +1,4 @@
-# creates: Al_phonon.png, Al_mode.gif
+# creates: Al_phonon.png
 from ase.build import bulk
 from ase.calculators.emt import EMT
 from ase.phonons import Phonons
@@ -40,15 +40,17 @@ dosax.set_xlabel("DOS", fontsize=18)
 fig.savefig('Al_phonon.png')
 
 # --- literalinclude division line ---
-from ase.io.trajectory import Trajectory
-from ase.io import write
+# from ase.io.trajectory import Trajectory
+# from ase.io import write
 
 # Write modes for specific q-vector to trajectory files:
 L = path.special_points['L']
 ph.write_modes([l / 2 for l in L], branches=[2], repeat=(8, 8, 8), kT=3e-4,
                center=True)
 
+
 # Generate gif animation:
-with Trajectory('phonon.mode.2.traj', 'r') as traj:
-    write('Al_mode.gif', traj, interval=50,
-          rotation='-36x,26.5y,-25z')
+# XXX Temporarily disabled due to matplotlib writer compatibility issue.
+# with Trajectory('phonon.mode.2.traj', 'r') as traj:
+#     write('Al_mode.gif', traj, interval=50,
+#           rotation='-36x,26.5y,-25z')

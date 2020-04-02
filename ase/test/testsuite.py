@@ -1,9 +1,9 @@
 import os
 import sys
-import subprocess
+from subprocess import Popen, PIPE
 from contextlib import contextmanager
 import importlib
-import unittest
+from pathlib import Path
 import warnings
 import argparse
 from multiprocessing import cpu_count
@@ -14,16 +14,32 @@ from ase.cli.main import CLIError
 
 
 test_calculator_names = ['emt']
+testdir = Path(__file__).parent
 datafiles_directory = os.path.join(os.path.dirname(__file__), 'datafiles', '')
 
 
 def require(calcname):
+    import unittest
     if calcname not in test_calculator_names:
-        raise unittest.SkipTest('use --calculators={0} to enable'
-                                .format(calcname))
+        raise unittest.SkipTest(f'use --calculators={calcname} to enable')
+
+
+def all_test_modules_and_groups():
+    names = []
+    groups = {}
+    for abspath in testdir.rglob('test_*.py'):
+        path = abspath.relative_to(testdir)
+        name = str(path).rsplit('.', 1)[0].replace('/', '.')
+        if str(path.parent) != '.':
+            groupname = str(path.parent).replace('/', '.')
+            groups.setdefault(groupname, []).append(name)
+        else:
+            names.append(name)
+    return names, groups
 
 
 def disable_calculators(names):
+    import pytest
     for name in names:
         if name in ['emt', 'lj', 'eam', 'morse', 'tip3p']:
             continue
@@ -34,8 +50,7 @@ def disable_calculators(names):
         else:
             def get_mock_init(name):
                 def mock_init(obj, *args, **kwargs):
-                    raise unittest.SkipTest('use --calculators={0} to enable'
-                                            .format(name))
+                    pytest.skip(f'use --calculators={name} to enable')
                 return mock_init
 
             def mock_del(obj):
@@ -44,14 +59,15 @@ def disable_calculators(names):
             cls.__del__ = mock_del
 
 
-def cli(command, calculator_name=None):
+def runshellcommand(command, calculator_name=None):
     if (calculator_name is not None and
         calculator_name not in test_calculator_names):
-        return
+        import pytest
+        pytest.skip(f'Not available: {calculator_name}')
     actual_command = ' '.join(command.split('\n')).strip()
-    proc = subprocess.Popen(actual_command,
-                            shell=True,
-                            stdout=subprocess.PIPE)
+    proc = Popen(actual_command,
+                 shell=True,
+                 stdout=PIPE)
     print(proc.stdout.read().decode())
     proc.wait()
 
@@ -160,6 +176,11 @@ class CLICommand:
         parser.add_argument('--strict', action='store_true',
                             help='convert warnings to errors.  '
                             'This option currently has no effect')
+        parser.add_argument('--fast', action='store_true',
+                            help='skip slow tests')
+        parser.add_argument('--coverage', action='store_true',
+                            help='measure code coverage.  '
+                            'Requires pytest-cov')
         parser.add_argument('--nogui', action='store_true',
                             help='do not run graphical tests')
         parser.add_argument('tests', nargs='*',
@@ -212,17 +233,17 @@ class CLICommand:
         if jobs:
             add_args('--numprocesses={}'.format(jobs))
 
+        if args.fast:
+            add_args('-m', 'not slow')
+
+        if args.coverage:
+            add_args('--cov=ase',
+                     '--cov-config=.coveragerc',
+                     '--cov-report=term',
+                     '--cov-report=html')
+
         if args.tests:
-            from ase.test.newtestsuite import TestModule
-
-            dct = TestModule.all_test_modules_as_dict()
-
-            # Hack: Make it recognize groups of tests like fio/*.py
-            groups = {}
-            for name in dct:
-                groupname = name.split('.')[0]
-                if groupname not in dct:
-                    groups.setdefault(groupname, []).append(name)
+            names, groups = all_test_modules_and_groups()
 
             testnames = []
             for arg in args.tests:
@@ -232,13 +253,7 @@ class CLICommand:
                     testnames.append(arg)
 
             for testname in testnames:
-                mod = dct[testname]
-                if mod.is_pytest_style:
-                    pytest_args.append(mod.module)
-                else:
-                    # XXX Not totally logical
-                    add_args('ase.test.test_modules::{}'
-                             .format(mod.pytest_function_name))
+                add_args('ase.test.{}'.format(testname))
         else:
             add_args('ase.test')
 
@@ -256,11 +271,17 @@ class CLICommand:
         for line in pytest_args:
             print('    ' + line)
 
-
-
         if not have_module('pytest'):
-            raise CLIError('Cannot import pytest; please install pytest to run tests')
+            raise CLIError('Cannot import pytest; please install pytest '
+                           'to run tests')
 
-        import pytest
-        exitcode = pytest.main(pytest_args)
+        # We run pytest through Popen rather than pytest.main().
+        #
+        # This is because some ASE modules were already imported and
+        # would interfere with code coverage measurement.
+        # (Flush so we don't get our stream mixed with the pytest output)
+        sys.stdout.flush()
+        proc = Popen([sys.executable, '-m', 'pytest'] + pytest_args,
+                     cwd=str(testdir))
+        exitcode = proc.wait()
         sys.exit(exitcode)

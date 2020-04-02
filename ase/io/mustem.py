@@ -76,22 +76,23 @@ class XtlmuSTEMWriter:
         Occupancy of each atoms. Default value is `1.0`.
 
     comment: str (optional)
-        Comments to be written in the first line of the file. If not 
+        Comments to be written in the first line of the file. If not
         provided, write the total number of atoms and the chemical formula.
 
     fit_cell_to_atoms: bool (optional)
         If `True`, fit the cell to the atoms positions. If negative coordinates
-        are present in the cell, the atoms are translated, so that all 
-        positions are positive. If `False` (default), the atoms positions and 
+        are present in the cell, the atoms are translated, so that all
+        positions are positive. If `False` (default), the atoms positions and
         the cell are unchanged.
     """
 
     def __init__(self, atoms, keV, DW, comment=None, occupancy=1.0,
                  fit_cell_to_atoms=False):
         self.atoms = atoms.copy()
-        from collections import OrderedDict
-        self.atom_types = list(OrderedDict((element, None)
-            for element in self.atoms.get_chemical_symbols()))
+        self.atom_types = []
+        for atom in self.atoms:
+            if atom.symbol not in self.atom_types:
+                self.atom_types.append(atom.symbol)
         self.keV = keV
         self.DW = DW
         self._check_key_dictionary(self.DW, 'DW')
@@ -110,7 +111,7 @@ class XtlmuSTEMWriter:
     def _check_key_dictionary(self, d, dict_name):
         # Check if we have enough key
         for key in self.atom_types:
-            if not key in d:
+            if key not in d:
                 raise ValueError('Missing the {0} key in the `{1}` dictionary.'
                                  ''.format(key, dict_name))
 

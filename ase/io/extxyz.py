@@ -5,9 +5,6 @@ Read/write files in "extended" XYZ format, storing additional
 per-configuration information as key-value pairs on the XYZ
 comment line, and additional per-atom properties as extra columns.
 
-See http://jrkermode.co.uk/quippy/io.html#extendedxyz for a full
-description of the Extended XYZ file format.
-
 Contributed by James Kermode <james.kermode@gmail.com>
 """
 
@@ -15,6 +12,8 @@ Contributed by James Kermode <james.kermode@gmail.com>
 from itertools import islice
 import re
 import warnings
+
+import json
 
 import numpy as np
 
@@ -25,6 +24,7 @@ from ase.spacegroup.spacegroup import Spacegroup
 from ase.parallel import paropen
 from ase.constraints import FixAtoms, FixCartesian
 from ase.io.formats import index2range
+
 
 __all__ = ['read_xyz', 'write_xyz', 'iread_xyz']
 
@@ -44,6 +44,8 @@ KEY_RE = re.compile(r'([A-Za-z_]+[A-Za-z0-9_-]*)\s*')
 
 UNPROCESSED_KEYS = ['uid']
 
+SPECIAL_3_3_KEYS = ['Lattice', 'virial', 'stress']
+
 
 def key_val_str_to_dict(string, sep=None):
     """
@@ -51,8 +53,8 @@ def key_val_str_to_dict(string, sep=None):
     various values parsed to native types.
 
     Accepts brackets or quotes to delimit values. Parses integers, floats
-    booleans and arrays thereof. Arrays with 9 values are converted to 3x3
-    arrays with Fortran ordering.
+    booleans and arrays thereof. Arrays with 9 values whose name is listed
+    in SPECIAL_3_3_KEYS are converted to 3x3 arrays with Fortran ordering.
 
     If sep is None, string will split on whitespace, otherwise will split
     key value pairs with the given separator.
@@ -62,36 +64,31 @@ def key_val_str_to_dict(string, sep=None):
     delimiters = {
         "'": "'",
         '"': '"',
-        '(': ')',
         '{': '}',
-        '[': ']',
+        '[': ']'
     }
 
     # Make pairs and process afterwards
     kv_pairs = [
         [[]]]  # List of characters for each entry, add a new list for new value
-    delimiter_stack = []  # push and pop closing delimiters
+    cur_delimiter = None  # push and pop closing delimiters
     escaped = False  # add escaped sequences verbatim
 
     # parse character-by-character unless someone can do nested brackets
     # and escape sequences in a regex
     for char in string.strip():
         if escaped:  # bypass everything if escaped
-            kv_pairs[-1][-1].extend(['\\', char])
+            kv_pairs[-1][-1].append(char)
             escaped = False
-        elif delimiter_stack:  # inside brackets
-            if char == delimiter_stack[-1]:  # find matching delimiter
-                delimiter_stack.pop()
-            elif char in delimiters:
-                delimiter_stack.append(delimiters[char])  # nested brackets
-            elif char == '\\':
-                escaped = True  # so escaped quotes can be ignored
+        elif char == '\\':  # escape the next thing
+            escaped = True
+        elif cur_delimiter:  # inside brackets
+            if char == cur_delimiter:  # found matching delimiter
+                cur_delimiter = None
             else:
                 kv_pairs[-1][-1].append(char)  # inside quotes, add verbatim
-        elif char == '\\':
-            escaped = True
         elif char in delimiters:
-            delimiter_stack.append(delimiters[char])  # brackets or quotes
+            cur_delimiter = delimiters[char]  # brackets or quotes
         elif (sep is None and char.isspace()) or char == sep:
             if kv_pairs == [[[]]]:  # empty, beginning of string
                 continue
@@ -128,16 +125,22 @@ def key_val_str_to_dict(string, sep=None):
                     numvalue = np.array(split_value, dtype=float)
                 if len(numvalue) == 1:
                     numvalue = numvalue[0]  # Only one number
-                elif len(numvalue) == 9:
-                    # special case: 3x3 matrix, fortran ordering
-                    numvalue = np.array(numvalue).reshape((3, 3), order='F')
                 value = numvalue
             except (ValueError, OverflowError):
                 pass  # value is unchanged
 
-            # Parse boolean values: 'T' -> True, 'F' -> False,
-            #                       'T T F' -> [True, True, False]
+            # convert special 3x3 matrices
+            if key in SPECIAL_3_3_KEYS:
+                if not isinstance(value, np.ndarray) or value.shape != (9,):
+                    raise ValueError("Got info item {}, expecting special 3x3 "
+                                     "matrix, but value is not in the form of "
+                                     "a 9-long numerical vector".format(key))
+                value = np.array(value).reshape((3, 3), order='F')
+
+            # parse special strings as boolean or JSON
             if isinstance(value, str):
+                # Parse boolean values: 'T' -> True, 'F' -> False,
+                #                       'T T F' -> [True, True, False]
                 str_to_bool = {'T': True, 'F': False}
 
                 try:
@@ -148,7 +151,12 @@ def key_val_str_to_dict(string, sep=None):
                     else:
                         value = boolvalue
                 except KeyError:
-                    pass  # value is unchanged
+                    # parse JSON
+                    if value.startswith("_JSON "):
+                        d = json.loads(value.replace("_JSON ", "", 1))
+                        value = np.array(d)
+                        if value.dtype.kind not in ['i', 'f', 'b']:
+                            value = d
 
         kv_dict[key] = value
 
@@ -222,58 +230,86 @@ def key_val_str_to_dict_regex(s):
     return d
 
 
-def key_val_dict_to_str(d, sep=' ', tolerant=False):
+def escape(string):
+    if (' ' in string or
+            '"' in string or "'" in string or
+            '{' in string or '}' in string or
+            '[' in string or ']' in string):
+        string = string.replace('"', '\\"')
+        string = '"%s"' % string
+    return string
+
+
+def key_val_dict_to_str(dct, sep=' '):
     """
     Convert atoms.info dictionary to extended XYZ string representation
     """
-    if len(d) == 0:
+
+    def array_to_string(val):
+        # some ndarrays are special (special 3x3 keys, and scalars/vectors of
+        # numbers or bools), handle them here
+        if key in SPECIAL_3_3_KEYS:
+            # special 3x3 matrix
+            val = ' '.join(str(known_types_to_str(v))
+                           for v in val.reshape(val.size, order='F'))
+        elif val.dtype.kind in ['i', 'f', 'b']:
+            # numerical or bool scalars/vectors are special, for backwards
+            # compat.
+            if len(val.shape) == 0:
+                # scalar
+                val = str(known_types_to_str(val))
+            elif len(val.shape) == 1:
+                # vector
+                val = ' '.join(str(known_types_to_str(v)) for v in val)
+        return val
+
+    def known_types_to_str(value):
+        if isinstance(value, bool) or isinstance(value, np.bool_):
+            return 'T' if value else 'F'
+        elif isinstance(value, np.int_) or isinstance(value, np.float_):
+            return '{}'.format(value)
+        elif isinstance(value, Spacegroup):
+            return value.symbol
+        else:
+            return value
+
+    if len(dct) == 0:
         return ''
-    s = ''
-    type_val_map = {(bool, True): 'T',
-                    (bool, False): 'F',
-                    (np.bool_, True): 'T',
-                    (np.bool_, False): 'F'}
 
-    s = ''
-    for key in d.keys():
-        val = d[key]
-        if isinstance(val, dict):
-            continue
-        if isinstance(val, str):
-            pass
-        elif hasattr(val, '__iter__'):
+    string = ''
+    for key in dct:
+        val = dct[key]
+
+        if isinstance(val, np.ndarray):
+            val = array_to_string(val)
+        else:
+            # convert any known types to string
+            val = known_types_to_str(val)
+
+        if val is not None and not isinstance(val, str):
+            # what's left is an object, try using JSON
+            if isinstance(val, np.ndarray):
+                val = val.tolist()
             try:
-                val = np.array(list(val))
-                val = ' '.join(str(type_val_map.get((type(x), x), x))
-                               for x in val.reshape(val.size, order='F'))
-            except (TypeError, ValueError) as exc:
-                # It may fail if the type is unhashable
-                # ValueError is only relevant for non-uniform arrays
-                # with older numpy (1.10.4) and affects the creation
-                # of the array.  Can be removed in the future.
-                if tolerant:
-                    warnings.warn('Skipping unhashable information '
-                                  '{0}'.format(key))
-                    continue
-                else:
-                    raise RuntimeError('Unhashable object in info dictionary,'
-                                       ' please remove it or use '
-                                       'tolerant=True') from exc
-            val.replace('[', '')
-            val.replace(']', '')
-        elif isinstance(val, Spacegroup):
-            val = val.symbol
-        else:
-            val = type_val_map.get((type(val), val), val)
+                val = '_JSON ' + json.dumps(val)
+                # if this fails, let give up
+            except TypeError:
+                warnings.warn('Skipping unhashable information '
+                              '{0}'.format(key))
+                continue
 
+        key = escape(key)  # escape and quote key
+        eq = "="
+        # Should this really be setting empty value that's going to be
+        # interpreted as bool True?
         if val is None:
-            s = s + '%s%s' % (key, sep)
-        elif isinstance(val, str) and ' ' in val:
-            s = s + '%s="%s"%s' % (key, val, sep)
-        else:
-            s = s + '%s=%s%s' % (key, str(val), sep)
+            val = ""
+            eq = ""
+        val = escape(val)  # escape and quote val
 
-    return s.strip()
+        string += '%s%s%s%s' % (key, eq, val, sep)
+
+    return string.strip()
 
 
 def parse_properties(prop_str):
@@ -328,7 +364,8 @@ def parse_properties(prop_str):
     return properties, properties_list, dtype, converters
 
 
-def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0):
+def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict,
+                    nvec=0):
     # comment line
     line = next(lines).strip()
     if nvec > 0:
@@ -386,20 +423,21 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
             try:
                 line = next(lines)
             except StopIteration:
-                raise XYZError('ase.io.adfxyz: Frame has {} cell vectors, expected {}'
-                               .format(len(cell), nvec))
+                raise XYZError('ase.io.adfxyz: Frame has {} cell vectors, '
+                               'expected {}'.format(len(cell), nvec))
             entry = line.split()
 
             if not entry[0].startswith('VEC'):
                 raise XYZError('Expected cell vector, got {}'.format(entry[0]))
+
             try:
                 n = int(entry[0][3:])
-                if n != ln + 1:
-                    raise XYZError('Expected VEC{}, got VEC{}'
-                                   .format(ln + 1, n))
-            except:
-                raise XYZError('Expected VEC{}, got VEC{}'.format(
-                    ln + 1, entry[0][3:]))
+            except ValueError as e:
+                raise XYZError('Expected VEC{}, got VEC{}'
+                               .format(ln + 1, entry[0][3:])) from e
+            if n != ln + 1:
+                raise XYZError('Expected VEC{}, got VEC{}'
+                               .format(ln + 1, n))
 
             cell[ln] = np.array([float(x) for x in entry[1:]])
             pbc[ln] = True
@@ -452,8 +490,10 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict, nvec=0
     # Read and set constraints
     if 'move_mask' in arrays:
         if properties['move_mask'][1] == 3:
-            atoms.set_constraint(
-                [FixCartesian(a, mask=arrays['move_mask'][a, :]) for a in range(natoms)])
+            cons = []
+            for a in range(natoms):
+                cons.append(FixCartesian(a, mask=arrays['move_mask'][a, :]))
+            atoms.set_constraint(cons)
         elif properties['move_mask'][1] == 1:
             atoms.set_constraint(FixAtoms(mask=~arrays['move_mask']))
         else:
@@ -556,7 +596,7 @@ iread_xyz = ImageIterator(ixyzchunks)
 
 
 def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
-    """
+    r"""
     Read from a file in Extended XYZ format
 
     index is the frame to read, default is last frame (index=-1).
@@ -564,7 +604,110 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
     to a dictionary, ``extxyz.key_val_str_to_dict`` is the default and can
     deal with most use cases, ``extxyz.key_val_str_to_dict_regex`` is slightly
     faster but has fewer features.
-    """
+
+    Extended XYZ format is an enhanced version of the `basic XYZ format
+    <http://en.wikipedia.org/wiki/XYZ_file_format>`_ that allows extra
+    columns to be present in the file for additonal per-atom properties as
+    well as standardising the format of the comment line to include the
+    cell lattice and other per-frame parameters.
+
+    It's easiest to describe the format with an example.  Here is a
+    standard XYZ file containing a bulk cubic 8 atom silicon cell ::
+
+        8
+        Cubic bulk silicon cell
+        Si          0.00000000      0.00000000      0.00000000
+        Si        1.36000000      1.36000000      1.36000000
+        Si        2.72000000      2.72000000      0.00000000
+        Si        4.08000000      4.08000000      1.36000000
+        Si        2.72000000      0.00000000      2.72000000
+        Si        4.08000000      1.36000000      4.08000000
+        Si        0.00000000      2.72000000      2.72000000
+        Si        1.36000000      4.08000000      4.08000000
+
+    The first line is the number of atoms, followed by a comment and
+    then one line per atom, giving the element symbol and cartesian
+    x y, and z coordinates in Angstroms.
+
+    Here's the same configuration in extended XYZ format ::
+
+        8
+        Lattice="5.44 0.0 0.0 0.0 5.44 0.0 0.0 0.0 5.44" Properties=species:S:1:pos:R:3 Time=0.0
+        Si        0.00000000      0.00000000      0.00000000
+        Si        1.36000000      1.36000000      1.36000000
+        Si        2.72000000      2.72000000      0.00000000
+        Si        4.08000000      4.08000000      1.36000000
+        Si        2.72000000      0.00000000      2.72000000
+        Si        4.08000000      1.36000000      4.08000000
+        Si        0.00000000      2.72000000      2.72000000
+        Si        1.36000000      4.08000000      4.08000000
+
+    In extended XYZ format, the comment line is replaced by a series of
+    key/value pairs.  The keys should be strings and values can be
+    integers, reals, logicals (denoted by `T` and `F` for true and false)
+    or strings. Quotes are required if a value contains any spaces (like
+    `Lattice` above).  There are two mandatory parameters that any
+    extended XYZ: `Lattice` and `Properties`. Other parameters --
+    e.g. `Time` in the example above --- can be added to the parameter line
+    as needed.
+
+    `Lattice` is a Cartesian 3x3 matrix representation of the cell
+    vectors, with each vector stored as a column and the 9 values listed in
+    Fortran column-major order, i.e. in the form ::
+
+      Lattice="R1x R1y R1z R2x R2y R2z R3x R3y R3z"
+
+    where `R1x R1y R1z` are the Cartesian x-, y- and z-components of the
+    first lattice vector (:math:`\mathbf{a}`), `R2x R2y R2z` those of the second
+    lattice vector (:math:`\mathbf{b}`) and `R3x R3y R3z` those of the
+    third lattice vector (:math:`\mathbf{c}`).
+
+    The list of properties in the file is described by the `Properties`
+    parameter, which should take the form of a series of colon separated
+    triplets giving the name, format (`R` for real, `I` for integer) and
+    number of columns of each property. For example::
+
+      Properties="species:S:1:pos:R:3:vel:R:3:select:I:1"
+
+    indicates the first column represents atomic species, the next three
+    columns represent atomic positions, the next three velcoities, and the
+    last is an single integer called `select`. With this property
+    definition, the line ::
+
+      Si        4.08000000      4.08000000      1.36000000   0.00000000      0.00000000      0.00000000       1
+
+    would describe a silicon atom at position (4.08,4.08,1.36) with zero
+    velocity and the `select` property set to 1.
+
+    The property names `pos`, `Z`, `mass`, and `charge` map to ASE
+    :attr:`ase.atoms.Atoms.arrays` entries named
+    `positions`, `numbers`, `masses` and `charges` respectively.
+
+    Additional key-value pairs in the comment line are parsed into the
+    :attr:`ase.Atoms.atoms.info` dictionary, with the following conventions
+
+     - Values can be quoted with `""`, `''`, `[]` or `{}` (the latter are
+       included to ease command-line usage as the `{}` are not treated
+       specially by the shell)
+     - Quotes within keys or values can be escaped with `\"`.
+     - Keys with special names `stress` or `virial` are treated as 3x3 matrices
+       in Fortran order, as for `Lattice` above.
+     - Otherwise, values with multiple elements are treated as 1D arrays, first
+       assuming integer format and falling back to float if conversion is
+       unsuccessful.
+     - A missing value defaults to `True`, e.g. the comment line
+       `"cutoff=3.4 have_energy"` leads to
+       `{'cutoff': 3.4, 'have_energy': True}` in `atoms.info`.
+     - Value strings starting with `"_JSON"` are interpreted as JSON content;
+       similarly, when writing, anything which does not match the criteria above
+       is serialised as JSON.
+
+    The extended XYZ format is also supported by the
+    the `Ovito <http://www.ovito.org>`_ visualisation tool
+    (from `v2.4 beta
+    <http://www.ovito.org/index.php/component/content/article?id=25>`_
+    onwards).
+    """  # noqa: E501
     if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
@@ -622,7 +765,7 @@ def read_xyz(fileobj, index=-1, properties_parser=key_val_str_to_dict):
 
 
 def output_column_format(atoms, columns, arrays,
-                         write_info=True, results=None, tolerant=False):
+                         write_info=True, results=None):
     """
     Helper function to build extended XYZ comment line
     """
@@ -684,7 +827,7 @@ def output_column_format(atoms, columns, arrays,
     if results is not None:
         info.update(results)
     info['pbc'] = atoms.get_pbc()  # always save periodic boundary conditions
-    comment_str += ' ' + key_val_dict_to_str(info, tolerant=tolerant)
+    comment_str += ' ' + key_val_dict_to_str(info)
 
     dtype = np.dtype(dtypes)
     fmt = ' '.join(formats) + '\n'
@@ -693,15 +836,21 @@ def output_column_format(atoms, columns, arrays,
 
 
 def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
-              write_results=True, plain=False, vec_cell=False, append=False, 
-              tolerant=False):
+              write_results=True, plain=False, vec_cell=False, append=False):
     """
     Write output in extended XYZ format
 
     Optionally, specify which columns (arrays) to include in output,
-    and whether to write the contents of the Atoms.info dict to the
-    XYZ comment line (default is True) and the results of any
-    calculator attached to this Atoms.
+    whether to write the contents of the `atoms.info` dict to the
+    XYZ comment line (default is True), the results of any
+    calculator attached to this Atoms. The `plain` argument
+    can be used to write a simple XYZ file with no additional information.
+    `vec_cell` can be used to write the cell vectors as additional
+    pseudo-atoms. If `append` is set to True, the file is for append (mode `a`),
+    otherwise it is overwritten (mode `w`).
+
+    See documentation for :func:`read_xyz()` for further details of the extended
+    XYZ file format.
     """
     if isinstance(fileobj, str):
         mode = 'w'
@@ -745,7 +894,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                     if value is None:
                         # skip missing calculator results
                         continue
-                    if (isinstance(value, np.ndarray)
+                    if (isinstance(value, np.ndarray) and len(value.shape) >= 1
                             and value.shape[0] == len(atoms)):
                         # per-atom quantities (forces, energies, stresses)
                         per_atom_results[key] = value
@@ -846,8 +995,7 @@ def write_xyz(fileobj, images, comment='', columns=None, write_info=True,
                                                        fr_cols,
                                                        arrays,
                                                        write_info,
-                                                       per_frame_results, 
-                                                       tolerant)
+                                                       per_frame_results)
 
         if plain or comment != '':
             # override key/value pairs with user-speficied comment string

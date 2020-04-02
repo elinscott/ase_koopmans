@@ -2,6 +2,7 @@ import numpy as np
 import itertools
 from scipy import sparse as sp
 from scipy.spatial import cKDTree
+import scipy.sparse.csgraph as csgraph
 
 from ase.data import atomic_numbers, covalent_radii
 from ase.geometry import complete_cell, find_mic, wrap_positions
@@ -74,7 +75,7 @@ def get_distance_matrix(graph, limit=3):
     Why not dok_matrix like the connectivity-matrix? Because row-picking
     is most likely and this is super fast with csr.
     """
-    mat = sp.csgraph.dijkstra(graph, directed=False, limit=limit)
+    mat = csgraph.dijkstra(graph, directed=False, limit=limit)
     mat[mat == np.inf] = 0
     return sp.csr_matrix(mat, dtype=np.int8)
 
@@ -1050,6 +1051,10 @@ class NeighborList:
         See :meth:`ase.neighborlist.PrimitiveNeighborList.get_neighbors` or
         :meth:`ase.neighborlist.PrimitiveNeighborList.get_neighbors`.
         """
+        if self.nl.nupdates <= 0:
+            raise RuntimeError('Must call update(atoms) on your neighborlist '
+                               'first!')
+
         return self.nl.get_neighbors(a)
 
     def get_connectivity_matrix(self, sparse=True):

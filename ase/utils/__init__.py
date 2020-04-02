@@ -56,6 +56,7 @@ def plural(n, word):
 
 class DevNull:
     encoding = 'UTF-8'
+    closed = False
 
     def write(self, string):
         pass

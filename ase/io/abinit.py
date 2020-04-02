@@ -504,20 +504,22 @@ def write_files_file(fd, label, ppp_list):
         fd.write('%s\n' % (ppp))  # psp file path
 
 
-def get_abinit_pp_paths():
+def get_default_abinit_pp_paths():
     return os.environ.get('ABINIT_PP_PATH', '.').split(':')
 
 
 def write_all_inputs(atoms, properties, parameters,
+                     pp_paths=None,
                      raise_exception=True,
                      label='abinit'):
     species = list(set(atoms.numbers))
-    search_paths = get_abinit_pp_paths()
+    if pp_paths is None:
+        pp_paths = get_default_abinit_pp_paths()
     ppp = get_ppp_list(atoms, species,
                        raise_exception=raise_exception,
                        xc=parameters.xc,
                        pps=parameters.pps,
-                       search_paths=search_paths)
+                       search_paths=pp_paths)
 
     with open(label + '.files', 'w') as fd:
         write_files_file(fd, label, ppp)
@@ -554,6 +556,7 @@ def read_results(label):
         dct = read_eig(fd)
         results.update(dct)
     return results
+
 
 def get_ppp_list(atoms, species, raise_exception, xc, pps,
                  search_paths):

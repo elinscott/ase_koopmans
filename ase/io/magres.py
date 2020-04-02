@@ -12,6 +12,7 @@ from collections import OrderedDict
 import ase.units
 from ase.atoms import Atoms
 from ase.spacegroup import Spacegroup
+from ase.spacegroup.spacegroup import SpacegroupNotFoundError
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 
 _mprops = {
@@ -323,7 +324,7 @@ def read_magres(fd, include_unrecognised=False):
     if 'symmetry' in data_dict['atoms']:
         try:
             spg = Spacegroup(data_dict['atoms']['symmetry'][0])
-        except:
+        except SpacegroupNotFoundError:
             # Not found
             spg = Spacegroup(1)  # Most generic one
         atoms.info['spacegroup'] = spg
@@ -388,7 +389,8 @@ def read_magres(fd, include_unrecognised=False):
                     #                                            {})
                     # # We only take element 0 because for this sort of data
                     # # there should be only that
-                    # atoms.info['magres_data'][u] = data_dict['magres'][u][0][mn]
+                    # atoms.info['magres_data'][u] = \
+                    #     data_dict['magres'][u][0][mn]
                     if atoms.calc is None:
                         calc = SinglePointDFTCalculator(atoms)
                         atoms.set_calculator(calc)
@@ -419,7 +421,7 @@ def write_magres(fd, image):
     image_data['atoms'] = {'units': []}
     # Contains units, lattice and each individual atom
     if np.all(image.get_pbc()):
-            # Has lattice!
+        # Has lattice!
         image_data['atoms']['units'].append(['lattice', 'Angstrom'])
         image_data['atoms']['lattice'] = [image.get_cell()]
 
@@ -495,7 +497,7 @@ def write_magres(fd, image):
                                 tens = {mn: arr[i],
                                         'atom': {'label': lab,
                                                  'index': ind}}
-                                image_data['magres'][u].append(tens)                
+                                image_data['magres'][u].append(tens)
 
     # Calculation block, if present
     if 'magresblock_calculation' in image.info:
@@ -515,8 +517,8 @@ def write_magres(fd, image):
 
         def nout(tag, tensor_name):
             if tag in data:
-                out.append(('  %s %s') % (tag, 
-                                          tensor_string(data[tag][tensor_name])))
+                out.append(' '.join([' ', tag,
+                                     tensor_string(data[tag][tensor_name])]))
 
         def siout(tag, tensor_name):
             if tag in data:

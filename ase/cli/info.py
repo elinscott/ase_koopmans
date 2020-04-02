@@ -77,7 +77,7 @@ class CLICommand:
 def print_info():
     versions = [('platform', platform.platform()),
                 ('python-' + sys.version.split()[0], sys.executable)]
-    for name in ['ase', 'numpy', 'scipy', 'ase_ext']:
+    for name in ['ase', 'numpy', 'scipy', 'ase_ext', 'spglib']:
         try:
             module = import_module(name)
         except ImportError:

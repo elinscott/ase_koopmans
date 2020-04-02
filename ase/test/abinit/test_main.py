@@ -1,9 +1,7 @@
 import pytest
 import numpy as np
 from ase.build import bulk, molecule
-from ase.calculators.abinit import Abinit
 from ase.units import Hartree
-from ase.utils import workdir
 
 
 required_quantities = {'eigenvalues',
@@ -17,119 +15,94 @@ required_quantities = {'eigenvalues',
                        'kpoint_weights'}
 
 
-def run(atoms, name):
-    dirname = 'test-abinit/{}'.format(name)
-    with workdir(dirname, mkdir=True):
-        header = 'test {} in {}'.format(name, dirname)
-        print()
-        print(header)
-        print('=' * len(header))
-        print('input:', atoms.calc.parameters)
-        atoms.get_potential_energy()
-        atoms.get_forces()
-        print(sorted(atoms.calc.results))
-        for key, value in atoms.calc.results.items():
-            if isinstance(value, np.ndarray):
-                print(key, value.shape, value.dtype)
-            else:
-                print(key, value)
+def run(atoms):
+    atoms.get_forces()
+    print(sorted(atoms.calc.results))
+    for key, value in atoms.calc.results.items():
+        if isinstance(value, np.ndarray):
+            print(key, value.shape, value.dtype)
+        else:
+            print(key, value)
 
-        for name in required_quantities:
-            assert name in atoms.calc.results
+    for name in required_quantities:
+        assert name in atoms.calc.results
 
     return atoms.calc.results
 
 
-def abinit(**kwargs):
-    kw = dict(ecut=150,
-              chksymbreak=0,
-              toldfe=1e-3)
-    kw.update(kwargs)
-    return Abinit(**kw)
-
-
-def test_si():
+def test_si(abinit_factory):
     atoms = bulk('Si')
-    atoms.calc = abinit(nbands=4 * len(atoms))
-    run(atoms, 'bulk-si')
+    atoms.calc = abinit_factory.calc(nbands=4 * len(atoms))
+    run(atoms)
 
 
-def run_au(pps, **kwargs):
+@pytest.mark.parametrize('pps', ['fhi', 'paw'])
+def test_au(abinit_factory, pps):
     atoms = bulk('Au')
-    atoms.calc = abinit(nbands=10 * len(atoms), pps=pps,
-                        tsmear=0.1,
-                        occopt=3,
-                        kpts=[2, 2, 2],
-                        **kwargs)
-    run(atoms, 'bulk-au-{}'.format(pps))
+    atoms.calc = abinit_factory.calc(
+        pps=pps,
+        nbands=10 * len(atoms),
+        tsmear=0.1,
+        occopt=3,
+        kpts=[2, 2, 2],
+        pawecutdg=6.0 * Hartree,
+    )
+    # Somewhat awkward to set pawecutdg also when we are not doing paw,
+    # but it's an error to pass None as pawecutdg.
+    run(atoms)
 
 
-def _test_fe(name, **kwargs):
+@pytest.fixture
+def fe_atoms(abinit_factory):
     atoms = bulk('Fe')
     atoms.set_initial_magnetic_moments([1])
-    calc = abinit(nbands=8,
-                  kpts=[2, 2, 2], **kwargs)
+    calc = abinit_factory.calc(nbands=8,
+                               kpts=[2, 2, 2])
     atoms.calc = calc
-    run(atoms, name)
-    # Grrr we want to test magmoms but the caching doesn't work.
-    # We should fix this.
-    #magmom = atoms.get_magnetic_moment()
-    #print('magmom', magmom)
+    return atoms
     # The calculator base class thinks it is smart, returning 0 magmom
     # automagically when not otherwise given.  This means we get bogus zeros
     # if/when we didn't parse the magmoms.  This happens when the magmoms
     # are fixed.  Not going to fix this right now though.
 
 
-def test_fe_fixed_magmom():
-    _test_fe('bulk-spin-fixmagmom', spinmagntarget=2.3)
+def test_fe_fixed_magmom(fe_atoms):
+    fe_atoms.calc.set(spinmagntarget=2.3)
+    run(fe_atoms)
 
 
-def test_fe_any_magmom():
-    _test_fe('bulk-spin-anymagmom', occopt=7)
+def test_fe_any_magmom(fe_atoms):
+    fe_atoms.calc.set(occopt=7)
+    run(fe_atoms)
 
 
-def test_h2o():
+def test_h2o(abinit_factory):
     atoms = molecule('H2O', vacuum=2.5)
-    atoms.calc = abinit(nbands=8)
-    run(atoms, 'molecule')
+    atoms.calc = abinit_factory.calc(nbands=8)
+    run(atoms)
 
 
-def test_o2():
+def test_o2(abinit_factory):
     atoms = molecule('O2', vacuum=2.5)
-    atoms.calc = abinit(nbands=8, occopt=7)
-    run(atoms, 'molecule-spin')
+    atoms.calc = abinit_factory.calc(nbands=8, occopt=7)
+    run(atoms)
     magmom = atoms.get_magnetic_moment()
+    assert magmom == pytest.approx(2, 1e-2)
     print('magmom', magmom)
 
 
 @pytest.mark.skip('expensive')
-def test_manykpts():
+def test_manykpts(abinit_factory):
     atoms = bulk('Au') * (2, 2, 2)
     atoms.rattle(stdev=0.01)
     atoms.symbols[:2] = 'Cu'
-    atoms.calc = abinit(nbands=len(atoms) * 7,
-                        kpts=[8, 8, 8])
+    atoms.calc = abinit_factory.calc(nbands=len(atoms) * 7, kpts=[8, 8, 8])
     run(atoms, 'manykpts')
 
 
 @pytest.mark.skip('expensive')
-def test_manyatoms():
+def test_manyatoms(abinit_factory):
     atoms = bulk('Ne', cubic=True) * (4, 2, 2)
     atoms.rattle(stdev=0.01)
-    atoms.calc = abinit(nbands=len(atoms) * 5)
+    atoms.calc = abinit_factory.calc(nbands=len(atoms) * 5)
     run(atoms, 'manyatoms')
-
-
-#test_many()
-#test_big()
-#test_si()
-def test_au_fhi():
-    run_au(pps='fhi')
-
-def test_au_paw():
-    run_au(pps='paw', pawecutdg=6.0 * Hartree)
-#test_fe_fixed_magmom()
-#test_fe_any_magmom()
-#test_h2o()
-#test_o2()

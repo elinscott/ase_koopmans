@@ -6,6 +6,11 @@ from ase.calculators.calculator import PropertyNotImplementedError
 
 
 class LennardJones(Calculator):
+    """Lennard Jones potential calculator
+
+    see https://en.wikipedia.org/wiki/Lennard-Jones_potential
+
+    """
     implemented_properties = ['energy', 'forces', 'stress']
     default_parameters = {'epsilon': 1.0,
                           'sigma': 1.0,
@@ -13,7 +18,24 @@ class LennardJones(Calculator):
     nolabel = True
 
     def __init__(self, **kwargs):
+        """
+        Parameters
+        ----------
+        sigma: float
+          The potential minimum is at  2**(1/6) * sigma, default 1.0
+        epsilon: float
+          The potential depth, default 1.0
+        rc: float, None
+          Cut-off for the NeighborList is set to 3 * sigma if None.
+          The energy is upshifted to be continuous at rc.
+          Default None
+        """
         Calculator.__init__(self, **kwargs)
+
+        if self.parameters.rc is None:
+            self.parameters.rc = 3 * self.parameters.sigma
+
+        self.nl = None
 
     def calculate(self, atoms=None,
                   properties=['energy'],
@@ -25,10 +47,8 @@ class LennardJones(Calculator):
         sigma = self.parameters.sigma
         epsilon = self.parameters.epsilon
         rc = self.parameters.rc
-        if rc is None:
-            rc = 3 * sigma
 
-        if 'numbers' in system_changes:
+        if self.nl is None or 'numbers' in system_changes:
             self.nl = NeighborList([rc / 2] * natoms, self_interaction=False)
 
         self.nl.update(self.atoms)

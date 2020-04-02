@@ -360,6 +360,12 @@ class Siesta(FileIOCalculator):
                            SiestaParameters.
         """
 
+        # XXX Inserted these next few lines because set() would otherwise
+        # discard all previously set keywords to their defaults!  --askhl
+        current = self.parameters.copy()
+        current.update(kwargs)
+        kwargs = current
+
         # Find not allowed keys.
         default_keys = list(self.__class__.default_parameters)
         offending_keys = set(kwargs) - set(default_keys)
@@ -810,7 +816,7 @@ class Siesta(FileIOCalculator):
         """
         species, species_numbers = self.species(atoms)
 
-        if not self['pseudo_path'] is None:
+        if self['pseudo_path'] is not None:
             pseudo_path = self['pseudo_path']
         elif 'SIESTA_PP_PATH' in os.environ:
             pseudo_path = os.environ['SIESTA_PP_PATH']

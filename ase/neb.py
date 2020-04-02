@@ -81,7 +81,7 @@ class NEB:
                 raise ValueError('Images have different boundary conditions')
             if (img.get_atomic_numbers() !=
                 images[0].get_atomic_numbers()).any():
-                    raise ValueError('Images have atoms in different orders')
+                raise ValueError('Images have atoms in different orders')
         self.nimages = len(images)
         self.emax = np.nan
 
@@ -618,8 +618,8 @@ class NEBTools:
         without interpolation. Set raw=True to get the raw energy of the
         transition state instead of the forward barrier."""
         forcefit = fit_images(self.images)
-        energies = forcefit.E
-        fit_energies = forcefit.Efit
+        energies = forcefit.energies
+        fit_energies = forcefit.fit_energies
         dE = energies[-1] - energies[0]
         if fit:
             barrier = max(fit_energies)
