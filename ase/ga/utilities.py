@@ -624,7 +624,7 @@ class CellBounds:
 
     Example:
 
-    >>> from ase.ga.bulk_utilities import CellBounds
+    >>> from ase.ga.utilities import CellBounds
     >>> CellBounds(bounds={'phi': [20, 160],
     ...                    'chi': [60, 120],
     ...                    'psi': [20, 160],

@@ -381,9 +381,9 @@ class StrainMutation(OffspringCreator):
         The closest allowed interatomic distances on the form:
         {(Z, Z*): dist, ...}, where Z and Z* are atomic numbers.
 
-    cellbounds: ase.ga.bulk_utilities.CellBounds instance
+    cellbounds: ase.ga.utilities.CellBounds instance
         Describes limits on the cell shape, see
-        :class:`~ase.ga.bulk_utilities.CellBounds`.
+        :class:`~ase.ga.utilities.CellBounds`.
 
     stddev: float
         Standard deviation used in the generation of the

@@ -117,9 +117,9 @@ class StartGenerator(object):
 
         By default, no splitting is applied (splits = None = {(1,): 1}).
 
-    cellbounds: ase.ga.bulk_utilities.CellBounds instance
+    cellbounds: ase.ga.utilities.CellBounds instance
         Describing limits on the cell shape, see
-        :class:`~ase.ga.bulk_utilities.CellBounds`.
+        :class:`~ase.ga.utilities.CellBounds`.
         Note that it only make sense to impose conditions
         regarding cell vectors which have been marked as
         variable (see number_of_variable_cell_vectors).
