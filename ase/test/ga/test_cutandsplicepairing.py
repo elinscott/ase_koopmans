@@ -45,16 +45,15 @@ def test_cutandsplicepairing():
     top2 = c2[-n_top:]
     top3 = c3[-n_top:]
 
-
     # verify that the positions in the new candidate come from c1 or c2
     n1 = -1 * np.ones((n_top, ))
     n2 = -1 * np.ones((n_top, ))
     for i in range(n_top):
         for j in range(n_top):
-            if np.all(top1.positions[j, :] == top3.positions[i, :]):
+            if np.allclose(top1.positions[j, :], top3.positions[i, :], 1e-12):
                 n1[i] = j
                 break
-            elif np.all(top2.positions[j, :] == top3.positions[i, :]):
+            elif np.allclose(top2.positions[j, :], top3.positions[i, :], 1e-12):
                 n2[i] = j
                 break
         assert (n1[i] > -1 and n2[i] == -1) or (n1[i] == -1 and n2[i] > -1)
