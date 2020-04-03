@@ -1,7 +1,6 @@
 import pytest
 from typing import Iterable
 
-import matplotlib.pyplot as plt
 import numpy as np
 from ase.dft.doscollection import (DOSCollection,
                                    GridDOSCollection,
@@ -49,9 +48,10 @@ class TestDOSCollection:
             dc['hello']
 
     linewidths = [1, 5, None]
+    @pytest.mark.usefixtures("plt")
     @pytest.mark.parametrize('linewidth, make_ax', zip(linewidths,
                                                        [True, False, True]))
-    def test_plot(self, mindoscollection, linewidth, make_ax):
+    def test_plot(self, mindoscollection, plt, linewidth, make_ax):
         npts = 20
 
         if linewidth is None:

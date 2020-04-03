@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import logging
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -172,9 +171,10 @@ class TestRawDosData:
     # - check that a line styling parameter is correctly passed through mplargs
     # - set a kwarg from self.sample() to check broadening args are recognised
     linewidths = [1, 5, None]
+    @pytest.mark.usefixtures("plt")
     @pytest.mark.parametrize('linewidth, make_ax',
                              zip(linewidths, [True, False, True]))
-    def test_plot_dos(self, sparse_dos, linewidth, make_ax):
+    def test_plot_dos(self, sparse_dos, plt, linewidth, make_ax):
         if linewidth is None:
             mplargs = None
         else:
@@ -196,9 +196,10 @@ class TestRawDosData:
         if linewidth is not None:
             assert ax.lines[0].get_linewidth() == linewidth
 
+    @pytest.mark.usefixtures("plt")
     @pytest.mark.parametrize('linewidth, make_ax',
                              zip(linewidths, [True, False, True]))
-    def test_plot_deltas(self, sparse_dos, linewidth, make_ax):
+    def test_plot_deltas(self, sparse_dos, plt, linewidth, make_ax):
         if linewidth is None:
             mplargs = None
         else:
@@ -282,9 +283,10 @@ class TestGridDosData:
         assert "The broadening width is small" in caplog.record_tuples[-1][2]
 
     linewidths = [1, 5, None]
+    @pytest.mark.usefixtures("plt")
     @pytest.mark.parametrize('linewidth, make_ax',
                              zip(linewidths, [True, False, True]))
-    def test_plot_dos(self, dense_dos, linewidth, make_ax):
+    def test_plot_dos(self, dense_dos, plt, linewidth, make_ax):
         if linewidth is None:
             mplargs = None
         else:
