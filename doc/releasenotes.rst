@@ -13,6 +13,14 @@ Git master branch
 * No changes yet
 
 
+Version 3.19.1
+==============
+
+4 April 2020: :git:`3.19.1 <../3.19.1>`
+
+* No changes yet
+
+
 Version 3.19.0
 ==============
 
