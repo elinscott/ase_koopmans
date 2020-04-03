@@ -52,6 +52,7 @@ newpy_only_modules = {
 }
 
 @pytest.mark.filterwarnings('ignore:Moved to')
+@pytest.mark.filterwarnings('ignore:.*has been deprecated.*')
 def test_imports():
     for module in all_modules:
         try:
