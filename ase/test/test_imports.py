@@ -62,3 +62,5 @@ def test_imports():
         except ImportError as err:
             if err.name not in ignore_imports:
                 raise
+        except DeprecationWarning:
+            pass
