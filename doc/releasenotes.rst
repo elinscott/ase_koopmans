@@ -99,6 +99,14 @@ Git master branch
   a genetic algorithm, see :ref:`ga_molecular_crystal_tutorial`.
 
 
+Version 3.19.1
+==============
+
+4 April 2020: :git:`3.19.1 <../3.19.1>`
+
+* Update png writer to be compatible with matplotlib 3.2.
+
+
 Version 3.19.0
 ==============
 
