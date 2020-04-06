@@ -492,14 +492,35 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                     .format(*(i + 1, s, q) + tuple(r)))
     elif atom_style == 'full':
         charges = atoms.get_initial_charges()
-        molecule = 1  # Assign all atoms to a single molecule
-        for i, (q, r) in enumerate(zip(charges, pos)):
+        # The label 'mol-id' has apparenlty been introduced in read earlier,
+        # but so far not implemented here. Wouldn't a 'underscored' label
+        # be better, i.e. 'mol_id' or 'molecule_id'?
+        if atoms.has('mol-id'):
+            molecules = atoms.get_array('mol-id')
+            if not np.issubdtype(molecules.dtype, np.integer):
+                raise TypeError((
+                    "If 'atoms' object has 'mol-id' array, then"
+                    " mol-id dtype must be subtype of np.integer, and"
+                    " not {:s}.").format(str(molecules.dtype)))
+            if (len(molecules) != len(atoms)) or (molecules.ndim != 1):
+                raise TypeError((
+                    "If 'atoms' object has 'mol-id' array, then"
+                    " each atom must have exactly one mol-id."))
+        else:
+            # assigning each atom to a distinct molecule id seems preferable
+            # above assigning all atoms to a single molecule id per default,
+            # as done within ase <= v 3.19.1
+            molecules = np.arange(start=0, stop=len(atoms), step=1, dtype=int)
+
+        # In analogy to atom ids:
+        # Convert 0-indexed ASE molecule ids to 1-indexed LAMMPS data.
+        for i, (m, q, r) in enumerate(zip(molecules, charges, pos)):
             # Convert position and charge from ASE units to LAMMPS units
             r = convert(r, "distance", "ASE", units)
             q = convert(q, "charge", "ASE", units)
             s = species.index(symbols[i]) + 1
             f.write("{0:>6} {1:>3} {2:>3} {3:>5} {4:23.17g} {5:23.17g} "
-                    "{6:23.17g}\n".format(*(i + 1, molecule, s, q) + tuple(r)))
+                    "{6:23.17g}\n".format(*(i + 1, m + 1, s, q) + tuple(r)))
     else:
         raise NotImplementedError
 
