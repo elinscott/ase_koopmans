@@ -32,27 +32,33 @@ class TestPlotManager:
 
     def test_plot_manager_error(self, plt):
         # Boot up a figure to help the oldlibs tests manage without graphics
-        plt.figure()
-
-        with pytest.raises(AssertionError):
-            with SimplePlottingAxes(ax=None, show=False, filename=None) as _:
-                raise AssertionError()
+        fig = plt.figure()
+        try:
+            with pytest.raises(AssertionError):
+                with SimplePlottingAxes(ax=None, show=False,
+                                        filename=None) as _:
+                    raise AssertionError()
+        finally:
+            plt.close(fig=fig)
 
     def test_plot_manager_no_file(self, plt, xy_data):
         x, y = xy_data
 
         # Boot up a figure to help the oldlibs tests manage without graphics
-        plt.figure()
+        fig = plt.figure()
 
-        with SimplePlottingAxes(ax=None, show=False, filename=None) as ax:
-            ax.plot(x, y)
+        try:
+            with SimplePlottingAxes(ax=None, show=False, filename=None) as ax:
+                ax.plot(x, y)
 
-        assert np.allclose(ax.lines[0].get_xydata().transpose(), xy_data)
-        assert not os.path.isfile(self.filename)
+            assert np.allclose(ax.lines[0].get_xydata().transpose(), xy_data)
+            assert not os.path.isfile(self.filename)
+        finally:
+            plt.close(fig=fig)
 
-    def test_plot_manager_axis_file(self, plt, xy_data):
+    def test_plot_manager_axis_file(self, figure, xy_data):
         x, y = xy_data
-        _, ax = plt.subplots()
+        ax = figure.add_subplot()
         with SimplePlottingAxes(ax=ax, show=False,
                                 filename=self.filename) as return_ax:
             assert return_ax is ax
