@@ -1,8 +1,10 @@
 import re
 import warnings
+from typing import Dict
 
 import numpy as np
 
+import ase  # Annotations
 from ase.utils import jsonable
 from ase.cell import Cell
 
@@ -200,17 +202,54 @@ class BandPath:
         if path is None:
             path = ''
 
-        self.cell = cell = Cell.new(cell)
+        self._cell = cell = Cell.new(cell)
         assert cell.shape == (3, 3)
         kpts = np.asarray(kpts)
         assert kpts.ndim == 2 and kpts.shape[1] == 3
-        self.icell = self.cell.reciprocal()
-        self.kpts = kpts
-        self.special_points = special_points
+        self._icell = self.cell.reciprocal()
+        self._kpts = kpts
+        self._special_points = special_points
         assert isinstance(path, str)
-        self.path = path
+        self._path = path
 
-    def transform(self, op):
+    @property
+    def cell(self) -> Cell:
+        """The :class:`~ase.cell.Cell` of this BandPath."""
+        return self._cell
+
+    @property
+    def icell(self) -> Cell:
+        """Reciprocal cell of this BandPath as a :class:`~ase.cell.Cell`."""
+        return self._icell
+
+    @property
+    def kpts(self) -> np.ndarray:
+        """The kpoints of this BandPath as an array of shape (nkpts, 3).
+
+        The kpoints are given in units of the reciprocal cell."""
+        return self._kpts
+
+    @property
+    def special_points(self) -> Dict[str, np.ndarray]:
+        """Special points of this BandPath as a dictionary.
+
+        The dictionary maps names (such as `'G'`) to kpoint coordinates
+        in units of the reciprocal cell as a 3-element numpy array.
+
+        It's unwise to edit this dictionary directly.  If you need that,
+        consider deepcopying it."""
+        return self._special_points
+
+    @property
+    def path(self) -> str:
+        """The string specification of this band path.
+
+        This is a specification of the form `'GXWKGLUWLK,UX'`.
+
+        Comma marks a discontinuous jump: K is not connected to U."""
+        return self._path
+
+    def transform(self, op: np.ndarray) -> 'BandPath':
         """Apply 3x3 matrix to this BandPath and return new BandPath.
 
         This is useful for converting the band path to another cell.
@@ -236,14 +275,20 @@ class BandPath:
                 'labelseq': self.path,
                 'cell': self.cell}
 
-    def interpolate(self, path=None, npoints=None, special_points=None,
-                    density=None):
+    def interpolate(
+            self,
+            path: str = None,
+            npoints: int = None,
+            special_points: Dict[str, np.ndarray] = None,
+            density: float = None,
+    ) -> 'BandPath':
         """Create new bandpath, (re-)interpolating kpoints from this one."""
         if path is None:
             path = self.path
 
-        special_points = {} if special_points is None else dict(special_points)
-        special_points.update(self.special_points)
+        if special_points is None:
+            special_points = self.special_points
+
         pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
         kpts, x, X = paths2kpts(pathcoords, self.cell, npoints, density)
         return BandPath(self.cell, kpts, path=path,
@@ -259,7 +304,7 @@ class BandPath:
                         ''.join(sorted(self.special_points)),
                         len(self.kpts)))
 
-    def cartesian_kpts(self):
+    def cartesian_kpts(self) -> np.ndarray:
         """Get Cartesian kpoints from this bandpath."""
         return self._scale(self.kpts)
 
@@ -323,11 +368,14 @@ class BandPath:
 
         return index2name
 
-    def plot(self, dimension=3, **plotkwargs):
+    def plot(self, **plotkwargs):
         """Visualize this bandpath.
 
         Plots the irreducible Brillouin zone and this bandpath."""
         import ase.dft.bz as bz
+
+        # We previously had a "dimension=3" argument which is now unused.
+        plotkwargs.pop('dimension', None)
 
         special_points = self.special_points
         labelseq, coords = resolve_kpt_path_string(self.path,
@@ -354,10 +402,15 @@ class BandPath:
                           points=self.cartesian_kpts(),
                           **kw)
 
-    def free_electron_band_structure(self, **kwargs):
+    def free_electron_band_structure(
+            self, **kwargs
+    ) -> 'ase.dft.band_structure.BandStructure':
         """Return band structure of free electrons for this bandpath.
 
-        This is for mostly testing."""
+        Keyword arguments are passed to
+        :class:`~ase.calculators.test.FreeElectrons`.
+
+        This is for mostly testing and visualization."""
         from ase import Atoms
         from ase.calculators.test import FreeElectrons
         from ase.dft.band_structure import calculate_band_structure
