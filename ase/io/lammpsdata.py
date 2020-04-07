@@ -507,20 +507,28 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
                     "If 'atoms' object has 'mol-id' array, then"
                     " each atom must have exactly one mol-id."))
         else:
-            # assigning each atom to a distinct molecule id seems preferable
-            # above assigning all atoms to a single molecule id per default,
-            # as done within ase <= v 3.19.1
-            molecules = np.arange(start=0, stop=len(atoms), step=1, dtype=int)
+            # Assigning each atom to a distinct molecule id would seem
+            # preferableabove assigning all atoms to a single molecule id per
+            # default, as done within ase <= v 3.19.1. I.e.,
+            # molecules = np.arange(start=1, stop=len(atoms)+1, step=1, dtype=int)
+            # However, according to LAMMPS default behavior,
+            molecules = np.zeros(len(atoms))
+            # which is what happens if one creates new atoms within LAMMPS
+            # without explicitly taking care of the molecule id.
+            # Quote from docs at https://lammps.sandia.gov/doc/read_data.html:
+            #    The molecule ID is a 2nd identifier attached to an atom.
+            #    Normally, it is a number from 1 to N, identifying which
+            #    molecule the atom belongs to. It can be 0 if it is a
+            #    non-bonded atom or if you don't care to keep track of molecule
+            #    assignments.
 
-        # In analogy to atom ids:
-        # Convert 0-indexed ASE molecule ids to 1-indexed LAMMPS data.
         for i, (m, q, r) in enumerate(zip(molecules, charges, pos)):
             # Convert position and charge from ASE units to LAMMPS units
             r = convert(r, "distance", "ASE", units)
             q = convert(q, "charge", "ASE", units)
             s = species.index(symbols[i]) + 1
             f.write("{0:>6} {1:>3} {2:>3} {3:>5} {4:23.17g} {5:23.17g} "
-                    "{6:23.17g}\n".format(*(i + 1, m + 1, s, q) + tuple(r)))
+                    "{6:23.17g}\n".format(*(i + 1, m, s, q) + tuple(r)))
     else:
         raise NotImplementedError
 
