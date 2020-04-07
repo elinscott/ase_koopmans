@@ -1,4 +1,4 @@
-def test_lammpsdata():
+def test_lammpsdata_read():
     import ase.io
     from ase.utils import StringIO
 
