@@ -762,6 +762,8 @@ class SQLite3Database(Database, object):
                      tables=self._get_external_table_names(db_con=con))
         self._delete(con.cursor(), ids)
         con.commit()
+        if self.type == 'db':
+            self.vacuum(db_con=con)
         con.close()
 
     def _delete(self, cur, ids, tables=None):
@@ -769,6 +771,14 @@ class SQLite3Database(Database, object):
         for table in tables:
             cur.execute('DELETE FROM {} WHERE id in ({});'.
                         format(table, ', '.join([str(id) for id in ids])))
+
+    def vacuum(self, db_con=None):
+        if self.type == 'db':
+            con = db_con or self.connection or self._connect()
+            con.commit()
+            con.execute("VACUUM")
+            if self.connection is None and db_con is None:
+                con.close()
 
     @property
     def metadata(self):
