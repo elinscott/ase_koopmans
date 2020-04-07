@@ -430,7 +430,10 @@ def write_lammps_data(fileobj, atoms, specorder=None, force_skew=False,
             )
         atoms = atoms[0]
 
-    f.write("{0} (written by ASE) \n\n".format(f.name))
+    try:
+        f.write("{0} (written by ASE) \n\n".format(f.name))
+    except AttributeError:
+        f.write("(written by ASE) \n\n")
 
     symbols = atoms.get_chemical_symbols()
     n_atoms = len(symbols)
