@@ -172,15 +172,15 @@ class DOSCollection(collections.abc.Sequence):
                                  "weights")
         return info
 
-    @overload  # noqa F811
+    @overload
     def __getitem__(self, item: int) -> DOSData:
         ...
 
     @overload  # noqa F811
-    def __getitem__(self, item: slice) -> 'DOSCollection':
+    def __getitem__(self, item: slice) -> 'DOSCollection':  # noqa F811
         ...
 
-    def __getitem__(self, item): # noqa F811
+    def __getitem__(self, item):  # noqa F811
         if isinstance(item, int):
             return self._data[item]
         elif isinstance(item, slice):
@@ -414,7 +414,7 @@ class GridDOSCollection(DOSCollection):
         ...
 
     @overload  # noqa F811
-    def __getitem__(self, item: slice) -> 'GridDOSCollection':
+    def __getitem__(self, item: slice) -> 'GridDOSCollection':  # noqa F811
         ...
 
     def __getitem__(self, item):  # noqa F811
