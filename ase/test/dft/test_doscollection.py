@@ -48,10 +48,9 @@ class TestDOSCollection:
             dc['hello']
 
     linewidths = [1, 5, None]
-    @pytest.mark.usefixtures("plt")
-    @pytest.mark.parametrize('linewidth, make_ax', zip(linewidths,
-                                                       [True, False, True]))
-    def test_plot(self, mindoscollection, plt, linewidth, make_ax):
+    @pytest.mark.usefixtures("figure")
+    @pytest.mark.parametrize('linewidth', linewidths)
+    def test_plot(self, mindoscollection, figure, linewidth):
         npts = 20
 
         if linewidth is None:
@@ -59,13 +58,10 @@ class TestDOSCollection:
         else:
             mplargs = {'linewidth': linewidth}
 
-        if make_ax:
-            _, ax = plt.subplots()
+        ax = figure.add_subplot()
 
-            ax_out = mindoscollection.plot(npts=npts, ax=ax, mplargs=mplargs)
-            assert ax_out == ax
-        else:
-            ax = mindoscollection.plot(npts=npts, mplargs=mplargs)
+        ax_out = mindoscollection.plot(npts=npts, ax=ax, mplargs=mplargs)
+        assert ax_out == ax
 
         assert ([line.get_label() for line in ax.get_legend().get_lines()]
                 == ['my_key: my_value', 'other_key: other_value'])

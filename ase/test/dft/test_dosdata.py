@@ -171,22 +171,18 @@ class TestRawDosData:
     # - check that a line styling parameter is correctly passed through mplargs
     # - set a kwarg from self.sample() to check broadening args are recognised
     linewidths = [1, 5, None]
-    @pytest.mark.usefixtures("plt")
-    @pytest.mark.parametrize('linewidth, make_ax',
-                             zip(linewidths, [True, False, True]))
-    def test_plot_dos(self, sparse_dos, plt, linewidth, make_ax):
+    @pytest.mark.usefixtures("figure")
+    @pytest.mark.parametrize('linewidth', linewidths)
+    def test_plot_dos(self, sparse_dos, figure, linewidth):
         if linewidth is None:
             mplargs = None
         else:
             mplargs = {'linewidth': linewidth}
 
-        if make_ax:
-            _, ax = plt.subplots()
-            ax_out = sparse_dos.plot_dos(npts=5, ax=ax, mplargs=mplargs,
-                                         smearing='Gauss')
-            assert ax_out == ax
-        else:
-            ax = sparse_dos.plot_dos(npts=5, mplargs=mplargs, smearing='Gauss')
+        ax = figure.add_subplot()
+        ax_out = sparse_dos.plot_dos(npts=5, ax=ax, mplargs=mplargs,
+                                     smearing='Gauss')
+        assert ax_out == ax
 
         line_data = ax.lines[0].get_data()
         assert np.allclose(line_data[0], np.linspace(0.9, 5.3, 5))
@@ -196,21 +192,17 @@ class TestRawDosData:
         if linewidth is not None:
             assert ax.lines[0].get_linewidth() == linewidth
 
-    @pytest.mark.usefixtures("plt")
-    @pytest.mark.parametrize('linewidth, make_ax',
-                             zip(linewidths, [True, False, True]))
-    def test_plot_deltas(self, sparse_dos, plt, linewidth, make_ax):
+    @pytest.mark.usefixtures("figure")
+    @pytest.mark.parametrize('linewidth', linewidths)
+    def test_plot_deltas(self, sparse_dos, figure, linewidth):
         if linewidth is None:
             mplargs = None
         else:
             mplargs = {'linewidth': linewidth}
 
-        if make_ax:
-            _, ax = plt.subplots()
-            ax_out = sparse_dos.plot_deltas(ax=ax, mplargs=mplargs)
-            assert ax_out == ax
-        else:
-            ax = sparse_dos.plot_deltas(mplargs={'linewidth': linewidth})
+        ax = figure.add_subplot()
+        ax_out = sparse_dos.plot_deltas(ax=ax, mplargs=mplargs)
+        assert ax_out == ax
 
         if linewidth is not None:
             assert ax.get_children()[0].get_linewidth() == linewidth
@@ -283,22 +275,18 @@ class TestGridDosData:
         assert "The broadening width is small" in caplog.record_tuples[-1][2]
 
     linewidths = [1, 5, None]
-    @pytest.mark.usefixtures("plt")
-    @pytest.mark.parametrize('linewidth, make_ax',
-                             zip(linewidths, [True, False, True]))
-    def test_plot_dos(self, dense_dos, plt, linewidth, make_ax):
+    @pytest.mark.usefixtures("figure")
+    @pytest.mark.parametrize('linewidth', linewidths)
+    def test_plot_dos(self, dense_dos, figure, linewidth):
         if linewidth is None:
             mplargs = None
         else:
             mplargs = {'linewidth': linewidth}
 
-        if make_ax:
-            _, ax = plt.subplots()
-            ax_out = dense_dos.plot_dos(ax=ax, mplargs=mplargs,
-                                        smearing='Gauss')
-            assert ax_out == ax
-        else:
-            ax = dense_dos.plot_dos(mplargs=mplargs, smearing='Gauss')
+        ax = figure.add_subplot()
+        ax_out = dense_dos.plot_dos(ax=ax, mplargs=mplargs,
+                                    smearing='Gauss')
+        assert ax_out == ax
 
         line_data = ax.lines[0].get_data()
 
@@ -309,12 +297,14 @@ class TestGridDosData:
         if linewidth is not None:
             assert ax.lines[0].get_linewidth() == linewidth
 
-    def test_plot_broad_dos(self, dense_dos):
+    @pytest.mark.usefixtures("figure")
+    def test_plot_broad_dos(self, dense_dos, figure):
         # Check that setting a grid/broadening does not blow up and reproduces
         # previous results; this result has not been rigorously checked but at
         # least it should not _change_ unexpectedly
-        ax = dense_dos.plot_dos(npts=10, xmin=0, xmax=9,
-                                width=4, smearing='Gauss')
+        ax = figure.add_subplot()
+        _ = dense_dos.plot_dos(ax=ax, npts=10, xmin=0, xmax=9,
+                               width=4, smearing='Gauss')
         line_data = ax.lines[0].get_data()
         assert np.allclose(line_data[0], range(10))
         assert np.allclose(line_data[1],
