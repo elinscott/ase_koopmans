@@ -275,14 +275,14 @@ def parallel_generator(generator):
                 raise ex
             broadcast((None, None))
         else:
-            ex, result = broadcast((None, None))
-            if ex is not None:
-                raise ex
+            ex2, result = broadcast((None, None))
+            if ex2 is not None:
+                raise ex2
             while result is not None:
                 yield result
-                ex, result = broadcast((None, None))
-                if ex is not None:
-                    raise ex
+                ex2, result = broadcast((None, None))
+                if ex2 is not None:
+                    raise ex2
 
     return new_generator
 
@@ -345,4 +345,4 @@ class ParallelModuleWrapper:
 
 
 _parallel = sys.modules['ase.parallel']
-sys.modules['ase.parallel'] = ParallelModuleWrapper()
+sys.modules['ase.parallel'] = ParallelModuleWrapper()  # type: ignore

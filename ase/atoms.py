@@ -1152,8 +1152,6 @@ class Atoms(object):
 
         self.cell = np.array([m[c] * self.cell[c] for c in range(3)])
 
-        return self
-
     def repeat(self, rep):
         """Create new repeated atoms object.
 
@@ -1165,7 +1163,8 @@ class Atoms(object):
         atoms *= rep
         return atoms
 
-    __mul__ = repeat
+    def __mul__(self, rep):
+        return self.repeat(rep)
 
     def translate(self, displacement):
         """Translate atomic positions.
@@ -1932,8 +1931,6 @@ class Atoms(object):
             return eq
         else:
             return not eq
-
-    __hash__ = None
 
     def get_volume(self):
         """Get volume of unit cell."""
