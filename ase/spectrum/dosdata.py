@@ -147,7 +147,7 @@ class DOSData(metaclass=ABCMeta):
         If the special key 'label' is present in self.info, this will be set
         as the label for the plotted line (unless overruled in mplargs). The
         label is only seen if a legend is added to the plot (i.e. by calling
-        `ax.legend()`).
+        ``ax.legend()``).
 
         Args:
             npts, xmin, xmax: output data range, as passed to self.sample_grid
@@ -233,7 +233,7 @@ class RawDOSData(GeneralDOSData):
     spectral data where the energy data values not form a known regular
     grid. The data may be plotted or resampled for further analysis using the
     sample(), sample_grid() and plot() methods. Multiple weights at the same
-    energy value will _only_ be combined in output data, and data stored in
+    energy value will *only* be combined in output data, and data stored in
     RawDOSData is never resampled. A plot_deltas() function is also provided
     which plots the raw data.
 
@@ -245,18 +245,18 @@ class RawDOSData(GeneralDOSData):
 
       big_dos = raw_dos_1 + raw_dos_2
 
-    the energy and weights data is _concatenated_ (i.e. combined without
+    the energy and weights data is *concatenated* (i.e. combined without
     sorting or replacement) and the new info dictionary consists of the
-    _intersection_ of the inputs: only key-value pairs that were common to both
+    *intersection* of the inputs: only key-value pairs that were common to both
     of the input objects will be retained in the new combined object. For
-    example:
+    example::
 
-    (RawDOSData([x1], [y1], info={'symbol': 'O', 'index': '1'})
-     + RawDOSData([x2], [y2], info={'symbol': 'O', 'index': '2'})
+      (RawDOSData([x1], [y1], info={'symbol': 'O', 'index': '1'})
+       + RawDOSData([x2], [y2], info={'symbol': 'O', 'index': '2'}))
 
-    will yield the equivalent of
+    will yield the equivalent of::
 
-    RawDOSData([x1, x2], [y1, y2], info={'symbol': 'O'})
+      RawDOSData([x1, x2], [y1, y2], info={'symbol': 'O'})
 
     """
 
@@ -324,19 +324,19 @@ class GridDOSData(GeneralDOSData):
 
       big_dos = raw_dos_1 + raw_dos_2
 
-    the weights data is _summed_ (requiring a consistent energy grid) and the
-    new info dictionary consists of the _intersection_ of the inputs: only
+    the weights data is *summed* (requiring a consistent energy grid) and the
+    new info dictionary consists of the *intersection* of the inputs: only
     key-value pairs that were common to both of the input objects will be
-    retained in the new combined object. For example:
+    retained in the new combined object. For example::
 
-    (GridDOSData([0.1, 0.2, 0.3], [y1, y2, y3],
-                 info={'symbol': 'O', 'index': '1'})
-     + GridDOSData([0.1, 0.2, 0.3], [y4, y5, y6],
-                   info={'symbol': 'O', 'index': '2'})
+      (GridDOSData([0.1, 0.2, 0.3], [y1, y2, y3],
+                   info={'symbol': 'O', 'index': '1'})
+       + GridDOSData([0.1, 0.2, 0.3], [y4, y5, y6],
+                     info={'symbol': 'O', 'index': '2'}))
 
-    will yield the equivalent of
+    will yield the equivalent of::
 
-    GridDOSData([0.1, 0.2, 0.3], [y1+y4, y2+y5, y3+y6], info={'symbol': 'O'})
+      GridDOSData([0.1, 0.2, 0.3], [y1+y4, y2+y5, y3+y6], info={'symbol': 'O'})
 
     """
     def __init__(self,
@@ -410,6 +410,7 @@ class GridDOSData(GeneralDOSData):
 
         Data will be resampled onto a grid with `npts` points unless `npts` is
         set to zero, in which case:
+
         - no resampling takes place
         - `width` and `smearing` are ignored
         - `xmin` and `xmax` affect the axis limits of the plot, not the
@@ -418,7 +419,7 @@ class GridDOSData(GeneralDOSData):
         If the special key 'label' is present in self.info, this will be set
         as the label for the plotted line (unless overruled in mplargs). The
         label is only seen if a legend is added to the plot (i.e. by calling
-        `ax.legend()`).
+        ``ax.legend()``).
 
         Args:
             npts, xmin, xmax: output data range, as passed to self.sample_grid

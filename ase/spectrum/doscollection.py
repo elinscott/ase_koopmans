@@ -234,19 +234,20 @@ class DOSCollection(collections.abc.Sequence):
     def select(self, **info_selection: str) -> 'DOSCollection':
         """Narrow DOSCollection to items with specified info
 
-        For example, if
+        For example, if ::
 
           dc = DOSCollection([DOSData(x1, y1, info={'a': '1', 'b': '1'}),
                               DOSData(x2, y2, info={'a': '2', 'b': '1'})])
-        then
+
+        then ::
 
           dc.select(b='1')
 
-        will return an identical object to dc, while
+        will return an identical object to dc, while ::
 
           dc.select(a='1')
 
-        will return a DOSCollection with only the first item and
+        will return a DOSCollection with only the first item and ::
 
           dc.select(a='2', b='1')
 
@@ -260,19 +261,20 @@ class DOSCollection(collections.abc.Sequence):
     def select_not(self, **info_selection: str) -> 'DOSCollection':
         """Narrow DOSCollection to items without specified info
 
-        For example, if
+        For example, if ::
 
           dc = DOSCollection([DOSData(x1, y1, info={'a': '1', 'b': '1'}),
                               DOSData(x2, y2, info={'a': '2', 'b': '1'})])
-        then
+
+        then ::
 
           dc.select_not(b='2')
 
-        will return an identical object to dc, while
+        will return an identical object to dc, while ::
 
           dc.select_not(a='2')
 
-        will return a DOSCollection with only the first item and
+        will return a DOSCollection with only the first item and ::
 
           dc.select_not(a='1', b='1')
 
@@ -285,16 +287,17 @@ class DOSCollection(collections.abc.Sequence):
     def sum_by(self, *info_keys: str) -> 'DOSCollection':
         """Return a DOSCollection with some data summed by common attributes
 
-        For example, if
+        For example, if ::
 
           dc = DOSCollection([DOSData(x1, y1, info={'a': '1', 'b': '1'}),
                               DOSData(x2, y2, info={'a': '2', 'b': '1'}),
                               DOSData(x3, y3, info={'a': '2', 'b': '2'})])
-        then
+
+        then ::
 
           dc.sum_by('b')
 
-        will return a collection equivalent to
+        will return a collection equivalent to ::
 
           DOSCollection([DOSData(x1, y1, info={'a': '1', 'b': '1'})
                          + DOSData(x2, y2, info={'a': '2', 'b': '1'}),
@@ -336,15 +339,15 @@ class DOSCollection(collections.abc.Sequence):
         """Join entries between two DOSCollection objects of the same type
 
         It is also possible to add a single DOSData object without wrapping it
-        in a new collection: i.e.
+        in a new collection: i.e. ::
 
           DOSCollection([dosdata1]) + DOSCollection([dosdata2])
 
-        or
+        or ::
 
           DOSCollection([dosdata1]) + dosdata2
 
-        will return
+        will return ::
 
           DOSCollection([dosdata1, dosdata2])
 
@@ -466,21 +469,22 @@ class GridDOSCollection(DOSCollection):
     def select(self, **info_selection: str) -> 'DOSCollection':
         """Narrow GridDOSCollection to items with specified info
 
-        For example, if
+        For example, if ::
 
           dc = GridDOSCollection([GridDOSData(x, y1,
                                               info={'a': '1', 'b': '1'}),
                                   GridDOSData(x, y2,
                                               info={'a': '2', 'b': '1'})])
-        then
+
+        then ::
 
           dc.select(b='1')
 
-        will return an identical object to dc, while
+        will return an identical object to dc, while ::
 
           dc.select(a='1')
 
-        will return a DOSCollection with only the first item and
+        will return a DOSCollection with only the first item and ::
 
           dc.select(a='2', b='1')
 
@@ -497,21 +501,22 @@ class GridDOSCollection(DOSCollection):
     def select_not(self, **info_selection: str) -> 'DOSCollection':
         """Narrow GridDOSCollection to items without specified info
 
-        For example, if
+        For example, if ::
 
           dc = GridDOSCollection([GridDOSData(x, y1,
                                               info={'a': '1', 'b': '1'}),
                                   GridDOSData(x, y2,
                                               info={'a': '2', 'b': '1'})])
-        then
+
+        then ::
 
           dc.select_not(b='2')
 
-        will return an identical object to dc, while
+        will return an identical object to dc, while ::
 
           dc.select_not(a='2')
 
-        will return a DOSCollection with only the first item and
+        will return a DOSCollection with only the first item and ::
 
           dc.select_not(a='1', b='1')
 
