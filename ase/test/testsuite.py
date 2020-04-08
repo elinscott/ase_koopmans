@@ -15,7 +15,7 @@ from ase.cli.main import CLIError
 
 test_calculator_names = ['emt']
 testdir = Path(__file__).parent
-datadir = testdir / 'data'
+datadir = (testdir / 'data').resolve()
 # datafiles_directory = os.path.join(os.path.dirname(__file__), 'datafiles', '')
 
 

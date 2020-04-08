@@ -90,7 +90,7 @@ class DFTBFactory:
         # from ASE's own datadir.
         command = f'{self.executable} > PREFIX.out'
         return Dftb(command=command,
-                    slako_dir=str(datadir),
+                    slako_dir=str(datadir) + '/',  # XXX not obvious
                     **kwargs)
 
     @classmethod
