@@ -13,7 +13,7 @@ def test_idealgas():
     assert len(atoms) == 1000
 
     atoms.center(vacuum=100)
-    atoms.set_calculator(IdealGas())
+    atoms.calc = IdealGas()
     natoms = len(atoms)
 
     md_temp = 1000
@@ -28,7 +28,7 @@ def test_idealgas():
         stresses = atoms.get_stresses(include_ideal_gas=True)
         assert stresses.mean(0) == pytest.approx(stress)
         pressure = -stress[:3].sum() / 3
-        vol = atoms.get_volume()
-        temp = atoms.get_temperature()
-        print("pV = {}  NkT = {}".format(pressure * vol, natoms * kB * temp))
-        assert np.fabs(pressure * vol - natoms * kB * temp) < 1e-6
+        pV = pressure * atoms.cell.volume
+        NkT = natoms * kB * atoms.get_temperature()
+        print(f"pV = {pV}  NkT = {NkT}")
+        assert pV == pytest.approx(NkT, abs=1e-6)
