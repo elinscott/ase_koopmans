@@ -3,11 +3,12 @@
 import numpy as np
 from ase.calculators.calculator import Calculator, all_changes
 
+
 class IdealGas(Calculator):
     """The ideal gas: non-interacting atoms.
 
     The ideal gas is atoms that do not interact.  The potential is thus
-    always zero, and so are forces and stresses (a part from the dynamic
+    always zero, and so are forces and stresses (apart from the dynamic
     part of the stress, which is handled by the atoms themselves).
 
     This calculator is probably only useful for testing purposes.
@@ -24,9 +25,7 @@ class IdealGas(Calculator):
         self.results = {
             'energy': 0.0,
             'energies': np.zeros(n),
-            'forces': np.zeros((n,3)),
+            'forces': np.zeros((n, 3)),
             'stress': np.zeros(6),
-            'stresses': np.zeros((n,6)),
+            'stresses': np.zeros((n, 6)),
         }
-
-                                   
