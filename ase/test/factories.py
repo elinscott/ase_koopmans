@@ -84,11 +84,13 @@ class DFTBFactory:
 
     def calc(self, **kwargs):
         from ase.calculators.dftb import Dftb
-        from ase.test.testsuite import datafiles_directory
+        from ase.test.testsuite import datadir
         # XXX datafiles should be imported from datafiles project
+        # We should include more datafiles for DFTB there, and remove them
+        # from ASE's own datadir.
         command = f'{self.executable} > PREFIX.out'
         return Dftb(command=command,
-                    slako_dir=datafiles_directory,
+                    slako_dir=str(datadir) + '/',  # XXX not obvious
                     **kwargs)
 
     @classmethod
