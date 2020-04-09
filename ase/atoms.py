@@ -1152,6 +1152,8 @@ class Atoms(object):
 
         self.cell = np.array([m[c] * self.cell[c] for c in range(3)])
 
+        return self
+
     def repeat(self, rep):
         """Create new repeated atoms object.
 
