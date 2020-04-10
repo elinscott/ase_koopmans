@@ -604,7 +604,7 @@ def read_aims_output(filename, index=-1):
                 atoms.set_cell(cell)
                 atoms.pbc = True
             if not found_aims_calculator:
-                atoms.set_calculator(SinglePointCalculator(atoms, energy=e))
+                atoms.calc = SinglePointCalculator(atoms, energy=e)
             if not molecular_dynamics:
                 if len(fix):
                     atoms.set_constraint([FixAtoms(indices=fix)] + fix_cart)

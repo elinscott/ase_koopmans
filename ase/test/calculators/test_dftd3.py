@@ -97,18 +97,17 @@ def test_main():
     close(system.get_potential_energy(), -1.5274869363442936)
 
     # Custom damping parameters
-    system.set_calculator(DFTD3(s6=1.1, sr6=1.1, s8=0.6, sr8=0.9,
-                                alpha6=13.0))
+    system.calc = DFTD3(s6=1.1, sr6=1.1, s8=0.6, sr8=0.9, alpha6=13.0)
     close(system.get_potential_energy(), -1.082846357973487)
 
     # A couple of combinations, but not comprehensive
 
     # D3(BJ, ABC)
-    system.set_calculator(DFTD3(damping='bj', abc=True))
+    system.calc = DFTD3(damping='bj', abc=True)
     close(system.get_potential_energy(), -1.1959417763402416)
 
     # D3(zerom) with B3LYP parameters
-    system.set_calculator(DFTD3(damping='zerom', xc='b3-lyp'))
+    system.calc = DFTD3(damping='zerom', xc='b3-lyp')
     close(system.get_potential_energy(), -1.3369234231047677)
 
     # use diamond for bulk system

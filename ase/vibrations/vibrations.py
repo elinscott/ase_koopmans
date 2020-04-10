@@ -438,7 +438,7 @@ class Vibrations:
         n %= 3 * len(self.indices)
         traj = Trajectory('%s.%d.traj' % (self.name, n), 'w')
         calc = self.atoms.calc
-        self.atoms.set_calculator()
+        self.atoms.calc = None
         for x in np.linspace(0, 2 * pi, nimages, endpoint=False):
             self.atoms.set_positions(p + sin(x) * mode)
             traj.write(self.atoms)

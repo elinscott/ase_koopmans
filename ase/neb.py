@@ -504,7 +504,7 @@ class SingleCalculatorNEB(NEB):
                 self.images[i].calc = calculators[i]
         elif n == self.nimages - 2:
             for i in range(1, self.nimages - 1):
-                self.images[i].set_calculator(calculators[i - 1])
+                self.images[i].calc = calculators[i - 1]
         else:
             raise RuntimeError(
                 'len(calculators)=%d does not fit to len(images)=%d'
@@ -524,12 +524,11 @@ class SingleCalculatorNEB(NEB):
                 self.calculators[i] = calc
             if calc is not None:
                 if not isinstance(calc, SinglePointCalculator):
-                    self.images[i].set_calculator(
-                        SinglePointCalculator(
-                            image,
-                            energy=image.get_potential_energy(
-                                apply_constraint=False),
-                            forces=image.get_forces(apply_constraint=False)))
+                    self.images[i].calc = SinglePointCalculator(
+                        image,
+                        energy=image.get_potential_energy(
+                            apply_constraint=False),
+                        forces=image.get_forces(apply_constraint=False))
                 self.emax = min(self.emax, image.get_potential_energy())
 
         if self.first:

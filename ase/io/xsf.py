@@ -219,7 +219,7 @@ def iread_xsf(fileobj, read_data=False):
         image = Atoms(numbers, positions, cell=cell, pbc=pbc)
 
         if forces is not None:
-            image.set_calculator(SinglePointCalculator(image, forces=forces))
+            image.calc = SinglePointCalculator(image, forces=forces)
         yield image
 
     if read_data:

@@ -72,7 +72,7 @@ def test_write_read_with_calculator():
 
     h2o_db = db.get(id=uid).toatoms(attach_calculator=True)
 
-    calc_db = h2o_db.get_calculator()
+    calc_db = h2o_db.calc
     assert calc_db.parameters['dummy_param'] == 2.4
 
     # Check that get_atoms function works
