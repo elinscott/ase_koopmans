@@ -160,7 +160,7 @@ def arbitrarily_seed_rng(request):
     import numpy as np
     module_name = request.module
     function_name = request.function.__name__
-    seed = (hash(module_name) & hash(function_name)) % 123456789
+    seed = hash((module_name, function_name)) % 123456789
     print(seed)
     state = np.random.get_state()
     np.random.seed(seed)
