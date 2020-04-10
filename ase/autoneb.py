@@ -586,4 +586,4 @@ def store_E_and_F_in_spc(self):
             self.images[i].calc = SinglePointCalculator(
                 self.images[i],
                 energy=energy[0],
-                forces=forces))
+                forces=forces)
