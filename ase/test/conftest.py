@@ -134,7 +134,13 @@ class CLI:
         runshellcommand(command, calculator_name=calculator_name)
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
+def datadir():
+    from ase.test.testsuite import datadir
+    return datadir
+
+
+@pytest.fixture(scope='session')
 def cli():
     return CLI()
 

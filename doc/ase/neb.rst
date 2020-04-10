@@ -70,10 +70,11 @@ the original atoms object.
 Notice the use of the :meth:`~NEB.interpolate` method to obtain an
 initial guess for the path from A to B.
 
+
 Interpolation
 =============
 
-.. method:: NEB.interpolate()
+``NEB.interpolate()``
 
    Interpolate path linearly from initial to final state.
 
@@ -83,7 +84,7 @@ Interpolation
    function can be used independently of the NEB class, but is functionally
    identical.
 
-.. method:: NEB.interpolate(method='idpp')
+``NEB.interpolate(method='idpp')``
 
    Create an improved path from initial to final state using the IDPP approach
    [4]. This will start from an initial guess of a linear interpolation.

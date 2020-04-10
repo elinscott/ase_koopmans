@@ -101,7 +101,6 @@ NGL_ and ipywidgets_ websites.
    :inherited-members:
 
 .. autofunction:: ase.visualize.ngl.view_ngl
-.. automethod:: ase.visualize.ngl.NGLDisplay.custom_colors
 
 
 .. module:: ase.visualize.mlab
