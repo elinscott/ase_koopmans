@@ -270,8 +270,7 @@ class Atoms(object):
         new_symbols = Symbols.fromsymbols(obj)
         self.numbers[:] = new_symbols.numbers
 
-    # @deprecated(DeprecationWarning('Please use atoms.calc = calc'))
-    # XXX deprecate
+    @deprecated(DeprecationWarning('Please use atoms.calc = calc'))
     def set_calculator(self, calc=None):
         """Attach calculator object.
 
