@@ -161,7 +161,7 @@ def arbitrarily_seed_rng(request):
     module_name = request.module
     function_name = request.function.__name__
     seed = hash((module_name, function_name)) % 123456789
-    print(seed)
+    # (We should really use the full qualified name of the test method.)
     state = np.random.get_state()
     np.random.seed(seed)
     yield
