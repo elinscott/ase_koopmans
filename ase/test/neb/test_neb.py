@@ -27,7 +27,7 @@ def test_neb(plt):
     dyn.run(fmax=0.01)
 
     final = initial.copy()
-    final.set_calculator(calc())
+    final.calc = calc()
     final.positions[6, 1] = 2 - initial.positions[6, 1]
     dyn = QuasiNewton(final)
     dyn.run(fmax=0.01)
@@ -39,7 +39,7 @@ def test_neb(plt):
     images = [initial]
     for index in range(nimages - 2):
         images += [initial.copy()]
-        images[-1].set_calculator(calc())
+        images[-1].calc = calc()
     images += [final]
 
     neb = NEB(images)

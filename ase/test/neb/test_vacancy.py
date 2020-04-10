@@ -23,8 +23,8 @@ def test_vacancy():
         images = [initial] + [initial.copy() for i in range(6)]
         images[-1].positions[0] = (0, 0, 0)
         for image in images:
-            image.set_calculator(EMT())
-            #image.set_calculator(ASAP())
+            image.calc = EMT()
+            #image.calc = ASAP()
 
         for image in [images[0], images[-1]]:
             QuasiNewton(image).run(fmax=0.01)

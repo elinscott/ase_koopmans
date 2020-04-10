@@ -23,7 +23,7 @@ def test_preconlbfgs():
     for OPT in [PreconLBFGS, PreconFIRE]:
         for precon in [None, Exp(A=3, mu=1.0)]:
             atoms = a0.copy()
-            atoms.set_calculator(EMT())
+            atoms.calc = EMT()
             opt = OPT(atoms, precon=precon, use_armijo=True)
             opt.run(1e-4)
             energies += [atoms.get_potential_energy()]
@@ -39,7 +39,7 @@ def test_preconlbfgs():
     cons = [FixBondLength(0,1), FixAtoms([2,3])]
     for precon in [None, Exp(mu=1.0)]:
         cu = cu0.copy()
-        cu.set_calculator(EMT())
+        cu.calc = EMT()
         cu.set_distance(0, 1, a0*1.2)
         cu.set_constraint(cons)
         opt = PreconLBFGS(cu, precon=precon, use_armijo=True)

@@ -6,7 +6,7 @@ def test_siesta_read_eigenvalues(siesta_factory):
     # gapped .EIG file
     atoms = ase.build.bulk('Si', cubic=True)
     calc = siesta_factory.calc(kpts=[2, 1, 1])
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     atoms.get_potential_energy()
 
     assert calc.results['eigenvalues'].shape[:2] == (1, 2)  # spins x bands

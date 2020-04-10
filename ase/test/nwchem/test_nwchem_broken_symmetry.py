@@ -26,7 +26,7 @@ def test_main():
                                        .format(names[orientation])),
                       charge=0,
                       basis='"DZVP2 (DFT Orbital)"')
-        cr_atom.set_calculator(calc)
+        cr_atom.calc = calc
         fragment_energies[orientation] = cr_atom.get_potential_energy()
     cr_dimer = Atoms('Cr2', positions=[(0, 0, 0), (0, 0, 1.93)], pbc=False)
     cr_dimer.set_initial_magnetic_moments([0, 0])
@@ -39,7 +39,7 @@ def test_main():
                                    .format(' '.join(names))),
                   basis='"DZVP2 (DFT Orbital)"',
                   charge=0)
-    cr_dimer.set_calculator(calc)
+    cr_dimer.calc = calc
     e_dimer = cr_dimer.get_potential_energy()
     e_tot = e_dimer - fragment_energies.sum()
     assert abs(e_tot - e_literature) < 0.01

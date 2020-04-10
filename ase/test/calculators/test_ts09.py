@@ -28,7 +28,7 @@ def test_ts09():
     cc = FakeDFTcalculator()
     hp = FakeHirshfeldPartitioning(cc)
     c = vdWTkatchenko09prl(hp, [3])
-    al.set_calculator(c)
+    al.calc = c
     al.get_potential_energy()
 
     fname = 'out.traj'

@@ -15,7 +15,7 @@ def _try_delete(theory, prefix, suffix, sep='.'):
 def _run_calc(atoms_in, theory, eref, forces=False, **kwargs):
     atoms = atoms_in.copy()
     calc = NWChem(label=theory, theory=theory, **kwargs)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     assert_allclose(atoms.get_potential_energy(), eref, atol=1e-4, rtol=1e-4)
     if forces:
         assert_allclose(atoms.get_forces(),

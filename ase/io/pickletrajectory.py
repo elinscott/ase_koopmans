@@ -321,7 +321,7 @@ class PickleTrajectory:
                     forces=d.get('forces', None),
                     stress=d.get('stress', None),
                     magmoms=magmoms)
-                atoms.set_calculator(calc)
+                atoms.calc = calc
             return atoms
 
         if i >= N:

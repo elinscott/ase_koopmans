@@ -1168,7 +1168,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def recipe(cls, **kwargs):
         system = Atoms()
         calc = Octopus(CalculationMode='recipe', **kwargs)
-        system.set_calculator(calc)
+        system.calc = calc
         try:
             system.get_potential_energy()
         except OctopusIOError:
@@ -1193,7 +1193,7 @@ def main():
                    stderr='"stderr.log"',
                    Output='density + potential + wfs',
                    OutputFormat='xcrysden')
-    system.set_calculator(calc)
+    system.calc = calc
     system.get_potential_energy()
 
     check_interface(calc)

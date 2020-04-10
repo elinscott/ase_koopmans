@@ -825,7 +825,7 @@ def read_castep_castep_old(fd, index=None):
                                             forces=None,
                                             magmoms=None,
                                             stress=None)
-            atoms.set_calculator(sp_calc)
+            atoms.calc = sp_calc
             traj.append(atoms)
     if index is None:
         return traj

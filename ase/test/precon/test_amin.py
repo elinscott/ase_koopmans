@@ -23,7 +23,7 @@ def test_precon_amin():
     for use_armijo in [True, False]:
         for a_min in [None, 1e-3]:
             atoms = cu0.copy()
-            atoms.set_calculator(lj)
+            atoms.calc = lj
             opt = PreconLBFGS(atoms, precon=Exp(A=3), use_armijo=use_armijo,
                               a_min=a_min, variable_cell=True)
             opt.run(fmax=1e-3, smax=1e-4)

@@ -10,7 +10,7 @@ def test_idealgas():
     assert len(atoms) == 1000
 
     atoms.center(vacuum=100)
-    atoms.set_calculator(IdealGas())
+    atoms.calc = IdealGas()
 
     T = 1000
 

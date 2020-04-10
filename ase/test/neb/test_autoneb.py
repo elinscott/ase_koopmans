@@ -17,7 +17,7 @@ def test_autoneb():
     slab.set_constraint(FixAtoms(range(6, 12)))
 
     # Use EMT potential:
-    slab.set_calculator(EMT())
+    slab.calc = EMT()
 
     # Initial state:
     qn = QuasiNewton(slab, trajectory='neb000.traj')
@@ -36,7 +36,7 @@ def test_autoneb():
 
     def attach_calculators(images):
         for i in range(len(images)):
-            images[i].set_calculator(EMT())
+            images[i].calc = EMT()
 
 
     autoneb = AutoNEB(attach_calculators,

@@ -30,7 +30,7 @@ def test_linesearch_maxstep():
 
     for i,Optimizer in enumerate(optimizers):
         a = atoms.copy()
-        a.set_calculator(EMT())
+        a.calc = EMT()
 
         kwargs = {'maxstep':maxstep, 'logfile':None}
         if 'Precon' in labels[i]:

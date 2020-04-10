@@ -18,5 +18,5 @@ def test_vasp2_cell():
     calc = Vasp()
 
     with must_raise(ValueError):
-        atoms.set_calculator(calc)
+        atoms.calc = calc
         atoms.get_total_energy()

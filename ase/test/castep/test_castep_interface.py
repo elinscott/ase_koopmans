@@ -102,7 +102,7 @@ def test_castep_interface():
     print('about auto-generating pseudo-potentials are')
     print('normal behavior and can be safely ignored')
 
-    lattice.set_calculator(c)
+    lattice.calc = c
 
     param_fn = os.path.join(tmp_dir, 'myParam.param')
     param = open(param_fn, 'w')
@@ -144,7 +144,7 @@ def test_castep_interface():
                castep_pp_path=pp_path)
     c._pedantic=True
     atoms=ase.build.bulk('Ag')
-    atoms.set_calculator(c)
+    atoms.calc = c
 
     # I know, unittest would be nicer... maybe at a later point
 
@@ -195,7 +195,7 @@ def test_castep_interface():
                castep_pp_path=pp_path, find_pspots=True, keyword_tolerance=2)
     c._build_missing_pspots = False
     atoms = ase.build.bulk('Ag')
-    atoms.set_calculator(c)
+    atoms.calc = c
 
     # this should raise an error due to ambuiguity
     try:
@@ -206,7 +206,7 @@ def test_castep_interface():
 
     for e in ['Ni', 'Fe', 'Cu']:
         atoms = ase.build.bulk(e)
-        atoms.set_calculator(c)
+        atoms.calc = c
         c._fetch_pspots()
 
     # test writing to file
@@ -215,7 +215,7 @@ def test_castep_interface():
                find_pspots=True, castep_pp_path=pp_path, keyword_tolerance=2)
     c._label = 'test'
     atoms = ase.build.bulk('Cu')
-    atoms.set_calculator(c)
+    atoms.calc = c
     c.prepare_input_files()
 
     with open(os.path.join(tmp_dir, 'test.cell'), 'r') as f:
@@ -269,7 +269,7 @@ def test_castep_interface():
         assert c.cell.kpoint_mp_grid.value == '3 3 5'
         assert c.cell.kpoint_mp_offset.value == '0.0 0.0 0.0'
         atoms = ase.build.bulk('Ag')
-        atoms.set_calculator(c)
+        atoms.calc = c
         c.set_kpts({'density': 10, 'gamma': False, 'even': None})
         assert c.cell.kpoint_mp_grid.value == '27 27 27'
         assert c.cell.kpoint_mp_offset.value == '0.018519 0.018519 0.018519'

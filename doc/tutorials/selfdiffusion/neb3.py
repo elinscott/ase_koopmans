@@ -45,7 +45,7 @@ print(mask)
 
 for image in images:
     # Let all images use an EMT calculator:
-    image.set_calculator(EMT())
+    image.calc = EMT()
     image.set_constraint(constraint)
 
 # Relax the initial and final states:

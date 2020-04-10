@@ -25,7 +25,7 @@ def test_forceqmmm():
     def strain(at, e, calc):
         at = at.copy()
         at.set_cell((1.0 + e)*at.cell, scale_atoms=True)
-        at.set_calculator(calc)
+        at.calc = calc
         v = at.get_volume()
         e = at.get_potential_energy()
         return v, e
@@ -65,7 +65,7 @@ def test_forceqmmm():
     print("N_cell", N_cell, 'N_MM', len(at0))
 
     ref_at = at0.copy()
-    ref_at.set_calculator(qm)
+    ref_at.calc = qm
     opt = FIRE(ref_at)
     opt.run(fmax=1e-3)
     u_ref = ref_at.positions - at0.positions
@@ -76,7 +76,7 @@ def test_forceqmmm():
         mask = r < R_QM
         print('R_QM', R_QM, 'N_QM', mask.sum(), 'N_total', len(at))
         qmmm = ForceQMMM(at, mask, qm, mm, buffer_width=2*qm.rc)
-        at.set_calculator(qmmm)
+        at.calc = qmmm
         opt = FIRE(at)
         opt.run(fmax=1e-3)
         us.append(at.positions - at0.positions)

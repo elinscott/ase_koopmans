@@ -371,7 +371,7 @@ class BundleTrajectory:
                                          forces=forces,
                                          stress=smalldata.get('stress'),
                                          magmoms=magmoms)
-            atoms.set_calculator(calc)
+            atoms.calc = calc
         return atoms
 
     def read_extra_data(self, name, n=0):

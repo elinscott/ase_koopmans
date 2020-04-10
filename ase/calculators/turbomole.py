@@ -615,7 +615,7 @@ class Turbomole(FileIOCalculator):
             self.reset()
 
         if atoms is not None:
-            atoms.set_calculator(self)
+            atoms.calc = self
             self.set_atoms(atoms)
 
     def __getitem__(self, item):
@@ -1104,7 +1104,7 @@ class Turbomole(FileIOCalculator):
     def read_restart(self):
         """read a previous calculation from control file"""
         self.atoms = read('coord')
-        self.atoms.set_calculator(self)
+        self.atoms.calc = self
         self.converged = self.read_convergence()
         read_methods = [
             self.read_energy,

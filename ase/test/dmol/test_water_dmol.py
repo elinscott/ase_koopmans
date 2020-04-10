@@ -4,6 +4,6 @@ def test_water_dmol():
 
     atoms = molecule('H2O')
     calc = DMol3()
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     atoms.get_potential_energy()
     atoms.get_forces()

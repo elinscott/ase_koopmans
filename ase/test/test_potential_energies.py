@@ -8,7 +8,7 @@ def test_potential_energies():
 
     atoms = ase.build.bulk("Ni", crystalstructure="fcc", cubic=1)
     atoms *= (2, 2, 2)
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     energies = atoms.get_potential_energies()
     energy = atoms.get_potential_energy()
 

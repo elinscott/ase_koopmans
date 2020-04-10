@@ -76,7 +76,7 @@ class Infrared(Vibrations):
     ...             idipol=4,       # calculate the total dipole moment
     ...             dipol=water.get_center_of_mass(scaled=True),
     ...             ldipol=True)
-    >>> water.set_calculator(calc)
+    >>> water.calc = calc
     >>> ir = Infrared(water)
     >>> ir.run()
     >>> ir.summary()
@@ -130,7 +130,7 @@ class Infrared(Vibrations):
     >>> calc.set_fdf('LatticeConstant', 1.000000 * Ang)
     >>> calc.set_fdf('WriteCoorXmol',       'T')
 
-    >>> bud.set_calculator(calc)
+    >>> bud.calc = calc
 
     >>> ir = Infrared(bud)
     >>> ir.run()

@@ -11,7 +11,7 @@ def test_parameteric_constr():
 
     # Build the atoms object and attach a calculator
     a = bulk("Ni", cubic=True)
-    a.set_calculator(EMT())
+    a.calc = EMT()
 
     # Get adjusted cell
     cell = a.cell + 0.01

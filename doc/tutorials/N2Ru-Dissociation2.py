@@ -13,7 +13,7 @@ configs = [initial.copy() for i in range(8)] + [final]
 
 constraint = FixAtoms(mask=[atom.symbol != 'N' for atom in initial])
 for config in configs:
-    config.set_calculator(EMT())
+    config.calc = EMT()
     config.set_constraint(constraint)
     
 band = NEB(configs)

@@ -78,6 +78,6 @@ def read_dacapo(filename):
         force = None
     # Fixme magmoms
     calc = SinglePointCalculator(atoms, energy=energy, forces=force)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     return atoms

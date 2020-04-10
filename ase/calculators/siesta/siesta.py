@@ -1304,7 +1304,7 @@ class Siesta(FileIOCalculator):
                         'DM.NumberPulay': 4,
                         'XML.Write': True})
 
-        Na8.set_calculator(siesta)
+        Na8.calc = siesta
         e = Na8.get_potential_energy()
         freq, pol = siesta.get_polarizability_pyscf_inter(
             label="siesta",
@@ -1484,7 +1484,7 @@ class Siesta(FileIOCalculator):
                 'XML.Write': True})
 
 
-        Na8.set_calculator(siesta)
+        Na8.calc = siesta
         e = Na8.get_potential_energy()
         tddft = siesta.pyscf_tddft_eels(
             label="siesta", jcutoff=7, iter_broadening=0.15/Ha,
@@ -1660,7 +1660,7 @@ class Siesta(FileIOCalculator):
                     'gwa_initialization':'SIESTA_PB'}
 
 
-        Na8.set_calculator(siesta)
+        Na8.calc = siesta
         e = Na8.get_potential_energy() #run siesta
         freq, pol = siesta.get_polarizability_siesta(mbpt_inp,
                                                      format_output='txt',

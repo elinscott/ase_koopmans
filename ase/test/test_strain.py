@@ -13,7 +13,7 @@ def test_strain():
         b = a / 2
         cu = Atoms('Cu', cell=[(0,b,b),(b,0,b),(b,b,0)], pbc=1) * (6, 6, 6)
 
-        cu.set_calculator(EMT())
+        cu.calc = EMT()
         f = StrainFilter(cu, [1, 1, 1, 0, 0, 0])
         opt = MDMin(f, dt=0.01)
         t = Trajectory('Cu.traj', 'w', cu)
@@ -26,7 +26,7 @@ def test_strain():
         cu.cell[1,0] -= 0.05
         cu *= (6, 6, 3)
 
-        cu.set_calculator(EMT())
+        cu.calc = EMT()
         f = StrainFilter(cu)
         opt = MDMin(f, dt=0.01)
         t = Trajectory('Cu.traj', 'w', cu)

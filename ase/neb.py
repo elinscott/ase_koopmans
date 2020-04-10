@@ -501,7 +501,7 @@ class SingleCalculatorNEB(NEB):
         n = len(calculators)
         if n == self.nimages:
             for i in range(self.nimages):
-                self.images[i].set_calculator(calculators[i])
+                self.images[i].calc = calculators[i]
         elif n == self.nimages - 2:
             for i in range(1, self.nimages - 1):
                 self.images[i].set_calculator(calculators[i - 1])

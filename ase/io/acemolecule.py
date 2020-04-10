@@ -96,7 +96,7 @@ def read_acemolecule_out(filename):
 
     # Set calculator to
     calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     results = {}
     results['energy'] = energy

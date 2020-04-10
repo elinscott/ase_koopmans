@@ -66,7 +66,7 @@ def test_write_read_with_calculator():
 
     h2o = molecule('H2O')
     calc = EMT(dummy_param=2.4)
-    h2o.set_calculator(calc)
+    h2o.calc = calc
 
     uid = db.write(h2o)
 

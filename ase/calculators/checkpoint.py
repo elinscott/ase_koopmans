@@ -237,7 +237,7 @@ class CheckpointCalculator(Calculator):
 
         calc = ...
         cp_calc = CheckpointCalculator(calc)
-        atoms.set_calculator(cp_calc)
+        atoms.calc = cp_calc
         e = atoms.get_potential_energy()
         # 1st time, does calc, writes to checkfile
         # subsequent runs, reads from checkpoint file
@@ -295,9 +295,9 @@ class CheckpointCalculator(Calculator):
                     results.append(method(atoms))
             _calculator = atoms.calc
             try:
-                atoms.set_calculator(self.calculator)
+                atoms.calc = self.calculator
                 self.checkpoint.save(atoms, *results)
             finally:
-                atoms.set_calculator(_calculator)
+                atoms.calc = _calculator
 
         self.results = dict(zip(properties, results))

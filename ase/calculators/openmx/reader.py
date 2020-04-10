@@ -64,7 +64,7 @@ def read_openmx(filename=None, debug=False):
                           dat_data=dat_data, band_data=band_data)
 
     atoms = Atoms(**atomic_formula)
-    atoms.set_calculator(OpenMX(**parameters))
+    atoms.calc = OpenMX(**parameters)
     atoms.calc.results = results
     return atoms
 

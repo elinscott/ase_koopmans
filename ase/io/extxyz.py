@@ -526,7 +526,7 @@ def _read_xyz_frame(lines, natoms, properties_parser=key_val_str_to_dict,
             results[key] = atoms.arrays[key]
     if results != {}:
         calculator = SinglePointCalculator(atoms, **results)
-        atoms.set_calculator(calculator)
+        atoms.calc = calculator
     return atoms
 
 

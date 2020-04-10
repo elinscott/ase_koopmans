@@ -39,7 +39,7 @@ def test_NaCl_minimize():
             else:
                 a.charge = -1.
 
-        nacl.set_calculator(calc)
+        nacl.calc = calc
 
         assert_allclose(nacl.get_potential_energy(), -1896.216737561538,
                         atol=1e-4, rtol=1e-4)

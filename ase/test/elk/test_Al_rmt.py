@@ -52,7 +52,7 @@ def test_Al_rmt():
     # run calculation
     calc = ELK(tasks=0, label=label,
                rgkmax=4.0, kpts=tuple(kpts2mp(atoms, 2.0, even=True)))
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     e1 = atoms.get_potential_energy()
 
     # test2
@@ -73,7 +73,7 @@ def test_Al_rmt():
     # run calculation
     calc = ELK(tasks=0, label=label,
                rgkmax=4.0, kpts=tuple(kpts2mp(atoms, 2.0, even=True)))
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     e2 = atoms.get_potential_energy()
 
     # restore ELK_SPECIES_PATH

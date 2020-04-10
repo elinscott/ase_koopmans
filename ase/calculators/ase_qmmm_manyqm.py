@@ -622,7 +622,7 @@ class AseQmmmManyqm:
         """ Calculate the qm energy of a single qm region
         (for X-H bond length calculations)
         """
-        myqm.set_calculator(mycalculator)
+        myqm.calc = mycalculator
         return myqm.get_potential_energy()
 
     def run(self, atoms):

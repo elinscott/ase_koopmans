@@ -14,7 +14,7 @@ def test_main():
                   nwpw={'lmbfgs': None,
                         'tolerances': '1e-9 1e-9'},
                   )
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     assert_allclose(atoms.get_stress(), calc.calculate_numerical_stress(atoms),
                     atol=1e-3, rtol=1e-3)

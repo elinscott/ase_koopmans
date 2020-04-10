@@ -487,7 +487,7 @@ class Precon(object):
         # compute LHS
         dE_p = -atoms.get_forces().reshape(-1)
         atoms_v = atoms.copy()
-        atoms_v.set_calculator(atoms.calc)
+        atoms_v.calc = atoms.calc
         if isinstance(atoms, Filter):
             atoms_v = atoms.__class__(atoms_v)
             if hasattr(atoms, 'constant_volume'):

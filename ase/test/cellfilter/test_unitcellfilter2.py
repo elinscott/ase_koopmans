@@ -20,7 +20,7 @@ def setup_atoms():
     # perturb the cell
     a0.cell += rng.uniform(-1e-1, 1e-2, size=(3, 3))
 
-    a0.set_calculator(LennardJones())
+    a0.calc = LennardJones()
     return a0
 
 

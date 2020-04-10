@@ -44,7 +44,7 @@ def test_dihedralconstraint():
     print('bond length before', system.get_distance(*indices_bondlength))
     print('(target bondlength %s)', target_bondlength)
 
-    system.set_calculator(calc)
+    system.calc = calc
     system.set_constraint(constraint)
     print('-----Optimization-----')
     opt.run(fmax=0.01)

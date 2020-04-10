@@ -23,6 +23,6 @@ calc = Siesta(label='Si',
                              'SCF.DM.Tolerance': 0.1,
                              },
               )
-bulk.set_calculator(calc)
+bulk.calc = calc
 e = bulk.get_potential_energy()
 print(e)

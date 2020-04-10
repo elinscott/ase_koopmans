@@ -175,7 +175,7 @@ def main_gpaw():
     system.center(vacuum=1.5)
     system.pbc = 1
     calc = GPAW(h=0.3, mode='lcao', txt=None)
-    system.set_calculator(calc)
+    system.calc = calc
     system.get_potential_energy()
     check_interface(calc)
 
@@ -187,7 +187,7 @@ def main_octopus():
     system.center(vacuum=1.5)
     system.pbc = 1
     calc = Octopus()
-    system.set_calculator(calc)
+    system.calc = calc
     system.get_potential_energy()
     check_interface(calc)
     

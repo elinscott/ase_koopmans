@@ -288,7 +288,7 @@ def read_res(filename, index=-1):
         if res.energy:
             calc = SinglePointCalculator(res.atoms,
                                          energy=res.energy)
-            res.atoms.set_calculator(calc)
+            res.atoms.calc = calc
         images.append(res.atoms)
     return images[index]
 

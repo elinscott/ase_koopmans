@@ -77,6 +77,6 @@ def test_h2of():
     # input file, but it doesn't appear to do anything to the calculation.
     # What is it for? What is it suppsoed to do?
 
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     atoms.get_potential_energy()
 

@@ -23,7 +23,7 @@ def test_COCu111_2():
     initial = fcc111 * (2, 2, 4)
     initial.set_cell([2 * d, d * sqrt(3), 1])
     initial.set_pbc((1, 1, 0))
-    initial.set_calculator(EMT())
+    initial.calc = EMT()
     Z = initial.get_positions()[:, 2]
     indices = [i for i, z in enumerate(Z) if z < Z.mean()]
     constraint = FixAtoms(indices=indices)
@@ -47,7 +47,7 @@ def test_COCu111_2():
 
     print('Relax final image')
     final = initial.copy()
-    final.set_calculator(EMT())
+    final.calc = EMT()
     final.set_constraint(constraint)
     final[-2].position = final[-1].position
     final[-1].x = d

@@ -12,7 +12,7 @@ def test_lammpslib_change_cell_bcs():
                        log_file='test.log', keep_alive=True)
     atoms = FaceCenteredCubic(size=(2, 2, 2), latticeconstant=3.52, symbol="Ni",
                               pbc=True)
-    atoms.set_calculator(lammps)
+    atoms.calc = lammps
 
     energy_ppp_ref = -142.400000403
     energy_ppp = atoms.get_potential_energy()

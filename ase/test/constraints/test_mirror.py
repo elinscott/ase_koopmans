@@ -11,7 +11,7 @@ def test_mirror():
     con1 = MirrorForce(2, 3, max_dist=5., fmax=0.05)
     con2 = FixBondLength(0, 1)
     atoms.set_constraint([con1, con2])
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     opt = FIRE(atoms)
     opt.run(fmax=0.05)
     assert round(dist - atoms.get_distance(0, 1), 5) == 0
@@ -23,7 +23,7 @@ def test_mirror():
     con1 = MirrorTorque(0, 1, 2, 3, fmax=0.05)
     con2 = ExternalForce(9, 4, f_ext=0.1)
     atoms.set_constraint([con1, con2])
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     opt = FIRE(atoms)
     opt.run(fmax=0.05, steps=300)
     # The result is not realistic because of EMT

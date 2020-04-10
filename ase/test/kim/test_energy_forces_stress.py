@@ -24,7 +24,7 @@ def test_energy_forces_stress():
     atoms.positions[0, 0] += 0.01
 
     calc = KIM("ex_model_Ar_P_Morse_07C")
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     # Get energy and analytical forces/stress from KIM model
     energy = atoms.get_potential_energy()

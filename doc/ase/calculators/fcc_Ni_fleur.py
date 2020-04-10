@@ -6,7 +6,7 @@ from ase.io.trajectory import Trajectory
 
 atoms = bulk('Ni', a=3.52)
 calc = FLEUR(xc='PBE', kmax=3.6, kpts=(10, 10, 10), workdir='lat_const')
-atoms.set_calculator(calc)
+atoms.calc = calc
 traj = Trajectory('Ni.traj','w', atoms)
 cell0 = atoms.get_cell()
 for s in linspace(0.95, 1.05, 7):
