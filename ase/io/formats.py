@@ -653,6 +653,9 @@ def iread(
     Works as the `read` function, but yields one Atoms object at a time
     instead of all at once."""
 
+    if isinstance(filename, PurePath):
+        filename = str(filename)
+
     if isinstance(index, str):
         index = string2index(index)
 
