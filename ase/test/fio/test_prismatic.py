@@ -1,5 +1,6 @@
 import os
 import tempfile
+from distutils.version import LooseVersion
 import numpy as np
 import pytest
 
@@ -8,6 +9,11 @@ from ase.io import read
 
 
 tmpDir = tempfile.gettempdir()
+
+
+pytestmark = pytest.mark.skipif(LooseVersion(np.__version__) <
+                                LooseVersion("1.14"),
+                                reason="This test requires numpy >= 1.14")
 
 
 def make_Si100_atoms():
@@ -38,6 +44,7 @@ def make_STO_atoms():
                   pbc=True)
 
     return atoms
+
 
 def test_write_read_cycle_xyz_prismatic():
     """Check writing and reading a xtl mustem file."""
