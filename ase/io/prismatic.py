@@ -89,6 +89,11 @@ class XYZPrismaticWriter:
 
     def _get_DW(self, DW):
         if np.isscalar(DW):
+            if len(self.atom_types) > 1:
+                raise ValueError('This cell contains more then one type of '
+                                 'atoms and the Debye-Waller factor needs to '
+                                 'be provided for each atom using a '
+                                 'dictionary.')
             DW = np.ones_like(self.atoms.numbers) * DW
         elif isinstance(DW, dict):
             self._check_key_dictionary(DW, 'DW')
@@ -96,7 +101,6 @@ class XYZPrismaticWriter:
             DW = {symbols2numbers(k)[0]:v for k, v in DW.items()}
             DW = np.vectorize(DW.get)(self.atoms.numbers)
         else:
-            # If
             for name in ['DW', 'debye_waller_factor']:
                 if name in self.atoms.arrays:
                     DW = self.atoms.get_array(name)

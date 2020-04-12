@@ -63,7 +63,7 @@ class XtlmuSTEMWriter:
     """See the docstring of the `write_mustem` function.
     """
 
-    def __init__(self, atoms, keV, DW, comment=None, occupancy=1.0,
+    def __init__(self, atoms, keV, DW=None, comment=None, occupancy=1.0,
                  fit_cell_to_atoms=False):
         cell = atoms.get_cell()
         if not cell.orthorhombic:
@@ -73,24 +73,44 @@ class XtlmuSTEMWriter:
             raise ValueError('To export to this format, the cell size needs '
                              'to be set: current cell is {}.'.format(cell))
         self.atoms = atoms.copy()
-        self.atom_types = []
-        for atom in self.atoms:
-            if atom.symbol not in self.atom_types:
-                self.atom_types.append(atom.symbol)
+        self.atom_types = list(set(atoms.get_chemical_symbols()))
         self.keV = keV
-        self.DW = DW
-        self._check_key_dictionary(self.DW, 'DW')
         self.comment = comment
-        if np.isscalar(occupancy):
-            self.occupancy = dict(zip(self.atom_types,
-                                      [occupancy] * len(self.atom_types)))
-        else:
-            self.occupancy = occupancy
-        self._check_key_dictionary(self.occupancy, 'occupancy')
+        self.occupancy = self._get_occupancy(occupancy)
+        self.DW = self._get_DW(DW)
+
         self.numbers = symbols2numbers(self.atom_types)
         if fit_cell_to_atoms:
             self.atoms.translate(-self.atoms.positions.min(axis=0))
             self.atoms.set_cell(self.atoms.positions.max(axis=0))
+
+    def _get_occupancy(self, occupancy):
+        if np.isscalar(occupancy):
+            occupancy = {atom:occupancy for atom in self.atom_types}
+        elif isinstance(occupancy, dict):
+            self._check_key_dictionary(occupancy, 'occupancy')
+
+        return occupancy
+
+    def _get_DW(self, DW):
+        if np.isscalar(DW):
+            if len(self.atom_types) > 1:
+                raise ValueError('This cell contains more then one type of '
+                                 'atoms and the Debye-Waller factor needs to '
+                                 'be provided for each atom using a '
+                                 'dictionary.')
+            DW = {self.atom_types[0]: DW}
+        elif isinstance(DW, dict):
+            self._check_key_dictionary(DW, 'DW')
+
+        if DW is None:
+            raise ValueError('Missing Debye-Waller factors. It can be '
+                             'provided as a dictionary with symbols as key or '
+                             'if the cell contains only a single type of '
+                             'element, the Debye-Waller factor can also be '
+                             'provided as float.')
+
+        return DW
 
     def _check_key_dictionary(self, d, dict_name):
         # Check if we have enough key
