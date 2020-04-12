@@ -90,3 +90,14 @@ def test_write_error():
 
     atoms_STO.write(filename, format='prismatic',
                     DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02})
+
+    with pytest.raises(ValueError):
+        # Raise an error if the unit cell is not defined.
+        atoms4 = Atoms(['Sr', 'Ti', 'O', 'O', 'O'],
+                       positions=[[0, 0, 0],
+                                  [0.5, 0.5, 0.5],
+                                  [0.5, 0.5, 0],
+                                  [0.5, 0, 0.5],
+                                  [0, 0.5, 0.5]])
+        atoms4.write(filename, format='prismatic',
+                     DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02})

@@ -74,6 +74,13 @@ class XYZPrismaticWriter:
     """
 
     def __init__(self, atoms, DW=None, comments=None):
+        cell = atoms.get_cell()
+        if not cell.orthorhombic:
+            raise ValueError('To export to this format, the cell needs to be '
+                             'orthorhombic.')
+        if (cell.diagonal() ==  0).any():
+            raise ValueError('To export to this format, the cell size needs '
+                             'to be set: current cell is {}.'.format(cell))
         self.atoms = atoms.copy()
         self.atom_types = set(atoms.get_chemical_symbols())
         self.comments = comments
