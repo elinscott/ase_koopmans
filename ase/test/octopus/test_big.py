@@ -27,8 +27,8 @@ def test_h2o(factory):
     dipole = calc.get_dipole_moment()
     E = calc.get_potential_energy()
 
-    #print('dipole', dipole)
-    #print('energy', E)
+    print('dipole', dipole)
+    print('energy', E)
 
     # XXX What's with the dipole not being correct?
     # XXX Investigate
