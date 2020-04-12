@@ -69,7 +69,7 @@ class XtlmuSTEMWriter:
         if not cell.orthorhombic:
             raise ValueError('To export to this format, the cell needs to be '
                              'orthorhombic.')
-        if (cell.diagonal() ==  0).any():
+        if (cell.diagonal() == 0).any():
             raise ValueError('To export to this format, the cell size needs '
                              'to be set: current cell is {}.'.format(cell))
         self.atoms = atoms.copy()
@@ -86,7 +86,7 @@ class XtlmuSTEMWriter:
 
     def _get_occupancy(self, occupancy):
         if np.isscalar(occupancy):
-            occupancy = {atom:occupancy for atom in self.atom_types}
+            occupancy = {atom: occupancy for atom in self.atom_types}
         elif isinstance(occupancy, dict):
             self._check_key_dictionary(occupancy, 'occupancy')
 

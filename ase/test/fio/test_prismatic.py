@@ -18,7 +18,7 @@ pytestmark = pytest.mark.skipif(LooseVersion(np.__version__) <
 
 def make_Si100_atoms():
     # Reproduce the SI100.XYZ file distributed with prismatic
-    atoms = Atoms(symbols='Si'*8,
+    atoms = Atoms(symbols='Si' * 8,
                   positions=[[0.0000, 0.0000, 0.0000],
                              [2.7150, 2.7150, 0.0000],
                              [1.3575, 4.0725, 1.3575],
@@ -51,7 +51,7 @@ def test_write_read_cycle_xyz_prismatic():
     # Reproduce the SI100.XYZ file distributed with prismatic
     atoms = make_Si100_atoms()
     atoms.set_array('occupancy', np.ones_like(atoms.numbers))
-    atoms.set_array('debye_waller_factor', np.ones_like(atoms.numbers)*0.076)
+    atoms.set_array('debye_waller_factor', np.ones_like(atoms.numbers) * 0.076)
 
     filename = os.path.join(tmpDir, 'SI100.XYZ')
     atoms.write(filename=filename, format='prismatic',
@@ -81,7 +81,7 @@ def test_write_error():
     atoms_Si100.write(filename, format='prismatic', DW=0.076)
 
     # Write file with DW provided as dict
-    atoms_Si100.write(filename, format='prismatic', DW={'Si':0.076})
+    atoms_Si100.write(filename, format='prismatic', DW={'Si': 0.076})
 
     with pytest.raises(ValueError):
         # DW missing keys

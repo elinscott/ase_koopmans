@@ -49,7 +49,6 @@ def read_prismatic(filename):
     # Use genfromtxt instead of loadtxt to skip last line
     read_data = np.genfromtxt(fname=filename, skip_footer=1)
 
-
     atoms = Atoms(symbols=read_data[:, 0],
                   positions=read_data[:, 1:4],
                   cell=cellpar_to_cell(cellpar),
@@ -69,7 +68,7 @@ class XYZPrismaticWriter:
         if not cell.orthorhombic:
             raise ValueError('To export to this format, the cell needs to be '
                              'orthorhombic.')
-        if (cell.diagonal() ==  0).any():
+        if (cell.diagonal() == 0).any():
             raise ValueError('To export to this format, the cell size needs '
                              'to be set: current cell is {}.'.format(cell))
         self.atoms = atoms.copy()
@@ -98,7 +97,7 @@ class XYZPrismaticWriter:
         elif isinstance(DW, dict):
             self._check_key_dictionary(DW, 'DW')
             # Get the arrays of DW from mapping the DW defined by symbol
-            DW = {symbols2numbers(k)[0]:v for k, v in DW.items()}
+            DW = {symbols2numbers(k)[0]: v for k, v in DW.items()}
             DW = np.vectorize(DW.get)(self.atoms.numbers)
         else:
             for name in ['DW', 'debye_waller_factor']:
@@ -113,7 +112,6 @@ class XYZPrismaticWriter:
                              'the `Atoms` object.')
 
         return DW
-
 
     def _check_key_dictionary(self, d, dict_name):
         # Check if we have enough key

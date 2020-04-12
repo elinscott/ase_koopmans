@@ -1,4 +1,6 @@
+import numpy as np
 import pytest
+
 from ase import Atoms
 from ase.io import read
 
@@ -34,8 +36,9 @@ def test_mustem():
     atoms3 = read(filename)
 
     for _atoms in [atoms2, atoms3]:
-        assert atoms.positions.sum() - _atoms.positions.sum() == 0
-        assert atoms.cell.sum() - _atoms.cell.sum() == 0
+        np.testing.assert_allclose(atoms.positions.sum(),
+                                   _atoms.positions.sum())
+        np.testing.assert_allclose(atoms.cell.sum(), _atoms.cell.sum())
 
     with pytest.raises(ValueError):
         # Raise an error if there is a missing key.
@@ -63,7 +66,7 @@ def test_mustem():
                      DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02})
 
     # Setting Debye-Waller factor as float.
-    Si_atoms = Atoms(symbols='Si'*8,
+    Si_atoms = Atoms(symbols='Si' * 8,
                      positions=[[0.0000, 0.0000, 0.0000],
                                 [2.7150, 2.7150, 0.0000],
                                 [1.3575, 4.0725, 1.3575],
@@ -79,5 +82,6 @@ def test_mustem():
     Si_atoms.write(filename, keV=300, DW=0.78700E-02)
     Si_atoms2 = read(filename)
 
-    assert Si_atoms.positions.sum() - Si_atoms2.positions.sum() == 0
-    assert Si_atoms.cell.sum() - Si_atoms2.cell.sum() == 0
+    np.testing.assert_allclose(Si_atoms.positions.sum(),
+                               Si_atoms2.positions.sum())
+    np.testing.assert_allclose(Si_atoms.cell.sum(), Si_atoms2.cell.sum())
