@@ -917,16 +917,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
                               #'magmom', 'magmoms'
     ]
 
-    troublesome_keywords = set(['subsystemcoordinates',
-                                'subsystems',
-                                'unitsinput',
-                                'unitsoutput',
-                                'pdbcoordinates',
-                                'xyzcoordinates',
-                                'xsfcoordinates',
-                                'xsfcoordinatesanimstep',
-                                'reducedcoordinates'])
-
     special_ase_keywords = set(['kpts'])
     command = 'octopus'
 
@@ -936,13 +926,14 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
                  directory=None,
                  atoms=None,
                  command=None,
-                 ignore_troublesome_keywords=None,
                  check_keywords=False,
                  **kwargs):
         """Create Octopus calculator.
 
         Label is always taken as a subdirectory.
         Restart is taken to be a label."""
+
+        kwargs.pop('troublesome_keywords', None)  # Ignore old keyword
 
         if label is not None:
             # restart mechanism in Calculator tends to set the label.
@@ -952,12 +943,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
 
         if directory is None:
             directory = 'ink-pool'
-
-        if ignore_troublesome_keywords:
-            trouble = set(self.troublesome_keywords)
-            for keyword in ignore_troublesome_keywords:
-                trouble.remove(keyword)
-            self.troublesome_keywords = trouble
 
         self.kwargs = {}
 
@@ -971,15 +956,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
     def set(self, **kwargs):
         """Set octopus input file parameters."""
         kwargs = normalize_keywords(kwargs)
-
-        for keyword in kwargs:
-            if keyword in self.troublesome_keywords:
-                msg = ('ASE-Octopus interface will probably misbehave with '
-                       'the %s parameter.  Optimists may use '
-                       'Octopus(ignore_troublesome_keywords=[kw1, kw2, ...])'
-                       'to override this.' % keyword)
-                raise OctopusKeywordError(msg)
-
         changes = FileIOCalculator.set(self, **kwargs)
         if changes:
             self.results.clear()
