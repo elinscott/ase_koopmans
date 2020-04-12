@@ -22,9 +22,12 @@ def _check_numpy_version():
 
 
 def read_prismatic(filename):
-    """Import prismatic and computem xyz input file.
+    """Import prismatic and computem xyz input file as an Atoms object.
 
-    Reads cell, atom positions, occupancy and Debye Waller factor
+    Reads cell, atom positions, occupancy and Debye Waller factor.
+    The occupancy and the Debye Waller factors are obtained using the
+    `get_array` method and the `occupancy` and `debye_waller_factor` keys,
+    respectively.
     """
     _check_numpy_version()
 
@@ -58,19 +61,7 @@ def read_prismatic(filename):
 
 
 class XYZPrismaticWriter:
-    """Write xyz file for prismatic and computem.
-
-    Parameters:
-
-    atoms: Atoms object
-
-    DW: float or dictionary of float with atom type as key
-        Debye-Waller factor of each atoms.
-
-    comment: str (optional)
-        Comments to be written in the first line of the file. If not
-        provided, write the total number of atoms and the chemical formula.
-
+    """ See the docstring of the `write_prismatic` function.
     """
 
     def __init__(self, atoms, DW=None, comments=None):
@@ -162,6 +153,29 @@ class XYZPrismaticWriter:
 
 
 def write_prismatic(filename, *args, **kwargs):
+    """Write xyz input file for the prismatic and computem software. The cell
+    needs to be orthorhombric. If the cell contains the `occupancy` and
+    `debye_waller_factor` arrays (see the `set_array` method to set them),
+    these array will be written to the file.
+    If the occupancy is not specified, the default value will be set to 0.
+
+    Parameters:
+
+    atoms: Atoms object
+
+    DW: float or dictionary of float or None (optional).
+        If float, set this value to all
+        atoms. If dictionary, each atom needs to specified with the symbol as
+        key and the corresponding Debye-Waller factor as value.
+        If None, the `debye_waller_factor` array of the Atoms object needs to
+        be set (see the `set_array` method to set them), otherwise raise a
+        ValueError. Default is None.
+
+    comment: str (optional)
+        Comments to be written in the first line of the file. If not
+        provided, write the total number of atoms and the chemical formula.
+
+    """
 
     _check_numpy_version()
 

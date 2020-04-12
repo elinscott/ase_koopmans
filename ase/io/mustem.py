@@ -60,34 +60,18 @@ def read_mustem(filename):
 
 
 class XtlmuSTEMWriter:
-    """Write muSTEM input file.
-
-    Parameters:
-
-    atoms: Atoms object
-
-    keV: float
-        Energy of the electron beam required for the image simulation.
-
-    DW: float or dictionary of float with atom type as key
-        Debye-Waller factor of each atoms.
-
-    occupancy: float or dictionary of float with atom type as key (optional)
-        Occupancy of each atoms. Default value is `1.0`.
-
-    comment: str (optional)
-        Comments to be written in the first line of the file. If not
-        provided, write the total number of atoms and the chemical formula.
-
-    fit_cell_to_atoms: bool (optional)
-        If `True`, fit the cell to the atoms positions. If negative coordinates
-        are present in the cell, the atoms are translated, so that all
-        positions are positive. If `False` (default), the atoms positions and
-        the cell are unchanged.
+    """See the docstring of the `write_mustem` function.
     """
 
     def __init__(self, atoms, keV, DW, comment=None, occupancy=1.0,
                  fit_cell_to_atoms=False):
+        cell = atoms.get_cell()
+        if not cell.orthorhombic:
+            raise ValueError('To export to this format, the cell needs to be '
+                             'orthorhombic.')
+        if (cell.diagonal() ==  0).any():
+            raise ValueError('To export to this format, the cell size needs '
+                             'to be set: current cell is {}.'.format(cell))
         self.atoms = atoms.copy()
         self.atom_types = []
         for atom in self.atoms:
@@ -116,18 +100,9 @@ class XtlmuSTEMWriter:
                                  ''.format(key, dict_name))
 
     def _get_position_array_single_atom_type(self, number):
-        self._check_cell_is_orthorhombic()
         # Get the scaled (reduced) position for a single atom type
         return self.atoms.get_scaled_positions()[np.where(
             self.atoms.numbers == number)]
-
-    def _check_cell_is_orthorhombic(self):
-        cell = self.atoms.get_cell()
-        # Diagonal element must different from 0
-        # Non-diagonal element must be zero
-        if ((cell != 0) != np.eye(3)).any():
-            raise ValueError('To export to this format, the cell need to be '
-                             'orthorhombic.')
 
     def _get_file_header(self):
         # 1st line: comment line
@@ -174,6 +149,31 @@ class XtlmuSTEMWriter:
 
 
 def write_mustem(filename, *args, **kwargs):
+    """Write muSTEM input file.
+
+    Parameters:
+
+    atoms: Atoms object
+
+    keV: float
+        Energy of the electron beam in keV required for the image simulation.
+
+    DW: float or dictionary of float with atom type as key
+        Debye-Waller factor of each atoms.
+
+    occupancy: float or dictionary of float with atom type as key (optional)
+        Occupancy of each atoms. Default value is `1.0`.
+
+    comment: str (optional)
+        Comments to be written in the first line of the file. If not
+        provided, write the total number of atoms and the chemical formula.
+
+    fit_cell_to_atoms: bool (optional)
+        If `True`, fit the cell to the atoms positions. If negative coordinates
+        are present in the cell, the atoms are translated, so that all
+        positions are positive. If `False` (default), the atoms positions and
+        the cell are unchanged.
+    """
 
     writer = XtlmuSTEMWriter(*args, **kwargs)
     writer.write_to_file(filename)
