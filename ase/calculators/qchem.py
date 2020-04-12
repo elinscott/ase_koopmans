@@ -27,9 +27,8 @@ class QChem(FileIOCalculator):
         The scratch directory, number of processor and threads as well as a few
         other command line options can be set using the arguments explained
         below. The remaining kwargs are copied as options to the input file.
-        The calculator will convert these options to lower case for storage
-        and convert back to upper case (Q-Chem standard) when writing the
-        input file.
+        The calculator will convert these options to upper case
+        (Q-Chem standard) when writing the input file.
 
         scratch: str
             path of the scratch directory

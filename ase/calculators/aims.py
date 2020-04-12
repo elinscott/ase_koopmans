@@ -351,13 +351,12 @@ class Aims(FileIOCalculator):
         self.atoms = atoms
 
     def set_label(self, label, update_outfilename=False):
-        self.label = label
-        self.directory = label
-        self.prefix = ''
-        # change outfile name to "<label.out>"
-        if update_outfilename:
-            self.outfilename="{}.out".format(os.path.basename(label))
-        self.out = os.path.join(label, self.outfilename)
+        msg = "Aims.set_label is not supported anymore, please use `directory`"
+        raise RuntimeError(msg)
+
+    @property
+    def out(self):
+        return os.path.join(self.label, self.outfilename)
 
     def check_state(self, atoms):
         system_changes = FileIOCalculator.check_state(self, atoms)
