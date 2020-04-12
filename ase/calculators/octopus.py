@@ -7,7 +7,6 @@ http://tddft.org/programs/octopus/
 """
 import os
 import re
-from subprocess import Popen, PIPE
 
 import numpy as np
 
