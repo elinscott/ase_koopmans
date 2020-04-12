@@ -1,16 +1,15 @@
 import os
+from ase.utils import reader
 from ase.calculators.octopus import parse_input_file, kwargs2atoms
 
 
-def read_octopus(fileobj, get_kwargs=False):
-    if isinstance(fileobj, str):  # This could be solved with decorators...
-        fileobj = open(fileobj)
-
-    kwargs = parse_input_file(fileobj)
+@reader
+def read_octopus(fd, get_kwargs=False):
+    kwargs = parse_input_file(fd)
 
     # input files may contain internal references to other files such
     # as xyz or xsf.  We need to know the directory where the file
-    # resides in order to locate those.  If fileobj is a real file
+    # resides in order to locate those.  If fd is a real file
     # object, it contains the path and we can use it.  Else assume
     # pwd.
     #
@@ -18,7 +17,7 @@ def read_octopus(fileobj, get_kwargs=False):
     # wants a non-standard file-like type.  But it's probably better than
     # failing 'ase gui somedir/inp'
     try:
-        fname = fileobj.name
+        fname = fd.name
     except AttributeError:
         directory = None
     else:
