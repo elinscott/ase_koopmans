@@ -52,27 +52,9 @@ from ase.calculators.calculator import kpts2ndarray
 #     Octopus input file -> Atoms object + dict of keyword arguments
 # Below we detail some conventions and compatibility issues.
 #
-# 1) ASE always passes some parameters by default (always write
-#    forces, etc.).  They can be overridden by the user, but the
-#    resulting behaviour is undefined.
-#
-# 2) Atoms object is used to establish some parameters: Coordinates,
-#    Lsize, etc.  All those parameters can be overridden by passing
-#    them directly as keyword arguments.  Parameters that were taken
-#    from the Atoms object are always marked with the comment "# ASE
-#    auto" in the input file.  This is used to distinguish variables
-#    that are overridden from variables that simply came from the
-#    atoms object when restarting.
-#
-# 3) Some variables do not interact nicely between ASE and Octopus,
-#    such as SubSystemCoordinates which may involve rotations.  There
-#    may be many such variables that we have not identified, but at
-#    least the known ones will cause a suppressable
-#    OctopusKeywordError.  (This third rule has not been implemented
-#    as of this moment.)
-#
-# 4) OctopusKeywordError is raised from Python for keywords that are
-#    not valid according to oct-help.
+# ASE always passes some parameters by default (always write
+# forces, etc.).  They can be overridden by the user, but the
+# resulting behaviour is undefined.
 
 
 def read_eigenvalues_file(fd):
@@ -166,10 +148,6 @@ def process_special_kwargs(atoms, kwargs):
     for kw in Octopus.special_ase_keywords:
         assert kw not in kwargs, kw
     return kwargs
-
-
-class OctopusKeywordError(ValueError):
-    pass  # Unhandled keywords
 
 
 class OctopusParseError(Exception):
