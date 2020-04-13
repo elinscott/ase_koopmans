@@ -1,3 +1,11 @@
+"""ASE-interface to Octopus.
+
+Ask Hjorth Larsen <asklarsen@gmail.com>
+Carlos de Armas
+
+http://tddft.org/programs/octopus/
+"""
+
 import os
 import numpy as np
 from ase.io.octopus import (
