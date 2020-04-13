@@ -1,6 +1,6 @@
 import os
 import re
-from ase.utils import reader
+
 import numpy as np
 
 from ase import Atoms
@@ -8,6 +8,10 @@ from ase.data import atomic_numbers
 from ase.io import read
 from ase.calculators.calculator import kpts2ndarray
 from ase.units import Bohr, Hartree
+from ase.utils import reader
+
+
+special_ase_keywords = set(['kpts'])
 
 
 def process_special_kwargs(atoms, kwargs):
@@ -30,8 +34,7 @@ def process_special_kwargs(atoms, kwargs):
     # The idea is to get rid of the special keywords, since the rest
     # will be passed to Octopus
     # XXX do a better check of this
-    from ase.calculators.octopus import Octopus
-    for kw in Octopus.special_ase_keywords:
+    for kw in special_ase_keywords:
         assert kw not in kwargs, kw
     return kwargs
 

@@ -31,7 +31,6 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
                               #'magmom', 'magmoms'
     ]
 
-    special_ase_keywords = set(['kpts'])
     command = 'octopus'
 
     def __init__(self,
@@ -40,14 +39,14 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
                  directory=None,
                  atoms=None,
                  command=None,
-                 check_keywords=False,
                  **kwargs):
         """Create Octopus calculator.
 
         Label is always taken as a subdirectory.
         Restart is taken to be a label."""
 
-        kwargs.pop('troublesome_keywords', None)  # Ignore old keyword
+        kwargs.pop('check_keywords', None)  # Ignore old keywords
+        kwargs.pop('troublesome_keywords', None)
 
         if label is not None:
             # restart mechanism in Calculator tends to set the label.
