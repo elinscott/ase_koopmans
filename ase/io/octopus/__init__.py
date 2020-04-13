@@ -168,10 +168,6 @@ def process_special_kwargs(atoms, kwargs):
     return kwargs
 
 
-def is_orthorhombic(cell):
-    return (np.diag(np.diag(cell)) == cell).all()
-
-
 def get_input_units(kwargs):
     units = kwargs.get('unitsinput', kwargs.get('units', 'atomic')).lower()
     if units not in ['ev_angstrom', 'atomic']:
@@ -621,7 +617,7 @@ def atoms2kwargs(atoms, use_ase_cell):
         cell = atoms.cell / Bohr
         cell_offset = 0.5 * cell.sum(axis=0)
         positions -= cell_offset
-        if is_orthorhombic(cell):
+        if atoms.cell.orthorhombic:
             Lsize = 0.5 * np.diag(cell)
             kwargs['lsize'] = [[repr(size) for size in Lsize]]
             # ASE uses (0...cell) while Octopus uses -L/2...L/2.
