@@ -168,14 +168,6 @@ def process_special_kwargs(atoms, kwargs):
     return kwargs
 
 
-def get_input_units(kwargs):
-    units = kwargs.get('unitsinput', kwargs.get('units', 'atomic')).lower()
-    if units not in ['ev_angstrom', 'atomic']:
-        raise OctopusKeywordError('Units not supported by ASE-Octopus '
-                                  'interface: %s' % units)
-    return units
-
-
 class OctopusKeywordError(ValueError):
     pass  # Unhandled keywords
 
@@ -431,12 +423,6 @@ def kwargs2atoms(kwargs, directory=None):
     # Only input units accepted nowadays are 'atomic'.
     # But if we are loading an old file, and it specifies something else,
     # we can be sure that the user wanted that back then.
-    units = get_input_units(kwargs)
-    atomic_units = (units == 'atomic')
-    if atomic_units:
-        length_unit = Bohr
-    else:
-        length_unit = Angstrom
 
     coord_keywords = ['coordinates',
                       'xyzcoordinates',
@@ -528,8 +514,8 @@ def kwargs2atoms(kwargs, directory=None):
     xsfcoords = kwargs.pop('xsfcoordinates', None)
     if xsfcoords is not None:
         atoms = read_atoms_from_file(xsfcoords, 'xsf')
-        atoms.positions *= length_unit
-        atoms.cell *= length_unit
+        atoms.positions *= Bohr
+        atoms.cell *= Bohr
         # As it turns out, non-periodic xsf is not supported by octopus.
         # Also, it only supports fully periodic or fully non-periodic....
         # So the only thing that we can test here is 3D fully periodic.
@@ -543,7 +529,7 @@ def kwargs2atoms(kwargs, directory=None):
     xyzcoords = kwargs.pop('xyzcoordinates', None)
     if xyzcoords is not None:
         atoms = read_atoms_from_file(xyzcoords, 'xyz')
-        atoms.positions *= length_unit
+        atoms.positions *= Bohr
         adjust_positions_by_half_cell = True
     pdbcoords = kwargs.pop('pdbcoordinates', None)
     if pdbcoords is not None:
@@ -551,8 +537,8 @@ def kwargs2atoms(kwargs, directory=None):
         pbc = atoms.pbc
         adjust_positions_by_half_cell = True
         # Due to an error in ASE pdb, we can only test the nonperiodic case.
-        # atoms.cell *= length_unit # XXX cell?  Not in nonperiodic case...
-        atoms.positions *= length_unit
+        # atoms.cell *= Bohr # XXX cell?  Not in nonperiodic case...
+        atoms.positions *= Bohr
         if sum(atoms.pbc) != 0:
             raise NotImplementedError('Periodic pdb not supported by ASE.')
 
@@ -561,7 +547,7 @@ def kwargs2atoms(kwargs, directory=None):
         # Atoms now if possible:
         cell, kwargs = kwargs2cell(kwargs)
         if cell is not None:
-            cell *= length_unit
+            cell *= Bohr
         if cell is not None and atoms is not None:
             atoms.cell = cell
         # In case of boxshape = sphere and similar, we still do not have
@@ -574,7 +560,7 @@ def kwargs2atoms(kwargs, directory=None):
     coords = kwargs.get('coordinates')
     if coords is not None:
         numbers, pos, tags, info = get_positions_from_block('coordinates')
-        pos *= length_unit
+        pos *= Bohr
         adjust_positions_by_half_cell = True
         atoms = Atoms(cell=cell, numbers=numbers, positions=pos,
                       tags=tags, info=info)
