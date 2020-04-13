@@ -8,12 +8,17 @@ http://tddft.org/programs/octopus/
 
 import os
 import numpy as np
-from ase.io.octopus import (
-    OctopusIOError, process_special_kwargs, kwargs2atoms, read_static_info,
-    read_eigenvalues_file, generate_input, parse_input_file,
+from ase.io.octopus.input import (
+    process_special_kwargs, kwargs2atoms,
+    generate_input, parse_input_file,
     normalize_keywords)
+from ase.io.octopus.output import read_eigenvalues_file, read_static_info
 from ase.calculators.calculator import (
     FileIOCalculator, EigenvalOccupationMixin, PropertyNotImplementedError)
+
+
+class OctopusIOError(IOError):
+    pass
 
 
 class Octopus(FileIOCalculator, EigenvalOccupationMixin):
