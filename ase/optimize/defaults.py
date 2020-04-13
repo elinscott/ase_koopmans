@@ -1,3 +1,4 @@
+# type: ignore
 """Default parameters for optimizer class - currently just sets max step size"""
 import collections
 

@@ -1,3 +1,4 @@
+# type: ignore
 import re
 import sys
 from collections import namedtuple

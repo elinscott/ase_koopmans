@@ -1,3 +1,4 @@
+# type: ignore
 """Function-like objects creating lattices with more than one element.
 
 These lattice creators are mainly intended as examples for how to build you
@@ -10,7 +11,7 @@ own.  The following crystal structures are defined:
     L1_0 = AuCu
     TRI_Fe2O3
     HEX_Fe2O3
-    
+
 """
 from ase.lattice.cubic import DiamondFactory, SimpleCubicFactory
 from ase.lattice.tetragonal import SimpleTetragonalFactory
@@ -28,7 +29,7 @@ class NaClFactory(SimpleCubicFactory):
                      [0.5, 0, 0], [0.5, 0, 0.5], [0.5, 0.5, 0],
                      [0.5, 0.5, 0.5]]
     element_basis = (0, 1, 1, 0, 1, 0, 0, 1)
-    
+
 
 B1 = NaCl = Rocksalt = NaClFactory()
 
@@ -86,12 +87,12 @@ class TriclinicFe2O3Factory(TriclinicFactory):
      Example::
 
          #!/usr/bin/env python3
-    
+
          from ase.lattice.hexagonal import *
          from ase.lattice.compounds import *
          import ase.io as io
          from ase import Atoms, Atom
-    
+
          index1=3
          index2=3
          index3=3
@@ -153,7 +154,7 @@ class HexagonalFe2O3Factory(HexagonalFactory):
      'gamma':mygamma},
      size=(index1,index2,index3))
      io.write('hexaFe2O3.xyz', gra, format='xyz')
-     
+
      """
 
     bravais_basis = [[0.000000, 0.000000, 0.355300],
