@@ -180,36 +180,6 @@ class OctopusIOError(IOError):
     pass  # Cannot find output files
 
 
-def unpad(pbc, arr):
-    # Return non-padded array from padded array.
-    # This means removing the last element along all periodic directions.
-    if pbc[0]:
-        assert np.all(arr[0, :, :] == arr[-1, :, :])
-        arr = arr[0:-1, :, :]
-    if pbc[1]:
-        assert np.all(arr[:, 0, :] == arr[:, -1, :])
-        arr = arr[:, 0:-1, :]
-    if pbc[2]:
-        assert np.all(arr[:, :, 0] == arr[:, :, -1])
-        arr = arr[:, :, 0:-1]
-    return np.ascontiguousarray(arr)
-
-
-def unpad_smarter(pbc, arr):
-    # 'Smarter' but less easy to understand version of the above.
-    # (untested I think)
-    slices = []
-    for c, is_periodic in enumerate(pbc):
-        if is_periodic:
-            left = np.take(arr, [0], axis=c)
-            right = np.take(arr, [-1], axis=c)
-            assert np.all(left == right)
-            slices.append(slice(0, -1))
-        else:
-            slices.append(slice(None))
-    return np.ascontiguousarray(arr[slices])
-
-
 # Parse value as written in input file *or* something that one would be
 # passing to the ASE interface, i.e., this might already be a boolean
 def octbool2bool(value):
