@@ -1,36 +1,14 @@
-import os
-import tempfile
 from distutils.version import LooseVersion
 import numpy as np
 import pytest
 
 from ase import Atoms
 from ase.io import read
-
-
-tmpDir = tempfile.gettempdir()
-
+from ase.build import bulk
 
 pytestmark = pytest.mark.skipif(LooseVersion(np.__version__) <
                                 LooseVersion("1.14"),
                                 reason="This test requires numpy >= 1.14")
-
-
-def make_Si100_atoms():
-    # Reproduce the SI100.XYZ file distributed with prismatic
-    atoms = Atoms(symbols='Si' * 8,
-                  positions=[[0.0000, 0.0000, 0.0000],
-                             [2.7150, 2.7150, 0.0000],
-                             [1.3575, 4.0725, 1.3575],
-                             [4.0725, 1.3575, 1.3575],
-                             [2.7150, 0.0000, 2.7150],
-                             [0.0000, 2.7150, 2.7150],
-                             [1.3575, 1.3575, 4.0725],
-                             [4.0725, 4.0725, 4.0725]],
-                  cell=[5.43, 5.43, 5.43],
-                  pbc=True)
-
-    return atoms
 
 
 def make_STO_atoms():
@@ -49,11 +27,11 @@ def make_STO_atoms():
 def test_write_read_cycle_xyz_prismatic():
     """Check writing and reading a xtl mustem file."""
     # Reproduce the SI100.XYZ file distributed with prismatic
-    atoms = make_Si100_atoms()
+    atoms = bulk('Si', cubic=True)
     atoms.set_array('occupancy', np.ones_like(atoms.numbers))
     atoms.set_array('debye_waller_factors', np.ones_like(atoms.numbers) * 0.076)
 
-    filename = os.path.join(tmpDir, 'SI100.XYZ')
+    filename = 'SI100.XYZ'
     atoms.write(filename=filename, format='prismatic',
                 comments='one unit cell of 100 silicon')
 
@@ -69,9 +47,9 @@ def test_write_read_cycle_xyz_prismatic():
 
 def test_write_error():
     """Check missing parameter when writing xyz prismatic file."""
-    atoms_Si100 = make_Si100_atoms()
+    atoms_Si100 = bulk('Si', cubic=True)
     atoms_STO = make_STO_atoms()
-    filename = os.path.join(tmpDir, 'SI100.XYZ')
+    filename = 'SI100.XYZ'
 
     with pytest.raises(ValueError):
         # DW not provided
