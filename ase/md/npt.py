@@ -69,8 +69,8 @@ class NPT(MolecularDynamics):
     pfactor
         A constant in the barostat differential equation.  If
         a characteristic barostat timescale of ptime is
-        desired, set pfactor to ptime^2 * B (where ptime is in units matching 
-        eV, A, u; and B is the Bulk Modulus, given in eV/A^3).  
+        desired, set pfactor to ptime^2 * B (where ptime is in units matching
+        eV, A, u; and B is the Bulk Modulus, given in eV/A^3).
         Set to None to disable the barostat.
         Typical metallic bulk moduli are of the order of
         100 GPa or 0.6 eV/A^3.
@@ -500,7 +500,8 @@ class NPT(MolecularDynamics):
                 from ase.io.bundletrajectory import BundleTrajectory
                 trajectory = BundleTrajectory(trajectory)
             else:
-                raise ValueError("Cannot open '%': unsupported file format" % trajectory)
+                raise ValueError(
+                    f"Cannot open '{trajectory}': unsupported file format")
         # trajectory is now a BundleTrajectory object (or compatible)
         if atoms is None:
             atoms = trajectory[frame]

@@ -141,8 +141,9 @@ def resolve_custom_points(pathspec, special_points, eps):
         for kpt in segment:
             if isinstance(kpt, str):
                 if kpt not in special_points:
-                    raise KeyError('No kpoint "{}" among "{}"'.format(kpt),
-                                   ''.join(special_points))
+                    raise KeyError('No kpoint "{}" among "{}"'
+                                   .format(kpt,
+                                           ''.join(special_points)))
                 labelseq.append(kpt)
                 continue
 
@@ -582,12 +583,12 @@ def get_special_points(cell, lattice=None, eps=2e-4):
 def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
                                size, offset=(0, 0, 0), pad_width=2):
     """Interpolate values from Monkhorst-Pack sampling.
-    
+
     `monkhorst_pack_interpolate` takes a set of `values`, for example
     eigenvalues, that are resolved on a Monkhorst Pack k-point grid given by
     `size` and `offset` and interpolates the values onto the k-points
     in `path`.
-    
+
     Note
     ----
     For the interpolation to work, path has to lie inside the domain

@@ -3,7 +3,7 @@ import copy
 import subprocess
 from math import pi, sqrt
 import pathlib
-from typing import Union
+from typing import Union, Optional
 
 import numpy as np
 
@@ -866,7 +866,7 @@ class Calculator(object):
 class FileIOCalculator(Calculator):
     """Base class for calculators that write/read input/output files."""
 
-    command = None  # str
+    command: Optional[str] = None
     'Command used to start calculation'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,

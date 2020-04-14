@@ -40,7 +40,6 @@ pipinstall:
     - pip install scipy==1.2.1  # TODO: Delete me
     - pip install .
     - ase test --pytest --color=yes
-    - mypy -p ase
     - cd $CI_PROJECT_DIR
     - python -We:invalid -m compileall -f -q ase/
   when: manual
@@ -59,6 +58,7 @@ main:
     - ase info --calculators
     - cd $CI_PROJECT_DIR
     - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --coverage --pytest --color=yes --durations 20
+    - mypy -p ase
     - python -We:invalid -m compileall -f -q ase/
   coverage: '/TOTAL.+ ([0-9]+\.[0-9]+%)/'
   artifacts:
