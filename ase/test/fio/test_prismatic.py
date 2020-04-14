@@ -28,8 +28,10 @@ def test_write_read_cycle_xyz_prismatic():
     """Check writing and reading a xtl mustem file."""
     # Reproduce the SI100.XYZ file distributed with prismatic
     atoms = bulk('Si', cubic=True)
-    atoms.set_array('occupancy', np.ones_like(atoms.numbers))
-    atoms.set_array('debye_waller_factors', np.ones_like(atoms.numbers) * 0.076)
+    atoms.set_array('occupancy', np.ones(len(atoms)))
+    rng = np.random.RandomState(42)
+    atoms.set_array('debye_waller_factors', 0.076 + 0.01 * rng.rand(len(atoms)))
+
 
     filename = 'SI100.XYZ'
     atoms.write(filename=filename, format='prismatic',
@@ -42,7 +44,8 @@ def test_write_read_cycle_xyz_prismatic():
     np.testing.assert_allclose(atoms.get_array('occupancy'),
                                atoms_loaded.get_array('occupancy'))
     np.testing.assert_allclose(atoms.get_array('debye_waller_factors'),
-                               atoms_loaded.get_array('debye_waller_factors'))
+                               atoms_loaded.get_array('debye_waller_factors'),
+                               rtol=1E-6)
 
 
 def test_write_error():
