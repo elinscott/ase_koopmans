@@ -1169,6 +1169,48 @@ class VaspDos(object):
                 'dx2-': 18,
                 'dx2-down': 18
             }
+        elif n == 37:
+            # For non-collinear calculations. VASP reports totals for each
+            # orbital first then the net spin magnetic moment in the
+            # -x, -y, and -z directions
+            norb = {
+                's'    : 1,
+                's-x'  : 2,
+                's-y'  : 3,
+                's-z'  : 4,
+                'py'   : 5,
+                'py-x' : 6,
+                'py-y' : 7,
+                'py-z' : 8,
+                'pz'   : 9,
+                'pz-x' : 10,
+                'pz-y' : 11,
+                'pz-z' : 12,
+                'px'   : 13,
+                'px-x' : 14,
+                'px-y' : 15,
+                'px-z' : 16,
+                'dxy'  : 17,
+                'dxy-x': 18,
+                'dxy-y': 19,
+                'dxy-z': 20,
+                'dyz'  : 21,
+                'dyz-x': 22,
+                'dyz-y': 23,
+                'dyz-z': 24,
+                'dz2'  : 25,
+                'dz2-x': 26,
+                'dz2-y': 27,
+                'dz2-z': 28,
+                'dxz'  : 29,
+                'dxz-x': 30,
+                'dxz-y': 31,
+                'dxz-z': 32,
+                'dx2'  : 33,
+                'dx2-x': 34,
+                'dx2-y': 35,
+                'dx2-z': 36,
+            }
         else:
             norb = {
                 's+': 1,
