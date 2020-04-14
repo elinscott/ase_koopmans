@@ -14,7 +14,7 @@ omit =
     ../utils/sphinx.py
     ../utils/newrelease.py
     ../utils/build_web_page.py
-    ../visualize/primiplotter.py  # Deprecated
+    ../visualize/primiplotter.py
 
 [html]
 directory = coverage-html
