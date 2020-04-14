@@ -13,6 +13,7 @@ from math import pi
 
 import numpy as np
 
+from ase.utils import warn_legacy
 from ase.visualize.colortable import color_table
 import ase.data
 
@@ -343,8 +344,9 @@ class PrimiPlotter(PrimiPlotterBase):
 
         initframe = 0: Initial frame number, i.e. the number of the
         first plot.
-        
+
         """
+        warn_legacy('PrimiPlotter')
         self.atoms = atoms
         self.outputdevice = []
         self.angles = np.zeros(3, float)
@@ -366,7 +368,7 @@ class PrimiPlotter(PrimiPlotterBase):
         self.isparallel = 0
         self.logfile = None
         self.ownlogfile = False
-        
+
     def set_output(self, device):
         "Attach an output device to the plotter."
         self.outputdevice.append(device)
@@ -537,6 +539,7 @@ class ParallelPrimiPlotter(PrimiPlotter):
     PrimiPlotter docstring for details.
     """
     def __init__(self, *args, **kwargs):
+        warn_legacy('PrimiPlotter')
         PrimiPlotter.__init__(self, *args, **kwargs)
         self.isparallel = 1
         import ase.parallel
