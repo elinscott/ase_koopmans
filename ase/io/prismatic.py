@@ -28,7 +28,7 @@ def read_prismatic(fd):
 
     Reads cell, atom positions, occupancy and Debye Waller factor.
     The occupancy and the Debye Waller factors are obtained using the
-    `get_array` method and the `occupancy` and `debye_waller_factor` keys,
+    `get_array` method and the `occupancy` and `debye_waller_factors` keys,
     respectively.
     """
     _check_numpy_version()
@@ -50,7 +50,7 @@ def read_prismatic(fd):
                   cell=cellpar,
                   )
     atoms.set_array('occupancy', read_data[:, 4])
-    atoms.set_array('debye_waller_factor', read_data[:, 5])
+    atoms.set_array('debye_waller_factors', read_data[:, 5])
 
     return atoms
 
@@ -59,7 +59,7 @@ class XYZPrismaticWriter:
     """ See the docstring of the `write_prismatic` function.
     """
 
-    def __init__(self, atoms, DW=None, comments=None):
+    def __init__(self, atoms, debye_waller_factors=None, comments=None):
         cell = atoms.get_cell()
         if not cell.orthorhombic:
             raise ValueError('To export to this format, the cell needs to be '
@@ -72,7 +72,8 @@ class XYZPrismaticWriter:
         self.comments = comments
 
         self.occupancy = self._get_occupancy()
-        self.DW = self._get_DW(DW)
+        self.debye_waller_factors = self._get_debye_waller_factors(
+            debye_waller_factors)
 
     def _get_occupancy(self):
         if 'occupancy' in self.atoms.arrays:
@@ -82,7 +83,7 @@ class XYZPrismaticWriter:
 
         return occupancy
 
-    def _get_DW(self, DW):
+    def _get_debye_waller_factors(self, DW):
         if np.isscalar(DW):
             if len(self.atom_types) > 1:
                 raise ValueError('This cell contains more then one type of '
@@ -96,7 +97,7 @@ class XYZPrismaticWriter:
             DW = {symbols2numbers(k)[0]: v for k, v in DW.items()}
             DW = np.vectorize(DW.get)(self.atoms.numbers)
         else:
-            for name in ['DW', 'debye_waller_factor']:
+            for name in ['DW', 'debye_waller_factors']:
                 if name in self.atoms.arrays:
                     DW = self.atoms.get_array(name)
 
@@ -104,7 +105,7 @@ class XYZPrismaticWriter:
             raise ValueError('Missing Debye-Waller factors. It can be '
                              'provided as a dictionary with symbols as key or '
                              'can be set for each atom by using the '
-                             '`set_array("debye_waller_factor", values)` of '
+                             '`set_array("debye_waller_factors", values)` of '
                              'the `Atoms` object.')
 
         return DW
@@ -137,7 +138,7 @@ class XYZPrismaticWriter:
         data_array = np.vstack((self.atoms.numbers,
                                 self.atoms.positions.T,
                                 self.occupancy,
-                                self.DW)
+                                self.debye_waller_factors)
                                ).T
 
         np.savetxt(fname=f,
@@ -153,7 +154,7 @@ class XYZPrismaticWriter:
 def write_prismatic(fd, *args, **kwargs):
     """Write xyz input file for the prismatic and computem software. The cell
     needs to be orthorhombric. If the cell contains the `occupancy` and
-    `debye_waller_factor` arrays (see the `set_array` method to set them),
+    `debye_waller_factors` arrays (see the `set_array` method to set them),
     these array will be written to the file.
     If the occupancy is not specified, the default value will be set to 0.
 
@@ -161,11 +162,11 @@ def write_prismatic(fd, *args, **kwargs):
 
     atoms: Atoms object
 
-    DW: float or dictionary of float or None (optional).
+    debye_waller_factors: float or dictionary of float or None (optional).
         If float, set this value to all
         atoms. If dictionary, each atom needs to specified with the symbol as
         key and the corresponding Debye-Waller factor as value.
-        If None, the `debye_waller_factor` array of the Atoms object needs to
+        If None, the `debye_waller_factors` array of the Atoms object needs to
         be set (see the `set_array` method to set them), otherwise raise a
         ValueError. Default is None.
 

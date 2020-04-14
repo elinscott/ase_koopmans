@@ -58,8 +58,8 @@ class XtlmuSTEMWriter:
     """See the docstring of the `write_mustem` function.
     """
 
-    def __init__(self, atoms, keV, DW=None, comment=None, occupancy=1.0,
-                 fit_cell_to_atoms=False):
+    def __init__(self, atoms, keV, debye_waller_factors=None,
+                 comment=None, occupancy=1.0, fit_cell_to_atoms=False):
         cell = atoms.get_cell()
         if not cell.orthorhombic:
             raise ValueError('To export to this format, the cell needs to be '
@@ -72,7 +72,8 @@ class XtlmuSTEMWriter:
         self.keV = keV
         self.comment = comment
         self.occupancy = self._get_occupancy(occupancy)
-        self.DW = self._get_DW(DW)
+        self.debye_waller_factors = self._get_debye_waller_factors(
+            debye_waller_factors)
 
         self.numbers = symbols2numbers(self.atom_types)
         if fit_cell_to_atoms:
@@ -87,7 +88,7 @@ class XtlmuSTEMWriter:
 
         return occupancy
 
-    def _get_DW(self, DW):
+    def _get_debye_waller_factors(self, DW):
         if np.isscalar(DW):
             if len(self.atom_types) > 1:
                 raise ValueError('This cell contains more then one type of '
@@ -96,7 +97,7 @@ class XtlmuSTEMWriter:
                                  'dictionary.')
             DW = {self.atom_types[0]: DW}
         elif isinstance(DW, dict):
-            self._check_key_dictionary(DW, 'DW')
+            self._check_key_dictionary(DW, 'debye_waller_factors')
 
         if DW is None:
             raise ValueError('Missing Debye-Waller factors. It can be '
@@ -137,9 +138,10 @@ class XtlmuSTEMWriter:
         return s
 
     def _get_element_header(self, atom_type, number, atom_type_number,
-                            occupancy, DW):
+                            occupancy, debye_waller_factors):
         return "{0}\n{1} {2} {3} {4}\n".format(atom_type, number,
-                                               atom_type_number, occupancy, DW)
+                                               atom_type_number, occupancy,
+                                               debye_waller_factors)
 
     def _get_file_end(self):
         return "Orientation\n   1 0 0\n   0 1 0\n   0 0 1\n"
@@ -155,8 +157,9 @@ class XtlmuSTEMWriter:
             positions = self._get_position_array_single_atom_type(number)
             atom_type_number = positions.shape[0]
             f.write(self._get_element_header(atom_type, atom_type_number,
-                                             number, self.occupancy[atom_type],
-                                             self.DW[atom_type]))
+                                             number,
+                                             self.occupancy[atom_type],
+                                             self.debye_waller_factors[atom_type]))
             for pos in positions:
                 f.write('{0} {1} {2}\n'.format(pos[0], pos[1], pos[2]))
 
@@ -173,7 +176,7 @@ def write_mustem(filename, *args, **kwargs):
     keV: float
         Energy of the electron beam in keV required for the image simulation.
 
-    DW: float or dictionary of float with atom type as key
+    debye_waller_factors: float or dictionary of float with atom type as key
         Debye-Waller factor of each atoms.
 
     occupancy: float or dictionary of float with atom type as key (optional)

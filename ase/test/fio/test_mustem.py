@@ -18,6 +18,8 @@ def test_mustem():
                   pbc=True)
 
     filename = 'sto_mustem.xtl'
+    STO_DW_dict = {'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02}
+    STO_DW_dict_Ti_missing = {key:STO_DW_dict[key] for key in ['Sr', 'O']}
 
     with pytest.raises(TypeError):
         atoms.write(filename)
@@ -27,10 +29,10 @@ def test_mustem():
 
     with pytest.raises(TypeError):
         atoms.write(filename,
-                    DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02})
+                    debye_waller_factors=STO_DW_dict)
 
     atoms.write(filename, keV=300,
-                DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02})
+                debye_waller_factors=STO_DW_dict)
 
     atoms2 = read(filename, format='mustem')
     atoms3 = read(filename)
@@ -42,16 +44,17 @@ def test_mustem():
 
     with pytest.raises(ValueError):
         # Raise an error if there is a missing key.
-        atoms.write(filename, keV=300, DW={'Sr': 0.78700E-02, 'O': 0.92750E-02})
+        atoms.write(filename, keV=300,
+                    debye_waller_factors=STO_DW_dict_Ti_missing)
 
     atoms.write(filename, keV=300,
-                DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02},
+                debye_waller_factors=STO_DW_dict,
                 occupancy={'Sr': 1.0, 'O': 0.5, 'Ti': 0.9})
 
     with pytest.raises(ValueError):
         # Raise an error if there is a missing key.
         atoms.write(filename, keV=300,
-                    DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02},
+                    debye_waller_factors=STO_DW_dict,
                     occupancy={'O': 0.5, 'Ti': 0.9})
 
     with pytest.raises(ValueError):
@@ -63,7 +66,7 @@ def test_mustem():
                                   [0.5, 0, 0.5],
                                   [0, 0.5, 0.5]])
         atoms4.write(filename, keV=300,
-                     DW={'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02})
+                     debye_waller_factors=STO_DW_dict)
 
     # Setting Debye-Waller factor as float.
     Si_atoms = Atoms(symbols='Si' * 8,
@@ -79,7 +82,7 @@ def test_mustem():
                      pbc=True)
 
     filename = 'Si100.xtl'
-    Si_atoms.write(filename, keV=300, DW=0.78700E-02)
+    Si_atoms.write(filename, keV=300, debye_waller_factors=0.78700E-02)
     Si_atoms2 = read(filename)
 
     np.testing.assert_allclose(Si_atoms.positions.sum(),
