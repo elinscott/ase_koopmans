@@ -14,6 +14,7 @@ omit =
     ../utils/sphinx.py
     ../utils/newrelease.py
     ../utils/build_web_page.py
+    ../visualize/fieldplotter.py
     ../visualize/primiplotter.py
 
 [html]
