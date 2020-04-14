@@ -334,7 +334,7 @@ F('proteindatabank', 'Protein Data Bank', '+F',
 F('png', 'Portable Network Graphics', '1B'),
 F('postgresql', 'ASE PostgreSQL database file', '+S', module='db'),
 F('pov', 'Persistance of Vision', '1S'),
-F('prismatic', 'prismatic and computen XYZ-file', '1F', ext='xyz')
+F('prismatic', 'prismatic and computem XYZ-file', '1F', ext='xyz')
 F('py', 'Python file', '+F'),
 F('qbox', 'QBOX output file', '+F',
   magic=b'*:simulation xmlns:'),

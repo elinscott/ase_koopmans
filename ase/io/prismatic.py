@@ -21,6 +21,7 @@ def _check_numpy_version():
     if LooseVersion(np.__version__) < LooseVersion("1.14"):
         raise NotImplementedError("Writing this format needs numpy >= 1.14.")
 
+
 @reader
 def read_prismatic(fd):
     """Import prismatic and computem xyz input file as an Atoms object.
@@ -38,7 +39,7 @@ def read_prismatic(fd):
     fd.readline()
 
     # Read unit cell parameters:
-    cellpar = [float(i) for i in fd.readline().strip().split()]
+    cellpar = [float(i) for i in fd.readline().split()]
 
     # Read all data at once
     # Use genfromtxt instead of loadtxt to skip last line
@@ -46,7 +47,7 @@ def read_prismatic(fd):
 
     atoms = Atoms(symbols=read_data[:, 0],
                   positions=read_data[:, 1:4],
-                  cell=cellpar_to_cell(cellpar),
+                  cell=cellpar,
                   )
     atoms.set_array('occupancy', read_data[:, 4])
     atoms.set_array('debye_waller_factor', read_data[:, 5])
@@ -63,11 +64,11 @@ class XYZPrismaticWriter:
         if not cell.orthorhombic:
             raise ValueError('To export to this format, the cell needs to be '
                              'orthorhombic.')
-        if (cell.diagonal() == 0).any():
+        if cell.rank < 3:
             raise ValueError('To export to this format, the cell size needs '
                              'to be set: current cell is {}.'.format(cell))
         self.atoms = atoms.copy()
-        self.atom_types = set(atoms.get_chemical_symbols())
+        self.atom_types = set(atoms.symbols)
         self.comments = comments
 
         self.occupancy = self._get_occupancy()

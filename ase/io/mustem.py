@@ -26,7 +26,7 @@ def read_mustem(fd):
     fd.readline()
 
     # Parse unit cell parameter
-    cellpar = [float(i) for i in fd.readline().strip().split()[:3]]
+    cellpar = [float(i) for i in fd.readline().split()[:3]]
     cell = cellpar_to_cell(cellpar)
 
     # beam energy
@@ -45,7 +45,7 @@ def read_mustem(fd):
         # read all the position for each element
         for j in range(atoms_number):
             line = fd.readline()
-            positions.append([float(i) for i in line.strip().split()])
+            positions.append([float(i) for i in line.split()])
             symbols.append(symbol)
 
     atoms = Atoms(cell=cell, scaled_positions=positions)
@@ -64,11 +64,11 @@ class XtlmuSTEMWriter:
         if not cell.orthorhombic:
             raise ValueError('To export to this format, the cell needs to be '
                              'orthorhombic.')
-        if (cell.diagonal() == 0).any():
+        if cell.rank < 3:
             raise ValueError('To export to this format, the cell size needs '
                              'to be set: current cell is {}.'.format(cell))
         self.atoms = atoms.copy()
-        self.atom_types = list(set(atoms.get_chemical_symbols()))
+        self.atom_types = list(set(atoms.symbols))
         self.keV = keV
         self.comment = comment
         self.occupancy = self._get_occupancy(occupancy)
