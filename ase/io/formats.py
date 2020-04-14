@@ -334,6 +334,8 @@ F('proteindatabank', 'Protein Data Bank', '+F',
 F('png', 'Portable Network Graphics', '1B'),
 F('postgresql', 'ASE PostgreSQL database file', '+S', module='db'),
 F('pov', 'Persistance of Vision', '1S'),
+# prismatic: Should have ext='xyz' if/when multiple formats can have the same
+# extension
 F('prismatic', 'prismatic and computem XYZ-file', '1F')
 F('py', 'Python file', '+F'),
 F('qbox', 'QBOX output file', '+F',
