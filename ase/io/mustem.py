@@ -9,9 +9,11 @@ See https://github.com/HamishGBrown/MuSTEM for the source code of muSTEM.
 import numpy as np
 
 from ase.atoms import symbols2numbers
+from ase.utils import reader
 
 
-def read_mustem(filename):
+@reader
+def read_mustem(fd):
     """Import muSTEM input file.
 
     Reads cell, atom positions, etc. from muSTEM xtl file
@@ -20,38 +22,31 @@ def read_mustem(filename):
     from ase import Atoms
     from ase.geometry import cellpar_to_cell
 
-    if isinstance(filename, str):
-        f = open(filename)
-    else:  # Assume it's a file-like object
-        f = filename
-
     # Read comment:
-    f.readline()
+    fd.readline()
 
     # Parse unit cell parameter
-    cellpar = [float(i) for i in f.readline().strip().split()[:3]]
+    cellpar = [float(i) for i in fd.readline().strip().split()[:3]]
     cell = cellpar_to_cell(cellpar)
 
     # beam energy
-    f.readline()
+    fd.readline()
 
     # Number of different type of atoms
-    element_number = int(f.readline().strip())
+    element_number = int(fd.readline().strip())
 
     symbols = []
     positions = []
 
     for i in range(element_number):
         # Read the element
-        symbol = str(f.readline().strip())
-        atoms_number = int(f.readline().split()[0])
+        symbol = str(fd.readline().strip())
+        atoms_number = int(fd.readline().split()[0])
         # read all the position for each element
         for j in range(atoms_number):
-            line = f.readline()
+            line = fd.readline()
             positions.append([float(i) for i in line.strip().split()])
             symbols.append(symbol)
-
-    f.close()
 
     atoms = Atoms(cell=cell, scaled_positions=positions)
     atoms.set_chemical_symbols(symbols)

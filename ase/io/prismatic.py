@@ -11,6 +11,7 @@ computem software.
 import numpy as np
 
 from ase.atoms import symbols2numbers
+from ase.utils import reader
 
 
 def _check_numpy_version():
@@ -20,8 +21,8 @@ def _check_numpy_version():
     if LooseVersion(np.__version__) < LooseVersion("1.14"):
         raise NotImplementedError("Writing this format needs numpy >= 1.14.")
 
-
-def read_prismatic(filename):
+@reader
+def read_prismatic(fd):
     """Import prismatic and computem xyz input file as an Atoms object.
 
     Reads cell, atom positions, occupancy and Debye Waller factor.
@@ -32,22 +33,16 @@ def read_prismatic(filename):
     _check_numpy_version()
 
     from ase import Atoms
-    from ase.geometry import cellpar_to_cell
-
-    if isinstance(filename, str):
-        f = open(filename)
-    else:  # Assume it's a file-like object
-        f = filename
 
     # Read comment:
-    f.readline()
+    fd.readline()
 
     # Read unit cell parameters:
-    cellpar = [float(i) for i in f.readline().strip().split()]
+    cellpar = [float(i) for i in fd.readline().strip().split()]
 
     # Read all data at once
     # Use genfromtxt instead of loadtxt to skip last line
-    read_data = np.genfromtxt(fname=filename, skip_footer=1)
+    read_data = np.genfromtxt(fname=fd, skip_footer=1)
 
     atoms = Atoms(symbols=read_data[:, 0],
                   positions=read_data[:, 1:4],
@@ -154,7 +149,7 @@ class XYZPrismaticWriter:
                    )
 
 
-def write_prismatic(filename, *args, **kwargs):
+def write_prismatic(fd, *args, **kwargs):
     """Write xyz input file for the prismatic and computem software. The cell
     needs to be orthorhombric. If the cell contains the `occupancy` and
     `debye_waller_factor` arrays (see the `set_array` method to set them),
@@ -182,4 +177,4 @@ def write_prismatic(filename, *args, **kwargs):
     _check_numpy_version()
 
     writer = XYZPrismaticWriter(*args, **kwargs)
-    writer.write_to_file(filename)
+    writer.write_to_file(fd)
