@@ -3,7 +3,7 @@ import copy
 import subprocess
 from math import pi, sqrt
 import pathlib
-from typing import Union, Optional
+from typing import Union, Optional, List, Set, Dict, Any
 
 import numpy as np
 
@@ -108,8 +108,8 @@ def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
         # Finally, check all of the non-excluded properties shared by the atoms
         # arrays
         for prop in properties_to_check & arrays1 & arrays2:
-                if not equal(atoms1.arrays[prop], atoms2.arrays[prop], tol):
-                    system_changes.append(prop)
+            if not equal(atoms1.arrays[prop], atoms2.arrays[prop], tol):
+                system_changes.append(prop)
 
     return system_changes
 
@@ -306,6 +306,7 @@ def kpts2sizeandoffsets(size=None, density=None, gamma=None, even=None,
 
     return size, offsets
 
+
 @jsonable('kpoints')
 class KPoints:
     def __init__(self, kpts=None):
@@ -437,13 +438,13 @@ class Calculator(object):
     'magmom' and 'magmoms'.
     """
 
-    implemented_properties = []
+    implemented_properties: List[str] = []
     'Properties calculator can handle (energy, forces, ...)'
 
-    default_parameters = {}
+    default_parameters: Dict[str, Any] = {}
     'Default parameters'
 
-    ignored_changes = set()
+    ignored_changes: Set[str] = set()
     'Properties of Atoms which we ignore for the purposes of cache '
     'invalidation with check_state().'
 

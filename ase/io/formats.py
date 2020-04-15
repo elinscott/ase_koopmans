@@ -42,7 +42,7 @@ class IOFormat:
         self.encoding = encoding
 
         # (To be set by define_io_format())
-        self.extensions = []
+        self.extensions: List[str] = []
         self.globs = []
         self.magic = []
 

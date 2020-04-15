@@ -1,3 +1,4 @@
+# type: ignore
 """Function-like objects creating cubic lattices (SC, FCC, BCC and Diamond).
 
 The following lattice creators are defined:
