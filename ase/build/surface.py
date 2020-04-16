@@ -13,7 +13,7 @@ import numpy as np
 from ase.atom import Atom
 from ase.atoms import Atoms
 from ase.data import reference_states, atomic_numbers
-from ase.lattice.cubic import FaceCenteredCubic  # type: ignore
+from ase.lattice.cubic import FaceCenteredCubic
 
 
 def fcc100(symbol, size, a=None, vacuum=None, orthogonal=True,
