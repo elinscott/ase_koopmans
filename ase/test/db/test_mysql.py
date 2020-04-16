@@ -1,3 +1,4 @@
+from typing import Optional
 from ase.test import must_raise
 import unittest
 try:
@@ -14,6 +15,8 @@ from ase.build import molecule
 import os
 
 ON_CI_SERVER = 'CI_PROJECT_DIR' in os.environ.keys()
+
+URL: Optional[str]
 
 if ON_CI_SERVER:
     URL = 'mysql://root:ase@mysql:3306/testase_mysql'

@@ -3,7 +3,7 @@ import copy
 import subprocess
 from math import pi, sqrt
 import pathlib
-from typing import Union
+from typing import Union, Optional, List, Set, Dict, Any
 
 import numpy as np
 
@@ -439,13 +439,13 @@ class Calculator(object):
     'magmom' and 'magmoms'.
     """
 
-    implemented_properties = []
+    implemented_properties: List[str] = []
     'Properties calculator can handle (energy, forces, ...)'
 
-    default_parameters = {}
+    default_parameters: Dict[str, Any] = {}
     'Default parameters'
 
-    ignored_changes = set()
+    ignored_changes: Set[str] = set()
     'Properties of Atoms which we ignore for the purposes of cache '
     'invalidation with check_state().'
 
@@ -867,7 +867,7 @@ class Calculator(object):
 class FileIOCalculator(Calculator):
     """Base class for calculators that write/read input/output files."""
 
-    command = None  # str
+    command: Optional[str] = None
     'Command used to start calculation'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
