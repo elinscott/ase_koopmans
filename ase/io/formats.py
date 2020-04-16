@@ -376,7 +376,7 @@ netcdfconventions2format = {
 }
 
 
-def get_compression(filename: str) -> Tuple[str, str]:
+def get_compression(filename: str) -> Tuple[str, Optional[str]]:
     """
     Parse any expected file compression from the extension of a filename.
     Return the filename without the extension, and the extension. Recognises
@@ -518,13 +518,13 @@ def write(
         fd = None
         if filename == '-':
             fd = sys.stdout
-            filename = None
+            filename = None  # type: ignore
         elif format is None:
             format = filetype(filename, read=False)
             assert isinstance(format, str)
     else:
-        fd = filename
-        filename = None
+        fd = filename  # type: ignore
+        filename = None  # type: ignore
 
     format = format or 'json'  # default is json
 
@@ -809,7 +809,7 @@ def filetype(
 
         fd = open_with_compression(filename, 'rb')
     else:
-        fd = filename
+        fd = filename    # type: ignore
         if fd is sys.stdin:
             return 'json'
 
@@ -820,7 +820,7 @@ def filetype(
         fd.seek(0)
 
     if len(data) == 0:
-        raise UnknownFileTypeError('Empty file: ' + filename)
+        raise UnknownFileTypeError('Empty file: ' + filename)    # type: ignore
 
     if data.startswith(b'CDF'):
         # We can only recognize these if we actually have the netCDF4 module.

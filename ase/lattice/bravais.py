@@ -41,7 +41,7 @@ class Bravais:
     # could be (0,0,1,0) - the third atom in the basis is different
     # from the other three.  Leave as None if all atoms are of the
     # same type.
-    element_basis = None
+    element_basis: Optional[Sequence[int]] = None
 
     # How small numbers should be considered zero in the unit cell?
     chop_tolerance = 1e-10

@@ -244,8 +244,8 @@ class Aims(FileIOCalculator):
         self.tier = tier
 
     # handling the filtering for dynamical commands with properties,
-    @property
-    def command(self):
+    @property  # type: ignore
+    def command(self) -> Optional[str]:  # type: ignore
         return self.__command
 
     @command.setter
