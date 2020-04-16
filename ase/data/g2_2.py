@@ -1776,7 +1776,8 @@ data = {
 # all constituent atoms
 atoms_g22 = []
 for f in data.keys():
-    s = Atoms(symbols=data[f]['symbols'], positions=data[f]['positions'])
+    s = Atoms(symbols=data[f]['symbols'],  # type: ignore
+              positions=data[f]['positions'])  # type: ignore
     for a in s:
         atoms_g22.append(a.symbol)
 # unique atoms

@@ -3,13 +3,14 @@ import copy
 import subprocess
 from math import pi, sqrt
 import pathlib
-from typing import Union
+from typing import Union, Optional, List, Set, Dict, Any
 
 import numpy as np
 
-from ase.utils import jsonable
-from ase.dft.kpoints import monkhorst_pack
 from ase.cell import Cell
+from ase.dft.kpoints import monkhorst_pack
+from ase.outputs import Properties, all_outputs
+from ase.utils import jsonable
 
 
 class CalculatorError(RuntimeError):
@@ -91,7 +92,8 @@ def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
         for prop in ['cell', 'pbc']:
             if prop in properties_to_check:
                 properties_to_check.remove(prop)
-                if not equal(getattr(atoms1, prop), getattr(atoms2, prop), tol):
+                if not equal(getattr(atoms1, prop), getattr(atoms2, prop),
+                             tol):
                     system_changes.append(prop)
 
         arrays1 = set(atoms1.arrays)
@@ -105,10 +107,10 @@ def compare_atoms(atoms1, atoms2, tol=1e-15, excluded_properties=None):
         system_changes += properties_to_check & (arrays1 ^ arrays2)
 
         # Finally, check all of the non-excluded properties shared by the atoms
-        # arrays
+        # arrays.
         for prop in properties_to_check & arrays1 & arrays2:
-                if not equal(atoms1.arrays[prop], atoms2.arrays[prop], tol):
-                    system_changes.append(prop)
+            if not equal(atoms1.arrays[prop], atoms2.arrays[prop], tol):
+                system_changes.append(prop)
 
     return system_changes
 
@@ -123,9 +125,9 @@ all_changes = ['positions', 'numbers', 'cell', 'pbc',
 
 # Recognized names of calculators sorted alphabetically:
 names = ['abinit', 'ace', 'aims', 'amber', 'asap', 'castep', 'cp2k',
-         'crystal', 'demon', 'demonnano', 'dftb', 'dftd3', 'dmol', 'eam', 'elk',
-         'emt', 'espresso', 'exciting', 'ff', 'fleur', 'gamess_us', 'gaussian',
-         'gpaw', 'gromacs', 'gulp', 'hotbit', 'kim',
+         'crystal', 'demon', 'demonnano', 'dftb', 'dftd3', 'dmol', 'eam',
+         'elk', 'emt', 'espresso', 'exciting', 'ff', 'fleur', 'gamess_us',
+         'gaussian', 'gpaw', 'gromacs', 'gulp', 'hotbit', 'kim',
          'lammpslib', 'lammpsrun', 'lj', 'mopac', 'morse', 'nwchem',
          'octopus', 'onetep', 'openmx', 'orca', 'psi4', 'qchem', 'siesta',
          'tip3p', 'tip4p', 'turbomole', 'vasp']
@@ -305,6 +307,7 @@ def kpts2sizeandoffsets(size=None, density=None, gamma=None, even=None,
 
     return size, offsets
 
+
 @jsonable('kpoints')
 class KPoints:
     def __init__(self, kpts=None):
@@ -436,13 +439,13 @@ class Calculator(object):
     'magmom' and 'magmoms'.
     """
 
-    implemented_properties = []
+    implemented_properties: List[str] = []
     'Properties calculator can handle (energy, forces, ...)'
 
-    default_parameters = {}
+    default_parameters: Dict[str, Any] = {}
     'Default parameters'
 
-    ignored_changes = set()
+    ignored_changes: Set[str] = set()
     'Properties of Atoms which we ignore for the purposes of cache '
     'invalidation with check_state().'
 
@@ -521,8 +524,7 @@ class Calculator(object):
 
     @directory.setter
     def directory(self, directory: Union[str, pathlib.PurePath]):
-        # Normalize path
-        self._directory = str(pathlib.Path(directory))
+        self._directory = str(pathlib.Path(directory))  # Normalize path.
 
     @property
     def label(self):
@@ -566,10 +568,7 @@ class Calculator(object):
         * label='abc': (directory='.', prefix='abc')
         * label='dir1/abc': (directory='dir1', prefix='abc')
         * label=None: (directory='.', prefix=None)
-
-        Calculators that must write results to files with fixed names
-        can override this method so that the directory is set to all
-        of label."""
+        """
         self.label = label
 
     def get_default_parameters(self):
@@ -773,11 +772,14 @@ class Calculator(object):
                             'magmoms': np.zeros(len(atoms))}
 
         The subclass implementation should first call this
-        implementation to set the atoms attribute.
+        implementation to set the atoms attribute and create any missing
+        directories.
         """
 
         if atoms is not None:
             self.atoms = atoms.copy()
+        if not os.path.isdir(self._directory):
+            os.makedirs(self._directory)
 
     def calculate_numerical_forces(self, atoms, d=0.001):
         """Calculate numerical forces using finite difference.
@@ -842,11 +844,30 @@ class Calculator(object):
         # from the selfconsistent calculation.
         return get_band_structure(calc=self)
 
+    def calculate_properties(self, atoms, properties):
+        """This method is experimental; currently for internal use."""
+        for name in properties:
+            if name not in all_outputs:
+                raise ValueError(f'No such property: {name}')
+
+        # We ignore system changes for now.
+        self.calculate(atoms, properties, system_changes=all_changes)
+
+        props = self.export_properties()
+
+        for name in properties:
+            if name not in props:
+                raise PropertyNotPresent(name)
+        return props
+
+    def export_properties(self):
+        return Properties(self.results)
+
 
 class FileIOCalculator(Calculator):
     """Base class for calculators that write/read input/output files."""
 
-    command = None  # str
+    command: Optional[str] = None
     'Command used to start calculation'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,

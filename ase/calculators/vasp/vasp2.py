@@ -27,19 +27,18 @@ import numpy as np
 import subprocess
 from contextlib import contextmanager
 from warnings import warn
+from typing import Dict, Any
 
 import ase
 from ase.io import read, jsonio
 from ase.utils import PurePath
-
 from ase.calculators.calculator import (Calculator, ReadError,
                                         all_changes, CalculatorSetupError,
                                         CalculationFailed)
-
 from ase.calculators.vasp.create_input import GenerateVaspInput
 
 
-class Vasp2(GenerateVaspInput, Calculator):
+class Vasp2(GenerateVaspInput, Calculator):  # type: ignore
     """ASE interface for the Vienna Ab initio Simulation Package (VASP),
     with the Calculator interface.
 
@@ -75,8 +74,8 @@ class Vasp2(GenerateVaspInput, Calculator):
 
                 - Examples:
 
-                    >>> Vasp2(label='mylabel', txt='vasp.out') # Redirect stdout to :file:`vasp.out`
-                    >>> Vasp2(txt='myfile.txt') # Redirect stdout to :file:`myfile.txt`
+                    >>> Vasp2(label='mylabel', txt='vasp.out') # Redirect stdout
+                    >>> Vasp2(txt='myfile.txt') # Redirect stdout
                     >>> Vasp2(txt='-') # Print vasp output to stdout
                     >>> Vasp2(txt=None)  # Suppress txt output
 
@@ -93,7 +92,8 @@ class Vasp2(GenerateVaspInput, Calculator):
     implemented_properties = ['energy', 'free_energy', 'forces', 'dipole',
                               'fermi', 'stress', 'magmom', 'magmoms']
 
-    default_parameters = {}     # Can be used later to set some ASE defaults
+    # Can be used later to set some ASE defaults
+    default_parameters: Dict[str, Any] = {}
 
     def __init__(self,
                  atoms=None,
@@ -158,12 +158,12 @@ class Vasp2(GenerateVaspInput, Calculator):
             # Search for the environment commands
             for env in self.env_commands:
                 if env in os.environ:
-                        cmd = os.environ[env].replace('PREFIX', self.prefix)
-                        if env == 'VASP_SCRIPT':
-                            # Make the system python exe run $VASP_SCRIPT
-                            exe = sys.executable
-                            cmd = ' '.join([exe, cmd])
-                        break
+                    cmd = os.environ[env].replace('PREFIX', self.prefix)
+                    if env == 'VASP_SCRIPT':
+                        # Make the system python exe run $VASP_SCRIPT
+                        exe = sys.executable
+                        cmd = ' '.join([exe, cmd])
+                    break
             else:
                 msg = ('Please set either command in calculator'
                        ' or one of the following environment '

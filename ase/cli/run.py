@@ -1,5 +1,5 @@
 import sys
-
+from typing import Dict, Any
 import numpy as np
 
 from ase.calculators.calculator import (get_calculator_class,
@@ -208,7 +208,7 @@ class Runner:
         return name
 
 
-def str2dict(s: str, namespace={}, sep: str = '='):
+def str2dict(s: str, namespace={}, sep: str = '=') -> Dict[str, Any]:
     """Convert comma-separated key=value string to dictionary.
 
     Examples:
@@ -227,11 +227,11 @@ def str2dict(s: str, namespace={}, sep: str = '='):
         return value
 
     dct = {}
-    s = (s + ',').split(sep)
-    for i in range(len(s) - 1):
-        key = s[i]
-        m = s[i + 1].rfind(',')
-        value = s[i + 1][:m]
+    strings = (s + ',').split(sep)
+    for i in range(len(strings) - 1):
+        key = strings[i]
+        m = strings[i + 1].rfind(',')
+        value: Any = strings[i + 1][:m]
         if value[0] == '{':
             assert value[-1] == '}'
             value = str2dict(value[1:-1], namespace, ':')
@@ -241,5 +241,5 @@ def str2dict(s: str, namespace={}, sep: str = '='):
         else:
             value = myeval(value)
         dct[key] = value
-        s[i + 1] = s[i + 1][m + 1:]
+        strings[i + 1] = strings[i + 1][m + 1:]
     return dct

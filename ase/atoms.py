@@ -707,6 +707,13 @@ class Atoms(object):
                     energy += constraint.adjust_potential_energy(self)
         return energy
 
+    def get_properties(self, properties):
+        """This method is experimental; currently for internal use."""
+        # XXX Something about constraints.
+        if self._calc is None:
+            raise RuntimeError('Atoms object has no calculator.')
+        return self._calc.calculate_properties(self, properties)
+
     def get_potential_energies(self):
         """Calculate the potential energies of all the atoms.
 
@@ -1024,6 +1031,10 @@ class Atoms(object):
         """Append atom to end."""
         self.extend(self.__class__([atom]))
 
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
     def __getitem__(self, i):
         """Return a subset of the atoms.
 
@@ -1158,7 +1169,8 @@ class Atoms(object):
         atoms *= rep
         return atoms
 
-    __mul__ = repeat
+    def __mul__(self, rep):
+        return self.repeat(rep)
 
     def translate(self, displacement):
         """Translate atomic positions.
@@ -1925,8 +1937,6 @@ class Atoms(object):
             return eq
         else:
             return not eq
-
-    __hash__ = None
 
     def get_volume(self):
         """Get volume of unit cell."""

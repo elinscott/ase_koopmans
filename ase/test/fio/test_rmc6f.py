@@ -1,4 +1,6 @@
+# type: ignore
 import numpy as np
+
 from ase import Atoms
 from ase.io import read, write
 import ase.io.rmc6f as rmc6f

@@ -8,11 +8,10 @@ from ase import units
 from ase.atoms import Atoms
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md.verlet import VelocityVerlet
-from ase.calculators.cp2k import CP2K
 
 
-def test_md():
-    calc = CP2K(label='test_H2_MD')
+def test_md(cp2k_factory):
+    calc = cp2k_factory.calc(label='test_H2_MD')
     positions = [(0, 0, 0), (0, 0, 0.7245595)]
     atoms = Atoms('HH', positions=positions, calculator=calc)
     atoms.center(vacuum=2.0)

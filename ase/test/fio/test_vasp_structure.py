@@ -1,3 +1,4 @@
+# type: ignore
 import os
 import numpy as np
 import numpy.testing
@@ -8,6 +9,7 @@ import ase.build
 import ase.io
 from ase.io.vasp import write_vasp_xdatcar
 from ase.calculators.calculator import compare_atoms
+
 
 class TestXdatcarRoundtrip(unittest.TestCase):
     def setUp(self):

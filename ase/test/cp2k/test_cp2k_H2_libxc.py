@@ -5,13 +5,13 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 """
 
 from ase.build import molecule
-from ase.calculators.cp2k import CP2K
 
 
-def test_h2_libxc():
-    calc = CP2K(xc='XC_GGA_X_PBE XC_GGA_C_PBE',
-                pseudo_potential="GTH-PBE",
-                label='test_H2_libxc')
+def test_h2_libxc(cp2k_factory):
+    calc = cp2k_factory.calc(
+        xc='XC_GGA_X_PBE XC_GGA_C_PBE',
+        pseudo_potential="GTH-PBE",
+        label='test_H2_libxc')
     h2 = molecule('H2', calculator=calc)
     h2.center(vacuum=2.0)
     energy = h2.get_potential_energy()

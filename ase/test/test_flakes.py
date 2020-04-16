@@ -11,7 +11,7 @@ import ase
 pytest.importorskip('flake8')
 
 
-asepath = Path(ase.__path__[0])
+asepath = Path(ase.__path__[0])  # type: ignore
 
 
 max_errors = {

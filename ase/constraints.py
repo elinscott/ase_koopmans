@@ -1,11 +1,11 @@
 from math import sqrt
 from warnings import warn
-from ase.geometry import find_mic, wrap_positions
-from ase.calculators.calculator import PropertyNotImplementedError
-from ase.utils.parsemath import eval_expression
 
 import numpy as np
-from scipy.linalg import logm, expm
+from ase.calculators.calculator import PropertyNotImplementedError
+from ase.geometry import find_mic, wrap_positions
+from ase.utils.parsemath import eval_expression
+from scipy.linalg import expm, logm
 
 __all__ = [
     'FixCartesian', 'FixBondLength', 'FixedMode',
@@ -2197,7 +2197,7 @@ class StrainFilter(Filter):
         self.atoms.set_cell(np.dot(self.origcell, eps), scale_atoms=True)
         self.strain[:] = new
 
-    def get_forces(self):
+    def get_forces(self, **kwargs):
         stress = self.atoms.get_stress(include_ideal_gas=self.include_ideal_gas)
         return -self.atoms.get_volume() * (stress * self.mask).reshape((2, 3))
 
@@ -2435,7 +2435,7 @@ class UnitCellFilter(Filter):
             force_consistent=force_consistent)
         return atoms_energy + self.scalar_pressure * self.atoms.get_volume()
 
-    def get_forces(self, apply_constraint=False):
+    def get_forces(self, **kwargs):
         """
         returns an array with shape (natoms+3,3) of the atomic forces
         and unit cell stresses.
@@ -2445,8 +2445,8 @@ class UnitCellFilter(Filter):
         computed from the stress tensor.
         """
 
-        stress = self.atoms.get_stress(apply_constraint=apply_constraint)
-        atoms_forces = self.atoms.get_forces(apply_constraint=apply_constraint)
+        stress = self.atoms.get_stress(**kwargs)
+        atoms_forces = self.atoms.get_forces(**kwargs)
 
         volume = self.atoms.get_volume()
         virial = -volume * (voigt_6_to_full_3x3_stress(stress) +
@@ -2624,12 +2624,12 @@ class ExpCellFilter(UnitCellFilter):
         new2[natoms:] = expm(new[natoms:])
         UnitCellFilter.set_positions(self, new2, **kwargs)
 
-    def get_forces(self, apply_constraint=False):
-        forces = UnitCellFilter.get_forces(self, apply_constraint)
+    def get_forces(self, **kwargs):
+        forces = UnitCellFilter.get_forces(self, **kwargs)
 
         # forces on atoms are same as UnitCellFilter, we just
         # need to modify the stress contribution
-        stress = self.atoms.get_stress(apply_constraint=apply_constraint)
+        stress = self.atoms.get_stress(**kwargs)
         volume = self.atoms.get_volume()
         virial = -volume * (voigt_6_to_full_3x3_stress(stress) +
                             np.diag([self.scalar_pressure] * 3))

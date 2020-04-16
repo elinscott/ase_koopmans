@@ -9,13 +9,12 @@ import shutil
 import subprocess
 import numpy as np
 from ase.build import molecule
-from ase.calculators.cp2k import CP2K
 from ase import io
 from ase.io.cp2k import iread_cp2k_dcd
 from ase.calculators.calculator import compare_atoms
 
 
-def test_dcd():
+def test_dcd(cp2k_factory):
     if not shutil.which("cp2k"):
         raise unittest.SkipTest('cp2k command not available')
 
@@ -32,7 +31,7 @@ def test_dcd():
              &GLOBAL
                RUN_TYPE MD
              &END GLOBAL"""
-    calc = CP2K(label='test_dcd', max_scf=1, inp=inp)
+    calc = cp2k_factory.calc(label='test_dcd', max_scf=1, inp=inp)
     h2 = molecule('H2', calculator=calc)
     h2.center(vacuum=2.0)
     h2.set_cell([10.0, 10.0, 10.0, 90.0, 90.0, 90.0])
