@@ -18,7 +18,8 @@ import inspect
 import os
 import sys
 from pathlib import Path, PurePath
-from typing import IO, List, Any, Iterable, Tuple, Union, Sequence
+from typing import (
+    IO, List, Any, Iterable, Tuple, Union, Sequence, Dict, Optional)
 
 from ase.atoms import Atoms
 from importlib import import_module
@@ -43,8 +44,8 @@ class IOFormat:
 
         # (To be set by define_io_format())
         self.extensions: List[str] = []
-        self.globs = []
-        self.magic = []
+        self.globs: List[str] = []
+        self.magic: List[str] = []
 
     def open(self, fname, mode: str = 'r') -> IO:
         # We might want append mode, too
@@ -162,11 +163,11 @@ class IOFormat:
     def match_magic(self, data: bytes) -> bool:
         # XXX We should use a regex for this!
         from fnmatch import fnmatchcase
-        return any(fnmatchcase(data, magic + b'*')
+        return any(fnmatchcase(data, magic + b'*')  # type: ignore
                    for magic in self.magic)
 
 
-ioformats = {}  # These will be filled at run-time.
+ioformats: Dict[str, IOFormat] = {}  # These will be filled at run-time.
 extension2format = {}
 
 
@@ -743,7 +744,7 @@ def string2index(string: str) -> Union[int, slice, str]:
             return int(string)
         except ValueError:
             return string
-    i = []
+    i: List[Optional[int]] = []
     for s in string.split(':'):
         if s == '':
             i.append(None)

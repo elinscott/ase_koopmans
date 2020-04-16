@@ -1,4 +1,3 @@
-# type: ignore
 """Default parameters for optimizer class - currently just sets max step size"""
 import collections
 
@@ -8,12 +7,14 @@ import collections
 
 _mdmin = "mdmin"
 _dct = {"dt": 0.2}
-mdmin_defaults = collections.namedtuple(_mdmin, _dct.keys())(**_dct)
+mdmin_defaults = collections.namedtuple(_mdmin,
+                                        _dct.keys())(**_dct)  # type: ignore
 
 
 _dct = {
     "maxstep": 0.2,  # default maxstep for all optimizers
     # _fire: fire_defaults,
-    _mdmin: mdmin_defaults,
+    _mdmin: mdmin_defaults,  # type: ignore
 }
-defaults = collections.namedtuple("optimizer_defaults", _dct.keys())(**_dct)
+defaults = collections.namedtuple("optimizer_defaults",
+                                  _dct.keys())(**_dct)  # type: ignore

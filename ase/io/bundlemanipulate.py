@@ -14,11 +14,14 @@ Usage from command line:
 python -m ase.io.bundlemanipulate inbundle outbundle [start [end [step]]]
 """
 
-from ase.io.bundletrajectory import PickleBundleBackend, UlmBundleBackend
 import os
 import pickle
 import json
+from typing import Optional
+
 import numpy as np
+
+from ase.io.bundletrajectory import PickleBundleBackend, UlmBundleBackend
 
 
 def copy_frames(inbundle, outbundle, start=0, end=None, step=1,
@@ -37,7 +40,7 @@ def copy_frames(inbundle, outbundle, start=0, end=None, step=1,
         assert(metadata['backend'] == 'pickle')
         backend = PickleBundleBackend(True)
         backend.readpy2 = False
-        
+
     if start < 0:
         start += nframes
     if end is None:
@@ -53,7 +56,7 @@ def copy_frames(inbundle, outbundle, start=0, end=None, step=1,
     frames = list(range(start, end, step))
     if verbose:
         print("Copying the frames", frames)
-    
+
     # Make the new bundle directory
     os.mkdir(outbundle)
     with open(os.path.join(outbundle, 'metadata.json'), 'w') as f:
@@ -186,7 +189,7 @@ if __name__ == '__main__':
     else:
         start = 0
     if len(sys.argv) > 4:
-        end = int(sys.argv[4])
+        end: Optional[int] = int(sys.argv[4])
     else:
         end = None
     if len(sys.argv) > 5:

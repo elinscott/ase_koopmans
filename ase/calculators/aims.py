@@ -6,10 +6,11 @@ Simon P. Rittmeyer simon.rittmeyer@tum.de
 """
 
 import os
-
-import numpy as np
 import warnings
 import time
+from typing import Optional
+
+import numpy as np
 
 from ase.units import Hartree
 from ase.io.aims import write_aims, read_aims
@@ -246,6 +247,7 @@ class Aims(FileIOCalculator):
     @property
     def command(self):
         return self.__command
+
     @command.setter
     def command(self, x):
         self.__update_command(command=x)
@@ -275,7 +277,7 @@ class Aims(FileIOCalculator):
         # new class variables due to dynamical command handling
         self.__aims_command = None
         self.__outfilename = None
-        self.__command = None
+        self.__command: Optional[str] = None
 
         # filter the command and set the member variables "aims_command" and "outfilename"
         self.__update_command(command=command,

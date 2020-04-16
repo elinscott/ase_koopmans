@@ -1,3 +1,4 @@
+# type: ignore
 """
 This module defines an ASE interface to Turbomole: http://www.turbomole.com/
 

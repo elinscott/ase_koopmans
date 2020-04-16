@@ -31,7 +31,7 @@ class _ZMatrixToAtoms:
         self.dconv = self.get_units('distance', dconv)  # type: float
         self.aconv = self.get_units('angle', aconv)  # type: float
         self.set_defs(defs)
-        self.name_to_index = dict()  # type: Dict[str, int]
+        self.name_to_index: Optional[Dict[str, int]] = dict()
         self.symbols = []  # type: List[str]
         self.positions = []  # type: List[Tuple[float, float, float]]
 

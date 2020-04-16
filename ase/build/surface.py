@@ -13,7 +13,7 @@ import numpy as np
 from ase.atom import Atom
 from ase.atoms import Atoms
 from ase.data import reference_states, atomic_numbers
-from ase.lattice.cubic import FaceCenteredCubic
+from ase.lattice.cubic import FaceCenteredCubic  # type: ignore
 
 
 def fcc100(symbol, size, a=None, vacuum=None, orthogonal=True,
@@ -41,7 +41,6 @@ def fcc110(symbol, size, a=None, vacuum=None, orthogonal=True,
     return _surface(symbol, 'fcc', '110', size, a, None, vacuum,
                     periodic=periodic,
                     orthogonal=orthogonal)
-
 
 
 def bcc100(symbol, size, a=None, vacuum=None, orthogonal=True,
@@ -507,7 +506,7 @@ def mx2(formula='MoS2', kind='2H', a=3.18, thickness=3.19,
 def graphene(formula='C2', a=2.460, size=(1, 1, 1), vacuum=None):
     """Create a graphene monolayer structure."""
     cell = [[a, 0, 0], [-a / 2, a * 3**0.5 / 2, 0], [0, 0, 0]]
-    basis = [[0, 0, 0], [2./3, 1./3, 0]]
+    basis = [[0, 0, 0], [2 / 3, 1 / 3, 0]]
     atoms = Atoms(formula, cell=cell, pbc=(1, 1, 0))
     atoms.set_scaled_positions(basis)
     if vacuum is not None:

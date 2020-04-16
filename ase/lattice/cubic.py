@@ -1,4 +1,3 @@
-# type: ignore
 """Function-like objects creating cubic lattices (SC, FCC, BCC and Diamond).
 
 The following lattice creators are defined:
@@ -117,7 +116,9 @@ class BodyCenteredCubicFactory(SimpleCubicFactory):
 
     atoms_in_unit_cell = 2
 
+
 BodyCenteredCubic = BodyCenteredCubicFactory()
+
 
 class DiamondFactory(FaceCenteredCubicFactory):
     "A factory for creating diamond lattices."
