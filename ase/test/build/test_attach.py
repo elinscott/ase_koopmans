@@ -3,7 +3,8 @@ import numpy as np
 
 from ase.parallel import world
 from ase.build import molecule, fcc111
-from ase.build.attach import attach, attach_randomly
+from ase.build.attach import (attach, attach_randomly,
+                              attach_randomly_and_distribute)
 
 
 def test_attach_molecules():
@@ -37,8 +38,8 @@ def test_attach_randomly():
 
     if world.size > 1:
         "Check that the coordinates are correctly distributed from master."
-        np.random.seed(world.rank)  # ensure different seed
-        atoms = attach_randomly(m1, m2, distance)
+        rng = np.random.RandomState(world.rank)  # ensure different seed
+        atoms = attach_randomly_and_distribute(m1, m2, distance, rng)
 
         p0 = 1. * atoms[-1].position
         world.broadcast(p0, 0)
@@ -46,12 +47,22 @@ def test_attach_randomly():
             pi = 1. * atoms[-1].position
             world.broadcast(pi, i)
             assert pi == pytest.approx(p0, 1e-8)
+
+        "Check that every core has its own structure"
+        rng = np.random.RandomState(world.rank)  # ensure different seed
+        atoms = attach_randomly(m1, m2, distance, rng)
+        p0 = 1. * atoms[-1].position
+        world.broadcast(p0, 0)
+        for i in range(1, world.size):
+            pi = 1. * atoms[-1].position
+            world.broadcast(pi, i)
+            assert pi != pytest.approx(p0, 1e-8)
     
-    np.random.seed(42)  # ensure the same seed
+    rng = np.random.RandomState(42)  # ensure the same seed
     pos2_ac = np.zeros((5, 3))
     N = 25
     for i in range(N):
-        atoms = attach_randomly(m1, m2, distance)
+        atoms = attach_randomly(m1, m2, distance, rng=rng)
         pos2_ac += atoms.get_positions()[12:, :]
     # the average position should be "zero" approximately
     assert (np.abs(pos2_ac / N) <= 1).all()

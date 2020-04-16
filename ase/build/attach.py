@@ -1,24 +1,20 @@
 import numpy as np
 
-from ase.parallel import world
+from ase.parallel import world, broadcast
 from ase.geometry import get_distances
 
 
-def random_unit_vector(comm=world):
+def random_unit_vector(rng):
     """Random unit vector equally distributed on the sphere
 
     Parameter:
     ----------
-    comm:
-      Communicator to share random state.
+    rng: random number generator object
 """
-    ct = -1 + 2 * np.random.rand()
-    phi = 2 * np.pi * np.random.rand()
+    ct = -1 + 2 * rng.rand()
+    phi = 2 * np.pi * rng.rand()
     st = np.sqrt(1 - ct**2)
-    uvec = np.array([st * np.cos(phi), st * np.sin(phi), ct])
-    if comm:
-        comm.broadcast(uvec, 0)
-    return uvec
+    return np.array([st * np.cos(phi), st * np.sin(phi), ct])
 
 
 def nearest(atoms1, atoms2, cell=None, pbc=None):
@@ -83,10 +79,54 @@ def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
     raise RuntimeError('attach did not converge')
 
 
-def attach_randomly(atoms1, atoms2, distance):
-    """Randomly attach two structures with a given minimal distance"""
+def attach_randomly(atoms1, atoms2, distance,
+                    rng=np.random.RandomState()):
+    """Randomly attach two structures with a given minimal distance
+
+    Parameters:
+    -----------
+    atoms1: Atoms object
+    atoms2: Atoms object
+    distance: float
+      Required distance
+    rng: random number generator object
+      defaults to np.random.RandomState()
+
+    Returns
+    -------
+    Joined structure as an atoms object.
+    """
     atoms2 = atoms2.copy()
-    atoms2.rotate('x', random_unit_vector(),
+    atoms2.rotate('x', random_unit_vector(rng),
                   center=atoms2.get_center_of_mass())
     return attach(atoms1, atoms2, distance,
-                  direction=random_unit_vector())
+                  direction=random_unit_vector(rng))
+
+
+def attach_randomly_and_distribute(atoms1, atoms2, distance,
+                                   rng=np.random.RandomState(),
+                                   comm=world):
+    """Randomly attach two structures with a given minimal distance
+      and ensure that these are distributed.
+
+    Parameters:
+    -----------
+    atoms1: Atoms object
+    atoms2: Atoms object
+    distance: float
+      Required distance
+    rng: random number generator object
+      defaults to np.random.RandomState()
+    comm: communicator to distribute
+      Communicator to distribute the structure, default: world
+
+    Returns
+    -------
+    Joined structure as an atoms object.
+    """
+    if comm.rank == 0:
+        joined = attach_randomly(atoms1, atoms2, distance, rng)
+        broadcast(joined, 0, comm=comm)
+    else:
+        joined = broadcast(None, 0, comm)
+    return joined
