@@ -4,7 +4,7 @@ import numpy as np
 from ase.parallel import world
 from ase.build import molecule, fcc111
 from ase.build.attach import (attach, attach_randomly,
-                              attach_randomly_and_distribute)
+                              attach_randomly_and_broadcast)
 
 
 def test_attach_molecules():
@@ -39,7 +39,7 @@ def test_attach_randomly():
     if world.size > 1:
         "Check that the coordinates are correctly distributed from master."
         rng = np.random.RandomState(world.rank)  # ensure different seed
-        atoms = attach_randomly_and_distribute(m1, m2, distance, rng)
+        atoms = attach_randomly_and_broadcast(m1, m2, distance, rng)
 
         p0 = 1. * atoms[-1].position
         world.broadcast(p0, 0)
