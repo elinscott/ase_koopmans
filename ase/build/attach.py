@@ -80,7 +80,7 @@ def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
 
 
 def attach_randomly(atoms1, atoms2, distance,
-                    rng=np.random.RandomState()):
+                    rng=np.random):
     """Randomly attach two structures with a given minimal distance
 
     Parameters:
@@ -104,7 +104,7 @@ def attach_randomly(atoms1, atoms2, distance,
 
 
 def attach_randomly_and_broadcast(atoms1, atoms2, distance,
-                                  rng=np.random.RandomState(),
+                                  rng=np.random,
                                   comm=world):
     """Randomly attach two structures with a given minimal distance
       and ensure that these are distributed.
