@@ -10,6 +10,8 @@ Git master branch
 
 :git:`master <>`.
 
+* Functions for attaching structures in :mod:`attach <ase.build>` introduced.
+
 * Standardize optimizers maximum step variable name to maxstep and default value to 0.2 for all optimizers.
 * The tangent estimates used to make the nudged elastic band (NEB) plots are
   slightly improved to use center, rather than forward differences. This does
