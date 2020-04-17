@@ -908,28 +908,3 @@ def rel_pos_pbc(atoms, i, j):
     f = np.floor(np.dot(g, d.T) + 0.5)
     d -= np.dot(atoms.get_cell().T, f).T
     return d
-
-def translational_vectors(atoms, mass_weighted=False):
-    """
-    Return normalised translational vectors
-    """
-
-    Tr = np.zeros((3*len(atoms),3))
-
-    if mass_weighted:
-        masses = atoms.get_masses()
-    else:
-        masses = np.ones(len(atoms))
-    masses_sqrt = np.sqrt(masses)
-
-    k=0
-    for i in range(len(atoms)):
-        for j in range(3):
-           Tr[k,j] = masses_sqrt[i]
-           k+=1
-
-    for i in range(3):
-        norm = np.sqrt(np.dot(Tr[:,i], Tr[:,i]))
-        Tr[:,i] /= norm
-
-    return Tr
