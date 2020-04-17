@@ -56,6 +56,8 @@ Git master branch
 * Code coverage statistics are now available on https://ase.gitlab.io/ase.
   They currently exclude calculators and IO formats.
 
+* Our CI now uses mypy_ for static analysis of the code.
+
 * The deprecated ``atoms.cell.pbc`` has been removed.
 
 * Multiple improvements and bugfixes to OpenMX calculator;
@@ -97,6 +99,8 @@ Git master branch
 
 * Added a new tutorial on molecular crystal structure prediction using
   a genetic algorithm, see :ref:`ga_molecular_crystal_tutorial`.
+
+.. _mypy: http://mypy-lang.org/
 
 
 Version 3.19.1

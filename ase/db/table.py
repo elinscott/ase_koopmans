@@ -1,3 +1,4 @@
+from typing import Optional, List
 import numpy as np
 
 from ase.db.core import float_to_time_string, now
@@ -67,6 +68,7 @@ class Table:
         self.right = None
         self.keys = None
         self.unique_key = unique_key
+        self.addcolumns: Optional[List[str]] = None
 
     def select(self, query, columns, sort, limit, offset):
         sql_columns = get_sql_columns(columns)

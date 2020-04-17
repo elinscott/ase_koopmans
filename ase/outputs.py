@@ -112,6 +112,7 @@ def _defineprop(
         shape = (shape,)
 
     shape = tuple(shape)
+    prop: Property
     if len(shape) == 0:
         prop = ScalarProperty(name, dtype)
     else:

@@ -8,11 +8,12 @@ There is, currently, only one implemented method: The Dimer method.
 import sys
 import time
 import warnings
+from math import cos, sin, atan, tan, degrees, pi, sqrt
+from typing import Dict, Any
 
 import numpy as np
 
 from ase.optimize.optimize import Optimizer
-from math import cos, sin, atan, tan, degrees, pi, sqrt
 from ase.parallel import world
 from ase.calculators.singlepoint import SinglePointCalculator
 
@@ -306,7 +307,7 @@ class MinModeControl:
     be overwritten.
 
     """
-    parameters = {}
+    parameters: Dict[str, Any] = {}
     def __init__(self, logfile = '-', eigenmode_logfile=None, **kwargs):
         # Overwrite the defaults with the input parameters given
         for key in kwargs:

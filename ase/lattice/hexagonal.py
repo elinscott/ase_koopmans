@@ -13,12 +13,12 @@ Example for using Graphene to create atoms object gra::
     from ase.lattice.hexagonal import *
     import ase.io as io
     from ase import Atoms, Atom
-    
+
     index1=6
     index2=7
     mya = 2.45
     myc = 20.0
-    
+
     gra = Graphene(symbol = 'C',latticeconstant={'a':mya,'c':myc},
                    size=(index1,index2,1))
     io.write('test.xyz', gra, format='xyz')
@@ -72,7 +72,7 @@ class HexagonalFactory(TriclinicFactory):
                     z = 3*d
                     obj[i] = (x,y,z)
         TriclinicFactory.find_directions(self, directions, miller)
-        
+
     def print_directions_and_miller(self, txt=""):
         "Print direction vectors and Miller indices."
         print("Direction vectors of unit cell%s:" % (txt,))
@@ -91,8 +91,8 @@ class HexagonalFactory(TriclinicFactory):
         d = 2*z
         print("   %s%d, %d, %d%s  ~  %s%d, %d, %d, %d%s" % \
               (bra,x,y,z,ket, bra,a,b,c,d,ket))
-        
-        
+
+
 Hexagonal = HexagonalFactory()
 
 class HexagonalClosedPackedFactory(HexagonalFactory):

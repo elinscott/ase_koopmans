@@ -17,6 +17,8 @@ functional theories.
     You should have received a copy of the GNU Lesser General Public License
     along with ASE.  If not, see <http://www.gnu.org/licenses/>.
 """
+from typing import List, Dict, Any
+
 from ase.calculators.calculator import Parameters
 from ase.calculators.openmx.default_settings import default_dictionary
 
@@ -31,7 +33,7 @@ tuple_float_keys = [
     'scf.Electric.Field',
     'scf.fixed.grid'
 ]
-tuple_bool_keys = [
+tuple_bool_keys: List[str] = [
 
 ]
 integer_keys = [
@@ -60,7 +62,7 @@ integer_keys = [
     'num.LUMOs',
     'MO.Nkpoint',
     'MD.Current.Iter'
-    ]
+]
 float_keys = [
     'scf.Constraint.NC.Spin.v',
     'scf.ElectronicTemperature',
@@ -116,8 +118,8 @@ bool_keys = [
     'scf.NC.Zeeman.Spin',
     'scf.stress.tensor'
 ]
-list_int_keys = []
-list_bool_keys = []
+list_int_keys: List[str] = []
+list_bool_keys: List[str] = []
 list_float_keys = [
     'Dos.Erange',
 ]
@@ -151,10 +153,10 @@ unit_dat_keywords = {
     'Dos.Erange': 'eV',
     'scf.NC.Mag.Field.Spin': 'Tesla',
     'scf.NC.Mag.Field.Orbital': 'Tesla'
-                     }
+}
 
 
-omx_parameter_defaults = dict(
+omx_parameter_defaults: Dict[str, Any] = dict(
     scf_ngrid=None,
     scf_kgrid=None,
     dos_kgrid=None,
@@ -286,14 +288,13 @@ class OpenMXParameters(Parameters):
     """
 
     allowed_xc = [
-            'LDA',
-            'GGA', 'PBE', 'GGA-PBE',
-            'LSDA',
-            'LSDA-PW',
-            'LSDA-CA',
-            'CA',
-            'PW',
-    ]
+        'LDA',
+        'GGA', 'PBE', 'GGA-PBE',
+        'LSDA',
+        'LSDA-PW',
+        'LSDA-CA',
+        'CA',
+        'PW']
 
     def __init__(self, **kwargs):
         kw = omx_parameter_defaults.copy()
