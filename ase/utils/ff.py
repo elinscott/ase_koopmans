@@ -995,14 +995,3 @@ def rotational_vectors(atoms, mass_weighted=False):
                 Rot[:,i+1] = Rot[:,i+1] - np.dot(Rot[:,i+1],Rot[:,j]) * Rot[:,j]
 
     return Rot[:,0:ndof]
-
-
-def row(Z):
-    if Z <= 2:
-        return 1
-    elif Z <= 10:
-        return 2
-    elif Z <= 18:
-        return 3
-    else:
-        return 3
