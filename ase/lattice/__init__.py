@@ -549,8 +549,7 @@ class ORCC(BravaisLattice):
     def __init__(self, a, b, c):
         # ORCC is the only ORCx lattice with a<b and not a<b<c
         if a >= b:
-            raise UnconventionalLattice('Expected a < b, got {}, {}'
-                                        .format(a, b, c))
+            raise UnconventionalLattice(f'Expected a < b, got a={a}, b={b}')
         BravaisLattice.__init__(self, a=a, b=b, c=c)
 
     def _cell(self, a, b, c):

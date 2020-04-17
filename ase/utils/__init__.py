@@ -421,7 +421,7 @@ def write_json(self, fd):
     _write_json(fd, self)
 
 
-@classmethod
+@classmethod  # type: ignore
 def read_json(cls, fd):
     """Read new instance from JSON file."""
     from ase.io.jsonio import read_json as _read_json
@@ -497,6 +497,14 @@ def lazymethod(meth):
             cache[name] = meth(self)
         return cache[name]
     return getter
+
+
+def warn_legacy(feature_name):
+    warnings.warn(
+        f'The {feature_name} feature is untested and ASE developers do not '
+        'know whether it works or how to use it.  Please rehabilitate it '
+        '(by writing unittests) or it may be removed.',
+        FutureWarning)
 
 
 def lazyproperty(meth):

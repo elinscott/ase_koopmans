@@ -1,3 +1,4 @@
+# type: ignore
 import os
 from copy import deepcopy
 from ase.io.acemolecule import read_acemolecule_out
@@ -52,13 +53,13 @@ class ACE(FileIOCalculator):
         1. Add default values for repeated parameter sections with self.default_parameters using order.
         2. Also add empty dictionary as an indicator for section existence if no relevant default_parameters exist.
         3. Update parameters from arguments.
-        
+
         Returns
         =======
         Updated parameter
         '''
         new_parameters = deepcopy(self.parameters)
-        
+
         changed_parameters = FileIOCalculator.set(self, **kwargs)
 
         # Add default values for repeated parameter sections with self.default_parameters using order.
@@ -81,7 +82,7 @@ class ACE(FileIOCalculator):
             if section in kwargs.keys():
                 if isinstance(kwargs[section], dict):
                     kwargs[section] = [kwargs[section]]
-                    
+
                 i = 0
                 for section_param in kwargs[section]:
                     new_parameters[section][i] = update_parameter(new_parameters[section][i], section_param)
@@ -107,13 +108,13 @@ class ACE(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         '''Initializes input parameters and xyz files. If force calculation is requested, add Force section to parameters if not exists.
-            
+
         Parameters
         ==========
         atoms: ASE atoms object.
         properties: List of properties to be calculated. Should be element of self.implemented_properties.
         system_chages: Ignored.
-        
+
         '''
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         inputfile = open(self.label + '.inp', 'w')
@@ -127,7 +128,7 @@ class ACE(FileIOCalculator):
 
     def prepare_input(self, geometry_filename, properties):
         '''Initialize parameters dictionary based on geometry filename and calculated properties.
-        
+
         Parameters
         ==========
         geometry_filename: Geometry (XYZ format) file path.
@@ -159,8 +160,8 @@ class ACE(FileIOCalculator):
         self.results = read_acemolecule_out(filename)
 
     def write_acemolecule_section(self, fpt, section, depth=0):
-        '''Write parameters in each section of input 
-            
+        '''Write parameters in each section of input
+
         Parameters
         ==========
         fpt: ACE-Moleucle input file object. Should be write mode.
@@ -176,7 +177,7 @@ class ACE(FileIOCalculator):
                 fpt.write('    ' * depth + "%% End\n")
 
     def write_acemolecule_input(self, fpt, param, depth=0):
-        '''Write ACE-Molecule input 
+        '''Write ACE-Molecule input
 
         ACE-Molecule input examples (not minimal)
         %% BasicInformation
@@ -208,7 +209,7 @@ class ACE(FileIOCalculator):
             IterateMaxCycle     150
             ConvergenceType     Energy
             ConvergenceTolerance    0.00001
-            EnergyDecomposition	    1
+            EnergyDecomposition     1
             ComputeInitialEnergy    1
             %% Diagonalize
                 Tolerance           0.000001
@@ -252,12 +253,12 @@ class ACE(FileIOCalculator):
 
 def update_parameter(oldpar, newpar):
     '''Update each section of parameter (oldpar) using newpar keys and values.
-    If section of newpar exist in oldpar, 
+    If section of newpar exist in oldpar,
         - Replace the section_name with newpar's section_name if oldvar section_name type is not dict.
         - Append the section_name with newpar's section_name if oldvar section_name type is list.
         - If oldpar section_name type is dict, it is subsection. So call update_parameter again.
     otherwise, add the parameter section and section_name from newpar.
-        
+
     Parameters
     ==========
     oldpar: dictionary of original parameters to be updated.

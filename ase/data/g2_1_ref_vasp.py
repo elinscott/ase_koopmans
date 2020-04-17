@@ -1,3 +1,4 @@
+# type: ignore
 from ase.data.g2_1_ref import convert
 from ase.data.g2_1_ref import atomization_vasp
 from ase.data.g2_1_ref import diatomic

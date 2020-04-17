@@ -4,6 +4,7 @@ This is a base class for numerous classes setting up pieces of crystal.
 """
 
 import math
+from typing import Optional, Sequence
 
 import numpy as np
 
@@ -31,7 +32,7 @@ class Bravais:
 
     # For Bravais lattices with a basis, set the basis here.  Leave as
     # None if no basis is present.
-    bravais_basis = None
+    bravais_basis: Optional[Sequence[Sequence[float]]] = None
 
     # If more than one type of element appear in the crystal, give the
     # order here.  For example, if two elements appear in a 3:1 ratio,
@@ -39,7 +40,7 @@ class Bravais:
     # could be (0,0,1,0) - the third atom in the basis is different
     # from the other three.  Leave as None if all atoms are of the
     # same type.
-    element_basis = None
+    element_basis: Optional[Sequence[int]] = None
 
     # How small numbers should be considered zero in the unit cell?
     chop_tolerance = 1e-10
