@@ -201,4 +201,3 @@ Attaching structures
 .. autofunction:: ase.build.attach.attach
 .. autofunction:: ase.build.attach.attach_randomly
 .. autofunction:: ase.build.attach.attach_randomly_and_broadcast
-

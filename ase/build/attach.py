@@ -7,8 +7,8 @@ from ase.geometry import get_distances
 def random_unit_vector(rng):
     """Random unit vector equally distributed on the sphere
 
-    Parameter:
-    ----------
+    Parameter
+    ---------
     rng: random number generator object
 """
     ct = -1 + 2 * rng.rand()
@@ -29,8 +29,8 @@ def attach(atoms1, atoms2, distance, direction=(1, 0, 0),
            maxiter=50, accuracy=1e-5):
     """Attach two structures
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     atoms1: Atoms
       cell and pbc of this object are used
     atoms2: Atoms
@@ -83,8 +83,8 @@ def attach_randomly(atoms1, atoms2, distance,
                     rng=np.random):
     """Randomly attach two structures with a given minimal distance
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     atoms1: Atoms object
     atoms2: Atoms object
     distance: float
@@ -109,8 +109,8 @@ def attach_randomly_and_broadcast(atoms1, atoms2, distance,
     """Randomly attach two structures with a given minimal distance
       and ensure that these are distributed.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     atoms1: Atoms object
     atoms2: Atoms object
     distance: float
