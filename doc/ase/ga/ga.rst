@@ -18,6 +18,7 @@ The use of the GA is best learned through tutorials:
    ../../tutorials/ga/ga_convex_hull
    ../../tutorials/ga/ga_fcc_alloys
    ../../tutorials/ga/ga_bulk
+   ../../tutorials/ga/ga_molecular_crystal
 
 The GA implementation is diverse. It (or previous versions of it) has been used in publications with differing subjects such as structure of gold clusters on surfaces, composition of alloy nanoparticles, ammonia storage in mixed metal ammines and more. The implementation is structured such that it can be tailored to the specific problem investigated and to the computational resources available (single computer or a large computer cluster).
    
