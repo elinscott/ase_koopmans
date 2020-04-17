@@ -996,22 +996,6 @@ def rotational_vectors(atoms, mass_weighted=False):
 
     return Rot[:,0:ndof]
 
-def remove_tr_rot_vector(atoms, vecin, mass_weighted=False):
-    Tr = translational_vectors(atoms, mass_weighted)
-    Rot = rotational_vectors(atoms, mass_weighted)
-
-    vecout = vecin
-
-    for i in range(np.shape(Tr)[1]):
-        norm = np.dot(vecout, Tr[:,i])
-        vecout -= norm * Tr[:,i]
-
-    for i in range(np.shape(Rot)[1]):
-        norm = np.dot(vecout, Rot[:,i])
-        vecout -= norm * Rot[:,i]
-
-    return vecout
-
 
 def row(Z):
     if Z <= 2:
