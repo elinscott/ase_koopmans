@@ -297,7 +297,7 @@ class Atoms(object):
         if hasattr(calc, 'set_atoms'):
             calc.set_atoms(self)
 
-    @calc.deleter
+    @calc.deleter  # type: ignore
     @deprecated(DeprecationWarning('Please use atoms.calc = None'))
     def calc(self):
         self._calc = None
