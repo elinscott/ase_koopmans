@@ -170,8 +170,8 @@ class OctopusFactory:
 
     def calc(self, **kwargs):
         from ase.calculators.octopus import Octopus
-        return Octopus(command=self.executable,
-                       stdout='"stdout.log"', stderr='"stderr.log"')
+        command = f'{self.executable} > stdout.log'
+        return Octopus(command=command, **kwargs)
 
     @classmethod
     def fromconfig(cls, config):

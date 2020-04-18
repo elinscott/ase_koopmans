@@ -23,11 +23,11 @@ import sys
 import warnings
 import shutil
 from os.path import join, isfile, islink
+from typing import List
 
 import numpy as np
 
 from ase.calculators.calculator import kpts2ndarray
-
 from ase.calculators.vasp.setups import setups_defaults
 
 # Parameters that can be set in INCAR. The values which are None
@@ -739,7 +739,7 @@ dict_keys = [
                   # 'U':4.0, 'J':0.9}, ...}
 ]
 
-keys = [
+keys: List[str] = [
     # 'NBLOCK' and KBLOCK       inner block; outer block
     # 'NPACO' and APACO         distance and nr. of slots for P.C.
     # 'WEIMIN, EBREAK, DEPER    special control tags

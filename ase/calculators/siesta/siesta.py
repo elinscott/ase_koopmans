@@ -187,14 +187,14 @@ class Siesta(FileIOCalculator):
 
     name = 'siesta'
     command = 'siesta < PREFIX.fdf > PREFIX.out'
-    implemented_properties = (
+    implemented_properties = [
         'energy',
         'forces',
         'stress',
         'dipole',
         'eigenvalues',
         'density',
-        'fermi_energy')
+        'fermi_energy']
 
     # Dictionary of valid input vaiables.
     default_parameters = SiestaParameters()

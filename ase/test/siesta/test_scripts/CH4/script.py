@@ -10,7 +10,8 @@ traj = 'bud.traj'
 
 try:
     bud = read(traj)
-except:
+    assert not isinstance(bud, list)
+except FileNotFoundError:
     bud = Atoms('CH4', np.array([
         [0.000000, 0.000000, 0.100000],
         [0.682793, 0.682793, 0.682793],

@@ -10,6 +10,8 @@ Git master branch
 
 :git:`master <>`.
 
+* Functions for attaching structures in :mod:`attach <ase.build>` introduced.
+
 * Standardize optimizers maximum step variable name to maxstep and default value to 0.2 for all optimizers.
 
 * The tangent estimates used to make the nudged elastic band (NEB) plots are
@@ -65,6 +67,8 @@ Git master branch
 * Code coverage statistics are now available on https://ase.gitlab.io/ase.
   They currently exclude calculators and IO formats.
 
+* Our CI now uses mypy_ for static analysis of the code.
+
 * The deprecated ``atoms.cell.pbc`` has been removed.
 
 * Multiple improvements and bugfixes to OpenMX calculator;
@@ -92,6 +96,23 @@ Git master branch
 * Added :class:`Pyberny <ase.optimize.Berny>` geometry optimizer.
 
 * Added Z-matrix parser for use in input/output file readers.
+
+* Reduced code duplication in the :mod:`ase.ga` module by incorporating the
+  'bulk' GA functionality into the corresponding 'standard' modules.
+  Using the now deprecated 'bulk' GA modules (i.e.
+  :mod:`ase.ga.bulk_startgenerator`, :mod:`ase.ga.bulk_crossovers`,
+  :mod:`ase.ga.bulk_mutations` and :mod:`ase.ga.bulk_utilities`) raises
+  a warning with pointers to the corresponding 'standard' modules.
+
+* Extended the genetic algorithm to cases where 1 or 2 cell vectors are
+  part of the global optimization problem, which can be useful in searching
+  for nanowire and thin film structures.
+
+* Added a new tutorial on molecular crystal structure prediction using
+  a genetic algorithm, see :ref:`ga_molecular_crystal_tutorial`.
+
+.. _mypy: http://mypy-lang.org/
+
 
 Version 3.19.1
 ==============
@@ -347,9 +368,6 @@ Algorithms:
   This makes it easier to execute custom code during runs.  The ``conv``
   variable indicates whether the current iteration meets the convergence
   criterion, although this behaviour may change in future versions.
-
-* The genetic algorithm module :mod:`ase.ga` now has operators for crystal
-  structure prediction. See :ref:`ga_bulk_tutorial`.
 
 * The genetic algorithm module :mod:`ase.ga` now has operators for crystal
   structure prediction. See :ref:`ga_bulk_tutorial`.

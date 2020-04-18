@@ -1,7 +1,7 @@
+from ase import Atoms
 from ase.data import atomic_numbers
-from ase.ga.utilities import closest_distances_generator
-from ase.ga.bulk_utilities import CellBounds
-from ase.ga.bulk_startgenerator import StartGenerator
+from ase.ga.utilities import closest_distances_generator, CellBounds
+from ase.ga.startgenerator import StartGenerator
 from ase.ga.data import PrepareDB
 
 # Number of random initial structures to generate
@@ -14,23 +14,19 @@ volume = 240.
 # will be constructed. Here we take single Ag atoms as building
 # blocks, 24 in total.
 blocks = [('Ag', 24)]
-
-# From these blocks we can determine the stoichiometry
-# (as a list of atomic numbers)
-stoichiometry = [atomic_numbers[atom] for atom, count in blocks
-                 for _ in range(count)]
+# We may also write:
+blocks = ['Ag'] * 24
 
 # Generate a dictionary with the closest allowed interatomic distances
-atom_numbers = list(set(stoichiometry))
-blmin = closest_distances_generator(atom_numbers=atom_numbers,
+Z = atomic_numbers['Ag']
+blmin = closest_distances_generator(atom_numbers=[Z],
                                     ratio_of_covalent_radii=0.5)
 
 # Specify reasonable bounds on the minimal and maximal
 # cell vector lengths (in angstrom) and angles (in degrees)
-cellbounds = CellBounds(bounds={'phi': [35, 145],
-                                'chi': [35, 145],
-                                'psi': [35, 145],
-                                'a': [3, 50], 'b': [3, 50], 'c': [3, 50]})
+cellbounds = CellBounds(bounds={'phi': [35, 145], 'chi': [35, 145],
+                                'psi': [35, 145], 'a': [3, 50],
+                                'b': [3, 50], 'c': [3, 50]})
 
 # Choose an (optional) 'cell splitting' scheme which basically
 # controls the level of translational symmetry (within the unit
@@ -42,13 +38,21 @@ splits = {(2,): 1, (1,): 1}
 # structure along a randomly chosen axis. In the other 50%
 # of cases, no cell cell splitting will be applied.
 
+# The 'slab' object in the GA serves as a template
+# in the creation of new structures, which inherit
+# the slab's atomic positions (if any), cell vectors
+# (if specified), and periodic boundary conditions.
+# Here only the last property is relevant:
+slab = Atoms('', pbc=True)
+
 # Initialize the random structure generator
-sg = StartGenerator(blocks, blmin, volume, cellbounds=cellbounds,
-                    splits=splits)
+sg = StartGenerator(slab, blocks, blmin, box_volume=volume,
+                    number_of_variable_cell_vectors=3,
+                    cellbounds=cellbounds, splits=splits)
 
 # Create the database
 da = PrepareDB(db_file_name='gadb.db',
-               stoichiometry=stoichiometry)
+               stoichiometry=[Z] * 24)
 
 # Generate N random structures
 # and add them to the database

@@ -140,8 +140,6 @@ def get_logging_file_descriptor(calculator):
 
 class vdWTkatchenko09prl(Calculator):
     """vdW correction after Tkatchenko and Scheffler PRL 102 (2009) 073005."""
-    implemented_properties = ['energy', 'forces']
-
     def __init__(self,
                  hirshfeld=None, vdwradii=None, calculator=None,
                  Rmax=10.,  # maximal radius for periodic calculations

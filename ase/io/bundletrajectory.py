@@ -31,16 +31,8 @@ import time
 
 from ase import Atoms
 from ase.io import jsonio
-try:
-    import cPickle as pickle   # Need efficient pickle if using Python 2
-except ImportError:
-    import pickle              # Python 3 pickle is efficient.
+import pickle              # Python 3 pickle is efficient.
 import collections
-# We would like to use an OrderedDict for nice printing
-try:
-    from collections import OrderedDict as odict
-except ImportError:
-    odict = dict
 
 
 class BundleTrajectory:
@@ -839,7 +831,7 @@ class UlmBundleBackend:
         fn = os.path.join(framedir, name + '.ulm')
         if split is None or os.path.exists(fn):
             f = ulmopen(fn, 'r')
-            info = odict()
+            info = dict()
             info['shape'] = f.shape
             info['type'] = f.dtype
             info['stored_as'] = f.stored_as
@@ -847,7 +839,7 @@ class UlmBundleBackend:
             f.close()
             return info
         else:
-            info = odict()
+            info = dict()
             for i in range(split):
                 fn = os.path.join(framedir, name + '_' + str(i) + '.ulm')
                 f = ulmopen(fn, 'r')
@@ -958,7 +950,7 @@ class PickleBundleBackend:
             else:
                 info = pickle.load(f)
             f.close()
-            result = odict()
+            result = dict()
             result['shape'] = info[0]
             result['type'] = info[1]
             return result
@@ -977,7 +969,7 @@ class PickleBundleBackend:
                 else:
                     shape[0] += info[0][0]
                     assert dtype == info[1]
-            result = odict()
+            result = dict()
             result['shape'] = info[0]
             result['type'] = info[1]
             return result

@@ -41,6 +41,8 @@ is performed:
                                      # subsequent runs, reads from checkpoint
 """
 
+from typing import Dict, Any
+
 import numpy as np
 
 import ase
@@ -51,12 +53,12 @@ from ase.calculators.calculator import Calculator
 class NoCheckpoint(Exception):
     pass
 
-    
+
 class DevNull:
     def write(str, *args):
         pass
 
-        
+
 class Checkpoint(object):
     _value_prefix = '_values_'
 
@@ -71,7 +73,7 @@ class Checkpoint(object):
 
     def __call__(self, func, *args, **kwargs):
         checkpoint_func_name = str(func)
-        
+
         def decorated_func(*args, **kwargs):
             # Get the first ase.Atoms object.
             atoms = None
@@ -118,7 +120,7 @@ class Checkpoint(object):
         E.g. if checkpoint is nested and id is [3,2,6] it returns:
             'check3:2:6'
         """
-        return 'check'+':'.join(str(id) for id in self.checkpoint_id)
+        return 'check' + ':'.join(str(id) for id in self.checkpoint_id)
 
     def load(self, atoms=None):
         """
@@ -243,7 +245,7 @@ class CheckpointCalculator(Calculator):
         # subsequent runs, reads from checkpoint file
     """
     implemented_properties = ase.calculators.calculator.all_properties
-    default_parameters = {}
+    default_parameters: Dict[str, Any] = {}
     name = 'CheckpointCalculator'
 
     property_to_method_name = {

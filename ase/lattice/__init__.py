@@ -1,4 +1,3 @@
-# flake8: noqa
 from abc import abstractmethod, ABC
 import functools
 import warnings
@@ -129,7 +128,6 @@ class BravaisLattice(ABC):
         assert len(labels) == 1  # list of lists
         return labels[0]
 
-
     def get_special_points_array(self):
         """Return all special points for this lattice as an array.
 
@@ -174,7 +172,8 @@ class BravaisLattice(ABC):
         See :meth:`ase.cell.Cell.bandpath` for description of parameters.
 
         >>> BCT(3, 5).bandpath()
-        BandPath(path='GXYSGZS1NPY1Z,XP', cell=[3x3], special_points={GNPSS1XYY1Z}, kpts=[51x3])
+        BandPath(path='GXYSGZS1NPY1Z,XP', cell=[3x3], \
+special_points={GNPSS1XYY1Z}, kpts=[51x3])
 
         .. note:: This produces the standard band path following AFlow
            conventions.  If your cell does not follow this convention,
@@ -348,6 +347,7 @@ class UnconventionalLattice(ValueError):
 
 class Cubic(BravaisLattice):
     """Abstract class for cubic lattices."""
+
     def __init__(self, a):
         BravaisLattice.__init__(self, a=a)
 
@@ -408,25 +408,25 @@ class BCT(BravaisLattice):
 
         if variant.name == 'BCT1':
             eta = .25 * (1 + c2 / a2)
-            points = [[0,0,0],
+            points = [[0, 0, 0],
                       [-.5, .5, .5],
-                      [0.,.5,0.],
+                      [0., .5, 0.],
                       [.25, .25, .25],
-                      [0.,0.,.5],
-                      [eta,eta,-eta],
-                      [-eta,1-eta,eta]]
+                      [0., 0., .5],
+                      [eta, eta, -eta],
+                      [-eta, 1 - eta, eta]]
         else:
             eta = .25 * (1 + a2 / c2)  # Not same eta as BCT1!
             zeta = 0.5 * a2 / c2
-            points = [[0.,.0,0.],
-                      [0.,.5,0.],
-                      [.25,.25,.25],
-                      [-eta,eta,eta],
-                      [eta,1-eta,-eta],
-                      [0.,0.,.5],
-                      [-zeta,zeta,.5],
-                      [.5,.5,-zeta],
-                      [.5,.5,-.5]]
+            points = [[0., .0, 0.],
+                      [0., .5, 0.],
+                      [.25, .25, .25],
+                      [-eta, eta, eta],
+                      [eta, 1 - eta, -eta],
+                      [0., 0., .5],
+                      [-zeta, zeta, .5],
+                      [.5, .5, -zeta],
+                      [.5, .5, -.5]]
         return points
 
 
@@ -438,6 +438,7 @@ def check_orc(a, b, c):
 
 class Orthorhombic(BravaisLattice):
     """Abstract class for orthorhombic types."""
+
     def __init__(self, a, b, c):
         check_orc(a, b, c)
         BravaisLattice.__init__(self, a=a, b=b, c=c)
@@ -487,14 +488,14 @@ class ORCF(Orthorhombic):
             delta = 0.25 * (1 + b2 / a2 - b2 / c2)
             eta = xminus
 
-            points = [[0,0,0],
-                      [.5, .5-eta, 1-eta],
-                      [.5, .5+eta, eta],
-                      [.5-delta, .5, 1-delta],
-                      [.5+delta, .5, delta],
+            points = [[0, 0, 0],
+                      [.5, .5 - eta, 1 - eta],
+                      [.5, .5 + eta, eta],
+                      [.5 - delta, .5, 1 - delta],
+                      [.5 + delta, .5, delta],
                       [.5, .5, .5],
-                      [1-phi, .5-phi, .5],
-                      [phi, .5+phi, .5],
+                      [1 - phi, .5 - phi, .5],
+                      [phi, .5 + phi, .5],
                       [0., .5, .5],
                       [.5, 0., .5],
                       [.5, .5, 0.]]
@@ -525,19 +526,19 @@ class ORCI(Orthorhombic):
         delta = .25 * (b2 - a2) / c2
         mu = .25 * (a2 + b2) / c2
 
-        points = [[0.,0.,0.],
-                  [-mu,mu,.5-delta],
-                  [mu, -mu, .5+delta],
-                  [.5-delta, .5+delta, -mu],
-                  [0,.5,0],
-                  [.5,0,0],
-                  [0.,0.,.5],
-                  [.25,.25,.25],
+        points = [[0., 0., 0.],
+                  [-mu, mu, .5 - delta],
+                  [mu, -mu, .5 + delta],
+                  [.5 - delta, .5 + delta, -mu],
+                  [0, .5, 0],
+                  [.5, 0, 0],
+                  [0., 0., .5],
+                  [.25, .25, .25],
                   [-zeta, zeta, zeta],
                   [zeta, 1 - zeta, -zeta],
                   [eta, -eta, eta],
                   [1 - eta, eta, -eta],
-                  [.5,.5,-.5]]
+                  [.5, .5, -.5]]
         return points
 
 
@@ -548,8 +549,7 @@ class ORCC(BravaisLattice):
     def __init__(self, a, b, c):
         # ORCC is the only ORCx lattice with a<b and not a<b<c
         if a >= b:
-            raise UnconventionalLattice('Expected a < b, got {}, {}'
-                                        .format(a, b, c))
+            raise UnconventionalLattice(f'Expected a < b, got a={a}, b={b}')
         BravaisLattice.__init__(self, a=a, b=b, c=c)
 
     def _cell(self, a, b, c):
@@ -558,16 +558,16 @@ class ORCC(BravaisLattice):
 
     def _special_points(self, a, b, c, variant):
         zeta = .25 * (1 + a * a / (b * b))
-        points = [[0,0,0],
-                  [zeta,zeta,.5],
-                  [-zeta,1-zeta,.5],
-                  [0,.5,.5],
-                  [0,.5,0],
-                  [-.5,.5,.5],
-                  [zeta,zeta,0],
-                  [-zeta,1-zeta,0],
-                  [-.5,.5,0],
-                  [0,0,.5]]
+        points = [[0, 0, 0],
+                  [zeta, zeta, .5],
+                  [-zeta, 1 - zeta, .5],
+                  [0, .5, .5],
+                  [0, .5, 0],
+                  [-.5, .5, .5],
+                  [zeta, zeta, 0],
+                  [-zeta, 1 - zeta, 0],
+                  [-.5, .5, 0],
+                  [0, 0, .5]]
         return points
 
 
@@ -615,29 +615,29 @@ class RHL(BravaisLattice):
             cosa = np.cos(alpha * _degrees)
             eta = (1 + 4 * cosa) / (2 + 4 * cosa)
             nu = .75 - 0.5 * eta
-            points = [[0,0,0],
-                      [eta,.5,1-eta],
+            points = [[0, 0, 0],
+                      [eta, .5, 1 - eta],
                       [.5, 1 - eta, eta - 1],
-                      [.5,.5,0],
-                      [.5,0,0],
-                      [0,0,-.5],
-                      [eta,nu,nu],
-                      [1-nu,1-nu,1-eta],
-                      [nu,nu,eta-1],
-                      [1-nu,nu,0],
-                      [nu,0,-nu],
-                      [.5,.5,.5]]
+                      [.5, .5, 0],
+                      [.5, 0, 0],
+                      [0, 0, -.5],
+                      [eta, nu, nu],
+                      [1 - nu, 1 - nu, 1 - eta],
+                      [nu, nu, eta - 1],
+                      [1 - nu, nu, 0],
+                      [nu, 0, -nu],
+                      [.5, .5, .5]]
         else:
             eta = 1 / (2 * np.tan(alpha * _degrees / 2)**2)
             nu = .75 - 0.5 * eta
-            points = [[0,0,0],
-                      [.5,-.5,0],
-                      [.5,0,0],
-                      [1-nu,-nu,1-nu],
-                      [nu,nu-1,nu-1],
-                      [eta,eta,eta],
-                      [1-eta,-eta,-eta],
-                      [.5,-.5,.5]]
+            points = [[0, 0, 0],
+                      [.5, -.5, 0],
+                      [.5, 0, 0],
+                      [1 - nu, -nu, 1 - nu],
+                      [nu, nu - 1, nu - 1],
+                      [eta, eta, eta],
+                      [1 - eta, -eta, -eta],
+                      [.5, -.5, .5]]
         return points
 
 
@@ -666,22 +666,22 @@ class MCL(BravaisLattice):
         eta = (1 - b * cosa / c) / (2 * np.sin(alpha * _degrees)**2)
         nu = .5 - eta * c * cosa / b
 
-        points = [[0,0,0],
-                  [.5,.5,0],
-                  [0,.5,.5],
-                  [.5,0,.5],
-                  [.5,0,-.5],
-                  [.5,.5,.5],
-                  [0,eta,1-nu],
-                  [0,1-eta,nu],
-                  [0,eta,-nu],
-                  [.5,eta,1-nu],
-                  [.5,1-eta,nu],
-                  [.5,eta,-nu],
-                  [0,.5,0],
-                  [0,0,.5],
-                  [0,0,-.5],
-                  [.5,0,0]]
+        points = [[0, 0, 0],
+                  [.5, .5, 0],
+                  [0, .5, .5],
+                  [.5, 0, .5],
+                  [.5, 0, -.5],
+                  [.5, .5, .5],
+                  [0, eta, 1 - nu],
+                  [0, 1 - eta, nu],
+                  [0, eta, -nu],
+                  [.5, eta, 1 - nu],
+                  [.5, 1 - eta, nu],
+                  [.5, eta, -nu],
+                  [0, .5, 0],
+                  [0, 0, .5],
+                  [0, 0, -.5],
+                  [.5, 0, 0]]
         return points
 
     def _variant_name(self, a, b, c, alpha):
@@ -712,7 +712,7 @@ class MCLC(BravaisLattice):
                          [0, c * np.cos(alpha), c * np.sin(alpha)]])
 
     def _variant_name(self, a, b, c, alpha):
-        #from ase.geometry.cell import mclc
+        # from ase.geometry.cell import mclc
         # okay, this is a bit hacky
 
         # We need the same parameters here as when determining the points.
@@ -764,48 +764,48 @@ class MCLC(BravaisLattice):
             psi = .75 - a2 / (4 * b2 * sina * sina)
             phi = psi + (.75 - psi) * b * cosa / c
 
-            points = [[0,0,0],
-                      [.5,0,0],
-                      [0,-.5,0],
-                      [1-zeta,1-zeta,1-eta],
-                      [zeta,zeta,eta],
-                      [-zeta,-zeta,1-eta],
-                      [1-zeta,-zeta,1-eta],
-                      [phi,1-phi,.5],
-                      [1-phi,phi-1,.5],
-                      [.5,.5,.5],
-                      [.5,0,.5],
-                      [1-psi,psi-1,0],
-                      [psi,1-psi,0],
-                      [psi-1,-psi,0],
-                      [.5,.5,0],
-                      [-.5,-.5,0],
-                      [0,0,.5]]
+            points = [[0, 0, 0],
+                      [.5, 0, 0],
+                      [0, -.5, 0],
+                      [1 - zeta, 1 - zeta, 1 - eta],
+                      [zeta, zeta, eta],
+                      [-zeta, -zeta, 1 - eta],
+                      [1 - zeta, -zeta, 1 - eta],
+                      [phi, 1 - phi, .5],
+                      [1 - phi, phi - 1, .5],
+                      [.5, .5, .5],
+                      [.5, 0, .5],
+                      [1 - psi, psi - 1, 0],
+                      [psi, 1 - psi, 0],
+                      [psi - 1, -psi, 0],
+                      [.5, .5, 0],
+                      [-.5, -.5, 0],
+                      [0, 0, .5]]
         elif variant == 3 or variant == 4:
             mu = .25 * (1 + b2 / a2)
-            delta = b * c * cosa / (2  * a2)
+            delta = b * c * cosa / (2 * a2)
             zeta = mu - 0.25 + (1 - b * cosa / c) / (4 * sina2)
             eta = 0.5 + 2 * zeta * c * cosa / b
             phi = 1 + zeta - 2 * mu
             psi = eta - 2 * delta
 
-            points = [[0,0,0],
-                      [1-phi,1-phi,1-psi],
-                      [phi,phi-1,psi],
-                      [1-phi,-phi,1-psi],
-                      [zeta,zeta,eta],
-                      [1-zeta,-zeta,1-eta],
-                      [-zeta,-zeta,1-eta],
-                      [.5,-.5,.5],
-                      [.5,0,.5],
-                      [.5,0,0],
-                      [0,-.5,0],
-                      [.5,-.5,0],
-                      [mu,mu,delta],
-                      [1-mu,-mu,-delta],
-                      [-mu,-mu,-delta],
-                      [mu,mu-1,delta],
-                      [0,0,.5]]
+            points = [[0, 0, 0],
+                      [1 - phi, 1 - phi, 1 - psi],
+                      [phi, phi - 1, psi],
+                      [1 - phi, -phi, 1 - psi],
+                      [zeta, zeta, eta],
+                      [1 - zeta, -zeta, 1 - eta],
+                      [-zeta, -zeta, 1 - eta],
+                      [.5, -.5, .5],
+                      [.5, 0, .5],
+                      [.5, 0, 0],
+                      [0, -.5, 0],
+                      [.5, -.5, 0],
+                      [mu, mu, delta],
+                      [1 - mu, -mu, -delta],
+                      [-mu, -mu, -delta],
+                      [mu, mu - 1, delta],
+                      [0, 0, .5]]
         elif variant == 5:
             zeta = .25 * (b2 / a2 + (1 - b * cosa / c) / sina2)
             eta = 0.5 + 2 * zeta * c * cosa / b
@@ -815,25 +815,25 @@ class MCLC(BravaisLattice):
             delta = zeta * c * cosa / b + omega / 2 - .25
             rho = 1 - zeta * a2 / b2
 
-            points = [[0,0,0],
-                      [nu,nu,omega],
-                      [1-nu,1-nu,1-omega],
-                      [nu,nu-1,omega],
-                      [zeta,zeta,eta],
-                      [1-zeta,-zeta,1-eta],
-                      [-zeta,-zeta,1-eta],
-                      [rho,1-rho,.5],
-                      [1-rho,rho-1,.5],
-                      [.5,.5,.5],
-                      [.5,0,.5],
-                      [.5,0,0],
-                      [0,-.5,0],
-                      [.5,-.5,0],
-                      [mu,mu,delta],
-                      [1-mu,-mu,-delta],
-                      [-mu,-mu,-delta],
-                      [mu,mu-1,delta],
-                      [0,0,.5]]
+            points = [[0, 0, 0],
+                      [nu, nu, omega],
+                      [1 - nu, 1 - nu, 1 - omega],
+                      [nu, nu - 1, omega],
+                      [zeta, zeta, eta],
+                      [1 - zeta, -zeta, 1 - eta],
+                      [-zeta, -zeta, 1 - eta],
+                      [rho, 1 - rho, .5],
+                      [1 - rho, rho - 1, .5],
+                      [.5, .5, .5],
+                      [.5, 0, .5],
+                      [.5, 0, 0],
+                      [0, -.5, 0],
+                      [.5, -.5, 0],
+                      [mu, mu, delta],
+                      [1 - mu, -mu, -delta],
+                      [-mu, -mu, -delta],
+                      [mu, mu - 1, delta],
+                      [0, 0, .5]]
 
         return points
 
@@ -847,6 +847,8 @@ Angles of reciprocal lattice are kalpha={}, kbeta={}, kgamma={}.  \
 If you don't care, please use Cell.fromcellpar() instead."""
 
 # XXX labels, paths, are all the same.
+
+
 @bravaisclass('primitive triclinic', 'triclinic', 'triclinic', 'aP',
               ('a', 'b', 'c', 'alpha', 'beta', 'gamma'),
               [['TRI1a', 'GLMNRXYZ', 'XGY,LGZ,NGM,RG', None],
@@ -893,7 +895,7 @@ class TRI(BravaisLattice):
             if kgamma > min(kangles):
                 raise_unconventional()
             var = '1a'
-        elif all(kangles < 90):# and kgamma > max(kalpha, kbeta):
+        elif all(kangles < 90):  # and kgamma > max(kalpha, kbeta):
             if kgamma < max(kangles):
                 raise_unconventional()
             var = '1b'
@@ -906,23 +908,23 @@ class TRI(BravaisLattice):
         # (None of the points actually depend on any parameters)
         # (We should store the points openly on the variant objects)
         if variant.name == 'TRI1a' or variant.name == 'TRI2a':
-            points = [[0.,0.,0.],
-                      [.5,.5,0],
-                      [0,.5,.5],
-                      [.5,0,.5],
-                      [.5,.5,.5],
-                      [.5,0,0],
-                      [0,.5,0],
-                      [0,0,.5]]
+            points = [[0., 0., 0.],
+                      [.5, .5, 0],
+                      [0, .5, .5],
+                      [.5, 0, .5],
+                      [.5, .5, .5],
+                      [.5, 0, 0],
+                      [0, .5, 0],
+                      [0, 0, .5]]
         else:
-            points = [[0,0,0],
-                      [.5,-.5,0],
-                      [0,0,.5],
-                      [-.5,-.5,.5],
-                      [0,-.5,.5],
-                      [0,-0.5,0],
-                      [.5,0,0],
-                      [-.5,0,.5]]
+            points = [[0, 0, 0],
+                      [.5, -.5, 0],
+                      [0, 0, .5],
+                      [-.5, -.5, .5],
+                      [0, -.5, .5],
+                      [0, -0.5, 0],
+                      [.5, 0, 0],
+                      [-.5, 0, .5]]
 
         return points
 
