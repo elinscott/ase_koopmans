@@ -286,10 +286,6 @@ class Atoms(object):
         atoms.get_calculator()."""
         return self.calc
 
-    @deprecated(DeprecationWarning('Please use atoms.calc = None'))
-    def _del_calculator(self):
-        self._calc = None
-
     @property
     def calc(self):
         """Calculator object."""
@@ -300,6 +296,11 @@ class Atoms(object):
         self._calc = calc
         if hasattr(calc, 'set_atoms'):
             calc.set_atoms(self)
+
+    @calc.deleter
+    @deprecated(DeprecationWarning('Please use atoms.calc = None'))
+    def calc(self):
+        self._calc = None
 
     @property
     def number_of_lattice_vectors(self):
