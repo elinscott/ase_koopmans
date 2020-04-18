@@ -21,6 +21,7 @@ from ase.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
 from ase.data import atomic_masses, atomic_masses_common
 from ase.geometry import wrap_positions, find_mic, get_angles, get_distances
 from ase.symbols import Symbols, symbols2numbers
+from ase.utils import deprecated
 
 
 class Atoms(object):
@@ -184,7 +185,7 @@ class Atoms(object):
             if constraint is None:
                 constraint = [c.copy() for c in atoms.constraints]
             if calculator is None:
-                calculator = atoms.get_calculator()
+                calculator = atoms.calc
             if info is None:
                 info = copy.deepcopy(atoms.info)
 
@@ -254,7 +255,7 @@ class Atoms(object):
         else:
             self.info = dict(info)
 
-        self.set_calculator(calculator)
+        self.calc = calculator
 
     @property
     def symbols(self):
@@ -269,21 +270,37 @@ class Atoms(object):
         new_symbols = Symbols.fromsymbols(obj)
         self.numbers[:] = new_symbols.numbers
 
+    @deprecated(DeprecationWarning('Please use atoms.calc = calc'))
     def set_calculator(self, calc=None):
-        """Attach calculator object."""
+        """Attach calculator object.
+
+        Please use the equivalent atoms.calc = calc instead of this
+        method."""
+        self.calc = calc
+
+    @deprecated(DeprecationWarning('Please use atoms.calc'))
+    def get_calculator(self):
+        """Get currently attached calculator object.
+
+        Please use the equivalent atoms.calc instead of
+        atoms.get_calculator()."""
+        return self.calc
+
+    @property
+    def calc(self):
+        """Calculator object."""
+        return self._calc
+
+    @calc.setter
+    def calc(self, calc):
         self._calc = calc
         if hasattr(calc, 'set_atoms'):
             calc.set_atoms(self)
 
-    def get_calculator(self):
-        """Get currently attached calculator object."""
-        return self._calc
-
-    def _del_calculator(self):
+    @calc.deleter  # type: ignore
+    @deprecated(DeprecationWarning('Please use atoms.calc = None'))
+    def calc(self):
         self._calc = None
-
-    calc = property(get_calculator, set_calculator, _del_calculator,
-                    doc='Calculator object.')
 
     @property
     def number_of_lattice_vectors(self):

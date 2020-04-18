@@ -17,7 +17,7 @@ def test_dftb_relax_surface(dftb_factory):
                        periodic=True)
     atoms.positions[-2:,2] -= 0.2
     atoms.set_constraint(FixAtoms(indices=range(4)))
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     dyn = BFGS(atoms, logfile='-')
     dyn.run(fmax=0.1)

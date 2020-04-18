@@ -91,7 +91,7 @@ class Vibrations:
     def __init__(self, atoms, indices=None, name='vib', delta=0.01, nfree=2):
         assert nfree in [2, 4]
         self.atoms = atoms
-        self.calc = atoms.get_calculator()
+        self.calc = atoms.calc
         if indices is None:
             indices = range(len(atoms))
         self.indices = np.asarray(indices)
@@ -437,19 +437,19 @@ class Vibrations:
         p = self.atoms.positions.copy()
         n %= 3 * len(self.indices)
         traj = Trajectory('%s.%d.traj' % (self.name, n), 'w')
-        calc = self.atoms.get_calculator()
-        self.atoms.set_calculator()
+        calc = self.atoms.calc
+        self.atoms.calc = None
         for x in np.linspace(0, 2 * pi, nimages, endpoint=False):
             self.atoms.set_positions(p + sin(x) * mode)
             traj.write(self.atoms)
         self.atoms.set_positions(p)
-        self.atoms.set_calculator(calc)
+        self.atoms.calc = calc
         traj.close()
 
     def show_as_force(self, n, scale=0.2):
         mode = self.get_mode(n) * len(self.hnu) * scale
         calc = SinglePointCalculator(self.atoms, forces=mode)
-        self.atoms.set_calculator(calc)
+        self.atoms.calc = calc
         self.atoms.edit()
 
     def write_jmol(self):

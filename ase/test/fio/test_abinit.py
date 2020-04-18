@@ -17,13 +17,13 @@ def test_abinit():
 
     write('abinit_save.in', images=m1, format='abinit-in')
 
-    m1.set_calculator(EMT())
+    m1.calc = EMT()
     e1 = m1.get_potential_energy()
     f1 = m1.get_forces()
 
     m2 = read('abinit_save.in', format='abinit-in')
 
-    m2.set_calculator(EMT())
+    m2.calc = EMT()
     e2 = m2.get_potential_energy()
     f2 = m1.get_forces()
 

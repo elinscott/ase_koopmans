@@ -54,7 +54,7 @@ def test_hcp():
         for a in a0 * np.linspace(1 - eps, 1 + eps, 4):
             for c in c0 * np.linspace(1 - eps, 1 + eps, 4):
                 ni = bulk('Ni', 'hcp', a=a, covera=c / a)
-                ni.set_calculator(EMT())
+                ni.calc = EMT()
                 ni.get_potential_energy()
                 traj.write(ni)
         traj.close()

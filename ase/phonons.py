@@ -139,7 +139,7 @@ class Displacement:
 
         # Set calculator if provided
         assert self.calc is not None, "Provide calculator in __init__ method"
-        atoms_N.set_calculator(self.calc)
+        atoms_N.calc = self.calc
 
         # Do calculation on equilibrium structure
         self.state = 'eq.pckl'

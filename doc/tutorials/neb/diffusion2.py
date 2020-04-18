@@ -12,7 +12,7 @@ constraint = FixAtoms(mask=[atom.tag > 1 for atom in initial])
 images = [initial]
 for i in range(3):
     image = initial.copy()
-    image.set_calculator(EMT())
+    image.calc = EMT()
     image.set_constraint(constraint)
     images.append(image)
 

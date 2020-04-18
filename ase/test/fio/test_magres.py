@@ -14,7 +14,7 @@ def test_magres():
 
     calc = SinglePointDFTCalculator(si2)
     calc.results['sus'] = np.eye(3) * 2
-    si2.set_calculator(calc)
+    si2.calc = calc
 
     si2.info['magres_units'] = {'ms': 'ppm',
                                 'efg': 'au',

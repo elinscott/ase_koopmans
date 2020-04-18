@@ -170,7 +170,7 @@ def lammps_data_to_ase_atoms(
         #        to atoms.property) (other problem: synchronizing
         #        parallel runs)
         calculator = SinglePointCalculator(out_atoms, energy=0.0, forces=forces)
-        out_atoms.set_calculator(calculator)
+        out_atoms.calc = calculator
 
     # process the extra columns of fixes, variables and computes
     #    that can be dumped, add as additional arrays to atoms object

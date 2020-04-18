@@ -15,13 +15,13 @@ def test_mixingcalc():
 
     # First run the test with EMT similarly to the test of the single point calculator.
     calc = EMT()
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     forces = atoms.get_forces()
 
     # SumCalculator: Alternative ways to associate a calculator with an atoms object.
     atoms1 = atoms.copy()
     calc1 = SumCalculator([EMT(), EMT()])
-    atoms1.set_calculator(calc1)
+    atoms1.calc = calc1
 
     atoms2 = atoms.copy()
     SumCalculator(calcs=[EMT(), EMT()], atoms=atoms2)
@@ -42,7 +42,7 @@ def test_mixingcalc():
 
     atoms1 = atoms.copy()
     calc1 = AverageCalculator([EMT(), EMT()])
-    atoms1.set_calculator(calc1)
+    atoms1.calc = calc1
 
     # LinearCombinationCalculator:
 
@@ -71,7 +71,7 @@ def test_mixingcalc():
     # test  MixedCalculator and energy contributions
     w1, w2 = 0.78, 0.22
     atoms1 = atoms.copy()
-    atoms1.set_calculator(EMT())
+    atoms1.calc = EMT()
     E_tot = atoms1.get_potential_energy()
 
     calc1 = MixedCalculator(EMT(), EMT(), w1, w2)

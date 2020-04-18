@@ -23,7 +23,7 @@ def create_slab_with_constraints():
 def test_ase_relax():
     slab = create_slab_with_constraints()
     calc = Vasp(xc='LDA', ediffg=-1e-3, lwave=False, lcharg=False)
-    slab.set_calculator(calc)
+    slab.calc = calc
     opt = BFGS(slab, logfile=None)
     opt.run(fmax=0.1, steps=3)
 

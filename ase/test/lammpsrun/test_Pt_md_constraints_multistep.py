@@ -22,7 +22,7 @@ def test_Pt_md_constraints_multistep():
     params['pair_coeff'] = ['1 1 {}'.format(pot_fn)]
 
     with LAMMPS(specorder=['Pt'], files=[pot_fn], **params) as calc:
-        slab.set_calculator(calc)
+        slab.calc = calc
 
         assert_allclose(slab.get_potential_energy(), -110.3455014595596,
                         atol=1e-4, rtol=1e-4)

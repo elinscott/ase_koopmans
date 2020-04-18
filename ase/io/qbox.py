@@ -201,6 +201,6 @@ def _parse_frame(tree, species):
     # Create the calculator object that holds energy/forces
     calc = SinglePointCalculator(atoms,
                                  energy=energy, forces=forces, stress=stresses)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     return atoms

@@ -11,6 +11,6 @@ def test_ace():
     if "ASE_ACE_COMMAND" not in os.environ:
         raise unittest.SkipTest('$ASE_ACE_COMMAND not defined') 
     ace = ACE(label=label, BasicInformation=basic)
-    mol.set_calculator(ace)
+    mol.calc = ace
     mol.get_forces()
     #mol.get_potential_energy()

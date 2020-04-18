@@ -22,7 +22,7 @@ Example
 
 >>> atoms = bulk('Al','fcc')
 >>> calc = DMol3()
->>> atoms.set_calculator(calc)
+>>> atoms.calc = calc
 >>> print 'Potential energy %5.5f eV' % atoms.get_potential_energy()
 
 
@@ -619,6 +619,6 @@ if __name__ == '__main__':
 
     atoms = molecule('H2')
     calc = DMol3()
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     # ~ 60 sec calculation
     print('Potential energy %5.5f eV' % atoms.get_potential_energy())

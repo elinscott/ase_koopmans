@@ -48,7 +48,7 @@ def test_update_coords():
     neigh_skin_ratio = 0.2
     skin = neigh_skin_ratio * model_cutoff
     calc = KIM(model, options={"neigh_skin_ratio": neigh_skin_ratio})
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     squeezed_energies_ref = {
         False: 5.784620078721877,  # finite

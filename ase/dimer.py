@@ -594,7 +594,7 @@ class MinModeAtoms:
                     self.atoms0,
                     energy=self.atoms.get_potential_energy(),
                     forces=self.atoms.get_forces())
-                self.atoms0.set_calculator(calc)
+                self.atoms0.calc = calc
 
     def initialize_eigenmodes(self, method=None, eigenmodes=None, \
                               gauss_std=None):

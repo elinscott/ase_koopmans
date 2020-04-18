@@ -27,7 +27,7 @@ def test_turbomole_au13():
     }
 
     calc = Turbomole(**params)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     calc.calculate(atoms)
 
     # use the get_property() method

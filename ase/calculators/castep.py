@@ -1428,7 +1428,7 @@ End CASTEP Interface Documentation
 
             if mulliken_analysis:
                 atoms.set_initial_charges(charges=mulliken_charges_atoms)
-            atoms.set_calculator(self)
+            atoms.calc = self
 
         self._kpoints = kpoints
         self._forces = forces_atoms

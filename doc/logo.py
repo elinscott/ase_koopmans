@@ -22,7 +22,7 @@ logo.center()
 if 1:
     from gpaw import GPAW
     calc = GPAW()
-    logo.set_calculator(calc)
+    logo.calc = calc
     e = logo.get_potential_energy()
     calc.write('logo2.gpw')
 if 0:

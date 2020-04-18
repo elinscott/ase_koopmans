@@ -23,7 +23,7 @@ def test_COCu111_2():
     initial = fcc111 * (2, 2, 4)
     initial.set_cell([2 * d, d * sqrt(3), 1])
     initial.set_pbc((1, 1, 0))
-    initial.set_calculator(EMT())
+    initial.calc = EMT()
     Z = initial.get_positions()[:, 2]
     indices = [i for i, z in enumerate(Z) if z < Z.mean()]
     constraint = FixAtoms(indices=indices)
@@ -47,7 +47,7 @@ def test_COCu111_2():
 
     print('Relax final image')
     final = initial.copy()
-    final.set_calculator(EMT())
+    final.calc = EMT()
     final.set_constraint(constraint)
     final[-2].position = final[-1].position
     final[-1].x = d
@@ -63,7 +63,7 @@ def test_COCu111_2():
 
     print('Optimize neb using a single calculator')
     neb.set_calculators(EMT())
-    # print('0001', id(neb.images[0]), id(neb.images[0].get_calculator().atoms))
+    # print('0001', id(neb.images[0]), id(neb.images[0].calc.atoms))
     dyn = Optimizer(neb, maxstep=0.04, trajectory='mep_2coarse.traj')
     dyn.run(fmax=0.1)
     # dyn.run(fmax=39.1)

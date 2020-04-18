@@ -21,7 +21,7 @@ def test_turbomole_h2o():
     }
 
     calc = Turbomole(**params)
-    mol.set_calculator(calc)
+    mol.calc = calc
     calc.calculate(mol)
     assert calc.converged
 
@@ -46,7 +46,7 @@ def test_turbomole_h2o():
     })
 
     calc = Turbomole(**params)
-    mol.set_calculator(calc)
+    mol.calc = calc
     calc.calculate(mol)
 
     print(calc['results']['vibrational spectrum'])

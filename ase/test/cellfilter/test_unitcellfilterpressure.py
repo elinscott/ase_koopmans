@@ -23,7 +23,7 @@ def test_unitcellfilterpressure():
                                       size=9).reshape((3,3))
 
     atoms = a0.copy()
-    atoms.set_calculator(LennardJones())
+    atoms.calc = LennardJones()
     ucf = UnitCellFilter(atoms, scalar_pressure=10.0*GPa)
 
     # test all derivatives
@@ -40,7 +40,7 @@ def test_unitcellfilterpressure():
 
 
     atoms = a0.copy()
-    atoms.set_calculator(LennardJones())
+    atoms.calc = LennardJones()
     ecf = ExpCellFilter(atoms, scalar_pressure=10.0*GPa)
 
     # test all deritatives

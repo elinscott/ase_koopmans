@@ -43,7 +43,7 @@ def voids(atoms_in):
     atoms = atoms_in.copy()
     # append moving atom
     atoms.append(Atom('X'))
-    atoms.set_calculator(RepulsivePotential())
+    atoms.calc = RepulsivePotential()
 
     voids_a = Atoms()
     voids_a.set_cell(atoms.get_cell())

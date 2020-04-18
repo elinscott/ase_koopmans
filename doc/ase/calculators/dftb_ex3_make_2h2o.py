@@ -55,7 +55,7 @@ calculator_NVT = Dftb(atoms=atoms,
 
 write_dftb_velocities(atoms, 'velocities.txt')
 
-atoms.set_calculator(calculator_NVE)
+atoms.calc = calculator_NVE
 atoms.get_potential_energy()  # run NVE ensemble using DFTB+'s own driver
 atoms = read('geo_end.gen')
 write('after_NVE.xyz', atoms)
@@ -64,7 +64,7 @@ read_dftb_velocities(atoms, filename='geo_end.xyz')
 write_dftb_velocities(atoms, 'velocities.txt')
 os.system('mv geo_end.xyz geo_end_NVE.xyz')
 
-atoms.set_calculator(calculator_NVT)
+atoms.calc = calculator_NVT
 atoms.get_potential_energy()  # run NVT ensemble using DFTB+'s own driver
 atoms = read('geo_end.gen')
 write('after_NVT.xyz', atoms)

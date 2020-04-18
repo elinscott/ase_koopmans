@@ -42,7 +42,7 @@ def read_dacapo_text(fileobj):
                     break
                 i2 -= 1
             energy = float(lines[i2].split()[column])
-            atoms.set_calculator(SinglePointCalculator(atoms, energy=energy))
+            atoms.calc = SinglePointCalculator(atoms, energy=energy)
 
     return atoms
 
@@ -78,6 +78,6 @@ def read_dacapo(filename):
         force = None
     # Fixme magmoms
     calc = SinglePointCalculator(atoms, energy=energy, forces=force)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     return atoms

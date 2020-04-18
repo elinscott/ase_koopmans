@@ -4,6 +4,6 @@ def test_Al_dmol():
 
     atoms = bulk('Al')
     calc = DMol3()
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     atoms.get_potential_energy()
     atoms.get_forces()

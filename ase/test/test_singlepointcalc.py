@@ -27,7 +27,7 @@ def test_singlepointcalc():
     atoms.set_constraint(FixAtoms(indices=[atom.index for atom in atoms]))
 
     # First run the tes with EMT and save a force component.
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     check_forces()
     f = float(atoms.get_forces(apply_constraint=False)[0, 0])
 

@@ -363,7 +363,7 @@ class BundleTrajectory:
                                          forces=forces,
                                          stress=smalldata.get('stress'),
                                          magmoms=magmoms)
-            atoms.set_calculator(calc)
+            atoms.calc = calc
         return atoms
 
     def read_extra_data(self, name, n=0):
@@ -1044,7 +1044,7 @@ def write_bundletrajectory(filename, images):
 
     for atoms in images:
         # Avoid potentially expensive calculations:
-        calc = atoms.get_calculator()
+        calc = atoms.calc
         if hasattr(calc, 'calculation_required'):
             for quantity in ('energy', 'forces', 'stress', 'magmoms'):
                 traj.select_data(quantity,

@@ -193,7 +193,7 @@ def read_single_image(f, levcfg, imcon, natoms, is_trajectory, symbols=None):
     if levcfg > 0:
         atoms.set_velocities(velocities)
     if levcfg > 1:
-        atoms.set_calculator(SinglePointCalculator(atoms, forces=forces))
+        atoms.calc = SinglePointCalculator(atoms, forces=forces)
     return atoms
 
 

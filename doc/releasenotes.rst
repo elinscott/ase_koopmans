@@ -13,9 +13,18 @@ Git master branch
 * Functions for attaching structures in :mod:`attach <ase.build>` introduced.
 
 * Standardize optimizers maximum step variable name to maxstep and default value to 0.2 for all optimizers.
+
 * The tangent estimates used to make the nudged elastic band (NEB) plots are
   slightly improved to use center, rather than forward differences. This does
   not affect how NEBs are run; only how they are displayed.
+
+* :meth:`ase.Atoms.get_calculator` is deprecated.  Use
+  ``atoms.calc`` instead.
+
+* :meth:`ase.Atoms.set_calculator` is deprecated.  Use
+  ``atoms.calc = calc`` instead.
+
+* ``del atoms.calc`` is deprecated.  Use ``atoms.calc = None`` instead.
 
 * The ``ase db db1.db <selection> --insert-into db2.db`` command now respects
   ``--limit`` and ``--offset``.

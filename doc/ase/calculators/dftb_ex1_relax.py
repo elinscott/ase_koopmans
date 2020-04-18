@@ -10,7 +10,7 @@ calc = Dftb(atoms=atoms,
             Hamiltonian_MaxAngularMomentum_O='p',
             Hamiltonian_MaxAngularMomentum_H='s',
             )
-atoms.set_calculator(calc)
+atoms.calc = calc
 
 dyn = QuasiNewton(atoms, trajectory='test.traj')
 dyn.run(fmax=0.01)

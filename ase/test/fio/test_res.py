@@ -280,7 +280,7 @@ def test_res():
     assert res.energy == atoms.get_potential_energy()
 
     spc = SinglePointCalculator(atoms, energy=res.energy)
-    atoms.set_calculator(spc)
+    atoms.calc = spc
 
     write_res('test2.res', atoms)
     atoms2 = read_res(filepath)

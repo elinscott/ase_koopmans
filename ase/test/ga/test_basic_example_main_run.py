@@ -104,7 +104,7 @@ def test_basic_example_main_run():
     # Relax all unrelaxed structures (e.g. the starting population)
     while da.get_number_of_unrelaxed_candidates() > 0:
         a = da.get_an_unrelaxed_candidate()
-        a.set_calculator(EMT())
+        a.calc = EMT()
         print('Relaxing starting candidate {0}'.format(a.info['confid']))
         dyn = BFGS(a, trajectory=None, logfile=None)
         dyn.run(fmax=0.05, steps=100)
@@ -133,7 +133,7 @@ def test_basic_example_main_run():
                 a3 = a3_mut
 
         # Relax the new candidate
-        a3.set_calculator(EMT())
+        a3.calc = EMT()
         dyn = BFGS(a3, trajectory=None, logfile=None)
         dyn.run(fmax=0.05, steps=100)
         set_raw_score(a3, -a3.get_potential_energy())

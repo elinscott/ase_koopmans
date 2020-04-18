@@ -210,7 +210,7 @@ class Octopus(FileIOCalculator, EigenvalOccupationMixin):
         from ase import Atoms
         system = Atoms()
         calc = Octopus(CalculationMode='recipe', **kwargs)
-        system.set_calculator(calc)
+        system.calc = calc
         try:
             system.get_potential_energy()
         except OctopusIOError:

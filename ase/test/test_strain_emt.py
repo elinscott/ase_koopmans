@@ -14,7 +14,7 @@ def test_strain_emt():
         def get_stress(self, atoms):
             return np.zeros(6)
 
-    cu.set_calculator(EMTPlus())
+    cu.calc = EMTPlus()
     f = StrainFilter(cu)
     opt = MDMin(f, dt=0.01)
     opt.run(0.1, steps=2)

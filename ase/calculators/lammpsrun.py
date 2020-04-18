@@ -104,7 +104,7 @@ potentials)
 
     lammps = LAMMPS(parameters=parameters, files=files)
 
-    NiH.set_calculator(lammps)
+    NiH.calc = lammps
     print("Energy ", NiH.get_potential_energy())
 
 (Remember you also need to set the environment variable
@@ -674,7 +674,7 @@ if __name__ == "__main__":
     print("forces for a = {0}".format(a0))
     print(calc.get_forces(bulk))
     # single points for various lattice constants
-    bulk.set_calculator(calc)
+    bulk.calc = calc
     for i in range(-5, 5, 1):
         a = a0 * (1 + i / 100.0)
         bulk.set_cell([a] * 3)

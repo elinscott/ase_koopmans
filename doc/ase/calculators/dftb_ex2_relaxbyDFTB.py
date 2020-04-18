@@ -12,7 +12,7 @@ calc = Dftb(atoms=atoms,
             Hamiltonian_MaxAngularMomentum_O='p',
             Hamiltonian_MaxAngularMomentum_H='s')
 
-atoms.set_calculator(calc)
+atoms.calc = calc
 calc.calculate(atoms)
 
 # The 'geo_end.gen' file written by the ASE calculator

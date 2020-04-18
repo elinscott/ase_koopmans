@@ -108,7 +108,7 @@ For example::
     mishin.write_potential('new.eam.alloy')
     mishin.plot()
 
-    slab.set_calculator(mishin)
+    slab.calc = mishin
     slab.get_potential_energy()
     slab.get_forces()
 

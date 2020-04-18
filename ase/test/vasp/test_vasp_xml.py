@@ -34,7 +34,7 @@ def test_main():
                 lcharg=False,
                 ldipol=True)
 
-    co.set_calculator(calc)
+    co.calc = calc
     energy = co.get_potential_energy()
     forces = co.get_forces()
     dipole_moment = co.get_dipole_moment()

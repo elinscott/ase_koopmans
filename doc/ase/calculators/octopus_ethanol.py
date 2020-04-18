@@ -11,7 +11,7 @@ system.center(vacuum=3.0)
 calc = Octopus(label='ethanol',
                Spacing=0.25,
                BoxShape='parallelepiped')
-system.set_calculator(calc)
+system.calc = calc
 
 opt = QuasiNewton(system, logfile='opt.log', trajectory='opt.traj')
 opt.run(fmax=0.05)

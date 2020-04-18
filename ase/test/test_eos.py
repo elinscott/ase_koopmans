@@ -7,7 +7,7 @@ def test_eos():
     scipy  # silence pyflakes
 
     b = bulk('Al', 'fcc', a=4.0, orthorhombic=True)
-    b.set_calculator(EMT())
+    b.calc = EMT()
     cell = b.get_cell()
 
     volumes = []

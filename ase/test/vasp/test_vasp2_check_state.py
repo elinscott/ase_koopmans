@@ -38,7 +38,7 @@ def test_vasp2_check_state():
 
     calc = Vasp(**settings)
 
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     en1 = atoms.get_potential_energy()
 

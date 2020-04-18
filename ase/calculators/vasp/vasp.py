@@ -211,7 +211,7 @@ class Vasp(GenerateVaspInput, Calculator):
 
     def get_atoms(self):
         atoms = self.atoms.copy()
-        atoms.set_calculator(self)
+        atoms.calc = self
         return atoms
 
     def get_version(self):
@@ -1362,7 +1362,7 @@ class xdat2traj:
                 calc = SinglePointCalculator(self.atoms,
                                              energy=self.energies[step],
                                              forces=self.forces[step])
-                self.atoms.set_calculator(calc)
+                self.atoms.calc = calc
                 self.out.write(self.atoms)
                 scaled_pos = []
                 iatom = 0
@@ -1382,7 +1382,7 @@ class xdat2traj:
         calc = SinglePointCalculator(self.atoms,
                                      energy=self.energies[step],
                                      forces=self.forces[step])
-        self.atoms.set_calculator(calc)
+        self.atoms.calc = calc
         self.out.write(self.atoms)
 
         self.out.close()

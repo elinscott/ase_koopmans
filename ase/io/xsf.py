@@ -60,7 +60,7 @@ def write_xsf(fileobj, images, data=None):
             fileobj.write('ATOMS%s\n' % anim_token)
 
         # Get the forces if it's not too expensive:
-        calc = atoms.get_calculator()
+        calc = atoms.calc
         if (calc is not None and
             (hasattr(calc, 'calculation_required') and
              not calc.calculation_required(atoms, ['forces']))):
@@ -219,7 +219,7 @@ def iread_xsf(fileobj, read_data=False):
         image = Atoms(numbers, positions, cell=cell, pbc=pbc)
 
         if forces is not None:
-            image.set_calculator(SinglePointCalculator(image, forces=forces))
+            image.calc = SinglePointCalculator(image, forces=forces)
         yield image
 
     if read_data:

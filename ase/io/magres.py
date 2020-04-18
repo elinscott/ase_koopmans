@@ -393,7 +393,7 @@ def read_magres(fd, include_unrecognised=False):
                     #     data_dict['magres'][u][0][mn]
                     if atoms.calc is None:
                         calc = SinglePointDFTCalculator(atoms)
-                        atoms.set_calculator(calc)
+                        atoms.calc = calc
                         atoms.calc.results[u] = data_dict['magres'][u][0][mn]
 
     if 'calculation' in data_dict:

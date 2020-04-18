@@ -25,7 +25,7 @@ def test_siesta_zmat(siesta_factory):
             'MD.NumCGsteps': 1000
             })
 
-    atoms.set_calculator(siesta)
+    atoms.calc = siesta
     siesta.write_input(atoms, properties=['energy'])
 
     with open(os.path.join(custom_dir, 'test_label.fdf'), 'r') as fd:

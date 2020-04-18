@@ -32,7 +32,7 @@ def test_h2o_xas_xes():
                        xc=['BLYP', 'BASIS'],
                        input_arguments=input_arguments)
 
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     # energy
     print('XAS hch')
@@ -85,7 +85,7 @@ def test_h2o_xas_xes():
                        xc=['BLYP', 'BASIS'],
                        input_arguments=input_arguments)
 
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     # energy
     print('')
@@ -140,7 +140,7 @@ def test_h2o_xas_xes():
                        xc=['BLYP', 'BASIS'],
                        input_arguments=input_arguments)
 
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
 
     # energy
@@ -170,7 +170,7 @@ def test_h2o_xas_xes():
                        xc=['BLYP', 'BASIS'],
                        input_arguments=input_arguments)
 
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
 
     # energy

@@ -9,7 +9,7 @@ def test_qchem_calculator():
                  method='B3LYP',
                  basis='6-31+G*')
 
-    mol.set_calculator(calc)
+    mol.calc = calc
     # Check energy and forces
     np.testing.assert_allclose(mol.get_potential_energy(), -2172.379183703419,
                                atol=10.)

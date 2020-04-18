@@ -31,7 +31,7 @@ def relax(input_atoms, ref_db):
 
     # Since calculations are extremely fast with EMT we can also do a volume
     # relaxation
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     eps = 0.05
     volumes = (a * np.linspace(1 - eps, 1 + eps, 9))**3
     energies = []

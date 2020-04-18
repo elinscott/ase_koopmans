@@ -44,7 +44,7 @@ calc = Siesta(
                    'ElectronicTemperature': (0.02585, 'eV'),  # 300 K
                    'SaveElectrostaticPotential': True})
 
-bud.set_calculator(calc)
+bud.calc = calc
 dyn = QuasiNewton(bud, trajectory=traj)
 dyn.run(fmax=0.02)
 e = bud.get_potential_energy()

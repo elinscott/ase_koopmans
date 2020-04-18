@@ -25,7 +25,7 @@ def test_main():
     system = create_s22_system('Adenine-thymine_complex_stack')
 
     # Default is D3(zero)
-    system.set_calculator(DFTD3())
+    system.calc = DFTD3()
     close(system.get_potential_energy(), -0.6681154466652238)
 
     # Only check forces once, for the default settings.
@@ -69,52 +69,51 @@ def test_main():
     array_close(f_numer, f_ref, releps=1e-2, abseps=1e-3)
 
     # D2
-    system.set_calculator(DFTD3(old=True))
+    system.calc = DFTD3(old=True)
     close(system.get_potential_energy(), -0.8923443424663762)
 
     # D3(BJ)
-    system.set_calculator(DFTD3(damping='bj'))
+    system.calc = DFTD3(damping='bj')
     close(system.get_potential_energy(), -1.211193213979179)
 
     # D3(zerom)
-    system.set_calculator(DFTD3(damping='zerom'))
+    system.calc = DFTD3(damping='zerom')
     close(system.get_potential_energy(), -2.4574447613705717)
 
     # D3(BJm)
-    system.set_calculator(DFTD3(damping='bjm'))
+    system.calc = DFTD3(damping='bjm')
     close(system.get_potential_energy(), -1.4662085277005799)
 
     # alternative tz parameters
-    system.set_calculator(DFTD3(tz=True))
+    system.calc = DFTD3(tz=True)
     close(system.get_potential_energy(), -0.6160295884482619)
 
     # D3(zero, ABC)
-    system.set_calculator(DFTD3(abc=True))
+    system.calc = DFTD3(abc=True)
     close(system.get_potential_energy(), -0.6528640090262864)
 
     # D3(zero) with revpbe parameters
-    system.set_calculator(DFTD3(xc='revpbe'))
+    system.calc = DFTD3(xc='revpbe')
     close(system.get_potential_energy(), -1.5274869363442936)
 
     # Custom damping parameters
-    system.set_calculator(DFTD3(s6=1.1, sr6=1.1, s8=0.6, sr8=0.9,
-                                alpha6=13.0))
+    system.calc = DFTD3(s6=1.1, sr6=1.1, s8=0.6, sr8=0.9, alpha6=13.0)
     close(system.get_potential_energy(), -1.082846357973487)
 
     # A couple of combinations, but not comprehensive
 
     # D3(BJ, ABC)
-    system.set_calculator(DFTD3(damping='bj', abc=True))
+    system.calc = DFTD3(damping='bj', abc=True)
     close(system.get_potential_energy(), -1.1959417763402416)
 
     # D3(zerom) with B3LYP parameters
-    system.set_calculator(DFTD3(damping='zerom', xc='b3-lyp'))
+    system.calc = DFTD3(damping='zerom', xc='b3-lyp')
     close(system.get_potential_energy(), -1.3369234231047677)
 
     # use diamond for bulk system
     system = bulk('C')
 
-    system.set_calculator(DFTD3())
+    system.calc = DFTD3()
     close(system.get_potential_energy(), -0.2160072476277501)
 
     # Do one stress for the default settings

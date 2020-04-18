@@ -28,7 +28,7 @@ def test_ts09():
     cc = FakeDFTcalculator()
     hp = FakeHirshfeldPartitioning(cc)
     c = vdWTkatchenko09prl(hp, [3])
-    al.set_calculator(c)
+    al.calc = c
     al.get_potential_energy()
 
     fname = 'out.traj'
@@ -38,7 +38,7 @@ def test_ts09():
     io.read(fname)
     # maybe assert something about what we just read?
 
-    p = io.read(fname).get_calculator().parameters
+    p = io.read(fname).calc.parameters
     p['calculator']
     p['xc']
     p['uncorrected_energy']

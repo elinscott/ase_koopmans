@@ -9,7 +9,7 @@ def test_hookean_pbc():
     positions = [[(L - d/2) % L , L/2, L/2], [(L + d/2) % L, L/2, L/2]]
     a = Atoms('AuAu', cell=cell, positions=positions, pbc=True)
 
-    a.set_calculator(EMT())
+    a.calc = EMT()
     e1 = a.get_potential_energy()
 
     constraint = Hookean(a1=0, a2=1, rt=1.1*d, k=10.)
