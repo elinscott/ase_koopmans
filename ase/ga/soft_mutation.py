@@ -341,7 +341,7 @@ class SoftMutation(OffspringCreator):
             calc = self.calc(atoms, rcut=self.rcut)
         else:
             calc = self.calc
-        a.set_calculator(calc)
+        a.calc = calc
 
         if self.use_tags:
             a = TagFilter(a)

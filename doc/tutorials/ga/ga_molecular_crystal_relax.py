@@ -21,7 +21,7 @@ def relax(atoms):
     # Molecular Simulations, 13, 11 (1994).
     calc = HarmonicPlusLennardJones(epsilon=37.3 * kB, sigma=3.31, rc=12.,
                                     r0=1.12998, k=10.)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     dyn = PreconLBFGS(atoms, variable_cell=True, maxstep=0.2,
                       use_armijo=True, logfile='opt.log', trajectory='opt.traj')
@@ -44,7 +44,7 @@ def finalize(atoms, energy=None, forces=None, stress=None):
     atoms.wrap()
     calc = SinglePointCalculator(atoms, energy=energy, forces=forces,
                                  stress=stress)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     raw_score = -atoms.get_potential_energy()
     set_raw_score(atoms, raw_score)
 
