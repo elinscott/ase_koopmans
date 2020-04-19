@@ -20,7 +20,7 @@ def test_mustem():
 
     filename = 'sto_mustem.xtl'
     STO_DW_dict = {'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02}
-    STO_DW_dict_Ti_missing = {key:STO_DW_dict[key] for key in ['Sr', 'O']}
+    STO_DW_dict_Ti_missing = {key: STO_DW_dict[key] for key in ['Sr', 'O']}
 
     with pytest.raises(TypeError):
         atoms.write(filename)
@@ -73,8 +73,12 @@ def test_mustem():
     Si_atoms = bulk('Si', cubic=True)
 
     filename = 'Si100.xtl'
-    Si_atoms.write(filename, keV=300, debye_waller_factors=0.78700E-02)
+    DW = 0.78700E-02
+    Si_atoms.write(filename, keV=300, debye_waller_factors=DW)
     Si_atoms2 = read(filename)
 
     np.testing.assert_allclose(Si_atoms.positions, Si_atoms2.positions)
     np.testing.assert_allclose(Si_atoms.cell, Si_atoms2.cell)
+    np.testing.assert_allclose(Si_atoms2.arrays['occupancy'], np.ones(8))
+    np.testing.assert_allclose(Si_atoms2.arrays['debye_waller_factors'],
+                               np.ones(8) * DW)

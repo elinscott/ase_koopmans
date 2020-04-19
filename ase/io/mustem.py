@@ -37,19 +37,28 @@ def read_mustem(fd):
 
     symbols = []
     positions = []
+    debye_waller_factors = []
+    occupancies = []
 
     for i in range(element_number):
         # Read the element
         symbol = str(fd.readline().strip())
-        atoms_number = int(fd.readline().split()[0])
+        line = fd.readline().split()
+        atoms_number = int(line[0])
+        occupancy = float(line[2])
+        DW = float(line[3])
         # read all the position for each element
         for j in range(atoms_number):
             line = fd.readline()
             positions.append([float(i) for i in line.split()])
             symbols.append(symbol)
+            debye_waller_factors.append(DW)
+            occupancies.append(occupancy)
 
     atoms = Atoms(cell=cell, scaled_positions=positions)
     atoms.set_chemical_symbols(symbols)
+    atoms.set_array('occupancy', np.array(occupancies))
+    atoms.set_array('debye_waller_factors', np.array(debye_waller_factors))
 
     return atoms
 

@@ -32,7 +32,6 @@ def test_write_read_cycle_xyz_prismatic():
     rng = np.random.RandomState(42)
     atoms.set_array('debye_waller_factors', 0.076 + 0.01 * rng.rand(len(atoms)))
 
-
     filename = 'SI100.XYZ'
     atoms.write(filename=filename, format='prismatic',
                 comments='one unit cell of 100 silicon')
@@ -67,7 +66,7 @@ def test_write_error():
                       debye_waller_factors={'Si': 0.076})
 
     STO_DW_dict = {'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02}
-    STO_DW_dict_Ti_missing = {key:STO_DW_dict[key] for key in ['Sr', 'O']}
+    STO_DW_dict_Ti_missing = {key: STO_DW_dict[key] for key in ['Sr', 'O']}
 
     with pytest.raises(ValueError):
         # DW missing keys
