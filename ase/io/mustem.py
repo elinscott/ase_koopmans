@@ -180,8 +180,8 @@ class XtlmuSTEMWriter:
 
     def _get_position_array_single_atom_type(self, number):
         # Get the scaled (reduced) position for a single atom type
-        return self.atoms.get_scaled_positions()[np.where(
-            self.atoms.numbers == number)]
+        return self.atoms.get_scaled_positions()[
+            self.atoms.numbers==number]
 
     def _get_file_header(self):
         # 1st line: comment line
@@ -223,8 +223,7 @@ class XtlmuSTEMWriter:
                                              number,
                                              self.occupancies[atom_type],
                                              self.debye_waller_factors[atom_type]))
-            for pos in positions:
-                f.write('{0} {1} {2}\n'.format(pos[0], pos[1], pos[2]))
+            np.savetxt(fname=f, X=positions, fmt='%.6g', newline='\n')
 
         f.write(self._get_file_end())
 
