@@ -3,6 +3,7 @@ import pytest
 
 from ase import Atoms
 from ase.io import read
+from ase.build import bulk
 
 
 def test_mustem():
@@ -69,22 +70,11 @@ def test_mustem():
                      debye_waller_factors=STO_DW_dict)
 
     # Setting Debye-Waller factor as float.
-    Si_atoms = Atoms(symbols='Si' * 8,
-                     positions=[[0.0000, 0.0000, 0.0000],
-                                [2.7150, 2.7150, 0.0000],
-                                [1.3575, 4.0725, 1.3575],
-                                [4.0725, 1.3575, 1.3575],
-                                [2.7150, 0.0000, 2.7150],
-                                [0.0000, 2.7150, 2.7150],
-                                [1.3575, 1.3575, 4.0725],
-                                [4.0725, 4.0725, 4.0725]],
-                     cell=[5.43, 5.43, 5.43],
-                     pbc=True)
+    Si_atoms = bulk('Si', cubic=True)
 
     filename = 'Si100.xtl'
     Si_atoms.write(filename, keV=300, debye_waller_factors=0.78700E-02)
     Si_atoms2 = read(filename)
 
-    np.testing.assert_allclose(Si_atoms.positions.sum(),
-                               Si_atoms2.positions.sum())
-    np.testing.assert_allclose(Si_atoms.cell.sum(), Si_atoms2.cell.sum())
+    np.testing.assert_allclose(Si_atoms.positions, Si_atoms2.positions)
+    np.testing.assert_allclose(Si_atoms.cell, Si_atoms2.cell)
