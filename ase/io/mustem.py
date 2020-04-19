@@ -35,30 +35,34 @@ def read_mustem(fd):
     # Number of different type of atoms
     element_number = int(fd.readline().strip())
 
-    symbols = []
+    # List of numpy arrays:
+    # length of the list = number of different atom type (element_number)
+    # length of each array = number of atoms for each atom type
+    atomic_numbers = []
     positions = []
     debye_waller_factors = []
     occupancies = []
 
     for i in range(element_number):
         # Read the element
-        symbol = str(fd.readline().strip())
+        _ = fd.readline()
         line = fd.readline().split()
         atoms_number = int(line[0])
+        atomic_number = int(line[1])
         occupancy = float(line[2])
         DW = float(line[3])
         # read all the position for each element
-        for j in range(atoms_number):
-            line = fd.readline()
-            positions.append([float(i) for i in line.split()])
-            symbols.append(symbol)
-            debye_waller_factors.append(DW)
-            occupancies.append(occupancy)
+        positions.append(np.genfromtxt(fname=fd, max_rows=atoms_number))
+        atomic_numbers.append(np.ones(atoms_number) * atomic_number)
+        occupancies.append(np.ones(atoms_number) * occupancy)
+        debye_waller_factors.append(np.ones(atoms_number) * DW)
+
+    positions = np.vstack(positions)
 
     atoms = Atoms(cell=cell, scaled_positions=positions)
-    atoms.set_chemical_symbols(symbols)
-    atoms.set_array('occupancy', np.array(occupancies))
-    atoms.set_array('debye_waller_factors', np.array(debye_waller_factors))
+    atoms.set_atomic_numbers(np.hstack(atomic_numbers))
+    atoms.set_array('occupancy', np.hstack(occupancies))
+    atoms.set_array('debye_waller_factors', np.hstack(debye_waller_factors))
 
     return atoms
 
