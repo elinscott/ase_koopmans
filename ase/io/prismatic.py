@@ -26,9 +26,9 @@ def _check_numpy_version():
 def read_prismatic(fd):
     """Import prismatic and computem xyz input file as an Atoms object.
 
-    Reads cell, atom positions, occupancy and Debye Waller factor.
-    The occupancy and the Debye Waller factors are obtained using the
-    `get_array` method and the `occupancy` and `debye_waller_factors` keys,
+    Reads cell, atom positions, occupancies and Debye Waller factor.
+    The occupancy values and the Debye Waller factors are obtained using the
+    `get_array` method and the `occupancies` and `debye_waller_factors` keys,
     respectively.
     """
     _check_numpy_version()
@@ -49,7 +49,7 @@ def read_prismatic(fd):
                   positions=read_data[:, 1:4],
                   cell=cellpar,
                   )
-    atoms.set_array('occupancy', read_data[:, 4])
+    atoms.set_array('occupancies', read_data[:, 4])
     atoms.set_array('debye_waller_factors', read_data[:, 5])
 
     return atoms
@@ -71,17 +71,17 @@ class XYZPrismaticWriter:
         self.atom_types = set(atoms.symbols)
         self.comments = comments
 
-        self.occupancy = self._get_occupancy()
+        self.occupancies = self._get_occupancies()
         self.debye_waller_factors = self._get_debye_waller_factors(
             debye_waller_factors)
 
-    def _get_occupancy(self):
-        if 'occupancy' in self.atoms.arrays:
-            occupancy = self.atoms.get_array('occupancy', copy=False)
+    def _get_occupancies(self):
+        if 'occupancies' in self.atoms.arrays:
+            occupancies = self.atoms.get_array('occupancies', copy=False)
         else:
-            occupancy = np.ones_like(self.atoms.numbers)
+            occupancies = np.ones_like(self.atoms.numbers)
 
-        return occupancy
+        return occupancies
 
     def _get_debye_waller_factors(self, DW):
         if np.isscalar(DW):
@@ -137,7 +137,7 @@ class XYZPrismaticWriter:
     def write_to_file(self, f):
         data_array = np.vstack((self.atoms.numbers,
                                 self.atoms.positions.T,
-                                self.occupancy,
+                                self.occupancies,
                                 self.debye_waller_factors)
                                ).T
 
@@ -153,10 +153,10 @@ class XYZPrismaticWriter:
 
 def write_prismatic(fd, *args, **kwargs):
     """Write xyz input file for the prismatic and computem software. The cell
-    needs to be orthorhombric. If the cell contains the `occupancy` and
+    needs to be orthorhombric. If the cell contains the `occupancies` and
     `debye_waller_factors` arrays (see the `set_array` method to set them),
     these array will be written to the file.
-    If the occupancy is not specified, the default value will be set to 0.
+    If the occupancies is not specified, the default value will be set to 0.
 
     Parameters:
 
