@@ -9,6 +9,7 @@ See https://github.com/HamishGBrown/MuSTEM for the source code of muSTEM.
 import numpy as np
 
 from ase.atoms import symbols2numbers
+from ase.data import chemical_symbols
 from ase.utils import reader
 
 
@@ -61,7 +62,7 @@ def read_mustem(fd):
 
     atoms = Atoms(cell=cell, scaled_positions=positions)
     atoms.set_atomic_numbers(np.hstack(atomic_numbers))
-    atoms.set_array('occupancy', np.hstack(occupancies))
+    atoms.set_array('occupancies', np.hstack(occupancies))
     atoms.set_array('debye_waller_factors', np.hstack(debye_waller_factors))
 
     return atoms
@@ -72,7 +73,7 @@ class XtlmuSTEMWriter:
     """
 
     def __init__(self, atoms, keV, debye_waller_factors=None,
-                 comment=None, occupancy=1.0, fit_cell_to_atoms=False):
+                 comment=None, occupancies=None, fit_cell_to_atoms=False):
         cell = atoms.get_cell()
         if not cell.orthorhombic:
             raise ValueError('To export to this format, the cell needs to be '
@@ -84,7 +85,7 @@ class XtlmuSTEMWriter:
         self.atom_types = list(set(atoms.symbols))
         self.keV = keV
         self.comment = comment
-        self.occupancy = self._get_occupancy(occupancy)
+        self.occupancies = self._get_occupancies(occupancies)
         self.debye_waller_factors = self._get_debye_waller_factors(
             debye_waller_factors)
 
@@ -93,15 +94,28 @@ class XtlmuSTEMWriter:
             self.atoms.translate(-self.atoms.positions.min(axis=0))
             self.atoms.set_cell(self.atoms.positions.max(axis=0))
 
-    def _get_occupancy(self, occupancy):
-        if np.isscalar(occupancy):
-            occupancy = {atom: occupancy for atom in self.atom_types}
-        elif isinstance(occupancy, dict):
-            self._check_key_dictionary(occupancy, 'occupancy')
+    def _get_occupancies(self, occupancies):
+        if occupancies is None:
+            if 'occupancies' in self.atoms.arrays:
+                occupancies = {element:
+                               self._parse_array_from_atoms(
+                                   'occupancies', element, True)
+                               for element in self.atom_types}
+            else:
+                occupancies = 1.0
+        if np.isscalar(occupancies):
+            occupancies = {atom: occupancies for atom in self.atom_types}
+        elif isinstance(occupancies, dict):
+            self._check_key_dictionary(occupancies, 'occupancies')
 
-        return occupancy
+        return occupancies
 
     def _get_debye_waller_factors(self, DW):
+        if DW is None:
+            if 'debye_waller_factors' in self.atoms.arrays:
+                DW = {element: self._parse_array_from_atoms(
+                    'debye_waller_factors', element, True)
+                    for element in self.atom_types}
         if np.isscalar(DW):
             if len(self.atom_types) > 1:
                 raise ValueError('This cell contains more then one type of '
@@ -120,6 +134,42 @@ class XtlmuSTEMWriter:
                              'provided as float.')
 
         return DW
+
+    def _parse_array_from_atoms(self, name, element, check_same_value):
+        """
+        Return the array "name" for the given element.
+
+        Parameters
+        ----------
+        name : str
+            The name of the arrays. Can be any key of `atoms.arrays`
+        element : str, int
+            The element to be considered.
+        check_same_value : bool
+            Check if all values are the same in the array. Necessary for
+            'occupancies' and 'debye_waller_factors' arrays.
+
+        Returns
+        -------
+        array containing the values corresponding defined by "name" for the
+        given element. If check_same_value, return a single element.
+
+        """
+        if isinstance(element, str):
+            element = symbols2numbers(element)[0]
+        sliced_array = self.atoms.arrays[name][self.atoms.numbers == element]
+
+        if check_same_value:
+            # to write the occupancies and the Debye Waller factor of xtl file
+            # all the value must be equal
+            if np.unique(sliced_array).size > 1:
+                raise ValueError(
+                    "All the '{}' values for element '{}' must be "
+                    "equal.".format(name, chemical_symbols[element])
+                )
+            sliced_array = sliced_array[0]
+
+        return sliced_array
 
     def _check_key_dictionary(self, d, dict_name):
         # Check if we have enough key
@@ -166,12 +216,12 @@ class XtlmuSTEMWriter:
         f.write(self._get_file_header())
         for atom_type, number, occupancy in zip(self.atom_types,
                                                 self.numbers,
-                                                self.occupancy):
+                                                self.occupancies):
             positions = self._get_position_array_single_atom_type(number)
             atom_type_number = positions.shape[0]
             f.write(self._get_element_header(atom_type, atom_type_number,
                                              number,
-                                             self.occupancy[atom_type],
+                                             self.occupancies[atom_type],
                                              self.debye_waller_factors[atom_type]))
             for pos in positions:
                 f.write('{0} {1} {2}\n'.format(pos[0], pos[1], pos[2]))
@@ -192,7 +242,7 @@ def write_mustem(filename, *args, **kwargs):
     debye_waller_factors: float or dictionary of float with atom type as key
         Debye-Waller factor of each atoms.
 
-    occupancy: float or dictionary of float with atom type as key (optional)
+    occupancies: float or dictionary of float with atom type as key (optional)
         Occupancy of each atoms. Default value is `1.0`.
 
     comment: str (optional)
