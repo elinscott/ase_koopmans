@@ -13,6 +13,14 @@ from ase.data import chemical_symbols
 from ase.utils import reader
 
 
+def _check_numpy_version():
+    # This writer doesn't support numpy < 1.14 because of the issue:
+    # https://github.com/numpy/numpy/issues/10018
+    from distutils.version import LooseVersion
+    if LooseVersion(np.__version__) < LooseVersion("1.14"):
+        raise NotImplementedError("Writing this format needs numpy >= 1.14.")
+
+
 @reader
 def read_mustem(fd):
     """Import muSTEM input file.
