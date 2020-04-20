@@ -10,6 +10,9 @@ Git master branch
 
 :git:`master <>`.
 
+
+* Read and write support for qball sys file format.
+
 * Functions for attaching structures in :mod:`attach <ase.build>` introduced.
 
 * Standardize optimizers maximum step variable name to maxstep and default value to 0.2 for all optimizers.
