@@ -132,10 +132,14 @@ class StartGenerator(object):
         Whether to also make sure that there are no isolated
         atoms or molecules with nearest-neighbour bond lengths
         larger than 2x the value in the blmin dict.
+
+    rng: Random number generator
+        By default numpy.random.
     """
     def __init__(self, slab, blocks, blmin, number_of_variable_cell_vectors=0,
                  box_to_place_in=None, box_volume=None, splits=None,
-                 cellbounds=None, test_dist_to_slab=True, test_too_far=True):
+                 cellbounds=None, test_dist_to_slab=True, test_too_far=True,
+                 rng=np.random):
 
         self.slab = slab
 
@@ -210,6 +214,7 @@ class StartGenerator(object):
         self.cellbounds = cellbounds
         self.test_too_far = test_too_far
         self.test_dist_to_slab = test_dist_to_slab
+        self.rng = rng
 
     def get_new_candidate(self, maxiter=None):
         """Returns a new candidate.
@@ -227,7 +232,7 @@ class StartGenerator(object):
         pbc = self.slab.get_pbc()
 
         # Choose cell splitting
-        r = np.random.random()
+        r = self.rng.random()
         cumprob = 0
         for split, prob in self.splits.items():
             cumprob += prob
@@ -240,7 +245,7 @@ class StartGenerator(object):
         repeat = [1, 1, 1]
         if len(directions) > 0:
             for number in split:
-                d = np.random.choice(directions)
+                d = self.rng.choice(directions)
                 repeat[d] = number
         repeat = tuple(repeat)
 
@@ -279,7 +284,7 @@ class StartGenerator(object):
         # Shuffle the ordering so different blocks
         # are added in random order
         order = np.arange(N_blocks)
-        np.random.shuffle(order)
+        self.rng.shuffle(order)
         blocks = [blocks[i] for i in order]
         ids = np.array(ids)[order]
 
@@ -301,12 +306,12 @@ class StartGenerator(object):
                 while maxiter is None or niter < maxiter:
                     niter += 1
                     cop = atoms.get_positions().mean(axis=0)
-                    pos = np.dot(np.random.random((1, 3)), box)
+                    pos = np.dot(self.rng.random((1, 3)), box)
                     atoms.translate(pos - cop)
 
                     if len(atoms) > 1:
                         # Apply a random rotation to multi-atom blocks
-                        phi, theta, psi = 360 * np.random.random(3)
+                        phi, theta, psi = 360 * self.rng.random(3)
                         atoms.euler_rotate(phi=phi, theta=0.5 * theta, psi=psi,
                                            center=pos)
 
@@ -342,7 +347,7 @@ class StartGenerator(object):
 
             for i, (block, count) in enumerate(self.blocks):
                 tags = np.where(ids_full == i)[0]
-                bad = np.random.choice(tags, size=surplus[i], replace=False)
+                bad = self.rng.choice(tags, size=surplus[i], replace=False)
                 for tag in tags:
                     if tag not in bad:
                         select = [a.index for a in cand_full if a.tag == tag]
@@ -451,11 +456,11 @@ class StartGenerator(object):
 
             for i in range(self.number_of_variable_cell_vectors):
                 # on-diagonal values
-                cell[i, i] = np.random.random() * np.cbrt(self.box_volume)
+                cell[i, i] = self.rng.random() * np.cbrt(self.box_volume)
                 cell[i, i] *= repeat[i]
                 for j in range(i):
                     # off-diagonal values
-                    cell[i, j] = (np.random.random() - 0.5) * cell[i - 1, i - 1]
+                    cell[i, j] = (self.rng.random() - 0.5) * cell[i - 1, i - 1]
 
             # volume scaling
             for i in range(self.number_of_variable_cell_vectors, 3):
