@@ -1,10 +1,18 @@
-def test_mutations():
+def test_mutations(seeds):
+    for seed in seeds:
+        run(seed)
+
+
+def run(seed):
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.utilities import closest_distances_generator
     from ase.ga.standardmutations import RattleMutation, PermutationMutation
     import numpy as np
     from ase.build import fcc111
     from ase.constraints import FixAtoms
+
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
     # first create two random starting candidates
     slab = fcc111('Au', size=(4, 4, 2), vacuum=10.0, orthogonal=True)
@@ -26,13 +34,15 @@ def test_mutations():
     sg = StartGenerator(slab=slab,
                         blocks=atom_numbers,
                         blmin=blmin,
-                        box_to_place_in=[p0, [v1, v2, v3]])
+                        box_to_place_in=[p0, [v1, v2, v3]],
+                        rng=rng)
 
     c1 = sg.get_new_candidate()
     c1.info['confid'] = 1
 
     # first verify that the rattle mutation works
-    rmut = RattleMutation(blmin, n_top, rattle_strength=0.8, rattle_prop=0.4)
+    rmut = RattleMutation(blmin, n_top, rattle_strength=0.8, rattle_prop=0.4,
+                          rng=rng)
 
     c2, desc = rmut.get_new_individual([c1])
 
@@ -56,7 +66,7 @@ def test_mutations():
 
     # now we check the permutation mutation
 
-    mmut = PermutationMutation(n_top, probability=0.5)
+    mmut = PermutationMutation(n_top, probability=0.5, rng=rng)
 
     c3, desc = mmut.get_new_individual([c1])
     assert np.all(c1.numbers == c3.numbers)

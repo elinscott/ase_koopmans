@@ -166,3 +166,15 @@ def arbitrarily_seed_rng(request):
     np.random.seed(seed)
     yield
     np.random.set_state(state)
+
+
+def pytest_addoption(parser):
+    parser.addoption('--seeds', action='store', default='0,1',
+                     help='Comma-separated list of seeds for tests'
+                          ' where random number generators are involved')
+
+
+@pytest.fixture
+def seeds(request):
+    seeds = request.config.getoption('--seeds')
+    yield map(int, seeds.split(','))
