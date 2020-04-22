@@ -177,4 +177,4 @@ def pytest_addoption(parser):
 @pytest.fixture
 def seeds(request):
     seeds = request.config.getoption('--seeds')
-    yield map(int, seeds.split(','))
+    return list(map(int, seeds.split(',')))
