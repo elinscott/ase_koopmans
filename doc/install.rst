@@ -83,6 +83,10 @@ the source code from PyPI_::
 
     $ pip install --upgrade --user ase
 
+If you intend to run the tests, use::
+
+    $ pip install --upgrade --user ase[test]
+
 This will install ASE in a local folder where Python can
 automatically find it (``~/.local`` on Unix, see here_ for details).  Some
 :ref:`cli` will be installed in the following location:
@@ -95,8 +99,8 @@ Windows            ``%APPDATA%/Python/Scripts``
 
 Make sure you have that path in your :envvar:`PATH` environment variable.
 
-Now you should be ready to use ASE, but before you start, please `run the
-tests`_ as described below.
+Now you should be ready to use ASE, but before you start, you may
+wish to `run the tests`_ as described below.
 
 
 .. note::
