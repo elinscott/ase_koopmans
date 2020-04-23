@@ -1,9 +1,4 @@
-def test_particle_comparators(seeds):
-    for seed in seeds:
-        run(seed)
-
-
-def run(seed):
+def test_particle_comparators(seed):
     import numpy as np
     from ase.cluster import Icosahedron
     from ase.ga.particle_comparator import NNMatComparator

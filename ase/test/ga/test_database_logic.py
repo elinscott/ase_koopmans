@@ -1,17 +1,7 @@
-import os
-
-
 db_file = 'gadb_logics_test.db'
 
 
-def test_database_logic(seeds):
-    for seed in seeds:
-        if os.path.exists(db_file):
-            os.remove(db_file)
-        run(seed)
-
-
-def run(seed):
+def test_database_logic(seed):
     from ase.ga.data import PrepareDB
     from ase.ga.data import DataConnection
     from ase.ga.startgenerator import StartGenerator
@@ -91,5 +81,3 @@ def run(seed):
 
     dc.remove_from_queue(confid)
     assert len(dc.get_all_candidates_in_queue()) == 0
-
-    os.remove(db_file)

@@ -1,9 +1,4 @@
-def test_mutations(seeds):
-    for seed in seeds:
-        run(seed)
-
-
-def run(seed):
+def test_mutations(seed):
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.utilities import closest_distances_generator
     from ase.ga.standardmutations import RattleMutation, PermutationMutation

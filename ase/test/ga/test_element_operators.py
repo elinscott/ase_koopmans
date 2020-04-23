@@ -1,9 +1,4 @@
-def test_element_operators(seeds):
-    for seed in seeds:
-        run(seed)
-
-
-def run(seed):
+def test_element_operators(seed):
     import numpy as np
     from ase import Atoms
     from ase.ga.element_crossovers import OnePointElementCrossover

@@ -116,6 +116,15 @@ def pytest_generate_tests(metafunc):
     from ase.test.factories import parametrize_calculator_tests
     parametrize_calculator_tests(metafunc)
 
+    if 'seed' in metafunc.fixturenames:
+        seeds = metafunc.config.getoption('seed')
+        if len(seeds) == 0:
+            seeds = [0, 1]
+        else:
+            seeds = list(map(int, seeds))
+        metafunc.parametrize('seed', seeds)
+
+
 class CLI:
     def ase(self, args):
         if isinstance(args, str):
@@ -169,12 +178,7 @@ def arbitrarily_seed_rng(request):
 
 
 def pytest_addoption(parser):
-    parser.addoption('--seeds', action='store', default='0,1',
-                     help='Comma-separated list of seeds for tests'
-                          ' where random number generators are involved')
-
-
-@pytest.fixture
-def seeds(request):
-    seeds = request.config.getoption('--seeds')
-    return list(map(int, seeds.split(',')))
+    parser.addoption('--seed', action='append', default=[],
+                     help='Add a seed for tests where random number generators'
+                          ' are involved. This option can be applied more'
+                          ' than once.')

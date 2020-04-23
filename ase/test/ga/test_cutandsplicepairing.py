@@ -1,9 +1,4 @@
-def test_cutandsplicepairing(seeds):
-    for seed in seeds:
-        run(seed)
-
-
-def run(seed):
+def test_cutandsplicepairing(seed):
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.utilities import closest_distances_generator, atoms_too_close
     from ase.ga.cutandsplicepairing import CutAndSplicePairing

@@ -1,9 +1,4 @@
-def test_chain_operators(seeds):
-    for seed in seeds:
-        run(seed)
-
-
-def run(seed):
+def test_chain_operators(seed):
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.cutandsplicepairing import CutAndSplicePairing
     from ase.ga.standardmutations import StrainMutation

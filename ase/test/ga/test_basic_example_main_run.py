@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import pytest
 from ase.ga.data import PrepareDB
@@ -25,14 +24,7 @@ db_file = 'gadb.db'
 
 
 @pytest.mark.slow
-def test_basic_example_main_run(seeds):
-    for seed in seeds:
-        if os.path.exists(db_file):
-            os.remove(db_file)
-        run(seed)
-
-
-def run(seed):
+def test_basic_example_main_run(seed):
     # set up the random number generator
     rng = np.random.RandomState(seed)
 

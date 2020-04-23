@@ -16,12 +16,7 @@ from ase.ga.standardmutations import (RattleMutation, PermutationMutation,
 
 
 @pytest.mark.slow
-def test_bulk_operators(seeds):
-    for seed in seeds:
-        run(seed)
-
-
-def run(seed):
+def test_bulk_operators(seed):
     # set up the random number generator
     rng = np.random.RandomState(seed)
 
