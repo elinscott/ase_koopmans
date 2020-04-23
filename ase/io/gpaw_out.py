@@ -227,7 +227,7 @@ def read_gpaw_out(fileobj, index):
                 calc.energy_contributions = energy_contributions
             if kpts is not None:
                 calc.kpts = kpts
-            atoms.set_calculator(calc)
+            atoms.calc = calc
 
         images.append(atoms)
         lines = lines[i:]

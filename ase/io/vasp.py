@@ -394,16 +394,16 @@ def _read_outcar_frame(lines, header_data):
                     # Collinear
                     magmoms = np.array(mag_x)
 
-            atoms.set_calculator(
-                SinglePointDFTCalculator(atoms,
-                                         energy=energy_zero,
-                                         free_energy=energy_free,
-                                         ibzkpts=ibzkpts,
-                                         forces=forces,
-                                         efermi=efermi,
-                                         magmom=magmom,
-                                         magmoms=magmoms,
-                                         stress=stress))
+            atoms.calc = SinglePointDFTCalculator(
+                atoms,
+                energy=energy_zero,
+                free_energy=energy_free,
+                ibzkpts=ibzkpts,
+                forces=forces,
+                efermi=efermi,
+                magmom=magmom,
+                magmoms=magmoms,
+                stress=stress)
             atoms.calc.name = 'vasp'
             atoms.calc.kpts = kpts
     return atoms
@@ -827,11 +827,11 @@ def read_vasp_xml(filename='vasprun.xml', index=-1):
         atoms = atoms_init.copy()
         atoms.set_cell(cell)
         atoms.set_scaled_positions(scpos)
-        atoms.set_calculator(
-            SinglePointDFTCalculator(atoms, energy=energy, forces=forces,
-                                     stress=stress, free_energy=free_energy,
-                                     ibzkpts=ibz_kpts,
-                                     efermi=efermi, dipole=dipole))
+        atoms.calc = SinglePointDFTCalculator(
+            atoms, energy=energy, forces=forces,
+            stress=stress, free_energy=free_energy,
+            ibzkpts=ibz_kpts,
+            efermi=efermi, dipole=dipole)
         atoms.calc.name = 'vasp'
         atoms.calc.kpts = kpoints
         atoms.calc.parameters = parameters

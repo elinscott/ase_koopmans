@@ -13,7 +13,7 @@ def test_fire():
 
     a[0].x += 0.5
 
-    a.set_calculator(EMT())
+    a.calc = EMT()
 
     opt = FIRE(a, dtmax=1.0, dt=1.0, maxstep=100.0, downhill_check=False)
     opt.run(fmax=0.001)
@@ -25,7 +25,7 @@ def test_fire():
 
     a[0].x += 0.5
 
-    a.set_calculator(EMT())
+    a.calc = EMT()
 
     reset_history = []
 

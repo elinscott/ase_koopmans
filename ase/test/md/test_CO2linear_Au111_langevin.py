@@ -32,7 +32,7 @@ def test_CO2linear_Au111_langevin():
     d2 = co2.get_distance(-2, -1)
 
     calc = EMT()
-    slab.set_calculator(calc)
+    slab.calc = calc
     constraint = FixLinearTriatomic(triples=[(-2, -3, -1)])
     slab.set_constraint(constraint)
 

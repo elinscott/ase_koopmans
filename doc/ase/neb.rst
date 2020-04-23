@@ -57,7 +57,7 @@ saved in A.traj and B.traj::
   neb.interpolate()
   # Set calculators:
   for image in images[1:4]:
-      image.set_calculator(MyCalculator(...))
+      image.calc = MyCalculator(...)
   # Optimize:
   optimizer = MDMin(neb, trajectory='A2B.traj')
   optimizer.run(fmax=0.04)
@@ -70,10 +70,11 @@ the original atoms object.
 Notice the use of the :meth:`~NEB.interpolate` method to obtain an
 initial guess for the path from A to B.
 
+
 Interpolation
 =============
 
-.. method:: NEB.interpolate()
+``NEB.interpolate()``
 
    Interpolate path linearly from initial to final state.
 
@@ -83,7 +84,7 @@ Interpolation
    function can be used independently of the NEB class, but is functionally
    identical.
 
-.. method:: NEB.interpolate(method='idpp')
+``NEB.interpolate(method='idpp')``
 
    Create an improved path from initial to final state using the IDPP approach
    [4]. This will start from an initial guess of a linear interpolation.
@@ -236,7 +237,7 @@ only some of them have a calculator attached::
   j = world.rank * n // world.size
   for i, image in enumerate(images[1:-1]):
       if i == j:
-          image.set_calculator(EMT())
+          image.calc = EMT()
 
 Create the NEB object with ``NEB(images, parallel=True)``.
 For a complete example using GPAW_, see here_.

@@ -28,7 +28,7 @@ def test_dynamic_neb():
     initial.extend(oxygen)
 
     # EMT potential
-    initial.set_calculator(EMT())
+    initial.calc = EMT()
 
     # Optimize initial state
     opt = BFGS(initial)
@@ -39,7 +39,7 @@ def test_dynamic_neb():
     final[18].x += 2.8
     final[18].y += 1.8
 
-    final.set_calculator(EMT())
+    final.calc = EMT()
 
     opt = BFGS(final)
     opt.run(fmax=0.03)
@@ -54,7 +54,7 @@ def test_dynamic_neb():
 
     for i in range(1, len(images)-1):
         calc = EMT()
-        images[i].set_calculator(calc)
+        images[i].calc = calc
 
 
     def run_NEB():

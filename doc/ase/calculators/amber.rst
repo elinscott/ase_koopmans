@@ -59,5 +59,5 @@ Here is your example Python script::
                  topologyfile='2h2o.top',
                  incoordfile='mm.crd')
     calc.write_coordinates(atoms, 'mm.crd')
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     f = atoms.get_forces()

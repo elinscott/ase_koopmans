@@ -34,7 +34,7 @@ def test_vasp2_co():
                 lwave = False,
                 lcharg = False)
 
-    co.set_calculator(calc)
+    co.calc = calc
     en = co.get_potential_energy()
     write('vasp_co.traj', co)
     assert abs(en + 14.918933) < 5e-3

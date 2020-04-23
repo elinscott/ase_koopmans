@@ -23,7 +23,7 @@ def test_multi_neighlist():
     )
 
     calc = KIM("ex_model_Ar_P_Morse_MultiCutoff")
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     # Get energy and analytical forces/stress from KIM Model
     energy = atoms.get_potential_energy()

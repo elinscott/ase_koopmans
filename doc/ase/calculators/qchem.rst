@@ -4,6 +4,10 @@
 Q-Chem
 ======
 
+.. image:: ../../static/qchem.png
+   :target: https://www.q-chem.com/
+   :scale: 40
+
 `Q-Chem <https://www.q-chem.com/>`_ is a comprehensive ab initio quantum
 chemistry package for accurate predictions of molecular structures,
 reactivities, and vibrational, electronic and NMR spectra.

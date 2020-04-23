@@ -13,8 +13,8 @@ def test_standardcomparator():
     e1 = 1.0
     e2 = 0.8
 
-    a1.set_calculator(SinglePointCalculator(a1, energy=e1))
-    a2.set_calculator(SinglePointCalculator(a2, energy=e2))
+    a1.calc = SinglePointCalculator(a1, energy=e1)
+    a2.calc = SinglePointCalculator(a2, energy=e2)
 
     comp1 = InteratomicDistanceComparator(n_top=3,
                                           pair_cor_cum_diff=0.03,

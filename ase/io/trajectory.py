@@ -152,7 +152,7 @@ class TrajectoryWriter:
 
         write_atoms(b, atoms, write_header=write_header)
 
-        calc = atoms.get_calculator()
+        calc = atoms.calc
 
         if calc is None and len(kwargs) > 0:
             calc = SinglePointCalculator(atoms)
@@ -277,7 +277,7 @@ class TrajectoryReader:
 
             if 'parameters' in c:
                 calc.parameters.update(c.parameters)
-            atoms.set_calculator(calc)
+            atoms.calc = calc
 
         return atoms
 
@@ -339,7 +339,8 @@ def read_atoms(backend,
             return read_atoms(backend, header, traj, False)
         except Exception as ex:
             from distutils.version import LooseVersion
-            if LooseVersion(__version__) < traj.ase_version:
+            if (traj is not None and
+                LooseVersion(__version__) < traj.ase_version):
                 msg = ('You are trying to read a trajectory file written ' +
                        'with ASE-{v1} from ASE-{v2}. ' +
                        'It might help to update your ASE').format(

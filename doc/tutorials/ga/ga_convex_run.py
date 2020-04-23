@@ -27,7 +27,7 @@ def get_mixing_energy(atoms):
     atoms.set_cell(atoms.cell * new_a / current_a, scale_atoms=True)
 
     # Calculate the energy
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     e = atoms.get_potential_energy()
 
     # Subtract contributions from the pure element references

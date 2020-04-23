@@ -15,7 +15,7 @@ def test_unitcellfilter():
         cu = Atoms('Cu',
                    cell=[(0, b, b), (b, 0, b), (b, b, 0)],
                    pbc=1) * (6, 6, 6)
-        cu.set_calculator(EMT())
+        cu.calc = EMT()
         f = UnitCellFilter(cu, [1, 1, 1, 0, 0, 0])
         opt = LBFGS(f)
         t = Trajectory('Cu-fcc.traj', 'w', cu)
@@ -27,7 +27,7 @@ def test_unitcellfilter():
         cu = bulk('Cu', 'hcp', a=a / sqrt(2))
         cu.cell[1,0] -= 0.05
         cu *= (6, 6, 3)
-        cu.set_calculator(EMT())
+        cu.calc = EMT()
         print(cu.get_forces())
         print(cu.get_stress())
         f = UnitCellFilter(cu)

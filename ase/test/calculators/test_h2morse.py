@@ -36,7 +36,7 @@ def test_gs_io_overlap():
     # own overlap is the unity matrix
     assert np.eye(4) == pytest.approx(calc0.overlap(calc0), 1e-8)
     # self and other - test on unitarity
-    ov = calc0.overlap(atoms1.get_calculator())
+    ov = calc0.overlap(atoms1.calc)
     assert np.eye(4) == pytest.approx(ov.dot(ov.T), 1e-8)
     
 

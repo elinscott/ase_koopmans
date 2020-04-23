@@ -3,15 +3,16 @@ import numpy as np
 import pytest
 from ase import Atoms
 from ase.build import bulk
-from ase.ga.utilities import closest_distances_generator, atoms_too_close
-from ase.ga.bulk_utilities import CellBounds
-from ase.ga.bulk_startgenerator import StartGenerator
-from ase.ga.bulk_crossovers import CutAndSplicePairing
-from ase.ga.bulk_mutations import (SoftMutation, RotationalMutation,
-                                   RattleRotationalMutation, StrainMutation)
+from ase.ga.utilities import (closest_distances_generator, atoms_too_close,
+                              CellBounds)
+from ase.ga.startgenerator import StartGenerator
+from ase.ga.cutandsplicepairing import CutAndSplicePairing
+from ase.ga.soft_mutation import SoftMutation
 from ase.ga.ofp_comparator import OFPComparator
 from ase.ga.offspring_creator import CombinationMutation
-from ase.ga.standardmutations import RattleMutation, PermutationMutation
+from ase.ga.standardmutations import (RattleMutation, PermutationMutation,
+                                      StrainMutation, RotationalMutation,
+                                      RattleRotationalMutation)
 
 
 @pytest.mark.slow
@@ -36,8 +37,10 @@ def test_bulk_operators():
                                     'psi': [30, 150], 'a': [3, 50],
                                     'b': [3, 50], 'c': [3, 50]})
 
-    sg = StartGenerator(blocks, blmin, volume, cellbounds=cellbounds,
-                        splits=splits)
+    slab = Atoms('', pbc=True)
+    sg = StartGenerator(slab, blocks, blmin, box_volume=volume,
+                        number_of_variable_cell_vectors=3,
+                        cellbounds=cellbounds, splits=splits)
 
     # Generate 2 candidates
     a1 = sg.get_new_candidate()
@@ -46,7 +49,9 @@ def test_bulk_operators():
     a2.info['confid'] = 2
 
     # Define and test genetic operators
-    pairing = CutAndSplicePairing(blmin, p1=1., p2=0., minfrac=0.15,
+    n_top = len(a1)
+    pairing = CutAndSplicePairing(slab, n_top, blmin, p1=1., p2=0., minfrac=0.15,
+                                  number_of_variable_cell_vectors=3,
                                   cellbounds=cellbounds, use_tags=True)
 
     a3, desc = pairing.get_new_individual([a1, a2])
@@ -56,6 +61,7 @@ def test_bulk_operators():
 
     n_top = len(a1)
     strainmut = StrainMutation(blmin, stddev=0.7, cellbounds=cellbounds,
+                               number_of_variable_cell_vectors=3,
                                use_tags=True)
     softmut = SoftMutation(blmin, bounds=[2., 5.], used_modes_file=None,
                            use_tags=True)

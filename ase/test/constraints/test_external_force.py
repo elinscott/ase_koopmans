@@ -17,7 +17,7 @@ def test_external_force():
     fmax = 0.001
 
     atoms = Atoms('H3', positions=[(0, 0, 0), (0.751, 0, 0), (0, 1., 0)])
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
 
     # Without external force
     opt = FIRE(atoms)

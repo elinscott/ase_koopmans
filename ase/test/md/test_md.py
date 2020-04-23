@@ -10,7 +10,7 @@ def test_md():
                 cell=[(0, b, b), (b, 0, b), (b, b, 0)],
                 pbc=1)
     fcc *= (2, 1, 1)
-    fcc.set_calculator(EMT())
+    fcc.calc = EMT()
     fcc.set_momenta([(0.9, 0.0, 0.0), (-0.9, 0, 0)])
     md = VelocityVerlet(fcc, timestep=0.1)
 

@@ -27,7 +27,7 @@ A simple calculation can be set up::
     mol= read('H2.xyz')
     basic_list = {'Cell' : 12.0}
     ace = ACE(label=label, BasicInformation = basic_list)
-    mol.set_calculator(ace)
+    mol.calc = ace
     print (mol.get_potential_energy())
 
 A Force calculation can be set up::
@@ -41,7 +41,7 @@ A Force calculation can be set up::
     mol= read('H2.xyz')
     order_list = ["BasicInformation", "Guess", "Scf", "Force"]
     ace = ACE(label=label, BasicInformation = basic_list, order = order_list)
-    mol.set_calculator(ace)
+    mol.calc = ace
     print (mol.get_forces())
     
 
@@ -57,7 +57,7 @@ A Geometry optimization calculation can be set up::
     mol= read('H2.xyz')
     order_list = ["BasicInformation", "Guess", "Scf", "Force"]
     ace = ACE(label=label, BasicInformation = basic_list, order = order_list)
-    mol.set_calculator(ace)
+    mol.calc = ace
     g_opt = BFGS(mol)
     g_opt.run(fmax=0.05)
     print ("OPT is end")
@@ -68,16 +68,16 @@ A TDDFT calculation can be set up::
    from ase.io import read
    from ase.calculators.acemolecule import ACE
    from ase.optimize import BFGS
-   
-   label = sys.argv[1]    
+
+   label = sys.argv[1]
    mol= read('H2.xyz')
    basic_list = {'Cell' : 12.0}
    order_list = ["BasicInformation", "Guess", "Scf", "TDDFT"]
    scf_list = [dict(FinalDiagonalize = dict(NumberOfEigenvalues= 12))]
    ace = ACE(label=label, BasicInformation = basic_list, Scf= scf_list, order = order_list)
-   mol.set_calculator(ace)
+   mol.calc = ace
    print (ace.get_property('excitation-energy', mol))
-    
+
 
 Parameters
 ==========

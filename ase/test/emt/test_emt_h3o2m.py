@@ -41,7 +41,7 @@ def test_emt_h3o2m():
     # Set constraints and calculator:
     constraint = FixAtoms(indices=[1, 3])  # fix OO
     for image in images:
-        image.set_calculator(EMT())
+        image.calc = EMT()
         image.set_constraint(constraint)
 
     for image in images:  # O-H(shared) distance

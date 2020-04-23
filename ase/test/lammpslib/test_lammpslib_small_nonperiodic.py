@@ -13,7 +13,7 @@ def test_lammpslib_small_nonperiodic():
     a = 2.0
     dimer = Atoms("NiNi", positions=[(0, 0, 0), (a, 0, 0)],
                   cell=(1000*a, 1000*a, 1000*a), pbc=(0, 0, 0))
-    dimer.set_calculator(lammps)
+    dimer.calc = lammps
 
     energy_ref = -1.10756669119
     energy = dimer.get_potential_energy()

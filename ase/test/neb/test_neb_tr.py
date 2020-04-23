@@ -26,15 +26,15 @@ def test_neb_tr():
 
         final.set_cell((5, 5, 5))
         initial.set_cell((5, 5, 5))
-        final.set_calculator(LennardJones())
-        initial.set_calculator(LennardJones())
+        final.calc = LennardJones()
+        initial.calc = LennardJones()
 
         images = [initial]
 
         # Set calculator
         for i in range(nimages):
             image = initial.copy()
-            image.set_calculator(LennardJones())
+            image.calc = LennardJones()
             images.append(image)
 
         images.append(final)

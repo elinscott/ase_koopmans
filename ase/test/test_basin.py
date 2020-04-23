@@ -22,7 +22,7 @@ def test_basin():
     pos = np.random.uniform(-R, R, (N, 3))
     s = Atoms('He' + str(N),
               positions=pos)
-    s.set_calculator(LennardJones())
+    s.calc = LennardJones()
     original_positions = 1. * s.get_positions()
 
     ftraj = 'lowest.traj'
@@ -44,7 +44,7 @@ def test_basin():
               ' global minimum:', E_global[N])
 
         # recalc energy
-        smin.set_calculator(LennardJones())
+        smin.calc = LennardJones()
         E = smin.get_potential_energy()
         assert abs(E - Emin) < 1e-15
         other = read(ftraj)

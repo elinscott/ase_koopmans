@@ -31,7 +31,7 @@ def test_md():
         eigensolver='Band'
         )
 
-    bud.set_calculator(calc)
+    bud.calc = calc
 
     try:
         bud.get_stress()

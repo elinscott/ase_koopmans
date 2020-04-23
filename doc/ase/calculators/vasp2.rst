@@ -177,7 +177,7 @@ initial calculations, in order to construct the band structure for silicon
 	# Make self-consistent ground state
 	calc = Vasp2(kpts=(4, 4, 4), directory=mydir)
 
-	si.set_calculator(calc)
+	si.calc = calc
 	si.get_potential_energy()  # Run the calculation
 
 	# Non-SC calculation along band path

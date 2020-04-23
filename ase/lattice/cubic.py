@@ -116,7 +116,9 @@ class BodyCenteredCubicFactory(SimpleCubicFactory):
 
     atoms_in_unit_cell = 2
 
+
 BodyCenteredCubic = BodyCenteredCubicFactory()
+
 
 class DiamondFactory(FaceCenteredCubicFactory):
     "A factory for creating diamond lattices."

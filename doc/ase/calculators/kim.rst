@@ -50,7 +50,7 @@ calculators are used, where the name of the KIM model is passed as an argument:
 
     atoms = FaceCenteredCubic(symbol='Ar', latticeconstant=5.25, size=(1,1,1))
     calc = KIM("ex_model_Ar_P_Morse_07C")
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     energy = atoms.get_potential_energy()
     print("Potential energy: {} eV".format(energy))
@@ -144,7 +144,7 @@ LAMMPS-based simulator model bundled with the KIM API,
 
     atoms = FaceCenteredCubic(symbol='Au', latticeconstant=4.07, size=(1,1,1))
     calc = KIM("Sim_LAMMPS_LJcut_AkersonElliott_Alchemy_PbAu")
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     energy = atoms.get_potential_energy()
     print("Potential energy: {} eV".format(energy))

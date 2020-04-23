@@ -46,13 +46,13 @@ def test_basic_example_main_run():
 
     # define the closest distance two atoms of a given species can be to each other
     unique_atom_types = get_all_atom_types(slab, atom_numbers)
-    cd = closest_distances_generator(atom_numbers=unique_atom_types,
-                                     ratio_of_covalent_radii=0.7)
+    blmin = closest_distances_generator(atom_numbers=unique_atom_types,
+                                        ratio_of_covalent_radii=0.7)
 
     # create the starting population
     sg = StartGenerator(slab=slab,
-                        atom_numbers=atom_numbers,
-                        closest_allowed_distances=cd,
+                        blocks=atom_numbers,
+                        blmin=blmin,
                         box_to_place_in=[p0, [v1, v2, v3]])
 
     # generate the starting population
@@ -104,7 +104,7 @@ def test_basic_example_main_run():
     # Relax all unrelaxed structures (e.g. the starting population)
     while da.get_number_of_unrelaxed_candidates() > 0:
         a = da.get_an_unrelaxed_candidate()
-        a.set_calculator(EMT())
+        a.calc = EMT()
         print('Relaxing starting candidate {0}'.format(a.info['confid']))
         dyn = BFGS(a, trajectory=None, logfile=None)
         dyn.run(fmax=0.05, steps=100)
@@ -133,7 +133,7 @@ def test_basic_example_main_run():
                 a3 = a3_mut
 
         # Relax the new candidate
-        a3.set_calculator(EMT())
+        a3.calc = EMT()
         dyn = BFGS(a3, trajectory=None, logfile=None)
         dyn.run(fmax=0.05, steps=100)
         set_raw_score(a3, -a3.get_potential_energy())

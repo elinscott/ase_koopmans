@@ -2125,7 +2125,11 @@ class Filter:
         WARNING: The calculator is unaware of this filter, and sees a
         different number of atoms.
         """
-        return self.atoms.get_calculator()
+        return self.atoms.calc
+
+    @property
+    def calc(self):
+        return self.atoms.calc
 
     def get_celldisp(self):
         return self.atoms.get_celldisp()

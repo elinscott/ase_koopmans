@@ -50,7 +50,7 @@ def test_amber():
                  topologyfile='2h2o.top',
                  incoordfile='mm.crd')
     calc.write_coordinates(atoms, 'mm.crd')
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     e = atoms.get_potential_energy()
     assert abs(e + 0.046799672) < 5e-3

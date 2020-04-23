@@ -47,7 +47,7 @@ def test_h3o2m():
     # Set constraints and calculator:
     constraint = FixAtoms(indices=[1, 3])  # fix OO
     for image in images:
-        image.set_calculator(calculator())
+        image.calc = calculator()
         image.set_constraint(constraint)
 
     # Relax initial and final states:

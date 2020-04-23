@@ -44,7 +44,7 @@ def test_vasp2_Al_volrelax():
     def ase_vol_relax():
         Al = bulk('Al', 'fcc', a=4.5, cubic=True)
         calc = Vasp(xc='LDA')
-        Al.set_calculator(calc)
+        Al.calc = calc
 
         from ase.constraints import StrainFilter
         sf = StrainFilter(Al)
@@ -71,4 +71,4 @@ def test_vasp2_Al_volrelax():
     assert cells_almost_equal(LDA_cell, Al_ase.get_cell())
 
     # Cleanup
-    Al_ase.get_calculator().clean()
+    Al_ase.calc.clean()

@@ -296,19 +296,19 @@ def test_pw_results_required():
 
     # ignore 'final coordinates' with no results
     pw_output_traj = io.read('pw_output.pwo', index=':')
-    assert 'energy' in pw_output_traj[-1].get_calculator().results
+    assert 'energy' in pw_output_traj[-1].calc.results
     assert len(pw_output_traj) == 2
     # include un-calculated final config
     pw_output_traj = io.read('pw_output.pwo', index=':',
                              results_required=False)
     assert len(pw_output_traj) == 3
-    assert 'energy' not in pw_output_traj[-1].get_calculator().results
+    assert 'energy' not in pw_output_traj[-1].calc.results
     # get default index=-1 with results
     pw_output_config = io.read('pw_output.pwo')
-    assert 'energy' in pw_output_config.get_calculator().results
+    assert 'energy' in pw_output_config.calc.results
     # get default index=-1 with no results "final coordinates'
     pw_output_config = io.read('pw_output.pwo', results_required=False)
-    assert 'energy' not in pw_output_config.get_calculator().results
+    assert 'energy' not in pw_output_config.calc.results
 
 
 def test_pw_input_write():

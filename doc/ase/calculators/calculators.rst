@@ -2,7 +2,7 @@
    :synopsis: Energy, force and stress calculators.
 
 .. _calculators:
-	      
+
 ===========
 Calculators
 ===========
@@ -14,8 +14,8 @@ energy and forces and sometimes also stresses.
 In order to calculate forces and energies, you need to attach a
 calculator object to your atoms object:
 
->>> a = read('molecule.xyz')
->>> e = a.get_potential_energy()  # doctest: IGNORE_EXCEPTION_DETAIL
+>>> atoms = read('molecule.xyz')
+>>> e = atoms.get_potential_energy()  # doctest: IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "/home/jjmo/ase/atoms/ase.py", line 399, in get_potential_energy
@@ -23,22 +23,14 @@ Traceback (most recent call last):
 RuntimeError: Atoms object has no calculator.
 >>> from ase.calculators.abinit import Abinit
 >>> calc = Abinit(...)
->>> a.set_calculator(calc)
->>> e = a.get_potential_energy()
+>>> atoms.calc = calc
+>>> e = atoms.get_potential_energy()
 >>> print(e)
 -42.0
 
-Here, we used the :meth:`~ase.Atoms.set_calculator` method to attach
+Here we attached
 an instance of the :mod:`ase.calculators.abinit` class and then
 we asked for the energy.
-
-Alternatively, a calculator can be attached like this::
-
-  atoms = Atoms(..., calculator=Abinit(...))
-
-or this::
-
-  atoms.calc = Abinit(...)
 
 
 .. _supported calculators:

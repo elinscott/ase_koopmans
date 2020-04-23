@@ -18,7 +18,7 @@ def test_precon(N):
     a0.set_scaled_positions(s)
 
     atoms = a0.copy()
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
 
     # check we get a warning about small system
     with warnings.catch_warnings(record=True) as w:

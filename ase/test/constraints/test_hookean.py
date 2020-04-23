@@ -32,7 +32,7 @@ def test_hookean():
                        Atom('Cu', atoms[7].position + (0., 0., 5.0))])
     atoms.extend(adsorbate)
     calc = EMT()
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     # Constrain the surface to be fixed and a Hookean constraint between
     # the adsorbate atoms.

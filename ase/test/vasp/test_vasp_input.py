@@ -21,7 +21,7 @@ def test_vasp_input():
         atoms.write('POSCAR')
 
     with must_raise(ValueError):
-        atoms.set_calculator(calc)
+        atoms.calc = calc
         atoms.get_total_energy()
 
     # Comment splitting logic

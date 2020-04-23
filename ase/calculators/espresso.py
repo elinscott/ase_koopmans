@@ -77,7 +77,7 @@ class Espresso(FileIOCalculator):
 
               >>> input_data = {<your input data>}
               >>> calc = Espresso(input_data=input_data, ...)
-              >>> atoms.set_calculator(calc)
+              >>> atoms.calc = calc
               >>> atoms.get_potential_energy()
               >>> fermi_level = calc.get_fermi_level()
 

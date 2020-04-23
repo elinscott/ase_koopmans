@@ -11,7 +11,7 @@ def test_dftb_relax_bulk(dftb_factory):
     )
 
     atoms = bulk('Si')
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     ecf = ExpCellFilter(atoms)
     dyn = QuasiNewton(ecf)

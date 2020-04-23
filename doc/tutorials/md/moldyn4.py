@@ -25,7 +25,7 @@ atoms = FaceCenteredCubic('Cu',
                           vacuum=4)
 
 # Describe the interatomic interactions with the Effective Medium Theory
-atoms.set_calculator(EMT())
+atoms.calc = EMT()
 
 # Do a quick relaxation of the cluster
 qn = QuasiNewton(atoms)

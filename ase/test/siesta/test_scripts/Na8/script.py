@@ -30,7 +30,7 @@ siesta = Siesta(
         'MaxSCFIterations': 3,
         'DM.NumberPulay': 4})
 
-Na8.set_calculator(siesta)
+Na8.calc = siesta
 print(Na8.get_potential_energy())
 
 print(siesta.results['fermi_energy'])

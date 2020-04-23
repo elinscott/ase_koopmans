@@ -1,8 +1,8 @@
 .. _ga_bulk_tutorial:
 
-=================================
- GA crystal structure prediction
-=================================
+====================================================
+Genetic algorithm search for bulk crystal structures
+====================================================
 
 Here we will use the GA to predict a crystal structure of a given chemical composition.
 
@@ -41,9 +41,7 @@ As an example, we will search for the most energetically stable :mol:`Ag_2_4`
 polymorphs using an EMT potential. Note that, in general, the number of atoms
 per unit cell should be chosen carefully, as one will only find crystal structures
 where the stoichiometry of the primitive cell is a divisor of the chosen
-stoichiometry. As the stress tensor is currently not implemented in the EMT
-calculator in ASE, the `ASAP <https://wiki.fysik.dtu.dk/asap/asap>`_ code will
-be used instead.
+stoichiometry.
 
 
 Initial population
@@ -62,24 +60,29 @@ Now we can start the actual search (:download:`ga_bulk_run.py`),
 which should only take a few minutes to complete.
 The relaxation function, which performs the variable-cell
 local optimization, is imported from :download:`ga_bulk_relax.py`.
+This script will try to use the EMT calculator implemented
+in the `ASAP <https://wiki.fysik.dtu.dk/asap/asap>`_ code.
+If ASAP is not available, ASE's native (but slower) EMT
+calculator will be used instead.
+
 
 .. literalinclude:: ga_bulk_run.py
 
 
-All the bulk operators
-----------------------
+Typical bulk GA operators
+-------------------------
 
-.. autoclass:: ase.ga.bulk_crossovers.CutAndSplicePairing
-.. autoclass:: ase.ga.bulk_mutations.StrainMutation
-.. autoclass:: ase.ga.bulk_mutations.PermuStrainMutation
-.. autoclass:: ase.ga.bulk_mutations.SoftMutation
-.. autoclass:: ase.ga.bulk_mutations.RotationalMutation
-.. autoclass:: ase.ga.bulk_mutations.RattleRotationalMutation
+.. autoclass:: ase.ga.cutandsplicepairing.CutAndSplicePairing
+.. autoclass:: ase.ga.standardmutations.StrainMutation
+.. autoclass:: ase.ga.standardmutations.PermuStrainMutation
+.. autoclass:: ase.ga.standardmutations.RotationalMutation
+.. autoclass:: ase.ga.standardmutations.RattleRotationalMutation
+.. autoclass:: ase.ga.soft_mutation.SoftMutation
 
 
-All the helper functions
-------------------------
+Useful helper functions
+-----------------------
 
-.. autoclass:: ase.ga.bulk_utilities.CellBounds
-.. autoclass:: ase.ga.bulk_startgenerator.StartGenerator
+.. autoclass:: ase.ga.utilities.CellBounds
+.. autoclass:: ase.ga.startgenerator.StartGenerator
 .. autoclass:: ase.ga.ofp_comparator.OFPComparator

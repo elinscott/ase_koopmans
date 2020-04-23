@@ -46,7 +46,7 @@ set. After this the calculator can be associated with an existing Atoms object
 
 .. code:: python
 
-  atoms.set_calculator(calc)
+  atoms.calc = calc
 
 The recommended methods to access parameters and properties are the getter
 methods, i.e. these ones starting with *get*. The calculations then are
@@ -89,7 +89,7 @@ calculator and associating it with an atoms object, e.g.:
         'multiplicity': 2
     }
     calc = Turbomole(**params)
-    mol.set_calculator(calc)
+    mol.calc = calc
     calc.initialize()
 
 Optionally the calculator will be associated with the atoms object in one step

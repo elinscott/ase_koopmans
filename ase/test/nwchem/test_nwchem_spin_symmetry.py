@@ -17,6 +17,6 @@ def test_main():
                             basis='m6-31g*',
                             basispar='"ao basis" spherical',
                             charge=0)
-        cr_atom.set_calculator(calculator)
+        cr_atom.calc = calculator
         energies.append(cr_atom.get_potential_energy())
     assert abs(energies[0] - energies[1]) < 1e-9

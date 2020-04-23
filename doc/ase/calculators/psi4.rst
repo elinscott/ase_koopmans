@@ -42,7 +42,7 @@ You can import psi4 and run it like any other calculator in ase::
             memory = '500MB' # this is the default, be aware!
             basis = '6-311g_d_p_')
     
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     print(atoms.get_potential_energy())
     print(atoms.get_forces())
 

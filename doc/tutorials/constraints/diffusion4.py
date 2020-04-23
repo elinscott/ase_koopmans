@@ -24,7 +24,7 @@ plane = FixedPlane(-1, (1, 0, 0))
 slab.set_constraint([fixlayers, plane])
 
 # Use EMT potential:
-slab.set_calculator(EMT())
+slab.calc = EMT()
 
 for i in range(5):
     qn = QuasiNewton(slab, trajectory='mep%d.traj' % i)

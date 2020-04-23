@@ -594,7 +594,7 @@ def read_aims_output(filename, index=-1):
                     calc = SinglePointCalculator(
                         atoms, energy=e, forces=f, stress=stress
                     )
-                images[-1].set_calculator(calc)
+                images[-1].calc = calc
             e = None
             f = None
 
@@ -604,7 +604,7 @@ def read_aims_output(filename, index=-1):
                 atoms.set_cell(cell)
                 atoms.pbc = True
             if not found_aims_calculator:
-                atoms.set_calculator(SinglePointCalculator(atoms, energy=e))
+                atoms.calc = SinglePointCalculator(atoms, energy=e)
             if not molecular_dynamics:
                 if len(fix):
                     atoms.set_constraint([FixAtoms(indices=fix)] + fix_cart)
@@ -614,7 +614,7 @@ def read_aims_output(filename, index=-1):
             e = None
             # if found_aims_calculator:
             # calc.set_results(images[-1])
-            # images[-1].set_calculator(calc)
+            # images[-1].calc = calc
 
         # FlK: add stress per atom
         if "Per atom stress (eV) used for heat flux calculation" in line:
@@ -635,7 +635,7 @@ def read_aims_output(filename, index=-1):
                 calc = SinglePointCalculator(
                     atoms, energy=e, forces=f, stress=stress, stresses=stresses
                 )
-                images[-1].set_calculator(calc)
+                images[-1].calc = calc
 
     fd.close()
     if molecular_dynamics:

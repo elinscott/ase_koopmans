@@ -14,7 +14,7 @@ def test_dimer_method():
     atoms.set_constraint(FixAtoms(mask = mask))
 
     # Calculate using EMT
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     atoms.get_potential_energy()
 
     # Set up the dimer

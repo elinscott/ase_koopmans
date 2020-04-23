@@ -25,7 +25,7 @@ def test_CO2_Au111(wrap):
     d1 = co2.get_distance(-3, -1)
 
     calc = EMT()
-    slab.set_calculator(calc)
+    slab.calc = calc
     if wrap:
         # Remap into the cell so bond is actually wrapped:
         slab.set_scaled_positions(slab.get_scaled_positions() % 1.0)

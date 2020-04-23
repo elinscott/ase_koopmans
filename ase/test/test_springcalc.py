@@ -14,7 +14,7 @@ def test_springcalc():
     # calc forces and energy
     atoms = atoms_ideal.copy()
     atoms.positions += displacements
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     forces = atoms.get_forces()
     Epot = atoms.get_potential_energy()
 
@@ -27,6 +27,6 @@ def test_springcalc():
 
 
     # numeric forces test
-    atoms_ideal.set_calculator(calc)
+    atoms_ideal.calc = calc
     f, fn = gradient_test(atoms_ideal)
     assert abs(f - fn).max() < 1e-10

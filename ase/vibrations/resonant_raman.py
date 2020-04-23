@@ -50,7 +50,7 @@ class ResonantRaman(Vibrations):
             Type of the excitation list object. The class object is
             initialized as::
 
-                Excitations(atoms.get_calculator())
+                Excitations(atoms.calc)
 
             or by reading form a file as::
 
@@ -153,7 +153,7 @@ class ResonantRaman(Vibrations):
         if self.overlap:
             # XXXX stupid way to make a copy
             self.atoms.get_potential_energy()
-            calc = self.atoms.get_calculator()
+            calc = self.atoms.calc
             fname = self.exname + '.eq.gpw'
             calc.write(fname, 'all')
             self.eq_calculator = calc.__class__.read(fname)
@@ -176,7 +176,7 @@ class ResonantRaman(Vibrations):
 
             ov_ij = int dr displaced*_i(r) eqilibrium_j(r)
             """
-            ov_nn = self.overlap(self.atoms.get_calculator(),
+            ov_nn = self.overlap(self.atoms.calc,
                                  self.eq_calculator)
             if world.rank == 0:
                 np.save(filename + '.ov', ov_nn)
@@ -186,7 +186,7 @@ class ResonantRaman(Vibrations):
         self.timer.start('Excitations')
         basename, _ = os.path.splitext(filename)
         excitations = self.exobj(
-            self.atoms.get_calculator(), **self.exkwargs)
+            self.atoms.calc, **self.exkwargs)
         excitations.write(basename + self.exext)
         self.timer.stop('Excitations')
 

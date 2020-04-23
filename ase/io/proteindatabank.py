@@ -229,6 +229,6 @@ def write_proteindatabank(fileobj, images, write_arrays=True):
             x, y, z = p[a]
             occ = occupancy[a]
             bf = bfactor[a]
-            fileobj.write(format % (a % MAXNUM, symbols[a],
+            fileobj.write(format % ((a+1) % MAXNUM, symbols[a],
                                     x, y, z, occ, bf, symbols[a].upper()))
         fileobj.write('ENDMDL\n')

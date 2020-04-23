@@ -825,7 +825,7 @@ def read_castep_castep_old(fd, index=None):
                                             forces=None,
                                             magmoms=None,
                                             stress=None)
-            atoms.set_calculator(sp_calc)
+            atoms.calc = sp_calc
             traj.append(atoms)
     if index is None:
         return traj
@@ -897,9 +897,8 @@ def read_castep_geom(fd, index=None, units=units_CODATA2002):
                                txt[geom_stop:geom_stop
                                    + (geom_stop - geom_start)]])
             image = ase.Atoms(species, geom, cell=cell, pbc=True)
-            image.set_calculator(
-                SinglePointCalculator(atoms=image, energy=energy,
-                                      forces=forces))
+            image.calc = SinglePointCalculator(
+                atoms=image, energy=energy, forces=forces)
             traj.append(image)
 
     if index is None:
@@ -1122,13 +1121,12 @@ def read_castep_md(fd, index=None, return_scalars=False,
                                   cell=cell)
                 atoms.set_velocities(velocities)
                 if len(stress) == 0:
-                    atoms.set_calculator(
-                        SinglePointCalculator(atoms=atoms, energy=Epot,
-                                              forces=forces))
+                    atoms.calc = SinglePointCalculator(
+                        atoms=atoms, energy=Epot, forces=forces)
                 else:
-                    atoms.set_calculator(
-                        SinglePointCalculator(atoms=atoms, energy=Epot,
-                                              forces=forces, stress=stress))
+                    atoms.calc = SinglePointCalculator(
+                        atoms=atoms, energy=Epot,
+                        forces=forces, stress=stress)
                 traj.append(atoms)
             symbols = []
             positions = []

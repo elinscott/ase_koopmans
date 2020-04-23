@@ -14,10 +14,9 @@ mol = Atoms('H2O',
 input_arguments = {'DFTB': 'SCC',
                    'CHARGE': '0.0',
                    'PARAM': 'PTYPE=BIO'}
-    
-calc = DemonNano(label='rundir/',input_arguments=input_arguments)
 
-mol.set_calculator(calc)
+calc = DemonNano(label='rundir/',input_arguments=input_arguments)
+mol.calc = calc
 
 # optimize geometry
 dyn = BFGS(mol, trajectory='test.traj')

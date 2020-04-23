@@ -105,7 +105,7 @@ def test_lammpslib_simple():
                            atom_types={'Ni': 1, 'H': 2},
                            log_file='test.log', keep_alive=True)
 
-        nickel.set_calculator(lammps)
+        nickel.calc = lammps
 
         E = nickel.get_potential_energy()
         F = nickel.get_forces()
@@ -123,7 +123,7 @@ def test_lammpslib_simple():
 
         lammps = LAMMPSlib(lmpcmds=cmds,
                            log_file='test.log', keep_alive=True)
-        nickel.set_calculator(lammps)
+        nickel.calc = lammps
 
         E2 = nickel.get_potential_energy()
         F2 = nickel.get_forces()
@@ -169,7 +169,7 @@ def test_lammpslib_simple():
 
         lammps = LAMMPSlib(lmpcmds=cmds, log_file='test.log')
 
-        NiH.set_calculator(lammps)
+        NiH.calc = lammps
         print("Energy ", NiH.get_potential_energy())
 
 
@@ -197,7 +197,7 @@ def test_lammpslib_simple():
         lammps = LAMMPSlib(lammps_header=header, lmpcmds=cmds, atom_types={'Fe': 1},
                            create_atoms=False, create_box=False, boundary=False,
                            keep_alive=True, log_file='test.log')
-        at.set_calculator(lammps)
+        at.calc = lammps
         dyn = VelocityVerlet(at, 1 * units.fs)
 
         assert_allclose(at.get_potential_energy(), 2041.411982950972,

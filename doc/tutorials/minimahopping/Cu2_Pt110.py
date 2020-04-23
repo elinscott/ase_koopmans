@@ -22,7 +22,7 @@ atoms.set_constraint(constraints)
 
 # Set the calculator.
 calc = EMT()
-atoms.set_calculator(calc)
+atoms.calc = calc
 
 # Instantiate and run the minima hopping algorithm.
 hop = MinimaHopping(atoms,
