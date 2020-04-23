@@ -663,7 +663,8 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
                                        self.min_adsorbate_distance)
             elif diff > 0:
                 # Remove adsorbates
-                tbr = self.rng.sample(adsorbates_in_child, diff)
+                tbr = self.rng.choice(adsorbates_in_child, size=diff,
+                                      replace=False)
                 for adsorbate_indices in sorted(tbr, reverse=True):
                     for i in adsorbate_indices[::-1]:
                         indi.pop(i)
