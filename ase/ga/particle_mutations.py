@@ -376,7 +376,7 @@ class Poor2richPermutation(_NeighborhoodPermutation):
         del ac[[atom.index for atom in ac
                 if atom.symbol not in elements]]
         permuts = _NP.get_possible_poor2rich_permutations(ac)
-        swap = list(self.rng.choice(permuts))
+        swap = list(rng.choice(permuts))
         atoms.positions[swap] = atoms.positions[swap[::-1]]
 
 
