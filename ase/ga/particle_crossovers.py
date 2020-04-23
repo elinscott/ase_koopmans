@@ -50,8 +50,8 @@ class CutSpliceCrossover(Crossover):
         indi = self.initialize_individual(f)
         indi.info['data']['parents'] = [i.info['confid'] for i in parents]
 
-        theta = self.rng.random() * 2 * np.pi  # 0,2pi
-        phi = self.rng.random() * np.pi  # 0,pi
+        theta = self.rng.rand() * 2 * np.pi  # 0,2pi
+        phi = self.rng.rand() * np.pi  # 0,pi
         e = np.array((np.sin(phi) * np.cos(theta),
                       np.sin(theta) * np.sin(phi),
                       np.cos(phi)))

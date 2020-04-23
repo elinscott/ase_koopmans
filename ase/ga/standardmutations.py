@@ -85,9 +85,9 @@ class RattleMutation(OffspringCreator):
             ok = False
             for tag in np.unique(tags):
                 select = np.where(tags == tag)
-                if self.rng.random() < self.rattle_prop:
+                if self.rng.rand() < self.rattle_prop:
                     ok = True
-                    r = self.rng.random(3)
+                    r = self.rng.rand(3)
                     pos[select] += st * (r - 0.5)
 
             if not ok:
@@ -283,8 +283,8 @@ class MirrorMutation(OffspringCreator):
             cm = np.average(top.get_positions(), axis=0)
 
             # first select a randomly oriented cutting plane
-            theta = pi * self.rng.random()
-            phi = 2. * pi * self.rng.random()
+            theta = pi * self.rng.rand()
+            phi = 2. * pi * self.rng.rand()
             n = (cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta))
             n = np.array(n)
 
@@ -667,17 +667,17 @@ class RotationalMutation(OffspringCreator):
                 if len(p) == 2:
                     line = (p[1] - p[0]) / np.linalg.norm(p[1] - p[0])
                     while True:
-                        axis = self.rng.random(3)
+                        axis = self.rng.rand(3)
                         axis /= np.linalg.norm(axis)
                         a = np.arccos(np.dot(axis, line))
                         if np.pi / 4 < a < np.pi * 3 / 4:
                             break
                 else:
-                    axis = self.rng.random(3)
+                    axis = self.rng.rand(3)
                     axis /= np.linalg.norm(axis)
 
                 angle = self.min_angle
-                angle += 2 * (np.pi - self.min_angle) * self.rng.random()
+                angle += 2 * (np.pi - self.min_angle) * self.rng.rand()
 
                 m = get_rotation_matrix(axis, angle)
                 newpos[indices[tag]] = np.dot(m, (p - cop).T).T + cop

@@ -247,13 +247,13 @@ class Population(object):
             nnf = True
             while nnf:
                 t = self.rng.randint(len(self.pop))
-                if fit[t] > self.rng.random() * fmax:
+                if fit[t] > self.rng.rand() * fmax:
                     c1 = self.pop[t]
                     nnf = False
             nnf = True
             while nnf:
                 t = self.rng.randint(len(self.pop))
-                if fit[t] > self.rng.random() * fmax:
+                if fit[t] > self.rng.rand() * fmax:
                     c2 = self.pop[t]
                     nnf = False
 
@@ -281,7 +281,7 @@ class Population(object):
         nnf = True
         while nnf:
             t = self.rng.randint(len(self.pop))
-            if fit[t] > self.rng.random() * fmax:
+            if fit[t] > self.rng.rand() * fmax:
                 c1 = self.pop[t]
                 nnf = False
 
@@ -387,7 +387,7 @@ class RandomPopulation(Population):
                         self.pop.append(c)
                     else:
                         exp_fact = exp(get_raw_score(c) / best_raw)
-                        ratings.append([c, (exp_fact - 1) * self.rng.random()])
+                        ratings.append([c, (exp_fact - 1) * self.rng.rand()])
             ratings.sort(key=itemgetter(1), reverse=True)
 
             for i in range(self.bad_candidates):
@@ -573,13 +573,13 @@ class FitnessSharingPopulation(Population):
             nnf = True
             while nnf:
                 t = self.rng.randint(len(self.pop))
-                if fit[t] > self.rng.random() * fmax:
+                if fit[t] > self.rng.rand() * fmax:
                     c1 = self.pop[t]
                     nnf = False
             nnf = True
             while nnf:
                 t = self.rng.randint(len(self.pop))
-                if fit[t] > self.rng.random() * fmax:
+                if fit[t] > self.rng.rand() * fmax:
                     c2 = self.pop[t]
                     nnf = False
 
@@ -744,13 +744,13 @@ class RankFitnessPopulation(Population):
             nnf = True
             while nnf:
                 t = self.rng.randint(len(self.pop))
-                if fit[t] > self.rng.random() * fmax:
+                if fit[t] > self.rng.rand() * fmax:
                     c1 = self.pop[t]
                     nnf = False
             nnf = True
             while nnf:
                 t = self.rng.randint(len(self.pop))
-                if fit[t] > self.rng.random() * fmax:
+                if fit[t] > self.rng.rand() * fmax:
                     c2 = self.pop[t]
                     nnf = False
 

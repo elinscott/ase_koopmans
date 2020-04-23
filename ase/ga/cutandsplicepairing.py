@@ -248,8 +248,8 @@ class CutAndSplicePairing(OffspringCreator):
             # Choose direction of cutting plane normal
             if self.number_of_variable_cell_vectors == 0:
                 # Will be generated entirely at random
-                theta = np.pi * self.rng.random()
-                phi = 2. * np.pi * self.rng.random()
+                theta = np.pi * self.rng.rand()
+                phi = 2. * np.pi * self.rng.rand()
                 cut_n = np.array([np.cos(phi) * np.sin(theta),
                                   np.sin(phi) * np.sin(theta), np.cos(theta)])
             else:
@@ -262,11 +262,11 @@ class CutAndSplicePairing(OffspringCreator):
 
                 cell = a_copy.get_cell()
                 for i in range(self.number_of_variable_cell_vectors):
-                    r = self.rng.random()
+                    r = self.rng.rand()
                     cond1 = i == cut_n and r < self.p1
                     cond2 = i != cut_n and r < self.p2
                     if cond1 or cond2:
-                        a_copy.positions += self.rng.random() * cell[i]
+                        a_copy.positions += self.rng.rand() * cell[i]
 
                 if self.use_tags:
                     # For correct determination of the center-
@@ -283,7 +283,7 @@ class CutAndSplicePairing(OffspringCreator):
             cut_p = np.zeros((1, 3))
             for i in range(3):
                 if i < self.number_of_variable_cell_vectors:
-                    cut_p[0, i] = self.rng.random()
+                    cut_p[0, i] = self.rng.rand()
                 else:
                     cut_p[0, i] = 0.5 * (cosp1[i] + cosp2[i])
 
@@ -323,7 +323,7 @@ class CutAndSplicePairing(OffspringCreator):
         if not self.scaling_volume:
             v1 = np.abs(np.linalg.det(cell1))
             v2 = np.abs(np.linalg.det(cell2))
-            r = self.rng.random()
+            r = self.rng.rand()
             v_ref = r * v1 + (1 - r) * v2
         else:
             v_ref = self.scaling_volume
@@ -335,7 +335,7 @@ class CutAndSplicePairing(OffspringCreator):
         else:
             count = 0
             while count < maxcount:
-                r = self.rng.random()
+                r = self.rng.rand()
                 newcell = r * cell1 + (1 - r) * cell2
 
                 vol = abs(np.linalg.det(newcell))

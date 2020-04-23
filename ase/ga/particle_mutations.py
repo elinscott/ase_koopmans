@@ -114,7 +114,7 @@ class RandomMutation(Mutation):
     @classmethod
     def random_vector(cls, l, rng=np.random):
         """return random vector of length l"""
-        vec = np.array([rng.random() * 2 - 1 for i in range(3)])
+        vec = np.array([rng.rand() * 2 - 1 for i in range(3)])
         vl = np.linalg.norm(vec)
         return np.array([v * l / vl for v in vec])
 

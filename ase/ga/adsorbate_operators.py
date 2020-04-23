@@ -520,8 +520,8 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
                     angle = self.rangs
                 m.rotate(angle, vec, center=mna_geo_mid)
 
-        theta = self.rng.random() * 2 * np.pi  # 0,2pi
-        phi = self.rng.random() * np.pi  # 0,pi
+        theta = self.rng.rand() * 2 * np.pi  # 0,2pi
+        phi = self.rng.rand() * np.pi  # 0,pi
         e = np.array((np.sin(phi) * np.cos(theta),
                       np.sin(theta) * np.sin(phi),
                       np.cos(phi)))

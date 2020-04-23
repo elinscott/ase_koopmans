@@ -260,12 +260,12 @@ class CutSpliceSlabCrossover(SlabOperator):
 
         for _ in range(self.tries):
             # Find center point of cut
-            rv = [self.rng.random() for _ in range(3)]  # random vector
+            rv = [self.rng.rand() for _ in range(3)]  # random vector
             midpoint = (ma - mi) * rv + mi
 
             # Determine cut plane
-            theta = self.rng.random() * 2 * np.pi  # 0,2pi
-            phi = self.rng.random() * np.pi  # 0,pi
+            theta = self.rng.rand() * 2 * np.pi  # 0,2pi
+            phi = self.rng.rand() * np.pi  # 0,pi
             e = np.array((np.sin(phi) * np.cos(theta),
                           np.sin(theta) * np.sin(phi),
                           np.cos(phi)))

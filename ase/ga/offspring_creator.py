@@ -80,7 +80,7 @@ class OperationSelector(object):
         self.rng = rng
 
     def __get_index__(self):
-        v = self.rng.random() * self.rho[-1]
+        v = self.rng.rand() * self.rho[-1]
         for i in range(len(self.rho)):
             if self.rho[i] > v:
                 return i
