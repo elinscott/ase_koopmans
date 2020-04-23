@@ -131,7 +131,7 @@ def test_basic_example_main_run(seed):
         da.add_unrelaxed_candidate(a3, description=desc)
 
         # Check if we want to do a mutation
-        if rng.random() < mutation_probability:
+        if rng.rand() < mutation_probability:
             a3_mut, desc = mutations.get_new_individual([a3])
             if a3_mut is not None:
                 da.add_unrelaxed_step(a3_mut, desc)
