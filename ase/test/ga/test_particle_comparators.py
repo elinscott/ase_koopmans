@@ -1,8 +1,12 @@
-def test_particle_comparators():
+def test_particle_comparators(seed):
+    import numpy as np
     from ase.cluster import Icosahedron
     from ase.ga.particle_comparator import NNMatComparator
     from ase.ga.utilities import get_nnmat
     from ase.ga.particle_mutations import RandomPermutation
+
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
     ico1 = Icosahedron('Cu', 4)
     ico1.info['confid'] = 1
@@ -17,7 +21,7 @@ def test_particle_comparators():
     comp = NNMatComparator()
     assert not comp.looks_like(ico1, ico2)
 
-    op = RandomPermutation()
+    op = RandomPermutation(rng=rng)
     a3, desc = op.get_new_individual([ico1])
 
     assert a3.get_chemical_formula() == ico1.get_chemical_formula()

@@ -1,6 +1,5 @@
 """Base module for all operators that create offspring."""
 import numpy as np
-from random import random
 
 from ase import Atoms
 
@@ -12,13 +11,16 @@ class OffspringCreator(object):
 
     verbose: Be verbose and print some stuff
 
+    rng: Random number generator
+        By default numpy.random.
     """
 
-    def __init__(self, verbose=False, num_muts=1):
+    def __init__(self, verbose=False, num_muts=1, rng=np.random):
         self.descriptor = 'OffspringCreator'
         self.verbose = verbose
         self.min_inputs = 0
         self.num_muts = num_muts
+        self.rng = rng
 
     def get_min_inputs(self):
         """Returns the number of inputs required for a mutation,
@@ -66,15 +68,19 @@ class OperationSelector(object):
         does not need to be 1.
 
     oplist: The list of operations to select from.
+
+    rng: Random number generator
+        By default numpy.random.
     """
 
-    def __init__(self, probabilities, oplist):
+    def __init__(self, probabilities, oplist, rng=np.random):
         assert len(probabilities) == len(oplist)
         self.oplist = oplist
         self.rho = np.cumsum(probabilities)
+        self.rng = rng
 
     def __get_index__(self):
-        v = random() * self.rho[-1]
+        v = self.rng.rand() * self.rho[-1]
         for i in range(len(self.rho)):
             if self.rho[i] > v:
                 return i

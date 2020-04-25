@@ -1,10 +1,13 @@
-def test_cutandsplicepairing():
+def test_cutandsplicepairing(seed):
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.utilities import closest_distances_generator, atoms_too_close
     from ase.ga.cutandsplicepairing import CutAndSplicePairing
     import numpy as np
     from ase.build import fcc111
     from ase.constraints import FixAtoms
+
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
     # first create two random starting candidates
     slab = fcc111('Au', size=(4, 4, 2), vacuum=10.0, orthogonal=True)
@@ -26,7 +29,8 @@ def test_cutandsplicepairing():
     sg = StartGenerator(slab=slab,
                         blocks=atom_numbers,
                         blmin=blmin,
-                        box_to_place_in=[p0, [v1, v2, v3]])
+                        box_to_place_in=[p0, [v1, v2, v3]],
+                        rng=rng)
 
     c1 = sg.get_new_candidate()
     c1.info['confid'] = 1
@@ -35,7 +39,7 @@ def test_cutandsplicepairing():
 
     n_top = len(atom_numbers)
 
-    pairing = CutAndSplicePairing(slab, n_top, blmin)
+    pairing = CutAndSplicePairing(slab, n_top, blmin, rng=rng)
 
     c3, desc = pairing.get_new_individual([c1, c2])
 

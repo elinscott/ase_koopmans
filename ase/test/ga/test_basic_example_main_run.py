@@ -4,7 +4,6 @@ from ase.ga.data import PrepareDB
 from ase.ga.startgenerator import StartGenerator
 from ase.constraints import FixAtoms
 from ase.build import fcc111
-from random import random
 from ase.io import write
 from ase.optimize import BFGS
 from ase.calculators.emt import EMT
@@ -25,7 +24,10 @@ db_file = 'gadb.db'
 
 
 @pytest.mark.slow
-def test_basic_example_main_run():
+def test_basic_example_main_run(seed):
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
+
     # create the surface
     slab = fcc111('Au', size=(4, 4, 1), vacuum=10.0, orthogonal=True)
     slab.set_constraint(FixAtoms(mask=len(slab) * [True]))
@@ -53,7 +55,8 @@ def test_basic_example_main_run():
     sg = StartGenerator(slab=slab,
                         blocks=atom_numbers,
                         blmin=blmin,
-                        box_to_place_in=[p0, [v1, v2, v3]])
+                        box_to_place_in=[p0, [v1, v2, v3]],
+                        rng=rng)
 
     # generate the starting population
     population_size = 5
@@ -95,11 +98,12 @@ def test_basic_example_main_run():
                                          dE=0.02,
                                          mic=False)
 
-    pairing = CutAndSplicePairing(slab, n_to_optimize, blmin)
+    pairing = CutAndSplicePairing(slab, n_to_optimize, blmin, rng=rng)
     mutations = OperationSelector([1., 1., 1.],
-                                  [MirrorMutation(blmin, n_to_optimize),
-                                   RattleMutation(blmin, n_to_optimize),
-                                   PermutationMutation(n_to_optimize)])
+                            [MirrorMutation(blmin, n_to_optimize, rng=rng),
+                             RattleMutation(blmin, n_to_optimize, rng=rng),
+                             PermutationMutation(n_to_optimize, rng=rng)],
+                             rng=rng)
 
     # Relax all unrelaxed structures (e.g. the starting population)
     while da.get_number_of_unrelaxed_candidates() > 0:
@@ -114,7 +118,8 @@ def test_basic_example_main_run():
     # create the population
     population = Population(data_connection=da,
                             population_size=population_size,
-                            comparator=comp)
+                            comparator=comp,
+                            rng=rng)
 
     # test n_to_test new candidates
     for i in range(n_to_test):
@@ -126,7 +131,7 @@ def test_basic_example_main_run():
         da.add_unrelaxed_candidate(a3, description=desc)
 
         # Check if we want to do a mutation
-        if random() < mutation_probability:
+        if rng.rand() < mutation_probability:
             a3_mut, desc = mutations.get_new_individual([a3])
             if a3_mut is not None:
                 da.add_unrelaxed_step(a3_mut, desc)

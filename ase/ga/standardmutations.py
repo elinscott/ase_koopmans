@@ -34,11 +34,14 @@ class RattleMutation(OffspringCreator):
         molecular identity. Same-tag atoms will then be
         displaced collectively, so that the internal
         geometry is preserved.
+
+    rng: Random number generator
+        By default numpy.random.
     """
     def __init__(self, blmin, n_top, rattle_strength=0.8,
                  rattle_prop=0.4, test_dist_to_slab=True, use_tags=False,
-                 verbose=False):
-        OffspringCreator.__init__(self, verbose)
+                 verbose=False, rng=np.random):
+        OffspringCreator.__init__(self, verbose, rng=rng)
         self.blmin = blmin
         self.n_top = n_top
         self.rattle_strength = rattle_strength
@@ -82,9 +85,9 @@ class RattleMutation(OffspringCreator):
             ok = False
             for tag in np.unique(tags):
                 select = np.where(tags == tag)
-                if np.random.random() < self.rattle_prop:
+                if self.rng.rand() < self.rattle_prop:
                     ok = True
-                    r = np.random.random(3)
+                    r = self.rng.rand(3)
                     pos[select] += st * (r - 0.5)
 
             if not ok:
@@ -125,10 +128,13 @@ class PermutationMutation(OffspringCreator):
     blmin: Dictionary defining the minimum distance between atoms
         after the permutation. If equal to None (the default),
         no such check is performed.
+
+    rng: Random number generator
+        By default numpy.random.
     """
     def __init__(self, n_top, probability=0.33, test_dist_to_slab=True,
-                 use_tags=False, blmin=None, verbose=False):
-        OffspringCreator.__init__(self, verbose)
+                 use_tags=False, blmin=None, rng=np.random, verbose=False):
+        OffspringCreator.__init__(self, verbose, rng=rng)
         self.n_top = n_top
         self.probability = probability
         self.test_dist_to_slab = test_dist_to_slab
@@ -186,8 +192,8 @@ class PermutationMutation(OffspringCreator):
             for _ in range(swaps):
                 i = j = 0
                 while sym[i] == sym[j]:
-                    i = np.random.randint(0, high=n)
-                    j = np.random.randint(0, high=n)
+                    i = self.rng.randint(0, high=n)
+                    j = self.rng.randint(0, high=n)
                 ind1 = np.where(tags == i)
                 ind2 = np.where(tags == j)
                 cop1 = np.mean(pos[ind1], axis=0)
@@ -227,9 +233,13 @@ class MirrorMutation(OffspringCreator):
 
     reflect: Defines if the mirrored half is also reflected
         perpendicular to the mirroring plane.
+
+    rng: Random number generator
+        By default numpy.random.
     """
-    def __init__(self, blmin, n_top, reflect=False, verbose=False):
-        OffspringCreator.__init__(self, verbose)
+    def __init__(self, blmin, n_top, reflect=False, rng=np.random,
+                 verbose=False):
+        OffspringCreator.__init__(self, verbose, rng=rng)
         self.blmin = blmin
         self.n_top = n_top
         self.reflect = reflect
@@ -273,8 +283,8 @@ class MirrorMutation(OffspringCreator):
             cm = np.average(top.get_positions(), axis=0)
 
             # first select a randomly oriented cutting plane
-            theta = pi * np.random.random()
-            phi = 2. * pi * np.random.random()
+            theta = pi * self.rng.rand()
+            phi = 2. * pi * self.rng.rand()
             n = (cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta))
             n = np.array(n)
 
@@ -398,11 +408,14 @@ class StrainMutation(OffspringCreator):
 
     use_tags: boolean
         Whether to use the atomic tags to preserve molecular identity.
+
+    rng: Random number generator
+        By default numpy.random.
     """
     def __init__(self, blmin, cellbounds=None, stddev=0.7,
                  number_of_variable_cell_vectors=3, use_tags=False,
-                 verbose=False):
-        OffspringCreator.__init__(self, verbose)
+                 rng=np.random, verbose=False):
+        OffspringCreator.__init__(self, verbose, rng=rng)
         self.blmin = blmin
         self.cellbounds = cellbounds
         self.stddev = stddev
@@ -468,7 +481,7 @@ class StrainMutation(OffspringCreator):
             strain = np.identity(3)
             for i in range(self.number_of_variable_cell_vectors):
                 for j in range(i + 1):
-                    r = np.random.normal(loc=0., scale=self.stddev)
+                    r = self.rng.normal(loc=0., scale=self.stddev)
                     if i == j:
                         strain[i, j] += r
                     else:
@@ -591,10 +604,14 @@ class RotationalMutation(OffspringCreator):
     test_dist_to_slab: boolean
         Whether also the distances to the slab
         should be checked to satisfy the blmin.
+
+    rng: Random number generator
+        By default numpy.random.
     """
     def __init__(self, blmin, n_top=None, fraction=0.33, tags=None,
-                 min_angle=1.57, test_dist_to_slab=True, verbose=False):
-        OffspringCreator.__init__(self, verbose)
+                 min_angle=1.57, test_dist_to_slab=True, rng=np.random,
+                 verbose=False):
+        OffspringCreator.__init__(self, verbose, rng=rng)
         self.blmin = blmin
         self.n_top = n_top
         self.fraction = fraction
@@ -635,8 +652,8 @@ class RotationalMutation(OffspringCreator):
                 indices[tag] = hits
 
         n_rot = int(np.ceil(len(indices) * self.fraction))
-        chosen_tags = np.random.choice(list(indices.keys()), size=n_rot,
-                                       replace=False)
+        chosen_tags = self.rng.choice(list(indices.keys()), size=n_rot,
+                                      replace=False)
 
         too_close = True
         count = 0
@@ -650,17 +667,17 @@ class RotationalMutation(OffspringCreator):
                 if len(p) == 2:
                     line = (p[1] - p[0]) / np.linalg.norm(p[1] - p[0])
                     while True:
-                        axis = np.random.random(3)
+                        axis = self.rng.rand(3)
                         axis /= np.linalg.norm(axis)
                         a = np.arccos(np.dot(axis, line))
                         if np.pi / 4 < a < np.pi * 3 / 4:
                             break
                 else:
-                    axis = np.random.random(3)
+                    axis = self.rng.rand(3)
                     axis /= np.linalg.norm(axis)
 
                 angle = self.min_angle
-                angle += 2 * (np.pi - self.min_angle) * np.random.random()
+                angle += 2 * (np.pi - self.min_angle) * self.rng.rand()
 
                 m = get_rotation_matrix(axis, angle)
                 newpos[indices[tag]] = np.dot(m, (p - cop).T).T + cop

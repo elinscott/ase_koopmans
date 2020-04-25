@@ -1,7 +1,6 @@
 """Adsorbate operators that adds an adsorbate to the surface
 of a particle or given structure, using a supplied list of sites."""
 import numpy as np
-import random
 from itertools import chain
 
 from ase import Atoms, Atom
@@ -15,8 +14,9 @@ class AdsorbateOperator(OffspringCreator):
 
     Don't use this operator directly!"""
 
-    def __init__(self, adsorbate, adsorption_sites=None, num_muts=1):
-        OffspringCreator.__init__(self, num_muts=num_muts)
+    def __init__(self, adsorbate, adsorption_sites=None, num_muts=1,
+                 rng=np.random):
+        OffspringCreator.__init__(self, num_muts=num_muts, rng=rng)
         self.adsorbate = self.convert_adsorbate(adsorbate)
         self.adsorbate_set = set(self.adsorbate.get_chemical_symbols())
         if adsorption_sites is None:
@@ -32,9 +32,9 @@ class AdsorbateOperator(OffspringCreator):
         else:
             unrelaxed = []
         indi.info['data']['unrelaxed_adsorbates'] = unrelaxed
-        
+
         return indi
-        
+
     def get_new_individual(self, parents):
         raise NotImplementedError
 
@@ -59,7 +59,7 @@ class AdsorbateOperator(OffspringCreator):
         min_adsorbate_distance: float
             the radius of the sphere inside which no other
             adsorbates should be found
-        
+
         tilt_angle: float
             Tilt the adsorbate with an angle (in degress) relative to
             the surface normal.
@@ -82,19 +82,19 @@ class AdsorbateOperator(OffspringCreator):
         if len(ads) > 1:
             avg_pos = np.average(ads[1:].positions, 0)
             ads.rotate(avg_pos - ads[0].position, normal)
-            pvec = np.cross(np.random.rand(3) - ads[0].position, normal)
+            pvec = np.cross(self.rng.rand(3) - ads[0].position, normal)
             ads.rotate(tilt_angle, pvec, center=ads[0].position)
         ads.translate(pos - ads[0].position)
 
         atoms.extend(ads)
-        
+
         # Setting the indices of the unrelaxed adsorbates for the cut-
         # relax-paste function to be executed in the calculation script.
         # There it should also reset the parameter to [], to indicate
         # that the adsorbates have been relaxed.
         ads_indices = sorted([len(atoms) - k - 1 for k in range(len(ads))])
         atoms.info['data']['unrelaxed_adsorbates'].append(ads_indices)
-        
+
         # site['occupied'] = 1
 
         return True
@@ -129,7 +129,7 @@ class AdsorbateOperator(OffspringCreator):
         if len(ads_ind) != len_ads:
             print('removing other than {0}'.format(len_ads), ads_ind, pos)
             print(atoms.info)
-            random.shuffle(sites_list)
+            self.rng.shuffle(sites_list)
             return self.remove_adsorbate(atoms, sites_list, for_move=for_move)
         # print('removing', ads_ind, [atoms[j].symbol for j in ads_ind], pos)
         for k in ads_ind:
@@ -169,7 +169,7 @@ class AdsorbateOperator(OffspringCreator):
         for ads in self.get_all_adsorbate_indices(atoms):
             if ind in ads:
                 return ads[:]
-        
+
     def _get_indices_in_adsorbate(self, atoms, neighborlist,
                                   index, molecule_indices=None):
         """Internal recursive function that help
@@ -254,17 +254,17 @@ class AddAdsorbate(AdsorbateOperator):
                  site_preference=None,
                  surface_preference=None,
                  tilt_angle=None,
-                 num_muts=1):
+                 num_muts=1,
+                 rng=np.random):
         AdsorbateOperator.__init__(self, adsorbate,
                                    adsorption_sites=adsorption_sites,
-                                   num_muts=num_muts)
+                                   num_muts=num_muts, rng=rng)
         self.descriptor = 'AddAdsorbate'
 
         self.min_adsorbate_distance = min_adsorbate_distance
 
         self.site_preference = site_preference
         self.surface_preference = surface_preference
-        
         self.tilt_angle = tilt_angle or 0.
 
         self.min_inputs = 1
@@ -285,7 +285,7 @@ class AddAdsorbate(AdsorbateOperator):
         # else:
         #     ads_sites = self.adsorption_sites[:]
         for _ in range(self.num_muts):
-            random.shuffle(ads_sites)
+            self.rng.shuffle(ads_sites)
 
             if self.surface_preference is not None:
                 def func(x):
@@ -314,10 +314,11 @@ class RemoveAdsorbate(AdsorbateOperator):
                  adsorption_sites=None,
                  site_preference=None,
                  surface_preference=None,
-                 num_muts=1):
+                 num_muts=1,
+                 rng=np.random):
         AdsorbateOperator.__init__(self, adsorbate,
                                    adsorption_sites=adsorption_sites,
-                                   num_muts=num_muts)
+                                   num_muts=num_muts, rng=rng)
         self.descriptor = 'RemoveAdsorbate'
 
         self.site_preference = site_preference
@@ -336,7 +337,7 @@ class RemoveAdsorbate(AdsorbateOperator):
 
         ads_sites = self.adsorption_sites[:]
         for _ in range(self.num_muts):
-            random.shuffle(ads_sites)
+            self.rng.shuffle(ads_sites)
 
             if self.surface_preference is not None:
                 def func(x):
@@ -367,10 +368,11 @@ class MoveAdsorbate(AdsorbateOperator):
                  surface_preference_from=None,
                  site_preference_to=None,
                  surface_preference_to=None,
-                 num_muts=1):
+                 num_muts=1,
+                 rng=np.random):
         AdsorbateOperator.__init__(self, adsorbate,
                                    adsorption_sites=adsorption_sites,
-                                   num_muts=num_muts)
+                                   num_muts=num_muts, rng=rng)
         self.descriptor = 'MoveAdsorbate'
 
         self.min_adsorbate_distance = min_adsorbate_distance
@@ -390,10 +392,10 @@ class MoveAdsorbate(AdsorbateOperator):
 
         for atom in f:
             indi.append(atom)
-            
+
         ads_sites = self.adsorption_sites[:]
         for _ in range(self.num_muts):
-            random.shuffle(ads_sites)
+            self.rng.shuffle(ads_sites)
             if self.surface_preference_from is not None:
                 def func(x):
                     return x['surface'] == self.surface_preference_from
@@ -407,7 +409,7 @@ class MoveAdsorbate(AdsorbateOperator):
             removed = self.remove_adsorbate(indi, ads_sites,
                                             for_move=True)
 
-            random.shuffle(ads_sites)
+            self.rng.shuffle(ads_sites)
             if self.surface_preference_to is not None:
                 def func(x):
                     return x['surface'] == self.surface_preference_to
@@ -427,7 +429,7 @@ class MoveAdsorbate(AdsorbateOperator):
         return (self.finalize_individual(indi),
                 self.descriptor + ': {0}'.format(f.info['confid']))
 
-        
+
 class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
     """Crossover that cuts two particles through a plane in space and
     merges two halfes from different particles together.
@@ -445,14 +447,14 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
     adsorbate: str or Atoms
         specifies the type of adsorbate, it will not be taken into account
         when keeping the correct size and composition
-    
+
     blmin: dict
         Dictionary of minimum distance between atomic numbers.
         e.g. {(28,29): 1.5}
-    
+
     keep_composition: boolean
         Should the composition be the same as in the parents
-    
+
     rotate_vectors: list
         A list of vectors that the part of the structure that is cut
         is able to rotate around, the size of rotation is set in
@@ -463,16 +465,19 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
         A list of angles that the structure cut can be rotated. The vector
         being rotated around is set in rotate_vectors.
         Default None meaning no rotation is performed
+
+    rng: Random number generator
+        By default numpy.random.
     """
     def __init__(self, adsorbate, blmin, keep_composition=True,
                  fix_coverage=False, adsorption_sites=None,
                  min_adsorbate_distance=2.,
-                 rotate_vectors=None, rotate_angles=None):
+                 rotate_vectors=None, rotate_angles=None, rng=np.random):
         if not fix_coverage:
             # Trick the AdsorbateOperator class to accept no adsorption_sites
             adsorption_sites = [1]
         AdsorbateOperator.__init__(self, adsorbate,
-                                   adsorption_sites=adsorption_sites)
+                                   adsorption_sites=adsorption_sites, rng=rng)
         self.blmin = blmin
         self.keep_composition = keep_composition
         self.fix_coverage = fix_coverage
@@ -480,54 +485,54 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
         self.rvecs = rotate_vectors
         self.rangs = rotate_angles
         self.descriptor = 'CutSpliceCrossoverWithAdsorbates'
-        
+
         self.min_inputs = 2
-        
+
     def get_new_individual(self, parents):
         f, m = parents
-        
+
         if self.fix_coverage:
             # Count number of adsorbates
             adsorbates_in_parents = len(self.get_all_adsorbate_indices(f))
-            
+
         indi = self.initialize_individual(f)
         indi.info['data']['parents'] = [i.info['confid'] for i in parents]
-        
+
         fna = self.get_atoms_without_adsorbates(f)
         mna = self.get_atoms_without_adsorbates(m)
         fna_geo_mid = np.average(fna.get_positions(), 0)
         mna_geo_mid = np.average(mna.get_positions(), 0)
-        
+
         if self.rvecs is not None:
             if not isinstance(self.rvecs, list):
                 print('rotation vectors are not a list, skipping rotation')
             else:
-                vec = random.choice(self.rvecs)
+                vec = self.rng.choice(self.rvecs)
                 try:
-                    angle = random.choice(self.rangs)
+                    angle = self.rng.choice(self.rangs)
                 except TypeError:
                     angle = self.rangs
                 f.rotate(angle, vec, center=fna_geo_mid)
-                vec = random.choice(self.rvecs)
+                vec = self.rng.choice(self.rvecs)
                 try:
-                    angle = random.choice(self.rangs)
+                    angle = self.rng.choice(self.rangs)
                 except TypeError:
                     angle = self.rangs
                 m.rotate(angle, vec, center=mna_geo_mid)
-                
-        theta = random.random() * 2 * np.pi  # 0,2pi
-        phi = random.random() * np.pi  # 0,pi
+
+        theta = self.rng.rand() * 2 * np.pi  # 0,2pi
+        phi = self.rng.rand() * np.pi  # 0,pi
         e = np.array((np.sin(phi) * np.cos(theta),
                       np.sin(theta) * np.sin(phi),
                       np.cos(phi)))
         eps = 0.0001
-        
+
         # Move each particle to origo with their respective geometrical
         # centers, without adsorbates
         common_mid = (fna_geo_mid + mna_geo_mid) / 2.
         f.translate(-common_mid)
         m.translate(-common_mid)
-        
+
         off = 1
         while off != 0:
             fna = self.get_atoms_without_adsorbates(f)
@@ -562,7 +567,7 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
 
         fna = self.get_atoms_without_adsorbates(f)
         mna = self.get_atoms_without_adsorbates(m)
-        
+
         # Determine the contributing parts from f and m
         tmpf, tmpm = Atoms(), Atoms()
         for atom in fna:
@@ -596,10 +601,10 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
                     for i in ads:
                         m[i].tag = 2
                         tmpm.append(m[i])
-                
+
         tmpfna = self.get_atoms_without_adsorbates(tmpf)
         tmpmna = self.get_atoms_without_adsorbates(tmpm)
-                
+
         # Check that the correct composition is employed
         if self.keep_composition:
             opt_sm = sorted(fna.numbers)
@@ -612,7 +617,7 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
             correct_by = dict([(j, opt_sm.count(j)) for j in set(opt_sm)])
             for n in cur_sm:
                 correct_by[n] -= 1
-            correct_in = random.choice([tmpf, tmpm])
+            correct_in = self.rng.choice([tmpf, tmpm])
             to_add, to_rem = [], []
             for num, amount in correct_by.items():
                 if amount > 0:
@@ -623,9 +628,9 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
                 tbc = [a.index for a in correct_in if a.number == rem]
                 if len(tbc) == 0:
                     pass
-                ai = random.choice(tbc)
+                ai = self.rng.choice(tbc)
                 correct_in[ai].number = add
-                
+
         # Move the contributing apart if any distance is below blmin
         maxl = 0.
         for sv, min_dist in self.get_vectors_below_min_dist(tmpf + tmpm):
@@ -638,7 +643,7 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
                 maxl = l
         tmpf.translate(e * maxl)
         tmpm.translate(-e * maxl)
-        
+
         # Translate particles halves back to the center
         tmpf.translate(common_mid)
         tmpm.translate(common_mid)
@@ -646,7 +651,7 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
         # Put the two parts together
         for atom in chain(tmpf, tmpm):
             indi.append(atom)
-            
+
         if self.fix_coverage:
             # Remove or add adsorbates as needed
             adsorbates_in_child = self.get_all_adsorbate_indices(indi)
@@ -658,7 +663,8 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
                                        self.min_adsorbate_distance)
             elif diff > 0:
                 # Remove adsorbates
-                tbr = random.sample(adsorbates_in_child, diff)  # to be removed
+                tbr = self.rng.choice(adsorbates_in_child, size=diff,
+                                      replace=False)
                 for adsorbate_indices in sorted(tbr, reverse=True):
                     for i in adsorbate_indices[::-1]:
                         indi.pop(i)
@@ -674,13 +680,13 @@ class CutSpliceCrossoverWithAdsorbates(AdsorbateOperator):
         del ac[[a.index for a in ac
                 if a.symbol in self.adsorbate_set]]
         return ac.numbers
-        
+
     def get_atoms_without_adsorbates(self, atoms):
         ac = atoms.copy()
         del ac[[a.index for a in ac
                 if a.symbol in self.adsorbate_set]]
         return ac
-        
+
     def get_vectors_below_min_dist(self, atoms):
         """Generator function that returns each vector (between atoms)
         that is shorter than the minimum distance for those atom types

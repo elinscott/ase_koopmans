@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 from ase.build import fcc111
 from ase.ga.slab_operators import (CutSpliceSlabCrossover,
@@ -17,9 +18,12 @@ def cu_slab():
     return p1
 
 
-def test_cut_splice(cu_slab):
+def test_cut_splice(seed, cu_slab):
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
+
     ratio = .4
-    op = CutSpliceSlabCrossover(min_ratio=ratio)
+    op = CutSpliceSlabCrossover(min_ratio=ratio, rng=rng)
     p1 = cu_slab
     natoms = len(p1)
 
@@ -36,48 +40,61 @@ def test_cut_splice(cu_slab):
     assert new_ratio > ratio and new_ratio < 1 - ratio
 
     op = CutSpliceSlabCrossover(element_pools=['Cu', 'Au'],
-                                allowed_compositions=[(12, 12)])
+                                allowed_compositions=[(12, 12)], rng=rng)
     child = op.operate(p1, p2)
     assert child.get_chemical_symbols().count('Au') == 12
 
 
-def test_random_composition_mutation(cu_slab):
+def test_random_composition_mutation(seed, cu_slab):
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
+
     p1 = cu_slab
     p1.symbols[3] = 'Au'
     op = RandomCompositionMutation(element_pools=['Cu', 'Au'],
-                                   allowed_compositions=[(12, 12),
-                                                         (18, 6)])
+                                   allowed_compositions=[(12, 12), (18, 6)],
+                                   rng=rng)
     child, _ = op.get_new_individual([p1])
     no_Au = (child.symbols == 'Au').sum()
     assert no_Au in [6, 12]
 
-    op = RandomCompositionMutation(element_pools=['Cu', 'Au'])
+    op = RandomCompositionMutation(element_pools=['Cu', 'Au'], rng=rng)
     child2 = op.operate(child)
     # Make sure we have gotten a new stoichiometry
     assert (child2.symbols == 'Au').sum() != no_Au
 
 
-def test_random_element_mutation(cu_slab):
-    op = RandomElementMutation(element_pools=[['Cu', 'Au']])
+def test_random_element_mutation(seed, cu_slab):
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
-    child, desc = op.get_new_individual([cu_slab])
+    op = RandomElementMutation(element_pools=[['Cu', 'Au']], rng=rng)
+
+    child, desc = op.get_new_individual([cu_slab.copy()])
 
     assert (child.symbols == 'Au').sum() == 24
 
 
-def test_neighborhood_element_mutation(cu_slab):
-    op = NeighborhoodElementMutation(element_pools=[['Cu', 'Ni', 'Au']])
+def test_neighborhood_element_mutation(seed, cu_slab):
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
+
+    op = NeighborhoodElementMutation(element_pools=[['Cu', 'Ni', 'Au']],
+                                     rng=rng)
 
     child, desc = op.get_new_individual([cu_slab])
 
     assert (child.symbols == 'Ni').sum() == 24
 
 
-def test_random_permutation(cu_slab):
+def test_random_permutation(seed, cu_slab):
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
+
     p1 = cu_slab
     p1.symbols[:8] = 'Au'
 
-    op = RandomSlabPermutation()
+    op = RandomSlabPermutation(rng=rng)
     child, desc = op.get_new_individual([p1])
 
     assert (child.symbols == 'Au').sum() == 8

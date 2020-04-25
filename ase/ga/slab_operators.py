@@ -1,7 +1,6 @@
 """Operators that work on slabs.
 Allowed compositions are respected.
 Identical indexing of the slabs are assumed for the cut-splice operator."""
-import random
 from operator import itemgetter
 from collections import Counter
 from itertools import permutations
@@ -16,10 +15,10 @@ except ImportError:
     spglib = None
 
 
-def permute2(atoms):
-    i1 = random.choice(range(len(atoms)))
+def permute2(atoms, rng=np.random):
+    i1 = rng.choice(range(len(atoms)))
     sym1 = atoms[i1].symbol
-    i2 = random.choice([a.index for a in atoms if a.symbol != sym1])
+    i2 = rng.choice([a.index for a in atoms if a.symbol != sym1])
     atoms[i1].symbol = atoms[i2].symbol
     atoms[i2].symbol = sym1
 
@@ -45,7 +44,7 @@ def get_minority_element(atoms):
     return sorted(counter.items(), key=itemgetter(1), reverse=False)[0][0]
 
 
-def minority_element_segregate(atoms, layer_tag=1):
+def minority_element_segregate(atoms, layer_tag=1, rng=np.random):
     """Move the minority alloy element to the layer specified by the layer_tag,
     Atoms object should contain atoms with the corresponding tag."""
     sym = get_minority_element(atoms)
@@ -53,14 +52,14 @@ def minority_element_segregate(atoms, layer_tag=1):
     minority_indices = set([a.index for a in atoms if a.symbol == sym])
     change_indices = minority_indices - layer_indices
     in_layer_not_sym = list(layer_indices - minority_indices)
-    random.shuffle(in_layer_not_sym)
+    rng.shuffle(in_layer_not_sym)
     if len(change_indices) > 0:
         for i, ai in zip(change_indices, in_layer_not_sym):
             atoms[i].symbol = atoms[ai].symbol
             atoms[ai].symbol = sym
 
 
-def same_layer_comp(atoms):
+def same_layer_comp(atoms, rng=np.random):
     unique_syms, comp = np.unique(sorted(atoms.get_chemical_symbols()),
                                   return_counts=True)
     l = get_layer_comps(atoms)
@@ -74,7 +73,7 @@ def same_layer_comp(atoms):
             correct_by[s] -= num
         to_add, to_rem = get_add_remove_lists(**correct_by)
         for add, rem in zip(to_add, to_rem):
-            ai = random.choice([i for i in la if atoms[i].symbol == rem])
+            ai = rng.choice([i for i in la if atoms[i].symbol == rem])
             atoms[ai].symbol = add
 
 
@@ -118,8 +117,9 @@ class SlabOperator(OffspringCreator):
     def __init__(self, verbose=False, num_muts=1,
                  allowed_compositions=None,
                  distribution_correction_function=None,
-                 element_pools=None):
-        OffspringCreator.__init__(self, verbose, num_muts=num_muts)
+                 element_pools=None,
+                 rng=np.random):
+        OffspringCreator.__init__(self, verbose, num_muts=num_muts, rng=rng)
 
         self.allowed_compositions = allowed_compositions
         self.element_pools = element_pools
@@ -150,7 +150,7 @@ class SlabOperator(OffspringCreator):
             **dict(zip(unique_syms, comp_diff)))
         for add, rem in zip(to_add, to_rem):
             tbc = [i for i in range(len(syms)) if syms[i] == rem]
-            ai = random.choice(tbc)
+            ai = self.rng.choice(tbc)
             syms[ai] = add
         return syms
 
@@ -180,7 +180,7 @@ class SlabOperator(OffspringCreator):
         comp = np.array(c)
         mindiff = 1e10
         allowed_list = list(self.allowed_compositions)
-        random.shuffle(allowed_list)
+        self.rng.shuffle(allowed_list)
         for ac in allowed_list:
             diff = self.get_composition_diff(comp, ac)
             numdiff = sum([abs(i) for i in diff])
@@ -230,11 +230,12 @@ class CutSpliceSlabCrossover(SlabOperator):
     def __init__(self, allowed_compositions=None, element_pools=None,
                  verbose=False,
                  num_muts=1, tries=1000, min_ratio=0.25,
-                 distribution_correction_function=None):
+                 distribution_correction_function=None, rng=np.random):
         SlabOperator.__init__(self, verbose, num_muts,
                               allowed_compositions,
                               distribution_correction_function,
-                              element_pools=element_pools)
+                              element_pools=element_pools,
+                              rng=rng)
 
         self.tries = tries
         self.min_ratio = min_ratio
@@ -259,12 +260,12 @@ class CutSpliceSlabCrossover(SlabOperator):
 
         for _ in range(self.tries):
             # Find center point of cut
-            rv = [random.random() for _ in range(3)]  # random vector
+            rv = [self.rng.rand() for _ in range(3)]  # random vector
             midpoint = (ma - mi) * rv + mi
 
             # Determine cut plane
-            theta = random.random() * 2 * np.pi  # 0,2pi
-            phi = random.random() * np.pi  # 0,pi
+            theta = self.rng.rand() * 2 * np.pi  # 0,2pi
+            phi = self.rng.rand() * np.pi  # 0,pi
             e = np.array((np.sin(phi) * np.cos(theta),
                           np.sin(theta) * np.sin(phi),
                           np.cos(phi)))
@@ -311,11 +312,12 @@ class RandomCompositionMutation(SlabOperator):
 
     def __init__(self, verbose=False, num_muts=1, element_pools=None,
                  allowed_compositions=None,
-                 distribution_correction_function=None):
+                 distribution_correction_function=None, rng=np.random):
         SlabOperator.__init__(self, verbose, num_muts,
                               allowed_compositions,
                               distribution_correction_function,
-                              element_pools=element_pools)
+                              element_pools=element_pools,
+                              rng=rng)
 
         self.descriptor = 'RandomCompositionMutation'
 
@@ -356,8 +358,8 @@ class RandomCompositionMutation(SlabOperator):
             if comp == tuple(allowed):
                 allowed_comps = np.delete(allowed_comps, i, axis=0)
                 break
-        new_comp = random.choice(allowed_comps)
-        comp_diff = self.get_composition_diff(comp, new_comp)
+        chosen = self.rng.randint(len(allowed_comps))
+        comp_diff = self.get_composition_diff(comp, allowed_comps[chosen])
 
         # Get difference from current composition
         to_add, to_rem = get_add_remove_lists(
@@ -367,7 +369,7 @@ class RandomCompositionMutation(SlabOperator):
         syms = atoms.get_chemical_symbols()
         for add, rem in zip(to_add, to_rem):
             tbc = [i for i in range(len(syms)) if syms[i] == rem]
-            ai = random.choice(tbc)
+            ai = self.rng.choice(tbc)
             syms[ai] = add
 
         atoms.set_chemical_symbols(syms)
@@ -378,11 +380,12 @@ class RandomCompositionMutation(SlabOperator):
 class RandomElementMutation(SlabOperator):
     def __init__(self, element_pools, verbose=False, num_muts=1,
                  allowed_compositions=None,
-                 distribution_correction_function=None):
+                 distribution_correction_function=None, rng=np.random):
         SlabOperator.__init__(self, verbose, num_muts,
                               allowed_compositions,
                               distribution_correction_function,
-                              element_pools=element_pools)
+                              element_pools=element_pools,
+                              rng=rng)
 
         self.descriptor = 'RandomElementMutation'
 
@@ -398,8 +401,9 @@ class RandomElementMutation(SlabOperator):
                 self.descriptor + parent_message)
 
     def operate(self, atoms):
-        mut = random.choice(self.get_all_element_mutations(atoms))
-        replace_element(atoms, *mut)
+        poss_muts = self.get_all_element_mutations(atoms)
+        chosen = self.rng.randint(len(poss_muts))
+        replace_element(atoms, *poss_muts[chosen])
         self.dcf(atoms)
         return atoms
 
@@ -407,11 +411,12 @@ class RandomElementMutation(SlabOperator):
 class NeighborhoodElementMutation(SlabOperator):
     def __init__(self, element_pools, verbose=False, num_muts=1,
                  allowed_compositions=None,
-                 distribution_correction_function=None):
+                 distribution_correction_function=None, rng=np.random):
         SlabOperator.__init__(self, verbose, num_muts,
                               allowed_compositions,
                               distribution_correction_function,
-                              element_pools=element_pools)
+                              element_pools=element_pools,
+                              rng=rng)
 
         self.descriptor = 'NeighborhoodElementMutation'
 
@@ -436,8 +441,9 @@ class NeighborhoodElementMutation(SlabOperator):
                 least_diff = dist
             elif dist == least_diff:
                 poss_muts.append(mut)
-        chosen_mut = random.choice(poss_muts)
-        replace_element(atoms, *chosen_mut)
+
+        chosen = self.rng.randint(len(poss_muts))
+        replace_element(atoms, *poss_muts[chosen])
         self.dcf(atoms)
         return atoms
 
@@ -447,10 +453,11 @@ class SymmetrySlabPermutation(SlabOperator):
 
     def __init__(self, verbose=False, num_muts=1, sym_goal=100, max_tries=50,
                  allowed_compositions=None,
-                 distribution_correction_function=None):
+                 distribution_correction_function=None, rng=np.random):
         SlabOperator.__init__(self, verbose, num_muts,
                               allowed_compositions,
-                              distribution_correction_function)
+                              distribution_correction_function,
+                              rng=rng)
         if spglib is None:
             print("SymmetrySlabPermutation needs spglib to function")
 
@@ -482,7 +489,7 @@ class SymmetrySlabPermutation(SlabOperator):
         while sym_num < sg:
             for _ in range(self.max_tries):
                 for _ in range(2):
-                    permute2(atoms)
+                    permute2(atoms, rng=self.rng)
                 self.dcf(atoms)
                 sym_num = spglib.get_symmetry_dataset(atoms)['number']
                 if sym_num >= sg:
@@ -494,10 +501,11 @@ class SymmetrySlabPermutation(SlabOperator):
 class RandomSlabPermutation(SlabOperator):
     def __init__(self, verbose=False, num_muts=1,
                  allowed_compositions=None,
-                 distribution_correction_function=None):
+                 distribution_correction_function=None, rng=np.random):
         SlabOperator.__init__(self, verbose, num_muts,
                               allowed_compositions,
-                              distribution_correction_function)
+                              distribution_correction_function,
+                              rng=rng)
 
         self.descriptor = 'RandomSlabPermutation'
 
@@ -522,6 +530,6 @@ class RandomSlabPermutation(SlabOperator):
     def operate(self, atoms):
         # Do the operation
         for _ in range(self.num_muts):
-            permute2(atoms)
+            permute2(atoms, rng=self.rng)
         self.dcf(atoms)
         return atoms
