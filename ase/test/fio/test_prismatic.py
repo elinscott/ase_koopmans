@@ -30,7 +30,7 @@ def test_write_read_cycle_xyz_prismatic():
     atoms = bulk('Si', cubic=True)
     atoms.set_array('occupancies', np.ones(len(atoms)))
     rng = np.random.RandomState(42)
-    atoms.set_array('debye_waller_factors', 0.076 + 0.01 * rng.rand(len(atoms)))
+    atoms.set_array('debye_waller_factors', 0.62 + 0.1 * rng.rand(len(atoms)))
 
     filename = 'SI100.XYZ'
     atoms.write(filename=filename, format='prismatic',
@@ -44,7 +44,7 @@ def test_write_read_cycle_xyz_prismatic():
                                atoms_loaded.get_array('occupancies'))
     np.testing.assert_allclose(atoms.get_array('debye_waller_factors'),
                                atoms_loaded.get_array('debye_waller_factors'),
-                               rtol=1E-6)
+                               rtol=1E-5)
 
 
 def test_write_error():
@@ -65,7 +65,7 @@ def test_write_error():
     atoms_Si100.write(filename, format='prismatic',
                       debye_waller_factors={'Si': 0.076})
 
-    STO_DW_dict = {'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02}
+    STO_DW_dict = {'Sr': 0.62, 'O': 0.73, 'Ti': 0.43}
     STO_DW_dict_Ti_missing = {key: STO_DW_dict[key] for key in ['Sr', 'O']}
 
     with pytest.raises(ValueError):

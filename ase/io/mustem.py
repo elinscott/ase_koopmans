@@ -23,9 +23,16 @@ def _check_numpy_version():
 
 @reader
 def read_mustem(fd):
-    """Import muSTEM input file.
+    r"""Import muSTEM input file.
 
-    Reads cell, atom positions, etc. from muSTEM xtl file
+    Reads cell, atom positions, etc. from muSTEM xtl file.
+    The mustem xtl save the root mean square (RMS) displacement, which is
+    convert to Debye-Waller (in Å²) factor by:
+
+    .. math::
+
+        B = RMS * 8\pi^2
+
     """
 
     from ase import Atoms
@@ -59,7 +66,7 @@ def read_mustem(fd):
         atoms_number = int(line[0])
         atomic_number = int(line[1])
         occupancy = float(line[2])
-        DW = float(line[3])
+        DW = float(line[3]) * 8 * np.pi**2
         # read all the position for each element
         positions.append(np.genfromtxt(fname=fd, max_rows=atoms_number))
         atomic_numbers.append(np.ones(atoms_number) * atomic_number)
@@ -94,8 +101,7 @@ class XtlmuSTEMWriter:
         self.keV = keV
         self.comment = comment
         self.occupancies = self._get_occupancies(occupancies)
-        self.debye_waller_factors = self._get_debye_waller_factors(
-            debye_waller_factors)
+        self.RMS = self._get_RMS(debye_waller_factors)
 
         self.numbers = symbols2numbers(self.atom_types)
         if fit_cell_to_atoms:
@@ -118,21 +124,23 @@ class XtlmuSTEMWriter:
 
         return occupancies
 
-    def _get_debye_waller_factors(self, DW):
+    def _get_RMS(self, DW):
         if DW is None:
             if 'debye_waller_factors' in self.atoms.arrays:
                 DW = {element: self._parse_array_from_atoms(
-                    'debye_waller_factors', element, True)
+                    'debye_waller_factors', element, True) / (8 * np.pi**2)
                     for element in self.atom_types}
-        if np.isscalar(DW):
+        elif np.isscalar(DW):
             if len(self.atom_types) > 1:
                 raise ValueError('This cell contains more then one type of '
                                  'atoms and the Debye-Waller factor needs to '
                                  'be provided for each atom using a '
                                  'dictionary.')
-            DW = {self.atom_types[0]: DW}
+            DW = {self.atom_types[0]: DW / (8 * np.pi**2)}
         elif isinstance(DW, dict):
             self._check_key_dictionary(DW, 'debye_waller_factors')
+            for key, value in DW.items():
+                DW[key] = value / (8 * np.pi**2)
 
         if DW is None:
             raise ValueError('Missing Debye-Waller factors. It can be '
@@ -209,10 +217,12 @@ class XtlmuSTEMWriter:
         return s
 
     def _get_element_header(self, atom_type, number, atom_type_number,
-                            occupancy, debye_waller_factors):
-        return "{0}\n{1} {2} {3} {4}\n".format(atom_type, number,
-                                               atom_type_number, occupancy,
-                                               debye_waller_factors)
+                            occupancy, RMS):
+        return "{0}\n{1} {2} {3} {4:.3g}\n".format(atom_type,
+                                                  number,
+                                                  atom_type_number,
+                                                  occupancy,
+                                                  RMS)
 
     def _get_file_end(self):
         return "Orientation\n   1 0 0\n   0 1 0\n   0 0 1\n"
@@ -230,14 +240,14 @@ class XtlmuSTEMWriter:
             f.write(self._get_element_header(atom_type, atom_type_number,
                                              number,
                                              self.occupancies[atom_type],
-                                             self.debye_waller_factors[atom_type]))
+                                             self.RMS[atom_type]))
             np.savetxt(fname=f, X=positions, fmt='%.6g', newline='\n')
 
         f.write(self._get_file_end())
 
 
 def write_mustem(filename, *args, **kwargs):
-    """Write muSTEM input file.
+    r"""Write muSTEM input file.
 
     Parameters:
 
@@ -247,7 +257,14 @@ def write_mustem(filename, *args, **kwargs):
         Energy of the electron beam in keV required for the image simulation.
 
     debye_waller_factors: float or dictionary of float with atom type as key
-        Debye-Waller factor of each atoms.
+        Debye-Waller factor of each atoms. Since the prismatic/computem
+        software use root means square RMS) displacements, the Debye-Waller
+        factors (B) needs to be provided in Å² and these values are converted
+        to RMS displacement by:
+
+        .. math::
+
+            RMS = \frac{B}{8\pi^2}
 
     occupancies: float or dictionary of float with atom type as key (optional)
         Occupancy of each atoms. Default value is `1.0`.

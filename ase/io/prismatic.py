@@ -24,12 +24,19 @@ def _check_numpy_version():
 
 @reader
 def read_prismatic(fd):
-    """Import prismatic and computem xyz input file as an Atoms object.
+    r"""Import prismatic and computem xyz input file as an Atoms object.
 
     Reads cell, atom positions, occupancies and Debye Waller factor.
     The occupancy values and the Debye Waller factors are obtained using the
     `get_array` method and the `occupancies` and `debye_waller_factors` keys,
-    respectively.
+    respectively. The root means square (RMS) values from the
+    prismatic/computem xyz file are converted to Debye-Waller factors (B) in Å²
+    by:
+
+    .. math::
+
+        B = RMS^2 * 8\pi^2
+
     """
     _check_numpy_version()
 
@@ -44,13 +51,15 @@ def read_prismatic(fd):
     # Read all data at once
     # Use genfromtxt instead of loadtxt to skip last line
     read_data = np.genfromtxt(fname=fd, skip_footer=1)
+    # Convert from RMS to Debye-Waller factor
+    RMS = read_data[:, 5]**2 * 8 * np.pi**2
 
     atoms = Atoms(symbols=read_data[:, 0],
                   positions=read_data[:, 1:4],
                   cell=cellpar,
                   )
     atoms.set_array('occupancies', read_data[:, 4])
-    atoms.set_array('debye_waller_factors', read_data[:, 5])
+    atoms.set_array('debye_waller_factors', RMS)
 
     return atoms
 
@@ -72,8 +81,9 @@ class XYZPrismaticWriter:
         self.comments = comments
 
         self.occupancies = self._get_occupancies()
-        self.debye_waller_factors = self._get_debye_waller_factors(
+        debye_waller_factors = self._get_debye_waller_factors(
             debye_waller_factors)
+        self.RMS = np.sqrt(debye_waller_factors / (8 * np.pi**2))
 
     def _get_occupancies(self):
         if 'occupancies' in self.atoms.arrays:
@@ -138,7 +148,7 @@ class XYZPrismaticWriter:
         data_array = np.vstack((self.atoms.numbers,
                                 self.atoms.positions.T,
                                 self.occupancies,
-                                self.debye_waller_factors)
+                                self.RMS)
                                ).T
 
         np.savetxt(fname=f,
@@ -152,7 +162,7 @@ class XYZPrismaticWriter:
 
 
 def write_prismatic(fd, *args, **kwargs):
-    """Write xyz input file for the prismatic and computem software. The cell
+    r"""Write xyz input file for the prismatic and computem software. The cell
     needs to be orthorhombric. If the cell contains the `occupancies` and
     `debye_waller_factors` arrays (see the `set_array` method to set them),
     these array will be written to the file.
@@ -168,7 +178,15 @@ def write_prismatic(fd, *args, **kwargs):
         key and the corresponding Debye-Waller factor as value.
         If None, the `debye_waller_factors` array of the Atoms object needs to
         be set (see the `set_array` method to set them), otherwise raise a
-        ValueError. Default is None.
+        ValueError. Since the prismatic/computem software use root means square
+        (RMS) displacements, the Debye-Waller factors (B) needs to be provided
+        in Å² and these values are converted to RMS displacement by:
+
+        .. math::
+
+            RMS = \sqrt{\frac{B}{8\pi^2}}
+
+        Default is None.
 
     comment: str (optional)
         Comments to be written in the first line of the file. If not

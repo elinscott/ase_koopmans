@@ -32,7 +32,7 @@ def test_mustem_several_elements():
     atoms = make_STO_atoms()
 
     filename = 'sto_mustem.xtl'
-    STO_DW_dict = {'Sr': 0.78700E-02, 'O': 0.92750E-02, 'Ti': 0.55700E-02}
+    STO_DW_dict = {'Sr': 0.62, 'O': 0.73, 'Ti': 0.43}
     STO_DW_dict_Ti_missing = {key: STO_DW_dict[key] for key in ['Sr', 'O']}
 
     with pytest.raises(TypeError):
@@ -97,8 +97,7 @@ def test_mustem_several_elements():
         atoms5.write(filename, keV=300, debye_waller_factors=STO_DW_dict)
 
     atoms7 = make_STO_atoms()
-    debye_waller_factors = np.array(
-        [0.92750E-02, 0.92750E-02, 0.92750E-02, 0.78700E-02, 0.55700E-02])
+    debye_waller_factors = np.array([0.73, 0.73, 0.73, 0.62, 0.43])
     atoms7.set_array('debye_waller_factors', debye_waller_factors)
     # element 0 is Sr and there is onlye one Sr in the cell: this is a valid
     # cell to export to xtl file
@@ -108,7 +107,8 @@ def test_mustem_several_elements():
         number = symbols2numbers(element)
         np.testing.assert_allclose(
             atoms7.arrays['debye_waller_factors'][atoms7.numbers == number],
-            atoms8.arrays['debye_waller_factors'][atoms8.numbers == number]
+            atoms8.arrays['debye_waller_factors'][atoms8.numbers == number],
+            rtol=1e-2
         )
 
 
@@ -117,7 +117,7 @@ def test_mustem_single_elements():
     Si_atoms = bulk('Si', cubic=True)
 
     filename = 'Si100.xtl'
-    DW = 0.78700E-02
+    DW = 0.62
     Si_atoms.write(filename, keV=300, debye_waller_factors=DW)
     Si_atoms2 = read(filename)
 
@@ -125,7 +125,7 @@ def test_mustem_single_elements():
     np.testing.assert_allclose(Si_atoms.cell, Si_atoms2.cell)
     np.testing.assert_allclose(Si_atoms2.arrays['occupancies'], np.ones(8))
     np.testing.assert_allclose(Si_atoms2.arrays['debye_waller_factors'],
-                               np.ones(8) * DW)
+                               np.ones(8) * DW, rtol=1e-2)
 
     Si_atoms3 = bulk('Si', cubic=True)
     Si_atoms3.set_array('occupancies', np.ones(8) * 0.9)
@@ -138,7 +138,8 @@ def test_mustem_single_elements():
     np.testing.assert_allclose(Si_atoms3.arrays['occupancies'],
                                Si_atoms4.arrays['occupancies'])
     np.testing.assert_allclose(Si_atoms3.arrays['debye_waller_factors'],
-                               Si_atoms4.arrays['debye_waller_factors'])
+                               Si_atoms4.arrays['debye_waller_factors'],
+                               rtol=1e-2)
 
     Si_atoms5 = bulk('Si', cubic=True)
     debye_waller_factors = np.ones(8) * DW
