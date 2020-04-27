@@ -2,6 +2,7 @@ from collections import OrderedDict
 import logging
 import numpy as np
 import pytest
+from typing import List, Tuple, Any
 
 from ase.spectrum.dosdata import DOSData, GridDOSData, RawDOSData
 
@@ -25,7 +26,7 @@ class TestDosData:
                    ({'symbol': 'C', 'index': '2', 'strangekey': 'isallowed'},
                     {'symbol': 'C', 'index': '2', 'strangekey': 'isallowed'}),
                    ('notadict', TypeError),
-                   (False, TypeError)]
+                   (False, TypeError)]  # type: List[Tuple[Any,Any]]
 
     @pytest.mark.parametrize('info, expected', sample_info)
     def test_dosdata_init_info(self, info, expected):
