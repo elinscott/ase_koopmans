@@ -773,6 +773,7 @@ class SQLite3Database(Database, object):
                         format(table, ', '.join([str(id) for id in ids])))
 
     def vacuum(self, db_con=None):
+        """ Run SQLite's VACUUM command to rebuild the db and reclaim space """
         if self.type == 'db':
             con = db_con or self.connection or self._connect()
             con.commit()
