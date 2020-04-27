@@ -25,7 +25,7 @@ class SimplePlottingAxes:
 
         return self.ax
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> Optional[bool]:
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         if exc_type is None:
             # If there was no exception, display/write the plot as appropriate
             if self.figure is None:
@@ -36,6 +36,4 @@ class SimplePlottingAxes:
             if self.filename is not None:
                 self.figure.savefig(self.filename)
 
-        else:
-            # Raise any exception from inside the block
-            return False
+        return None

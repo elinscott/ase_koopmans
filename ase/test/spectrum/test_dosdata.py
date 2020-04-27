@@ -20,7 +20,6 @@ class MinimalDOSData(DOSData):
 
 class TestDosData:
     """Test the abstract base class for DOS data"""
-
     sample_info = [(None, {}),
                    ({}, {}),
                    ({'symbol': 'C', 'index': '2', 'strangekey': 'isallowed'},
