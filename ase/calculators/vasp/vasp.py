@@ -197,8 +197,6 @@ class Vasp(GenerateVaspInput, Calculator):
         self.read_incar()
         self.read_outcar()
         self.set_results(atoms)
-        if not self.float_params['kspacing']:
-            self.read_kpoints()
         self.read_potcar()
 
         self.old_input_params = self.input_params.copy()
@@ -1069,10 +1067,10 @@ class VaspDos(object):
         if isinstance(orbital, int):
             return self._site_dos[atom, orbital + 1, :]
         n = self._site_dos.shape[1]
-        
+
         from .vasp_data import PDOS_orbital_names_and_DOSCAR_column
         norb = PDOS_orbital_names_and_DOSCAR_column[n]
-        
+
 
         return self._site_dos[atom, norb[orbital.lower()], :]
 

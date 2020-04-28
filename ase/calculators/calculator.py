@@ -458,7 +458,7 @@ class Calculator(object):
         """Basic calculator implementation.
 
         restart: str
-            Prefix for restart file.  May contain a directory.  Default
+            Prefix for restart file.  May contain a directory. Default
             is None: don't restart.
         ignore_bad_restart_file: bool
             Ignore broken or missing restart file.  By default, it is an
