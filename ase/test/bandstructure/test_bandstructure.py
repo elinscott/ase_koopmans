@@ -23,6 +23,10 @@ def test_bandstructure(plt):
     assert ''.join(labels) == 'GXWKGLUWLKUX'
     bs.plot(emax=10, filename='bs.png')
 
+def test_deprecation():
+    with pytest.raises(np.VisibleDeprecationWarning):
+        import ase.dft.band_structure  # noqa F401
+
 
 @pytest.fixture
 def bs():

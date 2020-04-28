@@ -1,4 +1,4 @@
-from ase.spectrum.band_structure import *
+from ase.spectrum.band_structure import *  # noqa: F401,F403
 import warnings
 from numpy import VisibleDeprecationWarning
 
