@@ -23,10 +23,6 @@ def test_bandstructure(plt):
     assert ''.join(labels) == 'GXWKGLUWLKUX'
     bs.plot(emax=10, filename='bs.png')
 
-def test_deprecation():
-    with pytest.raises(np.VisibleDeprecationWarning):
-        import ase.dft.band_structure  # noqa F401
-
 
 @pytest.fixture
 def bs():
@@ -35,8 +31,10 @@ def bs():
     path = rhl.bandpath()
     return path.free_electron_band_structure()
 
+
 def test_print_bs(bs):
     print(bs)
+
 
 def test_subtract_ref(bs):
     avg = np.mean(bs.energies)

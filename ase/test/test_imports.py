@@ -58,8 +58,14 @@ newpy_only_modules = {
 @pytest.mark.filterwarnings('ignore:Moved to')
 def test_imports():
     for module in all_modules:
+        if module in deprecated_modules:
+            warning = (DeprecationWarning, VisibleDeprecationWarning)
+        else:
+            warning = None
+
         try:
-            import_module(module)
+            with pytest.warns(warning):
+                import_module(module)
         except SyntaxError:
             if module not in newpy_only_modules:
                 raise
