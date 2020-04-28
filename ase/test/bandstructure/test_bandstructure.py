@@ -4,7 +4,7 @@ import pytest
 from ase.build import bulk
 from ase.calculators.test import FreeElectrons
 from ase.dft.kpoints import special_paths
-from ase.dft.band_structure import BandStructure
+from ase.spectrum.band_structure import BandStructure
 
 
 def test_bandstructure(plt):
