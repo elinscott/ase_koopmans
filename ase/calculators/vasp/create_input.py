@@ -1604,9 +1604,14 @@ class GenerateVaspInput(object):
                 raise IOError('Value missing for keyword "%s".' % key)
 
     def read_kpoints(self, filename='KPOINTS'):
-        file = open(filename, 'r')
-        lines = file.readlines()
-        file.close()
+        # If we used VASP builtin kspacing,
+        if self.float_params['kspacing'] is not None:
+            # Don't update kpts array
+            return
+
+        with open(filename, 'r') as fd:
+            lines = fd.readlines()
+
         ktype = lines[2].split()[0].lower()[0]
         if ktype in ['g', 'm', 'a']:
             if ktype == 'g':
