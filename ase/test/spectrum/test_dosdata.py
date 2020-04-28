@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import logging
 import numpy as np
 import pytest
 from typing import List, Tuple, Any
@@ -265,14 +264,13 @@ class TestGridDosData:
             dense_dos + GridDOSData(dense_dos.get_energies()[1:],
                                     dense_dos.get_weights()[1:])
 
-    def test_check_spacing(self, dense_dos, caplog):
+    def test_check_spacing(self, dense_dos):
         """Check a warning is logged when width < 2 * grid spacing"""
         # In the sample data, grid spacing is 1.0
         dense_dos.sample([1], width=2.1)
-        assert len(caplog.record_tuples) == 0
-        dense_dos.sample([1], width=1.9)
-        assert caplog.record_tuples[-1][1] == logging.WARNING
-        assert "The broadening width is small" in caplog.record_tuples[-1][2]
+
+        with pytest.warns(UserWarning, match="The broadening width is small"):
+            dense_dos.sample([1], width=1.9)
 
     linewidths = [1, 5, None]
     @pytest.mark.usefixtures("figure")

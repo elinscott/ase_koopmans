@@ -1,7 +1,7 @@
 # Refactor of DOS-like data objects
 # towards replacing ase.dft.dos and ase.dft.pdos
 from abc import ABCMeta, abstractmethod
-import logging
+import warnings
 from typing import Any, Dict, Sequence, Tuple, TypeVar
 
 import numpy as np
@@ -357,7 +357,7 @@ class GridDOSData(GeneralDOSData):
     def _check_spacing(self, width):
         current_spacing = self._data[0, 1] - self._data[0, 0]
         if width < (2 * current_spacing):
-            logging.warning(
+            warnings.warn(
                 "The broadening width is small compared to the original "
                 "sampling density. The results are unlikely to be smooth.")
 
