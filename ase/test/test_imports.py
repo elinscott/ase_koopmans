@@ -1,5 +1,6 @@
 from pathlib import Path
 from importlib import import_module
+from numpy import VisibleDeprecationWarning
 import pytest
 import ase
 
@@ -37,8 +38,10 @@ def glob_modules():
             continue
         yield path
 
+
 all_modules = filenames2modules(glob_modules())
 
+deprecated_modules = {'ase.dft.band_structure'}
 
 ignore_imports = {
     'flask', 'psycopg2', 'kimpy', 'pymysql', 'IPython',
@@ -51,6 +54,7 @@ newpy_only_modules = {
     'ase.utils.build_web_page'
 }
 
+
 @pytest.mark.filterwarnings('ignore:Moved to')
 def test_imports():
     for module in all_modules:
@@ -61,4 +65,9 @@ def test_imports():
                 raise
         except ImportError as err:
             if err.name not in ignore_imports and 'deprecated' not in str(err):
+                raise
+        except (VisibleDeprecationWarning):
+            if module in deprecated_modules:
+                pass
+            else:
                 raise
