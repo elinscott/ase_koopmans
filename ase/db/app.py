@@ -150,11 +150,6 @@ def robots():
             200)
 
 
-@app.route('/favicon.ico')
-def favicon():
-    return ''
-
-
 def handle_query(args) -> str:
     """Converts request args to ase.db query string."""
     return args['query']
