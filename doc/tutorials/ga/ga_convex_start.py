@@ -27,7 +27,7 @@ print('Reference energies:')
 for m in metals:
     slab = fcc111(m, size=(2, 4, 3), a=lattice_constants[m],
                   vacuum=5, orthogonal=True)
-    slab.set_calculator(EMT())
+    slab.calc = EMT()
 
     # We save the reference energy as E_A / N
     e = slab.get_potential_energy()

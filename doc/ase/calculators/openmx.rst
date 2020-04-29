@@ -27,7 +27,7 @@ atoms object:
 .. code-block:: python
 
   calc = OpenMX(**kwargs)
-  atoms.set_calculator(calc)
+  atoms.calc = calc
 
 Environment variables
 =====================

@@ -23,13 +23,13 @@ def test_replay():
         view(a)
 
     constraint = FixAtoms(range(len(a) - 1))
-    a.set_calculator(EMT())
+    a.calc = EMT()
     a.set_constraint(constraint)
     dyn1 = QuasiNewton(a, trajectory='AgCu1.traj', logfile='AgCu1.log')
     dyn1.run(fmax=0.1)
 
     a = read('AgCu1.traj')
-    a.set_calculator(EMT())
+    a.calc = EMT()
     print(a.constraints)
     dyn2 = QuasiNewton(a, trajectory='AgCu2.traj', logfile='AgCu2.log')
     dyn2.replay_trajectory('AgCu1.traj')

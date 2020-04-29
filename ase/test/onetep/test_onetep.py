@@ -19,7 +19,7 @@ def test_onetep():
             abinit format. I need H.abinit and O.abinit""")
     calc.set_pseudos([('H', h_path), ('O', o_path)])
     calc.set(paw=True, xc='PBE', cutoff_energy='400 eV')
-    mol.set_calculator(calc)
+    mol.calc = calc
 
     energy = mol.get_total_energy()
     ref_energy = -470.852068717

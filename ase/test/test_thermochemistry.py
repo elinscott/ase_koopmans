@@ -35,7 +35,7 @@ def test_thermochemistry():
     # Harmonic thermo.
 
     atoms = fcc100('Cu', (2, 2, 2), vacuum=10.)
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     add_adsorbate(atoms, 'Pt', 1.5, 'hollow')
     atoms.set_constraint(FixAtoms(indices=[atom.index for atom in atoms
                                            if atom.symbol == 'Cu']))
@@ -54,7 +54,7 @@ def test_thermochemistry():
     # Crystal thermo.
     atoms = bulk('Al', 'fcc', a=4.05)
     calc = EMT()
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     energy = atoms.get_potential_energy()
 
     # Phonon calculator

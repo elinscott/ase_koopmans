@@ -10,9 +10,11 @@ import sys
 import time
 import weakref
 from math import pi
+from typing import Optional
 
 import numpy as np
 
+from ase.utils import warn_legacy
 from ase.visualize.colortable import color_table
 import ase.data
 
@@ -33,10 +35,10 @@ class PrimiPlotterBase:
 
     def set_colors(self, colors):
         """Explicitly set the colors of the atoms.
-        
+
         The colors can either be a dictionary mapping tags to colors
         or an array of colors, one per atom.
-        
+
         Each color is specified as a greyscale value from 0.0 to 1.0
         or as three RGB values from 0.0 to 1.0.
         """
@@ -64,7 +66,7 @@ class PrimiPlotterBase:
                 zmin=None, zmax=None):
         self.cut = {"xmin":xmin, "xmax":xmax, "ymin":ymin, "ymax":ymax,
                     "zmin":zmin, "zmax":zmax}
-    
+
     def update(self, newatoms = None):
         """Cause a plot (respecting the interval setting).
 
@@ -80,7 +82,7 @@ class PrimiPlotterBase:
             self.plot()
             self.skipnext = self.interval
         self.skipnext -= 1
-        
+
     def set_log(self, log):
         """Sets a file for logging.
 
@@ -99,11 +101,11 @@ class PrimiPlotterBase:
             self.logfile.write(message+"\n")
             self.logfile.flush()
         self._verb(message)
-        
+
     def _verb(self, txt):
         if self.verbose:
             sys.stderr.write(txt+"\n")
-    
+
     def _starttimer(self):
         self.starttime = time.time()
 
@@ -137,7 +139,7 @@ class PrimiPlotterBase:
 
     def _getatomicnumbers(self):
         return self.atoms.get_atomic_numbers()
-    
+
     def _getcolors(self):
         # Try any explicitly given colors
         if self.colors is not None:
@@ -200,7 +202,7 @@ class PrimiPlotterBase:
     def __del__(self):
         if self.ownlogfile:
             self.logfile.close()
-            
+
 class PrimiPlotter(PrimiPlotterBase):
     """Primitive PostScript-based plots during a simulation.
 
@@ -232,7 +234,7 @@ class PrimiPlotter(PrimiPlotterBase):
 
     The radii of the atoms are obtained from the first of the following
     methods which work:
-    
+
     1.  If the radii are specified using PrimiPlotter.set_radii(r),
         they are used.  Must be an array, or a single number.
 
@@ -286,7 +288,7 @@ class PrimiPlotter(PrimiPlotterBase):
     if an atom is invisible by any criterion, it is left out of the plot.
 
     1.  All atoms are visible.
-    
+
     2.  If PrimiPlotter.set_invisible() has be used to specify invisible
         atoms, any atoms for which the value is non-zero becomes invisible.
 
@@ -301,9 +303,9 @@ class PrimiPlotter(PrimiPlotterBase):
     Note that invisible atoms are still included in the algorithm for
     positioning and scaling the plot.
 
-    
+
     The following output devices are implemented.
-    
+
     PostScriptFile(prefix):  Create PS files names prefix0000.ps etc.
 
     PnmFile(prefix):  Similar, but makes PNM files.
@@ -343,8 +345,9 @@ class PrimiPlotter(PrimiPlotterBase):
 
         initframe = 0: Initial frame number, i.e. the number of the
         first plot.
-        
+
         """
+        warn_legacy('PrimiPlotter')
         self.atoms = atoms
         self.outputdevice = []
         self.angles = np.zeros(3, float)
@@ -366,7 +369,7 @@ class PrimiPlotter(PrimiPlotterBase):
         self.isparallel = 0
         self.logfile = None
         self.ownlogfile = False
-        
+
     def set_output(self, device):
         "Attach an output device to the plotter."
         self.outputdevice.append(device)
@@ -378,7 +381,7 @@ class PrimiPlotter(PrimiPlotterBase):
         if self.outputdevice:
             raise RuntimeError("Cannot set dimensions after an output device has been specified.")
         self.dims = dims
-        
+
     def autoscale(self, mode):
         if mode == "on":
             self.a_scale = 1
@@ -439,7 +442,7 @@ class PrimiPlotter(PrimiPlotterBase):
             id = np.arange(len(coords))[order] ### take(arange(len(coords)), order)
         else:
             id = None
-            
+
         radii = radii * scale
         selector = self._computevisibility(coords, radii, invisible, id)
         coords = np.compress(selector, coords, 0)
@@ -498,7 +501,7 @@ class PrimiPlotter(PrimiPlotterBase):
         self.log("%d visible, %d hidden out of %d" %
                    (sum(visible), len(visible) - sum(visible), len(visible)))
         return visible
-        
+
     def _rotate(self, positions):
         self.log("Rotation angles: %f %f %f" % tuple(self.angles))
         mat = np.dot(np.dot(_rot(self.angles[2], 2),
@@ -537,6 +540,7 @@ class ParallelPrimiPlotter(PrimiPlotter):
     PrimiPlotter docstring for details.
     """
     def __init__(self, *args, **kwargs):
+        warn_legacy('PrimiPlotter')
         PrimiPlotter.__init__(self, *args, **kwargs)
         self.isparallel = 1
         import ase.parallel
@@ -545,7 +549,7 @@ class ParallelPrimiPlotter(PrimiPlotter):
             raise RuntimeError("MPI is not available.")
         self.master = self.mpi.rank == 0
         self.mpitag = 42   # Reduce chance of collision with other modules.
-        
+
     def set_output(self, device):
         if self.master:
             PrimiPlotter.set_output(self, device)
@@ -619,7 +623,7 @@ class ParallelPrimiPlotter(PrimiPlotter):
         newcol = np.zeros(newcolshape, col.dtype)
         newcol[:len(col)] = col
         return newcol
-    
+
     def _makeoutput(self, scale, coords, radii, colors):
         if len(colors.shape) == 1:
             # Greyscales
@@ -694,7 +698,7 @@ class ParallelPrimiPlotter(PrimiPlotter):
             else:
                 colors = data[:,4:]
             PrimiPlotter._makeoutput(self, scale, coords, radii, colors)
-    
+
 class _PostScriptDevice:
     """PostScript based output device."""
     offset = (0,0)   # Will be changed by some classes
@@ -702,26 +706,26 @@ class _PostScriptDevice:
         self.scale = 1
         self.linewidth = 1
         self.outline = 1
-        
+
     def set_dimensions(self, dims):
         self.dims = dims
 
     def set_owner(self, owner):
         self.owner = owner
-        
+
     def inform_about_scale(self, scale):
         self.linewidth = 0.1 * scale
 
     def set_outline(self, value):
         self.outline = value
         return self   # Can chain these calls in set_output()
-        
+
     def plot(self, *args, **kargs):
         self.Doplot(self.PSplot, *args, **kargs)
-        
+
     def plotArray(self, *args, **kargs):
         self.Doplot(self.PSplotArray, *args, **kargs)
-        
+
     def PSplot(self, file, n, coords, r, colors, noshowpage=0):
         xy = coords[:,:2]
         assert(len(xy) == len(r) and len(xy) == len(colors))
@@ -758,7 +762,7 @@ class _PostScriptDevice:
                 file.write("/circ { 0 360 arc setrgbcolor fill } def\n")
         file.write("%f setlinewidth 0.0 setgray\n" %
                    (self.linewidth * self.scale,))
-        
+
         if gray:
             data = np.zeros((len(xy), 4), float)
             data[:,0] = colors
@@ -775,7 +779,7 @@ class _PostScriptDevice:
                 file.write("%.3f %.3f %.3f %.2f %.2f %.2f circ\n" % tuple(point))
         if not noshowpage:
             file.write("showpage\n")
-            
+
     def PSplotArray(self, file, n, data, noshowpage=0):
         assert(len(data.shape) == 3)
         assert(data.shape[0] == self.dims[1] and data.shape[1] == self.dims[0])
@@ -809,10 +813,10 @@ class _PostScriptDevice:
         file.write("\n")
         if not noshowpage:
             file.write("showpage\n")
-            
+
 class _PostScriptToFile(_PostScriptDevice):
     """Output device for PS files."""
-    compr_suffix = None
+    compr_suffix: Optional[str] = None
     def __init__(self, prefix, compress = 0):
         self.compress = compress
         if "'" in prefix:
@@ -854,7 +858,7 @@ class _PS_to_bitmap(_PostScriptToFile):
         cmd = self.gscmd.format(self.devicename)
         if self.compress:
             cmd = cmd + "| gzip "
-            
+
         cmd = (cmd+" > '%s'") % (self.dims[0], self.dims[1], filename)
         file = os.popen(cmd, "w")
         plotmethod(*(file, n)+args, **kargs)

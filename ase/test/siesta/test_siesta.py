@@ -28,10 +28,10 @@ def test_siesta(siesta_factory):
     siesta = siesta_factory.calc(
         label='test_label',
         fdf_arguments={'DM.Tolerance': 1e-3})
-    atoms.set_calculator(siesta)
+    atoms.calc = siesta
     siesta.write_input(atoms, properties=['energy'])
     atoms = h.copy()
-    atoms.set_calculator(siesta)
+    atoms.calc = siesta
     siesta.write_input(atoms, properties=['energy'])
     with open('test_label.fdf', 'r') as fd:
         lines = fd.readlines()
@@ -44,10 +44,10 @@ def test_siesta(siesta_factory):
         fdf_arguments={
             'DM.Tolerance': 1e-3,
             'ON.eta': (5, 'Ry')})
-    atoms.set_calculator(siesta)
+    atoms.calc = siesta
     siesta.write_input(atoms, properties=['energy'])
     atoms = h.copy()
-    atoms.set_calculator(siesta)
+    atoms.calc = siesta
     siesta.write_input(atoms, properties=['energy'])
     with open('test_label.fdf', 'r') as f:
         lines = f.readlines()

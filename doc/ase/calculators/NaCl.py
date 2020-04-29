@@ -10,6 +10,6 @@ NaCl = Atoms([Atom('Na', [0, 0, 0], magmom=1.928),
 calc = Vasp(prec='Accurate',
             xc='PBE',
             lreal=False)
-NaCl.set_calculator(calc)
+NaCl.calc = calc
 
 print(NaCl.get_magnetic_moment())

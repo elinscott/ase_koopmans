@@ -6,7 +6,7 @@ def test_fixcom():
 
     atoms = molecule('H2O')
     atoms.center(vacuum=4)
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     cold = atoms.get_center_of_mass()
     atoms.set_constraint(FixCom())
 

@@ -11,7 +11,7 @@ atoms = crystal('Au', (0., 0., 0.),
                 cellpar=[a, a, a, 90, 90, 90],
                 pbc=(1, 1, 1))
 calc = EMT()
-atoms.set_calculator(calc)
+atoms.calc = calc
 qn = QuasiNewton(atoms)
 qn.run(fmax=0.05)
 potentialenergy = atoms.get_potential_energy()

@@ -48,7 +48,7 @@ def test_turbomole_h3o2m():
     constraint = FixAtoms(indices=[1, 3])  # fix OO BUG No.1: fixes atom 0 and 1
     # constraint = FixAtoms(mask=[0,1,0,1,0]) # fix OO    #Works without patch
     for image in images:
-        image.set_calculator(Turbomole(define_str=define_str))
+        image.calc = Turbomole(define_str=define_str)
         image.set_constraint(constraint)
 
     # Relax initial and final states:

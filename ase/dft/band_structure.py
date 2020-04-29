@@ -1,5 +1,6 @@
 import numpy as np
 
+import ase  # Annotations
 from ase.utils import jsonable
 from ase.calculators.calculator import PropertyNotImplementedError
 
@@ -123,8 +124,8 @@ def get_band_structure(atoms=None, calc=None, path=None, reference=None):
         # TODO: Make it available as a proper (documented) bandpath method.
         kinks = find_bandpath_kinks(atoms.cell, kpts, eps=1e-5)
         pathspec = resolve_custom_points(kpts[kinks], path.special_points, eps=1e-5)
-        path.kpts = kpts
-        path.path = pathspec
+        path._kpts = kpts
+        path._path = pathspec
 
     # XXX If we *did* get the path, now would be a good time to check
     # that it matches the cell!  Although the path can only be passed
@@ -297,12 +298,37 @@ class BandStructure:
     BandStructure objects support JSON I/O.
     """
     def __init__(self, path, energies, reference=0.0):
-        self.path = path
-        self.energies = np.asarray(energies)
+        self._path = path
+        self._energies = np.asarray(energies)
         assert self.energies.shape[0] in [1, 2]  # spins x kpts x bands
         assert self.energies.shape[1] == len(path.kpts)
         assert np.isscalar(reference)
-        self.reference = reference
+        self._reference = reference
+
+    @property
+    def energies(self) -> np.ndarray:
+        """The energies of this band structure.
+
+        This is a numpy array of shape (nspins, nkpoints, nbands)."""
+        return self._energies
+
+    @property
+    def path(self) -> 'ase.dft.kpoints.BandPath':
+        """The :class:`~ase.dft.kpoints.BandPath` of this band structure."""
+        return self._path
+
+    @property
+    def reference(self) -> float:
+        """The reference energy.
+
+        Semantics may vary; typically a Fermi energy or zero,
+        depending on how the band structure was created."""
+        return self._reference
+
+    def subtract_reference(self) -> 'BandStructure':
+        """Return new band structure with reference energy subtracted."""
+        return BandStructure(self.path, self.energies - self.reference,
+                             reference=0.0)
 
     def todict(self):
         return dict(path=self.path,

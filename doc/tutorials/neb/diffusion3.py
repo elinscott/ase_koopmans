@@ -15,7 +15,7 @@ j = world.rank * 3 // world.size  # my image number
 for i in range(3):
     image = initial.copy()
     if i == j:
-        image.set_calculator(EMT())
+        image.calc = EMT()
     image.set_constraint(constraint)
     images.append(image)
 images.append(final)

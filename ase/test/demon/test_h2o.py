@@ -28,7 +28,7 @@ def test_h2o():
                        xc=['BLYP', 'BASIS'],
                        input_arguments=input_arguments)
 
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     # energy
     energy = atoms.get_potential_energy()

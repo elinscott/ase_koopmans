@@ -29,15 +29,16 @@ def test_graphene():
                             (-1.445355101009, 0., 0.)],
                  pbc=[True, True, False])
 
-    geom.set_calculator(CRYSTAL(label='graphene',
-                                guess=True,
-                                xc='PBE',
-                                kpts=(1, 1, 1),
-                                otherkeys=['scfdir', 'anderson',
-                                           ['maxcycles', '500'],
-                                           ['toldee', '6'],
-                                           ['tolinteg', '7 7 7 7 14'],
-                                           ['fmixing', '95']]))
+    geom.calc = CRYSTAL(
+        label='graphene',
+        guess=True,
+        xc='PBE',
+        kpts=(1, 1, 1),
+        otherkeys=['scfdir', 'anderson',
+                   ['maxcycles', '500'],
+                   ['toldee', '6'],
+                   ['tolinteg', '7 7 7 7 14'],
+                   ['fmixing', '95']])
 
     final_energy = geom.get_potential_energy()
     assert abs(final_energy + 2063.13266758) < 1.0

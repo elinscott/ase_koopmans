@@ -44,7 +44,7 @@ def atoms():
                                 energy=-1.0,
                                 stress=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                                 forces=-1.0 * atoms.positions)
-    atoms.set_calculator(spc)
+    atoms.calc = spc
     return atoms
 
 

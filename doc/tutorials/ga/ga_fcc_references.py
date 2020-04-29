@@ -10,7 +10,7 @@ db = connect('refs.db')
 metals = ['Al', 'Au', 'Cu', 'Ag', 'Pd', 'Pt', 'Ni']
 for m in metals:
     atoms = FaceCenteredCubic(m)
-    atoms.set_calculator(EMT())
+    atoms.calc = EMT()
     e0 = atoms.get_potential_energy()
     a = atoms.cell[0][0]
 

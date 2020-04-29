@@ -9,7 +9,7 @@ def test_issue276():
 
     at = bulk("Cu")
     at.rattle()
-    at.set_calculator(EMT())
+    at.calc = EMT()
     f = at.get_forces()
 
     write("tmp.xyz", at)

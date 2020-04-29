@@ -61,13 +61,13 @@ def test_eam():
         Z=[13], nr=n, nrho=n, dr=cutoff / n, drho=2. / n,
         lattice=['fcc'], mass=[26.982], a=[a])
 
-    al.set_calculator(mishin_approx)
+    al.calc = mishin_approx
     mishin_approx_energy = al.get_potential_energy()
 
     mishin_approx.write_potential('Al99-test.eam.alloy')
 
     mishin_check = EAM(potential='Al99-test.eam.alloy')
-    al.set_calculator(mishin_check)
+    al.calc = mishin_check
     mishin_check_energy = al.get_potential_energy()
 
     print('Cohesive Energy for Al = ', mishin_approx_energy, ' eV')

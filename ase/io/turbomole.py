@@ -133,7 +133,7 @@ def read_turbomole_gradient(fd, index=-1):
 
         # calculator
         calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
-        atoms.set_calculator(calc)
+        atoms.calc = calc
 
         # save frame
         images.append(atoms)

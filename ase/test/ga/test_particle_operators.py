@@ -1,7 +1,10 @@
-def test_particle_operators():
+def test_particle_operators(seed):
+    import numpy as np
     from ase.cluster import Icosahedron
     from ase.ga.particle_crossovers import CutSpliceCrossover
-    from random import shuffle
+
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
     ico1 = Icosahedron('Cu', 3)
     ico1.info['confid'] = 1
@@ -17,10 +20,11 @@ def test_particle_operators():
     # assert len(a3) == 55
 
     ico1.numbers[:20] = [28] * 20
-    shuffle(ico1.numbers)
+    rng.shuffle(ico1.numbers)
     ico2.numbers[:35] = [29] * 35
-    shuffle(ico2.numbers)
-    op = CutSpliceCrossover({(28, 29): 2.0, (28, 28): 2.0, (29, 29): 2.0})
+    rng.shuffle(ico2.numbers)
+    op = CutSpliceCrossover({(28, 29): 2.0, (28, 28): 2.0, (29, 29): 2.0},
+                            rng=rng)
     a3, desc = op.get_new_individual([ico1, ico2])
 
     assert a3.get_chemical_formula() == 'Cu35Ni20'
@@ -30,7 +34,7 @@ def test_particle_operators():
     # from ase.ga.particle_mutations import Poor2richPermutation
     # from ase.ga.particle_mutations import Rich2poorPermutation
 
-    op = COM2surfPermutation(min_ratio=0.05)
+    op = COM2surfPermutation(min_ratio=0.05, rng=rng)
     a3, desc = op.get_new_individual([ico1])
     a3.info['confid'] = 3
 

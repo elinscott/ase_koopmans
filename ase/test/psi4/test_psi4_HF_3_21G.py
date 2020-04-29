@@ -12,7 +12,7 @@ def test_main():
     atoms.rotate(30, 'x')
 
     calc = Psi4(basis='3-21G')
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     # Calculate forces ahead of time, compare against finite difference after
     # checking the psi4-calc.dat file

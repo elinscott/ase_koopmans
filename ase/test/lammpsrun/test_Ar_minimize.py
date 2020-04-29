@@ -16,7 +16,7 @@ def test_Ar_minimize():
     params['masses'] = ['1 {}'.format(atomic_masses[atomic_numbers['Ar']])]
 
     with LAMMPS(specorder=['Ar'], **params) as calc:
-        ar_nc.set_calculator(calc)
+        ar_nc.calc = calc
 
         assert_allclose(ar_nc.get_potential_energy(), -0.468147667942117,
                         atol=1e-4, rtol=1e-4)

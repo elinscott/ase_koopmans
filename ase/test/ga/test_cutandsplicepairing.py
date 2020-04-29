@@ -1,10 +1,13 @@
-def test_cutandsplicepairing():
+def test_cutandsplicepairing(seed):
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.utilities import closest_distances_generator, atoms_too_close
     from ase.ga.cutandsplicepairing import CutAndSplicePairing
     import numpy as np
     from ase.build import fcc111
     from ase.constraints import FixAtoms
+
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
     # first create two random starting candidates
     slab = fcc111('Au', size=(4, 4, 2), vacuum=10.0, orthogonal=True)
@@ -18,15 +21,16 @@ def test_cutandsplicepairing():
     v3 = cell[2, :]
     v3[2] = 3.
 
-    cd = closest_distances_generator(atom_numbers=[47, 79],
-                                     ratio_of_covalent_radii=0.7)
+    blmin = closest_distances_generator(atom_numbers=[47, 79],
+                                        ratio_of_covalent_radii=0.7)
 
     atom_numbers = 2 * [47] + 2 * [79]
 
     sg = StartGenerator(slab=slab,
-                        atom_numbers=atom_numbers,
-                        closest_allowed_distances=cd,
-                        box_to_place_in=[p0, [v1, v2, v3]])
+                        blocks=atom_numbers,
+                        blmin=blmin,
+                        box_to_place_in=[p0, [v1, v2, v3]],
+                        rng=rng)
 
     c1 = sg.get_new_candidate()
     c1.info['confid'] = 1
@@ -35,7 +39,7 @@ def test_cutandsplicepairing():
 
     n_top = len(atom_numbers)
 
-    pairing = CutAndSplicePairing(slab, n_top, cd)
+    pairing = CutAndSplicePairing(slab, n_top, blmin, rng=rng)
 
     c3, desc = pairing.get_new_individual([c1, c2])
 
@@ -45,16 +49,15 @@ def test_cutandsplicepairing():
     top2 = c2[-n_top:]
     top3 = c3[-n_top:]
 
-
     # verify that the positions in the new candidate come from c1 or c2
     n1 = -1 * np.ones((n_top, ))
     n2 = -1 * np.ones((n_top, ))
     for i in range(n_top):
         for j in range(n_top):
-            if np.all(top1.positions[j, :] == top3.positions[i, :]):
+            if np.allclose(top1.positions[j, :], top3.positions[i, :], 1e-12):
                 n1[i] = j
                 break
-            elif np.all(top2.positions[j, :] == top3.positions[i, :]):
+            elif np.allclose(top2.positions[j, :], top3.positions[i, :], 1e-12):
                 n2[i] = j
                 break
         assert (n1[i] > -1 and n2[i] == -1) or (n1[i] == -1 and n2[i] > -1)
@@ -63,4 +66,4 @@ def test_cutandsplicepairing():
     assert len(n1[n1 > -1]) > 0 and len(n2[n2 > -1]) > 0
 
     # verify no atoms too close
-    assert not atoms_too_close(top3, cd)
+    assert not atoms_too_close(top3, blmin)

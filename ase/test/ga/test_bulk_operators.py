@@ -3,19 +3,23 @@ import numpy as np
 import pytest
 from ase import Atoms
 from ase.build import bulk
-from ase.ga.utilities import closest_distances_generator, atoms_too_close
-from ase.ga.bulk_utilities import CellBounds
-from ase.ga.bulk_startgenerator import StartGenerator
-from ase.ga.bulk_crossovers import CutAndSplicePairing
-from ase.ga.bulk_mutations import (SoftMutation, RotationalMutation,
-                                   RattleRotationalMutation, StrainMutation)
+from ase.ga.utilities import (closest_distances_generator, atoms_too_close,
+                              CellBounds)
+from ase.ga.startgenerator import StartGenerator
+from ase.ga.cutandsplicepairing import CutAndSplicePairing
+from ase.ga.soft_mutation import SoftMutation
 from ase.ga.ofp_comparator import OFPComparator
 from ase.ga.offspring_creator import CombinationMutation
-from ase.ga.standardmutations import RattleMutation, PermutationMutation
+from ase.ga.standardmutations import (RattleMutation, PermutationMutation,
+                                      StrainMutation, RotationalMutation,
+                                      RattleRotationalMutation)
 
 
 @pytest.mark.slow
-def test_bulk_operators():
+def test_bulk_operators(seed):
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
+
     h2 = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.75]])
     blocks = [('H', 4), ('H2O', 3), (h2, 2)]  # the building blocks
     volume = 40. * sum([x[1] for x in blocks])  # cell volume in angstrom^3
@@ -36,8 +40,10 @@ def test_bulk_operators():
                                     'psi': [30, 150], 'a': [3, 50],
                                     'b': [3, 50], 'c': [3, 50]})
 
-    sg = StartGenerator(blocks, blmin, volume, cellbounds=cellbounds,
-                        splits=splits)
+    slab = Atoms('', pbc=True)
+    sg = StartGenerator(slab, blocks, blmin, box_volume=volume,
+                        number_of_variable_cell_vectors=3,
+                        cellbounds=cellbounds, splits=splits, rng=rng)
 
     # Generate 2 candidates
     a1 = sg.get_new_candidate()
@@ -46,8 +52,10 @@ def test_bulk_operators():
     a2.info['confid'] = 2
 
     # Define and test genetic operators
-    pairing = CutAndSplicePairing(blmin, p1=1., p2=0., minfrac=0.15,
-                                  cellbounds=cellbounds, use_tags=True)
+    n_top = len(a1)
+    pairing = CutAndSplicePairing(slab, n_top, blmin, p1=1., p2=0., minfrac=0.15,
+                                  number_of_variable_cell_vectors=3,
+                                  cellbounds=cellbounds, use_tags=True, rng=rng)
 
     a3, desc = pairing.get_new_individual([a1, a2])
     cell = a3.get_cell()
@@ -56,16 +64,18 @@ def test_bulk_operators():
 
     n_top = len(a1)
     strainmut = StrainMutation(blmin, stddev=0.7, cellbounds=cellbounds,
-                               use_tags=True)
+                               number_of_variable_cell_vectors=3,
+                               use_tags=True, rng=rng)
     softmut = SoftMutation(blmin, bounds=[2., 5.], used_modes_file=None,
-                           use_tags=True)
-    rotmut = RotationalMutation(blmin, fraction=0.3, min_angle=0.5 * np.pi)
+                           use_tags=True)  # no rng
+    rotmut = RotationalMutation(blmin, fraction=0.3, min_angle=0.5 * np.pi,
+                                rng=rng)
     rattlemut = RattleMutation(blmin, n_top, rattle_prop=0.3, rattle_strength=0.5,
-                               use_tags=True, test_dist_to_slab=False)
-    rattlerotmut = RattleRotationalMutation(rattlemut, rotmut)
+                               use_tags=True, test_dist_to_slab=False, rng=rng)
+    rattlerotmut = RattleRotationalMutation(rattlemut, rotmut)  # no rng
     permut = PermutationMutation(n_top, probability=0.33, test_dist_to_slab=False,
-                                 use_tags=True, blmin=blmin)
-    combmut = CombinationMutation(rattlemut, rotmut, verbose=True)
+                                 use_tags=True, blmin=blmin, rng=rng)
+    combmut = CombinationMutation(rattlemut, rotmut, verbose=True)  # no rng
     mutations = [strainmut, softmut, rotmut,
                  rattlemut, rattlerotmut, permut, combmut]
 
@@ -82,7 +92,7 @@ def test_bulk_operators():
 
     modes_file = 'modes.txt'
     softmut_with = SoftMutation(blmin, bounds=[2., 5.], use_tags=True,
-                                used_modes_file=modes_file)
+                                used_modes_file=modes_file)  # no rng
     no_muts = 3
     for _ in range(no_muts):
         softmut_with.get_new_individual([a1])

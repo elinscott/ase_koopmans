@@ -173,7 +173,7 @@ potentials)
 
     lammps = LAMMPSlib(lmpcmds=cmds, log_file='test.log')
 
-    NiH.set_calculator(lammps)
+    NiH.calc = lammps
     print("Energy ", NiH.get_potential_energy())
 
 

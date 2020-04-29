@@ -54,7 +54,7 @@ def test_vasp2_wdir():
     compare_paths(calc.directory, testdir)
 
     calc.set_txt(file1)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     en1 = atoms.get_potential_energy()
 
     # Check that the output files are in the correct directory
@@ -66,7 +66,7 @@ def test_vasp2_wdir():
     # in the label directory
     with open(file2, 'w') as f:
         calc2.set_txt(f)
-        atoms.set_calculator(calc2)
+        atoms.calc = calc2
         atoms.get_potential_energy()
 
 

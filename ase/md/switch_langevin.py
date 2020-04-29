@@ -45,7 +45,7 @@ class SwitchLangevin(Langevin):
         self.n_switch = n_switch
         self.lam = 0.0
         calc = MixedCalculator(calc1, calc2, weight1=1.0, weight2=0.0)
-        self.atoms.set_calculator(calc)
+        self.atoms.calc = calc
 
         self.path_data = []
 

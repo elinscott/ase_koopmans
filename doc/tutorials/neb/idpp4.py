@@ -44,14 +44,14 @@ slab.set_constraint(FixAtoms(mask=mask))
 
 # Optimise the initial state: atom below step.
 initial = slab.copy()
-initial.set_calculator(EMT())
+initial.calc = EMT()
 relax = QuasiNewton(initial)
 relax.run(fmax=0.05)
 
 # Optimise the final state: atom above step.
 slab[-1].position = (x3, y2 + 1., z2 + 3.5)
 final = slab.copy()
-final.set_calculator(EMT())
+final.calc = EMT()
 relax = QuasiNewton(final)
 relax.run(fmax=0.05)
 
@@ -61,7 +61,7 @@ for i in range(nimages):
     images.append(initial.copy())
 
 for image in images:
-    image.set_calculator(EMT())
+    image.calc = EMT()
 
 images.append(final)
 

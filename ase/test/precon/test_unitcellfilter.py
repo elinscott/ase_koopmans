@@ -14,7 +14,7 @@ def test_precon():
 
     cu = cu0.copy()
     cu.set_cell(1.2*cu.get_cell())
-    cu.set_calculator(lj)
+    cu.calc = lj
     ucf = UnitCellFilter(cu, constant_volume=True)
     opt = PreconLBFGS(ucf, precon=Exp(mu=1.0, mu_c=1.0))
     opt.run(fmax=1e-3)
@@ -23,7 +23,7 @@ def test_precon():
     # EcpCellFilter allows relaxing to lower tolerance
     cu = cu0.copy()
     cu.set_cell(1.2*cu.get_cell())
-    cu.set_calculator(lj)
+    cu.calc = lj
     ecf = ExpCellFilter(cu, constant_volume=True)
     opt = PreconLBFGS(ecf, precon=Exp(mu=1.0, mu_c=1.0))
     opt.run(fmax=1e-3)

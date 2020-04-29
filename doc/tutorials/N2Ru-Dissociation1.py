@@ -29,7 +29,7 @@ d = 1.10 # N2 bond length
 slab += Atoms('2N', [(x, y, z), (x + sqrt3 * d / 2, y + d / 2, z)])
 
 # Use the EMT calculator for the forces and energies:
-slab.set_calculator(EMT())
+slab.calc = EMT()
 
 # We don't want to worry about the Cu degrees of freedom:
 mask = [atom.symbol == 'Cu' for atom in slab]

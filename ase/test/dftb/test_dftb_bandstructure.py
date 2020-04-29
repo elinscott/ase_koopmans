@@ -42,7 +42,7 @@ def test_dftb_bandstructure(dftb_factory):
     )
 
     atoms = bulk('Si')
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     atoms.get_potential_energy()
 
     efermi = calc.get_fermi_level()
@@ -66,7 +66,7 @@ def test_dftb_bandstructure(dftb_factory):
         Hamiltonian_MaxAngularMomentum_Si='d'
     )
 
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     calc.calculate(atoms)
 
     #calc.results['fermi_levels'] = [efermi]

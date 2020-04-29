@@ -14,7 +14,7 @@ def test_Ar_minimize_multistep():
     params['masses'] = ['1 {}'.format(atomic_masses[atomic_numbers['Ar']])]
 
     with LAMMPS(specorder=['Ar'], **params) as calc:
-        ar_nc.set_calculator(calc)
+        ar_nc.calc = calc
         F1_numer = calc.calculate_numerical_forces(ar_nc)
 
         assert_allclose(ar_nc.get_potential_energy(), -0.468147667942117,

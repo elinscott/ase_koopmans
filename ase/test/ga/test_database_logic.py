@@ -1,15 +1,18 @@
-def test_database_logic():
+db_file = 'gadb_logics_test.db'
+
+
+def test_database_logic(seed):
     from ase.ga.data import PrepareDB
     from ase.ga.data import DataConnection
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.utilities import closest_distances_generator
     from ase.ga import set_raw_score
-    import os
     import numpy as np
     from ase.build import fcc111
     from ase.constraints import FixAtoms
 
-    db_file = 'gadb_logics_test.db'
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
     slab = fcc111('Au', size=(4, 4, 2), vacuum=10.0, orthogonal=True)
     slab.set_constraint(FixAtoms(mask=slab.positions[:, 2] <= 10.))
@@ -26,17 +29,18 @@ def test_database_logic():
     v3[2] = 3.
 
     # define the closest distance between two atoms of a given species
-    cd = closest_distances_generator(atom_numbers=[47, 79],
-                                     ratio_of_covalent_radii=0.7)
+    blmin = closest_distances_generator(atom_numbers=[47, 79],
+                                        ratio_of_covalent_radii=0.7)
 
     # Define the composition of the atoms to optimize
     atom_numbers = 2 * [47] + 2 * [79]
 
     # create the starting population
     sg = StartGenerator(slab=slab,
-                        atom_numbers=atom_numbers,
-                        closest_allowed_distances=cd,
-                        box_to_place_in=[p0, [v1, v2, v3]])
+                        blocks=atom_numbers,
+                        blmin=blmin,
+                        box_to_place_in=[p0, [v1, v2, v3]],
+                        rng=rng)
 
     # generate the starting population
     starting_population = [sg.get_new_candidate() for i in range(20)]
@@ -77,5 +81,3 @@ def test_database_logic():
 
     dc.remove_from_queue(confid)
     assert len(dc.get_all_candidates_in_queue()) == 0
-
-    os.remove(db_file)

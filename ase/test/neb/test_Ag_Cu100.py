@@ -30,7 +30,7 @@ def test_Ag_Cu100():
     # Set constraints and calculator:
     constraint = FixAtoms(range(len(initial) - 1))
     for image in images:
-        image.set_calculator(EMT())
+        image.calc = EMT()
         image.set_constraint(constraint)
 
     # Displace last image:

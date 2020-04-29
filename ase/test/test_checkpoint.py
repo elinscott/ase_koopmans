@@ -56,7 +56,7 @@ def rattle_calc(atoms, calc):
     np.random.seed(0)
     atoms.rattle()
     cp_calc_1 = CheckpointCalculator(calc)
-    atoms.set_calculator(cp_calc_1)
+    atoms.calc = cp_calc_1
     e11 = atoms.get_potential_energy()
     f11 = atoms.get_forces()
     atoms.rattle()
@@ -68,7 +68,7 @@ def rattle_calc(atoms, calc):
     np.random.seed(0)
     atoms.rattle()
     cp_calc_2 = CheckpointCalculator(calc)
-    atoms.set_calculator(cp_calc_2)
+    atoms.calc = cp_calc_2
     e21 = atoms.get_potential_energy()
     f21 = atoms.get_forces()
     atoms.rattle()

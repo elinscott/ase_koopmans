@@ -57,8 +57,8 @@ We can attach a calculator to the previously created
 :class:`~ase.Atoms` objects::
 
 >>> from ase.calculators.emt import EMT
->>> slab.set_calculator(EMT())
->>> molecule.set_calculator(EMT())
+>>> slab.calc = EMT()
+>>> molecule.calc = EMT()
 
 and use it to calculate the total energies for the systems by using
 the :meth:`~ase.Atoms.get_potential_energy` method from the

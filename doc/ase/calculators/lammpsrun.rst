@@ -100,7 +100,7 @@ A simple example.
                cell=a, pbc=True)
   
   calc = LAMMPS()
-  NaCl.set_calculator(calc)
+  NaCl.calc = calc
   
   print(NaCl.get_stress())
 

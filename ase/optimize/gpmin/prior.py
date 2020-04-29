@@ -73,7 +73,7 @@ class CalculatorPrior(Prior):
     def __init__(self, atoms, calculator):
         Prior.__init__(self)
         self.atoms = atoms.copy()
-        self.atoms.set_calculator(calculator)
+        self.atoms.calc = calculator
 
     def potential(self, x):
         self.atoms.set_positions(x.reshape(-1, 3))

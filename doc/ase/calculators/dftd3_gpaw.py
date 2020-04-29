@@ -14,7 +14,7 @@ diamond.rattle(stdev=0.1, seed=0)
 diamond.cell += np.random.normal(scale=0.1, size=(3,3))
 dft = GPAW(xc='PBE', kpts=(8,8,8), mode=PW(400))
 d3 = DFTD3(dft=dft)
-diamond.set_calculator(d3)
+diamond.calc = d3
 
 ucf = UnitCellFilter(diamond)
 

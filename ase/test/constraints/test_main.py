@@ -6,7 +6,7 @@ def test_main():
     from ase.calculators.emt import EMT
 
     a = bulk("Ni", cubic=True)
-    a.set_calculator(EMT())
+    a.calc = EMT()
 
     pos = a.get_positions()
 

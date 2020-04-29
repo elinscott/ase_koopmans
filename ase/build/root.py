@@ -97,7 +97,7 @@ def root_surface(primitive_slab, root, swap_alpha=False, eps=1e-8):
     # Calculate square distances and break when appropriate
     for x in range(cell_search[0]):
         for y in range(cell_search[1]):
-            if x == 0 or y == 0:
+            if x == y == 0:
                 continue
             vect = (cell_vectors[0] * x) + (cell_vectors[1] * y)
             dist = round((vect ** 2).sum(), logeps)

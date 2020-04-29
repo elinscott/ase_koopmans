@@ -20,6 +20,6 @@ def test_H2O_aims():
                 sc_accuracy_forces=1e-4,
                 cubes=water_cube)
 
-    water.set_calculator(calc)
+    water.calc = calc
     dynamics = QuasiNewton(water, trajectory='square_water.traj')
     dynamics.run(fmax=0.01)

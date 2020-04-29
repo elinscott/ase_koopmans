@@ -61,7 +61,7 @@ calc = pytest.mark.calculator
 @calc('cp2k')
 @calc('espresso', ecutwfc=300 / Ry)
 @calc('gpaw', symmetry='off', mode='pw', txt='gpaw.txt', mixer={'beta': 0.6})
-@calc('octopus')
+@calc('octopus', Spacing='0.4 * angstrom')
 @calc('siesta', marks=pytest.mark.xfail)
 def test_ch4_reaction(factory):
     e_ch4 = _calculate(factory, 'CH4')

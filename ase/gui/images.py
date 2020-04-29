@@ -421,9 +421,7 @@ class Images:
             atoms = atoms[self.visible]
             if F is not None:
                 F = F[self.visible]
-        atoms.set_calculator(SinglePointCalculator(atoms,
-                                                   energy=E,
-                                                   forces=F))
+        atoms.calc = SinglePointCalculator(atoms, energy=E, forces=F)
         return atoms
 
     def delete(self, i):

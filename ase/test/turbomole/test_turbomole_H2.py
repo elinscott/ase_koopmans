@@ -7,7 +7,7 @@ def test_turbomole_H2():
     # Write all commands for the define command in a string
     define_str = '\n\na coord\n*\nno\nb all sto-3g hondo\n*\neht\n\n\n\n*'
 
-    atoms.set_calculator(Turbomole(define_str=define_str))
+    atoms.calc = Turbomole(define_str=define_str)
 
     # Run turbomole
     atoms.get_potential_energy()

@@ -40,7 +40,7 @@ def test_cutoff_skin():
     skin_distance = 0.2 * model_cutoff
     distance_orig = model_cutoff + 0.1 * skin_distance
     atoms = Atoms("Ar2", positions=[[0, 0, 0], [distance_orig, 0, 0]])
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     # Get energy -- should be zero
     e_outside_cutoff = atoms.get_potential_energy()

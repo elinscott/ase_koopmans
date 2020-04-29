@@ -28,6 +28,7 @@ import subprocess
 from copy import deepcopy
 from collections import namedtuple
 from itertools import product
+from typing import List, Set
 
 import ase
 import ase.units as units
@@ -1049,7 +1050,8 @@ End CASTEP Interface Documentation
                             'hybrid HSE03': 'HSE03',
                             'hybrid HSE06': 'HSE06'
                         }
-                        used_func = used_functional_possibilities[used_functional]
+                        used_func = used_functional_possibilities[
+                            used_functional]
                         self.param.xc_functional = used_func
                 elif 'output verbosity' in line:
                     iprint = int(line.split()[-1][1])
@@ -1288,7 +1290,8 @@ End CASTEP Interface Documentation
                             if len(fields) == 1:
                                 break
 
-                            # the check for len==7 is due to CASTEP 18 outformat changes
+                            # the check for len==7 is due to CASTEP 18
+                            # outformat changes
                             if spin_polarized:
                                 if len(fields) != 7:
                                     spins.append(float(fields[-1]))
@@ -1425,7 +1428,7 @@ End CASTEP Interface Documentation
 
             if mulliken_analysis:
                 atoms.set_initial_charges(charges=mulliken_charges_atoms)
-            atoms.set_calculator(self)
+            atoms.calc = self
 
         self._kpoints = kpoints
         self._forces = forces_atoms
@@ -1450,14 +1453,13 @@ End CASTEP Interface Documentation
             self._band_structure = self.band_structure(bandfile=bands_file)
         else:
             try:
-                (self._ibz_kpts, 
+                (self._ibz_kpts,
                  self._ibz_weights,
-                 self._eigenvalues, 
+                 self._eigenvalues,
                  self._efermi) = read_bands(filename=bands_file)
             except FileNotFoundError:
                 warnings.warn('Could not load .bands file, eigenvalues and '
                               'Fermi energy are unknown')
-
 
     def read_symops(self, castep_castep=None):
         # TODO: check that this is really backwards compatible
@@ -1610,8 +1612,8 @@ End CASTEP Interface Documentation
                 print('Warning: <_find_pspots> = True')
                 print('Do you really want to use `set_pspots()`')
                 print('This does not check whether the PP files exist.')
-                print(
-                    'You may rather want to use `find_pspots()` with the same <pspot>.')
+                print('You may rather want to use `find_pspots()` with '
+                      'the same <pspot>.')
 
         if clear and not elems and not notelems:
             self.cell.species_pot.clear()
@@ -1656,8 +1658,8 @@ End CASTEP Interface Documentation
 
         if not os.path.isdir(self._castep_pp_path):
             if self._pedantic:
-                print('Cannot search directory:\n    {}\nFolder does not exist'.format(
-                    self._castep_pp_path))
+                print('Cannot search directory:\n    {}\nFolder does not exist'
+                      .format(self._castep_pp_path))
             return
 
         # translate the bash wildcard syntax to regex
@@ -1676,20 +1678,27 @@ End CASTEP Interface Documentation
                 continue
             if notelems is not None and elem in notelems:
                 continue
-            p = pattern.format(elem=elem, elem_upper=elem.upper(), elem_lower=elem.lower(),
-                               pspot=pspot, suffix=suffix)
+            p = pattern.format(elem=elem,
+                               elem_upper=elem.upper(),
+                               elem_lower=elem.lower(),
+                               pspot=pspot,
+                               suffix=suffix)
             pps = []
             for f in os.listdir(self._castep_pp_path):
                 if re.match(p, f):
                     pps.append(f)
             if not pps:
                 if self._pedantic:
-                    print('Pseudopotential for species {} not found!'.format(elem))
+                    print('Pseudopotential for species {} not found!'
+                          .format(elem))
             elif not len(pps) == 1:
-                raise RuntimeError('Pseudopotential for species ''{} not unique!\n'.format(elem)
-                                   + 'Found the following files in {}\n'.format(self._castep_pp_path)
-                                   + '\n'.join(['    {}'.format(pp) for pp in pps])
-                                   + '\nConsider a stricter search pattern in `find_pspots()`.')
+                raise RuntimeError(
+                    'Pseudopotential for species ''{} not unique!\n'
+                    .format(elem)
+                    + 'Found the following files in {}\n'
+                    .format(self._castep_pp_path)
+                    + '\n'.join(['    {}'.format(pp) for pp in pps]) +
+                    '\nConsider a stricter search pattern in `find_pspots()`.')
             else:
                 self.cell.species_pot = (elem, pps[0])
 
@@ -1779,8 +1788,9 @@ End CASTEP Interface Documentation
         self.update(atoms)
         # modification: we return the Voigt form directly to get rid of the
         # annoying user warnings
-        stress = np.array([self._stress[0, 0], self._stress[1, 1], self._stress[2, 2],
-                           self._stress[1, 2], self._stress[0, 2], self._stress[0, 1]])
+        stress = np.array(
+            [self._stress[0, 0], self._stress[1, 1], self._stress[2, 2],
+             self._stress[1, 2], self._stress[0, 2], self._stress[0, 1]])
         # return self._stress
         return stress
 
@@ -2297,8 +2307,9 @@ End CASTEP Interface Documentation
                         print('For sake of numerical consistency and efficiency')
                         print('this is discouraged.')
                 else:
-                    raise RuntimeError('Warning: you have no PP specified for %s.' %
-                                       species)
+                    raise RuntimeError(
+                        'Warning: you have no PP specified for %s.' %
+                        species)
         if self.cell.species_pot.value:
             for (species, pspot) in pspots.items():
                 orig_pspot_file = os.path.join(self._castep_pp_path, pspot)
@@ -2535,7 +2546,7 @@ class CastepOption(object):
         # The value, not converted to a string
         return self._value
 
-    @value.setter
+    @value.setter  # type: ignore
     def value(self, val):
 
         if val is None:
@@ -2681,7 +2692,7 @@ class CastepInputFile(object):
 
     """Master class for CastepParam and CastepCell to inherit from"""
 
-    _keyword_conflicts = []
+    _keyword_conflicts: List[Set[str]] = []
 
     def __init__(self, options_dict=None, keyword_tolerance=1):
         object.__init__(self)

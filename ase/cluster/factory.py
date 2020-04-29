@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 import numpy as np
 
 from ase.data import atomic_numbers as ref_atomic_numbers
@@ -13,7 +15,7 @@ class ClusterFactory(ClusterBase):
 
     atomic_basis = np.array([[0., 0., 0.]])
 
-    element_basis = None
+    element_basis: Optional[List[int]] = None
 
     Cluster = Cluster   # Make it possible to change the class of the object returned.
 

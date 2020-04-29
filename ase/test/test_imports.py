@@ -60,5 +60,5 @@ def test_imports():
             if module not in newpy_only_modules:
                 raise
         except ImportError as err:
-            if err.name not in ignore_imports:
+            if err.name not in ignore_imports and 'deprecated' not in str(err):
                 raise

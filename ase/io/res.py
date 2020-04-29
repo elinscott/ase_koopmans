@@ -288,7 +288,7 @@ def read_res(filename, index=-1):
         if res.energy:
             calc = SinglePointCalculator(res.atoms,
                                          energy=res.energy)
-            res.atoms.set_calculator(calc)
+            res.atoms.calc = calc
         images.append(res.atoms)
     return images[index]
 
@@ -319,7 +319,7 @@ def write_res(filename, images, write_info=True,
             fn = filename % i
         res = Res(atoms)
         if write_results:
-            calculator = atoms.get_calculator()
+            calculator = atoms.calc
             if (calculator is not None and
                     isinstance(calculator, Calculator)):
                 energy = calculator.results.get('energy')

@@ -4,6 +4,7 @@ Module for povray file format support.
 See http://www.povray.org/ for details on the format.
 """
 import os
+from typing import Dict, Any
 
 import numpy as np
 
@@ -99,7 +100,7 @@ def set_high_bondorder_pairs(bondpairs, high_bondorder_pairs=None):
 
 
 class POVRAY(PlottingVariables):
-    default_settings = {
+    default_settings: Dict[str, Any] = {
         # x, y is the image plane, z is *out* of the screen
         'display': False,  # display while rendering
         'pause': True,  # pause when done rendering (only if display)

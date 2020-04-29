@@ -5,8 +5,8 @@ from typing import Dict, Tuple, List, Union
 from ase.data import chemical_symbols, atomic_numbers
 
 
-# For type hints:
-Tree = Union[str, Tuple['Tree', int], List['Tree']]  # A, A2, A+B
+# For type hints (A, A2, A+B):
+Tree = Union[str, Tuple['Tree', int], List['Tree']]  # type: ignore
 
 
 class Formula:
@@ -381,6 +381,7 @@ def parse(f: str):  # -> Tree
 def parse2(f: str) -> Tree:
     units = []
     while f:
+        unit: Union[str, Tuple[str, int], Tree]
         if f[0] == '(':
             level = 0
             for i, c in enumerate(f[1:], 1):

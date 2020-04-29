@@ -17,7 +17,7 @@ def test_relax():
     # Create structure and calculator
     atoms = Icosahedron("Ar", latticeconstant=3.0, noshells=2)
     calc = KIM("ex_model_Ar_P_Morse_07C")
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     opt = BFGS(atoms, logfile=None)
     opt.run(fmax=0.05)
