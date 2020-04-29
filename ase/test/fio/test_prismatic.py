@@ -5,23 +5,12 @@ import pytest
 from ase import Atoms
 from ase.io import read
 from ase.build import bulk
+from .test_mustem import make_STO_atoms
+
 
 pytestmark = pytest.mark.skipif(LooseVersion(np.__version__) <
                                 LooseVersion("1.14"),
                                 reason="This test requires numpy >= 1.14")
-
-
-def make_STO_atoms():
-    atoms = Atoms(['Sr', 'Ti', 'O', 'O', 'O'],
-                  scaled_positions=[[0, 0, 0],
-                                    [0.5, 0.5, 0.5],
-                                    [0.5, 0.5, 0],
-                                    [0.5, 0, 0.5],
-                                    [0, 0.5, 0.5]],
-                  cell=[3.905, 3.905, 3.905],
-                  pbc=True)
-
-    return atoms
 
 
 def test_write_read_cycle_xyz_prismatic():

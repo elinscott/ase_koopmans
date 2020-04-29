@@ -8,17 +8,11 @@ See https://github.com/HamishGBrown/MuSTEM for the source code of muSTEM.
 
 import numpy as np
 
-from ase.atoms import symbols2numbers
+from ase.atoms import Atoms, symbols2numbers
 from ase.data import chemical_symbols
 from ase.utils import reader
-
-
-def _check_numpy_version():
-    # This writer doesn't support numpy < 1.14 because of the issue:
-    # https://github.com/numpy/numpy/issues/10018
-    from distutils.version import LooseVersion
-    if LooseVersion(np.__version__) < LooseVersion("1.14"):
-        raise NotImplementedError("Writing this format needs numpy >= 1.14.")
+from .utils import verify_cell_for_export, verify_dictionary
+from .prismatic import check_numpy_version
 
 
 @reader
@@ -34,8 +28,8 @@ def read_mustem(fd):
         B = RMS * 8\pi^2
 
     """
+    check_numpy_version()
 
-    from ase import Atoms
     from ase.geometry import cellpar_to_cell
 
     # Read comment:
@@ -69,7 +63,7 @@ def read_mustem(fd):
         DW = float(line[3]) * 8 * np.pi**2
         # read all the position for each element
         positions.append(np.genfromtxt(fname=fd, max_rows=atoms_number))
-        atomic_numbers.append(np.ones(atoms_number) * atomic_number)
+        atomic_numbers.append(np.ones(atoms_number, dtype=int) * atomic_number)
         occupancies.append(np.ones(atoms_number) * occupancy)
         debye_waller_factors.append(np.ones(atoms_number) * DW)
 
@@ -89,13 +83,8 @@ class XtlmuSTEMWriter:
 
     def __init__(self, atoms, keV, debye_waller_factors=None,
                  comment=None, occupancies=None, fit_cell_to_atoms=False):
-        cell = atoms.get_cell()
-        if not cell.orthorhombic:
-            raise ValueError('To export to this format, the cell needs to be '
-                             'orthorhombic.')
-        if cell.rank < 3:
-            raise ValueError('To export to this format, the cell size needs '
-                             'to be set: current cell is {}.'.format(cell))
+        verify_cell_for_export(atoms.get_cell())
+
         self.atoms = atoms.copy()
         self.atom_types = list(set(atoms.symbols))
         self.keV = keV
@@ -120,7 +109,7 @@ class XtlmuSTEMWriter:
         if np.isscalar(occupancies):
             occupancies = {atom: occupancies for atom in self.atom_types}
         elif isinstance(occupancies, dict):
-            self._check_key_dictionary(occupancies, 'occupancies')
+            verify_dictionary(self.atoms, occupancies, 'occupancies')
 
         return occupancies
 
@@ -138,7 +127,7 @@ class XtlmuSTEMWriter:
                                  'dictionary.')
             DW = {self.atom_types[0]: DW / (8 * np.pi**2)}
         elif isinstance(DW, dict):
-            self._check_key_dictionary(DW, 'debye_waller_factors')
+            verify_dictionary(self.atoms, DW, 'debye_waller_factors')
             for key, value in DW.items():
                 DW[key] = value / (8 * np.pi**2)
 
@@ -186,13 +175,6 @@ class XtlmuSTEMWriter:
             sliced_array = sliced_array[0]
 
         return sliced_array
-
-    def _check_key_dictionary(self, d, dict_name):
-        # Check if we have enough key
-        for key in self.atom_types:
-            if key not in d:
-                raise ValueError('Missing the {0} key in the `{1}` dictionary.'
-                                 ''.format(key, dict_name))
 
     def _get_position_array_single_atom_type(self, number):
         # Get the scaled (reduced) position for a single atom type
@@ -279,6 +261,7 @@ def write_mustem(filename, *args, **kwargs):
         positions are positive. If `False` (default), the atoms positions and
         the cell are unchanged.
     """
+    check_numpy_version()
 
     writer = XtlmuSTEMWriter(*args, **kwargs)
     writer.write_to_file(filename)

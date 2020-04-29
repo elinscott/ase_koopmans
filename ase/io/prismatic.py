@@ -10,11 +10,12 @@ computem software.
 
 import numpy as np
 
-from ase.atoms import symbols2numbers
+from ase.atoms import Atoms, symbols2numbers
 from ase.utils import reader
+from .utils import verify_cell_for_export, verify_dictionary
 
 
-def _check_numpy_version():
+def check_numpy_version():
     # This writer doesn't support numpy < 1.14 because of the issue:
     # https://github.com/numpy/numpy/issues/10018
     from distutils.version import LooseVersion
@@ -38,9 +39,7 @@ def read_prismatic(fd):
         B = RMS^2 * 8\pi^2
 
     """
-    _check_numpy_version()
-
-    from ase import Atoms
+    check_numpy_version()
 
     # Read comment:
     fd.readline()
@@ -69,13 +68,8 @@ class XYZPrismaticWriter:
     """
 
     def __init__(self, atoms, debye_waller_factors=None, comments=None):
-        cell = atoms.get_cell()
-        if not cell.orthorhombic:
-            raise ValueError('To export to this format, the cell needs to be '
-                             'orthorhombic.')
-        if cell.rank < 3:
-            raise ValueError('To export to this format, the cell size needs '
-                             'to be set: current cell is {}.'.format(cell))
+        verify_cell_for_export(atoms.get_cell())
+
         self.atoms = atoms.copy()
         self.atom_types = set(atoms.symbols)
         self.comments = comments
@@ -102,7 +96,7 @@ class XYZPrismaticWriter:
                                  'dictionary.')
             DW = np.ones_like(self.atoms.numbers) * DW
         elif isinstance(DW, dict):
-            self._check_key_dictionary(DW, 'DW')
+            verify_dictionary(self.atoms, DW, 'DW')
             # Get the arrays of DW from mapping the DW defined by symbol
             DW = {symbols2numbers(k)[0]: v for k, v in DW.items()}
             DW = np.vectorize(DW.get)(self.atoms.numbers)
@@ -119,13 +113,6 @@ class XYZPrismaticWriter:
                              'the `Atoms` object.')
 
         return DW
-
-    def _check_key_dictionary(self, d, dict_name):
-        # Check if we have enough key
-        for key in self.atom_types:
-            if key not in d:
-                raise ValueError('Missing the {} key in the `{}` dictionary.'
-                                 ''.format(key, dict_name))
 
     def _get_file_header(self):
         # 1st line: comment line
@@ -194,7 +181,7 @@ def write_prismatic(fd, *args, **kwargs):
 
     """
 
-    _check_numpy_version()
+    check_numpy_version()
 
     writer = XYZPrismaticWriter(*args, **kwargs)
     writer.write_to_file(fd)
