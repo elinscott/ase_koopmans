@@ -72,8 +72,3 @@ def test_imports():
         except ImportError as err:
             if err.name not in ignore_imports and 'deprecated' not in str(err):
                 raise
-        except (VisibleDeprecationWarning):
-            if module in deprecated_modules:
-                pass
-            else:
-                raise
