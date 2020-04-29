@@ -63,8 +63,6 @@ Git master branch
 
 * Added Russian translation.
 
-* Write support has been added for the Vasp 5 XDATCAR file format.
-
 * Added :mod:`ORCA <ase.calculators.orca>` calculator.
 
 * Added :mod:`GAMESS-US <ase.calculators.gamess_us>` calculator.
@@ -82,7 +80,15 @@ Git master branch
 
 * Added :class:`Pyberny <ase.optimize.Berny>` geometry optimizer.
 
+I/O:
+
+* Write support has been added for the Vasp 5 XDATCAR file format.
+
 * Added Z-matrix parser for use in input/output file readers.
+
+* Added support for writing prismatic and computem xyz file. Required arguments
+  to write mustem xtl file have been updated to be consistent with prismatic
+  and computem xyz file export.
 
 Version 3.19.1
 ==============
