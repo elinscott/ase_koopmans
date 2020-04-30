@@ -86,7 +86,7 @@ class XtlmuSTEMWriter:
         verify_cell_for_export(atoms.get_cell())
 
         self.atoms = atoms.copy()
-        self.atom_types = list(set(atoms.symbols))
+        self.atom_types = sorted(set(atoms.symbols))
         self.keV = keV
         self.comment = comment
         self.occupancies = self._get_occupancies(occupancies)

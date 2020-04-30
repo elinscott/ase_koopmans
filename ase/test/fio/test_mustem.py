@@ -52,9 +52,8 @@ def test_mustem_several_elements():
     atoms3 = read(filename)
 
     for _atoms in [atoms2, atoms3]:
-        np.testing.assert_allclose(atoms.positions.sum(),
-                                   _atoms.positions.sum())
-        np.testing.assert_allclose(atoms.cell.sum(), _atoms.cell.sum())
+        assert atoms.positions == pytest.approx(_atoms.positions)
+        np.testing.assert_allclose(atoms.cell, _atoms.cell)
 
     with pytest.raises(ValueError):
         # Raise an error if there is a missing key.
