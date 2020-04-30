@@ -129,7 +129,7 @@ def resolve_band_structure(path, kpts, energies, efermi):
     #
     # Also we should perhaps verify the cell.  If we had the cell, we
     # could construct the bandpath from scratch (i.e., pure outputs).
-    from ase.dft.band_structure import BandStructure
+    from ase.spectrum.band_structure import BandStructure
     ksn2e = energies
     skn2e = np.swapaxes(ksn2e, 0, 1)
     bs = BandStructure(path, skn2e, reference=efermi)
@@ -200,7 +200,7 @@ class Siesta(FileIOCalculator):
     default_parameters = SiestaParameters()
 
     # XXX Not a ASE standard mechanism (yet).  We need to communicate to
-    # ase.dft.band_structure.calculate_band_structure() that we expect
+    # ase.spectrum.band_structure.calculate_band_structure() that we expect
     # it to use the bandpath keyword.
     accepts_bandpath_keyword = True
 

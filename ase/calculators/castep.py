@@ -605,7 +605,7 @@ End CASTEP Interface Documentation
                 self.__setattr__(keyword, value)
 
     def band_structure(self, bandfile=None):
-        from ase.dft.band_structure import BandStructure
+        from ase.spectrum.band_structure import BandStructure
 
         if bandfile is None:
             bandfile = os.path.join(self._directory, self._seed) + '.bands'

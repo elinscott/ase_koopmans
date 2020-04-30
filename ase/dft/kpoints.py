@@ -405,7 +405,7 @@ class BandPath:
 
     def free_electron_band_structure(
             self, **kwargs
-    ) -> 'ase.dft.band_structure.BandStructure':
+    ) -> 'ase.spectrum.band_structure.BandStructure':
         """Return band structure of free electrons for this bandpath.
 
         Keyword arguments are passed to
@@ -414,7 +414,7 @@ class BandPath:
         This is for mostly testing and visualization."""
         from ase import Atoms
         from ase.calculators.test import FreeElectrons
-        from ase.dft.band_structure import calculate_band_structure
+        from ase.spectrum.band_structure import calculate_band_structure
         atoms = Atoms(cell=self.cell, pbc=True)
         atoms.calc = FreeElectrons(**kwargs)
         bs = calculate_band_structure(atoms, path=self)
