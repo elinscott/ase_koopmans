@@ -1,8 +1,7 @@
-import pytest
 from ase import Atoms, Atom
 from ase.build import fcc111
 from ase.optimize.minimahopping import MinimaHopping
-from ase.constraints import FixAtoms, Hookean
+from ase.constraints import FixAtoms
 
 
 def test_minimahop(asap3):
