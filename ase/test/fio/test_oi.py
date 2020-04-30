@@ -76,7 +76,7 @@ def all_tested_formats():
     skip += ['abinit', 'castep-cell', 'dftb', 'eon', 'gaussian', 'lammps-data']
 
     # Standalone test used as not compatible with 1D periodicity
-    skip += ['v-sim', 'mustem']
+    skip += ['v-sim', 'mustem', 'prismatic']
 
     # We have a standalone dmol test
     skip += ['dmol-arc', 'dmol-car', 'dmol-incoor']
