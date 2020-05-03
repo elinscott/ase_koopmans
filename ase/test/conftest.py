@@ -150,6 +150,12 @@ def datadir():
 
 
 @pytest.fixture(scope='session')
+def asap3():
+    asap3 = pytest.importorskip('asap3')
+    return asap3
+
+
+@pytest.fixture(scope='session')
 def cli():
     return CLI()
 
