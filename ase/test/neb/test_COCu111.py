@@ -1,5 +1,5 @@
 from math import sqrt
-import pytest
+
 from ase import Atoms, Atom
 from ase.calculators.emt import EMT
 from ase.constraints import FixAtoms
