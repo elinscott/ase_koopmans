@@ -11,8 +11,10 @@ def write_entries_to_db(db, n_entries_db=30):
 
 def update_keys_in_db(db):
     new_keys = {}
-    [new_keys.update({f'mynewkey_{i}': 'test'}) for i in range(50)]
-    [db.update(row.id, **new_keys) for row in db.select()]
+    for i in range(50):   
+        new_keys.update({f'mynewkey_{i}': 'test'})
+    for row in db.select():
+        db.update(row.id, **new_keys)
 
 
 def check_delete_function(db):
@@ -34,14 +36,14 @@ def test_delete_vacuum():
     db = connect(db_name)
     write_entries_to_db(db)
     check_delete_function(db)
-    os.remove(db_name)
 
+
+def test_delete_vacuum_context():
     # try within context
     with connect(db_name) as db:
         write_entries_to_db(db)
     with connect(db_name) as db:
         check_delete_function(db)
-    os.remove(db_name)
 
 
 def test_update_vacuum():
@@ -50,8 +52,9 @@ def test_update_vacuum():
     write_entries_to_db(db)
     update_keys_in_db(db)
     check_update_function(db)
-    os.remove(db_name)
 
+
+def test_update_vacuum_context():
     # within context manager
     with connect(db_name) as db:
         write_entries_to_db(db)
@@ -59,4 +62,3 @@ def test_update_vacuum():
         update_keys_in_db(db)
     with connect(db_name) as db:
         check_update_function(db)
-        os.remove(db_name)
