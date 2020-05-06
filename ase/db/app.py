@@ -40,7 +40,7 @@ from ase.db.table import all_columns
 root = Path(__file__).parent.parent.parent
 app = Flask(__name__, template_folder=str(root))
 
-projects = {}  # type: Dict[str, Dict[str, Any]]
+projects: Dict[str, Dict[str, Any]] = {}
 
 
 static = root / 'ase/db/static'
