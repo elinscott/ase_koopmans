@@ -164,7 +164,7 @@ def write_abinit_in(fd, atoms, param=None, species=None):
     param = _param
 
     if species is None:
-        species = sorted(list(set(atoms.numbers))) #unique set of atomic numbers
+        species = sorted(set(atoms.numbers))
 
     inp = {}
     inp.update(param)
@@ -512,7 +512,7 @@ def write_all_inputs(atoms, properties, parameters,
                      pp_paths=None,
                      raise_exception=True,
                      label='abinit'):
-    species = sorted(list(set(atoms.numbers))) # unique set of atomic numbers
+    species = sorted(set(atoms.numbers))
     if pp_paths is None:
         pp_paths = get_default_abinit_pp_paths()
     ppp = get_ppp_list(atoms, species,
