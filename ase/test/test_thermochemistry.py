@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from ase import Atoms
 from ase.build import fcc100, add_adsorbate
 from ase.build import bulk
@@ -12,15 +11,10 @@ from ase.thermochemistry import (IdealGasThermo, HarmonicThermo,
 from ase.calculators.emt import EMT
 
 
-@pytest.mark.slow
-def test_thermochemistry():
-    """Tests of the major methods (HarmonicThermo, IdealGasThermo,
-    CrystalThermo) from the thermochemistry module."""
-
-    # Ideal gas thermo.
+def test_ideal_gas_thermo():
     atoms = Atoms('N2',
-                  positions=[(0, 0, 0), (0, 0, 1.1)],
-                  calculator=EMT())
+                  positions=[(0, 0, 0), (0, 0, 1.1)])
+    atoms.calc = EMT()
     QuasiNewton(atoms).run(fmax=0.01)
     energy = atoms.get_potential_energy()
     vib = Vibrations(atoms, name='idealgasthermo-vib')
@@ -34,6 +28,7 @@ def test_thermochemistry():
 
     # Harmonic thermo.
 
+def test_harmonic_thermo():
     atoms = fcc100('Cu', (2, 2, 2), vacuum=10.)
     atoms.calc = EMT()
     add_adsorbate(atoms, 'Pt', 1.5, 'hollow')
@@ -51,9 +46,10 @@ def test_thermochemistry():
                             potentialenergy=atoms.get_potential_energy())
     thermo.get_helmholtz_energy(temperature=298.15)
 
-    # Crystal thermo.
+
+def test_crystal_thermo(asap3):
     atoms = bulk('Al', 'fcc', a=4.05)
-    calc = EMT()
+    calc = asap3.EMT()
     atoms.calc = calc
     energy = atoms.get_potential_energy()
 
@@ -75,6 +71,7 @@ def test_thermochemistry():
     # Hindered translator / rotor.
     # (Taken directly from the example given in the documentation.)
 
+def test_hindered_thermo():
     vibs = np.array([3049.060670,
                      3040.796863,
                      3001.661338,

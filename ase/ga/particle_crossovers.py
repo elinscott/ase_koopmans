@@ -1,5 +1,4 @@
 """Crossover operations originally intended for medium sized particles"""
-import random
 import numpy as np
 from itertools import chain
 
@@ -10,8 +9,8 @@ from ase.ga.offspring_creator import OffspringCreator
 class Crossover(OffspringCreator):
     """Base class for all particle crossovers.
     Do not call this class directly."""
-    def __init__(self):
-        OffspringCreator.__init__(self)
+    def __init__(self, rng=np.random):
+        OffspringCreator.__init__(self, rng=rng)
         self.descriptor = 'Crossover'
         self.min_inputs = 2
 
@@ -32,32 +31,35 @@ class CutSpliceCrossover(Crossover):
 
     blmin: dictionary of minimum distance between atomic numbers.
         e.g. {(28,29): 1.5}
-    
+
     keep_composition: boolean that signifies if the composition should
         be the same as in the parents.
+
+    rng: Random number generator
+        By default numpy.random.
     """
-    def __init__(self, blmin, keep_composition=True):
-        Crossover.__init__(self)
+    def __init__(self, blmin, keep_composition=True, rng=np.random):
+        Crossover.__init__(self, rng=rng)
         self.blmin = blmin
         self.keep_composition = keep_composition
         self.descriptor = 'CutSpliceCrossover'
-        
+
     def get_new_individual(self, parents):
         f, m = parents
-        
+
         indi = self.initialize_individual(f)
         indi.info['data']['parents'] = [i.info['confid'] for i in parents]
-        
-        theta = random.random() * 2 * np.pi  # 0,2pi
-        phi = random.random() * np.pi  # 0,pi
+
+        theta = self.rng.rand() * 2 * np.pi  # 0,2pi
+        phi = self.rng.rand() * np.pi  # 0,pi
         e = np.array((np.sin(phi) * np.cos(theta),
                       np.sin(theta) * np.sin(phi),
                       np.cos(phi)))
         eps = 0.0001
-        
+
         f.translate(-f.get_center_of_mass())
         m.translate(-m.get_center_of_mass())
-        
+
         # Get the signed distance to the cutting plane
         # We want one side from f and the other side from m
         fmap = [np.dot(x, e) for x in f.get_positions()]
@@ -112,7 +114,7 @@ class CutSpliceCrossover(Crossover):
             correct_by = dict([(j, opt_sm.count(j)) for j in set(opt_sm)])
             for n in cur_sm:
                 correct_by[n] -= 1
-            correct_in = random.choice([tmpf, tmpm])
+            correct_in = self.rng.choice([tmpf, tmpm])
             to_add, to_rem = [], []
             for num, amount in correct_by.items():
                 if amount > 0:
@@ -123,7 +125,7 @@ class CutSpliceCrossover(Crossover):
                 tbc = [a.index for a in correct_in if a.number == rem]
                 if len(tbc) == 0:
                     pass
-                ai = random.choice(tbc)
+                ai = self.rng.choice(tbc)
                 correct_in[ai].number = add
 
         # Move the contributing apart if any distance is below blmin
@@ -156,7 +158,7 @@ class CutSpliceCrossover(Crossover):
             del ac[[a.index for a in ac
                     if a.symbol in self.elements]]
         return ac.numbers
-        
+
     def get_vectors_below_min_dist(self, atoms):
         """Generator function that returns each vector (between atoms)
         that is shorter than the minimum distance for those atom types

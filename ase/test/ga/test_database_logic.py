@@ -1,15 +1,18 @@
-def test_database_logic():
+db_file = 'gadb_logics_test.db'
+
+
+def test_database_logic(seed):
     from ase.ga.data import PrepareDB
     from ase.ga.data import DataConnection
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.utilities import closest_distances_generator
     from ase.ga import set_raw_score
-    import os
     import numpy as np
     from ase.build import fcc111
     from ase.constraints import FixAtoms
 
-    db_file = 'gadb_logics_test.db'
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
     slab = fcc111('Au', size=(4, 4, 2), vacuum=10.0, orthogonal=True)
     slab.set_constraint(FixAtoms(mask=slab.positions[:, 2] <= 10.))
@@ -36,7 +39,8 @@ def test_database_logic():
     sg = StartGenerator(slab=slab,
                         blocks=atom_numbers,
                         blmin=blmin,
-                        box_to_place_in=[p0, [v1, v2, v3]])
+                        box_to_place_in=[p0, [v1, v2, v3]],
+                        rng=rng)
 
     # generate the starting population
     starting_population = [sg.get_new_candidate() for i in range(20)]
@@ -77,5 +81,3 @@ def test_database_logic():
 
     dc.remove_from_queue(confid)
     assert len(dc.get_all_candidates_in_queue()) == 0
-
-    os.remove(db_file)

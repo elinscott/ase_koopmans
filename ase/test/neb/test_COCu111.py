@@ -1,5 +1,5 @@
 from math import sqrt
-import pytest
+
 from ase import Atoms, Atom
 from ase.calculators.emt import EMT
 from ase.constraints import FixAtoms
@@ -8,7 +8,6 @@ from ase.neb import NEB
 from ase.io import Trajectory
 
 
-@pytest.mark.slow
 def test_COCu111():
     # Distance between Cu atoms on a (111) surface:
     a = 3.6
@@ -18,7 +17,7 @@ def test_COCu111():
                          (d / 2, d * sqrt(3) / 2, 0),
                          (d / 2, d * sqrt(3) / 6, -a / sqrt(3))],
                    pbc=True)
-    slab = fcc111 * (2, 2, 4)
+    slab = fcc111 * (2, 2, 2)
     slab.set_cell([2 * d, d * sqrt(3), 1])
     slab.set_pbc((1, 1, 0))
     slab.calc = EMT()
@@ -42,7 +41,7 @@ def test_COCu111():
 
     # Make band:
     images = [slab]
-    for i in range(6):
+    for i in range(4):
         image = slab.copy()
         # Set constraints and calculator:
         image.set_constraint(constraint)
@@ -65,7 +64,7 @@ def test_COCu111():
         print(image.positions[-1], image.get_potential_energy())
 
     dyn = BFGS(neb, maxstep=0.04, trajectory='mep.traj')
-    dyn.run(fmax=0.05)
+    dyn.run(fmax=0.1)
 
     for image in images:
         print(image.positions[-1], image.get_potential_energy())

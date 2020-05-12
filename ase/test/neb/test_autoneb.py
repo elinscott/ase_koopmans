@@ -1,13 +1,13 @@
 from ase.build import fcc211, add_adsorbate
 from ase.constraints import FixAtoms
-from ase.calculators.emt import EMT
 from ase.optimize import QuasiNewton
 from ase.neb import NEBTools
 from ase.autoneb import AutoNEB
-import pytest
 
-@pytest.mark.slow
-def test_autoneb():
+
+def test_autoneb(asap3):
+    EMT = asap3.EMT
+    fmax = 0.02
 
     # Pt atom adsorbed in a hollow site:
     slab = fcc211('Pt', size=(3, 2, 2), vacuum=4.0)
@@ -21,13 +21,13 @@ def test_autoneb():
 
     # Initial state:
     qn = QuasiNewton(slab, trajectory='neb000.traj')
-    qn.run(fmax=0.05)
+    qn.run(fmax=fmax)
 
     # Final state:
     slab[-1].x += slab.get_cell()[0, 0]
     slab[-1].y += 2.8
     qn = QuasiNewton(slab, trajectory='neb001.traj')
-    qn.run(fmax=0.05)
+    qn.run(fmax=fmax)
 
     # Stops PermissionError on Win32 for access to
     # the traj file that remains open.
@@ -44,7 +44,7 @@ def test_autoneb():
                       optimizer='BFGS',
                       n_simul=3,
                       n_max=7,
-                      fmax=0.05,
+                      fmax=fmax,
                       k=0.5,
                       parallel=False,
                       maxsteps=[50, 1000])

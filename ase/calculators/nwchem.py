@@ -8,7 +8,7 @@ import numpy as np
 from ase import io
 from ase.units import Hartree
 from ase.calculators.calculator import FileIOCalculator
-from ase.dft.band_structure import BandStructure
+from ase.spectrum.band_structure import BandStructure
 
 
 class NWChem(FileIOCalculator):

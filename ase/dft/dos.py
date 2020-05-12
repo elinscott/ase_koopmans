@@ -8,7 +8,7 @@ from ase.utils.cext import cextension
 
 
 class DOS:
-    def __init__(self, calc, width=0.1, window=None, npts=401):
+    def __init__(self, calc, width=0.1, window=None, npts=401, comm=world):
         """Electronic Density Of States object.
 
         calc: calculator object
@@ -21,9 +21,12 @@ class DOS:
             big enough to hold all the eigenvalues will be used.
         npts: int
             Number of points.
+        comm: communicator object
+            MPI communicator for lti_dos
 
         """
 
+        self.comm = comm
         self.npts = npts
         self.width = width
         self.w_k = calc.get_k_point_weights()
@@ -89,7 +92,7 @@ class DOS:
 
         if self.width == 0.0:
             dos = linear_tetrahedron_integration(self.cell, self.e_skn[spin],
-                                                 self.energies)
+                                                 self.energies, comm=self.comm)
             return dos
 
         dos = np.zeros(self.npts)
@@ -99,7 +102,8 @@ class DOS:
         return dos
 
 
-def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
+def linear_tetrahedron_integration(cell, eigs, energies,
+                                   weights=None, comm=world):
     """DOS from linear tetrahedron interpolation.
 
     cell: 3x3 ndarray-like
@@ -112,6 +116,8 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
         Weights.  Defaults to a (n1, n2, n3, nbands)-shaped ndarray
         filled with ones.  Can also have an extra dimednsion if there are
         nw weights.
+    comm: communicator object
+            MPI communicator for lti_dos
 
     Returns:
 
@@ -148,7 +154,7 @@ def linear_tetrahedron_integration(cell, eigs, energies, weights=None):
     nweights = weights.shape[4]
     dos = np.empty((nweights, len(energies)))
 
-    lti_dos(indices[dt.simplices], eigs, weights, energies, dos, world)
+    lti_dos(indices[dt.simplices], eigs, weights, energies, dos, comm)
 
     dos /= np.prod(size)
 

@@ -185,7 +185,8 @@ class SoftMutation(OffspringCreator):
 
     As in the reference above, the next-lowest mode is used if the
     structure has already been softmutated along the current-lowest
-    mode.
+    mode. This mutation hence acts in a deterministic way, in contrast
+    to most other genetic operators.
 
     If you find this implementation useful in your work,
     please consider citing:

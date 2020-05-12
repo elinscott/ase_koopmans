@@ -1,6 +1,6 @@
 from ase.build import bulk
 from ase.calculators.nwchem import NWChem
-from ase.dft.band_structure import calculate_band_structure
+from ase.spectrum.band_structure import calculate_band_structure
 
 
 def test_bands():

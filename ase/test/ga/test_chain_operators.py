@@ -1,15 +1,14 @@
-def test_chain_operators():
+def test_chain_operators(seed):
     from ase.ga.startgenerator import StartGenerator
     from ase.ga.cutandsplicepairing import CutAndSplicePairing
     from ase.ga.standardmutations import StrainMutation
     from ase.ga.utilities import (closest_distances_generator, atoms_too_close,
                                   CellBounds)
-    import random
     import numpy as np
     from ase import Atoms
 
-    random.seed(12345)
-    np.random.seed(12345)
+    # set up the random number generator
+    rng = np.random.RandomState(seed)
 
     slab = Atoms('', cell=(0, 16, 16), pbc=[True, False, False])
     blocks = ['C'] * 8
@@ -33,7 +32,7 @@ def test_chain_operators():
                         splits=None, box_to_place_in=box_to_place_in,
                         number_of_variable_cell_vectors=num_vcv,
                         cellbounds=cellbounds, test_too_far=True,
-                        test_dist_to_slab=False)
+                        test_dist_to_slab=False, rng=rng)
 
     parents = []
     for i in range(2):
@@ -64,11 +63,12 @@ def test_chain_operators():
     pairing = CutAndSplicePairing(slab, n_top, blmin,
                                   number_of_variable_cell_vectors=num_vcv,
                                   p1=1., p2=0., minfrac=0.15,
-                                  cellbounds=cellbounds, use_tags=use_tags)
+                                  cellbounds=cellbounds, use_tags=use_tags,
+                                  rng=rng)
 
     strainmut = StrainMutation(blmin, cellbounds=cellbounds,
                                number_of_variable_cell_vectors=num_vcv,
-                               use_tags=use_tags)
+                               use_tags=use_tags, rng=rng)
     strainmut.update_scaling_volume(parents)
 
     for operator in [pairing, strainmut]:

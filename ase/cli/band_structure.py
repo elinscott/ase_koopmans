@@ -9,7 +9,7 @@ from ase.dft.kpoints import (get_monkhorst_pack_size_and_offset,
                              monkhorst_pack_interpolate,
                              bandpath, BandPath,
                              get_special_points)
-from ase.dft.band_structure import BandStructure
+from ase.spectrum.band_structure import BandStructure
 
 
 class CLICommand:

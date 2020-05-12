@@ -60,10 +60,12 @@ main:
     - ase test --calculators asap,eam,ff,lj,morse,tip3p,tip4p --coverage --pytest --color=yes --durations 20
     - mypy --color-output -p ase
     - python -We:invalid -m compileall -f -q ase/
+    - mv ase/test/coverage-html .
   coverage: '/TOTAL.+ ([0-9]+\.[0-9]+%)/'
   artifacts:
     paths:
-      - ase/test/coverage-html/
+      - coverage-html/
+    expire_in: 1 week
 
 
 # Currently (2019-07-26) facing a problem where PATH does not include
@@ -134,10 +136,10 @@ pages:
   dependencies:
     - main
   script:
-    - mv ase/test/coverage-html public
+    - mv coverage-html public
   artifacts:
     paths:
       - public
-    expire_in: 3 weeks
+    expire_in: 2 weeks
   only:
     - master

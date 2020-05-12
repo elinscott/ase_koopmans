@@ -10,9 +10,6 @@ Git master branch
 
 :git:`master <>`.
 
-
-* Read and write support for qball sys file format.
-
 * Functions for attaching structures in :mod:`attach <ase.build>` introduced.
 
 * Standardize optimizers maximum step variable name to maxstep and default value to 0.2 for all optimizers.
@@ -79,8 +76,6 @@ Git master branch
 
 * Added Russian translation.
 
-* Write support has been added for the Vasp 5 XDATCAR file format.
-
 * Added :mod:`ORCA <ase.calculators.orca>` calculator.
 
 * Added :mod:`GAMESS-US <ase.calculators.gamess_us>` calculator.
@@ -98,8 +93,6 @@ Git master branch
 
 * Added :class:`Pyberny <ase.optimize.Berny>` geometry optimizer.
 
-* Added Z-matrix parser for use in input/output file readers.
-
 * Reduced code duplication in the :mod:`ase.ga` module by incorporating the
   'bulk' GA functionality into the corresponding 'standard' modules.
   Using the now deprecated 'bulk' GA modules (i.e.
@@ -113,6 +106,18 @@ Git master branch
 
 * Added a new tutorial on molecular crystal structure prediction using
   a genetic algorithm, see :ref:`ga_molecular_crystal_tutorial`.
+
+I/O:
+
+* Read and write support for qball sys file format.
+
+* Write support has been added for the Vasp 5 XDATCAR file format.
+
+* Added Z-matrix parser for use in input/output file readers.
+
+* Added support for writing prismatic and computem xyz file. Required arguments
+  to write mustem xtl file have been updated to be consistent with prismatic
+  and computem xyz file export.
 
 .. _mypy: http://mypy-lang.org/
 

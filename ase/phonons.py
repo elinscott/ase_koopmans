@@ -535,7 +535,7 @@ class Phonons(Displacement):
             assert 0
             omega_kl, modes = omega_kl
 
-        from ase.dft.band_structure import BandStructure
+        from ase.spectrum.band_structure import BandStructure
         bs = BandStructure(path, energies=omega_kl[None])
         return bs
 

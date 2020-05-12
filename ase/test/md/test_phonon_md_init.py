@@ -5,17 +5,17 @@ from ase.phonons import Phonons
 from ase.data import atomic_numbers
 from ase.optimize import FIRE
 #from asap3 import EMT
-from ase.calculators.emt import EMT
 from ase.build import bulk
 from ase.md.velocitydistribution import PhononHarmonics
 from ase import units
 
 
 @pytest.mark.slow
-def test_phonon_md_init():
-
+def test_phonon_md_init(asap3):
     # Tests the phonon-based perturbation and velocity distribution
     # for thermal equilibration in MD.
+
+    EMT = asap3.EMT
 
     rng = RandomState(17)
 

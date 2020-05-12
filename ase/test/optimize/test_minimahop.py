@@ -1,13 +1,10 @@
-import pytest
 from ase import Atoms, Atom
 from ase.build import fcc111
 from ase.optimize.minimahopping import MinimaHopping
-from ase.calculators.emt import EMT
-from ase.constraints import FixAtoms, Hookean
+from ase.constraints import FixAtoms
 
 
-@pytest.mark.slow
-def test_minimahop():
+def test_minimahop(asap3):
     # Make Pt 111 slab with Cu2 adsorbate.
     atoms = fcc111('Pt', (2, 2, 1), vacuum=7., orthogonal=True)
     adsorbate = Atoms([Atom('Cu', atoms[2].position + (0., 0., 2.5)),
@@ -16,14 +13,21 @@ def test_minimahop():
 
     # Constrain the surface to be fixed and a Hookean constraint between
     # the adsorbate atoms.
+    #
+    # Actually: Why?  The test passes whether we set them or not, which
+    # means we don't gain anything by including them.
+    # I have disabled the hookeans to reduce test runtime.  --askhl
+    #
     constraints = [FixAtoms(indices=[atom.index for atom in atoms if
-                                     atom.symbol == 'Pt']),
-                   Hookean(a1=4, a2=5, rt=2.6, k=15.),
-                   Hookean(a1=4, a2=(0., 0., 1., -15.), k=15.)]
+                                     atom.symbol == 'Pt'])]
+    # constraints = [FixAtoms(indices=[atom.index for atom in atoms if
+    #                                  atom.symbol == 'Pt']),
+    #                Hookean(a1=4, a2=5, rt=2.6, k=15.),
+    #                Hookean(a1=4, a2=(0., 0., 1., -15.), k=15.)]
     atoms.set_constraint(constraints)
 
     # Set the calculator.
-    calc = EMT()
+    calc = asap3.EMT()
     atoms.calc = calc
 
     # Instantiate and run the minima hopping algorithm.

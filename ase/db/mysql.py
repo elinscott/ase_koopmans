@@ -49,6 +49,9 @@ class Connection(object):
     def close(self):
         self.con.close()
 
+    def rollback(self):
+        self.con.rollback()
+
 
 class MySQLCursor(object):
     """
