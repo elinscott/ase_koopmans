@@ -2,7 +2,7 @@ import os
 import numpy as np
 from ase import io, units
 from ase.optimize import QuasiNewton
-from ase.parallel import paropen, rank, world
+from ase.parallel import paropen, world
 from ase.md import VelocityVerlet
 from ase.md import MDLogger
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
@@ -81,7 +81,7 @@ class MinimaHopping:
 
         status = np.array(-1.)
         exists = self._read_minima()
-        if rank == 0:
+        if world.rank == 0:
             if not exists:
                 # Fresh run with new minima file.
                 status = np.array(0.)
@@ -223,7 +223,7 @@ class MinimaHopping:
     def _log(self, cat='msg', message=None):
         """Records the message as a line in the log file."""
         if cat == 'init':
-            if rank == 0:
+            if world.rank == 0:
                 if os.path.exists(self._logfile):
                     raise RuntimeError('File exists: %s' % self._logfile)
             f = paropen(self._logfile, 'w')

@@ -1,15 +1,14 @@
-""" 
+"""
 read and write gromacs geometry files
 """
-from __future__ import print_function
 
 from ase.atoms import Atoms
 from ase.parallel import paropen
-from ase.utils import basestring
 import numpy as np
 
 from ase.data import atomic_numbers
 from ase import units
+
 
 def read_gromacs(filename):
     """ From:
@@ -25,7 +24,6 @@ def read_gromacs(filename):
     simulation cell (if present)
     """
 
-
     atoms = Atoms()
     filed = open(filename, 'r')
     lines = filed.readlines()
@@ -40,11 +38,11 @@ def read_gromacs(filename):
     sym2tag = {}
     tag = 0
     for line in (lines[2:-1]):
-        #print line[0:5]+':'+line[5:11]+':'+line[11:15]+':'+line[15:20]
+        # print(line[0:5]+':'+line[5:11]+':'+line[11:15]+':'+line[15:20])
         # it is not a good idea to use the split method with gromacs input
         # since the fields are defined by a fixed column number. Therefore,
         # they may not be space between the fields
-        #inp = line.split()
+        # inp = line.split()
 
         floatvect = float(line[20:28]) * 10.0, \
             float(line[28:36]) * 10.0, \
@@ -104,7 +102,7 @@ def read_gromacs(filename):
 
     if not atoms.has('residuenumbers'):
         atoms.new_array('residuenumbers', gromacs_residuenumbers, int)
-        atoms.set_array('residuenumbers',gromacs_residuenumbers, int)
+        atoms.set_array('residuenumbers', gromacs_residuenumbers, int)
     if not atoms.has('residuenames'):
         atoms.new_array('residuenames', gromacs_residuenames, str)
         atoms.set_array('residuenames', gromacs_residuenames, str)
@@ -112,46 +110,24 @@ def read_gromacs(filename):
         atoms.new_array('atomtypes', gromacs_atomtypes, str)
         atoms.set_array('atomtypes', gromacs_atomtypes, str)
 
-
+    # determine PBC and unit cell
+    atoms.pbc = False
+    inp = lines[-1].split()
     try:
-        line = lines[-1]
-        inp = line.split()
-        floatvect0 = \
-            float(inp[0]) * 10.0, \
-            float(inp[1]) * 10.0, \
-            float(inp[2]) * 10.0
-        try:
-            floatvect1 = \
-                float(inp[3]) * 10.0, \
-                float(inp[4]) * 10.0, \
-                float(inp[5]) * 10.0
-            floatvect2 = \
-                float(inp[6]) * 10.0, \
-                float(inp[7]) * 10.0, \
-                float(inp[8]) * 10.0
-            mycell = []
-            #gromacs manual (manual.gromacs.org/online/gro.html) says:
-            #v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y)
-            #
-            #v1(x) v2(y) v3(z) fv0[0 1 2]  v1(x) v2(x) v3(x)
-            #v1(y) v1(z) v2(x) fv1[0 1 2]  v1(y) v2(y) v3(y)
-            #v2(z) v3(x) v3(y) fv2[0 1 2]  v1(z) v2(z) v3(z)
-            mycell += [[floatvect0[0], floatvect1[2], floatvect2[1]]]
-            mycell += [[floatvect1[0], floatvect0[1], floatvect2[2]]]
-            mycell += [[floatvect1[1], floatvect2[0], floatvect0[2]]]
-            atoms.set_cell(mycell)
-            atoms.set_pbc(True)
-        except:
-            mycell = []
-            #gromacs manual (manual.gromacs.org/online/gro.html) says:
-            #v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y)
-            mycell += [[floatvect0[0],           0.0,           0.0]]
-            mycell += [[          0.0, floatvect0[1],           0.0]]
-            mycell += [[          0.0,           0.0, floatvect0[2]]]
-            atoms.set_cell(floatvect0)
-            atoms.set_pbc(True)
-    except:
-        atoms.set_pbc(False)
+        grocell = list(map(float, inp))
+    except ValueError:
+        return atoms
+
+    if len(grocell) < 3:
+        return atoms
+
+    cell = np.diag(grocell[:3])
+
+    if len(grocell) >= 9:
+        cell.flat[[1, 2, 3, 5, 6, 7]] = grocell[3:9]
+
+    atoms.cell = cell * 10.
+    atoms.pbc = True
     return atoms
 
 
@@ -165,7 +141,7 @@ def write_gromacs(fileobj, images):
     * simulation cell (if present)
     """
 
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'w')
 
     if not isinstance(images, (list, tuple)):
@@ -174,40 +150,44 @@ def write_gromacs(fileobj, images):
     natoms = len(images[-1])
     try:
         gromacs_residuenames = images[-1].get_array('residuenames')
-    except:
+    except KeyError:
         gromacs_residuenames = []
         for idum in range(natoms):
             gromacs_residuenames.append('1DUM')
     try:
         gromacs_atomtypes = images[-1].get_array('atomtypes')
-    except:
+    except KeyError:
         gromacs_atomtypes = images[-1].get_chemical_symbols()
+
     try:
         residuenumbers = images[-1].get_array('residuenumbers')
-    except (KeyError):
+    except KeyError:
         residuenumbers = np.ones(natoms, int)
 
     pos = images[-1].get_positions()
     pos = pos / 10.0
-    try:
-        vel = images[-1].get_velocities()
-        vel = vel * 1000.0 * units.fs / units.nm
-    except:
-        vel = pos
+
+    vel = images[-1].get_velocities()
+    if vel is None:
         vel = pos * 0.0
+    else:
+        vel *= 1000.0 * units.fs / units.nm
 
     # No "#" in the first line to prevent read error in VMD
     fileobj.write('A Gromacs structure file written by ASE \n')
     fileobj.write('%5d\n' % len(images[-1]))
     count = 1
 
-    # gromac line see http://manual.gromacs.org/documentation/current/user-guide/file-formats.html#gro
+    # gromacs line see
+    # manual.gromacs.org/documentation/current/user-guide/file-formats.html#gro
+    # (EDH: link seems broken as of 2020-02-21)
     #    1WATER  OW1    1   0.126   1.624   1.679  0.1227 -0.0580  0.0434
-    for resnb, resname, atomtype, xyz, vxyz in zip\
-            (residuenumbers, gromacs_residuenames, gromacs_atomtypes, pos, vel):
+    for (resnb, resname, atomtype, xyz,
+         vxyz) in zip(residuenumbers, gromacs_residuenames,
+                      gromacs_atomtypes, pos, vel):
 
         # THIS SHOULD BE THE CORRECT, PYTHON FORMATTING, EQUIVALENT TO THE
-        # C FORMATTING GIVEN IN THE GROMACS DOCUMENTATION: 
+        # C FORMATTING GIVEN IN THE GROMACS DOCUMENTATION:
         # >>> %5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f <<<
         line = ("{0:>5d}{1:<5s}{2:>5s}{3:>5d}{4:>8.3f}{5:>8.3f}{6:>8.3f}"
                 "{7:>8.4f}{8:>8.4f}{9:>8.4f}\n"
@@ -223,21 +203,12 @@ def write_gromacs(fileobj, images):
         # gromacs manual (manual.gromacs.org/online/gro.html) says:
         # v1(x) v2(y) v3(z) v1(y) v1(z) v2(x) v2(z) v3(x) v3(y)
         #
-        # cell[0,0] cell[1,0] cell[2,0] v1(x) v2(y) v3(z) fv0[0 1 2]
-        # cell[0,1] cell[1,1] cell[2,1] v1(y) v1(z) v2(x) fv1[0 1 2]
-        # cell[0,2] cell[1,2] cell[2,2] v2(z) v3(x) v3(y) fv2[0 1 2]
-        fileobj.write('%10.5f%10.5f%10.5f' \
-                          % (mycell[0, 0] * 0.1, \
-                                 mycell[1, 1] * 0.1, \
-                                 mycell[2, 2] * 0.1))
-        fileobj.write('%10.5f%10.5f%10.5f' \
-                          % (mycell[1, 0] * 0.1, \
-                                 mycell[2, 0] * 0.1, \
-                                 mycell[0, 1] * 0.1))
-        fileobj.write('%10.5f%10.5f%10.5f\n' \
-                          % (mycell[2, 1] * 0.1, \
-                                 mycell[0, 2] * 0.1, \
-                                 mycell[1, 2] * 0.1))
+        # cell[i,j] is the jth Cartesian coordinate of the ith unit vector
+        # cell[0,0] cell[1,1] cell[2,2] v1(x) v2(y) v3(z) fv0[0 1 2]
+        # cell[0,1] cell[0,2] cell[1,0] v1(y) v1(z) v2(x) fv1[0 1 2]
+        # cell[1,2] cell[2,0] cell[2,1] v2(z) v3(x) v3(y) fv2[0 1 2]
+        grocell = mycell.flat[[0, 4, 8, 1, 2, 3, 5, 6, 7]] * 0.1
+        fileobj.write(''.join(['{:10.5f}'.format(x) for x in grocell]))
     else:
         # When we do not have a cell, the cell is specified as an empty line
         fileobj.write("\n")

@@ -1,4 +1,3 @@
-from __future__ import print_function, division
 # Copyright (C) 2010, Jesper Friis
 # (see accompanying license files for details).
 
@@ -12,7 +11,6 @@ import warnings
 from functools import total_ordering
 
 import numpy as np
-from ase.utils import basestring
 
 __all__ = ['Spacegroup']
 
@@ -653,7 +651,7 @@ def _read_datafile_entry(spg, no, symbol, setting, f):
 def _read_datafile(spg, spacegroup, setting, f):
     if isinstance(spacegroup, int):
         pass
-    elif isinstance(spacegroup, basestring):
+    elif isinstance(spacegroup, str):
         spacegroup = ' '.join(spacegroup.strip().split())
         compact_spacegroup = ''.join(spacegroup.split())
     else:
@@ -667,8 +665,9 @@ def _read_datafile(spg, spacegroup, setting, f):
         _no = int(_no)
         if ((isinstance(spacegroup, int) and _no == spacegroup and
              _setting == setting) or
-            (isinstance(spacegroup, basestring) and
-             compact_symbol == compact_spacegroup)):
+            (isinstance(spacegroup, str) and
+             compact_symbol == compact_spacegroup) and
+            _setting == setting):
             _read_datafile_entry(spg, _no, _symbol, _setting, f)
             break
         else:
@@ -716,17 +715,17 @@ def parse_sitesym(symlist, sep=','):
                 if s[0] in '+-':
                     if s[0] == '-':
                         sign = -1
-                    s = s[1:]
+                    s = s[1:].lstrip()
                 if s[0] in 'xyz':
                     k = ord(s[0]) - ord('x')
                     rot[i, j, k] = sign
-                    s = s[1:]
+                    s = s[1:].lstrip()
                 elif s[0].isdigit() or s[0] == '.':
                     n = 0
                     while n < len(s) and (s[n].isdigit() or s[n] in '/.'):
                         n += 1
                     t = s[:n]
-                    s = s[n:]
+                    s = s[n:].lstrip()
                     if '/' in t:
                         q, r = t.split('/')
                         trans[i, j] = float(q) / float(r)
@@ -753,6 +752,9 @@ def spacegroup_from_data(no=None, symbol=None, setting=None,
     else:
         raise SpacegroupValueError('either *no* and *setting* '
                                    'or *symbol* must be given')
+    if not isinstance(sitesym, list):
+        raise TypeError('sitesym must be a list')
+
     have_sym = False
     if centrosymmetric is not None:
         spg._centrosymmetric = bool(centrosymmetric)

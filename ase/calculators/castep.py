@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
 """This module defines an interface to CASTEP for
     use by the ASE (Webpage: http://wiki.fysik.dtu.dk/ase)
 
@@ -30,6 +28,7 @@ import subprocess
 from copy import deepcopy
 from collections import namedtuple
 from itertools import product
+from typing import List, Set
 
 import ase
 import ase.units as units
@@ -38,7 +37,6 @@ from ase.calculators.calculator import compare_atoms
 from ase.calculators.calculator import PropertyNotImplementedError
 from ase.calculators.calculator import kpts2sizeandoffsets
 from ase.dft.kpoints import BandPath
-from ase.utils import basestring
 from ase.parallel import paropen
 from ase.io.castep import read_param
 from ase.io.castep import read_bands
@@ -393,15 +391,15 @@ Notes/Issues:
 
 .. _CASTEP: http://www.castep.org/
 
-.. _W: http://en.wikipedia.org/wiki/CASTEP
+.. _W: https://en.wikipedia.org/wiki/CASTEP
 
-.. _CODATA: http://physics.nist.gov/cuu/Constants/index.html
+.. _CODATA: https://physics.nist.gov/cuu/Constants/index.html
 
 .. [1] S. J. Clark, M. D. Segall, C. J. Pickard, P. J. Hasnip, M. J. Probert,
        K. Refson, M. C. Payne Zeitschrift für Kristallographie 220(5-6)
        pp.567- 570 (2005) PDF_.
 
-.. _PDF: http://goo.gl/wW50m
+.. _PDF: http://www.tcm.phy.cam.ac.uk/castep/papers/ZKristallogr_2005.pdf
 
 
 End CASTEP Interface Documentation
@@ -541,6 +539,7 @@ End CASTEP Interface Documentation
         self._energy_free = None
         self._energy_0K = None
         self._energy_total_corr = None
+        self._eigenvalues = None
         self._efermi = None
         self._ibz_kpts = None
         self._ibz_weights = None
@@ -606,7 +605,7 @@ End CASTEP Interface Documentation
                 self.__setattr__(keyword, value)
 
     def band_structure(self, bandfile=None):
-        from ase.dft.band_structure import BandStructure
+        from ase.spectrum.band_structure import BandStructure
 
         if bandfile is None:
             bandfile = os.path.join(self._directory, self._seed) + '.bands'
@@ -789,7 +788,7 @@ End CASTEP Interface Documentation
 
         returns (record_start, record_end, end_found, last_record_complete)
         """
-        if isinstance(castep_file, basestring):
+        if isinstance(castep_file, str):
             castep_file = paropen(castep_file, 'r')
             file_opened = True
         else:
@@ -822,13 +821,7 @@ End CASTEP Interface Documentation
                 if 'warn' in line.lower():
                     self._warnings.append(line)
 
-                # HOTFIX: This string appears twice from CASTEP 7 on and thus
-                # prevents reading forces. So, better go for another keyword
-                # to indicate the regular end of a run.
-                # 'Initialization time' seems to do the job.
-                # if 'Writing analysis data to' in line:
-                # if 'Writing model to' in line:
-                if 'Peak Memory Use' in line:
+                if 'Finalisation time   =' in line:
                     end_found = True
                     record_end = castep_file.tell()
                     break
@@ -863,7 +856,7 @@ End CASTEP Interface Documentation
             if not os.path.exists(castep_file):
                 print('No CASTEP file found')
 
-        elif isinstance(castep_file, basestring):
+        elif isinstance(castep_file, str):
             out = paropen(castep_file, 'r')
 
         else:
@@ -984,7 +977,7 @@ End CASTEP Interface Documentation
                 elif 'convergence tolerance window' in line:
                     elec_convergence_win = int(line.split()[-2])
                     self.param.elec_convergence_win = elec_convergence_win
-                elif re.match('\sfinite basis set correction\s*:', line):
+                elif re.match(r'\sfinite basis set correction\s*:', line):
                     finite_basis_corr = line.split()[-1]
                     fbc_possibilities = {'none': 0,
                                          'manual': 1, 'automatic': 2}
@@ -1039,7 +1032,7 @@ End CASTEP Interface Documentation
                         self.param.task = ctype
                 elif 'using functional' in line:
                     used_functional = line.split(":")[-1]
-                    used_functional = re.sub('\s+', ' ', used_functional)
+                    used_functional = re.sub(r'\s+', ' ', used_functional)
                     used_functional = used_functional.strip()
                     if used_functional != 'Local Density Approximation':
                         used_functional_possibilities = {
@@ -1057,7 +1050,8 @@ End CASTEP Interface Documentation
                             'hybrid HSE03': 'HSE03',
                             'hybrid HSE06': 'HSE06'
                         }
-                        used_func = used_functional_possibilities[used_functional]
+                        used_func = used_functional_possibilities[
+                            used_functional]
                         self.param.xc_functional = used_func
                 elif 'output verbosity' in line:
                     iprint = int(line.split()[-1][1])
@@ -1296,7 +1290,8 @@ End CASTEP Interface Documentation
                             if len(fields) == 1:
                                 break
 
-                            # the check for len==7 is due to CASTEP 18 outformat changes
+                            # the check for len==7 is due to CASTEP 18
+                            # outformat changes
                             if spin_polarized:
                                 if len(fields) != 7:
                                     spins.append(float(fields[-1]))
@@ -1313,11 +1308,11 @@ End CASTEP Interface Documentation
 
                 # fetch some last info
                 elif 'Total time' in line:
-                    pattern = '.*=\s*([\d\.]+) s'
+                    pattern = r'.*=\s*([\d\.]+) s'
                     self._total_time = float(re.search(pattern, line).group(1))
 
                 elif 'Peak Memory Use' in line:
-                    pattern = '.*=\s*([\d]+) kB'
+                    pattern = r'.*=\s*([\d]+) kB'
                     self._peak_memory = int(re.search(pattern, line).group(1))
 
             except Exception as exception:
@@ -1433,7 +1428,7 @@ End CASTEP Interface Documentation
 
             if mulliken_analysis:
                 atoms.set_initial_charges(charges=mulliken_charges_atoms)
-            atoms.set_calculator(self)
+            atoms.calc = self
 
         self._kpoints = kpoints
         self._forces = forces_atoms
@@ -1457,8 +1452,14 @@ End CASTEP Interface Documentation
             and self.param.task.value.lower() == 'bandstructure'):
             self._band_structure = self.band_structure(bandfile=bands_file)
         else:
-            (self._ibz_kpts, self._ibz_weights,
-             self._eigenvalues, self._efermi) = read_bands(filename=bands_file)
+            try:
+                (self._ibz_kpts,
+                 self._ibz_weights,
+                 self._eigenvalues,
+                 self._efermi) = read_bands(filename=bands_file)
+            except FileNotFoundError:
+                warnings.warn('Could not load .bands file, eigenvalues and '
+                              'Fermi energy are unknown')
 
     def read_symops(self, castep_castep=None):
         # TODO: check that this is really backwards compatible
@@ -1468,7 +1469,7 @@ End CASTEP Interface Documentation
         if castep_castep is None:
             castep_castep = self._seed + '.castep'
 
-        if isinstance(castep_castep, basestring):
+        if isinstance(castep_castep, str):
             if not os.path.isfile(castep_castep):
                 print('Warning: CASTEP file %s not found!' % castep_castep)
             f = paropen(castep_castep, 'r')
@@ -1611,8 +1612,8 @@ End CASTEP Interface Documentation
                 print('Warning: <_find_pspots> = True')
                 print('Do you really want to use `set_pspots()`')
                 print('This does not check whether the PP files exist.')
-                print(
-                    'You may rather want to use `find_pspots()` with the same <pspot>.')
+                print('You may rather want to use `find_pspots()` with '
+                      'the same <pspot>.')
 
         if clear and not elems and not notelems:
             self.cell.species_pot.clear()
@@ -1625,7 +1626,7 @@ End CASTEP Interface Documentation
 
     def find_pspots(self, pspot='.+', elems=None,
                     notelems=None, clear=True, suffix='(usp|UPF|recpot)'):
-        """Quickly find and set all pseudo-potentials by searching in
+        r"""Quickly find and set all pseudo-potentials by searching in
         castep_pp_path:
 
         This one is more flexible than set_pspots, and also checks if the files
@@ -1657,8 +1658,8 @@ End CASTEP Interface Documentation
 
         if not os.path.isdir(self._castep_pp_path):
             if self._pedantic:
-                print('Cannot search directory:\n    {}\nFolder does not exist'.format(
-                    self._castep_pp_path))
+                print('Cannot search directory:\n    {}\nFolder does not exist'
+                      .format(self._castep_pp_path))
             return
 
         # translate the bash wildcard syntax to regex
@@ -1677,20 +1678,27 @@ End CASTEP Interface Documentation
                 continue
             if notelems is not None and elem in notelems:
                 continue
-            p = pattern.format(elem=elem, elem_upper=elem.upper(), elem_lower=elem.lower(),
-                               pspot=pspot, suffix=suffix)
+            p = pattern.format(elem=elem,
+                               elem_upper=elem.upper(),
+                               elem_lower=elem.lower(),
+                               pspot=pspot,
+                               suffix=suffix)
             pps = []
             for f in os.listdir(self._castep_pp_path):
                 if re.match(p, f):
                     pps.append(f)
             if not pps:
                 if self._pedantic:
-                    print('Pseudopotential for species {} not found!'.format(elem))
+                    print('Pseudopotential for species {} not found!'
+                          .format(elem))
             elif not len(pps) == 1:
-                raise RuntimeError('Pseudopotential for species ''{} not unique!\n'.format(elem)
-                                   + 'Found the following files in {}\n'.format(self._castep_pp_path)
-                                   + '\n'.join(['    {}'.format(pp) for pp in pps])
-                                   + '\nConsider a stricter search pattern in `find_pspots()`.')
+                raise RuntimeError(
+                    'Pseudopotential for species ''{} not unique!\n'
+                    .format(elem)
+                    + 'Found the following files in {}\n'
+                    .format(self._castep_pp_path)
+                    + '\n'.join(['    {}'.format(pp) for pp in pps]) +
+                    '\nConsider a stricter search pattern in `find_pspots()`.')
             else:
                 self.cell.species_pot = (elem, pps[0])
 
@@ -1780,8 +1788,9 @@ End CASTEP Interface Documentation
         self.update(atoms)
         # modification: we return the Voigt form directly to get rid of the
         # annoying user warnings
-        stress = np.array([self._stress[0, 0], self._stress[1, 1], self._stress[2, 2],
-                           self._stress[1, 2], self._stress[0, 2], self._stress[0, 1]])
+        stress = np.array(
+            [self._stress[0, 0], self._stress[1, 1], self._stress[2, 2],
+             self._stress[1, 2], self._stress[0, 2], self._stress[0, 1]])
         # return self._stress
         return stress
 
@@ -2143,7 +2152,7 @@ End CASTEP Interface Documentation
                     self.param.__setattr__(key, option.value)
             return
 
-        elif isinstance(param, basestring):
+        elif isinstance(param, str):
             param_file = open(param, 'r')
             _close = True
 
@@ -2298,8 +2307,9 @@ End CASTEP Interface Documentation
                         print('For sake of numerical consistency and efficiency')
                         print('this is discouraged.')
                 else:
-                    raise RuntimeError('Warning: you have no PP specified for %s.' %
-                                       species)
+                    raise RuntimeError(
+                        'Warning: you have no PP specified for %s.' %
+                        species)
         if self.cell.species_pot.value:
             for (species, pspot) in pspots.items():
                 orig_pspot_file = os.path.join(self._castep_pp_path, pspot)
@@ -2536,7 +2546,7 @@ class CastepOption(object):
         # The value, not converted to a string
         return self._value
 
-    @value.setter
+    @value.setter  # type: ignore
     def value(self, val):
 
         if val is None:
@@ -2580,7 +2590,7 @@ class CastepOption(object):
     @staticmethod
     def _parse_int_vector(value):
         # Accepts either a string or an actual list/numpy array of ints
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if ',' in value:
                 value = value.replace(',', ' ')
             value = list(map(int, value.split()))
@@ -2595,7 +2605,7 @@ class CastepOption(object):
     @staticmethod
     def _parse_float_vector(value):
         # Accepts either a string or an actual list/numpy array of floats
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if ',' in value:
                 value = value.replace(',', ' ')
             value = list(map(float, value.split()))
@@ -2610,7 +2620,7 @@ class CastepOption(object):
     @staticmethod
     def _parse_float_physical(value):
         # If this is a string containing units, saves them
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.split()
 
         try:
@@ -2637,7 +2647,7 @@ class CastepOption(object):
     @staticmethod
     def _parse_block(value):
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return value
         elif hasattr(value, '__getitem__'):
             return '\n'.join(value)  # Arrays of lines
@@ -2682,7 +2692,7 @@ class CastepInputFile(object):
 
     """Master class for CastepParam and CastepCell to inherit from"""
 
-    _keyword_conflicts = []
+    _keyword_conflicts: List[Set[str]] = []
 
     def __init__(self, options_dict=None, keyword_tolerance=1):
         object.__init__(self)
@@ -2726,7 +2736,7 @@ class CastepInputFile(object):
 
             if self._perm > 0:
                 # Do we consider it a string or a block?
-                is_str = isinstance(value, basestring)
+                is_str = isinstance(value, str)
                 is_block = False
                 if ((hasattr(value, '__getitem__') and not is_str)
                         or (is_str and len(value.split('\n')) > 1)):
@@ -2754,7 +2764,7 @@ class CastepInputFile(object):
             attr = attr.lower()
             opt = self._options[attr]
 
-        if not opt.type.lower() == 'block' and isinstance(value, basestring):
+        if not opt.type.lower() == 'block' and isinstance(value, str):
             value = value.replace(':', ' ')
 
         # If it is, use the appropriate parser, unless a custom one is defined

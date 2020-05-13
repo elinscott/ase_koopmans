@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Copyright (C) 2008 CSC - Scientific Computing Ltd.
 """This module defines an ASE interface to VASP.
 
@@ -24,12 +23,11 @@ import sys
 import warnings
 import shutil
 from os.path import join, isfile, islink
+from typing import List
 
 import numpy as np
 
 from ase.calculators.calculator import kpts2ndarray
-from ase.utils import basestring
-
 from ase.calculators.vasp.setups import setups_defaults
 
 # Parameters that can be set in INCAR. The values which are None
@@ -549,7 +547,7 @@ bool_keys = [
     'lrscor',     # Include long-range correlation (HF)
     'lrhfcalc',   # Include long-range HF (HF)
     'lmodelhf',   # Model HF calculation (HF)
-    'shiftred',   # Undocumented HF paramter
+    'shiftred',   # Undocumented HF parameter
     'hfkident',   # Undocumented HF parameter
     'oddonly',    # Undocumented HF parameter
     'evenonly',   # Undocumented HF parameter
@@ -625,6 +623,9 @@ bool_keys = [
     'qifcg',      # Use CG instead of quickmin (instanton)
     'qdo_ins',    # Find instanton
     'qdo_pre',    # Calculate prefactor (instanton)
+    # The next keyword pertains to the periodic NBO code of JR Schmidt's group
+    # at UW-Madison (https://github.com/jrschmidt2/periodic-NBO)
+    'lnbo',    # Enable NBO analysis
 ]
 
 list_int_keys = [
@@ -738,7 +739,7 @@ dict_keys = [
                   # 'U':4.0, 'J':0.9}, ...}
 ]
 
-keys = [
+keys: List[str] = [
     # 'NBLOCK' and KBLOCK       inner block; outer block
     # 'NPACO' and APACO         distance and nr. of slots for P.C.
     # 'WEIMIN, EBREAK, DEPER    special control tags
@@ -769,6 +770,9 @@ class GenerateVaspInput(object):
         'scan-rvv10': {'metagga': 'SCAN', 'luse_vdw': True, 'bparam': 15.7},
         # vdW-DFs
         'vdw-df': {'gga': 'RE', 'luse_vdw': True, 'aggac': 0.},
+        'vdw-df-cx': {'gga': 'CX', 'luse_vdw': True, 'aggac': 0.},
+        'vdw-df-cx0p': {'gga': 'CX', 'luse_vdw': True, 'aggac': 0.,
+                        'lhfcalc': True, 'aexx': 0.2, 'aggax': 0.8},
         'optpbe-vdw': {'gga': 'OR', 'luse_vdw': True, 'aggac': 0.0},
         'optb88-vdw': {'gga': 'BO', 'luse_vdw': True, 'aggac': 0.0,
                        'param1': 1.1 / 6.0, 'param2': 0.22},
@@ -841,7 +845,12 @@ class GenerateVaspInput(object):
             # Switch to disable writing constraints to POSCAR
             'ignore_constraints': False,
             # Net charge for the whole system; determines nelect if not 0
+            'charge': None,
+            # Deprecated older parameter which works just like "charge" but
+            # with the sign flipped
             'net_charge': None,
+            # Custom key-value pairs, written to INCAR with *no* type checking
+            'custom': {},
         }
 
     def set_xc_params(self, xc):
@@ -1211,21 +1220,32 @@ class GenerateVaspInput(object):
         incar.write('INCAR created by Atomic Simulation Environment\n')
         for key, val in self.float_params.items():
             if key == 'nelect':
+                charge = p.get('charge')
+                # Handle deprecated net_charge parameter (remove at some point)
+                net_charge = p.get('net_charge')
+                if net_charge is not None:
+                   warnings.warn('`net_charge`, which is given in units of '
+                        'the *negative* elementary charge (i.e., the opposite '
+                        'of what one normally calls charge) has been '
+                        'deprecated in favor of `charge`, which is given in '
+                        'units of the positive elementary charge as usual',
+                        category=FutureWarning)
+                   if charge is not None and charge != -net_charge:
+                      raise ValueError("can't give both net_charge and charge")
+                   charge = -net_charge
                 # We need to determine the nelect resulting from a given net
                 # charge in any case if it's != 0, but if nelect is
                 # additionally given explicitly, then we need to determine it
                 # even for net charge of 0 to check for conflicts
-                if 'net_charge' in p and p['net_charge'] is not None \
-                and (p['net_charge'] != 0 or val is not None):
-                    net_charge = p['net_charge']
+                if charge is not None and (charge != 0 or val is not None):
                     default_nelect = self.default_nelect_from_ppp()
-                    nelect_from_net_charge = default_nelect + net_charge
-                    if val is not None and val != nelect_from_net_charge:
+                    nelect_from_charge = default_nelect - charge
+                    if val is not None and val != nelect_from_charge:
                         raise ValueError('incompatible input parameters: '
-                                         'nelect=%s, but net_charge=%s '
+                                         'nelect=%s, but charge=%s '
                                          '(neutral nelect is %s)'
-                                         % (val, net_charge, default_nelect))
-                    val = nelect_from_net_charge
+                                         % (val, charge, default_nelect))
+                    val = nelect_from_charge
             if val is not None:
                 incar.write(' %s = %5.6f\n' % (key.upper(), val))
         for key, val in self.exp_params.items():
@@ -1318,7 +1338,7 @@ class GenerateVaspInput(object):
             if val is not None:
                 incar.write(' %s = ' % key.upper())
                 if key == 'lreal':
-                    if isinstance(val, basestring):
+                    if isinstance(val, str):
                         incar.write(val + '\n')
                     elif isinstance(val, bool):
                         if val:
@@ -1366,6 +1386,13 @@ class GenerateVaspInput(object):
             incar.write(' magmom = '.upper())
             [incar.write('%i*%.4f ' % (mom[0], mom[1])) for mom in list]
             incar.write('\n')
+
+        # Custom key-value pairs, which receive no formatting
+        # Use the comment "# <Custom ASE key>" to denote such a custom key-value pair
+        # We cannot otherwise reliably and easily identify such non-standard entries
+        custom_kv_pairs = p.get('custom')
+        for key, value in custom_kv_pairs.items():
+            incar.write(' {} = {}  # <Custom ASE key>\n'.format(key.upper(), value))
         incar.close()
 
     def write_kpoints(self, directory='./', **kwargs):
@@ -1451,6 +1478,7 @@ class GenerateVaspInput(object):
         file = open(filename, 'r')
         file.readline()
         lines = file.readlines()
+
         for line in lines:
             try:
                 # Make multiplication, comments, and parameters easier to spot
@@ -1464,7 +1492,18 @@ class GenerateVaspInput(object):
                 elif data[0][0] in ['#', '!']:
                     continue
                 key = data[0].lower()
-                if key in float_keys:
+                if '<Custom ASE key>' in line:
+                    # This key was added with custom key-value pair formatting.
+                    # Unconditionally add it, no type checking
+                    # Get value between "=" and the comment, e.g.
+                    # key = 1 2 3  # <Custom ASE key>
+                    # value should be '1 2 3'
+                    value = line.split('=', 1)[1]  # Split at first occurence of "="
+                    # First "#" denotes beginning of comment
+                    # Add everything before comment as a string to custom dict
+                    value = value.split('#', 1)[0].strip()
+                    self.input_params['custom'][key] = value
+                elif key in float_keys:
                     self.float_params[key] = float(data[2])
                 elif key in exp_keys:
                     self.exp_params[key] = float(data[2])
@@ -1565,9 +1604,14 @@ class GenerateVaspInput(object):
                 raise IOError('Value missing for keyword "%s".' % key)
 
     def read_kpoints(self, filename='KPOINTS'):
-        file = open(filename, 'r')
-        lines = file.readlines()
-        file.close()
+        # If we used VASP builtin kspacing,
+        if self.float_params['kspacing'] is not None:
+            # Don't update kpts array
+            return
+
+        with open(filename, 'r') as fd:
+            lines = fd.readlines()
+
         ktype = lines[2].split()[0].lower()[0]
         if ktype in ['g', 'm', 'a']:
             if ktype == 'g':
@@ -1630,9 +1674,7 @@ class GenerateVaspInput(object):
         dct = {}
         for item in dict_list:
             dct.update(getattr(self, item))
-        for key, val in list(dct.items()):
-            if val is None:
-                del(dct[key])
+        dct = {key: value for key, value in dct.items() if value is not None}
         return dct
 
 

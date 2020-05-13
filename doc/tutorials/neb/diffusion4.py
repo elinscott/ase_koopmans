@@ -7,7 +7,7 @@ from ase.optimize import BFGS
 images = read('neb.traj@-5:')
 
 for i in range(1, len(images) - 1):
-    images[i].set_calculator(EMT())
+    images[i].calc = EMT()
 
 neb = NEB(images)
 qn = BFGS(neb, trajectory='neb_restart.traj')

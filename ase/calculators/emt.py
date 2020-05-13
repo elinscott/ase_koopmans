@@ -50,8 +50,8 @@ class EMT(Calculator):
     older EMT implementations, although the results are not
     bitwise identical.
     """
-    implemented_properties = ['energy', 'forces', 'stress',
-                              'magmom', 'magmoms']
+    implemented_properties = ['energy', 'energies', 'forces',
+                              'stress', 'magmom', 'magmoms']
 
     nolabel = True
 
@@ -115,6 +115,7 @@ class EMT(Calculator):
             for s2, p2 in self.par.items():
                 self.ksi[s1][s2] = p2['n0'] / p1['n0']
 
+        self.energies = np.empty(len(atoms))
         self.forces = np.empty((len(atoms), 3))
         self.stress = np.empty((3, 3))
         self.sigma1 = np.empty(len(atoms))
@@ -137,6 +138,7 @@ class EMT(Calculator):
         self.nl.update(self.atoms)
 
         self.energy = 0.0
+        self.energies[:] = 0
         self.sigma1[:] = 0.0
         self.forces[:] = 0.0
         self.stress[:] = 0.0
@@ -165,13 +167,16 @@ class EMT(Calculator):
             except (OverflowError, ValueError):
                 self.deds[a] = 0.0
                 self.energy -= p['E0']
+                self.energies[a] -= p['E0']
                 continue
             x = p['lambda'] * ds
             y = exp(-x)
             z = 6 * p['V0'] * exp(-p['kappa'] * ds)
             self.deds[a] = ((x * y * p['E0'] * p['lambda'] + p['kappa'] * z) /
                             (self.sigma1[a] * beta * p['eta2']))
-            self.energy += p['E0'] * ((1 + x) * y - 1) + z
+            E = p['E0'] * ((1 + x) * y - 1) + z
+            self.energy += E
+            self.energies[a] += E
 
         for a1 in range(natoms):
             Z1 = numbers[a1]
@@ -188,6 +193,7 @@ class EMT(Calculator):
                     self.interact2(a1, a2, d, r, p1, p2, ksi[Z2])
 
         self.results['energy'] = self.energy
+        self.results['energies'] = self.energies
         self.results['free_energy'] = self.energy
         self.results['forces'] = self.forces
 
@@ -207,6 +213,8 @@ class EMT(Calculator):
         y2 = (0.5 * p2['V0'] * exp(-p1['kappa'] * (r / beta - p1['s0'])) /
               ksi / p2['gamma2'] * theta)
         self.energy -= y1 + y2
+        self.energies[a1] -= (y1 + y2) / 2
+        self.energies[a2] -= (y1 + y2) / 2
         f = ((y1 * p2['kappa'] + y2 * p1['kappa']) / beta +
              (y1 + y2) * self.acut * theta * x) * d / r
         self.forces[a1] += f

@@ -1,11 +1,9 @@
-from __future__ import print_function
-
 import argparse
 import sys
 import textwrap
+from importlib import import_module
 
 from ase import __version__
-from ase.utils import import_module
 
 
 class CLIError(Exception):
@@ -19,7 +17,7 @@ class CLIError(Exception):
 # python3 -m ase.cli.completion to update autocompletion.
 commands = [
     ('info', 'ase.cli.info'),
-    #('show', 'ase.cli.show'),
+    # ('show', 'ase.cli.show'),
     ('test', 'ase.test'),
     ('gui', 'ase.gui.ag'),
     ('db', 'ase.db.cli'),
@@ -29,6 +27,7 @@ commands = [
     ('eos', 'ase.eos'),
     ('ulm', 'ase.io.ulm'),
     ('find', 'ase.cli.find'),
+    ('nebplot', 'ase.cli.nebplot'),
     ('nomad-upload', 'ase.cli.nomad'),
     ('nomad-get', 'ase.cli.nomadget'),
     ('convert', 'ase.cli.convert'),

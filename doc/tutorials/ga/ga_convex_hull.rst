@@ -14,7 +14,7 @@ We will create an initial population of (111) slabs each with a random compositi
 The candidates are evaluated with the :mod:`EMT potential <ase.calculators.emt>`. To make comparisons between different compositions we define the mixing or excess energy by:
 
 .. math:: E_\text{mixing} = E_{AB} - \frac{E_A \cdot n_A}{N} - \frac{E_B \cdot n_B}{N}
-          
+
 where `E_\text{AB}` is the energy of the mixed slab, `E_A` and `E_B` are the energies of the pure A and B slabs respectively.
 
 We will take advantage of the :class:`ase.ga.population.RankFitnessPopulation`, that allows us to optimize a full composition range at once. It works by grouping candidates according to a variable (composition in this case) and then ranking candidates within each group. This means that the fittest candidate in each group is given equal fitness and has the same probability for being selected for procreation. This means that the entire convex hull is mapped out contrary to just the candidates with lowest mixing energies. This "all in one" approach is more efficient than running each composition individually since the chemical ordering is similar for different compositions.
@@ -29,9 +29,9 @@ Initial population
 We choose a population size large enough so that the entire composition range will be represented in the population. The pure slabs are set up using experimental lattice constants, and for the mixed slabs we use Vegard's law (interpolation). :download:`ga_convex_start.py`
 
 .. literalinclude:: ga_convex_start.py
-                    
+
 Now we have the file :file:`hull.db`, that can be examined like a regular :mod:`ase.db` database. The first row is special as it contains the parameters we have chosen to save (population size, reference energies,  etc.). The rest of the rows are candidates marked with ``relaxed=0`` for not evaluated, ``queued=1`` for a candidate submitted for evaluation using a queueing system on a computer cluster and ``relaxed=1`` for evaluated candidates.
-                    
+
 Run the algorithm
 =================
 
@@ -40,11 +40,13 @@ With the database properly initiated we are ready to start the GA. Below is a sh
 .. literalinclude:: ga_convex_run.py
 
 We can evaluate the results of the algorithm continuously while the database is being updated. We use the :class:`ase.phasediagram.PhaseDiagram` to plot the convex hull. In the script below we retrieve the evaluated candidates and plot the convex hull. We also write a trajectory file with all the candidates that make up the convex hull. :download:`plot_convex_hull.py`
-                    
+
 .. literalinclude:: plot_convex_hull.py
-                    
+
 All evaluated structures are put in the plot, if the number of points is disturbing the plot try to put ``only_plot_simplices=True`` instead of ``only_label_simplices=True``.
-                    
+
+.. image:: hull.png
+
 We then view the structures on the convex hull by doing (on the command-line)::
 
     $ ase gui hull.traj
@@ -81,7 +83,7 @@ The list of elements in the candidate determines the structure completely, thus 
             dup = db.is_duplicate(atoms_string=atoms_string)
 
 .. _symmetry:
-            
+
 Symmetric duplicate identification
 ==================================
 
@@ -113,7 +115,7 @@ The nearest neighbor average is put in ``candidate.info['key_value_pairs']`` as 
        set_raw_score(a, -get_mixing_energy(a))
        db.add_relaxed_step(a)
    pop.update()
-   
+
    ...
 
    # If a candidate is not an exact duplicate the nnmat should be calculated

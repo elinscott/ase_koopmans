@@ -1,9 +1,7 @@
-from __future__ import print_function
-
 # lammps.py (2011/03/29)
 # An ASE calculator for the LAMMPS classical MD code available from
 #       http://lammps.sandia.gov/
-# The environment variable LAMMPS_COMMAND must be defined to point to the
+# The environment variable ASE_LAMMPSRUN_COMMAND must be defined to point to the
 # LAMMPS binary.
 #
 # Copyright (C) 2009 - 2011 Joerg Meyer, joerg.meyer@ch.tum.de
@@ -27,19 +25,19 @@ from __future__ import print_function
 import os
 import shutil
 import shlex
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 from threading import Thread
 from re import compile as re_compile, IGNORECASE
 from tempfile import mkdtemp, NamedTemporaryFile, mktemp as uns_mktemp
 import inspect
 import warnings
+from typing import Dict, Any
 import numpy as np
 
 from ase import Atoms
 from ase.parallel import paropen
 from ase.calculators.calculator import Calculator
 from ase.calculators.calculator import all_changes
-from ase.utils import basestring as asestring
 from ase.data import chemical_symbols
 from ase.data import atomic_masses
 from ase.io.lammpsdata import write_lammps_data
@@ -56,13 +54,15 @@ class LAMMPS(Calculator):
     """The LAMMPS calculators object
 
     files: list
-        List of files typically containing relevant potentials for the calculation
+        List of files typically containing relevant potentials for the
+        calculation
     parameters: dict
         Dictionary of settings to be passed into the input file for calculation.
     specorder: list
         Within LAAMPS, atoms are identified by an integer value starting from 1.
-        This variable allows the user to define the order of the indices assigned to the
-        atoms in the calculation, with the default if not given being alphabetical
+        This variable allows the user to define the order of the indices
+        assigned to the atoms in the calculation, with the default
+        if not given being alphabetical
     keep_tmp_files: bool
         Retain any temporary files created. Mostly useful for debugging.
     tmp_dir: str
@@ -104,10 +104,11 @@ potentials)
 
     lammps = LAMMPS(parameters=parameters, files=files)
 
-    NiH.set_calculator(lammps)
+    NiH.calc = lammps
     print("Energy ", NiH.get_potential_energy())
 
-(Remember you also need to set the environment variable ``$LAMMPS_COMMAND``)
+(Remember you also need to set the environment variable
+``$ASE_LAMMPSRUN_COMMAND``)
 
     """
 
@@ -115,7 +116,7 @@ potentials)
     implemented_properties = ["energy", "forces", "stress", "energies"]
 
     # parameters to choose options in LAMMPSRUN
-    ase_parameters = dict(
+    ase_parameters: Dict[str, Any] = dict(
         specorder=None,
         always_triclinic=False,
         keep_alive=True,
@@ -330,9 +331,15 @@ potentials)
         # Close lammps input and wait for lammps to end. Return process
         # return value
         if self._lmp_alive():
-            self._lmp_handle.stdin.close()
             # !TODO: handle lammps error codes
-            # return self._lmp_handle.wait()
+            try:
+                self._lmp_handle.communicate(timeout=5)
+            except TimeoutExpired:
+                self._lmp_handle.kill()
+                self._lmp_handle.communicate()
+            err = self._lmp_handle.poll()
+            assert err is not None
+            return err
 
     def set_missing_parameters(self):
         """Verify that all necessary variables are set.
@@ -405,6 +412,8 @@ potentials)
                 prefix="data_" + label,
                 dir=self.parameters.tmp_dir,
                 delete=(not self.parameters.keep_tmp_files),
+                mode='w',
+                encoding='ascii'
             )
             write_lammps_data(
                 lammps_data_fd,
@@ -497,7 +506,7 @@ potentials)
 
         self.forces = trj_atoms.get_forces()
         # !TODO: trj_atoms is only the last snapshot of the system; Is it
-        #        desireable to save also the inbetween steps?
+        #        desirable to save also the inbetween steps?
         if self.parameters.trajectory_out is not None:
             # !TODO: is it advisable to create here temporary atoms-objects
             self.trajectory_out.write(trj_atoms)
@@ -534,6 +543,12 @@ potentials)
 
         os.chdir(cwd)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self._lmp_end()
+
     def read_lammps_log(self, lammps_log=None):
         # !TODO: somehow communicate 'thermo_content' explicitly
         """Method which reads a LAMMPS output log file."""
@@ -541,7 +556,7 @@ potentials)
         if lammps_log is None:
             lammps_log = self.label + ".log"
 
-        if isinstance(lammps_log, asestring):
+        if isinstance(lammps_log, str):
             fileobj = paropen(lammps_log, "wb")
             close_log_file = True
         else:
@@ -550,7 +565,7 @@ potentials)
             close_log_file = False
 
         # read_log depends on that the first (three) thermo_style custom args
-        # can be capitilized and matched against the log output. I.e.
+        # can be capitalized and matched against the log output. I.e.
         # don't use e.g. 'ke' or 'cpu' which are labeled KinEng and CPU.
         _custom_thermo_mark = " ".join(
             [x.capitalize() for x in self.parameters.thermo_args[0:3]]
@@ -572,7 +587,7 @@ potentials)
             if 'ERROR:' in line:
                 if close_log_file:
                     fileobj.close()
-                raise RuntimeError('LAMMPS exits with error message: {}'.format(line))
+                raise RuntimeError(f'LAMMPS exits with error message: {line}')
 
             # get thermo output
             if line.startswith(_custom_thermo_mark):
@@ -659,7 +674,7 @@ if __name__ == "__main__":
     print("forces for a = {0}".format(a0))
     print(calc.get_forces(bulk))
     # single points for various lattice constants
-    bulk.set_calculator(calc)
+    bulk.calc = calc
     for i in range(-5, 5, 1):
         a = a0 * (1 + i / 100.0)
         bulk.set_cell([a] * 3)

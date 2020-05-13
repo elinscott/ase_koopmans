@@ -42,7 +42,7 @@ The entire class can be used with few commands:
 * There is also a wrapper to get radial distribution functions :func:`Analysis.get_rdf()`.
 
 The main difference between properties (getters) and functions here is, that getters provide data that is cached.
-This means that getting information from ``Analysis.all_bonds`` more than once is instantanious, since the information is cached in ``Analysis._cache``.
+This means that getting information from ``Analysis.all_bonds`` more than once is instantaneous, since the information is cached in ``Analysis._cache``.
 If you call any ``Analysis.get_xxx()`` the information is calculated from the cached data, meaning each call will take the same amount of time.
 
 

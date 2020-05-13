@@ -1,6 +1,5 @@
 import numpy as np
 from ase.atoms import Atoms
-from ase.utils import basestring
 
 
 def read_dftb(filename='dftb_in.hsd'):
@@ -76,7 +75,7 @@ def read_dftb(filename='dftb_in.hsd'):
                and 'TypesAndCoordinates' not in line):
                 typeindexstr, xxx, yyy, zzz = line.split()[:4]
                 typeindex = int(typeindexstr)
-                symbol = type_names[typeindex-1]
+                symbol = type_names[typeindex - 1]
                 atom_symbols.append(symbol)
                 atoms_pos.append([float(xxx), float(yyy), float(zzz)])
 
@@ -95,7 +94,7 @@ def read_dftb_velocities(atoms, filename='geo_end.xyz'):
     """
     from ase.units import second
     # AA/ps -> ase units
-    AngdivPs2ASE = 1.0/(1e-12*second)
+    AngdivPs2ASE = 1.0 / (1e-12 * second)
 
     myfile = open(filename)
 
@@ -111,19 +110,19 @@ def read_dftb_velocities(atoms, filename='geo_end.xyz'):
     last_lines = lines_ok[-natoms:]
     for iline, line in enumerate(last_lines):
         inp = line.split()
-        velocities.append([float(inp[5])*AngdivPs2ASE,
-                           float(inp[6])*AngdivPs2ASE,
-                           float(inp[7])*AngdivPs2ASE])
+        velocities.append([float(inp[5]) * AngdivPs2ASE,
+                           float(inp[6]) * AngdivPs2ASE,
+                           float(inp[7]) * AngdivPs2ASE])
 
     atoms.set_velocities(velocities)
     return atoms
 
 
-def read_dftb_lattice(fileobj='md.out',images=None):
-    """
-    Read lattice vectors from MD and return them as a list. If a molecules are parsed add them there.
-    """
-    if isinstance(fileobj, basestring):
+def read_dftb_lattice(fileobj='md.out', images=None):
+    """Read lattice vectors from MD and return them as a list.
+
+    If a molecules are parsed add them there."""
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     if images is not None:
@@ -138,28 +137,28 @@ def read_dftb_lattice(fileobj='md.out',images=None):
     for line in fileobj:
         if 'Lattice vectors' in line:
             vec = []
-            for i in range(3): #DFTB+ only supports 3D PBC
+            for i in range(3):  # DFTB+ only supports 3D PBC
                 line = fileobj.readline().split()
                 try:
                     line = [float(x) for x in line]
                 except ValueError:
-                    raise ValueError('Lattice vector elements should be of type float.')
+                    raise ValueError('Lattice vector elements should be of '
+                                     'type float.')
                 vec.extend(line)
-            lattices.append(np.array(vec).reshape((3,3)))
+            lattices.append(np.array(vec).reshape((3, 3)))
 
     if append:
         if len(images) != len(lattices):
-            raise ValueError('Length of images given does not match number of cell vectors found')
+            raise ValueError('Length of images given does not match number of '
+                             'cell vectors found')
 
-        for i,atoms in enumerate(images):
+        for i, atoms in enumerate(images):
             atoms.set_cell(lattices[i])
-            #DFTB+ only supports 3D PBC
+            # DFTB+ only supports 3D PBC
             atoms.set_pbc(True)
         return
     else:
         return lattices
-
-
 
 
 def write_dftb_velocities(atoms, filename='velocities.txt'):
@@ -170,7 +169,7 @@ def write_dftb_velocities(atoms, filename='velocities.txt'):
     # ase units -> atomic units
     ASE2au = Bohr / AUT
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         myfile = open(filename, 'w')
     else:
         # Assume it's a 'file-like object'
@@ -199,7 +198,7 @@ def write_dftb(filename, atoms):
     for i in indexes:
         atomsnew = atomsnew + atoms[i]
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         myfile = open(filename, 'w')
     else:
         # Assume it's a 'file-like object'
@@ -218,16 +217,16 @@ def write_dftb(filename, atoms):
     for i in chemsym:
         if i not in allchem:
             allchem = allchem + i + ' '
-    myfile.write(allchem+' \n')
+    myfile.write(allchem + ' \n')
 
     coords = atomsnew.get_positions()
     itype = 1
     for iatom, coord in enumerate(coords):
         if iatom > 0:
-            if chemsym[iatom] != chemsym[iatom-1]:
-                itype = itype+1
+            if chemsym[iatom] != chemsym[iatom - 1]:
+                itype = itype + 1
         myfile.write('%5i%5i  %19.16f %19.16f %19.16f \n'
-                     % (iatom+1, itype,
+                     % (iatom + 1, itype,
                         coords[iatom][0], coords[iatom][1], coords[iatom][2]))
     # write box
     if (any(ispbc)):
@@ -240,5 +239,5 @@ def write_dftb(filename, atoms):
         myfile.write(' %19.16f %19.16f %19.16f \n'
                      % (box[2][0], box[2][1], box[2][2]))
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         myfile.close()

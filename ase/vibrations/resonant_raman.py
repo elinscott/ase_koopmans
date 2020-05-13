@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-
 """Resonant Raman intensities"""
 
-from __future__ import print_function, division
 import pickle
 import os
 import sys
@@ -10,10 +7,10 @@ import sys
 import numpy as np
 
 import ase.units as u
-from ase.parallel import  world, rank, parprint, paropen
+from ase.parallel import world, parprint, paropen
 from ase.vibrations import Vibrations
 from ase.utils.timing import Timer
-from ase.utils import convert_string_to_fd, basestring
+from ase.utils import convert_string_to_fd
 
 
 class ResonantRaman(Vibrations):
@@ -22,7 +19,7 @@ class ResonantRaman(Vibrations):
     Parameters
     ----------
     overlap : function or False
-        Function to calculate overlaps between excitation at 
+        Function to calculate overlaps between excitation at
         equilibrium and at a displaced position. Calculators are
         given as first and second argument, respectively.
     """
@@ -53,7 +50,7 @@ class ResonantRaman(Vibrations):
             Type of the excitation list object. The class object is
             initialized as::
 
-                Excitations(atoms.get_calculator())
+                Excitations(atoms.calc)
 
             or by reading form a file as::
 
@@ -70,9 +67,11 @@ class ResonantRaman(Vibrations):
                     is the transition energy in Hartrees
         indices: list
         gsname: string
-            name for ground state calculations
+            name for ground state calculations, used in run() and
+            for reading of forces (default 'rraman')
         exname: string
-            name for excited state calculations
+            name for excited state calculations (defaults to gsname),
+            used for reading excitations
         delta: float
             Finite difference displacement in Angstrom.
         nfree: float
@@ -98,14 +97,14 @@ class ResonantRaman(Vibrations):
             Minimal absolute overlap to consider. Defaults to 0.02 to avoid
             numerical garbage.
         minrep: float
-            Minimal represention to consider derivative, defaults to 0.8
+            Minimal representation to consider derivative, defaults to 0.8
         """
         assert(nfree == 2)
         Vibrations.__init__(self, atoms, indices, gsname, delta, nfree)
-        self.name = gsname + '-d%.3f' % delta
+        self.name = gsname
         if exname is None:
             exname = gsname
-        self.exname = exname + '-d%.3f' % delta
+        self.exname = exname
         self.exext = exext
 
         if directions is None:
@@ -132,7 +131,7 @@ class ResonantRaman(Vibrations):
         self.minrep = minrep
 
         self.comm = comm
-        
+
     @property
     def approximation(self):
         return self._approx
@@ -154,11 +153,13 @@ class ResonantRaman(Vibrations):
         if self.overlap:
             # XXXX stupid way to make a copy
             self.atoms.get_potential_energy()
-            self.eq_calculator = self.atoms.get_calculator()
+            calc = self.atoms.calc
             fname = self.exname + '.eq.gpw'
-            self.eq_calculator.write(fname, 'all')
-            self.eq_calculator = self.eq_calculator.__class__(fname)
-            self.eq_calculator.converge_wave_functions()
+            calc.write(fname, 'all')
+            self.eq_calculator = calc.__class__.read(fname)
+            if hasattr(self.eq_calculator, 'converge_wave_functions'):
+                self.eq_calculator.converge_wave_functions()
+
         Vibrations.run(self)
 
     def calculate(self, atoms, filename, fd):
@@ -166,18 +167,18 @@ class ResonantRaman(Vibrations):
         assert(atoms == self.atoms)  # XXX action required
         self.timer.start('Ground state')
         forces = self.atoms.get_forces()
-        if rank == 0:
+        if world.rank == 0:
             pickle.dump(forces, fd, protocol=2)
             fd.close()
         if self.overlap:
             self.timer.start('Overlap')
             """Overlap is determined as
 
-            ov_ij = \int dr displaced*_i(r) eqilibrium_j(r)
+            ov_ij = int dr displaced*_i(r) eqilibrium_j(r)
             """
-            ov_nn = self.overlap(self.atoms.get_calculator(),
+            ov_nn = self.overlap(self.atoms.calc,
                                  self.eq_calculator)
-            if rank == 0:
+            if world.rank == 0:
                 np.save(filename + '.ov', ov_nn)
             self.timer.stop('Overlap')
         self.timer.stop('Ground state')
@@ -185,7 +186,7 @@ class ResonantRaman(Vibrations):
         self.timer.start('Excitations')
         basename, _ = os.path.splitext(filename)
         excitations = self.exobj(
-            self.atoms.get_calculator(), **self.exkwargs)
+            self.atoms.calc, **self.exkwargs)
         excitations.write(basename + self.exext)
         self.timer.stop('Excitations')
 
@@ -207,6 +208,7 @@ class ResonantRaman(Vibrations):
         self.log('reading ' + self.exname + '.eq' + self.exext)
         ex0_object = self.exobj(self.exname + '.eq' + self.exext,
                                 **self.exkwargs)
+        eu = ex0_object.energy_to_eV_scale
         self.timer.stop('really read')
         self.timer.start('index')
         matching = frozenset(ex0_object)
@@ -255,7 +257,6 @@ class ResonantRaman(Vibrations):
 
         self.timer.start('me and energy')
 
-        eu = u.Hartree
         self.ex0E_p = np.array([ex.energy * eu for ex in ex0])
         self.ex0m_pc = (np.array(
             [ex.get_dipole_me(form=self.dipole_form) for ex in ex0]) *
@@ -296,13 +297,14 @@ class ResonantRaman(Vibrations):
 
         We assume that the wave function overlaps are determined as
 
-        ov_ij = \int dr displaced*_i(r) eqilibrium_j(r)
+        ov_ij = int dr displaced*_i(r) eqilibrium_j(r)
         """
         self.timer.start('read excitations')
         self.timer.start('read+rotate')
         self.log('reading ' + self.exname + '.eq' + self.exext)
         ex0 = self.exobj(self.exname + '.eq' + self.exext,
                          **self.exkwargs)
+        eu = ex0.energy_to_eV_scale
         rep0_p = np.ones((len(ex0)), dtype=float)
 
         def load(name, pm, rep0_p):
@@ -321,7 +323,7 @@ class ResonantRaman(Vibrations):
             rep0_p *= (ov_pp.real**2 + ov_pp.imag**2).sum(axis=0)
             self.timer.stop('ex overlap')
             return ex_p, ov_pp
-            
+
         def rotate(ex_p, ov_pp):
             e_p = np.array([ex.energy for ex in ex_p])
             m_pc = np.array(
@@ -356,7 +358,6 @@ class ResonantRaman(Vibrations):
         self.comm.product(rep0_p)
         select = np.where(rep0_p > self.minrep)[0]
 
-        eu = u.Hartree
         self.ex0E_p = np.array([ex.energy * eu for ex in ex0])[select]
         self.ex0m_pc = (np.array(
             [ex.get_dipole_me(form=self.dipole_form)
@@ -497,7 +498,7 @@ class ResonantRaman(Vibrations):
                      m2(alpha_Qcc[:, 0, 0] - alpha_Qcc[:, 2, 2]) +
                      m2(alpha_Qcc[:, 1, 1] - alpha_Qcc[:, 2, 2])) / 2)
         return alpha2_r, gamma2_r, delta2_r
-        
+
     def absolute_intensity(self, omega, gamma=0.1, delta=0):
         """Absolute Raman intensity or Raman scattering factor
 
@@ -519,7 +520,7 @@ class ResonantRaman(Vibrations):
         -------
         raman intensity, unit Ang**4/amu
         """
-        
+
         alpha2_r, gamma2_r, delta2_r = self._invariants(
             self.electronic_me_Qcc(omega, gamma))
         return 45 * alpha2_r + delta * delta2_r + 7 * gamma2_r
@@ -633,8 +634,8 @@ class ResonantRaman(Vibrations):
             ts = str(10**te)
         else:
             ts = '10^{0}'.format(te)
-	
-        if isinstance(log, basestring):
+
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         parprint('-------------------------------------', file=log)
@@ -674,6 +675,7 @@ class LrResonantRaman(ResonantRaman):
         self.log('reading ' + self.exname + '.eq' + self.exext)
         ex0_object = self.exobj(self.exname + '.eq' + self.exext,
                                 **self.exkwargs)
+        eu = ex0_object.energy_to_eV_scale
         self.timer.stop('really read')
         self.timer.start('index')
         matching = frozenset(ex0_object.kss)
@@ -726,7 +728,6 @@ class LrResonantRaman(ResonantRaman):
 
         self.timer.start('me and energy')
 
-        eu = u.Hartree
         self.ex0E_p = np.array([ex.energy * eu for ex in ex0])
 #        self.exmE_p = np.array([ex.energy * eu for ex in exm])
 #        self.expE_p = np.array([ex.energy * eu for ex in exp])

@@ -17,10 +17,10 @@ functional theories.
     You should have received a copy of the GNU Lesser General Public License
     along with ASE.  If not, see <http://www.gnu.org/licenses/>.
 """
-from __future__ import print_function
+from typing import List, Dict, Any
+
 from ase.calculators.calculator import Parameters
 from ase.calculators.openmx.default_settings import default_dictionary
-from ase.units import Ha, Ry
 
 
 # Keys that have length 3
@@ -33,7 +33,7 @@ tuple_float_keys = [
     'scf.Electric.Field',
     'scf.fixed.grid'
 ]
-tuple_bool_keys = [
+tuple_bool_keys: List[str] = [
 
 ]
 integer_keys = [
@@ -62,7 +62,7 @@ integer_keys = [
     'num.LUMOs',
     'MO.Nkpoint',
     'MD.Current.Iter'
-    ]
+]
 float_keys = [
     'scf.Constraint.NC.Spin.v',
     'scf.ElectronicTemperature',
@@ -104,7 +104,7 @@ bool_keys = [
     'scf.Hubbard.U',
     'scf.Constraint.NC.Spin',
     'scf.ProExpn.VNA',
-    'scf.SpinOrbit.Coupling'
+    'scf.SpinOrbit.Coupling',
     'CntOrb.fileout',
     'orderN.Exact.Inverse.S',
     'orderN.Recalc.Buffer',
@@ -118,8 +118,8 @@ bool_keys = [
     'scf.NC.Zeeman.Spin',
     'scf.stress.tensor'
 ]
-list_int_keys = []
-list_bool_keys = []
+list_int_keys: List[str] = []
+list_bool_keys: List[str] = []
 list_float_keys = [
     'Dos.Erange',
 ]
@@ -153,10 +153,10 @@ unit_dat_keywords = {
     'Dos.Erange': 'eV',
     'scf.NC.Mag.Field.Spin': 'Tesla',
     'scf.NC.Mag.Field.Orbital': 'Tesla'
-                     }
+}
 
 
-omx_parameter_defaults = dict(
+omx_parameter_defaults: Dict[str, Any] = dict(
     scf_ngrid=None,
     scf_kgrid=None,
     dos_kgrid=None,
@@ -165,7 +165,7 @@ omx_parameter_defaults = dict(
     level_of_fileout=None,
     species_number=None,
     atoms_number=None,
-    scf_maxiter=None,
+    scf_maxiter=None,          # default 40
     scf_mixing_history=None,
     scf_mixing_startpulay=None,
     scf_mixing_everypulay=None,
@@ -189,14 +189,14 @@ omx_parameter_defaults = dict(
     scf_constraint_nc_spin_v=None,
     scf_electronictemperature=None,
     scf_fixed_grid=None,
-    scf_energycutoff=None,
+    scf_energycutoff=150,
     scf_init_mixing_weight=None,
     scf_min_mixing_weight=None,
     scf_max_mixing_weight=None,
     scf_kerker_factor=None,
-    scf_criterion=None,
+    scf_criterion=None,           # Ha unit defualt 1e-6
     scf_system_charge=None,
-    onedfft_energycutoff=None,  # 1Dfft
+    onedfft_energycutoff=None,    # 1Dfft
     orbitalopt_sd_step=None,
     orbitalopt_criterion=None,
     ordern_hoppingranges=None,
@@ -208,13 +208,13 @@ omx_parameter_defaults = dict(
     system_currentdirectory=None,
     system_name=None,
     data_path=None,
-    atoms_speciesandcoordinates_unit=None,
-    atoms_unitvectors_unit=None,
-    scf_xctype=None,
+    atoms_speciesandcoordinates_unit='Ang',
+    atoms_unitvectors_unit='Ang',
+    scf_xctype='LDA',
     scf_spinpolarization=None,
     scf_hubbard_occupation=None,
-    scf_eigenvaluesolver=None,
-    scf_mixing_type=None,
+    scf_eigenvaluesolver='Cluster',  # Band | Cluster
+    scf_mixing_type='Rmm-Diis',
     orbitalopt_method=None,
     orbitalopt_startpulay=None,
     md_type=None,
@@ -249,24 +249,25 @@ omx_parameter_defaults = dict(
     band_kpath=None,
     mo_kpoint=None,
     wannier_initial_projectors=None,
-    xc='LDA',  # Begining of standard parameters
-    maxiter=200,
-    energy_cutoff=150 * Ry,
-    kpts=(4, 4, 4),
-    band_kpts=tuple(),  # To seperate monkhorst and band kpts
-    eigensolver='Band',
+    xc=None,  # Default is set to 'LDA' as 'scf_xctype' keyword
+    maxiter=None,
+    energy_cutoff=None,  # Please make sure written in eV unit not Ry
+    kpts=None,           # Default value is set to (4, 4, 4) in 'scf_kgrid'
+    band_kpts=tuple(),   # To separate monkhorst and band kpts
+    eigensolver=None,
     spinpol=None,
-    convergence=1e-6 * Ha,
+    convergence=None,
     external=None,
-    mixer='Rmm-Diis',
+    mixer=None,
     charge=None,
     smearing=None,
-    restart=None,  # Begining of calculator parameters
+    restart=None,  # Beginning of calculator parameters
     mpi=None,
     pbs=None,
     debug=False,
     nohup=True,
-    dft_data_dict=None)
+    dft_data_dict=None,  # dft_data_year : Pseudo potential generated year
+    dft_data_year=None)  # writting in 'Definition.Of.Atomic.Species'. 13 or 19
 
 
 class OpenMXParameters(Parameters):
@@ -287,14 +288,13 @@ class OpenMXParameters(Parameters):
     """
 
     allowed_xc = [
-            'LDA',
-            'GGA', 'PBE', 'GGA-PBE',
-            'LSDA',
-            'LSDA-PW',
-            'LSDA-CA',
-            'CA',
-            'PW',
-        ]
+        'LDA',
+        'GGA', 'PBE', 'GGA-PBE',
+        'LSDA',
+        'LSDA-PW',
+        'LSDA-CA',
+        'CA',
+        'PW']
 
     def __init__(self, **kwargs):
         kw = omx_parameter_defaults.copy()

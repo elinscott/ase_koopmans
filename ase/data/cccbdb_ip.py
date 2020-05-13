@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Experimental ionization energies from CCCBDB at
 http://srdata.nist.gov/cccbdb/default.htm

@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
-import pickle
 import sys
 import threading
-from math import sqrt
 
 import numpy as np
 
-import ase.parallel as mpi
+import ase.parallel
 from ase.build import minimize_rotation_and_translation
 from ase.calculators.calculator import Calculator
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io import read
 from ase.optimize import MDMin
 from ase.geometry import find_mic
-from ase.utils import basestring
+from ase.io.trajectory import Trajectory
+from ase.utils import deprecated
+from ase.utils.forcecurve import fit_images
 
 
 class NEB:
@@ -75,14 +74,13 @@ class NEB:
         self.climb = climb
         self.parallel = parallel
         self.natoms = len(images[0])
-        pbc = images[0].pbc
-        atomic_numbers = images[0].get_atomic_numbers()
         for img in images:
             if len(img) != self.natoms:
                 raise ValueError('Images have different numbers of atoms')
-            if (pbc != img.pbc).any():
+            if (img.pbc != images[0].pbc).any():
                 raise ValueError('Images have different boundary conditions')
-            if (atomic_numbers != img.get_atomic_numbers()).any():
+            if (img.get_atomic_numbers() !=
+                images[0].get_atomic_numbers()).any():
                 raise ValueError('Images have atoms in different orders')
         self.nimages = len(images)
         self.emax = np.nan
@@ -106,7 +104,7 @@ class NEB:
         self.k = list(k)
 
         if world is None:
-            world = mpi.world
+            world = ase.parallel.world
         self.world = world
 
         if parallel:
@@ -116,36 +114,30 @@ class NEB:
         self.energies = None  # ndarray of shape (nimages,)
 
     def interpolate(self, method='linear', mic=False):
+        """Interpolate the positions of the interior images between the
+        initial state (image 0) and final state (image -1).
+
+        method: str
+            Method by which to interpolate: 'linear' or 'idpp'.
+            linear provides a standard straight-line interpolation, while
+            idpp uses an image-dependent pair potential.
+        mic: bool
+            Use the minimum-image convention when interpolating.
+        """
         if self.remove_rotation_and_translation:
             minimize_rotation_and_translation(self.images[0], self.images[-1])
 
         interpolate(self.images, mic)
 
         if method == 'idpp':
-            self.idpp_interpolate(traj=None, log=None, mic=mic)
+            idpp_interpolate(images=self, traj=None, log=None, mic=mic)
 
+    @deprecated("Please use NEB's interpolate(method='idpp') method or "
+                "directly call the idpp_interpolate function from ase.neb")
     def idpp_interpolate(self, traj='idpp.traj', log='idpp.log', fmax=0.1,
                          optimizer=MDMin, mic=False, steps=100):
-        d1 = self.images[0].get_all_distances(mic=mic)
-        d2 = self.images[-1].get_all_distances(mic=mic)
-        d = (d2 - d1) / (self.nimages - 1)
-        old = []
-        for i, image in enumerate(self.images):
-            old.append(image.calc)
-            image.calc = IDPP(d1 + i * d, mic=mic)
-        opt = optimizer(self, trajectory=traj, logfile=log)
-        # BFGS was originally used by the paper, but testing shows that
-        # MDMin results in nearly the same results in 3-4 orders of magnitude
-        # less time. Known working optimizers = BFGS, MDMin, FIRE, HessLBFGS
-        # Internal testing shows BFGS is only needed in situations where MDMIN
-        # cannot converge easily and tends to be obvious on inspection.
-        #
-        # askhl: 3-4 orders of magnitude difference cannot possibly be
-        # true unless something is actually broken.  Should it not be
-        # "3-4 times"?
-        opt.run(fmax=fmax, steps=steps)
-        for image, calc in zip(self.images, old):
-            image.calc = calc
+        idpp_interpolate(self, traj=traj, log=log, fmax=fmax,
+                         optimizer=optimizer, mic=mic, steps=steps)
 
     def get_positions(self):
         positions = np.empty(((self.nimages - 2) * self.natoms, 3))
@@ -182,7 +174,7 @@ class NEB:
         n = self.natoms
         f_i = self.get_forces()
         fmax_images = []
-        for i in range(self.nimages-2):
+        for i in range(self.nimages - 2):
             n1 = n * i
             n2 = n + n * i
             fmax_images.append(np.sqrt((f_i[n1:n2]**2).sum(axis=1)).max())
@@ -206,8 +198,6 @@ class NEB:
         energies = np.empty(self.nimages)
 
         if self.remove_rotation_and_translation:
-            # Remove translation and rotation between
-            # images before computing forces:
             for i in range(1, self.nimages):
                 minimize_rotation_and_translation(images[i - 1], images[i])
 
@@ -440,10 +430,10 @@ class IDPP(Calculator):
 
 
 class SingleCalculatorNEB(NEB):
-    def __init__(self, images, k=0.1, climb=False):
-        if isinstance(images, basestring):
+    def __init__(self, images, k=0.1, climb=False, index=None):
+        if isinstance(images, str):
             # this is a filename
-            images = read(images)
+            images = read(images, index=index)
 
         NEB.__init__(self, images, k, climb, False)
         self.calculators = [None] * self.nimages
@@ -495,7 +485,7 @@ class SingleCalculatorNEB(NEB):
         calculators = []
         for i, image in enumerate(self.images):
             if self.calculators[i] is None:
-                calculators.append(image.get_calculator())
+                calculators.append(image.calc)
             else:
                 calculators.append(self.calculators[i])
         return calculators
@@ -511,10 +501,10 @@ class SingleCalculatorNEB(NEB):
         n = len(calculators)
         if n == self.nimages:
             for i in range(self.nimages):
-                self.images[i].set_calculator(calculators[i])
+                self.images[i].calc = calculators[i]
         elif n == self.nimages - 2:
             for i in range(1, self.nimages - 1):
-                self.images[i].set_calculator(calculators[i - 1])
+                self.images[i].calc = calculators[i - 1]
         else:
             raise RuntimeError(
                 'len(calculators)=%d does not fit to len(images)=%d'
@@ -529,17 +519,16 @@ class SingleCalculatorNEB(NEB):
 
         def calculate_and_hide(i):
             image = self.images[i]
-            calc = image.get_calculator()
+            calc = image.calc
             if self.calculators[i] is None:
                 self.calculators[i] = calc
             if calc is not None:
                 if not isinstance(calc, SinglePointCalculator):
-                    self.images[i].set_calculator(
-                        SinglePointCalculator(
-                            image,
-                            energy=image.get_potential_energy(
-                                apply_constraint=False),
-                            forces=image.get_forces(apply_constraint=False)))
+                    self.images[i].calc = SinglePointCalculator(
+                        image,
+                        energy=image.get_potential_energy(
+                            apply_constraint=False),
+                        forces=image.get_forces(apply_constraint=False))
                 self.emax = min(self.emax, image.get_potential_energy())
 
         if self.first:
@@ -563,7 +552,6 @@ class SingleCalculatorNEB(NEB):
         return self.nimages
 
     def write(self, filename):
-        from ase.io.trajectory import Trajectory
         traj = Trajectory(filename, 'w', self)
         traj.write()
         traj.close()
@@ -572,136 +560,6 @@ class SingleCalculatorNEB(NEB):
         for image in other:
             self.images.append(image)
         return self
-
-
-def fit0(E, F, R, cell=None, pbc=None):
-    """Constructs curve parameters from the NEB images."""
-    E = np.array(E) - E[0]
-    n = len(E)
-    Efit = np.empty((n - 1) * 20 + 1)
-    Sfit = np.empty((n - 1) * 20 + 1)
-
-    s = [0]
-    dR = np.zeros_like(R)
-    for i in range(n):
-        if i < n - 1:
-            dR[i] = R[i + 1] - R[i]
-            if cell is not None and pbc is not None:
-                dR[i], _ = find_mic(dR[i], cell, pbc)
-            s.append(s[i] + sqrt((dR[i]**2).sum()))
-        else:
-            dR[i] = R[i] - R[i - 1]
-            if cell is not None and pbc is not None:
-                dR[i], _ = find_mic(dR[i], cell, pbc)
-
-    lines = []
-    dEds0 = None
-    for i in range(n):
-        d = dR[i]
-        if i == 0:
-            ds = 0.5 * s[1]
-        elif i == n - 1:
-            ds = 0.5 * (s[-1] - s[-2])
-        else:
-            ds = 0.25 * (s[i + 1] - s[i - 1])
-
-        d = d / sqrt((d**2).sum())
-        dEds = -(F[i] * d).sum()
-        x = np.linspace(s[i] - ds, s[i] + ds, 3)
-        y = E[i] + dEds * (x - s[i])
-        lines.append((x, y))
-
-        if i > 0:
-            s0 = s[i - 1]
-            s1 = s[i]
-            x = np.linspace(s0, s1, 20, endpoint=False)
-            c = np.linalg.solve(np.array([(1, s0, s0**2, s0**3),
-                                          (1, s1, s1**2, s1**3),
-                                          (0, 1, 2 * s0, 3 * s0**2),
-                                          (0, 1, 2 * s1, 3 * s1**2)]),
-                                np.array([E[i - 1], E[i], dEds0, dEds]))
-            y = c[0] + x * (c[1] + x * (c[2] + x * c[3]))
-            Sfit[(i - 1) * 20:i * 20] = x
-            Efit[(i - 1) * 20:i * 20] = y
-
-        dEds0 = dEds
-
-    Sfit[-1] = s[-1]
-    Efit[-1] = E[-1]
-    return s, E, Sfit, Efit, lines
-
-
-class NEBTools:
-    """Class to make many of the common tools for NEB analysis available to
-    the user. Useful for scripting the output of many jobs. Initialize with
-    list of images which make up a single band."""
-
-    def __init__(self, images):
-        self._images = images
-
-    def get_barrier(self, fit=True, raw=False):
-        """Returns the barrier estimate from the NEB, along with the
-        Delta E of the elementary reaction. If fit=True, the barrier is
-        estimated based on the interpolated fit to the images; if
-        fit=False, the barrier is taken as the maximum-energy image
-        without interpolation. Set raw=True to get the raw energy of the
-        transition state instead of the forward barrier."""
-        s, E, Sfit, Efit, lines = self.get_fit()
-        dE = E[-1] - E[0]
-        if fit:
-            barrier = max(Efit)
-        else:
-            barrier = max(E)
-        if raw:
-            barrier += self._images[0].get_potential_energy()
-        return barrier, dE
-
-    def plot_band(self, ax=None):
-        """Plots the NEB band on matplotlib axes object 'ax'. If ax=None
-        returns a new figure object."""
-        ax = plot_band_from_fit(*self.get_fit(), ax=ax)
-        return ax.figure
-
-    def get_fmax(self, **kwargs):
-        """Returns fmax, as used by optimizers with NEB."""
-        neb = NEB(self._images, **kwargs)
-        forces = neb.get_forces()
-        return np.sqrt((forces**2).sum(axis=1).max())
-
-    def get_fit(self):
-        """Returns the parameters for fitting images to band."""
-        images = self._images
-        R = [atoms.positions for atoms in images]
-        E = [atoms.get_potential_energy() for atoms in images]
-        F = [atoms.get_forces() for atoms in images]
-        A = images[0].cell
-        pbc = images[0].pbc
-        s, E, Sfit, Efit, lines = fit0(E, F, R, A, pbc)
-        return s, E, Sfit, Efit, lines
-
-
-def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
-    if ax is None:
-        import matplotlib.pyplot as plt
-        ax = plt.gca()
-
-    ax.plot(s, E, 'o')
-    for x, y in lines:
-        ax.plot(x, y, '-g')
-    ax.plot(Sfit, Efit, 'k-')
-    ax.set_xlabel(r'path [$\AA$]')
-    ax.set_ylabel('energy [eV]')
-    Ef = max(Efit) - E[0]
-    Er = max(Efit) - E[-1]
-    dE = E[-1] - E[0]
-    ax.set_title('$E_\\mathrm{f} \\approx$ %.3f eV; '
-                 '$E_\\mathrm{r} \\approx$ %.3f eV; '
-                 '$\\Delta E$ = %.3f eV'
-                 % (Ef, Er, dE))
-    return ax
-
-
-NEBtools = NEBTools  # backwards compatibility
 
 
 def interpolate(images, mic=False):
@@ -717,9 +575,163 @@ def interpolate(images, mic=False):
         images[i].set_positions(pos1 + i * d)
 
 
-if __name__ == '__main__':
-    # This stuff is used by ASE's GUI
-    import matplotlib.pyplot as plt
-    fit = pickle.load(sys.stdin)
-    plot_band_from_fit(*fit)
-    plt.show()
+def idpp_interpolate(images, traj='idpp.traj', log='idpp.log', fmax=0.1,
+                     optimizer=MDMin, mic=False, steps=100):
+    """Interpolate using the IDPP method. 'images' can either be a plain
+    list of images or an NEB object (containing a list of images)."""
+    if hasattr(images, 'interpolate'):
+        neb = images
+    else:
+        neb = NEB(images)
+    d1 = neb.images[0].get_all_distances(mic=mic)
+    d2 = neb.images[-1].get_all_distances(mic=mic)
+    d = (d2 - d1) / (neb.nimages - 1)
+    real_calcs = []
+    for i, image in enumerate(neb.images):
+        real_calcs.append(image.calc)
+        image.calc = IDPP(d1 + i * d, mic=mic)
+    opt = optimizer(neb, trajectory=traj, logfile=log)
+    opt.run(fmax=fmax, steps=steps)
+    for image, calc in zip(neb.images, real_calcs):
+        image.calc = calc
+
+
+class NEBTools:
+    """Class to make many of the common tools for NEB analysis available to
+    the user. Useful for scripting the output of many jobs. Initialize with
+    list of images which make up one or more band of the NEB relaxation."""
+
+    def __init__(self, images):
+        self.images = images
+
+    @deprecated('NEBTools.get_fit() is deprecated.  '
+                'Please use ase.utils.forcecurve.fit_images(images).')
+    def get_fit(self):
+        return fit_images(self.images)
+
+    def get_barrier(self, fit=True, raw=False):
+        """Returns the barrier estimate from the NEB, along with the
+        Delta E of the elementary reaction. If fit=True, the barrier is
+        estimated based on the interpolated fit to the images; if
+        fit=False, the barrier is taken as the maximum-energy image
+        without interpolation. Set raw=True to get the raw energy of the
+        transition state instead of the forward barrier."""
+        forcefit = fit_images(self.images)
+        energies = forcefit.energies
+        fit_energies = forcefit.fit_energies
+        dE = energies[-1] - energies[0]
+        if fit:
+            barrier = max(fit_energies)
+        else:
+            barrier = max(energies)
+        if raw:
+            barrier += self.images[0].get_potential_energy()
+        return barrier, dE
+
+    def get_fmax(self, **kwargs):
+        """Returns fmax, as used by optimizers with NEB."""
+        neb = NEB(self.images, **kwargs)
+        forces = neb.get_forces()
+        return np.sqrt((forces**2).sum(axis=1).max())
+
+    def plot_band(self, ax=None):
+        """Plots the NEB band on matplotlib axes object 'ax'. If ax=None
+        returns a new figure object."""
+        forcefit = fit_images(self.images)
+        ax = forcefit.plot(ax=ax)
+        return ax.figure
+
+    def plot_bands(self, constant_x=False, constant_y=False,
+                   nimages=None, label='nebplots'):
+        """Given a trajectory containing many steps of a NEB, makes
+        plots of each band in the series in a single PDF.
+
+        constant_x: bool
+            Use the same x limits on all plots.
+        constant_y: bool
+            Use the same y limits on all plots.
+        nimages: int
+            Number of images per band. Guessed if not supplied.
+        label: str
+            Name for the output file. .pdf will be appended.
+        """
+        from matplotlib import pyplot
+        from matplotlib.backends.backend_pdf import PdfPages
+        if nimages is None:
+            nimages = self._guess_nimages()
+        nebsteps = len(self.images) // nimages
+        if constant_x or constant_y:
+            sys.stdout.write('Scaling axes.\n')
+            sys.stdout.flush()
+            # Plot all to one plot, then pull its x and y range.
+            fig, ax = pyplot.subplots()
+            for index in range(nebsteps):
+                images = self.images[index * nimages:(index + 1) * nimages]
+                NEBTools(images).plot_band(ax=ax)
+                xlim = ax.get_xlim()
+                ylim = ax.get_ylim()
+            pyplot.close(fig)  # Reference counting "bug" in pyplot.
+        with PdfPages(label + '.pdf') as pdf:
+            for index in range(nebsteps):
+                sys.stdout.write('\rProcessing band {:10d} / {:10d}'
+                                 .format(index, nebsteps))
+                sys.stdout.flush()
+                fig, ax = pyplot.subplots()
+                images = self.images[index * nimages:(index + 1) * nimages]
+                NEBTools(images).plot_band(ax=ax)
+                if constant_x:
+                    ax.set_xlim(xlim)
+                if constant_y:
+                    ax.set_ylim(ylim)
+                pdf.savefig(fig)
+                pyplot.close(fig)  # Reference counting "bug" in pyplot.
+        sys.stdout.write('\n')
+
+    def _guess_nimages(self):
+        """Attempts to guess the number of images per band from
+        a trajectory, based solely on the repetition of the
+        potential energy of images. This should also work for symmetric
+        cases."""
+        e_first = self.images[0].get_potential_energy()
+        nimages = None
+        for index, image in enumerate(self.images[1:], start=1):
+            e = image.get_potential_energy()
+            if e == e_first:
+                # Need to check for symmetric case when e_first = e_last.
+                try:
+                    e_next = self.images[index + 1].get_potential_energy()
+                except IndexError:
+                    pass
+                else:
+                    if e_next == e_first:
+                        nimages = index + 1  # Symmetric
+                        break
+                nimages = index  # Normal
+                break
+        if nimages is None:
+            sys.stdout.write('Appears to be only one band in the images.\n')
+            return len(self.images)
+        # Sanity check that the energies of the last images line up too.
+        e_last = self.images[nimages - 1].get_potential_energy()
+        e_nextlast = self.images[2 * nimages - 1].get_potential_energy()
+        if not (e_last == e_nextlast):
+            raise RuntimeError('Could not guess number of images per band.')
+        sys.stdout.write('Number of images per band guessed to be {:d}.\n'
+                         .format(nimages))
+        return nimages
+
+
+class NEBtools(NEBTools):
+    @deprecated('NEBtools has been renamed; please use NEBTools.')
+    def __init__(self, images):
+        NEBTools.__init__(self, images)
+
+
+@deprecated('Please use NEBTools.plot_band_from_fit.')
+def plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None):
+    NEBTools.plot_band_from_fit(s, E, Sfit, Efit, lines, ax=None)
+
+
+def fit0(*args, **kwargs):
+    raise DeprecationWarning('fit0 is deprecated. Use `fit_raw` from '
+                             '`ase.utils.forcecurve` instead.')

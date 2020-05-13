@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from ase.gui.i18n import _
 from math import sqrt, pi, acos
 

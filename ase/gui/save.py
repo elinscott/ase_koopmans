@@ -1,6 +1,5 @@
 """Dialog for saving one or more configurations."""
 
-from __future__ import unicode_literals
 from ase.gui.i18n import _
 
 import numpy as np
@@ -8,7 +7,6 @@ import numpy as np
 import ase.gui.ui as ui
 from ase.io.formats import (write, parse_filename, get_ioformat, string2index,
                             filetype)
-from ase.utils import basestring
 
 
 text = _("""\
@@ -32,7 +30,7 @@ def save_dialog(gui, filename=None):
     filename, index = parse_filename(filename)
     if index is None:
         index = slice(gui.frame, gui.frame + 1)
-    elif isinstance(index, basestring):
+    elif isinstance(index, str):
         index = string2index(index)
     elif isinstance(index, slice):
         pass

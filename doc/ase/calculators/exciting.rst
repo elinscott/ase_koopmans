@@ -16,7 +16,7 @@ applied to all kinds of materials, irrespective of the atomic species
 involved, and also allows for the investigation of the core
 region. The website is http://exciting-code.org/
 
-The module depends on lxml  http://lxml.de
+The module depends on lxml  https://lxml.de/
 
 
 There are two ways to construct the exciting calculator.
@@ -32,9 +32,9 @@ Constructor with Groundstate Keywords
 
 One is by giving parameters of the ground state in the
 constructor. The possible attributes can be found at
-http://exciting-code.org/ref:groundstate
+http://exciting-code.org/ref:groundstate::
 
-.. class:: Exciting(bin='excitingser', kpts=(4, 4, 4), xctype='LDA_PW')
+    Exciting(bin='excitingser', kpts=(4, 4, 4), xctype='LDA_PW')
 
 
 Parameter Dictionary
@@ -92,7 +92,7 @@ The translation follows the following rules:
 String values are translated to attributes. Nested dictionaries are translated to sub elements.
 A list of dictionaries is translated to a list of sub elements named after the key of which the list is the value.
 The special key "text()" results in text content of the enclosing tag.
- 
+
 
 Muffin Tin Radius
 =================

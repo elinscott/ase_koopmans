@@ -1,2 +1,0 @@
-numpy
-psycopg2-binary

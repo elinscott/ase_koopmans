@@ -10,7 +10,7 @@ fname = sys.argv[1]
 print('Now relaxing {0}'.format(fname))
 a = read(fname)
 
-a.set_calculator(EMT())
+a.calc = EMT()
 dyn = BFGS(a, trajectory=None, logfile=None)
 vb = VariansBreak(a, dyn)
 dyn.attach(vb.write)

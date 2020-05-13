@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # creates: diffusion-I.png, diffusion-T.png, diffusion-F.png
 # creates: diffusion-barrier.png
 

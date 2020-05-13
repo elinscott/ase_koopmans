@@ -78,3 +78,12 @@ Pretty pictures
 
 :mod:`ase.spacegroup`
 :download:`cosb3.py <../ase/spacegroup/spacegroup-cosb3.py>`
+
+
+Periodic table
+==============
+
+.. image:: ptable.png
+   :width: 10cm
+
+:download:`ptable.py`

@@ -53,14 +53,14 @@ Structures and data from:
     "Error estimates for solid-state density-functional theory predictions:
     an overview by means of the ground-state elemental crystals",
     Crit. Rev. Solid State (2014).
-    http://dx.doi.org/10.1080/10408436.2013.772503
+    https://doi.org/10.1080/10408436.2013.772503
 
 .. [Lejaeghere2016]
 
     Kurt Lejaeghere *et al.*:
     "Reproducibility in density functional theory calculations of solids",
     Science 351 (6280), aad3000 (2016).
-    http://dx.doi.org/10.1126/science.aad3000
+    https://doi.org/10.1126/science.aad3000
 
 This collection has WIEN2k and experimental data for:
 

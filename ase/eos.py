@@ -1,37 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, division
+import warnings
 
 from ase.units import kJ
-from ase.utils import basestring
 
 import numpy as np
 
-try:
-    from scipy.optimize import curve_fit
-except ImportError:
-    try:
-        from scipy.optimize import leastsq
-
-        # this part comes from
-        # http://projects.scipy.org/scipy/browser/trunk/scipy/optimize/minpack.py
-        def _general_function(params, xdata, ydata, function):
-            return function(xdata, *params) - ydata
-        # end of this part
-
-        def curve_fit(f, x, y, p0):
-            func = _general_function
-            args = (x, y, f)
-            # this part comes from
-            # http://projects.scipy.org/scipy/browser/trunk/scipy/optimize/minpack.py
-            popt, pcov, infodict, mesg, ier = leastsq(func, p0, args=args,
-                                                      full_output=1)
-
-            if ier not in [1, 2, 3, 4]:
-                raise RuntimeError("Optimal parameters not found: " + mesg)
-            # end of this part
-            return popt, pcov
-    except ImportError:
-        curve_fit = None
+from scipy.optimize import curve_fit
 
 
 eos_names = ['sj', 'taylor', 'murnaghan', 'birch', 'birchmurnaghan',
@@ -200,7 +173,7 @@ class EquationOfState:
 
         eos = EquationOfState(volumes, energies, eos='murnaghan')
         v0, e0, B = eos.fit()
-        eos.plot()
+        eos.plot(show=True)
 
     """
     def __init__(self, volumes, energies, eos='sj'):
@@ -212,7 +185,7 @@ class EquationOfState:
         self.eos_string = eos
         self.v0 = None
 
-    def fit(self):
+    def fit(self, warn=True):
         """Calculate volume, energy, and bulk modulus.
 
         Returns the optimal volume, the minimum energy, and the bulk
@@ -243,10 +216,6 @@ class EquationOfState:
         b = parabola_parameters[1]
         a = parabola_parameters[0]
         parabola_vmin = -b / 2 / c
-
-        if not (minvol < parabola_vmin and parabola_vmin < maxvol):
-            print('Warning the minimum volume of a fitted parabola is not in '
-                  'your volumes. You may not have a minimum in your dataset')
 
         # evaluate the parabola at the minimum to estimate the groundstate
         # energy
@@ -285,6 +254,11 @@ class EquationOfState:
             self.e0 = self.eos_parameters[0]
             self.B = self.eos_parameters[1]
 
+        if warn and not (minvol < self.v0 < maxvol):
+            warnings.warn(
+                'The minimum volume of your fit is not in '
+                'your volumes.  You may not have a minimum in your dataset!')
+
         return self.v0, self.e0, self.B
 
     def getplotdata(self):
@@ -299,7 +273,7 @@ class EquationOfState:
 
         return self.eos_string, self.e0, self.v0, self.B, x, y, self.v, self.e
 
-    def plot(self, filename=None, show=None, ax=None):
+    def plot(self, filename=None, show=False, ax=None):
         """Plot fitted energy curve.
 
         Uses Matplotlib to plot the energy curve.  Use *show=True* to
@@ -307,9 +281,6 @@ class EquationOfState:
         *filename='abc.eps'* to save the figure to a file."""
 
         import matplotlib.pyplot as plt
-
-        if filename is None and show is None:
-            show = True
 
         plotdata = self.getplotdata()
 
@@ -359,8 +330,8 @@ def plot(eos_string, e0, v0, B, x, y, v, e, ax=None):
         import matplotlib.pyplot as plt
         ax = plt.gca()
 
-    ax.plot(x, y, '-r')
-    ax.plot(v, e, 'ob')
+    ax.plot(x, y, ls='-', color='C3')  # By default red line
+    ax.plot(v, e, ls='', marker='o', mec='C0', mfc='C0')  # By default blue marker
 
     try:
         ax.set_xlabel(u'volume [Å$^3$]')
@@ -409,7 +380,7 @@ def calculate_eos(atoms, npoints=5, eps=0.04, trajectory=None, callback=None):
     p0 = atoms.get_positions()
     c0 = atoms.get_cell()
 
-    if isinstance(trajectory, basestring):
+    if isinstance(trajectory, str):
         from ase.io import Trajectory
         trajectory = Trajectory(trajectory, 'w', atoms)
 
@@ -468,10 +439,7 @@ class CLICommand:
                 # Special case - used by ASE's GUI:
                 import pickle
                 import sys
-                if sys.version_info[0] == 2:
-                    v, e = pickle.load(sys.stdin)
-                else:
-                    v, e = pickle.load(sys.stdin.buffer)
+                v, e = pickle.load(sys.stdin.buffer)
             else:
                 if '@' in name:
                     index = None

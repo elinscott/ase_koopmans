@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# flake8: noqa
 
 """Infrared and Raman intensities using siesta and MBPT_LCAO"""
 
@@ -9,7 +9,6 @@ import numpy as np
 import ase.units as units
 from ase.parallel import parprint, paropen
 from ase.vibrations import Vibrations
-from ase.utils import basestring
 import warnings
 
 # XXX This class contains much repeated code.  FIXME
@@ -52,7 +51,7 @@ class SiestaRaman(Vibrations):
         The atoms to work on.
     siesta: Siesta calculator
     mbpt_inp: dict
-        dictionnary containing the input for the mbpt_lcao program
+        dictionary containing the input for the mbpt_lcao program
     indices: list of int
         List of indices of atoms to vibrate.  Default behavior is
         to vibrate all atoms.
@@ -73,7 +72,7 @@ class SiestaRaman(Vibrations):
         use the dipole moment in all directions.
 
     freq_pol: float or array of float
-        frequency at which the Raman intensity is computed, can be float or array 
+        frequency at which the Raman intensity is computed, can be float or array
 
     Example:
 
@@ -114,13 +113,13 @@ class SiestaRaman(Vibrations):
     def __init__(self, atoms, siesta, indices=None, name='ram',
                  delta=0.01, nfree=2, directions=None, freq_pol=0.0, **kw):
 
-        Vibrations.__init__(self, atoms, indices=indices, name=name, 
+        Vibrations.__init__(self, atoms, indices=indices, name=name,
                             delta = delta, nfree=nfree)
         if atoms.constraints:
             warnings.warn('WARNING! \n Your Atoms object is constrained. ' +
                   'Some forces may be unintended set to zero. \n')
         self.name = name + '-d%.3f' % delta
-        self.calc = atoms.get_calculator()
+        self.calc = atoms.calc
 
         if directions is None:
             self.directions = np.asarray([0, 1, 2])
@@ -186,10 +185,10 @@ class SiestaRaman(Vibrations):
                 [fplus, dplus, frplus, noninpplus, pplus] = pickle.load(
                     open(name + '+.pckl', "rb"))
                 if self.nfree == 4:
-                    [fminusminus, dminusminus, frminusminus, 
+                    [fminusminus, dminusminus, frminusminus,
                             noninpminusminus, pminusminus] =\
                                     pickle.load(open(name + '--.pckl', "rb"))
-                    [fplusplus, dplusplus, frplusplus, 
+                    [fplusplus, dplusplus, frplusplus,
                             noninpplusplus, pplusplus] =\
                                     pickle.load(open(name + '++.pckl', "rb"))
                 if self.method == 'frederiksen':
@@ -321,7 +320,7 @@ class SiestaRaman(Vibrations):
         iu_ir, iu_string_ir = self.intensity_prefactor(intensity_unit_ir)
         iu_ram, iu_string_ram = self.intensity_prefactor(intensity_unit_ram)
         arr = []
- 
+
         freq_idx = (np.abs(self.freq_pol-freq_pol)).argmin()
         print("index: ", freq_idx)
 
@@ -345,7 +344,7 @@ class SiestaRaman(Vibrations):
         elif intensity_unit_ram == 'A^4 amu^-1':
             iu_format_ram = '%9.4f              '
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         parprint('---------------------------------------------------------------------------------------------------------------------------', file=log)
@@ -392,7 +391,7 @@ class SiestaRaman(Vibrations):
         s = 0.01 * units._e / units._c / units._hplanck
         iu_ir, iu_string_ir = self.intensity_prefactor(intensity_unit_ir)
         iu_ram, iu_string_ram = self.intensity_prefactor(intensity_unit_ram)
- 
+
         freq_idx = (np.abs(self.freq_pol-freq_pol)).argmin()
 
 
@@ -416,7 +415,7 @@ class SiestaRaman(Vibrations):
         elif intensity_unit_ram == 'A^4 amu^-1':
             iu_format_ram = '%9.4f              '
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         if hline:
@@ -431,18 +430,18 @@ class SiestaRaman(Vibrations):
                 column = column + "c"
 
         f = open(fname, 'w')
-        f.write("\begin{table}[h] \n")
-        f.write("  \caption{" + caption + "} \n")
-        f.write("  \begin{center}\n")
-        f.write("    \begin{tabular}{" + column + "} \n")
+        f.write("\\begin{table}[h] \n")
+        f.write("  \\caption{" + caption + "} \n")
+        f.write("  \\begin{center}\n")
+        f.write("    \\begin{tabular}{" + column + "} \n")
 
         if hline:
-            f.write("     \hline \n")
+            f.write("     \\hline \n")
 
         f.write('     Mode & Frequency (meV) & Frequency ($cm^{-1}$) & Intensity IR  (' +
                 iu_string_ir + ')  & Intensity Raman (' + iu_string_ram + ') \n')
         if hline:
-            f.write("   \hline \n")
+            f.write("   \\hline \n")
         for n, e in enumerate(hnu):
             if e.imag != 0:
                 c = ' + i'
@@ -456,10 +455,10 @@ class SiestaRaman(Vibrations):
                                                         self.intensities_ram[n, freq_idx].real))
             if hline:
                 f.write(r"      \hline \n")
-        f.write("    \end{tabular} \n")
-        f.write("  \end{center} \n")
-        f.write(" \label{" + label + "} \n")
-        f.write("\end{table}\n")
+        f.write("    \\end{tabular} \n")
+        f.write("  \\end{center} \n")
+        f.write(" \\label{" + label + "} \n")
+        f.write("\\end{table}\n")
 
         f.close()
 
@@ -478,7 +477,7 @@ class SiestaRaman(Vibrations):
         name = '%s.eq.pckl' % self.name
         [forces_zero, dipole_zero, freq_zero, noninPol_zero,
             pol_zero] = pickle.load(open(name, "rb"))
- 
+
         freq_idx = (np.abs(self.freq_pol-freq_pol)).argmin()
 
         frequencies = self.get_frequencies(method, direction).real

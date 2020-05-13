@@ -4,12 +4,13 @@ Module for povray file format support.
 See http://www.povray.org/ for details on the format.
 """
 import os
+from typing import Dict, Any
 
 import numpy as np
 
 from ase.io.utils import PlottingVariables
 from ase.constraints import FixAtoms
-from ase.utils import basestring
+from ase import Atoms
 
 
 def pa(array):
@@ -19,7 +20,7 @@ def pa(array):
 
 def pc(array):
     """Povray color syntax"""
-    if isinstance(array, basestring):
+    if isinstance(array, str):
         return 'color ' + array
     if isinstance(array, float):
         return 'rgb <%.2f>*3' % array
@@ -62,10 +63,46 @@ def get_bondpairs(atoms, radius=1.1):
     return bondpairs
 
 
+def set_high_bondorder_pairs(bondpairs, high_bondorder_pairs=None):
+    """Set high bondorder pairs
+
+    Modify bondpairs list (from get_bondpairs((atoms)) to include high
+    bondorder pairs.
+
+    Parameters:
+    -----------
+    bondpairs: List of pairs, generated from get_bondpairs(atoms)
+    high_bondorder_pairs: Dictionary of pairs with high bond orders
+                          using the following format:
+                          { ( a1, b1 ): ( offset1, bond_order1, bond_offset1),
+                            ( a2, b2 ): ( offset2, bond_order2, bond_offset2),
+                            ...
+                          }
+                          offset, bond_order, bond_offset are optional.
+                          However, if they are provided, the 1st value is
+                          offset, 2nd value is bond_order,
+                          3rd value is bond_offset """
+
+    if high_bondorder_pairs is None:
+        high_bondorder_pairs = dict()
+    bondpairs_ = []
+    for pair in bondpairs:
+        (a, b) = (pair[0], pair[1])
+        if (a, b) in high_bondorder_pairs.keys():
+            bondpair = [a, b] + [item for item in high_bondorder_pairs[(a, b)]]
+            bondpairs_.append(bondpair)
+        elif (b, a) in high_bondorder_pairs.keys():
+            bondpair = [a, b] + [item for item in high_bondorder_pairs[(b, a)]]
+            bondpairs_.append(bondpair)
+        else:
+            bondpairs_.append(pair)
+    return bondpairs_
+
+
 class POVRAY(PlottingVariables):
-    default_settings = {
+    default_settings: Dict[str, Any] = {
         # x, y is the image plane, z is *out* of the screen
-        'display': True,  # display while rendering
+        'display': False,  # display while rendering
         'pause': True,  # pause when done rendering (only if display)
         'transparent': True,  # transparent background
         'canvas_width': None,  # width of canvas in pixels
@@ -86,6 +123,14 @@ class POVRAY(PlottingVariables):
         'celllinewidth': 0.05,  # radius of the cylinders representing the cell
         'bondlinewidth': 0.10,  # radius of the cylinders representing bonds
         'bondatoms': [],  # [[atom1, atom2], ... ] pairs of bonding atoms
+                          # For bond order > 1: [[atom1, atom2, offset,
+                          #                       bond_order, bond_offset],
+                          #                      ... ]
+                          # bond_order: 1, 2, 3 for single, double,
+                          #             and triple bond
+                          # bond_offset: vector for shifting bonds from
+                          #              original position. Coordinates are
+                          #              in Angstrom unit.
         'exportconstraints': False}  # honour FixAtoms and mark relevant atoms?
 
     def __init__(self, atoms, scale=1.0, **parameters):
@@ -99,16 +144,25 @@ class POVRAY(PlottingVariables):
                 for n, i in enumerate(c.index):
                     self.constrainatoms += [i]
 
-        self.material_styles_dict = {
-            'simple'       : 'finish {phong 0.7}',
-            'pale'         : 'finish {ambient 0.5 diffuse 0.85 roughness 0.001 specular 0.200 }',
-            'intermediate' : 'finish {ambient 0.3 diffuse 0.6 specular 0.1 roughness 0.04}',
-            'vmd'          : 'finish {ambient 0.0 diffuse 0.65 phong 0.1 phong_size 40.0 specular 0.5 }',
-            'jmol'         : 'finish {ambient 0.2 diffuse 0.6 specular 1 roughness 0.001 metallic}',
-            'ase2'         : 'finish {ambient 0.05 brilliance 3 diffuse 0.6 metallic specular 0.7 roughness 0.04 reflection 0.15}',
-            'ase3'         : 'finish {ambient 0.15 brilliance 2 diffuse 0.6 metallic specular 1.0 roughness 0.001 reflection 0.0}',
-            'glass'        : 'finish {ambient 0.05 diffuse 0.3 specular 1.0 roughness 0.001}',
-            'glass2'       : 'finish {ambient 0.01 diffuse 0.3 specular 1.0 reflection 0.25 roughness 0.001}' }
+        self.material_styles_dict = dict(
+            simple='finish {phong 0.7}',
+            pale=('finish {ambient 0.5 diffuse 0.85 roughness 0.001 '
+                  'specular 0.200 }'),
+            intermediate=('finish {ambient 0.3 diffuse 0.6 specular 0.1 '
+                          'roughness 0.04}'),
+            vmd=('finish {ambient 0.0 diffuse 0.65 phong 0.1 phong_size 40.0 '
+                 'specular 0.5 }'),
+            jmol=('finish {ambient 0.2 diffuse 0.6 specular 1 roughness 0.001 '
+                  'metallic}'),
+            ase2=('finish {ambient 0.05 brilliance 3 diffuse 0.6 metallic '
+                  'specular 0.7 roughness 0.04 reflection 0.15}'),
+            ase3=('finish {ambient 0.15 brilliance 2 diffuse 0.6 metallic '
+                  'specular 1.0 roughness 0.001 reflection 0.0}'),
+            glass=('finish {ambient 0.05 diffuse 0.3 specular 1.0 '
+                   'roughness 0.001}'),
+            glass2=('finish {ambient 0.01 diffuse 0.3 specular 1.0 '
+                    'reflection 0.25 roughness 0.001}'),
+        )
 
     def cell_to_lines(self, cell):
         return np.empty((0, 3)), None, None
@@ -163,9 +217,9 @@ class POVRAY(PlottingVariables):
         w('#include "finish.inc"\n')
         w('\n')
         w('global_settings {assumed_gamma 1 max_trace_level 6}\n')
-        ## The background must be transparent for a transparent image
+        # The background must be transparent for a transparent image
         if self.transparent:
-            w('background {%s transmit 1.0}\n' % pc(self.background) )
+            w('background {%s transmit 1.0}\n' % pc(self.background))
         else:
             w('background {%s}\n' % pc(self.background))
         w('camera {%s\n' % self.camera_type)
@@ -195,7 +249,7 @@ class POVRAY(PlottingVariables):
 
         w('\n')
         for key in self.material_styles_dict.keys():
-            w('#declare %s = %s\n' %(key, self.material_styles_dict[key]))
+            w('#declare %s = %s\n' % (key, self.material_styles_dict[key]))
 
         w('#declare Rcell = %.3f;\n' % self.celllinewidth)
         w('#declare Rbond = %.3f;\n' % self.bondlinewidth)
@@ -252,11 +306,61 @@ class POVRAY(PlottingVariables):
 
         # Draw atom bonds
         for pair in self.bondatoms:
+            # Make sure that each pair has 4 componets: a, b, offset,
+            #                                           bond_order, bond_offset
+            # a, b: atom index to draw bond
+            # offset: original meaning to make offset for mid-point.
+            # bond_oder: if not supplied, set it to 1 (single bond).
+            #            It can be  1, 2, 3, corresponding to single,
+            #            double, triple bond
+            # bond_offset: displacement from original bond position.
+            #              Default is (bondlinewidth, bondlinewidth, 0)
+            #              for bond_order > 1.
             if len(pair) == 2:
                 a, b = pair
                 offset = (0, 0, 0)
-            else:
+                bond_order = 1
+                bond_offset = (0, 0, 0)
+            elif len(pair) == 3:
                 a, b, offset = pair
+                bond_order = 1
+                bond_offset = (0, 0, 0)
+            elif len(pair) == 4:
+                a, b, offset, bond_order = pair
+                bond_offset = (self.bondlinewidth, self.bondlinewidth, 0)
+            elif len(pair) > 4:
+                a, b, offset, bond_order, bond_offset = pair
+            else:
+                raise RuntimeError('Each list in bondatom must have at least '
+                                   '2 entries. Error at %s' % pair)
+
+            if len(offset) != 3:
+                raise ValueError('offset must have 3 elements. '
+                                 'Error at %s' % pair)
+            if len(bond_offset) != 3:
+                raise ValueError('bond_offset must have 3 elements. '
+                                 'Error at %s' % pair)
+            if bond_order not in [0, 1, 2, 3]:
+                raise ValueError('bond_order must be either 0, 1, 2, or 3. '
+                                 'Error at %s' % pair)
+
+            # Up to here, we should have all a, b, offset, bond_order,
+            # bond_offset for all bonds.
+
+            # Rotate bond_offset so that its direction is 90 degree off the bond
+            # Utilize Atoms object to rotate
+            if bond_order > 1 and np.linalg.norm(bond_offset) > 1.e-9:
+                tmp_atoms = Atoms('H3')
+                tmp_atoms.set_cell(self.cell)
+                tmp_atoms.set_positions([
+                    self.positions[a],
+                    self.positions[b],
+                    self.positions[b] + np.array(bond_offset),
+                ])
+                tmp_atoms.center()
+                tmp_atoms.set_angle(0, 1, 2, 90)
+                bond_offset = tmp_atoms[2].position - tmp_atoms[1].position
+
             R = np.dot(offset, self.cell)
             mida = 0.5 * (self.positions[a] + self.positions[b] + R)
             midb = 0.5 * (self.positions[a] + self.positions[b] - R)
@@ -274,12 +378,62 @@ class POVRAY(PlottingVariables):
 
             fmt = ('cylinder {%s, %s, Rbond texture{pigment '
                    '{color %s transmit %s} finish{%s}}}\n')
-            w(fmt %
-              (pa(self.positions[a]), pa(mida),
-                  pc(self.colors[a]), transa, texa))
-            w(fmt %
-              (pa(self.positions[b]), pa(midb),
-                  pc(self.colors[b]), transb, texb))
+
+            # draw bond, according to its bond_order.
+            # bond_order == 0: No bond is plotted
+            # bond_order == 1: use original code
+            # bond_order == 2: draw two bonds, one is shifted by bond_offset/2,
+            #                  and another is shifted by -bond_offset/2.
+            # bond_order == 3: draw two bonds, one is shifted by bond_offset,
+            #                  and one is shifted by -bond_offset, and the
+            #                  other has no shift.
+            # To shift the bond, add the shift to the first two coordinate in
+            # write statement.
+
+            if bond_order == 1:
+                w(fmt %
+                  (pa(self.positions[a]), pa(mida),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]), pa(midb),
+                      pc(self.colors[b]), transb, texb))
+            elif bond_order == 2:
+                bondOffSetDB = [x / 2 for x in bond_offset]
+                w(fmt %
+                  (pa(self.positions[a] - bondOffSetDB),
+                      pa(mida - bondOffSetDB),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b] - bondOffSetDB),
+                      pa(midb - bondOffSetDB),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a] + bondOffSetDB),
+                      pa(mida + bondOffSetDB),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b] + bondOffSetDB),
+                      pa(midb + bondOffSetDB),
+                      pc(self.colors[b]), transb, texb))
+            elif bond_order == 3:
+                w(fmt %
+                  (pa(self.positions[a]), pa(mida),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b]), pa(midb),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a] + bond_offset), pa(mida + bond_offset),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b] + bond_offset), pa(midb + bond_offset),
+                      pc(self.colors[b]), transb, texb))
+                w(fmt %
+                  (pa(self.positions[a] - bond_offset), pa(mida - bond_offset),
+                      pc(self.colors[a]), transa, texa))
+                w(fmt %
+                  (pa(self.positions[b] - bond_offset), pa(midb - bond_offset),
+                      pc(self.colors[b]), transb, texb))
 
         # Draw constraints if requested
         if self.exportconstraints:
@@ -294,12 +448,11 @@ class POVRAY(PlottingVariables):
         return pov_fid
 
 
-
 def add_isosurface_to_pov(pov_fid, pov_obj,
-                        density_grid, cut_off,
-                        closed_edges = False, gradient_ascending = False,
-                        color=(0.85, 0.80, 0.25, 0.2), material = 'ase3',
-                        verbose = False ):
+                          density_grid, cut_off,
+                          closed_edges=False, gradient_ascending=False,
+                          color=(0.85, 0.80, 0.25, 0.2), material='ase3',
+                          verbose=False):
     """Computes an isosurface from a density grid and adds it to a .pov file.
 
     Parameters:
@@ -347,92 +500,94 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
           reflection on
           collect on
       }'''
-    """
+    """  # noqa: E501
 
     rho = density_grid
     cell = pov_obj.cell
-    POV_cell_origin = pov_obj.cell_vertices[0,0,0]
+    POV_cell_origin = pov_obj.cell_vertices[0, 0, 0]
 
-    #print(POV_cell_disp)
+    # print(POV_cell_disp)
     from skimage import measure
     import numpy as np
     # Use marching cubes to obtain the surface mesh of this density grid
     if gradient_ascending:
         gradient_direction = 'ascent'
-        cv = 2*cut_off
+        cv = 2 * cut_off
     else:
         gradient_direction = 'descent'
         cv = 0
 
-
     if closed_edges:
         shape_old = rho.shape
-        POV_cell_origin += -(1.0/np.array(shape_old)).dot(cell) # since well be padding, we need to keep the data at origin
+        # since well be padding, we need to keep the data at origin
+        POV_cell_origin += -(1.0 / np.array(shape_old)) @ cell
 
-        rho = np.pad(rho, pad_width = (1,), mode = 'constant', constant_values = cv)
+        rho = np.pad(rho, pad_width=(1,), mode='constant', constant_values=cv)
         shape_new = rho.shape
-        s = np.array(shape_new)/np.array(shape_old)
-        cell = cell.dot(np.array([ [s[0],   0.0,  0.0],
-                                [ 0.0,  s[1],  0.0],
-                                [ 0.0,   0.0,  s[2]]]))
+        s = np.array(shape_new) / np.array(shape_old)
+        cell = cell @ np.diag(s)
 
+    spacing = tuple(1.0 / np.array(rho.shape))
+    scaled_verts, faces, normals, values = measure.marching_cubes_lewiner(
+        rho,
+        level=cut_off,
+        spacing=spacing,
+        gradient_direction=gradient_direction,
+        allow_degenerate=False,
+    )
 
-    spacing = tuple(1.0/np.array(rho.shape))
-    scaled_verts, faces, normals, values = measure.marching_cubes_lewiner(rho, level = cut_off,
-        spacing=spacing,gradient_direction=gradient_direction , allow_degenerate = False)
-
-
-    ## The verts are scaled by default, this is the super easy way of
-    ## distributing them in real space but it's easier to do affine
-    ## transformations/rotations on a unit cube so I leave it like that
-    #verts = scaled_verts.dot(atoms.get_cell())
+    # The verts are scaled by default, this is the super easy way of
+    # distributing them in real space but it's easier to do affine
+    # transformations/rotations on a unit cube so I leave it like that
+    # verts = scaled_verts.dot(atoms.get_cell())
     verts = scaled_verts
 
-    #some prime numbers for debugging formatting of lines
-    #verts = verts[:31]
-    #faces = faces[:47]
+    # some prime numbers for debugging formatting of lines
+    # verts = verts[:31]
+    # faces = faces[:47]
 
     if verbose:
         print('faces', len(faces))
         print('verts', len(verts))
 
     def wrapped_triples_section(name, triple_list,
-                        triple_format="<%f, %f, %f>, ", triples_per_line = 4):
+                                triple_format="<%f, %f, %f>, ",
+                                triples_per_line=4):
 
-        pov_fid.write( '\n  %s {  %i,' % (name, len(triple_list)) )
+        pov_fid.write('\n  %s {  %i,' % (name, len(triple_list)))
 
-        last_line_index = len(triple_list)//triples_per_line - 1
-        if (len(triple_list) % triples_per_line ) > 0:
+        last_line_index = len(triple_list) // triples_per_line - 1
+        if (len(triple_list) % triples_per_line) > 0:
             last_line_index += 1
 
-        #print('vertex lines', last_line_index)
-        for line_index in range(last_line_index+1):
+        # print('vertex lines', last_line_index)
+        for line_index in range(last_line_index + 1):
             pov_fid.write('\n      ')
             line = ''
             index_start = line_index * triples_per_line
             index_end = (line_index + 1) * triples_per_line
             # cut short if its at the last line
-            index_end = min( index_end, len(triple_list))
+            index_end = min(index_end, len(triple_list))
 
             for index in range(index_start, index_end):
-                line = line + triple_format%tuple(triple_list[index])
+                line = line + triple_format % tuple(triple_list[index])
 
             if last_line_index == line_index:
                 line = line[:-2] + '\n  }'
 
             pov_fid.write(line)
 
-    ########## Start writting the mesh2
+    # Start writing the mesh2
     pov_fid.write('\n\nmesh2 {')
 
-    ############ the vertex_vectors (floats) and the face_indices (ints)
-    wrapped_triples_section(name = "vertex_vectors", triple_list = verts,
-                        triple_format="<%f, %f, %f>, ", triples_per_line = 4)
+    # the vertex_vectors (floats) and the face_indices (ints)
+    wrapped_triples_section(name="vertex_vectors", triple_list=verts,
+                            triple_format="<%f, %f, %f>, ", triples_per_line=4)
 
-    wrapped_triples_section(name = "face_indices", triple_list = faces,
-                        triple_format="<%i, %i, %i>, ", triples_per_line = 5)
+    wrapped_triples_section(name="face_indices", triple_list=faces,
+                            triple_format="<%i, %i, %i>, ", triples_per_line=5)
 
-    ########### pigment and material
+    # pigment and material
 
     if material in pov_obj.material_styles_dict.keys():
         material = '''
@@ -441,25 +596,26 @@ def add_isosurface_to_pov(pov_fid, pov_obj,
       pigment { %s }
       finish { %s }
     }
-  }'''%( pc(color), material )
+  }''' % (pc(color), material)
     pov_fid.writelines(material)
 
-    ###### now for the rotations of the cell
+    # now for the rotations of the cell
     matrix_transform = [
-            '\n  matrix < %f, %f, %f,' % tuple(cell[0]),
-            '\n        %f, %f, %f,'    % tuple(cell[1]),
-            '\n        %f, %f, %f,'    % tuple(cell[2]),
-            '\n        %f, %f, %f>'    % tuple(POV_cell_origin)]
+        '\n  matrix < %f, %f, %f,' % tuple(cell[0]),
+        '\n        %f, %f, %f,' % tuple(cell[1]),
+        '\n        %f, %f, %f,' % tuple(cell[2]),
+        '\n        %f, %f, %f>' % tuple(POV_cell_origin),
+    ]
     pov_fid.writelines(matrix_transform)
 
-    ################# close the brackets
+    # close the brackets
     pov_fid.writelines('\n}\n')
 
-    #pov_fid.close()
+    # pov_fid.close()
 
 
-def write_pov(filename, atoms, run_povray=False, povray_path = 'povray',
-              stderr=None, extras = [],  **parameters):
+def write_pov(filename, atoms, run_povray=False, povray_path='povray',
+              stderr=None, extras=[], **parameters):
     if isinstance(atoms, list):
         assert len(atoms) == 1
         atoms = atoms[0]

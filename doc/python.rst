@@ -15,9 +15,9 @@ language.
 
 
 .. _Recipes: http://code.activestate.com/recipes/langs/python
-.. _Python quick reference card: http://www.limsi.fr/Individu/pointal/python/pqrc
+.. _Python quick reference card: https://perso.limsi.fr/pointal/python/pqrc
 .. _different reference card: http://rgruet.free.fr/
-.. _Python: http://www.python.org
+.. _Python: https://www.python.org/
 
 
 Executing Python code
@@ -29,10 +29,6 @@ like this::
   $ python3
   >>> print('hello')
   hello
-
-.. note:: ASE works with both Python 2 and the latest Python 3 --- `the
-    differences are minor <https://wiki.python.org/moin/Python2orPython3>`__.
-    We use Python 3 for this web-page.
 
 You can also put the ``print('hello')`` line in a file (``hello.py``)
 and execute it as a Python script::
@@ -51,27 +47,10 @@ Finally, you can put ``#!/usr/bin/env python3`` in the first line of
 the ``hello.py`` file, make it executable (``chmod +x hello.py``) and
 execute it like any other executable.
 
-.. tip::
-
-   For interactive Python sessions, it is very convenient to have a
-   personal ``.pythonrc`` file::
-
-     import rlcompleter
-     import readline
-     readline.parse_and_bind("tab: complete")
-     import numpy as np
-     from ase import *
-
-   and point the :envvar:`PYTHONSTARTUP` environment variable at it (see
-   rlcompleter_ for details).
-
-
-   .. _rlcompleter: https://docs.python.org/2/library/rlcompleter.html
-
 
 .. tip::
 
-   For an even better interactive experience, use ipython_.
+   For a better interactive experience, consider ipython_.
 
    .. _ipython: http://ipython.scipy.org
 

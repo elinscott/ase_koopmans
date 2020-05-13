@@ -1,6 +1,5 @@
 """Mutation classes, that mutate the elements in the supplied
 atoms objects."""
-import random
 import numpy as np
 
 from ase.data import atomic_numbers
@@ -15,9 +14,10 @@ def chunks(l, n):
 class ElementMutation(OffspringCreator):
     """The base class for all operators where the elements
     of the atoms objects are mutated"""
+
     def __init__(self, element_pool, max_diff_elements,
-                 min_percentage_elements, verbose, num_muts=1):
-        OffspringCreator.__init__(self, verbose, num_muts=num_muts)
+                 min_percentage_elements, verbose, num_muts=1, rng=np.random):
+        OffspringCreator.__init__(self, verbose, num_muts=num_muts, rng=rng)
         if not isinstance(element_pool[0], (list, np.ndarray)):
             self.element_pools = [element_pool]
         else:
@@ -51,7 +51,7 @@ class ElementMutation(OffspringCreator):
         """
         itbm_ok = False
         while not itbm_ok:
-            itbm = random.choice(range(len(atoms)))  # index to be mutated
+            itbm = self.rng.choice(range(len(atoms)))  # index to be mutated
             itbm_ok = True
             for i, e in enumerate(self.element_pools):
                 if atoms[itbm].symbol in e:
@@ -120,16 +120,20 @@ class RandomElementMutation(ElementMutation):
         each input corresponding to the elements specified in the same input
         in element_pool.
 
+    rng: Random number generator
+        By default numpy.random.
+
     Example: element_pool=[[A,B,C,D],[x,y,z]], max_diff_elements=[3,2],
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
                  min_percentage_elements=None, verbose=False,
-                 num_muts=1):
+                 num_muts=1, rng=np.random):
         ElementMutation.__init__(self, element_pool, max_diff_elements,
                                  min_percentage_elements, verbose,
-                                 num_muts=num_muts)
+                                 num_muts=num_muts, rng=rng)
         self.descriptor = 'RandomElementMutation'
 
     def get_new_individual(self, parents):
@@ -140,7 +144,7 @@ class RandomElementMutation(ElementMutation):
 
         ltbm, choices = self.get_mutation_index_list_and_choices(f)
 
-        new_element = random.choice(choices)
+        new_element = self.rng.choice(choices)
         for a in f:
             if a.index in ltbm:
                 a.symbol = new_element
@@ -187,6 +191,12 @@ def get_row_column(element):
                     return i, 3
 
 
+def get_periodic_table_distance(e1, e2):
+    rc1 = np.array(get_row_column(e1))
+    rc2 = np.array(get_row_column(e2))
+    return sum(np.abs(rc1 - rc2))
+
+
 class MoveDownMutation(ElementMutation):
     """
     Mutation that exchanges an element with an element one step
@@ -221,16 +231,20 @@ class MoveDownMutation(ElementMutation):
         each input corresponding to the elements specified in the same input
         in element_pool.
 
+    rng: Random number generator
+        By default numpy.random.
+
     Example: element_pool=[[A,B,C,D],[x,y,z]], max_diff_elements=[3,2],
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
                  min_percentage_elements=None, verbose=False,
-                 num_muts=1):
+                 num_muts=1, rng=np.random):
         ElementMutation.__init__(self, element_pool, max_diff_elements,
                                  min_percentage_elements, verbose,
-                                 num_muts=num_muts)
+                                 num_muts=num_muts, rng=rng)
         self.descriptor = 'MoveDownMutation'
 
     def get_new_individual(self, parents):
@@ -265,7 +279,7 @@ class MoveDownMutation(ElementMutation):
                 print(msg)
             used_descriptor = 'RandomElementMutation_from_{0}'
             used_descriptor = used_descriptor.format(self.descriptor)
-            random.shuffle(popped)
+            self.rng.shuffle(popped)
             choices = popped
         else:
             # Sorting the element that lie below and in the same column
@@ -311,15 +325,20 @@ class MoveUpMutation(ElementMutation):
         each input corresponding to the elements specified in the same input
         in element_pool.
 
+    rng: Random number generator
+        By default numpy.random.
+
     Example: element_pool=[[A,B,C,D],[x,y,z]], max_diff_elements=[3,2],
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
-                 min_percentage_elements=None, verbose=False, num_muts=1):
+                 min_percentage_elements=None, verbose=False, num_muts=1,
+                 rng=np.random):
         ElementMutation.__init__(self, element_pool, max_diff_elements,
                                  min_percentage_elements, verbose,
-                                 num_muts=num_muts)
+                                 num_muts=num_muts, rng=rng)
         self.descriptor = 'MoveUpMutation'
 
     def get_new_individual(self, parents):
@@ -355,7 +374,7 @@ class MoveUpMutation(ElementMutation):
                 print(msg)
             used_descriptor = 'RandomElementMutation_from_{0}'
             used_descriptor = used_descriptor.format(self.descriptor)
-            random.shuffle(popped)
+            self.rng.shuffle(popped)
             choices = popped
         else:
             # Sorting the element that lie above and in the same column
@@ -401,15 +420,20 @@ class MoveRightMutation(ElementMutation):
         each input corresponding to the elements specified in the same input
         in element_pool.
 
+    rng: Random number generator
+        By default numpy.random.
+
     Example: element_pool=[[A,B,C,D],[x,y,z]], max_diff_elements=[3,2],
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
-                 min_percentage_elements=None, verbose=False, num_muts=1):
+                 min_percentage_elements=None, verbose=False, num_muts=1,
+                rng=np.random):
         ElementMutation.__init__(self, element_pool, max_diff_elements,
                                  min_percentage_elements, verbose,
-                                 num_muts=num_muts)
+                                 num_muts=num_muts, rng=rng)
         self.descriptor = 'MoveRightMutation'
 
     def get_new_individual(self, parents):
@@ -444,7 +468,7 @@ class MoveRightMutation(ElementMutation):
                 print(msg)
             used_descriptor = 'RandomElementMutation_from_{0}'
             used_descriptor = used_descriptor.format(self.descriptor)
-            random.shuffle(popped)
+            self.rng.shuffle(popped)
             choices = popped
         else:
             # Sorting so the element closest to the right is first
@@ -489,15 +513,20 @@ class MoveLeftMutation(ElementMutation):
         each input corresponding to the elements specified in the same input
         in element_pool.
 
+    rng: Random number generator
+        By default numpy.random.
+
     Example: element_pool=[[A,B,C,D],[x,y,z]], max_diff_elements=[3,2],
         min_percentage_elements=[.25, .5]
         An individual could be "D,B,B,C,x,x,x,x,z,z,z,z"
     """
+
     def __init__(self, element_pool, max_diff_elements=None,
-                 min_percentage_elements=None, verbose=False, num_muts=1):
+                 min_percentage_elements=None, verbose=False, num_muts=1,
+                 rng=np.random):
         ElementMutation.__init__(self, element_pool, max_diff_elements,
                                  min_percentage_elements, verbose,
-                                 num_muts=num_muts)
+                                 num_muts=num_muts, rng=rng)
         self.descriptor = 'MoveLeftMutation'
 
     def get_new_individual(self, parents):
@@ -532,7 +561,7 @@ class MoveLeftMutation(ElementMutation):
                 print(msg)
             used_descriptor = 'RandomElementMutation_from_{0}'
             used_descriptor = used_descriptor.format(self.descriptor)
-            random.shuffle(popped)
+            self.rng.shuffle(popped)
             choices = popped
         else:
             # Sorting so the element closest to the left is first
@@ -558,9 +587,13 @@ class FullElementMutation(OffspringCreator):
     element_pool: List of elements in the phase space. The elements can be
         grouped if the individual consist of different types of elements.
         The list should then be a list of lists e.g. [[list1], [list2]]
+
+    rng: Random number generator
+        By default numpy.random.
     """
-    def __init__(self, element_pool, verbose=False, num_muts=1):
-        OffspringCreator.__init__(self, verbose, num_muts=num_muts)
+
+    def __init__(self, element_pool, verbose=False, num_muts=1, rng=np.random):
+        OffspringCreator.__init__(self, verbose, num_muts=num_muts, rng=rng)
         self.descriptor = 'FullElementMutation'
         if not isinstance(element_pool[0], (list, np.ndarray)):
             self.element_pools = [element_pool]
@@ -574,7 +607,7 @@ class FullElementMutation(OffspringCreator):
         indi.info['data']['parents'] = [f.info['confid']]
 
         # Randomly choose an element to mutate in the current individual.
-        old_element = random.choice([a.symbol for a in f])
+        old_element = self.rng.choice([a.symbol for a in f])
         # Find the list containing the chosen element. By choosing a new
         # element from the same list, the percentages are not altered.
         for i in range(len(self.element_pools)):
@@ -583,7 +616,7 @@ class FullElementMutation(OffspringCreator):
 
         not_val = True
         while not_val:
-            new_element = random.choice(self.element_pools[lm])
+            new_element = self.rng.choice(self.element_pools[lm])
             not_val = new_element == old_element
 
         for a in f:

@@ -36,10 +36,12 @@ is performed:
 
     calc = ...
     cp_calc = CheckpointCalculator(calc)
-    atoms.set_calculator(cp_calc)
+    atoms.calc = cp_calc
     e = atoms.get_potential_energy() # 1st time, does calc, writes to checkfile
                                      # subsequent runs, reads from checkpoint
 """
+
+from typing import Dict, Any
 
 import numpy as np
 
@@ -51,12 +53,12 @@ from ase.calculators.calculator import Calculator
 class NoCheckpoint(Exception):
     pass
 
-    
+
 class DevNull:
     def write(str, *args):
         pass
 
-        
+
 class Checkpoint(object):
     _value_prefix = '_values_'
 
@@ -71,7 +73,7 @@ class Checkpoint(object):
 
     def __call__(self, func, *args, **kwargs):
         checkpoint_func_name = str(func)
-        
+
         def decorated_func(*args, **kwargs):
             # Get the first ase.Atoms object.
             atoms = None
@@ -118,7 +120,7 @@ class Checkpoint(object):
         E.g. if checkpoint is nested and id is [3,2,6] it returns:
             'check3:2:6'
         """
-        return 'check'+':'.join(str(id) for id in self.checkpoint_id)
+        return 'check' + ':'.join(str(id) for id in self.checkpoint_id)
 
     def load(self, atoms=None):
         """
@@ -147,7 +149,7 @@ class Checkpoint(object):
                     newatoms = dbentry.toatoms()
                     if atoms is not None:
                         # Assign calculator
-                        newatoms.set_calculator(atoms.get_calculator())
+                        newatoms.calc = atoms.calc
                     retvals += [newatoms]
                 else:
                     retvals += [data['{0}{1}'.format(self._value_prefix, i)]]
@@ -199,7 +201,7 @@ class Checkpoint(object):
     def flush(self, *args, **kwargs):
         """
         Store data to a checkpoint without increasing the checkpoint id. This
-        is useful to continously update the checkpoint state in an iterative
+        is useful to continuously update the checkpoint state in an iterative
         loop.
         """
         # If we are flushing from a successfully restored checkpoint, then
@@ -230,20 +232,20 @@ class CheckpointCalculator(Calculator):
     This wraps any calculator object to checkpoint whenever a calculation
     is performed.
 
-    This is particularily useful for expensive calculators, e.g. DFT and
+    This is particularly useful for expensive calculators, e.g. DFT and
     allows usage of complex workflows.
 
     Example usage:
 
         calc = ...
         cp_calc = CheckpointCalculator(calc)
-        atoms.set_calculator(cp_calc)
+        atoms.calc = cp_calc
         e = atoms.get_potential_energy()
         # 1st time, does calc, writes to checkfile
         # subsequent runs, reads from checkpoint file
     """
     implemented_properties = ase.calculators.calculator.all_properties
-    default_parameters = {}
+    default_parameters: Dict[str, Any] = {}
     name = 'CheckpointCalculator'
 
     property_to_method_name = {
@@ -293,11 +295,11 @@ class CheckpointCalculator(Calculator):
                     method_name = self.property_to_method_name[prop]
                     method = getattr(self.calculator, method_name)
                     results.append(method(atoms))
-            _calculator = atoms.get_calculator()
+            _calculator = atoms.calc
             try:
-                atoms.set_calculator(self.calculator)
+                atoms.calc = self.calculator
                 self.checkpoint.save(atoms, *results)
             finally:
-                atoms.set_calculator(_calculator)
+                atoms.calc = _calculator
 
         self.results = dict(zip(properties, results))

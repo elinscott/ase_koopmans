@@ -10,7 +10,7 @@ class Calculator:
 
     def get_atoms(self):
         atoms = self.atoms.copy()
-        atoms.set_calculator(self)
+        atoms.calc = self
         return atoms
 
     def get_name(self):

@@ -39,7 +39,7 @@ c = make_ensemble()
 
 def get_ensemble_energies(atoms, c=c):
     if hasattr(atoms, 'get_calculator'):
-        coefs = atoms.get_calculator().get_ensemble_coefficients()
+        coefs = atoms.calc.get_ensemble_coefficients()
     else:
         coefs = atoms
     return coefs[0] + np.dot(c, coefs[1:])

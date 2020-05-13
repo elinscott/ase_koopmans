@@ -12,16 +12,12 @@ add_adsorbate(slab, adsorbate, 1.8, 'ontop')
 
 write('io1.png', slab * (3, 3, 1), rotation='10z,-80x')
 write('io2.pov', slab * (3, 3, 1), rotation='10z,-80x',
-      transparent=False, display=False, run_povray=True)
+      transparent=False, run_povray=True)
 d = a / 2**0.5
 write('io3.pov', slab * (2, 2, 1),
       bbox=(d, 0, 3 * d, d * 3**0.5),
-      transparent=False, display=False, run_povray=True)
+      transparent=False, run_povray=True)
 
-write('slab.xyz', slab)
-a = read('slab.xyz')
-a.get_cell()
-a.get_pbc()
 write('slab.traj', slab)
 b = read('slab.traj')
 b.get_cell()

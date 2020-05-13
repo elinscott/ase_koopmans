@@ -17,7 +17,6 @@ functional theories.
     You should have received a copy of the GNU Lesser General Public License
     along with ASE.  If not, see <http://www.gnu.org/licenses/>.
 """
-from __future__ import print_function
 import numpy as np
 import os
 import subprocess
@@ -51,7 +50,7 @@ class DOS:
         """
         function for reading DOS from the following OpenMX file extensions:
          ~.[DOS|PDOS].[Tetrahedron|Gaussian]<.atom(int).(orbital)
-        :param method: the method which has been used to calcualte the density
+        :param method: the method which has been used to calculate the density
                        of states ('Tetrahedron' or 'Gaussian')
         :param pdos: True if the pseudo-density of states have been calculated,
                      False if only the total density of states has been

@@ -29,7 +29,7 @@ entry = """\
 with open('bztable.rst', 'w') as fd:
     print(header, file=fd)
 
-    for i, lat in enumerate(all_variants()):
+    for i, lat in enumerate(all_variants(include_blunt_angles=False)):
         id = '{:02d}.{}'.format(i, lat.variant)
         imagefname = '{}.svg'.format(id)
         txt = entry.format(name=lat.variant,

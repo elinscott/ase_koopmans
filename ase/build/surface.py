@@ -5,7 +5,6 @@ add vacuum layers and add adsorbates.
 
 """
 
-from __future__ import division
 from math import sqrt
 from operator import itemgetter
 
@@ -15,7 +14,6 @@ from ase.atom import Atom
 from ase.atoms import Atoms
 from ase.data import reference_states, atomic_numbers
 from ase.lattice.cubic import FaceCenteredCubic
-from ase.utils import basestring
 
 
 def fcc100(symbol, size, a=None, vacuum=None, orthogonal=True,
@@ -43,7 +41,6 @@ def fcc110(symbol, size, a=None, vacuum=None, orthogonal=True,
     return _surface(symbol, 'fcc', '110', size, a, None, vacuum,
                     periodic=periodic,
                     orthogonal=orthogonal)
-
 
 
 def bcc100(symbol, size, a=None, vacuum=None, orthogonal=True,
@@ -206,7 +203,7 @@ def add_adsorbate(slab, adsorbate, height, position=(0, 0), offset=None,
     if offset is not None:
         spos += np.asarray(offset, float)
 
-    if isinstance(position, basestring):
+    if isinstance(position, str):
         # A site-name:
         if 'sites' not in info:
             raise TypeError('If the atoms are not made by an ' +
@@ -503,7 +500,18 @@ def mx2(formula='MoS2', kind='2H', a=3.18, thickness=3.19,
     if vacuum is not None:
         atoms.center(vacuum, axis=2)
     atoms = atoms.repeat(size)
+    return atoms
 
+
+def graphene(formula='C2', a=2.460, size=(1, 1, 1), vacuum=None):
+    """Create a graphene monolayer structure."""
+    cell = [[a, 0, 0], [-a / 2, a * 3**0.5 / 2, 0], [0, 0, 0]]
+    basis = [[0, 0, 0], [2 / 3, 1 / 3, 0]]
+    atoms = Atoms(formula, cell=cell, pbc=(1, 1, 0))
+    atoms.set_scaled_positions(basis)
+    if vacuum is not None:
+        atoms.center(vacuum, axis=2)
+    atoms = atoms.repeat(size)
     return atoms
 
 
@@ -511,6 +519,6 @@ def _all_surface_functions():
     # Convenient for debugging.
     d = {}
     for func in [fcc100, fcc110, bcc100, bcc110, bcc111, fcc111, hcp0001,
-                 hcp10m10, diamond100, diamond111, fcc111, mx2]:
+                 hcp10m10, diamond100, diamond111, fcc111, mx2, graphene]:
         d[func.__name__] = func
     return d

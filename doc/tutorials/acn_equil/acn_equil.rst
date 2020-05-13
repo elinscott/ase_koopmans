@@ -10,7 +10,7 @@ the implementation of an acetonitrile force field in ASE.
 The acetonitrile force field implemented in ASE (:mod:`ase.calculators.acn`)
 is an interaction potential between three-site linear molecules, in which 
 the atoms of the methyl group are treated as a single site centered on the 
-methyl carbon, i.e. hydrogens are not considered explicitely. For this reason, 
+methyl carbon, i.e. hydrogens are not considered explicitly. For this reason, 
 while setting up a box of acetonitrile one has to assign the mass of a methyl 
 to the outer carbon atom. The calculator requires the atomic
 sequence to be MeCN ... MeCN or NCMeNCMe ... NCMe, where Me represents the 

@@ -1,41 +1,47 @@
-import collections
 import functools
+import json
 import numbers
 import operator
 import os
 import re
 import warnings
 from time import time
+from typing import List, Any
 
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.symbols import symbols2numbers, string2symbols
 from ase.calculators.calculator import all_properties, all_changes
 from ase.data import atomic_numbers
 from ase.db.row import AtomsRow
+from ase.formula import Formula
+from ase.io.jsonio import create_ase_object
 from ase.parallel import world, DummyMPI, parallel_function, parallel_generator
-from ase.utils import Lock, basestring, PurePath
+from ase.utils import Lock, PurePath
 
 
 T2000 = 946681200.0  # January 1. 2000
 YEAR = 31557600.0  # 365.25 days
 
 
+# Format of key description: ('short', 'long', 'unit')
 default_key_descriptions = {
     'id': ('ID', 'Uniqe row ID', ''),
     'age': ('Age', 'Time since creation', ''),
     'formula': ('Formula', 'Chemical formula', ''),
+    'pbc': ('PBC', 'Periodic boundary conditions', ''),
     'user': ('Username', '', ''),
     'calculator': ('Calculator', 'ASE-calculator name', ''),
     'energy': ('Energy', 'Total energy', 'eV'),
+    'natoms': ('Number of atoms', '', ''),
     'fmax': ('Maximum force', '', 'eV/Ang'),
-    'smax': ('Maximum stress', '', '`\\text{eV/Ang}^3`'),
-    'charge': ('Charge', '', '|e|'),
-    'mass': ('Mass', '', 'au'),
+    'smax': ('Maximum stress', 'Maximum stress on unit cell',
+             '`\\text{eV/Ang}^3`'),
+    'charge': ('Charge', 'Net charge in unit cell', '|e|'),
+    'mass': ('Mass', 'Sum of atomic masses in unit cell', 'au'),
     'magmom': ('Magnetic moment', '', 'au'),
     'unique_id': ('Unique ID', 'Random (unique) ID', ''),
-    'volume': ('Volume', 'Volume of unit-cell', '`\\text{Ang}^3`')}
+    'volume': ('Volume', 'Volume of unit cell', '`\\text{Ang}^3`')}
 
 
 def now():
@@ -74,6 +80,7 @@ reserved_keys = set(all_properties +
                     all_changes +
                     list(atomic_numbers) +
                     ['id', 'unique_id', 'ctime', 'mtime', 'user',
+                     'fmax', 'smax',
                      'momenta', 'constraints', 'natoms', 'formula', 'age',
                      'calculator', 'calculator_parameters',
                      'key_value_pairs', 'data'])
@@ -91,7 +98,7 @@ def check(key_value_pairs):
         if not word.match(key) or key in reserved_keys:
             raise ValueError('Bad key: {}'.format(key))
         try:
-            string2symbols(key)
+            Formula(key, strict=True)
         except ValueError:
             pass
         else:
@@ -100,9 +107,9 @@ def check(key_value_pairs):
                 'chemical formula.  If you do a "db.select({0!r})",'
                 'you will not find rows with your key.  Instead, you wil get '
                 'rows containing the atoms in the formula!'.format(key))
-        if not isinstance(value, (numbers.Real, basestring, np.bool_)):
+        if not isinstance(value, (numbers.Real, str, np.bool_)):
             raise ValueError('Bad value for {!r}: {}'.format(key, value))
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             for t in [int, float]:
                 if str_represents(value, t):
                     raise ValueError(
@@ -146,7 +153,7 @@ def connect(name, type='extract_from_name', create_indices=True,
     if type == 'extract_from_name':
         if name is None:
             type = None
-        elif not isinstance(name, basestring):
+        elif not isinstance(name, str):
             type = 'json'
         elif (name.startswith('postgresql://') or
               name.startswith('postgres://')):
@@ -165,7 +172,7 @@ def connect(name, type='extract_from_name', create_indices=True,
         if isinstance(name, str) and os.path.isfile(name):
             os.remove(name)
 
-    if type not in ['postgresql', 'mysql'] and isinstance(name, basestring):
+    if type not in ['postgresql', 'mysql'] and isinstance(name, str):
         name = os.path.abspath(name)
 
     if type == 'json':
@@ -241,11 +248,10 @@ def parse_selection(selection, **kwargs):
                 comparisons.append((expression, '>', 0))
             else:
                 try:
-                    symbols = string2symbols(expression)
+                    count = Formula(expression).count()
                 except ValueError:
                     keys.append(expression)
                 else:
-                    count = collections.Counter(symbols)
                     comparisons.extend((symbol, '>', n - 1)
                                        for symbol, n in count.items())
             continue
@@ -264,17 +270,16 @@ def parse_selection(selection, **kwargs):
         elif key == 'formula':
             if op != '=':
                 raise ValueError('Use fomula=...')
-            numbers = symbols2numbers(value)
-            count = collections.defaultdict(int)
-            for Z in numbers:
-                count[Z] += 1
-            cmps.extend((Z, '=', count[Z]) for Z in count)
+            f = Formula(value)
+            count = f.count()
+            cmps.extend((atomic_numbers[symbol], '=', n)
+                        for symbol, n in count.items())
             key = 'natoms'
-            value = len(numbers)
+            value = len(f)
         elif key in atomic_numbers:
             key = atomic_numbers[key]
             value = int(value)
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             value = convert_str_to_int_float_or_str(value)
         if key in numeric_keys and not isinstance(value, (int, float)):
             msg = 'Wrong type for "{}{}{}" - must be a number'
@@ -295,11 +300,11 @@ class Database:
             to interact with the database on the master only and then
             distribute results to all slaves.
         """
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             filename = os.path.expanduser(filename)
         self.filename = filename
         self.create_indices = create_indices
-        if use_lock_file and isinstance(filename, basestring):
+        if use_lock_file and isinstance(filename, str):
             self.lock = Lock(filename + '.lock', world=DummyMPI())
         else:
             self.lock = None
@@ -528,7 +533,7 @@ class Database:
 
         row = self._get_row(id)
         kvp = row.key_value_pairs
-        
+
         n = len(kvp)
         for key in delete_keys:
             kvp.pop(key, None)
@@ -590,3 +595,85 @@ def float_to_time_string(t, long=False):
         return '{:.3f} {}s'.format(x, longwords[s])
     else:
         return '{:.0f}{}'.format(round(x), s)
+
+
+def object_to_bytes(obj: Any) -> bytes:
+    """Serialize Python object to bytes."""
+    parts = [b'12345678']
+    obj = o2b(obj, parts)
+    offset = sum(len(part) for part in parts)
+    x = np.array(offset, np.int64)
+    if not np.little_endian:
+        x.byteswap(True)
+    parts[0] = x.tobytes()
+    parts.append(json.dumps(obj, separators=(',', ':')).encode())
+    return b''.join(parts)
+
+
+def bytes_to_object(b: bytes) -> Any:
+    """Deserialize bytes to Python object."""
+    x = np.frombuffer(b[:8], np.int64)
+    if not np.little_endian:
+        x = x.byteswap()
+    offset = x.item()
+    obj = json.loads(b[offset:].decode())
+    return b2o(obj, b)
+
+
+def o2b(obj: Any, parts: List[bytes]):
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+    if isinstance(obj, dict):
+        return {key: o2b(value, parts) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [o2b(value, parts) for value in obj]
+    if isinstance(obj, np.ndarray):
+        assert obj.dtype != object, \
+            'Cannot convert ndarray of type "object" to bytes.'
+        offset = sum(len(part) for part in parts)
+        if not np.little_endian:
+            obj = obj.byteswap()
+        parts.append(obj.tobytes())
+        return {'__ndarray__': [obj.shape,
+                                obj.dtype.name,
+                                offset]}
+    if isinstance(obj, complex):
+        return {'__complex__': [obj.real, obj.imag]}
+    objtype = getattr(obj, 'ase_objtype')
+    if objtype:
+        dct = o2b(obj.todict(), parts)
+        dct['__ase_objtype__'] = objtype
+        return dct
+    raise ValueError('Objects of type {type} not allowed'
+                     .format(type=type(obj)))
+
+
+def b2o(obj: Any, b: bytes) -> Any:
+    if isinstance(obj, (int, float, bool, str, type(None))):
+        return obj
+
+    if isinstance(obj, list):
+        return [b2o(value, b) for value in obj]
+
+    assert isinstance(obj, dict)
+
+    x = obj.get('__complex__')
+    if x is not None:
+        return complex(*x)
+
+    x = obj.get('__ndarray__')
+    if x is not None:
+        shape, name, offset = x
+        dtype = np.dtype(name)
+        size = dtype.itemsize * np.prod(shape).astype(int)
+        a = np.frombuffer(b[offset:offset + size], dtype)
+        a.shape = shape
+        if not np.little_endian:
+            a = a.byteswap()
+        return a
+
+    dct = {key: b2o(value, b) for key, value in obj.items()}
+    objtype = dct.pop('__ase_objtype__', None)
+    if objtype is None:
+        return dct
+    return create_ase_object(objtype, dct)

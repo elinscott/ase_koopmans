@@ -1,31 +1,18 @@
-from __future__ import unicode_literals
-try:
-    # Python 3
-    import tkinter as tk
-    import tkinter.ttk as ttk
-    from tkinter.messagebox import askokcancel as ask_question
-    from tkinter.messagebox import showerror, showwarning, showinfo
-    from tkinter.filedialog import LoadFileDialog, SaveFileDialog
-except ImportError:
-    # Python 2
-    import Tkinter as tk
-    try:
-        import ttk
-    except ImportError:
-        ttk = None
-    from tkMessageBox import (askokcancel as ask_question, showerror,
-                              showwarning, showinfo)
-    from FileDialog import LoadFileDialog, SaveFileDialog
-
+# type: ignore
 import re
 import sys
 from collections import namedtuple
 from functools import partial
-from ase.gui.i18n import _
 
 import numpy as np
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter.messagebox import askokcancel as ask_question
+from tkinter.messagebox import showerror, showwarning, showinfo
+from tkinter.filedialog import LoadFileDialog, SaveFileDialog
 
-from ase.utils import basestring
+from ase.gui.i18n import _
+
 
 __all__ = [
     'error', 'ask_question', 'MainWindow', 'LoadFileDialog', 'SaveFileDialog',
@@ -86,7 +73,7 @@ class BaseWindow(object):
     title = property(None, title)
 
     def add(self, stuff, anchor='w'):  # 'center'):
-        if isinstance(stuff, basestring):
+        if isinstance(stuff, str):
             stuff = Label(stuff)
         elif isinstance(stuff, list):
             stuff = Row(stuff)
@@ -131,7 +118,7 @@ class Row(Widget):
     def create(self, parent):
         self.widget = tk.Frame(parent)
         for thing in self.things:
-            if isinstance(thing, basestring):
+            if isinstance(thing, str):
                 thing = Label(thing)
             thing.pack(self.widget, 'left')
         return self.widget
@@ -144,10 +131,13 @@ class Label(Widget):
     def __init__(self, text='', color=None):
         self.creator = partial(tk.Label, text=text, fg=color)
 
+    @property
+    def text(self):
+        return self.widget['text']
+
+    @text.setter
     def text(self, new):
         self.widget.config(text=new)
-
-    text = property(None, text)
 
 
 class Text(Widget):
@@ -241,6 +231,13 @@ class SpinBox(Widget):
         self.widget.insert(0, x)
 
 
+# Entry and ComboBox use same mechanism (since ttk ComboBox
+# is a subclass of tk Entry).
+def _set_entry_value(widget, value):
+    widget.delete(0, 'end')
+    widget.insert(0, value)
+
+
 class Entry(Widget):
     def __init__(self, value='', width=20, callback=None):
         self.creator = partial(tk.Entry,
@@ -264,8 +261,7 @@ class Entry(Widget):
 
     @value.setter
     def value(self, x):
-        self.entry.delete(0, 'end')
-        self.entry.insert(0, x)
+        _set_entry_value(self.entry, x)
 
 
 class Scale(Widget):
@@ -352,6 +348,7 @@ if ttk is not None:
                 def callback(event):
                     self.callback(self.value)
                 widget.bind('<<ComboboxSelected>>', callback)
+
             return widget
 
         @property
@@ -360,7 +357,7 @@ if ttk is not None:
 
         @value.setter
         def value(self, val):
-            self.widget.current(self.values.index(val))
+            _set_entry_value(self.widget, val)
 else:
     # Use Entry object when there is no ttk:
     def ComboBox(labels, values, callback):
@@ -381,7 +378,7 @@ class Rows(Widget):
         return widget
 
     def add(self, row):
-        if isinstance(row, basestring):
+        if isinstance(row, str):
             row = Label(row)
         elif isinstance(row, list):
             row = Row(row)
@@ -527,20 +524,6 @@ class MainWindow(BaseWindow):
                 break
             except UnicodeDecodeError:
                 pass
-
-    def test(self, test, close_after_test=False):
-        def callback():
-            try:
-                next(test)
-            except StopIteration:
-                if close_after_test:
-                    self.close()
-            else:
-                self.win.after_idle(callback)
-
-        test.__name__ = str('?')
-        self.win.after_idle(test)  # callback)
-        self.run()
 
     def __getitem__(self, name):
         return self.menu[name].get()

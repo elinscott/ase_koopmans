@@ -1,6 +1,5 @@
-""" Implementaiton of a population for maintaining a GA population and
+""" Implementation of a population for maintaining a GA population and
 proposing structures to pair. """
-from random import randrange, random
 from math import tanh, sqrt, exp
 from operator import itemgetter
 import numpy as np
@@ -48,9 +47,13 @@ class Population(object):
     use_extinct: boolean
         Set this to True if mass extinction and the extinct key
         are going to be used. Default is False.
+
+    rng: Random number generator
+        By default numpy.random.
     """
     def __init__(self, data_connection, population_size,
-                 comparator=None, logfile=None, use_extinct=False):
+                 comparator=None, logfile=None, use_extinct=False,
+                 rng=np.random):
         self.dc = data_connection
         self.pop_size = population_size
         if comparator is None:
@@ -59,13 +62,14 @@ class Population(object):
         self.comparator = comparator
         self.logfile = logfile
         self.use_extinct = use_extinct
+        self.rng = rng
         self.pop = []
         self.pairs = None
         self.all_cand = None
         self.__initialize_pop__()
 
     def __initialize_pop__(self):
-        """ Private method that initalizes the population when
+        """ Private method that initializes the population when
             the population is created. """
 
         # Get all relaxed candidates from the database
@@ -242,14 +246,14 @@ class Population(object):
         while c1.info['confid'] == c2.info['confid'] and not used_before:
             nnf = True
             while nnf:
-                t = randrange(0, len(self.pop), 1)
-                if fit[t] > random() * fmax:
+                t = self.rng.randint(len(self.pop))
+                if fit[t] > self.rng.rand() * fmax:
                     c1 = self.pop[t]
                     nnf = False
             nnf = True
             while nnf:
-                t = randrange(0, len(self.pop), 1)
-                if fit[t] > random() * fmax:
+                t = self.rng.randint(len(self.pop))
+                if fit[t] > self.rng.rand() * fmax:
                     c2 = self.pop[t]
                     nnf = False
 
@@ -276,8 +280,8 @@ class Population(object):
         fmax = max(fit)
         nnf = True
         while nnf:
-            t = randrange(0, len(self.pop), 1)
-            if fit[t] > random() * fmax:
+            t = self.rng.randint(len(self.pop))
+            if fit[t] > self.rng.rand() * fmax:
                 c1 = self.pop[t]
                 nnf = False
 
@@ -355,7 +359,7 @@ class RandomPopulation(Population):
                             comparator, logfile, use_extinct)
 
     def __initialize_pop__(self):
-        """ Private method that initalizes the population when
+        """ Private method that initializes the population when
             the population is created. """
 
         # Get all relaxed candidates from the database
@@ -383,7 +387,7 @@ class RandomPopulation(Population):
                         self.pop.append(c)
                     else:
                         exp_fact = exp(get_raw_score(c) / best_raw)
-                        ratings.append([c, (exp_fact - 1) * random()])
+                        ratings.append([c, (exp_fact - 1) * self.rng.rand()])
             ratings.sort(key=itemgetter(1), reverse=True)
 
             for i in range(self.bad_candidates):
@@ -415,7 +419,7 @@ class RandomPopulation(Population):
         if len(self.pop) < 1:
             return None
 
-        t = randrange(0, len(self.pop), 1)
+        t = self.rng.randint(len(self.pop))
         c = self.pop[t]
 
         return c.copy()
@@ -432,9 +436,9 @@ class RandomPopulation(Population):
         c2 = self.pop[0]
         used_before = False
         while c1.info['confid'] == c2.info['confid'] and not used_before:
-            t = randrange(0, len(self.pop), 1)
+            t = self.rng.randint(len(self.pop))
             c1 = self.pop[t]
-            t = randrange(0, len(self.pop), 1)
+            t = self.rng.randint(len(self.pop))
             c2 = self.pop[t]
 
             c1id = c1.info['confid']
@@ -568,14 +572,14 @@ class FitnessSharingPopulation(Population):
         while c1.info['confid'] == c2.info['confid']:
             nnf = True
             while nnf:
-                t = randrange(0, len(self.pop), 1)
-                if fit[t] > random() * fmax:
+                t = self.rng.randint(len(self.pop))
+                if fit[t] > self.rng.rand() * fmax:
                     c1 = self.pop[t]
                     nnf = False
             nnf = True
             while nnf:
-                t = randrange(0, len(self.pop), 1)
-                if fit[t] > random() * fmax:
+                t = self.rng.randint(len(self.pop))
+                if fit[t] > self.rng.rand() * fmax:
                     c2 = self.pop[t]
                     nnf = False
 
@@ -739,14 +743,14 @@ class RankFitnessPopulation(Population):
         while c1.info['confid'] == c2.info['confid']:
             nnf = True
             while nnf:
-                t = randrange(0, len(self.pop), 1)
-                if fit[t] > random() * fmax:
+                t = self.rng.randint(len(self.pop))
+                if fit[t] > self.rng.rand() * fmax:
                     c1 = self.pop[t]
                     nnf = False
             nnf = True
             while nnf:
-                t = randrange(0, len(self.pop), 1)
-                if fit[t] > random() * fmax:
+                t = self.rng.randint(len(self.pop))
+                if fit[t] > self.rng.rand() * fmax:
                     c2 = self.pop[t]
                     nnf = False
 

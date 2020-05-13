@@ -33,8 +33,6 @@ Mode inspection:
 .. literalinclude:: phonons_Al_fcc.py
    :start-after: literalinclude division line
 
-.. image:: Al_mode.*
-
 .. [Alfe] D. Alfe, PHON: A program to calculate phonons using the small
           displacement method, Comput. Phys. Commun. 180, 2622 (2009)
 .. [Wang] Y. Wang *et al.*, A mixed-space approach to first-principles

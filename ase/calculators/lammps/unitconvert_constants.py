@@ -62,7 +62,7 @@ kcal_si = (
 # water by one degree Kelvin)
 ev_si = (
     1.6021766208e-19
-)  # [J] electon volt (amount of energy gained or lost by the
+)  # [J] electron volt (amount of energy gained or lost by the
 # charge of a single electron moving across an electric
 # potential difference of one volt.) (NIST value)
 hartree_si = (

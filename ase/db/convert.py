@@ -5,7 +5,6 @@ import numpy as np
 
 from ase.db import connect
 from ase.db.sqlite import index_statements
-from ase.utils import basestring
 
 
 def convert(name, opts):
@@ -18,7 +17,7 @@ def convert(name, opts):
             kvp = row.get('key_value_pairs', {})
             if opts.convert_strings_to_numbers:
                 for key, value in kvp.items():
-                    if isinstance(value, basestring):
+                    if isinstance(value, str):
                         try:
                             value = float(value)
                         except ValueError:

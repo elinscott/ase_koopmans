@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import socket
 from subprocess import Popen
@@ -8,7 +7,6 @@ import numpy as np
 from ase.calculators.calculator import (Calculator, all_changes,
                                         PropertyNotImplementedError)
 import ase.units as units
-from ase.utils import basestring
 
 
 def actualunixsocketname(name):
@@ -26,7 +24,8 @@ class IPIProtocol:
         self.socket = socket
 
         if txt is None:
-            log = lambda *args: None
+            def log(*args):
+                pass
         else:
             def log(*args):
                 print('Driver:', *args, file=txt)
@@ -35,7 +34,7 @@ class IPIProtocol:
 
     def sendmsg(self, msg):
         self.log('  sendmsg', repr(msg))
-        #assert msg in self.statements, msg
+        # assert msg in self.statements, msg
         msg = msg.encode('ascii').ljust(12)
         self.socket.sendall(msg)
 
@@ -63,13 +62,13 @@ class IPIProtocol:
 
         assert len(msg) == 12, msg
         msg = msg.rstrip().decode('ascii')
-        #assert msg in self.responses, msg
+        # assert msg in self.responses, msg
         self.log('  recvmsg', repr(msg))
         return msg
 
     def send(self, a, dtype):
         buf = np.asarray(a, dtype).tobytes()
-        #self.log('  send {}'.format(np.array(a).ravel().tolist()))
+        # self.log('  send {}'.format(np.array(a).ravel().tolist()))
         self.log('  send {} bytes of {}'.format(len(buf), dtype))
         self.socket.sendall(buf)
 
@@ -79,9 +78,9 @@ class IPIProtocol:
         buf = self._recvall(nbytes)
         assert len(buf) == nbytes, (len(buf), nbytes)
         self.log('  recv {} bytes of {}'.format(len(buf), dtype))
-        #print(np.frombuffer(buf, dtype=dtype))
+        # print(np.frombuffer(buf, dtype=dtype))
         a.flat[:] = np.frombuffer(buf, dtype=dtype)
-        #self.log('  recv {}'.format(a.ravel().tolist()))
+        # self.log('  recv {}'.format(a.ravel().tolist()))
         assert np.isfinite(a).all()
         return a
 
@@ -323,7 +322,7 @@ class SocketServer:
         #     self.protocol.end()  # Send end-of-communication string
         self.protocol = None
         if self.clientsocket is not None:
-            self.clientsocket.close() #shutdown(socket.SHUT_RDWR)
+            self.clientsocket.close()  # shutdown(socket.SHUT_RDWR)
         if self.proc is not None:
             exitcode = self.proc.wait()
             if exitcode != 0:
@@ -338,7 +337,7 @@ class SocketServer:
         if self._created_socket_file is not None:
             assert self._created_socket_file.startswith('/tmp/ipi_')
             os.unlink(self._created_socket_file)
-        #self.log('IPI server closed')
+        # self.log('IPI server closed')
 
     def calculate(self, atoms):
         """Send geometry to client and return calculated things as dict.
@@ -347,7 +346,7 @@ class SocketServer:
         wait for the client to finish the calculation."""
         assert not self._closed
 
-        #If we have not established connection yet, we must block
+        # If we have not established connection yet, we must block
         # until the client catches up:
         if self.protocol is None:
             self._accept()
@@ -423,7 +422,7 @@ class SocketClient:
         # We should also broadcast the bead index, once we support doing
         # multiple beads.
         self.comm.broadcast(atoms.positions, 0)
-        self.comm.broadcast(atoms.cell, 0)
+        self.comm.broadcast(np.ascontiguousarray(atoms.cell), 0)
 
         energy = atoms.get_potential_energy()
         forces = atoms.get_forces()
@@ -577,7 +576,7 @@ class SocketIOCalculator(Calculator):
         self.timeout = timeout
         self.server = None
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             self.log = open(log, 'w')
             self.log_was_opened = True
         else:

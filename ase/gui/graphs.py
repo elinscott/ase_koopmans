@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import pickle
 import sys
 
@@ -99,7 +98,4 @@ def make_plot(data, i, expr, type, show=True):
 
 
 if __name__ == '__main__':
-    if sys.version_info[0] == 2:
-        make_plot(*pickle.load(sys.stdin))
-    else:
-        make_plot(*pickle.load(sys.stdin.buffer))
+    make_plot(*pickle.load(sys.stdin.buffer))

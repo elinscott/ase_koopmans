@@ -27,7 +27,6 @@ for i in range(len(cosb3)):
 # Create nice-looking image using povray
 io.write('spacegroup-cosb3.pov', cosb3,
          transparent=False,
-         display=False,
          run_povray=True,
          camera_type='perspective',
          canvas_width=320,

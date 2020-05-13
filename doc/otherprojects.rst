@@ -31,3 +31,10 @@ link and descriptive paragraph.
    potential models. It includes a Python interface for integration
    with first-principles codes via ASE as well as other Python
    libraries.
+
+ * `Sella <https://github.com/zadorlab/sella>`_:
+   Sella is a saddle point refinement (optimization) tool which uses
+   the `Optimize <ase/optimize.html>`_ API. Sella supports minimization and
+   refinement of arbitrary-order saddle points with constraints.
+   Additionally, Sella can perform intrinsic reaction coordinate (IRC)
+   calculations.

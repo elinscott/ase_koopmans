@@ -83,7 +83,7 @@ CoSb3 skutterudite
 Skutterudites_ are quite interesting structures with 32 atoms
 in the unit cell.
 
-.. _Skutterudites: http://en.wikipedia.org/wiki/Skutterudite
+.. _Skutterudites: https://en.wikipedia.org/wiki/Skutterudite
 
 .. literalinclude:: spacegroup-skutterudite.py
 

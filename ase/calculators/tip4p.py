@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy as np
 
 from ase import units
@@ -14,13 +13,13 @@ A = 600e3 * units.kcal / units.mol
 B = 610 * units.kcal / units.mol
 sigma0 = (A / B)**(1 / 6.)
 epsilon0 = B**2 / (4 * A)
-# http://dx.doi.org/10.1063/1.445869
+# https://doi.org/10.1063/1.445869
 
 class TIP4P(TIP3P):
     def __init__(self, rc=7.0, width=1.0):
         """ TIP4P potential for water.
 
-        http://dx.doi.org/10.1063/1.445869
+        https://doi.org/10.1063/1.445869
 
         Requires an atoms object of OHH,OHH, ... sequence
         Correct TIP4P charges and LJ parameters set automatically.

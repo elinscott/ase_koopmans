@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import ase.gui.ui as ui
 from ase.gui.i18n import _
 

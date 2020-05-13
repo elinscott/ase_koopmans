@@ -42,8 +42,8 @@ a large degree of customisability. :ref:`More information <matplotlib_plotting>`
 .. _RasMol: http://openrasmol.org/
 .. _VMD: http://www.ks.uiuc.edu/Research/vmd/
 .. _gOpenMol: http://www.csc.fi/gopenmol/
-.. _Avogadro: http://avogadro.openmolecules.net/
-.. _ParaView: http://www.paraview.org/
+.. _Avogadro: http://avogadro.cc/
+.. _ParaView: https://www.paraview.org/
 .. _NGLView: https://github.com/arose/nglview
 
 
@@ -93,7 +93,7 @@ The `.view` member exposes full API of the NGLView_ widget. The
 widgets. For the full documentation of these objects consult the NGLView_,
 NGL_ and ipywidgets_ websites.
 
-.. _Jupyter: https://www.jupyter.org/
+.. _Jupyter: https://jupyter.org/
 .. _NGL: https://github.com/arose/ngl
 .. _ipywidgets: https://github.com/jupyter-widgets/ipywidgets
 
@@ -101,7 +101,6 @@ NGL_ and ipywidgets_ websites.
    :inherited-members:
 
 .. autofunction:: ase.visualize.ngl.view_ngl
-.. automethod:: ase.visualize.ngl.NGLDisplay.custom_colors
 
 
 .. module:: ase.visualize.mlab

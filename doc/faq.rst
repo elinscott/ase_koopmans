@@ -77,7 +77,7 @@ An older paper corresponding to an early version of ASE is:
    | `An object-oriented scripting interface to a legacy electronic structure code`__
    | Comput. Sci. Eng., Vol. **4**, 56-66, 2002
 
-   __ http://dx.doi.org/10.1109/5992.998641
+   __ https://doi.org/10.1109/5992.998641
 
 BibTex (:git:`doc/ASE.bib`):
 

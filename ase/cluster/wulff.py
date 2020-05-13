@@ -1,6 +1,4 @@
-from __future__ import print_function
 import numpy as np
-from ase.utils import basestring
 
 
 delta = 1e-10
@@ -54,7 +52,7 @@ def wulff_construction(symbol, surfaces, energies, size, structure,
             raise ValueError('Invalid rounding: %s' % rounding)
 
     # Interpret structure, if it is a string.
-    if isinstance(structure, basestring):
+    if isinstance(structure, str):
         if structure == 'fcc':
             from ase.cluster.cubic import FaceCenteredCubic as structure
         elif structure == 'bcc':

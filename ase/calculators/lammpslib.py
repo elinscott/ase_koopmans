@@ -1,6 +1,5 @@
 """ASE LAMMPS Calculator Library Version"""
 
-from __future__ import print_function
 
 import ctypes
 import operator
@@ -12,8 +11,8 @@ from ase.calculators.calculator import Calculator
 from ase.data import (atomic_numbers as ase_atomic_numbers,
                       chemical_symbols as ase_chemical_symbols,
                       atomic_masses as ase_atomic_masses)
-from ase.utils import basestring
 from ase.calculators.lammps import convert
+from ase.geometry import wrap_positions
 
 # TODO
 # 1. should we make a new lammps object each time ?
@@ -174,7 +173,7 @@ potentials)
 
     lammps = LAMMPSlib(lmpcmds=cmds, log_file='test.log')
 
-    NiH.set_calculator(lammps)
+    NiH.calc = lammps
     print("Energy ", NiH.get_potential_energy())
 
 
@@ -311,11 +310,12 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
         self.lmp.command(cell_cmd)
 
-    def set_lammps_pos(self, atoms, wrap=True):
-        if wrap:
-            atoms.wrap()
-
-        pos = convert(atoms.get_positions(), "distance", "ASE", self.units)
+    def set_lammps_pos(self, atoms):
+        # Create local copy of positions that are wrapped along any periodic
+        # directions
+        pos = wrap_positions(atoms.get_positions(), atoms.get_cell(),
+                             atoms.get_pbc())
+        pos = convert(pos, "distance", "ASE", self.units)
 
         # If necessary, transform the positions to new coordinate system
         if self.coord_transform is not None:
@@ -425,7 +425,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
                 self.lmp.command('timestep %.30f' % dt)
             else:
                 self.lmp.command('timestep %.30f' %
-                    convert(dt, "time", "ASE", self.units))
+                                 convert(dt, "time", "ASE", self.units))
         self.lmp.command('run %d' % n_steps)
 
         if n_steps > 0:
@@ -445,12 +445,12 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
             if self.coord_transform is not None:
                 vel = np.dot(vel, self.coord_transform)
             if velocity_field is None:
-                vel = convert(atoms.get_velocities(), "velocity", "ASE",
-                        self.units)
+                atoms.set_velocities(convert(vel, 'velocity', self.units,
+                                             'ASE'))
 
         # Extract the forces and energy
-        self.results['energy'] = convert(self.lmp.extract_variable('pe', None, 0), "energy", self.units,
-                "ASE")
+        self.results['energy'] = convert(self.lmp.extract_variable('pe', None, 0),
+                                         "energy", self.units, "ASE")
         self.results['free_energy'] = self.results['energy']
 
         stress = np.empty(6)
@@ -483,7 +483,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 
         # definitely yields atom-id ordered force array
         f = convert(np.array(self.lmp.gather_atoms("f", 1, 3)).reshape(-1,3),
-                "force", self.units, "ASE")
+                    "force", self.units, "ASE")
 
         if self.coord_transform is not None:
             self.results['forces'] = np.dot(f, self.coord_transform)
@@ -690,7 +690,7 @@ xz and yz are the tilt of the lattice vectors, all to be edited.
 def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
                       molecule_ids=None, charges=None, units='metal'):
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         fh = open(filename, 'w')
     else:
         fh = filename
@@ -738,5 +738,5 @@ def write_lammps_data(filename, atoms, atom_types, comment=None, cutoff=None,
         fh.write('{0} {1} {2} {3:16.8e} {4:16.8e} {5:16.8e} {6:16.8e}\n'
                  .format(i + 1, mol, typ, q, pos[0], pos[1], pos[2]))
 
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         fh.close()

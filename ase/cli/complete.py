@@ -11,7 +11,6 @@ or run::
 
 """
 
-from __future__ import print_function
 import os
 import sys
 from glob import glob
@@ -40,19 +39,19 @@ commands = {
          '--output-format', '-f', '--force', '-n',
          '--image-number', '-e', '--exec-code', '-E',
          '--exec-file', '-a', '--arrays', '-I', '--info', '-s',
-         '--split-output'],
+         '--split-output', '--read-args', '--write-args'],
     'db':
         ['-v', '--verbose', '-q', '--quiet', '-n', '--count', '-l',
          '--long', '-i', '--insert-into', '-a',
          '--add-from-file', '-k', '--add-key-value-pairs', '-L',
          '--limit', '--offset', '--delete', '--delete-keys',
          '-y', '--yes', '--explain', '-c', '--columns', '-s',
-         '--sort', '--cut', '-p', '--plot', '-P', '--plot-data',
-         '--csv', '-w', '--open-web-browser', '--no-lock-file',
-         '--analyse', '-j', '--json', '-m', '--show-metadata',
+         '--sort', '--cut', '-p', '--plot', '--csv', '-w',
+         '--open-web-browser', '--no-lock-file', '--analyse',
+         '-j', '--json', '-m', '--show-metadata',
          '--set-metadata', '-M', '--metadata-from-python-script',
          '--unique', '--strip-data', '--show-keys',
-         '--show-values', '--write-summary-files'],
+         '--show-values'],
     'eos':
         ['-p', '--plot', '-t', '--type'],
     'find':
@@ -64,6 +63,8 @@ commands = {
          '--interpolate', '-b', '--bonds', '-s', '--scale'],
     'info':
         ['-v', '--verbose', '--formats', '--calculators'],
+    'nebplot':
+        ['--nimages', '--share-x', '--share-y'],
     'nomad-get':
         [],
     'nomad-upload':
@@ -79,7 +80,8 @@ commands = {
          '--eos-type', '-o', '--output', '--modify', '--after'],
     'test':
         ['-c', '--calculators', '--list', '--list-calculators', '-j',
-         '--jobs', '-v', '--verbose', '--strict'],
+         '--jobs', '-v', '--verbose', '--strict', '--nogui',
+         '--pytest'],
     'ulm':
         ['-n', '--index', '-d', '--delete', '-v', '--verbose']}
 # End of computer generated data
@@ -118,11 +120,13 @@ def complete(word, previous, line, point):
         if previous in ['-c', '--calculators']:
             from ase.calculators.calculator import names as words
         elif not word.startswith('-'):
-            # Suggest names of tests.  We suggest all matching tests.
-            # It might be better to autocomplete only up to directory
-            # names.
-            from ase.test.testsuite import get_tests
-            words = get_tests()
+            from ase.test.testsuite import all_test_modules_and_groups
+            names, groups = all_test_modules_and_groups()
+            group_completions = [group + '.' for group in groups]
+            for group in group_completions:
+                if word.startswith(group):
+                    return groups[group[:-1]]
+            words = names + list(groups) + group_completions
 
     return words
 
@@ -134,10 +138,15 @@ if sys.version_info[0] == 2:
                   'Please consider rerunning \'ase completion\'.')
 
 
-word, previous = sys.argv[2:]
-line = os.environ['COMP_LINE']
-point = int(os.environ['COMP_POINT'])
-words = complete(word, previous, line, point)
-for w in words:
-    if w.startswith(word):
-        print(w)
+def main():
+    word, previous = sys.argv[2:]
+    line = os.environ['COMP_LINE']
+    point = int(os.environ['COMP_POINT'])
+    words = complete(word, previous, line, point)
+    for w in words:
+        if w.startswith(word):
+            print(w)
+
+
+if __name__ == '__main__':
+    main()

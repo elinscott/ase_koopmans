@@ -43,7 +43,7 @@ mutations = OperationSelector([1., 1., 1.],
 # Relax all unrelaxed structures (e.g. the starting population)
 while da.get_number_of_unrelaxed_candidates() > 0:
     a = da.get_an_unrelaxed_candidate()
-    a.set_calculator(EMT())
+    a.calc = EMT()
     print('Relaxing starting candidate {0}'.format(a.info['confid']))
     dyn = BFGS(a, trajectory=None, logfile=None)
     dyn.run(fmax=0.05, steps=100)
@@ -72,7 +72,7 @@ for i in range(n_to_test):
             a3 = a3_mut
         
     # Relax the new candidate
-    a3.set_calculator(EMT())
+    a3.calc = EMT()
     dyn = BFGS(a3, trajectory=None, logfile=None)
     dyn.run(fmax=0.05, steps=100)
     a3.info['key_value_pairs']['raw_score'] = -a3.get_potential_energy()

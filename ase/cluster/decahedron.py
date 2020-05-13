@@ -2,15 +2,14 @@ import numpy as np
 
 from ase import Atoms
 from ase.data import atomic_numbers, reference_states
-from ase.utils import basestring
 
 
 def Decahedron(symbol, p, q, r, latticeconstant=None):
     """
-    Returns a cluster in the decahedra class.
+    Return a decahedral cluster.
 
-    Prameters
-    ---------
+    Parameters
+    ----------
     symbol: Chemical symbol (or atomic number) of the element.
 
     p: Number of atoms on the (100) facets perpendicular to the five
@@ -26,13 +25,11 @@ def Decahedron(symbol, p, q, r, latticeconstant=None):
     then it is extracted form ase.data.
     """
 
-    # Interpret symbol
-    if isinstance(symbol, basestring):
+    if isinstance(symbol, str):
         atomic_number = atomic_numbers[symbol]
     else:
         atomic_number = symbol
 
-    # Interpret lattice constant
     if latticeconstant is None:
         if reference_states[atomic_number]['symmetry'] in ['fcc', 'bcc', 'sc']:
             lattice_constant = reference_states[atomic_number]['a']

@@ -1,3 +1,4 @@
+# flake8: noqa
 # atomization energies in kcal / mol (= 43.364 meV)
 # All values evaluated with PBE xc-orbitals and densities at
 # experimental geometries. Zero-point vibration has been removed

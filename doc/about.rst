@@ -55,4 +55,4 @@ number of "design goals" that make it:
   http://www.gnu.org/licenses/.  Everybody is invited to
   participate in using and :ref:`developing the code <devel>`.
 
-.. _Python: http://www.python.org
+.. _Python: https://www.python.org/
