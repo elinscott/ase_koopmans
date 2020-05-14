@@ -162,7 +162,6 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
         if 'odd energy' in line:
             odd_energy = float(line.split()[3])*units.Hartree
 
-
         if 'HOMO Eigenvalue (eV)' in line:
             homo_energy = float(cpo_lines[i_line + 2])
     
@@ -217,12 +216,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     calc.results['lambda_ii'] = lambda_ii
     calc.results['orbital_data'] = orbital_data
     calc.results['job_done'] = job_done
-
     calc.results['walltime'] = walltime
     structure.set_calculator(calc)
 
     yield structure
-
 
 
 def construct_namelist(parameters=None, warn=False, **kwargs):
