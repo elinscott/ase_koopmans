@@ -160,7 +160,7 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                     pass
 
         if 'odd energy' in line:
-            odd_energy = float(line.split()[3])*Hartree
+            odd_energy = float(line.split()[3])*units.Hartree
 
         if 'HOMO Eigenvalue (eV)' in line:
             homo_energy = float(cpo_lines[i_line + 2])
@@ -178,11 +178,13 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
         # Orbital information
         if line.startswith(('OCC', 'EMP')):
-            splitline = line.split()
-            orbital_data['charge'][-1].append(float(splitline[3]))
-            orbital_data['centres'][-1].append([float(x)*Bohr for x in splitline[5:8]])
-            orbital_data['spreads'][-1].append(float(splitline[9])*Bohr**2)
-            orbital_data['self-Hartree'][-1].append(float(splitline[10]))
+            line = line.replace('********', '   0.000')
+            values = [float(line[i-4:i+4]) for i, c in enumerate(line) if c == '.']
+            orbital_data['charge'][-1].append(values[0])
+            orbital_data['centres'][-1].append([x*units.Bohr for x in values[1:4]])
+            orbital_data['spreads'][-1].append(values[4]*units.Bohr**2)
+            orbital_data['self-Hartree'][-1].append(values[5])
+
 
         if 'wall time' in line:
             time_str = line.split(',')[1].strip().rstrip('wall time')
