@@ -29,7 +29,7 @@ from ase.utils import basestring
 from ase.io.espresso import Namelist, KEYS, SSSP_VALENCE, \
    read_espresso_in, ibrav_to_cell, get_atomic_positions, \
    get_cell_parameters, str_to_value, read_fortran_namelist, ffloat, \
-   label_to_symbol, infix_float, construct_namelist, grep_valence, \
+   label_to_symbol, infix_float, grep_valence, \
    cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
 
 from ase.calculators.espresso_cp import Espresso_cp
@@ -200,139 +200,118 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                 seconds = 0
             walltime = (float(hours)*60 + float(minutes))*60 + float(seconds)
 
-    # Forces
-    # forces = None
-    # for force_index in indexes[_CP_FORCE]:
-    #     if image_index < force_index < next_index:
-    #         # Before QE 5.3 'negative rho' added 2 lines before forces
-    #         # Use exact lines to stop before 'non-local' forces
-    #         # in high verbosity
-    #         if not cpo_lines[force_index + 2].strip():
-    #             force_index += 4
-    #         else:
-    #             force_index += 2
-    #         # assume contiguous
-    #         forces = [
-    #             [float(x) for x in force_line.split()[-3:]] for force_line
-    #             in cpo_lines[force_index:force_index + len(structure)]]
-    #         forces = np.array(forces) * units['Ry'] / units['Bohr']
-
-    # Stress
-    # stress = None
-    # for stress_index in indexes[_CP_STRESS]:
-    #     if image_index < stress_index < next_index:
-    #         sxx, sxy, sxz = cpo_lines[stress_index + 1].split()[:3]
-    #         _, syy, syz = cpo_lines[stress_index + 2].split()[:3]
-    #         _, _, szz = cpo_lines[stress_index + 3].split()[:3]
-    #         stress = np.array([sxx, syy, szz, syz, sxz, sxy], dtype=float)
-    #         # sign convention is opposite of ase
-    #         stress *= -1 * units['Ry'] / (units['Bohr'] ** 3)
-
-    # Magmoms
-    # magmoms = None
-    # for magmoms_index in indexes[_CP_MAGMOM]:
-    #     if image_index < magmoms_index < next_index:
-    #         magmoms = [
-    #             float(mag_line.split()[5]) for mag_line
-    #             in cpo_lines[magmoms_index + 1:
-    #                          magmoms_index + 1 + len(structure)]]
-
-    # Fermi level
-    # efermi = None
-    # for fermi_index in indexes[_CP_FERMI]:
-    #     if image_index < fermi_index < next_index:
-    #         efermi = float(cpo_lines[fermi_index].split()[-2])
-
-    # K-points
-    # ibzkpts = None
-    # weights = None
-    # kpoints_warning = "Number of k-points >= 100: " + \
-    #                   "set verbosity='high' to print them."
-
-    # for kpts_index in indexes[_CP_KPTS]:
-    #     nkpts = int(cpo_lines[kpts_index].split()[4])
-    #     kpts_index += 2
-
-    #     if cpo_lines[kpts_index].strip() == kpoints_warning:
-    #         continue
-
-    #     # QE prints the k-points in units of 2*pi/alat
-    #     # with alat defined as the length of the first
-    #     # cell vector
-    #     cell = structure.get_cell()
-    #     alat = np.linalg.norm(cell[0])
-    #     ibzkpts = []
-    #     weights = []
-    #     for i in range(nkpts):
-    #         l = cpo_lines[kpts_index + i].split()
-    #         weights.append(float(l[-1]))
-    #         coord = np.array([l[-6], l[-5], l[-4].strip('),')],
-    #                          dtype=float)
-    #         coord *= 2 * np.pi / alat
-    #         coord = kpoint_convert(cell, ckpts_kv=coord)
-    #         ibzkpts.append(coord)
-    #     ibzkpts = np.array(ibzkpts)
-    #     weights = np.array(weights)
-
-    # kpts = None
-    # kpoints_warning = "Number of k-points >= 100: " + \
-    #                   "set verbosity='high' to print the bands."
-
-    # for bands_index in indexes[_CP_BANDS] + indexes[_CP_BANDSTRUCTURE]:
-    #     if image_index < bands_index < next_index:
-    #         bands_index += 2
-
-    #         if cpo_lines[bands_index].strip() == kpoints_warning:
-    #             continue
-
-    #         assert ibzkpts is not None
-    #         spin, bands, eigenvalues = 0, [], [[], []]
-
-    #         while True:
-    #             l = cpo_lines[bands_index].replace('-', ' -').split()
-    #             if len(l) == 0:
-    #                 if len(bands) > 0:
-    #                     eigenvalues[spin].append(bands)
-    #                     bands = []
-    #             elif l == ['occupation', 'numbers']:
-    #                 bands_index += 3
-    #             elif l[0] == 'k' and l[1].startswith('='):
-    #                 pass
-    #             elif 'SPIN' in l:
-    #                 if 'DOWN' in l:
-    #                     spin += 1
-    #             else:
-    #                 try:
-    #                     bands.extend(map(float, l))
-    #                 except ValueError:
-    #                     break
-    #             bands_index += 1
-
-    #         if spin == 1:
-    #             assert len(eigenvalues[0]) == len(eigenvalues[1])
-    #         assert len(eigenvalues[0] + eigenvalues[1]) == len(ibzkpts)
-
-    #         kpts = []
-    #         for s in range(spin + 1):
-    #             for w, k, e in zip(weights, ibzkpts, eigenvalues[s]):
-    #                 kpt = SinglePointKPoint(w, s, k, eps_n=e)
-    #                 kpts.append(kpt)
-
     # Put everything together
     calc = SinglePointDFTCalculator(structure, energy=energy) #,
     #                                 forces=forces, stress=stress,
     #                                 magmoms=magmoms, efermi=efermi,
     #                                 ibzkpts=ibzkpts)
-    # calc.kpts = kpts
     calc.results['energy'] = energy
     calc.results['odd_energy'] = odd_energy
     calc.results['homo_energy'] = homo_energy
     calc.results['lumo_energy'] = lumo_energy
     calc.results['eigenvalues'] = eigenvalues
     calc.results['lambda_ii'] = lambda_ii
-    calc.results['job_done'] = job_done
     calc.results['orbital_data'] = orbital_data
+    calc.results['job_done'] = job_done
     calc.results['walltime'] = walltime
     structure.set_calculator(calc)
 
     yield structure
+
+
+def construct_namelist(parameters=None, warn=False, **kwargs):
+    """
+    Construct an ordered Namelist containing all the parameters given (as
+    a dictionary or kwargs). Keys will be inserted into their appropriate
+    section in the namelist and the dictionary may contain flat and nested
+    structures. Any kwargs that match input keys will be incorporated into
+    their correct section. All matches are case-insensitive, and returned
+    Namelist object is a case-insensitive dict.
+
+    If a key is not known to ase, but in a section within `parameters`,
+    it will be assumed that it was put there on purpose and included
+    in the output namelist. Anything not in a section will be ignored (set
+    `warn` to True to see ignored keys).
+
+    Keys with a dimension (e.g. Hubbard_U(1)) will be incorporated as-is
+    so the `i` should be made to match the output.
+
+    The priority of the keys is:
+        kwargs[key] > parameters[key] > parameters[section][key]
+    Only the highest priority item will be included.
+
+    Copied from ase/io/espresso.cp
+
+    Parameters
+    ----------
+    parameters: dict
+        Flat or nested set of input parameters.
+    warn: bool
+        Enable warnings for unused keys.
+
+    Returns
+    -------
+    input_namelist: Namelist
+        cp.x compatible namelist of input parameters.
+
+    """
+    # Convert everything to Namelist early to make case-insensitive
+    if parameters is None:
+        parameters = Namelist()
+    else:
+        # Maximum one level of nested dict
+        # Don't modify in place
+        parameters_namelist = Namelist()
+        for key, value in parameters.items():
+            if isinstance(value, dict):
+                parameters_namelist[key] = Namelist(value)
+            else:
+                parameters_namelist[key] = value
+        parameters = parameters_namelist
+
+    # Just a dict
+    kwargs = Namelist(kwargs)
+
+    # Final parameter set
+    input_namelist = Namelist()
+
+    # Collect
+    for section in KEYS:
+        sec_list = Namelist()
+        for key in KEYS[section]:
+            # Check all three separately and pop them all so that
+            # we can check for missing values later
+            if key in parameters.get(section, {}):
+                sec_list[key] = parameters[section].pop(key)
+            if key in parameters:
+                sec_list[key] = parameters.pop(key)
+            if key in kwargs:
+                sec_list[key] = kwargs.pop(key)
+
+            # Check if there is a key(i) version (no extra parsing)
+            cp_parameters = parameters.copy()
+            for arg_key in cp_parameters:
+                if arg_key.split('(')[0].strip().lower() == key.lower():
+                    sec_list[arg_key] = parameters.pop(arg_key)
+            cp_kwargs = kwargs.copy()
+            for arg_key in cp_kwargs:
+                if arg_key.split('(')[0].strip().lower() == key.lower():
+                    sec_list[arg_key] = kwargs.pop(arg_key)
+
+        # Add to output
+        input_namelist[section] = sec_list
+
+    unused_keys = list(kwargs)
+    # pass anything else already in a section
+    for key, value in parameters.items():
+        if key in KEYS and isinstance(value, dict):
+            input_namelist[key].update(value)
+        elif isinstance(value, dict):
+            unused_keys.extend(list(value))
+        else:
+            unused_keys.append(key)
+
+    if warn and unused_keys:
+        warnings.warn('Unused keys: {}'.format(', '.join(unused_keys)))
+
+    return input_namelist

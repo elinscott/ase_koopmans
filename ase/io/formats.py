@@ -275,9 +275,9 @@ F('espresso-in', 'Quantum espresso in file', '1F',
 F('espresso-out', 'Quantum espresso out file', '+F',
   module='espresso', ext=['out', 'pwo'], magic=b'*Program PWSCF'),
 F('espresso-cp-in', 'Quantum espresso (cp.x) in file', '1F',
-  module='espresso', ext=['in', 'cpi'])
+  module='espresso_cp', ext='cpi')
 F('espresso-cp-out', 'Quantum espresso (cp.x) out file', '+F',
-  module='espresso_cp', ext=['out', 'cpo'])
+  module='espresso_cp', ext='cpo')
 F('etsf', 'ETSF format', '1S'),
 F('exciting', 'exciting input', '1S', glob='input.xml'),
 F('extxyz', 'Extended XYZ file', '+F'),
