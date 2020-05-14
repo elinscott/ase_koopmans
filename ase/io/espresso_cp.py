@@ -202,7 +202,6 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                 seconds = 0
             walltime = (float(hours)*60 + float(minutes))*60 + float(seconds)
 
-
     # Put everything together
     calc = SinglePointDFTCalculator(structure, energy=energy) #,
     #                                 forces=forces, stress=stress,
