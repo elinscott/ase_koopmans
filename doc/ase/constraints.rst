@@ -99,15 +99,15 @@ The FixLinearTriatomic class
 ============================
 
 This class is used to keep the geometry of linear triatomic molecules
-rigid in geometry optimizations or molecular dynamics runs. Rigidness 
-of linear triatomic molecules is impossible to attain by constraining 
+rigid in geometry optimizations or molecular dynamics runs. Rigidness
+of linear triatomic molecules is impossible to attain by constraining
 all interatomic distances using :class:`FixBondLength`, as this won't
-remove an adequate number of degrees of freedom. To overcome this, 
-:class:`FixLinearTriatomic` fixes the distance between the outer atoms 
-with RATTLE and applies a linear vectorial constraint to the central 
-atom using the RATTLE-constrained positions of the outer atoms (read 
-more about the method here: G. Ciccotti, M. Ferrario, J.-P. Ryckaert, 
-Molecular Physics 47, 1253 (1982)). 
+remove an adequate number of degrees of freedom. To overcome this,
+:class:`FixLinearTriatomic` fixes the distance between the outer atoms
+with RATTLE and applies a linear vectorial constraint to the central
+atom using the RATTLE-constrained positions of the outer atoms (read
+more about the method here: G. Ciccotti, M. Ferrario, J.-P. Ryckaert,
+Molecular Physics 47, 1253 (1982)).
 
 When setting these constraints one has to specify a list of triples
 of atomic indices, each triple representing a specific triatomic molecule.
@@ -439,6 +439,7 @@ scaled positions fixed.
 
 .. autoclass:: StrainFilter
 
+
 The ExpCellFilter class
 =======================
 
@@ -446,3 +447,26 @@ The exponential cell filter is an improved :class:`UnitCellFilter`
 which is parameter free.
 
 .. autoclass:: ExpCellFilter
+
+
+.. module:: ase.spacegroup.symmetrize
+
+The FixSymmetry class
+=====================
+
+.. autoclass:: ase.spacegroup.symmetrize.FixSymmetry
+
+The module also provides some utility functions to prepare
+symmetrized configurations and to check symmetry.
+
+.. autofunction:: ase.spacegroup.symmetrize.refine_symmetry
+
+.. autofunction:: ase.spacegroup.symmetrize.check_symmetry
+
+Here is an example of using these tools to demonstrate the difference between
+minimising a perturbed bcc Al cell with and without symmetry-preservation.
+Since bcc is unstable with respect to fcc with a Lennard Jones model, the
+unsymmetrised case relaxes to fcc, while the constraint keeps the original
+symmetry.
+
+-.. literalinclude:: fix_symmetry_example.py

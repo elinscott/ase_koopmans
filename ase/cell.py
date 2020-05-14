@@ -1,6 +1,9 @@
+import ase
+from typing import Mapping, Sequence, Union
 import numpy as np
 from ase.utils import deprecated
 from ase.utils.arraywrapper import arraylike
+from ase.utils import pbc2pbc
 
 
 __all__ = ['Cell']
@@ -31,7 +34,7 @@ class Cell:
 
     ase_objtype = 'cell'  # For JSON'ing
 
-    def __init__(self, array, pbc=deprecated_placeholder):
+    def __init__(self, array):
         """Create cell.
 
         Parameters:
@@ -39,27 +42,9 @@ class Cell:
         array: 3x3 arraylike object
           The three cell vectors: cell[0], cell[1], and cell[2].
         """
-        array = np.asarray(array)
-        pbc = warn_with_pbc(array, pbc)
-        if pbc is deprecated_placeholder:
-            pbc = array.any(1)
-
+        array = np.asarray(array, dtype=float)
         assert array.shape == (3, 3)
-        assert array.dtype == float
-        assert pbc.shape == (3,)
-        assert pbc.dtype == bool
         self.array = array
-        self._pbc = pbc
-
-    @property
-    @deprecated(deprecation_msg)
-    def pbc(self):
-        return self._pbc
-
-    @pbc.setter
-    @deprecated(deprecation_msg)
-    def pbc(self, pbc):
-        self._pbc = pbc
 
     def cellpar(self, radians=False):
         """Get cell lengths and angles of this cell.
@@ -69,7 +54,7 @@ class Cell:
         return cell_to_cellpar(self.array, radians)
 
     def todict(self):
-        return dict(array=self.array, pbc=self._pbc)
+        return dict(array=self.array)
 
     @classmethod
     def ascell(cls, cell):
@@ -81,7 +66,7 @@ class Cell:
         return cls.new(cell)
 
     @classmethod
-    def new(cls, cell=None, pbc=deprecated_placeholder):
+    def new(cls, cell=None):
         """Create new cell from any parameters.
 
         If cell is three numbers, assume three lengths with right angles.
@@ -104,20 +89,19 @@ class Cell:
             raise ValueError('Cell must be length 3 sequence, length 6 '
                              'sequence or 3x3 matrix!')
 
-        cellobj = cls(cell, pbc=pbc)
+        cellobj = cls(cell)
         return cellobj
 
     @classmethod
-    def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None,
-                    pbc=deprecated_placeholder):
+    def fromcellpar(cls, cellpar, ab_normal=(0, 0, 1), a_direction=None):
         """Return new Cell from cell lengths and angles.
 
         See also :func:`~ase.geometry.cell.cellpar_to_cell()`."""
         from ase.geometry.cell import cellpar_to_cell
         cell = cellpar_to_cell(cellpar, ab_normal, a_direction)
-        return cls(cell, pbc=pbc)
+        return cls(cell)
 
-    def get_bravais_lattice(self, eps=2e-4, *, pbc=None):
+    def get_bravais_lattice(self, eps=2e-4, *, pbc=True):
         """Return :class:`~ase.lattice.BravaisLattice` for this cell:
 
         >>> cell = Cell.fromcellpar([4, 4, 4, 60, 60, 60])
@@ -136,13 +120,20 @@ class Cell:
 
         """
         from ase.lattice import identify_lattice
-        if pbc is None:
-            pbc = self.any(1)
+        pbc = self.any(1) & pbc2pbc(pbc)
         lat, op = identify_lattice(self, eps=eps, pbc=pbc)
         return lat
 
-    def bandpath(self, path=None, npoints=None, density=None,
-                 special_points=None, eps=2e-4, *, pbc=None):
+    def bandpath(
+            self,
+            path: str = None,
+            npoints: int = None,
+            *,
+            density: float = None,
+            special_points: Mapping[str, Sequence[float]] = None,
+            eps: float = 2e-4,
+            pbc: Union[bool, Sequence[bool]] = True
+    ) -> "ase.dft.kpoints.BandPath":
         """Build a :class:`~ase.dft.kpoints.BandPath` for this cell.
 
         If special points are None, determine the Bravais lattice of
@@ -180,18 +171,18 @@ class Cell:
         """
         # TODO: Combine with the rotation transformation from bandpath()
 
-        cell = self if pbc is None else self.uncomplete(pbc)
+        cell = self.uncomplete(pbc)
 
         if special_points is None:
             from ase.lattice import identify_lattice
             lat, op = identify_lattice(cell, eps=eps)
-            path = lat.bandpath(path, npoints=npoints, density=density)
-            return path.transform(op)
+            bandpath = lat.bandpath(path, npoints=npoints, density=density)
+            return bandpath.transform(op)
         else:
             from ase.dft.kpoints import BandPath, resolve_custom_points
             path = resolve_custom_points(path, special_points, eps=eps)
-            path = BandPath(cell, path=path, special_points=special_points)
-            return path.interpolate(npoints=npoints, density=density)
+            bandpath = BandPath(cell, path=path, special_points=special_points)
+            return bandpath.interpolate(npoints=npoints, density=density)
 
 
     # XXX adapt the transformation stuff and include in the bandpath method.
@@ -204,22 +195,21 @@ class Cell:
 
     def uncomplete(self, pbc):
         """Return new cell, zeroing cell vectors where not periodic."""
-        pbc = np.asarray(pbc, bool)
+        _pbc = np.empty(3, bool)
+        _pbc[:] = pbc
         cell = self.copy()
-        cell[~pbc] = 0
+        cell[~_pbc] = 0
         return cell
 
     def complete(self):
         """Convert missing cell vectors into orthogonal unit vectors."""
         from ase.geometry.cell import complete_cell
         cell = Cell(complete_cell(self.array))
-        cell._pbc = self._pbc.copy()
         return cell
 
     def copy(self):
         """Return a copy of this cell."""
         cell = Cell(self.array.copy())
-        cell._pbc = self._pbc.copy()
         return cell
 
     @property
@@ -282,7 +272,7 @@ class Cell:
         """Get reciprocal lattice as a 3x3 array.
 
         Does not include factor of 2 pi."""
-        return np.linalg.pinv(self).transpose()
+        return Cell(np.linalg.pinv(self).transpose())
 
     def __repr__(self):
         if self.orthorhombic:
@@ -297,16 +287,63 @@ class Cell:
 
         See also :func:`ase.build.tools.niggli_reduce_cell`."""
         from ase.build.tools import niggli_reduce_cell
-        cell, op = niggli_reduce_cell(self, epsfactor=1e-5)
-        return Cell(cell), op
+        cell, op = niggli_reduce_cell(self, epsfactor=eps)
+        result = Cell(cell)
+        return result, op
 
     def minkowski_reduce(self):
         """Minkowski-reduce this cell, returning new cell and mapping.
 
         See also :func:`ase.geometry.minkowski_reduction.minkowski_reduce`."""
         from ase.geometry.minkowski_reduction import minkowski_reduce
-        rcell, op = minkowski_reduce(self)
-        return Cell(rcell), op
+        cell, op = minkowski_reduce(self, self.any(1))
+        result = Cell(cell)
+        return result, op
+
+    def permute_axes(self, permutation):
+        """Permute axes of cell."""
+        assert (np.sort(permutation) == np.arange(3)).all()
+        permuted = Cell(self[permutation][:, permutation])
+        return permuted
+
+    def standard_form(self):
+        """Rotate axes such that unit cell is lower triangular. The cell
+        handedness is preserved.
+
+        A lower-triangular cell with positive diagonal entries is a canonical
+        (i.e. unique) description. For a left-handed cell the diagonal entries
+        are negative.
+
+        Returns:
+
+        rcell: the standardized cell object
+
+        Q: ndarray
+            The orthogonal transformation.  Here, rcell @ Q = cell, where cell
+            is the input cell and rcell is the lower triangular (output) cell.
+        """
+
+        # get cell handedness (right or left)
+        sign = np.sign(np.linalg.det(self))
+        if sign == 0:
+            sign = 1
+
+        # LQ decomposition provides an axis-aligned description of the cell.
+        # Q is an orthogonal matrix and L is a lower triangular matrix. The
+        # decomposition is a unique description if the diagonal elements are
+        # all positive (negative for a left-handed cell).
+        Q, L = np.linalg.qr(self.T)
+        Q = Q.T
+        L = L.T
+
+        # correct the signs of the diagonal elements
+        signs = np.sign(np.diag(L))
+        indices = np.where(signs == 0)[0]
+        signs[indices] = 1
+        indices = np.where(signs != sign)[0]
+        L[:, indices] *= -1
+        Q[indices] *= -1
+        return Cell(L), Q
 
     # XXX We want a reduction function that brings the cell into
     # standard form as defined by Setyawan and Curtarolo.

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import json
 
 
@@ -19,7 +18,7 @@ class CLICommand:
         for uri in args.uri:
             calculation = download(uri)
             identifier = calculation.hash.replace('/', '.')
-            fname = 'nmd.{}.nomad.json'.format(identifier)
+            fname = 'nmd.{}.nomad-json'.format(identifier)
             with open(fname, 'w') as fd:
                 json.dump(calculation, fd)
             print(uri)

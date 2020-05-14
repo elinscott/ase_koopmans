@@ -14,7 +14,6 @@ from ase.neighborlist import NeighborList
 from ase.calculators.calculator import Calculator, all_changes
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
 from ase.units import Bohr, Hartree
-from ase.utils import basestring
 
 
 class EAM(Calculator):
@@ -37,7 +36,7 @@ potential file or as a set of functions that describe the potential.
 The files containing the potentials for this calculator are not
 included but many suitable potentials can be downloaded from The
 Interatomic Potentials Repository Project at
-http://www.ctcms.nist.gov/potentials/
+https://www.ctcms.nist.gov/potentials/
 
 Theory
 ======
@@ -109,7 +108,7 @@ For example::
     mishin.write_potential('new.eam.alloy')
     mishin.plot()
 
-    slab.set_calculator(mishin)
+    slab.calc = mishin
     slab.get_potential_energy()
     slab.get_forces()
 
@@ -122,8 +121,9 @@ Arguments
 =========================  ====================================================
 Keyword                    Description
 =========================  ====================================================
-``potential``              file of potential in ``.alloy``, ``.adp`` or ``.fs``
-                           format (This is generally all you need to supply)
+``potential``              file of potential in ``.eam``, ``.alloy``, ``.adp`` or ``.fs``
+                           format or file object (This is generally all you need to supply).
+                           In case of file object the ``form`` argument is required
 
 ``elements[N]``            array of N element abbreviations
 
@@ -148,9 +148,9 @@ Keyword                    Description
                            call to the ``update()`` method then the neighbor
                            list can be reused. Defaults to 1.0.
 
-``form``                   the form of the potential ``alloy``, ``adp`` or
+``form``                   the form of the potential ``eam``, ``alloy``, ``adp`` or
                            ``fs``. This will be determined from the file suffix
-                           or must be set if using equations
+                           or must be set if using equations or file object
 
 =========================  ====================================================
 
@@ -237,7 +237,9 @@ End EAM Interface Documentation
                 b'blank\n'])
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label=os.curdir, atoms=None, **kwargs):
+                 label=os.curdir, atoms=None, form=None, **kwargs):
+
+        self.form = form
 
         if 'potential' in kwargs:
             self.read_potential(kwargs['potential'])
@@ -251,7 +253,7 @@ End EAM Interface Documentation
                       # derivatives
                       'd_embedded_energy', 'd_electron_density', 'd_phi',
                       'd', 'q', 'd_d', 'd_q',  # adp terms
-                      'skin', 'form', 'Z', 'nr', 'nrho', 'mass')
+                      'skin', 'Z', 'nr', 'nrho', 'mass')
 
         # set any additional keyword arguments
         for arg, val in self.parameters.items():
@@ -281,9 +283,10 @@ End EAM Interface Documentation
         and creates the interpolation functions from the data
         """
 
-        if isinstance(fileobj, basestring):
+        if isinstance(fileobj, str):
             f = open(fileobj)
-            self.set_form(fileobj)
+            if self.form is None:
+                self.set_form(fileobj)
         else:
             f = fileobj
 

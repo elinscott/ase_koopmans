@@ -32,14 +32,14 @@ Quick links:
     - :mod:`~ase.phasediagram`
     - :mod:`~ase.phonons`
     - :mod:`~ase.spacegroup`
-  * - :mod:`~ase.symbols`
+  * - :mod:`~ase.spectrum`
+    - :mod:`~ase.symbols`
     - :mod:`~ase.transport`
     - :mod:`~ase.thermochemistry`
-    - :mod:`~ase.units`
-  * - :mod:`~ase.utils`
+  * - :mod:`~ase.units`
+    - :mod:`~ase.utils`
     - :mod:`~ase.vibrations`
     - :mod:`~ase.visualize`
-    -
 
 .. seealso::
 
@@ -82,6 +82,7 @@ List of all modules:
    vibrations/vibrations
    phonons
    phasediagram/phasediagram
+   spectrum/spectrum
    thermochemistry/thermochemistry
    utils
    parallel

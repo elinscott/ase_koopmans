@@ -1,4 +1,3 @@
-from __future__ import print_function
 """ Maximally localized Wannier Functions
 
     Find the set of maximally localized Wannier functions
@@ -34,7 +33,7 @@ def gram_schmidt_single(U, n):
     del indices[indices.index(n)]
     for i in indices:
         v_i = U.T[i]
-        v_i -=  v_n * np.dot(v_n.conj(), v_i)
+        v_i -= v_n * np.dot(v_n.conj(), v_i)
 
 
 def lowdin(U, S=None):
@@ -273,12 +272,9 @@ class Wannier:
 
           ``verbose``: True / False level of verbosity.
           """
-        # Bloch phase sign convention
+        # Bloch phase sign convention.
+        # May require special cases depending on which code is used.
         sign = -1
-        classname = calc.__class__.__name__
-        if classname in ['Dacapo', 'Jacapo']:
-            print('Using ' + classname)
-            sign = +1
 
         self.nwannier = nwannier
         self.calc = calc
@@ -450,7 +446,7 @@ class Wannier:
         return coord_wc
 
     def get_radii(self):
-        """Calculate the spread of the Wannier functions.
+        r"""Calculate the spread of the Wannier functions.
 
         ::
 
@@ -510,7 +506,7 @@ class Wannier:
         self.translate(w, trans)
 
     def translate_all_to_cell(self, cell=[0, 0, 0]):
-        """Translate all Wannier functions to specified cell.
+        r"""Translate all Wannier functions to specified cell.
 
         Move all Wannier orbitals to a specific unit cell.  There
         exists an arbitrariness in the positions of the Wannier
@@ -528,7 +524,7 @@ class Wannier:
         """
         scaled_wc = np.angle(self.Z_dww[:3].diagonal(0, 1, 2)).T  * \
                     self.kptgrid / (2 * pi)
-        trans_wc =  np.array(cell)[None] - np.floor(scaled_wc)
+        trans_wc = np.array(cell)[None] - np.floor(scaled_wc)
         for kpt_c, U_ww in zip(self.kpt_kc, self.U_kww):
             U_ww *= np.exp(2.j * pi * np.dot(trans_wc, kpt_c))
         self.update()
@@ -601,7 +597,7 @@ class Wannier:
         return Hk
 
     def get_function(self, index, repeat=None):
-        """Get Wannier function on grid.
+        r"""Get Wannier function on grid.
 
         Returns an array with the funcion values of the indicated Wannier
         function on a grid with the size of the *repeated* unit cell.

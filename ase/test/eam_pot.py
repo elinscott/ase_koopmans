@@ -1,3 +1,4 @@
+# flake8: noqa
 # EAM potential for Pt from LAMMPS
 
 Pt_u3 = \

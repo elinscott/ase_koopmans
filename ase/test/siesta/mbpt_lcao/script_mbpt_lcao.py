@@ -67,9 +67,9 @@ mbpt_inp = {'prod_basis_type': 'MIXED',
             'gwa_initialization': 'SIESTA_PB'}
 
 
-Na8.set_calculator(siesta)
+Na8.calc = siesta
 e = Na8.get_potential_energy()
-freq, pol = siesta.get_polarizability(mbpt_inp,
+freq, pol = siesta.get_polarizability(mbpt_inp,  # type: ignore
                                       format_output='txt',
                                       units='nm**2')
 

@@ -11,7 +11,7 @@ algorithms in which ASE moves the atoms while the external code
 calculates energies, forces, and stress.  Note that ASE does not
 require i-PI, but simply uses the same protocol.
 
-The reference article for i-PI is `Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019-1026 (2014) <http://dx.doi.org/10.1016/j.cpc.2013.10.027>`_.
+The reference article for i-PI is `Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019-1026 (2014) <https://doi.org/10.1016/j.cpc.2013.10.027>`_.
 
 
 Introduction
@@ -41,7 +41,8 @@ Program name     Supported by ASE calculator
 Quantum Espresso Yes
 FHI-aims         Yes
 Siesta           Yes
-DFTB+            Yes, presumably (untested)
+DFTB+            Yes
+NWChem           Yes
 Yaff             No; there is no ASE calculator for Yaff
 cp2k             No; ASE uses cp2k shell instead
 Lammps           No; ASE uses lammpsrun/lammpslib instead
@@ -78,6 +79,21 @@ Example using FHI-aims
 Example using Siesta
 
 .. literalinclude:: example_siesta.py
+
+
+Example using DFTB+
+
+.. literalinclude:: example_dftb.py
+
+
+.. note:: The DFTB+ script did not work with INET sockets.
+          This may have been a problem on the test machine.
+          The relevant keyword is ``Driver_Socket_Port=<portnumber>``
+          in case someone wants to test.
+
+Example using NWChem
+
+.. literalinclude:: example_nwchem.py
 
 For codes other than these, see the next section.
 

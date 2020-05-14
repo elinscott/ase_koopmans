@@ -7,13 +7,14 @@ P.M. Larsen, M. Pandey, M. Strange, and K. W. Jacobsen
 Phys. Rev. Materials 3 034003, 2019
 https://doi.org/10.1103/PhysRevMaterials.3.034003
 """
-
 import numpy as np
 from collections import namedtuple
-from ase.neighborlist import NeighborList
-from ase.data import covalent_radii
 from ase.geometry.dimensionality import rank_determination
 from ase.geometry.dimensionality import topology_scaling
+from ase.geometry.dimensionality.bond_generator import next_bond
+
+
+Kinterval = namedtuple('KInterval', 'dimtype score a b h components cdim')
 
 
 def f(x):
@@ -28,21 +29,16 @@ def calculate_score(a, b):
 
 
 def reduced_histogram(h):
-
     h = [int(e > 0) for e in h]
     return tuple(h)
 
 
 def build_dimtype(h):
-
     h = reduced_histogram(h)
     return ''.join([str(i) for i, e in enumerate(h) if e > 0]) + 'D'
 
 
 def build_kinterval(a, b, h, components, cdim, score=None):
-
-    Kinterval = namedtuple('KInterval', 'dimtype score a b h components cdim')
-
     if score is None:
         score = calculate_score(a, b)
 
@@ -51,7 +47,6 @@ def build_kinterval(a, b, h, components, cdim, score=None):
 
 
 def merge_intervals(intervals):
-
     """Merges intervals of the same dimensionality type.
 
     For example, two histograms with component histograms [10, 4, 0, 0] and
@@ -66,7 +61,6 @@ def merge_intervals(intervals):
     calculated from its k-interval.  This is necessary to maintain the property
     that the scores sum to 1.
     """
-
     dimtypes = set([e.dimtype for e in intervals])
 
     merged_intervals = []
@@ -82,60 +76,15 @@ def merge_intervals(intervals):
     return merged_intervals
 
 
-def get_bond_list(atoms, nl, rs):
-
-    """Gets a list of bonds sorted by k-value, from low to high.
-
-    Parameters:
-
-    atoms: ASE atoms object
-    nl: ASE neighborlist
-    rs: covalent radii
-
-    Returns:
-
-    intervals : list
-        List of tuples for each bond.  Each tuple contains
-        (k, i, j, offset)
-
-        k:       float   k-value
-        i:       float   index of first atom
-        j:       float   index of second atom
-        offset:  tuple   cell offset of second atom
-    """
-
-    num_atoms = len(atoms)
-    bonds = []
-    for i in range(num_atoms):
-        p = atoms.positions[i]
-        indices, offsets = nl.get_neighbors(i)
-
-        for j, offset in zip(indices, offsets):
-            q = atoms.positions[j] + np.dot(offset, atoms.get_cell())
-            d = np.linalg.norm(p - q)
-            k = d / (rs[i] + rs[j])
-            bonds.append((k, i, j, tuple(offset)))
-    return sorted(bonds)
-
-
 def build_kintervals(atoms, method_name):
-
+    """The interval analysis is performed by inserting bonds one at a time
+    until the component analysis finds a single component."""
     method = {'RDA': rank_determination.RDA,
               'TSA': topology_scaling.TSA}[method_name]
 
     assert all([e in [0, 1] for e in atoms.pbc])
     num_atoms = len(atoms)
-    rs = covalent_radii[atoms.get_atomic_numbers()]
-
-    """
-    The interval analysis is performed by iteratively expanding the neighbor
-    lists, until the component analysis finds a single component.  To avoid
-    repeat analyses after expanding the neighbor lists, we keep track of the
-    previously inserted bonds.
-    """
-
     intervals = []
-    seen = set()
     kprev = 0
     calc = method(num_atoms)
     hprev = calc.check()
@@ -150,60 +99,38 @@ def build_kintervals(atoms, method_name):
     end_state[end_dim] = 1
     end_state = tuple(end_state)
 
-    kmax = 0
-    while 1:
+    # Insert each new bond into the component graph.
+    for (k, i, j, offset) in next_bond(atoms):
+        calc.insert_bond(i, j, offset)
+        h = calc.check()
+        if h == hprev:    # Test if any components were merged
+            continue
 
-        # Expand the scope of the neighbor lists.
-        kmax += 2
-        nl = NeighborList(kmax * rs, skin=0, self_interaction=False)
-        nl.update(atoms)
+        components, cdim = calc.get_components()
 
-        # Get a list of bonds, sorted by k-value.
-        bonds = get_bond_list(atoms, nl, rs)
+        # If any components were merged, create a new interval
+        if k != kprev:
+            # Only keep intervals of non-zero width
+            intervals.append(build_kinterval(kprev, k, hprev,
+                                             components_prev, cdim_prev))
+        kprev = k
+        hprev = h
+        components_prev = components
+        cdim_prev = cdim
 
-        # Find only the bonds which we have not previously tested.
-        new_bonds = []
-        for b in bonds:
-            if b not in seen:
-                new_bonds += [b]
-                seen.add(b)
-
-        # Insert each new bond into the component graph.
-        for (k, i, j, offset) in new_bonds:
-
-            calc.insert_bond(i, j, offset)
-            h = calc.check()
-            if h == hprev:    # Test if any components were merged
-                continue
-
-            components, cdim = calc.get_components()
-
-            # If any components were merged, create a new interval
-            if k != kprev:
-                # Only keep intervals of non-zero width
-                intervals.append(build_kinterval(kprev, k, hprev,
-                                                 components_prev, cdim_prev))
-
-            kprev = k
-            hprev = h
-            components_prev = components
-            cdim_prev = cdim
-
-            # Stop once all components are merged
-            if h == end_state:
-                intervals.append(build_kinterval(k, float("inf"), h,
-                                                 components, cdim))
-                return intervals
+        # Stop once all components are merged
+        if h == end_state:
+            intervals.append(build_kinterval(k, float("inf"), h,
+                                             components, cdim))
+            return intervals
 
 
 def analyze_kintervals(atoms, method='RDA', merge=True):
-
     """Performs a k-interval analysis.
 
     In each k-interval the components (connected clusters) are identified.
     The intervals are sorted according to the scoring parameter, from high
     to low.
-
 
     Parameters:
 
@@ -241,7 +168,6 @@ def analyze_kintervals(atoms, method='RDA', merge=True):
         cdim: dict
             The component dimensionalities
     """
-
     intervals = build_kintervals(atoms, method)
     if merge:
         intervals = merge_intervals(intervals)

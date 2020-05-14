@@ -9,7 +9,6 @@ for name in ['al', 'mg', 'fe', 'diamond', 'nacl', 'rutile', 'skutterudite']:
     ase.io.write('spacegroup-%s.pov' % name,
                  atoms,
                  transparent=False,
-                 display=False,
                  run_povray=True,
                  # canvas_width=128,
                  rotation='10x,-10y',

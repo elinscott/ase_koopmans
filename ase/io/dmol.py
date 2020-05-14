@@ -46,7 +46,6 @@ multiple images of car format separated with $end
 
 """
 
-from __future__ import print_function
 from datetime import datetime
 import numpy as np
 
@@ -60,7 +59,7 @@ def write_dmol_car(filename, atoms):
 
     Notes
     -----
-    The positions written to file are rotated as to allign with the cell when
+    The positions written to file are rotated as to align with the cell when
     reading (due to cellpar information)
     Can not handle multiple images.
     Only allows for pbc 111 or 000.
@@ -92,7 +91,7 @@ def write_dmol_car(filename, atoms):
 
     for i, (sym, pos) in enumerate(zip(symbols, positions)):
         f.write('%-6s  %12.8f   %12.8f   %12.8f XXXX 1      xx      %-2s  '
-                '0.000\n' % (sym + str(i+1), pos[0], pos[1], pos[2], sym))
+                '0.000\n' % (sym + str(i + 1), pos[0], pos[1], pos[2], sym))
     f.write('end\nend\n')
     f.close()
 
@@ -213,7 +212,7 @@ def write_dmol_arc(filename, images):
     f.write('!BIOSYM archive 3\n')
     if np.all(images[0].pbc):
         f.write('PBC=ON\n\n')
-        # Rotate positions so they will allign with cellpar cell
+        # Rotate positions so they will align with cellpar cell
     elif not np.any(images[0].pbc):
         f.write('PBC=OFF\n\n')
     else:
@@ -238,7 +237,7 @@ def write_dmol_arc(filename, images):
                 'PBC must be all true or all false for .arc format')
         for i, (sym, pos) in enumerate(zip(symbols, positions)):
             f.write('%-6s  %12.8f   %12.8f   %12.8f XXXX 1      xx      %-2s  '
-                    '0.000\n' % (sym + str(i+1), pos[0], pos[1], pos[2], sym))
+                    '0.000\n' % (sym + str(i + 1), pos[0], pos[1], pos[2], sym))
         f.write('end\nend\n')
         f.write('\n')
     f.close()

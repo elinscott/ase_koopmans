@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 from math import sqrt
 
@@ -89,21 +88,21 @@ def cutcoupling(h, s, index_n):
         h[i, :] = 0.0
         h[i, i] = Ei
 
-        
+
 def fermidistribution(energy, kt):
-   # fermi level is fixed to zero
-   # energy can be a single number or a list
-   assert kt >= 0., 'Negative temperature encountered!'
+    # fermi level is fixed to zero
+    # energy can be a single number or a list
+    assert kt >= 0., 'Negative temperature encountered!'
 
-   if kt==0:
-       if isinstance(energy, float):
-           return int(energy / 2. <= 0)
-       else:
-           return (energy / 2. <= 0).astype(int)
-   else:
-       return 1. / (1. + np.exp(energy / kt))
+    if kt==0:
+        if isinstance(energy, float):
+            return int(energy / 2. <= 0)
+        else:
+            return (energy / 2. <= 0).astype(int)
+    else:
+        return 1. / (1. + np.exp(energy / kt))
 
-    
+
 def fliplr(a):
     length = len(a)
     b = [0] * length

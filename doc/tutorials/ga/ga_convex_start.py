@@ -1,10 +1,11 @@
+from pathlib import Path
+import random
+
 from ase.build import fcc111
 from ase.calculators.emt import EMT
 from ase.data import atomic_numbers, reference_states
 from ase.ga.data import PrepareDB
 from ase.ga import set_raw_score
-
-import random
 
 
 def get_avg_lattice_constant(syms):
@@ -26,7 +27,7 @@ print('Reference energies:')
 for m in metals:
     slab = fcc111(m, size=(2, 4, 3), a=lattice_constants[m],
                   vacuum=5, orthogonal=True)
-    slab.set_calculator(EMT())
+    slab.calc = EMT()
 
     # We save the reference energy as E_A / N
     e = slab.get_potential_energy()
@@ -42,7 +43,10 @@ for m in metals:
 pop_size = 2 * len(slab)
 
 # We prepare the db and write a few constants that we are going to use later
-db = PrepareDB('hull.db', population_size=pop_size,
+target = Path('hull.db')
+if target.exists():
+    target.unlink()
+db = PrepareDB(target, population_size=pop_size,
                reference_energies=refs, metals=metals,
                lattice_constants=lattice_constants)
 

@@ -34,10 +34,11 @@ siesta = Siesta(
         'MaxSCFIterations': 300,
         'DM.NumberPulay': 4})
 
-CO2.set_calculator(siesta)
+CO2.calc = siesta
 
 ram = SiestaRaman(CO2, siesta, label="siesta", jcutoff=7, iter_broadening=0.15/Ha,
-        xc_code='LDA,PZ', tol_loc=1e-6, tol_biloc=1e-7, freq = np.arange(0.0, 5.0, 0.05))
+                  xc_code='LDA,PZ', tol_loc=1e-6, tol_biloc=1e-7,
+                  freq=np.arange(0.0, 5.0, 0.05))
 ram.run()
 ram.summary(intensity_unit_ram='A^4 amu^-1')
 

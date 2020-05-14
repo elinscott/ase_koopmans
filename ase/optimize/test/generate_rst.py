@@ -1,7 +1,7 @@
 import os
 import re
 dirlist = os.listdir('.')
-name = '.*\.csv'
+name = r'.*\.csv'
 filterre = re.compile(name)
 dirlist = list(filter(filterre.search, dirlist))
 namelist = [d.strip('.csv') for d in dirlist]
@@ -29,7 +29,7 @@ for name in namelist:
     lines = open(name + '.csv', 'r').read().split('\n')
     firstline = lines.pop(0)
     f.write(
-        '\n' + 
+        '\n' +
         name + '\n' + \
         '=' * len(name) + '\n'
         'Calculator used: %s\n' % firstline.split(',')[-1] + \

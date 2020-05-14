@@ -1,4 +1,5 @@
 # creates: vasp_si_bandstructure.png
+# flake8: noqa
 from ase.build import bulk
 from ase.dft.band_structure import BandStructure
 import numpy as np

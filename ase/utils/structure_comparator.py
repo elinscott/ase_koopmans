@@ -1,9 +1,11 @@
 """Determine symmetry equivalence of two structures.
 Based on the recipe from Comput. Phys. Commun. 183, 690-697 (2012)."""
 from collections import Counter
-from itertools import combinations, product
+from itertools import combinations, product, filterfalse
+
 import numpy as np
 from scipy.spatial import cKDTree as KDTree
+
 from ase import Atom, Atoms
 from ase.build.tools import niggli_reduce
 
@@ -11,12 +13,6 @@ from ase.build.tools import niggli_reduce
 def normalize(cell):
     for i in range(3):
         cell[i] /= np.linalg.norm(cell[i])
-
-
-try:
-    from itertools import filterfalse
-except ImportError:  # python2.7
-    from itertools import ifilterfalse as filterfalse
 
 
 class SpgLibNotFoundError(Exception):
@@ -588,7 +584,9 @@ class SymmetryEquivalenceCheck(object):
         # [R] = [V][T]^-1, where [V] is the reference vectors and
         # [T] is the trial vectors
         # XXX What do we know about the length/shape of refined_candidate_list?
-        if len(refined_candidate_list) == 1:
+        if len(refined_candidate_list) == 0:
+            return None
+        elif len(refined_candidate_list) == 1:
             inverted_trial = 1.0 / refined_candidate_list
         else:
             inverted_trial = np.linalg.inv(refined_candidate_list)

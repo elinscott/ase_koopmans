@@ -19,6 +19,6 @@ siesta = Siesta(
     species=[
         Species(symbol='H', excess_charge=0.1)])
 
-atoms.set_calculator(siesta)
+atoms.calc = siesta
 dyn = QuasiNewton(atoms, trajectory='h.traj')
 dyn.run(fmax=0.02)

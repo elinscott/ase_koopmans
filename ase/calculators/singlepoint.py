@@ -62,6 +62,24 @@ class SinglePointKPoint:
         self.f_n = f_n
 
 
+def arrays_to_kpoints(eigenvalues, occupations, weights):
+    """Helper function for building SinglePointKPoints.
+
+    Convert eigenvalue, occupation, and weight arrays to list of
+    SinglePointKPoint objects."""
+    nspins, nkpts, nbands = eigenvalues.shape
+    assert eigenvalues.shape == occupations.shape
+    assert len(weights) == nkpts
+    kpts = []
+    for s in range(nspins):
+        for k in range(nkpts):
+            kpt = SinglePointKPoint(
+                weight=weights[k], s=s, k=k,
+                eps_n=eigenvalues[s, k], f_n=occupations[s, k])
+            kpts.append(kpt)
+    return kpts
+
+
 class SinglePointDFTCalculator(SinglePointCalculator):
     def __init__(self, atoms,
                  efermi=None, bzkpts=None, ibzkpts=None, bz2ibz=None,
@@ -115,6 +133,16 @@ class SinglePointDFTCalculator(SinglePointCalculator):
                     if kpt == counter:
                         return kpoint
                     counter += 1
+        return None
+
+    def get_k_point_weights(self):
+        """ Retunrs the weights of the k points """
+        if self.kpts is not None:
+            weights = []
+            for kpoint in self.kpts:
+                if kpoint.s == 0:
+                    weights.append(kpoint.weight)
+            return np.array(weights)
         return None
 
     def get_occupation_numbers(self, kpt=0, spin=0):

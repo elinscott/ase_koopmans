@@ -1,14 +1,12 @@
-from __future__ import division
-from ase.utils import basestring
 import re
 import warnings
-from math import sin, cos
+from typing import Dict
 
 import numpy as np
 
+import ase  # Annotations
 from ase.utils import jsonable
 from ase.cell import Cell
-from ase.geometry import cell_to_cellpar, crystal_structure_from_cell
 
 
 def monkhorst_pack(size):
@@ -145,8 +143,9 @@ def resolve_custom_points(pathspec, special_points, eps):
         for kpt in segment:
             if isinstance(kpt, str):
                 if kpt not in special_points:
-                    raise KeyError('No kpoint "{}" among "{}"'.format(kpt),
-                                   ''.join(special_points))
+                    raise KeyError('No kpoint "{}" among "{}"'
+                                   .format(kpt,
+                                           ''.join(special_points)))
                 labelseq.append(kpt)
                 continue
 
@@ -204,16 +203,54 @@ class BandPath:
         if path is None:
             path = ''
 
-        self.cell = cell = Cell.new(cell)
+        self._cell = cell = Cell.new(cell)
         assert cell.shape == (3, 3)
+        kpts = np.asarray(kpts)
         assert kpts.ndim == 2 and kpts.shape[1] == 3
-        self.icell = self.cell.reciprocal()
-        self.kpts = kpts
-        self.special_points = special_points
+        self._icell = self.cell.reciprocal()
+        self._kpts = kpts
+        self._special_points = special_points
         assert isinstance(path, str)
-        self.path = path
+        self._path = path
 
-    def transform(self, op):
+    @property
+    def cell(self) -> Cell:
+        """The :class:`~ase.cell.Cell` of this BandPath."""
+        return self._cell
+
+    @property
+    def icell(self) -> Cell:
+        """Reciprocal cell of this BandPath as a :class:`~ase.cell.Cell`."""
+        return self._icell
+
+    @property
+    def kpts(self) -> np.ndarray:
+        """The kpoints of this BandPath as an array of shape (nkpts, 3).
+
+        The kpoints are given in units of the reciprocal cell."""
+        return self._kpts
+
+    @property
+    def special_points(self) -> Dict[str, np.ndarray]:
+        """Special points of this BandPath as a dictionary.
+
+        The dictionary maps names (such as `'G'`) to kpoint coordinates
+        in units of the reciprocal cell as a 3-element numpy array.
+
+        It's unwise to edit this dictionary directly.  If you need that,
+        consider deepcopying it."""
+        return self._special_points
+
+    @property
+    def path(self) -> str:
+        """The string specification of this band path.
+
+        This is a specification of the form `'GXWKGLUWLK,UX'`.
+
+        Comma marks a discontinuous jump: K is not connected to U."""
+        return self._path
+
+    def transform(self, op: np.ndarray) -> 'BandPath':
         """Apply 3x3 matrix to this BandPath and return new BandPath.
 
         This is useful for converting the band path to another cell.
@@ -239,14 +276,20 @@ class BandPath:
                 'labelseq': self.path,
                 'cell': self.cell}
 
-    def interpolate(self, path=None, npoints=None, special_points=None,
-                    density=None):
+    def interpolate(
+            self,
+            path: str = None,
+            npoints: int = None,
+            special_points: Dict[str, np.ndarray] = None,
+            density: float = None,
+    ) -> 'BandPath':
         """Create new bandpath, (re-)interpolating kpoints from this one."""
         if path is None:
             path = self.path
 
-        special_points = {} if special_points is None else dict(special_points)
-        special_points.update(self.special_points)
+        if special_points is None:
+            special_points = self.special_points
+
         pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
         kpts, x, X = paths2kpts(pathcoords, self.cell, npoints, density)
         return BandPath(self.cell, kpts, path=path,
@@ -262,7 +305,7 @@ class BandPath:
                         ''.join(sorted(self.special_points)),
                         len(self.kpts)))
 
-    def cartesian_kpts(self):
+    def cartesian_kpts(self) -> np.ndarray:
         """Get Cartesian kpoints from this bandpath."""
         return self._scale(self.kpts)
 
@@ -284,8 +327,7 @@ class BandPath:
                       '(x, X, labels) = path.get_linear_kpoint_axis().')
         yield self.kpts
 
-        x, xspecial, _ = labels_from_kpts(self.kpts, self.cell,
-                                          special_points=self.special_points)
+        x, xspecial, _ = self.get_linear_kpoint_axis()
         yield x
         yield xspecial
 
@@ -297,14 +339,44 @@ class BandPath:
         """Define x axis suitable for plotting a band structure.
 
         See :func:`ase.dft.kpoints.labels_from_kpts`."""
-        return labels_from_kpts(self.kpts, self.cell, eps=eps,
-                                special_points=self.special_points)
 
-    def plot(self, dimension=3, **plotkwargs):
+        index2name = self._find_special_point_indices(eps)
+        indices = sorted(index2name)
+        labels = [index2name[index] for index in indices]
+        xcoords, special_xcoords = indices_to_axis_coords(
+            indices, self.kpts, self.cell)
+        return xcoords, special_xcoords, labels
+
+    def _find_special_point_indices(self, eps):
+        """Find indices of kpoints which are close to special points.
+
+        The result is returned as a dictionary mapping indices to labels."""
+        # XXX must work in Cartesian coordinates for comparison to eps
+        # to fully make sense!
+        index2name = {}
+        nkpts = len(self.kpts)
+
+        for name, kpt in self.special_points.items():
+            displacements = self.kpts - kpt[np.newaxis, :]
+            distances = np.linalg.norm(displacements, axis=1)
+            args = np.argwhere(distances < eps)
+            for arg in args.flat:
+                dist = distances[arg]
+                # Check if an adjacent point exists and is even closer:
+                neighbours = distances[max(arg - 1, 0):min(arg + 1, nkpts - 1)]
+                if not any(neighbours < dist):
+                    index2name[arg] = name
+
+        return index2name
+
+    def plot(self, **plotkwargs):
         """Visualize this bandpath.
 
         Plots the irreducible Brillouin zone and this bandpath."""
         import ase.dft.bz as bz
+
+        # We previously had a "dimension=3" argument which is now unused.
+        plotkwargs.pop('dimension', None)
 
         special_points = self.special_points
         labelseq, coords = resolve_kpt_path_string(self.path,
@@ -323,20 +395,26 @@ class BandPath:
             if label not in points_already_plotted:
                 paths.append(([label], [self._scale(point)]))
 
-        kw = {'vectors': True}
+        kw = {'vectors': True,
+              'pointstyle': {'marker': '.'}}
+
         kw.update(plotkwargs)
         return bz.bz_plot(self.cell, paths=paths,
                           points=self.cartesian_kpts(),
-                          pointstyle={'marker': '.'},
                           **kw)
 
-    def free_electron_band_structure(self, **kwargs):
+    def free_electron_band_structure(
+            self, **kwargs
+    ) -> 'ase.spectrum.band_structure.BandStructure':
         """Return band structure of free electrons for this bandpath.
 
-        This is for mostly testing."""
+        Keyword arguments are passed to
+        :class:`~ase.calculators.test.FreeElectrons`.
+
+        This is for mostly testing and visualization."""
         from ase import Atoms
         from ase.calculators.test import FreeElectrons
-        from ase.dft.band_structure import calculate_band_structure
+        from ase.spectrum.band_structure import calculate_band_structure
         atoms = Atoms(cell=self.cell, pbc=True)
         atoms.calc = FreeElectrons(**kwargs)
         bs = calculate_band_structure(atoms, path=self)
@@ -360,11 +438,11 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
         and ending point of each path segment will be used. If None (default),
         it will be calculated using the supplied density or a default one.
     density: float
-        k-points per A⁻¹ on the output kpts list. If npoints is None,
+        k-points per 1/A on the output kpts list. If npoints is None,
         the number of k-points in the output list will be:
         npoints = density * path total length (in Angstroms).
         If density is None (default), use 5 k-points per A⁻¹.
-        If the calculated npoints value is less than 50, a mimimum value of 50
+        If the calculated npoints value is less than 50, a minimum value of 50
         will be used.
     special_points: dict or None
         Dictionary mapping names to special points.  If None, the special
@@ -379,35 +457,6 @@ def bandpath(path, cell, npoints=None, density=None, special_points=None,
     cell = Cell.ascell(cell)
     return cell.bandpath(path, npoints=npoints, density=density,
                          special_points=special_points, eps=eps)
-
-    # XXX old code for bandpath() function, should be removed once we
-    # weed out any trouble
-    if isinstance(path, basestring):
-        # XXX we need to update this so we use the new and more complete
-        # cell classification stuff
-        lattice = None
-        if special_points is None:
-            cell = Cell.ascell(cell)
-            cellinfo = get_cellinfo(cell)
-            special_points = cellinfo.special_points
-            lattice = cellinfo.lattice
-        paths = []
-        for names in parse_path_string(path):
-            for name in names:
-                if name not in special_points:
-                    msg = ('K-point label {} not included in {} special '
-                           'points.  Valid labels are: {}'
-                           .format(name, lattice or 'custom dictionary of',
-                                   ', '.join(sorted(special_points))))
-                    raise ValueError(msg)
-            paths.append([special_points[name] for name in names])
-    elif np.array(path[0]).ndim == 1:
-        paths = [path]
-    else:
-        paths = path
-
-    kpts, x, X = paths2kpts(paths, cell, npoints, density)
-    return BandPath(cell, kpts=kpts, special_points=special_points)
 
 
 DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
@@ -463,7 +512,9 @@ get_bandpath = bandpath  # old name
 
 
 def find_bandpath_kinks(cell, kpts, eps=1e-5):
-    """Find indices of those kpoints that are not interiour to a line segment."""
+    """Find indices of those kpoints that are not interior to a line segment."""
+    # XXX Should use the Cartesian kpoints.
+    # Else comparison to eps will be anisotropic and hence arbitrary.
     diffs = kpts[1:] - kpts[:-1]
     kinks = abs(diffs[1:] - diffs[:-1]).sum(1) > eps
     N = len(kpts)
@@ -497,10 +548,11 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
     the third is the special points as strings.
     """
 
-
     if special_points is None:
         special_points = get_special_points(cell)
     points = np.asarray(kpts)
+    # XXX Due to this mechanism, we are blind to special points
+    # that lie on straight segments such as [K, G, -K].
     indices = find_bandpath_kinks(cell, kpts, eps=1e-5)
 
     labels = []
@@ -517,6 +569,11 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
                 label = '?'
         labels.append(label)
 
+    xcoords, ixcoords = indices_to_axis_coords(indices, points, cell)
+    return xcoords, ixcoords, labels
+
+
+def indices_to_axis_coords(indices, points, cell):
     jump = False  # marks a discontinuity in the path
     xcoords = [0]
     for i1, i2 in zip(indices[:-1], indices[1:]):
@@ -530,7 +587,7 @@ def labels_from_kpts(kpts, cell, eps=1e-5, special_points=None):
         xcoords.extend(np.linspace(0, length, i2 - i1 + 1)[1:] + xcoords[-1])
 
     xcoords = np.array(xcoords)
-    return xcoords, xcoords[indices], labels
+    return xcoords, xcoords[indices]
 
 
 special_paths = {
@@ -545,92 +602,13 @@ special_paths = {
     'rhombohedral type 2': 'GPZQGFP1Q1LZ'}
 
 
-class CellInfo:
-    def __init__(self, rcell, lattice, special_points):
-        self.rcell = rcell
-        self.lattice = lattice
-        self.special_points = special_points
-
-
-def get_cellinfo(cell, lattice=None, eps=2e-4):
-    from ase.build.tools import niggli_reduce_cell
-    rcell, M = niggli_reduce_cell(cell)
-    latt = crystal_structure_from_cell(rcell, niggli_reduce=False)
-    if lattice:
-        assert latt == lattice.lower(), latt
-
-    if latt == 'monoclinic':
-        # Transform From Niggli to Setyawana-Curtarolo cell:
-        a, b, c, alpha, beta, gamma = cell_to_cellpar(rcell, radians=True)
-        if abs(beta - np.pi / 2) > eps:
-            T = np.array([[0, 1, 0],
-                          [-1, 0, 0],
-                          [0, 0, 1]])
-            scell = np.dot(T, rcell)
-        elif abs(gamma - np.pi / 2) > eps:
-            T = np.array([[0, 0, 1],
-                          [1, 0, 0],
-                          [0, -1, 0]])
-        else:
-            raise ValueError('You are using a badly oriented ' +
-                             'monoclinic unit cell. Please choose one with ' +
-                             'either beta or gamma != pi/2')
-
-        scell = np.dot(np.dot(T, rcell), T.T)
-        a, b, c, alpha, beta, gamma = cell_to_cellpar(scell, radians=True)
-
-        assert alpha < np.pi / 2, 'Your monoclinic angle has to be < pi / 2'
-
-        M = np.dot(M, T.T)
-        eta = (1 - b * cos(alpha) / c) / (2 * sin(alpha)**2)
-        nu = 1 / 2 - eta * c * cos(alpha) / b
-        points = {'G': [0, 0, 0],
-                  'A': [1 / 2, 1 / 2, 0],
-                  'C': [0, 1 / 2, 1 / 2],
-                  'D': [1 / 2, 0, 1 / 2],
-                  'D1': [1 / 2, 0, -1 / 2],
-                  'E': [1 / 2, 1 / 2, 1 / 2],
-                  'H': [0, eta, 1 - nu],
-                  'H1': [0, 1 - eta, nu],
-                  'H2': [0, eta, -nu],
-                  'M': [1 / 2, eta, 1 - nu],
-                  'M1': [1 / 2, 1 - eta, nu],
-                  'M2': [1 / 2, eta, -nu],
-                  'X': [0, 1 / 2, 0],
-                  'Y': [0, 0, 1 / 2],
-                  'Y1': [0, 0, -1 / 2],
-                  'Z': [1 / 2, 0, 0]}
-    elif latt == 'rhombohedral type 1':
-        a, b, c, alpha, beta, gamma = cell_to_cellpar(cell=cell, radians=True)
-        eta = (1 + 4 * np.cos(alpha)) / (2 + 4 * np.cos(alpha))
-        nu = 3 / 4 - eta / 2
-        points = {'G': [0, 0, 0],
-                  'B': [eta, 1 / 2, 1 - eta],
-                  'B1': [1 / 2, 1 - eta, eta - 1],
-                  'F': [1 / 2, 1 / 2, 0],
-                  'L': [1 / 2, 0, 0],
-                  'L1': [0, 0, - 1 / 2],
-                  'P': [eta, nu, nu],
-                  'P1': [1 - nu, 1 - nu, 1 - eta],
-                  'P2': [nu, nu, eta - 1],
-                  'Q': [1 - nu, nu, 0],
-                  'X': [nu, 0, -nu],
-                  'Z': [0.5, 0.5, 0.5]}
-    else:
-        points = sc_special_points[latt]
-
-    myspecial_points = {label: np.dot(M, kpt) for label, kpt in points.items()}
-    return CellInfo(rcell=rcell, lattice=latt,
-                    special_points=myspecial_points)
-
-
 def get_special_points(cell, lattice=None, eps=2e-4):
     """Return dict of special points.
 
     The definitions are from a paper by Wahyu Setyawana and Stefano
     Curtarolo::
 
-        http://dx.doi.org/10.1016/j.commatsci.2010.05.010
+        https://doi.org/10.1016/j.commatsci.2010.05.010
 
     cell: 3x3 ndarray
         Unit cell.
@@ -656,9 +634,27 @@ def get_special_points(cell, lattice=None, eps=2e-4):
 
 
 def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
-                               size, offset=(0, 0, 0)):
+                               size, offset=(0, 0, 0), pad_width=2):
     """Interpolate values from Monkhorst-Pack sampling.
 
+    `monkhorst_pack_interpolate` takes a set of `values`, for example
+    eigenvalues, that are resolved on a Monkhorst Pack k-point grid given by
+    `size` and `offset` and interpolates the values onto the k-points
+    in `path`.
+
+    Note
+    ----
+    For the interpolation to work, path has to lie inside the domain
+    that is spanned by the MP kpoint grid given by size and offset.
+
+    To try to ensure this we expand the domain slightly by adding additional
+    entries along the edges and sides of the domain with values determined by
+    wrapping the values to the opposite side of the domain. In this way we
+    assume that the function to be interpolated is a periodic function in
+    k-space. The padding width is determined by the `pad_width` parameter.
+
+    Parameters
+    ----------
     path: (nk, 3) array-like
         Desired path in units of reciprocal lattice vectors.
     values: (nibz, ...) array-like
@@ -671,8 +667,13 @@ def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
         Size of Monkhorst-Pack grid.
     offset: (3,) array-like
         Offset of Monkhorst-Pack grid.
+    pad_width: int
+        Padding width to aid interpolation
 
-    Returns *values* interpolated to *path*.
+    Returns
+    -------
+    (nbz,) array-like
+        *values* interpolated to *path*.
     """
     from scipy.interpolate import LinearNDInterpolator
 
@@ -685,22 +686,24 @@ def monkhorst_pack_interpolate(path, values, icell, bz2ibz,
 
     # Create padded Monkhorst-Pack grid:
     size = np.asarray(size)
-    i = np.indices(size + 2).transpose((1, 2, 3, 0)).reshape((-1, 3))
-    k = (i - 0.5) / size - 0.5 + offset
+    i = (np.indices(size + 2 * pad_width)
+         .transpose((1, 2, 3, 0)).reshape((-1, 3)))
+    k = (i - pad_width + 0.5) / size - 0.5 + offset
     k = np.dot(k, icell)
 
     # Fill in boundary values:
-    V = np.zeros(tuple(size + 2) + v.shape[3:])
-    V[1:-1, 1:-1, 1:-1] = v
-    V[0, 1:-1, 1:-1] = v[-1]
-    V[-1, 1:-1, 1:-1] = v[0]
-    V[:, 0, 1:-1] = V[:, -2, 1:-1]
-    V[:, -1, 1:-1] = V[:, 1, 1:-1]
-    V[:, :, 0] = V[:, :, -2]
-    V[:, :, -1] = V[:, :, 1]
+    V = np.pad(v, [(pad_width, pad_width)] * 3 +
+               [(0, 0)] * (v.ndim - 3), mode="wrap")
 
     interpolate = LinearNDInterpolator(k, V.reshape((-1,) + V.shape[3:]))
-    return interpolate(path)
+    interpolated_points = interpolate(path)
+
+    # NaN values indicate points outside interpolation domain, if fail
+    # try increasing padding
+    assert not np.isnan(interpolated_points).any(), \
+        "Points outside interpolation domain. Try increasing pad_width."
+
+    return interpolated_points
 
 
 # ChadiCohen k point grids. The k point grids are given in units of the
@@ -812,7 +815,7 @@ cc162_1x1 = np.array([
 
 # The following is a list of the critical points in the 1st Brillouin zone
 # for some typical crystal structures following the conventions of Setyawan
-# and Curtarolo [http://dx.doi.org/10.1016/j.commatsci.2010.05.010].
+# and Curtarolo [https://doi.org/10.1016/j.commatsci.2010.05.010].
 #
 # In units of the reciprocal basis vectors.
 #

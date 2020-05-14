@@ -19,7 +19,6 @@
 
 """
 
-from __future__ import print_function
 import os
 import time
 import subprocess
@@ -43,7 +42,7 @@ class OpenMX(FileIOCalculator):
     Calculator interface to the OpenMX code.
     """
 
-    implemented_properties = (
+    implemented_properties = [
         'free_energy',       # Same value with energy
         'energy',
         'forces',
@@ -52,8 +51,7 @@ class OpenMX(FileIOCalculator):
         'chemical_potential',
         'magmom',
         'magmoms',
-        'eigenvalues',
-    )
+        'eigenvalues']
 
     default_parameters = OpenMXParameters()
 
@@ -151,7 +149,7 @@ class OpenMX(FileIOCalculator):
         def isRunning(process=None):
             ''' Check mpi is running'''
             return process.poll() is None
-        runfile = get_file_name('.dat', self.label)
+        runfile = get_file_name('.dat', self.label, absolute_directory=False)
         outfile = get_file_name('.log', self.label)
         olddir = os.getcwd()
         abs_dir = os.path.join(olddir, self.directory)
@@ -178,7 +176,7 @@ class OpenMX(FileIOCalculator):
             return process.poll() is None
         processes = self.processes
         threads = self.threads
-        runfile = get_file_name('.dat', self.label)
+        runfile = get_file_name('.dat', self.label, absolute_directory=False)
         outfile = get_file_name('.log', self.label)
         olddir = os.getcwd()
         abs_dir = os.path.join(olddir, self.directory)
@@ -476,7 +474,7 @@ class OpenMX(FileIOCalculator):
             command += 'mpirun -np ' + \
                 str(processes) + ' ' + self.command + ' %s ' + threads_string + ' |tee %s'
                 #str(processes) + ' openmx %s' + threads_string + ' > %s'
-                
+
         if runfile is None:
             runfile = abs_dir + '/' + self.prefix + '.dat'
         if outfile is None:

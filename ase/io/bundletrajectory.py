@@ -1,4 +1,3 @@
-from __future__ import print_function
 """bundletrajectory - a module for I/O from large MD simulations.
 
 The BundleTrajectory class writes trajectory into a directory with the
@@ -18,8 +17,7 @@ following structure::
         F1 (dir)
 """
 
-import ase.parallel
-from ase.parallel import paropen
+from ase.parallel import paropen, world, barrier
 from ase.calculators.singlepoint import (SinglePointCalculator,
                                          PropertyNotImplementedError)
 from ase.io.ulm import open as ulmopen
@@ -30,17 +28,11 @@ import shutil
 import time
 # The system json module causes memory leaks!  Use ase's own.
 # import json
+
+from ase import Atoms
 from ase.io import jsonio
-try:
-    import cPickle as pickle   # Need efficient pickle if using Python 2
-except ImportError:
-    import pickle              # Python 3 pickle is efficient.
+import pickle              # Python 3 pickle is efficient.
 import collections
-# We would like to use an OrderedDict for nice printing
-try:
-    from collections import OrderedDict as odict
-except ImportError:
-    odict = dict
 
 
 class BundleTrajectory:
@@ -88,7 +80,7 @@ class BundleTrajectory:
         self.filename = filename
         self.pre_observers = []  # callback functions before write is performed
         self.post_observers = []  # callback functions after write is performed
-        self.master = ase.parallel.rank == 0
+        self.master = world.rank == 0
         self.extra_data = []
         self.singleprecision = singleprecision
         self._set_defaults()
@@ -169,8 +161,7 @@ class BundleTrajectory:
         # Write 'small' data structures.  They are written jointly.
         smalldata = {'pbc': atoms.get_pbc(),
                      'cell': atoms.get_cell(),
-                     # GLOBAL number of atoms:
-                     'natoms': atoms.get_number_of_atoms(),
+                     'natoms': atoms.get_global_number_of_atoms(),
                      'constraints': atoms.constraints}
         if datatypes.get('energy'):
             try:
@@ -348,7 +339,7 @@ class BundleTrajectory:
             self.atom_id, dummy = self.backend.read_split(framedir, 'ID')
         else:
             self.atom_id = None
-        atoms = ase.Atoms(**data)
+        atoms = Atoms(**data)
         natoms = smalldata['natoms']
         for name in ('positions', 'numbers', 'tags', 'masses',
                      'momenta'):
@@ -372,7 +363,7 @@ class BundleTrajectory:
                                          forces=forces,
                                          stress=smalldata.get('stress'),
                                          magmoms=magmoms)
-            atoms.set_calculator(calc)
+            atoms.calc = calc
         return atoms
 
     def read_extra_data(self, name, n=0):
@@ -423,7 +414,7 @@ class BundleTrajectory:
             lfn = os.path.join(self.filename, 'log.txt')
         else:
             lfn = os.path.join(self.filename, ('log-node%d.txt' %
-                                               (ase.parallel.rank,)))
+                                               (world.rank,)))
         self.logfile = open(lfn, 'a', 1)   # Append to log if it exists.
         if hasattr(self, 'logdata'):
             for text in self.logdata:
@@ -438,33 +429,33 @@ class BundleTrajectory:
         self.atoms = atoms
         if os.path.exists(self.filename):
             # The output directory already exists.
-            ase.parallel.barrier()  # all must have time to see it exists
+            barrier()  # all must have time to see it exists
             if not self.is_bundle(self.filename, allowempty=True):
                 raise IOError(
                     'Filename "' + self.filename +
                     '" already exists, but is not a BundleTrajectory.' +
                     'Cowardly refusing to remove it.')
             if self.is_empty_bundle(self.filename):
-                ase.parallel.barrier()
+                barrier()
                 self.log('Deleting old "%s" as it is empty' % (self.filename,))
                 self.delete_bundle(self.filename)
             elif not backup:
-                ase.parallel.barrier()
+                barrier()
                 self.log('Deleting old "%s" as backup is turned off.' %
                          (self.filename,))
                 self.delete_bundle(self.filename)
             else:
-                ase.parallel.barrier()
+                barrier()
                 # Make a backup file
                 bakname = self.filename + '.bak'
                 if os.path.exists(bakname):
-                    ase.parallel.barrier()  # All must see it exists
+                    barrier()  # All must see it exists
                     self.log('Deleting old backup file "%s"' % (bakname,))
                     self.delete_bundle(bakname)
                 self.log('Renaming "%s" to "%s"' % (self.filename, bakname))
                 self._rename_bundle(self.filename, bakname)
         # Ready to create a new bundle.
-        ase.parallel.barrier()
+        barrier()
         self.log('Creating new "%s"' % (self.filename,))
         self._make_bundledir(self.filename)
         self.state = 'prewrite'
@@ -505,14 +496,13 @@ class BundleTrajectory:
             self.pythonmajor = 2  # Assume written with Python 2.
         # We need to know if we are running Python 3.X and try to read
         # a bundle written with Python 2.X
-        self.backend.readpy2 = (sys.version_info[0] >= 3 and
-                                self.pythonmajor == 2)
+        self.backend.readpy2 = (self.pythonmajor == 2)
         self.state = 'read'
 
     def _open_append(self, atoms):
         if not os.path.exists(self.filename):
             # OK, no old bundle.  Open as for write instead.
-            ase.parallel.barrier()
+            barrier()
             self._open_write(atoms, False)
             return
         if not self.is_bundle(self.filename):
@@ -598,7 +588,7 @@ class BundleTrajectory:
     def is_bundle(filename, allowempty=False):
         """Check if a filename exists and is a BundleTrajectory.
 
-        If allowempty=True, an empty folder is regarded as an 
+        If allowempty=True, an empty folder is regarded as an
         empty BundleTrajectory."""
         if not os.path.isdir(filename):
             return False
@@ -634,13 +624,13 @@ class BundleTrajectory:
         f.close()
 
         # File may be removed by the master immediately after this.
-        ase.parallel.barrier()
+        barrier()
         return nframes == 0
 
     @classmethod
     def delete_bundle(cls, filename):
         "Deletes a bundle."
-        if ase.parallel.rank == 0:
+        if world.rank == 0:
             # Only the master deletes
             if not cls.is_bundle(filename, allowempty=True):
                 raise IOError(
@@ -659,7 +649,7 @@ class BundleTrajectory:
         # The master may not proceed before all tasks have seen the
         # directory go away, as it might otherwise create a new bundle
         # with the same name, fooling the wait loop in _make_bundledir.
-        ase.parallel.barrier()
+        barrier()
 
     def _rename_bundle(self, oldname, newname):
         "Rename a bundle.  Used to create the .bak"
@@ -670,7 +660,7 @@ class BundleTrajectory:
                 time.sleep(1)
         # The master may not proceed before all tasks have seen the
         # directory go away.
-        ase.parallel.barrier()
+        barrier()
 
     def _make_bundledir(self, filename):
         """Make the main bundle directory.
@@ -680,7 +670,7 @@ class BundleTrajectory:
         """
         self.log('Making directory ' + filename)
         assert not os.path.isdir(filename)
-        ase.parallel.barrier()
+        barrier()
         if self.master:
             os.mkdir(filename)
         else:
@@ -841,7 +831,7 @@ class UlmBundleBackend:
         fn = os.path.join(framedir, name + '.ulm')
         if split is None or os.path.exists(fn):
             f = ulmopen(fn, 'r')
-            info = odict()
+            info = dict()
             info['shape'] = f.shape
             info['type'] = f.dtype
             info['stored_as'] = f.stored_as
@@ -849,7 +839,7 @@ class UlmBundleBackend:
             f.close()
             return info
         else:
-            info = odict()
+            info = dict()
             for i in range(split):
                 fn = os.path.join(framedir, name + '_' + str(i) + '.ulm')
                 f = ulmopen(fn, 'r')
@@ -960,7 +950,7 @@ class PickleBundleBackend:
             else:
                 info = pickle.load(f)
             f.close()
-            result = odict()
+            result = dict()
             result['shape'] = info[0]
             result['type'] = info[1]
             return result
@@ -979,7 +969,7 @@ class PickleBundleBackend:
                 else:
                     shape[0] += info[0][0]
                     assert dtype == info[1]
-            result = odict()
+            result = dict()
             result['shape'] = info[0]
             result['type'] = info[1]
             return result
@@ -1054,7 +1044,7 @@ def write_bundletrajectory(filename, images):
 
     for atoms in images:
         # Avoid potentially expensive calculations:
-        calc = atoms.get_calculator()
+        calc = atoms.calc
         if hasattr(calc, 'calculation_required'):
             for quantity in ('energy', 'forces', 'stress', 'magmoms'):
                 traj.select_data(quantity,

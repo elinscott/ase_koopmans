@@ -16,7 +16,6 @@ VMD (http://www.ks.uiuc.edu/Research/vmd/)
 or Ovito (http://www.ovito.org/, starting with version 2.3).
 """
 
-from __future__ import division
 
 import os
 import warnings
@@ -43,7 +42,7 @@ class NetCDFTrajectory:
     _cell_spatial_dim = 'cell_spatial'
     _cell_angular_dim = 'cell_angular'
     _label_dim = 'label'
-    _Voigt_dim = 'Voigt' # For stress/strain tensors
+    _Voigt_dim = 'Voigt'  # For stress/strain tensors
 
     # Default field names. If it is a list, check for any of these names upon
     # opening. Upon writing, use the first name.
@@ -418,9 +417,9 @@ class NetCDFTrajectory:
                 else:
                     raise TypeError("Don't know how to dump array of shape {0}"
                                     " into NetCDF trajectory.".format(shape))
-            try:
-                t = self.dtype_conv[type.char]
-            except:
+            if hasattr(type, 'char'):
+                t = self.dtype_conv.get(type.char, type)
+            else:
                 t = type
             self.nc.createVariable(array_name, t, dims)
 
@@ -474,9 +473,9 @@ class NetCDFTrajectory:
             else:
                 # If this is a large data set, only read chunks from it to
                 # reduce memory footprint of the NetCDFTrajectory reader.
-                for i in range((s-1)//self.chunk_size+1):
-                    sl = slice(i*self.chunk_size,
-                               min((i+1)*self.chunk_size, s))
+                for i in range((s - 1) // self.chunk_size + 1):
+                    sl = slice(i * self.chunk_size,
+                               min((i + 1) * self.chunk_size, s))
                     data[index[sl]] = var[sl]
         return data
 
@@ -516,8 +515,8 @@ class NetCDFTrajectory:
                 origin = np.zeros([3], dtype=float)
 
             # Do we have an index variable?
-            if self.index_var is not None and \
-                self._has_variable(self.index_var):
+            if (self.index_var is not None and
+                    self._has_variable(self.index_var)):
                 index = np.array(self.nc.variables[self.index_var][i][:])
                 # The index variable can be non-consecutive, we here construct
                 # a consecutive one.

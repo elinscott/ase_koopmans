@@ -7,20 +7,35 @@ from ase.io import write
 import ase.parallel as parallel
 
 
+def _pipe_to_gui(atoms, repeat, block):
+    from io import BytesIO
+    buf = BytesIO()
+    write(buf, atoms, format='traj')
+
+    args = [sys.executable, '-m', 'ase', 'gui', '-']
+    if repeat:
+        args.append(' --repeat={},{},{}'.format(*repeat))
+
+    proc = subprocess.Popen(args,
+                            stdin=subprocess.PIPE)
+    proc.stdin.write(buf.getvalue())
+    proc.stdin.close()
+    if block:
+        proc.wait()
+
+
 def view(atoms, data=None, viewer='ase', repeat=None, block=False):
     # Ignore for parallel calculations:
-    if parallel.size != 1:
+    if parallel.world.size != 1:
         return
 
     vwr = viewer.lower()
 
     if vwr == 'ase':
-        format = 'traj'
-        command = sys.executable + ' -m ase gui'
-        if repeat is not None:
-            command += ' --repeat={},{},{}'.format(*repeat)
-            repeat = None
-    elif vwr == 'vmd':
+        _pipe_to_gui(atoms, repeat, block)
+        return
+
+    if vwr == 'vmd':
         format = 'cube'
         command = 'vmd'
     elif vwr == 'rasmol':

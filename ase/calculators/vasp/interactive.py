@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from subprocess import Popen, PIPE
 
 from ase.calculators.calculator import Calculator
@@ -12,7 +10,7 @@ import os
 import sys
 
 
-class VaspInteractive(GenerateVaspInput, Calculator):
+class VaspInteractive(GenerateVaspInput, Calculator):  # type: ignore
     name = "VaspInteractive"
     implemented_properties = ['energy', 'forces', 'stress']
 
@@ -26,7 +24,7 @@ class VaspInteractive(GenerateVaspInput, Calculator):
 
     def __init__(self, txt="interactive.log", print_log=False, process=None,
                  command=None, path="./", **kwargs):
-        
+
         GenerateVaspInput.__init__(self)
 
         for kw, val in self.mandatory_input.items():

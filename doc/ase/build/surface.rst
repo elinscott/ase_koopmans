@@ -93,7 +93,7 @@ All the functions setting up surfaces take the same arguments.
 
 *periodic*:
   (optional) Produce a bulk system.  Defaults to False.  If true, sets
-  boundary conditions and cell constently with the corresponding bulk
+  boundary conditions and cell constantly with the corresponding bulk
   structure.  Useful for stacking multiple different surfaces.  The
   system will be fully equivalent to the bulk material only if the
   number of layers is consistent with the crystal stacking.

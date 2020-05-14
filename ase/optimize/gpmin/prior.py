@@ -2,35 +2,30 @@ import numpy as np
 
 
 class Prior():
-    '''Base class for all priors for the bayesian optimizer.
+    """Base class for all priors for the bayesian optimizer.
 
-       The __init__ method and the prior method are implemented here.
-       Each child class should implement its own potential method, 
-       that will be called by the prior method implemented here.
+    The __init__ method and the prior method are implemented here.
+    Each child class should implement its own potential method, that will be
+    called by the prior method implemented here.
 
-       When used, the prior should be initialized outside the optimizer 
-       and the Prior object should be passed as a function to the optimizer.
-    '''
-
+    When used, the prior should be initialized outside the optimizer and the
+    Prior object should be passed as a function to the optimizer.
+    """
     def __init__(self):
-        '''Basic prior implementation. 
-        '''
+        """Basic prior implementation."""
         pass
 
     def prior(self, x):
-        ''' Actual prior function, common to all Priors'''
-
-        if len(x.shape)>1:
+        """Actual prior function, common to all Priors"""
+        if len(x.shape) > 1:
             n = x.shape[0]
-
             return np.hstack([self.potential(x[i, :]) for i in range(n)])
-
         else:
             return self.potential(x)
 
 
 class ZeroPrior(Prior):
-    '''ZeroPrior object, consisting on a constant prior with 0eV energy.'''
+    """ZeroPrior object, consisting on a constant prior with 0eV energy."""
     def __init__(self):
         Prior.__init__(self)
 
@@ -39,19 +34,18 @@ class ZeroPrior(Prior):
 
 
 class ConstantPrior(Prior):
-    '''Constant prior, with energy = constant and zero forces
+    """Constant prior, with energy = constant and zero forces
 
     Parameters:
-    
-    constant: energy value for the constant. 
-    
+
+    constant: energy value for the constant.
+
     Example:
 
-    
     >>> from ase.optimize import GPMin
     >>> from ase.optimize.gpmin.prior import ConstantPrior
     >>> op = GPMin(atoms, Prior = ConstantPrior(10)
-    '''
+    """
     def __init__(self, constant):
         self.constant = constant
         Prior.__init__(self)
@@ -67,23 +61,19 @@ class ConstantPrior(Prior):
 
 
 class CalculatorPrior(Prior):
-
-    '''CalculatorPrior object, allows the user to 
-    use another calculator as prior function instead of the 
+    """CalculatorPrior object, allows the user to
+    use another calculator as prior function instead of the
     default constant.
 
     Parameters:
 
     atoms: the Atoms object
     calculator: one of ASE's calculators
-
-    '''
-
+    """
     def __init__(self, atoms, calculator):
-
         Prior.__init__(self)
         self.atoms = atoms.copy()
-        self.atoms.set_calculator(calculator)
+        self.atoms.calc = calculator
 
     def potential(self, x):
         self.atoms.set_positions(x.reshape(-1, 3))

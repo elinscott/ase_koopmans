@@ -14,7 +14,7 @@ The method was first described in the supplemental material of
    | `Systematic Study of Au6 to Au12 Gold Clusters on MgO(100) F Centers Using Density-Functional Theory`__
    | Physical Review Letters, Vol. 108 (Mar 2012), 126101
 
-   __ http://dx.doi.org/10.1103/physrevlett.108.126101
+   __ https://doi.org/10.1103/physrevlett.108.126101
 
 and a full account of the method is given in
 
@@ -22,7 +22,7 @@ and a full account of the method is given in
    | `A genetic algorithm for first principles global optimization of supported nano structures`__
    | Journal of Chemical Physics, Vol 141, 044711 (2014)
 
-   __ http://dx.doi.org/10.1063/1.4886337
+   __ https://doi.org/10.1063/1.4886337
 
 Any questions about how to use the GA can be asked at the mailing
 list.

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """Vibrational modes."""
-from __future__ import division
 
 import os
 import os.path as op
@@ -12,9 +10,9 @@ import numpy as np
 
 import ase.units as units
 from ase.io.trajectory import Trajectory
-from ase.parallel import rank, paropen
+from ase.parallel import world, paropen
 
-from ase.utils import opencew, pickleload, basestring
+from ase.utils import opencew, pickleload
 from ase.calculators.singlepoint import SinglePointCalculator
 
 
@@ -93,7 +91,7 @@ class Vibrations:
     def __init__(self, atoms, indices=None, name='vib', delta=0.01, nfree=2):
         assert nfree in [2, 4]
         self.atoms = atoms
-        self.calc = atoms.get_calculator()
+        self.calc = atoms.calc
         if indices is None:
             indices = range(len(atoms))
         self.indices = np.asarray(indices)
@@ -175,7 +173,7 @@ class Vibrations:
             dipole = self.calc.get_dipole_moment(atoms)
         if self.ram:
             freq, noninPol, pol = self.get_polarizability()
-        if rank == 0:
+        if world.rank == 0:
             if self.ir and self.ram:
                 pickle.dump([forces, dipole, freq, noninPol, pol], fd, protocol=2)
                 sys.stdout.write(
@@ -200,7 +198,7 @@ class Vibrations:
 
         """
 
-        if rank != 0:
+        if world.rank != 0:
             return 0
 
         n = 0
@@ -225,7 +223,7 @@ class Vibrations:
         of data structure at a time.
 
         """
-        if rank != 0:
+        if world.rank != 0:
             return 0
         filenames = [self.name + '.eq.pckl']
         for dispName, a, i, disp in self.displacements():
@@ -257,7 +255,7 @@ class Vibrations:
         sort of data structure at a time.
 
         """
-        if rank != 0:
+        if world.rank != 0:
             return 0
         combined_name = self.name + '.all.pckl'
         if not op.isfile(combined_name):
@@ -390,7 +388,7 @@ class Vibrations:
             file to create.
         """
 
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
         write = log.write
 
@@ -439,19 +437,19 @@ class Vibrations:
         p = self.atoms.positions.copy()
         n %= 3 * len(self.indices)
         traj = Trajectory('%s.%d.traj' % (self.name, n), 'w')
-        calc = self.atoms.get_calculator()
-        self.atoms.set_calculator()
+        calc = self.atoms.calc
+        self.atoms.calc = None
         for x in np.linspace(0, 2 * pi, nimages, endpoint=False):
             self.atoms.set_positions(p + sin(x) * mode)
             traj.write(self.atoms)
         self.atoms.set_positions(p)
-        self.atoms.set_calculator(calc)
+        self.atoms.calc = calc
         traj.close()
 
     def show_as_force(self, n, scale=0.2):
         mode = self.get_mode(n) * len(self.hnu) * scale
         calc = SinglePointCalculator(self.atoms, forces=mode)
-        self.atoms.set_calculator(calc)
+        self.atoms.calc = calc
         self.atoms.edit()
 
     def write_jmol(self):

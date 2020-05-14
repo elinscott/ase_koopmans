@@ -1,8 +1,8 @@
 .. _lattice_constant:
 
-=========================
-Finding lattice constants
-=========================
+=========================================================
+Finding lattice constants using EOS and the stress tensor
+=========================================================
 
 .. seealso::
 
@@ -81,7 +81,7 @@ One can also use the stress tensor to optimize the unit cell. For this we cannot
     from gpaw import GPAW, PW
     ni = bulk('Ni', 'hcp', a=a0,c=c0)
     calc = GPAW(mode=PW(200),xc='LDA',txt='Ni.out')
-    ni.set_calculator(calc)
+    ni.calc = calc
     sf = StrainFilter(ni)
     opt = BFGS(sf)
     opt.run(0.005)

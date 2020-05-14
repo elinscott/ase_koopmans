@@ -47,7 +47,7 @@ calc.Task = 'GeometryOptimization'
 
 # Prepare atoms
 mol = ase.atoms.Atoms('CO', [[0, 0, 0], [0, 0, 1.2]], cell=[10, 10, 10])
-mol.set_calculator(calc)
+mol.calc = calc
 
 # Check for correct input
 if calc.dryrun_ok():

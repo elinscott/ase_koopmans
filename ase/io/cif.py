@@ -9,6 +9,7 @@ The "latin-1" encoding is required by the IUCR specification.
 import re
 import shlex
 import warnings
+from typing import Dict
 
 import numpy as np
 
@@ -16,9 +17,8 @@ from ase import Atoms
 from ase.parallel import paropen
 from ase.spacegroup import crystal
 from ase.spacegroup.spacegroup import spacegroup_from_data, Spacegroup
-from ase.utils import basestring
 from ase.data import atomic_numbers, atomic_masses
-from ase.io.cif_unicode import format_unicode
+from ase.io.cif_unicode import format_unicode, handle_subscripts
 
 
 # Old conventions:
@@ -33,7 +33,7 @@ def convert_value(value):
     """Convert CIF value string to corresponding python type."""
     value = value.strip()
     if re.match('(".*")|(\'.*\')$', value):
-        return format_unicode(value[1:-1])
+        return handle_subscripts(value[1:-1])
     elif re.match(r'[+-]?\d+$', value):
         return int(value)
     elif re.match(r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$', value):
@@ -46,7 +46,7 @@ def convert_value(value):
         warnings.warn('Badly formed number: "{0}"'.format(value))
         return float(value[:value.index('(')])  # strip off uncertainties
     else:
-        return format_unicode(value)
+        return handle_subscripts(value)
 
 
 def parse_multiline_string(lines, line):
@@ -184,12 +184,13 @@ def parse_cif(fileobj, reader='ase'):
 def parse_cif_ase(fileobj):
     """Parse a CIF file using ase CIF parser"""
     blocks = []
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj, 'rb')
 
     data = fileobj.read()
     if isinstance(data, bytes):
         data = data.decode('latin1')
+    data = format_unicode(data)
     data = [e for e in data.split('\n') if len(e) > 0]
     if len(data) > 0 and data[0].rstrip() == '#\\#CIF_2.0':
         warnings.warn('CIF v2.0 file format detected; `ase` CIF reader might '
@@ -212,7 +213,7 @@ def parse_cif_ase(fileobj):
 def parse_cif_pycodcif(fileobj):
     """Parse a CIF file using pycodcif CIF parser"""
     blocks = []
-    if not isinstance(fileobj, basestring):
+    if not isinstance(fileobj, str):
         fileobj = fileobj.name
 
     try:
@@ -222,7 +223,7 @@ def parse_cif_pycodcif(fileobj):
             'parse_cif_pycodcif requires pycodcif ' +
             '(http://wiki.crystallography.net/cod-tools/pycodcif/)')
 
-    data,_,_ = parse(fileobj)
+    data, _, _ = parse(fileobj)
 
     for datablock in data:
         tags = datablock['values']
@@ -326,6 +327,8 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
     setting = 1
     spacegroup = 1
     if sitesym is not None:
+        if isinstance(sitesym, str):
+            sitesym = [sitesym]
         subtrans = [(0.0, 0.0, 0.0)] if subtrans_included else None
         spacegroup = spacegroup_from_data(
             no=no, symbol=symbolHM, sitesym=sitesym, subtrans=subtrans,
@@ -348,7 +351,12 @@ def tags2atoms(tags, store_tags=False, primitive_cell=False,
         deuterium = False
 
     setting_name = None
-    if '_space_group_crystal_system' in tags:
+    if '_symmetry_space_group_setting' in tags:
+        setting = int(tags['_symmetry_space_group_setting'])
+        if setting < 1 or setting > 2:
+            raise ValueError('Spacegroup setting must be 1 or 2, not %d' %
+                             setting)
+    elif '_space_group_crystal_system' in tags:
         setting_name = tags['_space_group_crystal_system']
     elif '_symmetry_cell_setting' in tags:
         setting_name = tags['_symmetry_cell_setting']
@@ -489,9 +497,13 @@ def write_enc(fileobj, s):
     fileobj.write(s.encode("latin-1"))
 
 
-def write_cif(fileobj, images, format='default'):
-    """Write *images* to CIF file."""
-    if isinstance(fileobj, basestring):
+def write_cif(fileobj, images, format='default',
+              wrap=True) -> None:
+    """Write *images* to CIF file.
+
+    wrap: Wrap atoms into unit cell.
+    """
+    if isinstance(fileobj, str):
         fileobj = paropen(fileobj, 'wb')
 
     if hasattr(images, 'get_positions'):
@@ -562,19 +574,20 @@ def write_cif(fileobj, images, format='default'):
             write_enc(fileobj, '  _atom_site_type_symbol\n')
 
         if coord_type == 'fract':
-            coords = atoms.get_scaled_positions().tolist()
+            coords = atoms.get_scaled_positions(wrap).tolist()
         else:
-            coords = atoms.get_positions().tolist()
+            coords = atoms.get_positions(wrap).tolist()
         symbols = atoms.get_chemical_symbols()
         occupancies = [1 for i in range(len(symbols))]
 
-        # try to fetch occupancies // rely on the tag - occupancy mapping
+        # try to fetch occupancies // spacegroup_kinds - occupancy mapping
         try:
             occ_info = atoms.info['occupancy']
-            for i, tag in enumerate(atoms.get_tags()):
-                occupancies[i] = occ_info[tag][symbols[i]]
+            kinds = atoms.arrays['spacegroup_kinds']
+            for i, kind in enumerate(kinds):
+                occupancies[i] = occ_info[kind][symbols[i]]
                 # extend the positions array in case of mixed occupancy
-                for sym, occ in occ_info[tag].items():
+                for sym, occ in occ_info[kind].items():
                     if sym != symbols[i]:
                         symbols.append(sym)
                         coords.append(coords[i])
@@ -582,7 +595,7 @@ def write_cif(fileobj, images, format='default'):
         except KeyError:
             pass
 
-        no = {}
+        no: Dict[str, int] = {}
 
         for symbol, pos, occ in zip(symbols, coords, occupancies):
             if symbol in no:

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from ase.io import Trajectory
 from ase.io import read
 from ase.neb import NEB
@@ -74,10 +72,10 @@ class AutoNEB(object):
         Choice betweeen three method:
         'aseneb', standard ase NEB implementation
         'improvedtangent', published NEB implementation
-        'eb', full spring force implementation (defualt)
+        'eb', full spring force implementation (default)
     optimizer: str
         Which optimizer to use in the relaxation. Valid values are 'BFGS'
-        and 'FIRE' (defualt)
+        and 'FIRE' (default)
     space_energy_ratio: float
         The preference for new images to be added in a big energy gab
         with a preference around the peak or in the biggest geometric gab.
@@ -585,7 +583,7 @@ def store_E_and_F_in_spc(self):
             self.world.broadcast(forces, root)
             # On all nodes, remove the calculator, keep only energy
             # and force in single point calculator
-            self.images[i].set_calculator(
-                SinglePointCalculator(self.images[i],
-                                      energy=energy[0],
-                                      forces=forces))
+            self.images[i].calc = SinglePointCalculator(
+                self.images[i],
+                energy=energy[0],
+                forces=forces)

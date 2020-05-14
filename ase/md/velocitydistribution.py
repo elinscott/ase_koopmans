@@ -1,4 +1,3 @@
-# encoding: utf-8
 # VelocityDistributions.py -- set up a velocity distribution
 
 """Module for setting up velocity distributions such as Maxwell–Boltzmann.

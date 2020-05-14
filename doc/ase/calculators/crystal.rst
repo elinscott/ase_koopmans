@@ -162,7 +162,7 @@ Reading an external wave function
 The calculator reads by default the wave function stored in
 the 'fort.20' file if present (``guess=True``).
 If this parameter is set to False the code will calculate the
-wave function from scratch at any step, slowing down the perfromances.
+wave function from scratch at any step, slowing down the performances.
 
 
 Code related keywords

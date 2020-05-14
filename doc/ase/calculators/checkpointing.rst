@@ -113,7 +113,7 @@ Example usage::
 
   calc = ...
   cp_calc = CheckpointCalculator(calc)
-  atoms.set_calculator(cp_calc)
+  atoms.calc = cp_calc
   e = atoms.get_potential_energy()
 
 The first call to :meth:`~ase.Atoms.get_potential_energy` does the actual

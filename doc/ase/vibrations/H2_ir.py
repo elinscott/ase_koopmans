@@ -12,7 +12,7 @@ atoms.minimal_box(3.5, h=h)
 
 # relax the molecule
 calc = GPAW(h=h, occupations=FermiDirac(width=0.1))
-atoms.set_calculator(calc)
+atoms.calc = calc
 dyn = optimize.FIRE(atoms)
 dyn.run(fmax=0.05)
 atoms.write('relaxed.traj')

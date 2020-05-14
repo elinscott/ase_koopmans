@@ -1,89 +1,91 @@
 import numpy as np
+from collections import namedtuple
 from ase.geometry import find_mic
 
 
 def fit_raw(energies, forces, positions, cell=None, pbc=None):
-    E = energies
-    F = forces
-    R = positions
-    E = np.array(E) - E[0]
-    n = len(E)
-    Efit = np.empty((n - 1) * 20 + 1)
-    Sfit = np.empty((n - 1) * 20 + 1)
+    """Calculates parameters for fitting images to a band, as for
+    a NEB plot."""
+    energies = np.array(energies) - energies[0]
+    n_images = len(energies)
+    fit_energies = np.empty((n_images - 1) * 20 + 1)
+    fit_path = np.empty((n_images - 1) * 20 + 1)
 
-    s = [0]
-    dR = np.zeros_like(R)
-    for i in range(n):
-        if i < n - 1:
-            dR[i] = R[i + 1] - R[i]
-            if cell is not None and pbc is not None:
-                dR[i], _ = find_mic(dR[i], cell, pbc)
-            s.append(s[i] + np.sqrt((dR[i]**2).sum()))
-        else:
-            dR[i] = R[i] - R[i - 1]
-            if cell is not None and pbc is not None:
-                dR[i], _ = find_mic(dR[i], cell, pbc)
+    path = [0]
+    for i in range(n_images - 1):
+        dR = positions[i + 1] - positions[i]
+        if cell is not None and pbc is not None:
+            dR, _ = find_mic(dR, cell, pbc)
+        path.append(path[i] + np.sqrt((dR**2).sum()))
 
-    lines = []
-    dEds0 = None
-    for i in range(n):
-        d = dR[i]
+    lines = []  # tangent lines
+    lastslope = None
+    for i in range(n_images):
         if i == 0:
-            ds = 0.5 * s[1]
-        elif i == n - 1:
-            ds = 0.5 * (s[-1] - s[-2])
+            direction = positions[i + 1] - positions[i]
+            dpath = 0.5 * path[1]
+        elif i == n_images - 1:
+            direction = positions[-1] - positions[-2]
+            dpath = 0.5 * (path[-1] - path[-2])
         else:
-            ds = 0.25 * (s[i + 1] - s[i - 1])
+            direction = positions[i + 1] - positions[i - 1]
+            dpath = 0.25 * (path[i + 1] - path[i - 1])
 
-        d = d / np.sqrt((d**2).sum())
-        dEds = -(F[i] * d).sum()
-        x = np.linspace(s[i] - ds, s[i] + ds, 3)
-        y = E[i] + dEds * (x - s[i])
+        direction /= np.linalg.norm(direction)
+        slope = -(forces[i] * direction).sum()
+        x = np.linspace(path[i] - dpath, path[i] + dpath, 3)
+        y = energies[i] + slope * (x - path[i])
         lines.append((x, y))
 
         if i > 0:
-            s0 = s[i - 1]
-            s1 = s[i]
+            s0 = path[i - 1]
+            s1 = path[i]
             x = np.linspace(s0, s1, 20, endpoint=False)
             c = np.linalg.solve(np.array([(1, s0, s0**2, s0**3),
                                           (1, s1, s1**2, s1**3),
                                           (0, 1, 2 * s0, 3 * s0**2),
                                           (0, 1, 2 * s1, 3 * s1**2)]),
-                                np.array([E[i - 1], E[i], dEds0, dEds]))
+                                np.array([energies[i - 1], energies[i],
+                                          lastslope, slope]))
             y = c[0] + x * (c[1] + x * (c[2] + x * c[3]))
-            Sfit[(i - 1) * 20:i * 20] = x
-            Efit[(i - 1) * 20:i * 20] = y
+            fit_path[(i - 1) * 20:i * 20] = x
+            fit_energies[(i - 1) * 20:i * 20] = y
 
-        dEds0 = dEds
+        lastslope = slope
 
-    Sfit[-1] = s[-1]
-    Efit[-1] = E[-1]
-    return ForceFit(s, E, Sfit, Efit, lines)
+    fit_path[-1] = path[-1]
+    fit_energies[-1] = energies[-1]
+    return ForceFit(path, energies, fit_path, fit_energies, lines)
 
-from collections import namedtuple
 
-class ForceFit(namedtuple('ForceFit', ['s', 'E', 'Sfit', 'Efit', 'lines'])):
+class ForceFit(namedtuple('ForceFit', ['path', 'energies', 'fit_path',
+                                       'fit_energies', 'lines'])):
+    """Data container to hold fitting parameters for force curves."""
+
     def plot(self, ax=None):
         import matplotlib.pyplot as plt
         if ax is None:
             ax = plt.gca()
 
-        ax.plot(self.s, self.E, 'o')
+        ax.plot(self.path, self.energies, 'o')
         for x, y in self.lines:
             ax.plot(x, y, '-g')
-        ax.plot(self.Sfit, self.Efit, 'k-')
-        ax.set_xlabel(r'path [$\AA$]')
+        ax.plot(self.fit_path, self.fit_energies, 'k-')
+        ax.set_xlabel(r'path [Å]')
         ax.set_ylabel('energy [eV]')
-        Ef = max(self.E) - self.E[0]
-        Er = max(self.E) - self.E[-1]
-        dE = self.E[-1] - self.E[0]
-        ax.set_title('$E_\mathrm{f} \\approx$ %.3f eV; '
-                     '$E_\mathrm{r} \\approx$ %.3f eV; '
-                     '$\\Delta E$ = %.3f eV'
-                     % (Ef, Er, dE))
+        Ef = max(self.energies) - self.energies[0]
+        Er = max(self.energies) - self.energies[-1]
+        dE = self.energies[-1] - self.energies[0]
+        ax.set_title(r'$E_\mathrm{{f}} \approx$ {:.3f} eV; '
+                     r'$E_\mathrm{{r}} \approx$ {:.3f} eV; '
+                     r'$\Delta E$ = {:.3f} eV'.format(Ef, Er, dE))
         return ax
 
+
 def fit_images(images):
+    """Fits a series of images with a smoothed line for producing a standard
+    NEB plot. Returns a `ForceFit` data structure; the plot can be produced
+    by calling the `plot` method of `ForceFit`."""
     R = [atoms.positions for atoms in images]
     E = [atoms.get_potential_energy() for atoms in images]
     F = [atoms.get_forces() for atoms in images]  # XXX force consistent???

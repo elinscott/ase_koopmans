@@ -3,11 +3,10 @@ import numpy as np
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.atom import Atom
 from ase.atoms import Atoms
-from ase.utils import basestring
 
 
 def read_dacapo_text(fileobj):
-    if isinstance(fileobj, basestring):
+    if isinstance(fileobj, str):
         fileobj = open(fileobj)
 
     lines = fileobj.readlines()
@@ -43,10 +42,9 @@ def read_dacapo_text(fileobj):
                     break
                 i2 -= 1
             energy = float(lines[i2].split()[column])
-            atoms.set_calculator(SinglePointCalculator(atoms, energy=energy))
+            atoms.calc = SinglePointCalculator(atoms, energy=energy)
 
     return atoms
-
 
 
 def read_dacapo(filename):
@@ -78,7 +76,8 @@ def read_dacapo(filename):
     except KeyError:
         energy = None
         force = None
-    calc = SinglePointCalculator(atoms, energy=energy, forces=force)  ### Fixme magmoms
-    atoms.set_calculator(calc)
-        
+    # Fixme magmoms
+    calc = SinglePointCalculator(atoms, energy=energy, forces=force)
+    atoms.calc = calc
+
     return atoms

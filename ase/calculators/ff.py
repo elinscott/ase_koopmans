@@ -1,5 +1,3 @@
-from __future__ import division
-
 import numpy as np
 
 from ase.calculators.calculator import Calculator

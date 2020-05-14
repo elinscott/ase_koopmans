@@ -1,7 +1,7 @@
 .. _selfdiffusion:
 
-Self-diffusion on the Al(110) surface (NEB + Dimer method exercise)
--------------------------------------------------------------------
+Self-diffusion on the Al(110) surface using the NEB and Dimer method
+--------------------------------------------------------------------
 
 .. image:: Al110slab.png
    :height: 270 px

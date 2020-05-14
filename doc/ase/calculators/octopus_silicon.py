@@ -11,5 +11,5 @@ calc = Octopus(label='silicon',
                OutputFormat='xcrysden',
                DosGamma=0.1)
 
-system.set_calculator(calc)
+system.calc = calc
 system.get_potential_energy()

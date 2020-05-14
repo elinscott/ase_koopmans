@@ -4,7 +4,7 @@ from ase.build.surface import (
     bcc100, bcc110, bcc111,
     diamond100, diamond111,
     fcc100, fcc110, fcc111, fcc211,
-    hcp0001, hcp10m10, mx2)
+    hcp0001, hcp10m10, mx2, graphene)
 from ase.build.bulk import bulk
 from ase.build.general_surface import surface
 from ase.build.molecule import molecule
@@ -24,7 +24,7 @@ __all__ = ['minimize_rotation_and_translation',
            'bcc100', 'bcc110', 'bcc111',
            'diamond100', 'diamond111',
            'fcc100', 'fcc110', 'fcc111', 'fcc211',
-           'hcp0001', 'hcp10m10', 'mx2',
+           'hcp0001', 'hcp10m10', 'mx2', 'graphene',
            'bulk', 'surface', 'molecule',
            'hcp0001_root', 'fcc111_root', 'bcc111_root',
            'root_surface', 'root_surface_analysis',

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 from ase import Atom, Atoms
 from ase.calculators.calculator import Calculator
@@ -44,7 +43,7 @@ def voids(atoms_in):
     atoms = atoms_in.copy()
     # append moving atom
     atoms.append(Atom('X'))
-    atoms.set_calculator(RepulsivePotential())
+    atoms.calc = RepulsivePotential()
 
     voids_a = Atoms()
     voids_a.set_cell(atoms.get_cell())

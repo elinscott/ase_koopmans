@@ -48,6 +48,11 @@ class Espresso(FileIOCalculator):
         kpts: (int, int, int), dict, or BandPath
             If kpts is a tuple (or list) of 3 integers, it is interpreted
             as the dimensions of a Monkhorst-Pack grid.
+            If ``kpts`` is set to ``None``, only the Γ-point will be included
+            and QE will use routines optimized for Γ-point-only calculations.
+            Compared to Γ-point-only calculations without this optimization
+            (i.e. with ``kpts=(1, 1, 1)``), the memory and CPU requirements
+            are typically reduced by half.
             If kpts is a dict, it will either be interpreted as a path
             in the Brillouin zone (*) if it contains the 'path' keyword,
             otherwise it is converted to a Monkhorst-Pack grid (**).
@@ -72,7 +77,7 @@ class Espresso(FileIOCalculator):
 
               >>> input_data = {<your input data>}
               >>> calc = Espresso(input_data=input_data, ...)
-              >>> atoms.set_calculator(calc)
+              >>> atoms.calc = calc
               >>> atoms.get_potential_energy()
               >>> fermi_level = calc.get_fermi_level()
 
@@ -125,6 +130,14 @@ class Espresso(FileIOCalculator):
         if ibzkpts is None:
             warnings.warn(warn_template % 'IBZ k-points')
         return ibzkpts
+
+    def get_k_point_weights(self):
+        if self.calc is None:
+            raise PropertyNotPresent(error_template % 'K-point weights')
+        k_point_weights = self.calc.get_k_point_weights()
+        if k_point_weights is None:
+            warnings.warn(warn_template % 'K-point weights')
+        return k_point_weights
 
     def get_eigenvalues(self, **kwargs):
         if self.calc is None:

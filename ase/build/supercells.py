@@ -10,7 +10,7 @@ class SupercellError(Exception):
 
 
 def get_deviation_from_optimal_cell_shape(cell, target_shape="sc", norm=None):
-    """
+    r"""
     Calculates the deviation of the given cell metric from the ideal
     cell metric defining a certain shape. Specifically, the function
     evaluates the expression `\Delta = || Q \mathbf{h} -
@@ -141,13 +141,13 @@ def find_optimal_cell_shape(
 
 
 def make_supercell(prim, P, wrap=True, tol=1e-5):
-    """Generate a supercell by applying a general transformation (*P*) to
+    r"""Generate a supercell by applying a general transformation (*P*) to
     the input configuration (*prim*).
 
     The transformation is described by a 3x3 integer matrix
     `\mathbf{P}`. Specifically, the new cell metric
     `\mathbf{h}` is given in terms of the metric of the input
-    configuraton `\mathbf{h}_p` by `\mathbf{P h}_p =
+    configuration `\mathbf{h}_p` by `\mathbf{P h}_p =
     \mathbf{h}`.
 
     Parameters:
@@ -194,7 +194,7 @@ def lattice_points_in_supercell(supercell_matrix):
     """Find all lattice points contained in a supercell.
 
     Adapted from pymatgen, which is available under MIT license:
-    The MIT License (MIT) Copyright (c) 2011-2012 MIT & The Regents of the 
+    The MIT License (MIT) Copyright (c) 2011-2012 MIT & The Regents of the
     University of California, through Lawrence Berkeley National Laboratory
     """
 

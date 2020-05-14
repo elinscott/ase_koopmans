@@ -1,4 +1,4 @@
-from __future__ import print_function
+# flake8: noqa
 """QM/MM interface with QM=FHI-aims, MM=gromacs
 
 QM could be something else, but you need to read in qm-atom charges
@@ -484,11 +484,11 @@ class AseQmmmManyqm:
 
         #attach calculators to qm regions
         for iqm, qm in enumerate(self.qmsystems):
-            self.qmsystems[iqm].set_calculator(self.qm_calculators[iqm])
+            self.qmsystems[iqm].calc = self.qm_calculators[iqm]
 
         #attach calculators to the mm region (the whole system)
         self.mm_system = system_tmp
-        self.mm_system.set_calculator(self.mm_calculator)
+        self.mm_system.calc = self.mm_calculator
 
         #initialize total energy and forces of qm regions
         #and the mm energy
@@ -582,7 +582,7 @@ class AseQmmmManyqm:
         """ Calculating mm energies and forces """
         import os
         mm = self.atoms
-        mm.set_calculator(self.mm_calculator)
+        mm.calc = self.mm_calculator
         if (self.mm_calculator.name == 'Gromacs'):
             try:
                 os.remove(self.mm_calculator.label+'.log')
@@ -600,7 +600,7 @@ class AseQmmmManyqm:
     def calculate_qms(self):
         """ QM calculations on all qm systems are carried out """
         for iqm, qm in enumerate(self.qmsystems):
-            qm.set_calculator(self.qm_calculators[iqm])
+            qm.calc = self.qm_calculators[iqm]
             self.qm_energies[iqm] = qm.get_potential_energy()
             self.qm_forces[iqm] = np.zeros((len(qm), 3))
             self.qm_forces[iqm] = qm.get_forces()
@@ -622,7 +622,7 @@ class AseQmmmManyqm:
         """ Calculate the qm energy of a single qm region
         (for X-H bond length calculations)
         """
-        myqm.set_calculator(mycalculator)
+        myqm.calc = mycalculator
         return myqm.get_potential_energy()
 
     def run(self, atoms):
@@ -1534,7 +1534,7 @@ class AseQmmmManyqm:
                     oklines.append(line)
                 elif check == 'bond':
                     bondedatoms = set(indexes[0:2])
-                    #set empty bond intereaction for qm-qm bonds (type 5)
+                    #set empty bond interaction for qm-qm bonds (type 5)
                     #(this way LJ and electrostatics is not messed up)
                     if (bondedatoms.issubset(qm)):
                         newline = str(indexes1[0]).rjust(8)+\

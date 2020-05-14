@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Infrared intensities"""
 
 import os.path as op
@@ -11,7 +9,7 @@ import numpy as np
 import ase.units as units
 from ase.parallel import parprint, paropen
 from ase.vibrations import Vibrations
-from ase.utils import basestring, pickleload
+from ase.utils import pickleload
 
 
 class Infrared(Vibrations):
@@ -78,7 +76,7 @@ class Infrared(Vibrations):
     ...             idipol=4,       # calculate the total dipole moment
     ...             dipol=water.get_center_of_mass(scaled=True),
     ...             ldipol=True)
-    >>> water.set_calculator(calc)
+    >>> water.calc = calc
     >>> ir = Infrared(water)
     >>> ir.run()
     >>> ir.summary()
@@ -132,7 +130,7 @@ class Infrared(Vibrations):
     >>> calc.set_fdf('LatticeConstant', 1.000000 * Ang)
     >>> calc.set_fdf('WriteCoorXmol',       'T')
 
-    >>> bud.set_calculator(calc)
+    >>> bud.calc = calc
 
     >>> ir = Infrared(bud)
     >>> ir.run()
@@ -260,7 +258,7 @@ class Infrared(Vibrations):
         elif intensity_unit == 'km/mol':
             iu_string = '   ' + iu_string
             iu_format = ' %7.1f'
-        if isinstance(log, basestring):
+        if isinstance(log, str):
             log = paropen(log, 'a')
 
         parprint('-------------------------------------', file=log)

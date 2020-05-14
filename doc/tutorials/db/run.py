@@ -31,7 +31,7 @@ for n in [1, 2, 3]:
     a *= (2, 2, 1)
     write('cu{}o.pov'.format(n), a,
           rotation='-80x',
-          display=False, run_povray=True)
+          run_povray=True)
 
 # A bit of testing:
 row = connect('ads.db').get(surf='Pt', layers=3, ads='O')

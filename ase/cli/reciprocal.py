@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 
 from ase.io import read
@@ -7,6 +6,7 @@ from ase.geometry import crystal_structure_from_cell
 from ase.dft.kpoints import (get_special_points, special_paths, BandPath,
                              parse_path_string, labels_from_kpts,
                              get_monkhorst_pack_size_and_offset)
+
 
 def atoms2bandpath(atoms, path='default',
                    k_points=False,

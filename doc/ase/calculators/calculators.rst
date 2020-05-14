@@ -1,6 +1,8 @@
 .. module:: ase.calculators
    :synopsis: Energy, force and stress calculators.
 
+.. _calculators:
+
 ===========
 Calculators
 ===========
@@ -12,8 +14,8 @@ energy and forces and sometimes also stresses.
 In order to calculate forces and energies, you need to attach a
 calculator object to your atoms object:
 
->>> a = read('molecule.xyz')
->>> e = a.get_potential_energy()  # doctest: IGNORE_EXCEPTION_DETAIL
+>>> atoms = read('molecule.xyz')
+>>> e = atoms.get_potential_energy()  # doctest: IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "/home/jjmo/ase/atoms/ase.py", line 399, in get_potential_energy
@@ -21,22 +23,14 @@ Traceback (most recent call last):
 RuntimeError: Atoms object has no calculator.
 >>> from ase.calculators.abinit import Abinit
 >>> calc = Abinit(...)
->>> a.set_calculator(calc)
->>> e = a.get_potential_energy()
+>>> atoms.calc = calc
+>>> e = atoms.get_potential_energy()
 >>> print(e)
 -42.0
 
-Here, we used the :meth:`~ase.Atoms.set_calculator` method to attach
+Here we attached
 an instance of the :mod:`ase.calculators.abinit` class and then
 we asked for the energy.
-
-Alternatively, a calculator can be attached like this::
-
-  atoms = Atoms(..., calculator=Abinit(...))
-
-or this::
-
-  atoms.calc = Abinit(...)
 
 
 .. _supported calculators:
@@ -49,7 +43,7 @@ The calculators can be divided in four groups:
 1) Asap_, GPAW_, and Hotbit_ have their own native ASE interfaces.
 
 2) ABINIT, AMBER, CP2K, CASTEP, deMon2k, DFTB+, ELK, EXCITING, FHI-aims, FLEUR, GAUSSIAN,
-   Gromacs, Jacapo, LAMMPS, MOPAC, NWChem, Octopus, ONETEP, Quantum ESPRESSO, SIESTA,
+   Gromacs, LAMMPS, MOPAC, NWChem, Octopus, ONETEP, psi4, Q-Chem, Quantum ESPRESSO, SIESTA,
    TURBOMOLE and VASP, have Python wrappers in the ASE package, but the actual
    FORTRAN/C/C++ codes are not part of ASE.
 
@@ -74,6 +68,7 @@ Hotbit_                                   DFT based tight binding
 :mod:`~ase.calculators.castep`            Plane-wave pseudopotential code
 :mod:`~ase.calculators.cp2k`              DFT and classical potentials
 :mod:`~ase.calculators.demon`             Gaussian based DFT code
+:mod:`~ase.calculators.demonnano`         DFT based tight binding code
 :mod:`~ase.calculators.dftb`              DFT based tight binding
 :mod:`~ase.calculators.dmol`              Atomic orbital DFT code
 :mod:`~ase.calculators.eam`               Embedded Atom Method
@@ -82,16 +77,21 @@ elk                                       Full Potential LAPW code
 :mod:`~ase.calculators.exciting`          Full Potential LAPW code
 :mod:`~ase.calculators.aims`              Numeric atomic orbital, full potential code
 :mod:`~ase.calculators.fleur`             Full Potential LAPW code
-gaussian                                  Gaussian based electronic structure code
+:mod:`~ase.calculators.gamess_us`         Gaussian based electronic structure code
+:mod:`~ase.calculators.gaussian`          Gaussian based electronic structure code
 :mod:`~ase.calculators.gromacs`           Classical molecular dynamics code
 :mod:`~ase.calculators.gulp`              Interatomic potential code
-:mod:`~ase.calculators.jacapo`            Plane-wave ultra-soft pseudopotential code
+:mod:`~ase.calculators.kim`               Classical MD with standardized models
 :mod:`~ase.calculators.lammps`            Classical molecular dynamics code
+:mod:`~ase.calculators.mixing`            Combination of multiple calculators
 :mod:`~ase.calculators.mopac`             Semiempirical molecular orbital code
 :mod:`~ase.calculators.nwchem`            Gaussian based electronic structure code
 :mod:`~ase.calculators.octopus`           Real-space pseudopotential code
 :mod:`~ase.calculators.onetep`            Linear-scaling pseudopotential code
 :mod:`~ase.calculators.openmx`            LCAO pseudopotential code
+:mod:`~ase.calculators.orca`              Gaussian based electronic structure code
+:mod:`~ase.calculators.psi4`              Gaussian based electronic structure code
+:mod:`~ase.calculators.qchem`             Gaussian based electronic structure code
 :mod:`~ase.calculators.siesta`            LCAO pseudopotential code
 :mod:`~ase.calculators.turbomole`         Fast atom orbital code
 :mod:`~ase.calculators.vasp`              Plane-wave PAW code
@@ -123,8 +123,8 @@ The calculators included in ASE are used like this:
 where ``abc`` is the module name and ``ABC`` is the class name.
 
 
-.. _Asap: http://wiki.fysik.dtu.dk/asap
-.. _GPAW: http://wiki.fysik.dtu.dk/gpaw
+.. _Asap: https://wiki.fysik.dtu.dk/asap
+.. _GPAW: https://wiki.fysik.dtu.dk/gpaw
 .. _Hotbit: https://github.com/pekkosk/hotbit
 
 Calculator keywords
@@ -207,16 +207,20 @@ the :meth:`set` method:
    cp2k
    crystal
    demon
+   demonnano
    dftb
    dmol
    espresso
    exciting
    FHI-aims
    fleur
+   gamess_us
+   gaussian
    gromacs
    gulp
    socketio/socketio
    jacapo
+   kim
    lammps
    lammpsrun
    mopac
@@ -224,11 +228,15 @@ the :meth:`set` method:
    octopus
    onetep
    openmx
+   orca
+   psi4
+   qchem
    siesta
    turbomole
    vasp
    qmmm
    checkpointing
+   mixing
    loggingcalc
    dftd3
    others

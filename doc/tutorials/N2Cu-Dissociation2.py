@@ -16,7 +16,7 @@ configs = [initial.copy() for i in range(8)] + [final]
 # As before, fix the Cu atoms
 constraint = FixAtoms(mask=[atom.symbol != 'N' for atom in initial])
 for config in configs:
-    config.set_calculator(EMT())
+    config.calc = EMT()
     config.set_constraint(constraint)
 
 # Make the NEB object, interpolate to guess the intermediate steps

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 from ase.calculators.calculator import Calculator
 from ase.calculators.qmmm import combine_lj_lorenz_berthelot
@@ -193,7 +192,7 @@ class CombineMM(Calculator):
         # Vectorized evaluation is not as trivial when spm1 != spm2.
         # This is pretty inefficient, but for ~1-5 counter ions as region 1
         # it should not matter much ..
-        # There is definetely room for improvements here.
+        # There is definitely room for improvements here.
         cell = self.cell.diagonal()
         for m1, (r1, c1) in enumerate(zip(R1, C1)):
             for m2, (r2, c2) in enumerate(zip(R2, C2)):

@@ -21,7 +21,7 @@ N2mol = Atoms('N2',positions=[[0.0,0.0,0.0],[0.5*3**0.5*d,0.5*d,0.0]])
 add_adsorbate(slab,N2mol,height=1.0,position='fcc')
 
 # Use the EMT calculator for the forces and energies:
-slab.set_calculator(EMT())
+slab.calc = EMT()
 
 # We don't want to worry about the Cu degrees of freedom,
 # so fix these atoms:

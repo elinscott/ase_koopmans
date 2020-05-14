@@ -105,7 +105,7 @@ Example
 
 1. Prepare classical input with Gromacs
 
-  - Get THE INDEPENDENT STRUCTURE OF THE ANTITRYPTIC REACTIVE SITE LOOP OF BOWMAN-BIRK INHIBITOR AND SUNFLOWER TRYPSIN INHIBITOR-1 (pdb code 1GM2) from pdb data bank http://www.rcsb.org/pdb/home/home.do, name it to 1GM2.pdb
+  - Get THE INDEPENDENT STRUCTURE OF THE ANTITRYPTIC REACTIVE SITE LOOP OF BOWMAN-BIRK INHIBITOR AND SUNFLOWER TRYPSIN INHIBITOR-1 (pdb code 1GM2) from pdb data bank https://www.rcsb.org/, name it to 1GM2.pdb
 
   - In file 1GM2.pdb take only MODEL1
     replace 'CYS ' by 'CYS2'

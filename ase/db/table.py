@@ -1,12 +1,11 @@
-from __future__ import print_function
-
+from typing import Optional, List
 import numpy as np
 
 from ase.db.core import float_to_time_string, now
 
 
 all_columns = ['id', 'age', 'user', 'formula', 'calculator',
-               'energy', 'fmax', 'pbc', 'volume',
+               'energy', 'natoms', 'fmax', 'pbc', 'volume',
                'charge', 'mass', 'smax', 'magmom']
 
 
@@ -69,6 +68,7 @@ class Table:
         self.right = None
         self.keys = None
         self.unique_key = unique_key
+        self.addcolumns: Optional[List[str]] = None
 
     def select(self, query, columns, sort, limit, offset):
         sql_columns = get_sql_columns(columns)
@@ -159,7 +159,7 @@ class Row:
             if c == 'age':
                 value = float_to_time_string(now() - self.dct.ctime)
             elif c == 'pbc':
-                value = ''.join('FT'[p] for p in self.dct.pbc)
+                value = ''.join('FT'[int(p)] for p in self.dct.pbc)
             else:
                 value = getattr(self.dct, c, None)
             self.values.append(value)

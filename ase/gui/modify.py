@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from functools import partial
 
 from ase.gui.i18n import _

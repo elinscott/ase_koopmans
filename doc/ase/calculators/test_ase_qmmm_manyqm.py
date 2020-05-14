@@ -1,3 +1,4 @@
+# flake8: noqa
 """ demo run for ase_qmmm_manyqm calculator """
 
 #  ./test_ase_qmmm_manyqm.py gromacs_mm-relax.g96
@@ -82,7 +83,7 @@ CALC_QMMM = AseQmmmManyqm(nqm_regions = 3,
 #                         link_info = 'byFILE')
 
 SYSTEM = read('gromacs_qm.g96')
-SYSTEM.set_calculator(CALC_QMMM)
+SYSTEM.calc = CALC_QMMM
 DYN = BFGS(SYSTEM)
 DYN.run(fmax = 0.05)
 

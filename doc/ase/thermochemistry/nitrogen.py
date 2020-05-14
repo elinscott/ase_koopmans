@@ -5,7 +5,7 @@ from ase.vibrations import Vibrations
 from ase.thermochemistry import IdealGasThermo
 
 atoms = molecule('N2')
-atoms.set_calculator(EMT())
+atoms.calc = EMT()
 dyn = QuasiNewton(atoms)
 dyn.run(fmax=0.01)
 potentialenergy = atoms.get_potential_energy()

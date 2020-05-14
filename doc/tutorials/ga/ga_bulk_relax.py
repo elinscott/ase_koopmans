@@ -3,7 +3,10 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.optimize import FIRE
 from ase.constraints import ExpCellFilter
 from ase.ga import set_raw_score
-from asap3 import EMT
+try:
+    from asap3 import EMT
+except ImportError:
+    from ase.calculators.emt import EMT
 
 
 def finalize(atoms, energy=None, forces=None, stress=None):
@@ -12,7 +15,7 @@ def finalize(atoms, energy=None, forces=None, stress=None):
     atoms.wrap()
     calc = SinglePointCalculator(atoms, energy=energy, forces=forces,
                                  stress=stress)
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     raw_score = -atoms.get_potential_energy()
     set_raw_score(atoms, raw_score)
 
@@ -20,7 +23,7 @@ def finalize(atoms, energy=None, forces=None, stress=None):
 def relax(atoms, cellbounds=None):
     # Performs a variable-cell relaxation of the structure
     calc = EMT()
-    atoms.set_calculator(calc)
+    atoms.calc = calc
 
     converged = False
     niter = 0

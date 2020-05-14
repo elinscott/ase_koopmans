@@ -5,27 +5,26 @@ X3DOM outputs to html pages that should display 3-d manipulatable atoms in
 modern web browsers.
 """
 
-from __future__ import print_function
 from ase.data import covalent_radii
 from ase.data.colors import jmol_colors
-from ase.utils import basestring
 
 
 def write_x3d(filename, atoms, format=None):
     """Writes to html using X3DOM.
-    
-    Args: 
+
+    Args:
         filename - str or file-like object, filename or output file object
         atoms - Atoms object to be rendered
         format - str, either 'X3DOM' for web-browser compatibility or 'X3D'
-            to be readable by Blender. `None` to detect format based on file extension
-            ('.html' -> 'X3DOM', '.x3d' -> 'X3D')"""
+            to be readable by Blender. `None` to detect format based on file
+            extension ('.html' -> 'X3DOM', '.x3d' -> 'X3D')"""
     X3D(atoms).write(filename, datatype=format)
+
 
 def write_html(filename, atoms):
     """Writes to html using X3DOM
-    
-    Args: 
+
+    Args:
         filename - str or file-like object, filename or output file object
         atoms - Atoms object to be rendered"""
     write_x3d(filename, atoms, format='X3DOM')
@@ -44,12 +43,12 @@ class X3D:
         """Writes output to either an 'X3D' or an 'X3DOM' file, based on
         the extension. For X3D, filename should end in '.x3d'. For X3DOM,
         filename should end in '.html'.
-        
+
         Args:
             filename - str or file-like object, output file name or writer
-            datatype - str, output format. 'X3D' or 'X3DOM'. If `None`, format 
+            datatype - str, output format. 'X3D' or 'X3DOM'. If `None`, format
                 will be determined from the filename"""
-        
+
         # Detect the format, if not stated
         if datatype is None:
             if filename.endswith('.x3d'):
@@ -58,7 +57,7 @@ class X3D:
                 datatype = 'X3DOM'
             else:
                 raise ValueError("filename must end in '.x3d' or '.html'.")
-                
+
         # Write the header
         w = WriteToFile(filename, 'w')
         if datatype == 'X3DOM':
@@ -73,8 +72,7 @@ class X3D:
             w(2, '</script>')
             w(1, '</head>')
             w(1, '<body>')
-            w(2, '<X3D style="margin:0; padding:0; width:100%; height:100%;'
-                 ' border:none;">')
+            w(2, '<X3D>')
         elif datatype == 'X3D':
             w(0, '<?xml version="1.0" encoding="UTF-8"?>')
             w(0, '<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.2//EN" '
@@ -93,7 +91,7 @@ class X3D:
                 w(4 + indent, line)
 
         w(3, '</Scene>')
-        
+
         if datatype == 'X3DOM':
             w(2, '</X3D>')
             w(1, '</body>')
@@ -106,14 +104,14 @@ class WriteToFile:
     """Creates convenience function to write to a file."""
 
     def __init__(self, filename, mode='w'):
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             self._f = open(filename, mode)
         else:
             self._f = filename
 
     def __call__(self, indent, line):
         text = ' ' * indent
-        print('%s%s\n'%(text,line), file=self._f)
+        print('%s%s\n' % (text, line), file=self._f)
 
     def close(self):
         self._f.close()

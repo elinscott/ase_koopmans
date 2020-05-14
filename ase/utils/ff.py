@@ -1,9 +1,23 @@
+# flake8: noqa
 import numpy as np
 from numpy import linalg
 from ase import units 
 
-class Morse:
+# Three variables extracted from what used to be endless repetitions below.
+Ax = np.array([[1, 0, 0, -1, 0, 0, 0, 0, 0],
+               [0, 1, 0, 0, -1, 0, 0, 0, 0],
+               [0, 0, 1, 0, 0, -1, 0, 0, 0],
+               [0, 0, 0, -1, 0, 0, 1, 0, 0],
+               [0, 0, 0, 0, -1, 0, 0, 1, 0],
+               [0, 0, 0, 0, 0, -1, 0, 0, 1]])
+Bx = np.array([[1, 0, 0, -1, 0, 0],
+               [0, 1, 0, 0, -1, 0],
+               [0, 0, 1, 0, 0, -1]])
+Mx = Bx
 
+
+
+class Morse:
     def __init__(self, atomi, atomj, D, alpha, r0):
         self.atomi = atomi
         self.atomj = atomj
@@ -13,7 +27,6 @@ class Morse:
         self.r = None
 
 class Bond:
-
     def __init__(self, atomi, atomj, k, b0, 
                  alpha=None, rref=None):
         self.atomi = atomi
@@ -25,7 +38,6 @@ class Bond:
         self.b = None
 
 class Angle:
-
     def __init__(self, atomi, atomj, atomk, k, a0, cos=False, 
                  alpha=None, rref=None):
         self.atomi = atomi
@@ -39,7 +51,6 @@ class Angle:
         self.a = None
 
 class Dihedral:
-
     def __init__(self, atomi, atomj, atomk, atoml, k, d0=None, n=None, 
                  alpha=None, rref=None):
         self.atomi = atomi
@@ -54,7 +65,6 @@ class Dihedral:
         self.d = None
 
 class VdW:
-
     def __init__(self, atomi, atomj, epsilonij=None, sigmaij=None, rminij=None,
                  Aij=None, Bij=None, epsiloni=None, epsilonj=None, 
                  sigmai=None, sigmaj=None, rmini=None, rminj=None, scale=1.0):
@@ -90,7 +100,6 @@ class VdW:
         self.r = None
 
 class Coulomb:
-
     def __init__(self, atomi, atomj, chargeij=None, 
                  chargei=None, chargej=None, scale=1.0):
         self.atomi = atomi
@@ -107,7 +116,6 @@ class Coulomb:
         self.r = None
 
 def get_morse_potential_eta(atoms, morse):
-
     i = morse.atomi
     j = morse.atomj
 
@@ -123,7 +131,6 @@ def get_morse_potential_eta(atoms, morse):
     return eta
 
 def get_morse_potential_value(atoms, morse):
-
     i = morse.atomi
     j = morse.atomj
 
@@ -139,11 +146,6 @@ def get_morse_potential_value(atoms, morse):
     return i, j, v
 
 def get_morse_potential_gradient(atoms, morse):
-
-    Mx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = morse.atomi
     j = morse.atomj
 
@@ -162,11 +164,6 @@ def get_morse_potential_gradient(atoms, morse):
     return i, j, gx
 
 def get_morse_potential_hessian(atoms, morse, spectral=False):
-
-    Mx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = morse.atomi
     j = morse.atomj
 
@@ -195,11 +192,6 @@ def get_morse_potential_hessian(atoms, morse, spectral=False):
     return i, j, Hx
 
 def get_morse_potential_reduced_hessian(atoms, morse):
-
-    Mx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = morse.atomi
     j = morse.atomj
 
@@ -220,7 +212,6 @@ def get_morse_potential_reduced_hessian(atoms, morse):
     return i, j, Hx
 
 def get_bond_potential_value(atoms, bond):
-
     i = bond.atomi
     j = bond.atomj
 
@@ -234,11 +225,6 @@ def get_bond_potential_value(atoms, bond):
     return i, j, v
 
 def get_bond_potential_gradient(atoms, bond):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = bond.atomi
     j = bond.atomj
 
@@ -255,11 +241,6 @@ def get_bond_potential_gradient(atoms, bond):
     return i, j, gx
 
 def get_bond_potential_hessian(atoms, bond, morses=None, spectral=False):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = bond.atomi
     j = bond.atomj
 
@@ -297,11 +278,6 @@ def get_bond_potential_hessian(atoms, bond, morses=None, spectral=False):
     return i, j, Hx
 
 def get_bond_potential_reduced_hessian(atoms, bond, morses=None):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = bond.atomi
     j = bond.atomj
 
@@ -371,14 +347,6 @@ def get_angle_potential_value(atoms, angle):
     return i, j, k, v
 
 def get_angle_potential_gradient(atoms, angle):
-
-    Ax=np.array([[1, 0, 0, -1, 0, 0, 0, 0, 0],
-                 [0, 1, 0, 0, -1, 0, 0, 0, 0],
-                 [0, 0, 1, 0, 0, -1, 0, 0, 0],
-                 [0, 0, 0, -1, 0, 0, 1, 0, 0],
-                 [0, 0, 0, 0, -1, 0, 0, 1, 0],
-                 [0, 0, 0, 0, 0, -1, 0, 0, 1]])
-
     i = angle.atomi
     j = angle.atomj
     k = angle.atomk
@@ -421,14 +389,6 @@ def get_angle_potential_gradient(atoms, angle):
     return i, j, k, gx
 
 def get_angle_potential_hessian(atoms, angle, morses=None, spectral=False):
-
-    Ax=np.array([[1, 0, 0, -1, 0, 0, 0, 0, 0],
-                 [0, 1, 0, 0, -1, 0, 0, 0, 0],
-                 [0, 0, 1, 0, 0, -1, 0, 0, 0],
-                 [0, 0, 0, -1, 0, 0, 1, 0, 0],
-                 [0, 0, 0, 0, -1, 0, 0, 1, 0],
-                 [0, 0, 0, 0, 0, -1, 0, 0, 1]])
-
     i = angle.atomi
     j = angle.atomj
     k = angle.atomk
@@ -524,14 +484,6 @@ def get_angle_potential_hessian(atoms, angle, morses=None, spectral=False):
     return i, j, k, Hx
 
 def get_angle_potential_reduced_hessian(atoms, angle, morses=None):
-
-    Ax=np.array([[1, 0, 0, -1, 0, 0, 0, 0, 0],
-                 [0, 1, 0, 0, -1, 0, 0, 0, 0],
-                 [0, 0, 1, 0, 0, -1, 0, 0, 0],
-                 [0, 0, 0, -1, 0, 0, 1, 0, 0],
-                 [0, 0, 0, 0, -1, 0, 0, 1, 0],
-                 [0, 0, 0, 0, 0, -1, 0, 0, 1]])
-
     i = angle.atomi
     j = angle.atomj
     k = angle.atomk
@@ -596,7 +548,6 @@ def get_angle_potential_reduced_hessian(atoms, angle, morses=None):
     return i, j, k, Hx
 
 def get_angle_potential_reduced_hessian_test(atoms, angle):
-
     i, j, k, v = get_angle_potential_value(atoms, angle)
     i, j, k, gx = get_angle_potential_gradient(atoms, angle)
 
@@ -605,7 +556,6 @@ def get_angle_potential_reduced_hessian_test(atoms, angle):
     return i, j, k, Hx
 
 def get_dihedral_potential_value(atoms, dihedral):
-
     i = dihedral.atomi
     j = dihedral.atomj
     k = dihedral.atomk
@@ -642,7 +592,6 @@ def get_dihedral_potential_value(atoms, dihedral):
     return i, j, k, l, v
 
 def get_dihedral_potential_gradient(atoms, dihedral):
-
     i = dihedral.atomi
     j = dihedral.atomj
     k = dihedral.atomk
@@ -697,7 +646,6 @@ def get_dihedral_potential_gradient(atoms, dihedral):
 
 def get_dihedral_potential_hessian(atoms, dihedral, morses=None, 
                                    spectral=False):
-
     eps = 0.000001
 
     i,j,k,l,g = get_dihedral_potential_gradient(atoms, dihedral)
@@ -754,7 +702,6 @@ def get_dihedral_potential_hessian(atoms, dihedral, morses=None,
     return i, j, k, l, Hx
 
 def get_dihedral_potential_reduced_hessian(atoms, dihedral, morses=None):
-
     i = dihedral.atomi
     j = dihedral.atomj
     k = dihedral.atomk
@@ -830,7 +777,6 @@ def get_dihedral_potential_reduced_hessian(atoms, dihedral, morses=None):
     return i, j, k, l, Hx
 
 def get_dihedral_potential_reduced_hessian_test(atoms, dihedral):
-
     i, j, k, l, gx = get_dihedral_potential_gradient(atoms, dihedral)
 
     if dihedral.n is None:
@@ -844,7 +790,6 @@ def get_dihedral_potential_reduced_hessian_test(atoms, dihedral):
     return i, j, k, l, Hx
 
 def get_vdw_potential_value(atoms, vdw):
-
     i = vdw.atomi
     j = vdw.atomj
 
@@ -858,11 +803,6 @@ def get_vdw_potential_value(atoms, vdw):
     return i, j, v
 
 def get_vdw_potential_gradient(atoms, vdw):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = vdw.atomi
     j = vdw.atomj
 
@@ -879,11 +819,6 @@ def get_vdw_potential_gradient(atoms, vdw):
     return i, j, gx
 
 def get_vdw_potential_hessian(atoms, vdw, spectral=False):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-    
     i = vdw.atomi
     j = vdw.atomj
 
@@ -910,7 +845,6 @@ def get_vdw_potential_hessian(atoms, vdw, spectral=False):
     return i, j, Hx
 
 def get_coulomb_potential_value(atoms, coulomb):
-
     i = coulomb.atomi
     j = coulomb.atomj
 
@@ -924,11 +858,6 @@ def get_coulomb_potential_value(atoms, coulomb):
     return i, j, v
 
 def get_coulomb_potential_gradient(atoms, coulomb):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = coulomb.atomi
     j = coulomb.atomj
 
@@ -945,11 +874,6 @@ def get_coulomb_potential_gradient(atoms, coulomb):
     return i, j, gx
 
 def get_coulomb_potential_hessian(atoms, coulomb, spectral=False):
-
-    Bx=np.array([[1, 0, 0, -1, 0, 0],
-                 [0, 1, 0, 0, -1, 0],
-                 [0, 0, 1, 0, 0, -1]])
-
     i = coulomb.atomi
     j = coulomb.atomj
 
@@ -984,187 +908,3 @@ def rel_pos_pbc(atoms, i, j):
     f = np.floor(np.dot(g, d.T) + 0.5)
     d -= np.dot(atoms.get_cell().T, f).T
     return d
-
-def translational_vectors(atoms, mass_weighted=False):
-    """
-    Return normalised translational vectors
-    """
-
-    Tr = np.zeros((3*len(atoms),3))
-
-    if mass_weighted:
-        masses = atoms.get_masses()
-    else:
-        masses = np.ones(len(atoms))
-    masses_sqrt = np.sqrt(masses)
-
-    k=0
-    for i in range(len(atoms)):
-        for j in range(3):
-           Tr[k,j] = masses_sqrt[i]
-           k+=1
-
-    for i in range(3):
-        norm = np.sqrt(np.dot(Tr[:,i], Tr[:,i]))
-        Tr[:,i] /= norm
-
-    return Tr
-
-def rotational_vectors(atoms, mass_weighted=False):
-    """
-    Return normalised rotational vectors
-    """
-
-    Rot = np.zeros((3*len(atoms),3))
-
-    threshold = np.finfo(float).eps*10000.0
-
-    if mass_weighted:
-        masses = atoms.get_masses()
-    else:
-        masses = np.ones(len(atoms))
-    masses_sqrt = np.sqrt(masses)
-
-    com = np.zeros(3)
-    for i in range(len(atoms)):
-        com += masses[i] * atoms.get_positions()[i,:]
-    com /= np.sum(masses)
-
-    it = np.zeros((3,3))
-    for i in range(len(atoms)):
-        rpos = atoms.get_positions()[i,:] - com
-        it[0,0] += masses[i] * (rpos[1]**2 + rpos[2]**2)
-        it[1,1] += masses[i] * (rpos[0]**2 + rpos[2]**2)
-        it[2,2] += masses[i] * (rpos[0]**2 + rpos[1]**2)
-        it[0,1] -= masses[i] * (rpos[0]*rpos[1])
-        it[0,2] -= masses[i] * (rpos[0]*rpos[2])
-        it[1,2] -= masses[i] * (rpos[1]*rpos[2])
-    it[1,0] = it[0,1]
-    it[2,0] = it[0,2]
-    it[2,1] = it[1,2]
-    d, dit = linalg.eigh(it)
-
-    for i in range(len(atoms)):
-        rpos = atoms.get_positions()[i,:] - com
-        cp = np.dot(np.transpose(dit), rpos)
-        Rot[i*3,0] = masses_sqrt[i] * (cp[1]*dit[0,2]-cp[2]*dit[0,1])
-        Rot[i*3+1,0] = masses_sqrt[i] * (cp[1]*dit[1,2]-cp[2]*dit[1,1])
-        Rot[i*3+2,0] = masses_sqrt[i] * (cp[1]*dit[2,2]-cp[2]*dit[2,1])
-
-        Rot[i*3,1] = masses_sqrt[i] * (cp[2]*dit[0,0]-cp[0]*dit[0,2])
-        Rot[i*3+1,1] = masses_sqrt[i] * (cp[2]*dit[1,0]-cp[0]*dit[1,2])
-        Rot[i*3+2,1] = masses_sqrt[i] * (cp[2]*dit[2,0]-cp[0]*dit[2,2])
-
-        Rot[i*3,2] = masses_sqrt[i] * (cp[0]*dit[0,1]-cp[1]*dit[0,0])
-        Rot[i*3+1,2] = masses_sqrt[i] * (cp[0]*dit[1,1]-cp[1]*dit[1,0])
-        Rot[i*3+2,2] = masses_sqrt[i] * (cp[0]*dit[2,1]-cp[1]*dit[2,0])
-
-    ndof = 3
-    for i in range(3):
-        norm = np.sqrt(np.dot(Rot[:,i], Rot[:,i]))
-        if norm <= threshold:
-            ndof -= 1
-            continue
-        Rot[:,i] /= norm
-        if i < 2:
-            for j in range(i+1):
-                Rot[:,i+1] = Rot[:,i+1] - np.dot(Rot[:,i+1],Rot[:,j]) * Rot[:,j]
-
-    return Rot[:,0:ndof]
-
-def remove_tr_rot_vector(atoms, vecin, mass_weighted=False):
-
-    Tr = translational_vectors(atoms, mass_weighted)
-    Rot = rotational_vectors(atoms, mass_weighted)
-
-    vecout = vecin
-
-    for i in range(np.shape(Tr)[1]):
-        norm = np.dot(vecout, Tr[:,i])
-        vecout -= norm * Tr[:,i]
-
-    for i in range(np.shape(Rot)[1]):
-        norm = np.dot(vecout, Rot[:,i])
-        vecout -= norm * Rot[:,i]
-
-    return vecout
-
-def model_bond_angle_dihedral(atoms, cutoff=10.0):
-
-    alpha = np.array([[1.0000, 0.3949, 0.3949], 
-                      [0.3949, 0.2800, 0.2800], 
-                      [0.3949, 0.2800, 0.2800]]) / units.Bohr / units.Bohr
-    rref = np.array([[1.35, 2.10, 2.53], 
-                     [2.10, 2.87, 3.40], 
-                     [2.53, 3.40, 3.40]]) * units.Bohr
-
-    kbond = 0.45 * units.Hartree / units.Bohr / units.Bohr
-    kangle = 0.15 * units.Hartree / units.Bohr / units.Bohr
-    kdihedral = 0.005 * units.Hartree / units.Bohr / units.Bohr
-
-    bonds = []
-    angles = []
-    dihedrals = []
-
-    for i in range(len(atoms)):
-        rowi = row(atoms.get_atomic_numbers()[i])-1
-        for j in range(i+1, len(atoms)):
-            rij = rel_pos_pbc(atoms, i, j)
-            dij = linalg.norm(rij)
-            if dij > cutoff:
-                continue 
-            rowj = row(atoms.get_atomic_numbers()[j])-1
-            bonds.append(Bond(i, j, kbond, b0=None, 
-                         alpha=[alpha[rowi, rowj]], 
-                         rref=[rref[rowi, rowj]]))
-            for k in range(j+1, len(atoms)):
-                 rjk = rel_pos_pbc(atoms, j, k)
-                 djk = linalg.norm(rjk)
-                 if djk > cutoff:
-                     continue
-                 rowk = row(atoms.get_atomic_numbers()[k])-1
-                 angles.append(Angle(i, j, k, kangle, a0=None, 
-                               alpha=[alpha[rowi, rowj], alpha[rowj, rowk]], 
-                               rref=[rref[rowi, rowj], rref[rowj, rowk]]))
-                 angles.append(Angle(i, k, j, kangle, a0=None, 
-                               alpha=[alpha[rowi, rowk], alpha[rowk, rowj]], 
-                               rref=[rref[rowi, rowk], rref[rowk, rowj]]))
-                 angles.append(Angle(j, i, k, kangle, a0=None, 
-                               alpha=[alpha[rowj, rowi], alpha[rowi, rowk]], 
-                               rref=[rref[rowj, rowi], rref[rowi, rowk]]))
-                 for l in range(k+1, len(atoms)):
-                      rkl = rel_pos_pbc(atoms, k, l)
-                      dkl = linalg.norm(rkl)
-                      if dkl > cutoff:
-                          continue
-                      rowl = row(atoms.get_atomic_numbers()[l])-1
-                      dihedrals.append(Dihedral(i, j, k, l, kdihedral, d0=None, 
-                                       alpha=[alpha[rowi, rowj], alpha[rowj, rowk], alpha[rowk, rowl]], 
-                                       rref=[rref[rowi, rowj], rref[rowj, rowk], rref[rowk, rowl]]))
-                      dihedrals.append(Dihedral(i, j, l, k, kdihedral, d0=None, 
-                                       alpha=[alpha[rowi, rowj], alpha[rowj, rowl], alpha[rowl, rowk]], 
-                                       rref=[rref[rowi, rowj], rref[rowj, rowl], rref[rowl, rowk]]))
-                      dihedrals.append(Dihedral(i, k, l, j, kdihedral, d0=None, 
-                                       alpha=[alpha[rowi, rowk], alpha[rowk, rowl], alpha[rowl, rowj]], 
-                                       rref=[rref[rowi, rowk], rref[rowk, rowl], rref[rowl, rowj]]))
-                      dihedrals.append(Dihedral(j, i, k, l, kdihedral, d0=None, 
-                                       alpha=[alpha[rowj, rowi], alpha[rowi, rowk], alpha[rowk, rowl]], 
-                                       rref=[rref[rowj, rowi], rref[rowi, rowk], rref[rowk, rowl]]))
-                      dihedrals.append(Dihedral(k, i, j, l, kdihedral, d0=None, 
-                                       alpha=[alpha[rowk, rowi], alpha[rowi, rowj], alpha[rowj, rowl]], 
-                                       rref=[rref[rowk, rowi], rref[rowi, rowj], rref[rowj, rowl]]))
-                      dihedrals.append(Dihedral(j, i, l, k, kdihedral, d0=None, 
-                                       alpha=[alpha[rowj, rowi], alpha[rowi, rowl], alpha[rowl, rowk]], 
-                                       rref=[rref[rowj, rowi], rref[rowi, rowl], rref[rowl, rowk]]))
-    return bonds, angles, dihedrals
-
-def row(Z):
-
-    if Z <= 2:
-        return 1
-    elif Z <= 10:
-        return 2
-    elif Z <= 18:
-        return 3
-    else:
-        return 3

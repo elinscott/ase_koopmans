@@ -60,7 +60,7 @@ Example
                 pseudopotential='none',
                 functional='pbe',
                 scf_density_convergence=1.0e-7)
-   atoms.set_calculator(calc)
+   atoms.calc = calc
    atoms.get_potential_energy()
 
 File formats

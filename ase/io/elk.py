@@ -1,4 +1,3 @@
-
 def read_elk(filename):
     """Import ELK atoms definition.
 

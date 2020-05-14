@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 The ASE Calculator for OpenMX <http://www.openmx-square.org>: Python interface
 to the software package for nano-scale material simulations based on density
@@ -22,7 +23,6 @@ import os
 import struct
 import numpy as np
 from ase.units import Ha, Bohr, Debye
-from ase.utils import basestring
 
 
 def read_openmx(filename=None, debug=False):
@@ -64,7 +64,7 @@ def read_openmx(filename=None, debug=False):
                           dat_data=dat_data, band_data=band_data)
 
     atoms = Atoms(**atomic_formula)
-    atoms.set_calculator(OpenMX(**parameters))
+    atoms.calc = OpenMX(**parameters)
     atoms.calc.results = results
     return atoms
 
@@ -120,6 +120,12 @@ def read_file(filename, debug=False):
             for key in param.list_bool_keys:
                 if key in line:
                     out_data[get_standard_key(key)] = read_list_bool(line)
+            for key in param.tuple_integer_keys:
+                if key in line:
+                    out_data[get_standard_key(key)] = read_tuple_integer(line)
+            for key in param.tuple_float_keys:
+                if key in line:
+                    out_data[get_standard_key(key)] = read_tuple_float(line)
             for key in param.matrix_keys:
                 if '<'+key in line:
                     out_data[get_standard_key(key)] = read_matrix(line, key, f)
@@ -168,7 +174,7 @@ def read_scfout_file(filename=None):
     tv[4][4]: unit cell vectors in Bohr
     rtv[4][4]: reciprocal unit cell vectors in Bohr^{-1}
          note:
-         tv_i \dot rtv_j = 2PI * Kronecker's delta_{ij}
+         tv_i dot rtv_j = 2PI * Kronecker's delta_{ij}
          Gxyz[atomnum+1][60]: atomic coordinates in Bohr
          Hks: Kohn-Sham matrix elements of basis orbitals
     size: Hks[SpinP_switch+1]
@@ -358,8 +364,7 @@ def read_band_file(filename=None):
 
 def read_electron_valency(filename='H_CA13'):
     array = []
-    with open(os.path.join(os.environ['OPENMX_DFT_DATA_PATH'],
-                           'VPS/' + filename + '.vps'), 'r') as f:
+    with open(filename, 'r') as f:
         array = f.readlines()
         f.close()
     required_line = ''
@@ -479,7 +484,7 @@ def read_eigenvalues(line, f, debug=False):
 
     For symmetry reason, `.out` file prints the eigenvalues at the half of the
     K points. Thus, we have to fill up the rest of the half.
-    However, if the caluclation was conducted only on the gamma point, it will
+    However, if the calculation was conducted only on the gamma point, it will
     raise the 'gamma_flag' as true and it will returns the original samples.
     """
     def prind(line):
@@ -497,15 +502,14 @@ def read_eigenvalues(line, f, debug=False):
     f.seek(current_line)  # Retrun to the original position
 
     kgrid = read_tuple_integer(line)
-    prind('scf.Kgrid is %d, %d, %d' % kgrid)
-
     line = f.readline()
     line = f.readline()
-    if '1' not in line:  # Non - Gamma point calculation
+    if kgrid != ():
         prind('Non-Gamma point calculation')
+        prind('scf.Kgrid is %d, %d, %d' % kgrid)
         gamma_flag = False
         f.seek(f.tell()+57)
-    else:                        # Gamma point calculation case
+    else:
         prind('Gamma point calculation')
         gamma_flag = True
 
@@ -613,7 +617,7 @@ def get_standard_key(key):
     For example:
         'scf.XcType' -> 'scf_xctype'
     """
-    if isinstance(key, basestring):
+    if isinstance(key, str):
         return key.lower().replace('.', '_')
     elif isinstance(key, list):
         return [k.lower().replace('.', '_') for k in key]
@@ -712,7 +716,7 @@ def get_results(out_data=None, log_data=None, restart_data=None,
                 scfout_data=None, dat_data=None, band_data=None):
     """
     From the gien data sets, construct the dictionary 'results' and return it'
-    OpenMX version 3.8 can yeild following properties
+    OpenMX version 3.8 can yield following properties
        free_energy,              Ha       # Same value with energy
        energy,                   Ha
        forces,                   Ha/Bohr
@@ -737,8 +741,11 @@ def get_results(out_data=None, log_data=None, restart_data=None,
     return results
 
 
-def get_file_name(extension='.out', filename=None):
+def get_file_name(extension='.out', filename=None, absolute_directory=True):
     directory, prefix = os.path.split(filename)
     if directory == '':
         directory = os.curdir
-    return os.path.abspath(directory + '/' + prefix + extension)
+    if absolute_directory:
+        return os.path.abspath(directory + '/' + prefix + extension)
+    else:
+        return os.path.basename(directory + '/' + prefix + extension)

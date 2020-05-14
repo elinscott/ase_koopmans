@@ -12,7 +12,7 @@ LAMMPS_ (Large-scale Atomic/Molecular Massively Parallel Simulator) is a classic
     "LAMMPS has potentials for soft materials (biomolecules, polymers) and solid-state materials (metals, semiconductors) and coarse-grained or mesoscopic systems. It can be used to model atoms or, more generically, as a parallel particle simulator at the atomic, meso, or continuum scale."
 
 
-.. _LAMMPS: http://lammps.sandia.gov
+.. _LAMMPS: https://lammps.sandia.gov/
 
 This is LAMMPSrun ASE implementation of the interface to LAMMPSRUN_.
 
@@ -100,7 +100,7 @@ A simple example.
                cell=a, pbc=True)
   
   calc = LAMMPS()
-  NaCl.set_calculator(calc)
+  NaCl.calc = calc
   
   print(NaCl.get_stress())
 
