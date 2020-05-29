@@ -8,6 +8,7 @@ Built for CP
 Units are converted using CODATA 2006, as used internally by Quantum
 ESPRESSO.
 """
+
 import os
 import operator as op
 import warnings
@@ -23,7 +24,7 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 # from ase.dft.kpoints import kpoint_convert
 # from ase.constraints import FixAtoms, FixCartesian
 # from ase.data import chemical_symbols, atomic_numbers
-from ase.units import create_units, Hartree, Bohr
+from ase.units import create_units
 from ase.utils import basestring
 
 from ase.io.espresso import Namelist, KEYS, SSSP_VALENCE, \
@@ -137,6 +138,9 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     job_done = False
     orbital_data = {'charge' : [], 'centres' : [], 'spreads' : [], 'self-Hartree' : []}
     walltime = None
+    convergence = {'filled' : [], 'empty': []}
+
+    convergence_key = 'filled'
 
     for i_line, line in enumerate(cpo_lines):
 
@@ -185,6 +189,19 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
             orbital_data['spreads'][-1].append(values[4]*units.Bohr**2)
             orbital_data['self-Hartree'][-1].append(values[5])
 
+        # Tracking convergence
+        if 'PERFORMING CONJUGATE GRADIENT MINIMIZATION OF EMPTY STATES' in line:
+            convergence_key = 'empty'
+
+        if 'iteration = ' in line and 'eff iteration = ' in line:
+            values = [l.split()[0] for l in line.split('=')[1:]]
+            [it, eff_it, etot] = values[:3]
+            entry = {'iteration': int(it), 'eff iteration': int(eff_it), 
+                     'Etot': float(etot)*units.Hartree}
+            if len(values) == 4:
+                entry['delta_E'] = float(values[3])*units.Hartree
+                [it, eff_it, etot] = values
+            convergence[convergence_key].append(entry)
 
         if 'wall time' in line:
             time_str = line.split(',')[1].strip().rstrip('wall time')
@@ -214,6 +231,7 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     calc.results['eigenvalues'] = eigenvalues
     calc.results['lambda_ii'] = lambda_ii
     calc.results['orbital_data'] = orbital_data
+    calc.results['convergence'] = convergence
     calc.results['job_done'] = job_done
     calc.results['walltime'] = walltime
     structure.set_calculator(calc)
