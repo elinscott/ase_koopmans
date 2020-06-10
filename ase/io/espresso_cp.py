@@ -40,7 +40,8 @@ units = create_units('2006')
 
 KEYS['CONTROL']   += ['ndr', 'ndw']
 KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
-                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx']
+                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx',
+                      'nr1b', 'nr2b', 'nr3b']
 KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
                       'electron_dynamics', 'passop']
 KEYS['EE']        += ['which_compensation']
@@ -48,7 +49,7 @@ KEYS['NKSIC']      = ['do_innerloop', 'one_innerloop_only', 'nkscalfact', 'odd_n
                       'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
                       'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
                       'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr', 
-                      'do_innerloop_cg', 'innerloop_nmax']
+                      'do_innerloop_cg', 'innerloop_nmax', 'innerloop_cg_ratio', 'kfact']
 KEYS['IONS']      += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
                       'ion_radius(4)'] 
 
@@ -182,6 +183,8 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
         # Orbital information
         if line.startswith(('OCC', 'EMP')):
+            if 'NaN' in line:
+                continue
             line = line.replace('********', '   0.000')
             values = [float(line[i-4:i+4]) for i, c in enumerate(line) if c == '.']
             orbital_data['charge'][-1].append(values[0])
@@ -200,7 +203,6 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                      'Etot': float(etot)*units.Hartree}
             if len(values) == 4:
                 entry['delta_E'] = float(values[3])*units.Hartree
-                [it, eff_it, etot] = values
             convergence[convergence_key].append(entry)
 
         if 'wall time' in line:
