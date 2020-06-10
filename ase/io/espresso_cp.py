@@ -37,17 +37,20 @@ from ase.calculators.espresso_cp import Espresso_cp
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
 
-KEYS['CONTROL']   += ['ndr', 'ndw']
+KEYS['CONTROL']   += ['ndr', 'ndw', 'ekin_conv_thr']
 KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
-                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx']
+                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx', 
+                      'nr1b', 'nr2b', 'nr3b']
 KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
                       'electron_dynamics', 'passop']
-KEYS['EE']        += ['which_compensation']
+KEYS['EE']        += ['which_compensation', 'tcc_odd']
 KEYS['NKSIC']      = ['do_innerloop', 'one_innerloop_only', 'nkscalfact', 'odd_nkscalfact', 
                       'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
                       'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
                       'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr', 
-                      'do_innerloop_cg', 'innerloop_nmax']
+                      'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty', 
+                      'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run', 
+                      'aux_empty_nbnd', 'print_evc0_occ_empty']
 KEYS['IONS']      += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
                       'ion_radius(4)'] 
 
