@@ -48,6 +48,8 @@ _PW_HIGHEST_OCCUPIED_LOWEST_FREE = 'highest occupied, lowest unoccupied level'
 _PW_KPTS = 'number of k points='
 _PW_BANDS = _PW_END
 _PW_BANDSTRUCTURE = 'End of band structure calculation'
+_PW_ELECTROSTATIC_EMBEDDING = 'electrostatic embedding'
+_PW_NITER = 'iteration #'
 
 class Namelist(OrderedDict):
     """Case insensitive dict that emulates Fortran Namelists."""
@@ -120,6 +122,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         _PW_KPTS: [],
         _PW_BANDS: [],
         _PW_BANDSTRUCTURE: [],
+        _PW_ELECTROSTATIC_EMBEDDING: [],
+        _PW_NITER: []
     }
 
     for idx, line in enumerate(pwo_lines):
@@ -144,6 +148,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         results_indexes = sorted(indexes[_PW_TOTEN] + indexes[_PW_FORCE] +
                                  indexes[_PW_STRESS] + indexes[_PW_MAGMOM] +
                                  indexes[_PW_BANDS] +
+                                 indexes[_PW_ELECTROSTATIC_EMBEDDING] +
                                  indexes[_PW_BANDSTRUCTURE])
 
         # Prune to only configurations with results data before the next
@@ -165,6 +170,9 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
     # to add to subsequent configurations. Use None so slices know
     # when to fill in the blanks.
     pwscf_start_info = dict((idx, None) for idx in indexes[_PW_START])
+
+    if isinstance(image_indexes, int):
+        image_indexes = [image_indexes]
 
     for image_index in image_indexes:
         # Find the nearest calculation start to parse info. Needed in,
@@ -231,6 +239,20 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             if image_index < energy_index < next_index:
                 energy = float(
                     pwo_lines[energy_index].split()[-2]) * units['Ry']
+
+        # Electrostatic enbedding energy
+        elec_embedding_energy = None
+        for eee_index in indexes[_PW_ELECTROSTATIC_EMBEDDING]:
+            if image_index < eee_index < next_index:
+                elec_embedding_energy = float(
+                    pwo_lines[eee_index].split()[-2]) * units['Ry']
+
+        # Number of iterations
+        n_iterations = None
+        for niter_index in indexes[_PW_NITER]:
+            if image_index < niter_index < next_index:
+                n_iterations = float(
+                    pwo_lines[niter_index].split('#')[1].split()[0])
 
         # Forces
         forces = None
@@ -354,8 +376,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
 
                 if spin == 1:
                     assert len(eigenvalues[0]) == len(eigenvalues[1])
-                assert len(eigenvalues[0]) == len(ibzkpts), \
-                    (np.shape(eigenvalues), len(ibzkpts))
+                # assert len(eigenvalues[0]) == len(ibzkpts), \
+                #     (np.shape(eigenvalues), len(ibzkpts))
 
                 kpts = []
                 for s in range(spin + 1):
@@ -368,9 +390,11 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                                         forces=forces, stress=stress,
                                         magmoms=magmoms, efermi=efermi,
                                         ibzkpts=ibzkpts)
+        calc.results['electrostatic embedding'] = elec_embedding_energy
+        calc.results['iterations'] = n_iterations
+
         calc.kpts = kpts
         structure.calc = calc
-
         yield structure
 
 
@@ -1549,7 +1573,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     # Species info holds the information on the pseudopotential and
     # associated for each element
     if pseudopotentials is None:
-        pseudopotentials = {}
+        pseudopotentials = atoms.calc.parameters.get('pseudopotentials', {})
     species_info = {}
 
     species = atoms.get_chemical_symbols()
