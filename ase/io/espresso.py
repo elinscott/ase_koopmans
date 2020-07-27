@@ -251,7 +251,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         n_iterations = None
         for niter_index in indexes[_PW_NITER]:
             if image_index < niter_index < next_index:
-                n_iterations = float(
+                n_iterations = int(
                     pwo_lines[niter_index].split('#')[1].split()[0])
 
         # Forces
