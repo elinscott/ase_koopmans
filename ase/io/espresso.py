@@ -50,6 +50,7 @@ _PW_BANDS = _PW_END
 _PW_BANDSTRUCTURE = 'End of band structure calculation'
 _PW_ELECTROSTATIC_EMBEDDING = 'electrostatic embedding'
 _PW_NITER = 'iteration #'
+_PW_DONE = 'JOB DONE.'
 
 class Namelist(OrderedDict):
     """Case insensitive dict that emulates Fortran Namelists."""
@@ -123,7 +124,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         _PW_BANDS: [],
         _PW_BANDSTRUCTURE: [],
         _PW_ELECTROSTATIC_EMBEDDING: [],
-        _PW_NITER: []
+        _PW_NITER: [],
+        _PW_DONE: []
     }
 
     for idx, line in enumerate(pwo_lines):
@@ -385,6 +387,12 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                         kpt = SinglePointKPoint(w, s, k, eps_n=e)
                         kpts.append(kpt)
 
+        # Convergence
+        job_done = False
+        for done_index in indexes[_PW_DONE]:
+            if image_index < done_index < next_index:
+                job_done = True
+
         # Put everything together
         calc = SinglePointDFTCalculator(structure, energy=energy,
                                         forces=forces, stress=stress,
@@ -392,6 +400,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                                         ibzkpts=ibzkpts)
         calc.results['electrostatic embedding'] = elec_embedding_energy
         calc.results['iterations'] = n_iterations
+        calc.results['job done'] = job_done
 
         calc.kpts = kpts
         structure.calc = calc
