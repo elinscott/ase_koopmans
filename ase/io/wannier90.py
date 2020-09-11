@@ -9,38 +9,22 @@ from ase.atoms import Atoms
 from ase.calculators.wannier90 import Wannier90
 import json
 
-class w90_setting:
-    def __init__(self, value):
-        self.value = self.parse(value)
-
-    def parse(self, value):
-        if isinstance(value, list):
-            parsed_value = []
-            for v in value:
-                parsed_value.append(self.parse(v))
-        else:
-            if value.lower in ['t', 'true']:
+def parse_value(value):
+    if isinstance(value, list):
+        parsed_value = []
+        for v in value:
+            parsed_value.append(parse_value(v))
+    else:
+        if isinstance(value, str):
+            if value.lower() in ['t', 'true']:
                 return True
-            elif value.lower in ['f', 'false']:
+            elif value.lower() in ['f', 'false']:
                 return False
-            else:
-                try:
-                   parsed_value = json.loads(value)
-                except:
-                   parsed_value = value
-        return parsed_value
-
-class w90_block(w90_setting):
-    type = 'block'
-
-    def __str__(self):
-        return '\n'.join([' '.join([str(v) for v in row]) for row in self.value])
-
-class w90_keyword(w90_setting):
-    type = 'keyword'
-
-    def __str__(self):
-        return str(self.value)
+        try:
+           parsed_value = json.loads(value)
+        except:
+           parsed_value = value
+    return parsed_value
 
 def write_wannier90_in(fd, atoms):
     """
@@ -50,11 +34,12 @@ def write_wannier90_in(fd, atoms):
     settings = atoms.calc.parameters
 
     for kw, opt in settings.items():
-        if opt.type == 'block':
+        if isinstance(opt, list):
+            opt_str = '\n'.join([' '.join([str(v) for v in row]) for row in opt])
             fd.write('begin {0}\n{1}\nend {0}\n\n'.format(
-                     kw.lower(), opt))
+                     kw.lower(), opt_str))
         else:
-            fd.write('{0} = {1}\n'.format(kw.lower(), opt.value))
+            fd.write('{0} = {1}\n'.format(kw.lower(), opt))
 
 
 def read_wannier90_in(fd):
@@ -91,7 +76,7 @@ def read_wannier90_in(fd):
                     raise ValueError(f'Out of place end of block at line {i+1}')
                 else:
                     read_block = False
-                    calc.parameters[keyw] = w90_block(block_lines)
+                    calc.parameters[keyw] = parse_value(block_lines)
             else:
                 block_lines += [L.split()]
         else:
@@ -111,7 +96,7 @@ def read_wannier90_in(fd):
             if read_block:
                 block_lines = []
             else:
-                calc.parameters[keyw] = w90_keyword(' '.join(lsplit[1:]))
+                calc.parameters[keyw] = parse_value(' '.join(lsplit[1:]))
 
     atoms = Atoms(calculator=calc)
     atoms.calc.atoms = atoms
