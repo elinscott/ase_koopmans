@@ -22,7 +22,7 @@ class PW2Wannier(FileIOCalculator):
     """
     """
     implemented_properties = []
-    command = 'pw2wannierPREFIX.pw2wan'
+    command = 'pw2wannier PREFIX.pw2wan'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='pw2wann', atoms=None, **kwargs):
@@ -46,7 +46,5 @@ class PW2Wannier(FileIOCalculator):
         io.write(self.label + '.pw2wan', atoms, **self.parameters)
 
     def read_results(self):
+        # There are no results to read
         return
-        # output = io.read(self.label + '.pwo')
-        # self.calc = output.calc
-        # self.results = output.calc.results

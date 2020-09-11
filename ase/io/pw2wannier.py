@@ -5,7 +5,6 @@
 from ase.atoms import Atoms
 from ase.calculators.pw2wannier import PW2Wannier
 from ase.io.espresso import Namelist, read_fortran_namelist
-import ipdb
 
 def read_pw2wannier_in(fileobj):
     """Parse a pw2wannier input file, '.pw2wan'
@@ -42,14 +41,13 @@ def read_pw2wannier_in(fileobj):
 
     calc = PW2Wannier()
     calc.parameters['inputpp'] = data['inputpp']
-    ipdb.set_trace()
     atoms = Atoms(calculator=calc)
     atoms.calc.atoms = atoms
 
     return atoms
 
 
-def write_pw2wannier_in(fd, atoms):
+def write_pw2wannier_in(fd, atoms, **kwargs):
     """
     Create an input file for pw2wannier.
 
