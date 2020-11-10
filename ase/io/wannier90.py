@@ -7,6 +7,7 @@ Instead, everything is stored in ase.calc.parmaeters
 import re
 from ase.atoms import Atoms
 from ase.calculators.wannier90 import Wannier90
+import numpy as np
 import json
 
 def parse_value(value):
@@ -31,16 +32,71 @@ def write_wannier90_in(fd, atoms):
     Prints out to a given file a wannier90 input file
     """
 
-    settings = atoms.calc.parameters
+    settings = {k.lower(): v for k, v in atoms.calc.parameters.items()}
 
     for kw, opt in settings.items():
-        if isinstance(opt, list):
-            opt_str = '\n'.join([' '.join([str(v) for v in row]) for row in opt])
-            fd.write('begin {0}\n{1}\nend {0}\n\n'.format(
-                     kw.lower(), opt_str))
-        else:
-            fd.write('{0} = {1}\n'.format(kw.lower(), opt))
 
+        if kw == 'koffset':
+            continue
+
+        if kw == 'kpts':
+            if np.ndim(opt) == 2:
+                rows_str = [' '.join([str(v) for v in row] + [1/len(opt)]) for row in opt]
+                fd.write(block_format('kpoints', rows_str))
+
+        elif kw == 'projections':
+            rows_str = []
+            if 'units' in opt:
+               rows_str.append(opt['units'])
+            for [site, proj] in opt['sites']:
+               if isinstance(site, list):
+                  # Interpret as fractional coordinates
+                  site_str = 'f=' + ','.join([str(v) for v in site])
+               else:
+                  # Interpret as atom label
+                  site_str = str(site)
+               if isinstance(proj, list):
+                  proj_str = ';',join(proj)
+               else:
+                  proj_str = str(proj)
+               rows_str.append('{0}: {1}'.format(site_str, proj_str))
+            fd.write(block_format(kw, rows_str))
+
+        elif kw == 'mp_grid':
+            opt_str = ' '.join([str(v) for v in opt])
+            fd.write(f'{0} = {1}\n'.format(kw, opt_str))
+
+        elif isinstance(opt, list):
+            if np.ndim(opt) == 1:
+               opt = [opt]
+            rows_str = '\n'.join([' '.join([str(v) for v in row]) for row in opt])
+            fd.write(block_format(name, rows))
+
+        else:
+            if isinstance(opt, bool):
+                if opt:
+                    opt_str = '.true.'
+                else:
+                    opt_str = '.false.'
+            else:
+                opt_str = str(opt)
+            fd.write(f'{kw} = {opt_str}\n')
+
+    # atoms_frac
+    if atoms.has('labels'):
+        labels = atoms.get_array('labels')
+    else:
+        labels = atoms.get_chemical_symbols()
+    rows_str = [l + ' ' + ' '.join([str(p) for p in pos]) for l, pos in zip(labels, atoms.get_scaled_positions())]
+    fd.write(block_format('atoms_frac', rows_str))
+
+    # unit_cell_cart
+    rows_str = ['ang'] + [' '.join([str(v) for v in row]) for row in atoms.cell]
+    fd.write(block_format('unit_cell_cart', rows_str))
+
+def block_format(name, rows_str):
+    joined_rows = '\n'.join(['  ' + r for r in rows_str])
+    return f'\nbegin {name}\n{joined_rows}\nend {name}\n'
 
 def read_wannier90_in(fd):
     """
