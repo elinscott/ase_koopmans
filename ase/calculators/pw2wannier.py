@@ -1,7 +1,7 @@
 """ pw2wannier calculator
 
-export ASE_PW2WANNIER_COMMAND="/path/to/pw2wannier PREFIX.pw2wan"
-
+export ASE_PW2WANNIER_COMMAND="/path/to/pw2wannier PREFIX.p2wi"
+                                                       
 """
 
 
@@ -13,7 +13,7 @@ class PW2Wannier(FileIOCalculator):
     """
     """
     implemented_properties = []
-    command = 'pw2wannier PREFIX.pw2wan'
+    command = 'pw2wannier PREFIX.p2wi'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='pw2wann', atoms=None, **kwargs):
@@ -34,7 +34,7 @@ class PW2Wannier(FileIOCalculator):
         # Create the appropriate directory
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         # Write the input file
-        io.write(self.label + '.pw2wan', atoms)
+        io.write(self.label + '.p2wi', atoms)
 
     def read_results(self):
         # There are no results to read

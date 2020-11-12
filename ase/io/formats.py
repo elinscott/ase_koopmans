@@ -344,7 +344,7 @@ F('pov', 'Persistance of Vision', '1S'),
 # extension
 F('prismatic', 'prismatic and computem XYZ-file', '1F')
 F('pw2wannier-in', 'pw2wannier input file', '1F',
-  module='pw2wannier', ext='pw2wan')
+  module='pw2wannier', ext=['pw2wan', 'p2wi'])
 F('py', 'Python file', '+F'),
 F('sys', 'qball sys file', '1F'),
 F('qbox', 'QBOX output file', '+F',
