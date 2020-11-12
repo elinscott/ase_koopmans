@@ -7,7 +7,7 @@ from ase.calculators.pw2wannier import PW2Wannier
 from ase.io.espresso import Namelist, read_fortran_namelist
 
 def read_pw2wannier_in(fileobj):
-    """Parse a pw2wannier input file, '.pw2wan'
+    """Parse a pw2wannier input file, 'pw2wan', '.p2wi'
 
     pw2wannier inputs are a fortran-namelist format with custom
     blocks of data. The namelist is parsed as a dict and an atoms object

@@ -41,7 +41,7 @@ def write_wannier90_in(fd, atoms):
 
         if kw == 'kpts':
             if np.ndim(opt) == 2:
-                rows_str = [' '.join([str(v) for v in row] + [1/len(opt)]) for row in opt]
+                rows_str = [' '.join([str(v) for v in row] + [str(1/len(opt))]) for row in opt]
                 fd.write(block_format('kpoints', rows_str))
 
         elif kw == 'projections':
@@ -64,7 +64,7 @@ def write_wannier90_in(fd, atoms):
 
         elif kw == 'mp_grid':
             opt_str = ' '.join([str(v) for v in opt])
-            fd.write(f'{0} = {1}\n'.format(kw, opt_str))
+            fd.write('{0} = {1}\n'.format(kw, opt_str))
 
         elif isinstance(opt, list):
             if np.ndim(opt) == 1:
