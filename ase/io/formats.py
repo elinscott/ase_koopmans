@@ -813,12 +813,13 @@ def filetype(
             if fmt.match_name(basename):
                 return fmt.name
 
+        ioformat = extension2format.get(ext)
+        if ioformat:
+            return ioformat.name
+
         if not read:
             if ext is None:
                 raise UnknownFileTypeError('Could not guess file type')
-            ioformat = extension2format.get(ext)
-            if ioformat:
-                return ioformat.name
 
             # askhl: This is strange, we don't know if ext is a format:
             return ext
