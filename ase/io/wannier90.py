@@ -5,10 +5,12 @@ Instead, everything is stored in ase.calc.parmaeters
 """
 
 import re
-from ase.atoms import Atoms
-from ase.calculators.wannier90 import Wannier90
-import numpy as np
 import json
+import numpy as np
+from ase.utils import basestring
+from ase.atoms import Atoms
+from ase.calculators.singlepoint import SinglePointDFTCalculator
+from ase.calculators.wannier90 import Wannier90
 
 def parse_value(value):
     if isinstance(value, list):
@@ -56,21 +58,21 @@ def write_wannier90_in(fd, atoms):
                   # Interpret as atom label
                   site_str = str(site)
                if isinstance(proj, list):
-                  proj_str = ';',join(proj)
+                  proj_str = ';'.join(proj)
                else:
                   proj_str = str(proj)
-               rows_str.append('{0}: {1}'.format(site_str, proj_str))
+               rows_str.append(f'{site_str}: {proj_str}')
             fd.write(block_format(kw, rows_str))
 
         elif kw == 'mp_grid':
             opt_str = ' '.join([str(v) for v in opt])
-            fd.write('{0} = {1}\n'.format(kw, opt_str))
+            fd.write(f'{kw} = {opt_str}\n')
 
         elif isinstance(opt, list):
             if np.ndim(opt) == 1:
                opt = [opt]
-            rows_str = '\n'.join([' '.join([str(v) for v in row]) for row in opt])
-            fd.write(block_format(name, rows))
+            rows_str = [' '.join([str(v) for v in row]) for row in opt]
+            fd.write(block_format(kw, rows_str))
 
         else:
             if isinstance(opt, bool):
@@ -158,3 +160,40 @@ def read_wannier90_in(fd):
     atoms.calc.atoms = atoms
 
     return atoms
+
+
+def read_wannier90_out(fd):
+    """
+    Reads wannier90 output files
+
+    Parameters
+    ----------
+    fd : file|str
+        A file like object or filename
+
+    Yields
+    ------
+    structure : atoms
+        An Atoms object with an attached SinglePointCalculator containing
+        any parsed results
+    """
+
+    if isinstance(fd, basestring):
+        fd = open(fd, 'rU')
+
+    flines = fd.readlines()
+
+    structure = Atoms()
+
+    job_done = False
+
+    for line in flines:
+        if 'All done' in line:
+            job_done = True
+
+    calc = SinglePointDFTCalculator(structure)
+    calc.results['job_done'] = job_done
+
+    structure.set_calculator(calc)
+
+    yield structure
