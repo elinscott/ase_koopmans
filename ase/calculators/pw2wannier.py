@@ -37,5 +37,6 @@ class PW2Wannier(FileIOCalculator):
         io.write(self.label + '.p2wi', atoms)
 
     def read_results(self):
-        # There are no results to read
-        return
+        output = io.read(self.label + '.p2wo')
+        self.calc = output.calc
+        self.results = output.calc.results

@@ -345,6 +345,8 @@ F('pov', 'Persistance of Vision', '1S'),
 F('prismatic', 'prismatic and computem XYZ-file', '1F')
 F('pw2wannier-in', 'pw2wannier input file', '1F',
   module='pw2wannier', ext=['pw2wan', 'p2wi'])
+F('pw2wannier-out', 'pw2wannier output file', '1F',
+  module='pw2wannier', ext='p2wo')
 F('py', 'Python file', '+F'),
 F('sys', 'qball sys file', '1F'),
 F('qbox', 'QBOX output file', '+F',
@@ -374,6 +376,8 @@ F('vasp-xml', 'VASP vasprun.xml file', '+F',
 F('vti', 'VTK XML Image Data', '1F', module='vtkxml'),
 F('vtu', 'VTK XML Unstructured Grid', '1F', module='vtkxml'),
 F('x3d', 'X3D', '1S'),
+F('wannier90-out', 'Wannier 90 output file', '1F',
+  module='wannier90', ext='wout')
 F('wannier90-in', 'Wannier 90 input file', '1F',
   module='wannier90', ext='win')
 F('xsd', 'Materials Studio file', '1F'),
