@@ -169,10 +169,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
         if 'odd energy' in line:
             odd_energy = float(line.split()[3])*units.Hartree
 
-        if 'HOMO Eigenvalue (eV)' in line:
+        if 'HOMO Eigenvalue (eV)' in line and '*' not in cpo_lines[i_line + 2]:
             homo_energy = float(cpo_lines[i_line + 2])
     
-        if 'LUMO Eigenvalue (eV)' in line:
+        if 'LUMO Eigenvalue (eV)' in line and '*' not in cpo_lines[i_line + 2]:
             lumo_energy = float(cpo_lines[i_line + 2])
 
         if 'JOB DONE' in line:
