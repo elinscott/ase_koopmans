@@ -4,7 +4,6 @@
 
 from ase.utils import basestring
 from ase.atoms import Atoms
-from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.calculators.pw2wannier import PW2Wannier
 from ase.io.espresso import Namelist, read_fortran_namelist
 
@@ -111,8 +110,8 @@ def read_pw2wannier_out(fd):
         if 'JOB DONE' in line:
             job_done = True
 
-    calc = SinglePointDFTCalculator(structure)
-    calc.results['job_done'] = job_done
+    calc = PW2Wannier(atoms=structure)
+    calc.results['job done'] = job_done
 
     structure.set_calculator(calc)
 

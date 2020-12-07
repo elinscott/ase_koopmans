@@ -35,5 +35,6 @@ class Wannier90(FileIOCalculator):
         io.write(self.label + '.win', atoms)
 
     def read_results(self):
-        # There are no results to read
-        return
+        output = io.read(self.label + '.wout')
+        self.calc = output.calc
+        self.results = output.calc.results

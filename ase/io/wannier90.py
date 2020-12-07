@@ -9,7 +9,6 @@ import json
 import numpy as np
 from ase.utils import basestring
 from ase.atoms import Atoms
-from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.calculators.wannier90 import Wannier90
 
 def parse_value(value):
@@ -153,6 +152,8 @@ def read_wannier90_in(fd):
             # Now save the value
             if read_block:
                 block_lines = []
+            elif keyw == 'mp_grid':
+                calc.parameters[keyw] = [parse_value(v) for v in lsplit[1].split()]
             else:
                 calc.parameters[keyw] = parse_value(' '.join(lsplit[1:]))
 
@@ -190,9 +191,11 @@ def read_wannier90_out(fd):
     for line in flines:
         if 'All done' in line:
             job_done = True
+        if 'Exiting...' in line and '.nnkp written' in line:
+            job_done = True
 
-    calc = SinglePointDFTCalculator(structure)
-    calc.results['job_done'] = job_done
+    calc = Wannier90(atoms=structure)
+    calc.results['job done'] = job_done
 
     structure.set_calculator(calc)
 
