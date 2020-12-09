@@ -38,7 +38,7 @@ from ase.calculators.espresso_cp import Espresso_cp
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
 
-KEYS['CONTROL']   += ['ndr', 'ndw', 'ekin_conv_thr']
+KEYS['CONTROL']   += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
 KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
                       'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx', 
                       'nr1b', 'nr2b', 'nr3b']
