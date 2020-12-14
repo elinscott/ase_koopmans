@@ -18,9 +18,9 @@ def parse_value(value):
             parsed_value.append(parse_value(v))
     else:
         if isinstance(value, str):
-            if value.lower() in ['t', 'true']:
+            if value.lower() in ['t', 'true', '.true.']:
                 return True
-            elif value.lower() in ['f', 'false']:
+            elif value.lower() in ['f', 'false', '.true.']:
                 return False
         try:
            parsed_value = json.loads(value)

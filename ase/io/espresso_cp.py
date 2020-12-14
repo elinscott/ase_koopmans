@@ -71,7 +71,7 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_STRESS =
 # _CP_FERMI =
 # _CP_KPTS =
-# _CP_BANDSTRUCTURE = 
+# _CP_BANDSTRUCTURE =
 
 def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
                       kspacing=None, kpts=None, koffset=(0, 0, 0),
@@ -99,7 +99,6 @@ def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
                 # repr format to get quotes around strings
                 extra_lines.append('   {0:16} = {1!r:}\n'.format(key, value))
         extra_lines.append('/\n')  # terminate section
-    extra_lines.append('\n')
 
     # Read in the original file without the NKSIC and EE blocks
     with open(fd.name, 'r') as fd_read:
@@ -109,6 +108,14 @@ def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
     i_break = lines.index('\n')
     before = lines[:i_break]
     after = lines[i_break:]
+
+    # Remove the K_POINTS card
+    for line in after:
+        if 'K_POINTS' in line:
+            kpts_start = after.index(line)
+            break
+    kpts_end = after[kpts_start:].index('\n') + kpts_start
+    del after[kpts_start:kpts_end+1]
 
     # Rewrite the file with the extra blocks
     with open(fd.name, 'w') as fd_rewrite:
@@ -177,9 +184,9 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     lambda_ii = None
     eigenvalues = []
     job_done = False
-    orbital_data = {'charge' : [], 'centres' : [], 'spreads' : [], 'self-Hartree' : []}
+    orbital_data = {'charge': [], 'centres': [], 'spreads': [], 'self-Hartree': []}
     walltime = None
-    convergence = {'filled' : [], 'empty': []}
+    convergence = {'filled': [], 'empty': []}
 
     convergence_key = 'filled'
 
@@ -187,10 +194,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
         # Energy
         if _CP_TOTEN in line:
-            energy = float(line.split()[-3])*units.Hartree
+            energy = float(line.split()[-3]) * units.Hartree
 
         if _CP_LAMBDA in line and lambda_ii is None:
-            lambda_ii = float(line.split()[-1])*units.Hartree
+            lambda_ii = float(line.split()[-1]) * units.Hartree
 
         # Bands
         if _CP_BANDS in line:
@@ -205,11 +212,11 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                     pass
 
         if 'odd energy' in line:
-            odd_energy = float(line.split()[3])*units.Hartree
+            odd_energy = float(line.split()[3]) * units.Hartree
 
         if 'HOMO Eigenvalue (eV)' in line and '*' not in cpo_lines[i_line + 2]:
             homo_energy = float(cpo_lines[i_line + 2])
-    
+
         if 'LUMO Eigenvalue (eV)' in line and '*' not in cpo_lines[i_line + 2]:
             lumo_energy = float(cpo_lines[i_line + 2])
 
@@ -226,10 +233,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
             if 'NaN' in line:
                 continue
             line = line.replace('********', '   0.000')
-            values = [float(line[i-4:i+4]) for i, c in enumerate(line) if c == '.']
+            values = [float(line[i - 4:i + 4]) for i, c in enumerate(line) if c == '.']
             orbital_data['charge'][-1].append(values[0])
-            orbital_data['centres'][-1].append([x*units.Bohr for x in values[1:4]])
-            orbital_data['spreads'][-1].append(values[4]*units.Bohr**2)
+            orbital_data['centres'][-1].append([x * units.Bohr for x in values[1:4]])
+            orbital_data['spreads'][-1].append(values[4] * units.Bohr**2)
             orbital_data['self-Hartree'][-1].append(values[5])
 
         # Tracking convergence
@@ -239,10 +246,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
         if 'iteration = ' in line and 'eff iteration = ' in line:
             values = [l.split()[0] for l in line.split('=')[1:]]
             [it, eff_it, etot] = values[:3]
-            entry = {'iteration': int(it), 'eff iteration': int(eff_it), 
-                     'Etot': float(etot)*units.Hartree}
+            entry = {'iteration': int(it), 'eff iteration': int(eff_it),
+                     'Etot': float(etot) * units.Hartree}
             if len(values) == 4:
-                entry['delta_E'] = float(values[3])*units.Hartree
+                entry['delta_E'] = float(values[3]) * units.Hartree
             convergence[convergence_key].append(entry)
 
         if 'wall time' in line:
@@ -259,10 +266,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                 seconds = rem.rstrip('s')
             else:
                 seconds = 0
-            walltime = (float(hours)*60 + float(minutes))*60 + float(seconds)
+            walltime = (float(hours) * 60 + float(minutes)) * 60 + float(seconds)
 
     # Put everything together
-    calc = SinglePointDFTCalculator(structure, energy=energy) #,
+    calc = SinglePointDFTCalculator(structure, energy=energy)  # ,
     #                                 forces=forces, stress=stress,
     #                                 magmoms=magmoms, efermi=efermi,
     #                                 ibzkpts=ibzkpts)
