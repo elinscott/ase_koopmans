@@ -14,6 +14,7 @@ import operator as op
 import warnings
 from collections import OrderedDict
 from os import path
+import copy
 
 import numpy as np
 
@@ -27,33 +28,35 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 from ase.units import create_units
 from ase.utils import basestring
 
-from ase.io.espresso import Namelist, KEYS, SSSP_VALENCE, \
-    read_espresso_in, ibrav_to_cell, get_atomic_positions, \
-    get_cell_parameters, str_to_value, read_fortran_namelist, ffloat, \
-    label_to_symbol, infix_float, grep_valence, \
-    cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
+from ase.io.espresso import Namelist, SSSP_VALENCE, \
+   read_espresso_in, ibrav_to_cell, get_atomic_positions, \
+   get_cell_parameters, str_to_value, read_fortran_namelist, ffloat, \
+   label_to_symbol, infix_float, grep_valence, \
+   cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
+from ase.io.espresso import KEYS as PW_KEYS
 
 from ase.calculators.espresso_cp import Espresso_cp
 
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
 
-KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
-KEYS['SYSTEM'] += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep',
-                   'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx',
-                   'nr1b', 'nr2b', 'nr3b']
-KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep',
+KEYS = copy.deepcopy(PW_KEYS)
+KEYS['CONTROL']   += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
+KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
+                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx', 
+                      'nr1b', 'nr2b', 'nr3b']
+KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
                       'electron_dynamics', 'passop', 'do_outerloop', 'do_outerloop_empty']
-KEYS['EE'] += ['which_compensation', 'tcc_odd']
-KEYS['NKSIC'] = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact',
-                 'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion',
-                 'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd',
-                 'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr',
-                 'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty',
-                 'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run',
-                 'aux_empty_nbnd', 'print_evc0_occ_empty']
-KEYS['IONS'] += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
-                 'ion_radius(4)']
+KEYS['EE']         = ['which_compensation', 'tcc_odd']
+KEYS['NKSIC']      = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact', 
+                      'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
+                      'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
+                      'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr', 
+                      'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty', 
+                      'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run', 
+                      'aux_empty_nbnd', 'print_evc0_occ_empty']
+KEYS['IONS']      += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
+                      'ion_radius(4)'] 
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
@@ -70,11 +73,53 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_KPTS =
 # _CP_BANDSTRUCTURE =
 
+def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
+                      kspacing=None, kpts=None, koffset=(0, 0, 0),
+                      **kwargs):
 
-def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None, **kwargs):
-    if 'kpts' in kwargs:
-        kwargs.pop('kpts')
-    write_espresso_in(fd, atoms, input_data, pseudopotentials, kpts="exclude", **kwargs)
+    write_espresso_in(fd, atoms, input_data, pseudopotentials,
+                      kspacing, kpts, koffset, **kwargs)
+
+    if not fd.closed:
+        fd.close()
+    
+    # Extra blocks
+    extra_lines = []
+    input_parameters = construct_namelist(input_data, **kwargs)
+    for section in input_parameters:
+        if section.lower() not in ['ee', 'nksic']:
+            continue
+        extra_lines.append('&{0}\n'.format(section.upper()))
+        for key, value in input_parameters[section].items():
+            if value is True:
+                extra_lines.append('   {0:16} = .true.\n'.format(key))
+            elif value is False:
+                extra_lines.append('   {0:16} = .false.\n'.format(key))
+            elif value is not None:
+                # repr format to get quotes around strings
+                extra_lines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        extra_lines.append('/\n')  # terminate section
+
+    # Read in the original file without the NKSIC and EE blocks
+    with open(fd.name, 'r') as fd_read:
+        lines = fd_read.readlines()
+
+    # Find where to insert the extra blocks
+    i_break = lines.index('\n')
+    before = lines[:i_break]
+    after = lines[i_break:]
+
+    # Remove the K_POINTS card
+    for line in after:
+        if 'K_POINTS' in line:
+            kpts_start = after.index(line)
+            break
+    kpts_end = after[kpts_start:].index('\n') + kpts_start
+    del after[kpts_start:kpts_end+1]
+
+    # Rewrite the file with the extra blocks
+    with open(fd.name, 'w') as fd_rewrite:
+        fd_rewrite.writelines(before + extra_lines + after)
 
 
 def read_espresso_cp_in(fileobj):
