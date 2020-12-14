@@ -1524,7 +1524,8 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         will be used instead.
     kpts: (int, int, int) or dict
         If kpts is a tuple (or list) of 3 integers, it is interpreted
-        as the dimensions of a Monkhorst-Pack grid.
+        as the dimensions of a Monkhorst-Pack grid. In particular, if
+        kpts is (0,0,0) then no K_POINTS card is created (for CP inputs).
         If ``kpts`` is set to ``None``, only the Γ-point will be included
         and QE will use routines optimized for Γ-point-only calculations.
         Compared to Γ-point-only calculations without this optimization
@@ -1752,10 +1753,13 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         pwi.append('K_POINTS gamma\n')
         pwi.append('\n')
     else:
-        pwi.append('K_POINTS automatic\n')
-        pwi.append('{0[0]} {0[1]} {0[2]}  {1[0]:d} {1[1]:d} {1[2]:d}\n'
-                   ''.format(kgrid, koffset))
-        pwi.append('\n')
+        if kgrid == (0,0,0) or kgrid == [0,0,0]:
+            pass
+        else:
+            pwi.append('K_POINTS automatic\n')
+            pwi.append('{0[0]} {0[1]} {0[2]}  {1[0]:d} {1[1]:d} {1[2]:d}\n'
+                       ''.format(kgrid, koffset))
+            pwi.append('\n')
 
     # CELL block, if required
     if input_parameters['SYSTEM']['ibrav'] == 0:
