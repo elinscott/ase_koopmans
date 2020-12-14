@@ -28,32 +28,32 @@ from ase.units import create_units
 from ase.utils import basestring
 
 from ase.io.espresso import Namelist, KEYS, SSSP_VALENCE, \
-   read_espresso_in, ibrav_to_cell, get_atomic_positions, \
-   get_cell_parameters, str_to_value, read_fortran_namelist, ffloat, \
-   label_to_symbol, infix_float, grep_valence, \
-   cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
+    read_espresso_in, ibrav_to_cell, get_atomic_positions, \
+    get_cell_parameters, str_to_value, read_fortran_namelist, ffloat, \
+    label_to_symbol, infix_float, grep_valence, \
+    cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
 
 from ase.calculators.espresso_cp import Espresso_cp
 
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
 
-KEYS['CONTROL']   += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
-KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
-                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx', 
-                      'nr1b', 'nr2b', 'nr3b']
-KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
+KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
+KEYS['SYSTEM'] += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep',
+                   'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx',
+                   'nr1b', 'nr2b', 'nr3b']
+KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep',
                       'electron_dynamics', 'passop', 'do_outerloop', 'do_outerloop_empty']
-KEYS['EE']        += ['which_compensation', 'tcc_odd']
-KEYS['NKSIC']      = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact', 
-                      'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
-                      'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
-                      'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr', 
-                      'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty', 
-                      'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run', 
-                      'aux_empty_nbnd', 'print_evc0_occ_empty']
-KEYS['IONS']      += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
-                      'ion_radius(4)'] 
+KEYS['EE'] += ['which_compensation', 'tcc_odd']
+KEYS['NKSIC'] = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact',
+                 'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion',
+                 'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd',
+                 'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr',
+                 'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty',
+                 'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run',
+                 'aux_empty_nbnd', 'print_evc0_occ_empty']
+KEYS['IONS'] += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
+                 'ion_radius(4)']
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
@@ -68,12 +68,13 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_STRESS =
 # _CP_FERMI =
 # _CP_KPTS =
-# _CP_BANDSTRUCTURE = 
+# _CP_BANDSTRUCTURE =
+
 
 def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None, **kwargs):
-    kwargs.pop('kpts')
-    write_espresso_in(fd, atoms, input_data, pseudopotentials,
-                      kpts="exclude", **kwargs)
+    if 'kpts' in kwargs:
+        kwargs.pop('kpts')
+    write_espresso_in(fd, atoms, input_data, pseudopotentials, kpts="exclude", **kwargs)
 
 
 def read_espresso_cp_in(fileobj):
@@ -138,9 +139,9 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     lambda_ii = None
     eigenvalues = []
     job_done = False
-    orbital_data = {'charge' : [], 'centres' : [], 'spreads' : [], 'self-Hartree' : []}
+    orbital_data = {'charge': [], 'centres': [], 'spreads': [], 'self-Hartree': []}
     walltime = None
-    convergence = {'filled' : [], 'empty': []}
+    convergence = {'filled': [], 'empty': []}
 
     convergence_key = 'filled'
 
@@ -148,10 +149,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
         # Energy
         if _CP_TOTEN in line:
-            energy = float(line.split()[-3])*units.Hartree
+            energy = float(line.split()[-3]) * units.Hartree
 
         if _CP_LAMBDA in line and lambda_ii is None:
-            lambda_ii = float(line.split()[-1])*units.Hartree
+            lambda_ii = float(line.split()[-1]) * units.Hartree
 
         # Bands
         if _CP_BANDS in line:
@@ -166,11 +167,11 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                     pass
 
         if 'odd energy' in line:
-            odd_energy = float(line.split()[3])*units.Hartree
+            odd_energy = float(line.split()[3]) * units.Hartree
 
         if 'HOMO Eigenvalue (eV)' in line and '*' not in cpo_lines[i_line + 2]:
             homo_energy = float(cpo_lines[i_line + 2])
-    
+
         if 'LUMO Eigenvalue (eV)' in line and '*' not in cpo_lines[i_line + 2]:
             lumo_energy = float(cpo_lines[i_line + 2])
 
@@ -187,10 +188,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
             if 'NaN' in line:
                 continue
             line = line.replace('********', '   0.000')
-            values = [float(line[i-4:i+4]) for i, c in enumerate(line) if c == '.']
+            values = [float(line[i - 4:i + 4]) for i, c in enumerate(line) if c == '.']
             orbital_data['charge'][-1].append(values[0])
-            orbital_data['centres'][-1].append([x*units.Bohr for x in values[1:4]])
-            orbital_data['spreads'][-1].append(values[4]*units.Bohr**2)
+            orbital_data['centres'][-1].append([x * units.Bohr for x in values[1:4]])
+            orbital_data['spreads'][-1].append(values[4] * units.Bohr**2)
             orbital_data['self-Hartree'][-1].append(values[5])
 
         # Tracking convergence
@@ -200,10 +201,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
         if 'iteration = ' in line and 'eff iteration = ' in line:
             values = [l.split()[0] for l in line.split('=')[1:]]
             [it, eff_it, etot] = values[:3]
-            entry = {'iteration': int(it), 'eff iteration': int(eff_it), 
-                     'Etot': float(etot)*units.Hartree}
+            entry = {'iteration': int(it), 'eff iteration': int(eff_it),
+                     'Etot': float(etot) * units.Hartree}
             if len(values) == 4:
-                entry['delta_E'] = float(values[3])*units.Hartree
+                entry['delta_E'] = float(values[3]) * units.Hartree
             convergence[convergence_key].append(entry)
 
         if 'wall time' in line:
@@ -220,10 +221,10 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
                 seconds = rem.rstrip('s')
             else:
                 seconds = 0
-            walltime = (float(hours)*60 + float(minutes))*60 + float(seconds)
+            walltime = (float(hours) * 60 + float(minutes)) * 60 + float(seconds)
 
     # Put everything together
-    calc = SinglePointDFTCalculator(structure, energy=energy) #,
+    calc = SinglePointDFTCalculator(structure, energy=energy)  # ,
     #                                 forces=forces, stress=stress,
     #                                 magmoms=magmoms, efermi=efermi,
     #                                 ibzkpts=ibzkpts)
