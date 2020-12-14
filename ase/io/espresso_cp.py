@@ -14,6 +14,7 @@ import operator as op
 import warnings
 from collections import OrderedDict
 from os import path
+import copy
 
 import numpy as np
 
@@ -27,24 +28,26 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 from ase.units import create_units
 from ase.utils import basestring
 
-from ase.io.espresso import Namelist, KEYS, SSSP_VALENCE, \
+from ase.io.espresso import Namelist, SSSP_VALENCE, \
    read_espresso_in, ibrav_to_cell, get_atomic_positions, \
    get_cell_parameters, str_to_value, read_fortran_namelist, ffloat, \
    label_to_symbol, infix_float, grep_valence, \
    cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
+from ase.io.espresso import KEYS as PW_KEYS
 
 from ase.calculators.espresso_cp import Espresso_cp
 
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
 
+KEYS = copy.deepcopy(PW_KEYS)
 KEYS['CONTROL']   += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
 KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
                       'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx', 
                       'nr1b', 'nr2b', 'nr3b']
 KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
                       'electron_dynamics', 'passop', 'do_outerloop', 'do_outerloop_empty']
-KEYS['EE']        += ['which_compensation', 'tcc_odd']
+KEYS['EE']         = ['which_compensation', 'tcc_odd']
 KEYS['NKSIC']      = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact', 
                       'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
                       'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 

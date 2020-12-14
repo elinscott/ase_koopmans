@@ -1175,10 +1175,7 @@ KEYS = Namelist((
         'w_2']),
     ('CELL', [
         'cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr',
-        'cell_dofree']),
-    ('EE', []),
-    ('NKSIC', [])))
-
+        'cell_dofree'])))
 
 # Number of valence electrons in the pseudopotentials recommended by
 # http://materialscloud.org/sssp/. These are just used as a fallback for
