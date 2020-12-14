@@ -70,12 +70,10 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_KPTS =
 # _CP_BANDSTRUCTURE = 
 
-def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
-                      kspacing=None, kpts=None, koffset=(0, 0, 0),
-                      **kwargs):
-    kpts = (0, 0, 0)
+def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None, **kwargs):
+    kwargs.pop('kpts')
     write_espresso_in(fd, atoms, input_data, pseudopotentials,
-                      kspacing, kpts, koffset, **kwargs)
+                      kpts="exclude", **kwargs)
 
 
 def read_espresso_cp_in(fileobj):

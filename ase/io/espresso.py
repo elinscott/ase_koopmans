@@ -1522,10 +1522,9 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         Generate a grid of k-points with this as the minimum distance,
         in A^-1 between them in reciprocal space. If set to None, kpts
         will be used instead.
-    kpts: (int, int, int) or dict
+    kpts: (int, int, int) or dict or str
         If kpts is a tuple (or list) of 3 integers, it is interpreted
-        as the dimensions of a Monkhorst-Pack grid. In particular, if
-        kpts is (0,0,0) then no K_POINTS card is created (for CP inputs).
+        as the dimensions of a Monkhorst-Pack grid.
         If ``kpts`` is set to ``None``, only the Γ-point will be included
         and QE will use routines optimized for Γ-point-only calculations.
         Compared to Γ-point-only calculations without this optimization
@@ -1534,6 +1533,8 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         If kpts is a dict, it will either be interpreted as a path
         in the Brillouin zone (*) if it contains the 'path' keyword,
         otherwise it is converted to a Monkhorst-Pack grid (**).
+        If kpts is the string "exclude" then the K_POINTS card is not
+        inserted in the input file (good for CP inputs).
         (*) see ase.dft.kpoints.bandpath
         (**) see ase.calculators.calculator.kpts2sizeandoffsets
     koffset: (int, int, int)
@@ -1731,6 +1732,11 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
             for i, x in enumerate(shift):
                 assert x == 0 or abs(x * kgrid[i] - 0.5) < 1e-14
                 koffset.append(0 if x == 0 else 1)
+        elif isinstance(kpts, str):
+            if kpts == 'exclude':
+                kgrid = None
+            else:
+                raise ValueError('Unrecognised value for kpts')
         else:
             kgrid = kpts
     else:
@@ -1752,14 +1758,13 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     elif isinstance(kgrid, str) and (kgrid == "gamma"):
         pwi.append('K_POINTS gamma\n')
         pwi.append('\n')
+    elif kgrid is None:
+        pass
     else:
-        if kgrid == (0,0,0) or kgrid == [0,0,0]:
-            pass
-        else:
-            pwi.append('K_POINTS automatic\n')
-            pwi.append('{0[0]} {0[1]} {0[2]}  {1[0]:d} {1[1]:d} {1[2]:d}\n'
-                       ''.format(kgrid, koffset))
-            pwi.append('\n')
+        pwi.append('K_POINTS automatic\n')
+        pwi.append('{0[0]} {0[1]} {0[2]}  {1[0]:d} {1[1]:d} {1[2]:d}\n'
+                   ''.format(kgrid, koffset))
+        pwi.append('\n')
 
     # CELL block, if required
     if input_parameters['SYSTEM']['ibrav'] == 0:
