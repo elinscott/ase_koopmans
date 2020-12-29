@@ -113,6 +113,6 @@ def read_pw2wannier_out(fd):
     calc = PW2Wannier(atoms=structure)
     calc.results['job done'] = job_done
 
-    structure.set_calculator(calc)
+    structure.calc = calc
 
     yield structure

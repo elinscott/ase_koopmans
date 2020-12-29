@@ -30,7 +30,7 @@ from ase.utils import basestring
 
 from ase.io.espresso import Namelist, SSSP_VALENCE, \
    read_espresso_in, ibrav_to_cell, get_atomic_positions, \
-   get_cell_parameters, str_to_value, read_fortran_namelist, ffloat, \
+   get_cell_parameters, str_to_value, ffloat, \
    label_to_symbol, infix_float, grep_valence, \
    cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
 from ase.io.espresso import KEYS as PW_KEYS
@@ -131,7 +131,7 @@ def read_espresso_cp_in(fileobj):
     calc = Espresso_cp(input_data=data, pseudopotentials=pseudos)
 
     # Overwriting the Espresso calculator with the new Espresso_cp calculator
-    atoms.set_calculator(calc)
+    atoms.calc = calc
     atoms.calc.atoms = atoms
 
     return atoms
@@ -283,7 +283,7 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     calc.results['convergence'] = convergence
     calc.results['job_done'] = job_done
     calc.results['walltime'] = walltime
-    structure.set_calculator(calc)
+    structure.calc = calc
 
     yield structure
 

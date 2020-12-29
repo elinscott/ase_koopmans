@@ -133,7 +133,17 @@ def read_wannier90_in(fd):
                     raise ValueError(f'Out of place end of block at line {i+1}')
                 else:
                     read_block = False
-                    calc.parameters[keyw] = parse_value(block_lines)
+                    if keyw == 'unit_cell_cart':
+                        assert block_lines.pop(0) == ['ang']
+                        cell = parse_value(block_lines)
+                    elif keyw == 'atoms_frac':
+                        symbols = [l[0] for l in block_lines]
+                        scaled_positions = parse_value([l[1:] for l in block_lines])
+                    elif keyw == 'projections':
+                        block_lines = [[l[0].strip('f=:').split(',')] + l[1:] for l in block_lines]
+                        calc.parameters[keyw] = {'sites': parse_value(block_lines)}
+                    else:
+                        calc.parameters[keyw] = parse_value(block_lines)
             else:
                 block_lines += [L.split()]
         else:
@@ -157,7 +167,7 @@ def read_wannier90_in(fd):
             else:
                 calc.parameters[keyw] = parse_value(' '.join(lsplit[1:]))
 
-    atoms = Atoms(calculator=calc)
+    atoms = Atoms(symbols=symbols, scaled_positions=scaled_positions, cell=cell, calculator=calc)
     atoms.calc.atoms = atoms
 
     return atoms
@@ -197,6 +207,6 @@ def read_wannier90_out(fd):
     calc = Wannier90(atoms=structure)
     calc.results['job done'] = job_done
 
-    structure.set_calculator(calc)
+    structure.calc = calc
 
     yield structure

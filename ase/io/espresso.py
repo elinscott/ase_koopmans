@@ -542,8 +542,27 @@ def read_espresso_in(fileobj):
                   calculator=Espresso(input_data=data, pseudopotentials = pseudos))
     atoms.calc.atoms = atoms
 
+    if any(['k_points' in l.lower() for l in card_lines]):
+        atoms.calc.parameters['kpts'], atoms.calc.parameters['koffset'] = get_kpoints(card_lines)
+
     return atoms
 
+
+def get_kpoints(card_lines):
+    # Find kpts, koffset from card_lines
+    for i, line in enumerate(card_lines):
+        if line.startswith('K_POINTS'):
+            mode = line.split()[-1]
+            if mode.lower() == 'gamma':
+                return [1, 1, 1], [0, 0, 0]
+            elif mode.lower() == 'automatic':
+                splitline = card_lines[i + 1].strip().split()
+                kpts = [int(x) for x in splitline[:3]]
+                koffset = [int(x) for x in splitline[3:]]
+                return kpts, koffset
+            else:
+                raise ValueError('Failed to parse K_POINTS block')
+    raise ValueError('Failed to find K_POINTS block')
 
 def ibrav_to_cell(system):
     """
