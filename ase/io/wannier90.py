@@ -11,6 +11,7 @@ from ase.utils import basestring
 from ase.atoms import Atoms
 from ase.calculators.wannier90 import Wannier90
 
+
 def parse_value(value):
     if isinstance(value, list):
         parsed_value = []
@@ -23,10 +24,11 @@ def parse_value(value):
             elif value.lower() in ['f', 'false', '.true.']:
                 return False
         try:
-           parsed_value = json.loads(value)
+            parsed_value = json.loads(value)
         except:
-           parsed_value = value
+            parsed_value = value
     return parsed_value
+
 
 def write_wannier90_in(fd, atoms):
     """
@@ -42,25 +44,25 @@ def write_wannier90_in(fd, atoms):
 
         if kw == 'kpts':
             if np.ndim(opt) == 2:
-                rows_str = [' '.join([str(v) for v in row] + [str(1/len(opt))]) for row in opt]
+                rows_str = [' '.join([str(v) for v in row] + [str(1 / len(opt))]) for row in opt]
                 fd.write(block_format('kpoints', rows_str))
 
         elif kw == 'projections':
             rows_str = []
             if 'units' in opt:
-               rows_str.append(opt['units'])
+                rows_str.append(opt['units'])
             for [site, proj] in opt['sites']:
-               if isinstance(site, list):
-                  # Interpret as fractional coordinates
-                  site_str = 'f=' + ','.join([str(v) for v in site])
-               else:
-                  # Interpret as atom label
-                  site_str = str(site)
-               if isinstance(proj, list):
-                  proj_str = ';'.join(proj)
-               else:
-                  proj_str = str(proj)
-               rows_str.append(f'{site_str}: {proj_str}')
+                if isinstance(site, list):
+                    # Interpret as fractional coordinates
+                    site_str = 'f=' + ','.join([str(v) for v in site])
+                else:
+                    # Interpret as atom label
+                    site_str = str(site)
+                if isinstance(proj, list):
+                    proj_str = ';'.join(proj)
+                else:
+                    proj_str = str(proj)
+                rows_str.append(f'{site_str}: {proj_str}')
             fd.write(block_format(kw, rows_str))
 
         elif kw == 'mp_grid':
@@ -69,7 +71,7 @@ def write_wannier90_in(fd, atoms):
 
         elif isinstance(opt, list):
             if np.ndim(opt) == 1:
-               opt = [opt]
+                opt = [opt]
             rows_str = [' '.join([str(v) for v in row]) for row in opt]
             fd.write(block_format(kw, rows_str))
 
@@ -95,9 +97,11 @@ def write_wannier90_in(fd, atoms):
     rows_str = ['ang'] + [' '.join([str(v) for v in row]) for row in atoms.cell]
     fd.write(block_format('unit_cell_cart', rows_str))
 
+
 def block_format(name, rows_str):
     joined_rows = '\n'.join(['  ' + r for r in rows_str])
     return f'\nbegin {name}\n{joined_rows}\nend {name}\n'
+
 
 def read_wannier90_in(fd):
     """

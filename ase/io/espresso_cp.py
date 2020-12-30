@@ -29,10 +29,10 @@ from ase.units import create_units
 from ase.utils import basestring
 
 from ase.io.espresso import Namelist, SSSP_VALENCE, \
-   read_espresso_in, ibrav_to_cell, get_atomic_positions, \
-   get_cell_parameters, str_to_value, ffloat, \
-   label_to_symbol, infix_float, grep_valence, \
-   cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
+    read_espresso_in, ibrav_to_cell, get_atomic_positions, \
+    get_cell_parameters, str_to_value, ffloat, \
+    label_to_symbol, infix_float, grep_valence, \
+    cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
 from ase.io.espresso import KEYS as PW_KEYS
 
 from ase.calculators.espresso_cp import Espresso_cp
@@ -41,22 +41,22 @@ from ase.calculators.espresso_cp import Espresso_cp
 units = create_units('2006')
 
 KEYS = copy.deepcopy(PW_KEYS)
-KEYS['CONTROL']   += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
-KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
-                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx', 
-                      'nr1b', 'nr2b', 'nr3b']
-KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
+KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
+KEYS['SYSTEM'] += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep',
+                   'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx',
+                   'nr1b', 'nr2b', 'nr3b']
+KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep',
                       'electron_dynamics', 'passop', 'do_outerloop', 'do_outerloop_empty']
-KEYS['EE']         = ['which_compensation', 'tcc_odd']
-KEYS['NKSIC']      = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact', 
-                      'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
-                      'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
-                      'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr', 
-                      'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty', 
-                      'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run', 
-                      'aux_empty_nbnd', 'print_evc0_occ_empty']
-KEYS['IONS']      += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
-                      'ion_radius(4)'] 
+KEYS['EE'] = ['which_compensation', 'tcc_odd']
+KEYS['NKSIC'] = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact',
+                 'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion',
+                 'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd',
+                 'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr',
+                 'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty',
+                 'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run',
+                 'aux_empty_nbnd', 'print_evc0_occ_empty']
+KEYS['IONS'] += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
+                 'ion_radius(4)']
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
@@ -73,16 +73,17 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_KPTS =
 # _CP_BANDSTRUCTURE =
 
+
 def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
-                      kspacing=None, kpts=None, koffset=(0, 0, 0),
-                      **kwargs):
+                         kspacing=None, kpts=None, koffset=(0, 0, 0),
+                         **kwargs):
 
     write_espresso_in(fd, atoms, input_data, pseudopotentials,
                       kspacing, kpts, koffset, **kwargs)
 
     if not fd.closed:
         fd.close()
-    
+
     # Extra blocks
     extra_lines = []
     input_parameters = construct_namelist(input_data, **kwargs)
@@ -115,7 +116,7 @@ def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
             kpts_start = after.index(line)
             break
     kpts_end = after[kpts_start:].index('\n') + kpts_start
-    del after[kpts_start:kpts_end+1]
+    del after[kpts_start:kpts_end + 1]
 
     # Rewrite the file with the extra blocks
     with open(fd.name, 'w') as fd_rewrite:
