@@ -7,6 +7,7 @@ from ase.atoms import Atoms
 from ase.calculators.pw2wannier import PW2Wannier
 from ase.io.espresso import Namelist, read_fortran_namelist
 
+
 def read_pw2wannier_in(fileobj):
     """Parse a pw2wannier input file, 'pw2wan', '.p2wi'
 
@@ -36,7 +37,7 @@ def read_pw2wannier_in(fileobj):
 
     # parse namelist section and extract remaining lines
     data, _ = read_fortran_namelist(fileobj)
-    
+
     if 'inputpp' not in data:
         raise KeyError('Required section &inputpp not found.')
 
@@ -113,6 +114,6 @@ def read_pw2wannier_out(fd):
     calc = PW2Wannier(atoms=structure)
     calc.results['job done'] = job_done
 
-    structure.set_calculator(calc)
+    structure.calc = calc
 
     yield structure

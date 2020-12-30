@@ -52,8 +52,10 @@ _PW_ELECTROSTATIC_EMBEDDING = 'electrostatic embedding'
 _PW_NITER = 'iteration #'
 _PW_DONE = 'JOB DONE.'
 
+
 class Namelist(OrderedDict):
     """Case insensitive dict that emulates Fortran Namelists."""
+
     def __contains__(self, key):
         return super(Namelist, self).__contains__(key.lower())
 
@@ -506,7 +508,7 @@ def read_espresso_in(fileobj):
 
     # parse namelist section and extract remaining lines
     data, card_lines = read_fortran_namelist(fileobj)
-    
+
     # get the cell if ibrav=0
     if 'system' not in data:
         raise KeyError('Required section &SYSTEM not found.')
@@ -538,11 +540,31 @@ def read_espresso_in(fileobj):
     # TODO: put more info into the atoms object
     # e.g magmom, forces.
     atoms = Atoms(symbols=symbols, positions=positions, cell=cell,
-                  constraint=constraint, pbc=True, 
-                  calculator=Espresso(input_data=data, pseudopotentials = pseudos))
+                  constraint=constraint, pbc=True,
+                  calculator=Espresso(input_data=data, pseudopotentials=pseudos))
     atoms.calc.atoms = atoms
 
+    if any(['k_points' in l.lower() for l in card_lines]):
+        atoms.calc.parameters['kpts'], atoms.calc.parameters['koffset'] = get_kpoints(card_lines)
+
     return atoms
+
+
+def get_kpoints(card_lines):
+    # Find kpts, koffset from card_lines
+    for i, line in enumerate(card_lines):
+        if line.startswith('K_POINTS'):
+            mode = line.split()[-1]
+            if mode.lower() == 'gamma':
+                return [1, 1, 1], [0, 0, 0]
+            elif mode.lower() == 'automatic':
+                splitline = card_lines[i + 1].strip().split()
+                kpts = [int(x) for x in splitline[:3]]
+                koffset = [int(x) for x in splitline[3:]]
+                return kpts, koffset
+            else:
+                raise ValueError('Failed to parse K_POINTS block')
+    raise ValueError('Failed to find K_POINTS block')
 
 
 def ibrav_to_cell(system):
@@ -840,6 +862,7 @@ def get_cell_parameters(lines, alat=None):
 
     return cell, cell_alat
 
+
 def get_pseudopotentials(lines, n_types):
     """Parse atom positions from ATOMIC_SPECIES card.
 
@@ -863,10 +886,10 @@ def get_pseudopotentials(lines, n_types):
     """
 
     i_start = [l.lower() for l in lines].index('atomic_species') + 1
-    pseudos = {l.split()[0] : l.split()[2] for l in lines[i_start:i_start + n_types]}
+    pseudos = {l.split()[0]: l.split()[2] for l in lines[i_start:i_start + n_types]}
 
     return pseudos
-        
+
 
 def str_to_value(string):
     """Attempt to convert string into int, float (including fortran double),
@@ -1549,8 +1572,8 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
             input_data = atoms.calc.parameters['input_data']
         elif input_data != atoms.calc.parameters['input_data']:
             warnings.warn("write_espresso_in(...) is ignoring "
-                  "atom.calc.parameters['input_data'] in favor of "
-                  "the input_data provided to it as an argument")
+                          "atom.calc.parameters['input_data'] in favor of "
+                          "the input_data provided to it as an argument")
 
     input_parameters = construct_namelist(input_data, **kwargs)
 
@@ -1598,7 +1621,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
             valence = SSSP_VALENCE[atomic_numbers[specie]]
 
         species_info[label] = {'pseudo': pseudo,
-                                 'valence': valence}
+                               'valence': valence}
 
     # Convert atoms into species.
     # Each different magnetic moment needs to be a separate type even with

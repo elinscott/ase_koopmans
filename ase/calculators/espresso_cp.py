@@ -21,13 +21,14 @@ warn_template = 'Property "%s" is None. Typically, this is because the ' \
                 'Espresso at a "low" verbosity level (the default). ' \
                 'Please try running Quantum Espresso with "high" verbosity.'
 
+
 class Espresso_cp(FileIOCalculator):
     """
     """
     implemented_properties = ['energy']
 
     # User must specify the appropriate command using ASE_ESPRESSO_CP_COMMAND
-    command = None
+    command = 'cp.x -in PREFIX.cpi > PREFIX.cpo'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='espresso', atoms=None, **kwargs):
