@@ -25,7 +25,7 @@ def parse_value(value):
                 return False
         try:
             parsed_value = json.loads(value)
-        except:
+        except (TypeError, json.decoder.JSONDecodeError) as e:
             parsed_value = value
     return parsed_value
 

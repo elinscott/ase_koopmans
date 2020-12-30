@@ -204,12 +204,12 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
         if _CP_BANDS in line:
             try:
                 eigenvalues.append([float(e) for e in cpo_lines[i_line + 2].split()])
-            except:
+            except ValueError:
                 pass
             if 'Empty States Eigenvalues' in cpo_lines[i_line + 4]:
                 try:
                     eigenvalues[-1] += [float(e) for e in cpo_lines[i_line + 6].split()]
-                except:
+                except ValueError:
                     pass
 
         if 'odd energy' in line:
