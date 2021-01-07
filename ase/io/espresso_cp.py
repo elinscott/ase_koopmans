@@ -182,6 +182,8 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     odd_energy = None
     lumo_energy = None
     homo_energy = None
+    mp1_energy = None
+    mp2_energy = None
     lambda_ii = None
     eigenvalues = []
     job_done = False
@@ -220,6 +222,12 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
         if 'LUMO Eigenvalue (eV)' in line and '*' not in cpo_lines[i_line + 2]:
             lumo_energy = float(cpo_lines[i_line + 2])
+
+        if 'Makov-Payne 1-order energy' in line:
+            mp1_energy = float(line.split()[4]) * units.Hartree
+
+        if 'Makov-Payne 2-order energy' in line:
+            mp2_energy = float(line.split()[4]) * units.Hartree
 
         if 'JOB DONE' in line:
             job_done = True
@@ -278,6 +286,8 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     calc.results['odd_energy'] = odd_energy
     calc.results['homo_energy'] = homo_energy
     calc.results['lumo_energy'] = lumo_energy
+    calc.results['mp1_energy'] = mp1_energy
+    calc.results['mp2_energy'] = mp2_energy
     calc.results['eigenvalues'] = eigenvalues
     calc.results['lambda_ii'] = lambda_ii
     calc.results['orbital_data'] = orbital_data
