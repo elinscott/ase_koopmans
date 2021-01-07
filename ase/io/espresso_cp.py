@@ -225,7 +225,7 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
         if 'Makov-Payne 1-order energy' in line:
             mp1_energy = float(line.split()[4]) * units.Hartree
-        
+
         if 'Makov-Payne 2-order energy' in line:
             mp2_energy = float(line.split()[4]) * units.Hartree
 
