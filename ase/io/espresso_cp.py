@@ -1,7 +1,7 @@
 """Reads Quantum ESPRESSO files.
 
 Read multiple structures and results from pw.x output files. Read
-structures from cp.x input files.
+structures from kcp.x input files.
 
 Built for CP
 
@@ -332,7 +332,7 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
     Returns
     -------
     input_namelist: Namelist
-        cp.x compatible namelist of input parameters.
+        kcp.x compatible namelist of input parameters.
 
     """
     # Convert everything to Namelist early to make case-insensitive
