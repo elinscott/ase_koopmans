@@ -75,8 +75,7 @@ _CP_LAMBDA = 'fixed_lambda'
 
 
 def write_espresso_kcp_in(fd, atoms, input_data=None, pseudopotentials=None,
-                         kspacing=None, kpts=None, koffset=(0, 0, 0),
-                         **kwargs):
+                          kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
 
     write_espresso_in(fd, atoms, input_data, pseudopotentials,
                       kspacing, kpts, koffset, **kwargs)
