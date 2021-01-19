@@ -27,7 +27,7 @@ class Espresso_kcp(FileIOCalculator):
     """
     implemented_properties = ['energy']
 
-    # User must specify the appropriate command using ASE_ESPRESSO_CP_COMMAND
+    # Default command does not use parallelism and assumes kcp.x is on the user's path
     command = 'kcp.x -in PREFIX.cpi > PREFIX.cpo'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
