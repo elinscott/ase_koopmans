@@ -1,7 +1,7 @@
 """Reads Quantum ESPRESSO files.
 
-Read multiple structures and results from pw.x output files. Read
-structures from cp.x input files.
+Read multiple structures and results from kcp.x output files. Read
+structures from kcp.x input files.
 
 Built for CP
 
@@ -29,34 +29,34 @@ from ase.units import create_units
 from ase.utils import basestring
 
 from ase.io.espresso import Namelist, SSSP_VALENCE, \
-   read_espresso_in, ibrav_to_cell, get_atomic_positions, \
-   get_cell_parameters, str_to_value, read_fortran_namelist, ffloat, \
-   label_to_symbol, infix_float, grep_valence, \
-   cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
+    read_espresso_in, ibrav_to_cell, get_atomic_positions, \
+    get_cell_parameters, str_to_value, ffloat, \
+    label_to_symbol, infix_float, grep_valence, \
+    cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
 from ase.io.espresso import KEYS as PW_KEYS
 
-from ase.calculators.espresso_cp import Espresso_cp
+from ase.calculators.espresso_kcp import Espresso_kcp
 
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
 
 KEYS = copy.deepcopy(PW_KEYS)
-KEYS['CONTROL']   += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
-KEYS['SYSTEM']    += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep', 
-                      'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx', 
-                      'nr1b', 'nr2b', 'nr3b']
-KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep', 
+KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
+KEYS['SYSTEM'] += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep',
+                   'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx',
+                   'nr1b', 'nr2b', 'nr3b']
+KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep',
                       'electron_dynamics', 'passop', 'do_outerloop', 'do_outerloop_empty']
-KEYS['EE']         = ['which_compensation', 'tcc_odd']
-KEYS['NKSIC']      = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact', 
-                      'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion', 
-                      'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd', 
-                      'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr', 
-                      'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty', 
-                      'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run', 
-                      'aux_empty_nbnd', 'print_evc0_occ_empty']
-KEYS['IONS']      += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
-                      'ion_radius(4)'] 
+KEYS['EE'] = ['which_compensation', 'tcc_odd']
+KEYS['NKSIC'] = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact',
+                 'odd_nkscalfact_empty', 'which_orbdep', 'print_wfc_anion',
+                 'index_empty_to_save', 'innerloop_cg_nreset', 'innerloop_cg_nsd',
+                 'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr',
+                 'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty',
+                 'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run',
+                 'aux_empty_nbnd', 'print_evc0_occ_empty']
+KEYS['IONS'] += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
+                 'ion_radius(4)']
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
@@ -73,16 +73,17 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_KPTS =
 # _CP_BANDSTRUCTURE =
 
-def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
-                      kspacing=None, kpts=None, koffset=(0, 0, 0),
-                      **kwargs):
+
+def write_espresso_kcp_in(fd, atoms, input_data=None, pseudopotentials=None,
+                         kspacing=None, kpts=None, koffset=(0, 0, 0),
+                         **kwargs):
 
     write_espresso_in(fd, atoms, input_data, pseudopotentials,
                       kspacing, kpts, koffset, **kwargs)
 
     if not fd.closed:
         fd.close()
-    
+
     # Extra blocks
     extra_lines = []
     input_parameters = construct_namelist(input_data, **kwargs)
@@ -115,29 +116,29 @@ def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
             kpts_start = after.index(line)
             break
     kpts_end = after[kpts_start:].index('\n') + kpts_start
-    del after[kpts_start:kpts_end+1]
+    del after[kpts_start:kpts_end + 1]
 
     # Rewrite the file with the extra blocks
     with open(fd.name, 'w') as fd_rewrite:
         fd_rewrite.writelines(before + extra_lines + after)
 
 
-def read_espresso_cp_in(fileobj):
+def read_espresso_kcp_in(fileobj):
     atoms = read_espresso_in(fileobj)
 
-    # Generating Espresso_cp calculator from Espresso calculator
+    # Generating Espresso_kcp calculator from Espresso calculator
     data = atoms.calc.parameters['input_data']
     pseudos = atoms.calc.parameters['pseudopotentials']
-    calc = Espresso_cp(input_data=data, pseudopotentials=pseudos)
+    calc = Espresso_kcp(input_data=data, pseudopotentials=pseudos)
 
-    # Overwriting the Espresso calculator with the new Espresso_cp calculator
-    atoms.set_calculator(calc)
+    # Overwriting the Espresso calculator with the new Espresso_kcp calculator
+    atoms.calc = calc
     atoms.calc.atoms = atoms
 
     return atoms
 
 
-def read_espresso_cp_out(fileobj, index=-1, results_required=True):
+def read_espresso_kcp_out(fileobj, index=-1, results_required=True):
     """Reads Quantum ESPRESSO output files.
 
     The atomistic configurations as well as results (energy, force, stress,
@@ -181,6 +182,8 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     odd_energy = None
     lumo_energy = None
     homo_energy = None
+    mp1_energy = None
+    mp2_energy = None
     lambda_ii = None
     eigenvalues = []
     job_done = False
@@ -203,12 +206,12 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
         if _CP_BANDS in line:
             try:
                 eigenvalues.append([float(e) for e in cpo_lines[i_line + 2].split()])
-            except:
+            except ValueError:
                 pass
             if 'Empty States Eigenvalues' in cpo_lines[i_line + 4]:
                 try:
                     eigenvalues[-1] += [float(e) for e in cpo_lines[i_line + 6].split()]
-                except:
+                except ValueError:
                     pass
 
         if 'odd energy' in line:
@@ -219,6 +222,12 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
 
         if 'LUMO Eigenvalue (eV)' in line and '*' not in cpo_lines[i_line + 2]:
             lumo_energy = float(cpo_lines[i_line + 2])
+
+        if 'Makov-Payne 1-order energy' in line:
+            mp1_energy = float(line.split()[4]) * units.Hartree
+
+        if 'Makov-Payne 2-order energy' in line:
+            mp2_energy = float(line.split()[4]) * units.Hartree
 
         if 'JOB DONE' in line:
             job_done = True
@@ -277,13 +286,15 @@ def read_espresso_cp_out(fileobj, index=-1, results_required=True):
     calc.results['odd_energy'] = odd_energy
     calc.results['homo_energy'] = homo_energy
     calc.results['lumo_energy'] = lumo_energy
+    calc.results['mp1_energy'] = mp1_energy
+    calc.results['mp2_energy'] = mp2_energy
     calc.results['eigenvalues'] = eigenvalues
     calc.results['lambda_ii'] = lambda_ii
     calc.results['orbital_data'] = orbital_data
     calc.results['convergence'] = convergence
     calc.results['job_done'] = job_done
     calc.results['walltime'] = walltime
-    structure.set_calculator(calc)
+    structure.calc = calc
 
     yield structure
 
@@ -309,7 +320,7 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
         kwargs[key] > parameters[key] > parameters[section][key]
     Only the highest priority item will be included.
 
-    Copied from ase/io/espresso.cp
+    Copied from ase/io/espresso
 
     Parameters
     ----------
@@ -321,7 +332,7 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
     Returns
     -------
     input_namelist: Namelist
-        cp.x compatible namelist of input parameters.
+        kcp.x compatible namelist of input parameters.
 
     """
     # Convert everything to Namelist early to make case-insensitive
@@ -358,12 +369,12 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
                 sec_list[key] = kwargs.pop(key)
 
             # Check if there is a key(i) version (no extra parsing)
-            cp_parameters = parameters.copy()
-            for arg_key in cp_parameters:
+            kcp_parameters = parameters.copy()
+            for arg_key in kcp_parameters:
                 if arg_key.split('(')[0].strip().lower() == key.lower():
                     sec_list[arg_key] = parameters.pop(arg_key)
-            cp_kwargs = kwargs.copy()
-            for arg_key in cp_kwargs:
+            kcp_kwargs = kwargs.copy()
+            for arg_key in kcp_kwargs:
                 if arg_key.split('(')[0].strip().lower() == key.lower():
                     sec_list[arg_key] = kwargs.pop(arg_key)
 
