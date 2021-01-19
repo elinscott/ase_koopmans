@@ -1,7 +1,7 @@
 """Reads Quantum ESPRESSO files.
 
-Read multiple structures and results from pw.x output files. Read
-structures from cp.x input files.
+Read multiple structures and results from kcp.x output files. Read
+structures from kcp.x input files.
 
 Built for CP
 
@@ -35,7 +35,7 @@ from ase.io.espresso import Namelist, SSSP_VALENCE, \
     cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
 from ase.io.espresso import KEYS as PW_KEYS
 
-from ase.calculators.espresso_cp import Espresso_cp
+from ase.calculators.espresso_kcp import Espresso_kcp
 
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
@@ -74,9 +74,8 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_BANDSTRUCTURE =
 
 
-def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
-                         kspacing=None, kpts=None, koffset=(0, 0, 0),
-                         **kwargs):
+def write_espresso_kcp_in(fd, atoms, input_data=None, pseudopotentials=None,
+                          kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
 
     write_espresso_in(fd, atoms, input_data, pseudopotentials,
                       kspacing, kpts, koffset, **kwargs)
@@ -123,22 +122,22 @@ def write_espresso_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
         fd_rewrite.writelines(before + extra_lines + after)
 
 
-def read_espresso_cp_in(fileobj):
+def read_espresso_kcp_in(fileobj):
     atoms = read_espresso_in(fileobj)
 
-    # Generating Espresso_cp calculator from Espresso calculator
+    # Generating Espresso_kcp calculator from Espresso calculator
     data = atoms.calc.parameters['input_data']
     pseudos = atoms.calc.parameters['pseudopotentials']
-    calc = Espresso_cp(input_data=data, pseudopotentials=pseudos)
+    calc = Espresso_kcp(input_data=data, pseudopotentials=pseudos)
 
-    # Overwriting the Espresso calculator with the new Espresso_cp calculator
+    # Overwriting the Espresso calculator with the new Espresso_kcp calculator
     atoms.calc = calc
     atoms.calc.atoms = atoms
 
     return atoms
 
 
-def read_espresso_cp_out(fileobj, index=-1, results_required=True):
+def read_espresso_kcp_out(fileobj, index=-1, results_required=True):
     """Reads Quantum ESPRESSO output files.
 
     The atomistic configurations as well as results (energy, force, stress,
@@ -320,7 +319,7 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
         kwargs[key] > parameters[key] > parameters[section][key]
     Only the highest priority item will be included.
 
-    Copied from ase/io/espresso.cp
+    Copied from ase/io/espresso
 
     Parameters
     ----------
@@ -332,7 +331,7 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
     Returns
     -------
     input_namelist: Namelist
-        cp.x compatible namelist of input parameters.
+        kcp.x compatible namelist of input parameters.
 
     """
     # Convert everything to Namelist early to make case-insensitive
@@ -369,12 +368,12 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
                 sec_list[key] = kwargs.pop(key)
 
             # Check if there is a key(i) version (no extra parsing)
-            cp_parameters = parameters.copy()
-            for arg_key in cp_parameters:
+            kcp_parameters = parameters.copy()
+            for arg_key in kcp_parameters:
                 if arg_key.split('(')[0].strip().lower() == key.lower():
                     sec_list[arg_key] = parameters.pop(arg_key)
-            cp_kwargs = kwargs.copy()
-            for arg_key in cp_kwargs:
+            kcp_kwargs = kwargs.copy()
+            for arg_key in kcp_kwargs:
                 if arg_key.split('(')[0].strip().lower() == key.lower():
                     sec_list[arg_key] = kwargs.pop(arg_key)
 

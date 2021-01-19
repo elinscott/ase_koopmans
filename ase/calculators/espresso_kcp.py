@@ -1,10 +1,10 @@
 """Quantum ESPRESSO Calculator
 
-export ASE_ESPRESSO_COMMAND="/path/to/cp.x -in PREFIX.cpi > PREFIX.cpo"
+export ASE_ESPRESSO_KCP_COMMAND="/path/to/kcp.x -in PREFIX.cpi > PREFIX.cpo"
 
 N.B. the extensions must be .cpi and .cpo
 
-Run cp.x jobs.
+Run kcp.x jobs.
 """
 
 
@@ -22,26 +22,26 @@ warn_template = 'Property "%s" is None. Typically, this is because the ' \
                 'Please try running Quantum Espresso with "high" verbosity.'
 
 
-class Espresso_cp(FileIOCalculator):
+class Espresso_kcp(FileIOCalculator):
     """
     """
     implemented_properties = ['energy']
 
-    # User must specify the appropriate command using ASE_ESPRESSO_CP_COMMAND
-    command = 'cp.x -in PREFIX.cpi > PREFIX.cpo'
+    # Default command does not use parallelism and assumes kcp.x is on the user's path
+    command = 'kcp.x -in PREFIX.cpi > PREFIX.cpo'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='espresso', atoms=None, **kwargs):
         """
-        All options for cp.x are copied verbatim to the input file, and put
+        All options for kcp.x are copied verbatim to the input file, and put
         into the correct section. Use ``input_data`` for parameters that are
         already in a dict, all other ``kwargs`` are passed as parameters.
 
-        Accepts all the options for cp.x as given in the QE docs, plus some
+        Accepts all the options for kcp.x as given in the QE docs, plus some
         additional options:
 
         input_data: dict
-            A flat or nested dictionary with input parameters for cp.x
+            A flat or nested dictionary with input parameters for kcp.x
         pseudopotentials: dict
             A filename for each atomic species, e.g.
             ``{'O': 'O.pbe-rrkjus.UPF', 'H': 'H.pbe-rrkjus.UPF'}``.
