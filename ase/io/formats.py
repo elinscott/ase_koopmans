@@ -311,6 +311,10 @@ F('html', 'X3DOM HTML', '1F', module='x3d'),
 F('iwm', '?', '1F', glob='atoms.dat'),
 F('json', 'ASE JSON database file', '+F', module='db'),
 F('jsv', 'JSV file format', '1F'),
+F('koopmans-ham-in', 'Koopmans ham input file', '1F', ext='khi'),
+F('koopmans-ham-out', 'Koopmans ham output file', '1F', ext='kho'),
+F('koopmans-screen-in', 'Koopmans screening input file', '1F', ext='ksi'),
+F('koopmans-screen-out', 'Koopmans screening output file', '1F', ext='kso'),
 F('lammps-dump-text', 'LAMMPS text dump file', '+F',
   module='lammpsrun', magic=b'*\nITEM: TIMESTEP\n'),
 F('lammps-dump-binary', 'LAMMPS binary dump file', '+B',
@@ -376,10 +380,10 @@ F('vasp-xml', 'VASP vasprun.xml file', '+F',
 F('vti', 'VTK XML Image Data', '1F', module='vtkxml'),
 F('vtu', 'VTK XML Unstructured Grid', '1F', module='vtkxml'),
 F('x3d', 'X3D', '1S'),
-F('wannier90-out', 'Wannier 90 output file', '1F',
-  module='wannier90', ext='wout')
-F('wannier90-in', 'Wannier 90 input file', '1F',
-  module='wannier90', ext='win')
+F('wann2kc-out', 'wannier_to_kc.x output file', '1F', module='wann2kc', ext='w2ko')
+F('wann2kc-in', 'wannier_to_kc.x input file', '1F', module='wann2kc', ext='w2ki')
+F('wannier90-out', 'Wannier 90 output file', '1F', module='wannier90', ext='wout')
+F('wannier90-in', 'Wannier 90 input file', '1F', module='wannier90', ext='win')
 F('xsd', 'Materials Studio file', '1F'),
 F('xsf', 'XCrySDen Structure File', '+F',
   magic=[b'*\nANIMSTEPS', b'*\nCRYSTAL', b'*\nSLAB', b'*\nPOLYMER',
