@@ -31,7 +31,7 @@ from ase.io.espresso import Namelist, SSSP_VALENCE, \
     get_cell_parameters, str_to_value, ffloat, \
     label_to_symbol, infix_float, grep_valence, \
     cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
-from ase.io.wann2kc import KEYS and W2KKEYS
+from ase.io.wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.koopmans_ham import KoopmansHam
 
