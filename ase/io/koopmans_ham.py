@@ -26,11 +26,8 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 from ase.units import create_units
 from ase.utils import basestring
 
-from ase.io.espresso import Namelist, SSSP_VALENCE, \
-    read_espresso_in, ibrav_to_cell, get_atomic_positions, \
-    get_cell_parameters, str_to_value, ffloat, \
-    label_to_symbol, infix_float, grep_valence, \
-    cell_to_ibrav, kspacing_to_grid, write_espresso_in, get_constraint
+from ase.io.espresso import read_espresso_in, write_espresso_in, Namelist
+from ase.io.espresso import construct_namelist as espresso_construct_namelist
 from ase.io.wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.koopmans_ham import KoopmansHam
@@ -159,99 +156,8 @@ def read_koopmans_ham_out(fileobj, index=-1, results_required=True):
     yield structure
 
 
-# def construct_namelist(parameters=None, warn=False, **kwargs):
-#     """
-#     Construct an ordered Namelist containing all the parameters given (as
-#     a dictionary or kwargs). Keys will be inserted into their appropriate
-#     section in the namelist and the dictionary may contain flat and nested
-#     structures. Any kwargs that match input keys will be incorporated into
-#     their correct section. All matches are case-insensitive, and returned
-#     Namelist object is a case-insensitive dict.
-#
-#     If a key is not known to ase, but in a section within `parameters`,
-#     it will be assumed that it was put there on purpose and included
-#     in the output namelist. Anything not in a section will be ignored (set
-#     `warn` to True to see ignored keys).
-#
-#     Keys with a dimension (e.g. Hubbard_U(1)) will be incorporated as-is
-#     so the `i` should be made to match the output.
-#
-#     The priority of the keys is:
-#         kwargs[key] > parameters[key] > parameters[section][key]
-#     Only the highest priority item will be included.
-#
-#     Copied from ase/io/espresso
-#
-#     Parameters
-#     ----------
-#     parameters: dict
-#         Flat or nested set of input parameters.
-#     warn: bool
-#         Enable warnings for unused keys.
-#
-#     Returns
-#     -------
-#     input_namelist: Namelist
-#         koopmans_ham.x compatible namelist of input parameters.
-#
-#     """
-#     # Convert everything to Namelist early to make case-insensitive
-#     if parameters is None:
-#         parameters = Namelist()
-#     else:
-#         # Maximum one level of nested dict
-#         # Don't modify in place
-#         parameters_namelist = Namelist()
-#         for key, value in parameters.items():
-#             if isinstance(value, dict):
-#                 parameters_namelist[key] = Namelist(value)
-#             else:
-#                 parameters_namelist[key] = value
-#         parameters = parameters_namelist
-#
-#     # Just a dict
-#     kwargs = Namelist(kwargs)
-#
-#     # Final parameter set
-#     input_namelist = Namelist()
-#
-#     # Collect
-#     for section in KEYS:
-#         sec_list = Namelist()
-#         for key in KEYS[section]:
-#             # Check all three separately and pop them all so that
-#             # we can check for missing values later
-#             if key in parameters.get(section, {}):
-#                 sec_list[key] = parameters[section].pop(key)
-#             if key in parameters:
-#                 sec_list[key] = parameters.pop(key)
-#             if key in kwargs:
-#                 sec_list[key] = kwargs.pop(key)
-#
-#             # Check if there is a key(i) version (no extra parsing)
-#             kcp_parameters = parameters.copy()
-#             for arg_key in kcp_parameters:
-#                 if arg_key.split('(')[0].strip().lower() == key.lower():
-#                     sec_list[arg_key] = parameters.pop(arg_key)
-#             kcp_kwargs = kwargs.copy()
-#             for arg_key in kcp_kwargs:
-#                 if arg_key.split('(')[0].strip().lower() == key.lower():
-#                     sec_list[arg_key] = kwargs.pop(arg_key)
-#
-#         # Add to output
-#         input_namelist[section] = sec_list
-#
-#     unused_keys = list(kwargs)
-#     # pass anything else already in a section
-#     for key, value in parameters.items():
-#         if key in KEYS and isinstance(value, dict):
-#             input_namelist[key].update(value)
-#         elif isinstance(value, dict):
-#             unused_keys.extend(list(value))
-#         else:
-#             unused_keys.append(key)
-#
-#     if warn and unused_keys:
-#         warnings.warn('Unused keys: {}'.format(', '.join(unused_keys)))
-#
-#     return input_namelist
+def construct_namelist(parameters=None, warn=False, **kwargs):
+    '''
+    Using espresso.py's construct_namelist function with differently defined "KEYS"
+    '''
+    espresso_construct_namelist(parameters, warn, KEYS, **kwargs)

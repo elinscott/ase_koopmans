@@ -1214,7 +1214,7 @@ SSSP_VALENCE = [
     15.0, 32.0, 19.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0]
 
 
-def construct_namelist(parameters=None, warn=False, **kwargs):
+def construct_namelist(parameters=None, warn=False, KEYS=KEYS, **kwargs):
     """
     Construct an ordered Namelist containing all the parameters given (as
     a dictionary or kwargs). Keys will be inserted into their appropriate
