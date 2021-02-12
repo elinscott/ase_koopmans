@@ -160,4 +160,4 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
     '''
     Using espresso.py's construct_namelist function with differently defined "KEYS"
     '''
-    espresso_construct_namelist(parameters, warn, KEYS, **kwargs)
+    return espresso_construct_namelist(parameters, warn, KEYS, **kwargs)
