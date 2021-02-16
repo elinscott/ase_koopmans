@@ -201,15 +201,27 @@ def read_wannier90_out(fd):
     structure = Atoms()
 
     job_done = False
-
+    convergence = False
+    convergence_dis = None
+    
     for line in flines:
         if 'All done' in line:
             job_done = True
         if 'Exiting...' in line and '.nnkp written' in line:
             job_done = True
+        if 'Wannierisation convergence criteria satisfied' in line:
+            convergence = True
+        if 'DISENTANGLE' in line:
+            convergence_dis = False
+        if 'Disentanglement convergence criteria satisfied' in line:
+            convergence_dis = True
 
     calc = Wannier90(atoms=structure)
     calc.results['job done'] = job_done
+    if convergence_dis is not None:
+        calc.results['convergence'] = convergence and convergence_dis
+    else
+        calc.results['convergence'] = convergence
 
     structure.calc = calc
 
