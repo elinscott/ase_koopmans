@@ -203,7 +203,7 @@ def read_wannier90_out(fd):
     job_done = False
     convergence = False
     convergence_dis = None
-    
+
     for line in flines:
         if 'All done' in line:
             job_done = True
