@@ -220,7 +220,7 @@ def read_wannier90_out(fd):
     calc.results['job done'] = job_done
     if convergence_dis is not None:
         calc.results['convergence'] = convergence and convergence_dis
-    else
+    else:
         calc.results['convergence'] = convergence
 
     structure.calc = calc
