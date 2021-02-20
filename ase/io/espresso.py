@@ -1741,6 +1741,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     pwi.append('\n')
 
     # KPOINTS - add a MP grid as required
+    kpts_via_parameters = atoms.calc.parameters.get('kpts', None)
+    if kpts is None and kpts_via_parameters is not None:
+        kpts = kpts_via_parameters
+
     if kspacing is not None:
         kgrid = kspacing_to_grid(atoms, kspacing)
     elif kpts is not None:
