@@ -1163,8 +1163,9 @@ KEYS = Namelist((
         'lelfield', 'nberrycyc', 'lorbm', 'lberry', 'gdir', 'nppstr',
         'lfcpopt', 'monopole']),
     ('SYSTEM', [
-        'ibrav', 'celldm', 'A', 'B', 'C', 'cosAB', 'cosAC', 'cosBC', 'nat',
-        'ntyp', 'nbnd', 'tot_charge', 'tot_magnetization',
+        'ibrav', 'celldm(1)', 'celldm(2)', 'celldm(3)', 'celldm(4)',
+        'celldm(5)', 'celldm(6)', 'A', 'B', 'C', 'cosAB', 'cosAC', 'cosBC',
+        'nat', 'ntyp', 'nbnd', 'tot_charge', 'tot_magnetization',
         'starting_magnetization', 'ecutwfc', 'ecutrho', 'ecutfock', 'nr1',
         'nr2', 'nr3', 'nr1s', 'nr2s', 'nr3s', 'nosym', 'nosym_evc', 'noinv',
         'no_t_rev', 'force_symmorphic', 'use_all_frac', 'occupations',
