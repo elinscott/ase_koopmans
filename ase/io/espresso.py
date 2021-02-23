@@ -295,8 +295,9 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                     in pwo_lines[magmoms_index + 1:
                                  magmoms_index + 1 + len(structure)]]
 
-        # Fermi level / highest occupied level
+        # Fermi level / highest occupied level and lowest unoccupied level
         efermi = None
+        lumo_ene = None
         for fermi_index in indexes[_PW_FERMI]:
             if image_index < fermi_index < next_index:
                 efermi = float(pwo_lines[fermi_index].split()[-2])
@@ -310,6 +311,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             for holf_index in indexes[_PW_HIGHEST_OCCUPIED_LOWEST_FREE]:
                 if image_index < holf_index < next_index:
                     efermi = float(pwo_lines[holf_index].split()[-2])
+                    lumo_ene = float(pwo_lines[holf_index].split()[-1])
 
         # K-points
         ibzkpts = None
@@ -400,6 +402,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                                         forces=forces, stress=stress,
                                         magmoms=magmoms, efermi=efermi,
                                         ibzkpts=ibzkpts)
+        calc.results['homo_ene'] = efermi
+        calc.results['lumo_ene'] = lumo_ene
         calc.results['electrostatic embedding'] = elec_embedding_energy
         calc.results['iterations'] = n_iterations
         calc.results['job done'] = job_done
