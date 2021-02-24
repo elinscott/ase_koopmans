@@ -82,6 +82,8 @@ def write_espresso_kcp_in(fd, atoms, input_data=None, pseudopotentials=None,
 
     # Extra blocks
     extra_lines = []
+    if input_data is None:
+        input_data = atoms.calc.parameters['input_data']
     input_parameters = construct_namelist(input_data, **kwargs)
     for section in input_parameters:
         if section.lower() not in ['ee', 'nksic']:

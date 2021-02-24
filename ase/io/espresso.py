@@ -295,8 +295,9 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                     in pwo_lines[magmoms_index + 1:
                                  magmoms_index + 1 + len(structure)]]
 
-        # Fermi level / highest occupied level
+        # Fermi level / highest occupied level and lowest unoccupied level
         efermi = None
+        lumo_ene = None
         for fermi_index in indexes[_PW_FERMI]:
             if image_index < fermi_index < next_index:
                 efermi = float(pwo_lines[fermi_index].split()[-2])
@@ -310,6 +311,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             for holf_index in indexes[_PW_HIGHEST_OCCUPIED_LOWEST_FREE]:
                 if image_index < holf_index < next_index:
                     efermi = float(pwo_lines[holf_index].split()[-2])
+                    lumo_ene = float(pwo_lines[holf_index].split()[-1])
 
         # K-points
         ibzkpts = None
@@ -400,6 +402,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
                                         forces=forces, stress=stress,
                                         magmoms=magmoms, efermi=efermi,
                                         ibzkpts=ibzkpts)
+        calc.results['homo_ene'] = efermi
+        calc.results['lumo_ene'] = lumo_ene
         calc.results['electrostatic embedding'] = elec_embedding_energy
         calc.results['iterations'] = n_iterations
         calc.results['job done'] = job_done
@@ -1163,8 +1167,9 @@ KEYS = Namelist((
         'lelfield', 'nberrycyc', 'lorbm', 'lberry', 'gdir', 'nppstr',
         'lfcpopt', 'monopole']),
     ('SYSTEM', [
-        'ibrav', 'celldm', 'A', 'B', 'C', 'cosAB', 'cosAC', 'cosBC', 'nat',
-        'ntyp', 'nbnd', 'tot_charge', 'tot_magnetization',
+        'ibrav', 'celldm(1)', 'celldm(2)', 'celldm(3)', 'celldm(4)',
+        'celldm(5)', 'celldm(6)', 'A', 'B', 'C', 'cosAB', 'cosAC', 'cosBC',
+        'nat', 'ntyp', 'nbnd', 'tot_charge', 'tot_magnetization',
         'starting_magnetization', 'ecutwfc', 'ecutrho', 'ecutfock', 'nr1',
         'nr2', 'nr3', 'nr1s', 'nr2s', 'nr3s', 'nosym', 'nosym_evc', 'noinv',
         'no_t_rev', 'force_symmorphic', 'use_all_frac', 'occupations',
@@ -1741,6 +1746,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     pwi.append('\n')
 
     # KPOINTS - add a MP grid as required
+    kpts_via_parameters = atoms.calc.parameters.get('kpts', None)
+    if kpts is None and kpts_via_parameters is not None:
+        kpts = kpts_via_parameters
+
     if kspacing is not None:
         kgrid = kspacing_to_grid(atoms, kspacing)
     elif kpts is not None:
