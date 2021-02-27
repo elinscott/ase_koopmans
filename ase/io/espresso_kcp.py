@@ -264,6 +264,9 @@ def read_espresso_kcp_out(fileobj, index=-1, results_required=True):
 
         if 'wall time' in line:
             time_str = line.split(',')[1].strip().rstrip('wall time')
+            if 'd' in time_str:
+                days = time_str.split('d')[0]
+                time_str = time_str.split('d')[1].strip()
             if 'h' in time_str:
                 hours, rem = time_str.split('h')
             else:
