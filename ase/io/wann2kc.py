@@ -35,50 +35,31 @@ from ase.calculators.wann2kc import Wann2KC
 units = create_units('2006')
 
 KEYS = Namelist((
-    ('control', ['prefix', 'outdir', 'kc_iverbosity ', 'kc_at_ks', 'homo_only ', 'read_unitary_matrix ', 'l_vcut ']),
+    ('control', ['prefix', 'outdir', 'kc_iverbosity', 'kc_at_ks', 'homo_only', 'read_unitary_matrix ', 'l_vcut']),
     ('wannier', ['seedname', 'check_ks', 'num_wann_occ', 'num_wann_emp', 'have_empty', 'has_disentangle'])))
 
 
 def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,
                      kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
 
-    raise NotImplementedError('Yet to complete this function')
+    if 'input_data' in atoms.calc.parameters and input_data is None:
+        input_data = atoms.calc.parameters['input_data']
 
-    write_espresso_in(fd, atoms, input_data, pseudopotentials,
-                      kspacing, kpts, koffset, **kwargs)
-
-    if not fd.closed:
-        fd.close()
-
-    # Extra blocks
-    extra_lines = []
     input_parameters = construct_namelist(input_data, **kwargs)
+    lines = []
     for section in input_parameters:
-        if section.lower() not in []:
-            continue
-        extra_lines.append('&{0}\n'.format(section.upper()))
+        lines.append('&{0}\n'.format(section.upper()))
         for key, value in input_parameters[section].items():
             if value is True:
-                extra_lines.append('   {0:16} = .true.\n'.format(key))
+                lines.append('   {0:16} = .true.\n'.format(key))
             elif value is False:
-                extra_lines.append('   {0:16} = .false.\n'.format(key))
+                lines.append('   {0:16} = .false.\n'.format(key))
             elif value is not None:
                 # repr format to get quotes around strings
-                extra_lines.append('   {0:16} = {1!r:}\n'.format(key, value))
-        extra_lines.append('/\n')  # terminate section
+                lines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        lines.append('/\n')  # terminate section
 
-    # Read in the original file without the NKSIC and EE blocks
-    with open(fd.name, 'r') as fd_read:
-        lines = fd_read.readlines()
-
-    # Find where to insert the extra blocks
-    i_break = lines.index('\n')
-    before = lines[:i_break]
-    after = lines[i_break:]
-
-    # Rewrite the file with the extra blocks
-    with open(fd.name, 'w') as fd_rewrite:
-        fd_rewrite.writelines(before + extra_lines + after)
+    fd.writelines(lines)
 
 
 def read_wann2kc_in(fileobj):
@@ -156,7 +137,7 @@ def read_wann2kc_out(fileobj, index=-1, results_required=True):
     yield structure
 
 
-def construct_namelist(parameters=None, warn=False, **kwargs):
+def construct_namelist(parameters=None, warn=True, **kwargs):
     '''
     Using espresso.py's construct_namelist function with differently defined "KEYS"
     '''

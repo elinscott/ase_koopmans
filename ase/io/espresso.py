@@ -1219,7 +1219,7 @@ SSSP_VALENCE = [
     15.0, 32.0, 19.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0]
 
 
-def construct_namelist(parameters=None, warn=False, KEYS=KEYS, **kwargs):
+def construct_namelist(parameters=None, warn=False, local_keys=KEYS, **kwargs):
     """
     Construct an ordered Namelist containing all the parameters given (as
     a dictionary or kwargs). Keys will be inserted into their appropriate
@@ -1274,9 +1274,9 @@ def construct_namelist(parameters=None, warn=False, KEYS=KEYS, **kwargs):
     input_namelist = Namelist()
 
     # Collect
-    for section in KEYS:
+    for section in local_keys:
         sec_list = Namelist()
-        for key in KEYS[section]:
+        for key in local_keys[section]:
             # Check all three separately and pop them all so that
             # we can check for missing values later
             if key in parameters.get(section, {}):
@@ -1302,7 +1302,7 @@ def construct_namelist(parameters=None, warn=False, KEYS=KEYS, **kwargs):
     unused_keys = list(kwargs)
     # pass anything else already in a section
     for key, value in parameters.items():
-        if key in KEYS and isinstance(value, dict):
+        if key in local_keys and isinstance(value, dict):
             input_namelist[key].update(value)
         elif isinstance(value, dict):
             unused_keys.extend(list(value))
