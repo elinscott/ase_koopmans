@@ -1,4 +1,5 @@
 import re
+import math
 import warnings
 from typing import Dict
 
@@ -190,6 +191,7 @@ class BandPath:
     BandPath(path='GXMGRX,MR', cell=[3x3], special_points={GMRX}, kpts=[40x3])
 
     """
+
     def __init__(self, cell, kpts=None,
                  special_points=None, path=None):
         if kpts is None:
@@ -491,7 +493,8 @@ def paths2kpts(paths, cell, npoints=None, density=None):
         if abs(diff) < 1e-6:
             n = 0
         else:
-            n = max(2, int(round(L * (npoints - len(x)) / diff)))
+            # N.B. math.floor(x + 0.5) is equivalent to round() but always rounding 0.5 up
+            n = max(2, int(math.floor(L * (npoints - len(x)) / diff + 0.5)))
 
         for t in np.linspace(0, 1, n)[:-1]:
             kpts.append(P + t * d)
