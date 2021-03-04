@@ -9,7 +9,10 @@ Run kc_ham.x jobs.
 
 
 import warnings
+import numpy as np
 from ase import io
+from ase.dft.kpoints import BandPath
+from ase.spectrum.band_structure import BandStructure
 from ase.calculators.calculator import FileIOCalculator
 
 
@@ -83,3 +86,7 @@ class KoopmansHam(FileIOCalculator):
         output = io.read(self.label + '.kho')
         self.calc = output.calc
         self.results = output.calc.results
+
+        # Construct bandstructure here where we have access to the band path
+        energies_np = np.array([self.results['energies']])
+        self.results['band structure'] = BandStructure(self.parameters['kpts'], energies_np)

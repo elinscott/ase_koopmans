@@ -1746,6 +1746,31 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     pwi.append('\n')
 
     # KPOINTS - add a MP grid as required
+    pwi += construct_kpoints_card(atoms, kpts, kspacing, koffset)
+
+    # CELL block, if required
+    if input_parameters['SYSTEM']['ibrav'] == 0:
+        pwi.append('CELL_PARAMETERS angstrom\n')
+        pwi.append('{cell[0][0]:.14f} {cell[0][1]:.14f} {cell[0][2]:.14f}\n'
+                   '{cell[1][0]:.14f} {cell[1][1]:.14f} {cell[1][2]:.14f}\n'
+                   '{cell[2][0]:.14f} {cell[2][1]:.14f} {cell[2][2]:.14f}\n'
+                   ''.format(cell=atoms.cell))
+        pwi.append('\n')
+
+    # Positions - already constructed, but must appear after namelist
+    if crystal_coordinates:
+        pwi.append('ATOMIC_POSITIONS crystal\n')
+    else:
+        pwi.append('ATOMIC_POSITIONS angstrom\n')
+    pwi.extend(atomic_positions_str)
+    pwi.append('\n')
+
+    # DONE!
+    fd.write(''.join(pwi))
+
+
+def construct_kpoints_card(atoms, kpts=None, kspacing=None, koffset=(0, 0, 0)):
+    out = []
     kpts_via_parameters = atoms.calc.parameters.get('kpts', None)
     if kpts is None and kpts_via_parameters is not None:
         kpts = kpts_via_parameters
@@ -1770,41 +1795,22 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
 
     # BandPath object or bandpath-as-dictionary:
     if isinstance(kgrid, dict) or hasattr(kgrid, 'kpts'):
-        pwi.append('K_POINTS crystal_b\n')
+        out.append('K_POINTS crystal_b\n')
         assert hasattr(kgrid, 'path') or 'path' in kgrid
         kgrid = kpts2ndarray(kgrid, atoms=atoms)
-        pwi.append('%s\n' % len(kgrid))
+        out.append('%s\n' % len(kgrid))
         for k in kgrid:
-            pwi.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} 0\n'.format(k=k))
-        pwi.append('\n')
+            out.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} 0\n'.format(k=k))
+        out.append('\n')
     elif isinstance(kgrid, str) and (kgrid == "gamma"):
-        pwi.append('K_POINTS gamma\n')
-        pwi.append('\n')
+        out.append('K_POINTS gamma\n')
+        out.append('\n')
     else:
-        pwi.append('K_POINTS automatic\n')
-        pwi.append('{0[0]} {0[1]} {0[2]}  {1[0]:d} {1[1]:d} {1[2]:d}\n'
+        out.append('K_POINTS automatic\n')
+        out.append('{0[0]} {0[1]} {0[2]}  {1[0]:d} {1[1]:d} {1[2]:d}\n'
                    ''.format(kgrid, koffset))
-        pwi.append('\n')
-
-    # CELL block, if required
-    if input_parameters['SYSTEM']['ibrav'] == 0:
-        pwi.append('CELL_PARAMETERS angstrom\n')
-        pwi.append('{cell[0][0]:.14f} {cell[0][1]:.14f} {cell[0][2]:.14f}\n'
-                   '{cell[1][0]:.14f} {cell[1][1]:.14f} {cell[1][2]:.14f}\n'
-                   '{cell[2][0]:.14f} {cell[2][1]:.14f} {cell[2][2]:.14f}\n'
-                   ''.format(cell=atoms.cell))
-        pwi.append('\n')
-
-    # Positions - already constructed, but must appear after namelist
-    if crystal_coordinates:
-        pwi.append('ATOMIC_POSITIONS crystal\n')
-    else:
-        pwi.append('ATOMIC_POSITIONS angstrom\n')
-    pwi.extend(atomic_positions_str)
-    pwi.append('\n')
-
-    # DONE!
-    fd.write(''.join(pwi))
+        out.append('\n')
+    return out
 
 
 def get_constraint(constraint_idx):

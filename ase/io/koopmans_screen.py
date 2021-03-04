@@ -39,46 +39,27 @@ KEYS = copy.deepcopy(W2KKEYS)
 KEYS['SCREEN'] = ['tr2_ph', 'nmix_ph', 'niter_ph', 'lrpa', 'mp1', 'mp2', 'mp3']
 
 
-def write_koopmans_screen_in(fd, atoms, input_data=None, pseudopotentials=None,
-                             kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
+def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
 
-    raise NotImplementedError('Yet to complete this function')
+    if 'input_data' in atoms.calc.parameters and input_data is None:
+        input_data = atoms.calc.parameters['input_data']
 
-    write_espresso_in(fd, atoms, input_data, pseudopotentials,
-                      kspacing, kpts, koffset, **kwargs)
-
-    if not fd.closed:
-        fd.close()
-
-    # Extra blocks
-    extra_lines = []
     input_parameters = construct_namelist(input_data, **kwargs)
+    lines = []
     for section in input_parameters:
-        if section.lower() not in []:
-            continue
-        extra_lines.append('&{0}\n'.format(section.upper()))
+        assert section in KEYS.keys()
+        lines.append('&{0}\n'.format(section.upper()))
         for key, value in input_parameters[section].items():
             if value is True:
-                extra_lines.append('   {0:16} = .true.\n'.format(key))
+                lines.append('   {0:16} = .true.\n'.format(key))
             elif value is False:
-                extra_lines.append('   {0:16} = .false.\n'.format(key))
+                lines.append('   {0:16} = .false.\n'.format(key))
             elif value is not None:
                 # repr format to get quotes around strings
-                extra_lines.append('   {0:16} = {1!r:}\n'.format(key, value))
-        extra_lines.append('/\n')  # terminate section
+                lines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        lines.append('/\n')  # terminate section
 
-    # Read in the original file without the NKSIC and EE blocks
-    with open(fd.name, 'r') as fd_read:
-        lines = fd_read.readlines()
-
-    # Find where to insert the extra blocks
-    i_break = lines.index('\n')
-    before = lines[:i_break]
-    after = lines[i_break:]
-
-    # Rewrite the file with the extra blocks
-    with open(fd.name, 'w') as fd_rewrite:
-        fd_rewrite.writelines(before + extra_lines + after)
+    fd.writelines(lines)
 
 
 def read_koopmans_screen_in(fileobj):
@@ -98,12 +79,8 @@ def read_koopmans_screen_in(fileobj):
     return atoms
 
 
-def read_koopmans_screen_out(fileobj, index=-1, results_required=True):
+def read_koopmans_screen_out(fileobj):
     """Reads Koopmans Screen output files.
-
-    The atomistic configurations as well as results (energy, force, stress,
-    magnetic moments) of the calculation are read for all configurations
-    within the output file.
 
     Will probably raise errors for broken or incomplete files.
 
@@ -111,14 +88,6 @@ def read_koopmans_screen_out(fileobj, index=-1, results_required=True):
     ----------
     fileobj : file|str
         A file like object or filename
-    index : slice
-        The index of configurations to extract.
-    results_required : bool
-        If True, atomistic configurations that do not have any
-        associated results will not be included. This prevents double
-        printed configurations and incomplete calculations from being
-        returned as the final configuration with no results data.
-
     Yields
     ------
     structure : Atoms
@@ -128,7 +97,6 @@ def read_koopmans_screen_out(fileobj, index=-1, results_required=True):
 
     """
 
-    raise NotImplementedError('Yet to write this function')
     if isinstance(fileobj, basestring):
         fileobj = open(fileobj, 'rU')
 
@@ -139,18 +107,22 @@ def read_koopmans_screen_out(fileobj, index=-1, results_required=True):
     structure = Atoms()
 
     # Extract calculation results
-    energy = None
     job_done = False
+    alphas = []
+    orbital_data = {'self-Hartree': []}
     for i_line, line in enumerate(flines):
-        continue
+        if 'relaxed' in line:
+            splitline = line.split()
+            alphas.append(float(splitline[-5]))
+            orbital_data['self-Hartree'].append(float(splitline[-1]))
+        if 'JOB DONE' in line:
+            job_done = True
 
     # Put everything together
-    calc = SinglePointDFTCalculator(structure, energy=energy)  # ,
-    #                                 forces=forces, stress=stress,
-    #                                 magmoms=magmoms, efermi=efermi,
-    #                                 ibzkpts=ibzkpts)
-    calc.results['energy'] = energy
+    calc = SinglePointDFTCalculator(structure)
     calc.results['job_done'] = job_done
+    calc.results['alphas'] = alphas
+    calc.results['orbital_data'] = orbital_data
     structure.calc = calc
 
     yield structure

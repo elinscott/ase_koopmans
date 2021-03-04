@@ -17,16 +17,12 @@ import copy
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.calculators.singlepoint import (SinglePointDFTCalculator,
-                                         SinglePointKPoint)
-# from ase.calculators.calculator import kpts2ndarray, kpts2sizeandoffsets
-# from ase.dft.kpoints import kpoint_convert
-# from ase.constraints import FixAtoms, FixCartesian
-# from ase.data import chemical_symbols, atomic_numbers
-from ase.units import create_units
+from ase.calculators.singlepoint import SinglePointDFTCalculator
+from ase.dft.kpoints import BandPath
+from ase.spectrum.band_structure import BandStructure
 from ase.utils import basestring
-
-from ase.io.espresso import read_espresso_in, write_espresso_in, Namelist
+from ase.units import create_units
+from ase.io.espresso import construct_kpoints_card
 from ase.io.espresso import construct_namelist as espresso_construct_namelist
 from ase.io.wann2kc import KEYS as W2KKEYS
 
@@ -42,43 +38,28 @@ KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'lrpa'
 def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
                           kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
 
-    raise NotImplementedError('Yet to complete this function')
+    if 'input_data' in atoms.calc.parameters and input_data is None:
+        input_data = atoms.calc.parameters['input_data']
 
-    write_espresso_in(fd, atoms, input_data, pseudopotentials,
-                      kspacing, kpts, koffset, **kwargs)
-
-    if not fd.closed:
-        fd.close()
-
-    # Extra blocks
-    extra_lines = []
     input_parameters = construct_namelist(input_data, **kwargs)
+    lines = []
     for section in input_parameters:
-        if section.lower() not in []:
-            continue
-        extra_lines.append('&{0}\n'.format(section.upper()))
+        assert section in KEYS.keys()
+        lines.append('&{0}\n'.format(section.upper()))
         for key, value in input_parameters[section].items():
             if value is True:
-                extra_lines.append('   {0:16} = .true.\n'.format(key))
+                lines.append('   {0:16} = .true.\n'.format(key))
             elif value is False:
-                extra_lines.append('   {0:16} = .false.\n'.format(key))
+                lines.append('   {0:16} = .false.\n'.format(key))
             elif value is not None:
                 # repr format to get quotes around strings
-                extra_lines.append('   {0:16} = {1!r:}\n'.format(key, value))
-        extra_lines.append('/\n')  # terminate section
+                lines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        lines.append('/\n')  # terminate section
 
-    # Read in the original file without the NKSIC and EE blocks
-    with open(fd.name, 'r') as fd_read:
-        lines = fd_read.readlines()
+    # kpoints block
+    lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
 
-    # Find where to insert the extra blocks
-    i_break = lines.index('\n')
-    before = lines[:i_break]
-    after = lines[i_break:]
-
-    # Rewrite the file with the extra blocks
-    with open(fd.name, 'w') as fd_rewrite:
-        fd_rewrite.writelines(before + extra_lines + after)
+    fd.writelines(lines)
 
 
 def read_koopmans_ham_in(fileobj):
@@ -98,12 +79,8 @@ def read_koopmans_ham_in(fileobj):
     return atoms
 
 
-def read_koopmans_ham_out(fileobj, index=-1, results_required=True):
+def read_koopmans_ham_out(fileobj):
     """Reads Koopmans Ham output files.
-
-    The atomistic configurations as well as results (energy, force, stress,
-    magnetic moments) of the calculation are read for all configurations
-    within the output file.
 
     Will probably raise errors for broken or incomplete files.
 
@@ -111,24 +88,14 @@ def read_koopmans_ham_out(fileobj, index=-1, results_required=True):
     ----------
     fileobj : file|str
         A file like object or filename
-    index : slice
-        The index of configurations to extract.
-    results_required : bool
-        If True, atomistic configurations that do not have any
-        associated results will not be included. This prevents double
-        printed configurations and incomplete calculations from being
-        returned as the final configuration with no results data.
 
     Yields
     ------
     structure : Atoms
-        The next structure from the index slice. The Atoms has a
-        SinglePointCalculator attached with any results parsed from
-        the file.
+        The next structure. The Atoms has a SinglePointCalculator attached with any results parsed from the file.
 
     """
 
-    raise NotImplementedError('Yet to write this function')
     if isinstance(fileobj, basestring):
         fileobj = open(fileobj, 'rU')
 
@@ -139,18 +106,21 @@ def read_koopmans_ham_out(fileobj, index=-1, results_required=True):
     structure = Atoms()
 
     # Extract calculation results
-    energy = None
     job_done = False
+    kpts = []
+    energies = []
     for i_line, line in enumerate(flines):
-        continue
+        if 'KC interpolated eigenvalues at k=' in line:
+            kpts.append([float(x) for x in line.split()[-3:]])
+            energies.append([float(x) for x in flines[i_line + 2].split()])
+
+        if 'JOB DONE' in line:
+            job_done = True
 
     # Put everything together
-    calc = SinglePointDFTCalculator(structure, energy=energy)  # ,
-    #                                 forces=forces, stress=stress,
-    #                                 magmoms=magmoms, efermi=efermi,
-    #                                 ibzkpts=ibzkpts)
-    calc.results['energy'] = energy
+    calc = SinglePointDFTCalculator(structure)
     calc.results['job_done'] = job_done
+    calc.results['energies'] = energies
     structure.calc = calc
 
     yield structure

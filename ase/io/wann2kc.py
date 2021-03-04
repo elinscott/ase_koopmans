@@ -35,12 +35,11 @@ from ase.calculators.wann2kc import Wann2KC
 units = create_units('2006')
 
 KEYS = Namelist((
-    ('control', ['prefix', 'outdir', 'kc_iverbosity', 'kc_at_ks', 'homo_only', 'read_unitary_matrix ', 'l_vcut']),
+    ('control', ['prefix', 'outdir', 'kc_iverbosity', 'kc_at_ks', 'homo_only', 'read_unitary_matrix', 'l_vcut']),
     ('wannier', ['seedname', 'check_ks', 'num_wann_occ', 'num_wann_emp', 'have_empty', 'has_disentangle'])))
 
 
-def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,
-                     kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
+def write_wann2kc_in(fd, atoms, input_data=None, **kwargs):
 
     if 'input_data' in atoms.calc.parameters and input_data is None:
         input_data = atoms.calc.parameters['input_data']
@@ -48,6 +47,7 @@ def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,
     input_parameters = construct_namelist(input_data, **kwargs)
     lines = []
     for section in input_parameters:
+        assert section in KEYS.keys()
         lines.append('&{0}\n'.format(section.upper()))
         for key, value in input_parameters[section].items():
             if value is True:
@@ -79,26 +79,13 @@ def read_wann2kc_in(fileobj):
     return atoms
 
 
-def read_wann2kc_out(fileobj, index=-1, results_required=True):
+def read_wann2kc_out(fileobj):
     """Reads Wannier to KC output files.
-
-    The atomistic configurations as well as results (energy, force, stress,
-    magnetic moments) of the calculation are read for all configurations
-    within the output file.
-
-    Will probably raise errors for broken or incomplete files.
 
     Parameters
     ----------
     fileobj : file|str
         A file like object or filename
-    index : slice
-        The index of configurations to extract.
-    results_required : bool
-        If True, atomistic configurations that do not have any
-        associated results will not be included. This prevents double
-        printed configurations and incomplete calculations from being
-        returned as the final configuration with no results data.
 
     Yields
     ------
@@ -109,7 +96,6 @@ def read_wann2kc_out(fileobj, index=-1, results_required=True):
 
     """
 
-    raise NotImplementedError('Yet to write this function')
     if isinstance(fileobj, basestring):
         fileobj = open(fileobj, 'rU')
 
@@ -120,17 +106,13 @@ def read_wann2kc_out(fileobj, index=-1, results_required=True):
     structure = Atoms()
 
     # Extract calculation results
-    energy = None
     job_done = False
     for i_line, line in enumerate(flines):
-        continue
+        if 'JOB DONE' in line:
+            job_done = True
 
-    # Put everything together
-    calc = SinglePointDFTCalculator(structure, energy=energy)  # ,
-    #                                 forces=forces, stress=stress,
-    #                                 magmoms=magmoms, efermi=efermi,
-    #                                 ibzkpts=ibzkpts)
-    calc.results['energy'] = energy
+    # Return an empty calculator object with ths solitary result 'job done'
+    calc = SinglePointDFTCalculator(structure)
     calc.results['job_done'] = job_done
     structure.calc = calc
 
