@@ -39,7 +39,8 @@ KEYS = Namelist((
     ('wannier', ['seedname', 'check_ks', 'num_wann_occ', 'num_wann_emp', 'have_empty', 'has_disentangle'])))
 
 
-def write_wann2kc_in(fd, atoms, input_data=None, **kwargs):
+def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,
+                     kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
 
     if 'input_data' in atoms.calc.parameters and input_data is None:
         input_data = atoms.calc.parameters['input_data']
