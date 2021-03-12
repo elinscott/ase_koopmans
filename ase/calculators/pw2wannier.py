@@ -13,7 +13,7 @@ class PW2Wannier(FileIOCalculator):
     """
     """
     implemented_properties = []
-    command = 'pw2wannier90.x PREFIX.p2wi > PREFIX.p2wo'
+    command = 'pw2wannier90.x -in PREFIX.p2wi > PREFIX.p2wo'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='pw2wann', atoms=None, **kwargs):
