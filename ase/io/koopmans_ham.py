@@ -22,7 +22,7 @@ from ase.dft.kpoints import BandPath
 from ase.spectrum.band_structure import BandStructure
 from ase.utils import basestring
 from ase.units import create_units
-from ase.io.espresso import construct_kpoints_card
+from ase.io.espresso import construct_kpoints_card, read_fortran_namelist
 from ase.io.espresso import construct_namelist as espresso_construct_namelist
 from ase.io.wann2kc import KEYS as W2KKEYS
 
@@ -63,20 +63,9 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
 
 
 def read_koopmans_ham_in(fileobj):
-    atoms = read_espresso_in(fileobj)
-
-    # Generating KoopmansHam calculator from Espresso calculator
-    data = atoms.calc.parameters['input_data']
-    pseudos = atoms.calc.parameters['pseudopotentials']
-    calc = KoopmansHam(input_data=data, pseudopotentials=pseudos)
-
-    # Overwriting the Espresso calculator with the new KoopmansHam calculator
-    atoms.calc = calc
-    atoms.calc.atoms = atoms
-
-    raise NotImplementedError('Yet to test this function')
-
-    return atoms
+    data, _ = read_fortran_namelist(fileobj)
+    calc = KoopmansHam(input_data=data)
+    return Atoms(calculator=calc)
 
 
 def read_koopmans_ham_out(fileobj):

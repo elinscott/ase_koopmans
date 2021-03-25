@@ -86,7 +86,12 @@ class KoopmansHam(FileIOCalculator):
         output = io.read(self.label + '.kho')
         self.calc = output.calc
         self.results = output.calc.results
+        # Add the bandstructure to the results
+        self.band_structure()
 
-        # Construct bandstructure here where we have access to the band path
+    def band_structure(self):
+        # Construct bandstructure here (rather than within self.calculate()) because we have access to the band path
+        assert 'energies' in self.results, 'Please call {0}.calculate() prior to calling {0}.band_structure'.format(self.__class__.__name__)
         energies_np = np.array([self.results['energies']])
         self.results['band structure'] = BandStructure(self.parameters['kpts'], energies_np)
+        return self.results['band structure']

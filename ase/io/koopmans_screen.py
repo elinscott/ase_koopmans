@@ -26,7 +26,7 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 from ase.units import create_units
 from ase.utils import basestring
 
-from ase.io.espresso import read_espresso_in, write_espresso_in, Namelist
+from ase.io.espresso import read_espresso_in, write_espresso_in, Namelist, read_fortran_namelist
 from ase.io.espresso import construct_namelist as espresso_construct_namelist
 from ase.io.wann2kc import KEYS as W2KKEYS
 
@@ -63,20 +63,9 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
 
 
 def read_koopmans_screen_in(fileobj):
-    atoms = read_espresso_in(fileobj)
-
-    # Generating KoopmansScreen calculator from Espresso calculator
-    data = atoms.calc.parameters['input_data']
-    pseudos = atoms.calc.parameters['pseudopotentials']
-    calc = KoopmansScreen(input_data=data, pseudopotentials=pseudos)
-
-    # Overwriting the Espresso calculator with the new KoopmansScreen calculator
-    atoms.calc = calc
-    atoms.calc.atoms = atoms
-
-    raise NotImplementedError('Yet to test this function')
-
-    return atoms
+    data, _ = read_fortran_namelist(fileobj) 
+    calc = KoopmansScreen(input_data=data)
+    return Atoms(calculator=calc)
 
 
 def read_koopmans_screen_out(fileobj):

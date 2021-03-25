@@ -26,7 +26,7 @@ from ase.calculators.singlepoint import (SinglePointDFTCalculator,
 from ase.units import create_units
 from ase.utils import basestring
 
-from ase.io.espresso import Namelist, read_espresso_in, write_espresso_in
+from ase.io.espresso import Namelist, read_espresso_in, write_espresso_in, read_fortran_namelist
 from ase.io.espresso import construct_namelist as espresso_construct_namelist
 
 from ase.calculators.wann2kc import Wann2KC
@@ -64,20 +64,9 @@ def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,
 
 
 def read_wann2kc_in(fileobj):
-    atoms = read_espresso_in(fileobj)
-
-    # Generating Wann2KC calculator from Espresso calculator
-    data = atoms.calc.parameters['input_data']
-    pseudos = atoms.calc.parameters['pseudopotentials']
-    calc = Wann2KC(input_data=data, pseudopotentials=pseudos)
-
-    # Overwriting the Espresso calculator with the new Wann2KC calculator
-    atoms.calc = calc
-    atoms.calc.atoms = atoms
-
-    raise NotImplementedError('Yet to test this function')
-
-    return atoms
+    data, _ = read_fortran_namelist(fileobj)
+    calc = Wann2KC(input_data=data)
+    return Atoms(calculator=calc)
 
 
 def read_wann2kc_out(fileobj):
