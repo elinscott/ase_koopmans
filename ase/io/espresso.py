@@ -683,7 +683,7 @@ def ibrav_to_cell(system):
     elif system['ibrav'] == 11:
         cell = np.array([[1.0 / 2.0, b_over_a / 2.0, c_over_a / 2.0],
                          [-1.0 / 2.0, b_over_a / 2.0, c_over_a / 2.0],
-                         [-1.0, 2.0, -b_over_a / 2.0, c_over_a / 2.0]]) * alat
+                         [-1.0 / 2.0, -b_over_a / 2.0, c_over_a / 2.0]]) * alat
     elif system['ibrav'] == 12:
         sinab = (1.0 - cosab**2)**0.5
         cell = np.array([[1.0, 0.0, 0.0],
