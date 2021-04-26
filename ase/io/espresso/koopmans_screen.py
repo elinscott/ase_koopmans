@@ -4,12 +4,13 @@ Read structures and results from koopmans_screen.x output files. Read
 structures from koopmans_screen.x input files.
 """
 
+import copy
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-import ase.io.espresso._utils as utils
-from ase.io.espresso._pw import read_espresso_in, write_espresso_in
-from ase.io.espresso._wann2kc import KEYS as W2KKEYS
-from ase.calculators.koopmans_screen import KoopmansScreen
+from .utils import read_fortran_namelist, generic_construct_namelist
+from .pw import read_espresso_in, write_espresso_in
+from .wann2kc import KEYS as W2KKEYS
+from ase.calculators.espresso import KoopmansScreen
 
 KEYS = copy.deepcopy(W2KKEYS)
 KEYS['SCREEN'] = ['tr2_ph', 'nmix_ph', 'niter_ph', 'lrpa', 'mp1', 'mp2', 'mp3', 'eps_inf', 'i_orb']
@@ -39,7 +40,7 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
 
 
 def read_koopmans_screen_in(fileobj):
-    data, _ = utils.read_fortran_namelist(fileobj)
+    data, _ = read_fortran_namelist(fileobj)
     calc = KoopmansScreen(input_data=data)
     return Atoms(calculator=calc)
 
@@ -94,4 +95,4 @@ def read_koopmans_screen_out(fileobj):
 
 
 def construct_namelist(parameters=None, warn=False, **kwargs):
-    return utils.construct_namelist(parameters, warn, KEYS, **kwargs)
+    return generic_construct_namelist(parameters, warn, KEYS, **kwargs)

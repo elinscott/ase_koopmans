@@ -4,15 +4,16 @@ Read structures and results from koopmans_ham.x output files. Read
 structures from koopmans_ham.x input files.
 """
 
+import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
 from ase.dft.kpoints import BandPath
 from ase.spectrum.band_structure import BandStructure
-import ase.io.espresso._utils as utils
-from ase.io.wann2kc import KEYS as W2KKEYS
+from .utils import construct_kpoints_card, generic_construct_namelist
+from .wann2kc import KEYS as W2KKEYS
 
-from ase.calculators.koopmans_ham import KoopmansHam
+from ase.calculators.espresso import KoopmansHam
 
 KEYS = copy.deepcopy(W2KKEYS)
 KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'lrpa', 'mp1', 'mp2', 'mp3']

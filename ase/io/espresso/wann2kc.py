@@ -8,8 +8,8 @@ structures from wannier_to_kc.x input files.
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from ase.io.espresso._utils import units, Namelist, read_fortran_namelist, generic_construct_namelist
-from ase.io.espresso._pw import read_espresso_in, write_espresso_in
+from .utils import units, Namelist, read_fortran_namelist, generic_construct_namelist
+from .pw import read_espresso_in, write_espresso_in
 from ase.calculators.wann2kc import Wann2KC
 
 

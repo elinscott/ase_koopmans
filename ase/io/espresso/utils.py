@@ -4,6 +4,8 @@ Written by Edward Linscott 2020-21
 
 """
 
+import numpy as np
+import operator as op
 from collections import OrderedDict
 from ase.units import create_units
 from ase.calculators.calculator import kpts2ndarray, kpts2sizeandoffsets
@@ -669,7 +671,7 @@ def infix_float(text):
 ###
 
 
-def construct_namelist(parameters=None, warn=False, local_keys=KEYS, **kwargs):
+def generic_construct_namelist(parameters=None, warn=False, local_keys=None, **kwargs):
     """
     Construct an ordered Namelist containing all the parameters given (as
     a dictionary or kwargs). Keys will be inserted into their appropriate

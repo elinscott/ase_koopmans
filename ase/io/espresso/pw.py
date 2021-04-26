@@ -11,13 +11,15 @@ Units are converted using CODATA 2006, as used internally by Quantum
 ESPRESSO.
 """
 
+import os
 import numpy as np
+from collections import OrderedDict
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator, SinglePointKPoint
 from ase.calculators.espresso import Espresso
-from ase.io.espresso._utils as utils
 from ase.dft.kpoints import kpoint_convert
 from ase.data import atomic_numbers
+from .utils import Namelist, construct_kpoints_card, generic_construct_namelist, get_atomic_positions, get_cell_parameters, get_constraint, get_pseudopotentials, grep_valence, label_to_symbol, read_fortran_namelist
 
 # Section identifiers
 _PW_START = 'Program PWSCF'
@@ -686,7 +688,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         pseudo_dirs.append(input_parameters['control']['pseudo_dir'])
     if 'ESPRESSO_PSEUDO' in os.environ:
         pseudo_dirs.append(os.environ['ESPRESSO_PSEUDO'])
-    pseudo_dirs.append(path.expanduser('~/espresso/pseudo/'))
+    pseudo_dirs.append(os.path.expanduser('~/espresso/pseudo/'))
 
     # Species info holds the information on the pseudopotential and
     # associated for each element
@@ -703,8 +705,8 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     for label, specie in set(zip(labels, species)):
         pseudo = pseudopotentials.get(label, '{}_dummy.UPF'.format(specie))
         for pseudo_dir in pseudo_dirs:
-            if path.exists(path.join(pseudo_dir, pseudo)):
-                valence = grep_valence(path.join(pseudo_dir, pseudo))
+            if os.path.exists(os.path.join(pseudo_dir, pseudo)):
+                valence = grep_valence(os.path.join(pseudo_dir, pseudo))
                 break
         else:  # not found in a file
             valence = SSSP_VALENCE[atomic_numbers[specie]]

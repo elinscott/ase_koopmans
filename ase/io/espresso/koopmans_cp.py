@@ -4,13 +4,14 @@ Read structures and results from kcp.x output files. Read
 structures from kcp.x input files.
 """
 
+import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-import ase.io.espresso._utils as utils
-from ase.io.espresso._pw import read_espresso_in, write_espresso_in
-from ase.io.espresso._pw import KEYS as PW_KEYS
-from ase.calculators.koopmans_cp import Espresso_kcp
+from .utils import generic_construct_namelist
+from .pw import read_espresso_in, write_espresso_in
+from .pw import KEYS as PW_KEYS
+from ase.calculators.espresso import Espresso_kcp
 
 
 KEYS = copy.deepcopy(PW_KEYS)
@@ -274,4 +275,4 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
 
 
 def construct_namelist(parameters=None, warn=False, **kwargs):
-    return espresso_construct_namelist(parameters, warn, KEYS, **kwargs)
+    return generic_construct_namelist(parameters, warn, KEYS, **kwargs)
