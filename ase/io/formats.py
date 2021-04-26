@@ -277,7 +277,7 @@ F('espresso-out', 'Quantum espresso out file', '+F',
 F('espresso-kcp-in', 'Quantum espresso (kcp.x) in file', '1F',
   module='espresso_kcp', ext='cpi')
 F('espresso-kcp-out', 'Quantum espresso (kcp.x) out file', '+F',
-  module='espresso_kcp', ext='cpo')
+  module='espresso', ext='cpo')
 F('etsf', 'ETSF format', '1S'),
 F('exciting', 'exciting input', '1S', glob='input.xml'),
 F('extxyz', 'Extended XYZ file', '+F'),
@@ -311,10 +311,10 @@ F('html', 'X3DOM HTML', '1F', module='x3d'),
 F('iwm', '?', '1F', glob='atoms.dat'),
 F('json', 'ASE JSON database file', '+F', module='db'),
 F('jsv', 'JSV file format', '1F'),
-F('koopmans-ham-in', 'Koopmans ham input file', '1F', module='koopmans_ham', ext='khi'),
-F('koopmans-ham-out', 'Koopmans ham output file', '1F', module='koopmans_ham', ext='kho'),
-F('koopmans-screen-in', 'Koopmans screening input file', '1F', module='koopmans_screen', ext='ksi'),
-F('koopmans-screen-out', 'Koopmans screening output file', '1F', module='koopmans_screen', ext='kso'),
+F('koopmans-ham-in', 'Koopmans ham input file', '1F', module='espresso', ext='khi'),
+F('koopmans-ham-out', 'Koopmans ham output file', '1F', module='espresso', ext='kho'),
+F('koopmans-screen-in', 'Koopmans screening input file', '1F', module='espresso', ext='ksi'),
+F('koopmans-screen-out', 'Koopmans screening output file', '1F', module='espresso', ext='kso'),
 F('lammps-dump-text', 'LAMMPS text dump file', '+F',
   module='lammpsrun', magic=b'*\nITEM: TIMESTEP\n'),
 F('lammps-dump-binary', 'LAMMPS binary dump file', '+B',
@@ -348,9 +348,9 @@ F('pov', 'Persistance of Vision', '1S'),
 # extension
 F('prismatic', 'prismatic and computem XYZ-file', '1F')
 F('pw2wannier-in', 'pw2wannier input file', '1F',
-  module='pw2wannier', ext=['pw2wan', 'p2wi'])
+  module='espresso', ext=['pw2wan', 'p2wi'])
 F('pw2wannier-out', 'pw2wannier output file', '1F',
-  module='pw2wannier', ext='p2wo')
+  module='espresso', ext='p2wo')
 F('py', 'Python file', '+F'),
 F('sys', 'qball sys file', '1F'),
 F('qbox', 'QBOX output file', '+F',

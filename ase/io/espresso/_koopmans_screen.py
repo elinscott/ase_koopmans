@@ -2,38 +2,14 @@
 
 Read structures and results from koopmans_screen.x output files. Read
 structures from koopmans_screen.x input files.
-
-Units are converted using CODATA 2006, as used internally by Quantum
-ESPRESSO.
 """
 
-import os
-import operator as op
-import warnings
-from collections import OrderedDict
-from os import path
-import copy
-
-import numpy as np
-
-from ase.atoms import Atoms
-from ase.calculators.singlepoint import (SinglePointDFTCalculator,
-                                         SinglePointKPoint)
-# from ase.calculators.calculator import kpts2ndarray, kpts2sizeandoffsets
-# from ase.dft.kpoints import kpoint_convert
-# from ase.constraints import FixAtoms, FixCartesian
-# from ase.data import chemical_symbols, atomic_numbers
-from ase.units import create_units
+from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-
-from ase.io.espresso import read_espresso_in, write_espresso_in, Namelist, read_fortran_namelist
-from ase.io.espresso import construct_namelist as espresso_construct_namelist
-from ase.io.wann2kc import KEYS as W2KKEYS
-
+import ase.io.espresso._utils as utils
+from ase.io.espresso._pw import read_espresso_in, write_espresso_in
+from ase.io.espresso._wann2kc import KEYS as W2KKEYS
 from ase.calculators.koopmans_screen import KoopmansScreen
-
-# Quantum ESPRESSO uses CODATA 2006 internally
-units = create_units('2006')
 
 KEYS = copy.deepcopy(W2KKEYS)
 KEYS['SCREEN'] = ['tr2_ph', 'nmix_ph', 'niter_ph', 'lrpa', 'mp1', 'mp2', 'mp3', 'eps_inf', 'i_orb']
@@ -63,7 +39,7 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
 
 
 def read_koopmans_screen_in(fileobj):
-    data, _ = read_fortran_namelist(fileobj) 
+    data, _ = utils.read_fortran_namelist(fileobj)
     calc = KoopmansScreen(input_data=data)
     return Atoms(calculator=calc)
 
@@ -118,7 +94,4 @@ def read_koopmans_screen_out(fileobj):
 
 
 def construct_namelist(parameters=None, warn=False, **kwargs):
-    '''
-    Using espresso.py's construct_namelist function with differently defined "KEYS"
-    '''
-    return espresso_construct_namelist(parameters, warn, KEYS, **kwargs)
+    return utils.construct_namelist(parameters, warn, KEYS, **kwargs)

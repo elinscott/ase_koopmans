@@ -5,7 +5,7 @@
 from ase.utils import basestring
 from ase.atoms import Atoms
 from ase.calculators.pw2wannier import PW2Wannier
-from ase.io.espresso import Namelist, read_fortran_namelist
+from ase.io.espresso._utils import Namelist, read_fortran_namelist
 
 
 def read_pw2wannier_in(fileobj):

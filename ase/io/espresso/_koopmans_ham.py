@@ -2,34 +2,17 @@
 
 Read structures and results from koopmans_ham.x output files. Read
 structures from koopmans_ham.x input files.
-
-Units are converted using CODATA 2006, as used internally by Quantum
-ESPRESSO.
 """
-
-import os
-import operator as op
-import warnings
-from collections import OrderedDict
-from os import path
-import copy
-
-import numpy as np
 
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
+from ase.utils import basestring
 from ase.dft.kpoints import BandPath
 from ase.spectrum.band_structure import BandStructure
-from ase.utils import basestring
-from ase.units import create_units
-from ase.io.espresso import construct_kpoints_card, read_fortran_namelist
-from ase.io.espresso import construct_namelist as espresso_construct_namelist
+import ase.io.espresso._utils as utils
 from ase.io.wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.koopmans_ham import KoopmansHam
-
-# Quantum ESPRESSO uses CODATA 2006 internally
-units = create_units('2006')
 
 KEYS = copy.deepcopy(W2KKEYS)
 KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'lrpa', 'mp1', 'mp2', 'mp3']
@@ -116,7 +99,4 @@ def read_koopmans_ham_out(fileobj):
 
 
 def construct_namelist(parameters=None, warn=False, **kwargs):
-    '''
-    Using espresso.py's construct_namelist function with differently defined "KEYS"
-    '''
-    return espresso_construct_namelist(parameters, warn, KEYS, **kwargs)
+    return generic_construct_namelist(parameters, warn, KEYS, **kwargs)

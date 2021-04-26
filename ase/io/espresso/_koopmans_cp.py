@@ -1,41 +1,17 @@
 """Reads Quantum ESPRESSO files.
 
-Read multiple structures and results from kcp.x output files. Read
+Read structures and results from kcp.x output files. Read
 structures from kcp.x input files.
-
-Built for CP
-
-Units are converted using CODATA 2006, as used internally by Quantum
-ESPRESSO.
 """
 
-import os
-import operator as op
-import warnings
-from collections import OrderedDict
-from os import path
-import copy
-
-import numpy as np
-
 from ase.atoms import Atoms
-from ase.calculators.singlepoint import (SinglePointDFTCalculator,
-                                         SinglePointKPoint)
-# from ase.calculators.calculator import kpts2ndarray, kpts2sizeandoffsets
-# from ase.dft.kpoints import kpoint_convert
-# from ase.constraints import FixAtoms, FixCartesian
-# from ase.data import chemical_symbols, atomic_numbers
-from ase.units import create_units
+from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
+import ase.io.espresso._utils as utils
+from ase.io.espresso._pw import read_espresso_in, write_espresso_in
+from ase.io.espresso._pw import KEYS as PW_KEYS
+from ase.calculators.koopmans_cp import Espresso_kcp
 
-from ase.io.espresso import Namelist, SSSP_VALENCE, read_espresso_in, write_espresso_in
-from ase.io.espresso import KEYS as PW_KEYS
-from ase.io.espresso import construct_namelist as espresso_construct_namelist
-
-from ase.calculators.espresso_kcp import Espresso_kcp
-
-# Quantum ESPRESSO uses CODATA 2006 internally
-units = create_units('2006')
 
 KEYS = copy.deepcopy(PW_KEYS)
 KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
@@ -71,8 +47,8 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_BANDSTRUCTURE =
 
 
-def write_espresso_kcp_in(fd, atoms, input_data=None, pseudopotentials=None,
-                          kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
+def write_koopmans_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
+                         kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
 
     write_espresso_in(fd, atoms, input_data, pseudopotentials,
                       kspacing, kpts, koffset, **kwargs)
@@ -121,7 +97,7 @@ def write_espresso_kcp_in(fd, atoms, input_data=None, pseudopotentials=None,
         fd_rewrite.writelines(before + extra_lines + after)
 
 
-def read_espresso_kcp_in(fileobj):
+def read_koopmans_cp_in(fileobj):
     atoms = read_espresso_in(fileobj)
 
     # Generating Espresso_kcp calculator from Espresso calculator
@@ -136,7 +112,7 @@ def read_espresso_kcp_in(fileobj):
     return atoms
 
 
-def read_espresso_kcp_out(fileobj, index=-1, results_required=True):
+def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
     """Reads Quantum ESPRESSO output files.
 
     The atomistic configurations as well as results (energy, force, stress,
@@ -298,7 +274,4 @@ def read_espresso_kcp_out(fileobj, index=-1, results_required=True):
 
 
 def construct_namelist(parameters=None, warn=False, **kwargs):
-    '''
-    Using espresso.py's construct_namelist function with differently defined "KEYS"
-    '''
     return espresso_construct_namelist(parameters, warn, KEYS, **kwargs)

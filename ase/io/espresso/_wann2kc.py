@@ -3,36 +3,15 @@
 Read structures and results from koopmans_ham.x output files. Read
 structures from wannier_to_kc.x input files.
 
-Units are converted using CODATA 2006, as used internally by Quantum
-ESPRESSO.
 """
 
-import os
-import operator as op
-import warnings
-from collections import OrderedDict
-from os import path
-import copy
-
-import numpy as np
-
 from ase.atoms import Atoms
-from ase.calculators.singlepoint import (SinglePointDFTCalculator,
-                                         SinglePointKPoint)
-# from ase.calculators.calculator import kpts2ndarray, kpts2sizeandoffsets
-# from ase.dft.kpoints import kpoint_convert
-# from ase.constraints import FixAtoms, FixCartesian
-# from ase.data import chemical_symbols, atomic_numbers
-from ase.units import create_units
+from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-
-from ase.io.espresso import Namelist, read_espresso_in, write_espresso_in, read_fortran_namelist
-from ase.io.espresso import construct_namelist as espresso_construct_namelist
-
+from ase.io.espresso._utils import units, Namelist, read_fortran_namelist, generic_construct_namelist
+from ase.io.espresso._pw import read_espresso_in, write_espresso_in
 from ase.calculators.wann2kc import Wann2KC
 
-# Quantum ESPRESSO uses CODATA 2006 internally
-units = create_units('2006')
 
 KEYS = Namelist((
     ('control', ['prefix', 'outdir', 'kc_iverbosity', 'kc_at_ks', 'homo_only', 'read_unitary_matrix', 'l_vcut']),
@@ -110,7 +89,4 @@ def read_wann2kc_out(fileobj):
 
 
 def construct_namelist(parameters=None, warn=True, **kwargs):
-    '''
-    Using espresso.py's construct_namelist function with differently defined "KEYS"
-    '''
-    return espresso_construct_namelist(parameters, warn, KEYS, **kwargs)
+    return generic_construct_namelist(parameters, warn, KEYS, **kwargs)
