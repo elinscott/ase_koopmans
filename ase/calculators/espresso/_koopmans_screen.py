@@ -12,8 +12,8 @@ from ._espresso import EspressoParent
 
 
 class KoopmansScreen(EspressoParent):
-    ext_in = 'ksi'
-    ext_out = 'kso'
+    ext_in = '.ksi'
+    ext_out = '.kso'
     implemented_properties = []
 
     # Default command does not use parallelism and assumes kc_screen.x is on the user's path

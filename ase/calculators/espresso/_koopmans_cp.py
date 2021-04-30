@@ -12,8 +12,8 @@ from ._espresso import EspressoParent
 
 
 class Espresso_kcp(EspressoParent):
-    ext_in = 'cpi'
-    ext_in = 'cpo'
+    ext_in = '.cpi'
+    ext_out = '.cpo'
     implemented_properties = ['energy']
 
     # Default command does not use parallelism and assumes kcp.x is on the user's path

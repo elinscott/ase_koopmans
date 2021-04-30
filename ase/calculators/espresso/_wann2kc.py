@@ -12,8 +12,8 @@ from ._espresso import EspressoParent
 
 
 class Wann2KC(EspressoParent):
-    ext_in = 'w2ki'
-    ext_out = 'w2ko'
+    ext_in = '.w2ki'
+    ext_out = '.w2ko'
     implemented_properties = []
 
     # Default command does not use parallelism and assumes wann2kc.x is on the user's path

@@ -44,7 +44,7 @@ class EspressoParent(FileIOCalculator):
 
     def write_input(self, atoms, properties=None, system_changes=None):
         # Create the appropriate directory
-        super().write_input(self, atoms, properties, system_changes)
+        super().write_input(atoms, properties, system_changes)
         # Write the input file
         io.write(self.label + self.ext_in, atoms, **self.parameters)
 

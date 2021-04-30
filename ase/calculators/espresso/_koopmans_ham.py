@@ -15,8 +15,8 @@ from ._espresso import EspressoParent
 
 
 class KoopmansHam(EspressoParent):
-    ext_in = 'khi'
-    ext_out = 'kho'
+    ext_in = '.khi'
+    ext_out = '.kho'
     implemented_properties = []
 
     # Default command does not use parallelism and assumes kc_ham.x is on the user's path

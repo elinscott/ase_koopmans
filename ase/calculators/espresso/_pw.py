@@ -87,8 +87,8 @@ class Espresso(EspressoParent):
           >>> bs.plot()
     """
 
-    ext_in = 'pwi'
-    ext_out = 'pwo'
+    ext_in = '.pwi'
+    ext_out = '.pwo'
     implemented_properties = ['energy', 'forces', 'stress', 'magmoms']
     command = 'pw.x -in PREFIX.pwi > PREFIX.pwo'
 
