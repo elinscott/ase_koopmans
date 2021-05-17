@@ -7,8 +7,7 @@ structures from koopmans_screen.x input files.
 import copy
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from .utils import read_fortran_namelist, generic_construct_namelist
-from .pw import read_espresso_in, write_espresso_in
+from .utils import read_fortran_namelist, generic_construct_namelist, time_to_float
 from .wann2kc import KEYS as W2KKEYS
 from ase.calculators.espresso import KoopmansScreen
 
@@ -25,6 +24,11 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
     lines = []
     for section in input_parameters:
         assert section in KEYS.keys()
+
+        if section == 'WANNIER' and not input_parameters['CONTROL'].get('kc_at_ks', True):
+            # Do not write the WANNIER section if kc_at_ks is true
+            continue
+
         lines.append('&{0}\n'.format(section.upper()))
         for key, value in input_parameters[section].items():
             if value is True:
@@ -74,6 +78,7 @@ def read_koopmans_screen_out(fileobj):
 
     # Extract calculation results
     job_done = False
+    walltime = None
     alphas = []
     orbital_data = {'self-Hartree': []}
     for i_line, line in enumerate(flines):
@@ -81,12 +86,18 @@ def read_koopmans_screen_out(fileobj):
             splitline = line.split()
             alphas.append(float(splitline[-5]))
             orbital_data['self-Hartree'].append(float(splitline[-1]))
+
         if 'JOB DONE' in line:
             job_done = True
+
+        if 'KC_WANN      :' in line:
+            time_str = line.split()[-2]
+            walltime = time_to_float(time_str)
 
     # Put everything together
     calc = SinglePointDFTCalculator(structure)
     calc.results['job_done'] = job_done
+    calc.results['walltime'] = walltime
     calc.results['alphas'] = alphas
     calc.results['orbital_data'] = orbital_data
     structure.calc = calc

@@ -8,7 +8,7 @@ import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from .utils import generic_construct_namelist, units
+from .utils import generic_construct_namelist, units, time_to_float
 from .pw import read_espresso_in, write_espresso_in
 from .pw import KEYS as PW_KEYS
 from ase.calculators.espresso import Espresso_kcp
@@ -238,19 +238,7 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
 
         if 'wall time' in line:
             time_str = line.split(',')[1].strip().rstrip('wall time')
-            if 'h' in time_str:
-                hours, rem = time_str.split('h')
-            else:
-                hours, rem = 0, time_str
-            if 'm' in rem:
-                minutes, rem = rem.split('m')
-            else:
-                minutes = 0
-            if 's' in rem:
-                seconds = rem.rstrip('s')
-            else:
-                seconds = 0
-            walltime = (float(hours) * 60 + float(minutes)) * 60 + float(seconds)
+            walltime = time_to_float(time_str)
 
     # Put everything together
     calc = SinglePointDFTCalculator(structure, energy=energy)  # ,

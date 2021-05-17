@@ -8,13 +8,13 @@ structures from wannier_to_kc.x input files.
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from .utils import units, Namelist, read_fortran_namelist, generic_construct_namelist
-from .pw import read_espresso_in, write_espresso_in
+from .utils import Namelist, read_fortran_namelist, generic_construct_namelist, time_to_float
 from ase.calculators.wann2kc import Wann2KC
 
 
 KEYS = Namelist((
-    ('control', ['prefix', 'outdir', 'kc_iverbosity', 'kc_at_ks', 'homo_only', 'read_unitary_matrix', 'l_vcut']),
+    ('control', ['prefix', 'outdir', 'kc_iverbosity', 'kc_at_ks',
+                 'homo_only', 'read_unitary_matrix', 'l_vcut', 'assume_isolated']),
     ('wannier', ['seedname', 'check_ks', 'num_wann_occ', 'num_wann_emp', 'have_empty', 'has_disentangle'])))
 
 
@@ -75,14 +75,19 @@ def read_wann2kc_out(fileobj):
     structure = Atoms()
 
     # Extract calculation results
+    walltime = None
     job_done = False
-    for i_line, line in enumerate(flines):
+    for line in flines:
         if 'JOB DONE' in line:
             job_done = True
+        if 'KC_WANN      :' in line:
+            time_str = line.split()[-2]
+            walltime = time_to_float(time_str)
 
     # Return an empty calculator object with ths solitary result 'job done'
     calc = SinglePointDFTCalculator(structure)
     calc.results['job_done'] = job_done
+    calc.results['walltime'] = walltime
     structure.calc = calc
 
     yield structure

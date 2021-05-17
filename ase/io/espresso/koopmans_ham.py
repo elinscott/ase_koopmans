@@ -10,7 +10,7 @@ from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
 from ase.dft.kpoints import BandPath
 from ase.spectrum.band_structure import BandStructure
-from .utils import construct_kpoints_card, generic_construct_namelist
+from .utils import construct_kpoints_card, generic_construct_namelist, time_to_float
 from .wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.espresso import KoopmansHam
@@ -29,6 +29,11 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
     lines = []
     for section in input_parameters:
         assert section in KEYS.keys()
+
+        if section == 'WANNIER' and not input_parameters['CONTROL'].get('kc_at_ks', True):
+            # Do not write the WANNIER section if kc_at_ks is true
+            continue
+
         lines.append('&{0}\n'.format(section.upper()))
         for key, value in input_parameters[section].items():
             if value is True:
@@ -80,6 +85,7 @@ def read_koopmans_ham_out(fileobj):
 
     # Extract calculation results
     job_done = False
+    walltime = None
     kpts = []
     energies = []
     for i_line, line in enumerate(flines):
@@ -90,9 +96,14 @@ def read_koopmans_ham_out(fileobj):
         if 'JOB DONE' in line:
             job_done = True
 
+        if 'KC_WANN      :' in line:
+            time_str = line.split()[-2]
+            walltime = time_to_float(time_str)
+
     # Put everything together
     calc = SinglePointDFTCalculator(structure)
     calc.results['job_done'] = job_done
+    calc.results['walltime'] = walltime
     calc.results['energies'] = energies
     structure.calc = calc
 

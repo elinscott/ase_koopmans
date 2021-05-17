@@ -1005,3 +1005,19 @@ def get_constraint(constraint_idx):
     else:
         constraint = FixCartesian(a, mask)
     return constraint
+
+
+def time_to_float(time_str):
+    if 'h' in time_str:
+        hours, rem = time_str.split('h')
+    else:
+        hours, rem = 0, time_str
+    if 'm' in rem:
+        minutes, rem = rem.split('m')
+    else:
+        minutes = 0
+    if 's' in rem:
+        seconds = rem.rstrip('s')
+    else:
+        seconds = 0
+    return (float(hours) * 60 + float(minutes)) * 60 + float(seconds)

@@ -21,7 +21,7 @@ from ase.dft.kpoints import kpoint_convert
 from ase.data import atomic_numbers
 from .utils import Namelist, cell_to_ibrav, construct_kpoints_card, generic_construct_namelist, get_atomic_positions, \
     get_cell_parameters, get_constraint, get_kpoints, get_pseudopotentials, grep_valence, ibrav_to_cell, \
-    label_to_symbol, read_fortran_namelist, units
+    label_to_symbol, read_fortran_namelist, time_to_float, units
 
 # Section identifiers
 _PW_START = 'Program PWSCF'
@@ -41,6 +41,7 @@ _PW_BANDSTRUCTURE = 'End of band structure calculation'
 _PW_ELECTROSTATIC_EMBEDDING = 'electrostatic embedding'
 _PW_NITER = 'iteration #'
 _PW_DONE = 'JOB DONE.'
+_PW_WALLTIME = 'PWSCF        :'
 
 
 def read_espresso_out(fileobj, index=-1, results_required=True):
@@ -98,7 +99,8 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         _PW_BANDSTRUCTURE: [],
         _PW_ELECTROSTATIC_EMBEDDING: [],
         _PW_NITER: [],
-        _PW_DONE: []
+        _PW_DONE: [],
+        _PW_WALLTIME: []
     }
 
     for idx, line in enumerate(pwo_lines):
@@ -368,6 +370,12 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
             if image_index < done_index < next_index:
                 job_done = True
 
+        # Walltime
+        walltime = None
+        for wt_index in indexes[_PW_WALLTIME]:
+            if image_index < wt_index < next_index:
+                walltime = time_to_float(pwo_lines[wt_index].split()[-2])
+
         # Put everything together
         calc = SinglePointDFTCalculator(structure, energy=energy,
                                         forces=forces, stress=stress,
@@ -378,6 +386,7 @@ def read_espresso_out(fileobj, index=-1, results_required=True):
         calc.results['electrostatic embedding'] = elec_embedding_energy
         calc.results['iterations'] = n_iterations
         calc.results['job done'] = job_done
+        calc.results['walltime'] = walltime
 
         calc.kpts = kpts
         structure.calc = calc
