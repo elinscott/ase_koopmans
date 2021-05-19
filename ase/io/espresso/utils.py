@@ -4,6 +4,7 @@ Written by Edward Linscott 2020-21
 
 """
 
+import warnings
 import numpy as np
 import operator as op
 from collections import OrderedDict

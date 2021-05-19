@@ -5,6 +5,7 @@ structures from koopmans_screen.x input files.
 """
 
 import copy
+from ase import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
 from .utils import read_fortran_namelist, generic_construct_namelist, time_to_float

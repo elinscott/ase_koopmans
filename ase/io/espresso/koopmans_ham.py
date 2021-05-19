@@ -8,9 +8,7 @@ import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from ase.dft.kpoints import BandPath
-from ase.spectrum.band_structure import BandStructure
-from .utils import construct_kpoints_card, generic_construct_namelist, time_to_float
+from .utils import construct_kpoints_card, generic_construct_namelist, time_to_float, read_fortran_namelist
 from .wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.espresso import KoopmansHam
