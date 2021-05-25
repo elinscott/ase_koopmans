@@ -1,6 +1,6 @@
 """ Calculator for wann_to_kc.x, a code for performing Koopmans calculations in periodic systems
 
-export ASE_KOOPMANS_HAM_COMMAND="/path/to/wann_to_kc.x -in PREFIX.khi > PREFIX.kho"
+export ASE_KOOPMANS_HAM_COMMAND="/path/to/wann_to_kc.x -in PREFIX.w2ki > PREFIX.w2ko"
 
 N.B. the extensions must be .w2ki and .w2ko
 

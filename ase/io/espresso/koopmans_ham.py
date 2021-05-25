@@ -85,11 +85,18 @@ def read_koopmans_ham_out(fileobj):
     job_done = False
     walltime = None
     kpts = []
-    energies = []
+    eigenvalues = []
+    ks_eigenvalues_on_grid = []
+    ki_eigenvalues_on_grid = []
+
     for i_line, line in enumerate(flines):
         if 'KC interpolated eigenvalues at k=' in line:
             kpts.append([float(x) for x in line.split()[-3:]])
-            energies.append([float(x) for x in flines[i_line + 2].split()])
+            eigenvalues.append([float(x) for x in flines[i_line + 2].split()])
+
+        if 'INFO: KC HAMILTONIAN CALCULATION ik=' in line:
+            ks_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 7].split()[1:]])
+            ki_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 8].split()[1:]])
 
         if 'JOB DONE' in line:
             job_done = True
@@ -102,7 +109,9 @@ def read_koopmans_ham_out(fileobj):
     calc = SinglePointDFTCalculator(structure)
     calc.results['job_done'] = job_done
     calc.results['walltime'] = walltime
-    calc.results['energies'] = energies
+    calc.results['eigenvalues'] = eigenvalues
+    calc.results['ks_eigenvalues_on_grid'] = ks_eigenvalues_on_grid
+    calc.results['ki_eigenvalues_on_grid'] = ki_eigenvalues_on_grid
     structure.calc = calc
 
     yield structure

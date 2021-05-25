@@ -9,7 +9,7 @@ from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
 from .utils import Namelist, read_fortran_namelist, generic_construct_namelist, time_to_float
-from ase.calculators.wann2kc import Wann2KC
+from ase.calculators.espresso import Wann2KC
 
 
 KEYS = Namelist((

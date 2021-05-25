@@ -33,19 +33,19 @@ class KoopmansHam(EspressoParent):
 
     def band_structure(self):
         # Construct bandstructure here (rather than within self.calculate()) because we have access to the band path
-        assert 'energies' in self.results, 'Please call {0}.calculate() prior to calling {0}.band_structure'.format(
+        assert 'eigenvalues' in self.results, 'Please call {0}.calculate() prior to calling {0}.band_structure'.format(
             self.__class__.__name__)
 
-        energies_np = np.array([self.results['energies']])
+        eigenvalues_np = np.array([self.results['eigenvalues']])
 
         # Shift so that the VBM = 0.0
         try:
             num_occ = self.parameters['input_data']['wannier']['num_wann_occ']
             if num_occ > 0:
-                reference = np.max(energies_np[:, :, num_occ - 1])
-                energies_np -= reference
+                reference = np.max(eigenvalues_np[:, :, num_occ - 1])
+                eigenvalues_np -= reference
         except KeyError():
             pass
 
-        self.results['band structure'] = BandStructure(self.parameters['kpts'], energies_np)
+        self.results['band structure'] = BandStructure(self.parameters['kpts'], eigenvalues_np)
         return self.results['band structure']

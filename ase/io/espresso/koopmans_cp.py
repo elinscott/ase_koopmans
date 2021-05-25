@@ -40,7 +40,7 @@ _CP_POS = 'ATOMIC_POSITIONS'
 # _CP_MAGMOM =
 # _CP_FORCE =
 _CP_TOTEN = '                total energy'
-_CP_BANDS = '   Eigenvalues (eV), kp'
+_CP_BANDS = 'Eigenvalues (eV), kp'
 _CP_LAMBDA = 'fixed_lambda'
 # _CP_STRESS =
 # _CP_FERMI =
@@ -179,15 +179,16 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
 
         # Bands
         if _CP_BANDS in line:
-            try:
-                eigenvalues.append([float(e) for e in cpo_lines[i_line + 2].split()])
-            except ValueError:
-                pass
-            if 'Empty States Eigenvalues' in cpo_lines[i_line + 4]:
+            if 'Empty' not in line:
+                eigenvalues.append([])
+
+            j_line = i_line + 2
+            while len(cpo_lines[j_line].strip()) > 0:
                 try:
-                    eigenvalues[-1] += [float(e) for e in cpo_lines[i_line + 6].split()]
+                    eigenvalues[-1] += [float(e) for e in cpo_lines[j_line].split()]
                 except ValueError:
                     pass
+                j_line += 1
 
         if 'odd energy' in line:
             odd_energy = float(line.split()[3]) * units.Hartree
