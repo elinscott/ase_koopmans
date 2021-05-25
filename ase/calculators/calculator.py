@@ -578,7 +578,10 @@ class Calculator(object):
         defaults = self.get_default_parameters()
         dct = {}
         for key, value in self.parameters.items():
-            if hasattr(value, 'todict'):
+            if hasattr(value, 'ase_objtype'):
+                from ase.io.jsonio import MyEncoder
+                value = MyEncoder().default(value)
+            elif hasattr(value, 'todict'):
                 value = value.todict()
             if skip_default:
                 default = defaults.get(key, '_no_default_')
