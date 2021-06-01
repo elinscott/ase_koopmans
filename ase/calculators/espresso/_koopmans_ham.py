@@ -44,7 +44,7 @@ class KoopmansHam(EspressoParent):
             if num_occ > 0:
                 reference = np.max(eigenvalues_np[:, :, num_occ - 1])
                 eigenvalues_np -= reference
-        except KeyError():
+        except KeyError:
             pass
 
         self.results['band structure'] = BandStructure(self.parameters['kpts'], eigenvalues_np)

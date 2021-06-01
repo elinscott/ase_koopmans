@@ -8,7 +8,7 @@ import copy
 from ase import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from .utils import read_fortran_namelist, generic_construct_namelist, time_to_float
+from .utils import read_fortran_namelist, generic_construct_namelist, time_to_float, units
 from .wann2kc import KEYS as W2KKEYS
 from ase.calculators.espresso import KoopmansScreen
 
@@ -86,7 +86,7 @@ def read_koopmans_screen_out(fileobj):
         if 'relaxed' in line:
             splitline = line.split()
             alphas.append(float(splitline[-5]))
-            orbital_data['self-Hartree'].append(float(splitline[-1]))
+            orbital_data['self-Hartree'].append(float(splitline[-1]) * units.Ry)
 
         if 'JOB DONE' in line:
             job_done = True

@@ -90,13 +90,24 @@ def read_koopmans_ham_out(fileobj):
     ki_eigenvalues_on_grid = []
 
     for i_line, line in enumerate(flines):
+
         if 'KC interpolated eigenvalues at k=' in line:
             kpts.append([float(x) for x in line.split()[-3:]])
-            eigenvalues.append([float(x) for x in flines[i_line + 2].split()])
+            eigenvalues.append([])
+            j_line = i_line + 2
+            while True:
+                line2 = flines[j_line].strip()
+                if len(line2) == 0:
+                    break
+                eigenvalues[-1] += [float(x) for x in line2.split()]
+                j_line += 1
 
         if 'INFO: KC HAMILTONIAN CALCULATION ik=' in line:
             ks_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 7].split()[1:]])
-            ki_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 8].split()[1:]])
+            try:
+                ki_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 8].split()[1:]])
+            except ValueError:
+                pass
 
         if 'JOB DONE' in line:
             job_done = True
