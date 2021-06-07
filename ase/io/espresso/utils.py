@@ -1022,3 +1022,30 @@ def time_to_float(time_str):
     else:
         seconds = 0
     return (float(hours) * 60 + float(minutes)) * 60 + float(seconds)
+
+
+def safe_float(string):
+    # Equivalent to float(string), but if string = '*******' it returns np.nan
+    if all([c == '*' for c in string]):
+        return np.nan
+    else:
+        return float(string)
+
+
+def safe_string_to_list_of_floats(string):
+    # Converts a string to a list of floats, but if string = 'number*******anothernumber' it returns [number, np.nan, anothernumber]
+    out = []
+    for word in string.split():
+        if '*' in word:
+            # First, reduce each sequence of '*'s to a single '*'
+            while '**' in word:
+                word = word.replace('**', '*')
+
+            # Then pad each '*' with spaces, making sure we don't add spaces at the start/end
+            word = word.replace('*', ' * ').strip()
+
+            # Finally, convert to float
+            out += [safe_float(x) for x in word.split()]
+        else:
+            out.append(safe_float(word))
+    return out

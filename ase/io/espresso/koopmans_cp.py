@@ -8,7 +8,7 @@ import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from .utils import generic_construct_namelist, units, time_to_float
+from .utils import generic_construct_namelist, units, time_to_float, safe_string_to_list_of_floats
 from .pw import read_espresso_in, write_espresso_in
 from .pw import KEYS as PW_KEYS
 from ase.calculators.espresso import Espresso_kcp
@@ -184,10 +184,7 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
 
             j_line = i_line + 2
             while len(cpo_lines[j_line].strip()) > 0:
-                try:
-                    eigenvalues[-1] += [float(e) for e in cpo_lines[j_line].split()]
-                except ValueError:
-                    pass
+                eigenvalues[-1] += safe_string_to_list_of_floats(cpo_lines[j_line])
                 j_line += 1
 
         if 'odd energy' in line:
