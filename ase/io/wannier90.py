@@ -201,6 +201,7 @@ def read_wannier90_out(fd):
     structure = Atoms()
 
     job_done = False
+    walltime = None
     convergence = False
     convergence_dis = None
 
@@ -215,9 +216,12 @@ def read_wannier90_out(fd):
             convergence_dis = False
         if 'Disentanglement convergence criteria satisfied' in line:
             convergence_dis = True
+        if 'Total Execution Time' in line or 'Time to write kmesh' in line:
+            walltime = float(line.split()[-2])
 
     calc = Wannier90(atoms=structure)
     calc.results['job done'] = job_done
+    calc.results['walltime'] = walltime
     if convergence_dis is not None:
         calc.results['convergence'] = convergence and convergence_dis
     else:

@@ -4,8 +4,8 @@
 
 from ase.utils import basestring
 from ase.atoms import Atoms
-from ase.calculators.pw2wannier import PW2Wannier
-from ase.io.espresso import Namelist, read_fortran_namelist
+from ase.calculators.espresso import PW2Wannier
+from .utils import read_fortran_namelist, time_to_float
 
 
 def read_pw2wannier_in(fileobj):
@@ -106,13 +106,18 @@ def read_pw2wannier_out(fd):
     structure = Atoms()
 
     job_done = False
+    walltime = None
 
     for line in flines:
         if 'JOB DONE' in line:
             job_done = True
+        if 'PW2WANNIER   :' in line:
+            time_str = line.split()[-2]
+            walltime = time_to_float(time_str)
 
     calc = PW2Wannier(atoms=structure)
     calc.results['job done'] = job_done
+    calc.results['walltime'] = walltime
 
     structure.calc = calc
 

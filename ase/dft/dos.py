@@ -2,13 +2,16 @@ from math import pi, sqrt
 
 import numpy as np
 
+from ase.utils import jsonable
 from ase.dft.kpoints import get_monkhorst_pack_size_and_offset
 from ase.parallel import world
 from ase.utils.cext import cextension
 
 
+@jsonable('densityofstates')
 class DOS:
-    def __init__(self, calc, width=0.1, window=None, npts=401, comm=world):
+    def __init__(self, calc=None, width=0.1, window=None, npts=401, comm=world, nspins=None, w_k=None,
+                 e_skn=None):
         """Electronic Density Of States object.
 
         calc: calculator object
@@ -23,22 +26,37 @@ class DOS:
             Number of points.
         comm: communicator object
             MPI communicator for lti_dos
+        nspins: int
+            number of spin channels
+        w_k: list
+            k-point weights
+        e_skn: numpy array
+            Kohn-Sham eigenvalues indexed by spin & k-point
+
 
         """
-
         self.comm = comm
         self.npts = npts
         self.width = width
-        self.w_k = calc.get_k_point_weights()
-        self.nspins = calc.get_number_of_spins()
-        self.e_skn = np.array([[calc.get_eigenvalues(kpt=k, spin=s)
-                                for k in range(len(self.w_k))]
-                               for s in range(self.nspins)])
-        try:  # two Fermi levels
-            for i, eF in enumerate(calc.get_fermi_level()):
-                self.e_skn[i] -= eF
-        except TypeError:  # a single Fermi level
-            self.e_skn -= calc.get_fermi_level()
+        if calc is None:
+            for kw in 'nspins', 'w_k', 'e_skn':
+                val = locals()[kw]
+                if val is not None:
+                    setattr(self, kw, val)
+                else:
+                    raise ValueError(
+                        f'When initialising a DOS object with calc=None, you must specify a value for {kw}')
+        else:
+            self.w_k = calc.get_k_point_weights()
+            self.nspins = calc.get_number_of_spins()
+            self.e_skn = np.array([[calc.get_eigenvalues(kpt=k, spin=s)
+                                    for k in range(len(self.w_k))]
+                                   for s in range(self.nspins)])
+            try:  # two Fermi levels
+                for i, eF in enumerate(calc.get_fermi_level()):
+                    self.e_skn[i] -= eF
+            except TypeError:  # a single Fermi level
+                self.e_skn -= calc.get_fermi_level()
 
         if window is None:
             emin = None
@@ -54,12 +72,24 @@ class DOS:
         self.energies = np.linspace(emin, emax, npts)
 
         if width == 0.0:
+            if calc is None:
+                raise NotImplementedError(
+                    f'When initialising a DOS object with width=0.0, you must specify a value for calc')
             bzkpts = calc.get_bz_k_points()
             size, offset = get_monkhorst_pack_size_and_offset(bzkpts)
             bz2ibz = calc.get_bz_to_ibz_map()
             shape = (self.nspins,) + tuple(size) + (-1,)
             self.e_skn = self.e_skn[:, bz2ibz].reshape(shape)
             self.cell = calc.atoms.cell
+
+    def todict(self):
+        return {'calc': None,
+                'width': self.width,
+                'window': (self.energies.min(), self.energies.max()),
+                'npts': self.npts,
+                'nspins': self.nspins,
+                'w_k': self.w_k,
+                'e_skn': self.e_skn}
 
     def get_energies(self):
         """Return the array of energies used to sample the DOS.

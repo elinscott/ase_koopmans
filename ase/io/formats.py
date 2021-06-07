@@ -274,10 +274,10 @@ F('espresso-in', 'Quantum espresso in file', '1F',
   module='espresso', ext='pwi', magic=[b'*\n&system', b'*\n&SYSTEM']),
 F('espresso-out', 'Quantum espresso out file', '+F',
   module='espresso', ext=['out', 'pwo'], magic=b'*Program PWSCF'),
-F('espresso-kcp-in', 'Quantum espresso (kcp.x) in file', '1F',
-  module='espresso_kcp', ext='cpi')
-F('espresso-kcp-out', 'Quantum espresso (kcp.x) out file', '+F',
-  module='espresso_kcp', ext='cpo')
+F('koopmans-cp-in', 'Quantum espresso (kcp.x) in file', '1F',
+  module='espresso', ext='cpi')
+F('koopmans-cp-out', 'Quantum espresso (kcp.x) out file', '+F',
+  module='espresso', ext='cpo')
 F('etsf', 'ETSF format', '1S'),
 F('exciting', 'exciting input', '1S', glob='input.xml'),
 F('extxyz', 'Extended XYZ file', '+F'),
@@ -311,6 +311,10 @@ F('html', 'X3DOM HTML', '1F', module='x3d'),
 F('iwm', '?', '1F', glob='atoms.dat'),
 F('json', 'ASE JSON database file', '+F', module='db'),
 F('jsv', 'JSV file format', '1F'),
+F('koopmans-ham-in', 'Koopmans ham input file', '1F', module='espresso', ext='khi'),
+F('koopmans-ham-out', 'Koopmans ham output file', '1F', module='espresso', ext='kho'),
+F('koopmans-screen-in', 'Koopmans screening input file', '1F', module='espresso', ext='ksi'),
+F('koopmans-screen-out', 'Koopmans screening output file', '1F', module='espresso', ext='kso'),
 F('lammps-dump-text', 'LAMMPS text dump file', '+F',
   module='lammpsrun', magic=b'*\nITEM: TIMESTEP\n'),
 F('lammps-dump-binary', 'LAMMPS binary dump file', '+B',
@@ -344,9 +348,9 @@ F('pov', 'Persistance of Vision', '1S'),
 # extension
 F('prismatic', 'prismatic and computem XYZ-file', '1F')
 F('pw2wannier-in', 'pw2wannier input file', '1F',
-  module='pw2wannier', ext=['pw2wan', 'p2wi'])
+  module='espresso', ext=['pw2wan', 'p2wi'])
 F('pw2wannier-out', 'pw2wannier output file', '1F',
-  module='pw2wannier', ext='p2wo')
+  module='espresso', ext='p2wo')
 F('py', 'Python file', '+F'),
 F('sys', 'qball sys file', '1F'),
 F('qbox', 'QBOX output file', '+F',
@@ -376,10 +380,10 @@ F('vasp-xml', 'VASP vasprun.xml file', '+F',
 F('vti', 'VTK XML Image Data', '1F', module='vtkxml'),
 F('vtu', 'VTK XML Unstructured Grid', '1F', module='vtkxml'),
 F('x3d', 'X3D', '1S'),
-F('wannier90-out', 'Wannier 90 output file', '1F',
-  module='wannier90', ext='wout')
-F('wannier90-in', 'Wannier 90 input file', '1F',
-  module='wannier90', ext='win')
+F('wann2kc-out', 'wannier_to_kc.x output file', '1F', module='espresso', ext='w2ko')
+F('wann2kc-in', 'wannier_to_kc.x input file', '1F', module='espresso', ext='w2ki')
+F('wannier90-out', 'Wannier 90 output file', '1F', module='wannier90', ext='wout')
+F('wannier90-in', 'Wannier 90 input file', '1F', module='wannier90', ext='win')
 F('xsd', 'Materials Studio file', '1F'),
 F('xsf', 'XCrySDen Structure File', '+F',
   magic=[b'*\nANIMSTEPS', b'*\nCRYSTAL', b'*\nSLAB', b'*\nPOLYMER',

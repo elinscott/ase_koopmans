@@ -1,0 +1,132 @@
+"""Reads Koopmans Ham files
+
+Read structures and results from koopmans_ham.x output files. Read
+structures from koopmans_ham.x input files.
+"""
+
+import copy
+from ase.atoms import Atoms
+from ase.calculators.singlepoint import SinglePointDFTCalculator
+from ase.utils import basestring
+from .utils import construct_kpoints_card, generic_construct_namelist, time_to_float, read_fortran_namelist
+from .wann2kc import KEYS as W2KKEYS
+
+from ase.calculators.espresso import KoopmansHam
+
+KEYS = copy.deepcopy(W2KKEYS)
+KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'lrpa', 'mp1', 'mp2', 'mp3']
+
+
+def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
+                          kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
+
+    if 'input_data' in atoms.calc.parameters and input_data is None:
+        input_data = atoms.calc.parameters['input_data']
+
+    input_parameters = construct_namelist(input_data, **kwargs)
+    lines = []
+    for section in input_parameters:
+        assert section in KEYS.keys()
+
+        if section == 'WANNIER' and not input_parameters['CONTROL'].get('kc_at_ks', True):
+            # Do not write the WANNIER section if kc_at_ks is true
+            continue
+
+        lines.append('&{0}\n'.format(section.upper()))
+        for key, value in input_parameters[section].items():
+            if value is True:
+                lines.append('   {0:16} = .true.\n'.format(key))
+            elif value is False:
+                lines.append('   {0:16} = .false.\n'.format(key))
+            elif value is not None:
+                # repr format to get quotes around strings
+                lines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        lines.append('/\n')  # terminate section
+
+    # kpoints block
+    lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
+
+    fd.writelines(lines)
+
+
+def read_koopmans_ham_in(fileobj):
+    data, _ = read_fortran_namelist(fileobj)
+    calc = KoopmansHam(input_data=data)
+    return Atoms(calculator=calc)
+
+
+def read_koopmans_ham_out(fileobj):
+    """Reads Koopmans Ham output files.
+
+    Will probably raise errors for broken or incomplete files.
+
+    Parameters
+    ----------
+    fileobj : file|str
+        A file like object or filename
+
+    Yields
+    ------
+    structure : Atoms
+        The next structure. The Atoms has a SinglePointCalculator attached with any results parsed from the file.
+
+    """
+
+    if isinstance(fileobj, basestring):
+        fileobj = open(fileobj, 'rU')
+
+    # work with a copy in memory for faster random access
+    flines = fileobj.readlines()
+
+    # For the moment, provide an empty atoms object
+    structure = Atoms()
+
+    # Extract calculation results
+    job_done = False
+    walltime = None
+    kpts = []
+    eigenvalues = []
+    ks_eigenvalues_on_grid = []
+    ki_eigenvalues_on_grid = []
+
+    for i_line, line in enumerate(flines):
+
+        if 'KC interpolated eigenvalues at k=' in line:
+            kpts.append([float(x) for x in line.split()[-3:]])
+            eigenvalues.append([])
+            j_line = i_line + 2
+            while True:
+                line2 = flines[j_line].strip()
+                if len(line2) == 0:
+                    break
+                eigenvalues[-1] += [float(x) for x in line2.split()]
+                j_line += 1
+
+        if 'INFO: KC HAMILTONIAN CALCULATION ik=' in line:
+            ks_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 7].split()[1:]])
+            try:
+                ki_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 8].split()[1:]])
+            except ValueError:
+                pass
+
+        if 'JOB DONE' in line:
+            job_done = True
+
+        if 'KC_WANN      :' in line:
+            time_str = line.split()[-2]
+            walltime = time_to_float(time_str)
+
+    # Put everything together
+    calc = SinglePointDFTCalculator(structure)
+    calc.results['job_done'] = job_done
+    calc.results['walltime'] = walltime
+    calc.results['eigenvalues'] = eigenvalues
+    calc.results['ks_eigenvalues_on_grid'] = ks_eigenvalues_on_grid
+    calc.results['ki_eigenvalues_on_grid'] = ki_eigenvalues_on_grid
+    structure.calc = calc
+
+    yield structure
+
+
+def construct_namelist(parameters=None, warn=False, **kwargs):
+    return generic_construct_namelist(parameters, warn, KEYS, **kwargs)

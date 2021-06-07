@@ -7,11 +7,12 @@ export ASE_WANNIER90_COMMAND="/path/to/wannier90 PREFIX.win"
 from ase import io
 from ase.calculators.calculator import FileIOCalculator
 
+
 class Wannier90(FileIOCalculator):
     """
     """
     implemented_properties = []
-    command = 'wannier90 PREFIX.pw2wan'
+    command = 'wannier90.x PREFIX.win > PREFIX.wout'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='wannier', atoms=None, **kwargs):
