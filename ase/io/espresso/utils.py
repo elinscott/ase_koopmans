@@ -1009,6 +1009,13 @@ def get_constraint(constraint_idx):
 
 
 def time_to_float(time_str):
+    if 'd' in time_str:
+        days = time_str.split('d')[0]
+        time_str = time_str.split('d')[1].strip()
+    else:
+        days = 0
+    if 'h' in time_str:
+        hours, rem = time_str.split('h')
     if 'h' in time_str:
         hours, rem = time_str.split('h')
     else:
@@ -1021,7 +1028,7 @@ def time_to_float(time_str):
         seconds = rem.rstrip('s')
     else:
         seconds = 0
-    return (float(hours) * 60 + float(minutes)) * 60 + float(seconds)
+    return (float(days) * 1440 + float(hours) * 60 + float(minutes)) * 60 + float(seconds)
 
 
 def safe_float(string):
