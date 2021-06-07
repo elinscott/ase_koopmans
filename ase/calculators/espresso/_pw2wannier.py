@@ -1,7 +1,7 @@
 """ pw2wannier calculator
 
 export ASE_PW2WANNIER_COMMAND="/path/to/pw2wannier PREFIX.p2wi"
-                                                       
+
 """
 
 

@@ -1040,7 +1040,8 @@ def safe_float(string):
 
 
 def safe_string_to_list_of_floats(string):
-    # Converts a string to a list of floats, but if string = 'number*******anothernumber' it returns [number, np.nan, anothernumber]
+    # Converts a string to a list of floats, but if string = 'number*******anothernumber' it returns
+    # [number, np.nan, anothernumber]
     out = []
     for word in string.split():
         if '*' in word:

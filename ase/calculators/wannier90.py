@@ -7,6 +7,7 @@ export ASE_WANNIER90_COMMAND="/path/to/wannier90 PREFIX.win"
 from ase import io
 from ase.calculators.calculator import FileIOCalculator
 
+
 class Wannier90(FileIOCalculator):
     """
     """
