@@ -8,7 +8,8 @@ import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from .utils import construct_kpoints_card, generic_construct_namelist, time_to_float, read_fortran_namelist
+from .utils import construct_kpoints_card, generic_construct_namelist, safe_string_to_list_of_floats, time_to_float, \
+    read_fortran_namelist
 from .wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.espresso import KoopmansHam
@@ -103,11 +104,14 @@ def read_koopmans_ham_out(fileobj):
                 j_line += 1
 
         if 'INFO: KC HAMILTONIAN CALCULATION ik=' in line:
-            ks_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 7].split()[1:]])
-            try:
-                ki_eigenvalues_on_grid.append([float(x) for x in flines[i_line + 8].split()[1:]])
-            except ValueError:
-                pass
+            ks_eigenvalues_on_grid.append([])
+            ki_eigenvalues_on_grid.append([])
+
+        if line.startswith('          KS'):
+            ks_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('KS', ''))
+
+        if line.startswith('          KI'):
+            ki_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('KI', ''))
 
         if 'JOB DONE' in line:
             job_done = True

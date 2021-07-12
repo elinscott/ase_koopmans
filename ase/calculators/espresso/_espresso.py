@@ -40,7 +40,7 @@ class EspressoParent(FileIOCalculator):
     def set(self, **kwargs):
         changed_parameters = FileIOCalculator.set(self, **kwargs)
         if changed_parameters:
-            self.reset()
+            self.results = {}
 
     def write_input(self, atoms, properties=None, system_changes=None):
         # Create the appropriate directory
