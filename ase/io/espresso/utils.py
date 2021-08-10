@@ -1041,7 +1041,7 @@ def safe_float(string):
 
 def safe_string_to_list_of_floats(string):
     # Converts a string to a list of floats, but if string = 'number*******anothernumber' it returns
-    # [number, np.nan, anothernumber]
+    # [number, np.nan, anothernumber]. It also keeps its eye out for cases like numberanothernumber
     out = []
     for word in string.split():
         if '*' in word:
@@ -1055,5 +1055,10 @@ def safe_string_to_list_of_floats(string):
             # Finally, convert to float
             out += [safe_float(x) for x in word.split()]
         else:
-            out.append(safe_float(word))
+            if word.count('.') > 1:
+                # For cases where a number almost overflows we might get a single "word" with multiple
+                # decimal points...
+                out += [np.nan for _ in range(word.count('.'))]
+            else:
+                out.append(safe_float(word))
     return out
