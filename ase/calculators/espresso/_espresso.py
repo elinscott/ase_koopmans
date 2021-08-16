@@ -3,8 +3,10 @@
 """
 
 
+import numpy as np
 import warnings
 from ase import io
+from ase.spectrum.band_structure import BandStructure
 from ase.calculators.calculator import FileIOCalculator, PropertyNotPresent
 
 
@@ -60,3 +62,36 @@ class EspressoParent(FileIOCalculator):
         if nspins is None:
             warnings.warn(warn_template % 'Number of spins')
         return nspins
+
+
+class EspressoWithBandstructure:
+    # Parent class to be used for Espresso calculators that yield bandstructures. These classes implement a
+    # self.band_structure() which is called after self.calculate(). This is done because after self.calculate()
+    # because we require access to the band path
+
+    # Putting the band structure in self.results is very un-ASE-y, so we should ultimately align all of this
+    # with the more general self.band_structure() method of ASE
+
+    def eigenvalues_from_results(self):
+        # Method that should return np array of eigenvalues
+        raise NotImplementedError
+
+    @property
+    def vbm_index(self):
+        raise NotImplementedError
+
+    @property
+    def vbm_energy(self):
+        eigenvalues_np = self.eigenvalues_from_results()
+        return np.max(eigenvalues_np[:, :, self.vbm_index])
+
+    def band_structure(self, vbm_to_zero=True):
+        # Fetch bandstructure from results
+        eigenvalues_np = self.eigenvalues_from_results()
+
+        if vbm_to_zero:
+            # Shift so that the VBM = 0.0
+            eigenvalues_np -= self.vbm_energy
+
+        self.results['band structure'] = BandStructure(self.parameters['kpts'], eigenvalues_np)
+        return self.results['band structure']

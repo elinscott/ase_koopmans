@@ -69,6 +69,15 @@ def write_wannier90_in(fd, atoms):
             opt_str = ' '.join([str(v) for v in opt])
             fd.write(f'{kw} = {opt_str}\n')
 
+        elif kw == 'kpath':
+            if settings.get('bands_plot', False):
+                rows_str = []
+                for start, end in zip(opt.path[:-1], opt.path[1:]):
+                    rows_str.append('')
+                    for point in (start, end):
+                        rows_str[-1] += ' ' + point + ' '.join([f'{v:9.5f}' for v in opt.special_points[point]])
+                fd.write(block_format('kpoint_path', rows_str))
+
         elif isinstance(opt, list):
             if np.ndim(opt) == 1:
                 opt = [opt]
