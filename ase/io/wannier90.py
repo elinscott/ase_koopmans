@@ -213,6 +213,7 @@ def read_wannier90_out(fd):
     walltime = None
     convergence = False
     convergence_dis = None
+    imre_ratio = []
 
     for line in flines:
         if 'All done' in line:
@@ -227,6 +228,8 @@ def read_wannier90_out(fd):
             convergence_dis = True
         if 'Total Execution Time' in line or 'Time to write kmesh' in line:
             walltime = float(line.split()[-2])
+        if 'Maximum Im/Re Ratio' in line:
+            imre_ratio.append(float(line.split()[-1]))
 
     calc = Wannier90(atoms=structure)
     calc.results['job done'] = job_done
@@ -235,6 +238,7 @@ def read_wannier90_out(fd):
         calc.results['convergence'] = convergence and convergence_dis
     else:
         calc.results['convergence'] = convergence
+    calc.results['Im/Re ratio'] = imre_ratio
 
     structure.calc = calc
 

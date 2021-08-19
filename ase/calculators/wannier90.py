@@ -44,7 +44,7 @@ class Wannier90(FileIOCalculator):
         self.calc = output.calc
         self.results = output.calc.results
 
-        if self.parameters['bands_plot']:
+        if self.parameters.get('bands_plot', False):
             self.read_bandstructure()
 
     def read_bandstructure(self):
