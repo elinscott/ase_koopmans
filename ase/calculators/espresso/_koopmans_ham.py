@@ -8,10 +8,11 @@ Run kc_ham.x jobs.
 """
 
 
+import numpy as np
 from ._espresso import EspressoParent, EspressoWithBandstructure
 
 
-class KoopmansHam(EspressoParent, EspressoWithBandstructure):
+class KoopmansHam(EspressoWithBandstructure, EspressoParent):
     ext_in = '.khi'
     ext_out = '.kho'
     implemented_properties = []
