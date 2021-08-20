@@ -69,6 +69,15 @@ def write_wannier90_in(fd, atoms):
             opt_str = ' '.join([str(v) for v in opt])
             fd.write(f'{kw} = {opt_str}\n')
 
+        elif kw == 'kpath':
+            if settings.get('bands_plot', False):
+                rows_str = []
+                for start, end in zip(opt.path[:-1], opt.path[1:]):
+                    rows_str.append('')
+                    for point in (start, end):
+                        rows_str[-1] += ' ' + point + ' '.join([f'{v:9.5f}' for v in opt.special_points[point]])
+                fd.write(block_format('kpoint_path', rows_str))
+
         elif isinstance(opt, list):
             if np.ndim(opt) == 1:
                 opt = [opt]
@@ -204,6 +213,7 @@ def read_wannier90_out(fd):
     walltime = None
     convergence = False
     convergence_dis = None
+    imre_ratio = []
 
     for line in flines:
         if 'All done' in line:
@@ -218,6 +228,8 @@ def read_wannier90_out(fd):
             convergence_dis = True
         if 'Total Execution Time' in line or 'Time to write kmesh' in line:
             walltime = float(line.split()[-2])
+        if 'Maximum Im/Re Ratio' in line:
+            imre_ratio.append(float(line.split()[-1]))
 
     calc = Wannier90(atoms=structure)
     calc.results['job done'] = job_done
@@ -226,6 +238,7 @@ def read_wannier90_out(fd):
         calc.results['convergence'] = convergence and convergence_dis
     else:
         calc.results['convergence'] = convergence
+    calc.results['Im/Re ratio'] = imre_ratio
 
     structure.calc = calc
 

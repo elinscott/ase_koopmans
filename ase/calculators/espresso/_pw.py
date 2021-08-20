@@ -6,13 +6,13 @@ Run pw.x jobs.
 """
 
 
+import numpy as np
 import warnings
-from ase import io
 from ase.calculators.calculator import PropertyNotPresent
-from ._espresso import EspressoParent
+from ._espresso import EspressoParent, EspressoWithBandstructure
 
 
-class Espresso(EspressoParent):
+class Espresso(EspressoWithBandstructure, EspressoParent):
     """
     During initialisation, al options for pw.x are copied verbatim to
     the input file, and put into the correct section. Use ``input_data``
@@ -92,6 +92,13 @@ class Espresso(EspressoParent):
     implemented_properties = ['energy', 'forces', 'stress', 'magmoms']
     command = 'pw.x -in PREFIX.pwi > PREFIX.pwo'
 
+    def read_results(self):
+        super().read_results()
+
+        if self.parameters['input_data']['control'].get('calculation', 'scf') == 'bands':
+            # Add the bandstructure to the results. This is very un-ASE-y and should eventually be replaced
+            self.band_structure(vbm_to_zero=False)
+
     def get_fermi_level(self):
         if self.calc is None:
             raise PropertyNotPresent(error_template % 'Fermi level')
@@ -128,3 +135,10 @@ class Espresso(EspressoParent):
         if nspins is None:
             warnings.warn(warn_template % 'Number of spins')
         return nspins
+
+    def eigenvalues_from_results(self):
+        assert hasattr(self.calc, 'kpts'), 'Please call {0}.calculate() prior to calling {0}.band_structure'.format(
+            self.__class__.__name__)
+
+        return np.array([[k.eps_n for k in self.calc.kpts if k.s == i_spin]
+                         for i_spin in range(self.calc.get_number_of_spins())])
