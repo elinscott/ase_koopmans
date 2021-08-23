@@ -9,7 +9,7 @@ Run pw.x jobs.
 import numpy as np
 import warnings
 from ase.calculators.calculator import PropertyNotPresent
-from ._espresso import EspressoParent, EspressoWithBandstructure
+from ._espresso import EspressoParent, EspressoWithBandstructure, error_template
 
 
 class Espresso(EspressoWithBandstructure, EspressoParent):
