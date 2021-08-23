@@ -54,6 +54,8 @@ class EspressoParent(FileIOCalculator):
         output = io.read(self.label + self.ext_out)
         self.calc = output.calc
         self.results = output.calc.results
+        if hasattr(output.calc, 'kpts'):
+            self.kpts = output.calc.kpts
 
     def get_number_of_spins(self):
         if self.calc is None:
