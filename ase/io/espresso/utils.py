@@ -81,8 +81,6 @@ def get_kpoints(card_lines):
                 kpts = [int(x) for x in splitline[:3]]
                 koffset = [int(x) for x in splitline[3:]]
                 return kpts, koffset
-            elif mode.lower() == 'crystal_b':
-                return None, None
             else:
                 raise ValueError('Failed to parse K_POINTS block')
     raise ValueError('Failed to find K_POINTS block')
