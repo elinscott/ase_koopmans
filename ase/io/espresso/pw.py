@@ -525,7 +525,7 @@ def read_espresso_in(fileobj):
     # e.g magmom, forces.
     atoms = Atoms(symbols=symbols, positions=positions, cell=cell,
                   constraint=constraint, pbc=True,
-                  calculator=Espresso(input_data=data, pseudopotentials=pseudos))
+                  calculator=Espresso(pseudopotentials=pseudos, **data))
     atoms.calc.atoms = atoms
 
     if any(['k_points' in l.lower() for l in card_lines]):

@@ -42,7 +42,7 @@ def read_pw2wannier_in(fileobj):
         raise KeyError('Required section &inputpp not found.')
 
     calc = PW2Wannier()
-    calc.parameters['inputpp'] = data['inputpp']
+    calc.parameters.update(data['inputpp'])
     atoms = Atoms(calculator=calc)
     atoms.calc.atoms = atoms
 
@@ -63,13 +63,11 @@ def write_pw2wannier_in(fd, atoms, **kwargs):
     """
 
     # Convert to a namelist to make working with parameters much easier
-    # Note that the name ``input_data`` is chosen to prevent clash with
-    # ``parameters`` in Calculator objects
     if 'inputpp' not in atoms.calc.parameters:
         raise ValueError('No inputpp block found')
 
     p2w = ['&inputpp\n']
-    for key, value in atoms.calc.parameters['inputpp'].items():
+    for key, value in atoms.calc.parameters.items():
         if value is True:
             p2w.append('   {0:16} = .true.\n'.format(key))
         elif value is False:
