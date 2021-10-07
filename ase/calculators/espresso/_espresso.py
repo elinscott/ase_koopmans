@@ -95,5 +95,5 @@ class EspressoWithBandstructure:
             # Shift so that the VBM = 0.0
             eigenvalues_np -= self.vbm_energy
 
-        self.results['band structure'] = BandStructure(self.parameters['kpts'], eigenvalues_np)
+        self.results['band structure'] = BandStructure(self.parameters.kpath, eigenvalues_np)
         return self.results['band structure']

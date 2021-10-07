@@ -19,13 +19,18 @@ KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'lrpa'
 
 
 def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
-                          kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
+                          kspacing=None, kpts=None, koffset=(0, 0, 0), kpath=None, **kwargs):
 
     if 'input_data' in atoms.calc.parameters and input_data is None:
         input_data = atoms.calc.parameters['input_data']
 
     input_parameters = construct_namelist(input_data, **kwargs)
     lines = []
+
+    if kpts is not None:
+        for i, k in enumerate(kpts):
+            input_parameters['HAM'][f'mp{i+1}'] = k
+
     for section in input_parameters:
         assert section in KEYS.keys()
 
@@ -44,15 +49,18 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
                 lines.append('   {0:16} = {1!r:}\n'.format(key, value))
         lines.append('/\n')  # terminate section
 
-    # kpoints block
-    lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
+    # kpoints block, using the kpath if present
+    if kpath is not None:
+        lines += construct_kpoints_card(atoms, kpath, kspacing, koffset)
+    else:
+        lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
 
     fd.writelines(lines)
 
 
 def read_koopmans_ham_in(fileobj):
     data, _ = read_fortran_namelist(fileobj)
-    calc = KoopmansHam(input_data=data)
+    calc = KoopmansHam(**{k: v for block in data.values() for k, v in block.items()})
     return Atoms(calculator=calc)
 
 

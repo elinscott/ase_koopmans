@@ -44,7 +44,7 @@ def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,
 
 def read_wann2kc_in(fileobj):
     data, _ = read_fortran_namelist(fileobj)
-    calc = Wann2KC(input_data=data)
+    calc = Wann2KC(**{k: v for block in data.values() for k, v in block.items()})
     return Atoms(calculator=calc)
 
 

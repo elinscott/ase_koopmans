@@ -20,5 +20,5 @@ class Wann2KC(EspressoParent):
     command = 'wann2kc.x -in PREFIX.w2ki > PREFIX.w2ko'
 
     def __init__(self, *args, **kwargs):
-        kwargs['label'] = 'kc_screen'
+        kwargs['label'] = 'wann2kc'
         super().__init__(*args, **kwargs)

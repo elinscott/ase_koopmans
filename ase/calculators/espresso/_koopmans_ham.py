@@ -26,8 +26,9 @@ class KoopmansHam(EspressoWithBandstructure, EspressoParent):
 
     def read_results(self):
         super().read_results()
-        # Add the bandstructure to the results
-        self.band_structure(vbm_to_zero=True)
+        if len(self.parameters.kpath.kpts) > 0:
+            # Add the bandstructure to the results
+            self.band_structure(vbm_to_zero=True)
 
     @property
     def vbm_index(self):
