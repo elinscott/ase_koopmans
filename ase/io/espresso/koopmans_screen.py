@@ -13,7 +13,7 @@ from .wann2kc import KEYS as W2KKEYS
 from ase.calculators.espresso import KoopmansScreen
 
 KEYS = copy.deepcopy(W2KKEYS)
-KEYS['SCREEN'] = ['tr2_ph', 'nmix_ph', 'niter_ph', 'lrpa', 'mp1', 'mp2', 'mp3', 'eps_inf', 'i_orb']
+KEYS['SCREEN'] = ['tr2_ph', 'nmix_ph', 'niter_ph', 'lrpa', 'mp1', 'mp2', 'mp3', 'eps_inf', 'i_orb', 'check_spread']
 
 
 def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):

@@ -61,6 +61,13 @@ class SinglePointKPoint:
         self.eps_n = eps_n
         self.f_n = f_n
 
+    def todict(self):
+        return self.__dict__
+
+    @classmethod
+    def fromdict(cls, dct):
+        return cls(**dct)
+
 
 def arrays_to_kpoints(eigenvalues, occupations, weights):
     """Helper function for building SinglePointKPoints.

@@ -155,6 +155,8 @@ def read_wannier90_in(fd):
                     elif keyw == 'projections':
                         block_lines = [[l[0].strip('f=:').split(',')] + l[1:] for l in block_lines]
                         calc.parameters[keyw] = {'sites': parse_value(block_lines)}
+                    elif keyw == 'kpoints':
+                        calc.parameters['kpts'] = [r[:-1] for r in parse_value(block_lines)]
                     else:
                         calc.parameters[keyw] = parse_value(block_lines)
             else:

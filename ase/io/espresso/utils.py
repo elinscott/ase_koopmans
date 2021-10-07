@@ -5,13 +5,15 @@ Written by Edward Linscott 2020-21
 """
 
 import warnings
+import os
 import numpy as np
+from pathlib import Path
 import operator as op
 from collections import OrderedDict
 from ase.units import create_units
 from ase.calculators.calculator import kpts2ndarray, kpts2sizeandoffsets
 from ase.constraints import FixAtoms, FixCartesian
-from ase.data import chemical_symbols
+from ase.data import atomic_numbers, chemical_symbols
 
 # Quantum ESPRESSO uses CODATA 2006 internally
 units = create_units('2006')
@@ -732,12 +734,19 @@ def generic_construct_namelist(parameters=None, warn=False, local_keys=None, **k
         for key in local_keys[section]:
             # Check all three separately and pop them all so that
             # we can check for missing values later
+
+            value = None
             if key in parameters.get(section, {}):
-                sec_list[key] = parameters[section].pop(key)
+                value = parameters[section].pop(key)
             if key in parameters:
-                sec_list[key] = parameters.pop(key)
+                value = parameters.pop(key)
             if key in kwargs:
-                sec_list[key] = kwargs.pop(key)
+                value = kwargs.pop(key)
+
+            if value is not None:
+                if isinstance(value, Path):
+                    value = str(value) + os.path.sep
+                sec_list[key] = value
 
             # Check if there is a key(i) version (no extra parsing)
             cp_parameters = parameters.copy()
@@ -1062,3 +1071,282 @@ def safe_string_to_list_of_floats(string):
             else:
                 out.append(safe_float(word))
     return out
+
+
+def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
+                      kspacing=None, kpts=None, koffset=(0, 0, 0),
+                      crystal_coordinates=False, local_construct_namelist=None,
+                      include_kpoints=True, **kwargs):
+    """
+    Create an input file for a generic Quantum ESPRESSO calculator
+
+    Use set_initial_magnetic_moments to turn on spin, if ispin is set to 2
+    with no magnetic moments, they will all be set to 0.0. Magnetic moments
+    will be converted to the QE units (fraction of valence electrons) using
+    any pseudopotential files found, or a best guess for the number of
+    valence electrons.
+
+    Units are not converted for any other input data, so use Quantum ESPRESSO
+    units (Usually Ry or atomic units).
+
+    Keys with a dimension (e.g. Hubbard_U(1)) will be incorporated as-is
+    so the `i` should be made to match the output.
+
+    Implemented features:
+
+    - Conversion of :class:`ase.constraints.FixAtoms` and
+                    :class:`ase.constraints.FixCartesian`.
+    - `starting_magnetization` derived from the `mgmoms` and pseudopotentials
+      (searches default paths for pseudo files.)
+    - Automatic assignment of options to their correct sections.
+    - Interpretation of ibrav (cell must exactly match the vectors defined
+      in the QE docs).
+
+    Not implemented:
+
+    - Lists of k-points
+    - Other constraints
+    - Hubbard parameters
+    - Validation of the argument types for input
+    - Validation of required options
+    - Reorientation for ibrav settings
+    - Noncollinear magnetism
+
+    Parameters
+    ----------
+    fd: file
+        A file like object to write the input file to.
+    atoms: Atoms
+        A single atomistic configuration to write to `fd`.
+    input_data: dict
+        A flat or nested dictionary with input parameters for pw.x
+    pseudopotentials: dict
+        A filename for each atomic species, e.g.
+        {'O': 'O.pbe-rrkjus.UPF', 'H': 'H.pbe-rrkjus.UPF'}.
+        A dummy name will be used if none are given.
+    kspacing: float
+        Generate a grid of k-points with this as the minimum distance,
+        in A^-1 between them in reciprocal space. If set to None, kpts
+        will be used instead.
+    kpts: (int, int, int) or dict
+        If kpts is a tuple (or list) of 3 integers, it is interpreted
+        as the dimensions of a Monkhorst-Pack grid.
+        If ``kpts`` is set to ``None``, only the Γ-point will be included
+        and QE will use routines optimized for Γ-point-only calculations.
+        Compared to Γ-point-only calculations without this optimization
+        (i.e. with ``kpts=(1, 1, 1)``), the memory and CPU requirements
+        are typically reduced by half.
+        If kpts is a dict, it will either be interpreted as a path
+        in the Brillouin zone (*) if it contains the 'path' keyword,
+        otherwise it is converted to a Monkhorst-Pack grid (**).
+        (*) see ase.dft.kpoints.bandpath
+        (**) see ase.calculators.calculator.kpts2sizeandoffsets
+    koffset: (int, int, int)
+        Offset of kpoints in each direction. Must be 0 (no offset) or
+        1 (half grid offset). Setting to True is equivalent to (1, 1, 1).
+    crystal_coordinates: bool
+        Whether the atomic positions should be written to the QE input file in
+        absolute (False, default) or relative (crystal) coordinates (True).
+
+    """
+
+    # Convert to a namelist to make working with parameters much easier
+    # Note that the name ``input_data`` is chosen to prevent clash with
+    # ``parameters`` in Calculator objects
+    if 'input_data' in atoms.calc.parameters:
+        if input_data is None:
+            input_data = atoms.calc.parameters['input_data']
+        elif input_data != atoms.calc.parameters['input_data']:
+            warnings.warn("write_espresso_in(...) is ignoring "
+                          "atom.calc.parameters['input_data'] in favor of "
+                          "the input_data provided to it as an argument")
+
+    input_parameters = local_construct_namelist(input_data, **kwargs)
+
+    # Convert ase constraints to QE constraints
+    # Nx3 array of force multipliers matches what QE uses
+    # Do this early so it is available when constructing the atoms card
+    constraint_mask = np.ones((len(atoms), 3), dtype='int')
+    for constraint in atoms.constraints:
+        if isinstance(constraint, FixAtoms):
+            constraint_mask[constraint.index] = 0
+        elif isinstance(constraint, FixCartesian):
+            constraint_mask[constraint.a] = constraint.mask
+        else:
+            warnings.warn('Ignored unknown constraint {}'.format(constraint))
+
+    # Deal with pseudopotentials
+    # Look in all possible locations for the pseudos and try to figure
+    # out the number of valence electrons
+    pseudo_dirs = []
+    if 'pseudo_dir' in input_parameters['control']:
+        pseudo_dirs.append(input_parameters['control']['pseudo_dir'])
+    if 'ESPRESSO_PSEUDO' in os.environ:
+        pseudo_dirs.append(os.environ['ESPRESSO_PSEUDO'])
+    pseudo_dirs.append(os.path.expanduser('~/espresso/pseudo/'))
+
+    # Species info holds the information on the pseudopotential and
+    # associated for each element
+    if pseudopotentials is None:
+        pseudopotentials = atoms.calc.parameters.get('pseudopotentials', {})
+    species_info = {}
+
+    species = atoms.get_chemical_symbols()
+    if 'labels' in atoms.arrays:
+        labels = atoms.get_array('labels')
+    else:
+        labels = species
+
+    for label, specie in set(zip(labels, species)):
+        pseudo = pseudopotentials.get(label, '{}_dummy.UPF'.format(specie))
+        for pseudo_dir in pseudo_dirs:
+            if os.path.exists(os.path.join(pseudo_dir, pseudo)):
+                valence = grep_valence(os.path.join(pseudo_dir, pseudo))
+                break
+        else:  # not found in a file
+            raise ValueError()
+            valence = SSSP_VALENCE[atomic_numbers[specie]]
+
+        species_info[label] = {'pseudo': pseudo,
+                               'valence': valence}
+
+    # Convert atoms into species.
+    # Each different magnetic moment needs to be a separate type even with
+    # the same pseudopotential (e.g. an up and a down for AFM).
+    # if any magmom are > 0 or nspin == 2 then use species labels.
+    # Rememeber: magnetisation uses 1 based indexes
+    atomic_species = OrderedDict()
+    atomic_species_str = []
+    atomic_positions_str = []
+
+    nspin = input_parameters['system'].get('nspin', 1)  # 1 is the default
+    if any(atoms.get_initial_magnetic_moments()):
+        if nspin == 1:
+            # Force spin on
+            input_parameters['system']['nspin'] = 2
+            nspin = 2
+
+    if nspin == 2:
+        # Spin on
+        for atom, label, magmom in zip(atoms, labels, atoms.get_initial_magnetic_moments()):
+            if (label, magmom) not in atomic_species:
+                # spin as fraction of valence
+                fspin = float(magmom) / species_info[label]['valence']
+                # Index in the atomic species list
+                sidx = len(atomic_species) + 1
+                # Index for that atom type; no index for first one
+                tidx = sum(atom.symbol == x[0] for x in atomic_species) or ' '
+                atomic_species[(label, magmom)] = (sidx, tidx)
+                # Add magnetization to the input file
+                mag_str = 'starting_magnetization({0})'.format(sidx)
+                input_parameters['system'][mag_str] = fspin
+                atomic_species_str.append(
+                    '{species}{tidx} {mass} {pseudo}\n'.format(
+                        species=label, tidx=tidx, mass=atom.mass,
+                        pseudo=species_info[label]['pseudo']))
+            # lookup tidx to append to name
+            sidx, tidx = atomic_species[(label, magmom)]
+
+            # only inclued mask if something is fixed
+            if not all(constraint_mask[atom.index]):
+                mask = ' {mask[0]} {mask[1]} {mask[2]}'.format(
+                    mask=constraint_mask[atom.index])
+            else:
+                mask = ''
+
+            # construct line for atomic positions
+            atomic_positions_str.append(
+                f'{label}{tidx} '
+                f'{atom.x:.10f} {atom.y:.10f} {atom.z:.10f}'
+                f'{mask}\n')
+
+    else:
+        # Do nothing about magnetisation
+        for atom, label in zip(atoms, labels):
+            if label not in atomic_species:
+                atomic_species[label] = True  # just a placeholder
+                atomic_species_str.append(
+                    '{species} {mass} {pseudo}\n'.format(
+                        species=label, mass=atom.mass,
+                        pseudo=species_info[label]['pseudo']))
+
+            # only inclued mask if something is fixed
+            if not all(constraint_mask[atom.index]):
+                mask = ' {mask[0]} {mask[1]} {mask[2]}'.format(
+                    mask=constraint_mask[atom.index])
+            else:
+                mask = ''
+
+            if crystal_coordinates:
+                coords = [atom.a, atom.b, atom.c]
+            else:
+                coords = atom.position
+            atomic_positions_str.append(
+                '{label} '
+                '{coords[0]:.10f} {coords[1]:.10f} {coords[2]:.10f} '
+                '{mask}\n'.format(label=label, coords=coords, mask=mask))
+
+    # Add computed parameters
+    # different magnetisms means different types
+    input_parameters['system']['ntyp'] = len(atomic_species)
+    input_parameters['system']['nat'] = len(atoms)
+
+    # Use cell as given or fit to a specific ibrav
+    if 'ibrav' in input_parameters['system']:
+        ibrav = input_parameters['system']['ibrav']
+        if ibrav != 0:
+            celldm = cell_to_ibrav(atoms.cell, ibrav)
+            regen_cell = ibrav_to_cell(celldm)[1]
+            if not np.allclose(atoms.cell, regen_cell):
+                warnings.warn('Input cell does not match requested ibrav'
+                              '{} != {}'.format(regen_cell, atoms.cell))
+            input_parameters['system'].update(celldm)
+    else:
+        # Just use standard cell block
+        input_parameters['system']['ibrav'] = 0
+
+    # Construct input file into this
+    flines = []
+
+    # Assume sections are ordered (taken care of in namelist construction)
+    # and that repr converts to a QE readable representation (except bools)
+    for section in input_parameters:
+        flines.append('&{0}\n'.format(section.upper()))
+        for key, value in input_parameters[section].items():
+            if value is True:
+                flines.append('   {0:16} = .true.\n'.format(key))
+            elif value is False:
+                flines.append('   {0:16} = .false.\n'.format(key))
+            elif value is not None:
+                # repr format to get quotes around strings
+                flines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        flines.append('/\n')  # terminate section
+    flines.append('\n')
+
+    flines.append('ATOMIC_SPECIES\n')
+    flines.extend(atomic_species_str)
+    flines.append('\n')
+
+    # KPOINTS - add a MP grid as required
+    if include_kpoints:
+        flines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
+
+    # CELL block, if required
+    if input_parameters['SYSTEM']['ibrav'] == 0:
+        flines.append('CELL_PARAMETERS angstrom\n')
+        flines.append('{cell[0][0]:.14f} {cell[0][1]:.14f} {cell[0][2]:.14f}\n'
+                      '{cell[1][0]:.14f} {cell[1][1]:.14f} {cell[1][2]:.14f}\n'
+                      '{cell[2][0]:.14f} {cell[2][1]:.14f} {cell[2][2]:.14f}\n'
+                      ''.format(cell=atoms.cell))
+        flines.append('\n')
+
+    # Positions - already constructed, but must appear after namelist
+    if crystal_coordinates:
+        flines.append('ATOMIC_POSITIONS crystal\n')
+    else:
+        flines.append('ATOMIC_POSITIONS angstrom\n')
+    flines.extend(atomic_positions_str)
+    flines.append('\n')
+
+    # DONE!
+    fd.write(''.join(flines))

@@ -95,7 +95,7 @@ class Espresso(EspressoWithBandstructure, EspressoParent):
     def read_results(self):
         super().read_results()
 
-        if self.parameters['input_data']['control'].get('calculation', 'scf') == 'bands':
+        if self.parameters.get('calculation', 'scf') == 'bands':
             # Add the bandstructure to the results. This is very un-ASE-y and should eventually be replaced
             self.band_structure(vbm_to_zero=False)
 

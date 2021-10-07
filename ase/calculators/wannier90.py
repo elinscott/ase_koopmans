@@ -26,6 +26,11 @@ class Wannier90(FileIOCalculator):
         """
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
+
+        if atoms is not None:
+            self.atoms = atoms
+            self.atoms.calc = self
+
         self.calc = None
 
     def set(self, **kwargs):

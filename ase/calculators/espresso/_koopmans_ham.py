@@ -31,7 +31,7 @@ class KoopmansHam(EspressoWithBandstructure, EspressoParent):
 
     @property
     def vbm_index(self):
-        return self.parameters['input_data']['wannier']['num_wann_occ'] - 1
+        return self.parameters.num_wann_occ - 1
 
     def eigenvalues_from_results(self):
         assert 'eigenvalues' in self.results, 'Please call {0}.calculate() prior to calling {0}.band_structure'.format(
