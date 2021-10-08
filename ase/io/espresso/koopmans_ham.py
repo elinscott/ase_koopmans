@@ -49,11 +49,13 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
                 lines.append('   {0:16} = {1!r:}\n'.format(key, value))
         lines.append('/\n')  # terminate section
 
-    # kpoints block, using the kpath if present
-    if kpath is not None:
-        lines += construct_kpoints_card(atoms, kpath, kspacing, koffset)
-    else:
-        lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
+    # kpoints block
+    if input_parameters['HAM'].get('do_bands', True):
+        if kpath is not None:
+            # use the kpath if present
+            lines += construct_kpoints_card(atoms, kpath, kspacing, koffset)
+        else:
+            lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
 
     fd.writelines(lines)
 
