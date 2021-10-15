@@ -9,6 +9,7 @@ Run kc_ham.x jobs.
 
 
 import numpy as np
+from ase.dft.kpoints import BandPath
 from ._espresso import EspressoParent, EspressoWithBandstructure
 
 
@@ -26,7 +27,7 @@ class KoopmansHam(EspressoWithBandstructure, EspressoParent):
 
     def read_results(self):
         super().read_results()
-        if len(self.parameters.kpath.kpts) > 0:
+        if isinstance(self.parameters.kpts, BandPath) and len(self.parameters.kpts.kpts) > 0:
             # Add the bandstructure to the results
             self.band_structure(vbm_to_zero=True)
 

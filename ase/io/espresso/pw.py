@@ -521,6 +521,10 @@ def read_pw_in(fileobj):
     # Switch from using 'input_data' to a flat dictionary
     data = {k: v for block in data.values() for k, v in block.items()}
 
+    # Don't store ntyp and nat because these are derivable from the atoms object
+    data.pop('ntyp', None)
+    data.pop('nat', None)
+
     # TODO: put more info into the atoms object
     # e.g magmom, forces.
     atoms = Atoms(symbols=symbols, positions=positions, cell=cell,
@@ -529,7 +533,7 @@ def read_pw_in(fileobj):
     atoms.calc.atoms = atoms
 
     if any(['k_points' in l.lower() for l in card_lines]):
-        atoms.calc.parameters['kpts'], atoms.calc.parameters['koffset'] = get_kpoints(card_lines)
+        atoms.calc.parameters['kpts'], atoms.calc.parameters['koffset'] = get_kpoints(card_lines, cell=atoms.cell)
 
     return atoms
 

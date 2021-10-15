@@ -7,9 +7,10 @@ structures from koopmans_ham.x input files.
 import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
+from ase.dft.kpoints import BandPath
 from ase.utils import basestring
 from .utils import construct_kpoints_card, generic_construct_namelist, safe_string_to_list_of_floats, time_to_float, \
-    read_fortran_namelist
+    read_fortran_namelist, get_kpoints
 from .wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.espresso import KoopmansHam
@@ -19,17 +20,13 @@ KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'lrpa'
 
 
 def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
-                          kspacing=None, kpts=None, koffset=(0, 0, 0), kpath=None, **kwargs):
+                          kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
 
     if 'input_data' in atoms.calc.parameters and input_data is None:
         input_data = atoms.calc.parameters['input_data']
 
     input_parameters = construct_namelist(input_data, **kwargs)
     lines = []
-
-    if kpts is not None:
-        for i, k in enumerate(kpts):
-            input_parameters['HAM'][f'mp{i+1}'] = k
 
     for section in input_parameters:
         assert section in KEYS.keys()
@@ -49,13 +46,9 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
                 lines.append('   {0:16} = {1!r:}\n'.format(key, value))
         lines.append('/\n')  # terminate section
 
-    # kpoints block
     if input_parameters['HAM'].get('do_bands', True):
-        if kpath is not None:
-            # use the kpath if present
-            lines += construct_kpoints_card(atoms, kpath, kspacing, koffset)
-        else:
-            lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
+        assert isinstance(kpts, BandPath)
+        lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
 
     fd.writelines(lines)
 

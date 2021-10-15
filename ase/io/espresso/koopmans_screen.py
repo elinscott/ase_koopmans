@@ -23,11 +23,6 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
 
     input_parameters = construct_namelist(input_data, **kwargs)
 
-    kpts = kwargs.pop('kpts', None)
-    if kpts is not None:
-        for i, k in enumerate(kpts):
-            input_parameters['SCREEN'][f'mp{i+1}'] = k
-
     lines = []
     for section in input_parameters:
         assert section in KEYS.keys()

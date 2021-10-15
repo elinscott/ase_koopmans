@@ -7,8 +7,12 @@ Instead, everything is stored in ase.calc.parmaeters
 import re
 import json
 import numpy as np
+import math
+from typing import List
 from ase.utils import basestring
 from ase.atoms import Atoms
+from ase.cell import Cell
+from ase.dft.kpoints import BandPath, bandpath
 from ase.calculators.wannier90 import Wannier90
 
 
@@ -39,10 +43,7 @@ def write_wannier90_in(fd, atoms):
 
     for kw, opt in settings.items():
 
-        if kw == 'koffset':
-            continue
-
-        if kw == 'kpts':
+        if kw == 'kpoints':
             if np.ndim(opt) == 2:
                 rows_str = [' '.join([str(v) for v in row] + [str(1 / len(opt))]) for row in opt]
                 fd.write(block_format('kpoints', rows_str))
@@ -69,14 +70,14 @@ def write_wannier90_in(fd, atoms):
             opt_str = ' '.join([str(v) for v in opt])
             fd.write(f'{kw} = {opt_str}\n')
 
-        elif kw == 'kpath':
+        elif kw == 'kpoint_path':
             if settings.get('bands_plot', False):
                 rows_str = []
                 for start, end in zip(opt.path[:-1], opt.path[1:]):
                     rows_str.append('')
                     for point in (start, end):
                         rows_str[-1] += ' ' + point + ' '.join([f'{v:9.5f}' for v in opt.special_points[point]])
-                fd.write(block_format('kpoint_path', rows_str))
+                fd.write(block_format(kw, rows_str))
 
         elif isinstance(opt, list):
             if np.ndim(opt) == 1:
@@ -126,6 +127,7 @@ def read_wannier90_in(fd):
     keyw = None
     read_block = False
     block_lines = None
+    kpoint_path = None
 
     calc = Wannier90()
 
@@ -148,7 +150,7 @@ def read_wannier90_in(fd):
                     read_block = False
                     if keyw == 'unit_cell_cart':
                         assert block_lines.pop(0) == ['ang']
-                        cell = parse_value(block_lines)
+                        cell = Cell(parse_value(block_lines))
                     elif keyw == 'atoms_frac':
                         symbols = [l[0] for l in block_lines]
                         scaled_positions = parse_value([l[1:] for l in block_lines])
@@ -156,7 +158,14 @@ def read_wannier90_in(fd):
                         block_lines = [[l[0].strip('f=:').split(',')] + l[1:] for l in block_lines]
                         calc.parameters[keyw] = {'sites': parse_value(block_lines)}
                     elif keyw == 'kpoints':
-                        calc.parameters['kpts'] = [r[:-1] for r in parse_value(block_lines)]
+                        calc.parameters[keyw] = np.array([line[:-1] for line in block_lines], dtype=float)
+                    elif keyw == 'kpoint_path':
+                        kpoint_path = block_lines[0][0]
+                        for line, prev_line in zip(block_lines[1:], block_lines[:-1]):
+                            if line[0] != prev_line[4]:
+                                kpoint_path += prev_line[4] + ','
+                            kpoint_path += line[0]
+                        kpoint_path += line[4]
                     else:
                         calc.parameters[keyw] = parse_value(block_lines)
             else:
@@ -182,10 +191,61 @@ def read_wannier90_in(fd):
             else:
                 calc.parameters[keyw] = parse_value(' '.join(lsplit[1:]))
 
+    # Convert kpoint_path to a BandPath object
+    if kpoint_path is not None:
+        calc.parameters.kpoint_path = construct_kpoint_path(
+            path=kpoint_path, cell=cell, bands_point_num=calc.parameters.get('bands_point_num', 100))
+
     atoms = Atoms(symbols=symbols, scaled_positions=scaled_positions, cell=cell, calculator=calc)
     atoms.calc.atoms = atoms
 
     return atoms
+
+
+def _path_lengths(path: str, cell: Cell, bands_point_num: int) -> List[int]:
+    # Construct the metric for reciprocal space (based off Wannier90's "utility_metric" subroutine)
+    recip_lat = 2 * math.pi * cell.reciprocal().array
+    recip_metric = recip_lat @ recip_lat.T
+
+    # Work out the lengths Wannier90 will assign each path (based off Wannier90's "plot_interpolate_bands" subroutine)
+    kpath_pts: List[int] = []
+    kpath_len: List[float] = []
+
+    for i, (start, end) in enumerate(zip(path[:-1], path[1:])):
+        if start == ',':
+            kpath_pts.append(0)
+        elif end == ',':
+            kpath_pts.append(1)
+        else:
+            special_points = cell.bandpath().special_points
+            vec = special_points[end] - special_points[start]
+            kpath_len.append(math.sqrt(vec.T @ recip_metric @ vec))
+            if i == 0:
+                kpath_pts.append(bands_point_num)
+            else:
+                kpath_pts.append(int(round(bands_point_num * kpath_len[-1] / kpath_len[0])))
+    return kpath_pts
+
+
+def construct_kpoint_path(path: str, cell: Cell, bands_point_num: int) -> BandPath:
+    path_lengths = _path_lengths(path, cell, bands_point_num)
+
+    kpts = []
+    for start, end, npoints in zip(path[:-1], path[1:], path_lengths):
+        if npoints == 0:
+            continue
+        bp = bandpath(start + end, cell, npoints + 1).kpts[:-1].tolist()
+        kpts += bp
+    # Don't forget about the final kpoint
+    kpts.append(bp[-1])
+
+    if len(kpts) != sum(path_lengths) + 1:
+        raise AssertionError(
+            'Did not get the expected number of kpoints; this suggests there is a bug in the code')
+
+    special_points = cell.bandpath().special_points
+
+    return BandPath(cell=cell, kpts=kpts, path=path, special_points=special_points)
 
 
 def read_wannier90_out(fd):
@@ -216,8 +276,10 @@ def read_wannier90_out(fd):
     convergence = False
     convergence_dis = None
     imre_ratio = []
+    centers = []
+    spreads = []
 
-    for line in flines:
+    for i, line in enumerate(flines):
         if 'All done' in line:
             job_done = True
         if 'Exiting...' in line and '.nnkp written' in line:
@@ -232,6 +294,13 @@ def read_wannier90_out(fd):
             walltime = float(line.split()[-2])
         if 'Maximum Im/Re Ratio' in line:
             imre_ratio.append(float(line.split()[-1]))
+        if 'Final State' in line:
+            j = 1
+            while 'WF centre and spread' in flines[i + j]:
+                splitline = [x.rstrip(',') for x in flines[i + j].split()]
+                centers.append([float(x) for x in splitline[6:9]])
+                spreads.append(float(splitline[-1]))
+                j += 1
 
     calc = Wannier90(atoms=structure)
     calc.results['job done'] = job_done
@@ -241,6 +310,8 @@ def read_wannier90_out(fd):
     else:
         calc.results['convergence'] = convergence
     calc.results['Im/Re ratio'] = imre_ratio
+    calc.results['centers'] = centers
+    calc.results['spreads'] = spreads
 
     structure.calc = calc
 

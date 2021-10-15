@@ -6,6 +6,7 @@ Written by Edward Linscott 2020-21
 
 import warnings
 import os
+from ase.dft.kpoints import BandPath, labels_from_kpts
 import numpy as np
 from pathlib import Path
 import operator as op
@@ -71,7 +72,7 @@ class Namelist(OrderedDict):
         return super(Namelist, self).get(key.lower(), default)
 
 
-def get_kpoints(card_lines):
+def get_kpoints(card_lines, cell=None):
     # Find kpts, koffset from card_lines
     for i, line in enumerate(card_lines):
         if line.startswith('K_POINTS'):
@@ -83,6 +84,12 @@ def get_kpoints(card_lines):
                 kpts = [int(x) for x in splitline[:3]]
                 koffset = [int(x) for x in splitline[3:]]
                 return kpts, koffset
+            elif mode.lower() == 'crystal_b':
+                assert cell is not None
+                n_kpts = int(card_lines[i + 1])
+                kpts = np.array([[float(x) for x in line.split()[:3]] for line in card_lines[i + 2: i + 2 + n_kpts]])
+                _, _, path_list = labels_from_kpts(kpts, cell)
+                return BandPath(path=''.join(path_list), cell=cell, special_points=cell.bandpath().special_points, kpts=kpts), [0, 0, 0]
             else:
                 raise ValueError('Failed to parse K_POINTS block')
     raise ValueError('Failed to find K_POINTS block')
