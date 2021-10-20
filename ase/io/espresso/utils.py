@@ -1082,7 +1082,7 @@ def safe_string_to_list_of_floats(string):
 
 def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                       kspacing=None, kpts=None, koffset=(0, 0, 0),
-                      crystal_coordinates=False, local_construct_namelist=None,
+                      crystal_coordinates=None, local_construct_namelist=None,
                       include_kpoints=True, **kwargs):
     """
     Create an input file for a generic Quantum ESPRESSO calculator
@@ -1153,9 +1153,14 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         1 (half grid offset). Setting to True is equivalent to (1, 1, 1).
     crystal_coordinates: bool
         Whether the atomic positions should be written to the QE input file in
-        absolute (False, default) or relative (crystal) coordinates (True).
+        absolute (False) or relative (crystal) coordinates (True). If no value
+        is provided, this keyword will take the value of atoms.pbc
 
     """
+
+    # Default for crystal_coordinates
+    if crystal_coordinates is None:
+        crystal_coordinates = all(atoms.pbc)
 
     # Convert to a namelist to make working with parameters much easier
     # Note that the name ``input_data`` is chosen to prevent clash with
@@ -1211,7 +1216,6 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 valence = grep_valence(os.path.join(pseudo_dir, pseudo))
                 break
         else:  # not found in a file
-            raise ValueError()
             valence = SSSP_VALENCE[atomic_numbers[specie]]
 
         species_info[label] = {'pseudo': pseudo,
@@ -1262,9 +1266,13 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 mask = ''
 
             # construct line for atomic positions
+            if crystal_coordinates:
+                coords = [atom.a, atom.b, atom.c]
+            else:
+                coords = atom.position
             atomic_positions_str.append(
                 f'{label}{tidx} '
-                f'{atom.x:.10f} {atom.y:.10f} {atom.z:.10f}'
+                f'{coords[0]:.10f} {coords[1]:.10f} {coords[2]:.10f}'
                 f'{mask}\n')
 
     else:
@@ -1288,10 +1296,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 coords = [atom.a, atom.b, atom.c]
             else:
                 coords = atom.position
-            atomic_positions_str.append(
-                '{label} '
-                '{coords[0]:.10f} {coords[1]:.10f} {coords[2]:.10f} '
-                '{mask}\n'.format(label=label, coords=coords, mask=mask))
+            atomic_positions_str.append(f'{label} {coords[0]:.10f} {coords[1]:.10f} {coords[2]:.10f} {mask}\n')
 
     # Add computed parameters
     # different magnetisms means different types
