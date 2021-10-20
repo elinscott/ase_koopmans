@@ -8,10 +8,12 @@ import re
 import json
 import numpy as np
 import math
+import warnings
 from typing import List
 from ase.utils import basestring
 from ase.atoms import Atoms
 from ase.cell import Cell
+from ase.geometry import wrap_positions
 from ase.dft.kpoints import BandPath, bandpath
 from ase.calculators.wannier90 import Wannier90
 
@@ -49,21 +51,7 @@ def write_wannier90_in(fd, atoms):
                 fd.write(block_format('kpoints', rows_str))
 
         elif kw == 'projections':
-            rows_str = []
-            if 'units' in opt:
-                rows_str.append(opt['units'])
-            for [site, proj] in opt['sites']:
-                if isinstance(site, list):
-                    # Interpret as fractional coordinates
-                    site_str = 'f=' + ','.join([str(v) for v in site])
-                else:
-                    # Interpret as atom label
-                    site_str = str(site)
-                if isinstance(proj, list):
-                    proj_str = ';'.join(proj)
-                else:
-                    proj_str = str(proj)
-                rows_str.append(f'{site_str}: {proj_str}')
+            rows_str = [proj_dict_to_string(dct) for dct in opt]
             fd.write(block_format(kw, rows_str))
 
         elif kw == 'mp_grid':
@@ -155,8 +143,7 @@ def read_wannier90_in(fd):
                         symbols = [l[0] for l in block_lines]
                         scaled_positions = parse_value([l[1:] for l in block_lines])
                     elif keyw == 'projections':
-                        block_lines = [[l[0].strip('f=:').split(',')] + l[1:] for l in block_lines]
-                        calc.parameters[keyw] = {'sites': parse_value(block_lines)}
+                        calc.parameters[keyw] = [proj_string_to_dict(' '.join(line)) for line in block_lines]
                     elif keyw == 'kpoints':
                         calc.parameters[keyw] = np.array([line[:-1] for line in block_lines], dtype=float)
                     elif keyw == 'kpoint_path':
@@ -200,6 +187,84 @@ def read_wannier90_in(fd):
     atoms.calc.atoms = atoms
 
     return atoms
+
+
+def proj_dict_to_string(dct):
+    site = []
+    site_outside_pc = False
+    if 'csite' in dct:
+        coords = np.array(dct['csite'])
+        # Check coords are inside the cell
+        [wrapped_coords] = wrap_positions([coords], atoms.cell)
+        if np.linalg.norm(wrapped_coords - coords) > 1e-3:
+            site_outside_pc = True
+            coords = wrapped_coords
+        site.append('c=' + ','.join([str(c) for c in coords]))
+    elif 'fsite' in dct:
+        coords = dct['fsite']
+        # Check coords are inside the cell
+        if any([x // 1 != 0 for x in coords]):
+            site_outside_pc = True
+            coords = [x % 1 for x in coords]
+        site.append('f=' + ','.join([str(c) for c in coords]))
+    elif 'site' in dct:
+        site.append(dct['site'])
+    else:
+        raise ValueError('w90 projections block is missing a "site" entry')
+
+    if site_outside_pc:
+        warnings.warn('This site lies outside the primitive cell. It has been wrapped.')
+
+    if 'ang_mtm' not in dct:
+        raise ValueError('w90 projections block is missing an "ang_mtm" entry')
+    site.append(dct['ang_mtm'])
+
+    if 'zaxis' in dct:
+        site.append('z=' + ','.join(str(x) for x in dct['zaxis']))
+
+    if 'xaxis' in dct:
+        site.append('x=' + ','.join(str(x) for x in dct['zaxis']))
+
+    if 'radial' in dct:
+        site.append(f'r={dct["radial"]}')
+
+    if 'zona' in dct:
+        site.append(f'zona={dct["zona"]}')
+
+    return ':'.join(site)
+
+
+def proj_string_to_dict(string):
+    # Converts a w90-formatted projector string into a dictionary
+    proj = {}
+    [site, ang_mtm] = string.split(':')[:2]
+
+    # Storing site
+    if '=' in site:
+        site_vec = parse_value(site.split('=')[1].split(','))
+        if site.startswith('c'):
+            proj['csite'] = site_vec
+        else:
+            proj['fsite'] = site_vec
+    else:
+        proj['site'] = site
+
+    # Storing ang_mtm
+    proj['ang_mtm'] = ang_mtm
+
+    # Storing other optional arguments
+    for setting in string.split(':')[2:]:
+        k, v = setting.split('=')
+
+        k_to_label = {'z': 'zaxis', 'x': 'xaxis', 'r': 'radial', 'zona': 'zona'}
+        assert k in k_to_label, f'Failed to parse {k} in the projection {string}'
+
+        if ',' in v:
+            v = v.split(',')
+
+        proj[k_to_label[k]] = parse_value(v)
+
+    return proj
 
 
 def _path_lengths(path: str, cell: Cell, bands_point_num: int) -> List[int]:
