@@ -9,7 +9,7 @@ import json
 import numpy as np
 import math
 import warnings
-from typing import List
+from typing import List, Dict, Any
 from ase.utils import basestring
 from ase.atoms import Atoms
 from ase.cell import Cell
@@ -51,7 +51,7 @@ def write_wannier90_in(fd, atoms):
                 fd.write(block_format('kpoints', rows_str))
 
         elif kw == 'projections':
-            rows_str = [proj_dict_to_string(dct) for dct in opt]
+            rows_str = [proj_dict_to_string(dct, atoms) for dct in opt]
             fd.write(block_format(kw, rows_str))
 
         elif kw == 'mp_grid':
@@ -189,7 +189,7 @@ def read_wannier90_in(fd):
     return atoms
 
 
-def proj_dict_to_string(dct):
+def proj_dict_to_string(dct, atoms):
     site = []
     site_outside_pc = False
     if 'csite' in dct:
@@ -381,3 +381,26 @@ def read_wannier90_out(fd):
     structure.calc = calc
 
     yield structure
+
+
+def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
+    # Works out the value of 'num_wann' based on the 'projections' block
+    num_wann_lookup = {'s': 1, 'p': 3, 'd': 5, 'sp': 2, 'sp2': 3, 'sp3': 4, 'sp3d': 5, 'sp3d2': 6}
+    num_wann = 0
+    for proj in projections:
+        if 'site' in proj:
+            if atoms.has('labels'):
+                labels = atoms.get_array('labels')
+            else:
+                labels = atoms.symbols
+            num_sites = labels.count(proj['site'])
+        else:
+            num_sites = 1
+
+        ang_mtm = proj['ang_mtm']
+        if not ang_mtm in num_wann_lookup:
+            raise NotImplementedError(f'I do not know how to tell how many projections will result from {ang_mtm}')
+
+        num_wann += num_sites * num_wann_lookup[ang_mtm]
+
+    return num_wann
