@@ -213,7 +213,7 @@ def proj_dict_to_string(dct, atoms):
         raise ValueError('w90 projections block is missing a "site" entry')
 
     if site_outside_pc:
-        warnings.warn('This site lies outside the primitive cell. It has been wrapped.')
+        warnings.warn('A projection site lies outside the primitive cell. It has been wrapped.')
 
     if 'ang_mtm' not in dct:
         raise ValueError('w90 projections block is missing an "ang_mtm" entry')
@@ -385,7 +385,8 @@ def read_wannier90_out(fd):
 
 def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
     # Works out the value of 'num_wann' based on the 'projections' block
-    num_wann_lookup = {'s': 1, 'p': 3, 'd': 5, 'sp': 2, 'sp2': 3, 'sp3': 4, 'sp3d': 5, 'sp3d2': 6}
+    num_wann_lookup = {'s': 1, 'p': 3, 'd': 5, 'sp': 2, 'sp2': 3, 'sp3': 4, 'sp3d': 5, 'sp3d2': 6,
+                       'l=0': 1, 'l=1': 3, 'l=2': 5}
     num_wann = 0
     for proj in projections:
         if 'site' in proj:
@@ -397,10 +398,11 @@ def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
         else:
             num_sites = 1
 
-        ang_mtm = proj['ang_mtm']
-        if not ang_mtm in num_wann_lookup:
-            raise NotImplementedError(f'I do not know how to tell how many projections will result from {ang_mtm}')
+        ang_mtms = proj['ang_mtm'].split(';')
+        if not all([ang_mtm in num_wann_lookup for ang_mtm in ang_mtms]):
+            raise NotImplementedError(
+                f'I cannot work out how many projections will result from {proj["ang_mtm"]}. Please specify num_wann manually.')
 
-        num_wann += num_sites * num_wann_lookup[ang_mtm]
+        num_wann += num_sites * sum([num_wann_lookup[ang_mtm] for ang_mtm in ang_mtms])
 
     return num_wann
