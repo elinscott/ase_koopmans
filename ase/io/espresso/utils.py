@@ -76,7 +76,7 @@ def get_kpoints(card_lines, cell=None):
     # Find kpts, koffset from card_lines
     for i, line in enumerate(card_lines):
         if line.startswith('K_POINTS'):
-            mode = line.split()[-1]
+            mode = line.split()[-1].strip('{}')
             if mode.lower() == 'gamma':
                 return [1, 1, 1], [0, 0, 0]
             elif mode.lower() == 'automatic':
