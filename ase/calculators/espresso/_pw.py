@@ -8,8 +8,9 @@ Run pw.x jobs.
 
 import numpy as np
 import warnings
+from ase.dft.kpoints import BandPath
 from ase.calculators.calculator import PropertyNotPresent
-from ._espresso import EspressoParent, EspressoWithBandstructure, error_template
+from ._espresso import EspressoParent, EspressoWithBandstructure, error_template, warn_template
 
 
 class Espresso(EspressoWithBandstructure, EspressoParent):
@@ -95,7 +96,7 @@ class Espresso(EspressoWithBandstructure, EspressoParent):
     def read_results(self):
         super().read_results()
 
-        if self.parameters['input_data']['control'].get('calculation', 'scf') == 'bands':
+        if isinstance(self.parameters.kpts, BandPath):
             # Add the bandstructure to the results. This is very un-ASE-y and should eventually be replaced
             self.band_structure(vbm_to_zero=False)
 

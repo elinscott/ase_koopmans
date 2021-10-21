@@ -7,9 +7,10 @@ structures from koopmans_ham.x input files.
 import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
+from ase.dft.kpoints import BandPath
 from ase.utils import basestring
 from .utils import construct_kpoints_card, generic_construct_namelist, safe_string_to_list_of_floats, time_to_float, \
-    read_fortran_namelist
+    read_fortran_namelist, get_kpoints
 from .wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.espresso import KoopmansHam
@@ -26,6 +27,7 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
 
     input_parameters = construct_namelist(input_data, **kwargs)
     lines = []
+
     for section in input_parameters:
         assert section in KEYS.keys()
 
@@ -44,15 +46,16 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
                 lines.append('   {0:16} = {1!r:}\n'.format(key, value))
         lines.append('/\n')  # terminate section
 
-    # kpoints block
-    lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
+    if input_parameters['HAM'].get('do_bands', True):
+        assert isinstance(kpts, BandPath)
+        lines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
 
     fd.writelines(lines)
 
 
 def read_koopmans_ham_in(fileobj):
     data, _ = read_fortran_namelist(fileobj)
-    calc = KoopmansHam(input_data=data)
+    calc = KoopmansHam(**{k: v for block in data.values() for k, v in block.items()})
     return Atoms(calculator=calc)
 
 

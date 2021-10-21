@@ -6,6 +6,7 @@
 import numpy as np
 import warnings
 from ase import io
+from ase.dft.kpoints import BandPath
 from ase.spectrum.band_structure import BandStructure
 from ase.calculators.calculator import FileIOCalculator, PropertyNotPresent
 
@@ -95,5 +96,9 @@ class EspressoWithBandstructure:
             # Shift so that the VBM = 0.0
             eigenvalues_np -= self.vbm_energy
 
-        self.results['band structure'] = BandStructure(self.parameters['kpts'], eigenvalues_np)
+        if isinstance(self.parameters.kpts, BandPath):
+            path = self.parameters.kpts
+        else:
+            raise ValueError('Unrecognised format for bandpath')
+        self.results['band structure'] = BandStructure(path, eigenvalues_np)
         return self.results['band structure']

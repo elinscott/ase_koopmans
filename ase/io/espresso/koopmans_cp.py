@@ -8,8 +8,8 @@ import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from .utils import generic_construct_namelist, units, time_to_float, safe_string_to_list_of_floats
-from .pw import read_espresso_in, write_espresso_in
+from .utils import generic_construct_namelist, units, time_to_float, safe_string_to_list_of_floats, write_espresso_in
+from .pw import read_pw_in
 from .pw import KEYS as PW_KEYS
 from ase.calculators.espresso import Espresso_kcp
 
@@ -29,8 +29,7 @@ KEYS['NKSIC'] = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact',
                  'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty',
                  'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run',
                  'aux_empty_nbnd', 'print_evc0_occ_empty']
-KEYS['IONS'] += ['ion_nstepe', 'ion_radius(1)', 'ion_radius(2)', 'ion_radius(3)',
-                 'ion_radius(4)']
+KEYS['IONS'] += ['ion_nstepe', 'ion_radius']
 
 # Section identifiers
 _CP_START = 'CP: variable-cell Car-Parrinello molecular dynamics'
@@ -48,63 +47,17 @@ _CP_LAMBDA = 'fixed_lambda'
 # _CP_BANDSTRUCTURE =
 
 
-def write_koopmans_cp_in(fd, atoms, input_data=None, pseudopotentials=None,
-                         kspacing=None, kpts=None, koffset=(0, 0, 0), **kwargs):
-
-    write_espresso_in(fd, atoms, input_data, pseudopotentials,
-                      kspacing, kpts, koffset, **kwargs)
-
-    if not fd.closed:
-        fd.close()
-
-    # Extra blocks
-    extra_lines = []
-    if input_data is None:
-        input_data = atoms.calc.parameters['input_data']
-    input_parameters = construct_namelist(input_data, **kwargs)
-    for section in input_parameters:
-        if section.lower() not in ['ee', 'nksic']:
-            continue
-        extra_lines.append('&{0}\n'.format(section.upper()))
-        for key, value in input_parameters[section].items():
-            if value is True:
-                extra_lines.append('   {0:16} = .true.\n'.format(key))
-            elif value is False:
-                extra_lines.append('   {0:16} = .false.\n'.format(key))
-            elif value is not None:
-                # repr format to get quotes around strings
-                extra_lines.append('   {0:16} = {1!r:}\n'.format(key, value))
-        extra_lines.append('/\n')  # terminate section
-
-    # Read in the original file without the NKSIC and EE blocks
-    with open(fd.name, 'r') as fd_read:
-        lines = fd_read.readlines()
-
-    # Find where to insert the extra blocks
-    i_break = lines.index('\n')
-    before = lines[:i_break]
-    after = lines[i_break:]
-
-    # Remove the K_POINTS card
-    for line in after:
-        if 'K_POINTS' in line:
-            kpts_start = after.index(line)
-            break
-    kpts_end = after[kpts_start:].index('\n') + kpts_start
-    del after[kpts_start:kpts_end + 1]
-
-    # Rewrite the file with the extra blocks
-    with open(fd.name, 'w') as fd_rewrite:
-        fd_rewrite.writelines(before + extra_lines + after)
+def write_koopmans_cp_in(*args, **kwargs):
+    kwargs['local_construct_namelist'] = construct_namelist
+    kwargs['include_kpoints'] = False
+    write_espresso_in(*args, **kwargs)
 
 
 def read_koopmans_cp_in(fileobj):
-    atoms = read_espresso_in(fileobj)
+    atoms = read_pw_in(fileobj)
 
     # Generating Espresso_kcp calculator from Espresso calculator
-    data = atoms.calc.parameters['input_data']
-    pseudos = atoms.calc.parameters['pseudopotentials']
-    calc = Espresso_kcp(input_data=data, pseudopotentials=pseudos)
+    calc = Espresso_kcp(**atoms.calc.parameters)
 
     # Overwriting the Espresso calculator with the new Espresso_kcp calculator
     atoms.calc = calc

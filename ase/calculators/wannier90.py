@@ -26,6 +26,11 @@ class Wannier90(FileIOCalculator):
         """
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
+
+        if atoms is not None:
+            self.atoms = atoms
+            self.atoms.calc = self
+
         self.calc = None
 
     def set(self, **kwargs):
@@ -62,8 +67,8 @@ class Wannier90(FileIOCalculator):
             end_label, i_end = end.split()[:2]
             kpts += self.atoms.cell.bandpath(start_label + end_label, int(i_end) - int(i_start) + 1).kpts[:-1].tolist()
         kpts.append([float(x) for x in flines[-1].split()[-3:]])
-        path = self.parameters['kpath'].path
-        special_points = self.parameters['kpath'].special_points
+        path = self.parameters.kpoint_path.path
+        special_points = self.parameters.kpoint_path.special_points
         kpath = BandPath(self.atoms.cell, kpts, path=path, special_points=special_points)
 
         # Read in the eigenvalues from the *_band.dat file

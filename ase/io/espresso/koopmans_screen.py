@@ -13,7 +13,7 @@ from .wann2kc import KEYS as W2KKEYS
 from ase.calculators.espresso import KoopmansScreen
 
 KEYS = copy.deepcopy(W2KKEYS)
-KEYS['SCREEN'] = ['tr2_ph', 'nmix_ph', 'niter_ph', 'lrpa', 'mp1', 'mp2', 'mp3', 'eps_inf', 'i_orb']
+KEYS['SCREEN'] = ['tr2_ph', 'nmix_ph', 'niter_ph', 'lrpa', 'mp1', 'mp2', 'mp3', 'eps_inf', 'i_orb', 'check_spread']
 
 
 def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
@@ -22,6 +22,7 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
         input_data = atoms.calc.parameters['input_data']
 
     input_parameters = construct_namelist(input_data, **kwargs)
+
     lines = []
     for section in input_parameters:
         assert section in KEYS.keys()
@@ -46,7 +47,7 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
 
 def read_koopmans_screen_in(fileobj):
     data, _ = read_fortran_namelist(fileobj)
-    calc = KoopmansScreen(input_data=data)
+    calc = KoopmansScreen(**{k: v for block in data.values() for k, v in block.items()})
     return Atoms(calculator=calc)
 
 
