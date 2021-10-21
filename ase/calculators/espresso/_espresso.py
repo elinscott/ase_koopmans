@@ -98,9 +98,6 @@ class EspressoWithBandstructure:
 
         if isinstance(self.parameters.kpts, BandPath):
             path = self.parameters.kpts
-            # elif isinstance(self.parameters.kpts, list) and len(self.parameters.kpts) == 3:
-            #     # kpts has been provided in grid format; convert it to a BandPath
-            #     path = BandPath(self.atoms.cell, kpts=[k.k for k in self.kpts])
         else:
             raise ValueError('Unrecognised format for bandpath')
         self.results['band structure'] = BandStructure(path, eigenvalues_np)
