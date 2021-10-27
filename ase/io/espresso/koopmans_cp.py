@@ -28,7 +28,7 @@ KEYS['NKSIC'] = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact',
                  'innerloop_init_n', 'hartree_only_sic', 'esic_conv_thr',
                  'do_innerloop_cg', 'innerloop_nmax', 'do_innerloop_empty',
                  'innerloop_cg_ratio', 'fref', 'kfact', 'wo_odd_in_empty_run',
-                 'aux_empty_nbnd', 'print_evc0_occ_empty']
+                 'aux_empty_nbnd', 'print_evc0_occ_empty', 'do_bare_eigs']
 KEYS['IONS'] += ['ion_nstepe', 'ion_radius']
 
 # Section identifiers
