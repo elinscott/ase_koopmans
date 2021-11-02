@@ -62,6 +62,8 @@ def write_wannier90_in(fd, atoms):
             if settings.get('bands_plot', False):
                 rows_str = []
                 for start, end in zip(opt.path[:-1], opt.path[1:]):
+                    if ',' in [start, end]:
+                        continue
                     rows_str.append('')
                     for point in (start, end):
                         rows_str[-1] += ' ' + point + ' '.join([f'{v:9.5f}' for v in opt.special_points[point]])
@@ -294,21 +296,23 @@ def _path_lengths(path: str, cell: Cell, bands_point_num: int) -> List[int]:
 
 def construct_kpoint_path(path: str, cell: Cell, bands_point_num: int) -> BandPath:
     path_lengths = _path_lengths(path, cell, bands_point_num)
+    special_points = cell.bandpath().special_points
 
     kpts = []
     for start, end, npoints in zip(path[:-1], path[1:], path_lengths):
-        if npoints == 0:
-            continue
-        bp = bandpath(start + end, cell, npoints + 1).kpts[:-1].tolist()
-        kpts += bp
+        if start == ',':
+            pass
+        elif end == ',':
+            kpts.append(special_points[start].tolist())
+        else:
+            bp = bandpath(start + end, cell, npoints + 1)
+            kpts += bp.kpts[:-1].tolist()
     # Don't forget about the final kpoint
-    kpts.append(bp[-1])
+    kpts.append(bp.kpts[-1].tolist())
 
     if len(kpts) != sum(path_lengths) + 1:
         raise AssertionError(
             'Did not get the expected number of kpoints; this suggests there is a bug in the code')
-
-    special_points = cell.bandpath().special_points
 
     return BandPath(cell=cell, kpts=kpts, path=path, special_points=special_points)
 
