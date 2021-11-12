@@ -395,9 +395,9 @@ def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
     for proj in projections:
         if 'site' in proj:
             if atoms.has('labels'):
-                labels = atoms.get_array('labels')
+                labels = atoms.get_array('labels').tolist()
             else:
-                labels = atoms.symbols
+                labels = [s for s in atoms.symbols]
             num_sites = labels.count(proj['site'])
         else:
             num_sites = 1
