@@ -390,7 +390,7 @@ def read_wannier90_out(fd):
 def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
     # Works out the value of 'num_wann' based on the 'projections' block
     num_wann_lookup = {'s': 1, 'p': 3, 'd': 5, 'sp': 2, 'sp2': 3, 'sp3': 4, 'sp3d': 5, 'sp3d2': 6,
-                       'l=0': 1, 'l=1': 3, 'l=2': 5}
+                       'l=0': 1, 'l=1': 3, 'l=2': 5, 'l=-3': 4}
     num_wann = 0
     for proj in projections:
         if 'site' in proj:
@@ -405,7 +405,7 @@ def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
         ang_mtms = proj['ang_mtm'].split(';')
         if not all([ang_mtm in num_wann_lookup for ang_mtm in ang_mtms]):
             raise NotImplementedError(
-                f'I cannot work out how many projections will result from {proj["ang_mtm"]}. '
+                f'Cannot work out how many projections will result from {proj["ang_mtm"]}. '
                 'Please specify num_wann manually.')
 
         num_wann += num_sites * sum([num_wann_lookup[ang_mtm] for ang_mtm in ang_mtms])
