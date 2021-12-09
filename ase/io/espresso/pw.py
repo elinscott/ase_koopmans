@@ -533,7 +533,8 @@ def read_pw_in(fileobj):
     atoms.calc.atoms = atoms
 
     if any(['k_points' in l.lower() for l in card_lines]):
-        atoms.calc.parameters['kpts'], atoms.calc.parameters['koffset'] = get_kpoints(card_lines, cell=atoms.cell)
+        for k, v in zip(['kpts', 'koffset', 'gamma_only'], get_kpoints(card_lines, cell=atoms.cell)):
+            atoms.calc.parameters[k] = v
 
     return atoms
 
@@ -595,5 +596,4 @@ def construct_namelist(parameters=None, warn=False, **kwargs):
 
 
 def write_pw_in(*args, **kwargs):
-    kwargs['local_construct_namelist'] = construct_namelist
-    write_espresso_in(*args, **kwargs)
+    write_espresso_in(*args, local_construct_namelist=construct_namelist, **kwargs)

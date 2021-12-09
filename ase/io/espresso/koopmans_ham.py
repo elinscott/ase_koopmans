@@ -10,7 +10,7 @@ from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.dft.kpoints import BandPath
 from ase.utils import basestring
 from .utils import construct_kpoints_card, generic_construct_namelist, safe_string_to_list_of_floats, time_to_float, \
-    read_fortran_namelist, get_kpoints
+    read_fortran_namelist
 from .wann2kc import KEYS as W2KKEYS
 
 from ase.calculators.espresso import KoopmansHam
