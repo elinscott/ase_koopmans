@@ -78,19 +78,19 @@ def get_kpoints(card_lines, cell=None):
         if line.startswith('K_POINTS'):
             mode = line.split()[-1].strip('{}')
             if mode.lower() == 'gamma':
-                return [1, 1, 1], [0, 0, 0]
+                return [1, 1, 1], [0, 0, 0], True
             elif mode.lower() == 'automatic':
                 splitline = card_lines[i + 1].strip().split()
                 kpts = [int(x) for x in splitline[:3]]
                 koffset = [int(x) for x in splitline[3:]]
-                return kpts, koffset
+                return kpts, koffset, False
             elif mode.lower() == 'crystal_b':
                 assert cell is not None
                 n_kpts = int(card_lines[i + 1])
                 kpts = np.array([[float(x) for x in line.split()[:3]] for line in card_lines[i + 2: i + 2 + n_kpts]])
                 _, _, path_list = labels_from_kpts(kpts, cell)
                 return BandPath(path=''.join(path_list), cell=cell, special_points=cell.bandpath().special_points,
-                                kpts=kpts), [0, 0, 0]
+                                kpts=kpts), [0, 0, 0], False
             else:
                 raise ValueError('Failed to parse K_POINTS block')
     raise ValueError('Failed to find K_POINTS block')
@@ -1084,7 +1084,7 @@ def safe_string_to_list_of_floats(string):
 def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                       kspacing=None, kpts=None, koffset=(0, 0, 0),
                       crystal_coordinates=None, local_construct_namelist=None,
-                      include_kpoints=True, **kwargs):
+                      include_kpoints=True, gamma_only=False, **kwargs):
     """
     Create an input file for a generic Quantum ESPRESSO calculator
 
@@ -1342,7 +1342,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
 
     # KPOINTS - add a MP grid as required
     if include_kpoints:
-        flines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
+        if gamma_only:
+            flines += construct_kpoints_card(atoms, None, None)
+        else:
+            flines += construct_kpoints_card(atoms, kpts, kspacing, koffset)
 
     # CELL block, if required
     if input_parameters['SYSTEM']['ibrav'] == 0:

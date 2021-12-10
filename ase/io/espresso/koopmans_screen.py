@@ -81,12 +81,12 @@ def read_koopmans_screen_out(fileobj):
     # Extract calculation results
     job_done = False
     walltime = None
-    alphas = []
+    alphas = [[]]
     orbital_data = {'self-Hartree': []}
     for i_line, line in enumerate(flines):
         if 'relaxed' in line:
             splitline = line.split()
-            alphas.append(float(splitline[-5]))
+            alphas[-1].append(float(splitline[-5]))
             orbital_data['self-Hartree'].append(float(splitline[-1]) * units.Ry)
 
         if 'JOB DONE' in line:
