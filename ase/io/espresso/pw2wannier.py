@@ -63,14 +63,14 @@ def write_pw2wannier_in(fd, atoms, **kwargs):
     p2w = ['&inputpp\n']
     for key, value in atoms.calc.parameters.items():
         if value is True:
-            p2w.append('   {0:16} = .true.\n'.format(key))
+            p2w.append(f'   {key:16} = .true.\n')
         elif value is False:
-            p2w.append('   {0:16} = .false.\n'.format(key))
+            p2w.append(f'   {key:16} = .false.\n')
         elif value is not None:
             if isinstance(value, Path):
                 value = str(value)
             # repr format to get quotes around strings
-            p2w.append('   {0:16} = {1!r:}\n'.format(key, value))
+            p2w.append(f'   {key:16} = {value!r:}\n')
     p2w.append('/\n')
 
     fd.write(''.join(p2w))
