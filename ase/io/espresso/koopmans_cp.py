@@ -19,7 +19,7 @@ KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
 KEYS['SYSTEM'] += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep',
                    'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx',
                    'nr1b', 'nr2b', 'nr3b']
-KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep',
+KEYS['ELECTRONS'] += ['maxiter', 'empty_states_maxstep',
                       'electron_dynamics', 'passop', 'do_outerloop', 'do_outerloop_empty']
 KEYS['EE'] = ['which_compensation', 'tcc_odd']
 KEYS['NKSIC'] = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact',
