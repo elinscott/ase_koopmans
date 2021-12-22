@@ -12,3 +12,5 @@ from .koopmans_screen import read_koopmans_screen_in, read_koopmans_screen_out, 
 from .koopmans_ham import read_koopmans_ham_in, read_koopmans_ham_out, write_koopmans_ham_in
 from .pw2wannier import read_pw2wannier_in, read_pw2wannier_out, write_pw2wannier_in
 from .wann2kc import read_wann2kc_in, read_wann2kc_out, write_wann2kc_in
+from .projwfc import read_projwfc_in, read_projwfc_out, write_projwfc_in
+

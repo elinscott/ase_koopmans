@@ -1,3 +1,4 @@
+from ase import io
 from ._espresso import EspressoParent
 
 
