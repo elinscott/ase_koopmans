@@ -387,6 +387,7 @@ def read_pw_out(fileobj, index=-1, results_required=True):
 
         calc.kpts = kpts
         structure.calc = calc
+
         yield structure
 
 
