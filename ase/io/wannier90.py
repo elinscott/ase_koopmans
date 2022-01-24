@@ -149,12 +149,15 @@ def read_wannier90_in(fd):
                     elif keyw == 'kpoints':
                         calc.parameters[keyw] = np.array([line[:-1] for line in block_lines], dtype=float)
                     elif keyw == 'kpoint_path':
-                        kpoint_path = block_lines[0][0]
-                        for line, prev_line in zip(block_lines[1:], block_lines[:-1]):
-                            if line[0] != prev_line[4]:
-                                kpoint_path += prev_line[4] + ','
-                            kpoint_path += line[0]
-                        kpoint_path += line[4]
+                        if len(block_lines) == 1:
+                            kpoint_path = block_lines[0][0] + block_lines[0][4]
+                        else:
+                            kpoint_path = block_lines[0][0]
+                            for line, prev_line in zip(block_lines[1:], block_lines[:-1]):
+                                if line[0] != prev_line[4]:
+                                    kpoint_path += prev_line[4] + ','
+                                kpoint_path += line[0]
+                            kpoint_path += line[4]
                     else:
                         calc.parameters[keyw] = parse_value(block_lines)
             else:
