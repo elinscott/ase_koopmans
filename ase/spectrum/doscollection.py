@@ -53,6 +53,7 @@ class DOSCollection(collections.abc.Sequence):
              ax: 'matplotlib.axes.Axes' = None,
              show: bool = False,
              filename: str = None,
+             orientation: str = 'horizontal',
              mplargs: dict = None) -> 'matplotlib.axes.Axes':
         """Simple plot of collected DOS data, resampled onto a grid
 
@@ -86,14 +87,20 @@ class DOSCollection(collections.abc.Sequence):
                                                width=width, smearing=smearing)
 
             all_labels = [DOSData.label_from_info(data.info) for data in self]
-
-            all_lines = ax.plot(energies, all_y.T, **mplargs)
+            if orientation == 'horizontal':    
+                all_lines = ax.plot(energies, all_y.T, **mplargs)
+                ax.set_xlim([min(energies), max(energies)])
+            else: 
+                all_lines = ax.plot(all_y.T, energies, **mplargs)
+                ax.set_ylim([min(energies), max(energies)])
+                #window = ax_bs.get_ylim()
+                #mask = np.all([ dc_up._energies > window[0], dc_up._energies < window[1]], axis=0)
+                #ax_dos.set_xlim(left=dc_down._weights[:,mask].min(), right=dc_up._weights[:,mask].max())
             for line, label in zip(all_lines, all_labels):
                 line.set_label(label)
             ax.legend()
 
-            ax.set_xlim(left=min(energies), right=max(energies))
-            ax.set_ylim(bottom=0)
+            # ax.set_ylim(bottom=0)
 
         return ax
 
