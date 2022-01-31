@@ -1306,6 +1306,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 f'{mask}\n')
 
     else:
+        # Wipe out tot_magnetisation
+        if input_parameters['system'].pop('tot_magnetization', 0) != 0:
+            raise ValueError('tot_magnetization != 0 and nspin == 1 are incompatible')
+
         # Do nothing about magnetisation
         for atom, label in zip(atoms, labels):
             if label not in atomic_species:
