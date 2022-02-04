@@ -259,9 +259,10 @@ def read_pw_out(fileobj, index=-1, results_required=True):
         # Magmoms
         magmoms = None
         for magmoms_index in indexes[_PW_MAGMOM]:
+            import ipdb; ipdb.set_trace()
             if image_index < magmoms_index < next_index:
                 magmoms = [
-                    float(mag_line.split()[5]) for mag_line
+                    float(mag_line.split()[6]) for mag_line
                     in pwo_lines[magmoms_index + 1:
                                  magmoms_index + 1 + len(structure)]]
 
