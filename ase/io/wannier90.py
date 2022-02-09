@@ -426,7 +426,7 @@ def read_wannier90_out(fd):
         if 'Final State' in line:
             j = 1
             while 'WF centre and spread' in flines[i + j]:
-                splitline = [x.rstrip(',') for x in flines[i + j].replace('(', ' ').replace(')', ' ').split()]
+                splitline = [x.rstrip(',') for x in re.sub('[(),]', ' ', flines[i + j]).split()]
                 centers.append([float(x) for x in splitline[6:9]])
                 spreads.append(float(splitline[-1]))
                 j += 1
