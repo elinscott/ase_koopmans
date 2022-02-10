@@ -295,7 +295,7 @@ def proj_string_to_dict(string):
 
     # Storing other optional arguments
     for setting in string.split(':')[2:]:
-        k, v = setting.split('=')
+        k, v = [x.strip() for x in setting.split('=')]
 
         k_to_label = {'z': 'zaxis', 'x': 'xaxis', 'r': 'radial', 'zona': 'zona'}
         assert k in k_to_label, f'Failed to parse {k} in the projection {string}'
