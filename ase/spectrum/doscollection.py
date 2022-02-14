@@ -5,6 +5,7 @@ from typing import (Any, Dict, Iterable, List, Optional,
 
 import numpy as np
 from ase.spectrum.dosdata import DOSData, RawDOSData, GridDOSData, Info
+from ase.utils import jsonable
 from ase.utils.plotting import SimplePlottingAxes
 
 # This import is for the benefit of type-checking / mypy
@@ -14,6 +15,7 @@ if False:
 
 class DOSCollection(collections.abc.Sequence):
     """Base class for a collection of DOSData objects"""
+
     def __init__(self, dos_series: Iterable[DOSData]) -> None:
         self._data = list(dos_series)
 
@@ -225,6 +227,7 @@ class DOSCollection(collections.abc.Sequence):
         return data
 
     D = TypeVar('D', bound=DOSData)
+
     @staticmethod
     def _select_to_list(dos_collection: Sequence[D],         # Bug in flakes
                         info_selection: Dict[str, str],      # misses 'D' def
@@ -390,6 +393,7 @@ class RawDOSCollection(DOSCollection):
                                 "RawDOSData objects.")
 
 
+@jsonable('griddoscollection')
 class GridDOSCollection(DOSCollection):
     def __init__(self, dos_series: Iterable[GridDOSData],
                  energies: Optional[Sequence[float]] = None) -> None:
@@ -535,3 +539,13 @@ class GridDOSCollection(DOSCollection):
             return type(self)([], energies=self._energies)
         else:
             return type(self)(matches)
+
+    def todict(self):
+        dct = {}
+        for key in ['energies', 'weights', 'info']:
+            dct[key] = getattr(self, '_' + key)
+        return dct
+
+    @classmethod
+    def fromdict(cls, dct):
+        return cls.from_data(**dct)

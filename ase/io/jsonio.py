@@ -93,6 +93,9 @@ def create_ase_object(objtype, dct):
     elif objtype == 'densityofstates':
         from ase.dft.dos import DOS
         obj = DOS(**dct)
+    elif objtype == 'griddoscollection':
+        from ase.spectrum.doscollection import GridDOSCollection
+        obj = GridDOSCollection.fromdict(dct)
     else:
         raise ValueError('Do not know how to decode object type {} '
                          'into an actual object'.format(objtype))
