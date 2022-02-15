@@ -1,7 +1,7 @@
 """Reads Koopmans Screen files
 
-Read structures and results from koopmans_screen.x output files. Read
-structures from koopmans_screen.x input files.
+Read structures and results from kcw.x (screen mode) output files.
+Read structures from kcw.x (screen mode) input files.
 """
 
 import copy
@@ -13,7 +13,7 @@ from .wann2kc import KEYS as W2KKEYS
 from ase.calculators.espresso import KoopmansScreen
 
 KEYS = copy.deepcopy(W2KKEYS)
-KEYS['SCREEN'] = ['tr2_ph', 'nmix_ph', 'niter_ph', 'lrpa', 'mp1', 'mp2', 'mp3', 'eps_inf', 'i_orb', 'check_spread']
+KEYS['SCREEN'] = ['tr2', 'nmix', 'niter', 'eps_inf', 'i_orb', 'check_spread']
 
 
 def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
@@ -23,12 +23,14 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
 
     input_parameters = construct_namelist(input_data, **kwargs)
 
+    assert input_parameters['CONTROL']['calculation'] == 'screen'
+
     lines = []
     for section in input_parameters:
         assert section in KEYS.keys()
 
-        if section == 'WANNIER' and not input_parameters['CONTROL'].get('kc_at_ks', True):
-            # Do not write the WANNIER section if kc_at_ks is true
+        if section == 'WANNIER' and not input_parameters['CONTROL'].get('kcw_at_ks', True):
+            # Do not write the WANNIER section if kcw_at_ks is true
             continue
 
         lines.append('&{0}\n'.format(section.upper()))

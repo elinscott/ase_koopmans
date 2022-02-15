@@ -1,10 +1,10 @@
-""" Calculator for koopmans_ham.x, a code for performing Koopmans calculations in periodic systems
+""" Calculator for kcw.x (ham mode), a code for performing Koopmans calculations in periodic systems
 
-export ASE_KOOPMANS_HAM_COMMAND="/path/to/kc_ham.x -in PREFIX.khi > PREFIX.kho"
+export ASE_KOOPMANS_HAM_COMMAND="/path/to/kcw.x -in PREFIX.khi > PREFIX.kho"
 
 N.B. the extensions must be .khi and .kho
 
-Run kc_ham.x jobs.
+Run kcw.x jobs in the 'ham' mode.
 """
 
 
@@ -18,8 +18,8 @@ class KoopmansHam(EspressoWithBandstructure, EspressoParent):
     ext_out = '.kho'
     implemented_properties = []
 
-    # Default command does not use parallelism and assumes kc_ham.x is on the user's path
-    command = 'kc_ham.x -in PREFIX.khi > PREFIX.kho'
+    # Default command does not use parallelism and assumes kcw.x is on the user's path
+    command = 'kcw.x -in PREFIX.khi > PREFIX.kho'
 
     def __init__(self, *args, **kwargs):
         kwargs['label'] = 'kc_ham'
