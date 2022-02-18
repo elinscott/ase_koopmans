@@ -337,6 +337,16 @@ class BandPath:
         # Temp compatibility stuff, see __iter__
         return tuple(self)[index]
 
+    def __eq__(self, other):
+        if isinstance(other, BandPath):
+            if not np.all(self.cell == other.cell):
+                return False
+            elif self.path != other.path:
+                return False
+            else:
+                return np.all(self.kpts == other.kpts)
+        return False
+
     def get_linear_kpoint_axis(self, eps=1e-5):
         """Define x axis suitable for plotting a band structure.
 
