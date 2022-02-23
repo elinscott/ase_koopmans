@@ -339,12 +339,12 @@ class BandPath:
 
     def __eq__(self, other):
         if isinstance(other, BandPath):
-            if not np.all(self.cell == other.cell):
+            if not np.allclose(self.cell, other.cell, atol=1e-10):
                 return False
             elif self.path != other.path:
                 return False
             else:
-                return np.all(self.kpts == other.kpts)
+                return np.allclose(self.kpts, other.kpts, atol=1e-10)
         return False
 
     def get_linear_kpoint_axis(self, eps=1e-5):
