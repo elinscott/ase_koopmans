@@ -390,10 +390,26 @@ def read_wannier90_out(fd):
     yield structure
 
 
+def num_wann_lookup(proj):
+    database = {'l=0': 1, 's': 1,
+                'l=1': 3, 'p': 3, 'pz': 1, 'px': 1, 'py': 1,
+                'l=2': 5, 'd': 5, 'dxy': 1, 'dxz': 1, 'dyz': 1, 'dx2-y2': 1, 'dz2': 1,
+                'l=3': 7, 'f': 7, 'fz3': 1, 'fxz2': 1, 'fyz2': 1, 'fz(x2-y2)': 1, 'fxyz': 1, 'fx(x2-3y2)': 1,
+                'fy(3x2-y2)': 1,
+                'l=-1': 2, 'sp': 2, 'sp-1': 1, 'sp-2': 1,
+                'l=-2': 3, 'sp2': 3, 'sp2-1': 1, 'sp2-2': 1, 'sp2-3': 1,
+                'l=-3': 4, 'sp3': 4, 'sp3-1': 1, 'sp3-2': 1, 'sp3-3': 1, 'sp3-4': 1,
+                'l=-4': 5, 'sp3d': 5, 'sp3d-1': 1, 'sp3d-2': 1, 'sp3d-3': 1, 'sp3d-4': 1, 'sp3d-5': 1,
+                'l=-5': 6, 'sp3d2': 6, 'sp3d2-1': 1, 'sp3d2-2': 1, 'sp3d2-3': 1, 'sp3d2-4': 1, 'sp3d2-5': 1,
+                'sp3d2-6': 1}
+    if proj in database:
+        return database[proj]
+    else:
+        raise NotImplementedError(f'Unrecognised Wannier90 projection {proj}')
+
+
 def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
     # Works out the value of 'num_wann' based on the 'projections' block
-    num_wann_lookup = {'s': 1, 'p': 3, 'd': 5, 'sp': 2, 'sp2': 3, 'sp3': 4, 'sp3d': 5, 'sp3d2': 6,
-                       'l=0': 1, 'l=1': 3, 'l=2': 5, 'l=-3': 4}
     num_wann = 0
     for proj in projections:
         if 'site' in proj:
@@ -404,13 +420,8 @@ def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
             num_sites = labels.count(proj['site'])
         else:
             num_sites = 1
-
-        ang_mtms = proj['ang_mtm'].split(';')
-        if not all([ang_mtm in num_wann_lookup for ang_mtm in ang_mtms]):
-            raise NotImplementedError(
-                f'Cannot work out how many projections will result from {proj["ang_mtm"]}. '
-                'Please specify num_wann manually.')
-
-        num_wann += num_sites * sum([num_wann_lookup[ang_mtm] for ang_mtm in ang_mtms])
-
+        ang_mtms = [p.replace(' ', '') for p in proj['ang_mtm'].split(';')]
+        num_wann += num_sites * sum([num_wann_lookup(ang_mtm) for ang_mtm in ang_mtms])
     return num_wann
+
+
