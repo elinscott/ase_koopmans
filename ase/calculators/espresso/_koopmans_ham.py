@@ -27,7 +27,7 @@ class KoopmansHam(EspressoWithBandstructure, EspressoParent):
 
     def read_results(self):
         super().read_results()
-        if isinstance(self.parameters.kpts, BandPath) and len(self.parameters.kpts.kpts) > 0:
+        if isinstance(self.parameters.kpts, BandPath) and len(self.parameters.kpts.kpts) > 1:
             # Add the bandstructure to the results
             self.band_structure(vbm_to_zero=True)
 
