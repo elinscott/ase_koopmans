@@ -1,7 +1,7 @@
-"""Reads Wannier to KC files
+"""Reads Wannier to KCW files
 
-Read structures and results from koopmans_ham.x output files. Read
-structures from wannier_to_kc.x input files.
+Read structures and results from kcw.x (wann2kcw mode) output files.
+Read structures from kcw.x (wann2kcw mode) input files.
 
 """
 
@@ -13,8 +13,8 @@ from ase.calculators.espresso import Wann2KC
 
 
 KEYS = Namelist((
-    ('control', ['prefix', 'outdir', 'kc_iverbosity', 'kc_at_ks',
-                 'homo_only', 'read_unitary_matrix', 'l_vcut', 'assume_isolated']),
+    ('control', ['prefix', 'outdir', 'kcw_iverbosity', 'kcw_at_ks', 'calculation', 'lrpa',
+                 'mp1', 'mp2', 'mp3', 'homo_only', 'read_unitary_matrix', 'l_vcut', 'assume_isolated']),
     ('wannier', ['seedname', 'check_ks', 'num_wann_occ', 'num_wann_emp', 'have_empty', 'has_disentangle'])))
 
 
@@ -25,6 +25,9 @@ def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,
         input_data = atoms.calc.parameters['input_data']
 
     input_parameters = construct_namelist(input_data, **kwargs)
+
+    assert input_parameters['CONTROL']['calculation'] == 'wann2kcw'
+
     lines = []
     for section in input_parameters:
         assert section in KEYS.keys()
