@@ -1,7 +1,7 @@
 """Reads Koopmans Ham files
 
-Read structures and results from koopmans_ham.x output files. Read
-structures from koopmans_ham.x input files.
+Read structures and results from kcw.x (ham mode) output files.
+Read structures from kcw.x (ham mode) input files.
 """
 
 import copy
@@ -16,7 +16,7 @@ from .wann2kc import KEYS as W2KKEYS
 from ase.calculators.espresso import KoopmansHam
 
 KEYS = copy.deepcopy(W2KKEYS)
-KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'lrpa', 'mp1', 'mp2', 'mp3']
+KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr']
 
 
 def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
@@ -26,13 +26,15 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
         input_data = atoms.calc.parameters['input_data']
 
     input_parameters = construct_namelist(input_data, **kwargs)
-    lines = []
 
+    assert input_parameters['CONTROL']['calculation'] == 'ham'
+
+    lines = []
     for section in input_parameters:
         assert section in KEYS.keys()
 
-        if section == 'WANNIER' and not input_parameters['CONTROL'].get('kc_at_ks', True):
-            # Do not write the WANNIER section if kc_at_ks is true
+        if section == 'WANNIER' and not input_parameters['CONTROL'].get('kcw_at_ks', True):
+            # Do not write the WANNIER section if kcw_at_ks is true
             continue
 
         lines.append('&{0}\n'.format(section.upper()))
