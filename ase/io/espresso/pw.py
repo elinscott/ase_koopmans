@@ -18,7 +18,7 @@ from ase.calculators.espresso import Espresso
 from ase.dft.kpoints import kpoint_convert
 from .utils import Namelist, generic_construct_namelist, get_atomic_positions, \
     get_cell_parameters, get_constraint, get_kpoints, get_pseudopotentials, ibrav_to_cell, \
-    label_to_symbol, read_fortran_namelist, time_to_float, units, write_espresso_in
+    label_to_symbol, read_fortran_namelist, time_to_float, units, write_espresso_in, label_to_tag
 
 # Section identifiers
 _PW_START = 'Program PWSCF'
@@ -196,15 +196,15 @@ def read_pw_out(fileobj, index=-1, results_required=True):
                 n_atoms=n_atoms, cell=cell, alat=cell_alat)
 
             # convert to Atoms object
-            symbols = [label_to_symbol(position[0]) for position in
-                       positions_card]
+            symbols = [label_to_symbol(position[0]) for position in positions_card]
+            tags = [label_to_tag(position[0]) for position in positions_card]
             positions = [position[1] for position in positions_card]
 
             constraint_idx = [position[2] for position in positions_card]
             constraint = get_constraint(constraint_idx)
 
             structure = Atoms(symbols=symbols, positions=positions, cell=cell,
-                              constraint=constraint, pbc=True)
+                              constraint=constraint, pbc=True, tags=tags)
 
         # Extract calculation results
         # Energy
@@ -378,8 +378,8 @@ def read_pw_out(fileobj, index=-1, results_required=True):
                                         forces=forces, stress=stress,
                                         magmoms=magmoms, efermi=efermi,
                                         ibzkpts=ibzkpts)
-        calc.results['homo_ene'] = efermi
-        calc.results['lumo_ene'] = lumo_ene
+        calc.results['homo_energy'] = efermi
+        calc.results['lumo_energy'] = lumo_ene
         calc.results['electrostatic embedding'] = elec_embedding_energy
         calc.results['iterations'] = n_iterations
         calc.results['job done'] = job_done
@@ -387,6 +387,7 @@ def read_pw_out(fileobj, index=-1, results_required=True):
 
         calc.kpts = kpts
         structure.calc = calc
+
         yield structure
 
 
@@ -512,6 +513,7 @@ def read_pw_in(fileobj):
         card_lines, n_atoms=data['system']['nat'], cell=cell, alat=alat)
 
     symbols = [label_to_symbol(position[0]) for position in positions_card]
+    tags = [label_to_tag(position[0]) for position in positions_card]
     positions = [position[1] for position in positions_card]
     constraint_idx = [position[2] for position in positions_card]
     constraint = get_constraint(constraint_idx)
@@ -528,7 +530,7 @@ def read_pw_in(fileobj):
     # TODO: put more info into the atoms object
     # e.g magmom, forces.
     atoms = Atoms(symbols=symbols, positions=positions, cell=cell,
-                  constraint=constraint, pbc=True,
+                  constraint=constraint, pbc=True, tags=tags,
                   calculator=Espresso(pseudopotentials=pseudos, **data))
     atoms.calc.atoms = atoms
 

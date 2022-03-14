@@ -19,7 +19,7 @@ KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
 KEYS['SYSTEM'] += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep',
                    'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx',
                    'nr1b', 'nr2b', 'nr3b']
-KEYS['ELECTRONS'] += ['empty_states_nbnd', 'maxiter', 'empty_states_maxstep',
+KEYS['ELECTRONS'] += ['maxiter', 'empty_states_maxstep',
                       'electron_dynamics', 'passop', 'do_outerloop', 'do_outerloop_empty']
 KEYS['EE'] = ['which_compensation', 'tcc_odd']
 KEYS['NKSIC'] = ['do_innerloop', 'nkscalfact', 'odd_nkscalfact',
@@ -120,6 +120,7 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
     convergence = {'filled': [], 'empty': []}
 
     convergence_key = 'filled'
+    i_spin_orbital_data = None
 
     for i_line, line in enumerate(cpo_lines):
 
@@ -159,9 +160,11 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
             job_done = True
 
         # Start of block of orbitals for a given spin channel
-        if 'Orb -- Charge  ---' in line:
+        if 'Orb -- Charge  ---' in line or 'Orb -- Empty Charge' in line:
+            i_spin_orbital_data = int(line.split()[-1]) - 1
             for key in orbital_data:
-                orbital_data[key].append([])
+                if len(orbital_data[key]) < i_spin_orbital_data + 1:
+                    orbital_data[key].append([])
 
         # Orbital information
         if line.startswith(('OCC', 'EMP')):
@@ -169,10 +172,10 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
                 continue
             line = line.replace('********', '   0.000')
             values = [float(line[i - 4:i + 4]) for i, c in enumerate(line) if c == '.']
-            orbital_data['charge'][-1].append(values[0])
-            orbital_data['centres'][-1].append([x * units.Bohr for x in values[1:4]])
-            orbital_data['spreads'][-1].append(values[4] * units.Bohr**2)
-            orbital_data['self-Hartree'][-1].append(values[5])
+            orbital_data['charge'][i_spin_orbital_data].append(values[0])
+            orbital_data['centres'][i_spin_orbital_data].append([x * units.Bohr for x in values[1:4]])
+            orbital_data['spreads'][i_spin_orbital_data].append(values[4] * units.Bohr**2)
+            orbital_data['self-Hartree'][i_spin_orbital_data].append(values[5])
 
         # Tracking convergence
         if 'PERFORMING CONJUGATE GRADIENT MINIMIZATION OF EMPTY STATES' in line:
