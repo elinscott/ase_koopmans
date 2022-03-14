@@ -460,7 +460,8 @@ def num_wann_lookup(proj):
                 'l=-2': 3, 'sp2': 3, 'sp2-1': 1, 'sp2-2': 1, 'sp2-3': 1,
                 'l=-3': 4, 'sp3': 4, 'sp3-1': 1, 'sp3-2': 1, 'sp3-3': 1, 'sp3-4': 1,
                 'l=-4': 5, 'sp3d': 5, 'sp3d-1': 1, 'sp3d-2': 1, 'sp3d-3': 1, 'sp3d-4': 1, 'sp3d-5': 1,
-                'l=-5': 6, 'sp3d2': 6, 'sp3d2-1': 1, 'sp3d2-2': 1, 'sp3d2-3': 1, 'sp3d2-4': 1, 'sp3d2-5': 1, 'sp3d2-6': 1}
+                'l=-5': 6, 'sp3d2': 6, 'sp3d2-1': 1, 'sp3d2-2': 1, 'sp3d2-3': 1, 'sp3d2-4': 1, 'sp3d2-5': 1,
+                'sp3d2-6': 1}
     if proj in database:
         return database[proj]
     elif proj.split(',')[0] in database:
