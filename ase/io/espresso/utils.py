@@ -637,7 +637,7 @@ def label_to_symbol_and_tag(label):
     else:
         try:
             tag = int(tag)
-        except:
+        except ValueError:
             raise ValueError(f'Please use positive integers as tags, rather than {tag} for {symbol}')
 
     return symbol, tag
