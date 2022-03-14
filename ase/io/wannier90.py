@@ -9,13 +9,43 @@ import json
 import numpy as np
 import math
 import warnings
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from ase.utils import basestring
 from ase.atoms import Atoms
 from ase.cell import Cell
 from ase.geometry import wrap_positions
 from ase.dft.kpoints import BandPath, bandpath
 from ase.calculators.wannier90 import Wannier90
+
+
+def list_to_formatted_str(values: List[int]) -> str:
+    # Converts a list of integers into the format expected by Wannier90
+    # e.g. list_to_formatted_str([1, 2, 3, 4, 5, 7]) = "1-5,7"
+    if len(values) == 0:
+        raise ValueError('list_to_formatted_str() should not be given an empty list')
+    assert all(a > b for a, b in zip(values[1:], values[:-1])), 'values must be monotonically increasing'
+    indices: List[Union[int, None]] = [None]
+    indices += [i + 1 for i in range(len(values) - 1) if values[i + 1] != values[i] + 1]
+    indices += [None]
+    sectors = [values[slice(a, b)] for a, b in zip(indices[:-1], indices[1:])]
+    out = []
+    for sector in sectors:
+        if len(sector) == 1:
+            out.append(str(sector[0]))
+        else:
+            out.append(f'{sector[0]}-{sector[-1]}')
+    return ','.join(out)
+
+
+def formatted_str_to_list(string: str) -> List[int]:
+    # Performs the inverse of list_to_formatted_str
+    out = []
+    for section in string.split(','):
+        if '-' in section:
+            out += list(range(int(section.split('-')[0]), int(section.split('-')[1]) + 1))
+        else:
+            out.append(int(section))
+    return out
 
 
 def parse_value(value):
@@ -61,7 +91,8 @@ def write_wannier90_in(fd, atoms):
         elif kw == 'kpoint_path':
             if settings.get('bands_plot', False):
                 rows_str = []
-                for start, end in zip(opt.path[:-1], opt.path[1:]):
+                path_list = path_str_to_list(opt.path, opt.special_points)
+                for start, end in zip(path_list[:-1], path_list[1:]):
                     if ',' in [start, end]:
                         continue
                     rows_str.append('')
@@ -86,8 +117,8 @@ def write_wannier90_in(fd, atoms):
             fd.write(f'{kw} = {opt_str}\n')
 
     # atoms_frac
-    if atoms.has('labels'):
-        labels = atoms.get_array('labels')
+    if atoms.has('tags'):
+        labels = [s + str(t) if t != 0 else s for s, t in zip(atoms.symbols, atoms.get_tags())]
     else:
         labels = atoms.get_chemical_symbols()
     rows_str = [l + ' ' + ' '.join([str(p) for p in pos]) for l, pos in zip(labels, atoms.get_scaled_positions())]
@@ -142,7 +173,15 @@ def read_wannier90_in(fd):
                         assert block_lines.pop(0) == ['ang']
                         cell = Cell(parse_value(block_lines))
                     elif keyw == 'atoms_frac':
-                        symbols = [l[0] for l in block_lines]
+                        symbols = []
+                        tags = []
+                        for l in block_lines:
+                            symbols.append(''.join([c for c in l[0] if c.isalpha()]))
+                            tag = ''.join([c for c in l[0] if c.isnumeric()])
+                            if tag:
+                                tags.append(int(tag))
+                            else:
+                                tags.append(0)
                         scaled_positions = parse_value([l[1:] for l in block_lines])
                     elif keyw == 'projections':
                         calc.parameters[keyw] = [proj_string_to_dict(' '.join(line)) for line in block_lines]
@@ -188,7 +227,7 @@ def read_wannier90_in(fd):
         calc.parameters.kpoint_path = construct_kpoint_path(
             path=kpoint_path, cell=cell, bands_point_num=calc.parameters.get('bands_point_num', 100))
 
-    atoms = Atoms(symbols=symbols, scaled_positions=scaled_positions, cell=cell, calculator=calc)
+    atoms = Atoms(symbols=symbols, scaled_positions=scaled_positions, cell=cell, calculator=calc, tags=tags)
     atoms.calc.atoms = atoms
 
     return atoms
@@ -259,7 +298,7 @@ def proj_string_to_dict(string):
 
     # Storing other optional arguments
     for setting in string.split(':')[2:]:
-        k, v = setting.split('=')
+        k, v = [x.strip() for x in setting.split('=')]
 
         k_to_label = {'z': 'zaxis', 'x': 'xaxis', 'r': 'radial', 'zona': 'zona'}
         assert k in k_to_label, f'Failed to parse {k} in the projection {string}'
@@ -280,14 +319,16 @@ def _path_lengths(path: str, cell: Cell, bands_point_num: int) -> List[int]:
     # Work out the lengths Wannier90 will assign each path (based off Wannier90's "plot_interpolate_bands" subroutine)
     kpath_pts: List[int] = []
     kpath_len: List[float] = []
+    special_points = cell.bandpath().special_points
 
-    for i, (start, end) in enumerate(zip(path[:-1], path[1:])):
+    path_list = path_str_to_list(path, special_points)
+
+    for i, (start, end) in enumerate(zip(path_list[:-1], path_list[1:])):
         if start == ',':
             kpath_pts.append(0)
         elif end == ',':
             kpath_pts.append(1)
         else:
-            special_points = cell.bandpath().special_points
             vec = special_points[end] - special_points[start]
             kpath_len.append(math.sqrt(vec.T @ recip_metric @ vec))
             if i == 0:
@@ -297,12 +338,31 @@ def _path_lengths(path: str, cell: Cell, bands_point_num: int) -> List[int]:
     return kpath_pts
 
 
+def path_str_to_list(path: str, special_points: Dict[str, str]) -> List[str]:
+    # Breaks down a k-point path specified by a string into a list of special points e.g.
+    # 'GLB1,BZGX,QFP1Z,LP' -> ['G', 'L', 'B1', ',', 'B', 'Z', 'G', 'X', ',', 'Q', 'F', 'P1', 'Z', ',', 'L', 'P']
+    path_list = []
+    while len(path) > 0:
+        found = False
+        for option in list(special_points.keys()) + [',']:
+            if path.endswith(option):
+                path = path[:-len(option)]
+                path_list.append(option)
+                found = True
+                break
+        if not found:
+            raise ValueError(f'Could not deconstruct {path} into individual high-symmetry points')
+    return path_list[::-1]
+
+
 def construct_kpoint_path(path: str, cell: Cell, bands_point_num: int) -> BandPath:
     path_lengths = _path_lengths(path, cell, bands_point_num)
     special_points = cell.bandpath().special_points
 
+    path_list = path_str_to_list(path, special_points)
+
     kpts = []
-    for start, end, npoints in zip(path[:-1], path[1:], path_lengths):
+    for start, end, npoints in zip(path_list[:-1], path_list[1:], path_lengths):
         if start == ',':
             pass
         elif end == ',':
@@ -369,7 +429,7 @@ def read_wannier90_out(fd):
         if 'Final State' in line:
             j = 1
             while 'WF centre and spread' in flines[i + j]:
-                splitline = [x.rstrip(',') for x in flines[i + j].split()]
+                splitline = [x.rstrip(',') for x in re.sub('[(),]', ' ', flines[i + j]).split()]
                 centers.append([float(x) for x in splitline[6:9]])
                 spreads.append(float(splitline[-1]))
                 j += 1
@@ -404,8 +464,13 @@ def num_wann_lookup(proj):
                 'sp3d2-6': 1}
     if proj in database:
         return database[proj]
-    else:
-        raise NotImplementedError(f'Unrecognised Wannier90 projection {proj}')
+    elif proj.split(',')[0] in database:
+        l, mr = proj.split(',')
+        if l in database and '=' in mr:
+            _, val = mr.split('=')
+            return len(formatted_str_to_list(val))
+
+    raise NotImplementedError(f'Unrecognised Wannier90 projection {proj}')
 
 
 def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
@@ -413,8 +478,8 @@ def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
     num_wann = 0
     for proj in projections:
         if 'site' in proj:
-            if atoms.has('labels'):
-                labels = atoms.get_array('labels').tolist()
+            if len(set(atoms.get_tags())) > 0:
+                labels = [s + str(t) if t != 0 else s for s, t in zip(atoms.symbols, atoms.get_tags())]
             else:
                 labels = [s for s in atoms.symbols]
             num_sites = labels.count(proj['site'])

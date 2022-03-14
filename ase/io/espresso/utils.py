@@ -363,10 +363,6 @@ def get_cell_parameters(lines, alat=None):
                                      'bohr')
                 cell_units = units['Bohr']
             elif 'angstrom' in line.lower():
-                if alat is not None:
-                    raise ValueError('Lattice parameters given in '
-                                     '&SYSTEM celldm/A and CELL_PARAMETERS '
-                                     'angstrom')
                 cell_units = 1.0
             elif 'alat' in line.lower():
                 # Output file has (alat = value) (in Bohrs)
@@ -581,7 +577,7 @@ def ffloat(string):
         return float(string.lower().replace('d', 'e'))
 
 
-def label_to_symbol(label):
+def label_to_symbol_and_tag(label):
     """Convert a valid espresso ATOMIC_SPECIES label to a
     chemical symbol.
 
@@ -598,6 +594,9 @@ def label_to_symbol(label):
     symbol : str
         The best matching species from ase.utils.chemical_symbols
 
+    tag : int
+        The tag provided
+
     Raises
     ------
     KeyError
@@ -607,21 +606,51 @@ def label_to_symbol(label):
     -----
         It's impossible to tell whether e.g. He is helium
         or hydrogen labelled 'e'.
-    """
 
+        This function enforces tagging with integers
+    """
     # possibly a two character species
     # ase Atoms need proper case of chemical symbols.
+
+    symbol = None
+    tag = None
     if len(label) >= 2:
         test_symbol = label[0].upper() + label[1].lower()
         if test_symbol in chemical_symbols:
-            return test_symbol
-    # finally try with one character
-    test_symbol = label[0].upper()
-    if test_symbol in chemical_symbols:
-        return test_symbol
-    else:
+            symbol, tag = test_symbol, label[2:]
+
+    if symbol is None:
+        # finally try with one character
+        test_symbol = label[0].upper()
+        if test_symbol in chemical_symbols:
+            symbol, tag = test_symbol, label[1:]
+
+    if symbol is None:
         raise KeyError('Could not parse species from label {0}.'
                        ''.format(label))
+
+    # Enforce tag to be a positive integer (we will internally use 0 for non-tagged atoms)
+    if tag == '':
+        tag = 0
+    elif tag == '0':
+        raise ValueError(f'Please do not use 0 as a tag for {symbol}; instead use positive integers')
+    else:
+        try:
+            tag = int(tag)
+        except ValueError:
+            raise ValueError(f'Please use positive integers as tags, rather than {tag} for {symbol}')
+
+    return symbol, tag
+
+
+def label_to_symbol(label):
+    symbol, _ = label_to_symbol_and_tag(label)
+    return symbol
+
+
+def label_to_tag(label):
+    _, tag = label_to_symbol_and_tag(label)
+    return tag
 
 
 def infix_float(text):
@@ -1205,8 +1234,8 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     species_info = {}
 
     species = atoms.get_chemical_symbols()
-    if 'labels' in atoms.arrays:
-        labels = atoms.get_array('labels')
+    if len(set(atoms.get_tags())) > 1:
+        labels = [s + str(t) if t > 0 else s for s, t in zip(species, atoms.get_tags())]
     else:
         labels = species
 
@@ -1277,6 +1306,10 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 f'{mask}\n')
 
     else:
+        # Wipe out tot_magnetisation
+        if input_parameters['system'].pop('tot_magnetization', 0) != 0:
+            raise ValueError('tot_magnetization != 0 and nspin == 1 are incompatible')
+
         # Do nothing about magnetisation
         for atom, label in zip(atoms, labels):
             if label not in atomic_species:
