@@ -18,4 +18,4 @@ from ._pw2wannier import read_pw2wannier_in, read_pw2wannier_out, write_pw2wanni
 from ._wann2kcp import read_wann2kcp_in, read_wann2kcp_out, write_wann2kcp_in
 from ._wann2kc import read_wann2kc_in, read_wann2kc_out, write_wann2kc_in
 from ._wann2kc import KEYS as w2kcw_keys
-from ._utils import label_to_symbol, label_to_tag
+from ._utils import cell_to_ibrav, ibrav_to_cell, label_to_symbol, label_to_tag
