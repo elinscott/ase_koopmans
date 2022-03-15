@@ -16,7 +16,7 @@ from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator, SinglePointKPoint
 from ase.calculators.espresso import Espresso
 from ase.dft.kpoints import kpoint_convert
-from .utils import Namelist, generic_construct_namelist, get_atomic_positions, \
+from ._utils import Namelist, generic_construct_namelist, get_atomic_positions, \
     get_cell_parameters, get_constraint, get_kpoints, get_pseudopotentials, ibrav_to_cell, \
     label_to_symbol, read_fortran_namelist, time_to_float, units, write_espresso_in, label_to_tag
 

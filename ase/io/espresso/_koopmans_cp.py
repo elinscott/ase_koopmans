@@ -8,9 +8,9 @@ import copy
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from .utils import generic_construct_namelist, units, time_to_float, safe_string_to_list_of_floats, write_espresso_in
-from .pw import read_pw_in
-from .pw import KEYS as PW_KEYS
+from ._utils import generic_construct_namelist, units, time_to_float, safe_string_to_list_of_floats, write_espresso_in
+from ._pw import read_pw_in
+from ._pw import KEYS as PW_KEYS
 from ase.calculators.espresso import Espresso_kcp
 
 
