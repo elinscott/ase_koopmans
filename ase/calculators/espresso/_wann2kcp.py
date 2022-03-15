@@ -1,6 +1,6 @@
 """ wann2kcp calculator
 
-export ASE_WANN2KCP_COMMAND="/path/to/wann2kcp PREFIX.w2ki"
+export ASE_WANN2KCP_COMMAND="/path/to/wann2kcp PREFIX.wki"
 
 """
 
