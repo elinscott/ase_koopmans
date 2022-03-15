@@ -9,10 +9,10 @@ from ase import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
 from ._utils import read_fortran_namelist, generic_construct_namelist, time_to_float, units
-from ._wann2kc import KEYS as W2KKEYS
+from ._wann2kc import KEYS as W2KCW_KEYS
 from ase.calculators.espresso import KoopmansScreen
 
-KEYS = copy.deepcopy(W2KKEYS)
+KEYS = copy.deepcopy(W2KCW_KEYS)
 KEYS['SCREEN'] = ['tr2', 'nmix', 'niter', 'eps_inf', 'i_orb', 'check_spread']
 
 
