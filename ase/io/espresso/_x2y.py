@@ -114,4 +114,4 @@ def read_x2y_out(fd, calc_class):
 
     structure.calc = calc
 
-    yield structure
+    return structure
