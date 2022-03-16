@@ -9,13 +9,13 @@ from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.dft.kpoints import BandPath
 from ase.utils import basestring
-from .utils import construct_kpoints_card, generic_construct_namelist, safe_string_to_list_of_floats, time_to_float, \
+from ._utils import construct_kpoints_card, generic_construct_namelist, safe_string_to_list_of_floats, time_to_float, \
     read_fortran_namelist
-from .wann2kc import KEYS as W2KKEYS
+from ._wann2kc import KEYS as W2KCW_KEYS
 
 from ase.calculators.espresso import KoopmansHam
 
-KEYS = copy.deepcopy(W2KKEYS)
+KEYS = copy.deepcopy(W2KCW_KEYS)
 KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr']
 
 

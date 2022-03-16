@@ -1,20 +1,19 @@
-"""Reads pw2wannier files.
+"""Reads pw2wannier/wann2kcp files.
 
 """
 
 from pathlib import Path
 from ase.utils import basestring
 from ase.atoms import Atoms
-from ase.calculators.espresso import PW2Wannier
-from .utils import read_fortran_namelist, time_to_float
+from ._utils import read_fortran_namelist, time_to_float
 
 
-def read_pw2wannier_in(fileobj):
-    """Parse a pw2wannier input file, 'pw2wan', '.p2wi'
+def read_x2y_in(fileobj, calc_class):
+    """Parse a pw2wannier/wann2kcp input file
 
-    pw2wannier inputs are a fortran-namelist format with custom
-    blocks of data. The namelist is parsed as a dict and an atoms object
-    is constructed from the included information.
+    inputs are a fortran-namelist format with custom blocks of data.
+    The namelist is parsed as a dict and an atoms object is constructed
+    from the included information.
 
     Parameters
     ----------
@@ -39,7 +38,7 @@ def read_pw2wannier_in(fileobj):
     # parse namelist section and extract remaining lines
     data, _ = read_fortran_namelist(fileobj)
 
-    calc = PW2Wannier()
+    calc = calc_class()
     calc.parameters.update(**data['inputpp'])
     atoms = Atoms(calculator=calc)
     atoms.calc.atoms = atoms
@@ -47,9 +46,9 @@ def read_pw2wannier_in(fileobj):
     return atoms
 
 
-def write_pw2wannier_in(fd, atoms, **kwargs):
+def write_x2y_in(fd, atoms, **kwargs):
     """
-    Create an input file for pw2wannier.
+    Create an input file for pw2wannier/wann2kcp.
 
     Parameters
     ----------
@@ -60,25 +59,25 @@ def write_pw2wannier_in(fd, atoms, **kwargs):
 
     """
 
-    p2w = ['&inputpp\n']
+    x2y = ['&inputpp\n']
     for key, value in atoms.calc.parameters.items():
         if value is True:
-            p2w.append('   {0:16} = .true.\n'.format(key))
+            x2y.append('   {0:16} = .true.\n'.format(key))
         elif value is False:
-            p2w.append('   {0:16} = .false.\n'.format(key))
+            x2y.append('   {0:16} = .false.\n'.format(key))
         elif value is not None:
             if isinstance(value, Path):
                 value = str(value)
             # repr format to get quotes around strings
-            p2w.append('   {0:16} = {1!r:}\n'.format(key, value))
-    p2w.append('/\n')
+            x2y.append('   {0:16} = {1!r:}\n'.format(key, value))
+    x2y.append('/\n')
 
-    fd.write(''.join(p2w))
+    fd.write(''.join(x2y))
 
 
-def read_pw2wannier_out(fd):
+def read_x2y_out(fd, calc_class):
     """
-    Reads pw2wannier output files
+    Reads pw2wannier/wann2kcp output files
 
     Parameters
     ----------
@@ -105,11 +104,11 @@ def read_pw2wannier_out(fd):
     for line in flines:
         if 'JOB DONE' in line:
             job_done = True
-        if 'PW2WANNIER   :' in line:
+        if line.startswith(calc_class.__name__.upper()):
             time_str = line.split()[-2]
             walltime = time_to_float(time_str)
 
-    calc = PW2Wannier(atoms=structure)
+    calc = calc_class(atoms=structure)
     calc.results['job done'] = job_done
     calc.results['walltime'] = walltime
 
