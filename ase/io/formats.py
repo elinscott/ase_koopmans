@@ -352,7 +352,7 @@ F('pw2wannier-in', 'pw2wannier input file', '1F',
 F('pw2wannier-out', 'pw2wannier output file', '1F',
   module='espresso', ext='p2wo')
 F('wann2kcp-in', 'wann2kcp input file', '1F',
-  module='espresso', ext=['w2kcp', 'wki'])
+  module='espresso', ext='wki')
 F('wann2kcp-out', 'wann2kcp output file', '1F',
   module='espresso', ext='wko')
 F('py', 'Python file', '+F'),
