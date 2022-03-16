@@ -18,4 +18,4 @@ def write_pw2wannier_in(fd, atoms, **kwargs):
 
 def read_pw2wannier_out(fd):
     # Reads pw2wannier output files
-    return read_x2y_out(fd, PW2Wannier)
+    yield from read_x2y_out(fd, PW2Wannier)

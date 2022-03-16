@@ -18,4 +18,4 @@ def write_wann2kcp_in(fd, atoms, **kwargs):
 
 def read_wann2kcp_out(fd):
     # Reads wann2kcp output files
-    return read_x2y_out(fd, Wann2KCP)
+    yield from read_x2y_out(fd, Wann2KCP)
