@@ -1,18 +1,13 @@
-"""Reads pw2wannier files.
-
-"""
-
+from ase.atoms import Atoms #  Import the atom object from ASE
+from ase.calculators.espresso import Projwfc 
+from .utils import read_fortran_namelist, time_to_float  # Not sure if this applies to projwfc
 from pathlib import Path
-from ase.utils import basestring
-from ase.atoms import Atoms
-from ase.calculators.espresso import PW2Wannier
-from .utils import read_fortran_namelist, time_to_float
 
 
-def read_pw2wannier_in(fileobj):
-    """Parse a pw2wannier input file, 'pw2wan', '.p2wi'
+def read_projwfc_in(fileobj):
+    """Parse a projwfc input file, '.pri'
 
-    pw2wannier inputs are a fortran-namelist format with custom
+    projwfc inputs are a fortran-namelist format with custom
     blocks of data. The namelist is parsed as a dict and an atoms object
     is constructed from the included information.
 
@@ -39,17 +34,16 @@ def read_pw2wannier_in(fileobj):
     # parse namelist section and extract remaining lines
     data, _ = read_fortran_namelist(fileobj)
 
-    calc = PW2Wannier()
-    calc.parameters.update(**data['inputpp'])
+    calc = Projwfc()
+    calc.parameters.update(**data['projwfc'])
     atoms = Atoms(calculator=calc)
     atoms.calc.atoms = atoms
 
     return atoms
 
-
-def write_pw2wannier_in(fd, atoms, **kwargs):
+def write_projwfc_in(fd, atoms, **kwargs):
     """
-    Create an input file for pw2wannier.
+    Create an input file for projwfc.
 
     Parameters
     ----------
@@ -60,25 +54,23 @@ def write_pw2wannier_in(fd, atoms, **kwargs):
 
     """
 
-    p2w = ['&inputpp\n']
+    projwf = ['&projwfc\n']
     for key, value in atoms.calc.parameters.items():
         if value is True:
-            p2w.append(f'   {key:16} = .true.\n')
+            projwf.append(f'   {key:16} = .true.\n')
         elif value is False:
-            p2w.append(f'   {key:16} = .false.\n')
+            projwf.append(f'   {key:16} = .false.\n')
         elif value is not None:
             if isinstance(value, Path):
                 value = str(value)
             # repr format to get quotes around strings
-            p2w.append(f'   {key:16} = {value!r:}\n')
-    p2w.append('/\n')
+            projwf.append(f'   {key:16} = {value!r:}\n')
+    projwf.append('/\n')
 
-    fd.write(''.join(p2w))
-
-
-def read_pw2wannier_out(fd):
+    fd.write(''.join(projwf))
+def read_projwfc_out(fd):
     """
-    Reads pw2wannier output files
+    Reads projwfc output files
 
     Parameters
     ----------
@@ -92,11 +84,10 @@ def read_pw2wannier_out(fd):
         any parsed results
     """
 
-    if isinstance(fd, basestring):
-        fd = open(fd, 'rU')
+    if isinstance(fd, str):
+        fd = open(fd, 'r')
 
     flines = fd.readlines()
-
     structure = Atoms()
 
     job_done = False
@@ -105,14 +96,15 @@ def read_pw2wannier_out(fd):
     for line in flines:
         if 'JOB DONE' in line:
             job_done = True
-        if 'PW2WANNIER   :' in line:
+        if 'PROJWFC      :' in line:
             time_str = line.split()[-2]
             walltime = time_to_float(time_str)
 
-    calc = PW2Wannier(atoms=structure)
+    calc = Projwfc(atoms=structure)
     calc.results['job done'] = job_done
     calc.results['walltime'] = walltime
 
     structure.calc = calc
 
     yield structure
+                     

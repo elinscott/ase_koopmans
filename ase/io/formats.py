@@ -355,6 +355,10 @@ F('pw2wannier-in', 'pw2wannier input file', '1F',
   module='espresso', ext=['pw2wan', 'p2wi'])
 F('pw2wannier-out', 'pw2wannier output file', '1F',
   module='espresso', ext='p2wo')
+F('wann2kcp-in', 'wann2kcp input file', '1F',
+  module='espresso', ext='wki')
+F('wann2kcp-out', 'wann2kcp output file', '1F',
+  module='espresso', ext='wko')
 F('py', 'Python file', '+F'),
 F('sys', 'qball sys file', '1F'),
 F('qbox', 'QBOX output file', '+F',
