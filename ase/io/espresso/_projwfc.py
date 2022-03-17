@@ -1,6 +1,6 @@
-from ase.atoms import Atoms #  Import the atom object from ASE
+from ase.atoms import Atoms
 from ase.calculators.espresso import Projwfc 
-from .utils import read_fortran_namelist, time_to_float  # Not sure if this applies to projwfc
+from ._utils import read_fortran_namelist, time_to_float
 from pathlib import Path
 
 
