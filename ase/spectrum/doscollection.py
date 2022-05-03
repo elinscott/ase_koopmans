@@ -5,6 +5,7 @@ from typing import (Any, Dict, Iterable, List, Optional,
 
 import numpy as np
 from ase.spectrum.dosdata import DOSData, RawDOSData, GridDOSData, Info
+from ase.utils import jsonable
 from ase.utils.plotting import SimplePlottingAxes
 
 # This import is for the benefit of type-checking / mypy
@@ -14,6 +15,7 @@ if False:
 
 class DOSCollection(collections.abc.Sequence):
     """Base class for a collection of DOSData objects"""
+
     def __init__(self, dos_series: Iterable[DOSData]) -> None:
         self._data = list(dos_series)
 
@@ -53,6 +55,7 @@ class DOSCollection(collections.abc.Sequence):
              ax: 'matplotlib.axes.Axes' = None,
              show: bool = False,
              filename: str = None,
+             orientation: str = 'horizontal',
              mplargs: dict = None) -> 'matplotlib.axes.Axes':
         """Simple plot of collected DOS data, resampled onto a grid
 
@@ -86,14 +89,17 @@ class DOSCollection(collections.abc.Sequence):
                                                width=width, smearing=smearing)
 
             all_labels = [DOSData.label_from_info(data.info) for data in self]
-
-            all_lines = ax.plot(energies, all_y.T, **mplargs)
+            if orientation == 'horizontal':
+                all_lines = ax.plot(energies, all_y.T, **mplargs)
+                ax.set_xlim([min(energies), max(energies)])
+            else:
+                all_lines = ax.plot(all_y.T, energies, **mplargs)
+                ax.set_ylim([min(energies), max(energies)])
             for line, label in zip(all_lines, all_labels):
                 line.set_label(label)
             ax.legend()
 
-            ax.set_xlim(left=min(energies), right=max(energies))
-            ax.set_ylim(bottom=0)
+            # ax.set_ylim(bottom=0)
 
         return ax
 
@@ -218,6 +224,7 @@ class DOSCollection(collections.abc.Sequence):
         return data
 
     D = TypeVar('D', bound=DOSData)
+
     @staticmethod
     def _select_to_list(dos_collection: Sequence[D],         # Bug in flakes
                         info_selection: Dict[str, str],      # misses 'D' def
@@ -383,6 +390,7 @@ class RawDOSCollection(DOSCollection):
                                 "RawDOSData objects.")
 
 
+@jsonable('griddoscollection')
 class GridDOSCollection(DOSCollection):
     def __init__(self, dos_series: Iterable[GridDOSData],
                  energies: Optional[Sequence[float]] = None) -> None:
@@ -403,7 +411,7 @@ class GridDOSCollection(DOSCollection):
                 raise TypeError("GridDOSCollection can only store "
                                 "GridDOSData objects.")
             if (dos_data.get_energies().shape != self._energies.shape
-                or not np.allclose(dos_data.get_energies(), self._energies)):
+                    or not np.allclose(dos_data.get_energies(), self._energies)):
                 raise ValueError("All GridDOSData objects in GridDOSCollection"
                                  " must have the same energy axis.")
             self._weights[i, :] = dos_data.get_weights()
@@ -528,3 +536,13 @@ class GridDOSCollection(DOSCollection):
             return type(self)([], energies=self._energies)
         else:
             return type(self)(matches)
+
+    def todict(self):
+        dct = {}
+        for key in ['energies', 'weights', 'info']:
+            dct[key] = getattr(self, '_' + key)
+        return dct
+
+    @classmethod
+    def fromdict(cls, dct):
+        return cls.from_data(**dct)

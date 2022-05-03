@@ -1332,6 +1332,9 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
                 coords = atom.position
             atomic_positions_str.append(f'{label} {coords[0]:.10f} {coords[1]:.10f} {coords[2]:.10f} {mask}\n')
 
+        if input_parameters['system'].pop('tot_magnetization', 0) != 0:
+            raise ValueError('tot_magnetization cannot be non-zero when nspin = 1')
+
     # Add computed parameters
     # different magnetisms means different types
     input_parameters['system']['ntyp'] = len(atomic_species)

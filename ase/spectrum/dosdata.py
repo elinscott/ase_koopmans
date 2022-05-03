@@ -20,6 +20,7 @@ class DOSData(metaclass=ABCMeta):
     """Abstract base class for a single series of DOS-like data
 
     Only the 'info' is a mutable attribute; DOS data is set at init"""
+
     def __init__(self,
                  info: Info = None) -> None:
         if info is None:
@@ -198,6 +199,7 @@ class GeneralDOSData(DOSData):
     "energies" and "weights" sequences of equal length at init.
 
     """
+
     def __init__(self,
                  energies: Sequence[float],
                  weights: Sequence[float],
@@ -339,6 +341,7 @@ class GridDOSData(GeneralDOSData):
       GridDOSData([0.1, 0.2, 0.3], [y1+y4, y2+y5, y3+y6], info={'symbol': 'O'})
 
     """
+
     def __init__(self,
                  energies: Sequence[float],
                  weights: Sequence[float],
@@ -404,6 +407,7 @@ class GridDOSData(GeneralDOSData):
                  smearing: str = 'Gauss',
                  ax: 'matplotlib.axes.Axes' = None,
                  show: bool = False,
+                 orientation: str = 'horizontal',
                  filename: str = None,
                  mplargs: dict = None) -> 'matplotlib.axes.Axes':
         """Simple 1-D plot of DOS data
@@ -450,7 +454,13 @@ class GridDOSData(GeneralDOSData):
             else:
                 energies, intensity = self.get_energies(), self.get_weights()
 
-            ax.plot(energies, intensity, **mplargs)
-            ax.set_xlim(left=xmin, right=xmax)
+            if orientation == 'horizontal':
+                ax.plot(energies, intensity, **mplargs)
+                ax.set_xlim(left=xmin, right=xmax)
+            elif orientation == 'vertical':
+                ax.plot(intensity, energies, **mplargs)
+                ax.set_ylim([xmin, xmax])
+            else:
+                raise ValueError(f'Unrecognised orientation {orientation}')
 
         return ax
