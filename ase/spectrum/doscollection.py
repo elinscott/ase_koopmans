@@ -89,15 +89,12 @@ class DOSCollection(collections.abc.Sequence):
                                                width=width, smearing=smearing)
 
             all_labels = [DOSData.label_from_info(data.info) for data in self]
-            if orientation == 'horizontal':    
+            if orientation == 'horizontal':
                 all_lines = ax.plot(energies, all_y.T, **mplargs)
                 ax.set_xlim([min(energies), max(energies)])
-            else: 
+            else:
                 all_lines = ax.plot(all_y.T, energies, **mplargs)
                 ax.set_ylim([min(energies), max(energies)])
-                #window = ax_bs.get_ylim()
-                #mask = np.all([ dc_up._energies > window[0], dc_up._energies < window[1]], axis=0)
-                #ax_dos.set_xlim(left=dc_down._weights[:,mask].min(), right=dc_up._weights[:,mask].max())
             for line, label in zip(all_lines, all_labels):
                 line.set_label(label)
             ax.legend()
@@ -414,7 +411,7 @@ class GridDOSCollection(DOSCollection):
                 raise TypeError("GridDOSCollection can only store "
                                 "GridDOSData objects.")
             if (dos_data.get_energies().shape != self._energies.shape
-                or not np.allclose(dos_data.get_energies(), self._energies)):
+                    or not np.allclose(dos_data.get_energies(), self._energies)):
                 raise ValueError("All GridDOSData objects in GridDOSCollection"
                                  " must have the same energy axis.")
             self._weights[i, :] = dos_data.get_weights()

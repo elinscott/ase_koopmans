@@ -1,5 +1,5 @@
 from ase.atoms import Atoms
-from ase.calculators.espresso import Projwfc 
+from ase.calculators.espresso import Projwfc
 from ._utils import read_fortran_namelist, time_to_float
 from pathlib import Path
 
@@ -41,6 +41,7 @@ def read_projwfc_in(fileobj):
 
     return atoms
 
+
 def write_projwfc_in(fd, atoms, **kwargs):
     """
     Create an input file for projwfc.
@@ -68,6 +69,8 @@ def write_projwfc_in(fd, atoms, **kwargs):
     projwf.append('/\n')
 
     fd.write(''.join(projwf))
+
+
 def read_projwfc_out(fd):
     """
     Reads projwfc output files
@@ -107,4 +110,3 @@ def read_projwfc_out(fd):
     structure.calc = calc
 
     yield structure
-                     
