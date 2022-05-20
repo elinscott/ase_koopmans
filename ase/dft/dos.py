@@ -131,6 +131,20 @@ class DOS:
                 dos += w * self.delta(e)
         return dos
 
+    def __eq__(self, other):
+        if isinstance(other, DOS):
+            for attr in ['width', 'energies', 'nspins', 'w_k', 'e_skn']:
+                val = getattr(self, attr)
+                ref_val = getattr(other, attr)
+                if isinstance(val, np.ndarray):
+                    if not np.allclose(val, ref_val, atol=1e-10):
+                        return False
+                else:
+                    if not val == ref_val:
+                        return False
+            return True
+        return False
+
 
 def linear_tetrahedron_integration(cell, eigs, energies,
                                    weights=None, comm=world):
