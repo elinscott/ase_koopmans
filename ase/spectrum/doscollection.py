@@ -546,3 +546,14 @@ class GridDOSCollection(DOSCollection):
     @classmethod
     def fromdict(cls, dct):
         return cls.from_data(**dct)
+
+    def __eq__(self, other):
+        if isinstance(other, GridDOSCollection):
+            for attr in ['_energies', '_weights']:
+                val = getattr(self, attr)
+                ref_val = getattr(other, attr)
+                if not np.allclose(val, ref_val, 1e-10):
+                    return False
+            return self._info == other._info
+        else:
+            return False
