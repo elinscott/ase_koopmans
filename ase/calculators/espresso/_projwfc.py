@@ -8,7 +8,7 @@ class Projwfc(EspressoParent):
     ext_in = '.pri'
     ext_out = '.pro'
     implemented_properties = []
-    command = 'projwfc.x -in PREFIX.pri > PREFIX.pro'
+    command = 'projwfc.x -in PREFIX.pri > PREFIX.pro 2>&1'
 
     def __init__(self, *args, **kwargs):
         """

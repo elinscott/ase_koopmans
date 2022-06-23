@@ -15,7 +15,7 @@ class Wann2KCP(EspressoParent):
     ext_in = '.wki'
     ext_out = '.wko'
     implemented_properties = []
-    command = 'wann2kcp.x -in PREFIX.wki > PREFIX.wko'
+    command = 'wann2kcp.x -in PREFIX.wki > PREFIX.wko 2>&1'
 
     def __init__(self, *args, **kwargs):
         """

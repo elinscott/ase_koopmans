@@ -16,7 +16,7 @@ class Wannier90(FileIOCalculator):
     """
     """
     implemented_properties = []
-    command = 'wannier90.x PREFIX.win > PREFIX.wout'
+    command = 'wannier90.x PREFIX.win > PREFIX.wout 2>&1'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='wannier', atoms=None, **kwargs):

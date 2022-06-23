@@ -17,7 +17,7 @@ class Wann2KC(EspressoParent):
     implemented_properties = []
 
     # Default command does not use parallelism and assumes kcw.x is on the user's path
-    command = 'kcw.x -in PREFIX.w2ki > PREFIX.w2ko'
+    command = 'kcw.x -in PREFIX.w2ki > PREFIX.w2ko 2>&1'
 
     def __init__(self, *args, **kwargs):
         kwargs['label'] = 'wann2kc'
