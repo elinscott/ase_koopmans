@@ -17,7 +17,7 @@ class KoopmansScreen(EspressoParent):
     implemented_properties = []
 
     # Default command does not use parallelism and assumes kcw.x is on the user's path
-    command = 'kcw.x -in PREFIX.ksi > PREFIX.kso'
+    command = 'kcw.x -in PREFIX.ksi > PREFIX.kso 2>&1'
 
     def __init__(self, *args, **kwargs):
         kwargs['label'] = 'kc_screen'

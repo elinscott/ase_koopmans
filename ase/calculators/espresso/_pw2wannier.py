@@ -15,7 +15,7 @@ class PW2Wannier(EspressoParent):
     ext_in = '.p2wi'
     ext_out = '.p2wo'
     implemented_properties = []
-    command = 'pw2wannier90.x -in PREFIX.p2wi > PREFIX.p2wo'
+    command = 'pw2wannier90.x -in PREFIX.p2wi > PREFIX.p2wo 2>&1'
 
     def __init__(self, *args, **kwargs):
         """
