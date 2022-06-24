@@ -97,7 +97,12 @@ def check_symmetry(atoms, symprec=1.0e-6, verbose=False):
         import spglib  # For version 1.9 or later
     except ImportError:
         from pyspglib import spglib  # For versions 1.8.x or before
-    dataset = spglib.get_symmetry_dataset(atoms, symprec=symprec)
+
+    lattice = atoms.get_cell()
+    positions = atoms.get_scaled_positions()
+    numbers = atoms.get_atomic_numbers()
+
+    dataset = spglib.get_symmetry_dataset((lattice, positions, numbers), symprec=symprec)
     if verbose:
         print_symmetry(symprec, dataset)
     return dataset
