@@ -51,7 +51,10 @@ def refine_symmetry(atoms, symprec=0.01, verbose=False):
 
     # get new dataset and primitive cell
     dataset = check_symmetry(atoms, symprec=symprec, verbose=verbose)
-    res = spglib.find_primitive(atoms, symprec=symprec)
+    lattice = atoms.get_cell()
+    positions = atoms.get_scaled_positions()
+    numbers = atoms.get_atomic_numbers()
+    res = spglib.find_primitive((lattice, positions, numbers), symprec=symprec)
     prim_cell, prim_scaled_pos, prim_types = res
 
     # calculate offset between standard cell and actual cell
