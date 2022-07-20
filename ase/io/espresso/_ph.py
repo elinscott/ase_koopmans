@@ -42,7 +42,7 @@ def read_ph_in(fileobj):
     data, _ = read_fortran_namelist(fileobj)
 
     calc = EspressoPh
-    calc.parameters.update(**data['inputpp'])
+    calc.parameters.update(**data['inputph'])
     atoms = Atoms(calculator=calc)
     atoms.calc.atoms = atoms
 
@@ -51,7 +51,7 @@ def read_ph_in(fileobj):
 
 def write_ph_in(fd, atoms, **kwargs):
     """
-    Create an input file for pw2wannier/wann2kcp.
+    Create an input file for ph.x
 
     Parameters
     ----------
@@ -62,7 +62,7 @@ def write_ph_in(fd, atoms, **kwargs):
 
     """
 
-    ph = ['&inputpp\n']
+    ph = ['&inputph\n']
     for key, value in atoms.calc.parameters.items():
         if value is True:
             ph.append('   {0:16} = .true.\n'.format(key))
@@ -107,7 +107,7 @@ def read_ph_out(fd):
     for line in flines:
         if 'JOB DONE' in line:
             job_done = True
-        if line.startswith(calc_class.__name__.upper()):
+        if line.strip().startswith('PHONON'):
             time_str = line.split()[-2]
             walltime = time_to_float(time_str)
 
