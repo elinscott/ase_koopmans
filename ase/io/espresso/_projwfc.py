@@ -1,19 +1,15 @@
-"""Reads pw2wannier/wann2kcp files.
-
-"""
-
-from pathlib import Path
-from ase.utils import basestring
 from ase.atoms import Atoms
+from ase.calculators.espresso import Projwfc
 from ._utils import read_fortran_namelist, time_to_float
+from pathlib import Path
 
 
-def read_x2y_in(fileobj, calc_class):
-    """Parse a pw2wannier/wann2kcp input file
+def read_projwfc_in(fileobj):
+    """Parse a projwfc input file, '.pri'
 
-    inputs are a fortran-namelist format with custom blocks of data.
-    The namelist is parsed as a dict and an atoms object is constructed
-    from the included information.
+    projwfc inputs are a fortran-namelist format with custom
+    blocks of data. The namelist is parsed as a dict and an atoms object
+    is constructed from the included information.
 
     Parameters
     ----------
@@ -38,17 +34,17 @@ def read_x2y_in(fileobj, calc_class):
     # parse namelist section and extract remaining lines
     data, _ = read_fortran_namelist(fileobj)
 
-    calc = calc_class()
-    calc.parameters.update(**data['inputpp'])
+    calc = Projwfc()
+    calc.parameters.update(**data['projwfc'])
     atoms = Atoms(calculator=calc)
     atoms.calc.atoms = atoms
 
     return atoms
 
 
-def write_x2y_in(fd, atoms, **kwargs):
+def write_projwfc_in(fd, atoms, **kwargs):
     """
-    Create an input file for pw2wannier/wann2kcp.
+    Create an input file for projwfc.
 
     Parameters
     ----------
@@ -59,25 +55,25 @@ def write_x2y_in(fd, atoms, **kwargs):
 
     """
 
-    x2y = ['&inputpp\n']
+    projwf = ['&projwfc\n']
     for key, value in atoms.calc.parameters.items():
         if value is True:
-            x2y.append(f'   {key:16} = .true.\n')
+            projwf.append(f'   {key:16} = .true.\n')
         elif value is False:
-            x2y.append(f'   {key:16} = .false.\n')
+            projwf.append(f'   {key:16} = .false.\n')
         elif value is not None:
             if isinstance(value, Path):
                 value = str(value)
             # repr format to get quotes around strings
-            x2y.append(f'   {key:16} = {value!r:}\n')
-    x2y.append('/\n')
+            projwf.append(f'   {key:16} = {value!r:}\n')
+    projwf.append('/\n')
 
-    fd.write(''.join(x2y))
+    fd.write(''.join(projwf))
 
 
-def read_x2y_out(fd, calc_class):
+def read_projwfc_out(fd):
     """
-    Reads pw2wannier/wann2kcp output files
+    Reads projwfc output files
 
     Parameters
     ----------
@@ -91,11 +87,10 @@ def read_x2y_out(fd, calc_class):
         any parsed results
     """
 
-    if isinstance(fd, basestring):
-        fd = open(fd, 'rU')
+    if isinstance(fd, str):
+        fd = open(fd, 'r')
 
     flines = fd.readlines()
-
     structure = Atoms()
 
     job_done = False
@@ -104,11 +99,11 @@ def read_x2y_out(fd, calc_class):
     for line in flines:
         if 'JOB DONE' in line:
             job_done = True
-        if line.startswith(calc_class.__name__.upper()):
+        if 'PROJWFC      :' in line:
             time_str = line.split()[-2]
             walltime = time_to_float(time_str)
 
-    calc = calc_class(atoms=structure)
+    calc = Projwfc(atoms=structure)
     calc.results['job done'] = job_done
     calc.results['walltime'] = walltime
 

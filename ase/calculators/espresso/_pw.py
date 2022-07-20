@@ -91,7 +91,7 @@ class Espresso(EspressoParent):
     ext_in = '.pwi'
     ext_out = '.pwo'
     implemented_properties = ['energy', 'forces', 'stress', 'magmoms']
-    command = 'pw.x -in PREFIX.pwi > PREFIX.pwo'
+    command = 'pw.x -in PREFIX.pwi > PREFIX.pwo 2>&1'
 
     def get_fermi_level(self):
         if self.calc is None:

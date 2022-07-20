@@ -278,6 +278,10 @@ F('espresso-ph-in', 'Quantum espresso (ph.x) in file', '1F',
   module='espresso', ext='phi')
 F('espresso-ph-out', 'Quantum espresso (ph.x) out file', '+F',
   module='espresso', ext='pho')
+F('projwfc-in', 'Quantum espresso (projwfc.x) input file', '1F',
+  module='espresso', ext='pri'),
+F('projwfc-out', 'Quantum espresso (projwfc.x) output file', '1F',
+  module='espresso', ext='pro'),
 F('koopmans-cp-in', 'Quantum espresso (kcp.x) in file', '1F',
   module='espresso', ext='cpi')
 F('koopmans-cp-out', 'Quantum espresso (kcp.x) out file', '+F',

@@ -19,7 +19,7 @@ class KoopmansHam(EspressoParent):
     implemented_properties = []
 
     # Default command does not use parallelism and assumes kcw.x is on the user's path
-    command = 'kcw.x -in PREFIX.khi > PREFIX.kho'
+    command = 'kcw.x -in PREFIX.khi > PREFIX.kho 2>&1'
 
     def __init__(self, *args, **kwargs):
         kwargs['label'] = 'kc_ham'

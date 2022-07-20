@@ -281,7 +281,7 @@ class BandStructurePlot:
         import matplotlib.pyplot as plt
 
         if self.show_legend:
-            leg = plt.legend(loc=loc)
+            leg = self.ax.legend(loc=loc)
             leg.get_frame().set_alpha(1)
 
         if filename:
@@ -350,3 +350,13 @@ class BandStructure:
                 .format(self.__class__.__name__, self.path,
                         '{}x{}x{}'.format(*self.energies.shape),
                         self.reference))
+
+    def __eq__(self, other):
+        if isinstance(other, BandStructure):
+            if not abs(self.reference - other.reference) < 1e-10:
+                return False
+            elif self.path != other.path:
+                return False
+            else:
+                return np.allclose(self.energies, other.energies, atol=1e-10)
+        return False

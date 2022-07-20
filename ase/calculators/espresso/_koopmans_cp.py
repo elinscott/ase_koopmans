@@ -17,7 +17,7 @@ class Espresso_kcp(EspressoParent):
     implemented_properties = ['energy']
 
     # Default command does not use parallelism and assumes kcp.x is on the user's path
-    command = 'kcp.x -in PREFIX.cpi > PREFIX.cpo'
+    command = 'kcp.x -in PREFIX.cpi > PREFIX.cpo 2>&1'
 
     def __init__(self, *args, **kwargs):
         kwargs['label'] = 'kc_ham'
