@@ -1,8 +1,9 @@
+
 ## MARIJA TO UPDATE
 
-""" wann2kcp calculator
+""" Ph calculator
 
-export ASE_WANN2KCP_COMMAND="/path/to/wann2kcp PREFIX.wki"
+export ASE_PH_COMMAND="/path/to/ph PREFIX.phi"
 
 """
 
@@ -17,11 +18,11 @@ class EspressoPh(EspressoParent):
     ext_in = '.phi'
     ext_out = '.pho'
     implemented_properties = []
-    command = 'wann2kcp.x -in PREFIX.wki > PREFIX.wko'
+    command = 'ph.x -in PREFIX.phi > PREFIX.pho'
 
     def __init__(self, *args, **kwargs):
         """
-        All options for wann2kcp are copied verbatim to the input file
+        All options for ph are copied verbatim to the input file
         """
-        kwargs['label'] = 'w2kcp'
+        kwargs['label'] = 'ph'
         super().__init__(*args, **kwargs)
