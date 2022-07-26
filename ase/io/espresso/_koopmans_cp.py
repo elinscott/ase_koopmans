@@ -15,7 +15,7 @@ from ase.calculators.espresso import Espresso_kcp
 
 
 KEYS = copy.deepcopy(PW_KEYS)
-KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr']
+KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr', 'print_real_space_density']
 KEYS['SYSTEM'] += ['fixed_band', 'f_cutoff', 'restart_from_wannier_pwscf', 'do_orbdep',
                    'fixed_state', 'do_ee', 'nelec', 'nelup', 'neldw', 'do_wf_cmplx',
                    'nr1b', 'nr2b', 'nr3b']
