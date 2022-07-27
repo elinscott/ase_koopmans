@@ -429,7 +429,7 @@ def niggli_reduce_cell(cell, epsfactor=None):
 
     if epsfactor is None:
         epsfactor = 1e-5
-    eps = epsfactor * abs(np.linalg.det(cell))**(1./3.)
+    eps = epsfactor * abs(np.linalg.det(cell))**(1. / 3.)
 
     cell = np.asarray(cell)
 
@@ -472,8 +472,8 @@ def niggli_reduce_cell(cell, epsfactor=None):
             g = np.dot(D, g0)
             continue
 
-        lmn = np.array(gt(g[3:], 0, eps=eps/2), dtype=int)
-        lmn -= np.array(lt(g[3:], 0, eps=eps/2), dtype=int)
+        lmn = np.array(gt(g[3:], 0, eps=eps / 2), dtype=int)
+        lmn -= np.array(lt(g[3:], 0, eps=eps / 2), dtype=int)
 
         if lmn.prod() == 1:
             ijk = lmn.copy()
@@ -502,7 +502,7 @@ def niggli_reduce_cell(cell, epsfactor=None):
         if (gt(abs(g[3]), g[1])
                 or (eq(g[3], g[1]) and lt(2 * g[4], g[5]))
                 or (eq(g[3], -g[1]) and lt(g[5], 0))):
-            s = np.int(np.sign(g[3]))
+            s = int(np.sign(g[3]))
 
             A = I3.copy()
             A[1, 2] = -s
@@ -518,7 +518,7 @@ def niggli_reduce_cell(cell, epsfactor=None):
         elif (gt(abs(g[4]), g[0])
                 or (eq(g[4], g[0]) and lt(2 * g[3], g[5]))
                 or (eq(g[4], -g[0]) and lt(g[5], 0))):
-            s = np.int(np.sign(g[4]))
+            s = int(np.sign(g[4]))
 
             A = I3.copy()
             A[0, 2] = -s
@@ -534,7 +534,7 @@ def niggli_reduce_cell(cell, epsfactor=None):
         elif (gt(abs(g[5]), g[0])
                 or (eq(g[5], g[0]) and lt(2 * g[3], g[4]))
                 or (eq(g[5], -g[0]) and lt(g[4], 0))):
-            s = np.int(np.sign(g[5]))
+            s = int(np.sign(g[5]))
 
             A = I3.copy()
             A[0, 1] = -s
