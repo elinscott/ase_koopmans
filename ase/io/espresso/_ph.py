@@ -4,11 +4,12 @@
 
 """
 
+from ase import Atom
 from pathlib import Path
 from ase.utils import basestring
 from ase.atoms import Atoms
 from ._utils import read_fortran_namelist, time_to_float
-from ase.espresso.calculators import EspressoPh
+from ase.calculators.espresso import EspressoPh
 
 
 def read_ph_in(fileobj):
@@ -41,7 +42,7 @@ def read_ph_in(fileobj):
     # parse namelist section and extract remaining lines
     data, _ = read_fortran_namelist(fileobj)
 
-    calc = EspressoPh
+    calc = EspressoPh()
     calc.parameters.update(**data['inputph'])
     atoms = Atoms(calculator=calc)
     atoms.calc.atoms = atoms
@@ -63,7 +64,16 @@ def write_ph_in(fd, atoms, **kwargs):
     """
 
     ph = ['&inputph\n']
-    for key, value in atoms.calc.parameters.items():
+
+
+    masses = {}
+    for i, element in enumerate(atoms.calc.parameters.pseudopotentials.keys()):
+        masses[f'amass({i+1})'] = Atom(element).mass
+
+    all_parameters = dict(**atoms.calc.parameters, **masses)
+    all_parameters.pop('pseudopotentials', None)
+
+    for key, value in all_parameters.items():
         if value is True:
             ph.append('   {0:16} = .true.\n'.format(key))
         elif value is False:
@@ -74,11 +84,12 @@ def write_ph_in(fd, atoms, **kwargs):
             # repr format to get quotes around strings
             ph.append('   {0:16} = {1!r:}\n'.format(key, value))
     ph.append('/\n')
+    ph.append('0.0 0.0 0.0')
 
     fd.write(''.join(ph))
 
 
-def read_ph_out(fd):
+def read_ph_out(fd, *args, **kwargs):
     """
     Reads pw2wannier/wann2kcp output files
 

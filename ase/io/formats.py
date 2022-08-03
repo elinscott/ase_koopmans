@@ -274,9 +274,9 @@ F('espresso-in', 'Quantum espresso in file', '1F',
   module='espresso', ext='pwi', magic=[b'*\n&system', b'*\n&SYSTEM']),
 F('espresso-out', 'Quantum espresso out file', '+F',
   module='espresso', ext=['out', 'pwo'], magic=b'*Program PWSCF'),
-F('espresso-ph-in', 'Quantum espresso (ph.x) in file', '1F',
+F('ph-in', 'Quantum espresso (ph.x) in file', '1F',
   module='espresso', ext='phi')
-F('espresso-ph-out', 'Quantum espresso (ph.x) out file', '+F',
+F('ph-out', 'Quantum espresso (ph.x) out file', '+F',
   module='espresso', ext='pho')
 F('projwfc-in', 'Quantum espresso (projwfc.x) input file', '1F',
   module='espresso', ext='pri'),
