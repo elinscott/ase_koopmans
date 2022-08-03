@@ -1,5 +1,4 @@
 
-## MARIJA TO UPDATE
 
 """ Ph calculator
 
