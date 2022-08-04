@@ -1,5 +1,3 @@
-# MARIJA
-
 """Reads pw2wannier/wann2kcp files.
 
 """
