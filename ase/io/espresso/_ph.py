@@ -65,7 +65,6 @@ def write_ph_in(fd, atoms, **kwargs):
 
     ph = ['&inputph\n']
 
-
     masses = {}
     for i, element in enumerate(atoms.calc.parameters.pseudopotentials.keys()):
         masses[f'amass({i+1})'] = Atom(element).mass
