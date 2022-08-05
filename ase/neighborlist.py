@@ -768,7 +768,7 @@ class NewPrimitiveNeighborList:
             return True
 
         if ((self.pbc != pbc).any() or (self.cell != cell).any() or
-            ((self.positions - positions)**2).sum(1).max() > self.skin**2):
+                ((self.positions - positions)**2).sum(1).max() > self.skin**2):
             self.build(pbc, cell, positions, numbers=numbers)
             return True
 
@@ -869,7 +869,7 @@ class PrimitiveNeighborList:
             return True
 
         if ((self.pbc != pbc).any() or (self.cell != cell).any() or
-            ((self.coordinates - coordinates)**2).sum(1).max() > self.skin**2):
+                ((self.coordinates - coordinates)**2).sum(1).max() > self.skin**2):
             self.build(pbc, cell, coordinates)
             return True
 
