@@ -13,7 +13,6 @@ def run():
     tol = 1E-14
     rng = np.random.RandomState(0)
 
-
     cell = Cell([[8.972058879514716, 0.0009788104586639142, 0.0005932485724084841],
                  [4.485181755775297, 7.770520334862034, 0.00043663339838788054],
                  [4.484671994095723, 2.5902066679984634, 16.25695615743613]])
@@ -30,11 +29,10 @@ def run():
 
         # Test idempotency
         _, _H = minkowski_reduce(R)
-        assert (_H == np.eye(3).astype(np.int)).all()
+        assert (_H == np.eye(3).astype(int)).all()
 
         rcell, _ = Cell(B).minkowski_reduce()
         assert np.allclose(rcell, R, atol=tol)
-
 
     cell = np.array([[1, 1, 2], [0, 1, 4], [0, 0, 1]])
     unimodular = np.array([[1, 2, 2], [0, 1, 2], [0, 0, 1]])

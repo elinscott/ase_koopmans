@@ -17,7 +17,7 @@ class EspressoPh(EspressoParent):
     ext_in = '.phi'
     ext_out = '.pho'
     implemented_properties = []
-    command = 'ph.x -in PREFIX.phi > PREFIX.pho'
+    command = 'ph.x -in PREFIX.phi > PREFIX.pho 2>&1'
 
     def __init__(self, *args, **kwargs):
         """

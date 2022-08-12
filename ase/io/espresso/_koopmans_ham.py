@@ -105,7 +105,7 @@ def read_koopmans_ham_out(fileobj):
                 line2 = flines[j_line].strip()
                 if len(line2) == 0:
                     break
-                eigenvalues[-1] += [float(x) for x in line2.split()]
+                eigenvalues[-1] += safe_string_to_list_of_floats(line2)
                 j_line += 1
 
         if 'INFO: KI[2nd] HAMILTONIAN CALCULATION ik=' in line:

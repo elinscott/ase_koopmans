@@ -79,6 +79,7 @@ def get_distance_matrix(graph, limit=3):
     mat[mat == np.inf] = 0
     return sp.csr_matrix(mat, dtype=np.int8)
 
+
 def get_distance_indices(distanceMatrix, distance):
     """Get indices for each node that are distance or less away.
 
@@ -101,17 +102,16 @@ def get_distance_indices(distanceMatrix, distance):
     """
     shape = distanceMatrix.get_shape()
     indices = []
-    #iterate over rows
+    # iterate over rows
     for i in range(shape[0]):
         row = distanceMatrix.getrow(i)[0]
-        #find all non-zero
+        # find all non-zero
         found = sp.find(row)
-        #screen for smaller or equal distance
-        equal = np.where( found[-1] <= distance )[0]
-        #found[1] contains the indexes
-        indices.append([ found[1][x] for x in equal ])
+        # screen for smaller or equal distance
+        equal = np.where(found[-1] <= distance)[0]
+        # found[1] contains the indexes
+        indices.append([found[1][x] for x in equal])
     return indices
-
 
 
 def mic(dr, cell, pbc=True):
@@ -217,11 +217,11 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
 
     # Return empty neighbor list if no atoms are passed here
     if len(positions) == 0:
-        empty_types = dict(i=(np.int, (0, )),
-                           j=(np.int, (0, )),
+        empty_types = dict(i=(int, (0, )),
+                           j=(int, (0, )),
                            D=(np.float, (0, 3)),
                            d=(np.float, (0, )),
-                           S=(np.int, (0, 3)))
+                           S=(int, (0, 3)))
         retvals = []
         for i in quantities:
             dtype, shape = empty_types[i]
@@ -249,7 +249,7 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
             max_cutoff = cutoff
         else:
             cutoff = np.asarray(cutoff)
-            max_cutoff = 2*np.max(cutoff)
+            max_cutoff = 2 * np.max(cutoff)
 
     # We use a minimum bin size of 3 A
     bin_size = max(max_cutoff, 3)
@@ -273,7 +273,7 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
     else:
         scaled_positions_ic = np.linalg.solve(complete_cell(cell).T,
                                               positions.T).T
-    bin_index_ic = np.floor(scaled_positions_ic*nbins_c).astype(int)
+    bin_index_ic = np.floor(scaled_positions_ic * nbins_c).astype(int)
     cell_shift_ic = np.zeros_like(bin_index_ic)
 
     for c in range(3):
@@ -282,7 +282,7 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
             cell_shift_ic[:, c], bin_index_ic[:, c] = \
                 divmod(bin_index_ic[:, c], nbins_c[c])
         else:
-            bin_index_ic[:, c] = np.clip(bin_index_ic[:, c], 0, nbins_c[c]-1)
+            bin_index_ic[:, c] = np.clip(bin_index_ic[:, c], 0, nbins_c[c] - 1)
 
     # Convert Cartesian bin index to unique scalar bin index.
     bin_index_i = (bin_index_ic[:, 0] +
@@ -349,9 +349,9 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
 
     # First atoms in pair.
     _first_at_neightuple_n = atoms_in_bin_ba[:, atom_pairs_pn[0]]
-    for dz in range(-neigh_search_z, neigh_search_z+1):
-        for dy in range(-neigh_search_y, neigh_search_y+1):
-            for dx in range(-neigh_search_x, neigh_search_x+1):
+    for dz in range(-neigh_search_z, neigh_search_z + 1):
+        for dy in range(-neigh_search_y, neigh_search_y + 1):
+            for dx in range(-neigh_search_x, neigh_search_x + 1):
                 # Bin index of neighboring bin and shift vector.
                 shiftx_xyz, neighbinx_xyz = divmod(binx_xyz + dx, nbins_c[0])
                 shifty_xyz, neighbiny_xyz = divmod(biny_xyz + dy, nbins_c[1])
@@ -427,7 +427,7 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
         positions[first_at_neightuple_n] + \
         cell_shift_vector_n.dot(cell)
     abs_distance_vector_n = \
-        np.sqrt(np.sum(distance_vector_nc*distance_vector_nc, axis=1))
+        np.sqrt(np.sum(distance_vector_nc * distance_vector_nc, axis=1))
 
     # We have still created too many pairs. Only keep those with distance
     # smaller than max_cutoff.
@@ -638,10 +638,10 @@ def first_neighbors(natoms, first_atom):
         to s[k+1]-1.
     """
     if len(first_atom) == 0:
-        return np.zeros(natoms+1, dtype=int)
+        return np.zeros(natoms + 1, dtype=int)
     # Create a seed array (which is returned by this function) populated with
     # -1.
-    seed = -np.ones(natoms+1, dtype=int)
+    seed = -np.ones(natoms + 1, dtype=int)
 
     first_atom = np.asarray(first_atom)
 
@@ -655,16 +655,17 @@ def first_neighbors(natoms, first_atom):
     seed[-1] = len(first_atom)
     # Populate all intermediate seed with the index of where the mask array is
     # true, i.e. the index where the first_atom array changes.
-    seed[first_atom[1:][mask]] = (np.arange(len(mask))+1)[mask]
+    seed[first_atom[1:][mask]] = (np.arange(len(mask)) + 1)[mask]
 
     # Now fill all remaining -1 value with the value in the seed array right
     # behind them. (There are no neighbor so seed[i] and seed[i+1] must point)
     # to the same index.
     mask = seed == -1
     while mask.any():
-        seed[mask] = seed[np.arange(natoms+1)[mask]+1]
+        seed[mask] = seed[np.arange(natoms + 1)[mask] + 1]
         mask = seed == -1
     return seed
+
 
 def get_connectivity_matrix(nl, sparse=True):
     """Return connectivity matrix for a given NeighborList (dtype=numpy.int8).
@@ -759,7 +760,7 @@ class NewPrimitiveNeighborList:
         self.nneighbors = 0
         self.npbcneighbors = 0
 
-    def update(self,  pbc, cell, positions, numbers=None):
+    def update(self, pbc, cell, positions, numbers=None):
         """Make sure the list is up to date."""
 
         if self.nupdates == 0:
@@ -767,7 +768,7 @@ class NewPrimitiveNeighborList:
             return True
 
         if ((self.pbc != pbc).any() or (self.cell != cell).any() or
-            ((self.positions - positions)**2).sum(1).max() > self.skin**2):
+                ((self.positions - positions)**2).sum(1).max() > self.skin**2):
             self.build(pbc, cell, positions, numbers=numbers)
             return True
 
@@ -791,7 +792,7 @@ class NewPrimitiveNeighborList:
                 np.logical_and(
                     self.pair_first <= self.pair_second,
                     (self.offset_vec == 0).all(axis=1)
-                    ),
+                ),
                 np.logical_or(
                     self.offset_vec[:, 0] > 0,
                     np.logical_and(
@@ -801,10 +802,10 @@ class NewPrimitiveNeighborList:
                             np.logical_and(
                                 self.offset_vec[:, 1] == 0,
                                 self.offset_vec[:, 2] > 0)
-                            )
                         )
                     )
                 )
+            )
             self.pair_first = self.pair_first[mask]
             self.pair_second = self.pair_second[mask]
             self.offset_vec = self.offset_vec[mask]
@@ -836,8 +837,8 @@ class NewPrimitiveNeighborList:
         then get_neighbors(b) will not return a as a neighbor - unless
         bothways=True was used."""
 
-        return (self.pair_second[self.first_neigh[a]:self.first_neigh[a+1]],
-                self.offset_vec[self.first_neigh[a]:self.first_neigh[a+1]])
+        return (self.pair_second[self.first_neigh[a]:self.first_neigh[a + 1]],
+                self.offset_vec[self.first_neigh[a]:self.first_neigh[a + 1]])
 
 
 class PrimitiveNeighborList:
@@ -847,6 +848,7 @@ class PrimitiveNeighborList:
     scaled and non-scaled coordinates which may affect cell offsets
     through rounding errors.
     """
+
     def __init__(self, cutoffs, skin=0.3, sorted=False, self_interaction=True,
                  bothways=False, use_scaled_positions=False):
         self.cutoffs = np.asarray(cutoffs) + skin
@@ -867,7 +869,7 @@ class PrimitiveNeighborList:
             return True
 
         if ((self.pbc != pbc).any() or (self.cell != cell).any() or
-            ((self.coordinates - coordinates)**2).sum(1).max() > self.skin**2):
+                ((self.coordinates - coordinates)**2).sum(1).max() > self.skin**2):
             self.build(pbc, cell, coordinates)
             return True
 
@@ -922,7 +924,7 @@ class PrimitiveNeighborList:
 
         tree = cKDTree(positions, copy_data=True)
         offsets = cell.scaled_positions(positions - positions0)
-        offsets = offsets.round().astype(np.int)
+        offsets = offsets.round().astype(int)
 
         for n1, n2, n3 in itertools.product(range(0, N[0] + 1),
                                             range(-N[1], N[1] + 1),
