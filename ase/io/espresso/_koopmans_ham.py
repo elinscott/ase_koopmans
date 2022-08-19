@@ -125,6 +125,10 @@ def read_koopmans_ham_out(fileobj):
             time_str = line.split()[-2]
             walltime = time_to_float(time_str)
 
+    # If doing a gamma-point-only calculation, populate the eigenvalues (which won't be printed)
+    if len(eigenvalues) == 0 and len(ki_eigenvalues_on_grid) == 1:
+        eigenvalues = ki_eigenvalues_on_grid
+
     # Put everything together
     calc = SinglePointDFTCalculator(structure)
     calc.results['job_done'] = job_done
