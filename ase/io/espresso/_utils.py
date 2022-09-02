@@ -1086,9 +1086,15 @@ def safe_float(string):
 
 
 def safe_string_to_list_of_floats(string):
-    # Converts a string to a list of floats, but if string = 'number*******anothernumber' it returns
-    # [number, np.nan, anothernumber]. It also keeps its eye out for cases like numberanothernumber
+    '''
+    Converts a string to a list of floats, but if string = 'number*******anothernumber' it returns
+    [number, np.nan, anothernumber]. It also keeps its eye out for cases like numberanothernumber
+    and number-negativenumber
+    '''
+
     out = []
+
+    string.replace('-', ' -')
     for word in string.split():
         if '*' in word:
             # First, reduce each sequence of '*'s to a single '*'

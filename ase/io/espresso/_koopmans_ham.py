@@ -105,7 +105,7 @@ def read_koopmans_ham_out(fileobj):
                 line2 = flines[j_line].strip()
                 if len(line2) == 0:
                     break
-                eigenvalues[-1] += [float(x) for x in line2.split()]
+                eigenvalues[-1] += safe_string_to_list_of_floats(line2)
                 j_line += 1
 
         if 'INFO: KI[2nd] HAMILTONIAN CALCULATION ik=' in line:
@@ -124,6 +124,10 @@ def read_koopmans_ham_out(fileobj):
         if 'KC_WANN      :' in line:
             time_str = line.split()[-2]
             walltime = time_to_float(time_str)
+
+    # If doing a gamma-point-only calculation, populate the eigenvalues (which won't be printed)
+    if len(eigenvalues) == 0 and len(ki_eigenvalues_on_grid) == 1:
+        eigenvalues = ki_eigenvalues_on_grid
 
     # Put everything together
     calc = SinglePointDFTCalculator(structure)

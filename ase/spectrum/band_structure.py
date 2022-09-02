@@ -326,9 +326,10 @@ class BandStructure:
         depending on how the band structure was created."""
         return self._reference
 
-    def subtract_reference(self) -> 'BandStructure':
+    def subtract_reference(self, reference=None) -> 'BandStructure':
         """Return new band structure with reference energy subtracted."""
-        return BandStructure(self.path, self.energies - self.reference,
+        reference = reference if reference is not None else self.reference
+        return BandStructure(self.path, self.energies - reference,
                              reference=0.0)
 
     def todict(self):
