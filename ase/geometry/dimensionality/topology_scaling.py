@@ -82,7 +82,7 @@ class TSA:
         hist : tuple         Dimensionality histogram.
         """
         cdim = self._get_component_dimensionalities()
-        hist = np.zeros(4).astype(np.int)
+        hist = np.zeros(4).astype(int)
         bc = np.bincount(list(cdim.values()))
         hist[:len(bc)] = bc
         return tuple(hist)
