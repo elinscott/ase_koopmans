@@ -6,7 +6,6 @@ on:
     - published
 
 env:
-  PUBLISH_UPDATE_BRANCH: master
   GIT_USER_NAME: 'ASE Koopmans developers'
   GIT_USER_EMAIL: ${{ secrets.PUBLISH_EMAIL }}
 
