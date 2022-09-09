@@ -85,12 +85,12 @@ class build_py(_build_py):
         return _build_py.get_outputs(self, *args, **kwargs) + self.mofiles
 
 
-setup(name='ase',
+setup(name='ase-koopmans',
       version=version,
-      description='Atomic Simulation Environment',
-      url='https://wiki.fysik.dtu.dk/ase',
-      maintainer='ASE-community',
-      maintainer_email='ase-users@listserv.fysik.dtu.dk',
+      description='Atomic Simulation Environment for Koopmans',
+      url='https://github.com/elinscott/ase_koopmans',
+      maintainer='Edward Linscott',
+      maintainer_email='edwardlinscott@gmail.com',
       license='LGPLv2.1+',
       platforms=['unix'],
       packages=find_packages(),
@@ -111,7 +111,6 @@ setup(name='ase',
           'GNU Lesser General Public License v2 or later (LGPLv2+)',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
           'Topic :: Scientific/Engineering :: Physics'])

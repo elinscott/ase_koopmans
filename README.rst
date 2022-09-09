@@ -1,11 +1,18 @@
-Atomic Simulation Environment
-=============================
+Atomic Simulation Environment for Koopmans
+==========================================
 
 ASE is a set of tools and Python modules for setting up, manipulating,
 running, visualizing and analyzing atomistic simulations.
 
 Webpage: http://wiki.fysik.dtu.dk/ase
 
+ASE for Koopmans is a modified version of ASE that contains modifications
+specific to Koopmans functionals. Ultimately we hope that these changes
+will be merged with the official version of ASE.
+
+ASE-Koopmans was forked from ASE v3.20.0b1.
+
+Webpage: https://koopmans-functionals.org/
 
 Requirements
 ------------
@@ -42,11 +49,18 @@ and send us the output if there are failing tests.
 Contact
 -------
 
+For ASE
+~~~~~~~
+
 * Mailing list: ase-users_
 * IRC_: #ase on freenode.net
 
 Please send us bug-reports, patches, code, ideas and questions.
 
+For Koopmans
+~~~~~~~~~~~~
+
+* Mailing list: koopmans-users_
 
 Example
 -------
@@ -83,4 +97,5 @@ This example requires NWChem to be installed.
 .. _SciPy: http://docs.scipy.org/doc/scipy/reference/
 .. _Matplotlib: http://matplotlib.org/
 .. _ase-users: https://listserv.fysik.dtu.dk/mailman/listinfo/ase-users
+.. _koopmans-users: https://groups.google.com/g/koopmans-users
 .. _IRC: http://webchat.freenode.net/?randomnick=0&channels=ase
