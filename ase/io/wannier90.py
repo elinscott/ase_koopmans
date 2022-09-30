@@ -100,14 +100,16 @@ def write_wannier90_in(fd, atoms):
                         rows_str[-1] += ' ' + point + ' '.join([f'{v:9.5f}' for v in opt.special_points[point]])
                 fd.write(block_format(kw, rows_str))
 
-        elif isinstance(opt, list):
+        elif isinstance(opt, list) and kw != 'exclude_bands':
             if np.ndim(opt) == 1:
                 opt = [opt]
             rows_str = [' '.join([str(v) for v in row]) for row in opt]
             fd.write(block_format(kw, rows_str))
 
         else:
-            if isinstance(opt, bool):
+            if kw == 'exclude_bands' and isinstance(opt, list):
+                opt_str = list_to_formatted_str(opt)
+            elif isinstance(opt, bool):
                 if opt:
                     opt_str = '.true.'
                 else:
