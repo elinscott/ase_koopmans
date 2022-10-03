@@ -221,6 +221,8 @@ def read_wannier90_in(fd):
                 block_lines = []
             elif keyw == 'mp_grid':
                 calc.parameters[keyw] = [parse_value(v) for v in lsplit[1].split()]
+            elif keyw == 'exclude_bands':
+                calc.parameters[keyw] = formatted_str_to_list(' '.join(lsplit[1:]))
             else:
                 calc.parameters[keyw] = parse_value(' '.join(lsplit[1:]))
 
