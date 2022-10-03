@@ -106,7 +106,7 @@ setup(name='ase-koopmans',
       long_description=long_description,
       cmdclass={'build_py': build_py},
       classifiers=[
-          'Development Status :: 6 - Mature',
+          'Development Status :: 2 - Pre-Alpha',
           'License :: OSI Approved :: '
           'GNU Lesser General Public License v2 or later (LGPLv2+)',
           'Operating System :: OS Independent',
