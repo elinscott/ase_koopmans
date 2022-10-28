@@ -473,6 +473,11 @@ def num_wann_lookup(proj):
         if l in database and '=' in mr:
             _, val = mr.split('=')
             return len(formatted_str_to_list(val))
+    elif proj.split(':')[0] in database:
+        l, r = proj.split(':')
+        if l in database and '=' in r:
+            _, val = r.split('=')
+            return len(formatted_str_to_list(val))
 
     raise NotImplementedError(f'Unrecognised Wannier90 projection {proj}')
 
