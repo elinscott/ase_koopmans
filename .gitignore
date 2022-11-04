@@ -6,7 +6,7 @@ MANIFEST
 */.DS_Store
 *.traj
 /build
-/ase.egg-info
+/ase_koopmans.egg-info
 /ase/db/static/jsmol
 doc/ase/dft/bztable.rst
 doc/tutorials/deltacodesdft/fit.json
