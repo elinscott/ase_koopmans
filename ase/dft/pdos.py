@@ -273,13 +273,13 @@ class DOS:
 
 
 class DOSPlot:
-    def __init__(self, dos, ax=None,
+    def __init__(self, dos, ax=None, dpi=None,
                  emin=None, emax=None,
                  ymin=None, ymax=None, ylabel=None):
         self.dos = dos
         self.ax = ax
         if self.ax is None:
-            self.ax = self.prepare_plot(ax, emin, emax,
+            self.ax = self.prepare_plot(ax, dpi, emin, emax,
                                         ymin=ymin, ymax=ymax,
                                         ylabel=ylabel)
 
@@ -307,12 +307,13 @@ class DOSPlot:
 
         return ax
 
-    def prepare_plot(self, ax=None, emin=None, emax=None,
+    def prepare_plot(self, ax=None, dpi=None,
+                     emin=None, emax=None,
                      ymin=None, ymax=None,
                      ylabel=None, xlabel=None):
         import matplotlib.pyplot as plt
         if ax is None:
-            ax = plt.figure().add_subplot(111)
+            ax = plt.figure(dpi=dpi).add_subplot(111)
 
         ylabel = ylabel if ylabel is not None else 'DOS'
         xlabel = xlabel if xlabel is not None else 'Energy [eV]'

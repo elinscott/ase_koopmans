@@ -155,7 +155,7 @@ class BandStructurePlot:
         self.show_legend = False
 
     def plot(self, ax=None, spin=None, emin=-10, emax=5, filename=None,
-             show=False, ylabel=None, colors=None, label=None,
+             dpi=None, show=False, ylabel=None, colors=None, label=None,
              spin_labels=['spin up', 'spin down'], loc=None, **plotkwargs):
         """Plot band-structure.
 
@@ -166,6 +166,8 @@ class BandStructurePlot:
             Maximum energy above reference.
         filename: str
             Write image to a file.
+        dpi: float
+            Image resolution
         ax: Axes
             MatPlotLib Axes object.  Will be created if not supplied.
         show: bool
@@ -173,7 +175,7 @@ class BandStructurePlot:
         """
 
         if self.ax is None:
-            ax = self.prepare_plot(ax, emin, emax, ylabel)
+            ax = self.prepare_plot(ax, dpi, emin, emax, ylabel)
 
         if spin is None:
             e_skn = self.bs.energies
@@ -210,7 +212,7 @@ class BandStructurePlot:
         return ax
 
     def plot_with_colors(self, ax=None, emin=-10, emax=5, filename=None,
-                         show=False, energies=None, colors=None,
+                         dpi=None, show=False, energies=None, colors=None,
                          ylabel=None, clabel='$s_z$', cmin=-1.0, cmax=1.0,
                          sortcolors=False, loc=None, s=2):
         """Plot band-structure with colors."""
@@ -218,7 +220,7 @@ class BandStructurePlot:
         import matplotlib.pyplot as plt
 
         if self.ax is None:
-            ax = self.prepare_plot(ax, emin, emax, ylabel)
+            ax = self.prepare_plot(ax, dpi, emin, emax, ylabel)
 
         shape = energies.shape
         xcoords = np.vstack([self.xcoords] * shape[1])
@@ -239,10 +241,10 @@ class BandStructurePlot:
 
         return ax
 
-    def prepare_plot(self, ax=None, emin=-10, emax=5, ylabel=None):
+    def prepare_plot(self, ax=None, dpi=None, emin=-10, emax=5, ylabel=None):
         import matplotlib.pyplot as plt
         if ax is None:
-            ax = plt.figure().add_subplot(111)
+            ax = plt.figure(dpi=dpi).add_subplot(111)
 
         def pretty(kpt):
             if kpt == 'G':
