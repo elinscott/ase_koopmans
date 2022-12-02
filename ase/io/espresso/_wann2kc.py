@@ -83,8 +83,8 @@ def read_wann2kc_out(fileobj):
     for line in flines:
         if 'JOB DONE' in line:
             job_done = True
-        if 'KC_WANN      :' in line:
-            time_str = line.split()[-2]
+        if 'KCW          :' in line:
+            time_str = line.split('CPU')[-1].split('WALL')[0].strip()
             walltime = time_to_float(time_str)
 
     # Return an empty calculator object with ths solitary result 'job done'

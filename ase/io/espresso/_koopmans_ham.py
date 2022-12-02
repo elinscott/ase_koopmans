@@ -121,8 +121,8 @@ def read_koopmans_ham_out(fileobj):
         if 'JOB DONE' in line:
             job_done = True
 
-        if 'KC_WANN      :' in line:
-            time_str = line.split()[-2]
+        if 'KCW          :' in line:
+            time_str = line.split('CPU')[-1].split('WALL')[0].strip()
             walltime = time_to_float(time_str)
 
     # If doing a gamma-point-only calculation, populate the eigenvalues (which won't be printed)
