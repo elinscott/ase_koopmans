@@ -15,7 +15,7 @@ from ._espresso import EspressoParent, error_template, warn_template
 
 class Espresso(EspressoParent):
     """
-    During initialisation, al options for pw.x are copied verbatim to
+    During initialisation, all options for pw.x are copied verbatim to
     the input file, and put into the correct section. Use ``input_data``
     for parameters that are already in a dict, all other ``kwargs`` are
     passed as parameters.
@@ -33,7 +33,7 @@ class Espresso(EspressoParent):
         Generate a grid of k-points with this as the minimum distance,
         in A^-1 between them in reciprocal space. If set to None, kpts
         will be used instead.
-    kpts: (int, int, int), dict, or BandPath
+    kpts: (int, int, int), dict, list, or BandPath
         If kpts is a tuple (or list) of 3 integers, it is interpreted
         as the dimensions of a Monkhorst-Pack grid.
         If ``kpts`` is set to ``None``, only the Γ-point will be included
@@ -44,6 +44,8 @@ class Espresso(EspressoParent):
         If kpts is a dict, it will either be interpreted as a path
         in the Brillouin zone (*) if it contains the 'path' keyword,
         otherwise it is converted to a Monkhorst-Pack grid (**).
+        If kpts is a list, it will be interpreted as an explicit list
+        of points.
         (*) see ase.dft.kpoints.bandpath
         (**) see ase.calculators.calculator.kpts2sizeandoffsets
     koffset: (int, int, int)
