@@ -1,7 +1,5 @@
-""" WannierJL calculator
-
-export ASE_WANNIERJL_COMMAND="/path/to/wjl TASK PREFIX"
-
+"""
+WannierJL calculator
 """
 
 from pathlib import Path
@@ -11,19 +9,12 @@ from ase.calculators.calculator import FileIOCalculator
 
 
 class WannierJL(FileIOCalculator):
-    """
-    """
     implemented_properties = []
     command = 'wjl TASK PREFIX FLAGS > PREFIX.wjlo 2>&1'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='wannier', atoms=None, **kwargs):
-        """
-        All options for wannier90 are copied verbatim to the input file
-
-        """
-        FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
-                                  label, atoms, **kwargs)
+        FileIOCalculator.__init__(self, restart, ignore_bad_restart_file, label, atoms, **kwargs)
 
         if atoms is not None:
             self.atoms = atoms
