@@ -1,4 +1,4 @@
-""" wannier90 calculator
+""" WannierJL calculator
 
 export ASE_WANNIERJL_COMMAND="/path/to/wjl TASK PREFIX"
 
@@ -50,7 +50,7 @@ class WannierJL(FileIOCalculator):
         # Assert that the W90 input file already exists
         input_file = Path(self.label + '.win')
         if not input_file.exists():
-            raise FileNotFoundError(f'{input_file} must exist before calling wjl')
+            raise FileNotFoundError(f'{input_file} must exist before calling WannierJL')
         
     def read_results(self):
         output = io.read(self.label + '.wjlo')

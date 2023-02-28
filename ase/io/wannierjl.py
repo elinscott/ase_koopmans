@@ -1,16 +1,16 @@
 """
-This module defines I/O routines with WannierJL files.
-Note that WannierJL uses Wannier90 input files.
+This module defines I/O routines with WannierJL files
+
+In reality, WannierJL does not rely on input and output files
 """
 
 from ase import Atoms
-from ase.utils import basestring
 from ase.calculators.wannierjl import WannierJL
 
 
 def read_wannierjl_out(fd):
     """
-    Reads wannierjl output files
+    Dummy function that pretends to read WannierJL output files
 
     Parameters
     ----------
@@ -20,22 +20,12 @@ def read_wannierjl_out(fd):
     Yields
     ------
     structure : atoms
-        An Atoms object with an attached SinglePointCalculator containing
+        An Atoms object with an attached WannierJL Calculator containing
         any parsed results
     """
 
-    if isinstance(fd, basestring):
-        fd = open(fd, 'rU')
-
-    flines = fd.readlines()
-
     structure = Atoms()
-
-    for i, line in enumerate(flines):
-        pass
-
     calc = WannierJL(atoms=structure)
-
     structure.calc = calc
 
     yield structure
