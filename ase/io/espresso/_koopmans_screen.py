@@ -94,8 +94,8 @@ def read_koopmans_screen_out(fileobj):
         if 'JOB DONE' in line:
             job_done = True
 
-        if 'KC_WANN      :' in line:
-            time_str = line.split()[-2]
+        if 'KCW          :' in line:
+            time_str = line.split('CPU')[-1].split('WALL')[0].strip()
             walltime = time_to_float(time_str)
 
     # Put everything together
