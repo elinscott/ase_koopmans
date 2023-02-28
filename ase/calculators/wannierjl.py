@@ -4,20 +4,17 @@ export ASE_WANNIERJL_COMMAND="/path/to/wjl TASK PREFIX"
 
 """
 
-import os
-import numpy as np
+from pathlib import Path
+
 from ase import io
-from ase.dft.kpoints import bandpath, BandPath
-from ase.spectrum.band_structure import BandStructure
 from ase.calculators.calculator import FileIOCalculator
-from ase.calculators.wannier90 import write_input as write_w90_input
 
 
 class WannierJL(FileIOCalculator):
     """
     """
     implemented_properties = []
-    command = 'wjl TASK PREFIX > PREFIX.wjlo 2>&1'
+    command = 'wjl TASK PREFIX FLAGS > PREFIX.wjlo 2>&1'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='wannier', atoms=None, **kwargs):
@@ -35,16 +32,26 @@ class WannierJL(FileIOCalculator):
         self.calc = None
 
     def calculate(self, *args, **kwargs):
-        task = self.parameters.pop('task', 'splitvc')
+        # wjl settings are specified via the command-line rather than an input file
+
+        # First, deal with "task"
+        task = self.parameters.get('task', 'splitvc')
         self.command = self.command.replace('TASK', task)
+
+        # All other arguments are provided as flags
+        flags = [f'--{k}' if v == True else f'--{k}={v}' for k, v in self.parameters.items() if v != False and k != 'task']
+        self.command = self.command.replace('FLAGS', ' '.join(flags))
+
         return super().calculate(*args, **kwargs)
 
     def write_input(self, atoms, properties=None, system_changes=None):
         # Create the appropriate directory
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
-        # Write the W90 input file
-        io.write(self.label + '.win', atoms)
-
+        # Assert that the W90 input file already exists
+        input_file = Path(self.label + '.win')
+        if not input_file.exists():
+            raise FileNotFoundError(f'{input_file} must exist before calling wjl')
+        
     def read_results(self):
         output = io.read(self.label + '.wjlo')
         self.calc = output.calc
