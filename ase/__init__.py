@@ -18,7 +18,7 @@ if LooseVersion(np.__version__) < '1.9':
 
 
 __all__ = ['Atoms', 'Atom']
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 
 from ase.atom import Atom
