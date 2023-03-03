@@ -104,7 +104,7 @@ def read_x2y_out(fd, calc_class):
     for line in flines:
         if 'JOB DONE' in line:
             job_done = True
-        if line.startswith(calc_class.__name__.upper()):
+        if line.strip().startswith(calc_class.__name__.upper()):
             time_str = line.split()[-2]
             walltime = time_to_float(time_str)
 
