@@ -33,7 +33,7 @@ class Espresso(EspressoParent):
         Generate a grid of k-points with this as the minimum distance,
         in A^-1 between them in reciprocal space. If set to None, kpts
         will be used instead.
-    kpts: (int, int, int), dict, list, or BandPath
+    kpts: (int, int, int), dict, or BandPath
         If kpts is a tuple (or list) of 3 integers, it is interpreted
         as the dimensions of a Monkhorst-Pack grid.
         If ``kpts`` is set to ``None``, only the Γ-point will be included
@@ -44,13 +44,12 @@ class Espresso(EspressoParent):
         If kpts is a dict, it will either be interpreted as a path
         in the Brillouin zone (*) if it contains the 'path' keyword,
         otherwise it is converted to a Monkhorst-Pack grid (**).
-        If kpts is a list, it will be interpreted as an explicit list
-        of points.
         (*) see ase.dft.kpoints.bandpath
         (**) see ase.calculators.calculator.kpts2sizeandoffsets
-    koffset: (int, int, int)
-        Offset of kpoints in each direction. Must be 0 (no offset) or
-        1 (half grid offset). Setting to True is equivalent to (1, 1, 1).
+    koffset: (int, int, int) or (float, float, float)
+        Offset of kpoints in each direction. Can be 0 (no offset) or
+        1 (half grid offset), or a float to get a generic grid offset.
+        Setting to True is equivalent to (1, 1, 1).
 
 
     .. note::

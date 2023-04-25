@@ -6,7 +6,7 @@ Written by Edward Linscott 2020-21
 
 import warnings
 import os
-from ase.dft.kpoints import BandPath, labels_from_kpts, get_monkhorst_pack_size_and_offset
+from ase.dft.kpoints import BandPath, labels_from_kpts, get_monkhorst_pack_size_and_offset, monkhorst_pack
 import numpy as np
 from pathlib import Path
 import operator as op
@@ -1018,7 +1018,7 @@ def construct_kpoints_card(atoms, kpts=None, kspacing=None, koffset=(0, 0, 0)):
         kgrid = "gamma"
 
     # True and False work here and will get converted by ':d' format
-    if isinstance(koffset, int):
+    if isinstance(koffset, (int, float)):
         koffset = (koffset, ) * 3
 
     # BandPath object or bandpath-as-dictionary:
@@ -1033,11 +1033,12 @@ def construct_kpoints_card(atoms, kpts=None, kspacing=None, koffset=(0, 0, 0)):
     elif isinstance(kgrid, str) and (kgrid == "gamma"):
         out.append('K_POINTS gamma\n')
         out.append('\n')
-    elif isinstance(kgrid, list):
+    elif any([isinstance(i, float) for i in koffset]):
+        klist = monkhorst_pack(kgrid) + koffset
         out.append('K_POINTS crystal\n')
-        assert len(kgrid) > 0
-        out.append('%s\n' % len(kgrid))
-        for k in kgrid:
+        assert len(klist) > 0
+        out.append('%s\n' % len(klist))
+        for k in klist:
             out.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} 1.0\n'.format(k=k))
         out.append('\n')
     else:
