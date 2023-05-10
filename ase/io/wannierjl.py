@@ -45,8 +45,7 @@ def read_wannierjl_in(fd):
     # Load the calculator parameters from file
     dct = toml.load(fd)
 
-    calc.parameters = {k: v for subdict in dct.values()
-                       for k, v in subdict.items()}
+    calc.parameters = dct['groups']
 
     # Return the atoms object
     return atoms
