@@ -2,8 +2,9 @@
 WannierJL calculator
 """
 
-import toml
 from pathlib import Path
+
+import toml
 
 from ase import io
 from ase.calculators.calculator import FileIOCalculator
@@ -11,7 +12,7 @@ from ase.calculators.calculator import FileIOCalculator
 
 class WannierJL(FileIOCalculator):
     implemented_properties = []
-    command = 'wjl TASK --config=PREFIX.wjli PREFIX > PREFIX.wjlo 2>&1'
+    command = 'wjl TASK FLAGS --config=PREFIX.wjli PREFIX > PREFIX.wjlo 2>&1'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='wannier', atoms=None, **kwargs):
@@ -28,6 +29,11 @@ class WannierJL(FileIOCalculator):
         task = self.parameters.get('task', 'splitvc')
         self.command = self.command.replace('TASK', task)
 
+        # Most arguments are provided as flags
+        flags = [f'--{k}' if v == True else f'--{k}={v}' for k,
+                 v in self.parameters.items() if v != False and k not in ['task', 'indices', 'outdirs']]
+        self.command = self.command.replace('FLAGS', ' '.join(flags))
+
         return super().calculate(*args, **kwargs)
 
     def write_input(self, atoms, properties=None, system_changes=None):
@@ -39,10 +45,10 @@ class WannierJL(FileIOCalculator):
         w90_input_file = Path(self.label + '.win')
         if not w90_input_file.exists():
             raise FileNotFoundError(f'{w90_input_file} must exist before calling WannierJL')
-    
+
         # Write the input file
         io.write(self.label + '.wjli', atoms)
-        
+
     def read_results(self):
         output = io.read(self.label + '.wjlo')
         self.calc = output.calc

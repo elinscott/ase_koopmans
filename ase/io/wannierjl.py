@@ -1,12 +1,13 @@
 """
 This module defines I/O routines with WannierJL files
 
-In reality, WannierJL does not rely on input and output files
+In reality, WannierJL does not rely on input and output files, save for a config TOML file for specifying groups
 """
 
-import toml
 from pathlib import Path
+
 import numpy as np
+import toml
 
 from ase import Atoms
 from ase.calculators.wannierjl import WannierJL
@@ -18,14 +19,15 @@ def write_wannierjl_in(fd, atoms):
     """
     # Prepare the dictionary of settings to write to file
     dct = {}
+
     def sanitize(obj):
         if isinstance(obj, Path):
             obj = str(obj)
         elif isinstance(obj, list):
             obj = [sanitize(x) for x in obj]
         return obj
-    dct['groups'] = {k: sanitize(
-        v) for k, v in atoms.calc.parameters.items() if k != 'task'}
+    dct['groups'] = {k: sanitize(v) for k, v in atoms.calc.parameters.items()
+                     if k in ['indices', 'outdirs']}
 
     # Write the wjl input file
     toml.dump(dct, fd)
