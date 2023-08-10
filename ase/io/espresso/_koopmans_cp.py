@@ -191,7 +191,7 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
             convergence[convergence_key].append(entry)
 
         if 'wall time' in line:
-            time_str = line.split(',')[1].strip().rstrip('wall time')
+            time_str = line.split(',')[1].strip().rstrip('time').rstrip('wall ')
             walltime = time_to_float(time_str)
 
     # Put everything together

@@ -1,7 +1,7 @@
 """
 This module defines I/O routines with wannier90 files.
 For the moment, no attempt has been made to put construct ASE atoms objects correctly.
-Instead, everything is stored in ase.calc.parmaeters
+Instead, everything is stored in ase.calc.parameters
 """
 
 import re

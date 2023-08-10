@@ -15,7 +15,7 @@ from ._espresso import EspressoParent, error_template, warn_template
 
 class Espresso(EspressoParent):
     """
-    During initialisation, al options for pw.x are copied verbatim to
+    During initialisation, all options for pw.x are copied verbatim to
     the input file, and put into the correct section. Use ``input_data``
     for parameters that are already in a dict, all other ``kwargs`` are
     passed as parameters.
@@ -46,9 +46,10 @@ class Espresso(EspressoParent):
         otherwise it is converted to a Monkhorst-Pack grid (**).
         (*) see ase.dft.kpoints.bandpath
         (**) see ase.calculators.calculator.kpts2sizeandoffsets
-    koffset: (int, int, int)
-        Offset of kpoints in each direction. Must be 0 (no offset) or
-        1 (half grid offset). Setting to True is equivalent to (1, 1, 1).
+    koffset: (int, int, int) or (float, float, float)
+        Offset of kpoints in each direction. Can be 0 (no offset) or
+        1 (half grid offset), or a float to get a generic grid offset.
+        Setting to True is equivalent to (1, 1, 1).
 
 
     .. note::

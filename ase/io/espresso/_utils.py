@@ -6,7 +6,7 @@ Written by Edward Linscott 2020-21
 
 import warnings
 import os
-from ase.dft.kpoints import BandPath, labels_from_kpts
+from ase.dft.kpoints import BandPath, labels_from_kpts, get_monkhorst_pack_size_and_offset, monkhorst_pack
 import numpy as np
 from pathlib import Path
 import operator as op
@@ -91,6 +91,11 @@ def get_kpoints(card_lines, cell=None):
                 _, _, path_list = labels_from_kpts(kpts, cell)
                 return BandPath(path=''.join(path_list), cell=cell, special_points=cell.bandpath().special_points,
                                 kpts=kpts), [0, 0, 0], False
+            elif mode.lower() == 'crystal':
+                n_kpts = int(card_lines[i + 1])
+                kpts_list = np.array([[float(x) for x in line.split()[:3]] for line in card_lines[i + 2: i + 2 + n_kpts]])
+                kpts, koffset = get_monkhorst_pack_size_and_offset(kpts_list)
+                return kpts, koffset, False
             else:
                 raise ValueError('Failed to parse K_POINTS block')
     raise ValueError('Failed to find K_POINTS block')
@@ -1013,7 +1018,7 @@ def construct_kpoints_card(atoms, kpts=None, kspacing=None, koffset=(0, 0, 0)):
         kgrid = "gamma"
 
     # True and False work here and will get converted by ':d' format
-    if isinstance(koffset, int):
+    if isinstance(koffset, (int, float)):
         koffset = (koffset, ) * 3
 
     # BandPath object or bandpath-as-dictionary:
@@ -1027,6 +1032,14 @@ def construct_kpoints_card(atoms, kpts=None, kspacing=None, koffset=(0, 0, 0)):
         out.append('\n')
     elif isinstance(kgrid, str) and (kgrid == "gamma"):
         out.append('K_POINTS gamma\n')
+        out.append('\n')
+    elif any([isinstance(i, float) for i in koffset]):
+        klist = monkhorst_pack(kgrid) + koffset
+        out.append('K_POINTS crystal\n')
+        assert len(klist) > 0
+        out.append('%s\n' % len(klist))
+        for k in klist:
+            out.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} 1.0\n'.format(k=k))
         out.append('\n')
     else:
         out.append('K_POINTS automatic\n')
@@ -1182,6 +1195,8 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
         If kpts is a dict, it will either be interpreted as a path
         in the Brillouin zone (*) if it contains the 'path' keyword,
         otherwise it is converted to a Monkhorst-Pack grid (**).
+        If kpts is a list, it will be interpreted as an explicit list
+        of points.
         (*) see ase.dft.kpoints.bandpath
         (**) see ase.calculators.calculator.kpts2sizeandoffsets
     koffset: (int, int, int)
