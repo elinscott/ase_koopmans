@@ -291,7 +291,7 @@ class BandPath:
 
         if special_points is None:
             special_points = self.special_points
-
+        
         pathnames, pathcoords = resolve_kpt_path_string(path, special_points)
         kpts, x, X = paths2kpts(pathcoords, self.cell, npoints, density)
         return BandPath(self.cell, kpts, path=path,

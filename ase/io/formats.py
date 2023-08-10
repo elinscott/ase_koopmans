@@ -396,6 +396,7 @@ F('wann2kc-out', 'Wannier 90 to KCW output file', '1F', module='espresso', ext='
 F('wann2kc-in', 'Wannier 90 to KCW input file', '1F', module='espresso', ext='w2ki')
 F('wannier90-out', 'Wannier 90 output file', '1F', module='wannier90', ext='wout')
 F('wannier90-in', 'Wannier 90 input file', '1F', module='wannier90', ext='win')
+F('wannierjl-in', 'WannierJL input file', '1F', module='wannierjl', ext='wjli')
 F('wannierjl-out', 'WannierJL output file', '1F', module='wannierjl', ext='wjlo')
 F('xsd', 'Materials Studio file', '1F'),
 F('xsf', 'XCrySDen Structure File', '+F',

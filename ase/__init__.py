@@ -5,8 +5,8 @@
 
 import sys
 from distutils.version import LooseVersion
-import numpy as np
 
+import numpy as np
 
 if sys.version_info[0] == 2:
     raise ImportError('ASE requires Python3. This is Python2.')
@@ -19,7 +19,9 @@ if LooseVersion(np.__version__) < '1.9':
 
 __all__ = ['Atoms', 'Atom']
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
+
+# isort: off
 
 from ase.atom import Atom
 from ase.atoms import Atoms
@@ -28,3 +30,5 @@ from ase.atoms import Atoms
 # ase.parallel does "from gpaw.mpi import world":
 import ase.parallel  # noqa
 ase.parallel  # silence pyflakes
+
+# isort: on
