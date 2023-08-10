@@ -16,7 +16,7 @@ from ._wann2kc import KEYS as W2KCW_KEYS
 from ase.calculators.espresso import KoopmansHam
 
 KEYS = copy.deepcopy(W2KCW_KEYS)
-KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr']
+KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'on_site_only']
 
 
 def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
