@@ -1035,11 +1035,12 @@ def construct_kpoints_card(atoms, kpts=None, kspacing=None, koffset=(0, 0, 0)):
         out.append('\n')
     elif any([isinstance(i, float) for i in koffset]):
         klist = monkhorst_pack(kgrid) + koffset
+        klist_weight = 1 / len(klist)
         out.append('K_POINTS crystal\n')
         assert len(klist) > 0
         out.append('%s\n' % len(klist))
         for k in klist:
-            out.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} 1.0\n'.format(k=k))
+            out.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} {klist_weight:.6e}\n'.format(k=k, klist_weight=klist_weight))
         out.append('\n')
     else:
         out.append('K_POINTS automatic\n')
