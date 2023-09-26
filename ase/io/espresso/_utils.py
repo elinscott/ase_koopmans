@@ -93,7 +93,8 @@ def get_kpoints(card_lines, cell=None):
                                 kpts=kpts), [0, 0, 0], False
             elif mode.lower() == 'crystal':
                 n_kpts = int(card_lines[i + 1])
-                kpts_list = np.array([[float(x) for x in line.split()[:3]] for line in card_lines[i + 2: i + 2 + n_kpts]])
+                kpts_list = np.array([[float(x) for x in line.split()[:3]]
+                                      for line in card_lines[i + 2: i + 2 + n_kpts]])                
                 kpts, koffset = get_monkhorst_pack_size_and_offset(kpts_list)
                 return kpts, koffset, False
             else:
@@ -1035,12 +1036,12 @@ def construct_kpoints_card(atoms, kpts=None, kspacing=None, koffset=(0, 0, 0)):
         out.append('\n')
     elif any([isinstance(i, float) for i in koffset]):
         klist = monkhorst_pack(kgrid) + koffset
-        klist_weight = 1 / len(klist)
+        k_weight = 1 / len(klist)
         out.append('K_POINTS crystal\n')
         assert len(klist) > 0
         out.append('%s\n' % len(klist))
         for k in klist:
-            out.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} {klist_weight:.6e}\n'.format(k=k, klist_weight=klist_weight))
+            out.append('{k[0]:.14f} {k[1]:.14f} {k[2]:.14f} {k_weight:.6e}\n'.format(k=k, k_weight=k_weight))
         out.append('\n')
     else:
         out.append('K_POINTS automatic\n')
