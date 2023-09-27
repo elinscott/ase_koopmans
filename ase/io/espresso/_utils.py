@@ -94,7 +94,7 @@ def get_kpoints(card_lines, cell=None):
             elif mode.lower() == 'crystal':
                 n_kpts = int(card_lines[i + 1])
                 kpts_list = np.array([[float(x) for x in line.split()[:3]]
-                                      for line in card_lines[i + 2: i + 2 + n_kpts]])                
+                                      for line in card_lines[i + 2: i + 2 + n_kpts]])
                 kpts, koffset = get_monkhorst_pack_size_and_offset(kpts_list)
                 return kpts, koffset, False
             else:
