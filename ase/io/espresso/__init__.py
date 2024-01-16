@@ -15,7 +15,7 @@ from ._koopmans_screen import KEYS as kcs_keys
 from ._koopmans_ham import read_koopmans_ham_in, read_koopmans_ham_out, write_koopmans_ham_in
 from ._koopmans_ham import KEYS as kch_keys
 from ._ph import read_ph_in, read_ph_out, write_ph_in
-from ._projwfc import read_projwfc_in, read_projwfc_out, write_projwfc_in
+from ._projwfc import read_projwfc_in, read_projwfc_out, write_projwfc_in, read_projwfc_xml
 from ._pw2wannier import read_pw2wannier_in, read_pw2wannier_out, write_pw2wannier_in
 from ._wann2kcp import read_wann2kcp_in, read_wann2kcp_out, write_wann2kcp_in
 from ._wann2kc import read_wann2kc_in, read_wann2kc_out, write_wann2kc_in
