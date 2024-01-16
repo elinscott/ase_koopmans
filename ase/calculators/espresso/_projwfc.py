@@ -16,3 +16,17 @@ class Projwfc(EspressoParent):
         """
         kwargs['label'] = 'projwfc'
         super().__init__(*args, **kwargs)
+    
+    def read_xml(self):
+        """
+        Read the atomic_proj.xml file and store its contents in self.results
+        """
+        xml_file = self.parameters['outdir'] / (self.parameters['prefix'] + '.save') / 'atomic_proj.xml'
+        with open(xml_file, 'r') as fd:
+            xml_dict = io.espresso.read_projwfc_xml(fd)
+
+        self.results.update(**xml_dict)
+
+        import ipdb; ipdb.set_trace()
+
+        return 

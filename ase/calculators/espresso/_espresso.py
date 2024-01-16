@@ -55,6 +55,9 @@ class EspressoParent(FileIOCalculator):
         self.results = output.calc.results
         if hasattr(output.calc, 'kpts'):
             self.kpts = output.calc.kpts
+        
+        # Read the xml file to provide any additional data
+        self.read_xml()
 
     def get_number_of_spins(self):
         if self.calc is None:
@@ -63,3 +66,7 @@ class EspressoParent(FileIOCalculator):
         if nspins is None:
             warnings.warn(warn_template % 'Number of spins')
         return nspins
+    
+    def read_xml(self):
+        # Method to be overwritten by calculators with xml output
+        pass
