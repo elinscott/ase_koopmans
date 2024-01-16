@@ -27,6 +27,4 @@ class Projwfc(EspressoParent):
 
         self.results.update(**xml_dict)
 
-        import ipdb; ipdb.set_trace()
-
         return 
