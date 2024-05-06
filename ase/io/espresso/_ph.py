@@ -111,17 +111,21 @@ def read_ph_out(fd, *args, **kwargs):
 
     job_done = False
     walltime = None
+    epsilon = None
 
-    for line in flines:
+    for i, line in enumerate(flines):
         if 'JOB DONE' in line:
             job_done = True
         if line.strip().startswith('PHONON'):
             time_str = line.split()[-2]
             walltime = time_to_float(time_str)
+        if 'Dielectric constant in cartesian axis' in line:
+            epsilon = np.array([x.split()[1:4] for x in flines[i + 2: i + 5]], dtype=float)
 
     calc = EspressoPh(atoms=structure)
     calc.results['job done'] = job_done
     calc.results['walltime'] = walltime
+    calc.results['dielectric tensor'] = epsilon
 
     structure.calc = calc
 
