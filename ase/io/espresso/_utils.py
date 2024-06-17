@@ -1433,5 +1433,5 @@ def dict_to_input_lines(dct):
                 value = '.true.'
             if value is False:
                 value = '.false.'
-            out.append(f'   {key:16} = "{value}"\n')
+            out.append(f'   {key:16} = {value}\n')
     return out
