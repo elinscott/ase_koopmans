@@ -1428,7 +1428,7 @@ def dict_to_input_lines(dct):
                 value = str(value)
             if isinstance(value, str):
                 # add quotes around strings
-                value = f'"{value}"'
+                value = f"'{value}'"
             if value is True:
                 value = '.true.'
             if value is False:
