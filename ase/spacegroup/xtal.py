@@ -103,9 +103,9 @@ def crystal(symbols=None, basis=None, occupancies=None, spacegroup=1, setting=1,
     """
     sg = Spacegroup(spacegroup, setting)
     if (not isinstance(symbols, str) and
-        hasattr(symbols, '__getitem__') and
-        len(symbols) > 0 and
-        isinstance(symbols[0], ase.Atom)):
+            hasattr(symbols, '__getitem__') and
+            len(symbols) > 0 and
+            isinstance(symbols[0], ase.Atom)):
         symbols = ase.Atoms(symbols)
     if isinstance(symbols, ase.Atoms):
         basis = symbols
