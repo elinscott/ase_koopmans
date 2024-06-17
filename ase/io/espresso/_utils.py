@@ -1384,14 +1384,7 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
     # and that repr converts to a QE readable representation (except bools)
     for section in input_parameters:
         flines.append('&{0}\n'.format(section.upper()))
-        for key, value in input_parameters[section].items():
-            if value is True:
-                flines.append('   {0:16} = .true.\n'.format(key))
-            elif value is False:
-                flines.append('   {0:16} = .false.\n'.format(key))
-            elif value is not None:
-                # repr format to get quotes around strings
-                flines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        flines += dict_to_input_lines(input_parameters[section])
         flines.append('/\n')  # terminate section
     flines.append('\n')
 
@@ -1425,3 +1418,20 @@ def write_espresso_in(fd, atoms, input_data=None, pseudopotentials=None,
 
     # DONE!
     fd.write(''.join(flines))
+
+
+def dict_to_input_lines(dct):
+    out = []
+    for key, value in dct.items():
+        if value is not None:
+            if isinstance(value, Path):
+                value = str(value)
+            if isinstance(value, str):
+                # add quotes around strings
+                value = f'"{value}"'
+            if value is True:
+                value = '.true.'
+            if value is False:
+                value = '.false.'
+            out.append(f'   {key:16} = "{value}"\n')
+    return out

@@ -6,7 +6,7 @@ from ase import Atom
 from pathlib import Path
 from ase.utils import basestring
 from ase.atoms import Atoms
-from ._utils import read_fortran_namelist, time_to_float
+from ._utils import read_fortran_namelist, time_to_float, dict_to_input_lines
 from ase.calculators.espresso import EspressoPh
 
 
@@ -70,16 +70,7 @@ def write_ph_in(fd, atoms, **kwargs):
     all_parameters = dict(**atoms.calc.parameters, **masses)
     all_parameters.pop('pseudopotentials', None)
 
-    for key, value in all_parameters.items():
-        if value is True:
-            ph.append('   {0:16} = .true.\n'.format(key))
-        elif value is False:
-            ph.append('   {0:16} = .false.\n'.format(key))
-        elif value is not None:
-            if isinstance(value, Path):
-                value = str(value)
-            # repr format to get quotes around strings
-            ph.append('   {0:16} = {1!r:}\n'.format(key, value))
+    ph += dict_to_input_lines(all_parameters)
     ph.append('/\n')
     ph.append('0.0 0.0 0.0')
 

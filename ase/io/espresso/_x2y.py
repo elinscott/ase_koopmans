@@ -5,7 +5,7 @@
 from pathlib import Path
 from ase.utils import basestring
 from ase.atoms import Atoms
-from ._utils import read_fortran_namelist, time_to_float
+from ._utils import read_fortran_namelist, time_to_float, dict_to_input_lines
 
 
 def read_x2y_in(fileobj, calc_class):
@@ -60,16 +60,7 @@ def write_x2y_in(fd, atoms, **kwargs):
     """
 
     x2y = ['&inputpp\n']
-    for key, value in atoms.calc.parameters.items():
-        if value is True:
-            x2y.append(f'   {key:16} = .true.\n')
-        elif value is False:
-            x2y.append(f'   {key:16} = .false.\n')
-        elif value is not None:
-            if isinstance(value, Path):
-                value = str(value)
-            # repr format to get quotes around strings
-            x2y.append(f'   {key:16} = {value!r:}\n')
+    x2y += dict_to_input_lines(atoms.calc.parameters)
     x2y.append('/\n')
 
     fd.write(''.join(x2y))
