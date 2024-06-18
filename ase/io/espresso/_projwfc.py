@@ -1,6 +1,6 @@
 from ase.atoms import Atoms
 from ase.calculators.espresso import Projwfc
-from ._utils import read_fortran_namelist, time_to_float
+from ._utils import read_fortran_namelist, time_to_float, dict_to_input_lines
 from pathlib import Path
 
 
@@ -56,16 +56,7 @@ def write_projwfc_in(fd, atoms, **kwargs):
     """
 
     projwf = ['&projwfc\n']
-    for key, value in atoms.calc.parameters.items():
-        if value is True:
-            projwf.append(f'   {key:16} = .true.\n')
-        elif value is False:
-            projwf.append(f'   {key:16} = .false.\n')
-        elif value is not None:
-            if isinstance(value, Path):
-                value = str(value)
-            # repr format to get quotes around strings
-            projwf.append(f'   {key:16} = {value!r:}\n')
+    projwf += dict_to_input_lines(atoms.calc.parameters)
     projwf.append('/\n')
 
     fd.write(''.join(projwf))

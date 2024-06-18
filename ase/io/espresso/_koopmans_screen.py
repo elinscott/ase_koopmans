@@ -8,7 +8,7 @@ import copy
 from ase import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from ._utils import read_fortran_namelist, generic_construct_namelist, time_to_float, units
+from ._utils import read_fortran_namelist, generic_construct_namelist, time_to_float, units, dict_to_input_lines
 from ._wann2kc import KEYS as W2KCW_KEYS
 from ase.calculators.espresso import KoopmansScreen
 
@@ -34,14 +34,7 @@ def write_koopmans_screen_in(fd, atoms, input_data=None, **kwargs):
             continue
 
         lines.append('&{0}\n'.format(section.upper()))
-        for key, value in input_parameters[section].items():
-            if value is True:
-                lines.append('   {0:16} = .true.\n'.format(key))
-            elif value is False:
-                lines.append('   {0:16} = .false.\n'.format(key))
-            elif value is not None:
-                # repr format to get quotes around strings
-                lines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        lines += dict_to_input_lines(input_parameters[section])
         lines.append('/\n')  # terminate section
 
     fd.writelines(lines)

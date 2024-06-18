@@ -8,13 +8,14 @@ Read structures from kcw.x (wann2kcw mode) input files.
 from ase.atoms import Atoms
 from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.utils import basestring
-from ._utils import Namelist, read_fortran_namelist, generic_construct_namelist, time_to_float
+from ._utils import Namelist, read_fortran_namelist, generic_construct_namelist, time_to_float, dict_to_input_lines
 from ase.calculators.espresso import Wann2KC
 
 
 KEYS = Namelist((
     ('control', ['prefix', 'outdir', 'kcw_iverbosity', 'kcw_at_ks', 'calculation', 'lrpa',
-                 'mp1', 'mp2', 'mp3', 'homo_only', 'read_unitary_matrix', 'l_vcut', 'assume_isolated', 'spin_component']),
+                 'mp1', 'mp2', 'mp3', 'homo_only', 'read_unitary_matrix', 'l_vcut', 'assume_isolated',
+                 'spin_component']),
     ('wannier', ['seedname', 'check_ks', 'num_wann_occ', 'num_wann_emp', 'have_empty', 'has_disentangle'])))
 
 
@@ -32,14 +33,7 @@ def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,
     for section in input_parameters:
         assert section in KEYS.keys()
         lines.append('&{0}\n'.format(section.upper()))
-        for key, value in input_parameters[section].items():
-            if value is True:
-                lines.append('   {0:16} = .true.\n'.format(key))
-            elif value is False:
-                lines.append('   {0:16} = .false.\n'.format(key))
-            elif value is not None:
-                # repr format to get quotes around strings
-                lines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        lines += dict_to_input_lines(input_parameters[section])
         lines.append('/\n')  # terminate section
 
     fd.writelines(lines)

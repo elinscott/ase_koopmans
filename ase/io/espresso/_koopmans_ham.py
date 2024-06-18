@@ -10,7 +10,7 @@ from ase.calculators.singlepoint import SinglePointDFTCalculator
 from ase.dft.kpoints import BandPath
 from ase.utils import basestring
 from ._utils import construct_kpoints_card, generic_construct_namelist, safe_string_to_list_of_floats, time_to_float, \
-    read_fortran_namelist
+    read_fortran_namelist, dict_to_input_lines
 from ._wann2kc import KEYS as W2KCW_KEYS
 
 from ase.calculators.espresso import KoopmansHam
@@ -38,14 +38,7 @@ def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
             continue
 
         lines.append('&{0}\n'.format(section.upper()))
-        for key, value in input_parameters[section].items():
-            if value is True:
-                lines.append('   {0:16} = .true.\n'.format(key))
-            elif value is False:
-                lines.append('   {0:16} = .false.\n'.format(key))
-            elif value is not None:
-                # repr format to get quotes around strings
-                lines.append('   {0:16} = {1!r:}\n'.format(key, value))
+        lines += dict_to_input_lines(input_parameters[section])
         lines.append('/\n')  # terminate section
 
     if input_parameters['HAM'].get('do_bands', True):
