@@ -271,7 +271,7 @@ def parallel_generator(generator):
     def new_generator(*args, **kwargs):
         if (world.size == 1 or
             args and getattr(args[0], 'serial', False) or
-            not kwargs.pop('parallel', True)):
+                not kwargs.pop('parallel', True)):
             # Disable:
             for result in generator(*args, **kwargs):
                 yield result
