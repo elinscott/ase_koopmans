@@ -239,8 +239,8 @@ def parallel_function(func):
     @functools.wraps(func)
     def new_func(*args, **kwargs):
         if (world.size == 1 or
-            args and getattr(args[0], 'serial', False) or
-            not kwargs.pop('parallel', True)):
+                args and getattr(args[0], 'serial', False) or
+                not kwargs.pop('parallel', True)):
             # Disable:
             return func(*args, **kwargs)
 
