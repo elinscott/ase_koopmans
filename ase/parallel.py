@@ -81,10 +81,22 @@ class MPI:
     * a dummy implementation for serial runs
 
     """
+
     def __init__(self):
         self.comm = None
 
     def __getattr__(self, name):
+
+        # Pickling of objects that carry instances of MPI class
+        # (e.g. NEB) raises RecursionError since it tries to access
+        # the optional __setstate__ method (which we do not implement)
+        # when unpickling. The two lines below prevent the
+        # RecursionError. This also affects modules that use pickling
+        # e.g. multiprocessing.  For more details see:
+        # https://gitlab.com/ase/ase/-/merge_requests/2695
+        if name == '__setstate__':
+            raise AttributeError(name)
+
         if self.comm is None:
             self.comm = _get_comm()
         return getattr(self.comm, name)
@@ -227,8 +239,8 @@ def parallel_function(func):
     @functools.wraps(func)
     def new_func(*args, **kwargs):
         if (world.size == 1 or
-            args and getattr(args[0], 'serial', False) or
-            not kwargs.pop('parallel', True)):
+                args and getattr(args[0], 'serial', False) or
+                not kwargs.pop('parallel', True)):
             # Disable:
             return func(*args, **kwargs)
 
@@ -259,7 +271,7 @@ def parallel_generator(generator):
     def new_generator(*args, **kwargs):
         if (world.size == 1 or
             args and getattr(args[0], 'serial', False) or
-            not kwargs.pop('parallel', True)):
+                not kwargs.pop('parallel', True)):
             # Disable:
             for result in generator(*args, **kwargs):
                 yield result
