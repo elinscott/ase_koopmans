@@ -101,7 +101,7 @@ def read_koopmans_ham_out(fileobj):
                 eigenvalues[-1] += safe_string_to_list_of_floats(line2)
                 j_line += 1
 
-        if 'INFO: KI[2nd] HAMILTONIAN CALCULATION ik=' in line:
+        if 'band energies (ev):' in line:
             ks_eigenvalues_on_grid.append([])
             ki_eigenvalues_on_grid.append([])
 
