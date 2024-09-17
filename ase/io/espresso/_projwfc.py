@@ -2,6 +2,8 @@ from ase.atoms import Atoms
 from ase.calculators.espresso import Projwfc
 from ._utils import read_fortran_namelist, time_to_float, dict_to_input_lines
 from pathlib import Path
+from xml.etree import ElementTree as ET
+import numpy as np
 
 
 def read_projwfc_in(fileobj):
@@ -101,3 +103,28 @@ def read_projwfc_out(fd):
     structure.calc = calc
 
     yield structure
+
+def read_projwfc_xml(fd):
+    """
+    Reads the atomic_proj.xml file and returns a dictionary of the data contained within it
+    """
+    tree = ET.parse(fd)
+    root = tree.getroot()
+
+    # Reading <HEADER> section
+    dct = {k.lower(): (int(v) if '.' not in v else float(v)) for k, v in root[0].attrib.items()}
+
+    # Reading <EIGENSTATES> section
+    estates = root[1]
+    dct['projectability_data'] = []
+    for kpt_element, eigs_element, projs_element in zip(estates[::3], estates[1::3], estates[2::3]):
+        kpt = np.array(kpt_element.text.split(), dtype=np.float64)
+        eigs = np.array(eigs_element.text.split(), dtype=np.float64)
+        projs = []
+        for proj_element in projs_element:
+            proj = {k.lower(): int(v) for k, v in proj_element.attrib.items()}
+            proj['array'] = np.array([float(row.split()[0]) + 1j * float(row.split()[1]) for row in proj_element.text.split('\n') if row.strip()])
+            projs.append(proj)
+        dct['projectability_data'].append({'kpoint': kpt, 'eigenvalues': eigs, 'projectability': projs})
+
+    return dct
