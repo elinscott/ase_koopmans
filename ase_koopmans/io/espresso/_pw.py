@@ -39,6 +39,7 @@ _PW_ELECTROSTATIC_EMBEDDING = 'electrostatic embedding'
 _PW_NITER = 'iteration #'
 _PW_DONE = 'JOB DONE.'
 _PW_WALLTIME = 'PWSCF        :'
+_PW_NELEC = 'number of electrons       ='
 
 
 def read_pw_out(fileobj, index=-1, results_required=True):
@@ -97,7 +98,8 @@ def read_pw_out(fileobj, index=-1, results_required=True):
         _PW_ELECTROSTATIC_EMBEDDING: [],
         _PW_NITER: [],
         _PW_DONE: [],
-        _PW_WALLTIME: []
+        _PW_WALLTIME: [],
+        _PW_NELEC: []
     }
 
     for idx, line in enumerate(pwo_lines):
@@ -123,7 +125,7 @@ def read_pw_out(fileobj, index=-1, results_required=True):
                                  indexes[_PW_STRESS] + indexes[_PW_MAGMOM] +
                                  indexes[_PW_BANDS] +
                                  indexes[_PW_ELECTROSTATIC_EMBEDDING] +
-                                 indexes[_PW_BANDSTRUCTURE])
+                                 indexes[_PW_BANDSTRUCTURE] + indexes[_PW_NELEC])
 
         # Prune to only configurations with results data before the next
         # configuration
@@ -372,6 +374,12 @@ def read_pw_out(fileobj, index=-1, results_required=True):
         for wt_index in indexes[_PW_WALLTIME]:
             if image_index < wt_index < next_index:
                 walltime = time_to_float(pwo_lines[wt_index].split()[-2])
+        
+        # Number of electrons
+        nelec = None
+        for nelec_index in indexes[_PW_NELEC]:
+            if image_index < nelec_index < next_index:
+                nelec = float(pwo_lines[nelec_index].split()[-1])
 
         # Put everything together
         calc = SinglePointDFTCalculator(structure, energy=energy,
@@ -384,6 +392,7 @@ def read_pw_out(fileobj, index=-1, results_required=True):
         calc.results['iterations'] = n_iterations
         calc.results['job done'] = job_done
         calc.results['walltime'] = walltime
+        calc.results['nelec'] = nelec
 
         calc.kpts = kpts
         structure.calc = calc

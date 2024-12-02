@@ -155,9 +155,9 @@ class IOFormat:
             raise UnknownFileTypeError('File format not recognized: %s.  '
                                        'Error: %s' % (format, err))
 
-    def match_name(self, base_koopmansname: str) -> bool:
+    def match_name(self, basename: str) -> bool:
         from fnmatch import fnmatch
-        return any(fnmatch(base_koopmansname, pattern)
+        return any(fnmatch(basename, pattern)
                    for pattern in self.globs)
 
     def match_magic(self, data: bytes) -> bool:
@@ -756,8 +756,8 @@ def parse_filename(filename, index=None, do_not_split_by_at_sign=False):
     if not isinstance(filename, str):
         return filename, index
 
-    base_koopmansname = os.path.base_koopmansname(filename)
-    if do_not_split_by_at_sign or '@' not in base_koopmansname:
+    basename = os.path.basename(filename)
+    if do_not_split_by_at_sign or '@' not in basename:
         return filename, index
 
     newindex = None
@@ -811,7 +811,7 @@ def filetype(
     ext = None
     if isinstance(filename, str):
         if os.path.isdir(filename):
-            if os.path.base_koopmansname(os.path.normpath(filename)) == 'states':
+            if os.path.basename(os.path.normpath(filename)) == 'states':
                 return 'eon'
             return 'bundletrajectory'
 
@@ -823,15 +823,15 @@ def filetype(
 
         # strip any compression extensions that can be read
         root, compression = get_compression(filename)
-        base_koopmansname = os.path.base_koopmansname(root)
+        basename = os.path.basename(root)
 
-        if '.' in base_koopmansname:
-            ext = os.path.splitext(base_koopmansname)[1].strip('.').lower()
+        if '.' in basename:
+            ext = os.path.splitext(basename)[1].strip('.').lower()
             if ext in ['xyz', 'cube', 'json', 'cif']:
                 return ext
 
         for fmt in ioformats.values():
-            if fmt.match_name(base_koopmansname):
+            if fmt.match_name(basename):
                 return fmt.name
 
         ioformat = extension2format.get(ext)
