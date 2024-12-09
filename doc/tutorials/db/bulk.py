@@ -1,7 +1,7 @@
-from ase.build import bulk
-from ase.calculators.emt import EMT
-from ase.eos import calculate_eos
-from ase.db import connect
+from ase_koopmans.build import bulk
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.eos import calculate_eos
+from ase_koopmans.db import connect
 
 db = connect('bulk.db')
 for symb in ['Al', 'Ni', 'Cu', 'Pd', 'Ag', 'Pt', 'Au']:

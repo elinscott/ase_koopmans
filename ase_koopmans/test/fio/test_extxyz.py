@@ -1,5 +1,5 @@
 # additional tests of the extended XYZ file I/O
-# (which is also included in oi.py test case_koopmans)
+# (which is also included in oi.py test case)
 # maintained by James Kermode <james.kermode@gmail.com>
 
 import numpy as np
@@ -87,7 +87,7 @@ def test_vec_cell(at, images):
     assert a == b
 
     # read xyz containing trailing blank line
-    # also test for upper case_koopmans elements
+    # also test for upper case elements
     f = open('structure.xyz', 'w')
     f.write("""4
     Coordinates
@@ -131,14 +131,14 @@ def test_read_struct():
                    [2.00381504, 1.15688001, 3.37697219],
                    [-2.003795e-05, 2.31379473, 1.62609781]],
     )
-    struct.info = {'datase_koopmanst': 'deltatest', 'kpoints': np.array([28, 28, 20]),
+    struct.info = {'dataset': 'deltatest', 'kpoints': np.array([28, 28, 20]),
                    'identifier': 'deltatest_H_1.00',
                    'unique_id': '4cf83e2f89c795fb7eaf9662e77542c1'}
     ase_koopmans.io.write('tmp.xyz', struct)
 
 
 # Complex properties line. Keys and values that break with a regex parser.
-# see https://gitlab.com/ase_koopmans/ase_koopmans/issues/53 for more info
+# see https://gitlab.com/ase/ase/issues/53 for more info
 def test_complex_key_val():
     complex_xyz_string = (
         ' '  # start with a separator

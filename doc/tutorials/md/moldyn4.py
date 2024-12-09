@@ -1,12 +1,12 @@
 """Demonstrates molecular dynamics for isolated particles."""
 from __future__ import print_function
 
-from ase.cluster.cubic import FaceCenteredCubic
-from ase.optimize import QuasiNewton
-from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
+from ase_koopmans.cluster.cubic import FaceCenteredCubic
+from ase_koopmans.optimize import QuasiNewton
+from ase_koopmans.md.velocitydistribution import (MaxwellBoltzmannDistribution,
                                          Stationary, ZeroRotation)
-from ase.md.verlet import VelocityVerlet
-from ase import units
+from ase_koopmans.md.verlet import VelocityVerlet
+from ase_koopmans import units
 
 # Use Asap for a huge performance increase if it is installed
 use_asap = True
@@ -15,7 +15,7 @@ if use_asap:
     from asap3 import EMT
     size = 4
 else:
-    from ase.calculators.emt import EMT
+    from ase_koopmans.calculators.emt import EMT
     size = 2
 
 # Set up a nanoparticle

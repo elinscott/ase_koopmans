@@ -72,7 +72,7 @@ class Population(object):
         """ Private method that initializes the population when
             the population is created. """
 
-        # Get all relaxed candidates from the database_koopmans
+        # Get all relaxed candidates from the database
         ue = self.use_extinct
         all_cand = self.dc.get_all_relaxed_candidates(use_extinct=ue)
         all_cand.sort(key=lambda x: x.info['key_value_pairs']['raw_score'],
@@ -101,7 +101,7 @@ class Population(object):
         self.__calc_participation__()
 
     def __calc_participation__(self):
-        """ Determines, from the database_koopmans, how many times each
+        """ Determines, from the database, how many times each
             candidate has been used to generate new candidates. """
         (participation, pairs) = self.dc.get_participation_in_pairing()
         for a in self.pop:
@@ -112,10 +112,10 @@ class Population(object):
         self.pairs = pairs
 
     def update(self, new_cand=None):
-        """ New candidates can be added to the database_koopmans
+        """ New candidates can be added to the database
             after the population object has been created.
             This method extracts these new candidates from the
-            database_koopmans and includes them in the population. """
+            database and includes them in the population. """
 
         if len(self.pop) == 0:
             self.__initialize_pop__()
@@ -334,7 +334,7 @@ class Population(object):
         return False
 
     def mass_extinction(self, ids):
-        """Kills every candidate in the database_koopmans with gaid in the
+        """Kills every candidate in the database with gaid in the
         supplied list of ids. Typically used on the main part of the current
         population if the diversity is to small.
 
@@ -362,7 +362,7 @@ class RandomPopulation(Population):
         """ Private method that initializes the population when
             the population is created. """
 
-        # Get all relaxed candidates from the database_koopmans
+        # Get all relaxed candidates from the database
         ue = self.use_extinct
         all_cand = self.dc.get_all_relaxed_candidates(use_extinct=ue)
         all_cand.sort(key=lambda x: get_raw_score(x), reverse=True)
@@ -521,7 +521,7 @@ class FitnessSharingPopulation(Population):
         self._write_log()
 
     def __initialize_pop__(self):
-        # Get all relaxed candidates from the database_koopmans
+        # Get all relaxed candidates from the database
         ue = self.use_extinct
         all_cand = self.dc.get_all_relaxed_candidates(use_extinct=ue)
         all_cand.sort(key=lambda x: get_raw_score(x), reverse=True)
@@ -686,7 +686,7 @@ class RankFitnessPopulation(Population):
         self._write_log()
 
     def __initialize_pop__(self):
-        # Get all relaxed candidates from the database_koopmans
+        # Get all relaxed candidates from the database
         ue = self.use_extinct
         all_cand = self.dc.get_all_relaxed_candidates(use_extinct=ue)
         all_cand.sort(key=lambda x: get_raw_score(x), reverse=True)
@@ -758,7 +758,7 @@ class RankFitnessPopulation(Population):
 
 
 class MultiObjectivePopulation(RankFitnessPopulation):
-    """ Allows for assignment of fitness base_koopmansd on a set of two variables
+    """ Allows for assignment of fitness based on a set of two variables
         such that fitness is ranked according to a Pareto-front of
         non-dominated candidates.
 
@@ -766,7 +766,7 @@ class MultiObjectivePopulation(RankFitnessPopulation):
     ----------
         abs_data: list
             Set of key_value_pairs in atoms object for which fitness should
-            be assigned base_koopmansd on absolute value.
+            be assigned based on absolute value.
 
         rank_data: list
             Set of key_value_pairs in atoms object for which data should
@@ -815,11 +815,11 @@ class MultiObjectivePopulation(RankFitnessPopulation):
         return nrc_list
 
     def __get_fitness__(self, candidates):
-        # There are no defaults set for the datase_koopmansts to be
+        # There are no defaults set for the datasets to be
         # used in this function, as such we test that the
         # user has specified at least two here.
         msg = "This is a multi-objective fitness function"
-        msg += " so there must be at least two datase_koopmansts"
+        msg += " so there must be at least two datasets"
         msg += " stated in the rank_data and abs_data variables"
         assert len(self.rank_data) + len(self.abs_data) >= 2, msg
 
@@ -829,13 +829,13 @@ class MultiObjectivePopulation(RankFitnessPopulation):
         used = set()
         for rd in self.rank_data:
             used.add(rd)
-            # Build ranked fitness base_koopmansd on rd
+            # Build ranked fitness based on rd
             all_fitnesses.append(self.get_rank(candidates, key=rd))
 
         for d in self.abs_data:
             if d not in used:
                 used.add(d)
-                # Build fitness base_koopmansd on d
+                # Build fitness based on d
                 all_fitnesses.append(self.get_nonrank(candidates, key=d))
 
         # Set the initial order of the ranks, will need to
@@ -844,7 +844,7 @@ class MultiObjectivePopulation(RankFitnessPopulation):
         mvf_rank = -1  # Start multi variable rank at -1.
         rec_vrc = []  # A record of already ranked candidates.
         mvf_list = []  # A list for all candidate ranks.
-        # Sort by raw_score_1 in case_koopmans this is different from
+        # Sort by raw_score_1 in case this is different from
         # the stored raw_score() variable that all_cands are
         # sorted by.
         fordered.sort(key=itemgetter(1), reverse=True)
@@ -900,7 +900,7 @@ class MultiObjectivePopulation(RankFitnessPopulation):
             return self.exp_prefactor ** (-rfro - 1)
 
     def __initialize_pop__(self):
-        # Get all relaxed candidates from the database_koopmans
+        # Get all relaxed candidates from the database
         ue = self.use_extinct
         all_cand = self.dc.get_all_relaxed_candidates(use_extinct=ue)
         all_cand.sort(key=lambda x: get_raw_score(x), reverse=True)

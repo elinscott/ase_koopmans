@@ -1,8 +1,8 @@
 # creates: diffusion-I.png, diffusion-T.png, diffusion-F.png
 # creates: diffusion-barrier.png
 
-from ase.io import read, write
-from ase.neb import NEBTools
+from ase_koopmans.io import read, write
+from ase_koopmans.neb import NEBTools
 
 if 1:
     exec(compile(open('diffusion1.py').read(), 'diffusion1.py', 'exec'))

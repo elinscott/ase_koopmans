@@ -1,13 +1,13 @@
 import numpy as np
-from ase.ga.population import RankFitnessPopulation
-from ase.ga.data import DataConnection
-from ase.ga.offspring_creator import OperationSelector
-from ase.ga.slab_operators import (CutSpliceSlabCrossover,
+from ase_koopmans.ga.population import RankFitnessPopulation
+from ase_koopmans.ga.data import DataConnection
+from ase_koopmans.ga.offspring_creator import OperationSelector
+from ase_koopmans.ga.slab_operators import (CutSpliceSlabCrossover,
                                    RandomSlabPermutation,
                                    RandomCompositionMutation)
-from ase.ga import set_raw_score
+from ase_koopmans.ga import set_raw_score
 
-from ase.calculators.emt import EMT
+from ase_koopmans.calculators.emt import EMT
 
 # Connect to the database containing all candidates
 db = DataConnection('hull.db')

@@ -1,7 +1,7 @@
-from ase.calculators.demonnano import DemonNano
-from ase import Atoms
-from ase.io import write
-from ase.optimize import BFGS
+from ase_koopmans.calculators.demonnano import DemonNano
+from ase_koopmans import Atoms
+from ase_koopmans.io import write
+from ase_koopmans.optimize import BFGS
 import numpy as np
 
 d = 0.9775

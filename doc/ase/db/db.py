@@ -3,11 +3,11 @@ from __future__ import print_function
 
 import subprocess
 
-import ase.db
-from ase import Atoms
-from ase.calculators.emt import EMT
-from ase.db.core import default_key_descriptions
-from ase.optimize import BFGS
+import ase_koopmans.db
+from ase_koopmans import Atoms
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.db.core import default_key_descriptions
+from ase_koopmans.optimize import BFGS
 
 c = ase.db.connect('abc.db', append=False)
 

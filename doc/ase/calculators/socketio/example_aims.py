@@ -1,9 +1,9 @@
 import sys
 
-from ase.build import molecule
-from ase.optimize import BFGS
-from ase.calculators.aims import Aims
-from ase.calculators.socketio import SocketIOCalculator
+from ase_koopmans.build import molecule
+from ase_koopmans.optimize import BFGS
+from ase_koopmans.calculators.aims import Aims
+from ase_koopmans.calculators.socketio import SocketIOCalculator
 
 # Environment-dependent parameters -- please configure according to machine
 # Note that FHI-aim support for the i-PI protocol must be specifically

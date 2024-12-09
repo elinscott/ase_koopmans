@@ -1,7 +1,7 @@
 import numpy as np
 
-from ase import Atoms
-from ase.dft.kpoints import monkhorst_pack
+from ase_koopmans import Atoms
+from ase_koopmans.dft.kpoints import monkhorst_pack
 from gpaw import GPAW
 
 kpts = monkhorst_pack((13, 1, 1)) + [1e-5, 0, 0]

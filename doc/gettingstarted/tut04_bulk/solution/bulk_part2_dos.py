@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from gpaw import GPAW
-from ase.dft.dos import DOS
+from ase_koopmans.dft.dos import DOS
 
 calc = GPAW('bulk.Ag.gpw')
 #energies, weights = calc.get_dos(npts=800, width=0)

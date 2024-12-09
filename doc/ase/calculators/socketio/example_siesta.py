@@ -1,8 +1,8 @@
 import sys
-from ase.build import molecule
-from ase.calculators.siesta import Siesta
-from ase.optimize import BFGS
-from ase.calculators.socketio import SocketIOCalculator
+from ase_koopmans.build import molecule
+from ase_koopmans.calculators.siesta import Siesta
+from ase_koopmans.optimize import BFGS
+from ase_koopmans.calculators.socketio import SocketIOCalculator
 
 unixsocket = 'siesta'
 

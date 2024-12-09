@@ -18,13 +18,13 @@ class NGLDisplay:
         self.atoms = atoms
         if isinstance(atoms[0], Atoms):
             # Assume this is a trajectory or struct list
-            self.view = nglview.show_ase_koopmanstraj(atoms, default=False)
+            self.view = nglview.show_asetraj(atoms, default=False)
             self.frm = IntSlider(value=0, min=0, max=len(atoms) - 1)
             self.frm.observe(self._update_frame)
             self.struct = atoms[0]
         else:
             # Assume this is just a single structure
-            self.view = nglview.show_ase_koopmans(atoms, default=False)
+            self.view = nglview.show_ase(atoms, default=False)
             self.struct = atoms
             self.frm = None
 
@@ -38,7 +38,7 @@ class NGLDisplay:
 
         self.view.center()
 
-        self.ase_koopmansl = Dropdown(options=['All'] +
+        self.asel = Dropdown(options=['All'] +
                              list(set(self.struct.get_chemical_symbols())),
                              value='All', description='Show')
 
@@ -48,7 +48,7 @@ class NGLDisplay:
         self.rad = FloatSlider(value=0.5, min=0.0, max=1.5, step=0.01,
                                description='Ball size')
 
-        self.ase_koopmansl.observe(self._select_atom)
+        self.asel.observe(self._select_atom)
         self.csel.observe(self._update_repr)
         self.rad.observe(self._update_repr)
 
@@ -57,7 +57,7 @@ class NGLDisplay:
                                    color_scheme=self.csel.value,
                                    color_scale='rainbow')
 
-        wdg = [self.ase_koopmansl, self.csel, self.rad]
+        wdg = [self.asel, self.csel, self.rad]
         if self.frm:
             wdg.append(self.frm)
 
@@ -78,7 +78,7 @@ class NGLDisplay:
         return
 
     def _select_atom(self, chg=None):
-        sel = self.ase_koopmansl.value
+        sel = self.asel.value
         self.view.remove_spacefill()
         for e in set(self.struct.get_chemical_symbols()):
             if (sel == 'All' or e == sel):

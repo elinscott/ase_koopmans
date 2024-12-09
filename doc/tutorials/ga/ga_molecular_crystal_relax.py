@@ -2,13 +2,13 @@
 import os
 from time import time
 import numpy as np
-from ase.units import kB
-from ase.build import niggli_reduce
-from ase.calculators.calculator import all_changes
-from ase.calculators.singlepoint import SinglePointCalculator
-from ase.calculators.lj import LennardJones
-from ase.optimize.precon import PreconLBFGS
-from ase.ga import set_raw_score
+from ase_koopmans.units import kB
+from ase_koopmans.build import niggli_reduce
+from ase_koopmans.calculators.calculator import all_changes
+from ase_koopmans.calculators.singlepoint import SinglePointCalculator
+from ase_koopmans.calculators.lj import LennardJones
+from ase_koopmans.optimize.precon import PreconLBFGS
+from ase_koopmans.ga import set_raw_score
 
 
 def relax(atoms):

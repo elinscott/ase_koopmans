@@ -1,7 +1,7 @@
 # creates: Al_phonon.png
-from ase.build import bulk
-from ase.calculators.emt import EMT
-from ase.phonons import Phonons
+from ase_koopmans.build import bulk
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.phonons import Phonons
 
 # Setup crystal and EMT calculator
 atoms = bulk('Al', 'fcc', a=4.05)
@@ -40,8 +40,8 @@ dosax.set_xlabel("DOS", fontsize=18)
 fig.savefig('Al_phonon.png')
 
 # --- literalinclude division line ---
-# from ase.io.trajectory import Trajectory
-# from ase.io import write
+# from ase_koopmans.io.trajectory import Trajectory
+# from ase_koopmans.io import write
 
 # Write modes for specific q-vector to trajectory files:
 L = path.special_points['L']

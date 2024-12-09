@@ -185,7 +185,7 @@ class NetCDFTrajectory:
             return
         if self.mode == 'a' and not os.path.exists(self.filename):
             self.mode = 'w'
-        self.nc = netCDF4.Datase_koopmanst(self.filename, self.mode,
+        self.nc = netCDF4.Dataset(self.filename, self.mode,
                                   format=self.netcdf_format)
 
         self.frame = 0

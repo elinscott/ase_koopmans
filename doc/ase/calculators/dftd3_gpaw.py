@@ -1,11 +1,11 @@
 import numpy as np
 from gpaw import GPAW, PW
 
-from ase.calculators.dftd3 import DFTD3
-from ase.build import bulk
-from ase.constraints import UnitCellFilter
+from ase_koopmans.calculators.dftd3 import DFTD3
+from ase_koopmans.build import bulk
+from ase_koopmans.constraints import UnitCellFilter
 
-from ase.optimize import LBFGS
+from ase_koopmans.optimize import LBFGS
 
 np.random.seed(0)
 

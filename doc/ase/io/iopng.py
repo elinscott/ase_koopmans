@@ -1,8 +1,8 @@
 # creates: io1.png io2.png io3.png
 
-from ase import Atoms
-from ase.build import fcc111, add_adsorbate
-from ase.io import write, read
+from ase_koopmans import Atoms
+from ase_koopmans.build import fcc111, add_adsorbate
+from ase_koopmans.io import write, read
 
 adsorbate = Atoms('CO')
 adsorbate[1].z = 1.1

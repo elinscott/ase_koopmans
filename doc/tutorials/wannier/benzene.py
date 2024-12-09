@@ -1,4 +1,4 @@
-from ase.build import molecule
+from ase_koopmans.build import molecule
 from gpaw import GPAW
 
 atoms = molecule('C6H6')

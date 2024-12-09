@@ -1,10 +1,10 @@
-from ase.ga.data import PrepareDB
-from ase.ga.startgenerator import StartGenerator
-from ase.ga.utilities import closest_distances_generator
-from ase.ga.utilities import get_all_atom_types
-from ase.constraints import FixAtoms
+from ase_koopmans.ga.data import PrepareDB
+from ase_koopmans.ga.startgenerator import StartGenerator
+from ase_koopmans.ga.utilities import closest_distances_generator
+from ase_koopmans.ga.utilities import get_all_atom_types
+from ase_koopmans.constraints import FixAtoms
 import numpy as np
-from ase.build import fcc111
+from ase_koopmans.build import fcc111
 
 db_file = 'gadb.db'
 
@@ -39,7 +39,7 @@ sg = StartGenerator(slab, atom_numbers, blmin,
 population_size = 20
 starting_population = [sg.get_new_candidate() for i in range(population_size)]
 
-# from ase.visualize import view   # uncomment these lines
+# from ase_koopmans.visualize import view   # uncomment these lines
 # view(starting_population)        # to see the starting population
 
 # create the database to store information in

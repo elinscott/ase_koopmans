@@ -1,8 +1,8 @@
 from numpy import linspace
 
-from ase.calculators.fleur import FLEUR
-from ase.build import bulk
-from ase.io.trajectory import Trajectory
+from ase_koopmans.calculators.fleur import FLEUR
+from ase_koopmans.build import bulk
+from ase_koopmans.io.trajectory import Trajectory
 
 atoms = bulk('Ni', a=3.52)
 calc = FLEUR(xc='PBE', kmax=3.6, kpts=(10, 10, 10), workdir='lat_const')

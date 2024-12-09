@@ -1,9 +1,9 @@
 import numpy as np
 
-from ase.lattice.cubic import FaceCenteredCubic
-from ase.calculators.emt import EMT
-from ase.eos import EquationOfState
-from ase.db import connect
+from ase_koopmans.lattice.cubic import FaceCenteredCubic
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.eos import EquationOfState
+from ase_koopmans.db import connect
 
 
 def relax(input_atoms, ref_db):

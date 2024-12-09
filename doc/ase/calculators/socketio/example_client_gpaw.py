@@ -1,6 +1,6 @@
 from __future__ import print_function
-from ase.io import read
-from ase.calculators.socketio import SocketClient
+from ase_koopmans.io import read
+from ase_koopmans.calculators.socketio import SocketClient
 from gpaw import GPAW, Mixer
 
 # The atomic numbers are not transferred over the socket, so we have to

@@ -10,7 +10,7 @@ A sample call::
    ./gromacs_example_mm_relax.py 1GM2_sol.gro
 """
 
-from ase.calculators.gromacs import Gromacs
+from ase_koopmans.calculators.gromacs import Gromacs
 
 import sys
 

@@ -14,7 +14,7 @@ if False:
 
 
 class DOSCollection(collections.abc.Sequence):
-    """Base_koopmans class for a collection of DOSData objects"""
+    """Base class for a collection of DOSData objects"""
 
     def __init__(self, dos_series: Iterable[DOSData]) -> None:
         self._data = list(dos_series)
@@ -154,7 +154,7 @@ class DOSCollection(collections.abc.Sequence):
         Args:
             energy: common set of energy values for input data
             weights: array of DOS weights with rows corresponding to different
-                datase_koopmansts
+                datasets
             info: sequence of info dicts corresponding to weights rows.
 
         Returns:
@@ -451,7 +451,7 @@ class GridDOSCollection(DOSCollection):
         Args:
             energies: common set of energy values for input data
             weights: array of DOS weights with rows corresponding to different
-                datase_koopmansts
+                datasets
             info: sequence of info dicts corresponding to weights rows.
 
         Returns:

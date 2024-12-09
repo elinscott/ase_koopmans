@@ -1,10 +1,10 @@
-from ase import Atoms
-from ase.constraints import FixLinearTriatomic
-from ase.calculators.acn import (ACN, m_me,
+from ase_koopmans import Atoms
+from ase_koopmans.constraints import FixLinearTriatomic
+from ase_koopmans.calculators.acn import (ACN, m_me,
                                  r_mec, r_cn)
-from ase.md import Langevin
-import ase.units as units
-from ase.io import Trajectory
+from ase_koopmans.md import Langevin
+import ase_koopmans.units as units
+from ase_koopmans.io import Trajectory
 
 import numpy as np
 

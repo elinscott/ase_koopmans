@@ -1,10 +1,10 @@
 # creates: precon.png
 
-from ase.build import bulk
-from ase.calculators.emt import EMT
-from ase.optimize.precon import Exp, PreconLBFGS
+from ase_koopmans.build import bulk
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.optimize.precon import Exp, PreconLBFGS
 
-from ase.calculators.loggingcalc import LoggingCalculator
+from ase_koopmans.calculators.loggingcalc import LoggingCalculator
 import matplotlib.pyplot as plt
 
 a0 = bulk('Cu', cubic=True)

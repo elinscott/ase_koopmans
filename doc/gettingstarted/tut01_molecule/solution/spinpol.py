@@ -1,4 +1,4 @@
-from ase import Atoms
+from ase_koopmans import Atoms
 from gpaw import GPAW
 
 atoms = Atoms('N')

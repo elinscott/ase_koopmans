@@ -1,6 +1,6 @@
 # creates: ptable.png
 import numpy as np
-from ase import Atoms
+from ase_koopmans import Atoms
 
 # generates column, row positions for each element
 zmax = 118
@@ -30,5 +30,5 @@ atoms = Atoms(np.arange(1, zmax + 1),
 
 atoms.write('ptable.png')
 
-# from ase.visualize import view
+# from ase_koopmans.visualize import view
 # view(atoms)

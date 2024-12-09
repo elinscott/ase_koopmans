@@ -1,7 +1,7 @@
 # creates: saxs.png, xrd.png
 
-from ase.utils.xrdebye import XrDebye
-from ase.cluster.cubic import FaceCenteredCubic
+from ase_koopmans.utils.xrdebye import XrDebye
+from ase_koopmans.cluster.cubic import FaceCenteredCubic
 import numpy as np
 
 # create nanoparticle with approx. 2 nm diameter

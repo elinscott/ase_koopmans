@@ -1,8 +1,8 @@
 # creates: cu1o.png, cu2o.png, cu3o.png
 import os
-from ase.io import read, write
-from ase.cli.main import main
-from ase.db import connect
+from ase_koopmans.io import read, write
+from ase_koopmans.cli.main import main
+from ase_koopmans.db import connect
 
 for name in ['bulk.db', 'ads.db', 'refs.db']:
     if os.path.isfile(name):

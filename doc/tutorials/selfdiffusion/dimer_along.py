@@ -4,12 +4,12 @@ import numpy as np
 
 from math import sqrt
 
-from ase import Atoms, Atom
-from ase.io import Trajectory
-from ase.constraints import FixAtoms
-from ase.optimize import QuasiNewton
-from ase.calculators.emt import EMT
-from ase.dimer import DimerControl, MinModeAtoms, MinModeTranslate
+from ase_koopmans import Atoms, Atom
+from ase_koopmans.io import Trajectory
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.optimize import QuasiNewton
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.dimer import DimerControl, MinModeAtoms, MinModeTranslate
 
 # Setting up the initial image:
 a = 4.0614

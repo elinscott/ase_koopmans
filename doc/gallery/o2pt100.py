@@ -1,8 +1,8 @@
 # creates: o2pt100.png
 import numpy as np
 
-from ase.io import write
-from ase.build import fcc100, add_adsorbate
+from ase_koopmans.io import write
+from ase_koopmans.build import fcc100, add_adsorbate
 
 # the metal slab
 atoms = fcc100('Pt', size=[4, 10, 3], vacuum=10)

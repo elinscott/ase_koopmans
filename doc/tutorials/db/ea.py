@@ -1,4 +1,4 @@
-from ase.db import connect
+from ase_koopmans.db import connect
 
 refs = connect('refs.db')
 db = connect('ads.db')

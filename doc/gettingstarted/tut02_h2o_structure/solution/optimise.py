@@ -1,5 +1,5 @@
-from ase import Atoms
-from ase.optimize import BFGS
+from ase_koopmans import Atoms
+from ase_koopmans.optimize import BFGS
 from gpaw import GPAW
 
 atoms = Atoms('HOH',

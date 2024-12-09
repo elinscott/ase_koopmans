@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ase.dft import DOS
+from ase_koopmans.dft import DOS
 
 
 class MyCalc:

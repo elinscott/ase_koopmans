@@ -31,7 +31,7 @@ def birch(V, E0, B0, BP, V0):
     Chapter 9 pages 195-210 by M. Mehl. B. Klein, D. Papaconstantopoulos
     paper downloaded from Web
 
-    case_koopmans where n=0
+    case where n=0
     """
 
     E = (E0 +
@@ -257,7 +257,7 @@ class EquationOfState:
         if warn and not (minvol < self.v0 < maxvol):
             warnings.warn(
                 'The minimum volume of your fit is not in '
-                'your volumes.  You may not have a minimum in your datase_koopmanst!')
+                'your volumes.  You may not have a minimum in your dataset!')
 
         return self.v0, self.e0, self.B
 
@@ -411,7 +411,7 @@ def calculate_eos(atoms, npoints=5, eps=0.04, trajectory=None, callback=None):
 class CLICommand:
     """Calculate EOS from one or more trajectory files.
 
-    See https://wiki.fysik.dtu.dk/ase_koopmans/tutorials/eos/eos.html for
+    See https://wiki.fysik.dtu.dk/ase/tutorials/eos/eos.html for
     more information.
     """
 
@@ -436,7 +436,7 @@ class CLICommand:
                   '          [Ang^3]      [eV]         [GPa]')
         for name in args.trajectories:
             if name == '-':
-                # Special case_koopmans - used by ASE's GUI:
+                # Special case - used by ASE's GUI:
                 import pickle
                 import sys
                 v, e = pickle.load(sys.stdin.buffer)

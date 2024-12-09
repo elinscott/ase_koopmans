@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy as np
 
-from ase.dft import Wannier
+from ase_koopmans.dft import Wannier
 from gpaw import restart
 
 atoms, calc = restart('poly.gpw', txt=None)

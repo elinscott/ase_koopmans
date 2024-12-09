@@ -1,10 +1,10 @@
 """Demonstrates molecular dynamics with constant temperature."""
 from __future__ import print_function
 
-from ase.lattice.cubic import FaceCenteredCubic
-from ase.md.langevin import Langevin
-from ase.io.trajectory import Trajectory
-from ase import units
+from ase_koopmans.lattice.cubic import FaceCenteredCubic
+from ase_koopmans.md.langevin import Langevin
+from ase_koopmans.io.trajectory import Trajectory
+from ase_koopmans import units
 
 from asap3 import EMT  # Way too slow with ase.EMT !
 size = 10

@@ -1,4 +1,4 @@
-from ase.vibrations.resonant_raman import ResonantRaman
+from ase_koopmans.vibrations.resonant_raman import ResonantRaman
 
 from gpaw.cluster import Cluster
 from gpaw import GPAW, FermiDirac

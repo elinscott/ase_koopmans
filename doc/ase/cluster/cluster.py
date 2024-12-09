@@ -1,8 +1,8 @@
 # creates: culayer.png truncated.png
 
-from ase.io import write
-from ase.cluster.cubic import FaceCenteredCubic
-#from ase.cluster.hexagonal import HexagonalClosedPacked
+from ase_koopmans.io import write
+from ase_koopmans.cluster.cubic import FaceCenteredCubic
+#from ase_koopmans.cluster.hexagonal import HexagonalClosedPacked
 #import numpy as np
 
 surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]

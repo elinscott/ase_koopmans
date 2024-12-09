@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from ase.neb import NEBTools
-from ase.io import read
+from ase_koopmans.neb import NEBTools
+from ase_koopmans.io import read
 
 images = read('neb.traj@-5:')
 

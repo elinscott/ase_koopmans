@@ -1,7 +1,7 @@
 import sys
 import sphinx_rtd_theme
 
-from ase import __version__
+from ase_koopmans import __version__
 
 sys.path.append('.')
 assert sys.version_info >= (2, 7)
@@ -64,8 +64,8 @@ intersphinx_mapping = {'gpaw': ('https://wiki.fysik.dtu.dk/gpaw', None),
 # Avoid GUI windows during doctest:
 doctest_global_setup = """
 import numpy as np
-import ase.visualize as visualize
-from ase import Atoms
+import ase_koopmans.visualize as visualize
+from ase_koopmans import Atoms
 visualize.view = lambda atoms: None
 Atoms.edit = lambda self: None
 """

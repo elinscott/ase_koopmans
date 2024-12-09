@@ -1,9 +1,9 @@
 import sys
 
-from ase.build import molecule
-from ase.optimize import BFGS
-from ase.calculators.espresso import Espresso
-from ase.calculators.socketio import SocketIOCalculator
+from ase_koopmans.build import molecule
+from ase_koopmans.optimize import BFGS
+from ase_koopmans.calculators.espresso import Espresso
+from ase_koopmans.calculators.socketio import SocketIOCalculator
 
 atoms = molecule('H2O', vacuum=3.0)
 atoms.rattle(stdev=0.1)

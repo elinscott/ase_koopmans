@@ -46,7 +46,7 @@ units_CODATA1986 = {
     'me': 5.485799110E-4}       # u
 
 # CODATA2002: default in CASTEP 5.01
-# (-> check in more recent CASTEP in case_koopmans of numerical discrepancies?!)
+# (-> check in more recent CASTEP in case of numerical discrepancies?!)
 # taken from
 #    http://physics.nist.gov/cuu/Document/all_2002.pdf
 units_CODATA2002 = {
@@ -1149,7 +1149,7 @@ def read_castep_md(fd, index=None, return_scalars=False,
             temperature = factors['T'] * float(fields[0])
             continue
 
-        # only printed in case_koopmans of variable cell calculation or calculate_stress
+        # only printed in case of variable cell calculation or calculate_stress
         # explicitly requested
         if fields[-1] == 'P':
             pressure = factors['P'] * float(fields[0])
@@ -1159,13 +1159,13 @@ def read_castep_md(fd, index=None, return_scalars=False,
             cell.append([factors['h'] * hi for hi in h])
             continue
 
-        # only printed in case_koopmans of variable cell calculation
+        # only printed in case of variable cell calculation
         if fields[-1] == 'hv':
             hv = [float(x) for x in fields[0:3]]
             cell_velocities.append([factors['hv'] * hvi for hvi in hv])
             continue
 
-        # only printed in case_koopmans of variable cell calculation
+        # only printed in case of variable cell calculation
         if fields[-1] == 'S':
             S = [float(x) for x in fields[0:3]]
             stress.append([factors['S'] * Si for Si in S])

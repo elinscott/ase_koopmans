@@ -1,4 +1,4 @@
-from ase.build import bulk
+from ase_koopmans.build import bulk
 from gpaw import GPAW, PW
 
 atoms = bulk('Ag')

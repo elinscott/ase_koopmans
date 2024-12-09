@@ -1,9 +1,9 @@
 # creates: transport_setup.png
 
 import numpy as np
-from ase import Atoms
-from ase.build import molecule
-from ase.io import write
+from ase_koopmans import Atoms
+from ase_koopmans.build import molecule
+from ase_koopmans.io import write
 
 a = 3.92  # Experimental lattice constant
 sqrt = np.sqrt

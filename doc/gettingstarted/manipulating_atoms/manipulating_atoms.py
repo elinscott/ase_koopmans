@@ -5,9 +5,9 @@
 import numpy as np
 from math import sqrt
 import runpy
-from ase import Atoms
-from ase.io import read, write
-from ase.build import fcc111
+from ase_koopmans import Atoms
+from ase_koopmans.io import read, write
+from ase_koopmans.build import fcc111
 
 a = 3.55
 atoms = Atoms('Ni4',

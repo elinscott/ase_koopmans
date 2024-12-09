@@ -3,9 +3,9 @@
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-from ase.visualize.plot import plot_atoms
-from ase.lattice.cubic import FaceCenteredCubic
-from ase.spacegroup import crystal
+from ase_koopmans.visualize.plot import plot_atoms
+from ase_koopmans.lattice.cubic import FaceCenteredCubic
+from ase_koopmans.spacegroup import crystal
 
 slab = FaceCenteredCubic('Au', size=(2, 2, 2))
 fig, ax = plt.subplots()
