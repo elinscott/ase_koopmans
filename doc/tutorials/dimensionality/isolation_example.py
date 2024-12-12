@@ -1,8 +1,8 @@
 import numpy as np
-import ase.build
-from ase import Atoms
-from ase.visualize import view
-from ase.geometry.dimensionality import isolate_components
+import ase_koopmans.build
+from ase_koopmans import Atoms
+from ase_koopmans.visualize import view
+from ase_koopmans.geometry.dimensionality import isolate_components
 
 
 # build two slabs of different types of MoS2

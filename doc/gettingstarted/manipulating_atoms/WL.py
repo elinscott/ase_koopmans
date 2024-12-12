@@ -1,5 +1,5 @@
 import numpy as np
-from ase import Atoms
+from ase_koopmans import Atoms
 p = np.array(
     [[0.27802511, -0.07732213, 13.46649107],
      [0.91833251, -1.02565868, 13.41456626],

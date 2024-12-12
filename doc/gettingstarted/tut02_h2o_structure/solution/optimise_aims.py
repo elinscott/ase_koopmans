@@ -1,7 +1,7 @@
 import os
-from ase import Atoms
-from ase.optimize import BFGS
-from ase.calculators.aims import Aims
+from ase_koopmans import Atoms
+from ase_koopmans.optimize import BFGS
+from ase_koopmans.calculators.aims import Aims
 
 os.environ['ASE_AIMS_COMMAND'] = 'aims.x'
 os.environ['AIMS_SPECIES_DIR'] = '/home/alumne/software/FHIaims/species_defaults/light'

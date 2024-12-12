@@ -3,13 +3,13 @@
 
 #  ./test_ase_qmmm_manyqm.py gromacs_mm-relax.g96
 
-from ase.calculators.gromacs import Gromacs
-from ase.calculators.aims import Aims
-from ase.calculators.ase_qmmm_manyqm import AseQmmmManyqm
-from ase.optimize import BFGS
+from ase_koopmans.calculators.gromacs import Gromacs
+from ase_koopmans.calculators.aims import Aims
+from ase_koopmans.calculators.ase_qmmm_manyqm import AseQmmmManyqm
+from ase_koopmans.optimize import BFGS
 
 import sys
-from ase.io import read
+from ase_koopmans.io import read
 
 RUN_COMMAND = '/home/mka/bin/aims.071711_6.serial.x'
 SPECIES_DIR = '/home/mka/Programs/fhi-aims.071711_6/species_defaults/light/'

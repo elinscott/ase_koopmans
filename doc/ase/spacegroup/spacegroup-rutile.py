@@ -1,4 +1,4 @@
-from ase.spacegroup import crystal
+from ase_koopmans.spacegroup import crystal
 
 a = 4.6
 c = 2.95

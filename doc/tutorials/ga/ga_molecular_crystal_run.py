@@ -1,16 +1,16 @@
 import numpy as np
-from ase.io import write
-from ase.ga import get_raw_score
-from ase.ga.data import DataConnection
-from ase.ga.population import Population
-from ase.ga.utilities import closest_distances_generator, CellBounds
-from ase.ga.ofp_comparator import OFPComparator
-from ase.ga.offspring_creator import OperationSelector
-from ase.ga.cutandsplicepairing import CutAndSplicePairing
-from ase.ga.standardmutations import (RattleMutation, StrainMutation,
+from ase_koopmans.io import write
+from ase_koopmans.ga import get_raw_score
+from ase_koopmans.ga.data import DataConnection
+from ase_koopmans.ga.population import Population
+from ase_koopmans.ga.utilities import closest_distances_generator, CellBounds
+from ase_koopmans.ga.ofp_comparator import OFPComparator
+from ase_koopmans.ga.offspring_creator import OperationSelector
+from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
+from ase_koopmans.ga.standardmutations import (RattleMutation, StrainMutation,
                                       RotationalMutation,
                                       RattleRotationalMutation)
-from ase.ga.soft_mutation import SoftMutation
+from ase_koopmans.ga.soft_mutation import SoftMutation
 from ga_molecular_crystal_relax import relax
 
 

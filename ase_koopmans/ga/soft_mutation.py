@@ -102,7 +102,7 @@ class PairwiseHarmonicPotential:
 
 def get_number_of_valence_electrons(Z):
     """Return the number of valence electrons for the element with
-    atomic number Z, simply base_koopmansd on its periodic table group.
+    atomic number Z, simply based on its periodic table group.
     """
     groups = [[], [1, 3, 11, 19, 37, 55, 87], [2, 4, 12, 20, 38, 56, 88],
               [21, 39, 57, 89]]
@@ -118,7 +118,7 @@ def get_number_of_valence_electrons(Z):
             nval = i if i < 13 else i - 10
             break
     else:
-        raise ValueError('Z=%d not included in this datase_koopmanst.' % Z)
+        raise ValueError('Z=%d not included in this dataset.' % Z)
 
     return nval
 
@@ -189,7 +189,7 @@ class SoftMutation(OffspringCreator):
     to most other genetic operators.
 
     If you find this implementation useful in your work,
-    please_koopmans consider citing:
+    please consider citing:
 
     `Van den Bossche, Gronbeck, Hammer, J. Chem. Theory Comput. 14 (2018)`__
 
@@ -206,7 +206,7 @@ class SoftMutation(OffspringCreator):
     bounds: list
         Lower and upper limits (in Angstrom) for the largest
         atomic displacement in the structure. For a given mode,
-        the algorithm starts at zero amplitude and increase_koopmanss
+        the algorithm starts at zero amplitude and increases
         it until either blmin is violated or the largest
         displacement exceeds the provided upper bound).
         If the largest displacement in the resulting structure
@@ -217,7 +217,7 @@ class SoftMutation(OffspringCreator):
     calculator: ASE calculator object
         The calculator to be used in the vibrational
         analysis. The default is to use a calculator
-        base_koopmansd on pairwise harmonic potentials with force
+        based on pairwise harmonic potentials with force
         constants from the "bond electronegativity"
         model described in the reference above.
         Any calculator with a working :func:`get_forces()`

@@ -2,11 +2,11 @@ import json
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-from ase.collections import dcdft
-from ase.eos import birchmurnaghan
-from ase.io import read
-from ase.units import kJ
-from ase.utils.deltacodesdft import delta
+from ase_koopmans.collections import dcdft
+from ase_koopmans.eos import birchmurnaghan
+from ase_koopmans.io import read
+from ase_koopmans.units import kJ
+from ase_koopmans.utils.deltacodesdft import delta
 
 # Read EMT data:
 data = json.loads(Path('fit.json').read_text())

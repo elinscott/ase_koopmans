@@ -1,7 +1,7 @@
-from ase.build import molecule
-from ase.neb import NEB
-from ase.calculators.emt import EMT
-from ase.optimize.fire import FIRE as QuasiNewton
+from ase_koopmans.build import molecule
+from ase_koopmans.neb import NEB
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.optimize.fire import FIRE as QuasiNewton
 
 # Optimise molecule.
 initial = molecule('C2H6')

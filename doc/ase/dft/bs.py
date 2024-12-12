@@ -1,6 +1,6 @@
 # creates: cu.png
-from ase.build import bulk
-from ase.calculators.test import FreeElectrons
+from ase_koopmans.build import bulk
+from ase_koopmans.calculators.test import FreeElectrons
 
 a = bulk('Cu')
 a.calc = FreeElectrons(nvalence=1,

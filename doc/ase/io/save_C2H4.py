@@ -1,7 +1,7 @@
 # creates: C2H4.png
-from ase.build.molecule import molecule
-from ase.io import write
-from ase.io.pov import get_bondpairs, set_high_bondorder_pairs
+from ase_koopmans.build.molecule import molecule
+from ase_koopmans.io import write
+from ase_koopmans.io.pov import get_bondpairs, set_high_bondorder_pairs
 C2H4 = molecule('C2H4')
 r = [{'C': 0.4, 'H':0.2}[at.symbol] for at in C2H4]
 bondpairs = get_bondpairs(C2H4, radius = 1.1)

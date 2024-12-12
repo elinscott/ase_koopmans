@@ -16,7 +16,7 @@ ase.eos
 ase.formula
 ase.geometry.cell
 ase.geometry.geometry
-ase.io.ulm
+ase_koopmans.io.ulm
 ase.lattice
 ase.phasediagram
 ase.spacegroup.spacegroup

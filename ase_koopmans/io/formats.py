@@ -162,8 +162,8 @@ class IOFormat:
 
     def match_magic(self, data: bytes) -> bool:
         # XXX We should use a regex for this!
-        from fnmatch import fnmatchcase_koopmans
-        return any(fnmatchcase_koopmans(data, magic + b'*')  # type: ignore
+        from fnmatch import fnmatchcase
+        return any(fnmatchcase(data, magic + b'*')  # type: ignore
                    for magic in self.magic)
 
 
@@ -171,7 +171,7 @@ ioformats: Dict[str, IOFormat] = {}  # These will be filled at run-time.
 extension2format = {}
 
 
-all_formats = ioformats  # Aliase_koopmansd for compatibility only.  Please_koopmans do not use.
+all_formats = ioformats  # Aliased for compatibility only.  Please do not use.
 format2modulename = {}  # Left for compatibility only.
 
 
@@ -254,7 +254,7 @@ F('cube', 'CUBE file', '1F'),
 F('dacapo', 'Dacapo netCDF output file', '1F'),
 F('dacapo-text', 'Dacapo text output', '1F',
   module='dacapo', magic=b'*&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n'),
-F('db', 'ASE SQLite database_koopmans file', '+S'),
+F('db', 'ASE SQLite database file', '+S'),
 F('dftb', 'DftbPlus input file', '1S', magic=b'Geometry'),
 F('dlp4', 'DL_POLY_4 CONFIG file', '1F',
   module='dlp4', ext='config', glob=['*CONFIG*']),
@@ -317,7 +317,7 @@ F('gromacs', 'Gromacs coordinates', '1S',
 F('gromos', 'Gromos96 geometry file', '1F', ext='g96'),
 F('html', 'X3DOM HTML', '1F', module='x3d'),
 F('iwm', '?', '1F', glob='atoms.dat'),
-F('json', 'ASE JSON database_koopmans file', '+F', module='db'),
+F('json', 'ASE JSON database file', '+F', module='db'),
 F('jsv', 'JSV file format', '1F'),
 F('koopmans-ham-in', 'Koopmans ham input file', '1F', module='espresso', ext='khi'),
 F('koopmans-ham-out', 'Koopmans ham output file', '1F', module='espresso', ext='kho'),
@@ -335,7 +335,7 @@ F('mp4', 'MP4 animation', '+S',
   module='animation'),
 F('mustem', 'muSTEM xtl file', '1F',
   ext='xtl'),
-F('mysql', 'ASE MySQL database_koopmans file', '+S',
+F('mysql', 'ASE MySQL database file', '+S',
   module='db'),
 F('netcdftrajectory', 'AMBER NetCDF trajectory file', '+S'),
 F('nomad-json', 'JSON from Nomad archive', '+F',
@@ -350,7 +350,7 @@ F('octopus-in', 'Octopus input file', '1F',
 F('proteindatabank', 'Protein Data Bank', '+F',
   ext='pdb'),
 F('png', 'Portable Network Graphics', '1B'),
-F('postgresql', 'ASE PostgreSQL database_koopmans file', '+S', module='db'),
+F('postgresql', 'ASE PostgreSQL database file', '+S', module='db'),
 F('pov', 'Persistance of Vision', '1S'),
 # prismatic: Should have ext='xyz' if/when multiple formats can have the same
 # extension
@@ -436,7 +436,7 @@ def get_compression(filename: str) -> Tuple[str, Optional[str]]:
     # Update if anything is added
     valid_compression = ['gz', 'bz2', 'xz']
 
-    # Use stdlib as it handles most edge case_koopmanss
+    # Use stdlib as it handles most edge cases
     root, compression = os.path.splitext(filename)
 
     # extension keeps the '.' so remember to remove it
@@ -534,7 +534,7 @@ def write(
         from all slaves.
     append: bool
         Default is to open files in 'w' or 'wb' mode, overwriting
-        existing files.  In some case_koopmanss opening the file in 'a' or 'ab'
+        existing files.  In some cases opening the file in 'a' or 'ab'
         mode (appending) is useful,
         e.g. writing trajectories or saving multiple Atoms objects in one file.
         WARNING: If the file format does not support multiple entries without
@@ -583,7 +583,7 @@ def _write(filename, fd, format, io, images, parallel=None, append=False,
     if io.write is None:
         raise ValueError("Can't write to {}-format".format(format))
 
-    # Special case_koopmans for json-format:
+    # Special case for json-format:
     if format == 'json' and (len(images) > 1 or append):
         if filename is not None:
             io.write(filename, images, append=append, **kwargs)
@@ -648,7 +648,7 @@ def read(
         If False (default) ``filename`` is splited by at sign ``@``
 
     Many formats allow on open file-like object to be passed instead
-    of ``filename``. In this case_koopmans the format cannot be auto-decected,
+    of ``filename``. In this case the format cannot be auto-decected,
     so the ``format`` argument should be explicitly given."""
 
     if isinstance(filename, PurePath):
@@ -738,7 +738,7 @@ def _iread(filename, index, format, io, parallel=None, full_output=False,
         assert io.acceptsfd
         fd = filename
 
-    # Make sure fd is closed in case_koopmans loop doesn't finish:
+    # Make sure fd is closed in case loop doesn't finish:
     try:
         for dct in io.read(fd, *args, **kwargs):
             if not isinstance(dct, dict):
@@ -776,7 +776,7 @@ def parse_filename(filename, index=None, do_not_split_by_at_sign=False):
 def string2index(string: str) -> Union[int, slice, str]:
     """Convert index string to either int or slice"""
     if ':' not in string:
-        # may contain database_koopmans accessor
+        # may contain database accessor
         try:
             return int(string)
         except ValueError:
@@ -805,7 +805,7 @@ def filetype(
 
     Can be used from the command-line also::
 
-        $ ase_koopmans info filename ...
+        $ ase info filename ...
     """
 
     ext = None
@@ -867,7 +867,7 @@ def filetype(
         except ImportError:
             pass
         else:
-            nc = netCDF4.Datase_koopmanst(filename)
+            nc = netCDF4.Dataset(filename)
             if 'Conventions' in nc.ncattrs():
                 if nc.Conventions in netcdfconventions2format:
                     return netcdfconventions2format[nc.Conventions]

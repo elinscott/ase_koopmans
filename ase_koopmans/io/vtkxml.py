@@ -70,7 +70,7 @@ def write_vti(filename, atoms, data=None):
     spd.SetScalars(ipd.GetScalars())
     """
 
-    # Save the ImageData datase_koopmanst to a VTK XML file.
+    # Save the ImageData dataset to a VTK XML file.
     w = vtkXMLImageDataWriter()
 
     if fast:
@@ -121,7 +121,7 @@ def write_vtu(filename, atoms, data=None):
     ugd.GetPointData().AddArray(radii)
     radii.SetName("radii")
 
-    # Save the UnstructuredGrid datase_koopmanst to a VTK XML file.
+    # Save the UnstructuredGrid dataset to a VTK XML file.
     w = vtkXMLUnstructuredGridWriter()
 
     if fast:

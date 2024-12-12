@@ -1,8 +1,8 @@
-from ase.io import read
-from ase.constraints import FixAtoms
-from ase.calculators.emt import EMT
-from ase.neb import NEB
-from ase.optimize import BFGS
+from ase_koopmans.io import read
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.neb import NEB
+from ase_koopmans.optimize import BFGS
 
 initial = read('initial.traj')
 final = read('final.traj')

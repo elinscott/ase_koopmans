@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from ase.io import iread
+from ase_koopmans.io import iread
 
 energies = []
 distances = []

@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 from typing import Tuple
-from ase.eos import EquationOfState as EOS
-from ase.io import read
+from ase_koopmans.eos import EquationOfState as EOS
+from ase_koopmans.io import read
 
 
 def fit(symbol: str) -> Tuple[float, float, float, float]:

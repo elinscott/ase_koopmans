@@ -1,6 +1,6 @@
 # creates: spacegroup-al.png spacegroup-fe.png spacegroup-rutile.png spacegroup-cosb3.png spacegroup-mg.png spacegroup-skutterudite.png spacegroup-diamond.png spacegroup-nacl.png
 
-import ase.io
+import ase_koopmans.io
 
 for name in ['al', 'mg', 'fe', 'diamond', 'nacl', 'rutile', 'skutterudite']:
     py = 'spacegroup-{0}.py'.format(name)

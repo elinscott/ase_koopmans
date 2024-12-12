@@ -1,12 +1,12 @@
-from ase.build import niggli_reduce
-from ase.calculators.singlepoint import SinglePointCalculator
-from ase.optimize import FIRE
-from ase.constraints import ExpCellFilter
-from ase.ga import set_raw_score
+from ase_koopmans.build import niggli_reduce
+from ase_koopmans.calculators.singlepoint import SinglePointCalculator
+from ase_koopmans.optimize import FIRE
+from ase_koopmans.constraints import ExpCellFilter
+from ase_koopmans.ga import set_raw_score
 try:
     from asap3 import EMT
 except ImportError:
-    from ase.calculators.emt import EMT
+    from ase_koopmans.calculators.emt import EMT
 
 
 def finalize(atoms, energy=None, forces=None, stress=None):

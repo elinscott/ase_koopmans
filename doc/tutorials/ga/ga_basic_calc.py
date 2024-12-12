@@ -1,7 +1,7 @@
-from ase.optimize import BFGS
-from ase.io import read, write
-from ase.calculators.emt import EMT
-from ase.ga.relax_attaches import VariansBreak
+from ase_koopmans.optimize import BFGS
+from ase_koopmans.io import read, write
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.ga.relax_attaches import VariansBreak
 import sys
 
 

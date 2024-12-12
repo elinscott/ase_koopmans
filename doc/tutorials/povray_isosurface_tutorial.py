@@ -1,6 +1,6 @@
-from ase.calculators.vasp import VaspChargeDensity
-from ase.io.pov import add_isosurface_to_pov
-from ase import io
+from ase_koopmans.calculators.vasp import VaspChargeDensity
+from ase_koopmans.io.pov import add_isosurface_to_pov
+from ase_koopmans import io
 
 spin_cut_off = 0.4
 density_cut_off = 0.15

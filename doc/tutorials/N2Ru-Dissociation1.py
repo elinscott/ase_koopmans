@@ -1,8 +1,8 @@
-from ase import Atoms
-from ase.calculators.emt import EMT
-from ase.constraints import FixAtoms
-from ase.optimize import QuasiNewton
-from ase.io import write
+from ase_koopmans import Atoms
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.optimize import QuasiNewton
+from ase_koopmans.io import write
 
 # Find the initial and final states for the reaction.
 

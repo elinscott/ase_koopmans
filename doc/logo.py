@@ -1,6 +1,6 @@
 import numpy as np
 
-from ase import Atoms, Atom
+from ase_koopmans import Atoms, Atom
 
 ase = """\
  H   HH HHH

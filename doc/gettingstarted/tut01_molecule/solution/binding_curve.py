@@ -1,5 +1,5 @@
-from ase import Atoms
-from ase.io import Trajectory
+from ase_koopmans import Atoms
+from ase_koopmans.io import Trajectory
 from gpaw import GPAW
 
 atoms = Atoms('N2', positions=[[0, 0, -1], [0, 0, 1]])

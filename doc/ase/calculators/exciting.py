@@ -1,6 +1,6 @@
 import os
-from ase import Atoms
-from ase.calculators.exciting import Exciting
+from ase_koopmans import Atoms
+from ase_koopmans.calculators.exciting import Exciting
 
 # test structure, not real
 a = Atoms('N3O', [(0, 0, 0), (1, 0, 0), (0, 0, 1), (0.5, 0.5, 0.5)], pbc=True)

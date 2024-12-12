@@ -491,7 +491,7 @@ class SymmetrySlabPermutation(SlabOperator):
                 for _ in range(2):
                     permute2(atoms, rng=self.rng)
                 self.dcf(atoms)
-                sym_num = spglib.get_symmetry_datase_koopmanst(atoms)['number']
+                sym_num = spglib.get_symmetry_dataset(atoms)['number']
                 if sym_num >= sg:
                     break
             sg -= 1

@@ -143,7 +143,7 @@ def test_netcdftrajectory():
     # Create a NetCDF file with a per-file definition of atomic numbers. ASE
     # NetCDFTrajectory can read but not write these types of files.
     import netCDF4
-    nc = netCDF4.Datase_koopmanst('6.nc', 'w')
+    nc = netCDF4.Dataset('6.nc', 'w')
     nc.createDimension('frame', None)
     nc.createDimension('atom', 2)
     nc.createDimension('spatial', 3)
@@ -175,7 +175,7 @@ def test_netcdftrajectory():
 
     # Create a NetCDF file with a non-consecutive index.
     import netCDF4
-    nc = netCDF4.Datase_koopmanst('7.nc', 'w')
+    nc = netCDF4.Dataset('7.nc', 'w')
     nc.createDimension('frame', None)
     nc.createDimension('atom', 3)
     nc.createDimension('spatial', 3)

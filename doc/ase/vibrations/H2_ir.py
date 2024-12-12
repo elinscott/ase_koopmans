@@ -1,6 +1,6 @@
-from ase.build import molecule
-from ase import optimize
-from ase.vibrations.infrared import InfraRed
+from ase_koopmans.build import molecule
+from ase_koopmans import optimize
+from ase_koopmans.vibrations.infrared import InfraRed
 
 from gpaw.cluster import Cluster
 from gpaw import GPAW, FermiDirac

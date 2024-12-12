@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 # Monkey-patch view() to avoid ASE-GUI windows popping up:
-import ase.visualize
+import ase_koopmans.visualize
 ase.visualize.view = lambda *args, **kwargs: None
 
 fd = open('test.txt', 'w')

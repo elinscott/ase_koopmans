@@ -1,6 +1,6 @@
-from ase.calculators.emt import EMT
-from ase.collections import dcdft
-from ase.io import Trajectory
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.collections import dcdft
+from ase_koopmans.io import Trajectory
 
 for symbol in ['Al', 'Ni', 'Cu', 'Pd', 'Ag', 'Pt', 'Au']:
     traj = Trajectory('{}.traj'.format(symbol), 'w')

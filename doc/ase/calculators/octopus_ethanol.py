@@ -1,6 +1,6 @@
-from ase.collections import g2
-from ase.calculators.octopus import Octopus
-from ase.optimize import QuasiNewton
+from ase_koopmans.collections import g2
+from ase_koopmans.calculators.octopus import Octopus
+from ase_koopmans.optimize import QuasiNewton
 
 
 # Ethanol molecule with somewhat randomized initial positions:

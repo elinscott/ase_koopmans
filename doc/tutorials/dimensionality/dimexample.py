@@ -1,6 +1,6 @@
-import ase.build
-from ase.visualize import view
-from ase.geometry.dimensionality import analyze_dimensionality
+import ase_koopmans.build
+from ase_koopmans.visualize import view
+from ase_koopmans.geometry.dimensionality import analyze_dimensionality
 
 
 atoms = ase.build.mx2(formula='MoS2', kind='2H', a=3.18, thickness=3.19)
