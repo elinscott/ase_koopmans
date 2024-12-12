@@ -372,6 +372,12 @@ def read_pw_out(fileobj, index=-1, results_required=True):
         for wt_index in indexes[_PW_WALLTIME]:
             if image_index < wt_index < next_index:
                 walltime = time_to_float(pwo_lines[wt_index].split()[-2])
+        
+        # Number of electrons
+        nelec = None
+        for nelec_index in indexes[_PW_NELEC]:
+            if image_index < nelec_index < next_index:
+                nelec = float(pwo_lines[nelec_index].split()[-1].replace(')',""))
 
         # Put everything together
         calc = SinglePointDFTCalculator(structure, energy=energy,
