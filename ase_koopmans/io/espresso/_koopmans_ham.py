@@ -104,6 +104,9 @@ def read_koopmans_ham_out(fileobj):
         if 'INFO: KI[2nd] HAMILTONIAN CALCULATION ik=' in line:
             ks_eigenvalues_on_grid.append([])
             ki_eigenvalues_on_grid.append([])
+        elif 'INFO: qKI  HAMILTONIAN CALCULATION ik=' in line: # new format.
+            ks_eigenvalues_on_grid.append([])
+            ki_eigenvalues_on_grid.append([])
 
         if line.startswith('          KS '):
             ks_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('KS', ''))
