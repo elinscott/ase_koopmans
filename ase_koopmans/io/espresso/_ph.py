@@ -2,12 +2,14 @@
 
 """
 
-from ase_koopmans import Atom
 from pathlib import Path
-from ase_koopmans.utils import base_koopmansstring
+
+from ase_koopmans import Atom
 from ase_koopmans.atoms import Atoms
-from ._utils import read_fortran_namelist, time_to_float, dict_to_input_lines
 from ase_koopmans.calculators.espresso import EspressoPh
+from ase_koopmans.utils import base_koopmansstring
+
+from ._utils import dict_to_input_lines, read_fortran_namelist, time_to_float
 
 
 def read_ph_in(fileobj):
@@ -63,11 +65,7 @@ def write_ph_in(fd, atoms, **kwargs):
 
     ph = ['&inputph\n']
 
-    masses = {}
-    for i, element in enumerate(atoms.calc.parameters.pseudopotentials.keys()):
-        masses[f'amass({i+1})'] = Atom(element).mass
-
-    all_parameters = dict(**atoms.calc.parameters, **masses)
+    all_parameters = dict(**atoms.calc.parameters)
     all_parameters.pop('pseudopotentials', None)
 
     ph += dict_to_input_lines(all_parameters)
