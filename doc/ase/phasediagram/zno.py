@@ -1,7 +1,9 @@
 # creates: zno.png
-import numpy as np
 import matplotlib.pyplot as plt
-from ase.phasediagram import Pourbaix, solvated
+import numpy as np
+
+from ase_koopmans.phasediagram import Pourbaix, solvated
+
 refs = solvated('Zn')
 print(refs)
 refs += [('Zn', 0.0), ('ZnO', -3.323), ('ZnO2(aq)', -2.921)]

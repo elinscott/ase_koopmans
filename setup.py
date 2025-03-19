@@ -43,15 +43,15 @@ with open('README.rst') as fd:
     long_description = fd.read()
 
 # Get the current version number:
-with open('ase/__init__.py') as fd:
+with open('ase_koopmans/__init__.py') as fd:
     version = re.search("__version__ = '(.*)'", fd.read()).group(1)
 
 
-package_data = {'ase': ['spacegroup/spacegroup.dat',
+package_data = {'ase_kppmans': ['spacegroup/spacegroup.dat',
                         'collections/*.json',
                         'db/templates/*',
                         'db/static/*'],
-                'ase.test': ['pytest.ini',
+                'ase_koopmans.test': ['pytest.ini',
                              'data/*']}
 
 
@@ -69,7 +69,7 @@ class build_py(_build_py):
         msgfmt = 'msgfmt'
         status = os.system(msgfmt + ' -V')
         if status == 0:
-            for pofile in sorted(glob('ase/gui/po/*/LC_MESSAGES/ag.po')):
+            for pofile in sorted(glob('ase_koopmans/gui/po/*/LC_MESSAGES/ag.po')):
                 dirname = join(self.build_lib, os.path.dirname(pofile))
                 if not os.path.isdir(dirname):
                     os.makedirs(dirname)
@@ -97,12 +97,6 @@ setup(name='ase-koopmans',
       install_requires=install_requires,
       extras_require=extras_require,
       package_data=package_data,
-      entry_points={'console_scripts': ['ase=ase.cli.main:main',
-                                        'ase-db=ase.cli.main:old',
-                                        'ase-gui=ase.cli.main:old',
-                                        'ase-run=ase.cli.main:old',
-                                        'ase-info=ase.cli.main:old',
-                                        'ase-build=ase.cli.main:old']},
       long_description=long_description,
       cmdclass={'build_py': build_py},
       classifiers=[

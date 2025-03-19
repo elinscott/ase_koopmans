@@ -1,8 +1,8 @@
-from ase.calculators.emt import EMT
-from ase.db import connect
-from ase.build import fcc111, add_adsorbate
-from ase.constraints import FixAtoms
-from ase.optimize import BFGS
+from ase_koopmans.build import add_adsorbate, fcc111
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.db import connect
+from ase_koopmans.optimize import BFGS
 
 db1 = connect('bulk.db')
 db2 = connect('ads.db')

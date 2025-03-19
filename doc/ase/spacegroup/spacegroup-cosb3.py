@@ -1,6 +1,6 @@
-import ase.io as io
-from ase.build import cut
-from ase.spacegroup import crystal
+import ase_koopmans.io as io
+from ase_koopmans.build import cut
+from ase_koopmans.spacegroup import crystal
 
 a = 9.04
 skutterudite = crystal(('Co', 'Sb'),

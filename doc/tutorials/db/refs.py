@@ -1,7 +1,7 @@
-from ase import Atoms
-from ase.calculators.emt import EMT
-from ase.db import connect
-from ase.build import fcc111
+from ase_koopmans import Atoms
+from ase_koopmans.build import fcc111
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.db import connect
 
 db1 = connect('bulk.db')
 db2 = connect('ads.db')

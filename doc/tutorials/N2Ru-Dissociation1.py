@@ -1,8 +1,8 @@
-from ase import Atoms
-from ase.calculators.emt import EMT
-from ase.constraints import FixAtoms
-from ase.optimize import QuasiNewton
-from ase.io import write
+from ase_koopmans import Atoms
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.io import write
+from ase_koopmans.optimize import QuasiNewton
 
 # Find the initial and final states for the reaction.
 
@@ -10,12 +10,12 @@ from ase.io import write
 a = 2.70
 c = 1.59 * a
 sqrt3 = 3. ** .5
-bulk = Atoms('2Cu', [(0., 0., 0.), (1./3, 1./3, -0.5*c)],
+bulk = Atoms('2Cu', [(0., 0., 0.), (1. / 3, 1. / 3, -0.5 * c)],
              tags=(1, 1),
              pbc=(1, 1, 0))
-bulk.set_cell([(a,     0,              0),
+bulk.set_cell([(a, 0, 0),
                (a / 2, sqrt3 * a / 2, 0),
-               (0,     0,              1)])
+               (0, 0, 1)])
 slab = bulk.repeat((4, 4, 1))
 
 # Initial state.
@@ -23,7 +23,7 @@ slab = bulk.repeat((4, 4, 1))
 x = a / 2.
 y = a * 3. ** .5 / 6.
 z = 1.8
-d = 1.10 # N2 bond length
+d = 1.10  # N2 bond length
 
 # Molecular state parallel to the surface:
 slab += Atoms('2N', [(x, y, z), (x + sqrt3 * d / 2, y + d / 2, z)])

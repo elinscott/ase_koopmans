@@ -1,8 +1,9 @@
 from __future__ import print_function
-import numpy as np
 
-from ase.dft import Wannier
+import numpy as np
 from gpaw import restart
+
+from ase_koopmans.dft import Wannier
 
 atoms, calc = restart('poly.gpw', txt=None)
 

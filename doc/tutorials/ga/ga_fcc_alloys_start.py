@@ -1,7 +1,7 @@
 import random
 
-from ase import Atoms
-from ase.ga.data import PrepareDB
+from ase_koopmans import Atoms
+from ase_koopmans.ga.data import PrepareDB
 
 metals = ['Al', 'Au', 'Cu', 'Ag', 'Pd', 'Pt', 'Ni']
 

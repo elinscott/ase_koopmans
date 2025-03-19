@@ -1,8 +1,9 @@
-from ase.constraints import ExpCellFilter
-from ase.io import write
-from ase.optimize import BFGS
-from ase.spacegroup import crystal
 from gpaw import GPAW, PW
+
+from ase_koopmans.constraints import ExpCellFilter
+from ase_koopmans.io import write
+from ase_koopmans.optimize import BFGS
+from ase_koopmans.spacegroup import crystal
 
 a = 4.6
 c = 2.95
