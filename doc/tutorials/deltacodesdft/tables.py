@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 from ase_koopmans.collections import dcdft
 from ase_koopmans.eos import birchmurnaghan
 from ase_koopmans.io import read

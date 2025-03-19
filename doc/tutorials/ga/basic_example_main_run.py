@@ -1,18 +1,18 @@
 from random import random
-from ase_koopmans.io import write
-from ase_koopmans.optimize import BFGS
-from ase_koopmans.calculators.emt import EMT
 
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
 from ase_koopmans.ga.data import DataConnection
+from ase_koopmans.ga.offspring_creator import OperationSelector
 from ase_koopmans.ga.population import Population
 from ase_koopmans.ga.standard_comparators import InteratomicDistanceComparator
-from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
-from ase_koopmans.ga.utilities import closest_distances_generator
-from ase_koopmans.ga.utilities import get_all_atom_types
-from ase_koopmans.ga.offspring_creator import OperationSelector
-from ase_koopmans.ga.standardmutations import MirrorMutation
-from ase_koopmans.ga.standardmutations import RattleMutation
-from ase_koopmans.ga.standardmutations import PermutationMutation
+from ase_koopmans.ga.standardmutations import (MirrorMutation,
+                                               PermutationMutation,
+                                               RattleMutation)
+from ase_koopmans.ga.utilities import (closest_distances_generator,
+                                       get_all_atom_types)
+from ase_koopmans.io import write
+from ase_koopmans.optimize import BFGS
 
 # Change the following three parameters to suit your needs
 population_size = 20
@@ -70,7 +70,7 @@ for i in range(n_to_test):
         if a3_mut is not None:
             da.add_unrelaxed_step(a3_mut, desc)
             a3 = a3_mut
-        
+
     # Relax the new candidate
     a3.calc = EMT()
     dyn = BFGS(a3, trajectory=None, logfile=None)

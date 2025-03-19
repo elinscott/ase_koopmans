@@ -6,16 +6,11 @@ attribute.
 import os
 import re
 import warnings
-import numpy as np
 from copy import deepcopy
 
+import numpy as np
+
 import ase_koopmans
-
-from ase_koopmans.parallel import paropen
-from ase_koopmans.spacegroup import Spacegroup
-from ase_koopmans.geometry.cell import cellpar_to_cell
-from ase_koopmans.constraints import FixAtoms, FixedPlane, FixedLine, FixCartesian
-
 # independent unit management included here:
 # When high accuracy is required, this allows to easily pin down
 # unit conversion factors from different "unit definition systems"
@@ -23,6 +18,12 @@ from ase_koopmans.constraints import FixAtoms, FixedPlane, FixedLine, FixCartesi
 #
 # ase_koopmans.units in in ase_koopmans-3.6.0.2515 is base_koopmansd on CODATA1986
 import ase_koopmans.units
+from ase_koopmans.constraints import (FixAtoms, FixCartesian, FixedLine,
+                                      FixedPlane)
+from ase_koopmans.geometry.cell import cellpar_to_cell
+from ase_koopmans.parallel import paropen
+from ase_koopmans.spacegroup import Spacegroup
+
 units_ase_koopmans = {
     'hbar': ase_koopmans.units._hbar * ase_koopmans.units.J,
     'Eh': ase_koopmans.units.Hartree,
@@ -959,7 +960,7 @@ def read_castep_phonon(fd, index=None, read_vib_data=False,
             N = int(line.split()[3])
         elif 'Number of branches' in line:
             Nb = int(line.split()[3])
-        elif 'Number of wavevectors'in line:
+        elif 'Number of wavevectors' in line:
             Nq = int(line.split()[3])
         elif 'Unit cell vectors (A)' in line:
             for ll in range(3):
@@ -976,8 +977,8 @@ def read_castep_phonon(fd, index=None, read_vib_data=False,
         elif 'END header' in line:
             L += 1
             atoms = ase_koopmans.Atoms(symbols=symbols,
-                              scaled_positions=scaled_positions,
-                              cell=cell)
+                                       scaled_positions=scaled_positions,
+                                       cell=cell)
             break
 
         L += 1
@@ -1117,8 +1118,8 @@ def read_castep_md(fd, index=None, return_scalars=False,
                 temperatures.append(temperature)
                 pressures.append(pressure)
                 atoms = ase_koopmans.Atoms(symbols=symbols,
-                                  positions=positions,
-                                  cell=cell)
+                                           positions=positions,
+                                           cell=cell)
                 atoms.set_velocities(velocities)
                 if len(stress) == 0:
                     atoms.calc = SinglePointCalculator(

@@ -8,7 +8,6 @@
 
 from ase_koopmans.lattice import all_variants
 
-
 header = """\
 
 Brillouin zone data

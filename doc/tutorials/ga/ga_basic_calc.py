@@ -1,9 +1,9 @@
-from ase_koopmans.optimize import BFGS
-from ase_koopmans.io import read, write
-from ase_koopmans.calculators.emt import EMT
-from ase_koopmans.ga.relax_attaches import VariansBreak
 import sys
 
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.ga.relax_attaches import VariansBreak
+from ase_koopmans.io import read, write
+from ase_koopmans.optimize import BFGS
 
 fname = sys.argv[1]
 

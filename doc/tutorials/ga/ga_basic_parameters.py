@@ -1,21 +1,24 @@
 from random import random
-from ase_koopmans.io import write
+
+import numpy as np
+
+from ase_koopmans.ga import get_parametrization
+from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
 from ase_koopmans.ga.data import DataConnection
+from ase_koopmans.ga.offspring_creator import OperationSelector
+from ase_koopmans.ga.pbs_queue_run import PBSQueueRun
 from ase_koopmans.ga.population import Population
 from ase_koopmans.ga.standard_comparators import InteratomicDistanceComparator
-from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
-from ase_koopmans.ga.offspring_creator import OperationSelector
-from ase_koopmans.ga.standardmutations import MirrorMutation
-from ase_koopmans.ga.standardmutations import RattleMutation
-from ase_koopmans.ga.standardmutations import PermutationMutation
-from ase_koopmans.ga.utilities import closest_distances_generator
-from ase_koopmans.ga.utilities import get_all_atom_types
-from ase_koopmans.ga.pbs_queue_run import PBSQueueRun
-from ase_koopmans.ga import get_parametrization
-import numpy as np
-from ase_koopmans.ga.utilities import get_atoms_connections, get_atoms_distribution
-from ase_koopmans.ga.utilities import get_angles_distribution
-from ase_koopmans.ga.utilities import get_rings, get_neighborlist
+from ase_koopmans.ga.standardmutations import (MirrorMutation,
+                                               PermutationMutation,
+                                               RattleMutation)
+from ase_koopmans.ga.utilities import (closest_distances_generator,
+                                       get_all_atom_types,
+                                       get_angles_distribution,
+                                       get_atoms_connections,
+                                       get_atoms_distribution,
+                                       get_neighborlist, get_rings)
+from ase_koopmans.io import write
 
 
 def jtg(job_name, traj_file):

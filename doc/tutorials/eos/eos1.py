@@ -1,8 +1,8 @@
 import numpy as np
 
 from ase_koopmans import Atoms
-from ase_koopmans.io.trajectory import Trajectory
 from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.io.trajectory import Trajectory
 
 a = 4.0  # approximate lattice constant
 b = a / 2

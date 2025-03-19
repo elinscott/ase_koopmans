@@ -1,9 +1,9 @@
 """Demonstrates molecular dynamics with constant energy."""
 
+from ase_koopmans import units
 from ase_koopmans.lattice.cubic import FaceCenteredCubic
 from ase_koopmans.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase_koopmans.md.verlet import VelocityVerlet
-from ase_koopmans import units
 
 # Use Asap for a huge performance increase if it is installed
 use_asap = False
@@ -14,7 +14,7 @@ if use_asap:
 else:
     from ase_koopmans.calculators.emt import EMT
     size = 3
-    
+
 # Set up a crystal
 atoms = FaceCenteredCubic(directions=[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
                           symbol='Cu',
@@ -37,6 +37,7 @@ def printenergy(a):
     ekin = a.get_kinetic_energy() / len(a)
     print('Energy per atom: Epot = %.3feV  Ekin = %.3feV (T=%3.0fK)  '
           'Etot = %.3feV' % (epot, ekin, ekin / (1.5 * units.kB), epot + ekin))
+
 
 # Now run the dynamics
 printenergy(atoms)

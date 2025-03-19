@@ -17,17 +17,16 @@ or Ovito (http://www.ovito.org/, starting with version 2.3).
 """
 
 
+import collections
 import os
 import warnings
+from functools import reduce
 
 import numpy as np
 
 import ase_koopmans
-
 from ase_koopmans.data import atomic_masses
 from ase_koopmans.geometry import cellpar_to_cell
-import collections
-from functools import reduce
 
 
 class NetCDFTrajectory:

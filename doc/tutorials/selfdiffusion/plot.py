@@ -2,9 +2,9 @@
 
 from math import sqrt
 
-from ase_koopmans import Atoms, Atom
-from ase_koopmans.io import write
+from ase_koopmans import Atom, Atoms
 from ase_koopmans.data.colors import jmol_colors
+from ase_koopmans.io import write
 
 a = 4.0614
 b = a / sqrt(2)

@@ -1,6 +1,8 @@
 # creates: io.csv
 from __future__ import print_function
+
 from ase_koopmans.io.formats import all_formats, get_ioformat
+
 with open('io.csv', 'w') as fd:
     print('format, description, capabilities', file=fd)
     for format in sorted(all_formats):

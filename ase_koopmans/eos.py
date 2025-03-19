@@ -1,11 +1,9 @@
 import warnings
 
-from ase_koopmans.units import kJ
-
 import numpy as np
-
 from scipy.optimize import curve_fit
 
+from ase_koopmans.units import kJ
 
 eos_names = ['sj', 'taylor', 'murnaghan', 'birch', 'birchmurnaghan',
              'pouriertarantola', 'vinet', 'antonschmidt', 'p3']
@@ -54,7 +52,7 @@ def birchmurnaghan(V, E0, B0, BP, V0):
 
 
 def check_birchmurnaghan():
-    from sympy import symbols, Rational, diff, simplify
+    from sympy import Rational, diff, simplify, symbols
     v, b, bp, v0 = symbols('v b bp v0')
     x = (v0 / v)**Rational(2, 3)
     e = 9 * b * v0 * (x - 1)**2 * (6 + bp * (x - 1) - 4 * x) / 16
@@ -176,6 +174,7 @@ class EquationOfState:
         eos.plot(show=True)
 
     """
+
     def __init__(self, volumes, energies, eos='sj'):
         self.v = np.array(volumes)
         self.e = np.array(energies)

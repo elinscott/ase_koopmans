@@ -1,9 +1,10 @@
 # creates: culayer.png truncated.png
 
-from ase_koopmans.io import write
 from ase_koopmans.cluster.cubic import FaceCenteredCubic
-#from ase_koopmans.cluster.hexagonal import HexagonalClosedPacked
-#import numpy as np
+from ase_koopmans.io import write
+
+# from ase_koopmans.cluster.hexagonal import HexagonalClosedPacked
+# import numpy as np
 
 surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]
 layers = [6, 9, 5]
@@ -21,10 +22,10 @@ trunc.rotate(2, 'y', rotate_cell=True)
 write('truncated.pov', trunc, show_unit_cell=0, run_povray=True)
 
 # This does not work!
-#surfaces = [(0, 0, 0, 1), (1, 1, -2, 0), (1, 0, -1, 1)]
-#layers = [6, 6, 6]
-#graphite = Graphite('C', surfaces, layers, latticeconstant=(2.461, 6.708))
-#write('graphite.pov', graphite, show_unit_cell=2, run_povray=True)
+# surfaces = [(0, 0, 0, 1), (1, 1, -2, 0), (1, 0, -1, 1)]
+# layers = [6, 6, 6]
+# graphite = Graphite('C', surfaces, layers, latticeconstant=(2.461, 6.708))
+# write('graphite.pov', graphite, show_unit_cell=2, run_povray=True)
 
 # surfaces = [(0, 0, 0, 1), (1, 1, -2, 0), (1, 0, -1, 1)]
 # layers = [6, 6, 6]

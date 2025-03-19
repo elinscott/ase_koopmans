@@ -1,9 +1,9 @@
 import sys
+
 from ase_koopmans.build import molecule
 from ase_koopmans.calculators.dftb import Dftb
 from ase_koopmans.calculators.socketio import SocketIOCalculator
 from ase_koopmans.optimize import BFGS
-
 
 atoms = molecule('H2O')
 dftb = Dftb(Hamiltonian_MaxAngularMomentum_='',

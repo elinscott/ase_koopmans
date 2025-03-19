@@ -1,6 +1,7 @@
+from gpaw import GPAW
+
 from ase_koopmans import Atoms
 from ase_koopmans.optimize import BFGS
-from gpaw import GPAW
 
 atoms = Atoms('HOH',
               positions=[[0, 0, -1], [0, 1, 0], [0, 0, 1]])

@@ -1,8 +1,8 @@
 from ase_koopmans import Atoms
 from ase_koopmans.data import atomic_numbers
-from ase_koopmans.ga.utilities import closest_distances_generator, CellBounds
-from ase_koopmans.ga.startgenerator import StartGenerator
 from ase_koopmans.ga.data import PrepareDB
+from ase_koopmans.ga.startgenerator import StartGenerator
+from ase_koopmans.ga.utilities import CellBounds, closest_distances_generator
 
 # Number of random initial structures to generate
 N = 20

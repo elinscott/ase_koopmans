@@ -1,15 +1,16 @@
 """Dimer: Diffusion along rows"""
 from __future__ import print_function
-import numpy as np
 
 from math import sqrt
 
-from ase_koopmans import Atoms, Atom
-from ase_koopmans.io import Trajectory
-from ase_koopmans.constraints import FixAtoms
-from ase_koopmans.optimize import QuasiNewton
+import numpy as np
+
+from ase_koopmans import Atom, Atoms
 from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms
 from ase_koopmans.dimer import DimerControl, MinModeAtoms, MinModeTranslate
+from ase_koopmans.io import Trajectory
+from ase_koopmans.optimize import QuasiNewton
 
 # Setting up the initial image:
 a = 4.0614

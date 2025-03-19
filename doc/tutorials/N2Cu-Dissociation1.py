@@ -1,24 +1,21 @@
 from ase_koopmans import Atoms
-from ase_koopmans.build import fcc111, add_adsorbate
-
+from ase_koopmans.build import add_adsorbate, fcc111
 from ase_koopmans.calculators.emt import EMT
 from ase_koopmans.constraints import FixAtoms
-
-from ase_koopmans.optimize import QuasiNewton
-
 from ase_koopmans.io import write
+from ase_koopmans.optimize import QuasiNewton
 
 # Find the initial and final states for the reaction.
 
 # Set up a (4 x 4) two layer slab of Cu:
-slab = fcc111('Cu',size=(4,4,2))
-slab.set_pbc((1,1,0))
+slab = fcc111('Cu', size=(4, 4, 2))
+slab.set_pbc((1, 1, 0))
 
 # Initial state.
 # Add the N2 molecule oriented at 60 degrees:
-d = 1.10 # N2 bond length
-N2mol = Atoms('N2',positions=[[0.0,0.0,0.0],[0.5*3**0.5*d,0.5*d,0.0]])
-add_adsorbate(slab,N2mol,height=1.0,position='fcc')
+d = 1.10  # N2 bond length
+N2mol = Atoms('N2', positions=[[0.0, 0.0, 0.0], [0.5 * 3**0.5 * d, 0.5 * d, 0.0]])
+add_adsorbate(slab, N2mol, height=1.0, position='fcc')
 
 # Use the EMT calculator for the forces and energies:
 slab.calc = EMT()
@@ -37,7 +34,7 @@ write('N2.traj', slab)
 
 # Now the final state.
 # Move the second N atom to a neighboring hollow site:
-slab[-1].position[0] = slab[-2].position[0] + 0.25 * slab.cell[0,0]
+slab[-1].position[0] = slab[-2].position[0] + 0.25 * slab.cell[0, 0]
 slab[-1].position[1] = slab[-2].position[1]
 # and relax.
 relax.run()

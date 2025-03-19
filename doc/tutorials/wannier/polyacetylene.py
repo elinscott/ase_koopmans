@@ -1,8 +1,8 @@
 import numpy as np
+from gpaw import GPAW
 
 from ase_koopmans import Atoms
 from ase_koopmans.dft.kpoints import monkhorst_pack
-from gpaw import GPAW
 
 kpts = monkhorst_pack((13, 1, 1)) + [1e-5, 0, 0]
 calc = GPAW(h=.21, xc='PBE', kpts=kpts, nbands=12, txt='poly.txt',

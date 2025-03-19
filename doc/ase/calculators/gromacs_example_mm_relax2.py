@@ -10,9 +10,9 @@ A sample call::
    ./gromacs_example_mm_relax.py 1GM2_sol.gro
 """
 
-from ase_koopmans.calculators.gromacs import Gromacs
-
 import sys
+
+from ase_koopmans.calculators.gromacs import Gromacs
 
 infile_name = sys.argv[1]
 

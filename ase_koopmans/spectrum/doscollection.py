@@ -1,10 +1,12 @@
 import collections
 from functools import reduce, singledispatch
-from typing import (Any, Dict, Iterable, List, Optional,
-                    overload, Sequence, Tuple, TypeVar, Union)
+from typing import (Any, Dict, Iterable, List, Optional, Sequence, Tuple,
+                    TypeVar, Union, overload)
 
 import numpy as np
-from ase_koopmans.spectrum.dosdata import DOSData, RawDOSData, GridDOSData, Info
+
+from ase_koopmans.spectrum.dosdata import (DOSData, GridDOSData, Info,
+                                           RawDOSData)
 from ase_koopmans.utils import jsonable
 from ase_koopmans.utils.plotting import SimplePlottingAxes
 

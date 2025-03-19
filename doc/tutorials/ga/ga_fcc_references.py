@@ -1,9 +1,9 @@
 import numpy as np
 
-from ase_koopmans.lattice.cubic import FaceCenteredCubic
 from ase_koopmans.calculators.emt import EMT
-from ase_koopmans.eos import EquationOfState
 from ase_koopmans.db import connect
+from ase_koopmans.eos import EquationOfState
+from ase_koopmans.lattice.cubic import FaceCenteredCubic
 
 db = connect('refs.db')
 

@@ -1,6 +1,6 @@
 from ase_koopmans.build import molecule
-from ase_koopmans.neb import NEB
 from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.neb import NEB
 from ase_koopmans.optimize.fire import FIRE as QuasiNewton
 
 # Optimise molecule.
@@ -21,7 +21,7 @@ for i in range(9):
 
 for image in images:
     image.calc = EMT()
-   
+
 images.append(final)
 
 # Run IDPP interpolation.

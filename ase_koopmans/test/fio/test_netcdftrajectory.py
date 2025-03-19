@@ -3,18 +3,16 @@ def test_netcdftrajectory():
     import warnings
 
     import numpy as np
-
     from pytest import importorskip
     importorskip('netCDF4')
 
     from ase_koopmans import Atom, Atoms
-    from ase_koopmans.io import read
-    from ase_koopmans.io import NetCDFTrajectory
+    from ase_koopmans.io import NetCDFTrajectory, read
 
     co = Atoms([Atom('C', (0, 0, 0)),
                 Atom('O', (0, 0, 1.2))],
-                cell=[3, 3, 3],
-                pbc=True)
+               cell=[3, 3, 3],
+               pbc=True)
     traj = NetCDFTrajectory('1.nc', 'w', co)
     for i in range(5):
         co.positions[:, 2] += 0.1
@@ -112,14 +110,14 @@ def test_netcdftrajectory():
 
     # Check cell origin
     co.set_pbc(True)
-    co.set_celldisp([1,2,3])
+    co.set_celldisp([1, 2, 3])
     traj = NetCDFTrajectory('4.nc', 'w', co)
     traj.write(co)
     traj.close()
 
     traj = NetCDFTrajectory('4.nc', 'r')
     a = traj[0]
-    assert np.all(abs(a.get_celldisp() - np.array([1,2,3])) < 1e-12)
+    assert np.all(abs(a.get_celldisp() - np.array([1, 2, 3])) < 1e-12)
     traj.close()
 
     os.remove('4.nc')
@@ -130,13 +128,13 @@ def test_netcdftrajectory():
     traj.write(co, arrays=['id'])
     traj.close()
 
-    traj = NetCDFTrajectory('5.nc', 'r')#
+    traj = NetCDFTrajectory('5.nc', 'r')
     assert np.all(traj[0].numbers == [8, 6])
     assert np.all(np.abs(traj[0].positions - np.array([[2, 2, 3.7], [2., 2., 2.5]])) < 1e-6)
     traj.close()
 
     a = read('5.nc')
-    assert(len(a) == 2)
+    assert (len(a) == 2)
 
     os.remove('5.nc')
 
@@ -156,7 +154,7 @@ def test_netcdftrajectory():
     nc.createVariable('cell_angles', 'f4', ('frame', 'cell_angular',))
 
     r0 = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float)
-    r1 = 2*r0
+    r1 = 2 * r0
 
     nc.variables['atom_types'][:] = [1, 2]
     nc.variables['coordinates'][0] = r0
@@ -186,10 +184,10 @@ def test_netcdftrajectory():
     nc.createVariable('coordinates', 'f4', ('frame', 'atom', 'spatial',))
     nc.createVariable('cell_lengths', 'f4', ('frame', 'cell_spatial',))
     nc.createVariable('cell_angles', 'f4', ('frame', 'cell_angular',))
-    nc.createVariable('id','i', ('frame', 'atom',))
+    nc.createVariable('id', 'i', ('frame', 'atom',))
 
     r0 = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=np.float)
-    r1 = 2*r0
+    r1 = 2 * r0
 
     nc.variables['atom_types'][:] = [1, 2, 3]
     nc.variables['coordinates'][0] = r0

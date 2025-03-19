@@ -1,12 +1,12 @@
 """Demonstrates molecular dynamics for isolated particles."""
 from __future__ import print_function
 
-from ase_koopmans.cluster.cubic import FaceCenteredCubic
-from ase_koopmans.optimize import QuasiNewton
-from ase_koopmans.md.velocitydistribution import (MaxwellBoltzmannDistribution,
-                                         Stationary, ZeroRotation)
-from ase_koopmans.md.verlet import VelocityVerlet
 from ase_koopmans import units
+from ase_koopmans.cluster.cubic import FaceCenteredCubic
+from ase_koopmans.md.velocitydistribution import (MaxwellBoltzmannDistribution,
+                                                  Stationary, ZeroRotation)
+from ase_koopmans.md.verlet import VelocityVerlet
+from ase_koopmans.optimize import QuasiNewton
 
 # Use Asap for a huge performance increase if it is installed
 use_asap = True
@@ -48,6 +48,7 @@ def printenergy(a=atoms):  # store a reference to atoms in the definition.
     ekin = a.get_kinetic_energy() / len(a)
     print('Energy per atom: Epot = %.3feV  Ekin = %.3feV (T=%3.0fK)  '
           'Etot = %.3feV' % (epot, ekin, ekin / (1.5 * units.kB), epot + ekin))
+
 
 dyn.attach(printenergy, interval=10)
 

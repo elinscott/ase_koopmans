@@ -2,9 +2,8 @@ import doctest
 import importlib
 from distutils.version import LooseVersion
 
-import pytest
 import numpy as np
-
+import pytest
 
 module_names = """\
 ase.atoms

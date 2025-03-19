@@ -1,13 +1,14 @@
 """Operators that work on slabs.
 Allowed compositions are respected.
 Identical indexing of the slabs are assumed for the cut-splice operator."""
-from operator import itemgetter
 from collections import Counter
 from itertools import permutations
+from operator import itemgetter
+
 import numpy as np
 
-from ase_koopmans.ga.offspring_creator import OffspringCreator
 from ase_koopmans.ga.element_mutations import get_periodic_table_distance
+from ase_koopmans.ga.offspring_creator import OffspringCreator
 
 try:
     import spglib

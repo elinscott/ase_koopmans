@@ -1,4 +1,5 @@
 import sys
+
 import sphinx_rtd_theme
 
 from ase_koopmans import __version__

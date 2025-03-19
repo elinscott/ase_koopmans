@@ -1,15 +1,15 @@
-from ase_koopmans.io import write
-from ase_koopmans.ga import get_raw_score
-from ase_koopmans.ga.data import DataConnection
-from ase_koopmans.ga.population import Population
-from ase_koopmans.ga.utilities import closest_distances_generator, CellBounds
-from ase_koopmans.ga.ofp_comparator import OFPComparator
-from ase_koopmans.ga.offspring_creator import OperationSelector
-from ase_koopmans.ga.standardmutations import StrainMutation
-from ase_koopmans.ga.soft_mutation import SoftMutation
-from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
 from ga_bulk_relax import relax
 
+from ase_koopmans.ga import get_raw_score
+from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
+from ase_koopmans.ga.data import DataConnection
+from ase_koopmans.ga.offspring_creator import OperationSelector
+from ase_koopmans.ga.ofp_comparator import OFPComparator
+from ase_koopmans.ga.population import Population
+from ase_koopmans.ga.soft_mutation import SoftMutation
+from ase_koopmans.ga.standardmutations import StrainMutation
+from ase_koopmans.ga.utilities import CellBounds, closest_distances_generator
+from ase_koopmans.io import write
 
 # Connect to the database and retrieve some information
 da = DataConnection('gadb.db')

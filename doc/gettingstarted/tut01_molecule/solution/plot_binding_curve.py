@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from ase_koopmans.io import iread
 
 energies = []

@@ -1,4 +1,5 @@
 from gpaw import restart
+
 from ase_koopmans.dft import Wannier
 
 atoms, calc = restart('benzene.gpw', txt=None)

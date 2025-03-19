@@ -1,11 +1,11 @@
+from ga_fcc_alloys_relax import relax
+
+from ase_koopmans.ga.convergence import GenerationRepetitionConvergence
 from ase_koopmans.ga.data import DataConnection
-from ase_koopmans.ga.element_mutations import RandomElementMutation
 from ase_koopmans.ga.element_crossovers import OnePointElementCrossover
+from ase_koopmans.ga.element_mutations import RandomElementMutation
 from ase_koopmans.ga.offspring_creator import OperationSelector
 from ase_koopmans.ga.population import Population
-from ase_koopmans.ga.convergence import GenerationRepetitionConvergence
-
-from ga_fcc_alloys_relax import relax
 
 # Specify the number of generations this script will run
 num_gens = 40

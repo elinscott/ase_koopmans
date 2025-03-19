@@ -1,6 +1,6 @@
-from ase_koopmans.build import fcc100, add_adsorbate
-from ase_koopmans.constraints import FixAtoms, FixedPlane
+from ase_koopmans.build import add_adsorbate, fcc100
 from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms, FixedPlane
 from ase_koopmans.optimize import QuasiNewton
 
 # 2x2-Al(001) surface with 3 layers and an
@@ -10,12 +10,12 @@ add_adsorbate(slab, 'Au', 1.7, 'hollow')
 slab.center(axis=2, vacuum=4.0)
 
 # Make sure the structure is correct:
-#from ase_koopmans.visualize import view
-#view(slab)
+# from ase_koopmans.visualize import view
+# view(slab)
 
 # Fix second and third layers:
 mask = [atom.tag > 1 for atom in slab]
-#print(mask)
+# print(mask)
 fixlayers = FixAtoms(mask=mask)
 
 # Constrain the last atom (Au atom) to move only in the yz-plane:

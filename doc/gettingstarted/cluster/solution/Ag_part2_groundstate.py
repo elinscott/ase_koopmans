@@ -1,4 +1,5 @@
 from gpaw import GPAW, FermiDirac
+
 from ase_koopmans.io import read
 
 atoms = read('opt.traj')

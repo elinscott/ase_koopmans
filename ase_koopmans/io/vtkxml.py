@@ -1,11 +1,10 @@
 import numpy as np
 
-
 fast = False
 
 
 def write_vti(filename, atoms, data=None):
-    from vtk import vtkStructuredPoints, vtkDoubleArray, vtkXMLImageDataWriter
+    from vtk import vtkDoubleArray, vtkStructuredPoints, vtkXMLImageDataWriter
 
     # if isinstance(fileobj, str):
     #     fileobj = paropen(fileobj, 'w')
@@ -85,7 +84,7 @@ def write_vti(filename, atoms, data=None):
 
 
 def write_vtu(filename, atoms, data=None):
-    from vtk import (VTK_MAJOR_VERSION, vtkUnstructuredGrid, vtkPoints,
+    from vtk import (VTK_MAJOR_VERSION, vtkPoints, vtkUnstructuredGrid,
                      vtkXMLUnstructuredGridWriter)
     from vtk.util.numpy_support import numpy_to_vtk
 

@@ -1,11 +1,11 @@
-from ase_koopmans import Atoms
-from ase_koopmans.constraints import FixBondLengths
-from ase_koopmans.calculators.tip3p import TIP3P, rOH, angleHOH
-from ase_koopmans.md import Langevin
-import ase_koopmans.units as units
-from ase_koopmans.io.trajectory import Trajectory
 import numpy as np
 
+import ase_koopmans.units as units
+from ase_koopmans import Atoms
+from ase_koopmans.calculators.tip3p import TIP3P, angleHOH, rOH
+from ase_koopmans.constraints import FixBondLengths
+from ase_koopmans.io.trajectory import Trajectory
+from ase_koopmans.md import Langevin
 
 # Set up water box at 20 deg C density
 x = angleHOH * np.pi / 180 / 2

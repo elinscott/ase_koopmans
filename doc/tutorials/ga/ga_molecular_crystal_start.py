@@ -1,8 +1,8 @@
 from ase_koopmans import Atoms
 from ase_koopmans.data import atomic_numbers
 from ase_koopmans.ga.data import PrepareDB
-from ase_koopmans.ga.utilities import closest_distances_generator, CellBounds
 from ase_koopmans.ga.startgenerator import StartGenerator
+from ase_koopmans.ga.utilities import CellBounds, closest_distances_generator
 
 # Number of randomly generated structures
 N = 10
@@ -16,7 +16,7 @@ blocks = [('N2', 8)]
 box_volume = 30. * 8
 
 # The cell splitting scheme:
-splits = {(2,):1, (1,):1}
+splits = {(2,): 1, (1,): 1}
 
 # The minimal interatomic distances which the
 # initial structures must satisfy. We can take these
@@ -28,7 +28,7 @@ blmin = closest_distances_generator(atom_numbers=[Z],
                                     ratio_of_covalent_radii=1.3)
 
 # The bounds for the randomly generated unit cells:
-cellbounds = CellBounds(bounds={'phi': [30, 150], 'chi':[ 30, 150],
+cellbounds = CellBounds(bounds={'phi': [30, 150], 'chi': [30, 150],
                                 'psi': [30, 150], 'a': [3, 50],
                                 'b': [3, 50], 'c': [3, 50]})
 

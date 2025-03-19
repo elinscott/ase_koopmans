@@ -1,5 +1,6 @@
 # creates: ptable.png
 import numpy as np
+
 from ase_koopmans import Atoms
 
 # generates column, row positions for each element

@@ -2,12 +2,14 @@
 # creates: WL.png, Ni111slab2x2.png, WL_rot_c.png, WL_rot_a.png, WL_wrap.png
 # creates: interface-h2o-wrap.png
 
-import numpy as np
-from math import sqrt
 import runpy
+from math import sqrt
+
+import numpy as np
+
 from ase_koopmans import Atoms
-from ase_koopmans.io import read, write
 from ase_koopmans.build import fcc111
+from ase_koopmans.io import read, write
 
 a = 3.55
 atoms = Atoms('Ni4',

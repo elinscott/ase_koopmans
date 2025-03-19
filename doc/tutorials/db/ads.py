@@ -1,7 +1,7 @@
+from ase_koopmans.build import add_adsorbate, fcc111
 from ase_koopmans.calculators.emt import EMT
-from ase_koopmans.db import connect
-from ase_koopmans.build import fcc111, add_adsorbate
 from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.db import connect
 from ase_koopmans.optimize import BFGS
 
 db1 = connect('bulk.db')

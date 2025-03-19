@@ -1,6 +1,7 @@
+from gpaw import GPAW
+
 from ase_koopmans import Atoms
 from ase_koopmans.io import Trajectory
-from gpaw import GPAW
 
 atoms = Atoms('N2', positions=[[0, 0, -1], [0, 0, 1]])
 atoms.center(vacuum=3.0)

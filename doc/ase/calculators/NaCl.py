@@ -1,4 +1,4 @@
-from ase_koopmans import Atoms, Atom
+from ase_koopmans import Atom, Atoms
 from ase_koopmans.calculators.vasp import Vasp
 
 a = [6.5, 6.5, 7.7]

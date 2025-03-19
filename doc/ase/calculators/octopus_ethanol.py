@@ -1,7 +1,6 @@
-from ase_koopmans.collections import g2
 from ase_koopmans.calculators.octopus import Octopus
+from ase_koopmans.collections import g2
 from ase_koopmans.optimize import QuasiNewton
-
 
 # Ethanol molecule with somewhat randomized initial positions:
 system = g2['CH3CH2OH']

@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 
 import ase_koopmans.io
-from ase_koopmans.io import extxyz
 from ase_koopmans.atoms import Atoms
 from ase_koopmans.build import bulk
+from ase_koopmans.io import extxyz
 from ase_koopmans.test.testsuite import no_warn
 
 # array data of shape (N, 1) squeezed down to shape (N, ) -- bug fixed

@@ -1,6 +1,8 @@
 # creates: ktao-2d.png, ktao-3d.png
 import matplotlib.pyplot as plt
+
 from ase_koopmans.phasediagram import PhaseDiagram
+
 references = [('K', 0), ('Ta', 0), ('O2', 0),
               ('K3TaO8', -16.167), ('KO2', -2.288),
               ('KO3', -2.239), ('Ta2O5', -19.801),

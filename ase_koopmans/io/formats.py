@@ -17,12 +17,12 @@ import functools
 import inspect
 import os
 import sys
+from importlib import import_module
 from pathlib import Path, PurePath
-from typing import (
-    IO, List, Any, Iterable, Tuple, Union, Sequence, Dict, Optional)
+from typing import (IO, Any, Dict, Iterable, List, Optional, Sequence, Tuple,
+                    Union)
 
 from ase_koopmans.atoms import Atoms
-from importlib import import_module
 from ase_koopmans.parallel import parallel_function, parallel_generator
 
 

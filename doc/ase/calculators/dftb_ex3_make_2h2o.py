@@ -1,9 +1,10 @@
 # fun collision of:  2 H2 + O2 -> 2 H2O
 import os
+
+from ase_koopmans.build import molecule
+from ase_koopmans.calculators.dftb import Dftb
 from ase_koopmans.io import read, write
 from ase_koopmans.io.dftb import read_dftb_velocities, write_dftb_velocities
-from ase_koopmans.calculators.dftb import Dftb
-from ase_koopmans.build import molecule
 
 o2 = molecule('O2')
 h2_1 = molecule('H2')

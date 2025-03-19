@@ -1,5 +1,5 @@
-from ase_koopmans.io import read
 from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.io import read
 from ase_koopmans.neb import NEB
 from ase_koopmans.optimize import BFGS
 

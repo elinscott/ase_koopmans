@@ -1,11 +1,11 @@
 # creates: precon.png
 
+import matplotlib.pyplot as plt
+
 from ase_koopmans.build import bulk
 from ase_koopmans.calculators.emt import EMT
-from ase_koopmans.optimize.precon import Exp, PreconLBFGS
-
 from ase_koopmans.calculators.loggingcalc import LoggingCalculator
-import matplotlib.pyplot as plt
+from ase_koopmans.optimize.precon import Exp, PreconLBFGS
 
 a0 = bulk('Cu', cubic=True)
 a0 *= [3, 3, 3]

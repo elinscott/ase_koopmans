@@ -1,17 +1,18 @@
-from random import random
-from ase_koopmans.io import write
 import time
+from random import random
+
+from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
 from ase_koopmans.ga.data import DataConnection
+from ase_koopmans.ga.offspring_creator import OperationSelector
+from ase_koopmans.ga.parallellocalrun import ParallelLocalRun
 from ase_koopmans.ga.population import Population
 from ase_koopmans.ga.standard_comparators import InteratomicDistanceComparator
-from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
-from ase_koopmans.ga.offspring_creator import OperationSelector
-from ase_koopmans.ga.standardmutations import MirrorMutation
-from ase_koopmans.ga.standardmutations import RattleMutation
-from ase_koopmans.ga.standardmutations import PermutationMutation
-from ase_koopmans.ga.utilities import closest_distances_generator
-from ase_koopmans.ga.utilities import get_all_atom_types
-from ase_koopmans.ga.parallellocalrun import ParallelLocalRun
+from ase_koopmans.ga.standardmutations import (MirrorMutation,
+                                               PermutationMutation,
+                                               RattleMutation)
+from ase_koopmans.ga.utilities import (closest_distances_generator,
+                                       get_all_atom_types)
+from ase_koopmans.io import write
 
 population_size = 20
 mutation_probability = 0.3

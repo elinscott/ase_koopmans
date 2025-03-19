@@ -1,5 +1,6 @@
-from ase_koopmans.build import molecule
 from gpaw import GPAW
+
+from ase_koopmans.build import molecule
 
 atoms = molecule('C6H6')
 atoms.center(vacuum=3.5)

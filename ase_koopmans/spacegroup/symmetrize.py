@@ -3,8 +3,9 @@ Provides FixSymmetry class to preserve spacegroup symmetry during optimisation
 """
 import numpy as np
 
-from ase_koopmans.constraints import (FixConstraint, voigt_6_to_full_3x3_stress,
-                             full_3x3_to_voigt_6_stress)
+from ase_koopmans.constraints import (FixConstraint,
+                                      full_3x3_to_voigt_6_stress,
+                                      voigt_6_to_full_3x3_stress)
 
 __all__ = ['refine_symmetry', 'check_symmetry', 'FixSymmetry']
 

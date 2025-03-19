@@ -12,13 +12,18 @@ ESPRESSO.
 """
 
 import numpy as np
+
 from ase_koopmans.atoms import Atoms
-from ase_koopmans.calculators.singlepoint import SinglePointDFTCalculator, SinglePointKPoint
 from ase_koopmans.calculators.espresso import Espresso
+from ase_koopmans.calculators.singlepoint import (SinglePointDFTCalculator,
+                                                  SinglePointKPoint)
 from ase_koopmans.dft.kpoints import kpoint_convert
-from ._utils import Namelist, generic_construct_namelist, get_atomic_positions, \
-    get_cell_parameters, get_constraint, get_kpoints, get_pseudopotentials, ibrav_to_cell, \
-    label_to_symbol, read_fortran_namelist, time_to_float, units, write_espresso_in, label_to_tag
+
+from ._utils import (Namelist, generic_construct_namelist,
+                     get_atomic_positions, get_cell_parameters, get_constraint,
+                     get_kpoints, get_pseudopotentials, ibrav_to_cell,
+                     label_to_symbol, label_to_tag, read_fortran_namelist,
+                     time_to_float, units, write_espresso_in)
 
 # Section identifiers
 _PW_START = 'Program PWSCF'
@@ -374,7 +379,7 @@ def read_pw_out(fileobj, index=-1, results_required=True):
         for wt_index in indexes[_PW_WALLTIME]:
             if image_index < wt_index < next_index:
                 walltime = time_to_float(pwo_lines[wt_index].split()[-2])
-        
+
         # Number of electrons
         nelec = None
         for nelec_index in indexes[_PW_NELEC]:

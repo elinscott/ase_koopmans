@@ -1,9 +1,9 @@
 import sys
 
 from ase_koopmans.build import molecule
-from ase_koopmans.optimize import BFGS
 from ase_koopmans.calculators.espresso import Espresso
 from ase_koopmans.calculators.socketio import SocketIOCalculator
+from ase_koopmans.optimize import BFGS
 
 atoms = molecule('H2O', vacuum=3.0)
 atoms.rattle(stdev=0.1)
@@ -11,7 +11,7 @@ atoms.rattle(stdev=0.1)
 # Environment-dependent parameters (please configure before running):
 pseudopotentials = {'H': 'H.pbe-rrkjus.UPF',
                     'O': 'O.pbe-rrkjus.UPF'}
-pseudo_dir='.'
+pseudo_dir = '.'
 
 # In this example we use a UNIX socket.  See other examples for INET socket.
 # UNIX sockets are faster then INET sockets, but cannot run over a network.

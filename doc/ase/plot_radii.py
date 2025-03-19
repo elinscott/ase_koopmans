@@ -1,10 +1,11 @@
 # creates: atomic_radii.png
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+from ase_koopmans.data import chemical_symbols, covalent_radii
 from ase_koopmans.data.vdw import vdw_radii as vdw1
 from ase_koopmans.data.vdw_alvarez import vdw_radii as vdw2
-from ase_koopmans.data import covalent_radii, chemical_symbols
 
 plt.grid(ls=':')
 c1 = covalent_radii.copy()

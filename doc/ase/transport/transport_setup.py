@@ -1,6 +1,7 @@
 # creates: transport_setup.png
 
 import numpy as np
+
 from ase_koopmans import Atoms
 from ase_koopmans.build import molecule
 from ase_koopmans.io import write
@@ -37,6 +38,7 @@ def pos(atoms, x):
     atoms2 = atoms.copy()
     atoms2.translate([x, 0, 0])
     return atoms2
+
 
 princ = pos(A, 0) + pos(B, 1) + pos(C, 2)
 large = (pos(princ, -8) +

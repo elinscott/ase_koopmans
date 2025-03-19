@@ -1,8 +1,8 @@
 import numpy as np
 
-from ase_koopmans.io import read
-from ase_koopmans.constraints import FixAtoms
 from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.io import read
 from ase_koopmans.neb import NEB
 from ase_koopmans.optimize.fire import FIRE as QuasiNewton
 
@@ -15,7 +15,7 @@ constraint = FixAtoms(mask=[atom.symbol != 'N' for atom in initial])
 for config in configs:
     config.calc = EMT()
     config.set_constraint(constraint)
-    
+
 band = NEB(configs)
 band.interpolate()
 
