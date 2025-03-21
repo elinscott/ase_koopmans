@@ -5,8 +5,8 @@
 
 import sys
 from distutils.version import LooseVersion
-import numpy as np
 
+import numpy as np
 
 if sys.version_info[0] == 2:
     raise ImportError('ASE requires Python3. This is Python2.')
@@ -19,12 +19,12 @@ if LooseVersion(np.__version__) < '1.9':
 
 __all__ = ['Atoms', 'Atom']
 
-__version__ = '0.1.7'
-
-from ase_koopmans.atom import Atom
-from ase_koopmans.atoms import Atoms
+__version__ = '0.1.8'
 
 # import ase_koopmans.parallel early to avoid circular import problems when
 # ase_koopmans.parallel does "from gpaw.mpi import world":
 import ase_koopmans.parallel  # noqa
+from ase_koopmans.atom import Atom
+from ase_koopmans.atoms import Atoms
+
 ase_koopmans.parallel  # silence pyflakes
