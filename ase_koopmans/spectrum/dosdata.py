@@ -73,7 +73,6 @@ class DOSData(metaclass=ABCMeta):
         if not isinstance(other, type(self)):
             return False
         elif not self.info == other.info:
-            raise ValueError(f'{self.info} != {other.info}')
             return False
         elif not np.allclose(self.get_weights(), other.get_weights()):
             return False
