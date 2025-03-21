@@ -100,6 +100,7 @@ setup(name='ase-koopmans',
       install_requires=install_requires,
       extras_require=extras_require,
       package_data=package_data,
+      include_package_data=True,
       long_description=long_description,
       cmdclass={'build_py': build_py},
       classifiers=[
