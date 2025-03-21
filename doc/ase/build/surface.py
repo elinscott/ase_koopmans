@@ -5,11 +5,11 @@
 # creates: diamond111.png, hcp10m10.png, mx2.png, fcc111_root.png
 # creates: graphene.png
 
-from ase import Atoms
-from ase.io import write
-from ase.build import fcc111
-from ase.build import root_surface
-import ase.build as surface
+from ase_koopmans import Atoms
+from ase_koopmans.io import write
+from ase_koopmans.build import fcc111
+from ase_koopmans.build import root_surface
+import ase_koopmans.build as surface
 
 
 surfaces = ['fcc100', 'fcc110', 'bcc100', 'hcp10m10', 'diamond100',

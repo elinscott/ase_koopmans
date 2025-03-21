@@ -1,12 +1,13 @@
 """Demonstrates molecular dynamics with constant temperature."""
 from __future__ import print_function
 
-from ase.lattice.cubic import FaceCenteredCubic
-from ase.md.langevin import Langevin
-from ase.io.trajectory import Trajectory
-from ase import units
-
 from asap3 import EMT  # Way too slow with ase.EMT !
+
+from ase_koopmans import units
+from ase_koopmans.io.trajectory import Trajectory
+from ase_koopmans.lattice.cubic import FaceCenteredCubic
+from ase_koopmans.md.langevin import Langevin
+
 size = 10
 
 T = 1500  # Kelvin
@@ -32,7 +33,8 @@ def printenergy(a=atoms):  # store a reference to atoms in the definition.
     ekin = a.get_kinetic_energy() / len(a)
     print('Energy per atom: Epot = %.3feV  Ekin = %.3feV (T=%3.0fK)  '
           'Etot = %.3feV' % (epot, ekin, ekin / (1.5 * units.kB), epot + ekin))
-    
+
+
 dyn.attach(printenergy, interval=50)
 
 # We also want to save the positions of all atoms after every 100th time step.

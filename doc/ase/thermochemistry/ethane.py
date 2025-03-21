@@ -1,5 +1,6 @@
-from ase.thermochemistry import HinderedThermo
 from numpy import array
+
+from ase_koopmans.thermochemistry import HinderedThermo
 
 vibs = array([3049.060670,
               3040.796863,

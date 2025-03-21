@@ -1,10 +1,10 @@
 import numpy as np
 
-from ase.build import bulk
-from ase.calculators.lj import LennardJones
-from ase.spacegroup.symmetrize import FixSymmetry, check_symmetry
-from ase.optimize import BFGS
-from ase.constraints import UnitCellFilter
+from ase_koopmans.build import bulk
+from ase_koopmans.calculators.lj import LennardJones
+from ase_koopmans.constraints import UnitCellFilter
+from ase_koopmans.optimize import BFGS
+from ase_koopmans.spacegroup.symmetrize import FixSymmetry, check_symmetry
 
 # We setup a bcc Al cell - bcc is unstable with LJ potential
 # so without constraint this would relax back to an fcc structure

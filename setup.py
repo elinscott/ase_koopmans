@@ -4,13 +4,15 @@
 # Please see the accompanying LICENSE file for further information.
 
 from __future__ import print_function
+
 import os
 import re
 import sys
-from setuptools import setup, find_packages
 from distutils.command.build_py import build_py as _build_py
 from glob import glob
 from os.path import join
+
+from setuptools import find_packages, setup
 
 python_requires = (3, 6)
 
@@ -44,20 +46,21 @@ with open('README.rst') as fd:
     long_description = fd.read()
 
 # Get the current version number:
-with open('ase/__init__.py') as fd:
+with open('ase_koopmans/__init__.py') as fd:
     version = re.search("__version__ = '(.*)'", fd.read()).group(1)
 
 
-package_data = {'ase': ['spacegroup/spacegroup.dat',
-                        'collections/*.json',
-                        'db/templates/*',
-                        'db/static/*'],
-                'ase.test': ['pytest.ini',
-                             'data/*']}
+package_data = {'ase_koopmans': ['spacegroup/spacegroup.dat',
+                                 'collections/*.json',
+                                 'db/templates/*',
+                                 'db/static/*'],
+                'ase_koopmans.test': ['pytest.ini',
+                                      'data/*']}
 
 
 class build_py(_build_py):
     """Custom distutils command to build translations."""
+
     def __init__(self, *args, **kwargs):
         _build_py.__init__(self, *args, **kwargs)
         # Keep list of files to appease bdist_rpm.  We have to keep track of
@@ -70,7 +73,7 @@ class build_py(_build_py):
         msgfmt = 'msgfmt'
         status = os.system(msgfmt + ' -V')
         if status == 0:
-            for pofile in sorted(glob('ase/gui/po/*/LC_MESSAGES/ag.po')):
+            for pofile in sorted(glob('ase_koopmans/gui/po/*/LC_MESSAGES/ag.po')):
                 dirname = join(self.build_lib, os.path.dirname(pofile))
                 if not os.path.isdir(dirname):
                     os.makedirs(dirname)
@@ -98,12 +101,7 @@ setup(name='ase-koopmans',
       install_requires=install_requires,
       extras_require=extras_require,
       package_data=package_data,
-      entry_points={'console_scripts': ['ase=ase.cli.main:main',
-                                        'ase-db=ase.cli.main:old',
-                                        'ase-gui=ase.cli.main:old',
-                                        'ase-run=ase.cli.main:old',
-                                        'ase-info=ase.cli.main:old',
-                                        'ase-build=ase.cli.main:old']},
+      include_package_data=True,
       long_description=long_description,
       cmdclass={'build_py': build_py},
       classifiers=[

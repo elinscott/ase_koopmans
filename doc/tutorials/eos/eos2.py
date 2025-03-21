@@ -1,6 +1,7 @@
-from ase.io import read
-from ase.units import kJ
-from ase.eos import EquationOfState
+from ase_koopmans.eos import EquationOfState
+from ase_koopmans.io import read
+from ase_koopmans.units import kJ
+
 configs = read('Ag.traj@0:5')  # read 5 configurations
 # Extract volumes and energies:
 volumes = [ag.get_volume() for ag in configs]

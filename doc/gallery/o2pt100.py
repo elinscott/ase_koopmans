@@ -1,8 +1,8 @@
 # creates: o2pt100.png
 import numpy as np
 
-from ase.io import write
-from ase.build import fcc100, add_adsorbate
+from ase_koopmans.build import add_adsorbate, fcc100
+from ase_koopmans.io import write
 
 # the metal slab
 atoms = fcc100('Pt', size=[4, 10, 3], vacuum=10)
@@ -45,13 +45,13 @@ Nbulk = len(idx)
 multiples = [0, 1, -1]
 for i in multiples:
     for j in multiples:
-            if i == j == 0:
-                continue
-            chunk = atoms[idx]
-            chunk.translate(i * cell[0] + j * cell[1])
-            atoms += chunk
-            transmittances += [0.8] * Nbulk
-            textures += ['pale'] * Nbulk
+        if i == j == 0:
+            continue
+        chunk = atoms[idx]
+        chunk.translate(i * cell[0] + j * cell[1])
+        atoms += chunk
+        transmittances += [0.8] * Nbulk
+        textures += ['pale'] * Nbulk
 
 bbox = [-30, 10, 5, 25]
 

@@ -1,4 +1,4 @@
-from ase import io
+from ase_koopmans import io
 
 t = io.read('mytrajectory.traj')
 

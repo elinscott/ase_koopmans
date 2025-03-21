@@ -1,8 +1,9 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from ase.phasediagram import PhaseDiagram
-from ase.db import connect
-from ase.io import write
+import numpy as np
+
+from ase_koopmans.db import connect
+from ase_koopmans.io import write
+from ase_koopmans.phasediagram import PhaseDiagram
 
 db = connect('hull.db')
 

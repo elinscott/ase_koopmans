@@ -1,4 +1,4 @@
-from ase.utils.sphinx import mol_role, git_role_tmpl, create_png_files
+from ase_koopmans.utils.sphinx import create_png_files, git_role_tmpl, mol_role
 
 
 def git_role(role, rawtext, text, lineno, inliner, options={}, content=[]):

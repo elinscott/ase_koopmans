@@ -1,8 +1,8 @@
 # creates: dos.png
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from ase.dft import DOS
+from ase_koopmans.dft import DOS
 
 
 class MyCalc:
@@ -17,6 +17,7 @@ class MyCalc:
 
     def get_fermi_level(self):
         return 0.0
+
 
 calc = MyCalc()
 dos = DOS(calc, width=0.2)

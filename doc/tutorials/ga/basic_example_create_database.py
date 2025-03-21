@@ -1,10 +1,11 @@
-from ase.ga.data import PrepareDB
-from ase.ga.startgenerator import StartGenerator
-from ase.ga.utilities import closest_distances_generator
-from ase.ga.utilities import get_all_atom_types
-from ase.constraints import FixAtoms
 import numpy as np
-from ase.build import fcc111
+
+from ase_koopmans.build import fcc111
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.ga.data import PrepareDB
+from ase_koopmans.ga.startgenerator import StartGenerator
+from ase_koopmans.ga.utilities import (closest_distances_generator,
+                                       get_all_atom_types)
 
 db_file = 'gadb.db'
 
@@ -29,7 +30,7 @@ atom_numbers = 2 * [47] + 2 * [79]
 # define the closest distance two atoms of a given species can be to each other
 unique_atom_types = get_all_atom_types(slab, atom_numbers)
 blmin = closest_distances_generator(atom_numbers=unique_atom_types,
-                                 ratio_of_covalent_radii=0.7)
+                                    ratio_of_covalent_radii=0.7)
 
 # create the starting population
 sg = StartGenerator(slab, atom_numbers, blmin,
@@ -39,7 +40,7 @@ sg = StartGenerator(slab, atom_numbers, blmin,
 population_size = 20
 starting_population = [sg.get_new_candidate() for i in range(population_size)]
 
-# from ase.visualize import view   # uncomment these lines
+# from ase_koopmans.visualize import view   # uncomment these lines
 # view(starting_population)        # to see the starting population
 
 # create the database to store information in

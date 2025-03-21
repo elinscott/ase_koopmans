@@ -1,7 +1,9 @@
 # creates: Al_phonon.png
-from ase.build import bulk
-from ase.calculators.emt import EMT
-from ase.phonons import Phonons
+import matplotlib.pyplot as plt
+
+from ase_koopmans.build import bulk
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.phonons import Phonons
 
 # Setup crystal and EMT calculator
 atoms = bulk('Al', 'fcc', a=4.05)
@@ -21,7 +23,7 @@ bs = ph.get_band_structure(path)
 dos = ph.get_dos(kpts=(20, 20, 20)).sample_grid(npts=100, width=1e-3)
 
 # Plot the band structure and DOS:
-import matplotlib.pyplot as plt
+
 fig = plt.figure(1, figsize=(7, 4))
 ax = fig.add_axes([.12, .07, .67, .85])
 
@@ -40,8 +42,8 @@ dosax.set_xlabel("DOS", fontsize=18)
 fig.savefig('Al_phonon.png')
 
 # --- literalinclude division line ---
-# from ase.io.trajectory import Trajectory
-# from ase.io import write
+# from ase_koopmans.io.trajectory import Trajectory
+# from ase_koopmans.io import write
 
 # Write modes for specific q-vector to trajectory files:
 L = path.special_points['L']

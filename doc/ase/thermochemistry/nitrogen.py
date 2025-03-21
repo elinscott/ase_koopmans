@@ -1,8 +1,8 @@
-from ase.build import molecule
-from ase.calculators.emt import EMT
-from ase.optimize import QuasiNewton
-from ase.vibrations import Vibrations
-from ase.thermochemistry import IdealGasThermo
+from ase_koopmans.build import molecule
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.optimize import QuasiNewton
+from ase_koopmans.thermochemistry import IdealGasThermo
+from ase_koopmans.vibrations import Vibrations
 
 atoms = molecule('N2')
 atoms.calc = EMT()

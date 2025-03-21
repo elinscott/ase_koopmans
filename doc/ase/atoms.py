@@ -1,7 +1,7 @@
 # creates: Au-wire.png
 
-from ase import Atoms
-from ase.io import write
+from ase_koopmans import Atoms
+from ase_koopmans.io import write
 
 d = 2.9
 L = 10.0
