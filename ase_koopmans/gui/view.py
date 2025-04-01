@@ -1,5 +1,5 @@
 from math import cos, sin, sqrt
-from os.path import base_koopmansname
+from os.path import basename
 
 import numpy as np
 
@@ -7,10 +7,10 @@ from ase_koopmans.calculators.calculator import PropertyNotImplementedError
 from ase_koopmans.data import atomic_numbers
 from ase_koopmans.data.colors import jmol_colors
 from ase_koopmans.geometry import complete_cell
+from ase_koopmans.gui.colors import ColorWindow
+from ase_koopmans.gui.render import Render
 from ase_koopmans.gui.repeat import Repeat
 from ase_koopmans.gui.rotate import Rotate
-from ase_koopmans.gui.render import Render
-from ase_koopmans.gui.colors import ColorWindow
 from ase_koopmans.gui.utils import get_magmoms
 from ase_koopmans.utils import rotate
 
@@ -124,7 +124,7 @@ class View:
         if fname is None:
             title = 'ase_koopmans.gui'
         else:
-            title = base_koopmansname(fname)
+            title = basename(fname)
 
         self.window.title = title
 
