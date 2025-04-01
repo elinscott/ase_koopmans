@@ -4,11 +4,12 @@ from typing import Tuple
 import numpy as np
 
 from ase_koopmans import __version__
-from ase_koopmans.calculators.singlepoint import SinglePointCalculator, all_properties
-from ase_koopmans.constraints import dict2constraint
-from ase_koopmans.calculators.calculator import PropertyNotImplementedError
 from ase_koopmans.atoms import Atoms
-from ase_koopmans.io.jsonio import encode, decode
+from ase_koopmans.calculators.calculator import PropertyNotImplementedError
+from ase_koopmans.calculators.singlepoint import (SinglePointCalculator,
+                                                  all_properties)
+from ase_koopmans.constraints import dict2constraint
+from ase_koopmans.io.jsonio import decode, encode
 from ase_koopmans.io.pickletrajectory import PickleTrajectory
 from ase_koopmans.parallel import world
 
@@ -51,6 +52,7 @@ def Trajectory(filename, mode='r', atoms=None, properties=None, master=None):
 
 class TrajectoryWriter:
     """Writes Atoms objects to a .traj file."""
+
     def __init__(self, filename, mode='w', atoms=None, properties=None,
                  extra=[], master=None):
         """A Trajectory writer, in write or append mode.
@@ -209,6 +211,7 @@ class TrajectoryWriter:
 
 class TrajectoryReader:
     """Reads Atoms objects from a .traj file."""
+
     def __init__(self, filename):
         """A Trajectory in read mode.
 
@@ -338,9 +341,9 @@ def read_atoms(backend,
         try:
             return read_atoms(backend, header, traj, False)
         except Exception as ex:
-            from distutils.version import LooseVersion
+            from packaging.version import Version
             if (traj is not None and
-                LooseVersion(__version__) < traj.ase_koopmans_version):
+                Version(__version__) < traj.ase_koopmans_version):
                 msg = ('You are trying to read a trajectory file written ' +
                        'with ASE-{v1} from ASE-{v2}. ' +
                        'It might help to update your ASE').format(

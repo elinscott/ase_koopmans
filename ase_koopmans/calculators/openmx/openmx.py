@@ -20,21 +20,25 @@
 """
 
 import os
-import time
-import subprocess
 import re
+import subprocess
+import time
 import warnings
-from distutils.version import LooseVersion
+
 import numpy as np
-from ase_koopmans.geometry import cell_to_cellpar
-from ase_koopmans.calculators.calculator import (FileIOCalculator, Calculator, equal,
-                                        all_changes, kptdensity2monkhorstpack,
-                                        PropertyNotImplementedError)
-from ase_koopmans.calculators.openmx.parameters import OpenMXParameters
+from packaging.version import Version
+
+from ase_koopmans.calculators.calculator import (Calculator, FileIOCalculator,
+                                                 PropertyNotImplementedError,
+                                                 all_changes, equal,
+                                                 kptdensity2monkhorstpack)
 from ase_koopmans.calculators.openmx.default_settings import default_dictionary
-from ase_koopmans.calculators.openmx.reader import read_openmx, get_file_name
+from ase_koopmans.calculators.openmx.parameters import OpenMXParameters
+from ase_koopmans.calculators.openmx.reader import get_file_name, read_openmx
 from ase_koopmans.calculators.openmx.writer import write_openmx
-#from ase_koopmans.calculators.openmx.dos import DOS
+from ase_koopmans.geometry import cell_to_cellpar
+
+# from ase_koopmans.calculators.openmx.dos import DOS
 
 
 class OpenMX(FileIOCalculator):
@@ -276,13 +280,13 @@ class OpenMX(FileIOCalculator):
         pbs_Name = get_file_name('', self.label)
         files = [
             # prefix+'.out',#prefix+'.dat',#prefix+'.BAND*',
-            fileName + '.cif', fileName + '.dden.cube', fileName + \
+            fileName + '.cif', fileName + '.dden.cube', fileName +
             '.ene', fileName + '.md', fileName + '.md2',
-            fileName + '.tden.cube', fileName + '.sden.cube', fileName + \
+            fileName + '.tden.cube', fileName + '.sden.cube', fileName +
             '.v0.cube', fileName + '.v1.cube',
-            fileName + '.vhart.cube', fileName + '.den0.cube', fileName + \
+            fileName + '.vhart.cube', fileName + '.den0.cube', fileName +
             '.bulk.xyz', fileName + '.den1.cube',
-            fileName + '.xyz', pbs_Name + '.o' + \
+            fileName + '.xyz', pbs_Name + '.o' +
             str(queue_num), pbs_Name + '.e' + str(queue_num)
         ]
         for f in files:
@@ -362,7 +366,7 @@ class OpenMX(FileIOCalculator):
             debug = self.debug
         if nohup is None:
             nohup = self.nohup
-        self.prind('Reading input file'+self.label)
+        self.prind('Reading input file' + self.label)
         filename = get_file_name('.dat', self.label)
         if not nohup:
             with open(filename, 'r') as f:
@@ -473,7 +477,7 @@ class OpenMX(FileIOCalculator):
                 threads_string = ''
             command += 'mpirun -np ' + \
                 str(processes) + ' ' + self.command + ' %s ' + threads_string + ' |tee %s'
-                #str(processes) + ' openmx %s' + threads_string + ' > %s'
+            # str(processes) + ' openmx %s' + threads_string + ' > %s'
 
         if runfile is None:
             runfile = abs_dir + '/' + self.prefix + '.dat'
@@ -496,7 +500,7 @@ class OpenMX(FileIOCalculator):
             atoms = self.atoms
 
         def check_version():
-            if LooseVersion(self.version) < '3.8':
+            if Version(self.version) < '3.8':
                 raise PropertyNotImplementedError(
                     'Version lower than 3.8 does not support stress '
                     'calculation.  Your version is %s' % self.version)
@@ -558,7 +562,7 @@ class OpenMX(FileIOCalculator):
             for i, kpath in enumerate(band_kpath):
                 end = False
                 nband = int(kpath[0])
-                if(band_nkpath == i):
+                if (band_nkpath == i):
                     end = True
                     nband += 1
                 ini = np.array(kpath[1:4], dtype=float)
