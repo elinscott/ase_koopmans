@@ -1,15 +1,14 @@
-from distutils.version import LooseVersion
 import numpy as np
 import pytest
+from packaging.version import Version
 
 from ase_koopmans import Atoms
-from ase_koopmans.io import read
-from ase_koopmans.build import bulk
 from ase_koopmans.atoms import symbols2numbers
+from ase_koopmans.build import bulk
+from ase_koopmans.io import read
 
-
-pytestmark = pytest.mark.skipif(LooseVersion(np.__version__) <
-                                LooseVersion("1.14"),
+pytestmark = pytest.mark.skipif(Version(np.__version__) <
+                                Version("1.14"),
                                 reason="This test requires numpy >= 1.14")
 
 

@@ -1,6 +1,5 @@
-from distutils.version import LooseVersion
-
 import numpy as np
+from packaging.version import Version
 
 from ase_koopmans.io.eps import EPS
 
@@ -24,11 +23,11 @@ class PNG(EPS):
             # Old version of matplotlib:
             renderer._renderer.write_png(self.filename)
         else:
-            from matplotlib import _png
             # buffer_rgba does not accept arguments from version 1.2.0
             # https://github.com/matplotlib/matplotlib/commit/f4fee350f9f
             import matplotlib
-            if LooseVersion(matplotlib.__version__) < '1.2.0':
+            from matplotlib import _png
+            if Version(matplotlib.__version__) < '1.2.0':
                 _png.write_png(renderer.buffer_rgba(0, 0),
                                renderer.width, renderer.height,
                                self.filename, 72)

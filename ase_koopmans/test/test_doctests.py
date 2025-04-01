@@ -1,9 +1,9 @@
 import doctest
 import importlib
-from distutils.version import LooseVersion
 
 import numpy as np
 import pytest
+from packaging.version import Version
 
 module_names = """\
 ase.atoms
@@ -31,7 +31,7 @@ def test_doctest(modname):
     # Older numpies format arrays differently.
     # We use the printoptions contextmanager from numpy 1.15:
     # https://docs.scipy.org/doc/numpy/release.html#id45
-    if LooseVersion(np.__version__) < '1.15':
+    if Version(np.__version__) < '1.15':
         pytest.skip('need numpy >= 1.15')
 
     mod = importlib.import_module(modname)

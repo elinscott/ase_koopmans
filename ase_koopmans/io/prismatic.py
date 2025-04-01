@@ -12,14 +12,15 @@ import numpy as np
 
 from ase_koopmans.atoms import Atoms, symbols2numbers
 from ase_koopmans.utils import reader
+
 from .utils import verify_cell_for_export, verify_dictionary
 
 
 def check_numpy_version():
     # This writer doesn't support numpy < 1.14 because of the issue:
     # https://github.com/numpy/numpy/issues/10018
-    from distutils.version import LooseVersion
-    if LooseVersion(np.__version__) < LooseVersion("1.14"):
+    from packaging.version import Version
+    if Version(np.__version__) < Version("1.14"):
         raise NotImplementedError("Writing this format needs numpy >= 1.14.")
 
 
