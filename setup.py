@@ -8,11 +8,11 @@ from __future__ import print_function
 import os
 import re
 import sys
-from distutils.command.build_py import build_py as _build_py
 from glob import glob
 from os.path import join
 
 from setuptools import find_packages, setup
+from setuptools.command.build_py import build_py as _build_py
 
 python_requires = (3, 6)
 
