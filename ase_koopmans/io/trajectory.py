@@ -343,7 +343,7 @@ def read_atoms(backend,
         except Exception as ex:
             from packaging.version import Version
             if (traj is not None and
-                Version(__version__) < traj.ase_koopmans_version):
+                Version(__version__) < Version(traj.ase_koopmans_version)):
                 msg = ('You are trying to read a trajectory file written ' +
                        'with ASE-{v1} from ASE-{v2}. ' +
                        'It might help to update your ASE').format(

@@ -500,7 +500,7 @@ class OpenMX(FileIOCalculator):
             atoms = self.atoms
 
         def check_version():
-            if Version(self.version) < '3.8':
+            if Version(self.version) < Version('3.8'):
                 raise PropertyNotImplementedError(
                     'Version lower than 3.8 does not support stress '
                     'calculation.  Your version is %s' % self.version)
