@@ -30,7 +30,7 @@ class EPS(PlottingVariables):
 
     def write_header(self):
         import matplotlib
-        if Version(matplotlib.__version__) <= '0.8':
+        if Version(matplotlib.__version__) <= Version('0.8'):
             raise RuntimeError('Your version of matplotlib (%s) is too old' %
                                matplotlib.__version__)
 
