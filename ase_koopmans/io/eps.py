@@ -1,5 +1,7 @@
 import time
-from distutils.version import LooseVersion
+
+from packaging.version import Version
+
 from ase_koopmans.io.utils import PlottingVariables, make_patch_list
 
 
@@ -28,7 +30,7 @@ class EPS(PlottingVariables):
 
     def write_header(self):
         import matplotlib
-        if LooseVersion(matplotlib.__version__) <= '0.8':
+        if Version(matplotlib.__version__) <= Version('0.8'):
             raise RuntimeError('Your version of matplotlib (%s) is too old' %
                                matplotlib.__version__)
 

@@ -4,15 +4,15 @@
 """Atomic Simulation Environment."""
 
 import sys
-from distutils.version import LooseVersion
 
 import numpy as np
+from packaging.version import Version
 
 if sys.version_info[0] == 2:
     raise ImportError('ASE requires Python3. This is Python2.')
 
 
-if LooseVersion(np.__version__) < '1.9':
+if Version(np.__version__) < Version('1.9'):
     raise ImportError(
         'ASE needs NumPy-1.9.0 or later. You have: %s' % np.__version__)
 
