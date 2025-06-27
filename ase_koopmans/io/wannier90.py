@@ -295,9 +295,9 @@ def proj_string_to_dict(string):
     if '=' in site:
         site_vec = parse_value(site.split('=')[1].split(','))
         if site.startswith('c'):
-            proj['csite'] = site_vec
+            proj['cartesian_site'] = site_vec
         else:
-            proj['fsite'] = site_vec
+            proj['fractional_site'] = site_vec
     else:
         proj['site'] = site
 
