@@ -1,10 +1,10 @@
-import ase_koopmans
 from typing import Mapping, Sequence, Union
-import numpy as np
-from ase_koopmans.utils import deprecated
-from ase_koopmans.utils.arraywrapper import arraylike
-from ase_koopmans.utils import pbc2pbc
 
+import numpy as np
+
+import ase_koopmans
+from ase_koopmans.utils import deprecated, pbc2pbc
+from ase_koopmans.utils.arraywrapper import arraylike
 
 __all__ = ['Cell']
 
@@ -13,6 +13,8 @@ __all__ = ['Cell']
 # know.  So we have it default to a non-None placeholder object instead:
 deprecated_placeholder = object()
 deprecation_msg = 'Cell object will no longer have pbc'
+
+
 def warn_with_pbc(array, pbc):
     if pbc is not deprecated_placeholder:
         import warnings
@@ -179,13 +181,14 @@ class Cell:
             bandpath = lat.bandpath(path, npoints=npoints, density=density)
             return bandpath.transform(op)
         else:
-            from ase_koopmans.dft.kpoints import BandPath, resolve_custom_points
+            from ase_koopmans.dft.kpoints import (BandPath,
+                                                  resolve_custom_points)
             path = resolve_custom_points(path, special_points, eps=eps)
             bandpath = BandPath(cell, path=path, special_points=special_points)
             return bandpath.interpolate(npoints=npoints, density=density)
 
-
     # XXX adapt the transformation stuff and include in the bandpath method.
+
     def oldbandpath(self, path=None, npoints=None, density=None, eps=2e-4):
         """Legacy implementation, please_koopmans ignore."""
         bravais = self.get_bravais_lattice(eps=eps)
@@ -234,11 +237,15 @@ class Cell:
         """Return an array with the three angles alpha, beta, and gamma."""
         return self.cellpar()[3:].copy()
 
-    def __array__(self, dtype=float):
+    def __array__(self, dtype=float, copy=False):
         if dtype != float:
             raise ValueError('Cannot convert cell to array of type {}'
                              .format(dtype))
-        return self.array
+
+        if copy:
+            return self.array.copy()
+        else:
+            return self.array
 
     def __bool__(self):
         return bool(self.any())  # need to convert from np.bool_
