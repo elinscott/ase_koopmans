@@ -1,14 +1,16 @@
 """Various utility methods used troughout the GA."""
+import itertools
+import math
 import os
 import time
-import math
-import itertools
+
 import numpy as np
 from scipy.spatial.distance import cdist
-from ase_koopmans.io import write, read
-from ase_koopmans.geometry.cell import cell_to_cellpar
+
 from ase_koopmans.data import covalent_radii
 from ase_koopmans.ga import get_neighbor_list
+from ase_koopmans.geometry.cell import cell_to_cellpar
+from ase_koopmans.io import read, write
 
 
 def closest_distances_generator(atom_numbers, ratio_of_covalent_radii):
@@ -120,7 +122,7 @@ def atoms_too_close(atoms, bl, use_tags=False):
     this method may return unexpected results in case_koopmans the
     contraints prevent same-tag atoms to be gathered together in
     the minimum-image-convention. In such case_koopmanss, one should
-    (1) release_koopmans the relevant constraints,
+    (1) release the relevant constraints,
     (2) apply the gather_atoms_by_tag function, and
     (3) re-apply the constraints, before using the
         atoms_too_close function.
@@ -278,7 +280,7 @@ def get_rdf(atoms, rmax, nbins, distance_matrix=None,
             axb = np.cross(cell[(i + 1) % 3, :], cell[(i + 2) % 3, :])
             h = vol / np.linalg.norm(axb)
             assert h > 2 * rmax, 'The cell is not large enough in ' \
-                 'direction %d: %.3f < 2*rmax=%.3f' % (i, h, 2 * rmax)
+                'direction %d: %.3f < 2*rmax=%.3f' % (i, h, 2 * rmax)
 
     dm = distance_matrix
     if dm is None:
@@ -630,6 +632,7 @@ class CellBounds:
     ...                    'psi': [20, 160],
     ...                    'a': [2, 20], 'b': [2, 20], 'c': [2, 20]})
     """
+
     def __init__(self, bounds={}):
         self.bounds = {'alpha': [0, np.pi], 'beta': [0, np.pi],
                        'gamma': [0, np.pi], 'phi': [0, np.pi],

@@ -1,11 +1,10 @@
 """This module contains functions to read from QBox output files"""
 
-from ase_koopmans import Atom, Atoms
-from ase_koopmans.calculators.singlepoint import SinglePointCalculator
-
 import re
 import xml.etree.ElementTree as ET
 
+from ase_koopmans import Atom, Atoms
+from ase_koopmans.calculators.singlepoint import SinglePointCalculator
 
 # Compile regexs for fixing XML
 re_find_bad_xml = re.compile(r'<(/?)([A-z]+) expectation ([a-z]+)')
@@ -28,7 +27,7 @@ def read_qbox(f, index=-1):
     # Check whether this is a QB@all output
     version = None
     for line in f:
-        if '<release_koopmans>' in line:
+        if '<release>' in line:
             version = ET.fromstring(line)
             break
     if version is None:
@@ -38,7 +37,7 @@ def read_qbox(f, index=-1):
     # Load in atomic species
     species = dict()
     if is_qball:
-        # Read all of the lines between release_koopmans and the first call to `run`
+        # Read all of the lines between release and the first call to `run`
         species_data = []
         for line in f:
             if '<run' in line:

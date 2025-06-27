@@ -6,17 +6,18 @@ Read structures from kcw.x (wann2kcw mode) input files.
 """
 
 from ase_koopmans.atoms import Atoms
+from ase_koopmans.calculators.espresso import Wann2KC
 from ase_koopmans.calculators.singlepoint import SinglePointDFTCalculator
 from ase_koopmans.utils import base_koopmansstring
-from ._utils import Namelist, read_fortran_namelist, generic_construct_namelist, time_to_float, dict_to_input_lines
-from ase_koopmans.calculators.espresso import Wann2KC
 
+from ._utils import (Namelist, dict_to_input_lines, generic_construct_namelist,
+                     read_fortran_namelist, time_to_float)
 
 KEYS = Namelist((
     ('control', ['prefix', 'outdir', 'kcw_iverbosity', 'kcw_at_ks', 'calculation', 'lrpa',
                  'mp1', 'mp2', 'mp3', 'homo_only', 'read_unitary_matrix', 'l_vcut', 'assume_isolated',
                  'spin_component']),
-    ('wannier', ['seedname', 'check_ks', 'num_wann_occ', 'num_wann_emp', 'have_empty', 'has_disentangle'])))
+    ('wannier', ['seedname', 'check_ks', 'num_wann_occ', 'num_wann_emp', 'have_empty', 'has_disentangle', 'l_unique_manifold'])))
 
 
 def write_wann2kc_in(fd, atoms, input_data=None, pseudopotentials=None,

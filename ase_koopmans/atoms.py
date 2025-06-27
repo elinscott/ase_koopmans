@@ -10,16 +10,18 @@ object.
 import copy
 import numbers
 import warnings
-from math import cos, sin, pi
+from math import cos, pi, sin
 
 import numpy as np
 
 import ase_koopmans.units as units
 from ase_koopmans.atom import Atom
 from ase_koopmans.cell import Cell
-from ase_koopmans.constraints import FixConstraint, FixBondLengths, FixLinearTriatomic
+from ase_koopmans.constraints import (FixBondLengths, FixConstraint,
+                                      FixLinearTriatomic)
 from ase_koopmans.data import atomic_masses, atomic_masses_common
-from ase_koopmans.geometry import wrap_positions, find_mic, get_angles, get_distances
+from ase_koopmans.geometry import (find_mic, get_angles, get_distances,
+                                   wrap_positions)
 from ase_koopmans.symbols import Symbols, symbols2numbers
 from ase_koopmans.utils import deprecated
 
@@ -668,7 +670,8 @@ class Atoms(object):
         try:
             return self._calc.get_charges(self)
         except AttributeError:
-            from ase_koopmans.calculators.calculator import PropertyNotImplementedError
+            from ase_koopmans.calculators.calculator import \
+                PropertyNotImplementedError
             raise PropertyNotImplementedError
 
     def set_positions(self, newpositions, apply_constraint=True):
@@ -1153,7 +1156,7 @@ class Atoms(object):
                 raise ValueError('Cannot repeat along undefined lattice '
                                  'vector')
 
-        M = np.product(m)
+        M = np.prod(m)
         n = len(self)
 
         for name, a in self.arrays.items():
@@ -2040,8 +2043,8 @@ class Atoms(object):
         please_koopmans set matplotlib.use('gtk') before calling this
         method.
         """
-        from ase_koopmans.gui.images import Images
         from ase_koopmans.gui.gui import GUI
+        from ase_koopmans.gui.images import Images
         images = Images([self])
         gui = GUI(images)
         gui.run()

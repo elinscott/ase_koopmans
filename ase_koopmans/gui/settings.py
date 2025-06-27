@@ -1,6 +1,5 @@
-from ase_koopmans.gui.i18n import _
-
 import ase_koopmans.gui.ui as ui
+from ase_koopmans.gui.i18n import _
 
 
 class Settings:
@@ -12,7 +11,7 @@ class Settings:
         win.add(_('Constraints:'))
         win.add([ui.Button(_('Constrain'), self.constrain_selected),
                  '/',
-                 ui.Button(_('release_koopmans'), self.release_koopmans_selected),
+                 ui.Button(_('release'), self.release_selected),
                  _(' selected atoms')])
         win.add(ui.Button(_('Constrain immobile atoms'), self.immobile))
         win.add(ui.Button(_('Clear all constraints'), self.clear_constraints))
@@ -76,13 +75,13 @@ class Settings:
         self.gui.images.set_dynamic(self.gui.images.selected, False)
         self.gui.draw()
 
-    def release_koopmans_selected(self):
+    def release_selected(self):
         self.gui.images.set_dynamic(self.gui.images.selected, True)
         self.gui.draw()
 
     def immobile(self):
         # wtf? XXX detect non-moving atoms somehow
-        #self.gui.images.set_dynamic()
+        # self.gui.images.set_dynamic()
         self.gui.draw()
 
     def clear_constraints(self):

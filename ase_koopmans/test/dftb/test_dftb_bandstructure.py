@@ -12,8 +12,8 @@ def test_dftb_bandstructure(dftb_factory):
     # whether to skip this test or not.
     # For this, we need to run DFTB+ and grep
     # the version from the output header.
-    #cmd = os.environ['ASE_DFTB_COMMAND'].split()[0]
-    #cmd = dftb_factory.ex
+    # cmd = os.environ['ASE_DFTB_COMMAND'].split()[0]
+    # cmd = dftb_factory.ex
 
     if 0:
         cmd = 'xxxxx'
@@ -21,7 +21,7 @@ def test_dftb_bandstructure(dftb_factory):
         lines = ''
         for line in proc.stdout:
             l = line.decode()
-            if 'DFTB+' in l and ('version' in l.lower() or 'release_koopmans' in l.lower()):
+            if 'DFTB+' in l and ('version' in l.lower() or 'release' in l.lower()):
                 version = l[l.index('DFTB+'):]
                 break
             lines += l + '\n'
@@ -35,7 +35,7 @@ def test_dftb_bandstructure(dftb_factory):
     # The actual testing starts here
     calc = dftb_factory.calc(
         label='dftb',
-        kpts=(3,3,3),
+        kpts=(3, 3, 3),
         Hamiltonian_SCC='Yes',
         Hamiltonian_SCCTolerance=1e-5,
         Hamiltonian_MaxAngularMomentum_Si='d'
@@ -50,16 +50,16 @@ def test_dftb_bandstructure(dftb_factory):
 
     # DOS does not currently work because of
     # missing "get_k_point_weights" function
-    #from ase_koopmans.dft.dos import DOS
-    #dos = DOS(calc, width=0.2)
-    #d = dos.get_dos()
-    #e = dos.get_energies()
-    #print(d, e)
+    # from ase_koopmans.dft.dos import DOS
+    # dos = DOS(calc, width=0.2)
+    # d = dos.get_dos()
+    # e = dos.get_energies()
+    # print(d, e)
 
     calc = dftb_factory.calc(
         atoms=atoms,
         label='dftb',
-        kpts={'path':'WGXWLG', 'npoints':50},
+        kpts={'path': 'WGXWLG', 'npoints': 50},
         Hamiltonian_SCC='Yes',
         Hamiltonian_MaxSCCIterations=1,
         Hamiltonian_ReadInitialCharges='Yes',
@@ -69,6 +69,6 @@ def test_dftb_bandstructure(dftb_factory):
     atoms.calc = calc
     calc.calculate(atoms)
 
-    #calc.results['fermi_levels'] = [efermi]
+    # calc.results['fermi_levels'] = [efermi]
     calc.band_structure()
     # Maybe write the band structure or assert something?

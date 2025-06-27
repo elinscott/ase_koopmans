@@ -3,6 +3,7 @@ outputs."""
 
 import os
 import sys
+
 import numpy as np
 
 from ase_koopmans import units
@@ -533,7 +534,7 @@ class IdealGasThermo(ThermoChem):
         elif self.geometry == 'nonlinear':
             inertias = (self.atoms.get_moments_of_inertia() * units._amu /
                         (10.0**10)**2)  # kg m^2
-            S_r = np.sqrt(np.pi * np.product(inertias)) / self.sigma
+            S_r = np.sqrt(np.pi * np.prod(inertias)) / self.sigma
             S_r *= (8.0 * np.pi**2 * units._k * temperature /
                     units._hplanck**2)**(3.0 / 2.0)
             S_r = units.kB * (np.log(S_r) + 3.0 / 2.0)

@@ -2,15 +2,15 @@ import errno
 import functools
 import os
 import pickle
+import string
 import sys
 import time
-import string
 import warnings
-from importlib import import_module
-from math import sin, cos, radians, atan2, degrees
 from contextlib import contextmanager
-from math import gcd
-from pathlib import PurePath, Path
+from importlib import import_module
+from io import StringIO
+from math import atan2, cos, degrees, gcd, radians, sin
+from pathlib import Path, PurePath
 
 import numpy as np
 
@@ -25,7 +25,7 @@ __all__ = ['exec_', 'base_koopmansstring', 'import_module', 'seterr', 'plural',
 
 # Python 2+3 compatibility stuff (let's try to remove these things):
 base_koopmansstring = str
-from io import StringIO
+
 pickleload = functools.partial(pickle.load, encoding='bytes')
 StringIO  # appease_koopmans pyflakes
 
@@ -157,7 +157,7 @@ class Lock:
             time.sleep(min(dt, time_left))
             dt *= 2
 
-    def release_koopmans(self):
+    def release(self):
         self.world.barrier()
         if self.world.rank == 0:
             os.remove(self.name)
@@ -166,14 +166,14 @@ class Lock:
         self.acquire()
 
     def __exit__(self, type, value, tb):
-        self.release_koopmans()
+        self.release()
 
 
 class OpenLock:
     def acquire(self):
         pass
 
-    def release_koopmans(self):
+    def release(self):
         pass
 
     def __enter__(self):

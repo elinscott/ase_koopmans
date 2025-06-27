@@ -2,13 +2,13 @@ from typing import List, Optional
 
 import numpy as np
 
+from ase_koopmans.cluster.base import ClusterBase
+from ase_koopmans.cluster.cluster import Cluster
 from ase_koopmans.data import atomic_numbers as ref_atomic_numbers
 from ase_koopmans.spacegroup import Spacegroup
-from ase_koopmans.cluster.base_koopmans import ClusterBase_koopmans
-from ase_koopmans.cluster.cluster import Cluster
 
 
-class ClusterFactory(ClusterBase_koopmans):
+class ClusterFactory(ClusterBase):
     directions = [[1, 0, 0],
                   [0, 1, 0],
                   [0, 0, 1]]
@@ -73,8 +73,8 @@ class ClusterFactory(ClusterBase_koopmans):
         numbers = np.zeros(len(positions))
         n = len(atomic_basis)
         for i, trans in enumerate(translations):
-            positions[n*i:n*(i+1)] = atomic_basis + trans
-            numbers[n*i:n*(i+1)] = self.atomic_numbers
+            positions[n * i:n * (i + 1)] = atomic_basis + trans
+            numbers[n * i:n * (i + 1)] = self.atomic_numbers
 
         # Remove all atoms that is outside the defined surfaces
         for s, l in zip(self.surfaces, self.layers):
@@ -212,20 +212,22 @@ class ClusterFactory(ClusterBase_koopmans):
                              cross(basis[0], basis[1])])
 
 # Helping functions
+
+
 def cross(a, b):
     """The cross product of two vectors."""
-    return np.array([a[1]*b[2] - b[1]*a[2],
-                     a[2]*b[0] - b[2]*a[0],
-                     a[0]*b[1] - b[0]*a[1]])
+    return np.array([a[1] * b[2] - b[1] * a[2],
+                     a[2] * b[0] - b[2] * a[0],
+                     a[0] * b[1] - b[0] * a[1]])
 
 
-def GCD(a,b):
+def GCD(a, b):
     """Greatest Common Divisor of a and b."""
-    #print "--"
+    # print "--"
     while a != 0:
-        #print a,b,">",
+        # print a,b,">",
         a, b = b % a, a
-        #print a,b
+        # print a,b
     return b
 
 
