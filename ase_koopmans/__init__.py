@@ -19,7 +19,7 @@ if Version(np.__version__) < Version('1.9'):
 
 __all__ = ['Atoms', 'Atom']
 
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 
 # import ase_koopmans.parallel early to avoid circular import problems when
 # ase_koopmans.parallel does "from gpaw.mpi import world":
