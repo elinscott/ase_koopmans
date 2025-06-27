@@ -1,5 +1,6 @@
-import numpy as np
 from math import sqrt
+
+import numpy as np
 
 
 def tri2full(H_nn, UL='L'):
@@ -23,19 +24,20 @@ def tri2full(H_nn, UL='L'):
     for n in range(N - 1):
         H_nn[n, n + 1:] = H_nn[n + 1:, n].conj()
 
-        
+
 def dagger(matrix):
     return np.conj(matrix.T)
 
-    
+
 def rotate_matrix(h, u):
     return np.dot(u.T.conj(), np.dot(h, u))
 
-    
+
 def get_subspace(matrix, index):
     """Get the subspace spanned by the basis function listed in index"""
     assert matrix.ndim == 2 and matrix.shape[0] == matrix.shape[1]
     return matrix.take(index, 0).take(index, 1)
+
 
 permute_matrix = get_subspace
 
@@ -54,7 +56,7 @@ def normalize(matrix, S=None):
         else:
             col /= np.sqrt(np.dot(col.conj(), np.dot(S, col)))
 
-            
+
 def subdiagonalize(h_ii, s_ii, index_j):
     nb = h_ii.shape[0]
     nb_sub = len(index_j)
@@ -65,7 +67,7 @@ def subdiagonalize(h_ii, s_ii, index_j):
     permute_list = np.argsort(e_j.real)
     e_j = np.take(e_j, permute_list)
     v_jj = np.take(v_jj, permute_list, axis=1)
-    
+
     # Setup transformation matrix
     c_ii = np.identity(nb, complex)
     for i in range(nb_sub):
@@ -77,7 +79,7 @@ def subdiagonalize(h_ii, s_ii, index_j):
 
     return h1_ii, s1_ii, c_ii, e_j
 
-    
+
 def cutcoupling(h, s, index_n):
     for i in index_n:
         s[:, i] = 0.0
@@ -94,7 +96,7 @@ def fermidistribution(energy, kt):
     # energy can be a single number or a list
     assert kt >= 0., 'Negative temperature encountered!'
 
-    if kt==0:
+    if kt == 0:
         if isinstance(energy, float):
             return int(energy / 2. <= 0)
         else:
@@ -110,18 +112,18 @@ def fliplr(a):
         b[i] = a[length - i - 1]
     return b
 
-    
+
 def plot_path(energy):
     import pylab
     pylab.plot(np.real(energy), np.imag(energy), 'b--o')
     pylab.show()
-    
+
 
 def function_integral(function, calcutype):
     # return the integral of the 'function' on 'intrange'
     # the function can be a value or a matrix, arg1,arg2 are the possible
     # parameters of the function
-    
+
     intctrl = function.intctrl
     if calcutype == 'eqInt':
         intrange = intctrl.eqintpath
@@ -176,7 +178,7 @@ def function_integral(function, calcutype):
     for i in range(len(w1)):
         w1[i] = w1[i] / 6.0
         w2[i] = w2[i] / 1470.0
-                                                        
+
     dZ = [intrange[:len(intrange) - 1], intrange[1:]]
     hmin = [0] * len(dZ[1])
 
@@ -188,7 +190,7 @@ def function_integral(function, calcutype):
             path_type.append('half_circle')
         else:
             path_type.append('line')
-   
+
     for i in range(len(dZ[1])):
         if path_type[i] == 'half_circle':
             dZ[0][i] = 0
@@ -198,9 +200,9 @@ def function_integral(function, calcutype):
         hmin[i] = realmin / 1024 * abs(dZ[1][i])
 
     temp = np.array([[1] * 13, x0]).transpose()
-    
+
     Zx = np.dot(temp, np.array(dZ))
-      
+
     Zxx = []
     for i in range(len(intrange) - 1):
         for j in range(13):
@@ -215,7 +217,7 @@ def function_integral(function, calcutype):
         yns = (-1.j * radius * np.exp(-1.j * Zxx[ns + i]) *
                function.calgfunc(energy, calcutype))
     fcnt = 0
-    
+
     for n in range(len(intrange) - 1):
         # below evaluate the integral and adjust the tolerance
         Q1pQ0 = yns * (w1[0] - w0[0])
@@ -233,7 +235,7 @@ def function_integral(function, calcutype):
 
         # Increase the tolerance if refinement appears to be effective
         r = np.abs(Q2pQ0) / (np.abs(Q1pQ0) + np.abs(realmin))
-        dim = np.product(r.shape)
+        dim = np.prod(r.shape)
         r = np.sum(r) / dim
         if r > 0 and r < 1:
             thistol = tol / r
@@ -246,7 +248,7 @@ def function_integral(function, calcutype):
             yne = (-1.j * radius * np.exp(-1.j * Zxx[ne]) *
                    function.calgfunc(energy, calcutype))
         # Call the recursive core integrator
-       
+
         Qk, xpk, wpk, fcnt, warn = quadlstep(function, Zxx[ns],
                                              Zxx[ne], yns, yne,
                                              thistol, trace, fcnt,
@@ -269,14 +271,14 @@ def function_integral(function, calcutype):
                   'encountered')
         else:
             pass
-        
+
         ns += 13
         ne += 13
         yns = np.copy(yne)
-      
+
     return Q, Xp, Wp, fcnt
 
-    
+
 def quadlstep(f, Za, Zb, fa, fb, tol, trace, fcnt, hmin, calcutype,
               path_type, origin, radius):
     # Gaussian-Lobatto and Kronrod method
@@ -392,7 +394,7 @@ def quadlstep(f, Za, Zb, fa, fb, tol, trace, fcnt, hmin, calcutype,
         Xk = Xk[:-1] + xkk
         Wk = Wk[:-1] + [Wk[-1] + wkk[0]] + wkk[1:]
         warn = max(warn, warnk)
-        
+
         Qk, xkk, wkk, fcnt, warnk = quadlstep(f, Zx[3], Zb, YYk[2], fb,
                                               tol, trace, fcnt, hmin,
                                               calcutype, path_type,
@@ -403,7 +405,7 @@ def quadlstep(f, Za, Zb, fa, fb, tol, trace, fcnt, hmin, calcutype,
         warn = max(warn, warnk)
     return Q, Xk, Wk, fcnt, warn
 
-    
+
 def mytextread0(filename):
     num = 0
     df = open(filename)
@@ -424,7 +426,7 @@ def mytextread0(filename):
         num += 1
     return mat
 
-    
+
 def mytextread1(filename):
     num = 0
     df = open(filename)
@@ -444,7 +446,7 @@ def mytextread1(filename):
             num += 1
     return mat
 
-    
+
 def mytextwrite1(filename, mat):
     df = open(filename, 'w')
     df.seek(0)

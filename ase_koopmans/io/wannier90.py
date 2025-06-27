@@ -4,18 +4,20 @@ For the moment, no attempt has been made to put construct ASE atoms objects corr
 Instead, everything is stored in ase_koopmans.calc.parameters
 """
 
-import re
 import json
-import numpy as np
 import math
+import re
 import warnings
-from typing import List, Dict, Any, Union
-from ase_koopmans.utils import base_koopmansstring
+from typing import Any, Dict, List, Union
+
+import numpy as np
+
 from ase_koopmans.atoms import Atoms
-from ase_koopmans.cell import Cell
-from ase_koopmans.geometry import wrap_positions
-from ase_koopmans.dft.kpoints import BandPath, bandpath
 from ase_koopmans.calculators.wannier90 import Wannier90
+from ase_koopmans.cell import Cell
+from ase_koopmans.dft.kpoints import BandPath, bandpath
+from ase_koopmans.geometry import wrap_positions
+from ase_koopmans.utils import base_koopmansstring
 
 
 def list_to_formatted_str(values: List[int]) -> str:
@@ -240,16 +242,18 @@ def read_wannier90_in(fd):
 def proj_dict_to_string(dct, atoms):
     site = []
     site_outside_pc = False
-    if 'csite' in dct:
-        coords = np.array(dct['csite'])
+    csite = dct.get("cartesian_site", None)
+    fsite = dct.get("fractional_site", None)
+    if csite is not None:
+        coords = np.array(csite)
         # Check coords are inside the cell
         [wrapped_coords] = wrap_positions([coords], atoms.cell)
         if np.linalg.norm(wrapped_coords - coords) > 1e-3:
             site_outside_pc = True
             coords = wrapped_coords
         site.append('c=' + ','.join([str(c) for c in coords]))
-    elif 'fsite' in dct:
-        coords = dct['fsite']
+    elif fsite is not None:
+        coords = fsite
         # Check coords are inside the cell
         if any([x // 1 != 0 for x in coords]):
             site_outside_pc = True
@@ -271,7 +275,7 @@ def proj_dict_to_string(dct, atoms):
         site.append('z=' + ','.join(str(x) for x in dct['zaxis']))
 
     if 'xaxis' in dct:
-        site.append('x=' + ','.join(str(x) for x in dct['zaxis']))
+        site.append('x=' + ','.join(str(x) for x in dct['xaxis']))
 
     if 'radial' in dct:
         site.append(f'r={dct["radial"]}')
@@ -456,16 +460,16 @@ def read_wannier90_out(fd):
 
 def num_wann_lookup(proj):
     database_koopmans = {'l=0': 1, 's': 1,
-                'l=1': 3, 'p': 3, 'pz': 1, 'px': 1, 'py': 1,
-                'l=2': 5, 'd': 5, 'dxy': 1, 'dxz': 1, 'dyz': 1, 'dx2-y2': 1, 'dz2': 1,
-                'l=3': 7, 'f': 7, 'fz3': 1, 'fxz2': 1, 'fyz2': 1, 'fz(x2-y2)': 1, 'fxyz': 1, 'fx(x2-3y2)': 1,
-                'fy(3x2-y2)': 1,
-                'l=-1': 2, 'sp': 2, 'sp-1': 1, 'sp-2': 1,
-                'l=-2': 3, 'sp2': 3, 'sp2-1': 1, 'sp2-2': 1, 'sp2-3': 1,
-                'l=-3': 4, 'sp3': 4, 'sp3-1': 1, 'sp3-2': 1, 'sp3-3': 1, 'sp3-4': 1,
-                'l=-4': 5, 'sp3d': 5, 'sp3d-1': 1, 'sp3d-2': 1, 'sp3d-3': 1, 'sp3d-4': 1, 'sp3d-5': 1,
-                'l=-5': 6, 'sp3d2': 6, 'sp3d2-1': 1, 'sp3d2-2': 1, 'sp3d2-3': 1, 'sp3d2-4': 1, 'sp3d2-5': 1,
-                'sp3d2-6': 1}
+                         'l=1': 3, 'p': 3, 'pz': 1, 'px': 1, 'py': 1,
+                         'l=2': 5, 'd': 5, 'dxy': 1, 'dxz': 1, 'dyz': 1, 'dx2-y2': 1, 'dz2': 1,
+                         'l=3': 7, 'f': 7, 'fz3': 1, 'fxz2': 1, 'fyz2': 1, 'fz(x2-y2)': 1, 'fxyz': 1, 'fx(x2-3y2)': 1,
+                         'fy(3x2-y2)': 1,
+                         'l=-1': 2, 'sp': 2, 'sp-1': 1, 'sp-2': 1,
+                         'l=-2': 3, 'sp2': 3, 'sp2-1': 1, 'sp2-2': 1, 'sp2-3': 1,
+                         'l=-3': 4, 'sp3': 4, 'sp3-1': 1, 'sp3-2': 1, 'sp3-3': 1, 'sp3-4': 1,
+                         'l=-4': 5, 'sp3d': 5, 'sp3d-1': 1, 'sp3d-2': 1, 'sp3d-3': 1, 'sp3d-4': 1, 'sp3d-5': 1,
+                         'l=-5': 6, 'sp3d2': 6, 'sp3d2-1': 1, 'sp3d2-2': 1, 'sp3d2-3': 1, 'sp3d2-4': 1, 'sp3d2-5': 1,
+                         'sp3d2-6': 1}
     if proj in database_koopmans:
         return database_koopmans[proj]
     elif proj.split(',')[0] in database_koopmans:
@@ -492,5 +496,3 @@ def num_wann_from_projections(projections: List[Dict[str, Any]], atoms: Atoms):
         ang_mtms = [p.replace(' ', '') for p in proj['ang_mtm'].split(';')]
         num_wann += num_sites * sum([num_wann_lookup(ang_mtm) for ang_mtm in ang_mtms])
     return num_wann
-
-

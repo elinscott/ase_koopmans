@@ -13,13 +13,9 @@ on KIM, visit https://openkim.org.
 """
 
 from . import kimpy_wrappers
+from .calculators import (ASAPCalculator, KIMCalculator, LAMMPSLibCalculator,
+                          LAMMPSRunCalculator)
 from .exceptions import KIMCalculatorError
-from .calculators import (
-    KIMCalculator,
-    ASAPCalculator,
-    LAMMPSRunCalculator,
-    LAMMPSLibCalculator,
-)
 
 
 def KIM(model_name, simulator=None, options=None, debug=False):
@@ -81,8 +77,8 @@ def KIM(model_name, simulator=None, options=None, debug=False):
           : The skin distance used for neighbor list construction,
           expressed as a fraction of the model cutoff (Default: 0.2)
 
-        - release_koopmans_GIL (bool)
-          : Whether to release_koopmans python GIL.  Releasing the GIL allows a KIM
+        - release_GIL (bool)
+          : Whether to release python GIL.  Releasing the GIL allows a KIM
           model to run with multiple concurrent threads. (Default: False)
 
         See the ASE LAMMPS calculators doc page

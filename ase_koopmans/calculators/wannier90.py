@@ -5,18 +5,20 @@ export ASE_WANNIER90_COMMAND="/path/to/wannier90 PREFIX.win"
 """
 
 import os
+
 import numpy as np
+
 from ase_koopmans import io
-from ase_koopmans.dft.kpoints import bandpath, BandPath
-from ase_koopmans.spectrum.band_structure import BandStructure
 from ase_koopmans.calculators.calculator import FileIOCalculator
+from ase_koopmans.dft.kpoints import BandPath, bandpath
+from ase_koopmans.spectrum.band_structure import BandStructure
 
 
 class Wannier90(FileIOCalculator):
     """
     """
     implemented_properties = []
-    command = 'wannier90.x PREFIX.win > PREFIX.wout 2>&1'
+    command = 'wannier90.x PREFIX.win'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='wannier', atoms=None, **kwargs):

@@ -9,11 +9,9 @@ University of Minnesota
 """
 import numpy as np
 
-from ase_koopmans.calculators.calculator import Calculator
-from ase_koopmans.calculators.calculator import compare_atoms
+from ase_koopmans.calculators.calculator import Calculator, compare_atoms
 
-from . import kimpy_wrappers
-from . import neighborlist
+from . import kimpy_wrappers, neighborlist
 
 
 class KIMModelData(object):
@@ -202,8 +200,8 @@ class KIMModelCalculator(Calculator):
       through the relation r_neigh = (1 + neigh_skin_ratio) * rcut,
       where rcut is the model's influence distance. (Default: 0.2)
 
-    release_koopmans_GIL : bool, optional
-      Whether to release_koopmans python GIL.  Releasing the GIL allows a KIM
+    release_GIL : bool, optional
+      Whether to release python GIL.  Releasing the GIL allows a KIM
       model to run with multiple concurrent threads. (Default: False)
 
     debug : bool, optional
@@ -218,7 +216,7 @@ class KIMModelCalculator(Calculator):
         model_name,
         ase_koopmans_neigh=False,
         neigh_skin_ratio=0.2,
-        release_koopmans_GIL=False,
+        release_GIL=False,
         debug=False,
         *args,
         **kwargs
@@ -226,7 +224,7 @@ class KIMModelCalculator(Calculator):
         super().__init__(*args, **kwargs)
 
         self.model_name = model_name
-        self.release_koopmans_GIL = release_koopmans_GIL
+        self.release_GIL = release_GIL
         self.debug = debug
 
         if neigh_skin_ratio < 0:
@@ -291,7 +289,7 @@ class KIMModelCalculator(Calculator):
             else:
                 self.update_kim_coords(atoms)
 
-            self.kim_model.compute(self.compute_args, self.release_koopmans_GIL)
+            self.kim_model.compute(self.compute_args, self.release_GIL)
 
         energy = self.energy[0]
         forces = self.assemble_padding_forces()
@@ -310,7 +308,7 @@ class KIMModelCalculator(Calculator):
 
     def check_state(self, atoms, tol=1e-15):
         return compare_atoms(self.atoms, atoms, excluded_properties={'initial_charges',
-            'initial_magmoms'})
+                                                                     'initial_magmoms'})
 
     def assemble_padding_forces(self):
         """
@@ -336,7 +334,7 @@ class KIMModelCalculator(Calculator):
         total_forces = np.array(self.forces[: self.num_contributing_particles])
 
         if self.padding_image_of.size != 0:
-            pad_forces = self.forces[self.num_contributing_particles :]
+            pad_forces = self.forces[self.num_contributing_particles:]
             for f, org_index in zip(pad_forces, self.padding_image_of):
                 total_forces[org_index] += f
 

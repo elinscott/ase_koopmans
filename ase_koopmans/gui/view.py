@@ -7,10 +7,10 @@ from ase_koopmans.calculators.calculator import PropertyNotImplementedError
 from ase_koopmans.data import atomic_numbers
 from ase_koopmans.data.colors import jmol_colors
 from ase_koopmans.geometry import complete_cell
+from ase_koopmans.gui.colors import ColorWindow
+from ase_koopmans.gui.render import Render
 from ase_koopmans.gui.repeat import Repeat
 from ase_koopmans.gui.rotate import Rotate
-from ase_koopmans.gui.render import Render
-from ase_koopmans.gui.colors import ColorWindow
 from ase_koopmans.gui.utils import get_magmoms
 from ase_koopmans.utils import rotate
 
@@ -559,7 +559,7 @@ class View:
                                                 len(self.images)),
                          anchor='SE')
 
-    def release_koopmans(self, event):
+    def release(self, event):
         if event.button in [4, 5]:
             self.scroll_event(event)
             return

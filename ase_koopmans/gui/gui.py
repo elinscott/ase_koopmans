@@ -5,14 +5,14 @@ import sys
 import tempfile
 import weakref
 from functools import partial
-from ase_koopmans.gui.i18n import _
 from time import time
 
 import numpy as np
 
-from ase_koopmans import __version__
 import ase_koopmans.gui.ui as ui
+from ase_koopmans import __version__
 from ase_koopmans.gui.defaults import read_defaults
+from ase_koopmans.gui.i18n import _
 from ase_koopmans.gui.images import Images
 from ase_koopmans.gui.nanoparticle import SetupNanoparticle
 from ase_koopmans.gui.nanotube import SetupNanotube
@@ -48,7 +48,7 @@ class GUI(View, Status):
                                       config=self.config, scroll=self.scroll,
                                       scroll_event=self.scroll_event,
                                       press=self.press, move=self.move,
-                                      release_koopmans=self.release_koopmans,
+                                      release=self.release,
                                       resize=self.resize)
 
         View.__init__(self, rotations)
@@ -163,7 +163,7 @@ class GUI(View, Status):
         # http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/event-types.html
         if event.type == '6':
             cur_pos = np.array([event.x, -event.y])
-            # Continue scroll if button has not been release_koopmansd
+            # Continue scroll if button has not been released
             if self.prev_pos is None or time() - self.last_scroll_time > .5:
                 self.prev_pos = cur_pos
                 self.last_scroll_time = time()

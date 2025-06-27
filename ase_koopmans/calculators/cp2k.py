@@ -7,12 +7,15 @@ Author: Ole Schuett <ole.schuett@mat.ethz.ch>
 
 import os
 import os.path
+from subprocess import PIPE, Popen
 from warnings import warn
-from subprocess import Popen, PIPE
+
 import numpy as np
+
 import ase_koopmans.io
+from ase_koopmans.calculators.calculator import (Calculator, Parameters,
+                                                 all_changes)
 from ase_koopmans.units import Rydberg
-from ase_koopmans.calculators.calculator import Calculator, all_changes, Parameters
 
 
 class CP2K(Calculator):
@@ -119,13 +122,13 @@ class CP2K(Calculator):
     print_level: str
         PRINT_LEVEL of global output.
         Possible options are:
-        DEBUG Everything is written out, useful for debugging purposes only 
-        HIGH Lots of output 
-        LOW Little output 
-        MEDIUM Quite some output 
-        SILENT Almost no output 
+        DEBUG Everything is written out, useful for debugging purposes only
+        HIGH Lots of output
+        LOW Little output
+        MEDIUM Quite some output
+        SILENT Almost no output
         Default is 'LOW'
-        
+
     """
 
     implemented_properties = ['energy', 'free_energy', 'forces', 'stress']
@@ -187,10 +190,10 @@ class CP2K(Calculator):
                     raise
 
     def __del__(self):
-        """Release_koopmans force_env and terminate cp2k_shell child process"""
+        """Release force_env and terminate cp2k_shell child process"""
         if self._shell:
-            self._release_koopmans_force_env()
-            del(self._shell)
+            self._release_force_env()
+            del (self._shell)
 
     def set(self, **kwargs):
         """Set parameters like set(key1=value1, key2=value2, ...)."""
@@ -228,7 +231,7 @@ class CP2K(Calculator):
             print("system_changes:", system_changes)
 
         if 'numbers' in system_changes:
-            self._release_koopmans_force_env()
+            self._release_force_env()
 
         if self._force_env_id is None:
             self._create_force_env()
@@ -252,7 +255,7 @@ class CP2K(Calculator):
                 self._shell.send('%.18e %.18e %.18e' % tuple(pos))
             self._shell.send('*END')
             max_change = float(self._shell.recv())
-            assert max_change >= 0 # sanity check
+            assert max_change >= 0  # sanity check
             self._shell.expect('* READY')
 
         self._shell.send('EVAL_EF %d' % self._force_env_id)
@@ -266,7 +269,7 @@ class CP2K(Calculator):
         forces = np.zeros(shape=(n_atoms, 3))
         self._shell.send('GET_F %d' % self._force_env_id)
         nvals = int(self._shell.recv())
-        assert nvals == 3 * n_atoms # sanity check
+        assert nvals == 3 * n_atoms  # sanity check
         for i in range(n_atoms):
             line = self._shell.recv()
             forces[i, :] = [float(x) for x in line.split()]
@@ -326,14 +329,14 @@ class CP2K(Calculator):
             self._shell.send('*END')
             self._shell.expect('* READY')
 
-    def _release_koopmans_force_env(self):
+    def _release_force_env(self):
         """Destroys the current force-environment"""
         if self._force_env_id:
             if self._shell.isready:
                 self._shell.send('DESTROY %d' % self._force_env_id)
                 self._shell.expect('* READY')
             else:
-                msg = "CP2K-shell not ready, could not release_koopmans force_env."
+                msg = "CP2K-shell not ready, could not release force_env."
                 warn(msg, RuntimeWarning)
             self._force_env_id = None
 
@@ -370,7 +373,7 @@ class CP2K(Calculator):
                 xc_sec = root.get_subsection('FORCE_EVAL/DFT/XC/XC_FUNCTIONAL')
                 # libxc input section changed over time
                 if functional.startswith("XC_") and self._shell.version < 3.0:
-                    legacy_libxc += " " + functional # handled later
+                    legacy_libxc += " " + functional  # handled later
                 elif functional.startswith("XC_"):
                     s = InputSection(name='LIBXC')
                     s.keywords.append('FUNCTIONAL ' + functional)
@@ -494,7 +497,7 @@ class Cp2kShell(object):
             print('Sending: ' + line)
         if self.version < 2.1 and len(line) >= 80:
             raise Exception('Buffer overflow, upgrade CP2K to r16779 or later')
-        assert(len(line) < 800)  # new input buffer size
+        assert (len(line) < 800)  # new input buffer size
         self.isready = False
         self._child.stdin.write(line + '\n')
 
@@ -512,8 +515,10 @@ class Cp2kShell(object):
         received = self.recv()
         assert received == line
 
+
 class InputSection(object):
     """Represents a section of a CP2K input file"""
+
     def __init__(self, name, params=None):
         self.name = name.upper()
         self.params = params

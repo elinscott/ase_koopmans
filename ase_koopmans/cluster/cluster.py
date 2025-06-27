@@ -1,13 +1,14 @@
-import os
 import math
-import numpy as np
+import os
 import pickle
 
+import numpy as np
+
 from ase_koopmans import Atoms
-from ase_koopmans.cluster.base_koopmans import ClusterBase_koopmans
+from ase_koopmans.cluster.base import ClusterBase
 
 
-class Cluster(Atoms, ClusterBase_koopmans):
+class Cluster(Atoms, ClusterBase):
     symmetry = None
     surfaces = None
     lattice_basis = None
@@ -52,12 +53,12 @@ class Cluster(Atoms, ClusterBase_koopmans):
         return np.array(layers, int)
 
     def get_diameter(self, method='volume'):
-        """Returns an estimate of the cluster diameter base_koopmansd on two different
+        """Returns an estimate of the cluster diameter based on two different
         methods.
 
         method = 'volume': Returns the diameter of a sphere with the
                            same volume as the atoms. (Default)
-        
+
         method = 'shape': Returns the averaged diameter calculated from the
                           directions given by the defined surfaces.
         """

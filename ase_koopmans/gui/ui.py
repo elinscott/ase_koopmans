@@ -1,18 +1,17 @@
 # type: ignore
 import re
 import sys
-from collections import namedtuple
-from functools import partial
-
-import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter.messagebox import askokcancel as ask_question
-from tkinter.messagebox import showerror, showwarning, showinfo
+from collections import namedtuple
+from functools import partial
 from tkinter.filedialog import LoadFileDialog, SaveFileDialog
+from tkinter.messagebox import askokcancel as ask_question
+from tkinter.messagebox import showerror, showinfo, showwarning
+
+import numpy as np
 
 from ase_koopmans.gui.i18n import _
-
 
 __all__ = [
     'error', 'ask_question', 'MainWindow', 'LoadFileDialog', 'SaveFileDialog',
@@ -576,7 +575,7 @@ def show_io_error(filename, err):
 class ASEGUIWindow(MainWindow):
     def __init__(self, close, menu, config,
                  scroll, scroll_event,
-                 press, move, release_koopmans, resize):
+                 press, move, release, resize):
         MainWindow.__init__(self, 'ASE-GUI', close, menu)
 
         self.size = np.array([450, 450])
@@ -598,9 +597,9 @@ class ASEGUIWindow(MainWindow):
         self.canvas.bind('<ButtonPress>', bind(press))
         self.canvas.bind('<B1-Motion>', bind(move))
         self.canvas.bind('<B{right}-Motion>'.format(right=right), bind(move))
-        self.canvas.bind('<ButtonRelease_koopmans>', bind(release_koopmans))
-        self.canvas.bind('<Control-ButtonRelease_koopmans>', bind(release_koopmans, 'ctrl'))
-        self.canvas.bind('<Shift-ButtonRelease_koopmans>', bind(release_koopmans, 'shift'))
+        self.canvas.bind('<ButtonRelease>', bind(release))
+        self.canvas.bind('<Control-ButtonRelease>', bind(release, 'ctrl'))
+        self.canvas.bind('<Shift-ButtonRelease>', bind(release, 'shift'))
         self.canvas.bind('<Configure>', resize)
         if not config['swap_mouse']:
             self.canvas.bind('<Shift-B{right}-Motion>'.format(right=right),
@@ -647,12 +646,11 @@ class ASEGUIWindow(MainWindow):
             outline = 'black'
             width = 1
         self.canvas.create_arc(*tuple(int(x) for x in bbox),
-                                start=start,
-                                extent=extent,
-                                fill=color,
-                                outline=outline,
-                                width=width)
-
+                               start=start,
+                               extent=extent,
+                               fill=color,
+                               outline=outline,
+                               width=width)
 
     def line(self, bbox, width=1):
         self.canvas.create_line(*tuple(int(x) for x in bbox), width=width)

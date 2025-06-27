@@ -500,7 +500,7 @@ def read_pw_in(fileobj):
     """
     # TODO: use ase_koopmans opening mechanisms
     if isinstance(fileobj, str):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r')
 
     # parse namelist section and extract remaining lines
     data, card_lines = read_fortran_namelist(fileobj)
