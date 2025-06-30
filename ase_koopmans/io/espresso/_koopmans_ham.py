@@ -16,7 +16,7 @@ from ._wann2kc import KEYS as W2KCW_KEYS
 from ase_koopmans.calculators.espresso import KoopmansHam
 
 KEYS = copy.deepcopy(W2KCW_KEYS)
-KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'on_site_only']
+KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'on_site_only', 'h_diag_scheme']
 
 
 def write_koopmans_ham_in(fd, atoms, input_data=None, pseudopotentials=None,
@@ -87,6 +87,7 @@ def read_koopmans_ham_out(fileobj):
     eigenvalues = []
     ks_eigenvalues_on_grid = []
     ki_eigenvalues_on_grid = []
+    pki_eigenvalues_on_grid = [] # pKI, perturbative KI.
 
     for i_line, line in enumerate(flines):
 
@@ -104,13 +105,26 @@ def read_koopmans_ham_out(fileobj):
         if 'INFO: KI[2nd] HAMILTONIAN CALCULATION ik=' in line:
             ks_eigenvalues_on_grid.append([])
             ki_eigenvalues_on_grid.append([])
+        elif 'INFO: qKI  HAMILTONIAN CALCULATION ik=' in line: # new format.
+            ks_eigenvalues_on_grid.append([])
+            ki_eigenvalues_on_grid.append([])
+            pki_eigenvalues_on_grid.append([])
 
         if line.startswith('          KS '):
+            if len(ks_eigenvalues_on_grid)==0: 
+                ks_eigenvalues_on_grid.append([])
             ks_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('KS', ''))
 
         if line.startswith('          KI '):
+            if len(ki_eigenvalues_on_grid)==0: 
+                ki_eigenvalues_on_grid.append([])
             ki_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('KI', ''))
 
+        if line.startswith('          pKI '):
+            if len(pki_eigenvalues_on_grid)==0: 
+                pki_eigenvalues_on_grid.append([])
+            pki_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('pKI', ''))
+        
         if 'JOB DONE' in line:
             job_done = True
 
@@ -129,6 +143,7 @@ def read_koopmans_ham_out(fileobj):
     calc.results['eigenvalues'] = eigenvalues
     calc.results['ks_eigenvalues_on_grid'] = ks_eigenvalues_on_grid
     calc.results['ki_eigenvalues_on_grid'] = ki_eigenvalues_on_grid
+    calc.results['pki_eigenvalues_on_grid'] = pki_eigenvalues_on_grid
     structure.calc = calc
 
     yield structure

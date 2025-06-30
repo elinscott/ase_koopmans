@@ -1109,7 +1109,7 @@ def safe_string_to_list_of_floats(string):
 
     out = []
 
-    string.replace('-', ' -')
+    string = string.replace('-', ' -')
     for word in string.split():
         if '*' in word:
             # First, reduce each sequence of '*'s to a single '*'
