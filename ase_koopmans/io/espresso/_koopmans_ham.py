@@ -111,12 +111,18 @@ def read_koopmans_ham_out(fileobj):
             pki_eigenvalues_on_grid.append([])
 
         if line.startswith('          KS '):
+            if len(ks_eigenvalues_on_grid)==0: 
+                ks_eigenvalues_on_grid.append([])
             ks_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('KS', ''))
 
         if line.startswith('          KI '):
+            if len(ki_eigenvalues_on_grid)==0: 
+                ki_eigenvalues_on_grid.append([])
             ki_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('KI', ''))
 
         if line.startswith('          pKI '):
+            if len(pki_eigenvalues_on_grid)==0: 
+                pki_eigenvalues_on_grid.append([])
             pki_eigenvalues_on_grid[-1] += safe_string_to_list_of_floats(line.replace('pKI', ''))
         
         if 'JOB DONE' in line:
