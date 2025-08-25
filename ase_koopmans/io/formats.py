@@ -17,10 +17,13 @@ import functools
 import inspect
 import os
 import sys
+from bz2 import BZ2File
+from gzip import GzipFile
 from importlib import import_module
+from lzma import LZMAFile
 from pathlib import Path, PurePath
-from typing import (IO, Any, Dict, Iterable, List, Optional, Sequence, Tuple,
-                    Union)
+from typing import (IO, Any, Dict, Iterable, List, Optional, Sequence, TextIO,
+                    Tuple, Union)
 
 from ase_koopmans.atoms import Atoms
 from ase_koopmans.parallel import parallel_function, parallel_generator
@@ -396,6 +399,7 @@ F('wann2kc-out', 'Wannier 90 to KCW output file', '1F', module='espresso', ext='
 F('wann2kc-in', 'Wannier 90 to KCW input file', '1F', module='espresso', ext='w2ki')
 F('wannier90-out', 'Wannier 90 output file', '1F', module='wannier90', ext='wout')
 F('wannier90-in', 'Wannier 90 input file', '1F', module='wannier90', ext='win')
+F('wannierjl-in', 'WannierJL input file', '1F', module='wannierjl', ext='wjli')
 F('wannierjl-out', 'WannierJL output file', '1F', module='wannierjl', ext='wjlo')
 F('xsd', 'Materials Studio file', '1F'),
 F('xsf', 'XCrySDen Structure File', '+F',
@@ -482,6 +486,8 @@ def open_with_compression(filename: str, mode: str = 'r') -> IO:
 
     root, compression = get_compression(filename)
 
+    fd: Union[TextIO, IO, GzipFile, BZ2File, LZMAFile]
+
     if compression is None:
         return open(filename, mode)
     elif compression == 'gz':
@@ -495,6 +501,8 @@ def open_with_compression(filename: str, mode: str = 'r') -> IO:
         fd = lzma.open(filename, mode)
     else:
         fd = open(filename, mode)
+
+    assert isinstance(fd, IO)
 
     return fd
 

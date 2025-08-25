@@ -1,13 +1,13 @@
-import re
 import math
+import re
 import warnings
 from typing import Dict
 
 import numpy as np
 
 import ase_koopmans  # Annotations
-from ase_koopmans.utils import jsonable
 from ase_koopmans.cell import Cell
+from ase_koopmans.utils import jsonable
 
 
 def monkhorst_pack(size):
@@ -426,7 +426,8 @@ class BandPath:
         This is for mostly testing and visualization."""
         from ase_koopmans import Atoms
         from ase_koopmans.calculators.test import FreeElectrons
-        from ase_koopmans.spectrum.band_structure import calculate_band_structure
+        from ase_koopmans.spectrum.band_structure import \
+            calculate_band_structure
         atoms = Atoms(cell=self.cell, pbc=True)
         atoms.calc = FreeElectrons(**kwargs)
         bs = calculate_band_structure(atoms, path=self)
@@ -475,7 +476,7 @@ DEFAULT_KPTS_DENSITY = 5    # points per 1/Angstrom
 
 
 def paths2kpts(paths, cell, npoints=None, density=None):
-    if not(npoints is None or density is None):
+    if not (npoints is None or density is None):
         raise ValueError('You may define npoints or density, but not both.')
     points = np.concatenate(paths)
     dists = points[1:] - points[:-1]
