@@ -1,11 +1,11 @@
-from pathlib import Path
 import random
+from pathlib import Path
 
-from ase.build import fcc111
-from ase.calculators.emt import EMT
-from ase.data import atomic_numbers, reference_states
-from ase.ga.data import PrepareDB
-from ase.ga import set_raw_score
+from ase_koopmans.build import fcc111
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.data import atomic_numbers, reference_states
+from ase_koopmans.ga import set_raw_score
+from ase_koopmans.ga.data import PrepareDB
 
 
 def get_avg_lattice_constant(syms):

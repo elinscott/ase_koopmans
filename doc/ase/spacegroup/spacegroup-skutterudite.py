@@ -1,4 +1,4 @@
-from ase.spacegroup import crystal
+from ase_koopmans.spacegroup import crystal
 
 a = 9.04
 skutterudite = crystal(('Co', 'Sb'),

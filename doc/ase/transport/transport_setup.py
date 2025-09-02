@@ -1,9 +1,10 @@
 # creates: transport_setup.png
 
 import numpy as np
-from ase import Atoms
-from ase.build import molecule
-from ase.io import write
+
+from ase_koopmans import Atoms
+from ase_koopmans.build import molecule
+from ase_koopmans.io import write
 
 a = 3.92  # Experimental lattice constant
 sqrt = np.sqrt
@@ -37,6 +38,7 @@ def pos(atoms, x):
     atoms2 = atoms.copy()
     atoms2.translate([x, 0, 0])
     return atoms2
+
 
 princ = pos(A, 0) + pos(B, 1) + pos(C, 2)
 large = (pos(princ, -8) +

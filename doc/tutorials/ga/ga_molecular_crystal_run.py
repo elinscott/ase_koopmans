@@ -1,18 +1,19 @@
 import numpy as np
-from ase.io import write
-from ase.ga import get_raw_score
-from ase.ga.data import DataConnection
-from ase.ga.population import Population
-from ase.ga.utilities import closest_distances_generator, CellBounds
-from ase.ga.ofp_comparator import OFPComparator
-from ase.ga.offspring_creator import OperationSelector
-from ase.ga.cutandsplicepairing import CutAndSplicePairing
-from ase.ga.standardmutations import (RattleMutation, StrainMutation,
-                                      RotationalMutation,
-                                      RattleRotationalMutation)
-from ase.ga.soft_mutation import SoftMutation
 from ga_molecular_crystal_relax import relax
 
+from ase_koopmans.ga import get_raw_score
+from ase_koopmans.ga.cutandsplicepairing import CutAndSplicePairing
+from ase_koopmans.ga.data import DataConnection
+from ase_koopmans.ga.offspring_creator import OperationSelector
+from ase_koopmans.ga.ofp_comparator import OFPComparator
+from ase_koopmans.ga.population import Population
+from ase_koopmans.ga.soft_mutation import SoftMutation
+from ase_koopmans.ga.standardmutations import (RattleMutation,
+                                               RattleRotationalMutation,
+                                               RotationalMutation,
+                                               StrainMutation)
+from ase_koopmans.ga.utilities import CellBounds, closest_distances_generator
+from ase_koopmans.io import write
 
 da = DataConnection('gadb.db')
 
@@ -21,8 +22,8 @@ slab = da.get_slab()
 atom_numbers_to_optimize = da.get_atom_numbers_to_optimize()
 n_top = len(atom_numbers_to_optimize)
 blmin = closest_distances_generator(atom_numbers_to_optimize, 1.0)
-cellbounds = CellBounds(bounds={'phi':[30, 150], 'chi': [30, 150],
-                                'psi':[30, 150]})
+cellbounds = CellBounds(bounds={'phi': [30, 150], 'chi': [30, 150],
+                                'psi': [30, 150]})
 
 # Note the "use_tags" keyword argument being used
 # to signal that we want to preserve molecular identity
@@ -56,7 +57,7 @@ while da.get_number_of_unrelaxed_candidates() > 0:
 
 # The structure comparator for the population
 comp = OFPComparator(n_top=n_top, dE=1.0, cos_dist_max=5e-3, rcut=10.,
-                     binwidth=0.05, pbc=[True, True, True],sigma=0.05,
+                     binwidth=0.05, pbc=[True, True, True], sigma=0.05,
                      nsigma=4, recalculate=False)
 
 # The population

@@ -1,7 +1,7 @@
-from ase.calculators.dftb import Dftb
-from ase.io import write
-from ase.build import molecule
-from ase.optimize import QuasiNewton
+from ase_koopmans.build import molecule
+from ase_koopmans.calculators.dftb import Dftb
+from ase_koopmans.io import write
+from ase_koopmans.optimize import QuasiNewton
 
 atoms = molecule('H2O')
 calc = Dftb(atoms=atoms,

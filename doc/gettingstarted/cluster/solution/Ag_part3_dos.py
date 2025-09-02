@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from gpaw import GPAW
-from ase.dft.dos import DOS
+
+from ase_koopmans.dft.dos import DOS
 
 calc = GPAW('groundstate.gpw')
 dos = DOS(calc, npts=800, width=0.1)

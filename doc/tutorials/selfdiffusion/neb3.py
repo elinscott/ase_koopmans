@@ -3,13 +3,13 @@ from __future__ import print_function
 
 from math import sqrt
 
-from ase import Atoms, Atom
-from ase.io import write
-from ase.visualize import view
-from ase.constraints import FixAtoms
-from ase.optimize import QuasiNewton, MDMin
-from ase.neb import NEB
-from ase.calculators.emt import EMT
+from ase_koopmans import Atom, Atoms
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.io import write
+from ase_koopmans.neb import NEB
+from ase_koopmans.optimize import MDMin, QuasiNewton
+from ase_koopmans.visualize import view
 
 a = 4.0614
 b = a / sqrt(2)

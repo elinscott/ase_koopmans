@@ -1,5 +1,5 @@
-from ase import Atoms
-from ase.calculators.emt import EMT
+from ase_koopmans import Atoms
+from ase_koopmans.calculators.emt import EMT
 
 atom = Atoms('N')
 atom.calc = EMT()

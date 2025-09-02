@@ -1,8 +1,8 @@
-from ase import Atoms, Atom
-from ase.build import fcc110
-from ase.optimize.minimahopping import MinimaHopping
-from ase.calculators.emt import EMT
-from ase.constraints import FixAtoms, Hookean
+from ase_koopmans import Atom, Atoms
+from ase_koopmans.build import fcc110
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms, Hookean
+from ase_koopmans.optimize.minimahopping import MinimaHopping
 
 # Make the Pt 110 slab.
 atoms = fcc110('Pt', (2, 2, 2), vacuum=7.)
@@ -15,7 +15,7 @@ atoms.extend(adsorbate)
 # Constrain the surface to be fixed and a Hookean constraint between
 # the adsorbate atoms.
 constraints = [FixAtoms(indices=[atom.index for atom in atoms if
-                                 atom.symbol=='Pt']),
+                                 atom.symbol == 'Pt']),
                Hookean(a1=8, a2=9, rt=2.6, k=15.),
                Hookean(a1=8, a2=(0., 0., 1., -15.), k=15.),]
 atoms.set_constraint(constraints)

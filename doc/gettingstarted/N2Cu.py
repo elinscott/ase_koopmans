@@ -1,8 +1,8 @@
-from ase import Atoms
-from ase.calculators.emt import EMT
-from ase.constraints import FixAtoms
-from ase.optimize import QuasiNewton
-from ase.build import fcc111, add_adsorbate
+from ase_koopmans import Atoms
+from ase_koopmans.build import add_adsorbate, fcc111
+from ase_koopmans.calculators.emt import EMT
+from ase_koopmans.constraints import FixAtoms
+from ase_koopmans.optimize import QuasiNewton
 
 h = 1.85
 d = 1.10

@@ -5,9 +5,9 @@
    python ./gromacs_example_mm_relax.py his.pdb
 """
 
-from ase.calculators.gromacs import Gromacs
-
 import sys
+
+from ase_koopmans.calculators.gromacs import Gromacs
 
 infile_name = sys.argv[1]
 

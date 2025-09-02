@@ -3,9 +3,9 @@ using once LDA and once PBE as xc-functional. Obviously
 some parts in this scripts are longer than necessary, but are shown
 to demonstrate some more features."""
 
-import ase
-import ase.calculators.castep
-import ase.io.castep
+import ase_koopmans
+import ase_koopmans.calculators.castep
+import ase_koopmans.io.castep
 
 calc = ase.calculators.castep.Castep()
 directory = 'CASTEP_ASE_DEMO'
