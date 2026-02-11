@@ -1,13 +1,14 @@
-import numpy as np
 import itertools
+
+import numpy as np
+import scipy.sparse.csgraph as csgraph
 from scipy import sparse as sp
 from scipy.spatial import cKDTree
-import scipy.sparse.csgraph as csgraph
 
-from ase_koopmans.data import atomic_numbers, covalent_radii
-from ase_koopmans.geometry import complete_cell, find_mic, wrap_positions
-from ase_koopmans.geometry import minkowski_reduce
 from ase_koopmans.cell import Cell
+from ase_koopmans.data import atomic_numbers, covalent_radii
+from ase_koopmans.geometry import (complete_cell, find_mic, minkowski_reduce,
+                                   wrap_positions)
 
 
 def natural_cutoffs(atoms, mult=1, **kwargs):
@@ -219,8 +220,8 @@ def primitive_neighbor_list(quantities, pbc, cell, positions, cutoff,
     if len(positions) == 0:
         empty_types = dict(i=(int, (0, )),
                            j=(int, (0, )),
-                           D=(np.float, (0, 3)),
-                           d=(np.float, (0, )),
+                           D=(float, (0, 3)),
+                           d=(float, (0, )),
                            S=(int, (0, 3)))
         retvals = []
         for i in quantities:
