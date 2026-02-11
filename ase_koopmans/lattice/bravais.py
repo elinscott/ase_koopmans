@@ -8,8 +8,8 @@ from typing import Optional, Sequence
 
 import numpy as np
 
-from ase_koopmans.atoms import Atoms
 import ase_koopmans.data
+from ase_koopmans.atoms import Atoms
 
 
 class Bravais:
@@ -93,7 +93,7 @@ class Bravais:
             # First basis vector along y axis - rotate 90 deg along z
             t = np.array([[0, -1, 0],
                           [1, 0, 0],
-                          [0, 0, 1]], np.float)
+                          [0, 0, 1]], float)
             self.basis = np.dot(self.basis, t)
             transf = t
             if self.debug >= 2:
@@ -101,7 +101,7 @@ class Bravais:
                       "stability.")
                 print(self.basis)
         else:
-            transf = np.identity(3, np.float)
+            transf = np.identity(3, float)
         assert abs(np.linalg.det(transf) - 1) < 1e-6
         # Rotate first basis vector into xy plane
         theta = math.atan2(self.basis[0, 2], self.basis[0, 0])
@@ -257,7 +257,7 @@ class Bravais:
         # in the real unit cell by put_atom().
         self.natoms = self.calc_num_atoms()
         self.nput = 0
-        self.atoms = np.zeros((self.natoms, 3), np.float)
+        self.atoms = np.zeros((self.natoms, 3), float)
         self.elements = np.zeros(self.natoms, int)
         self.farpoint = sum(self.directions)
         # printprogress = self.debug and (len(self.atoms) > 250)
@@ -313,7 +313,7 @@ class Bravais:
                 #    if perce > percent + 10:
                 #        print ("%d%%" % perce),
                 #        percent = perce
-        assert(self.nput == self.natoms)
+        assert (self.nput == self.natoms)
 
     def inside(self, point):
         "Is a point inside the unit cell?"
