@@ -64,7 +64,7 @@ def read_wann2kc_out(fileobj):
     """
 
     if isinstance(fileobj, base_koopmansstring):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r', newline='')
 
     # work with a copy in memory for faster random access
     flines = fileobj.readlines()

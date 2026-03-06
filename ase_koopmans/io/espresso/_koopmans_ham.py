@@ -5,15 +5,17 @@ Read structures from kcw.x (ham mode) input files.
 """
 
 import copy
+
 from ase_koopmans.atoms import Atoms
+from ase_koopmans.calculators.espresso import KoopmansHam
 from ase_koopmans.calculators.singlepoint import SinglePointDFTCalculator
 from ase_koopmans.dft.kpoints import BandPath
 from ase_koopmans.utils import base_koopmansstring
-from ._utils import construct_kpoints_card, generic_construct_namelist, safe_string_to_list_of_floats, time_to_float, \
-    read_fortran_namelist, dict_to_input_lines
-from ._wann2kc import KEYS as W2KCW_KEYS
 
-from ase_koopmans.calculators.espresso import KoopmansHam
+from ._utils import (construct_kpoints_card, dict_to_input_lines,
+                     generic_construct_namelist, read_fortran_namelist,
+                     safe_string_to_list_of_floats, time_to_float)
+from ._wann2kc import KEYS as W2KCW_KEYS
 
 KEYS = copy.deepcopy(W2KCW_KEYS)
 KEYS['HAM'] = ['do_bands', 'use_ws_distance', 'write_hr', 'l_alpha_corr', 'on_site_only']
@@ -72,7 +74,7 @@ def read_koopmans_ham_out(fileobj):
     """
 
     if isinstance(fileobj, base_koopmansstring):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r', newline='')
 
     # work with a copy in memory for faster random access
     flines = fileobj.readlines()

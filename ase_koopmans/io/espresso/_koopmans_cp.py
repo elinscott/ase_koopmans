@@ -5,14 +5,16 @@ structures from kcp.x input files.
 """
 
 import copy
+
 from ase_koopmans.atoms import Atoms
+from ase_koopmans.calculators.espresso import Espresso_kcp
 from ase_koopmans.calculators.singlepoint import SinglePointDFTCalculator
 from ase_koopmans.utils import base_koopmansstring
-from ._utils import generic_construct_namelist, units, time_to_float, safe_string_to_list_of_floats, write_espresso_in
-from ._pw import read_pw_in
-from ._pw import KEYS as PW_KEYS
-from ase_koopmans.calculators.espresso import Espresso_kcp
 
+from ._pw import KEYS as PW_KEYS
+from ._pw import read_pw_in
+from ._utils import (generic_construct_namelist, safe_string_to_list_of_floats,
+                     time_to_float, units, write_espresso_in)
 
 KEYS = copy.deepcopy(PW_KEYS)
 KEYS['CONTROL'] += ['ndr', 'ndw', 'ekin_conv_thr', 'write_hr', 'print_real_space_density']
@@ -97,7 +99,7 @@ def read_koopmans_cp_out(fileobj, index=-1, results_required=True):
 
     """
     if isinstance(fileobj, base_koopmansstring):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r', newline='')
 
     # work with a copy in memory for faster random access
     cpo_lines = fileobj.readlines()

@@ -405,7 +405,7 @@ def read_wannier90_out(fd):
     """
 
     if isinstance(fd, base_koopmansstring):
-        fd = open(fd, 'rU')
+        fd = open(fd, 'r', newline='')
 
     flines = fd.readlines()
 

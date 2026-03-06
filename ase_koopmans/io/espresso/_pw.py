@@ -78,7 +78,7 @@ def read_pw_out(fileobj, index=-1, results_required=True):
 
     """
     if isinstance(fileobj, str):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r', newline='')
 
     # work with a copy in memory for faster random access
     pwo_lines = fileobj.readlines()
