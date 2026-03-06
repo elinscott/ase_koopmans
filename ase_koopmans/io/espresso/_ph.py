@@ -37,7 +37,7 @@ def read_ph_in(fileobj):
     """
     # TODO: use ase_koopmans opening mechanisms
     if isinstance(fileobj, str):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r', newline='')
 
     # parse namelist section and extract remaining lines
     data, _ = read_fortran_namelist(fileobj)
@@ -92,7 +92,7 @@ def read_ph_out(fd, *args, **kwargs):
     """
 
     if isinstance(fd, base_koopmansstring):
-        fd = open(fd, 'rU')
+        fd = open(fd, 'r', newline='')
 
     flines = fd.readlines()
 

@@ -1,7 +1,9 @@
+from pathlib import Path
+
 from ase_koopmans.atoms import Atoms
 from ase_koopmans.calculators.espresso import Projwfc
-from ._utils import read_fortran_namelist, time_to_float, dict_to_input_lines
-from pathlib import Path
+
+from ._utils import dict_to_input_lines, read_fortran_namelist, time_to_float
 
 
 def read_projwfc_in(fileobj):
@@ -29,7 +31,7 @@ def read_projwfc_in(fileobj):
     """
     # TODO: use ase_koopmans opening mechanisms
     if isinstance(fileobj, str):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r', newline='')
 
     # parse namelist section and extract remaining lines
     data, _ = read_fortran_namelist(fileobj)

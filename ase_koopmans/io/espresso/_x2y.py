@@ -3,9 +3,11 @@
 """
 
 from pathlib import Path
-from ase_koopmans.utils import base_koopmansstring
+
 from ase_koopmans.atoms import Atoms
-from ._utils import read_fortran_namelist, time_to_float, dict_to_input_lines
+from ase_koopmans.utils import base_koopmansstring
+
+from ._utils import dict_to_input_lines, read_fortran_namelist, time_to_float
 
 
 def read_x2y_in(fileobj, calc_class):
@@ -33,7 +35,7 @@ def read_x2y_in(fileobj, calc_class):
     """
     # TODO: use ase_koopmans opening mechanisms
     if isinstance(fileobj, str):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r', newline='')
 
     # parse namelist section and extract remaining lines
     data, _ = read_fortran_namelist(fileobj)
@@ -83,7 +85,7 @@ def read_x2y_out(fd, calc_class):
     """
 
     if isinstance(fd, base_koopmansstring):
-        fd = open(fd, 'rU')
+        fd = open(fd, 'r', newline='')
 
     flines = fd.readlines()
 

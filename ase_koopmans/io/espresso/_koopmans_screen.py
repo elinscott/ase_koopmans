@@ -5,12 +5,15 @@ Read structures from kcw.x (screen mode) input files.
 """
 
 import copy
+
 from ase_koopmans import Atoms
+from ase_koopmans.calculators.espresso import KoopmansScreen
 from ase_koopmans.calculators.singlepoint import SinglePointDFTCalculator
 from ase_koopmans.utils import base_koopmansstring
-from ._utils import read_fortran_namelist, generic_construct_namelist, time_to_float, units, dict_to_input_lines
+
+from ._utils import (dict_to_input_lines, generic_construct_namelist,
+                     read_fortran_namelist, time_to_float, units)
 from ._wann2kc import KEYS as W2KCW_KEYS
-from ase_koopmans.calculators.espresso import KoopmansScreen
 
 KEYS = copy.deepcopy(W2KCW_KEYS)
 KEYS['SCREEN'] = ['tr2', 'nmix', 'niter', 'eps_inf', 'i_orb', 'check_spread']
@@ -65,7 +68,7 @@ def read_koopmans_screen_out(fileobj):
     """
 
     if isinstance(fileobj, base_koopmansstring):
-        fileobj = open(fileobj, 'rU')
+        fileobj = open(fileobj, 'r', newline='')
 
     # work with a copy in memory for faster random access
     flines = fileobj.readlines()
