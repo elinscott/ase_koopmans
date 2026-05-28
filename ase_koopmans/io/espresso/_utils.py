@@ -1070,6 +1070,9 @@ def get_constraint(constraint_idx):
 
 
 def time_to_float(time_str):
+    if '*' in time_str:
+        # Something has overflowed; don't try and parse
+        return None
     if 'd' in time_str:
         days = time_str.split('d')[0]
         time_str = time_str.split('d')[1].strip()
@@ -1089,10 +1092,7 @@ def time_to_float(time_str):
         seconds = rem.rstrip('s')
     else:
         seconds = 0
-    try:
-        return (float(days) * 1440 + float(hours) * 60 + float(minutes)) * 60 + float(seconds)
-    except ValueError:
-        return None
+    return (float(days) * 1440 + float(hours) * 60 + float(minutes)) * 60 + float(seconds)
 
 
 def safe_float(string):
