@@ -1070,6 +1070,9 @@ def get_constraint(constraint_idx):
 
 
 def time_to_float(time_str):
+    if '*' in time_str:
+        # Something has overflowed; don't try and parse
+        return None
     if 'd' in time_str:
         days = time_str.split('d')[0]
         time_str = time_str.split('d')[1].strip()
