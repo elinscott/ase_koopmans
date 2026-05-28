@@ -1089,7 +1089,10 @@ def time_to_float(time_str):
         seconds = rem.rstrip('s')
     else:
         seconds = 0
-    return (float(days) * 1440 + float(hours) * 60 + float(minutes)) * 60 + float(seconds)
+    try:
+        return (float(days) * 1440 + float(hours) * 60 + float(minutes)) * 60 + float(seconds)
+    except ValueError:
+        return None
 
 
 def safe_float(string):
