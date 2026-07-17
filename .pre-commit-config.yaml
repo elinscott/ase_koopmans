@@ -19,8 +19,11 @@ repos:
     rev: v0.961
     hooks:
       - id: mypy
-        files: src/koopmans/
+        files: ase_koopmans/
         args: [--ignore-missing-imports]
+        additional_dependencies:
+          - types-PyMySQL
+          - types-toml
 
   - repo: https://github.com/hhatto/autopep8
     rev: v2.3.2

@@ -2,7 +2,7 @@
 # towards replacing ase_koopmans.dft.dos and ase_koopmans.dft.pdos
 import warnings
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, Sequence, Tuple, TypeVar
+from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar
 
 import numpy as np
 
@@ -136,14 +136,15 @@ class DOSData(metaclass=ABCMeta):
 
     def plot_dos(self,
                  npts: int = 1000,
-                 xmin: float = None,
-                 xmax: float = None,
+                 xmin: Optional[float] = None,
+                 xmax: Optional[float] = None,
                  width: float = 0.1,
                  smearing: str = 'Gauss',
-                 ax: 'matplotlib.axes.Axes' = None,
+                 ax: Optional['matplotlib.axes.Axes'] = None,
                  show: bool = False,
-                 filename: str = None,
-                 mplargs: dict = None) -> 'matplotlib.axes.Axes':
+                 orientation: str = 'horizontal',
+                 filename: Optional[str] = None,
+                 mplargs: Optional[dict] = None) -> 'matplotlib.axes.Axes':
         """Simple 1-D plot of DOS data, resampled onto a grid
 
         If the special key 'label' is present in self.info, this will be set
@@ -177,8 +178,15 @@ class DOSData(metaclass=ABCMeta):
             energies, intensity = self.sample_grid(npts, xmin=xmin, xmax=xmax,
                                                    width=width,
                                                    smearing=smearing)
-            ax.plot(energies, intensity, **mplargs)
 
+            if orientation == 'horizontal':
+                ax.plot(energies, intensity, **mplargs)
+                ax.set_xlim(left=xmin, right=xmax)
+            elif orientation == 'vertical':
+                ax.plot(intensity, energies, **mplargs)
+                ax.set_ylim([xmin, xmax])
+            else:
+                raise ValueError(f'Unrecognised orientation {orientation}')
         return ax
 
     @staticmethod
@@ -402,15 +410,15 @@ class GridDOSData(GeneralDOSData):
 
     def plot_dos(self,
                  npts: int = 0,
-                 xmin: float = None,
-                 xmax: float = None,
+                 xmin: Optional[float] = None,
+                 xmax: Optional[float] = None,
                  width: float = 0.1,
                  smearing: str = 'Gauss',
-                 ax: 'matplotlib.axes.Axes' = None,
+                 ax: Optional['matplotlib.axes.Axes'] = None,
                  show: bool = False,
                  orientation: str = 'horizontal',
-                 filename: str = None,
-                 mplargs: dict = None) -> 'matplotlib.axes.Axes':
+                 filename: Optional[str] = None,
+                 mplargs: Optional[dict] = None) -> 'matplotlib.axes.Axes':
         """Simple 1-D plot of DOS data
 
         Data will be resampled onto a grid with `npts` points unless `npts` is

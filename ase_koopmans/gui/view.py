@@ -1,5 +1,5 @@
 from math import cos, sin, sqrt
-from os.path import base_koopmansname
+from os.path import basename
 
 import numpy as np
 
@@ -124,7 +124,7 @@ class View:
         if fname is None:
             title = 'ase_koopmans.gui'
         else:
-            title = base_koopmansname(fname)
+            title = basename(fname)
 
         self.window.title = title
 
