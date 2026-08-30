@@ -384,7 +384,7 @@ def read_pw_out(fileobj, index=-1, results_required=True):
         nelec = None
         for nelec_index in indexes[_PW_NELEC]:
             if image_index < nelec_index < next_index:
-                nelec = float(pwo_lines[nelec_index].split()[4])
+                nelec = float(pwo_lines[nelec_index].split()[-1].replace(')',""))
 
         # Put everything together
         calc = SinglePointDFTCalculator(structure, energy=energy,
